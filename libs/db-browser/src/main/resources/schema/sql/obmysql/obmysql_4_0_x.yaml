@@ -1,0 +1,127 @@
+sqls:
+  list-basic-schema-columns: |-
+    SELECT
+      TABLE_SCHEMA,
+      TABLE_NAME,
+      COLUMN_NAME,
+      DATA_TYPE,
+      COLUMN_COMMENT
+    FROM
+      information_schema.columns
+    WHERE
+      TABLE_SCHEMA = ?
+    ORDER BY
+      TABLE_NAME ASC,
+      ORDINAL_POSITION ASC
+  list-basic-table-columns: |-
+    SELECT
+      TABLE_SCHEMA,
+      TABLE_NAME,
+      COLUMN_NAME,
+      DATA_TYPE,
+      COLUMN_COMMENT
+    FROM
+      information_schema.columns
+    WHERE
+      TABLE_SCHEMA = ? AND TABLE_NAME = ?
+    ORDER BY
+      ORDINAL_POSITION ASC
+  list-table-columns: |-
+    SELECT
+      TABLE_NAME,
+      TABLE_SCHEMA,
+      ORDINAL_POSITION,
+      COLUMN_NAME,
+      DATA_TYPE,
+      COLUMN_TYPE,
+      NUMERIC_SCALE,
+      NUMERIC_PRECISION,
+      DATETIME_PRECISION,
+      NUMERIC_SCALE,
+      CHARACTER_MAXIMUM_LENGTH,
+      EXTRA,
+      CHARACTER_SET_NAME,
+      COLLATION_NAME,
+      COLUMN_COMMENT,
+      COLUMN_DEFAULT,
+      GENERATION_EXPRESSION,
+      IS_NULLABLE,
+      COLUMN_KEY
+    FROM
+      information_schema.columns
+    WHERE
+      TABLE_SCHEMA = ? AND TABLE_NAME = ?
+    ORDER BY
+      ORDINAL_POSITION ASC
+  list-table-constraints: |-
+    SELECT
+      t1.CONSTRAINT_NAME,
+      t1.CONSTRAINT_SCHEMA,
+      t1.TABLE_NAME,
+      t1.COLUMN_NAME,
+      t1.ORDINAL_POSITION,
+      t1.REFERENCED_TABLE_SCHEMA,
+      t1.REFERENCED_TABLE_NAME,
+      t1.REFERENCED_COLUMN_NAME,
+      t2.CONSTRAINT_TYPE
+    FROM
+      information_schema.key_column_usage t1
+      LEFT JOIN information_schema.table_constraints t2 ON t1.TABLE_NAME = t2.TABLE_NAME
+      and t1.TABLE_SCHEMA = t2.TABLE_SCHEMA
+      and t1.CONSTRAINT_NAME = t2.CONSTRAINT_NAME
+    WHERE
+      t1.TABLE_SCHEMA = ? AND t1.TABLE_NAME = ?
+    ORDER BY
+      t1.CONSTRAINT_NAME,
+      t1.ORDINAL_POSITION ASC
+  get-table-option: |-
+    SELECT
+      `CREATE_TIME`,
+      `UPDATE_TIME`,
+      `AUTO_INCREMENT`,
+      `TABLE_COLLATION`,
+      `TABLE_COMMENT`
+    FROM
+      `information_schema`.`tables`
+    WHERE
+      TABLE_SCHEMA = ? and TABLE_NAME = ?
+  get-partition: |-
+    SELECT
+      PARTITION_NAME,
+      SUBPARTITION_NAME,
+      COUNT(SUBPARTITION_NAME) AS SUB_NUM,
+      PARTITION_ORDINAL_POSITION,
+      PARTITION_METHOD,
+      SUBPARTITION_METHOD,
+      PARTITION_EXPRESSION,
+      SUBPARTITION_EXPRESSION,
+      PARTITION_DESCRIPTION
+    FROM
+      information_schema.partitions
+    WHERE
+      TABLE_SCHEMA = ? AND TABLE_NAME = ?
+    GROUP BY
+      PARTITION_NAME
+    ORDER BY
+      PARTITION_ORDINAL_POSITION ASC
+  list-schema-index: |-
+    SELECT 
+      TABLE_SCHEMA, 
+      TABLE_NAME, 
+      NON_UNIQUE, 
+      INDEX_NAME, 
+      SEQ_IN_INDEX, 
+      COLUMN_NAME,
+      COLLATION, 
+      CARDINALITY, 
+      SUB_PART, 
+      INDEX_TYPE, 
+      COMMENT, 
+      INDEX_COMMENT, 
+      IS_VISIBLE
+    FROM
+      information_schema.statistics
+    WHERE TABLE_SCHEMA = ? 
+    ORDER BY 
+      TABLE_NAME, 
+      SEQ_IN_INDEX

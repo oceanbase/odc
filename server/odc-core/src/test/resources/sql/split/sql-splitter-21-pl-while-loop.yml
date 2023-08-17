@@ -1,0 +1,23 @@
+origin: |-
+  delimiter ;
+  CREATE
+  OR REPLACE FUNCTION fn_get RETURN INT IS j INT := 0;
+  BEGIN
+  WHILE j < 3 LOOP
+  j := j+1;
+  END LOOP;
+  RETURN j;
+  END fn_get;
+
+expected:
+  - |-
+    CREATE
+    OR REPLACE FUNCTION fn_get RETURN INT IS j INT := 0;
+    BEGIN
+    WHILE j < 3 LOOP
+    j := j+1;
+    END LOOP;
+    RETURN j;
+    END fn_get;
+
+expected_end_delimiter: ;

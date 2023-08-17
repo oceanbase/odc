@@ -1,0 +1,45 @@
+[
+  {
+    "id": 1,
+    "name": "case1",
+    "description": "普通索引，单列",
+    "input": {
+      "current": {
+        "name": "a",
+        "schemaName": "schema",
+        "tableName": "table",
+        "type": "NORMAL",
+        "global": true,
+        "visible": true,
+        "columnNames": [
+          "a"
+        ],
+        "algorithm": "BTREE",
+        "ordinalPosition": null
+      }
+    },
+    "output": "CREATE  INDEX \"a\" USING BTREE ON \"schema\".\"table\" (\"a\") GLOBAL"
+  },
+  {
+    "id": 2,
+    "name": "case2",
+    "description": "普通索引，多列，RANGE 为 LOCAL",
+    "input": {
+      "current": {
+        "name": "a",
+        "schemaName": "schema",
+        "tableName": "table",
+        "type": "NORMAL",
+        "global": false,
+        "visible": true,
+        "columnNames": [
+          "a",
+          "b"
+        ],
+        "algorithm": "BTREE",
+        "ordinalPosition": null
+      }
+    },
+    "output": "CREATE  INDEX \"a\" USING BTREE ON \"schema\".\"table\" (\"a\", \"b\") LOCAL"
+  }
+]

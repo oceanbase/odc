@@ -1,0 +1,16 @@
+# 个人设置
+- type: "PERSONAL_CONFIGURATION"
+  action: "UPDATE_PERSONAL_CONFIGURATION"
+  method_signature: "com.oceanbase.odc.server.web.controller.v1.UserConfigController.update"
+  sid_extract_expression: ""
+  in_connection: 0
+  enabled: 1
+  id: 1
+# 密码管理
+- type: "PASSWORD_MANAGEMENT"
+  action: "SET_PASSWORD"
+  method_signature: "com.oceanbase.odc.server.web.controller.v2.IamController.activateUser"
+  sid_extract_expression: ""
+  in_connection: 0
+  enabled: 0
+  id: 2

@@ -1,0 +1,106 @@
+kind: resource
+version: v2
+templates:
+    - metadata:
+          allow_duplicate: false
+          table_name: regulation_approval_flow_node_config
+          unique_keys: [ "approval_flow_config_id", "sequence_number" ]
+      specs:
+          - column_name: id
+            default_value: 1
+            data_type: java.lang.Long
+          - column_name: approval_flow_config_id
+            value_from:
+                field_ref:
+                    ref_file: init-config/regulation/V_4_2_0_29__approval_flow_config.yaml
+                    field_path: templates.0.specs.0.value
+          - column_name: is_auto_approval
+            value: true
+            data_type: java.lang.Boolean
+          - column_name: sequence_number
+            value: 0
+            data_type: java.lang.Integer
+    - metadata:
+          allow_duplicate: false
+          table_name: regulation_approval_flow_node_config
+          unique_keys: [ "approval_flow_config_id", "sequence_number" ]
+      specs:
+          - column_name: id
+            default_value: 2
+            data_type: java.lang.Long
+          - column_name: approval_flow_config_id
+            value_from:
+                field_ref:
+                    ref_file: init-config/regulation/V_4_2_0_29__approval_flow_config.yaml
+                    field_path: templates.1.specs.0.value
+          - column_name: resource_role_id
+            value_from:
+                field_ref:
+                    ref_file: migrate/rbac/V_4_2_0_24__resource_role.yaml
+                    field_path: templates.0.specs.0.value
+          - column_name: sequence_number
+            value: 0
+            data_type: java.lang.Integer
+    - metadata:
+          allow_duplicate: false
+          table_name: regulation_approval_flow_node_config
+          unique_keys: [ "approval_flow_config_id", "sequence_number" ]
+      specs:
+          - column_name: id
+            default_value: 3
+            data_type: java.lang.Long
+          - column_name: approval_flow_config_id
+            value_from:
+                field_ref:
+                    ref_file: init-config/regulation/V_4_2_0_29__approval_flow_config.yaml
+                    field_path: templates.2.specs.0.value
+          - column_name: resource_role_id
+            value_from:
+                field_ref:
+                    ref_file: migrate/rbac/V_4_2_0_24__resource_role.yaml
+                    field_path: templates.1.specs.0.value
+          - column_name: sequence_number
+            value: 0
+            data_type: java.lang.Integer
+    - metadata:
+          allow_duplicate: false
+          table_name: regulation_approval_flow_node_config
+          unique_keys: [ "approval_flow_config_id", "sequence_number" ]
+      specs:
+          - column_name: id
+            default_value: 4
+            data_type: java.lang.Long
+          - column_name: approval_flow_config_id
+            value_from:
+                field_ref:
+                    ref_file: init-config/regulation/V_4_2_0_29__approval_flow_config.yaml
+                    field_path: templates.3.specs.0.value
+          - column_name: resource_role_id
+            value_from:
+                field_ref:
+                    ref_file: migrate/rbac/V_4_2_0_24__resource_role.yaml
+                    field_path: templates.0.specs.0.value
+          - column_name: sequence_number
+            value: 0
+            data_type: java.lang.Integer
+    - metadata:
+          allow_duplicate: false
+          table_name: regulation_approval_flow_node_config
+          unique_keys: [ "approval_flow_config_id", "sequence_number" ]
+      specs:
+          - column_name: id
+            default_value: 5
+            data_type: java.lang.Long
+          - column_name: approval_flow_config_id
+            value_from:
+                field_ref:
+                    ref_file: init-config/regulation/V_4_2_0_29__approval_flow_config.yaml
+                    field_path: templates.3.specs.0.value
+          - column_name: resource_role_id
+            value_from:
+                field_ref:
+                    ref_file: migrate/rbac/V_4_2_0_24__resource_role.yaml
+                    field_path: templates.1.specs.0.value
+          - column_name: sequence_number
+            value: 1
+            data_type: java.lang.Integer

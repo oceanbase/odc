@@ -1,0 +1,162 @@
+sqls:
+  list-basic-schema-columns: |-
+    SELECT
+      TABLE_SCHEMA,
+      TABLE_NAME,
+      COLUMN_NAME,
+      DATA_TYPE,
+      COLUMN_COMMENT
+    FROM
+      information_schema.columns
+    WHERE
+      TABLE_SCHEMA = ?
+    ORDER BY
+      TABLE_NAME ASC,
+      ORDINAL_POSITION ASC
+  list-basic-table-columns: |-
+    SELECT
+      TABLE_SCHEMA,
+      TABLE_NAME,
+      COLUMN_NAME,
+      DATA_TYPE,
+      COLUMN_COMMENT
+    FROM
+      information_schema.columns
+    WHERE
+      TABLE_SCHEMA = ? AND TABLE_NAME = ?
+    ORDER BY
+      ORDINAL_POSITION ASC
+  list-table-columns: |-
+    SELECT
+      TABLE_NAME,
+      TABLE_SCHEMA,
+      ORDINAL_POSITION,
+      COLUMN_NAME,
+      DATA_TYPE,
+      COLUMN_TYPE,
+      NUMERIC_SCALE,
+      NUMERIC_PRECISION,
+      DATETIME_PRECISION,
+      NUMERIC_SCALE,
+      CHARACTER_MAXIMUM_LENGTH,
+      EXTRA,
+      CHARACTER_SET_NAME,
+      COLLATION_NAME,
+      COLUMN_COMMENT,
+      COLUMN_DEFAULT,
+      IS_NULLABLE,
+      COLUMN_KEY
+    FROM
+      information_schema.columns
+    WHERE
+      TABLE_SCHEMA = ? AND TABLE_NAME = ?
+    ORDER BY
+      ORDINAL_POSITION ASC
+  list-table-constraints: |-
+    SELECT
+      t1.CONSTRAINT_NAME,
+      t1.CONSTRAINT_SCHEMA,
+      t1.TABLE_NAME,
+      t1.COLUMN_NAME,
+      t1.ORDINAL_POSITION,
+      t1.REFERENCED_TABLE_SCHEMA,
+      t1.REFERENCED_TABLE_NAME,
+      t1.REFERENCED_COLUMN_NAME,
+      t2.CONSTRAINT_TYPE
+    FROM
+      information_schema.key_column_usage t1
+      LEFT JOIN information_schema.table_constraints t2 ON t1.TABLE_NAME = t2.TABLE_NAME
+      and t1.TABLE_SCHEMA = t2.TABLE_SCHEMA
+      and t1.CONSTRAINT_NAME = t2.CONSTRAINT_NAME
+    WHERE
+      t1.TABLE_SCHEMA = ? AND t1.TABLE_NAME = ?
+    ORDER BY
+      t1.CONSTRAINT_NAME,
+      t1.ORDINAL_POSITION ASC
+  get-table-option: |-
+    SELECT
+      `CREATE_TIME`,
+      `UPDATE_TIME`,
+      `AUTO_INCREMENT`,
+      `TABLE_COLLATION`,
+      `TABLE_COMMENT`
+    FROM
+      `information_schema`.`tables`
+    WHERE
+      TABLE_SCHEMA = ? and TABLE_NAME = ?
+  get-partition: |-
+    select
+      t.part_level,
+      case
+      when t.part_func_type = 0 then 'HASH'
+      when t.part_func_type = 1 then 'KEY'
+      when t.part_func_type = 2 then 'KEY'
+      when t.part_func_type = 3 then 'RANGE'
+      when t.part_func_type = 4 then 'RANGE COLUMNS'
+      when t.part_func_type = 5 then 'LIST'
+      when t.part_func_type = 6 then 'KEY'
+      when t.part_func_type = 7 then 'LIST COLUMNS'
+      when t.part_func_type = 8 then 'HASH'
+      when t.part_func_type = 9 then 'KEY'
+      when t.part_func_type = 10 then 'KEY'
+      else 'UNKNOWN'
+    end
+      as partition_method,
+      t.part_func_expr,
+      t.part_num,
+      case
+      when t.sub_part_func_type = 0 then 'HASH'
+      when t.sub_part_func_type = 1 then 'KEY'
+      when t.sub_part_func_type = 2 then 'KEY'
+      when t.sub_part_func_type = 3 then 'RANGE'
+      when t.sub_part_func_type = 4 then 'RANGE COLUMNS'
+      when t.sub_part_func_type = 5 then 'LIST'
+      when t.sub_part_func_type = 6 then 'KEY'
+      when t.sub_part_func_type = 7 then 'LIST COLUMNS'
+      when t.sub_part_func_type = 8 then 'HASH'
+      when t.sub_part_func_type = 9 then 'KEY'
+      when t.sub_part_func_type = 10 then 'KEY'
+      else 'UNKNOWN'
+    end
+      as subpartition_method,
+      t.sub_part_func_expr,
+      t.sub_part_num,
+      '1' as is_sub_part_template,
+      p.part_id,
+      p.part_name,
+      p.high_bound_val,
+      p.list_val
+    from
+      oceanbase.__all_database d,
+      oceanbase.__all_table_v2 t,
+      oceanbase.__all_part p
+    where
+      d.database_name = ?
+      and t.table_name = ?
+      and d.tenant_id = t.tenant_id
+      and d.database_id = t.database_id
+      and t.tenant_id = p.tenant_id
+      and t.table_id = p.table_id
+    order by
+      part_id asc
+  list-schema-index: |-
+    SELECT 
+      TABLE_SCHEMA, 
+      TABLE_NAME, 
+      NON_UNIQUE, 
+      INDEX_NAME, 
+      SEQ_IN_INDEX, 
+      COLUMN_NAME,
+      COLLATION, 
+      CARDINALITY, 
+      SUB_PART, 
+      INDEX_TYPE, 
+      COMMENT, 
+      INDEX_COMMENT, 
+      IS_VISIBLE
+    FROM
+      information_schema.statistics
+    WHERE TABLE_SCHEMA = ? 
+    ORDER BY 
+      TABLE_NAME, 
+      SEQ_IN_INDEX

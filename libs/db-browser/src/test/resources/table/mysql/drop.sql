@@ -1,0 +1,13 @@
+drop table if exists test_data_type;
+drop table if exists test_other_than_data_type;
+drop table if exists test_index_type;
+drop table if exists test_fk_child;
+drop table if exists test_fk_parent;
+drop table if exists part_hash;
+drop table if exists part_list;
+drop table if exists part_range;
+drop view if exists view_test1;
+drop view if exists view_test2;
+drop table if exists test_view_table;
+drop function if exists function_test;
+drop procedure if exists procedure_detail_test;

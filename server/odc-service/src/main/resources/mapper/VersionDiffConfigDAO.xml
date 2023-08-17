@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC
+        "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.oceanbase.odc.metadb.feature.VersionDiffConfigDAO">
+    <sql id="sqlColumns">
+       `id`, `config_key` as configKey,`db_mode` as dbMode,`config_value` as configValue,
+        `min_version` as minVersion, `gmt_create` as gmtCreate, `gmt_modify` as gmtModify
+    </sql>
+
+    <sql id="insert_field">
+      #{configKey}, #{configValue}, #{dbMode}, #{minVersion}
+    </sql>
+
+    <sql id="update_field">
+      `config_key` = #{configKey},
+      `config_value` = #{configValue},
+      `db_mode` = #{dbMode},
+      `min_version` = #{minVersion},
+      `gmt_modify` = now()
+    </sql>
+
+    <sql id="table_name">
+        `odc_version_diff_config`
+    </sql>
+
+    <select id="query" resultType="com.oceanbase.odc.service.feature.model.VersionDiffConfig">
+        SELECT
+        <include refid="sqlColumns"/>
+        FROM
+        <include refid="table_name"/>
+        WHERE `db_mode` = #{dbMode}
+        <if test="configKey != null"> AND `config_key`=#{configKey}</if>
+    </select>
+
+    <insert id="insert" parameterType="com.oceanbase.odc.service.feature.model.VersionDiffConfig">
+        INSERT INTO
+        <include refid="table_name"/>
+        (config_key,config_value,db_mode,min_version)
+        VALUES
+        (
+        <include refid="insert_field"/>
+        )
+    </insert>
+
+    <update id="update" parameterType="com.oceanbase.odc.service.feature.model.VersionDiffConfig">
+        UPDATE
+        <include refid="table_name"/>
+        SET
+        <include refid="update_field"/>
+        WHERE `id` = #{id}
+    </update>
+
+    <delete id="delete" parameterType="com.oceanbase.odc.service.feature.model.VersionDiffConfig">
+        DELETE FROM
+        <include refid="table_name"/>
+        WHERE `id` = #{id}
+    </delete>
+
+</mapper>

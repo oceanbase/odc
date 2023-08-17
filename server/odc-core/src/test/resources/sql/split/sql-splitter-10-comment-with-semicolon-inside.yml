@@ -1,0 +1,10 @@
+origin: |-
+  select 1 --this is a line comment with semicolon; inside
+  as col1 from dual;
+
+expected:
+  - |-
+    select 1 --this is a line comment with semicolon; inside
+    as col1 from dual;
+
+expected_end_delimiter: ;

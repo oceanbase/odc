@@ -1,0 +1,99 @@
+[
+  {
+    "id": 1,
+    "name": "case1",
+    "description": "加一个新索引，并删除一个旧索引",
+    "input": {
+      "previous": [
+        {
+          "schemaName": "schema",
+          "tableName": "table",
+          "partitionOption": {
+            "type": "RANGE",
+            "expression": "col1"
+          },
+          "partitionDefinitions": [
+            {
+              "name": "p1",
+              "ordinalPosition": 1,
+              "maxValues": [
+                "1000"
+              ]
+            },
+            {
+              "name": "p2",
+              "ordinalPosition": null,
+              "maxValues": [
+                "2000"
+              ]
+            }
+          ]
+        }
+      ],
+      "current": [
+        {
+          "schemaName": "schema",
+          "tableName": "table",
+          "partitionOption": {
+            "type": "RANGE",
+            "expression": "col1"
+          },
+          "partitionDefinitions": [
+            {
+              "name": "p1",
+              "ordinalPosition": 1,
+              "maxValues": [
+                "1000"
+              ]
+            },
+            {
+              "name": "p3",
+              "ordinalPosition": null,
+              "maxValues": [
+                "3000"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "output": "ALTER TABLE `schema`.`table` ADD PARTITION(PARTITION `p3` VALUES LESS THAN (3000));\nALTER TABLE `schema`.`table` DROP PARTITION (p2);\n"
+  },
+  {
+    "id": 2,
+    "name": "case2",
+    "description": "无分区",
+    "input": {
+      "previous": [
+
+      ],
+      "current": [
+        {
+          "schemaName": "schema",
+          "tableName": "table",
+          "partitionOption": {
+            "type": "RANGE",
+            "expression": "col1"
+          },
+          "partitionDefinitions": [
+            {
+              "name": "p1",
+              "ordinalPosition": 1,
+              "maxValues": [
+                "1000"
+              ]
+            },
+            {
+              "name": "p3",
+              "ordinalPosition": null,
+              "maxValues": [
+                "3000"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "output": ""
+  }
+]

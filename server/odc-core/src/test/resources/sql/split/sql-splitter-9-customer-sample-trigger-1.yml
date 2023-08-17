@@ -1,0 +1,43 @@
+origin: |-
+  create or replace TRIGGER TRIGGER1
+  BEFORE UPDATE OF "NAME" OR INSERT OR DELETE
+  ON "TABLE_FOR_TRIGGER"
+  REFERENCING NEW AS NEW OLD AS OLD
+  FOR EACH ROW ENABLE
+  declare var_tag varchar2(20);  --声明一个变量，存储对dept表执行的操作类
+  begin
+  if inserting then  --当触发事件是insert时
+  var_tag:='插入';   --标识插入操作
+  INSERT INTO TRIGGER_LOG(operation,new_id,new_name) VALUES (var_tag,:NEW.ID,:NEW.NAME);
+  elsif updating then  --当触发事件是update时
+  var_tag:='修改';  --标识修改操作
+  INSERT INTO TRIGGER_LOG VALUES (var_tag,:OLD.ID,:NEW.ID,:OLD.NAME,:NEW.NAME);
+  elsif deleting then  --当触发事件是delete时
+  var_tag:='删除';  --标识删除操作
+  INSERT INTO TRIGGER_LOG(operation,old_id,old_name) VALUES (var_tag,:OLD.ID,:OLD.NAME);
+  end if;
+  END;
+  /
+
+expected:
+  - |-
+    create or replace TRIGGER TRIGGER1
+    BEFORE UPDATE OF "NAME" OR INSERT OR DELETE
+    ON "TABLE_FOR_TRIGGER"
+    REFERENCING NEW AS NEW OLD AS OLD
+    FOR EACH ROW ENABLE
+    declare var_tag varchar2(20);  --声明一个变量，存储对dept表执行的操作类
+    begin
+    if inserting then  --当触发事件是insert时
+    var_tag:='插入';   --标识插入操作
+    INSERT INTO TRIGGER_LOG(operation,new_id,new_name) VALUES (var_tag,:NEW.ID,:NEW.NAME);
+    elsif updating then  --当触发事件是update时
+    var_tag:='修改';  --标识修改操作
+    INSERT INTO TRIGGER_LOG VALUES (var_tag,:OLD.ID,:NEW.ID,:OLD.NAME,:NEW.NAME);
+    elsif deleting then  --当触发事件是delete时
+    var_tag:='删除';  --标识删除操作
+    INSERT INTO TRIGGER_LOG(operation,old_id,old_name) VALUES (var_tag,:OLD.ID,:OLD.NAME);
+    end if;
+    END;
+
+expected_end_delimiter: ;

@@ -1,0 +1,9 @@
+spring:
+  datasource:
+    url: jdbc:h2:${DB_PATH:~}/odc2.0;MODE=MySQL
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+jasypt:
+  encryptor:
+    bootstrap: false

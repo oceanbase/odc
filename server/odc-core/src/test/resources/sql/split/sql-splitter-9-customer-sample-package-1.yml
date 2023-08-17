@@ -1,0 +1,538 @@
+origin: |-
+  create or replace package debug_utils is
+    runtime dbms_debug.runtime_info;
+    function to_error(code binary_integer) return varchar2;
+    function to_reason(code binary_integer) return varchar2;
+    function to_namespace(code binary_integer) return varchar2;
+    procedure print_program(program dbms_debug.program_info);
+    procedure print_runtime(runtime dbms_debug.runtime_info);
+
+    procedure initialize;
+    procedure synchronize;
+    procedure brean_any_return;
+    procedure set_breakpoint(line# binary_integer);
+    procedure disable_breakpoint(num binary_integer);
+    procedure show_breakpoints;
+    procedure print_backtrace;
+    procedure delete_breakpoint(num binary_integer);
+    procedure step_over;
+    procedure step_into;
+    procedure step_any_return;
+    procedure step_abort;
+    procedure get_value(variable_name varchar2, frame# binary_integer);
+    procedure get_runtime_info;
+    procedure get_values;
+
+    procedure get_line_map;
+
+    procedure get_timeout;
+    procedure get_timeout_behaviour;
+    procedure set_timeout(timeout binary_integer);
+  end;
+  /
+  create or replace package body debug_utils is
+    function to_error(code binary_integer) return varchar2 is
+    begin
+      case code
+        when dbms_debug.success then return 'success';
+        when dbms_debug.error_bogus_frame then return 'error_bogus_frame';
+        when dbms_debug.error_no_debug_info then return 'error_no_debug_info';
+        when dbms_debug.error_no_such_object then return 'error_no_such_object';
+        when dbms_debug.error_unknown_type then return 'error_unknown_type';
+        when dbms_debug.error_indexed_table then return 'error_indexed_table';
+        when dbms_debug.error_illegal_index then return 'error_illegal_index';
+        when dbms_debug.error_nullcollection then return 'error_nullcollection';
+        when dbms_debug.error_nullvalue then return 'error_nullvalue';
+        when dbms_debug.error_illegal_value then return 'error_illegal_value';
+        when dbms_debug.error_illegal_null then return 'error_illegal_null';
+        when dbms_debug.error_value_malformed then return 'error_value_malformed';
+        when dbms_debug.error_other then return 'error_other';
+        when dbms_debug.error_name_incomplete then return 'error_name_incomplete';
+        when dbms_debug.error_illegal_line then return 'error_illegal_line';
+        when dbms_debug.error_no_such_breakpt then return 'error_no_such_breakpt';
+        when dbms_debug.error_idle_breakpt then return 'error_idle_breakpt';
+        when dbms_debug.error_stale_breakpt then return 'error_stale_breakpt';
+        when dbms_debug.error_bad_handle then return 'error_bad_handle';
+        when dbms_debug.error_unimplemented then return 'error_unimplemented';
+        when dbms_debug.error_deferred then return 'error_deferred';
+        when dbms_debug.error_exception then return 'error_exception';
+        when dbms_debug.error_communication then return 'error_communication';
+        when dbms_debug.error_timeout then return 'error_timeout';
+        when dbms_debug.error_pbrun_mismatch then return 'error_pbrun_mismatch';
+        when dbms_debug.error_no_rph then return 'error_no_rph';
+        when dbms_debug.error_probe_invalid then return 'error_probe_invalid';
+        when dbms_debug.error_upierr then return 'error_upierr';
+        when dbms_debug.error_noasync then return 'error_noasync';
+        when dbms_debug.error_nologon then return 'error_nologon';
+        when dbms_debug.error_reinit then return 'error_reinit';
+        when dbms_debug.error_unrecognized then return 'error_unrecognized';
+        when dbms_debug.error_synch then return 'error_synch';
+        when dbms_debug.error_incompatible then return 'error_incompatible';
+        else return 'error_unknown';
+      end case;
+      return 'error_unknown';
+    end;
+    function to_reason(code binary_integer) return varchar2 is
+    begin
+      case code
+        when dbms_debug.reason_none then return 'reason_none';
+        when dbms_debug.reason_interpreter_starting then return 'reason_interpreter_starting';
+        when dbms_debug.reason_breakpoint then return 'reason_breakpoint';
+        when dbms_debug .reason_enter then return 'reason_enter';
+        when dbms_debug.reason_return then return 'reason_return';
+        when dbms_debug.reason_finish then return 'reason_finish';
+        when dbms_debug.reason_line then return 'reason_line';
+        when dbms_debug.reason_interrupt then return 'reason_interrupt';
+        when dbms_debug.reason_exception then return 'reason_exception';
+        when dbms_debug.reason_exit then return 'reason_exit';
+        when dbms_debug.reason_handler then return 'reason_handler';
+        when dbms_debug.reason_timeout then return 'reason_timeout';
+        when dbms_debug.reason_instantiate then return 'reason_instantiate';
+        when dbms_debug.reason_abort then return 'reason_abort';
+        when dbms_debug.reason_knl_exit then return 'reason_knl_exit';
+        else return 'reason_unknown';
+      end case;
+      return 'reason_unknown';
+    end;
+    function to_namespace(code binary_integer) return varchar2 is
+    begin
+      case code
+        when dbms_debug.namespace_cursor then return 'namespace_cursor';
+        when dbms_debug.namespace_pkgspec_or_toplevel then return 'namespace_pkgspec_or_toplevel';
+        when dbms_debug.namespace_pkg_body then return 'namespace_pkg_body';
+        when dbms_debug.namespace_trigger then return 'namespace_trigger';
+        when dbms_debug.namespace_none then return 'namespace_none';
+        else return 'namespace_unknown';
+      end case;
+      return 'namespace_unknown';
+    end;
+    procedure print_program(program dbms_debug.program_info) is
+    begin
+      dbms_output.put_line('program_info:');
+      dbms_output.put_line('  namespace = ' || program.namespace || ' ' || to_namespace(program.namespace));
+      dbms_output.put_line('  name = ' || program.name);
+      dbms_output.put_line('  owner = ' || program.owner);
+    end;
+    procedure print_runtime(runtime dbms_debug.runtime_info) is
+    begin
+      dbms_output.put_line('runtime_info:');
+      dbms_output.put_line('  line# = ' || runtime.line#);
+      dbms_output.put_line('  Terminated = ' || runtime.Terminated);
+      dbms_output.put_line('  Breakpoint = ' || runtime.Breakpoint);
+      dbms_output.put_line('  StackDepth = ' || runtime.StackDepth);
+      dbms_output.put_line('  Reason = ' || runtime.Reason || ' ' || to_reason(runtime.Reason));
+      print_program(runtime.program);
+    end;
+    procedure initialize is
+      result varchar2(200);
+    begin
+      result := dbms_debug.initialize();
+      dbms_output.put_line(result);
+    end;
+    procedure synchronize is
+      result binary_integer;
+    begin
+      result := dbms_debug.synchronize(runtime);
+      print_runtime(runtime);
+      dbms_output.put_line('result = ' || result || ' ' || to_error(result));
+    end;
+    procedure brean_any_return is
+      result binary_integer;
+    begin
+      result := dbms_debug.continue(runtime, dbms_debug.break_any_return);
+      dbms_output.put_line('result = ' || result || ' ' || to_error(result));
+    end;
+    procedure set_breakpoint(line# binary_integer) is
+      result binary_integer;
+      bp_num binary_integer;
+    begin
+      result := dbms_debug.set_breakpoint(runtime.program, line#, bp_num);
+      dbms_output.put_line('result = ' || result || ' ' || to_error(result));
+      dbms_output.put_line('bp_num = ' || bp_num);
+    end;
+    procedure disable_breakpoint(num binary_integer) is
+      result binary_integer;
+    begin
+      result := dbms_debug.disable_breakpoint(num);
+      dbms_output.put_line('result = ' || result || ' ' || to_error(result));
+    end;
+    procedure show_breakpoints is
+      listing varchar2(4000);
+    begin
+      dbms_debug.show_breakpoints(listing);
+      dbms_output.put_line('breakpoints = ' || listing);
+    end;
+    procedure print_backtrace is
+      listing varchar2(4000);
+    begin
+      dbms_debug.print_backtrace(listing);
+      dbms_output.put_line('backtrace = ' || listing);
+    end;
+    procedure delete_breakpoint(num binary_integer) is
+      result binary_integer;
+    begin
+      result := dbms_debug.delete_breakpoint(num);
+      dbms_output.put_line('result = ' || result || ' ' || to_error(result));
+    end;
+    procedure step_over is
+      result binary_integer;
+    begin
+      result := dbms_debug.continue(runtime, dbms_debug.break_next_line);
+      dbms_output.put_line('result = ' || result || ' ' || to_error(result));
+      print_runtime(runtime);
+    end;
+    procedure step_into is
+      result binary_integer;
+    begin
+      result := dbms_debug.continue(runtime, dbms_debug.break_any_call);
+      dbms_output.put_line('result = ' || result || ' ' || to_error(result));
+      print_runtime(runtime);
+    end;
+    procedure step_any_return is
+      result binary_integer;
+    begin
+      result := dbms_debug.continue(runtime, dbms_debug.break_any_return);
+      dbms_output.put_line('result = ' || result || ' ' || to_error(result));
+      print_runtime(runtime);
+    end;
+    procedure step_abort is
+      result binary_integer;
+    begin
+      result := dbms_debug.continue(runtime, dbms_debug.abort_execution);
+      dbms_output.put_line('result = ' || result || to_error(result));
+      print_runtime(runtime);
+    end;
+    procedure get_value(variable_name varchar2, frame# binary_integer) is
+      scalar_value varchar2(2000);
+      result binary_integer;
+    begin
+      result := dbms_debug.get_value(variable_name, frame#, scalar_value);
+      dbms_output.put_line('result = ' || result);
+      dbms_output.put_line('scalar_value = ' || scalar_value);
+    end;
+    procedure get_runtime_info is
+      result binary_integer;
+    begin
+      result := dbms_debug.get_runtime_info(null, runtime);
+      print_runtime(runtime);
+      dbms_output.put_line('result = ' || result || ' ' || to_error(result));
+    end;
+    procedure get_values is
+      result binary_integer;
+      scalar_values varchar2(4000);
+    begin
+      -- result := dbms_debug.get_values(scalar_values);
+      dbms_output.put_line('result = ' || result || ' ' || to_error(result));
+      dbms_output.put_line('scalar_values = ' || scalar_values);
+    end;
+
+    procedure get_line_map is
+      result binary_integer;
+      maxline binary_integer;
+      number_of_entry_points binary_integer;
+      linemap raw(2000);
+    begin
+      result := dbms_debug.get_line_map(runtime.program, maxline, number_of_entry_points, linemap);
+      dbms_output.put_line('result = ' || result || ' ' || to_error(result));
+      dbms_output.put_line('maxline = ' || maxline);
+      dbms_output.put_line('number_of_entry_points = ' || number_of_entry_points);
+      dbms_output.put_line('linemap = ' || utl_raw.cast_to_varchar2(linemap));
+    end;
+
+    procedure get_timeout is
+    begin
+      dbms_output.put_line(dbms_debug.default_timeout);
+    end;
+
+    procedure get_timeout_behaviour is
+      result binary_integer;
+    begin
+      result := dbms_debug.get_timeout_behaviour();
+      case result
+      when dbms_debug.retry_on_timeout then dbms_output.put_line('retry_on_timeout');
+      when dbms_debug.continue_on_timeout then dbms_output.put_line('continue_on_timeout');
+      when dbms_debug.nodebug_on_timeout then dbms_output.put_line('nodebug_on_timeout');
+      when dbms_debug.abort_on_timeout then dbms_output.put_line('abort_on_timeout');
+      else dbms_output.put_line('unknown timeout behaviour !' || result);
+      end case;
+    end;
+
+    procedure set_timeout(timeout binary_integer) is
+      result binary_integer;
+    begin
+      result := dbms_debug.set_timeout(timeout);
+      dbms_output.put_line('new timeout is ' || result);
+    end;
+  end;
+  /
+
+expected:
+  - |-
+    create or replace package debug_utils is
+      runtime dbms_debug.runtime_info;
+      function to_error(code binary_integer) return varchar2;
+      function to_reason(code binary_integer) return varchar2;
+      function to_namespace(code binary_integer) return varchar2;
+      procedure print_program(program dbms_debug.program_info);
+      procedure print_runtime(runtime dbms_debug.runtime_info);
+
+      procedure initialize;
+      procedure synchronize;
+      procedure brean_any_return;
+      procedure set_breakpoint(line# binary_integer);
+      procedure disable_breakpoint(num binary_integer);
+      procedure show_breakpoints;
+      procedure print_backtrace;
+      procedure delete_breakpoint(num binary_integer);
+      procedure step_over;
+      procedure step_into;
+      procedure step_any_return;
+      procedure step_abort;
+      procedure get_value(variable_name varchar2, frame# binary_integer);
+      procedure get_runtime_info;
+      procedure get_values;
+
+      procedure get_line_map;
+
+      procedure get_timeout;
+      procedure get_timeout_behaviour;
+      procedure set_timeout(timeout binary_integer);
+    end;
+
+  - |-
+    create or replace package body debug_utils is
+      function to_error(code binary_integer) return varchar2 is
+      begin
+        case code
+          when dbms_debug.success then return 'success';
+          when dbms_debug.error_bogus_frame then return 'error_bogus_frame';
+          when dbms_debug.error_no_debug_info then return 'error_no_debug_info';
+          when dbms_debug.error_no_such_object then return 'error_no_such_object';
+          when dbms_debug.error_unknown_type then return 'error_unknown_type';
+          when dbms_debug.error_indexed_table then return 'error_indexed_table';
+          when dbms_debug.error_illegal_index then return 'error_illegal_index';
+          when dbms_debug.error_nullcollection then return 'error_nullcollection';
+          when dbms_debug.error_nullvalue then return 'error_nullvalue';
+          when dbms_debug.error_illegal_value then return 'error_illegal_value';
+          when dbms_debug.error_illegal_null then return 'error_illegal_null';
+          when dbms_debug.error_value_malformed then return 'error_value_malformed';
+          when dbms_debug.error_other then return 'error_other';
+          when dbms_debug.error_name_incomplete then return 'error_name_incomplete';
+          when dbms_debug.error_illegal_line then return 'error_illegal_line';
+          when dbms_debug.error_no_such_breakpt then return 'error_no_such_breakpt';
+          when dbms_debug.error_idle_breakpt then return 'error_idle_breakpt';
+          when dbms_debug.error_stale_breakpt then return 'error_stale_breakpt';
+          when dbms_debug.error_bad_handle then return 'error_bad_handle';
+          when dbms_debug.error_unimplemented then return 'error_unimplemented';
+          when dbms_debug.error_deferred then return 'error_deferred';
+          when dbms_debug.error_exception then return 'error_exception';
+          when dbms_debug.error_communication then return 'error_communication';
+          when dbms_debug.error_timeout then return 'error_timeout';
+          when dbms_debug.error_pbrun_mismatch then return 'error_pbrun_mismatch';
+          when dbms_debug.error_no_rph then return 'error_no_rph';
+          when dbms_debug.error_probe_invalid then return 'error_probe_invalid';
+          when dbms_debug.error_upierr then return 'error_upierr';
+          when dbms_debug.error_noasync then return 'error_noasync';
+          when dbms_debug.error_nologon then return 'error_nologon';
+          when dbms_debug.error_reinit then return 'error_reinit';
+          when dbms_debug.error_unrecognized then return 'error_unrecognized';
+          when dbms_debug.error_synch then return 'error_synch';
+          when dbms_debug.error_incompatible then return 'error_incompatible';
+          else return 'error_unknown';
+        end case;
+        return 'error_unknown';
+      end;
+      function to_reason(code binary_integer) return varchar2 is
+      begin
+        case code
+          when dbms_debug.reason_none then return 'reason_none';
+          when dbms_debug.reason_interpreter_starting then return 'reason_interpreter_starting';
+          when dbms_debug.reason_breakpoint then return 'reason_breakpoint';
+          when dbms_debug .reason_enter then return 'reason_enter';
+          when dbms_debug.reason_return then return 'reason_return';
+          when dbms_debug.reason_finish then return 'reason_finish';
+          when dbms_debug.reason_line then return 'reason_line';
+          when dbms_debug.reason_interrupt then return 'reason_interrupt';
+          when dbms_debug.reason_exception then return 'reason_exception';
+          when dbms_debug.reason_exit then return 'reason_exit';
+          when dbms_debug.reason_handler then return 'reason_handler';
+          when dbms_debug.reason_timeout then return 'reason_timeout';
+          when dbms_debug.reason_instantiate then return 'reason_instantiate';
+          when dbms_debug.reason_abort then return 'reason_abort';
+          when dbms_debug.reason_knl_exit then return 'reason_knl_exit';
+          else return 'reason_unknown';
+        end case;
+        return 'reason_unknown';
+      end;
+      function to_namespace(code binary_integer) return varchar2 is
+      begin
+        case code
+          when dbms_debug.namespace_cursor then return 'namespace_cursor';
+          when dbms_debug.namespace_pkgspec_or_toplevel then return 'namespace_pkgspec_or_toplevel';
+          when dbms_debug.namespace_pkg_body then return 'namespace_pkg_body';
+          when dbms_debug.namespace_trigger then return 'namespace_trigger';
+          when dbms_debug.namespace_none then return 'namespace_none';
+          else return 'namespace_unknown';
+        end case;
+        return 'namespace_unknown';
+      end;
+      procedure print_program(program dbms_debug.program_info) is
+      begin
+        dbms_output.put_line('program_info:');
+        dbms_output.put_line('  namespace = ' || program.namespace || ' ' || to_namespace(program.namespace));
+        dbms_output.put_line('  name = ' || program.name);
+        dbms_output.put_line('  owner = ' || program.owner);
+      end;
+      procedure print_runtime(runtime dbms_debug.runtime_info) is
+      begin
+        dbms_output.put_line('runtime_info:');
+        dbms_output.put_line('  line# = ' || runtime.line#);
+        dbms_output.put_line('  Terminated = ' || runtime.Terminated);
+        dbms_output.put_line('  Breakpoint = ' || runtime.Breakpoint);
+        dbms_output.put_line('  StackDepth = ' || runtime.StackDepth);
+        dbms_output.put_line('  Reason = ' || runtime.Reason || ' ' || to_reason(runtime.Reason));
+        print_program(runtime.program);
+      end;
+      procedure initialize is
+        result varchar2(200);
+      begin
+        result := dbms_debug.initialize();
+        dbms_output.put_line(result);
+      end;
+      procedure synchronize is
+        result binary_integer;
+      begin
+        result := dbms_debug.synchronize(runtime);
+        print_runtime(runtime);
+        dbms_output.put_line('result = ' || result || ' ' || to_error(result));
+      end;
+      procedure brean_any_return is
+        result binary_integer;
+      begin
+        result := dbms_debug.continue(runtime, dbms_debug.break_any_return);
+        dbms_output.put_line('result = ' || result || ' ' || to_error(result));
+      end;
+      procedure set_breakpoint(line# binary_integer) is
+        result binary_integer;
+        bp_num binary_integer;
+      begin
+        result := dbms_debug.set_breakpoint(runtime.program, line#, bp_num);
+        dbms_output.put_line('result = ' || result || ' ' || to_error(result));
+        dbms_output.put_line('bp_num = ' || bp_num);
+      end;
+      procedure disable_breakpoint(num binary_integer) is
+        result binary_integer;
+      begin
+        result := dbms_debug.disable_breakpoint(num);
+        dbms_output.put_line('result = ' || result || ' ' || to_error(result));
+      end;
+      procedure show_breakpoints is
+        listing varchar2(4000);
+      begin
+        dbms_debug.show_breakpoints(listing);
+        dbms_output.put_line('breakpoints = ' || listing);
+      end;
+      procedure print_backtrace is
+        listing varchar2(4000);
+      begin
+        dbms_debug.print_backtrace(listing);
+        dbms_output.put_line('backtrace = ' || listing);
+      end;
+      procedure delete_breakpoint(num binary_integer) is
+        result binary_integer;
+      begin
+        result := dbms_debug.delete_breakpoint(num);
+        dbms_output.put_line('result = ' || result || ' ' || to_error(result));
+      end;
+      procedure step_over is
+        result binary_integer;
+      begin
+        result := dbms_debug.continue(runtime, dbms_debug.break_next_line);
+        dbms_output.put_line('result = ' || result || ' ' || to_error(result));
+        print_runtime(runtime);
+      end;
+      procedure step_into is
+        result binary_integer;
+      begin
+        result := dbms_debug.continue(runtime, dbms_debug.break_any_call);
+        dbms_output.put_line('result = ' || result || ' ' || to_error(result));
+        print_runtime(runtime);
+      end;
+      procedure step_any_return is
+        result binary_integer;
+      begin
+        result := dbms_debug.continue(runtime, dbms_debug.break_any_return);
+        dbms_output.put_line('result = ' || result || ' ' || to_error(result));
+        print_runtime(runtime);
+      end;
+      procedure step_abort is
+        result binary_integer;
+      begin
+        result := dbms_debug.continue(runtime, dbms_debug.abort_execution);
+        dbms_output.put_line('result = ' || result || to_error(result));
+        print_runtime(runtime);
+      end;
+      procedure get_value(variable_name varchar2, frame# binary_integer) is
+        scalar_value varchar2(2000);
+        result binary_integer;
+      begin
+        result := dbms_debug.get_value(variable_name, frame#, scalar_value);
+        dbms_output.put_line('result = ' || result);
+        dbms_output.put_line('scalar_value = ' || scalar_value);
+      end;
+      procedure get_runtime_info is
+        result binary_integer;
+      begin
+        result := dbms_debug.get_runtime_info(null, runtime);
+        print_runtime(runtime);
+        dbms_output.put_line('result = ' || result || ' ' || to_error(result));
+      end;
+      procedure get_values is
+        result binary_integer;
+        scalar_values varchar2(4000);
+      begin
+        -- result := dbms_debug.get_values(scalar_values);
+        dbms_output.put_line('result = ' || result || ' ' || to_error(result));
+        dbms_output.put_line('scalar_values = ' || scalar_values);
+      end;
+
+      procedure get_line_map is
+        result binary_integer;
+        maxline binary_integer;
+        number_of_entry_points binary_integer;
+        linemap raw(2000);
+      begin
+        result := dbms_debug.get_line_map(runtime.program, maxline, number_of_entry_points, linemap);
+        dbms_output.put_line('result = ' || result || ' ' || to_error(result));
+        dbms_output.put_line('maxline = ' || maxline);
+        dbms_output.put_line('number_of_entry_points = ' || number_of_entry_points);
+        dbms_output.put_line('linemap = ' || utl_raw.cast_to_varchar2(linemap));
+      end;
+
+      procedure get_timeout is
+      begin
+        dbms_output.put_line(dbms_debug.default_timeout);
+      end;
+
+      procedure get_timeout_behaviour is
+        result binary_integer;
+      begin
+        result := dbms_debug.get_timeout_behaviour();
+        case result
+        when dbms_debug.retry_on_timeout then dbms_output.put_line('retry_on_timeout');
+        when dbms_debug.continue_on_timeout then dbms_output.put_line('continue_on_timeout');
+        when dbms_debug.nodebug_on_timeout then dbms_output.put_line('nodebug_on_timeout');
+        when dbms_debug.abort_on_timeout then dbms_output.put_line('abort_on_timeout');
+        else dbms_output.put_line('unknown timeout behaviour !' || result);
+        end case;
+      end;
+
+      procedure set_timeout(timeout binary_integer) is
+        result binary_integer;
+      begin
+        result := dbms_debug.set_timeout(timeout);
+        dbms_output.put_line('new timeout is ' || result);
+      end;
+    end;
+
+expected_end_delimiter: ;

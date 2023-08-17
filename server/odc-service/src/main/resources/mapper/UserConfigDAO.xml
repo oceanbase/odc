@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC
+    "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.oceanbase.odc.metadb.config.UserConfigDAO">
+    <sql id="select_field">
+        `user_id` as userId, `key`, `value`,`create_time` as createTime, `update_time` as updateTime, `description`
+    </sql>
+
+    <sql id="sql_columns">
+        `user_id`, `key`, `value`, `create_time`, `update_time`, `description`
+    </sql>
+
+    <sql id="insert_field">
+        #{userId},#{key},#{value},now(),now(),#{description}
+    </sql>
+
+    <sql id="update_field">
+        `value`=#{value},
+        `update_time`=now(),
+        `description`=#{description}
+    </sql>
+
+    <sql id="table_name">
+        `odc_user_configuration`
+    </sql>
+
+    <insert id="insert" parameterType="com.oceanbase.odc.metadb.config.UserConfigDO">
+        INSERT INTO
+        <include refid="table_name"/>
+        (
+        <include refid="sql_columns"/>
+        )
+        VALUES
+        (
+        <include refid="insert_field"/>
+        )
+    </insert>
+
+    <select id="get" resultType="com.oceanbase.odc.metadb.config.UserConfigDO">
+        SELECT
+        <include refid="select_field" />
+        FROM
+        <include refid="table_name" />
+        where `user_id`=#{userId} and `key`=#{key}
+    </select>
+
+    <select id="listByUserId" resultType="com.oceanbase.odc.metadb.config.UserConfigDO">
+        SELECT
+        <include refid="select_field" />
+        FROM
+        <include refid="table_name" />
+        where `user_id`=#{userId}
+    </select>
+
+    <update id="update" parameterType="com.oceanbase.odc.metadb.config.UserConfigDO">
+        UPDATE
+        <include refid="table_name" />
+        SET
+        <include refid="update_field" />
+        where `user_id`=#{userId} and `key`=#{key}
+    </update>
+
+    <delete id="delete">
+        DELETE FROM
+        <include refid="table_name" />
+        WHERE user_id=#{userId} and `key`=#{key}
+    </delete>
+</mapper>

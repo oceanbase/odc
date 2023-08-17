@@ -1,0 +1,54 @@
+kind: resource
+version: v2
+templates:
+  - metadata:
+      allow_duplicate: false
+      table_name: iam_user
+      unique_keys: ["id", "name"]
+    specs:
+      - column_name: id
+        value: ${USER_ID}
+        allow_null: false
+        default_value: 1
+      - column_name: name
+        value: "David"
+        data_type: java.lang.String
+  - metadata:
+      table_name: iam_role
+      unique_keys: ["name"]
+    specs:
+      - column_name: id
+        value: ${ROLE_ID}
+        allow_null: false
+        default_value: 1
+      - column_name: name
+        value: "2"
+        data_type: java.lang.Integer
+  - metadata:
+      table_name: iam_user_role
+      unique_keys: ["user_id", "role_id"]
+    specs:
+      - column_name: role_id
+        value_from:
+          field_ref:
+            field_path: templates.1.specs.0.value
+      - column_name: user_id
+        value_from:
+          db_ref:
+            ref_key: user_id
+            ref_table: iam_user_role
+            filters:
+              - column_name: organization_id
+                value: ${ORGANIZATION_ID}
+              - column_name: role_id
+                value_from:
+                  db_ref:
+                    ref_key: role_id
+                    ref_table: iam_user_role
+                    filters:
+                      - column_name: organization_id
+                        value: ${ORGANIZATION_ID}
+      - column_name: test_id
+        value_from:
+          field_ref:
+            field_path: template.1.spec.0.value

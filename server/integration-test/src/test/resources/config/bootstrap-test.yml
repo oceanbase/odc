@@ -1,0 +1,23 @@
+spring:
+  cloud:
+    config:
+      label: master
+      profile: default
+      server:
+        bootstrap: true
+        jdbc:
+          sql: SELECT `key`, `value` from config_system_configuration where `application`=? and `profile`=? and `label`=?
+  datasource:
+    type: com.alibaba.druid.pool.DruidDataSource
+    driver-class-name: org.h2.Driver
+    url: jdbc:h2:mem:odc2.0;MODE=MySQL
+    username: sa
+    password:
+    schema: classpath:schema.sql
+    data: classpath:data.sql
+    initialization-mode: always
+  jpa:
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true

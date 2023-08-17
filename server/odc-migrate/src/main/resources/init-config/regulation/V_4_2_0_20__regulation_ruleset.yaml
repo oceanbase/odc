@@ -1,0 +1,95 @@
+kind: resource
+version: v2
+templates:
+    - metadata:
+          allow_duplicate: false
+          table_name: regulation_ruleset
+          unique_keys: [ "organization_id", "name" ]
+      specs:
+          - column_name: id
+            default_value: 1
+            data_type: java.lang.Long
+          - column_name: name
+            value: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-dev-ruleset.name}
+          - column_name: description
+            value: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-dev-ruleset.description}
+          - column_name: organization_id
+            value: ${ORGANIZATION_ID}
+          - column_name: is_builtin
+            value: true
+            data_type: java.lang.Boolean
+          - column_name: creator_id
+            value: ${CREATOR_ID}
+            data_type: java.lang.Long
+          - column_name: last_modifier_id
+            value: ${CREATOR_ID}
+            data_type: java.lang.Long
+    - metadata:
+        allow_duplicate: false
+        table_name: regulation_ruleset
+        unique_keys: [ "organization_id", "name" ]
+      specs:
+          - column_name: id
+            default_value: 2
+            data_type: java.lang.Long
+          - column_name: name
+            value: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-sit-ruleset.name}
+          - column_name: description
+            value: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-sit-ruleset.description}
+          - column_name: organization_id
+            value: ${ORGANIZATION_ID}
+          - column_name: is_builtin
+            value: true
+            data_type: java.lang.Boolean
+          - column_name: creator_id
+            value: ${CREATOR_ID}
+            data_type: java.lang.Long
+          - column_name: last_modifier_id
+            value: ${CREATOR_ID}
+            data_type: java.lang.Long
+    - metadata:
+        allow_duplicate: false
+        table_name: regulation_ruleset
+        unique_keys: [ "organization_id", "name" ]
+      specs:
+          - column_name: id
+            default_value: 3
+            data_type: java.lang.Long
+          - column_name: name
+            value: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-prod-ruleset.name}
+          - column_name: description
+            value: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-prod-ruleset.description}
+          - column_name: organization_id
+            value: ${ORGANIZATION_ID}
+          - column_name: is_builtin
+            value: true
+            data_type: java.lang.Boolean
+          - column_name: creator_id
+            value: ${CREATOR_ID}
+            data_type: java.lang.Long
+          - column_name: last_modifier_id
+            value: ${CREATOR_ID}
+            data_type: java.lang.Long
+    - metadata:
+          allow_duplicate: false
+          table_name: regulation_ruleset
+          unique_keys: [ "organization_id", "name" ]
+      specs:
+          - column_name: id
+            default_value: 4
+            data_type: java.lang.Long
+          - column_name: name
+            value: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-default-ruleset.name}
+          - column_name: description
+            value: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-default-ruleset.description}
+          - column_name: organization_id
+            value: ${ORGANIZATION_ID}
+          - column_name: is_builtin
+            value: true
+            data_type: java.lang.Boolean
+          - column_name: creator_id
+            value: ${CREATOR_ID}
+            data_type: java.lang.Long
+          - column_name: last_modifier_id
+            value: ${CREATOR_ID}
+            data_type: java.lang.Long

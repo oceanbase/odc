@@ -1,0 +1,23 @@
+origin: |-
+  declare
+  l_today date := sysdate;
+  begin
+  dbms_output.put_line(
+  'today is '||to_char(l_today,'Day'));
+  exception when others then
+  dbms_output.put_line(sqlerrm);
+  end;
+
+expected:
+  - |-
+    declare
+    l_today date := sysdate;
+    begin
+    dbms_output.put_line(
+    'today is '||to_char(l_today,'Day'));
+    exception when others then
+    dbms_output.put_line(sqlerrm);
+    end;
+
+expected_end_delimiter: ;
+

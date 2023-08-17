@@ -1,0 +1,635 @@
+kind: resource
+version: v2
+templates:
+  - metadata:
+      allow_duplicate: false
+      table_name: data_security_masking_algorithm
+      unique_keys: [ "organization_id", "name" ]
+    specs:
+      - column_name: id
+        default_value: 1
+        data_type: java.lang.Long
+      - column_name: name
+        value: ${com.oceanbase.odc.builtin-resource.masking-algorithm.mask-all.name}
+      - column_name: is_enabled
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: is_builtin
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: type
+        value: SUBSTITUTION
+      - column_name: segments_type
+        value: ALL
+      - column_name: substitution
+        value: "*****"
+      - column_name: sample_content
+        value: "test value"
+      - column_name: masked_content
+        value: "*****"
+      - column_name: creator_id
+        value: ${CREATOR_ID}
+        data_type: java.lang.Long
+      - column_name: organization_id
+        value: ${ORGANIZATION_ID}
+        data_type: java.lang.Long
+  - metadata:
+      allow_duplicate: false
+      table_name: data_security_masking_algorithm
+      unique_keys: [ "organization_id", "name" ]
+    specs:
+      - column_name: id
+        default_value: 2
+        data_type: java.lang.Long
+      - column_name: name
+        value: ${com.oceanbase.odc.builtin-resource.masking-algorithm.personal-name-chinese.name}
+      - column_name: is_enabled
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: is_builtin
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: type
+        value: SUBSTITUTION
+      - column_name: segments_type
+        value: CUSTOM
+      - column_name: sample_content
+        value: "个人姓名"
+      - column_name: masked_content
+        value: "**名"
+      - column_name: creator_id
+        value: ${CREATOR_ID}
+        data_type: java.lang.Long
+      - column_name: organization_id
+        value: ${ORGANIZATION_ID}
+        data_type: java.lang.Long
+  - metadata:
+      allow_duplicate: false
+      table_name: data_security_masking_algorithm
+      unique_keys: [ "organization_id", "name" ]
+    specs:
+      - column_name: id
+        default_value: 3
+        data_type: java.lang.Long
+      - column_name: name
+        value: ${com.oceanbase.odc.builtin-resource.masking-algorithm.personal-name-alphabet.name}
+      - column_name: is_enabled
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: is_builtin
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: type
+        value: SUBSTITUTION
+      - column_name: segments_type
+        value: CUSTOM
+      - column_name: sample_content
+        value: "Personal Name"
+      - column_name: masked_content
+        value: "P**"
+      - column_name: creator_id
+        value: ${CREATOR_ID}
+        data_type: java.lang.Long
+      - column_name: organization_id
+        value: ${ORGANIZATION_ID}
+        data_type: java.lang.Long
+  - metadata:
+      allow_duplicate: false
+      table_name: data_security_masking_algorithm
+      unique_keys: [ "organization_id", "name" ]
+    specs:
+      - column_name: id
+        default_value: 4
+        data_type: java.lang.Long
+      - column_name: name
+        value: ${com.oceanbase.odc.builtin-resource.masking-algorithm.nickname.name}
+      - column_name: is_enabled
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: is_builtin
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: type
+        value: SUBSTITUTION
+      - column_name: segments_type
+        value: CUSTOM
+      - column_name: sample_content
+        value: "Nickname"
+      - column_name: masked_content
+        value: "N***e"
+      - column_name: creator_id
+        value: ${CREATOR_ID}
+        data_type: java.lang.Long
+      - column_name: organization_id
+        value: ${ORGANIZATION_ID}
+        data_type: java.lang.Long
+  - metadata:
+      allow_duplicate: false
+      table_name: data_security_masking_algorithm
+      unique_keys: [ "organization_id", "name" ]
+    specs:
+      - column_name: id
+        default_value: 5
+        data_type: java.lang.Long
+      - column_name: name
+        value: ${com.oceanbase.odc.builtin-resource.masking-algorithm.email.name}
+      - column_name: is_enabled
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: is_builtin
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: type
+        value: SUBSTITUTION
+      - column_name: segments_type
+        value: CUSTOM
+      - column_name: sample_content
+        value: "odc@oceanbase.com"
+      - column_name: masked_content
+        value: "o***@oceanbase.com"
+      - column_name: creator_id
+        value: ${CREATOR_ID}
+        data_type: java.lang.Long
+      - column_name: organization_id
+        value: ${ORGANIZATION_ID}
+        data_type: java.lang.Long
+  - metadata:
+      allow_duplicate: false
+      table_name: data_security_masking_algorithm
+      unique_keys: [ "organization_id", "name" ]
+    specs:
+      - column_name: id
+        default_value: 6
+        data_type: java.lang.Long
+      - column_name: name
+        value: ${com.oceanbase.odc.builtin-resource.masking-algorithm.address.name}
+      - column_name: is_enabled
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: is_builtin
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: type
+        value: SUBSTITUTION
+      - column_name: segments_type
+        value: CUSTOM
+      - column_name: sample_content
+        value: "Hangzhou, Zhejiang Province, China"
+      - column_name: masked_content
+        value: "Hangzhou, Z***"
+      - column_name: creator_id
+        value: ${CREATOR_ID}
+        data_type: java.lang.Long
+      - column_name: organization_id
+        value: ${ORGANIZATION_ID}
+        data_type: java.lang.Long
+  - metadata:
+      allow_duplicate: false
+      table_name: data_security_masking_algorithm
+      unique_keys: [ "organization_id", "name" ]
+    specs:
+      - column_name: id
+        default_value: 7
+        data_type: java.lang.Long
+      - column_name: name
+        value: ${com.oceanbase.odc.builtin-resource.masking-algorithm.phone-number.name}
+      - column_name: is_enabled
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: is_builtin
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: type
+        value: MASK
+      - column_name: segments_type
+        value: PRE_3_POST_2
+      - column_name: sample_content
+        value: "13500000000"
+      - column_name: masked_content
+        value: "135******00"
+      - column_name: creator_id
+        value: ${CREATOR_ID}
+        data_type: java.lang.Long
+      - column_name: organization_id
+        value: ${ORGANIZATION_ID}
+        data_type: java.lang.Long
+  - metadata:
+      allow_duplicate: false
+      table_name: data_security_masking_algorithm
+      unique_keys: [ "organization_id", "name" ]
+    specs:
+      - column_name: id
+        default_value: 8
+        data_type: java.lang.Long
+      - column_name: name
+        value: ${com.oceanbase.odc.builtin-resource.masking-algorithm.fixed-line-phone-number.name}
+      - column_name: is_enabled
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: is_builtin
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: type
+        value: MASK
+      - column_name: segments_type
+        value: CUSTOM
+      - column_name: sample_content
+        value: "010-12345678"
+      - column_name: masked_content
+        value: "**********78"
+      - column_name: creator_id
+        value: ${CREATOR_ID}
+        data_type: java.lang.Long
+      - column_name: organization_id
+        value: ${ORGANIZATION_ID}
+        data_type: java.lang.Long
+  - metadata:
+      allow_duplicate: false
+      table_name: data_security_masking_algorithm
+      unique_keys: [ "organization_id", "name" ]
+    specs:
+      - column_name: id
+        default_value: 9
+        data_type: java.lang.Long
+      - column_name: name
+        value: ${com.oceanbase.odc.builtin-resource.masking-algorithm.certificate-number.name}
+      - column_name: is_enabled
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: is_builtin
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: type
+        value: MASK
+      - column_name: segments_type
+        value: PRE_1_POST_1
+      - column_name: sample_content
+        value: "123456789"
+      - column_name: masked_content
+        value: "1*******9"
+      - column_name: creator_id
+        value: ${CREATOR_ID}
+        data_type: java.lang.Long
+      - column_name: organization_id
+        value: ${ORGANIZATION_ID}
+        data_type: java.lang.Long
+  - metadata:
+      allow_duplicate: false
+      table_name: data_security_masking_algorithm
+      unique_keys: [ "organization_id", "name" ]
+    specs:
+      - column_name: id
+        default_value: 10
+        data_type: java.lang.Long
+      - column_name: name
+        value: ${com.oceanbase.odc.builtin-resource.masking-algorithm.bank-card-number.name}
+      - column_name: is_enabled
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: is_builtin
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: type
+        value: MASK
+      - column_name: segments_type
+        value: CUSTOM
+      - column_name: sample_content
+        value: "1234 5678 5678 1234"
+      - column_name: masked_content
+        value: "***************1234"
+      - column_name: creator_id
+        value: ${CREATOR_ID}
+        data_type: java.lang.Long
+      - column_name: organization_id
+        value: ${ORGANIZATION_ID}
+        data_type: java.lang.Long
+  - metadata:
+      allow_duplicate: false
+      table_name: data_security_masking_algorithm
+      unique_keys: [ "organization_id", "name" ]
+    specs:
+      - column_name: id
+        default_value: 11
+        data_type: java.lang.Long
+      - column_name: name
+        value: ${com.oceanbase.odc.builtin-resource.masking-algorithm.license-plate-number.name}
+      - column_name: is_enabled
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: is_builtin
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: type
+        value: MASK
+      - column_name: segments_type
+        value: CUSTOM
+      - column_name: sample_content
+        value: "浙AB1234"
+      - column_name: masked_content
+        value: "浙A**234"
+      - column_name: creator_id
+        value: ${CREATOR_ID}
+        data_type: java.lang.Long
+      - column_name: organization_id
+        value: ${ORGANIZATION_ID}
+        data_type: java.lang.Long
+  - metadata:
+      allow_duplicate: false
+      table_name: data_security_masking_algorithm
+      unique_keys: [ "organization_id", "name" ]
+    specs:
+      - column_name: id
+        default_value: 12
+        data_type: java.lang.Long
+      - column_name: name
+        value: ${com.oceanbase.odc.builtin-resource.masking-algorithm.device-id.name}
+      - column_name: is_enabled
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: is_builtin
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: type
+        value: SUBSTITUTION
+      - column_name: segments_type
+        value: CUSTOM
+      - column_name: sample_content
+        value: "AB123456789CD"
+      - column_name: masked_content
+        value: "****89CD"
+      - column_name: creator_id
+        value: ${CREATOR_ID}
+        data_type: java.lang.Long
+      - column_name: organization_id
+        value: ${ORGANIZATION_ID}
+        data_type: java.lang.Long
+  - metadata:
+      allow_duplicate: false
+      table_name: data_security_masking_algorithm
+      unique_keys: [ "organization_id", "name" ]
+    specs:
+      - column_name: id
+        default_value: 13
+        data_type: java.lang.Long
+      - column_name: name
+        value: ${com.oceanbase.odc.builtin-resource.masking-algorithm.ip.name}
+      - column_name: is_enabled
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: is_builtin
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: type
+        value: SUBSTITUTION
+      - column_name: segments_type
+        value: CUSTOM
+      - column_name: sample_content
+        value: "10.123.456.789"
+      - column_name: masked_content
+        value: "10.*.*.*"
+      - column_name: creator_id
+        value: ${CREATOR_ID}
+        data_type: java.lang.Long
+      - column_name: organization_id
+        value: ${ORGANIZATION_ID}
+        data_type: java.lang.Long
+  - metadata:
+      allow_duplicate: false
+      table_name: data_security_masking_algorithm
+      unique_keys: [ "organization_id", "name" ]
+    specs:
+      - column_name: id
+        default_value: 14
+        data_type: java.lang.Long
+      - column_name: name
+        value: ${com.oceanbase.odc.builtin-resource.masking-algorithm.mac.name}
+      - column_name: is_enabled
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: is_builtin
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: type
+        value: SUBSTITUTION
+      - column_name: segments_type
+        value: CUSTOM
+      - column_name: sample_content
+        value: "ab:cd:ef:gh:hi:jk"
+      - column_name: masked_content
+        value: "ab:*:*:*:*:*"
+      - column_name: creator_id
+        value: ${CREATOR_ID}
+        data_type: java.lang.Long
+      - column_name: organization_id
+        value: ${ORGANIZATION_ID}
+        data_type: java.lang.Long
+  - metadata:
+      allow_duplicate: false
+      table_name: data_security_masking_algorithm
+      unique_keys: [ "organization_id", "name" ]
+    specs:
+      - column_name: id
+        default_value: 15
+        data_type: java.lang.Long
+      - column_name: name
+        value: ${com.oceanbase.odc.builtin-resource.masking-algorithm.md5.name}
+      - column_name: is_enabled
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: is_builtin
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: type
+        value: HASH
+      - column_name: hash_type
+        value: MD5
+      - column_name: sample_content
+        value: "default"
+      - column_name: masked_content
+        value: "c21f969b5f03d33d43e04f8f136e7682"
+      - column_name: creator_id
+        value: ${CREATOR_ID}
+        data_type: java.lang.Long
+      - column_name: organization_id
+        value: ${ORGANIZATION_ID}
+        data_type: java.lang.Long
+  - metadata:
+      allow_duplicate: false
+      table_name: data_security_masking_algorithm
+      unique_keys: [ "organization_id", "name" ]
+    specs:
+      - column_name: id
+        default_value: 16
+        data_type: java.lang.Long
+      - column_name: name
+        value: ${com.oceanbase.odc.builtin-resource.masking-algorithm.sha256.name}
+      - column_name: is_enabled
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: is_builtin
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: type
+        value: HASH
+      - column_name: hash_type
+        value: SHA256
+      - column_name: sample_content
+        value: "default"
+      - column_name: masked_content
+        value: "37a8eec1ce19687d132fe29051dca629d164e2c4958ba141d5f4133a33f0688f"
+      - column_name: creator_id
+        value: ${CREATOR_ID}
+        data_type: java.lang.Long
+      - column_name: organization_id
+        value: ${ORGANIZATION_ID}
+        data_type: java.lang.Long
+  - metadata:
+      allow_duplicate: false
+      table_name: data_security_masking_algorithm
+      unique_keys: [ "organization_id", "name" ]
+    specs:
+      - column_name: id
+        default_value: 17
+        data_type: java.lang.Long
+      - column_name: name
+        value: ${com.oceanbase.odc.builtin-resource.masking-algorithm.sha512.name}
+      - column_name: is_enabled
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: is_builtin
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: type
+        value: HASH
+      - column_name: hash_type
+        value: SHA512
+      - column_name: sample_content
+        value: "default"
+      - column_name: masked_content
+        value: "1625cdb75d25d9f699fd2779f44095b6e320767f606f095eb7edab5581e9e3441adbb0d628832f7dc4574a77a382973ce22911b7e4df2a9d2c693826bbd125bc"
+      - column_name: creator_id
+        value: ${CREATOR_ID}
+        data_type: java.lang.Long
+      - column_name: organization_id
+        value: ${ORGANIZATION_ID}
+        data_type: java.lang.Long
+  - metadata:
+      allow_duplicate: false
+      table_name: data_security_masking_algorithm
+      unique_keys: [ "organization_id", "name" ]
+    specs:
+      - column_name: id
+        default_value: 18
+        data_type: java.lang.Long
+      - column_name: name
+        value: ${com.oceanbase.odc.builtin-resource.masking-algorithm.sm3.name}
+      - column_name: is_enabled
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: is_builtin
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: type
+        value: HASH
+      - column_name: hash_type
+        value: SM3
+      - column_name: sample_content
+        value: "default"
+      - column_name: masked_content
+        value: "40c357923156504f734717d8b4f5623e75209e9572701f4b51ef2a03d9ced863"
+      - column_name: creator_id
+        value: ${CREATOR_ID}
+        data_type: java.lang.Long
+      - column_name: organization_id
+        value: ${ORGANIZATION_ID}
+        data_type: java.lang.Long
+  - metadata:
+      allow_duplicate: false
+      table_name: data_security_masking_algorithm
+      unique_keys: [ "organization_id", "name" ]
+    specs:
+      - column_name: id
+        default_value: 19
+        data_type: java.lang.Long
+      - column_name: name
+        value: ${com.oceanbase.odc.builtin-resource.masking-algorithm.round.name}
+      - column_name: is_enabled
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: is_builtin
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: type
+        value: ROUNDING
+      - column_name: is_decimal
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: rounding_precision
+        value: 0
+        data_type: java.lang.Integer
+      - column_name: sample_content
+        value: "123.456"
+      - column_name: masked_content
+        value: "123"
+      - column_name: creator_id
+        value: ${CREATOR_ID}
+        data_type: java.lang.Long
+      - column_name: organization_id
+        value: ${ORGANIZATION_ID}
+        data_type: java.lang.Long
+  - metadata:
+      allow_duplicate: false
+      table_name: data_security_masking_algorithm
+      unique_keys: [ "organization_id", "name" ]
+    specs:
+      - column_name: id
+        default_value: 20
+        data_type: java.lang.Long
+      - column_name: name
+        value: ${com.oceanbase.odc.builtin-resource.masking-algorithm.null.name}
+      - column_name: is_enabled
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: is_builtin
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: type
+        value: "NULL"
+      - column_name: sample_content
+        value: "default"
+      - column_name: creator_id
+        value: ${CREATOR_ID}
+        data_type: java.lang.Long
+      - column_name: organization_id
+        value: ${ORGANIZATION_ID}
+        data_type: java.lang.Long
+  - metadata:
+      allow_duplicate: false
+      table_name: data_security_masking_algorithm
+      unique_keys: [ "organization_id", "name" ]
+    specs:
+      - column_name: id
+        default_value: 21
+        data_type: java.lang.Long
+      - column_name: name
+        value: ${com.oceanbase.odc.builtin-resource.masking-algorithm.default.name}
+      - column_name: is_enabled
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: is_builtin
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: type
+        value: MASK
+      - column_name: segments_type
+        value: CUSTOM
+      - column_name: sample_content
+        value: "abcd1234"
+      - column_name: masked_content
+        value: "abc**234"
+      - column_name: creator_id
+        value: ${CREATOR_ID}
+        data_type: java.lang.Long
+      - column_name: organization_id
+        value: ${ORGANIZATION_ID}
+        data_type: java.lang.Long

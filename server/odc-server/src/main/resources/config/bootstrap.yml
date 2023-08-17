@@ -1,0 +1,35 @@
+management:
+  endpoints:
+    enabled-by-default: false
+spring:
+  application:
+    name: odc
+  profiles:
+    active: ${ODC_PROFILE_MODE:alipay},jdbc
+  datasource:
+    #use HikariDataSource while bootstrap,
+    #for avoid DruidDataSource ERROR 'testWhileIdle is true, validationQuery not set'
+    type: com.zaxxer.hikari.HikariDataSource
+    driver-class-name: com.oceanbase.jdbc.Driver
+    url: jdbc:oceanbase://${ODC_DATABASE_HOST}:${ODC_DATABASE_PORT}/${ODC_DATABASE_NAME}?allowMultiQueries=true
+    username: ${ODC_DATABASE_USERNAME}
+    password: ${ODC_DATABASE_PASSWORD}
+
+  cloud:
+    config:
+      label: master
+      profile: default
+      server:
+        bootstrap: true
+        jdbc:
+          sql: SELECT `key`, `value` from config_system_configuration where `application`=? and `profile`=? and `label`=?
+  sql:
+    init:
+      schema-locations: classpath:schema.sql
+      data-locations: classpath:data.sql
+      mode: always
+
+jasypt:
+  encryptor:
+    password: ${ODC_PROPERTY_ENCRYPTION_PASSWORD}
+    algorithm: PBEWithHmacSHA512AndAES_128

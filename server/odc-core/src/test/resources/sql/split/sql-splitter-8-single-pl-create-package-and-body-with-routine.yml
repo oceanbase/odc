@@ -1,0 +1,46 @@
+origin: |-
+  CREATE OR REPLACE PACKAGE my_pack IS
+    FUNCTION get_id RETURN NUMBER;
+  END my_pack;
+  /
+
+  CREATE OR REPLACE PACKAGE BODY my_pack
+  IS
+    id NUMBER := 1;
+    len NUMBER := 10;
+    FUNCTION get_id RETURN NUMBER AS
+    BEGIN
+      RETURN id;
+    END;
+  BEGIN
+    len := 20;
+    id := 10;
+    INSERT INTO result VALUES('call init package');
+    update OC_USER_OPERATION_EXECUTE set status = 2, exec_status = 2, response_time = sysdate, request_time = sysdate + 2/24/60/60, error_code = 10035;
+  END my_pack;
+  /
+
+
+expected:
+  - |-
+    CREATE OR REPLACE PACKAGE my_pack IS
+      FUNCTION get_id RETURN NUMBER;
+    END my_pack;
+
+  - |-
+    CREATE OR REPLACE PACKAGE BODY my_pack
+    IS
+      id NUMBER := 1;
+      len NUMBER := 10;
+      FUNCTION get_id RETURN NUMBER AS
+      BEGIN
+        RETURN id;
+      END;
+    BEGIN
+      len := 20;
+      id := 10;
+      INSERT INTO result VALUES('call init package');
+      update OC_USER_OPERATION_EXECUTE set status = 2, exec_status = 2, response_time = sysdate, request_time = sysdate + 2/24/60/60, error_code = 10035;
+    END my_pack;
+
+expected_end_delimiter: ;

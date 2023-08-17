@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- log4j2-test.xml configuration -->
+<Configuration status="WARN">
+
+    <!-- log4j2 配置参数 -->
+    <Properties>
+        <Property name="LOG_DIRECTORY">${sys:odc.log.directory:-./log}</Property>
+        <Property name="LOG_PATTERN">[%date{yyyy-MM-dd HH:mm:ss.SSS}][%thread][%level][%class][%line]:%message%n</Property>
+    </Properties>
+
+    <Appenders>
+
+        <!-- 控制台输出 -->
+        <Console name="ConsoleAppender" target="SYSTEM_OUT">
+            <PatternLayout pattern="${LOG_PATTERN}"/>
+        </Console>
+
+        <!-- ODC日志配置 -->
+        <RollingFile name="OdcFileAppender" fileName="${LOG_DIRECTORY}/test-odc-common.log"
+                     filePattern="${LOG_DIRECTORY}/odc-test-%d{yyyy-MM-dd}-%i.log">
+            <PatternLayout pattern="${LOG_PATTERN}"/>
+            <Policies>
+                <SizeBasedTriggeringPolicy size="100MB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="10"/>
+        </RollingFile>
+
+    </Appenders>
+    <Loggers>
+        <Root level="INFO">
+            <AppenderRef ref="OdcFileAppender"/>
+            <AppenderRef ref="ConsoleAppender"/>
+        </Root>
+
+    </Loggers>
+</Configuration>

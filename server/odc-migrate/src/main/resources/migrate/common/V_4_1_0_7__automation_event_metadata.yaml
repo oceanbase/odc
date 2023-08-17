@@ -1,0 +1,29 @@
+kind: resource
+version: v2
+templates:
+  - metadata:
+      allow_duplicate: false
+      table_name: automation_event_metadata
+      unique_keys: [ "name" ]
+    specs:
+      - column_name: id
+        default_value: 1
+        data_type: java.lang.Long
+      - column_name: name
+        value: OAuth2FirstTimeLogin
+      - column_name: variable_names
+        value: "[\"User\"]"
+      - column_name: is_builtin
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: is_hidden
+        value: false
+        data_type: java.lang.Boolean
+      - column_name: creator_id
+        value: ${CREATOR_ID}
+        data_type: java.lang.Long
+      - column_name: organization_id
+        value: ${ORGANIZATION_ID}
+        data_type: java.lang.Long
+      - column_name: description
+        value: ${com.oceanbase.odc.builtin-resource.TriggerEvent.NEW_USER_FROM_OAUTH2.description}

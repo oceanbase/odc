@@ -1,0 +1,11 @@
+# for install supervisor
+
+[ops.$releasever.$basearch]
+name=ops basearch
+baseurl=http://yum.tbsite.net/ops/$releasever/$basearch
+gpgcheck=0
+
+[ops.$releasever.noarch]
+name=ops noarch
+baseurl=http://yum.tbsite.net/ops/$releasever/noarch
+gpgcheck=0

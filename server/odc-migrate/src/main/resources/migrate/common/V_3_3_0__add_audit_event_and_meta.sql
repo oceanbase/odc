@@ -1,0 +1,43 @@
+CREATE TABLE IF NOT EXISTS `audit_event` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `type` varchar(64) NOT NULL COMMENT '事件类型',
+  `action` varchar(64) NOT NULL COMMENT '事件的具体操作',
+  `connection_id` bigint DEFAULT NULL COMMENT '事件操作所属的连接 id，若不属于任何连接，则为 NULL；FK to connect_connection.id',
+  `connection_name` varchar(64) DEFAULT NULL COMMENT '事件操作所属的连接名，若不属于任何连接，则为 NULL',
+  `connection_host` varchar(64) DEFAULT NULL COMMENT '事件操作所属连接的主机名，若不属于任何连接，则为 NULL',
+  `connection_port` int(11) DEFAULT NULL COMMENT '事件操作所属连接的端口号，若不属于任何连接，则为 NULL',
+  `connection_cluster_name` varchar(256) DEFAULT NULL COMMENT '事件操作所属连接的集群名，若不属于任何连接，则为 NULL',
+  `connection_tenant_name` varchar(256) DEFAULT NULL COMMENT '事件操作所属连接的租户名，若不属于任何连接，则为 NULL',
+  `connection_username` varchar(64) DEFAULT NULL COMMENT '事件操作所属连接的数据库用户名，若不属于任何连接，则为 NULL',
+  `connection_dialect_type` varchar(64) DEFAULT NULL COMMENT '事件操作所属连接的 dialect，若不属于任何连接，则为 NULL',
+  `client_ip_address` varchar(46) DEFAULT NULL COMMENT '该事件对应的客户端 IP 地址',
+  `server_ip_address` varchar(46) DEFAULT NULL COMMENT '该事件对应的 ODC server IP 地址',
+  `detail` TEXT NOT NULL COMMENT '执行细则，是一个 json 字符串，记录执行前后的参数',
+  `result` varchar(16) NOT NULL COMMENT '操作结果，SUCCESS/FAIL/UNKNOWN',
+  `user_id` bigint NOT NULL COMMENT '操作用户 ID；FK to iam_user.id',
+  `username` varchar(128) NOT NULL COMMENT '操作用户名；FK to iam_user.name',
+  `organization_id` bigint NOT NULL COMMENT '操作用户所属组织 ID；FK to iam_user.organization_id',
+  `task_id` varchar(64) DEFAULT NULL COMMENT '多流程异步任务 ID，若不是多流程异步任务，则为 NULL',
+  `start_time` datetime DEFAULT NULL COMMENT '审计事件开始时间',
+  `end_time` datetime DEFAULT NULL COMMENT '审计事件结束时间',
+  CONSTRAINT pk_audit_event_id PRIMARY KEY (`id`),
+  KEY index_audit_event_organization_id_user_id_start_time(`organization_id`,`user_id`,`start_time`),
+  KEY index_audit_event_organization_id_start_time(`organization_id`,`start_time`),
+  KEY index_audit_event_task_id(`task_id`)
+) COMMENT = '审计记录表';
+
+CREATE TABLE IF NOT EXISTS `audit_event_meta` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `type` varchar(64) NOT NULL COMMENT '事件类型，如：PASSWORD_MANAGEMENT, CONNECTION_MANAGEMENT, etc.',
+  `action` varchar(64) NOT NULL COMMENT '事件操作，如：ADD_USER, UPDATE_CONNECTION, etc.',
+  `method_signature` varchar(256) NOT NULL COMMENT 'API 方法签名，全类名.方法名',
+  `is_in_connection` TINYINT NOT NULL DEFAULT 1 COMMENT '操作是否在某个连接内发生，如果不在，则 sid_extract_expression 为空',
+  `sid_extract_expression` varchar(256) DEFAULT NULL COMMENT '提取 sid 的 SpEL 表达式',
+  `is_enabled` TINYINT NOT NULL DEFAULT 1 COMMENT '是否开启审计',
+  CONSTRAINT pk_audit_event_meta_id PRIMARY KEY (`id`),
+  CONSTRAINT uk_audit_event_meta_method_signature UNIQUE KEY (`method_signature`)
+) COMMENT = '审计记录元信息表';

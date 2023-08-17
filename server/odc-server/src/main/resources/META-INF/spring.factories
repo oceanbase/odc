@@ -1,0 +1,5 @@
+org.springframework.boot.diagnostics.FailureAnalyzer=com.oceanbase.odc.server.config.BeanCreateFailedAnalyzer
+org.springframework.cloud.bootstrap.BootstrapConfiguration=org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration,\
+  org.springframework.boot.autoconfigure.jdbc.JdbcTemplateAutoConfiguration,\
+  org.springframework.boot.autoconfigure.sql.init.SqlInitializationAutoConfiguration,\
+  org.springframework.boot.autoconfigure.sql.init.DataSourceInitializationConfiguration

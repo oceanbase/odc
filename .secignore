@@ -1,0 +1,125 @@
+##########################################################
+#            OBFlow Secret Scan Ignore List              #
+##########################################################
+# Above the segmentation lines there are suspected privacy information #
+# Please use the file name as the first line and the igored information #
+# should be started with space or tab #
+# Under the segmentation lines there are the folders which you need to ignore #
+##########################################################
+**
+  http://license.coscl.org.cn/MulanPubL-2.0
+  http://license.coscl.org.cn/MulanPSL2
+  https://open.oceanbase.com/
+  https://open.oceanbase.com
+  https://play.oceanbase.com*
+  https://www.oceanbase.com*
+  https://github.com/oceanbase/oceanbase
+  https://github.com/oceanbase/oceanbase/issues
+  http://msdn.microsoft.com*
+  http://stackoverflow.com*
+  https://github.com*
+  https://docs.oracle.com*
+  http://docs.oracle.com*
+  https://www.apache.org*
+  https://developer.apple.com*
+  https://dev.mysql.com*
+  http://maven.apache.org*
+  https://maven.apache.org*
+  https://code.revelc.net*
+  http://www.apache.org*
+  https://repo.maven.apache.org*
+  https://mvnrepository.com*
+  https://developer.apple.com*
+  https://docs.aws.amazon.com*
+  https://help.aliyun.com*
+  https://www.alibabacloud.com*
+  https://gosspublic.alicdn.com*
+  https://mirrors.ustc.edu.cn*
+  https://kb.iu.edu*
+  http://www.w3.org*
+  http://mybatis.org*
+  http://nginx.org*
+  https://www.springframework.org*
+  https://stackoverflow.com*
+  https://mozilla.github.io*
+  https://nodejs.org*
+  https://www.electronjs.org*
+  https://en.wikipedia.org*
+  http://java.oracle.com*
+  http://bugreport.sun.com*
+  https://adoptopenjdk.net*
+  https://opendocs.alipay.com*
+  https://www.baeldung.com*
+  https://owasp.org*
+  http://en.qubitsec.com*
+  http://mirrors.aliyun.com/*
+  https://mirrors.aliyun.com/*
+  http://yum.tbsite.net*
+  http://rpm.corp.taobao.com*
+  http://supervisord.org*
+  http://registry.npm.alibaba-inc.com*
+  https://www.fileformat.info*
+  https://openid.net*
+  http://example.org*
+  http://127.1*
+  http://127.0.0.1*
+  https://127.0.0.1*
+  http://localhost*
+  odc_desktop_user@oceanbase.com
+  odc@oceanbase.com
+  ex@email.com
+  example@email.com
+  exa@email.com
+  ex@email.com
+  ab@email.com
+  default@alibaba-inc.com
+  admin@alibaba-inc.com
+  odc@oceanbase.com
+  www.oceanbase.com
+  www.domain.com
+  www.example.com
+  http://odc.example.com
+  http://test.sql
+  www.protocol.jar.*
+  http://xxx.xxx.xxx.xxx:xxxx*
+  test@email.com
+  https://tools.ietf.org*
+
+--------------------------------------------------------
+# Should use GLOB wildcard to configure and analysis the ignored folder
+# The root patch should start with '/'
+/test-script/**
+/script/functions.sh
+/builds/**
+/server/integration-test/**
+/server/odc-common/src/test/resources/resource/**
+/server/odc-common/target/**
+/client/**
+/log/**
+/log/async/**
+/log/data-mocker/**
+/logs/**
+/data/**
+/maven/**
+/.antcode/**
+/.idea/**
+/.git/**
+/README.md
+/.gitmodules
+/.gitemplate
+/.secignore
+/build_daily_aci.yml
+/build_release_aci.yml
+/secretScanResult
+/server/integration-test/src/test/resources/ssl/ca.pem
+/libs/ob-sql-parser/README.md
+/libs/ob-sql-parser/src/main/resources/**
+/README-zh-CN.md
+/docs/**
+/server/integration-test/src/test/java/com/oceanbase/odc/service/connection/DefaultCertificateStorageTest.java
+--------------------------------------------------------
+# Set the ignored fold to escape the Chinese scan by GLOB wildcard
+--------------------------------------------------------
+# Set md5 of pemFile string to filter
+# This section must be end up with '--------------------------------------------------------'!!!
+--------------------------------------------------------

@@ -1,0 +1,235 @@
+[
+  {
+    "id": 1,
+    "name": "case1",
+    "description": "普通类型列",
+    "input": {
+      "current": {
+        "name": "a",
+        "typeName": "NUMBER",
+        "scale": "1",
+        "precision": "2",
+        "maxLength": "2",
+        "nullable": false,
+        "virtual": false,
+        "comment": null,
+        "charsetName": null,
+        "collationName": null,
+        "genExpression": null,
+        "autoIncrement": null,
+        "unsigned": null,
+        "zerofill": null,
+        "enumValues": [],
+        "onUpdateCurrentTimestamp": false
+      }
+    },
+    "output": "\"a\" NUMBER(2, 1) NOT NULL DEFAULT NULL"
+  },
+  {
+    "id": 2,
+    "name": "case2",
+    "description": "TIMESTAMP 列，指定秒精度",
+    "input": {
+      "current": {
+        "name": "a",
+        "typeName": "TIMESTAMP WITH TIME ZONE",
+        "nullable": false,
+        "defaultValue": "CURRENT_TIMESTAMP",
+        "virtual": false,
+        "comment": null,
+        "charsetName": null,
+        "collationName": null,
+        "genExpression": null,
+        "autoIncrement": null,
+        "unsigned": null,
+        "zerofill": null,
+        "enumValues": [],
+        "onUpdateCurrentTimestamp": false,
+        "secondPrecision": "1"
+      }
+    },
+    "output": "\"a\" TIMESTAMP(1) WITH TIME ZONE  NOT NULL DEFAULT CURRENT_TIMESTAMP"
+  },
+  {
+    "id": 3,
+    "name": "case3",
+    "description": "INTERVAL YEAR TO MONTH 列，指定年精度",
+    "input": {
+      "current": {
+        "name": "a",
+        "typeName": "INTERVAL YEAR TO MONTH",
+        "nullable": false,
+        "defaultValue": "CURRENT_TIMESTAMP",
+        "virtual": false,
+        "comment": null,
+        "charsetName": null,
+        "collationName": null,
+        "genExpression": null,
+        "autoIncrement": null,
+        "unsigned": null,
+        "zerofill": null,
+        "enumValues": [],
+        "onUpdateCurrentTimestamp": false,
+        "secondPrecision": "1",
+        "yearPrecision": "1"
+      }
+    },
+    "output": "\"a\" INTERVAL YEAR(1) TO MONTH NOT NULL DEFAULT CURRENT_TIMESTAMP"
+  },
+  {
+    "id": 4,
+    "name": "case4",
+    "description": "INTERVAL YEAR TO MONTH 列，指定年精度",
+    "input": {
+      "current": {
+        "name": "a",
+        "typeName": "INTERVAL YEAR TO MONTH",
+        "nullable": false,
+        "defaultValue": "CURRENT_TIMESTAMP",
+        "virtual": false,
+        "comment": null,
+        "charsetName": null,
+        "collationName": null,
+        "genExpression": null,
+        "autoIncrement": null,
+        "unsigned": null,
+        "zerofill": null,
+        "enumValues": [],
+        "onUpdateCurrentTimestamp": false,
+        "secondPrecision": null,
+        "yearPrecision": null
+      }
+    },
+    "output": "\"a\" INTERVAL YEAR TO MONTH NOT NULL DEFAULT CURRENT_TIMESTAMP"
+  },
+  {
+    "id": 5,
+    "name": "case5",
+    "description": "INTERVAL DAY TO SECOND 列，指定天精度和秒精度",
+    "input": {
+      "current": {
+        "name": "a",
+        "typeName": "INTERVAL DAY TO SECOND",
+        "nullable": false,
+        "defaultValue": "CURRENT_TIMESTAMP",
+        "virtual": false,
+        "comment": null,
+        "charsetName": null,
+        "collationName": null,
+        "genExpression": null,
+        "autoIncrement": null,
+        "unsigned": null,
+        "zerofill": null,
+        "enumValues": [],
+        "onUpdateCurrentTimestamp": false,
+        "secondPrecision": "1",
+        "dayPrecision": "1",
+        "yearPrecision": null
+      }
+    },
+    "output": "\"a\" INTERVAL DAY(1) TO SECOND(1) NOT NULL DEFAULT CURRENT_TIMESTAMP"
+  },
+  {
+    "id": 6,
+    "name": "case6",
+    "description": "INTERVAL DAY TO SECOND 列，不指定精度",
+    "input": {
+      "current": {
+        "name": "a",
+        "typeName": "INTERVAL DAY TO SECOND",
+        "nullable": false,
+        "defaultValue": "CURRENT_TIMESTAMP",
+        "virtual": false,
+        "comment": null,
+        "charsetName": null,
+        "collationName": null,
+        "genExpression": null,
+        "autoIncrement": null,
+        "unsigned": null,
+        "zerofill": null,
+        "enumValues": [],
+        "onUpdateCurrentTimestamp": false,
+        "secondPrecision": null,
+        "dayPrecision": null,
+        "yearPrecision": null
+      }
+    },
+    "output": "\"a\" INTERVAL DAY TO SECOND NOT NULL DEFAULT CURRENT_TIMESTAMP"
+  },
+  {
+    "id": 7,
+    "name": "case7",
+    "description": "虚拟列",
+    "input": {
+      "current": {
+        "name": "a",
+        "typeName": "VARCHAR2",
+        "precision": 120,
+        "maxLength": 120,
+        "nullable": true,
+        "defaultValue": null,
+        "virtual": true,
+        "comment": "",
+        "charsetName": null,
+        "collationName": null,
+        "genExpression": "\"aaa\"",
+        "autoIncrement": null,
+        "unsigned": null,
+        "zerofill": null,
+        "enumValues": [],
+        "onUpdateCurrentTimestamp": false
+      }
+    },
+    "output": "\"a\" VARCHAR2(120) AS (\"aaa\") VIRTUAL  NULL"
+  },
+  {
+    "id": 8,
+    "name": "case8",
+    "description": "NUMBER 列，不指定 precision，指定 scale",
+    "input": {
+      "current": {
+        "name": "a",
+        "typeName": "NUMBER",
+        "scale": "1",
+        "maxLength": "2",
+        "nullable": false,
+        "virtual": false,
+        "comment": null,
+        "charsetName": null,
+        "collationName": null,
+        "genExpression": null,
+        "autoIncrement": null,
+        "unsigned": null,
+        "zerofill": null,
+        "enumValues": [],
+        "onUpdateCurrentTimestamp": false
+      }
+    },
+    "output": "\"a\" NUMBER(*, 1) NOT NULL DEFAULT NULL"
+  },
+  {
+    "id": 9,
+    "name": "case9",
+    "description": "NUMBER 列，不指定 precision，不指定 scale",
+    "input": {
+      "current": {
+        "name": "a",
+        "typeName": "NUMBER",
+        "maxLength": "2",
+        "nullable": false,
+        "virtual": false,
+        "comment": null,
+        "charsetName": null,
+        "collationName": null,
+        "genExpression": null,
+        "autoIncrement": null,
+        "unsigned": null,
+        "zerofill": null,
+        "enumValues": [],
+        "onUpdateCurrentTimestamp": false
+      }
+    },
+    "output": "\"a\" NUMBER NOT NULL DEFAULT NULL"
+  }
+]
+

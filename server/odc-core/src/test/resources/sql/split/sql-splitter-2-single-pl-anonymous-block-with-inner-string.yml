@@ -1,0 +1,84 @@
+origin: |-
+  declare
+  create_package varchar(600) := '
+  CREATE OR REPLACE PACKAGE trans_data AS
+  TYPE TimeRec IS RECORD (
+  minutes SMALLINT,
+  hours   SMALLINT);
+  TYPE TransRec IS RECORD (
+  category VARCHAR2(10),
+  account  INT,
+  amount   REAL,
+  time_of  TimeRec);
+  minimum_balance     CONSTANT REAL := 10.00;
+  number_processed    INT;
+  insufficient_funds  EXCEPTION;
+  END trans_data;
+  ';
+  begin
+  execute immediate create_package;
+  execute immediate '
+  CREATE OR REPLACE PACKAGE aa_pkg IS
+  TYPE aa_type IS TABLE OF INTEGER INDEX BY VARCHAR2(15);
+  END;
+  ';
+  execute immediate '
+  CREATE OR REPLACE PROCEDURE print_aa (
+  aa aa_pkg.aa_type
+  ) IS
+  i  VARCHAR2(15);
+  BEGIN
+  i := aa.FIRST;
+
+  WHILE i IS NOT NULL LOOP
+  DBMS_OUTPUT.PUT_LINE (aa(i) || i);
+  i := aa.NEXT(i);
+  END LOOP;
+  END;
+  ';
+  end;
+  /
+
+expected:
+  - |-
+    declare
+    create_package varchar(600) := '
+    CREATE OR REPLACE PACKAGE trans_data AS
+    TYPE TimeRec IS RECORD (
+    minutes SMALLINT,
+    hours   SMALLINT);
+    TYPE TransRec IS RECORD (
+    category VARCHAR2(10),
+    account  INT,
+    amount   REAL,
+    time_of  TimeRec);
+    minimum_balance     CONSTANT REAL := 10.00;
+    number_processed    INT;
+    insufficient_funds  EXCEPTION;
+    END trans_data;
+    ';
+    begin
+    execute immediate create_package;
+    execute immediate '
+    CREATE OR REPLACE PACKAGE aa_pkg IS
+    TYPE aa_type IS TABLE OF INTEGER INDEX BY VARCHAR2(15);
+    END;
+    ';
+    execute immediate '
+    CREATE OR REPLACE PROCEDURE print_aa (
+    aa aa_pkg.aa_type
+    ) IS
+    i  VARCHAR2(15);
+    BEGIN
+    i := aa.FIRST;
+
+    WHILE i IS NOT NULL LOOP
+    DBMS_OUTPUT.PUT_LINE (aa(i) || i);
+    i := aa.NEXT(i);
+    END LOOP;
+    END;
+    ';
+    end;
+
+expected_end_delimiter: ;
+

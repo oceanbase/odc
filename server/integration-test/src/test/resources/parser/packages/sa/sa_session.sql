@@ -1,0 +1,92 @@
+CREATE OR REPLACE PACKAGE SA_SESSION AS
+/*
+  FUNCTION COMP_READ ( 
+    policy_name IN VARCHAR
+  )
+  RETURN VARCHAR;
+
+  FUNCTION COMP_WRITE ( 
+    policy_name IN VARCHAR
+  )
+  RETURN VARCHAR;
+
+  FUNCTION GROUP_READ ( 
+    policy_name IN VARCHAR
+  )
+  RETURN VARCHAR;
+
+  FUNCTION GROUP_WRITE ( 
+    policy_name IN VARCHAR
+  )
+  RETURN VARCHAR;
+*/
+  FUNCTION LABEL ( 
+    policy_name IN VARCHAR
+  )
+  RETURN VARCHAR;
+/*
+  FUNCTION MAX_LEVEL ( 
+    policy_name IN VARCHAR
+  )
+  RETURN VARCHAR;
+
+  FUNCTION MAX_READ_LABEL ( 
+    policy_name IN VARCHAR
+  )
+  RETURN VARCHAR;
+
+  FUNCTION MAX_WRITE_LABEL ( 
+    policy_name IN VARCHAR
+  )
+  RETURN VARCHAR;
+
+  FUNCTION MIN_LEVEL ( 
+    policy_name IN VARCHAR
+  )
+  RETURN VARCHAR;
+
+  FUNCTION MIN_WRITE_LABEL ( 
+    policy_name IN VARCHAR
+  )
+  RETURN VARCHAR;
+
+  FUNCTION PRIVS ( 
+    policy_name IN VARCHAR
+  )
+  RETURN VARCHAR;
+*/
+  PROCEDURE RESTORE_DEFAULT_LABELS (
+    policy_name in VARCHAR
+  );
+
+  FUNCTION ROW_LABEL ( 
+    policy_name IN VARCHAR
+  )
+  RETURN VARCHAR; 
+
+  PROCEDURE SET_LABEL (
+    policy_name IN VARCHAR,
+    label       IN VARCHAR
+  );
+/*
+  FUNCTION SA_USER_NAME ( 
+    policy_name IN VARCHAR
+  )
+  RETURN VARCHAR; 
+
+  PROCEDURE SAVE_DEFAULT_LABELS ( 
+    policy_name IN VARCHAR
+  );
+
+  PROCEDURE SET_ACCESS_PROFILE (
+    policy_name IN VARCHAR,
+    user_name   IN VARCHAR
+  );
+*/
+  PROCEDURE SET_ROW_LABEL (
+    policy_name   IN VARCHAR,
+    row_label     IN VARCHAR
+  );
+
+END SA_SESSION;
+//

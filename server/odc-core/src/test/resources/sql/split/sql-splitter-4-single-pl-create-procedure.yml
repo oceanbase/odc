@@ -1,0 +1,31 @@
+origin: |-
+  select 1 from dual;
+  create or replace procedure test_proc_1 (id NUMBER, agein number)
+  IS
+  name varchar2(100);
+  age number:=agein;
+  begin
+  name:='xxxxxxx';
+  dbms_output.put_line('id='||id||',name='||name||',age='||age);
+  end
+  /
+  delimiter //
+  select 2 from dual//
+
+expected:
+  - |-
+    select 1 from dual;
+  - |-
+    create or replace procedure test_proc_1 (id NUMBER, agein number)
+    IS
+    name varchar2(100);
+    age number:=agein;
+    begin
+    name:='xxxxxxx';
+    dbms_output.put_line('id='||id||',name='||name||',age='||age);
+    end
+    ;
+  - |-
+    select 2 from dual;
+
+expected_end_delimiter: //

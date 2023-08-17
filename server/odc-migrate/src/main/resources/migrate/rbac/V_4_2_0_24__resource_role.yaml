@@ -1,0 +1,45 @@
+kind: resource
+version: v2
+templates:
+    - metadata:
+          allow_duplicate: false
+          table_name: iam_resource_role
+          unique_keys: [ "resource_type", "role_name" ]
+      specs:
+          - column_name: id
+            default_value: 1
+            data_type: java.lang.Long
+          - column_name: resource_type
+            value: "ODC_PROJECT"
+          - column_name: role_name
+            value: "OWNER"
+          - column_name: description
+            value: "built-in resource role, project owner"
+    - metadata:
+          allow_duplicate: false
+          table_name: iam_resource_role
+          unique_keys: [ "resource_type", "role_name" ]
+      specs:
+          - column_name: id
+            default_value: 2
+            data_type: java.lang.Long
+          - column_name: resource_type
+            value: "ODC_PROJECT"
+          - column_name: role_name
+            value: "DBA"
+          - column_name: description
+            value: "built-in resource role, project dba"
+    - metadata:
+          allow_duplicate: false
+          table_name: iam_resource_role
+          unique_keys: [ "resource_type", "role_name" ]
+      specs:
+          - column_name: id
+            default_value: 3
+            data_type: java.lang.Long
+          - column_name: resource_type
+            value: "ODC_PROJECT"
+          - column_name: role_name
+            value: "DEVELOPER"
+          - column_name: description
+            value: "built-in resource role, project developer"
