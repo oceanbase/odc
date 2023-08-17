@@ -30,6 +30,8 @@ public interface UserRepository extends OdcJpaRepository<UserEntity, Long> {
 
     List<UserEntity> findByIdIn(Collection<Long> ids);
 
+    boolean existsByIdAndOrganizationId(Long id, Long organizationId);
+
     default List<UserEntity> partitionFindById(Collection<Long> ids, int size) {
         return partitionFind(ids, size, this::findByIdIn);
     }

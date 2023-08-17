@@ -21,7 +21,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
-import com.oceanbase.odc.metadb.iam.UserEntity;
 import com.oceanbase.odc.metadb.iam.UserOrganizationEntity;
 import com.oceanbase.odc.metadb.iam.UserOrganizationRepository;
 import com.oceanbase.odc.metadb.iam.UserRepository;
@@ -48,11 +47,8 @@ public class UserOrganizationService {
         UserOrganizationEntity userOrganizationEntity = new UserOrganizationEntity();
         userOrganizationEntity.setUserId(userId);
         userOrganizationEntity.setOrganizationId(organizationId);
-        UserEntity user = new UserEntity();
-        user.setId(userId);
-        user.setOrganizationId(organizationId);
         return userOrganizationRepository.exists(Example.of(userOrganizationEntity))
-                || userRepository.exists(Example.of(user));
+                || userRepository.existsByIdAndOrganizationId(userId, organizationId);
     }
 
     @SkipAuthorize
