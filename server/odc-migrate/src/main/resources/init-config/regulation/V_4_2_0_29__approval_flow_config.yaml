@@ -1,0 +1,119 @@
+kind: resource
+version: v2
+templates:
+    - metadata:
+          allow_duplicate: false
+          table_name: regulation_approval_flow_config
+          unique_keys: [ "organization_id", "name" ]
+      specs:
+          - column_name: id
+            default_value: 1
+            data_type: java.lang.Long
+          - column_name: name
+            value: ${com.oceanbase.odc.builtin-resource.regulation.approval.flow.config.auto-approval.name}
+          - column_name: description
+            value: ${com.oceanbase.odc.builtin-resource.regulation.approval.flow.config.auto-approval.description}
+          - column_name: is_builtin
+            value: true
+            data_type: java.lang.Boolean
+          - column_name: approval_expire_interval_seconds
+            value: 86400
+            data_type: java.lang.Long
+          - column_name: wait_execution_expire_interval_seconds
+            value: 86400
+            data_type: java.lang.Long
+          - column_name: execution_expire_interval_seconds
+            value: 86400
+            data_type: java.lang.Long
+          - column_name: organization_id
+            value: ${ORGANIZATION_ID}
+          - column_name: creator_id
+            value: ${CREATOR_ID}
+            data_type: java.lang.Long
+    - metadata:
+          allow_duplicate: false
+          table_name: regulation_approval_flow_config
+          unique_keys: [ "organization_id", "name" ]
+      specs:
+          - column_name: id
+            default_value: 2
+            data_type: java.lang.Long
+          - column_name: name
+            value: ${com.oceanbase.odc.builtin-resource.regulation.approval.flow.config.project-owner.name}
+          - column_name: description
+            value: ${com.oceanbase.odc.builtin-resource.regulation.approval.flow.config.project-owner.description}
+          - column_name: is_builtin
+            value: true
+            data_type: java.lang.Boolean
+          - column_name: approval_expire_interval_seconds
+            value: 86400
+            data_type: java.lang.Long
+          - column_name: wait_execution_expire_interval_seconds
+            value: 86400
+            data_type: java.lang.Long
+          - column_name: execution_expire_interval_seconds
+            value: 86400
+            data_type: java.lang.Long
+          - column_name: organization_id
+            value: ${ORGANIZATION_ID}
+          - column_name: creator_id
+            value: ${CREATOR_ID}
+            data_type: java.lang.Long
+    - metadata:
+          allow_duplicate: false
+          table_name: regulation_approval_flow_config
+          unique_keys: [ "organization_id", "name" ]
+      specs:
+          - column_name: id
+            default_value: 3
+            data_type: java.lang.Long
+          - column_name: name
+            value: ${com.oceanbase.odc.builtin-resource.regulation.approval.flow.config.project-dba.name}
+          - column_name: description
+            value: ${com.oceanbase.odc.builtin-resource.regulation.approval.flow.config.project-dba.description}
+          - column_name: is_builtin
+            value: true
+            data_type: java.lang.Boolean
+          - column_name: approval_expire_interval_seconds
+            value: 86400
+            data_type: java.lang.Long
+          - column_name: wait_execution_expire_interval_seconds
+            value: 86400
+            data_type: java.lang.Long
+          - column_name: execution_expire_interval_seconds
+            value: 86400
+            data_type: java.lang.Long
+          - column_name: organization_id
+            value: ${ORGANIZATION_ID}
+          - column_name: creator_id
+            value: ${CREATOR_ID}
+            data_type: java.lang.Long
+    - metadata:
+          allow_duplicate: false
+          table_name: regulation_approval_flow_config
+          unique_keys: [ "organization_id", "name" ]
+      specs:
+          - column_name: id
+            default_value: 4
+            data_type: java.lang.Long
+          - column_name: name
+            value: ${com.oceanbase.odc.builtin-resource.regulation.approval.flow.config.project-owner-dba.name}
+          - column_name: description
+            value: ${com.oceanbase.odc.builtin-resource.regulation.approval.flow.config.project-owner-dba.description}
+          - column_name: is_builtin
+            value: true
+            data_type: java.lang.Boolean
+          - column_name: approval_expire_interval_seconds
+            value: 86400
+            data_type: java.lang.Long
+          - column_name: wait_execution_expire_interval_seconds
+            value: 86400
+            data_type: java.lang.Long
+          - column_name: execution_expire_interval_seconds
+            value: 86400
+            data_type: java.lang.Long
+          - column_name: organization_id
+            value: ${ORGANIZATION_ID}
+          - column_name: creator_id
+            value: ${CREATOR_ID}
+            data_type: java.lang.Long

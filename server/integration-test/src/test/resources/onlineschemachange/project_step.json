@@ -1,0 +1,138 @@
+[
+    {
+        "order": 1,
+        "name": "TRANSFER_PRECHECK",
+        "description": "预检查",
+        "status": "FINISHED",
+        "extraInfo": {
+            "errorDetails": null,
+            "errorCode": null,
+            "errorMsg": null,
+            "errorParam": null,
+            "failedTime": null
+        },
+        "startTime": "2023-05-31T04:07:32",
+        "finishTime": "2023-05-31T04:07:40",
+        "progress": 100,
+        "stepInfo": null
+    },
+    {
+        "order": 2,
+        "name": "TRANSFER_INCR_LOG_PULL",
+        "description": "同步增量日志拉取",
+        "status": "FINISHED",
+        "extraInfo": {
+            "errorDetails": null,
+            "errorCode": null,
+            "errorMsg": null,
+            "errorParam": null,
+            "failedTime": null
+        },
+        "startTime": "2023-05-31T04:07:46",
+        "finishTime": "2023-05-31T04:08:36",
+        "progress": 100,
+        "stepInfo": null
+    },
+    {
+        "order": 3,
+        "name": "FULL_TRANSFER",
+        "description": "全量迁移",
+        "status": "FINISHED",
+        "extraInfo": {
+            "errorDetails": null,
+            "errorCode": null,
+            "errorMsg": null,
+            "errorParam": null,
+            "failedTime": null
+        },
+        "startTime": "2023-05-31T04:08:42",
+        "finishTime": "2023-05-31T04:09:02",
+        "progress": 100,
+        "stepInfo": {
+            "processedRecords": 1000,
+            "capacity": 1000,
+            "srcRps": 0,
+            "srcRt": 0,
+            "srcIops": 0,
+            "dstRps": 0,
+            "dstRt": 0,
+            "dstIops": 0,
+            "srcRpsRef": 4000,
+            "srcRtRef": 1,
+            "dstRpsRef": 4000,
+            "dstRtRef": 1,
+            "srcIopsRef": 4194304
+        }
+    },
+    {
+        "order": 4,
+        "name": "INCR_TRANSFER",
+        "description": "增量同步",
+        "status": "MONITORING",
+        "extraInfo": {
+            "errorDetails": null,
+            "errorCode": null,
+            "errorMsg": null,
+            "errorParam": null,
+            "failedTime": null
+        },
+        "startTime": "2023-05-31T04:09:07",
+        "finishTime": null,
+        "progress": 100,
+        "stepInfo": {
+            "incrTimestampCheckpoint": 1685796846,
+            "checkpointSampleTimestamp": 1685796847,
+            "enableIncrStatistics": null
+        }
+    },
+    {
+        "order": 5,
+        "name": "FULL_VERIFIER",
+        "description": "全量校验",
+        "status": "RUNNING",
+        "extraInfo": {
+            "errorDetails": null,
+            "errorCode": null,
+            "errorMsg": null,
+            "errorParam": null,
+            "failedTime": null
+        },
+        "startTime": "2023-05-31T04:09:17",
+        "finishTime": "2023-05-31T04:09:36",
+        "progress": 100,
+        "stepInfo": {
+            "processedRecords": 1000,
+            "capacity": 1000,
+            "srcRps": 0,
+            "srcRt": 0,
+            "srcIops": 0,
+            "dstRps": 0,
+            "dstRt": 0,
+            "dstIops": 0,
+            "srcRpsRef": 2000,
+            "srcRtRef": 1,
+            "dstRpsRef": 2000,
+            "dstRtRef": 1,
+            "srcIopsRef": 2097152
+        }
+    },
+    {
+        "order": 6,
+        "name": "TRANSFER_APP_SWITCH",
+        "description": "正向切换",
+        "status": "INIT",
+        "extraInfo": {
+            "errorDetails": null,
+            "errorCode": null,
+            "errorMsg": null,
+            "errorParam": null,
+            "failedTime": null
+        },
+        "startTime": null,
+        "finishTime": null,
+        "progress": 0,
+        "stepInfo": {
+            "checkpointSampleTimestamp": null
+        }
+    }
+]

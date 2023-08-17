@@ -1,0 +1,15 @@
+origin: |-
+  select 1 from dual;select 2 from dual;
+  select /*here is a comment*/ 3 from dual;
+  -- here is a line comment
+  select /*+READ_CONSISTENCY(WEAK)*/ 4 from dual;
+
+expected:
+  - select 1 from dual;
+  - select 2 from dual;
+  - select /*here is a comment*/ 3 from dual;
+  - |-
+    -- here is a line comment
+    select /*+READ_CONSISTENCY(WEAK)*/ 4 from dual;
+
+expected_end_delimiter: ;

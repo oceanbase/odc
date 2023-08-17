@@ -1,0 +1,22 @@
+kind: resource
+version: v2
+templates:
+  - metadata:
+      allow_duplicate: false
+      table_name: iam_user
+      unique_keys: ["id", "name"]
+    specs:
+      - column_name: id
+        value: ${USER_ID}
+        allow_null: false
+        default_value: 1
+      - column_name: name
+        value_from:
+          field_ref:
+            ref_file: resource/dir1/e.yaml
+            field_path: template.1.spec.0.value
+      - column_name: password
+        value: aaAA11__
+        encode:
+          key: xxx
+          algorithm: "BCRYPT"

@@ -1,0 +1,51 @@
+origin: |-
+  delimiter /
+  create or replace PROCEDURE Pro_Jobctl_Next_Date(p_P17work_Date IN VARCHAR2) IS 
+  v_P17work_Date Jobctl_t_Para.Paramvalue % TYPE;
+  v_Value Jobctl_t_Para.Paramvalue % TYPE;
+  BEGIN
+  BEGIN
+  SELECT Paramvalue INTO v_P17work_Date FROM Jobctl_t_Para WHERE Paramname = p_P17work_Date;
+  EXCEPTION
+  WHEN OTHERS THEN NULL;
+  END;
+  
+  IF p_P17work_Date = Lower('#RPT_MONTH#') OR p_P17work_Date = Lower('#zbx_date#')
+  THEN v_Value := To_Char(Add_Months(To_Date(v_P17work_Date, 'YYYYMM'), + 1),'YYYYMM');
+  
+  ELSE
+  IF Trunc(SYSDATE) > To_Date(Substr(v_P17work_Date, 1, 8), 'YYYYMMDD')
+  THEN v_Value := To_Char(SYSDATE, 'YYYYMMDD') || '001';
+  END IF;
+  END IF;
+  
+  v_Value := To_Char(Trunc(SYSDATE + 1 / 24, 'HH24'),'YYYYMMDDHH24MI');
+  
+  END Pro_Jobctl_Next_Date;
+  /
+expected:
+  - |-
+    create or replace PROCEDURE Pro_Jobctl_Next_Date(p_P17work_Date IN VARCHAR2) IS 
+    v_P17work_Date Jobctl_t_Para.Paramvalue % TYPE;
+    v_Value Jobctl_t_Para.Paramvalue % TYPE;
+    BEGIN
+    BEGIN
+    SELECT Paramvalue INTO v_P17work_Date FROM Jobctl_t_Para WHERE Paramname = p_P17work_Date;
+    EXCEPTION
+    WHEN OTHERS THEN NULL;
+    END;
+    
+    IF p_P17work_Date = Lower('#RPT_MONTH#') OR p_P17work_Date = Lower('#zbx_date#')
+    THEN v_Value := To_Char(Add_Months(To_Date(v_P17work_Date, 'YYYYMM'), + 1),'YYYYMM');
+    
+    ELSE
+    IF Trunc(SYSDATE) > To_Date(Substr(v_P17work_Date, 1, 8), 'YYYYMMDD')
+    THEN v_Value := To_Char(SYSDATE, 'YYYYMMDD') || '001';
+    END IF;
+    END IF;
+    
+    v_Value := To_Char(Trunc(SYSDATE + 1 / 24, 'HH24'),'YYYYMMDDHH24MI');
+    
+    END Pro_Jobctl_Next_Date;
+
+expected_end_delimiter: /

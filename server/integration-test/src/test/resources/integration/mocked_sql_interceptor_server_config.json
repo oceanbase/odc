@@ -1,0 +1,41 @@
+[
+  {
+    "description": "check SQL passed",
+    "request": {
+      "method": "post",
+      "uri": "/check_passed"
+    },
+    "response": {
+      "json": {
+        "resultCode": 0,
+        "checkResult": 3
+      }
+    }
+  },
+  {
+    "description": "check SQL need review",
+    "request": {
+      "method": "post",
+      "uri": "/check_need_review"
+    },
+    "response": {
+      "json": {
+        "resultCode": 0,
+        "checkResult": 2
+      }
+    }
+  },
+  {
+    "description": "check SQL blocked",
+    "request": {
+      "method": "post",
+      "uri": "/check_blocked"
+    },
+    "response": {
+      "json": {
+        "resultCode": 0,
+        "checkResult": 1
+      }
+    }
+  }
+]

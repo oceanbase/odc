@@ -1,0 +1,1 @@
+alter table `flow_instance_node_approval` ADD COLUMN `external_flow_instance_id` varchar(256) DEFAULT NULL COMMENT '外部审批流程 ID';

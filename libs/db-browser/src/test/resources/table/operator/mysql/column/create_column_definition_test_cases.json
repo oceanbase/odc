@@ -1,0 +1,196 @@
+[
+  {
+    "id": 1,
+    "name": "case1",
+    "description": "普通类型列",
+    "input": {
+      "current": {
+        "schemaName": "schema",
+        "tableName": "table",
+        "name": "col2",
+        "typeName": "int",
+        "scale": null,
+        "precision": 11,
+        "maxLength": 11,
+        "nullable": false,
+        "defaultValue": null,
+        "virtual": false,
+        "comment": "",
+        "charsetName": "binary",
+        "collationName": "binary",
+        "genExpression": null,
+        "autoIncrement": false,
+        "unsigned": false,
+        "zerofill": false,
+        "enumValues": null,
+        "stored": false,
+        "onUpdateCurrentTimestamp": false,
+        "ordinalPosition": 1,
+        "secondPrecision": null,
+        "dayPrecision": null,
+        "yearPrecision": null
+      }
+    },
+    "output": "`col2` int(11) NOT NULL"
+  },
+  {
+    "id": 2,
+    "name": "case2",
+    "description": "stored 生成列",
+    "input": {
+      "current": {
+        "name": "a",
+        "typeName": "int",
+        "nullable": true,
+        "defaultValue": null,
+        "virtual": true,
+        "comment": null,
+        "charsetName": null,
+        "collationName": null,
+        "genExpression": "1+1",
+        "autoIncrement": null,
+        "unsigned": true,
+        "zerofill": true,
+        "enumValues": [],
+        "stored": true,
+        "onUpdateCurrentTimestamp": false
+      }
+    },
+    "output": "`a` int UNSIGNED  ZEROFILL  GENERATED ALWAYS AS (1+1) STORED  NULL"
+  },
+  {
+    "id": 3,
+    "name": "case3",
+    "description": "virtual 生成列",
+    "input": {
+      "current": {
+        "name": "a",
+        "typeName": "int",
+        "nullable": true,
+        "defaultValue": null,
+        "virtual": true,
+        "comment": null,
+        "charsetName": null,
+        "collationName": null,
+        "genExpression": "1+1",
+        "autoIncrement": null,
+        "unsigned": true,
+        "zerofill": true,
+        "enumValues": [],
+        "stored": false,
+        "onUpdateCurrentTimestamp": false
+      }
+    },
+    "output": "`a` int UNSIGNED  ZEROFILL  GENERATED ALWAYS AS (1+1) VIRTUAL  NULL"
+  },
+  {
+    "id": 4,
+    "name": "case4",
+    "description": "带 comment 的列",
+    "input": {
+      "current": {
+        "name": "a",
+        "typeName": "int",
+        "scale": null,
+        "precision": 11,
+        "maxLength": 11,
+        "nullable": true,
+        "defaultValue": null,
+        "virtual": false,
+        "comment": "this is a column comment",
+        "charsetName": null,
+        "collationName": null,
+        "genExpression": null,
+        "autoIncrement": null,
+        "unsigned": true,
+        "zerofill": true,
+        "enumValues": [],
+        "stored": false,
+        "onUpdateCurrentTimestamp": false
+      }
+    },
+    "output": "`a` int(11) UNSIGNED  ZEROFILL  COMMENT 'this is a column comment' NULL"
+  },
+  {
+    "id": 5,
+    "name": "case5",
+    "description": "设置了 collate 和 charset 的列",
+    "input": {
+      "current": {
+        "name": "a",
+        "typeName": "varchar",
+        "precision": 120,
+        "maxLength": 120,
+        "nullable": false,
+        "defaultValue": "default value",
+        "virtual": false,
+        "comment": null,
+        "charsetName": "utf8mb4",
+        "collationName": "utf8mb4_bin",
+        "genExpression": null,
+        "autoIncrement": null,
+        "unsigned": true,
+        "zerofill": true,
+        "stored": true,
+        "onUpdateCurrentTimestamp": false
+      }
+    },
+    "output": "`a` varchar(120) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT 'default value' NOT NULL"
+  },
+  {
+    "id": 5,
+    "name": "case5",
+    "description": "默认值是 CURRENT_TIMESTAMP 的列",
+    "input": {
+      "current": {
+        "name": "a",
+        "typeName": "timestamp",
+        "precision": 0,
+        "maxLength": 0,
+        "nullable": false,
+        "defaultValue": "CURRENT_TIMESTAMP",
+        "virtual": false,
+        "comment": null,
+        "charsetName": "utf8mb4",
+        "collationName": "utf8mb4_bin",
+        "genExpression": null,
+        "autoIncrement": null,
+        "unsigned": true,
+        "zerofill": true,
+        "enumValues": [],
+        "stored": true,
+        "onUpdateCurrentTimestamp": true
+      }
+    },
+    "output": "`a` timestamp(0) ON UPDATE CURRENT_TIMESTAMP(0) DEFAULT CURRENT_TIMESTAMP NOT NULL"
+  },
+  {
+    "id": 6,
+    "name": "case6",
+    "description": "enum 类型的列",
+    "input": {
+      "current": {
+        "name": "a",
+        "typeName": "enum",
+        "nullable": false,
+        "defaultValue": "\"red\"",
+        "virtual": false,
+        "comment": null,
+        "charsetName": "utf8mb4",
+        "collationName": "utf8mb4_bin",
+        "genExpression": null,
+        "autoIncrement": null,
+        "unsigned": true,
+        "zerofill": true,
+        "enumValues": [
+          "red",
+          "yellow",
+          "blue"
+        ],
+        "stored": true,
+        "onUpdateCurrentTimestamp": true
+      }
+    },
+    "output": "`a` enum('red','yellow','blue') DEFAULT '\"red\"' NOT NULL"
+  }
+]

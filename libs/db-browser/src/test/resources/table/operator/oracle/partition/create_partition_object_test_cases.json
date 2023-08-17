@@ -1,0 +1,105 @@
+[
+  {
+    "id": 1,
+    "name": "case1",
+    "description": "RANGE 分区，单分区",
+    "input": {
+      "current": {
+        "schemaName": "schema",
+        "tableName": "table",
+        "partitionOption": {
+          "type": "RANGE",
+          "expression": "col1"
+        },
+        "partitionDefinitions": [
+          {
+            "name": "p1",
+            "maxValues": [
+              "1000"
+            ]
+          }
+        ]
+      }
+    },
+    "output": "ALTER TABLE \"schema\".\"table\"  PARTITION BY RANGE(col1) (\nPARTITION \"p1\" VALUES LESS THAN (1000)\n)"
+  },
+  {
+    "id": 2,
+    "name": "case2",
+    "description": "RANGE 分区，多个分区",
+    "input": {
+      "current": {
+        "schemaName": "schema",
+        "tableName": "table",
+        "partitionOption": {
+          "type": "RANGE",
+          "expression": "col1"
+        },
+        "partitionDefinitions": [
+          {
+            "name": "p1",
+            "maxValues": [
+              "1000"
+            ]
+          },
+          {
+            "name": "p2",
+            "maxValues": [
+              "2000"
+            ]
+          }
+        ]
+      }
+    },
+    "output": "ALTER TABLE \"schema\".\"table\"  PARTITION BY RANGE(col1) (\nPARTITION \"p1\" VALUES LESS THAN (1000),\nPARTITION \"p2\" VALUES LESS THAN (2000)\n)"
+  },
+  {
+    "id": 5,
+    "name": "case5",
+    "description": "List 分区",
+    "input": {
+      "current": {
+        "schemaName": "schema",
+        "tableName": "table",
+        "partitionOption": {
+          "type": "LIST",
+          "expression": "col1+1"
+        },
+        "partitionDefinitions": [
+          {
+            "name": "p1",
+            "valuesList": [
+              [
+                "1"
+              ],
+              [
+                "2"
+              ],
+              [
+                "3"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    "output": "ALTER TABLE \"schema\".\"table\"  PARTITION BY LIST(col1+1) (\nPARTITION \"p1\" VALUES (1,2,3)\n)"
+  },
+  {
+    "id": 7,
+    "name": "case7",
+    "description": "Hash 分区",
+    "input": {
+      "current": {
+        "schemaName": "schema",
+        "tableName": "table",
+        "partitionOption": {
+          "type": "HASH",
+          "expression": "col1",
+          "partitionsNum": 20
+        }
+      }
+    },
+    "output": "ALTER TABLE \"schema\".\"table\"  PARTITION BY HASH(col1) \nPARTITIONS 20"
+  }
+]

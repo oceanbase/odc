@@ -1,0 +1,20 @@
+{
+    "differentNumber": 0,
+    "fullVerifyTableStatistics": [
+        {
+            "sourceTableName": "t1",
+            "sourceSchemaName": "t",
+            "destSchemaName": "t",
+            "sourceOnlyCount": 0,
+            "destOnlyCount": 0,
+            "mismatchedCount": 0,
+            "consistentCount": 1000,
+            "progress": "1.0",
+            "message": "Consistent",
+            "status": "FINISHED",
+            "resultType": "CONSISTENT",
+            "resultDesc": "一致",
+            "errorDetails": null
+        }
+    ]
+}

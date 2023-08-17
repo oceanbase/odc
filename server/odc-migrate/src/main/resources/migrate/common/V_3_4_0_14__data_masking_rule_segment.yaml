@@ -1,0 +1,450 @@
+kind: resource
+version: v2
+templates:
+  # 内置姓名规则分段
+  - metadata:
+      allow_duplicate: false
+      table_name: data_masking_rule_segment
+    specs:
+      - column_name: id
+        default_value: 1
+        data_type: java.lang.Long
+      - column_name: organization_id
+        value: ${ORGANIZATION_ID}
+        data_type: java.lang.Long
+      - column_name: creator_id
+        value: ${CREATOR_ID}
+        data_type: java.lang.Long
+      - column_name: rule_id
+        value_from:
+          field_ref:
+            ref_file: migrate/common/V_3_4_0_13__data_masking_rule.yaml
+            field_path: templates.0.specs.0.value
+      - column_name: is_mask
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: type
+        value: "LEFT_OVER"
+      - column_name: replaced_characters
+        value: "****"
+      - column_name: ordinal
+        value: 0
+        data_type: java.lang.Integer
+  - metadata:
+      allow_duplicate: false
+      table_name: data_masking_rule_segment
+    specs:
+      - column_name: id
+        default_value: 2
+        data_type: java.lang.Long
+      - column_name: organization_id
+        value: ${ORGANIZATION_ID}
+        data_type: java.lang.Long
+      - column_name: creator_id
+        value: ${CREATOR_ID}
+        data_type: java.lang.Long
+      - column_name: rule_id
+        value_from:
+          field_ref:
+            ref_file: migrate/common/V_3_4_0_13__data_masking_rule.yaml
+            field_path: templates.0.specs.0.value
+      - column_name: is_mask
+        value: false
+        data_type: java.lang.Boolean
+      - column_name: type
+        value: "DIGIT"
+      - column_name: digit_number
+        value: 1
+        data_type: java.lang.Integer
+      - column_name: ordinal
+        value: 1
+        data_type: java.lang.Integer
+  # 身份证件号码
+  - metadata:
+      allow_duplicate: false
+      table_name: data_masking_rule_segment
+    specs:
+      - column_name: id
+        default_value: 3
+        data_type: java.lang.Long
+      - column_name: organization_id
+        value: ${ORGANIZATION_ID}
+        data_type: java.lang.Long
+      - column_name: creator_id
+        value: ${CREATOR_ID}
+        data_type: java.lang.Long
+      - column_name: rule_id
+        value_from:
+          field_ref:
+            ref_file: migrate/common/V_3_4_0_13__data_masking_rule.yaml
+            field_path: templates.1.specs.0.value
+      - column_name: is_mask
+        value: false
+        data_type: java.lang.Boolean
+      - column_name: type
+        value: "DIGIT"
+      - column_name: digit_number
+        value: 1
+        data_type: java.lang.Integer
+      - column_name: ordinal
+        value: 0
+        data_type: java.lang.Integer
+  - metadata:
+      allow_duplicate: false
+      table_name: data_masking_rule_segment
+    specs:
+      - column_name: id
+        default_value: 4
+        data_type: java.lang.Long
+      - column_name: organization_id
+        value: ${ORGANIZATION_ID}
+        data_type: java.lang.Long
+      - column_name: creator_id
+        value: ${CREATOR_ID}
+        data_type: java.lang.Long
+      - column_name: rule_id
+        value_from:
+          field_ref:
+            ref_file: migrate/common/V_3_4_0_13__data_masking_rule.yaml
+            field_path: templates.1.specs.0.value
+      - column_name: is_mask
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: type
+        value: "LEFT_OVER"
+      - column_name: ordinal
+        value: 1
+        data_type: java.lang.Integer
+  - metadata:
+      allow_duplicate: false
+      table_name: data_masking_rule_segment
+    specs:
+      - column_name: id
+        default_value: 5
+        data_type: java.lang.Long
+      - column_name: organization_id
+        value: ${ORGANIZATION_ID}
+        data_type: java.lang.Long
+      - column_name: creator_id
+        value: ${CREATOR_ID}
+        data_type: java.lang.Long
+      - column_name: rule_id
+        value_from:
+          field_ref:
+            ref_file: migrate/common/V_3_4_0_13__data_masking_rule.yaml
+            field_path: templates.1.specs.0.value
+      - column_name: is_mask
+        value: false
+        data_type: java.lang.Boolean
+      - column_name: type
+        value: "DIGIT"
+      - column_name: digit_number
+        value: 1
+        data_type: java.lang.Integer
+      - column_name: ordinal
+        value: 2
+        data_type: java.lang.Integer
+  # 手机号
+  - metadata:
+      allow_duplicate: false
+      table_name: data_masking_rule_segment
+    specs:
+      - column_name: id
+        default_value: 6
+        data_type: java.lang.Long
+      - column_name: organization_id
+        value: ${ORGANIZATION_ID}
+        data_type: java.lang.Long
+      - column_name: creator_id
+        value: ${CREATOR_ID}
+        data_type: java.lang.Long
+      - column_name: rule_id
+        value_from:
+          field_ref:
+            ref_file: migrate/common/V_3_4_0_13__data_masking_rule.yaml
+            field_path: templates.2.specs.0.value
+      - column_name: segments_type
+        value: "PRE_3_POST_2"
+  # 固定电话
+  - metadata:
+      allow_duplicate: false
+      table_name: data_masking_rule_segment
+    specs:
+      - column_name: id
+        default_value: 7
+        data_type: java.lang.Long
+      - column_name: organization_id
+        value: ${ORGANIZATION_ID}
+        data_type: java.lang.Long
+      - column_name: creator_id
+        value: ${CREATOR_ID}
+        data_type: java.lang.Long
+      - column_name: rule_id
+        value_from:
+          field_ref:
+            ref_file: migrate/common/V_3_4_0_13__data_masking_rule.yaml
+            field_path: templates.3.specs.0.value
+      - column_name: is_mask
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: type
+        value: "LEFT_OVER"
+      - column_name: ordinal
+        value: 0
+        data_type: java.lang.Integer
+  - metadata:
+      allow_duplicate: false
+      table_name: data_masking_rule_segment
+    specs:
+      - column_name: id
+        default_value: 8
+        data_type: java.lang.Long
+      - column_name: organization_id
+        value: ${ORGANIZATION_ID}
+        data_type: java.lang.Long
+      - column_name: creator_id
+        value: ${CREATOR_ID}
+        data_type: java.lang.Long
+      - column_name: rule_id
+        value_from:
+          field_ref:
+            ref_file: migrate/common/V_3_4_0_13__data_masking_rule.yaml
+            field_path: templates.3.specs.0.value
+      - column_name: is_mask
+        value: false
+        data_type: java.lang.Boolean
+      - column_name: type
+        value: "DIGIT"
+      - column_name: digit_number
+        value: 2
+        data_type: java.lang.Integer
+      - column_name: ordinal
+        value: 1
+        data_type: java.lang.Integer
+  # 银行卡号
+  - metadata:
+      allow_duplicate: false
+      table_name: data_masking_rule_segment
+    specs:
+      - column_name: id
+        default_value: 9
+        data_type: java.lang.Long
+      - column_name: organization_id
+        value: ${ORGANIZATION_ID}
+        data_type: java.lang.Long
+      - column_name: creator_id
+        value: ${CREATOR_ID}
+        data_type: java.lang.Long
+      - column_name: rule_id
+        value_from:
+          field_ref:
+            ref_file: migrate/common/V_3_4_0_13__data_masking_rule.yaml
+            field_path: templates.4.specs.0.value
+      - column_name: is_mask
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: type
+        value: "LEFT_OVER"
+      - column_name: ordinal
+        value: 0
+        data_type: java.lang.Integer
+  - metadata:
+      allow_duplicate: false
+      table_name: data_masking_rule_segment
+    specs:
+      - column_name: id
+        default_value: 10
+        data_type: java.lang.Long
+      - column_name: organization_id
+        value: ${ORGANIZATION_ID}
+        data_type: java.lang.Long
+      - column_name: creator_id
+        value: ${CREATOR_ID}
+        data_type: java.lang.Long
+      - column_name: rule_id
+        value_from:
+          field_ref:
+            ref_file: migrate/common/V_3_4_0_13__data_masking_rule.yaml
+            field_path: templates.4.specs.0.value
+      - column_name: is_mask
+        value: false
+        data_type: java.lang.Boolean
+      - column_name: type
+        value: "DIGIT"
+      - column_name: digit_number
+        value: 4
+        data_type: java.lang.Integer
+      - column_name: ordinal
+        value: 1
+        data_type: java.lang.Integer
+  # 邮箱
+  - metadata:
+      allow_duplicate: false
+      table_name: data_masking_rule_segment
+    specs:
+      - column_name: id
+        default_value: 11
+        data_type: java.lang.Long
+      - column_name: organization_id
+        value: ${ORGANIZATION_ID}
+        data_type: java.lang.Long
+      - column_name: creator_id
+        value: ${CREATOR_ID}
+        data_type: java.lang.Long
+      - column_name: rule_id
+        value_from:
+          field_ref:
+            ref_file: migrate/common/V_3_4_0_13__data_masking_rule.yaml
+            field_path: templates.5.specs.0.value
+      - column_name: is_mask
+        value: false
+        data_type: java.lang.Boolean
+      - column_name: type
+        value: "DIGIT"
+      - column_name: digit_number
+        value: 3
+        data_type: java.lang.Integer
+      - column_name: ordinal
+        value: 0
+        data_type: java.lang.Integer
+  - metadata:
+      allow_duplicate: false
+      table_name: data_masking_rule_segment
+    specs:
+      - column_name: id
+        default_value: 12
+        data_type: java.lang.Long
+      - column_name: organization_id
+        value: ${ORGANIZATION_ID}
+        data_type: java.lang.Long
+      - column_name: creator_id
+        value: ${CREATOR_ID}
+        data_type: java.lang.Long
+      - column_name: rule_id
+        value_from:
+          field_ref:
+            ref_file: migrate/common/V_3_4_0_13__data_masking_rule.yaml
+            field_path: templates.5.specs.0.value
+      - column_name: is_mask
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: type
+        value: "DELIMITER"
+      - column_name: delimiter
+        value: "@"
+      - column_name: replaced_characters
+        value: "***"
+      - column_name: ordinal
+        value: 1
+        data_type: java.lang.Integer
+  - metadata:
+      allow_duplicate: false
+      table_name: data_masking_rule_segment
+    specs:
+      - column_name: id
+        default_value: 13
+        data_type: java.lang.Long
+      - column_name: organization_id
+        value: ${ORGANIZATION_ID}
+        data_type: java.lang.Long
+      - column_name: creator_id
+        value: ${CREATOR_ID}
+        data_type: java.lang.Long
+      - column_name: rule_id
+        value_from:
+          field_ref:
+            ref_file: migrate/common/V_3_4_0_13__data_masking_rule.yaml
+            field_path: templates.5.specs.0.value
+      - column_name: is_mask
+        value: false
+        data_type: java.lang.Boolean
+      - column_name: type
+        value: "LEFT_OVER"
+      - column_name: ordinal
+        value: 2
+        data_type: java.lang.Integer
+  # 缺省规则
+  - metadata:
+      allow_duplicate: false
+      table_name: data_masking_rule_segment
+    specs:
+      - column_name: id
+        default_value: 14
+        data_type: java.lang.Long
+      - column_name: organization_id
+        value: ${ORGANIZATION_ID}
+        data_type: java.lang.Long
+      - column_name: creator_id
+        value: ${CREATOR_ID}
+        data_type: java.lang.Long
+      - column_name: rule_id
+        value_from:
+          field_ref:
+            ref_file: migrate/common/V_3_4_0_13__data_masking_rule.yaml
+            field_path: templates.6.specs.0.value
+      - column_name: is_mask
+        value: false
+        data_type: java.lang.Boolean
+      - column_name: type
+        value: "DIGIT_PERCENTAGE"
+      - column_name: digit_percentage
+        value: 34
+        data_type: java.lang.Integer
+      - column_name: ordinal
+        value: 0
+        data_type: java.lang.Integer
+  - metadata:
+      allow_duplicate: false
+      table_name: data_masking_rule_segment
+    specs:
+      - column_name: id
+        default_value: 15
+        data_type: java.lang.Long
+      - column_name: organization_id
+        value: ${ORGANIZATION_ID}
+        data_type: java.lang.Long
+      - column_name: creator_id
+        value: ${CREATOR_ID}
+        data_type: java.lang.Long
+      - column_name: rule_id
+        value_from:
+          field_ref:
+            ref_file: migrate/common/V_3_4_0_13__data_masking_rule.yaml
+            field_path: templates.6.specs.0.value
+      - column_name: is_mask
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: type
+        value: "LEFT_OVER"
+      - column_name: ordinal
+        value: 1
+        data_type: java.lang.Integer
+  - metadata:
+      allow_duplicate: false
+      table_name: data_masking_rule_segment
+    specs:
+      - column_name: id
+        default_value: 16
+        data_type: java.lang.Long
+      - column_name: organization_id
+        value: ${ORGANIZATION_ID}
+        data_type: java.lang.Long
+      - column_name: creator_id
+        value: ${CREATOR_ID}
+        data_type: java.lang.Long
+      - column_name: rule_id
+        value_from:
+          field_ref:
+            ref_file: migrate/common/V_3_4_0_13__data_masking_rule.yaml
+            field_path: templates.6.specs.0.value
+      - column_name: is_mask
+        value: false
+        data_type: java.lang.Boolean
+      - column_name: type
+        value: "DIGIT_PERCENTAGE"
+      - column_name: digit_percentage
+        value: 34
+        data_type: java.lang.Integer
+      - column_name: ordinal
+        value: 2
+        data_type: java.lang.Integer

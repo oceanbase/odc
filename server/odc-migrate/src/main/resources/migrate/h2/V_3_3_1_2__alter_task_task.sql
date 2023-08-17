@@ -1,0 +1,1 @@
+ALTER TABLE `task_task` ALTER COLUMN `executor` VARCHAR(1024);

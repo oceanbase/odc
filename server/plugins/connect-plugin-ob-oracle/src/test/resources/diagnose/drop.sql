@@ -1,0 +1,9 @@
+drop table t_test_explain;
+drop table D_PARAM_DICT_LST;
+drop table CLAIM_CNTR;
+drop table CLAIM_CAL;
+drop table CLAIM_CAL_EXPEN;
+drop table CLAIM_CAL_SUBSIDY;
+drop table t_test_exec_detail;
+drop table t_test_get_explain1;
+drop table t_test_get_explain2;

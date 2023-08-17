@@ -1,0 +1,211 @@
+[
+  {
+    "id": 1,
+    "name": "case1",
+    "description": "修改唯一性约束，新增一列",
+    "input": {
+      "previous": {
+        "name": "uk_col1",
+        "schemaName": "schema",
+        "tableName": "table",
+        "type": "UNIQUE_KEY",
+        "columnNames": [
+          "col1",
+          "col2"
+        ],
+        "enabled": true,
+        "deferability": "NOT_DEFERRABLE"
+      },
+      "current": {
+        "name": "uk_col1",
+        "schemaName": "schema",
+        "tableName": "table",
+        "type": "UNIQUE_KEY",
+        "columnNames": [
+          "col1",
+          "col2",
+          "col3"
+        ],
+        "enabled": true,
+        "deferability": "NOT_DEFERRABLE"
+      }
+    },
+    "output": "ALTER TABLE \"schema\".\"table\" DROP CONSTRAINT \"uk_col1\";\nALTER TABLE \"schema\".\"table\" ADD CONSTRAINT \"uk_col1\" UNIQUE (\"col1\", \"col2\", \"col3\");\n"
+  },
+  {
+    "id": 2,
+    "name": "case2",
+    "description": "重命名唯一性约束",
+    "input": {
+      "previous": {
+        "name": "uk_col1",
+        "schemaName": "schema",
+        "tableName": "table",
+        "type": "UNIQUE_KEY",
+        "columnNames": [
+          "col1",
+          "col2"
+        ],
+        "enabled": true,
+        "deferability": "NOT_DEFERRABLE"
+      },
+      "current": {
+        "name": "uk_col1_col2",
+        "schemaName": "schema",
+        "tableName": "table",
+        "type": "UNIQUE_KEY",
+        "columnNames": [
+          "col1",
+          "col2"
+        ],
+        "enabled": true,
+        "deferability": "NOT_DEFERRABLE"
+      }
+    },
+    "output": "ALTER TABLE \"schema\".\"table\" DROP CONSTRAINT \"uk_col1\";\nALTER TABLE \"schema\".\"table\" ADD CONSTRAINT \"uk_col1_col2\" UNIQUE (\"col1\", \"col2\");\n"
+  },
+  {
+    "id": 3,
+    "name": "case3",
+    "description": "重命名外键约束",
+    "input": {
+      "previous": {
+        "name": "fk_odc",
+        "schemaName": "schema",
+        "tableName": "table",
+        "type": "FOREIGN_KEY",
+        "columnNames": [
+          "col1",
+          "col2"
+        ],
+        "deferability": "NOT_DEFERRABLE",
+        "referenceSchemaName": "odc331",
+        "referenceTableName": "iam_user_role",
+        "referenceColumnNames": [
+          "col1",
+          "col2"
+        ],
+        "onDeleteRule": "CASCADE",
+        "onUpdateRule": "NO_ACTION",
+        "enabled": true
+      },
+      "current": {
+        "name": "fk_odc_new",
+        "schemaName": "schema",
+        "tableName": "table",
+        "type": "FOREIGN_KEY",
+        "columnNames": [
+          "col1",
+          "col2"
+        ],
+        "deferability": "NOT_DEFERRABLE",
+        "referenceSchemaName": "odc331",
+        "referenceTableName": "iam_user_role",
+        "referenceColumnNames": [
+          "col1",
+          "col2"
+        ],
+        "onDeleteRule": "CASCADE",
+        "onUpdateRule": "NO_ACTION",
+        "enabled": true
+      }
+    },
+    "output": "ALTER TABLE \"schema\".\"table\" DROP CONSTRAINT \"fk_odc\";\nALTER TABLE \"schema\".\"table\" ADD CONSTRAINT \"fk_odc_new\" FOREIGN KEY (\"col1\", \"col2\") REFERENCES \"odc331\".\"iam_user_role\" (\"col1\", \"col2\") ON DELETE CASCADE;\n"
+  },
+  {
+    "id": 4,
+    "name": "case4",
+    "description": "DISABLE 外键",
+    "input": {
+      "previous": {
+        "name": "fk_odc",
+        "schemaName": "schema",
+        "tableName": "table",
+        "type": "FOREIGN_KEY",
+        "columnNames": [
+          "col1",
+          "col2"
+        ],
+        "deferability": "NOT_DEFERRABLE",
+        "referenceSchemaName": "odc331",
+        "referenceTableName": "iam_user_role",
+        "referenceColumnNames": [
+          "col1",
+          "col2"
+        ],
+        "onDeleteRule": "CASCADE",
+        "onUpdateRule": "NO_ACTION",
+        "enabled": true
+      },
+      "current": {
+        "name": "fk_odc",
+        "schemaName": "schema",
+        "tableName": "table",
+        "type": "FOREIGN_KEY",
+        "columnNames": [
+          "col1",
+          "col2"
+        ],
+        "deferability": "NOT_DEFERRABLE",
+        "referenceSchemaName": "odc331",
+        "referenceTableName": "iam_user_role",
+        "referenceColumnNames": [
+          "col1",
+          "col2"
+        ],
+        "onDeleteRule": "CASCADE",
+        "onUpdateRule": "NO_ACTION",
+        "enabled": false
+      }
+    },
+    "output": "ALTER TABLE \"schema\".\"table\" DISABLE CONSTRAINT \"fk_odc\";\n"
+  },
+  {
+    "id": 5,
+    "name": "case4",
+    "description": "重命名并且 DISABLE 外键",
+    "input": {
+      "previous": {
+        "name": "fk_odc",
+        "schemaName": "schema",
+        "tableName": "table",
+        "type": "FOREIGN_KEY",
+        "columnNames": [
+          "col1",
+          "col2"
+        ],
+        "deferability": "NOT_DEFERRABLE",
+        "referenceSchemaName": "odc331",
+        "referenceTableName": "iam_user_role",
+        "referenceColumnNames": [
+          "col1",
+          "col2"
+        ],
+        "onDeleteRule": "CASCADE",
+        "onUpdateRule": "NO_ACTION",
+        "enabled": true
+      },
+      "current": {
+        "name": "fk_odc_new",
+        "schemaName": "schema",
+        "tableName": "table",
+        "type": "FOREIGN_KEY",
+        "columnNames": [
+          "col1",
+          "col2"
+        ],
+        "deferability": "NOT_DEFERRABLE",
+        "referenceSchemaName": "odc331",
+        "referenceTableName": "iam_user_role",
+        "referenceColumnNames": [
+          "col1",
+          "col2"
+        ],
+        "onDeleteRule": "CASCADE",
+        "onUpdateRule": "NO_ACTION",
+        "enabled": false
+      }
+    },
+    "output": "ALTER TABLE \"schema\".\"table\" DISABLE CONSTRAINT \"fk_odc_new\";\nALTER TABLE \"schema\".\"table\" DROP CONSTRAINT \"fk_odc\";\nALTER TABLE \"schema\".\"table\" ADD CONSTRAINT \"fk_odc_new\" FOREIGN KEY (\"col1\", \"col2\") REFERENCES \"odc331\".\"iam_user_role\" (\"col1\", \"col2\") ON DELETE CASCADE DISABLE;\n"
+  }
+]

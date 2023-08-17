@@ -1,0 +1,1 @@
+update config_system_configuration set `value`='' where `key`='odc.iam.user.default-roles';

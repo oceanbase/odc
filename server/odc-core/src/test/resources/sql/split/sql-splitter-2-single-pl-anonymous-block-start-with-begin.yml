@@ -1,0 +1,13 @@
+origin: |-
+  begin
+  dbms_output.put_line('hello world');
+  end;
+
+expected:
+  - |-
+    begin
+    dbms_output.put_line('hello world');
+    end;
+
+expected_end_delimiter: ;
+

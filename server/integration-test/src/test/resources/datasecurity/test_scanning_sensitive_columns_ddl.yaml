@@ -1,0 +1,74 @@
+mysql:
+  create: |-
+    CREATE DATABASE {0};
+    CREATE DATABASE {1};
+    CREATE TABLE `{0}`.`table_user`(
+        `id` INT NOT NULL,
+        `name` VARCHAR(16) DEFAULT NULL,
+        `birthday` VARCHAR(16) DEFAULT NULL,
+        `address` VARCHAR(16) DEFAULT NULL,
+        `email` VARCHAR(16) DEFAULT NULL,
+        `phone_number` VARCHAR(16)  DEFAULT NULL,
+        `column_1` VARCHAR(16) DEFAULT NULL COMMENT ''Record sensitive data''
+    );
+    CREATE TABLE `{0}`.`database_1_table_salary`(
+        `id` INT NOT NULL,
+        `name` VARCHAR(16) DEFAULT NULL,
+        `salary` INT DEFAULT NULL COMMENT ''Record salary of employees''
+    );
+    CREATE TABLE `{1}`.`table_user`(
+        `id` INT NOT NULL,
+        `name` VARCHAR(16) DEFAULT NULL,
+        `birthday` VARCHAR(16) DEFAULT NULL,
+        `address` VARCHAR(16) DEFAULT NULL,
+        `email` VARCHAR(16) DEFAULT NULL,
+        `phone_number` VARCHAR(16)  DEFAULT NULL,
+        `column_1` VARCHAR(16) DEFAULT NULL COMMENT ''Record sensitive data''
+    );
+    CREATE TABLE `{1}`.`database_2_table_salary`(
+        `id` INT NOT NULL,
+        `name` VARCHAR(16) DEFAULT NULL,
+        `salary` INT DEFAULT NULL COMMENT ''Record salary of employees''
+    );
+  drop: |-
+    DROP DATABASE {0};
+    DROP DATABASE {1};
+oracle:
+  create: |-
+    CREATE USER {2} IDENTIFIED BY "";
+    CREATE USER {3} IDENTIFIED BY "";
+    CREATE TABLE "{2}"."TABLE_USER"(
+    "ID" INT NOT NULL,
+    "NAME" VARCHAR(16) DEFAULT NULL,
+    "BIRTHDAY" VARCHAR(16) DEFAULT NULL,
+    "ADDRESS" VARCHAR(16) DEFAULT NULL,
+    "EMAIL" VARCHAR(16) DEFAULT NULL,
+    "PHONE_NUMBER" VARCHAR(16) DEFAULT NULL,
+    "COLUMN_1" VARCHAR(16) DEFAULT NULL
+    );
+    COMMENT ON COLUMN "{2}"."TABLE_USER"."COLUMN_1" IS ''RECORD SENSITIVE DATA'';
+    CREATE TABLE "{2}"."DATABASE_1_TABLE_SALARY"(
+    "ID" INT NOT NULL,
+    "NAME" VARCHAR(16) DEFAULT NULL,
+    "SALARY" INT DEFAULT NULL
+    );
+    COMMENT ON COLUMN "{2}"."DATABASE_1_TABLE_SALARY"."SALARY" IS ''RECORD SALARY OF EMPLOYEES'';
+    CREATE TABLE "{3}"."TABLE_USER"(
+    "ID" INT NOT NULL,
+    "NAME" VARCHAR(16) DEFAULT NULL,
+    "BIRTHDAY" VARCHAR(16) DEFAULT NULL,
+    "ADDRESS" VARCHAR(16) DEFAULT NULL,
+    "EMAIL" VARCHAR(16) DEFAULT NULL,
+    "PHONE_NUMBER" VARCHAR(16) DEFAULT NULL,
+    "COLUMN_1" VARCHAR(16) DEFAULT NULL
+    );
+    COMMENT ON COLUMN "{3}"."TABLE_USER"."COLUMN_1" IS ''RECORD SENSITIVE DATA'';
+    CREATE TABLE "{3}"."DATABASE_2_TABLE_SALARY"(
+    "ID" INT NOT NULL,
+    "NAME" VARCHAR(16) DEFAULT NULL,
+    "SALARY" INT DEFAULT NULL
+    );
+    COMMENT ON COLUMN "{3}"."DATABASE_2_TABLE_SALARY"."SALARY" IS ''RECORD SALARY OF EMPLOYEES'';
+  drop: |-
+    DROP USER {2} CASCADE;
+    DROP USER {3} CASCADE;

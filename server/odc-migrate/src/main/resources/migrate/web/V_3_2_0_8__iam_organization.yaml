@@ -1,0 +1,29 @@
+kind: resource
+version: v2
+templates:
+  - metadata:
+      allow_duplicate: false
+      table_name: iam_organization
+      unique_keys: ["name"]
+    specs:
+      - column_name: id
+        value: 1
+        data_type: java.lang.Long
+      - column_name: unique_identifier
+        value_from:
+          generator:
+            name: "UUID"
+      - column_name: name
+        value: "ODC_DEFAULT"
+      - column_name: creator_id
+        value: 1
+        data_type: java.lang.Long
+      - column_name: secret
+        value_from:
+          generator:
+            name: "AlphaNumeric_32"
+      - column_name: is_builtin
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: description
+        value: "Default organization description, change me"

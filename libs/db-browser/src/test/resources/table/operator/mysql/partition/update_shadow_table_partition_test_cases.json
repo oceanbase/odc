@@ -1,0 +1,162 @@
+[
+  {
+    "id": 1,
+    "name": "case1",
+    "description": "新增一个分区",
+    "input": {
+      "previous": {
+        "schemaName": "schema",
+        "tableName": "table",
+        "partitionOption": {
+          "type": "RANGE",
+          "expression": "col1"
+        },
+        "partitionDefinitions": [
+          {
+            "name": "p1",
+            "maxValues": [
+              "1000"
+            ]
+          }
+        ]
+      },
+      "current": {
+        "schemaName": "schema",
+        "tableName": "table",
+        "partitionOption": {
+          "type": "RANGE",
+          "expression": "col1"
+        },
+        "partitionDefinitions": [
+          {
+            "name": "p1",
+            "maxValues": [
+              "1000"
+            ]
+          },
+          {
+            "name": "p2",
+            "maxValues": [
+              "2000"
+            ]
+          }
+        ]
+      }
+    },
+    "output": "ALTER TABLE `schema`.`table` ADD PARTITION(PARTITION `p2` VALUES LESS THAN (2000));\n"
+  },
+  {
+    "id": 2,
+    "name": "case2",
+    "description": "删除一个分区",
+    "input": {
+      "previous": {
+        "schemaName": "schema",
+        "tableName": "table",
+        "partitionOption": {
+          "type": "RANGE",
+          "expression": "col1"
+        },
+        "partitionDefinitions": [
+          {
+            "name": "p1",
+            "maxValues": [
+              "1000"
+            ]
+          },
+          {
+            "name": "p2",
+            "maxValues": [
+              "2000"
+            ]
+          }
+        ]
+      },
+      "current": {}
+    },
+    "output": "ALTER TABLE  DROP PARTITION (p1);\nALTER TABLE  DROP PARTITION (p2);\n"
+  },
+  {
+    "id": 3,
+    "name": "case3",
+    "description": "新增一个分区，删除一个分区",
+    "input": {
+      "previous": {
+        "schemaName": "schema",
+        "tableName": "table",
+        "partitionOption": {
+          "type": "RANGE",
+          "expression": "col1"
+        },
+        "partitionDefinitions": [
+          {
+            "name": "p1",
+            "maxValues": [
+              "1000"
+            ]
+          },
+          {
+            "name": "p2",
+            "maxValues": [
+              "2000"
+            ]
+          }
+        ]
+      },
+      "current": {
+        "schemaName": "schema",
+        "tableName": "table",
+        "partitionOption": {
+          "type": "RANGE",
+          "expression": "col1"
+        },
+        "partitionDefinitions": [
+          {
+            "name": "p1",
+            "maxValues": [
+              "1000"
+            ]
+          },
+          {
+            "name": "p3",
+            "maxValues": [
+              "3000"
+            ]
+          }
+        ]
+      }
+    },
+    "output": "ALTER TABLE `schema`.`table` ADD PARTITION(PARTITION `p3` VALUES LESS THAN (3000));\nALTER TABLE `schema`.`table` DROP PARTITION (p2);\n"
+  },
+  {
+    "id": 4,
+    "name": "case4",
+    "description": "之前没分区，新增分区",
+    "input": {
+      "previous": {},
+      "current": {
+        "schemaName": "schema",
+        "tableName": "table",
+        "partitionOption": {
+          "type": "RANGE",
+          "expression": "col1"
+        },
+        "partitionDefinitions": [
+          {
+            "name": "p1",
+            "maxValues": [
+              "1000"
+            ]
+          },
+          {
+            "name": "p2",
+            "maxValues": [
+              "2000"
+            ]
+          }
+        ]
+      }
+    },
+    "output": "ALTER TABLE `schema`.`table` ADD PARTITION(PARTITION `p1` VALUES LESS THAN (1000));\nALTER TABLE `schema`.`table` ADD PARTITION(PARTITION `p2` VALUES LESS THAN (2000));\n"
+  }
+]

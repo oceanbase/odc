@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC
+        "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.oceanbase.odc.metadb.iam.UserInfoDAO">
+    <sql id="sqlColumns">
+        `id`,`name`, `email`, `password`, `role`,
+        `status`, `desc`, `gmt_create` as gmtCreate, `gmt_modify` as gmtModify,
+        `cipher`
+    </sql>
+
+    <sql id="table_field">
+        `name`, `email`, `password`, `role`,
+        `status`, `desc`, `cipher`
+    </sql>
+
+    <sql id="insert_field">
+        #{name}, #{email}, #{password}, #{role}, #{status}, #{desc}, #{cipher}
+    </sql>
+
+    <sql id="update_field">
+        `name` = #{name},
+        `email` = #{email},
+        `password` = #{password},
+        `role` = #{role},
+        `status` = #{status},
+        `desc` = #{desc},
+        `gmt_modify`= now(),
+        `cipher` = #{cipher}
+    </sql>
+
+    <sql id="table_name">
+        `odc_user_info`
+    </sql>
+
+
+    <select id="detail" resultType="com.oceanbase.odc.service.iam.model.UserInfo" parameterType="java.lang.String">
+        SELECT
+        <include refid="sqlColumns"/>
+        FROM
+        <include refid="table_name"/>
+        WHERE `email` = #{email}
+        LIMIT 1
+    </select>
+
+    <select id="get" resultType="com.oceanbase.odc.service.iam.model.UserInfo">
+        SELECT
+        <include refid="sqlColumns"/>
+        FROM
+        <include refid="table_name"/>
+        WHERE `id` = #{id}
+    </select>
+
+    <insert id="insert" parameterType="com.oceanbase.odc.service.iam.model.UserInfo">
+        INSERT INTO
+        <include refid="table_name"/>
+        (
+        <include refid="table_field"/>
+        )
+        VALUES
+        (
+        <include refid="insert_field"/>
+        )
+    </insert>
+
+    <update id="update" parameterType="com.oceanbase.odc.service.iam.model.UserInfo">
+        UPDATE
+        <include refid="table_name"/>
+        SET
+        <include refid="update_field"/>
+        WHERE `email` = #{email}
+    </update>
+
+    <delete id="delete" parameterType="java.lang.Long">
+        DELETE FROM
+        <include refid="table_name"/>
+        WHERE `id` = #{id}
+    </delete>
+
+</mapper>

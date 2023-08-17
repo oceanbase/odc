@@ -1,0 +1,21 @@
+CREATE OR REPLACE PROCEDURE DROPIFEXISTS_TABLE(new_table IN varchar2)
+    IS
+    v_count number(10);
+BEGIN
+    SELECT count(*)
+    INTO v_count
+    FROM user_tables
+    WHERE table_name = upper(new_table);
+    IF v_count > 0
+    THEN
+        EXECUTE IMMEDIATE 'drop table ' || new_table || ' purge';
+    END IF;
+END;
+/
+
+call DROPIFEXISTS_TABLE('HASH_PART_BY_PARSER');
+call DROPIFEXISTS_TABLE('LIST_PART_BY_PARSER');
+call DROPIFEXISTS_TABLE('RANGE_PART_BY_PARSER');
+call DROPIFEXISTS_TABLE('CONSTRAINT_MULTY_BY_PARSER');
+call DROPIFEXISTS_TABLE('CONSTRAINT_PRIMARY_BY_PARSER');
+call DROPIFEXISTS_TABLE('TEST_INDEX_BY_PARSER');

@@ -1,0 +1,30 @@
+origin: |-
+  delimiter //
+  create or replace package body debug_utils is
+    function to_error(code binary_integer) return varchar2 is
+    begin
+      case code
+        when dbms_debug.success then return 'success';
+        else return 'error_unknown';
+      end case;
+      select case code when dbms_debug.success then 1 else 2 end;
+      return 'error_unknown';
+    end;
+  end;
+  //
+
+expected:
+  - |-
+    create or replace package body debug_utils is
+      function to_error(code binary_integer) return varchar2 is
+      begin
+        case code
+          when dbms_debug.success then return 'success';
+          else return 'error_unknown';
+        end case;
+        select case code when dbms_debug.success then 1 else 2 end;
+        return 'error_unknown';
+      end;
+    end;
+
+expected_end_delimiter: //

@@ -1,0 +1,83 @@
+kind: resource
+version: v2
+templates:
+  - metadata:
+      allow_duplicate: false
+      table_name: iam_permission
+      unique_keys: ["organization_id", "resource_identifier", "action", "type"]
+    specs:
+      - column_name: id
+        value: ${ID}
+        allow_null: true
+        data_type: java.lang.Long
+      - column_name: organization_id
+        value: ${ORGANIZATION_ID}
+        default_value: 1
+        data_type: java.lang.Long
+      - column_name: resource_identifier
+        value: "ODC_TEST:*"
+      - column_name: action
+        value: "read"
+      - column_name: type
+        value: "SYSTEM"
+      - column_name: creator_id
+        value: ${USER_ID}
+        allow_null: false
+        default_value: 1
+        data_type: java.lang.Long
+      - column_name: description
+        value: "test permission"
+  - metadata:
+      allow_duplicate: false
+      table_name: iam_role
+      unique_keys: [ "name", "organization_id" ]
+    specs:
+      - column_name: id
+        value: ${ID}
+        allow_null: true
+        data_type: java.lang.Long
+      - column_name: name
+        value: "test_role_name"
+      - column_name: type
+        value: "CUSTOM"
+      - column_name: is_enabled
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: organization_id
+        value: ${ORGANIZATION_ID}
+        default_value: 1
+        data_type: java.lang.Long
+      - column_name: creator_id
+        value: ${USER_ID}
+        allow_null: false
+        default_value: 1
+        data_type: java.lang.Long
+      - column_name: description
+        value: "test role"
+  - metadata:
+      allow_duplicate: false
+      table_name: iam_role_permission
+      unique_keys: [ "role_id", "permission_id" ]
+    specs:
+      - column_name: role_id
+        value_from:
+          db_ref:
+            ref_key: id
+            ref_table: iam_role
+            filters:
+              - column_name: organization_id
+                value: ${ORGANIZATION_ID}
+                data_type: java.lang.Long
+      - column_name: permission_id
+        value_from:
+          field_ref:
+            field_path: templates.0.specs.0.value
+      - column_name: organization_id
+        value: ${ORGANIZATION_ID}
+        default_value: 1
+        data_type: java.lang.Long
+      - column_name: creator_id
+        value: ${USER_ID}
+        allow_null: false
+        default_value: 1
+        data_type: java.lang.Long

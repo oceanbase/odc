@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC
+        "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.oceanbase.odc.metadb.connection.ConnectionLabelDAO">
+    <sql id="sqlColumns">
+        `id` as id,`user_id` as userId,`label_name` as labelName, `label_color` as labelColor, gmt_create as gmtCreated, gmt_modify as
+        gmtModified
+    </sql>
+
+    <sql id="table_field">
+        `user_id`, `label_name`, `label_color`, `gmt_create`, `gmt_modify`
+    </sql>
+
+    <sql id="insert_field">
+        #{userId},#{labelName}, #{labelColor}, now(),now()
+    </sql>
+
+    <sql id="update_field">
+        `label_name`=#{labelName},
+        `label_color` = #{labelColor},
+        `gmt_modify`= now()
+    </sql>
+
+
+    <sql id="table_name">
+        `odc_session_label`
+    </sql>
+
+    <select id="list" resultType="com.oceanbase.odc.service.connection.model.ConnectionLabel" parameterType="java.lang.Long">
+        SELECT
+        <include refid="sqlColumns"/>
+        FROM
+        <include refid="table_name"/>
+        WHERE `user_id` = #{userId}
+    </select>
+
+    <select id="get" resultType="com.oceanbase.odc.service.connection.model.ConnectionLabel" parameterType="java.lang.Long">
+        SELECT
+        <include refid="sqlColumns"/>
+        FROM
+        <include refid="table_name"/>
+        WHERE `id` = #{id}
+    </select>
+
+    <insert id="insert" parameterType="com.oceanbase.odc.service.connection.model.ConnectionLabel" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO
+        <include refid="table_name"/>
+        (
+        <include refid="table_field"/>
+        )
+        VALUES
+        (
+        <include refid="insert_field"/>
+        )
+    </insert>
+
+    <update id="update" parameterType="com.oceanbase.odc.service.connection.model.ConnectionLabel">
+        UPDATE
+        <include refid="table_name"/>
+        SET
+        <include refid="update_field"/>
+        WHERE `id` = #{id}
+    </update>
+
+    <delete id="delete" parameterType="java.lang.Long">
+        DELETE FROM
+        <include refid="table_name"/>
+        WHERE `id` = #{id}
+    </delete>
+
+</mapper>

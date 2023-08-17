@@ -1,0 +1,372 @@
+origin: |-
+  CREATE OR REPLACE PROCEDURE "RISKCONFIG"."P_ABN_STOCK_E"
+  (
+   "I_MARKET_NO" IN CHAR, "I_STOCK_CODE" IN VARCHAR2, "I_BEGIN_DATE" IN CHAR, "I_END_DATE" IN CHAR, "I_ABN_BEGIN_DATE" IN CHAR, "I_ABN_END_DATE" IN CHAR, "I_SS_TYPE" IN VARCHAR2, "I_USER_CODE" IN CHAR, "I_REMARK" IN CHAR, "I_OP_FLAG" IN VARCHAR2, "I_PK_ID" IN VARCHAR2, "O_RETURN_MSG" OUT VARCHAR2, "O_RETURN_CODE" OUT INTEGER
+  ) IS
+  V_OP_OBJECT  VARCHAR2(50) DEFAULT 'P_ABN_STOCK_E'; -- '操作对象';
+    V_ERROR_MSG  VARCHAR2(200); --返回信息
+    V_ERROR_CODE INTEGER;
+    --===================================================================================
+    -------------------------------------------------------------------------------------
+    --业务变量
+    V_IF_EXIST INTEGER;
+    --===================================================================================
+    -- 业务处理过程
+    --=====================================================================================
+
+    --------------------------业务逻辑开始-----------------------------
+  BEGIN
+    O_RETURN_CODE := 0;
+    O_RETURN_MSG  := '执行成功';
+    --新增
+    IF I_OP_FLAG = '1' THEN
+      SELECT COUNT(1)
+        INTO V_IF_EXIST
+        FROM RISKCONFIG.T_SPECIALSTOCK A
+       WHERE A.SS_TYPE = I_SS_TYPE
+         AND NOT (I_ABN_BEGIN_DATE > A.ABN_END_DATE OR
+              I_ABN_END_DATE < A.ABN_BEGIN_DATE)
+         AND A.MARKET_NO = I_MARKET_NO
+         AND A.STOCK_CODE = I_STOCK_CODE;
+
+       IF V_IF_EXIST > 0 THEN O_RETURN_CODE := -1;
+      O_RETURN_MSG := '该证券的异常波动信息已存在！';
+      RETURN;
+    END IF;
+
+    INSERT INTO RISKCONFIG.T_SPECIALSTOCK
+      (SS_TYPE,
+       MARKET_NO,
+       STOCK_CODE,
+       BEGIN_DATE,
+       END_DATE,
+       SET_OPER,
+       SET_TIME,
+       REMARK,
+       ABN_BEGIN_DATE,
+       ABN_END_DATE)
+      SELECT I_SS_TYPE,
+             I_MARKET_NO,
+             I_STOCK_CODE,
+             I_BEGIN_DATE,
+             I_END_DATE,
+             I_USER_CODE,
+             SYSDATE,
+             I_REMARK,
+             I_ABN_BEGIN_DATE,
+             I_ABN_END_DATE
+        FROM DUAL;
+
+     --插入流水表数据
+    INSERT INTO RISKCONFIG.T_SPECIALSTOCKJOUR(SERIAL_NO,
+                                              OCCUR_DATE,
+                                              OCCUR_TIME,
+                                              OPER_TYPE,
+                                              OPER_CODE,
+                                              MARKET_NO,
+                                              STOCK_CODE,
+                                              BEGIN_DATE,
+                                              END_DATE,
+                                              REMARK,
+                                              SS_TYPE,
+                                              ABN_BEGIN_DATE,
+                                              ABN_END_DATE)
+      SELECT RISKCONFIG.SEQ_SPECIALSTOCKJOUR.NEXTVAL,
+             TO_CHAR(SYSDATE, 'YYYYMMDD'),
+             SUBSTR(TO_CHAR(SYSDATE, 'YYYYMMDD hh24:mi;ss'), 10, 8),
+             '1', --新增
+             I_USER_CODE,
+             I_MARKET_NO,
+             I_STOCK_CODE,
+             I_BEGIN_DATE,
+             I_END_DATE,
+             I_REMARK,
+             I_SS_TYPE,
+             I_ABN_BEGIN_DATE,
+             I_ABN_END_DATE
+        FROM DUAL;
+  END IF;
+
+    --修改
+  IF I_OP_FLAG = '2' THEN
+    UPDATE RISKCONFIG.T_SPECIALSTOCK T
+    SET
+        T.BEGIN_DATE = I_BEGIN_DATE,
+        T.END_DATE = I_END_DATE,
+        T.ABN_BEGIN_DATE = I_ABN_BEGIN_DATE,
+        T.ABN_END_DATE = I_ABN_END_DATE,
+        T.REMARK = I_REMARK
+        WHERE T.PK_ID = I_PK_ID;
+
+
+    --插入流水表数据
+    INSERT INTO RISKCONFIG.T_SPECIALSTOCKJOUR(SERIAL_NO,
+                                              OCCUR_DATE,
+                                              OCCUR_TIME,
+                                              OPER_TYPE,
+                                              OPER_CODE,
+                                              MARKET_NO,
+                                              STOCK_CODE,
+                                              BEGIN_DATE,
+                                              END_DATE,
+                                              REMARK,
+                                              SS_TYPE,
+                                              ABN_BEGIN_DATE,
+                                              ABN_END_DATE)
+      SELECT RISKCONFIG.SEQ_SPECIALSTOCKJOUR.NEXTVAL,
+             TO_CHAR(SYSDATE, 'YYYYMMDD'),
+             SUBSTR(TO_CHAR(SYSDATE, 'YYYYMMDD hh24:mi;ss'), 10, 8),
+             '2', --修改
+             I_USER_CODE,
+             I_MARKET_NO,
+             I_STOCK_CODE,
+             I_BEGIN_DATE,
+             I_END_DATE,
+             I_REMARK,
+             I_SS_TYPE,
+             I_ABN_BEGIN_DATE,
+             I_ABN_END_DATE
+        FROM DUAL;
+
+  END IF;
+  ---删除
+  IF I_OP_FLAG = '3' THEN
+      DELETE FROM RISKCONFIG.T_SPECIALSTOCK T
+     WHERE T.PK_ID = I_PK_ID;
+
+
+    INSERT INTO RISKCONFIG.T_SPECIALSTOCKJOUR(SERIAL_NO,
+                                              OCCUR_DATE,
+                                              OCCUR_TIME,
+                                              OPER_TYPE,
+                                              OPER_CODE,
+                                              MARKET_NO,
+                                              STOCK_CODE,
+                                              BEGIN_DATE,
+                                              END_DATE,
+                                              REMARK,
+                                              SS_TYPE,
+                                              ABN_BEGIN_DATE,
+                                              ABN_END_DATE)
+      SELECT RISKCONFIG.SEQ_SPECIALSTOCKJOUR.NEXTVAL,
+             TO_CHAR(SYSDATE, 'YYYYMMDD'),
+             SUBSTR(TO_CHAR(SYSDATE, 'YYYYMMDD hh24:mi;ss'), 10, 8),
+             '3', --删除
+             I_USER_CODE,
+             T.MARKET_NO,
+             T.STOCK_CODE,
+             T.BEGIN_DATE,
+             T.END_DATE,
+             T.REMARK,
+             T.SS_TYPE,
+             T.ABN_BEGIN_DATE,
+             T.ABN_END_DATE
+        FROM  RISKCONFIG.T_SPECIALSTOCK T
+        WHERE T.PK_ID = I_PK_ID;
+  END IF;
+
+  COMMIT;
+
+    -------------------------------------------------------------
+  O_RETURN_CODE := 0; O_RETURN_MSG := '执行成功';
+  -- ============================================================================
+    -- 错误处理部分
+    -- ============================================================================
+
+  EXCEPTION
+  WHEN OTHERS THEN O_RETURN_CODE := SQLCODE; O_RETURN_MSG := O_RETURN_MSG || SQLERRM; ROLLBACK; V_ERROR_MSG := O_RETURN_MSG; V_ERROR_CODE := O_RETURN_CODE; WOLF.P_ERROR_LOG('admin', -- '操作人';
+  V_OP_OBJECT, -- '操作对象';
+  V_ERROR_CODE, --'错误代码';
+  V_ERROR_MSG, -- '错误信息';
+   '', '', O_RETURN_MSG, --返回信息
+  O_RETURN_CODE --返回值 0 成功必须返回；-1 失败
+  );
+  END
+
+expected:
+  - |-
+    CREATE OR REPLACE PROCEDURE "RISKCONFIG"."P_ABN_STOCK_E"
+    (
+     "I_MARKET_NO" IN CHAR, "I_STOCK_CODE" IN VARCHAR2, "I_BEGIN_DATE" IN CHAR, "I_END_DATE" IN CHAR, "I_ABN_BEGIN_DATE" IN CHAR, "I_ABN_END_DATE" IN CHAR, "I_SS_TYPE" IN VARCHAR2, "I_USER_CODE" IN CHAR, "I_REMARK" IN CHAR, "I_OP_FLAG" IN VARCHAR2, "I_PK_ID" IN VARCHAR2, "O_RETURN_MSG" OUT VARCHAR2, "O_RETURN_CODE" OUT INTEGER
+    ) IS
+    V_OP_OBJECT  VARCHAR2(50) DEFAULT 'P_ABN_STOCK_E'; -- '操作对象';
+      V_ERROR_MSG  VARCHAR2(200); --返回信息
+      V_ERROR_CODE INTEGER;
+      --===================================================================================
+      -------------------------------------------------------------------------------------
+      --业务变量
+      V_IF_EXIST INTEGER;
+      --===================================================================================
+      -- 业务处理过程
+      --=====================================================================================
+
+      --------------------------业务逻辑开始-----------------------------
+    BEGIN
+      O_RETURN_CODE := 0;
+      O_RETURN_MSG  := '执行成功';
+      --新增
+      IF I_OP_FLAG = '1' THEN
+        SELECT COUNT(1)
+          INTO V_IF_EXIST
+          FROM RISKCONFIG.T_SPECIALSTOCK A
+         WHERE A.SS_TYPE = I_SS_TYPE
+           AND NOT (I_ABN_BEGIN_DATE > A.ABN_END_DATE OR
+                I_ABN_END_DATE < A.ABN_BEGIN_DATE)
+           AND A.MARKET_NO = I_MARKET_NO
+           AND A.STOCK_CODE = I_STOCK_CODE;
+
+         IF V_IF_EXIST > 0 THEN O_RETURN_CODE := -1;
+        O_RETURN_MSG := '该证券的异常波动信息已存在！';
+        RETURN;
+      END IF;
+
+      INSERT INTO RISKCONFIG.T_SPECIALSTOCK
+        (SS_TYPE,
+         MARKET_NO,
+         STOCK_CODE,
+         BEGIN_DATE,
+         END_DATE,
+         SET_OPER,
+         SET_TIME,
+         REMARK,
+         ABN_BEGIN_DATE,
+         ABN_END_DATE)
+        SELECT I_SS_TYPE,
+               I_MARKET_NO,
+               I_STOCK_CODE,
+               I_BEGIN_DATE,
+               I_END_DATE,
+               I_USER_CODE,
+               SYSDATE,
+               I_REMARK,
+               I_ABN_BEGIN_DATE,
+               I_ABN_END_DATE
+          FROM DUAL;
+
+       --插入流水表数据
+      INSERT INTO RISKCONFIG.T_SPECIALSTOCKJOUR(SERIAL_NO,
+                                                OCCUR_DATE,
+                                                OCCUR_TIME,
+                                                OPER_TYPE,
+                                                OPER_CODE,
+                                                MARKET_NO,
+                                                STOCK_CODE,
+                                                BEGIN_DATE,
+                                                END_DATE,
+                                                REMARK,
+                                                SS_TYPE,
+                                                ABN_BEGIN_DATE,
+                                                ABN_END_DATE)
+        SELECT RISKCONFIG.SEQ_SPECIALSTOCKJOUR.NEXTVAL,
+               TO_CHAR(SYSDATE, 'YYYYMMDD'),
+               SUBSTR(TO_CHAR(SYSDATE, 'YYYYMMDD hh24:mi;ss'), 10, 8),
+               '1', --新增
+               I_USER_CODE,
+               I_MARKET_NO,
+               I_STOCK_CODE,
+               I_BEGIN_DATE,
+               I_END_DATE,
+               I_REMARK,
+               I_SS_TYPE,
+               I_ABN_BEGIN_DATE,
+               I_ABN_END_DATE
+          FROM DUAL;
+    END IF;
+
+      --修改
+    IF I_OP_FLAG = '2' THEN
+      UPDATE RISKCONFIG.T_SPECIALSTOCK T
+      SET
+          T.BEGIN_DATE = I_BEGIN_DATE,
+          T.END_DATE = I_END_DATE,
+          T.ABN_BEGIN_DATE = I_ABN_BEGIN_DATE,
+          T.ABN_END_DATE = I_ABN_END_DATE,
+          T.REMARK = I_REMARK
+          WHERE T.PK_ID = I_PK_ID;
+
+
+      --插入流水表数据
+      INSERT INTO RISKCONFIG.T_SPECIALSTOCKJOUR(SERIAL_NO,
+                                                OCCUR_DATE,
+                                                OCCUR_TIME,
+                                                OPER_TYPE,
+                                                OPER_CODE,
+                                                MARKET_NO,
+                                                STOCK_CODE,
+                                                BEGIN_DATE,
+                                                END_DATE,
+                                                REMARK,
+                                                SS_TYPE,
+                                                ABN_BEGIN_DATE,
+                                                ABN_END_DATE)
+        SELECT RISKCONFIG.SEQ_SPECIALSTOCKJOUR.NEXTVAL,
+               TO_CHAR(SYSDATE, 'YYYYMMDD'),
+               SUBSTR(TO_CHAR(SYSDATE, 'YYYYMMDD hh24:mi;ss'), 10, 8),
+               '2', --修改
+               I_USER_CODE,
+               I_MARKET_NO,
+               I_STOCK_CODE,
+               I_BEGIN_DATE,
+               I_END_DATE,
+               I_REMARK,
+               I_SS_TYPE,
+               I_ABN_BEGIN_DATE,
+               I_ABN_END_DATE
+          FROM DUAL;
+
+    END IF;
+    ---删除
+    IF I_OP_FLAG = '3' THEN
+        DELETE FROM RISKCONFIG.T_SPECIALSTOCK T
+       WHERE T.PK_ID = I_PK_ID;
+
+
+      INSERT INTO RISKCONFIG.T_SPECIALSTOCKJOUR(SERIAL_NO,
+                                                OCCUR_DATE,
+                                                OCCUR_TIME,
+                                                OPER_TYPE,
+                                                OPER_CODE,
+                                                MARKET_NO,
+                                                STOCK_CODE,
+                                                BEGIN_DATE,
+                                                END_DATE,
+                                                REMARK,
+                                                SS_TYPE,
+                                                ABN_BEGIN_DATE,
+                                                ABN_END_DATE)
+        SELECT RISKCONFIG.SEQ_SPECIALSTOCKJOUR.NEXTVAL,
+               TO_CHAR(SYSDATE, 'YYYYMMDD'),
+               SUBSTR(TO_CHAR(SYSDATE, 'YYYYMMDD hh24:mi;ss'), 10, 8),
+               '3', --删除
+               I_USER_CODE,
+               T.MARKET_NO,
+               T.STOCK_CODE,
+               T.BEGIN_DATE,
+               T.END_DATE,
+               T.REMARK,
+               T.SS_TYPE,
+               T.ABN_BEGIN_DATE,
+               T.ABN_END_DATE
+          FROM  RISKCONFIG.T_SPECIALSTOCK T
+          WHERE T.PK_ID = I_PK_ID;
+    END IF;
+
+    COMMIT;
+
+      -------------------------------------------------------------
+    O_RETURN_CODE := 0; O_RETURN_MSG := '执行成功';
+    -- ============================================================================
+      -- 错误处理部分
+      -- ============================================================================
+
+    EXCEPTION
+    WHEN OTHERS THEN O_RETURN_CODE := SQLCODE; O_RETURN_MSG := O_RETURN_MSG || SQLERRM; ROLLBACK; V_ERROR_MSG := O_RETURN_MSG; V_ERROR_CODE := O_RETURN_CODE; WOLF.P_ERROR_LOG('admin', -- '操作人';
+    V_OP_OBJECT, -- '操作对象';
+    V_ERROR_CODE, --'错误代码';
+    V_ERROR_MSG, -- '错误信息';
+     '', '', O_RETURN_MSG, --返回信息
+    O_RETURN_CODE --返回值 0 成功必须返回；-1 失败
+    );
+    END;
+
+expected_end_delimiter: ;

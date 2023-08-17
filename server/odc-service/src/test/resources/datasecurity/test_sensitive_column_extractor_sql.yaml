@@ -1,0 +1,480 @@
+mysql:
+  select-star: |-
+    SELECT
+      *
+    FROM
+      test_data_masking_1;
+  select-column: |-
+    SELECT
+      gaoda_test_data.test_data_masking_1.*
+    FROM
+      gaoda_test_data.test_data_masking_1;
+  select-const: |-
+    SELECT 1;
+  select-function: |-
+    SELECT
+      CONCAT(t1.id, name)
+    FROM
+      test_data_masking_1 t1;
+  select-function-interval: |-
+    SELECT
+      ADDDATE(birthday, INTERVAL 31 DAY)
+    FROM
+      test_data_masking_1;
+  select-related-select-body: |-
+    SELECT
+      id,
+      (
+        SELECT
+          t1.name + id
+        FROM
+          test_data_masking_2
+        LIMIT
+          1
+      ) AS subquery
+    FROM
+      test_data_masking_1 t1;
+  select-compound: |-
+    SELECT
+      id + name
+    FROM
+      test_data_masking_1;
+  select-compound-negative-const: |-
+    SELECT
+      -1
+    FROM
+      dual;
+  select-compound-alias: |-
+    SELECT
+      id + name AS id_name
+    FROM
+      test_data_masking_1;
+  select-compound-subquery: |-
+    SELECT
+      id in (
+        SELECT
+          id
+        FROM
+          test_data_masking_1
+      ) AS id
+    FROM
+      test_data_masking_2;
+  select-compound-collection: |-
+    SELECT
+      id in (1, 2, 3, 4, 5) AS id
+    FROM
+      test_data_masking_2;
+  select-case-when-value: |-
+    SELECT
+      CASE id
+      WHEN 36 THEN 111
+      WHEN 157 THEN 222
+      ELSE -1
+    END
+      AS case_when_value_id
+    FROM
+      test_data_masking_1
+    ORDER BY
+      case_when_value_id DESC;
+  select-case-when-condition: |-
+    SELECT
+      CASE
+      WHEN id < 1000 THEN 111
+      WHEN id < 10000 THEN 222
+      ELSE -1
+    END
+      AS case_when_condition_id
+    FROM
+      test_data_masking_1
+  select-subquery: |-
+    SELECT
+      (
+        SELECT
+          id
+        FROM
+          test_data_masking_1 t1
+        LIMIT
+          1
+      ) > 100 AS subquery
+    FROM
+      dual;
+  select-multi-associated-subquery: |- # pretty hard
+    SELECT
+      CONCAT(
+        name,
+        ' - ',
+        (
+          SELECT
+            CONCAT(
+              t2.salary,
+              ' - ',
+              (
+                SELECT
+                  /* 
+                  这里需要注意列匹配顺序：从最里层到最外层逐次匹配
+                  1. 虽然 test_data_masking_2 和 test_data_masking_3 都有 id 字段且别名都叫 t2，但是这里的 t2.id 取值是 test_data_masking_3.id；
+                  2. level 字段只在 test_data_masking_3 存在，因此取值是 test_data_masking_3.level；
+                  3. t1.name 唯一确定是 test_data_masking_1.name;
+                  4. name 按从内到外顺序，匹配的是 test_data_masking_3.name
+                  */
+                  CONCAT(t2.id, level, ' - ', t1.name, ' - ', name)
+                FROM
+                  test_data_masking_3 t2
+                LIMIT
+                  1
+              )
+            )
+          FROM
+            test_data_masking_2 t2
+          LIMIT
+            1
+        )
+      ) AS output
+    FROM
+      test_data_masking_1 t1;
+  from-dual: |-
+    SELECT
+      1 alias
+    FROM
+      dual;
+  from-single-table-alias: |-
+    SELECT
+      *
+    FROM
+      test_data_masking_1 AS t1;
+  from-multi-table: |-
+    SELECT
+      *
+    FROM
+      test_data_masking_1,
+      test_data_masking_2,
+      test_data_masking_3;
+  from-multi-table-alias: |-
+    SELECT
+      *
+    FROM
+      test_data_masking_1 t1,
+      test_data_masking_2 t2,
+      test_data_masking_3;
+  from-join-table: |-
+    SELECT
+      *
+    FROM
+      test_data_masking_1 AS t1
+      JOIN test_data_masking_2 AS t2;
+  from-join-table-on: |-
+    SELECT
+      *
+    FROM
+      test_data_masking_1 AS t1
+      JOIN test_data_masking_2 AS t2 ON t1.id = t2.id;
+  from-join-table-using: |-
+    SELECT
+      *
+    FROM
+      test_data_masking_1 AS t1
+      JOIN test_data_masking_2 AS t2 USING (id, name);
+  from-natural-join-table: |-
+    SELECT
+      *
+    FROM
+      test_data_masking_1 AS t1 NATURAL
+      JOIN test_data_masking_2 AS t2;
+  from-single-subquery: |-
+    SELECT
+      *
+    FROM
+      (
+        SELECT
+          id,
+          name
+        FROM
+          test_data_masking_1 t1
+      ) AS t2;
+  from-multi-nesting-subquery: |-
+    SELECT
+      *
+    FROM
+      (
+        SELECT
+          id
+        FROM
+          (
+            SELECT
+              id,
+              name
+            FROM
+              test_data_masking_1 t1
+          ) AS t2
+      ) AS t3;
+  where-single-condition: |-
+    SELECT
+      *
+    FROM
+      test_data_masking_1
+    WHERE
+      id > 100;
+  where-multi-condition: |-
+    SELECT
+      *
+    FROM
+      test_data_masking_1 t1
+    WHERE
+      1 = 1
+      AND 1 + 2 = 3
+      OR birthday BETWEEN '2000-01-01' AND '2022-12-31'
+      AND description LIKE '%and%';
+  where-nesting-select: |-
+    SELECT
+      *
+    FROM
+      test_data_masking_1 t1
+    WHERE
+      t.id = (
+        SELECT
+          id
+        FROM
+          test_data_masking_2
+        LIMIT
+          1
+      )
+      OR t.name IN (
+        SELECT
+          name
+        FROM
+          test_data_masking_2
+      );
+  order-by: |-
+    SELECT
+      *
+    FROM
+      test_data_masking_1 t1
+    ORDER BY
+      t.birthday;
+  limit: |-
+    SELECT
+      *
+    FROM
+      test_data_masking_1 t1
+    LIMIT 3;
+  group-by-having: |-
+    SELECT
+      *
+    FROM
+      test_data_masking_1 t1
+    WHERE
+      t1.id > 0
+    GROUP BY
+      t1.id
+    HAVING
+      t1.id > 10;
+  union-two-tables: |-
+    SELECT
+      id AS id1,
+      name
+    FROM
+      test_data_masking_1
+    UNION ALL
+    SELECT
+      id,
+      name
+    FROM
+      test_data_masking_2
+  union-multi-tables: |-
+    SELECT
+      id AS id2,
+      name
+    FROM
+      test_data_masking_1
+    UNION ALL
+    SELECT
+      id,
+      salary
+    FROM
+      test_data_masking_2
+    UNION DISTINCT
+    SELECT
+      id,
+      level
+    FROM
+      test_data_masking_3;
+  cte-single-table: |-
+    WITH t1 AS (
+      SELECT
+        *
+      FROM
+        test_data_masking_1
+    )
+    SELECT
+      name
+    FROM
+      t1;
+  cte-single-table-alias: |-
+    WITH t1(id1, name1, birthday1, description1) AS (
+      SELECT
+        *
+      FROM
+        test_data_masking_1
+    )
+    SELECT
+      *
+    FROM
+      t1;
+  cte-multi-tables: |-
+    WITH t1 AS (
+      SELECT
+        *
+      FROM
+        test_data_masking_1
+    ),
+    t2 AS (
+      SELECT
+        *
+      FROM
+        test_data_masking_2
+    )
+    SELECT
+      *
+    FROM
+      t1,
+      t2;
+  cte-multi-associated-tables: |-
+    WITH t1 AS (
+      SELECT
+        *
+      FROM
+        test_data_masking_1
+    ),
+    t2 AS (
+      SELECT
+        *
+      FROM
+        t1
+    )
+    SELECT
+      *
+    FROM
+      t2;
+  cte-nesting-sub-cte: |-
+    WITH cte AS (
+      WITH sub_cte AS (
+        SELECT
+          id,
+          name
+        FROM
+          test_data_masking_1
+      )
+      SELECT
+        *
+      FROM
+        sub_cte
+    )
+    SELECT
+      *
+    FROM
+      cte;
+  cte-recursive-multi-tables: |-
+    WITH RECURSIVE cte(id1, name1) AS (
+      SELECT
+        id,
+        name
+      FROM
+        test_data_masking_1
+      UNION ALL
+      SELECT
+        id,
+        name
+      FROM
+        test_data_masking_2
+      UNION ALL
+      SELECT
+        id1 + 1,
+        name1
+      FROM
+        cte
+    )
+    SELECT
+      *
+    FROM
+      cte;
+  cte-recursive-column-transfer: |-
+    WITH RECURSIVE cte(c1, c2, c3) AS (
+      SELECT
+        id,
+        name,
+        description
+      FROM
+        test_data_masking_1
+      LIMIT
+        1
+      UNION ALL
+      SELECT
+        c1,
+        CONCAT(c1, c2),
+        CONCAT(c2, c3)
+      FROM
+        cte, test_data_masking_1
+    )
+    SELECT
+      *
+    FROM
+      cte
+    LIMIT
+      10;
+  cte-recursive-nesting-sub-cte: |-
+    WITH RECURSIVE cte(id, name) AS (
+      WITH RECURSIVE sub_cte(id, name) AS (
+        SELECT
+          id,
+          name
+        FROM
+          test_data_masking_1
+        LIMIT
+          2
+        UNION ALL
+        SELECT
+          id + 1,
+          CONCAT(id, name)
+        FROM
+          sub_cte
+      )
+      SELECT
+        *
+      FROM
+        sub_cte
+      LIMIT
+        2
+      UNION ALL
+      SELECT
+        id + 1,
+        name
+      FROM
+        cte
+    )
+    SELECT
+      *
+    FROM
+      cte
+    LIMIT
+      10
+oracle:
+  select-star: |-
+    SELECT
+      *
+    FROM
+      TEST_DATA_MASKING_1;
+  select-column: |-
+    SELECT
+      GAODA.TEST_DATA_MASKING_1.*
+    FROM
+      GAODA.TEST_DATA_MASKING_1;
+  select-rowid: |-
+    SELECT
+      ROWID
+    FROM
+      TEST_DATA_MASKING_1;
+  select-compound: |-
+    SELECT
+      ID + NAME
+    FROM
+      TEST_DATA_MASKING_1;

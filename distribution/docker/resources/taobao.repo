@@ -1,0 +1,82 @@
+##Created by taobao-repo-utils
+
+[taobao.7.i386.stable]
+name=Taobao Packages - For RHEL - i386 - stable Branch
+baseurl=http://yum.tbsite.net/taobao/7/i386/stable
+enabled=0
+skip_if_unavailable=True
+gpgcheck=0
+gpgkey=http://yum.tbsite.net/taobao/RPM-GPG-KEY-taobao
+
+
+[taobao.7.i386.current]
+name=Taobao Packages - For RHEL - i386 - current Branch
+baseurl=http://yum.tbsite.net/taobao/7/i386/current
+enabled=0
+skip_if_unavailable=True
+gpgcheck=0
+gpgkey=http://yum.tbsite.net/taobao/RPM-GPG-KEY-taobao
+
+
+[taobao.7.i386.test]
+name=Taobao Packages - For RHEL - i386 - test Branch
+baseurl=http://yum.tbsite.net/taobao/7/i386/test
+enabled=0
+skip_if_unavailable=True
+gpgcheck=0
+gpgkey=http://yum.tbsite.net/taobao/RPM-GPG-KEY-taobao
+
+
+[taobao.7.x86_64.stable]
+name=Taobao Packages - For RHEL - x86_64 - stable Branch
+baseurl=http://yum.tbsite.net/taobao/7/x86_64/stable
+enabled=1
+skip_if_unavailable=True
+gpgcheck=0
+gpgkey=http://yum.tbsite.net/taobao/RPM-GPG-KEY-taobao
+
+
+[taobao.7.x86_64.current]
+name=Taobao Packages - For RHEL - x86_64 - current Branch
+baseurl=http://yum.tbsite.net/taobao/7/x86_64/current
+enabled=0
+skip_if_unavailable=True
+gpgcheck=0
+gpgkey=http://yum.tbsite.net/taobao/RPM-GPG-KEY-taobao
+
+
+[taobao.7.x86_64.test]
+name=Taobao Packages - For RHEL - x86_64 - test Branch
+baseurl=http://yum.tbsite.net/taobao/7/x86_64/test
+enabled=0
+skip_if_unavailable=True
+gpgcheck=0
+gpgkey=http://yum.tbsite.net/taobao/RPM-GPG-KEY-taobao
+
+
+[taobao.7.noarch.stable]
+name=Taobao Packages - For RHEL - noarch - stable Branch
+baseurl=http://yum.tbsite.net/taobao/7/noarch/stable
+enabled=1
+skip_if_unavailable=True
+gpgcheck=0
+gpgkey=http://yum.tbsite.net/taobao/RPM-GPG-KEY-taobao
+
+
+[taobao.7.noarch.current]
+name=Taobao Packages - For RHEL - noarch - current Branch
+baseurl=http://yum.tbsite.net/taobao/7/noarch/current
+enabled=1
+skip_if_unavailable=True
+gpgcheck=0
+gpgkey=http://yum.tbsite.net/taobao/RPM-GPG-KEY-taobao
+
+
+[taobao.7.noarch.test]
+name=Taobao Packages - For RHEL - noarch - test Branch
+baseurl=http://yum.tbsite.net/taobao/7/noarch/test
+enabled=0
+skip_if_unavailable=True
+gpgcheck=0
+gpgkey=http://yum.tbsite.net/taobao/RPM-GPG-KEY-taobao
+

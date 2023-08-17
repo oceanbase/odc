@@ -1,0 +1,22 @@
+# This is a template for integrating  SQL interceptor system.
+http:
+  connectTimeoutSeconds: 5
+  socketTimeoutSeconds: 30
+api:
+  check:
+    method: POST
+    url: http://localhost:18989/check
+    headers:
+      Content-Type: application/json;charset=UTF-8
+      Accept: application/json
+    body:
+      type: RAW
+      content: |-
+        {"sql":"${sql_content}"}
+    queryParameters: ~
+    requestEncrypted: false
+    requestSuccessExpression: "[resultCode]==0"
+    inWhiteListExpression: "[checkResult]>=3"
+    inBlackListExpression: "[checkResult]==1"
+    needReviewExpression: "[checkResult]==2"
+    responseEncrypted: false

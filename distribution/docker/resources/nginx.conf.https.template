@@ -1,0 +1,112 @@
+# Nginx conf template for https deployment
+# For more information on configuration, see:
+#   * Official English Documentation: http://nginx.org/en/docs/
+
+user nginx;
+worker_processes auto;
+error_log /var/log/nginx/error.log;
+pid /run/nginx.pid;
+
+# Load dynamic modules. See /usr/share/doc/nginx/README.dynamic.
+include /usr/share/nginx/modules/*.conf;
+
+events {
+    worker_connections 1024;
+}
+
+http {
+    log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+                      '$status $body_bytes_sent "$http_referer" '
+                      '"$http_user_agent" "$http_x_forwarded_for"';
+
+    access_log  /var/log/nginx/access.log  main;
+
+    sendfile            on;
+    tcp_nopush          on;
+    tcp_nodelay         on;
+    keepalive_timeout   65;
+    types_hash_max_size 2048;
+
+    #set 0 to disable request body size check, for support large size file upload
+    client_max_body_size 0;
+
+    include             /etc/nginx/mime.types;
+    default_type        application/octet-stream;
+
+    # for websocket configuration
+    map $http_upgrade $connection_upgrade {
+        default upgrade;
+        '' close;
+    }
+
+    # load balancing configuration
+    # notice under_score character are not allowed for upsteram name, 400 Bad Request happens if used
+    # please use ip_hash strategy
+    # one server line for each odc-server node
+    upstream odcbackends {
+      ip_hash;
+      # PLEASE CHANGE to real odc-server address
+      # 请修改为实际的 odc-server 地址（非必改内容）
+      server 127.0.0.1:8989;
+      #add more servers here
+    }
+
+    # redirect http to https
+    server {
+        listen 80 default_server;
+
+        # uncomment below if ipv6 enabled
+        # 如启用 ipv6，请取消以下注释
+        #listen [::]:80 default_server;
+
+        location / {
+            return 301 https://$host$request_uri;
+        }
+    }
+
+    # https server, proxy to odc-server 8989 port
+    server {
+        listen 443 ssl http2;
+        # uncomment below if ipv6 enabled
+        # 如启用 ipv6，请取消以下注释
+        #listen [::]:443 ssl http2;
+
+        # PLEASE CHANGE to your site domain
+        # 请修改为实际的站点域名（非必改内容）
+        server_name  odc.oceanbase.com;
+
+        # you can use /opt/odc/bin/generate-odc-ssl-certificate.sh
+        # to generate self certificated SSL certificates
+        # 您可以使用 /opt/odc/bin/generate-odc-ssl-certificate.sh 生成自签证书
+
+        # PLEASE CHANGE certificate file location if unmatched
+        # 如不匹配，请修改证书文件路径
+        ssl_certificate /etc/pki/nginx/odcserver.crt;
+        ssl_certificate_key /etc/pki/nginx/odcserver.key;
+        ssl_session_timeout 1d;
+        ssl_session_cache shared:MozSSL:10m;  # about 40000 sessions
+        ssl_session_tickets off;
+
+        # intermediate configuration
+        ssl_protocols TLSv1.2 TLSv1.3;
+        ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384;
+        ssl_prefer_server_ciphers off;
+
+        # HSTS (ngx_http_headers_module is required) (63072000 seconds)
+        add_header Strict-Transport-Security "max-age=63072000" always;
+
+        location / {
+            proxy_pass http://odcbackends;
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection "upgrade";
+            proxy_set_header X-Forwarded-Host $host;
+            proxy_set_header X-Forwarded-For  $proxy_add_x_forwarded_for;
+            proxy_read_timeout 1800;
+            proxy_send_timeout 1800;
+            proxy_connect_timeout 75;
+            proxy_next_upstream off;
+        }
+    }
+
+}

@@ -1,0 +1,17 @@
+#
+# git pre hook scan ignore configuration
+#
+
+#AES256SALT_BASE64 encryption type
+server/odc-migrate/src/main/resources/migrate/common/V_2_4_1__add_task_info_and_lock.sql
+
+#Trunc function call in sample procedure
+server/integration-test/src/test/resources/parser/packages/qa/PKG_TEMPALTE_DEF-schema.sql
+
+#oceanbase grammer definition, antlr g4
+libs/ob-sql-parser/src/main/resources/oboracle/sql/OBParser.g4
+libs/ob-sql-parser/src/main/resources/obmysql/sql/OBParser.g4
+libs/ob-sql-parser/src/main/resources/oracle/PlSqlParser.g4
+
+#sample pem for unit testing
+server/integration-test/src/test/resources/ssl/ca.pem

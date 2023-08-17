@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC
+        "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.oceanbase.odc.metadb.snippet.SnippetsDAO">
+    <sql id="sqlColumns">
+        `id` as id, `user_id` as userId,`prefix` as prefix, `body` as body, `description` as description, `type` as type,
+        `create_time` as createTime, `modify_time` as modifyTime
+    </sql>
+
+    <sql id="table_field">
+        `user_id`, `prefix`, `body`, `description`, `type`, `create_time`, `modify_time`
+    </sql>
+
+    <sql id="insert_field">
+        #{userId}, #{prefix}, #{body}, #{description}, #{type}, now(), now()
+    </sql>
+
+    <sql id="update_field">
+        `prefix` = #{prefix},
+        `body` = #{body},
+        `description` = #{description},
+        `type` = #{type},
+        `modify_time`= now()
+    </sql>
+
+    <sql id="table_name">
+        `odc_snippet`
+    </sql>
+
+    <select id="list" resultType="com.oceanbase.odc.service.snippet.Snippet" parameterType="java.lang.Long">
+        SELECT
+        <include refid="sqlColumns"/>
+        FROM
+        <include refid="table_name"/>
+        WHERE `user_id` = #{userId}
+        ORDER BY create_time desc
+    </select>
+
+    <select id="get" resultType="com.oceanbase.odc.service.snippet.Snippet" parameterType="java.lang.Long">
+        SELECT
+        <include refid="sqlColumns"/>
+        FROM
+        <include refid="table_name"/>
+        WHERE `id` = #{id}
+    </select>
+
+    <insert id="insert" parameterType="com.oceanbase.odc.service.snippet.Snippet" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO
+        <include refid="table_name"/>
+        (
+        <include refid="table_field"/>
+        )
+        VALUES
+        (
+        <include refid="insert_field"/>
+        )
+    </insert>
+
+    <select id="queryByUserIdAndName" parameterType="com.oceanbase.odc.service.snippet.Snippet"
+            resultType="com.oceanbase.odc.service.snippet.Snippet">
+        SELECT
+        <include refid="sqlColumns"/>
+        FROM
+        <include refid="table_name"/>
+        WHERE `user_id` = #{userId}
+        AND `prefix` = #{prefix}
+    </select>
+
+    <update id="update" parameterType="com.oceanbase.odc.service.snippet.Snippet">
+        UPDATE
+        <include refid="table_name"/>
+        SET
+        <include refid="update_field"/>
+        WHERE `id` = #{id}
+    </update>
+
+    <delete id="delete" parameterType="java.lang.Long">
+        DELETE FROM
+        <include refid="table_name"/>
+        WHERE `id` = #{id}
+    </delete>
+
+    <delete id="deleteAll">
+        DELETE FROM
+        <include refid="table_name"/>
+        WHERE 1=1
+    </delete>
+
+</mapper>
