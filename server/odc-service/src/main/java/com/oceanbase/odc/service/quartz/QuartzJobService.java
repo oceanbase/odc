@@ -24,16 +24,13 @@ import org.quartz.JobBuilder;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
 import org.quartz.JobKey;
-import org.quartz.Matcher;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.SimpleScheduleBuilder;
 import org.quartz.Trigger;
 import org.quartz.TriggerBuilder;
 import org.quartz.TriggerKey;
-import org.quartz.TriggerListener;
 import org.quartz.UnableToInterruptJobException;
-import org.quartz.impl.matchers.KeyMatcher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -43,6 +40,7 @@ import com.oceanbase.odc.service.quartz.executor.QuartzJob;
 import com.oceanbase.odc.service.quartz.model.MisfireStrategy;
 import com.oceanbase.odc.service.quartz.util.QuartzCronExpressionUtils;
 import com.oceanbase.odc.service.schedule.model.CreateQuartzJobReq;
+import com.oceanbase.odc.service.schedule.model.JobType;
 import com.oceanbase.odc.service.schedule.model.QuartzKeyGenerator;
 import com.oceanbase.odc.service.schedule.model.TriggerConfig;
 
@@ -149,13 +147,20 @@ public class QuartzJobService {
         return scheduler.getTrigger(key);
     }
 
-    /**
-     * TODO 看起来是 yaobin 专门写给单测用的，后面优化
-     */
-    public void addTriggerListener(TriggerKey key, TriggerListener triggerListener) throws SchedulerException {
-        Matcher<TriggerKey> matcher = KeyMatcher.keyEquals(key);
-        scheduler.getListenerManager().addTriggerListener(triggerListener, matcher);
-        scheduler.getListenerManager().removeJobListener("ODC_JOB_LISTENER");
+    public CreateQuartzJobReq getQuartzJobReqOfJob(JobKey key) throws SchedulerException {
+        JobDetail jobDetail = scheduler.getJobDetail(key);
+        CreateQuartzJobReq req = new CreateQuartzJobReq();
+        req.setJobDataMap(jobDetail.getJobDataMap());
+        req.setType(JobType.valueOf(key.getGroup()));
+        req.setScheduleId(Long.parseLong(key.getName()));
+        return req;
+    }
+
+    public void updateJob(CreateQuartzJobReq req) throws SchedulerException {
+        JobKey jobKey = QuartzKeyGenerator.generateJobKey(req.getScheduleId(), req.getType());
+        JobDetail jobDetail = JobBuilder.newJob(QuartzJob.class).withIdentity(jobKey)
+                .usingJobData(req.getJobDataMap()).build();
+        scheduler.addJob(jobDetail, true, true);
     }
 
     public void triggerJob(JobKey key) throws SchedulerException {

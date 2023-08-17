@@ -38,9 +38,9 @@ import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.onlineschemachange.OnlineSchemaChangeContextHolder;
 import com.oceanbase.odc.service.onlineschemachange.configuration.OnlineSchemaChangeProperties;
+import com.oceanbase.odc.service.onlineschemachange.exception.OmsException;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeScheduleTaskParameters;
 import com.oceanbase.odc.service.onlineschemachange.oms.enums.OmsOceanBaseType;
-import com.oceanbase.odc.service.onlineschemachange.oms.exception.OmsException;
 import com.oceanbase.odc.service.onlineschemachange.oms.openapi.DataSourceOpenApiService;
 import com.oceanbase.odc.service.onlineschemachange.oms.openapi.ProjectOpenApiService;
 import com.oceanbase.odc.service.onlineschemachange.oms.request.CommonTransferConfig;
@@ -84,8 +84,8 @@ public abstract class BaseCreateOmsProjectValve extends BaseValve {
     @Autowired
     protected OnlineSchemaChangeProperties oscProperties;
 
-    @Value("${check-osc-task-cron-expression:0/10 * * * * ?}")
-    private String checkOscTaskCronExpression;
+    @Value("${osc-check-task-cron-expression:0/10 * * * * ?}")
+    private String oscCheckTaskCronExpression;
 
     @Override
     public void invoke(ValveContext valveContext) {
@@ -130,6 +130,10 @@ public abstract class BaseCreateOmsProjectValve extends BaseValve {
         JobKey jobKey = QuartzKeyGenerator.generateJobKey(scheduleId, JobType.ONLINE_SCHEMA_CHANGE_COMPLETE);
         try {
             if (quartzJobService.checkExists(jobKey)) {
+                // update quartz current schedule task id
+                CreateQuartzJobReq req = quartzJobService.getQuartzJobReqOfJob(jobKey);
+                req.getJobDataMap().put(OdcConstants.SCHEDULE_TASK_ID, scheduleTaskId);
+                quartzJobService.updateJob(req);
                 return;
             }
         } catch (SchedulerException e) {
@@ -141,10 +145,11 @@ public abstract class BaseCreateOmsProjectValve extends BaseValve {
         createQuartzJobReq.setType(JobType.ONLINE_SCHEMA_CHANGE_COMPLETE);
         TriggerConfig config = new TriggerConfig();
         config.setTriggerStrategy(TriggerStrategy.CRON);
-        config.setCronExpression(checkOscTaskCronExpression);
+        config.setCronExpression(oscCheckTaskCronExpression);
         createQuartzJobReq.setTriggerConfig(config);
         JobDataMap jobDataMap = ScheduleTaskUtils.buildTriggerDataMap(scheduleTaskId);
         jobDataMap.put(OdcConstants.SCHEDULE_ID, scheduleId);
+        jobDataMap.put(OdcConstants.SCHEDULE_TASK_ID, scheduleTaskId);
         jobDataMap.put(OdcConstants.CREATOR_ID, OnlineSchemaChangeContextHolder.get(TASK_WORK_SPACE));
         jobDataMap.put(OdcConstants.FLOW_TASK_ID, OnlineSchemaChangeContextHolder.get(TASK_ID));
         jobDataMap.put(OdcConstants.ORGANIZATION_ID, OnlineSchemaChangeContextHolder.get(OdcConstants.ORGANIZATION_ID));
@@ -219,7 +224,6 @@ public abstract class BaseCreateOmsProjectValve extends BaseValve {
     protected abstract void doCreateDataSourceRequest(ConnectionConfig config,
             ConnectionSession connectionSession, OnlineSchemaChangeScheduleTaskParameters oscScheduleTaskParameters,
             CreateOceanBaseDataSourceRequest request);
-
 
     protected abstract String reCreateDataSourceRequestAfterThrowsException(
             OnlineSchemaChangeScheduleTaskParameters oscScheduleTaskParameters,

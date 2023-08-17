@@ -24,17 +24,18 @@ import org.springframework.stereotype.Component;
 import com.google.common.collect.Lists;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.tableformat.Table;
+import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
 import com.oceanbase.odc.service.onlineschemachange.configuration.OnlineSchemaChangeProperties;
+import com.oceanbase.odc.service.onlineschemachange.exception.OscException;
 import com.oceanbase.odc.service.onlineschemachange.logger.DefaultTableFactory;
 import com.oceanbase.odc.service.onlineschemachange.model.FullVerificationResult;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeScheduleTaskParameters;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeScheduleTaskResult;
 import com.oceanbase.odc.service.onlineschemachange.model.PrecheckResult;
 import com.oceanbase.odc.service.onlineschemachange.oms.enums.OmsStepName;
-import com.oceanbase.odc.service.onlineschemachange.oms.exception.OmsException;
 import com.oceanbase.odc.service.onlineschemachange.oms.openapi.ProjectOpenApiService;
 import com.oceanbase.odc.service.onlineschemachange.oms.request.ListProjectFullVerifyResultRequest;
 import com.oceanbase.odc.service.onlineschemachange.oms.request.ProjectControlRequest;
@@ -84,6 +85,10 @@ public class ScheduleCheckOmsProjectValve extends BaseValve {
                 onlineSchemaChangeProperties.isEnableFullVerify())
                         .withCheckerVerifyResult(() -> listProjectFullVerifyResult(taskParameter.getOmsProjectId(),
                                 taskParameter.getDatabaseName(), taskParameter.getUid()))
+                        .withResumeProject(() -> {
+                            projectOpenApiService.resumeProject(projectRequest);
+                            return null;
+                        })
                         .getCheckerResult();
 
         OnlineSchemaChangeScheduleTaskResult result = new OnlineSchemaChangeScheduleTaskResult(taskParameter);
@@ -97,34 +102,27 @@ public class ScheduleCheckOmsProjectValve extends BaseValve {
 
     private void handleOmsProjectStepResult(ValveContext valveContext, ProjectStepResult projectStepResult,
             List<ProjectStepVO> projectSteps) {
-        if (!projectStepResult.isTaskCompleted()) {
-            return;
-        }
-        if (projectStepResult.getFullVerificationResult() == FullVerificationResult.CONSISTENT ||
-                projectStepResult.getFullVerificationResult() == FullVerificationResult.UNCHECK) {
+
+        if (projectStepResult.getTaskStatus() == TaskStatus.DONE
+                && (projectStepResult.getFullVerificationResult() == FullVerificationResult.CONSISTENT ||
+                        projectStepResult.getFullVerificationResult() == FullVerificationResult.UNCHECK)) {
             getNext().invoke(valveContext);
         } else {
-            handleFailedResult(projectStepResult, projectSteps);
+            ContinueHandleProjectStepResult(projectStepResult, projectSteps);
         }
     }
 
-    private void handleFailedResult(ProjectStepResult projectStepResult, List<ProjectStepVO> projectSteps) {
+    private void ContinueHandleProjectStepResult(ProjectStepResult projectStepResult,
+            List<ProjectStepVO> projectSteps) {
         if (CollectionUtils.isNotEmpty(projectSteps)) {
             log.warn("Oms project exec failed, projectStepResult: {}", JsonUtils.toJson(projectSteps));
         }
         if (projectStepResult.getPreCheckResult() == PrecheckResult.FAILED) {
-            throw new OmsException(
-                    "Oms precheck failed: " + projectStepResult.getErrorMsg());
-        } else if (projectStepResult.getTaskStatus() == TaskStatus.FAILED) {
-            throw new OmsException(
-                    "Oms running failed: " + projectStepResult.getErrorMsg());
+            throw new OscException(ErrorCodes.OmsPreCheckFailed, projectStepResult.getErrorMsg());
         } else if (projectStepResult.getFullVerificationResult() == FullVerificationResult.INCONSISTENT) {
-            throw new OmsException(
+            throw new OscException(ErrorCodes.OscDataCheckInconsistent,
                     "Task failed for origin table has inconsistent data with new table, result: "
                             + projectStepResult.getFullVerificationResultDescription());
-        } else {
-            throw new OmsException(
-                    "Unexpected error for oms result: " + projectStepResult);
         }
     }
 

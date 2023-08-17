@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.schedule.job;
 import static com.oceanbase.odc.core.shared.constant.OdcConstants.CREATOR_ID;
 import static com.oceanbase.odc.core.shared.constant.OdcConstants.FLOW_TASK_ID;
 import static com.oceanbase.odc.core.shared.constant.OdcConstants.SCHEDULE_ID;
+import static com.oceanbase.odc.core.shared.constant.OdcConstants.SCHEDULE_TASK_ID;
 
 import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
@@ -45,10 +46,11 @@ public class OnlineSchemaChangeCompleteJob implements OdcJob {
         try {
             log.info("Start execute {}", getClass().getSimpleName());
             Long scheduleId = (Long) context.getMergedJobDataMap().get(SCHEDULE_ID);
+            Long scheduleTaskId = (Long) context.getMergedJobDataMap().get(SCHEDULE_TASK_ID);
 
             OnlineSchemaChangeTaskHandler onlineSchemaChangeTaskHandler =
                     SpringContextUtil.getBean(OnlineSchemaChangeTaskHandler.class);
-            onlineSchemaChangeTaskHandler.complete(scheduleId);
+            onlineSchemaChangeTaskHandler.complete(scheduleId, scheduleTaskId);
         } finally {
             OnlineSchemaChangeContextHolder.clear();
         }

@@ -215,7 +215,7 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
         Optional<ScheduleTaskEntity> runningEntity = scheduleTaskService.listTask(Pageable.unpaged(), scheduleId)
                 .stream().filter(task -> task.getStatus() == TaskStatus.RUNNING)
                 .findFirst();
-        runningEntity.ifPresent(scheduleTask -> taskHandler.terminate(scheduleTask.getId()));
+        runningEntity.ifPresent(scheduleTask -> taskHandler.terminate(scheduleId, scheduleTask.getId()));
         this.status = TaskStatus.CANCELED;
         taskService.cancel(taskId);
         return true;
