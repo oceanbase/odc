@@ -41,13 +41,3 @@ maven 构建 rpm 包过程只是针对后端的，完整的构建需要先构建
 
 ### RPM发布
 正式的 RPM 包基于 AONE 发布，详见 `rpm` 目录。
-
-### ACI流水线自动构建
-
-在ACI流水线配置中，已经定义了 RPM 和 Docker 构建过程，流水线执行完成后，RPM 可以通过 OSS public 链接下载，Docker 镜像则会推送到 阿里云 Docker 仓库。
-
-生成的 docker 镜像为 `docker.io/oceanbase/odc-server`。
-
-ACI 配置文件说明 
-- `.aci.yml` 在代码 Push/PullRequest 时触发，生成 dev/test 产物
-- `build_release_aci.yml`  手工触发，生成 release 产物
