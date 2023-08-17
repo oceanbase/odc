@@ -142,9 +142,9 @@ ODC 桌面版使用 h2database 嵌入式数据库作为 MetaDB，所以您不需
 
 ODC 桌面版安装包下载地址
 
-- Windows 64位版本 [odc-win64-with-jre.dmg](https://ob-front.oss-cn-hangzhou.aliyuncs.com/client/4.2.0/OceanBase%20Developer%20Center%20Setup%204.2.0%20win64jre.exe)
-- MacOS 64位版本 [odc-macos-with-jre.dmg](https://ob-front.oss-cn-hangzhou.aliyuncs.com/client/4.2.0/OceanBase%20Developer%20Center-4.2.0.dmg)
-- Fedora/Ubuntu 64位版本 [TODO](https://ob-front.oss-cn-hangzhou.aliyuncs.com/client/4.2.0/OceanBase%20Developer%20Center-4.2.0.dmg)
+- Windows 64位版本 [odc-win64-with-jre.exe](https://obodc-front.oss-cn-beijing.aliyuncs.com/ODC%204.2.0/OceanBase%20Developer%20Center%20Setup%204.2.0%20win64jre.exe)
+- MacOS 64位版本 [odc-macos-with-jre.dmg](https://obodc-front.oss-cn-beijing.aliyuncs.com/ODC%204.2.0/OceanBase%20Developer%20Center-4.2.0jre.dmg)
+- Fedora/Ubuntu 64位版本 [odc-ubuntu.deb](https://obodc-front.oss-cn-beijing.aliyuncs.com/ODC%204.2.0/OceanBase%20Developer%20Center%20Setup%204.2.0%20amd64.deb)
 
 #### 更多
 
