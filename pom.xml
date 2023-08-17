@@ -43,7 +43,7 @@
         <ob-data-mocker.version>0.1.4</ob-data-mocker.version>
 
         <!-- dependency version -->
-        <springframework.version>5.3.26</springframework.version>
+        <springframework.version>5.3.27</springframework.version>
         <spring-security.version>5.7.5</spring-security.version>
         <spring-security-oauth2-client.version>5.7.5</spring-security-oauth2-client.version>
         <spring-integration.version>5.5.18</spring-integration.version>
