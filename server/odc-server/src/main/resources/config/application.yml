@@ -1,0 +1,66 @@
+spring:
+  main:
+    allow-circular-references: true
+  session:
+    store-type: jdbc
+  aop:
+    proxy-target-class: true
+  mvc:
+    throw-exception-if-no-handler-found: true
+  servlet:
+    multipart:
+      max-file-size: 2048MB
+      max-request-size: 4096MB
+  data:
+    web:
+      pageable:
+        #Spring Data JPA 和 REST分页查询时，设置默认的页码起始值为 1；如果是 false，则起始页码为0
+        one-indexed-parameters: true
+  datasource:
+    type: com.alibaba.druid.pool.DruidDataSource
+    driver-class-name: com.oceanbase.jdbc.Driver
+    url: jdbc:oceanbase://${ODC_DATABASE_HOST}:${ODC_DATABASE_PORT}/${ODC_DATABASE_NAME}?allowMultiQueries=true
+    username: ${ODC_DATABASE_USERNAME}
+    password: ${ODC_DATABASE_PASSWORD}
+    druid:
+      default-auto-commit: true
+      connection-error-retry-attempts: 3
+      time-between-connect-error-millis: 2000
+      fail-fast: true
+      initial-size: 100
+      max-active: 100
+      min-idle: 50
+      max-wait: 10000
+      validation-query: select 1 from dual
+      validation-query-timeout: 10
+      test-while-idle: true
+      keep-alive: true
+      filter:
+        stat:
+          enabled: true
+          slow-sql-millis: 1000
+          log-slow-sql: true
+  jpa:
+    open-in-view: false
+  sql:
+    init:
+      mode: never
+
+server:
+  compression:
+    enabled: true
+  servlet:
+    session:
+      timeout: 8h
+    encoding:
+      charset: UTF-8
+  tomcat:
+    max-threads: 500
+    min-spare-threads: 18
+swagger:
+  enabled: false
+
+jasypt:
+  encryptor:
+    password: ${ODC_PROPERTY_ENCRYPTION_PASSWORD}
+    algorithm: PBEWithHmacSHA512AndAES_128

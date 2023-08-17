@@ -1,0 +1,27 @@
+origin: |-
+  delimiter /
+  create or replace procedure handleCapitalAcco is
+  temp varchar2(4000);
+  begin
+  loop
+  while(length(temp) > 0)
+  loop
+  dbms_output.put_line('a');
+  end loop;
+  end loop;
+  end handleCapitalAcco;
+
+expected:
+  - |-
+    create or replace procedure handleCapitalAcco is
+    temp varchar2(4000);
+    begin
+    loop
+    while(length(temp) > 0)
+    loop
+    dbms_output.put_line('a');
+    end loop;
+    end loop;
+    end handleCapitalAcco;
+
+expected_end_delimiter: /

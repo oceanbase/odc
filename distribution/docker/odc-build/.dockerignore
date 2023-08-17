@@ -1,0 +1,2 @@
+# docker ignore patterns for odc-build docker
+build.sh

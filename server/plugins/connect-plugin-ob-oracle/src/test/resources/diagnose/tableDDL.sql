@@ -1,0 +1,11 @@
+create table t_test_explain(c1 int);
+create table D_PARAM_DICT_LST(DICT_CODE varchar2(100), SUB_DICT_CODE varchar2(100), SUB_DICT_NAME varchar2(100));
+create table CLAIM_CNTR(CLAIM_NO varchar2(100),CLAIM_CNTR_ID varchar2(100), SEQ_NO number, POL_CODE varchar2(100), IPSN_NO varchar2(100), M_CNTR_NO varchar2(100), CNTR_NO varchar2(100), SYS_NO_ORIGINAL varchar2(100), CLAIM_CNTR_PROC_STAT varchar2(100), MGR_BRANCH_NO varchar2(100));
+create table CLAIM_CAL(CLAIM_CAL_ID varchar2(100), CLAIM_CNTR_ID varchar2(100),CPNST_TYPE_CODE varchar2(100), SUB_POL_CODE varchar2(100), COVERAGE_NO varchar2(100), CPNST_CAL_CODE varchar2(100), GIFT_FLAG varchar2(100), CAL_CPNST_PSN_AMNT varchar2(100), CAL_CPNST_AMNT varchar2(100), CFM_CPNST_AMNT varchar2(100), CAL_CPNST_SI_AMNT varchar2(100));
+create table CLAIM_CAL_EXPEN(CLAIM_CAL_ID varchar2(100), RCPT_ID varchar2(100),APPL_AMNT number);
+create table CLAIM_CAL_SUBSIDY(CLAIM_CAL_ID varchar2(100), APPL_SUBSIDY_DAYS number, SUBSIDY_DAYS number);
+create table t_test_exec_detail(c1 int, c2 int);
+create table t_test_get_explain1(c1 int, c2 int);
+create table t_test_get_explain2(c1 int, c2 int);
+insert into t_test_get_explain1 values(1,1);
+insert into t_test_get_explain2 values(1,1);

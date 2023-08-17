@@ -1,0 +1,59 @@
+origin: |-
+  create or replace package Test_Package_Func_Proc
+  as
+   function  test_func  (in_val in number) return number;
+   procedure test_proc (in_val in number);
+  end;
+  /
+
+  create or replace package body Test_Package_Func_Proc
+  as
+  function test_func (in_val in number) return number
+  is
+  begin
+  return in_val;
+  exception
+  when others then
+  RAISE;
+  end;
+  procedure test_proc  (in_val in number)
+  is
+  begin
+  dbms_output.put_line (in_val);
+  exception
+  when others then
+  RAISE;
+  end;
+  end;
+
+
+expected:
+  - |-
+    create or replace package Test_Package_Func_Proc
+    as
+     function  test_func  (in_val in number) return number;
+     procedure test_proc (in_val in number);
+    end;
+
+  - |-
+    create or replace package body Test_Package_Func_Proc
+    as
+    function test_func (in_val in number) return number
+    is
+    begin
+    return in_val;
+    exception
+    when others then
+    RAISE;
+    end;
+    procedure test_proc  (in_val in number)
+    is
+    begin
+    dbms_output.put_line (in_val);
+    exception
+    when others then
+    RAISE;
+    end;
+    end;
+
+expected_end_delimiter: ;

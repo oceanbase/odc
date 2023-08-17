@@ -1,0 +1,478 @@
+kind: resource
+version: v2
+templates:
+  - metadata:
+      allow_duplicate: false
+      table_name: iam_permission
+      unique_keys: ["action", "organization_id", "resource_identifier", "type"]
+    specs:
+      - column_name: id
+        default_value: 1
+        data_type: java.lang.Long
+      - column_name: action
+        value: "read"
+      - column_name: resource_identifier
+        value: "ODC_USER:*"
+      - column_name: organization_id
+        value: ${ORGANIZATION_ID}
+        data_type: java.lang.Long
+      - column_name: type
+        value: "SYSTEM"
+      - column_name: creator_id
+        value: ${CREATOR_ID}
+        data_type: java.lang.Long
+      - column_name: is_builtin
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: description
+        value: "system user permission"
+  - metadata:
+      allow_duplicate: false
+      table_name: iam_permission
+      unique_keys: ["action", "organization_id", "resource_identifier", "type"]
+    specs:
+      - column_name: id
+        default_value: 2
+        data_type: java.lang.Long
+      - column_name: action
+        value: "create"
+      - column_name: resource_identifier
+        value: "ODC_USER:*"
+      - column_name: organization_id
+        value: ${ORGANIZATION_ID}
+        data_type: java.lang.Long
+      - column_name: type
+        value: "SYSTEM"
+      - column_name: creator_id
+        value: ${CREATOR_ID}
+        data_type: java.lang.Long
+      - column_name: is_builtin
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: description
+        value: "system user permission"
+  - metadata:
+      allow_duplicate: false
+      table_name: iam_permission
+      unique_keys: ["action", "organization_id", "resource_identifier", "type"]
+    specs:
+      - column_name: id
+        default_value: 3
+        data_type: java.lang.Long
+      - column_name: action
+        value: "update"
+      - column_name: resource_identifier
+        value: "ODC_USER:*"
+      - column_name: organization_id
+        value: ${ORGANIZATION_ID}
+        data_type: java.lang.Long
+      - column_name: type
+        value: "SYSTEM"
+      - column_name: creator_id
+        value: ${CREATOR_ID}
+        data_type: java.lang.Long
+      - column_name: is_builtin
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: description
+        value: "system user permission"
+  - metadata:
+      allow_duplicate: false
+      table_name: iam_permission
+      unique_keys: ["action", "organization_id", "resource_identifier", "type"]
+    specs:
+      - column_name: id
+        default_value: 4
+        data_type: java.lang.Long
+      - column_name: action
+        value: "delete"
+      - column_name: resource_identifier
+        value: "ODC_USER:*"
+      - column_name: organization_id
+        value: ${ORGANIZATION_ID}
+        data_type: java.lang.Long
+      - column_name: type
+        value: "SYSTEM"
+      - column_name: creator_id
+        value: ${CREATOR_ID}
+        data_type: java.lang.Long
+      - column_name: is_builtin
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: description
+        value: "system user permission"
+  - metadata:
+      allow_duplicate: false
+      table_name: iam_permission
+      unique_keys: ["action", "organization_id", "resource_identifier", "type"]
+    specs:
+      - column_name: id
+        default_value: 5
+        data_type: java.lang.Long
+      - column_name: action
+        value: "read"
+      - column_name: resource_identifier
+        value: "ODC_ROLE:*"
+      - column_name: organization_id
+        value: ${ORGANIZATION_ID}
+        data_type: java.lang.Long
+      - column_name: type
+        value: "SYSTEM"
+      - column_name: creator_id
+        value: ${CREATOR_ID}
+        data_type: java.lang.Long
+      - column_name: is_builtin
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: description
+        value: "system role permission"
+  - metadata:
+      allow_duplicate: false
+      table_name: iam_permission
+      unique_keys: ["action", "organization_id", "resource_identifier", "type"]
+    specs:
+      - column_name: id
+        default_value: 6
+        data_type: java.lang.Long
+      - column_name: action
+        value: "create"
+      - column_name: resource_identifier
+        value: "ODC_ROLE:*"
+      - column_name: organization_id
+        value: ${ORGANIZATION_ID}
+        data_type: java.lang.Long
+      - column_name: type
+        value: "SYSTEM"
+      - column_name: creator_id
+        value: ${CREATOR_ID}
+        data_type: java.lang.Long
+      - column_name: is_builtin
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: description
+        value: "system role permission"
+  - metadata:
+      allow_duplicate: false
+      table_name: iam_permission
+      unique_keys: ["action", "organization_id", "resource_identifier", "type"]
+    specs:
+      - column_name: id
+        default_value: 7
+        data_type: java.lang.Long
+      - column_name: action
+        value: "update"
+      - column_name: resource_identifier
+        value: "ODC_ROLE:*"
+      - column_name: organization_id
+        value: ${ORGANIZATION_ID}
+        data_type: java.lang.Long
+      - column_name: type
+        value: "SYSTEM"
+      - column_name: creator_id
+        value: ${CREATOR_ID}
+        data_type: java.lang.Long
+      - column_name: is_builtin
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: description
+        value: "system role permission"
+  - metadata:
+      allow_duplicate: false
+      table_name: iam_permission
+      unique_keys: ["action", "organization_id", "resource_identifier", "type"]
+    specs:
+      - column_name: id
+        default_value: 8
+        data_type: java.lang.Long
+      - column_name: action
+        value: "delete"
+      - column_name: resource_identifier
+        value: "ODC_ROLE:*"
+      - column_name: organization_id
+        value: ${ORGANIZATION_ID}
+        data_type: java.lang.Long
+      - column_name: type
+        value: "SYSTEM"
+      - column_name: creator_id
+        value: ${CREATOR_ID}
+        data_type: java.lang.Long
+      - column_name: is_builtin
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: description
+        value: "system role permission"
+  - metadata:
+      allow_duplicate: false
+      table_name: iam_permission
+      unique_keys: ["action", "organization_id", "resource_identifier", "type"]
+    specs:
+      - column_name: id
+        default_value: 9
+        data_type: java.lang.Long
+      - column_name: action
+        value: "read"
+      - column_name: resource_identifier
+        value: "ODC_CONNECTION:*"
+      - column_name: organization_id
+        value: ${ORGANIZATION_ID}
+        data_type: java.lang.Long
+      - column_name: type
+        value: "SYSTEM"
+      - column_name: creator_id
+        value: ${CREATOR_ID}
+        data_type: java.lang.Long
+      - column_name: is_builtin
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: description
+        value: "system public_connection permission"
+  - metadata:
+      allow_duplicate: false
+      table_name: iam_permission
+      unique_keys: ["action", "organization_id", "resource_identifier", "type"]
+    specs:
+      - column_name: id
+        default_value: 10
+        data_type: java.lang.Long
+      - column_name: action
+        value: "create"
+      - column_name: resource_identifier
+        value: "ODC_CONNECTION:*"
+      - column_name: organization_id
+        value: ${ORGANIZATION_ID}
+        data_type: java.lang.Long
+      - column_name: type
+        value: "SYSTEM"
+      - column_name: creator_id
+        value: ${CREATOR_ID}
+        data_type: java.lang.Long
+      - column_name: is_builtin
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: description
+        value: "system public_connection permission"
+  - metadata:
+      allow_duplicate: false
+      table_name: iam_permission
+      unique_keys: ["action", "organization_id", "resource_identifier", "type"]
+    specs:
+      - column_name: id
+        default_value: 11
+        data_type: java.lang.Long
+      - column_name: action
+        value: "update"
+      - column_name: resource_identifier
+        value: "ODC_CONNECTION:*"
+      - column_name: organization_id
+        value: ${ORGANIZATION_ID}
+        data_type: java.lang.Long
+      - column_name: type
+        value: "SYSTEM"
+      - column_name: creator_id
+        value: ${CREATOR_ID}
+        data_type: java.lang.Long
+      - column_name: is_builtin
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: description
+        value: "system public_connection permission"
+  - metadata:
+      allow_duplicate: false
+      table_name: iam_permission
+      unique_keys: ["action", "organization_id", "resource_identifier", "type"]
+    specs:
+      - column_name: id
+        default_value: 12
+        data_type: java.lang.Long
+      - column_name: action
+        value: "delete"
+      - column_name: resource_identifier
+        value: "ODC_CONNECTION:*"
+      - column_name: organization_id
+        value: ${ORGANIZATION_ID}
+        data_type: java.lang.Long
+      - column_name: type
+        value: "SYSTEM"
+      - column_name: creator_id
+        value: ${CREATOR_ID}
+        data_type: java.lang.Long
+      - column_name: is_builtin
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: description
+        value: "system public_connection permission"
+  - metadata:
+      allow_duplicate: false
+      table_name: iam_permission
+      unique_keys: ["action", "organization_id", "resource_identifier", "type"]
+    specs:
+      - column_name: id
+        default_value: 13
+        data_type: java.lang.Long
+      - column_name: action
+        value: "read"
+      - column_name: resource_identifier
+        value: "ODC_RESOURCE_GROUP:*"
+      - column_name: organization_id
+        value: ${ORGANIZATION_ID}
+        data_type: java.lang.Long
+      - column_name: type
+        value: "SYSTEM"
+      - column_name: creator_id
+        value: ${CREATOR_ID}
+        data_type: java.lang.Long
+      - column_name: is_builtin
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: description
+        value: "system resource_group permission"
+  - metadata:
+      allow_duplicate: false
+      table_name: iam_permission
+      unique_keys: ["action", "organization_id", "resource_identifier", "type"]
+    specs:
+      - column_name: id
+        default_value: 14
+        data_type: java.lang.Long
+      - column_name: action
+        value: "create"
+      - column_name: resource_identifier
+        value: "ODC_RESOURCE_GROUP:*"
+      - column_name: organization_id
+        value: ${ORGANIZATION_ID}
+        data_type: java.lang.Long
+      - column_name: type
+        value: "SYSTEM"
+      - column_name: creator_id
+        value: ${CREATOR_ID}
+        data_type: java.lang.Long
+      - column_name: is_builtin
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: description
+        value: "system resource_group permission"
+  - metadata:
+      allow_duplicate: false
+      table_name: iam_permission
+      unique_keys: ["action", "organization_id", "resource_identifier", "type"]
+    specs:
+      - column_name: id
+        default_value: 15
+        data_type: java.lang.Long
+      - column_name: action
+        value: "update"
+      - column_name: resource_identifier
+        value: "ODC_RESOURCE_GROUP:*"
+      - column_name: organization_id
+        value: ${ORGANIZATION_ID}
+        data_type: java.lang.Long
+      - column_name: type
+        value: "SYSTEM"
+      - column_name: creator_id
+        value: ${CREATOR_ID}
+        data_type: java.lang.Long
+      - column_name: is_builtin
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: description
+        value: "system resource_group permission"
+  - metadata:
+      allow_duplicate: false
+      table_name: iam_permission
+      unique_keys: ["action", "organization_id", "resource_identifier", "type"]
+    specs:
+      - column_name: id
+        default_value: 16
+        data_type: java.lang.Long
+      - column_name: action
+        value: "delete"
+      - column_name: resource_identifier
+        value: "ODC_RESOURCE_GROUP:*"
+      - column_name: organization_id
+        value: ${ORGANIZATION_ID}
+        data_type: java.lang.Long
+      - column_name: type
+        value: "SYSTEM"
+      - column_name: creator_id
+        value: ${CREATOR_ID}
+        data_type: java.lang.Long
+      - column_name: is_builtin
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: description
+        value: "system resource_group permission"
+  - metadata:
+      allow_duplicate: false
+      table_name: iam_permission
+      unique_keys: ["action", "organization_id", "resource_identifier", "type"]
+    specs:
+      - column_name: id
+        default_value: 17
+        data_type: java.lang.Long
+      - column_name: action
+        value: "read"
+      - column_name: resource_identifier
+        value: "ODC_SYSTEM_CONFIG:*"
+      - column_name: organization_id
+        value: ${ORGANIZATION_ID}
+        data_type: java.lang.Long
+      - column_name: type
+        value: "SYSTEM"
+      - column_name: creator_id
+        value: ${CREATOR_ID}
+        data_type: java.lang.Long
+      - column_name: is_builtin
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: description
+        value: "system system_config permission"
+  - metadata:
+      allow_duplicate: false
+      table_name: iam_permission
+      unique_keys: ["action", "organization_id", "resource_identifier", "type"]
+    specs:
+      - column_name: id
+        default_value: 18
+        data_type: java.lang.Long
+      - column_name: action
+        value: "update"
+      - column_name: resource_identifier
+        value: "ODC_SYSTEM_CONFIG:*"
+      - column_name: organization_id
+        value: ${ORGANIZATION_ID}
+        data_type: java.lang.Long
+      - column_name: type
+        value: "SYSTEM"
+      - column_name: creator_id
+        value: ${CREATOR_ID}
+        data_type: java.lang.Long
+      - column_name: is_builtin
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: description
+        value: "system system_config permission"
+  - metadata:
+      allow_duplicate: false
+      table_name: iam_permission
+      unique_keys: ["action", "organization_id", "resource_identifier", "type"]
+    specs:
+      - column_name: id
+        default_value: 19
+        data_type: java.lang.Long
+      - column_name: action
+        value: "connect"
+      - column_name: resource_identifier
+        value: "ODC_CONNECTION:*"
+      - column_name: organization_id
+        value: ${ORGANIZATION_ID}
+        data_type: java.lang.Long
+      - column_name: type
+        value: "PUBLIC_RESOURCE"
+      - column_name: creator_id
+        value: ${CREATOR_ID}
+        data_type: java.lang.Long
+      - column_name: is_builtin
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: description
+        value: "system datasource permission"

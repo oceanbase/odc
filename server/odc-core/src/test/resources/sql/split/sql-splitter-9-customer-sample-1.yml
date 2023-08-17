@@ -1,0 +1,88 @@
+origin: |-
+  declare
+      v_pkcount integer;
+      v_pkname varchar2(30);
+      v_tablename varchar2(30);
+  begin
+      v_tablename := 'tbfundliqassetchgfile';
+      select count(1) into v_pkcount from (
+      select au.constraint_name from user_cons_columns cu,user_constraints au
+       where au.table_name = cu.table_name
+         and au.constraint_type = 'P'
+         and au.table_name = upper(v_tablename)
+         and au.constraint_name = cu.constraint_name
+       group by au.constraint_name);
+      if v_pkcount > 0 then
+          select au.constraint_name into v_pkname from user_cons_columns cu,user_constraints au
+           where au.table_name = cu.table_name
+             and au.constraint_type = 'P'
+             and au.table_name = upper(v_tablename)
+             and au.constraint_name = cu.constraint_name
+           group by au.constraint_name;
+          execute immediate 'alter table '||v_tablename||' drop constraint '||v_pkname||' cascade drop index';
+      end if;
+  end;
+  /
+
+  call proc_droptable('tbfundcustschemaexp');
+  create table tbfundcustschemaexp(
+      ta_code                   VARCHAR2(18)         default ' ' not null,
+      prd_code                  VARCHAR2(32)         default ' ' not null,
+      reg_date                  INTEGER              default 0 not null,
+      div_date                  INTEGER              default 0 not null,
+      reinvest_date             INTEGER              default 0 not null,
+      unit_profit               NUMBER(18,8)         default 0.0 not null,
+      project_desc              VARCHAR2(2000)       default ' ' not null,
+      deal_flag                 VARCHAR2(1)          default ' ' not null,
+      tax                       NUMBER(18,2)         default 0.0 not null,
+      manager_code              VARCHAR2(6)          default ' ' not null,
+      remark                    VARCHAR2(1000)       default ' ' not null,
+      constraint pk_fundcustschemaexp primary key (ta_code, prd_code, reg_date, deal_flag)
+  )  ;
+
+expected:
+  - |-
+    declare
+        v_pkcount integer;
+        v_pkname varchar2(30);
+        v_tablename varchar2(30);
+    begin
+        v_tablename := 'tbfundliqassetchgfile';
+        select count(1) into v_pkcount from (
+        select au.constraint_name from user_cons_columns cu,user_constraints au
+         where au.table_name = cu.table_name
+           and au.constraint_type = 'P'
+           and au.table_name = upper(v_tablename)
+           and au.constraint_name = cu.constraint_name
+         group by au.constraint_name);
+        if v_pkcount > 0 then
+            select au.constraint_name into v_pkname from user_cons_columns cu,user_constraints au
+             where au.table_name = cu.table_name
+               and au.constraint_type = 'P'
+               and au.table_name = upper(v_tablename)
+               and au.constraint_name = cu.constraint_name
+             group by au.constraint_name;
+            execute immediate 'alter table '||v_tablename||' drop constraint '||v_pkname||' cascade drop index';
+        end if;
+    end;
+
+  - |-
+    call proc_droptable('tbfundcustschemaexp');
+
+  - |-
+    create table tbfundcustschemaexp(
+        ta_code                   VARCHAR2(18)         default ' ' not null,
+        prd_code                  VARCHAR2(32)         default ' ' not null,
+        reg_date                  INTEGER              default 0 not null,
+        div_date                  INTEGER              default 0 not null,
+        reinvest_date             INTEGER              default 0 not null,
+        unit_profit               NUMBER(18,8)         default 0.0 not null,
+        project_desc              VARCHAR2(2000)       default ' ' not null,
+        deal_flag                 VARCHAR2(1)          default ' ' not null,
+        tax                       NUMBER(18,2)         default 0.0 not null,
+        manager_code              VARCHAR2(6)          default ' ' not null,
+        remark                    VARCHAR2(1000)       default ' ' not null,
+        constraint pk_fundcustschemaexp primary key (ta_code, prd_code, reg_date, deal_flag)
+    )  ;
+
+expected_end_delimiter: ;

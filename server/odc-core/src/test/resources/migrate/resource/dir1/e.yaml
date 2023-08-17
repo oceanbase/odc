@@ -1,0 +1,12 @@
+kind: resource
+version: v2
+templates:
+  - metadata:
+      table_name: iam_user_role
+      unique_keys: ["user_id", "role_id"]
+    specs:
+      - column_name: test_id
+        value_from:
+          field_ref:
+            ref_file: resource/dir1/f.yml
+            field_path: template.1.spec.0.value

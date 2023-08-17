@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<assembly xmlns="http://maven.apache.org/ASSEMBLY/2.0.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/ASSEMBLY/2.0.0 http://maven.apache.org/xsd/assembly-2.0.0.xsd">
+    <id>${project.version}</id>
+    <includeBaseDirectory>false</includeBaseDirectory>
+
+    <formats>
+        <format>jar</format>
+    </formats>
+    <files>
+        <file>
+            <source>README.md</source>
+            <outputDirectory>META-INF</outputDirectory>
+            <filtered>true</filtered>
+        </file>
+    </files>
+    <fileSets>
+        <fileSet>
+            <directory>${project.build.directory}/classes/com</directory>
+            <outputDirectory>com</outputDirectory>
+            <excludes>
+                <exclude>**/*.g4</exclude>
+                <exclude>**/*.tokens</exclude>
+                <exclude>**/*.interp</exclude>
+            </excludes>
+        </fileSet>
+    </fileSets>
+</assembly>

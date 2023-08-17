@@ -1,0 +1,33 @@
+kind: resource
+version: v2
+templates:
+  - metadata:
+      allow_duplicate: false
+      table_name: iam_user
+      unique_keys: ["id", "name"]
+    specs:
+      - column_name: id
+        value: ${USER_ID}
+        allow_null: false
+        default_value: 1
+      - column_name: name
+        value: "David"
+        data_type: java.lang.String
+      - column_name: password
+        value: aaAA11__
+        encode:
+          key: xxx
+          algorithm: "BCRYPT"
+  - metadata:
+      table_name: iam_role
+      unique_keys: ["name"]
+    specs:
+      - column_name: id
+        value: ${ROLE_ID}
+        allow_null: false
+        default_value: 1
+      - column_name: test_id
+        value_from:
+          field_ref:
+            ref_file: resource/dir/d.yml
+            field_path: template.1.spec.0.value

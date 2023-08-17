@@ -1,0 +1,80 @@
+origin: |-
+  select 1 from dual;create or replace function adder(n1 in number, n2 in number)
+  return number
+  is
+  n3 number(8);
+  begin
+  n3 :=n1+n2;
+  return n3;
+  end;
+  /
+
+  --计算差值的时候有出现负数的情况，需要使用sbs(indata-basedata)
+  create function get_score(indata int, basedata int)
+  return int as
+      gap int;
+      score int;
+  BEGIN
+      gap := indata - basedata;
+      case gap
+      when 0 then
+          score := 100;
+      when 1 then
+          score := 90;
+      when 2 then
+          score := 70;
+      when 3 then
+          score := 50;
+      when 4 then
+          score := 30;
+      when 5 then
+          score := 10;
+      else
+          score := 0;
+      end case;i
+      return score;
+  END;
+  /
+
+expected:
+  - |-
+    select 1 from dual;
+
+  - |-
+    create or replace function adder(n1 in number, n2 in number)
+    return number
+    is
+    n3 number(8);
+    begin
+    n3 :=n1+n2;
+    return n3;
+    end;
+
+  - |-
+    --计算差值的时候有出现负数的情况，需要使用sbs(indata-basedata)
+    create function get_score(indata int, basedata int)
+    return int as
+        gap int;
+        score int;
+    BEGIN
+        gap := indata - basedata;
+        case gap
+        when 0 then
+            score := 100;
+        when 1 then
+            score := 90;
+        when 2 then
+            score := 70;
+        when 3 then
+            score := 50;
+        when 4 then
+            score := 30;
+        when 5 then
+            score := 10;
+        else
+            score := 0;
+        end case;i
+        return score;
+    END;
+
+expected_end_delimiter: ;

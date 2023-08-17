@@ -1,0 +1,25 @@
+odc:
+  config:
+    commonTask:
+      taskType: ${ODC_TASK_TYPE:}
+      beforeAction: ${ODC_BEFORE_ACTION:}
+      taskAction: ${ODC_TASK_ACTION:}
+      afterAction: ${ODC_AFTER_ACTION:}
+
+spring:
+  main:
+    allow-circular-references: true
+  datasource:
+    url: jdbc:h2:${DB_PATH:~}/odc2.0;MODE=MySQL
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  session:
+    store-type: none
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
+      - org.springframework.boot.actuate.autoconfigure.security.servlet.ManagementWebSecurityAutoConfiguration
+      - org.springframework.boot.autoconfigure.security.oauth2.client.servlet.OAuth2ClientAutoConfiguration
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect

@@ -1,0 +1,100 @@
+kind: resource
+version: v2
+templates:
+  - metadata:
+      allow_duplicate: false
+      table_name: iam_permission
+      unique_keys: ["organization_id", "resource_identifier", "action", "type"]
+    specs:
+      - column_name: id
+        value: ${ID}
+        allow_null: true
+        data_type: java.lang.Long
+      - column_name: organization_id
+        value: ${ORGANIZATION_ID}
+        default_value: 1
+        data_type: java.lang.Long
+      - column_name: resource_identifier
+        value: "ODC_XXX:*"
+      - column_name: action
+        value: "read"
+      - column_name: type
+        value: "SYSTEM"
+      - column_name: creator_id
+        value: ${USER_ID}
+        allow_null: false
+        default_value: 1
+        data_type: java.lang.Long
+      - column_name: description
+        value: "test permission"
+  - metadata:
+      allow_duplicate: false
+      table_name: iam_user
+      unique_keys: [ "account_name" ]
+    specs:
+      - column_name: id
+        value: ${ID}
+        allow_null: false
+        data_type: java.lang.Long
+      - column_name: name
+        value: "David"
+      - column_name: account_name
+        value: "example@email.com"
+      - column_name: password
+        value: aaAA11__
+        encode:
+          key: xxx
+          algorithm: "BCRYPT"
+      - column_name: organization_id
+        value: ${ORGANIZATION_ID}
+        default_value: 1
+        data_type: java.lang.Long
+      - column_name: is_enabled
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: is_active
+        value: false
+        data_type: java.lang.Boolean
+      - column_name: creator_id
+        value: ${USER_ID}
+        allow_null: false
+        default_value: 1
+        data_type: java.lang.Long
+      - column_name: description
+        value: "test user"
+  - metadata:
+      allow_duplicate: false
+      table_name: iam_user
+      unique_keys: [ "account_name" ]
+    specs:
+      - column_name: name
+        value: "David"
+      - column_name: account_name
+        value: "example@email.com"
+      - column_name: id
+        value_from:
+          field_ref:
+            field_path: templates.0.specs.1.value
+      - column_name: password
+        value: aaAA11__
+        encode:
+          key: xxx
+          algorithm: "BCRYPT"
+  - metadata:
+      allow_duplicate: false
+      table_name: iam_user_role
+    specs:
+      - column_name: role_id
+        value_from:
+          db_ref:
+            ref_key: id
+            ref_table: iam_role
+            filters:
+              - column_name: organization_id
+                value: 1
+                data_type: java.lang.Long
+      - column_name: user_id
+        value_from:
+          db_ref:
+            ref_key: id
+            ref_table: iam_user

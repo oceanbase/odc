@@ -1,0 +1,49 @@
+# This is a template for integrating the customized approval system.
+approvalTimeoutSeconds: 86400
+http:
+  connectTimeoutSeconds: 5
+  socketTimeoutSeconds: 30
+api:
+  start:
+    method: POST
+    url: http://localhost:18989/start
+    headers: ~
+    body:
+      type: FORM_DATA
+      content:
+        processCode: approval_integration_test
+    queryParameters: ~
+    requestEncrypted: false
+    requestSuccessExpression: "[success] == true"
+    extractInstanceIdExpression: "[content][processInstanceId]"
+    responseEncrypted: false
+  status:
+    method: POST
+    url: http://localhost:18989/status
+    headers: ~
+    body:
+      type: FORM_DATA
+      content:
+        processInstanceId: ${process.instance.id}
+    queryParameters: ~
+    requestEncrypted: false
+    requestSuccessExpression: "[success] == true"
+    processPendingExpression: '[content][processInstanceStatus]=="RUNNING"'
+    processApprovedExpression: '[content][processInstanceStatus]=="COMPLETED" && [content][outResult]=="同意"'
+    processRejectedExpression: '[content][processInstanceStatus]=="COMPLETED" && [content][outResult]=="拒绝"'
+    processTerminatedExpression: '[content][processInstanceStatus]=="TERMINATED"'
+    responseEncrypted: false
+  cancel:
+    method: POST
+    url: http://localhost:18989/cancel
+    headers: ~
+    body:
+      type: FORM_DATA
+      content:
+        processInstanceId: ${process.instance.id}
+    queryParameters: ~
+    requestEncrypted: false
+    requestSuccessExpression: "[success] == true"
+    responseEncrypted: false
+advanced:
+  hyperlinkExpression: http://localhost:8989/procInsId=${process.instance.id}

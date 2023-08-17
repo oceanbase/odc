@@ -1,0 +1,26 @@
+# PushRequest: <code modify tag>: Description
+
+# Merge branch 'branch merge'
+
+# Pull Request Url, for example: https://github.com/oceanbase/odc/pulls/xxx
+
+# <类型>:(影响范围) <主题>
+
+# <body>
+
+# <footer>
+
+# 类型字段包含:
+#     feat：新功能（feature）
+#     fix：修复bug
+#     doc：文档（documentation）
+#     style： 格式化 ESLint调整等（不影响代码运行的变动）
+#     refactor：重构（即不是新增功能，也不是修改bug的代码变动）
+#     test：增加测试
+# 影响范围：
+#     用于说明 commit 影响的范围，比如修改的登录页、账户中心页等
+# 主题：
+#    commit目的的简短描述，不超过50个字符
+# Body 部分是对本次 commit 的详细描述，可以分成多行
+# Footer用来关闭 Issue或以BREAKING CHANGE开头，后面是对变动的描述、
+#       以及变动理由和迁移方法

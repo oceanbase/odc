@@ -1,0 +1,45 @@
+[
+  {
+    "description": "Start a new process instance",
+    "request": {
+      "method": "post",
+      "uri": "/start"
+    },
+    "response": {
+      "json": {
+        "success": true,
+        "content": {
+          "processInstanceId": "test_process_instance_id"
+        }
+      }
+    }
+  },
+  {
+    "description": "Query the status of process instance",
+    "request": {
+      "method": "post",
+      "uri": "/status"
+    },
+    "response": {
+      "json": {
+        "success": true,
+        "content": {
+          "processInstanceStatus": "COMPLETED",
+          "outResult": "同意"
+        }
+      }
+    }
+  },
+  {
+    "description": "Cancel a process instance",
+    "request": {
+      "method": "post",
+      "uri": "/cancel"
+    },
+    "response": {
+      "json": {
+        "success": true
+      }
+    }
+  }
+]

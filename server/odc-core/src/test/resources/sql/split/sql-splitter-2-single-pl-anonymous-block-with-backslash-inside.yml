@@ -1,0 +1,28 @@
+origin: |-
+  begin
+    if 1=2 then
+       update OC_USER_OPERATION_EXECUTE set status = 2, exec_status = 5, response_time = sysdate,error_code = 10035, error_msg = '失败', retry_times = 2, response_content = '失败' where operation_id = 100005469 and (home_city =590);
+       if 1=1 then
+          insert into oc_user_order_execute_op (operation_id,order_id,create_id,create_time,create_source,exec_status,home_city,month,ver,exec_level,obj_city, obj_type, obj_id, obj_number,trade_id,seq) values (SEQ_OC_OD_EXEC_OP.nextval,100656654,331,sysdate,201028,0,590,202201,1,2,590,2,121544,12333333,12323232,3232);
+        end if;
+    else
+       update OC_USER_OPERATION_EXECUTE set status = 2, exec_status = 2, response_time = sysdate, request_time = sysdate + 2/24/60/60, error_code = 10035, error_msg = '失败', retry_times = 2 where operation_id = 100005469 and (home_city = 590);
+    end if;
+    INSERT INTO H_OC_USER_OPERATION_EXECUTE(history_id,insert_month,insert_time,operation_id,operation_type_id,home_city,month,request_time,status,response_content,response_time,priority,exec_time,exec_status,error_code,error_msg,retry_times,last_retry_time,ver,retry_type,exec_level) SELECT seq_oc_operation_id.nextval,to_char(sysdate,'yyyymm'),sysdate,operation_id,operation_type_id,home_city,month,request_time,status,response_content,response_time,priority,exec_time,exec_status,error_code,error_msg,retry_times,last_retry_time,ver,retry_type,exec_level from OC_USER_OPERATION_EXECUTE WHERE operation_id = 100005469 and (home_city = 590);
+  end;
+
+expected:
+  - |-
+    begin
+      if 1=2 then
+         update OC_USER_OPERATION_EXECUTE set status = 2, exec_status = 5, response_time = sysdate,error_code = 10035, error_msg = '失败', retry_times = 2, response_content = '失败' where operation_id = 100005469 and (home_city =590);
+         if 1=1 then
+            insert into oc_user_order_execute_op (operation_id,order_id,create_id,create_time,create_source,exec_status,home_city,month,ver,exec_level,obj_city, obj_type, obj_id, obj_number,trade_id,seq) values (SEQ_OC_OD_EXEC_OP.nextval,100656654,331,sysdate,201028,0,590,202201,1,2,590,2,121544,12333333,12323232,3232);
+          end if;
+      else
+         update OC_USER_OPERATION_EXECUTE set status = 2, exec_status = 2, response_time = sysdate, request_time = sysdate + 2/24/60/60, error_code = 10035, error_msg = '失败', retry_times = 2 where operation_id = 100005469 and (home_city = 590);
+      end if;
+      INSERT INTO H_OC_USER_OPERATION_EXECUTE(history_id,insert_month,insert_time,operation_id,operation_type_id,home_city,month,request_time,status,response_content,response_time,priority,exec_time,exec_status,error_code,error_msg,retry_times,last_retry_time,ver,retry_type,exec_level) SELECT seq_oc_operation_id.nextval,to_char(sysdate,'yyyymm'),sysdate,operation_id,operation_type_id,home_city,month,request_time,status,response_content,response_time,priority,exec_time,exec_status,error_code,error_msg,retry_times,last_retry_time,ver,retry_type,exec_level from OC_USER_OPERATION_EXECUTE WHERE operation_id = 100005469 and (home_city = 590);
+    end;
+
+expected_end_delimiter: ;

@@ -1,0 +1,36 @@
+[
+  {
+    "id": 1,
+    "name": "case1",
+    "description": "普通类型列",
+    "input": {
+      "current": {
+        "schemaName": "schema",
+        "tableName": "table",
+        "name": "col2",
+        "typeName": "int",
+        "scale": null,
+        "precision": 11,
+        "maxLength": 11,
+        "nullable": false,
+        "defaultValue": null,
+        "virtual": false,
+        "comment": "",
+        "charsetName": "binary",
+        "collationName": "binary",
+        "genExpression": null,
+        "autoIncrement": false,
+        "unsigned": false,
+        "zerofill": false,
+        "enumValues": null,
+        "stored": false,
+        "onUpdateCurrentTimestamp": false,
+        "ordinalPosition": 1,
+        "secondPrecision": null,
+        "dayPrecision": null,
+        "yearPrecision": null
+      }
+    },
+    "output": "ALTER TABLE `schema`.`table` ADD COLUMN `col2` int(11) NOT NULL;\n"
+  }
+]

@@ -1,0 +1,37 @@
+origin: |-
+  delimiter /
+  create
+  or replace PROCEDURE PP(P_OUT_FLAG OUT VARCHAR2) AS V_QCRQ VARCHAR2(8);
+  BEGIN
+  SELECT
+  DECODE(1) AS
+  SUM(
+  CASE
+  WHEN X = '1001' THEN ABS(F)
+  ELSE 0
+  END
+  ) AS TF
+  FROM
+  T COMMIT;
+  dbms_output.put_line(1/1);
+  END;
+
+expected:
+  - |-
+    create
+    or replace PROCEDURE PP(P_OUT_FLAG OUT VARCHAR2) AS V_QCRQ VARCHAR2(8);
+    BEGIN
+    SELECT
+    DECODE(1) AS
+    SUM(
+    CASE
+    WHEN X = '1001' THEN ABS(F)
+    ELSE 0
+    END
+    ) AS TF
+    FROM
+    T COMMIT;
+    dbms_output.put_line(1/1);
+    END;
+
+expected_end_delimiter: /

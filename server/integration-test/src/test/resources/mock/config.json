@@ -1,0 +1,63 @@
+{
+  "tables": [
+    {
+      "columns": [
+        {
+          "columnName": "COL",
+          "typeConfig": {
+            "columnType": "NUMBER",
+            "generator": "UNIFORM_GENERATOR",
+            "precision": 10,
+            "scale": 2
+          },
+          "allowNull": false,
+          "defaultValue": null,
+          "dataType": null
+        },
+        {
+          "columnName": "COL2",
+          "typeConfig": {
+            "columnType": "NUMBER",
+            "generator": "UNIFORM_GENERATOR",
+            "precision": 5,
+            "scale": 2
+          },
+          "allowNull": false,
+          "defaultValue": null,
+          "dataType": null
+        },
+        {
+          "columnName": "COL3",
+          "typeConfig": {
+            "columnType": "NUMBER",
+            "generator": "UNIFORM_GENERATOR",
+            "precision": 5,
+            "scale": 2
+          },
+          "allowNull": false,
+          "defaultValue": null,
+          "dataType": null
+        },
+        {
+          "columnName": "COL4",
+          "typeConfig": {
+            "columnType": "NUMBER",
+            "generator": "UNIFORM_GENERATOR",
+            "precision": 5,
+            "scale": 2
+          },
+          "allowNull": false,
+          "defaultValue": null,
+          "dataType": null
+        }
+      ],
+      "totalCount": 4500,
+      "strategy": "IGNORE",
+      "batchSize": 240,
+      "whetherTruncate": false,
+      "tableName": "EMP",
+      "schemaName": "SYS",
+      "timeout": 180000
+    }
+  ]
+}

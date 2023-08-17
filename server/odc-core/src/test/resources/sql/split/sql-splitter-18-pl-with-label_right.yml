@@ -1,0 +1,41 @@
+origin: |-
+  delimiter /
+  create
+  or replace procedure pro1 (a int) is cursor cur1 is
+  select
+  *
+  from
+  tt;
+  b number;
+  begin
+  <<endprog>>
+  if b = 1 then
+  insert into
+  tt
+  values(2);
+  end
+  if;
+  end
+  pro1;
+
+expected:
+  - |-
+    create
+    or replace procedure pro1 (a int) is cursor cur1 is
+    select
+    *
+    from
+    tt;
+    b number;
+    begin
+    <<endprog>>
+    if b = 1 then
+    insert into
+    tt
+    values(2);
+    end
+    if;
+    end
+    pro1;
+
+expected_end_delimiter: /

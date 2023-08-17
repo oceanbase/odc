@@ -1,0 +1,36 @@
+kind: resource
+version: v2
+templates:
+  - metadata:
+      allow_duplicate: false
+      table_name: iam_user
+      unique_keys: ["account_name", "organization_id"]
+    specs:
+      - column_name: id
+        value: 1
+        data_type: java.lang.Long
+      - column_name: name
+        value: "admin"
+      - column_name: account_name
+        value: "admin"
+      - column_name: password
+        value: "$2a$10$6aIZNafRdrOROzn2VBIbU.kbQVFBZK29PyegUakZ9NiHVD2k8CiTK"
+      - column_name: organization_id
+        value: ${ORGANIZATION_ID}
+        data_type: java.lang.Long
+      - column_name: is_active
+        value: false
+        data_type: java.lang.Boolean
+      - column_name: is_enabled
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: creator_id
+        value: 1
+        data_type: java.lang.Long
+      - column_name: is_builtin
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: cipher
+        value: "BCRYPT"
+      - column_name: description
+        value: "system admin"

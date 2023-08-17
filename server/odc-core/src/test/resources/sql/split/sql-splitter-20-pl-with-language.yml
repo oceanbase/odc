@@ -1,0 +1,21 @@
+origin: |-
+  delimiter /
+  CREATE OR REPLACE PROCEDURE query99() IS
+  BEGIN
+  SELECT COUNT(*) FROM dual;
+  SELECT * FROM dual WHERE f.state = 'A'
+  AND ft.id(+) = f.id
+  AND ft.language(+) = p_language;
+  END;
+
+expected:
+  - |-
+    CREATE OR REPLACE PROCEDURE query99() IS
+    BEGIN
+    SELECT COUNT(*) FROM dual;
+    SELECT * FROM dual WHERE f.state = 'A'
+    AND ft.id(+) = f.id
+    AND ft.language(+) = p_language;
+    END;
+
+expected_end_delimiter: /

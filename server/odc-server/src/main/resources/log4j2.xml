@@ -1,0 +1,502 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- log4j 自身的日志级别设置为 WARN，日志配置文件监视刷新的检查间隔设置为 30秒 -->
+<Configuration status="WARN" monitorInterval="30" shutdownHook="disable">
+
+    <!-- log4j2 配置参数 -->
+    <Properties>
+        <!-- ODC 日志目录可以通过 -Dodc.log.directory 指定系统变量（Java system properties），
+             缺省为 odc 工作路径下的 log 目录，
+             Linux 下更符合惯例的日志目录其实是 /var/log/odc
+        -->
+        <Property name="LOG_DIRECTORY">${sys:odc.log.directory:-./log}</Property>
+
+        <!-- 日志格式配置，注意 %class, %line 成本较高，可能会导致日志性能下降大约 80%，当日志数据规模较大时需优化。
+             如果每个类的 log 对象都基于当前类生成，%logger 可作为 %class 的替代。
+        -->
+        <Property name="LOG_PATTERN">
+            [%date{yyyy-MM-dd HH:mm:ss.SSS}][%thread][%X{traceId},%X{spanId},%X{requestId}][%level][%class][%line]: %message%n
+        </Property>
+        <Property name="API_LOG_PATTERN">
+            [%date{yyyy-MM-dd HH:mm:ss.SSS}][%thread][%X{traceId},%X{spanId},%X{requestId}][%level]: %message%n
+        </Property>
+    </Properties>
+
+    <Appenders>
+
+        <!-- 控制台输出 -->
+        <Console name="ConsoleAppender" target="SYSTEM_OUT">
+            <PatternLayout pattern="${LOG_PATTERN}"/>
+        </Console>
+
+        <!-- ODC日志配置 -->
+        <RollingFile name="OdcFileAppender" fileName="${LOG_DIRECTORY}/odc.log"
+                     filePattern="${LOG_DIRECTORY}/odc-%d{yyyy-MM-dd}-%i.log">
+            <PatternLayout pattern="${LOG_PATTERN}"/>
+            <Policies>
+                <SizeBasedTriggeringPolicy size="100MB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="20">
+                <Delete basePath="${LOG_DIRECTORY}" maxDepth="2">
+                    <IfFileName glob="*.log*"/>
+                    <IfLastModified age="14d"/>
+                </Delete>
+            </DefaultRolloverStrategy>
+        </RollingFile>
+
+        <!-- ODC日志配置 -->
+        <RollingFile name="OdcAPIFileAppender" fileName="${LOG_DIRECTORY}/odc-access.log"
+                     filePattern="${LOG_DIRECTORY}/odc-access-%d{yyyy-MM-dd}-%i.log">
+            <PatternLayout pattern="${API_LOG_PATTERN}"/>
+            <Policies>
+                <SizeBasedTriggeringPolicy size="100MB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="20">
+                <Delete basePath="${LOG_DIRECTORY}" maxDepth="2">
+                    <IfFileName glob="*.log*"/>
+                    <IfLastModified age="14d"/>
+                </Delete>
+            </DefaultRolloverStrategy>
+        </RollingFile>
+
+        <!-- 导入导出任务日志配置
+             !注意!：导入导出日志会用于前端页面查看任务日志，因此需要按照日志级别输出到不同文件以区分
+         -->
+        <Routing name="LoadDumpInfoRoutingAppender">
+            <Routes pattern="$${ctx:task.workspace}">
+                <Route>
+                    <RollingFile name="InfoRolling-${ctx:task.workspace}"
+                                 fileName="${ctx:task.workspace}/ob-loader-dumper.all"
+                                 filePattern="${ctx:task.workspace}/${date:yyyy-MM}/ob-loader-dumper-%d{yyyy-MM-dd}-%i.info.gz">
+                        <PatternLayout>
+                            <pattern>%d{yyyy-MM-dd HH:mm:ss} [%p] %m%n</pattern>
+                        </PatternLayout>
+                        <Filters>
+                            <!-- TRACE < DEBUG < INFO < WARN < ERROR < FATAL -->
+                            <ThresholdFilter level="INFO" onMatch="ACCEPT" onMismatch="DENY"/>
+                        </Filters>
+                        <Policies>
+                            <TimeBasedTriggeringPolicy interval="6" modulate="true"/>
+                            <SizeBasedTriggeringPolicy size="10 MB"/>
+                        </Policies>
+                    </RollingFile>
+                </Route>
+            </Routes>
+        </Routing>
+
+        <Routing name="LoadDumpWarnRoutingAppender">
+            <Routes pattern="$${ctx:task.workspace}">
+                <Route>
+                    <RollingFile name="WarnRolling-${ctx:task.workspace}"
+                                 fileName="${ctx:task.workspace}/ob-loader-dumper.warn"
+                                 filePattern="${ctx:task.workspace}/${date:yyyy-MM}/ob-loader-dumper-%d{yyyy-MM-dd}-%i.warn.gz">
+                        <PatternLayout>
+                            <pattern>%d{yyyy-MM-dd HH:mm:ss} [%p] %m%n</pattern>
+                        </PatternLayout>
+                        <Filters>
+                            <!-- TRACE < DEBUG < INFO < WARN < ERROR < FATAL -->
+                            <ThresholdFilter level="WARN" onMatch="ACCEPT" onMismatch="DENY"/>
+                        </Filters>
+                        <Policies>
+                            <TimeBasedTriggeringPolicy interval="6" modulate="true"/>
+                            <SizeBasedTriggeringPolicy size="10 MB"/>
+                        </Policies>
+                    </RollingFile>
+                </Route>
+            </Routes>
+        </Routing>
+
+        <!-- 以下为模拟数据任务日志配置 -->
+        <Routing name="InfoRoutingMockAppender">
+            <Routes pattern="${ctx:mocktask.workspace}">
+                <Route>
+                    <RollingFile name="Rolling-${ctx:mocktask.workspace}"
+                                 fileName="${LOG_DIRECTORY}/data-mocker/${ctx:mocktask.workspace}/ob-mocker.all"
+                                 filePattern="${LOG_DIRECTORY}/data-mocker/${ctx:mocktask.workspace}/${date:yyyy-MM}/ob-mocker-%d{yyyy-MM-dd}-%i.info.gz">
+                        <PatternLayout>
+                            <pattern>%d{yyyy-MM-dd HH:mm:ss} %p %c{1.} - %m%n</pattern>
+                        </PatternLayout>
+                        <Filters>
+                            <!-- TRACE < DEBUG < INFO < WARN < ERROR < FATAL -->
+                            <ThresholdFilter level="INFO" onMatch="ACCEPT" onMismatch="DENY"/>
+                        </Filters>
+                        <Policies>
+                            <TimeBasedTriggeringPolicy interval="6" modulate="true"/>
+                            <SizeBasedTriggeringPolicy size="30 MB"/>
+                        </Policies>
+                    </RollingFile>
+                </Route>
+            </Routes>
+        </Routing>
+
+        <Routing name="WarnRoutingMockAppender">
+            <Routes pattern="${ctx:mocktask.workspace}">
+                <Route>
+                    <RollingFile name="Rolling-${ctx:mocktask.workspace}"
+                                 fileName="${LOG_DIRECTORY}/data-mocker/${ctx:mocktask.workspace}/ob-mocker.warn"
+                                 filePattern="${LOG_DIRECTORY}/data-mocker/${ctx:mocktask.workspace}/${date:yyyy-MM}/ob-mocker-%d{yyyy-MM-dd}-%i.warn.gz">
+                        <PatternLayout>
+                            <pattern>%d{yyyy-MM-dd HH:mm:ss} %p %c{1.} - %m%n</pattern>
+                        </PatternLayout>
+                        <Filters>
+                            <!-- TRACE < DEBUG < INFO < WARN < ERROR < FATAL -->
+                            <!--                            <ThresholdFilter level="ERROR" onMatch="DENY" onMismatch="NEUTRAL"/>-->
+                            <ThresholdFilter level="WARN" onMatch="ACCEPT" onMismatch="DENY"/>
+                        </Filters>
+                        <Policies>
+                            <TimeBasedTriggeringPolicy interval="6" modulate="true"/>
+                            <SizeBasedTriggeringPolicy size="30 MB"/>
+                        </Policies>
+                    </RollingFile>
+                </Route>
+            </Routes>
+        </Routing>
+
+        <!-- 以下为异步任务日志配置 -->
+        <Routing name="AllRoutingAsyncAppender">
+            <Routes pattern="$${ctx:taskId}">
+                <Route>
+                    <RollingFile name="Rolling-${ctx:taskId}"
+                                 fileName="${LOG_DIRECTORY}/async/${ctx:taskWorkSpace}/${ctx:taskId}/asynctask.all"
+                                 filePattern="${LOG_DIRECTORY}/async/${ctx:taskWorkSpace}/${ctx:taskId}/${date:yyyy-MM}/async-task-%d{yyyy-MM-dd}-%i.all.gz">
+                        <PatternLayout>
+                            <pattern>%d{yyyy-MM-dd HH:mm:ss} %p %c{1.} - %m%n</pattern>
+                        </PatternLayout>
+                        <Policies>
+                            <TimeBasedTriggeringPolicy/>
+                            <SizeBasedTriggeringPolicy size="30MB"/>
+                        </Policies>
+                        <Policies>
+                            <TimeBasedTriggeringPolicy interval="6" modulate="true"/>
+                            <SizeBasedTriggeringPolicy size="10 MB"/>
+                        </Policies>
+                    </RollingFile>
+                </Route>
+            </Routes>
+        </Routing>
+
+        <Routing name="WarnRoutingAsyncAppender">
+            <Routes pattern="$${ctx:taskId}">
+                <Route>
+                    <RollingFile name="Rolling-${ctx:taskId}"
+                                 fileName="${LOG_DIRECTORY}/async/${ctx:taskWorkSpace}/${ctx:taskId}/asynctask.warn"
+                                 filePattern="${LOG_DIRECTORY}/async/${ctx:taskWorkSpace}/${ctx:taskId}/${date:yyyy-MM}/asynctask-%d{yyyy-MM-dd}-%i.warn.gz">
+                        <PatternLayout>
+                            <pattern>%d{yyyy-MM-dd HH:mm:ss} %p %c{1.} - %m%n</pattern>
+                        </PatternLayout>
+                        <Filters>
+                            <!-- TRACE < DEBUG < INFO < WARN < ERROR < FATAL -->
+                            <ThresholdFilter level="WARN" onMatch="ACCEPT" onMismatch="DENY"/>
+                        </Filters>
+                        <Policies>
+                            <TimeBasedTriggeringPolicy/>
+                            <SizeBasedTriggeringPolicy size="30MB"/>
+                        </Policies>
+                        <Policies>
+                            <TimeBasedTriggeringPolicy interval="6" modulate="true"/>
+                            <SizeBasedTriggeringPolicy size="10 MB"/>
+                        </Policies>
+                    </RollingFile>
+                </Route>
+            </Routes>
+        </Routing>
+
+        <!-- 以下为影子表同步任务日志配置 -->
+        <Routing name="AllRoutingShadowtableAppender">
+            <Routes pattern="${ctx:taskId}">
+                <Route>
+                    <RollingFile name="Rolling-${ctx:taskId}"
+                                 fileName="${LOG_DIRECTORY}/shadowtable/${ctx:shadowtableWorkSpace}/${ctx:taskId}/shadowtable.all"
+                                 filePattern="${LOG_DIRECTORY}/shadowtable/${ctx:shadowtableWorkSpace}/${ctx:taskId}/${date:yyyy-MM}/shadowtable-sync-task-%d{yyyy-MM-dd}-%i.all.gz">
+                        <PatternLayout>
+                            <pattern>%d{yyyy-MM-dd HH:mm:ss} %p %c{1.} - %m%n</pattern>
+                        </PatternLayout>
+                        <Policies>
+                            <TimeBasedTriggeringPolicy/>
+                            <SizeBasedTriggeringPolicy size="30MB"/>
+                        </Policies>
+                        <Policies>
+                            <TimeBasedTriggeringPolicy interval="6" modulate="true"/>
+                            <SizeBasedTriggeringPolicy size="10 MB"/>
+                        </Policies>
+                    </RollingFile>
+                </Route>
+            </Routes>
+        </Routing>
+        <Routing name="WarnRoutingShadowtableAppender">
+            <Routes pattern="${ctx:taskId}">
+                <Route>
+                    <RollingFile name="Rolling-${ctx:taskId}"
+                                 fileName="${LOG_DIRECTORY}/shadowtable/${ctx:shadowtableWorkSpace}/${ctx:taskId}/shadowtable.warn"
+                                 filePattern="${LOG_DIRECTORY}/shadowtable/${ctx:shadowtableWorkSpace}/${ctx:taskId}/${date:yyyy-MM}/shadowtable-%d{yyyy-MM-dd}-%i.warn.gz">
+                        <PatternLayout>
+                            <pattern>%d{yyyy-MM-dd HH:mm:ss} %p %c{1.} - %m%n</pattern>
+                        </PatternLayout>
+                        <Filters>
+                            <!-- TRACE < DEBUG < INFO < WARN < ERROR < FATAL -->
+                            <ThresholdFilter level="WARN" onMatch="ACCEPT" onMismatch="DENY"/>
+                        </Filters>
+                        <Policies>
+                            <TimeBasedTriggeringPolicy/>
+                            <SizeBasedTriggeringPolicy size="30MB"/>
+                        </Policies>
+                        <Policies>
+                            <TimeBasedTriggeringPolicy interval="6" modulate="true"/>
+                            <SizeBasedTriggeringPolicy size="10 MB"/>
+                        </Policies>
+                    </RollingFile>
+                </Route>
+            </Routes>
+        </Routing>
+        <!-- 以下为分区计划任务日志配置 -->
+        <Routing name="AllRoutingPartitionPlanAppender">
+            <Routes pattern="${ctx:taskId}">
+                <Route>
+                    <RollingFile name="Rolling-${ctx:taskId}"
+                                 fileName="${LOG_DIRECTORY}/partitionplan/${ctx:partitionplanWorkSpace}/${ctx:taskId}/partitionplan.all"
+                                 filePattern="${LOG_DIRECTORY}/partitionplan/${ctx:partitionplanWorkSpace}/${ctx:taskId}/${date:yyyy-MM}/partitionplan-task-%d{yyyy-MM-dd}-%i.all.gz">
+                        <PatternLayout>
+                            <pattern>%d{yyyy-MM-dd HH:mm:ss} %p %c{1.} - %m%n</pattern>
+                        </PatternLayout>
+                        <Policies>
+                            <TimeBasedTriggeringPolicy/>
+                            <SizeBasedTriggeringPolicy size="30MB"/>
+                        </Policies>
+                        <Policies>
+                            <TimeBasedTriggeringPolicy interval="6" modulate="true"/>
+                            <SizeBasedTriggeringPolicy size="10 MB"/>
+                        </Policies>
+                    </RollingFile>
+                </Route>
+            </Routes>
+        </Routing>
+
+        <Routing name="WarnRoutingPartitionPlanAppender">
+            <Routes pattern="${ctx:taskId}">
+                <Route>
+                    <RollingFile name="Rolling-${ctx:taskId}"
+                                 fileName="${LOG_DIRECTORY}/partitionplan/${ctx:partitionplanWorkSpace}/${ctx:taskId}/partitionplan.warn"
+                                 filePattern="${LOG_DIRECTORY}/partitionplan/${ctx:partitionplanWorkSpace}/${ctx:taskId}/${date:yyyy-MM}/partitionplan-%d{yyyy-MM-dd}-%i.warn.gz">
+                        <PatternLayout>
+                            <pattern>%d{yyyy-MM-dd HH:mm:ss} %p %c{1.} - %m%n</pattern>
+                        </PatternLayout>
+                        <Filters>
+                            <!-- TRACE < DEBUG < INFO < WARN < ERROR < FATAL -->
+                            <ThresholdFilter level="WARN" onMatch="ACCEPT" onMismatch="DENY"/>
+                        </Filters>
+                        <Policies>
+                            <TimeBasedTriggeringPolicy/>
+                            <SizeBasedTriggeringPolicy size="30MB"/>
+                        </Policies>
+                        <Policies>
+                            <TimeBasedTriggeringPolicy interval="6" modulate="true"/>
+                            <SizeBasedTriggeringPolicy size="10 MB"/>
+                        </Policies>
+                    </RollingFile>
+                </Route>
+            </Routes>
+        </Routing>
+
+        <Routing name="AllRoutingAlterScheduleAppender">
+            <Routes pattern="${ctx:taskId}">
+                <Route>
+                    <RollingFile name="Rolling-${ctx:taskId}"
+                                 fileName="${LOG_DIRECTORY}/alterschedule/${ctx:alterScheduleWorkSpace}/${ctx:taskId}/alterschedule.all"
+                                 filePattern="${LOG_DIRECTORY}/alterschedule/${ctx:alterScheduleWorkSpace}/${ctx:taskId}/${date:yyyy-MM}/alterschedule-task-%d{yyyy-MM-dd}-%i.all.gz">
+                        <PatternLayout>
+                            <pattern>%d{yyyy-MM-dd HH:mm:ss} %p %c{1.} - %m%n</pattern>
+                        </PatternLayout>
+                        <Policies>
+                            <TimeBasedTriggeringPolicy/>
+                            <SizeBasedTriggeringPolicy size="30MB"/>
+                        </Policies>
+                        <Policies>
+                            <TimeBasedTriggeringPolicy interval="6" modulate="true"/>
+                            <SizeBasedTriggeringPolicy size="10 MB"/>
+                        </Policies>
+                    </RollingFile>
+                </Route>
+            </Routes>
+        </Routing>
+
+        <Routing name="WarnRoutingAlterScheduleAppender">
+            <Routes pattern="${ctx:taskId}">
+                <Route>
+                    <RollingFile name="Rolling-${ctx:taskId}"
+                                 fileName="${LOG_DIRECTORY}/alterschedule/${ctx:alterScheduleWorkSpace}/${ctx:taskId}/alterschedule.warn"
+                                 filePattern="${LOG_DIRECTORY}/alterschedule/${ctx:alterScheduleWorkSpace}/${ctx:taskId}/${date:yyyy-MM}/alterschedule-%d{yyyy-MM-dd}-%i.warn.gz">
+                        <PatternLayout>
+                            <pattern>%d{yyyy-MM-dd HH:mm:ss} %p %c{1.} - %m%n</pattern>
+                        </PatternLayout>
+                        <Filters>
+                            <!-- TRACE < DEBUG < INFO < WARN < ERROR < FATAL -->
+                            <ThresholdFilter level="WARN" onMatch="ACCEPT" onMismatch="DENY"/>
+                        </Filters>
+                        <Policies>
+                            <TimeBasedTriggeringPolicy/>
+                            <SizeBasedTriggeringPolicy size="30MB"/>
+                        </Policies>
+                        <Policies>
+                            <TimeBasedTriggeringPolicy interval="6" modulate="true"/>
+                            <SizeBasedTriggeringPolicy size="10 MB"/>
+                        </Policies>
+                    </RollingFile>
+                </Route>
+            </Routes>
+        </Routing>
+
+        <!-- 以下为无锁结构变更任务日志配置 -->
+        <Routing name="AllRoutingOnlineSchemaChangeAppender">
+            <Routes pattern="${ctx:taskId}">
+                <Route>
+                    <RollingFile name="Rolling-${ctx:taskId}"
+                                 fileName="${LOG_DIRECTORY}/onlineschemachange/${ctx:onlineSchemaChangeWorkSpace}/${ctx:taskId}/onlineschemachange.all"
+                                 filePattern="${LOG_DIRECTORY}/onlineschemachange/${ctx:onlineSchemaChangeWorkSpace}/${ctx:taskId}/${date:yyyy-MM}/onlineschemachange-%d{yyyy-MM-dd}-%i.all.gz">
+                        <PatternLayout>
+                            <pattern>%d{yyyy-MM-dd HH:mm:ss} %p %c{1.} - %m%n</pattern>
+                        </PatternLayout>
+                        <Policies>
+                            <TimeBasedTriggeringPolicy/>
+                            <SizeBasedTriggeringPolicy size="30MB"/>
+                        </Policies>
+                        <Policies>
+                            <TimeBasedTriggeringPolicy interval="6" modulate="true"/>
+                            <SizeBasedTriggeringPolicy size="10 MB"/>
+                        </Policies>
+                    </RollingFile>
+                </Route>
+            </Routes>
+        </Routing>
+
+        <Routing name="WarnRoutingOnlineSchemaChangeAppender">
+            <Routes pattern="${ctx:taskId}">
+                <Route>
+                    <RollingFile name="Rolling-${ctx:taskId}"
+                                 fileName="${LOG_DIRECTORY}/onlineschemachange/${ctx:onlineSchemaChangeWorkSpace}/${ctx:taskId}/onlineschemachange.warn"
+                                 filePattern="${LOG_DIRECTORY}/onlineschemachange/${ctx:onlineSchemaChangeWorkSpace}/${ctx:taskId}/${date:yyyy-MM}/onlineschemachange-%d{yyyy-MM-dd}-%i.warn.gz">
+                        <PatternLayout>
+                            <pattern>%d{yyyy-MM-dd HH:mm:ss} %p %c{1.} - %m%n</pattern>
+                        </PatternLayout>
+                        <Filters>
+                            <!-- TRACE < DEBUG < INFO < WARN < ERROR < FATAL -->
+                            <ThresholdFilter level="WARN" onMatch="ACCEPT" onMismatch="DENY"/>
+                        </Filters>
+                        <Policies>
+                            <TimeBasedTriggeringPolicy/>
+                            <SizeBasedTriggeringPolicy size="30MB"/>
+                        </Policies>
+                        <Policies>
+                            <TimeBasedTriggeringPolicy interval="6" modulate="true"/>
+                            <SizeBasedTriggeringPolicy size="10 MB"/>
+                        </Policies>
+                    </RollingFile>
+                </Route>
+            </Routes>
+        </Routing>
+
+
+    </Appenders>
+    <Loggers>
+
+        <!--        接口日志输出-->
+        <Logger name="com.oceanbase.odc.server.web.trace.TraceHandlerInterceptor" level="INFO" additivity="false">
+            <AppenderRef ref="OdcAPIFileAppender" />
+        </Logger>
+        <!-- 导入导出程序日志输出 -->
+        <Logger name="DataTransferLogger" additivity="false" level="INFO">
+            <AppenderRef ref="LoadDumpInfoRoutingAppender"/>
+            <AppenderRef ref="LoadDumpWarnRoutingAppender"/>
+        </Logger>
+
+        <Logger name="com.oceanbase.tools.loaddump" additivity="false" level="INFO">
+            <AppenderRef ref="LoadDumpInfoRoutingAppender"/>
+            <AppenderRef ref="LoadDumpWarnRoutingAppender"/>
+        </Logger>
+
+        <Logger name="BadSchemaSqlLogger" additivity="false" level="INFO">
+            <AppenderRef ref="LoadDumpInfoRoutingAppender"/>
+            <AppenderRef ref="LoadDumpWarnRoutingAppender"/>
+        </Logger>
+
+        <Logger name="BadRecordLogger" additivity="false" level="INFO">
+            <AppenderRef ref="LoadDumpInfoRoutingAppender"/>
+            <AppenderRef ref="LoadDumpWarnRoutingAppender"/>
+        </Logger>
+
+        <Logger name="DisRecordLogger" additivity="false" level="INFO">
+            <AppenderRef ref="LoadDumpInfoRoutingAppender"/>
+            <AppenderRef ref="LoadDumpWarnRoutingAppender"/>
+        </Logger>
+
+        <Logger name="com.oceanbase.odc.service.datatransfer.task" additivity="true" level="INFO">
+            <AppenderRef ref="LoadDumpInfoRoutingAppender"/>
+            <AppenderRef ref="LoadDumpWarnRoutingAppender"/>
+        </Logger>
+
+        <Logger name="com.oceanbase.odc.service.flow.task.MockDataRuntimeFlowableTask" additivity="true">
+            <AppenderRef ref="InfoRoutingMockAppender"/>
+            <AppenderRef ref="WarnRoutingMockAppender"/>
+        </Logger>
+
+        <!-- 模拟数据程序日志输出 -->
+        <Logger name="com.oceanbase.tools.datamocker" level="INFO" additivity="true">
+            <AppenderRef ref="InfoRoutingMockAppender"/>
+            <AppenderRef ref="WarnRoutingMockAppender"/>
+        </Logger>
+
+        <!-- 异步任务日志输出 -->
+        <Logger name="com.oceanbase.odc.service.flow.task.DatabaseChangeThread" level="INFO" additivity="true">
+            <AppenderRef ref="AllRoutingAsyncAppender"/>
+            <AppenderRef ref="WarnRoutingAsyncAppender"/>
+        </Logger>
+
+        <!-- 影子表同步任务日志输出 -->
+        <Logger name="com.oceanbase.odc.service.shadowtable.ShadowTableSyncTask" level="INFO" additivity="true">
+            <AppenderRef ref="AllRoutingShadowtableAppender"/>
+            <AppenderRef ref="WarnRoutingShadowtableAppender"/>
+        </Logger>
+
+        <!-- 分区计划任务日志输出 -->
+        <Logger name="com.oceanbase.odc.service.flow.task.PartitionPlanTask" level="INFO" additivity="true">
+            <AppenderRef ref="AllRoutingPartitionPlanAppender"/>
+            <AppenderRef ref="WarnRoutingPartitionPlanAppender"/>
+        </Logger>
+        <Logger name="com.oceanbase.odc.service.partitionplan" level="INFO" additivity="true">
+            <AppenderRef ref="AllRoutingPartitionPlanAppender"/>
+            <AppenderRef ref="WarnRoutingPartitionPlanAppender"/>
+        </Logger>
+        <Logger name="com.oceanbase.odc.service.schedule" level="INFO" additivity="true">
+            <AppenderRef ref="AllRoutingAlterScheduleAppender"/>
+            <AppenderRef ref="WarnRoutingAlterScheduleAppender"/>
+        </Logger>
+        <!-- 无锁结构变更任务日志输出 -->
+        <Logger name="com.oceanbase.odc.service.onlineschemachange" level="INFO" additivity="true">
+            <AppenderRef ref="AllRoutingOnlineSchemaChangeAppender"/>
+            <AppenderRef ref="WarnRoutingOnlineSchemaChangeAppender"/>
+        </Logger>
+
+        <Logger name="com.oceanbase.tools.migrator" level="INFO">
+            <AppenderRef ref="OdcFileAppender"/>
+        </Logger>
+
+        <!-- ODC程序日志输出，输出级别 INFO -->
+        <Logger name="com.oceanbase.odc" level="INFO" additivity="false">
+            <AppenderRef ref="OdcFileAppender"/>
+        </Logger>
+
+        <!-- spring 框架日志输出，输出级别 INFO -->
+        <Logger name="org.springframework" level="INFO" additivity="false">
+            <AppenderRef ref="OdcFileAppender"/>
+        </Logger>
+
+        <Logger name="org.flowable" level="INFO" additivity="false">
+            <AppenderRef ref="OdcFileAppender"/>
+        </Logger>
+
+        <!-- 其它程序日志输出，输出级别 WARN -->
+        <Root level="WARN">
+            <AppenderRef ref="OdcFileAppender"/>
+        </Root>
+
+    </Loggers>
+</Configuration>

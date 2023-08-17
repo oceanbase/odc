@@ -1,0 +1,35 @@
+origin: |-
+  delimiter ;
+  DECLARE
+  p VARCHAR2(30);
+  n PLS_INTEGER := 37;
+  BEGIN
+  FOR j IN 2 .. round(sqrt(n)) LOOP
+  IF n MOD j = 0 THEN
+  p := ' is not a prime number';
+  GOTO print_now;
+  END IF;
+  END LOOP;
+  p := ' is a prime number';
+  <<print_now>>
+  dbms_output.put_line(to_char(n) || p);
+  END;
+
+expected:
+  - |-
+    DECLARE
+    p VARCHAR2(30);
+    n PLS_INTEGER := 37;
+    BEGIN
+    FOR j IN 2 .. round(sqrt(n)) LOOP
+    IF n MOD j = 0 THEN
+    p := ' is not a prime number';
+    GOTO print_now;
+    END IF;
+    END LOOP;
+    p := ' is a prime number';
+    <<print_now>>
+    dbms_output.put_line(to_char(n) || p);
+    END;
+
+expected_end_delimiter: ;

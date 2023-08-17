@@ -1,0 +1,89 @@
+origin: |-
+  -- prepare
+  CREATE TABLE DETP_LOG (
+  OPERATE_TAG VARCHAR2(10),
+  OPERATE_TIME DATE
+  );
+
+  -- 特点是以 create <or replace>  <EDITIONABLE|NONEDITIONABLE> trigger 开始
+  -- 程序块 begin 开始，end 结束
+  CREATE OR REPLACE trigger tri_dept
+  before insert or update or delete
+  on dept --创建触发器，当dept 表发生插入，修改，删除操作时引起该触发器执行
+  declare
+  var_tag varchar2(10);  --声明一个变量，存储对dept表执行的操作类
+  begin
+  if inserting then  --当触发事件是insert时
+  var_tag:='插入';   --标识插入操作
+  elsif updating then  --当触发事件是update时
+  var_tag:='修改';  --标识修改操作
+  elsif deleting then  --当触发事件是delete时
+  var_tag:='删除';  --标识删除操作
+  end if;
+  INSERT INTO dept_log VALUES (var_tag,sysdate); --向日志表中插入对dept表的操作信息
+  end tri_dept;
+  /
+
+  CREATE OR REPLACE trigger tri_dept
+  before insert or update or delete
+  on dept --创建触发器，当dept 表发生插入，修改，删除操作时引起该触发器执行
+  declare
+  var_tag varchar2(10);  --声明一个变量，存储对dept表执行的操作类
+  begin
+  if inserting then  --当触发事件是insert时
+  var_tag:='插入';   --标识插入操作
+  elsif updating then  --当触发事件是update时
+  var_tag:='修改';  --标识修改操作
+  elsif deleting then  --当触发事件是delete时
+  var_tag:='删除';  --标识删除操作
+  end if;
+  INSERT INTO dept_log VALUES (var_tag,sysdate); --向日志表中插入对dept表的操作信息
+  end
+  /
+
+
+expected:
+  - |-
+    -- prepare
+    CREATE TABLE DETP_LOG (
+    OPERATE_TAG VARCHAR2(10),
+    OPERATE_TIME DATE
+    );
+  - |-
+    -- 特点是以 create <or replace>  <EDITIONABLE|NONEDITIONABLE> trigger 开始
+    -- 程序块 begin 开始，end 结束
+    CREATE OR REPLACE trigger tri_dept
+    before insert or update or delete
+    on dept --创建触发器，当dept 表发生插入，修改，删除操作时引起该触发器执行
+    declare
+    var_tag varchar2(10);  --声明一个变量，存储对dept表执行的操作类
+    begin
+    if inserting then  --当触发事件是insert时
+    var_tag:='插入';   --标识插入操作
+    elsif updating then  --当触发事件是update时
+    var_tag:='修改';  --标识修改操作
+    elsif deleting then  --当触发事件是delete时
+    var_tag:='删除';  --标识删除操作
+    end if;
+    INSERT INTO dept_log VALUES (var_tag,sysdate); --向日志表中插入对dept表的操作信息
+    end tri_dept;
+  - |-
+    CREATE OR REPLACE trigger tri_dept
+    before insert or update or delete
+    on dept --创建触发器，当dept 表发生插入，修改，删除操作时引起该触发器执行
+    declare
+    var_tag varchar2(10);  --声明一个变量，存储对dept表执行的操作类
+    begin
+    if inserting then  --当触发事件是insert时
+    var_tag:='插入';   --标识插入操作
+    elsif updating then  --当触发事件是update时
+    var_tag:='修改';  --标识修改操作
+    elsif deleting then  --当触发事件是delete时
+    var_tag:='删除';  --标识删除操作
+    end if;
+    INSERT INTO dept_log VALUES (var_tag,sysdate); --向日志表中插入对dept表的操作信息
+    end
+    ;
+
+expected_end_delimiter: ;
+

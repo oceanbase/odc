@@ -1,0 +1,104 @@
+[
+  {
+    "id": 1,
+    "name": "case1",
+    "description": "加一个新索引，并删除一个旧索引",
+    "input": {
+      "previous": [
+        {
+          "name": "a",
+          "schemaName": "schema",
+          "tableName": "table",
+          "type": "NORMAL",
+          "global": true,
+          "visible": true,
+          "columnNames": [
+            "a"
+          ],
+          "algorithm": "BTREE",
+          "ordinalPosition": 1
+        }
+      ],
+      "current": [
+        {
+          "name": "b",
+          "schemaName": "schema",
+          "tableName": "table",
+          "type": "NORMAL",
+          "global": true,
+          "visible": true,
+          "columnNames": [
+            "b"
+          ],
+          "algorithm": "BTREE",
+          "ordinalPosition": null
+        }
+      ]
+    },
+    "output": "CREATE  INDEX `b` USING BTREE ON `schema`.`table` (`b`) GLOBAL;\nALTER TABLE `schema`.`table` DROP INDEX `a`;\n"
+  },
+  {
+    "id": 2,
+    "name": "case2",
+    "description": "原来无索引，新增一个索引",
+    "input": {
+      "previous": [
+      ],
+      "current": [
+        {
+          "name": "b",
+          "schemaName": "schema",
+          "tableName": "table",
+          "type": "NORMAL",
+          "global": true,
+          "visible": true,
+          "columnNames": [
+            "b"
+          ],
+          "algorithm": "BTREE",
+          "ordinalPosition": null
+        }
+      ]
+    },
+    "output": "CREATE  INDEX `b` USING BTREE ON `schema`.`table` (`b`) GLOBAL;\n"
+  },
+  {
+    "id": 3,
+    "name": "case3",
+    "description": "原来有多个索引，现在无索引",
+    "input": {
+      "previous": [
+        {
+          "name": "a",
+          "schemaName": "schema",
+          "tableName": "table",
+          "type": "NORMAL",
+          "global": true,
+          "visible": true,
+          "columnNames": [
+            "a"
+          ],
+          "algorithm": "BTREE",
+          "ordinalPosition": null
+        },
+        {
+          "name": "b",
+          "schemaName": "schema",
+          "tableName": "table",
+          "type": "NORMAL",
+          "global": true,
+          "visible": true,
+          "columnNames": [
+            "b"
+          ],
+          "algorithm": "BTREE",
+          "ordinalPosition": null
+        }
+      ],
+      "current": [
+
+      ]
+    },
+    "output": "ALTER TABLE `schema`.`table` DROP INDEX `a`;\nALTER TABLE `schema`.`table` DROP INDEX `b`;\n"
+  }
+]
