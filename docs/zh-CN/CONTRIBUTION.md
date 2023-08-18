@@ -16,7 +16,7 @@
 
 # 1. 行为准则 <a id='code-of-conduct'></a>
 
-项目的所有参与者都需要遵守 [行为准则](CODE_OF_CONDUCT.md)，参与贡献本项目表示您同意遵守此行为准则。
+项目的所有参与者都需要遵守 [行为准则](../../CODE_OF_CONDUCT-zh-CN.md)，参与贡献本项目表示您同意遵守此行为准则。
 如果遇到不可接受的行为，请联系 [yizhou.xw@oceanbase.com](mailto:yizhou.xw@oceanbase.com) 报告。
 
 # 2. 问题咨询或讨论 <a id='questions-or-discussion'></a>

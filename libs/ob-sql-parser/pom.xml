@@ -6,7 +6,7 @@
     <artifactId>ob-sql-parser</artifactId>
     <version>1.1.1</version>
     <name>ob-sql-parser</name>
-    <url>http://maven.apache.org</url>
+    <url>https://github.com/oceanbase/odc/tree/main/libs/ob-sql-parser</url>
 
     <licenses>
         <license>
