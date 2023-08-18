@@ -155,7 +155,7 @@ ODC 桌面版安装包下载地址
 ODC 期望构建一个开放的社区，一起打造数据库开发管控协同工具，我们欢迎任何形式的贡献，您可以：
 
 - 通过 [Issues](https://github.com/oceanbase/odc/issues) 提交 bug。
-- 通过 [Discussion](https://github.com/oceanbase/odc/disussions) 参与或发起讨论。
+- 通过 [Discussion](https://github.com/oceanbase/odc/discussions) 参与或发起讨论。
 - 通过 [Pull requests](https://github.com/oceanbase/odc/pulls) 提交问题修复或者功能特性。
 - 将 ODC 介绍给您的朋友和同事，分享 ODC 的功能和优势，帮助 ODC 社区扩大影响力。
 

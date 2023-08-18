@@ -175,7 +175,7 @@ After installing the Desktop version, you can follow our [Quick Start guide](htt
 ODC envisions an open community, collaboratively crafting a database development and control management tool. We welcome your contributions in any form:
 
 - Report bugs through [Issues](https://github.com/oceanbase/odc/issues).
-- Participate in or initiate discussions via [Discussion](https://github.com/oceanbase/odc/disussions).
+- Participate in or initiate discussions via [Discussion](https://github.com/oceanbase/odc/discussions).
 - Contribute bug fixes or new features through [Pull requests](https://github.com/oceanbase/odc/pulls).
 - Share ODC to your friends and colleagues, and help expand the ODC community's influence.
 
