@@ -6,7 +6,7 @@
     <artifactId>db-browser</artifactId>
     <version>1.0.1</version>
     <name>db-browser</name>
-    <url>http://maven.apache.org</url>
+    <url>https://github.com/oceanbase/odc/tree/main/libs/db-browser</url>
 
     <licenses>
         <license>
