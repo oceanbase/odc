@@ -205,4 +205,5 @@ ODC is licensed under the [Apache-2.0](https://www.apache.org/licenses/LICENSE-2
 We welcome you to raise any questions or provide feedback through GitHub Issues. If you have trouble accessing GitHub, you can also join our DingTalk Group to seek assistance there.
 
 * [GitHub Issues](https://github.com/oceanbase/odc/issues)
+* [Discord Server](https://discord.gg/drPUb2kq)
 * [ODC DingTalk Group](https://qr.dingtalk.com/action/joingroup?code=v1,k1,OacNAwktCbVGqRk2jQ0TDga6j6AHtXtvU7ZrD6Orah0=&_dt_no_comment=1&origin=11)
