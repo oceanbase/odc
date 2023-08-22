@@ -40,7 +40,7 @@ public class DataConverters {
         converterList = new LinkedList<>();
         if (DialectType.OB_ORACLE.equals(dialectType)) {
             initForOracleMode(serverTimeZoneId);
-        } else if (Objects.nonNull(dialectType) && dialectType.isOBMysql()) {
+        } else if (Objects.nonNull(dialectType) && dialectType.isMysql()) {
             initForMysqlMode();
         } else {
             throw new IllegalArgumentException("Illegal DialectType " + dialectType);

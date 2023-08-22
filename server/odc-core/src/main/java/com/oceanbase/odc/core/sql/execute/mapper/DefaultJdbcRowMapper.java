@@ -41,7 +41,7 @@ public class DefaultJdbcRowMapper extends BaseDialectBasedRowMapper {
     public DefaultJdbcRowMapper(@NonNull ConnectionSession session) {
         super(session.getDialectType());
         DialectType dialectType = session.getDialectType();
-        if (Objects.nonNull(dialectType) && dialectType.isOBMysql()) {
+        if (Objects.nonNull(dialectType) && dialectType.isMysql()) {
             mapperList.add(new MySQLBitMapper());
             mapperList.add(new MySQLDatetimeMapper());
             mapperList.add(new MySQLYearMapper());
