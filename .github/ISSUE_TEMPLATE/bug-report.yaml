@@ -14,6 +14,7 @@ body:
         </details>
     validations:
       required: true
+
   - type: textarea
     id: ob version
     attributes:
@@ -29,6 +30,7 @@ body:
         </details>
     validations:
       required: true
+
   - type: textarea
     id: problem
     attributes:
