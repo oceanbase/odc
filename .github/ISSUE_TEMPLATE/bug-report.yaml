@@ -3,7 +3,7 @@ description: Report a bug encountered while operating ODC
 labels: kind/bug
 body:
   - type: textarea
-    id: odc version
+    id: odcversion
     attributes:
       label: ODC version
       value: |
@@ -16,7 +16,7 @@ body:
       required: true
 
   - type: textarea
-    id: ob version
+    id: obversion
     attributes:
       label: OB version
       value: |
