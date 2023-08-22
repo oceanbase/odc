@@ -63,9 +63,5 @@ body:
     id: cloud
     attributes:
       label: Cloud
-      value: |
-        <details>
-
-        </details>
-    validations:
-      required: true
+      description: |
+        Please provide more information on the cloud, such as region information, etc.
