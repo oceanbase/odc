@@ -1,6 +1,7 @@
 name: 🐞 Bug Report
 description: Report a bug encountered while operating ODC
-labels: kind/bug
+labels: [type-bug, priority-medium]
+title: "[Bug]: "
 body:
   - type: textarea
     id: odcversion

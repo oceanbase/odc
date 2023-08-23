@@ -1,6 +1,7 @@
 name: 🌟 Enhancement
 description: Provide details for a feature in development
-labels: kind/feature
+labels: [enhancement, type-feature]
+title: "[Enhancement]: "
 body:
   - type: textarea
     id: feature
