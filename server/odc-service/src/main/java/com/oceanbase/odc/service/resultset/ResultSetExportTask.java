@@ -66,7 +66,6 @@ import com.oceanbase.odc.service.datatransfer.model.DataTransferFormat;
 import com.oceanbase.odc.service.flow.task.OssTaskReferManager;
 import com.oceanbase.odc.service.flow.task.model.ResultSetExportResult;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
-import com.oceanbase.odc.service.objectstorage.cloud.model.CloudObjectStorageConstants;
 import com.oceanbase.odc.service.resultset.ResultSetExportTaskParameter.CSVFormat;
 import com.oceanbase.tools.loaddump.client.DumpClient;
 import com.oceanbase.tools.loaddump.client.DumpClient.Builder;
@@ -427,8 +426,7 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
         try {
             if (cloudObjectStorageService.supported()) {
                 try {
-                    String objectName = cloudObjectStorageService
-                            .uploadTemp(CloudObjectStorageConstants.ODC_SERVER_PREFIX, origin);
+                    String objectName = cloudObjectStorageService.uploadTemp(origin.getName(), origin);
                     ((OssTaskReferManager) SpringContextUtil.getBean("ossTaskReferManager")).put(fileName, objectName);
                 } catch (Exception exception) {
                     throw new UnexpectedException(String
