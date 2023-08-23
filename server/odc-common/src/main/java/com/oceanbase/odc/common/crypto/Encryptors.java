@@ -15,17 +15,38 @@
  */
 package com.oceanbase.odc.common.crypto;
 
+import com.oceanbase.odc.common.crypto.RsaBytesEncryptor.RsaEncryptorType;
 import com.oceanbase.odc.common.encode.ByteArrayToBase64Converter;
 
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * 
  * @author yizhou.xw
  * @version : Encryptors.java, v 0.1 2021-3-29 18:02
  */
 @Slf4j
 public class Encryptors {
+
+    /**
+     * RSA (both encryptor and decryptor)
+     */
+    public static BytesEncryptor rsa(String publicKey, String privateKey) {
+        return new RsaBytesEncryptor(RsaEncryptorType.BOTH_MODE, publicKey, privateKey);
+    }
+
+    /**
+     * RSA (only encryptor mode)
+     */
+    public static BytesEncryptor rsaEncryptor(String publicKey) {
+        return new RsaBytesEncryptor(RsaEncryptorType.ENCRYPT_MODE, publicKey, null);
+    }
+
+    /**
+     * RSA (only decryptor mode)
+     */
+    public static BytesEncryptor rsaDecryptor(String privateKey) {
+        return new RsaBytesEncryptor(RsaEncryptorType.DECRYPT_MODE, null, privateKey);
+    }
 
     /**
      * AES-256 带 Salt 模式
@@ -39,6 +60,27 @@ public class Encryptors {
      */
     public static BytesEncryptor aes(String key, String salt, int keyLength) {
         return new AesBytesEncryptor(key, salt, keyLength);
+    }
+
+    /**
+     * RSA BASE64 (both encryptor and decryptor)
+     */
+    public static TextEncryptor rsaBase64(String publicKey, String privateKey) {
+        return new TextEncryptorWrapper(rsa(publicKey, privateKey), new ByteArrayToBase64Converter());
+    }
+
+    /**
+     * RSA BASE64 (only encryptor mode)
+     */
+    public static TextEncryptor rsaBase64Encryptor(String publicKey) {
+        return new TextEncryptorWrapper(rsaEncryptor(publicKey), new ByteArrayToBase64Converter());
+    }
+
+    /**
+     * RSA BASE64 (only decryptor mode)
+     */
+    public static TextEncryptor rsaBase64Decryptor(String privateKey) {
+        return new TextEncryptorWrapper(rsaDecryptor(privateKey), new ByteArrayToBase64Converter());
     }
 
     /**
