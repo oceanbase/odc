@@ -32,7 +32,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
 import javax.sql.DataSource;
 
@@ -40,8 +39,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.jdbc.core.StatementCallback;
 
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
 import com.oceanbase.jdbc.OceanBaseConnection;
 import com.oceanbase.jdbc.internal.protocol.Protocol;
 import com.oceanbase.odc.common.event.EventPublisher;
@@ -56,7 +53,6 @@ import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.core.shared.model.OdcDBSession;
-import com.oceanbase.odc.core.shared.model.TableIdentity;
 import com.oceanbase.odc.core.sql.execute.GeneralSyncJdbcExecutor;
 import com.oceanbase.odc.core.sql.execute.SyncJdbcExecutor;
 import com.oceanbase.odc.core.sql.execute.cache.BinaryDataManager;
@@ -65,8 +61,6 @@ import com.oceanbase.odc.core.sql.execute.cache.table.VirtualTable;
 import com.oceanbase.odc.core.sql.execute.model.JdbcGeneralResult;
 import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
 import com.oceanbase.odc.core.sql.util.OdcDBSessionRowMapper;
-import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
-import com.oceanbase.tools.dbbrowser.model.DBView;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -377,27 +371,6 @@ public class ConnectionSessionUtil {
         return (BinaryDataManager) connectionSession.getAttribute(ConnectionSessionConstants.BINARY_FILE_MANAGER_KEY);
     }
 
-    public static void setTableColumnCache(@NonNull ConnectionSession connectionSession,
-            @NonNull Cache<TableIdentity, List<DBTableColumn>> cache) {
-        connectionSession.setAttribute(ConnectionSessionConstants.TABLE_COLUMN_CACHE, cache);
-    }
-
-    public static Cache<TableIdentity, List<DBTableColumn>> getTableColumnCache(
-            @NonNull ConnectionSession connectionSession) {
-        return (Cache<TableIdentity, List<DBTableColumn>>) connectionSession
-                .getAttribute(ConnectionSessionConstants.TABLE_COLUMN_CACHE);
-    }
-
-    public static void setViewColumnCache(@NonNull ConnectionSession connectionSession,
-            @NonNull Cache<TableIdentity, DBView> cache) {
-        connectionSession.setAttribute(ConnectionSessionConstants.VIEW_COLUMN_CACHE, cache);
-    }
-
-    public static Cache<TableIdentity, DBView> getViewColumnCache(@NonNull ConnectionSession connectionSession) {
-        return (Cache<TableIdentity, DBView>) connectionSession
-                .getAttribute(ConnectionSessionConstants.VIEW_COLUMN_CACHE);
-    }
-
     public static void setShowTableColumnInfo(@NonNull ConnectionSession connectionSession,
             Boolean getTableColumnsInfo) {
         connectionSession.setAttribute(ConnectionSessionConstants.SHOW_TABLE_COLUMN_INFO, getTableColumnsInfo);
@@ -635,15 +608,6 @@ public class ConnectionSessionUtil {
 
     private static SyncJdbcExecutor getSyncJdbcExecutor(ConnectionSession session) {
         return session.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY);
-    }
-
-    public static void initCache(@NonNull ConnectionSession connectionSession) {
-        Cache<TableIdentity, List<DBTableColumn>> tableColumnsCache =
-                Caffeine.newBuilder().maximumSize(1000).expireAfterWrite(20, TimeUnit.MINUTES).build();
-        Cache<TableIdentity, DBView> viewColumnsCache =
-                Caffeine.newBuilder().maximumSize(1000).expireAfterWrite(20, TimeUnit.MINUTES).build();
-        setTableColumnCache(connectionSession, tableColumnsCache);
-        setViewColumnCache(connectionSession, viewColumnsCache);
     }
 
 }
