@@ -77,6 +77,7 @@ public class AuditEventMetaService {
                         AuditEventType.ASYNC,
                         AuditEventType.IMPORT,
                         AuditEventType.EXPORT,
+                        AuditEventType.EXPORT_RESULT_SET,
                         AuditEventType.PERMISSION_APPLY,
                         AuditEventType.SHADOWTABLE_SYNC,
                         AuditEventType.PARTITION_PLAN,
