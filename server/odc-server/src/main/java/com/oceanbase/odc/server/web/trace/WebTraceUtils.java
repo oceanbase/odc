@@ -52,7 +52,6 @@ public class WebTraceUtils {
         try {
             return "" + authenticationFacade.currentUserId();
         } catch (Exception ex) {
-            log.warn("get current user failed, message={}", ex.getMessage());
             return "N/A";
         }
     }
