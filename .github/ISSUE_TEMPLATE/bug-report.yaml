@@ -7,12 +7,10 @@ body:
     id: odcversion
     attributes:
       label: ODC version
-      value: |
-        <details>
-        帮助 -> 关于开发者中心
-
-        Help -> About Develop Center
-        </details>
+      placeholder: |
+        Enter the version, eg. 4.2.0
+      description: |
+        To submit a bug, you need to specify the version of ODC, find the version by: Help -> About Develop Center
     validations:
       required: true
 
