@@ -36,6 +36,8 @@ import lombok.Data;
  */
 @Data
 public class SensitiveColumn implements SecurityResource, OrganizationIsolated {
+
+    @JsonProperty(access = Access.READ_ONLY)
     private Long id;
 
     @NotNull

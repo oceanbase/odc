@@ -33,6 +33,7 @@ import lombok.Data;
 
 @Data
 public class AutomationRule implements OrganizationIsolated {
+    @JsonProperty(access = Access.READ_ONLY)
     private Long id;
     private String name;
     private Long eventId;

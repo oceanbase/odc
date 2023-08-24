@@ -39,6 +39,8 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 public class IntegrationConfig implements SecurityResource, OrganizationIsolated {
+
+    @JsonProperty(access = Access.READ_ONLY)
     private Long id;
 
     @NotNull

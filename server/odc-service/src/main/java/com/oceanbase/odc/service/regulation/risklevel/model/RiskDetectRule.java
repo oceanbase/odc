@@ -34,6 +34,8 @@ import lombok.Data;
 @Data
 @Valid
 public class RiskDetectRule {
+
+    @JsonProperty(access = Access.READ_ONLY)
     private Long id;
 
     private String name;
