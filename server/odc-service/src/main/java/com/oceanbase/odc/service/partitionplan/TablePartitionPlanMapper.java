@@ -32,7 +32,6 @@ public class TablePartitionPlanMapper {
                 .expirePeriodUnit(entity.getExpirePeriodUnit()).build();
         return TablePartitionPlan.builder()
                 .tableName(entity.getTableName())
-                .flowInstanceId(entity.getFlowInstanceId())
                 .schemaName(entity.getSchemaName())
                 .detail(detail).build();
     }
@@ -48,7 +47,6 @@ public class TablePartitionPlanMapper {
                 .partitionNamingSuffixExpression(model.getDetail().getPartitionNamingSuffixExpression())
                 .preCreatePartitionCount(model.getDetail().getPreCreatePartitionCount())
                 .tableName(model.getTableName())
-                .schemaName(model.getSchemaName())
-                .flowInstanceId(model.getFlowInstanceId()).build();
+                .schemaName(model.getSchemaName()).build();
     }
 }

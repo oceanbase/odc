@@ -18,9 +18,11 @@ package com.oceanbase.odc.service.partitionplan;
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import org.quartz.SchedulerException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,23 +32,33 @@ import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.metadb.flow.ServiceTaskInstanceEntity;
 import com.oceanbase.odc.metadb.flow.ServiceTaskInstanceRepository;
-import com.oceanbase.odc.metadb.partitionplan.ConnectionPartitionPlanEntity;
-import com.oceanbase.odc.metadb.partitionplan.ConnectionPartitionPlanRepository;
+import com.oceanbase.odc.metadb.partitionplan.DatabasePartitionPlanEntity;
+import com.oceanbase.odc.metadb.partitionplan.DatabasePartitionPlanRepository;
 import com.oceanbase.odc.metadb.partitionplan.TablePartitionPlanEntity;
 import com.oceanbase.odc.metadb.partitionplan.TablePartitionPlanRepository;
+import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.metadb.task.TaskEntity;
-import com.oceanbase.odc.service.connection.ConnectionService;
+import com.oceanbase.odc.service.connection.database.DatabaseService;
+import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.flow.FlowInstanceService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
-import com.oceanbase.odc.service.partitionplan.model.ConnectionPartitionPlan;
+import com.oceanbase.odc.service.partitionplan.model.DatabasePartitionPlan;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanTaskParameters;
 import com.oceanbase.odc.service.partitionplan.model.TablePartitionPlan;
+import com.oceanbase.odc.service.quartz.model.MisfireStrategy;
+import com.oceanbase.odc.service.schedule.ScheduleService;
+import com.oceanbase.odc.service.schedule.model.JobType;
+import com.oceanbase.odc.service.schedule.model.PartitionPlanJobParameters;
+import com.oceanbase.odc.service.schedule.model.ScheduleStatus;
+import com.oceanbase.odc.service.schedule.model.TriggerConfig;
+import com.oceanbase.odc.service.schedule.model.TriggerStrategy;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartition;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
+import com.oceanbase.tools.migrator.common.exception.UnExpectedException;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -64,14 +76,17 @@ public class PartitionPlanService {
     @Autowired
     private TablePartitionPlanRepository tablePartitionPlanRepository;
     @Autowired
-    private ConnectionPartitionPlanRepository connectionPartitionPlanRepository;
+    private DatabasePartitionPlanRepository databasePartitionPlanRepository;
 
     @Autowired
     private FlowInstanceService flowInstanceService;
     @Autowired
     private AuthenticationFacade authenticationFacade;
     @Autowired
-    private ConnectionService connectionService;
+    private DatabaseService databaseService;
+
+    @Autowired
+    private ScheduleService scheduleService;
 
     @Autowired
     private TaskService taskService;
@@ -79,67 +94,53 @@ public class PartitionPlanService {
     private ServiceTaskInstanceRepository serviceTaskInstanceRepository;
 
 
-    private final ConnectionPartitionPlanMapper connectionPartitionPlanMapper = ConnectionPartitionPlanMapper.INSTANCE;
+    private final DatabasePartitionPlanMapper databasePartitionPlanMapper = DatabasePartitionPlanMapper.INSTANCE;
 
     private final TablePartitionPlanMapper tablePartitionPlanMapper = new TablePartitionPlanMapper();
 
     /**
-     * 查找 Range 分区表 TODO:新增筛选已修改的表
+     * 查找 Range 分区表
      */
-    public ConnectionPartitionPlan findRangeTablePlan(Long connectionId, Long flowInstanceId) {
+    public DatabasePartitionPlan findRangeTablePlan(Long databaseId, Long flowInstanceId) {
         // 根据流程实例 ID 查询时，仅查询实例下的分区配置
         if (flowInstanceId != null) {
-            return findTablePartitionPlanByFlowInstanceId(flowInstanceId);
+            return findDatabasePartitionPlanByFlowInstanceId(flowInstanceId);
         }
-        // 通过 connectionId 查询时，拉取全 RANGE 表，并返回已存在的分区计划
-        ConnectionConfig connectionConfig = connectionService.getForConnect(connectionId);
-        DefaultConnectSessionFactory factory = new DefaultConnectSessionFactory(connectionConfig);
-        ConnectionSession connectionSession = factory.generateSession();
-        try {
-            DBSchemaAccessor accessor = DBSchemaAccessors.create(connectionSession);
-            List<TablePartitionPlan> tablePartitionPlans = findConnectionAllTablePartitionPlan(
-                    connectionId, connectionConfig.getTenantName(), accessor);
-            Optional<ConnectionPartitionPlanEntity> validConnectionPlan =
-                    connectionPartitionPlanRepository.findValidPlanByConnectionId(connectionId);
-            ConnectionPartitionPlan returnValue =
-                    validConnectionPlan.isPresent()
-                            ? connectionPartitionPlanMapper.entityToModel(validConnectionPlan.get())
-                            : ConnectionPartitionPlan.builder().connectionId(connectionId).build();
-            returnValue.setTablePartitionPlans(tablePartitionPlans);
-            return returnValue;
-        } finally {
-            try {
-                connectionSession.expire();
-            } catch (Exception e) {
-                // eat exception
-            }
-        }
+        // 通过 database 查询时，拉取全 RANGE 表，并返回已存在的分区计划
+        Database database = databaseService.detail(databaseId);
+        Optional<DatabasePartitionPlanEntity> databasePartitionPlan =
+                databasePartitionPlanRepository.findValidPlanByDatabaseId(databaseId);
+        DatabasePartitionPlan returnValue =
+                databasePartitionPlan.isPresent()
+                        ? databasePartitionPlanMapper.entityToModel(databasePartitionPlan.get())
+                        : DatabasePartitionPlan.builder().databaseId(databaseId).build();
+        returnValue.setTablePartitionPlans(findDatabaseTablePartitionPlan(database));
+        return returnValue;
     }
 
     /**
      * 确认策略：停用连接下原所有计划，生效当前 flowInstanceId 下的所有配置
      */
     @Transactional
-    public void updateTablePartitionPlan(ConnectionPartitionPlan connectionPartitionPlan) throws IOException {
+    public void updateTablePartitionPlan(DatabasePartitionPlan databasePartitionPlan) throws IOException {
         // 更新连接配置
-        Optional<ConnectionPartitionPlanEntity> connectionPartitionPlanEntity =
-                connectionPartitionPlanRepository.findByFlowInstanceId(connectionPartitionPlan.getFlowInstanceId());
+        Optional<DatabasePartitionPlanEntity> connectionPartitionPlanEntity =
+                databasePartitionPlanRepository.findByFlowInstanceId(databasePartitionPlan.getFlowInstanceId());
         if (!connectionPartitionPlanEntity.isPresent())
             return;
-        connectionPartitionPlanEntity.get().setInspectEnabled(connectionPartitionPlan.isInspectEnable());
+        connectionPartitionPlanEntity.get().setInspectEnabled(databasePartitionPlan.isInspectEnable());
         connectionPartitionPlanEntity.get()
-                .setInspectTriggerStrategy(connectionPartitionPlan.getInspectTriggerStrategy());
+                .setInspectTriggerStrategy(databasePartitionPlan.getInspectTriggerStrategy());
         connectionPartitionPlanEntity.get().setConfigEnabled(false);
-        connectionPartitionPlanRepository.saveAndFlush(connectionPartitionPlanEntity.get());
+        databasePartitionPlanRepository.saveAndFlush(connectionPartitionPlanEntity.get());
         // 更新表分区配置
-        List<TablePartitionPlan> tablePartitionPlans = connectionPartitionPlan.getTablePartitionPlans();
+        List<TablePartitionPlan> tablePartitionPlans = databasePartitionPlan.getTablePartitionPlans();
         List<TablePartitionPlanEntity> tablePartitionPlanEntities = tablePartitionPlanRepository.findByFlowInstanceId(
-                connectionPartitionPlan.getFlowInstanceId());
+                databasePartitionPlan.getFlowInstanceId());
         List<TablePartitionPlanEntity> updateEntities = new LinkedList<>();
         tablePartitionPlans.forEach(tablePartitionPlan -> {
             for (TablePartitionPlanEntity tablePartitionPlanEntity : tablePartitionPlanEntities) {
                 // 未修改的直接生效
-                tablePartitionPlanEntity.setFlowInstanceId(connectionPartitionPlan.getFlowInstanceId());
                 tablePartitionPlanEntity.setIsConfigEnable(false);
                 tablePartitionPlanEntity.setModifierId(authenticationFacade.currentUserId());
                 if (tablePartitionPlanEntity.getSchemaName().equals(tablePartitionPlan.getSchemaName())
@@ -164,99 +165,109 @@ public class PartitionPlanService {
         // 更新配置
         tablePartitionPlanRepository.saveAll(updateEntities);
         PartitionPlanTaskParameters taskParameters = new PartitionPlanTaskParameters();
-        taskParameters.setConnectionPartitionPlan(connectionPartitionPlan);
+        taskParameters.setConnectionPartitionPlan(databasePartitionPlan);
         // 更新任务详情
         Optional<ServiceTaskInstanceEntity> taskInstance = serviceTaskInstanceRepository.findByFlowInstanceId(
-                connectionPartitionPlan.getFlowInstanceId());
+                databasePartitionPlan.getFlowInstanceId());
         taskInstance.ifPresent(instance -> {
             TaskEntity taskEntity = taskService.detail(instance.getTargetTaskId());
             taskEntity.setParametersJson(JsonUtils.toJson(taskParameters));
             taskService.updateParametersJson(taskEntity);
         });
         // 推进流程节点
-        flowInstanceService.approve(connectionPartitionPlan.getFlowInstanceId(), "approve update partition plan",
+        flowInstanceService.approve(databasePartitionPlan.getFlowInstanceId(), "approve update partition plan",
                 false);
     }
 
     /**
      * 查询当前连接下是否存在分区计划
      */
-    public boolean hasConnectionPartitionPlan(Long connectionId) {
-        Optional<ConnectionPartitionPlanEntity> validConnectionPlan =
-                connectionPartitionPlanRepository.findValidPlanByConnectionId(connectionId);
+    public boolean hasConnectionPartitionPlan(Long databaseId) {
+        Optional<DatabasePartitionPlanEntity> validConnectionPlan =
+                databasePartitionPlanRepository.findValidPlanByDatabaseId(databaseId);
         return validConnectionPlan.isPresent();
     }
 
-    public ConnectionPartitionPlan findTablePartitionPlanByFlowInstanceId(Long flowInstanceId) {
-        ConnectionPartitionPlan connectionPartitionPlan = new ConnectionPartitionPlan();
-        Optional<ConnectionPartitionPlanEntity> connectionPartitionPlanEntity =
-                connectionPartitionPlanRepository.findByFlowInstanceId(flowInstanceId);
-        if (connectionPartitionPlanEntity.isPresent()) {
-            connectionPartitionPlan =
-                    connectionPartitionPlanMapper.entityToModel(connectionPartitionPlanEntity.get());
+    public DatabasePartitionPlan findDatabasePartitionPlanByFlowInstanceId(Long flowInstanceId) {
+        Optional<DatabasePartitionPlanEntity> entity =
+                databasePartitionPlanRepository.findByFlowInstanceId(flowInstanceId);
+        DatabasePartitionPlan databasePartitionPlan = new DatabasePartitionPlan();
+        if (entity.isPresent()) {
+            databasePartitionPlan = databasePartitionPlanMapper.entityToModel(entity.get());
+            List<TablePartitionPlan> tablePartitionPlans = tablePartitionPlanRepository
+                    .findValidPlanByDatabasePartitionPlanId(
+                            databasePartitionPlan.getId())
+                    .stream().map(tablePartitionPlanMapper::entityToModel).collect(Collectors.toList());
+            databasePartitionPlan.setTablePartitionPlans(tablePartitionPlans);
         }
-        List<TablePartitionPlanEntity> tablePartitionPlanEntities =
-                tablePartitionPlanRepository.findByFlowInstanceId(flowInstanceId);
-        List<TablePartitionPlan> tablePartitionPlans = tablePartitionPlanEntities.stream().map(
-                tablePartitionPlanMapper::entityToModel).collect(
-                        Collectors.toList());
-        connectionPartitionPlan.setTablePartitionPlans(tablePartitionPlans);
-        return connectionPartitionPlan;
+        return databasePartitionPlan;
     }
 
-    private List<TablePartitionPlan> findConnectionAllTablePartitionPlan(Long connectionId, String tenantName,
-            DBSchemaAccessor accessor) {
-        List<TablePartitionPlanEntity> connectionValidPartitionPlans =
-                tablePartitionPlanRepository.findValidPlanByConnectionId(connectionId);
-        List<DBTablePartition> dbTablePartitions = accessor.listTableRangePartitionInfo(tenantName);
+    private List<TablePartitionPlan> findDatabaseTablePartitionPlan(Database database) {
+        // find exist table partition-plan config.
+        Map<String, TablePartitionPlanEntity> tableName2TablePartitionPlan = tablePartitionPlanRepository
+                .findValidPlanByDatabaseId(
+                        database.getId())
+                .stream().collect(Collectors.toMap(TablePartitionPlanEntity::getTableName, o -> o));
+
+        List<DBTablePartition> dbTablePartitions = listTableRangePartitionInfo(database);
 
         List<TablePartitionPlan> returnValue = new LinkedList<>();
-        for (DBTablePartition dbTablePartition : dbTablePartitions) {
-            boolean hasPartitionPlan = false;
-            for (TablePartitionPlanEntity tablePlan : connectionValidPartitionPlans) {
-                if (dbTablePartition.getSchemaName().equals(tablePlan.getSchemaName())
-                        && dbTablePartition.getTableName().equals(tablePlan.getTableName())) {
-                    TablePartitionPlan tablePartitionPlan = tablePartitionPlanMapper.entityToModel(tablePlan);
-                    tablePartitionPlan.setPartitionCount(dbTablePartition.getPartitionOption().getPartitionsNum());
-                    returnValue.add(tablePartitionPlan);
-                    hasPartitionPlan = true;
-                    break;
-                }
-            }
-            if (!hasPartitionPlan) {
-                returnValue.add(TablePartitionPlan.builder()
-                        .schemaName(dbTablePartition.getSchemaName())
-                        .tableName(dbTablePartition.getTableName())
-                        .partitionCount(dbTablePartition.getPartitionOption().getPartitionsNum()).build());
-            }
-        }
+        dbTablePartitions.forEach(dbTablePartition -> {
+            TablePartitionPlan tablePartitionPlan =
+                    tableName2TablePartitionPlan.containsKey(dbTablePartition.getTableName())
+                            ? tablePartitionPlanMapper
+                                    .entityToModel(tableName2TablePartitionPlan.get(dbTablePartition.getTableName()))
+                            : TablePartitionPlan.builder()
+                                    .schemaName(dbTablePartition.getSchemaName())
+                                    .tableName(dbTablePartition.getTableName()).build();
+            tablePartitionPlan.setPartitionCount(dbTablePartition.getPartitionOption().getPartitionsNum());
+            returnValue.add(tablePartitionPlan);
+
+        });
         return returnValue;
     }
 
-    /**
-     * 创建分区计划时插入，审批通过后生效
-     */
+    private List<DBTablePartition> listTableRangePartitionInfo(Database database) {
+        ConnectionConfig connectionConfig = database.getDataSource();
+        DefaultConnectSessionFactory factory = new DefaultConnectSessionFactory(connectionConfig);
+        ConnectionSession connectionSession = factory.generateSession();
+        DBSchemaAccessor accessor = DBSchemaAccessors.create(connectionSession);
+        List<DBTablePartition> dbTablePartitions;
+        try {
+            dbTablePartitions = accessor.listTableRangePartitionInfo(
+                    database.getDataSource().getTenantName()).stream()
+                    .filter(o -> o.getSchemaName().equals(database.getName())).collect(
+                            Collectors.toList());
+        } finally {
+            try {
+                connectionSession.expire();
+            } catch (Exception e) {
+                // eat exception
+            }
+        }
+        return dbTablePartitions;
+    }
+
     @Transactional
-    public void addTablePartitionPlan(ConnectionPartitionPlan connectionPartitionPlan, Long flowInstanceId) {
-        connectionPartitionPlan.setFlowInstanceId(flowInstanceId);
-        connectionPartitionPlan.getTablePartitionPlans()
-                .forEach(tablePartitionPlan -> tablePartitionPlan.setFlowInstanceId(flowInstanceId));
+    public void createDatabasePartitionPlan(DatabasePartitionPlan databasePartitionPlan) {
         // 新增连接分区配置
         long currentUserId = authenticationFacade.currentUserId();
         long currentOrganizationId = authenticationFacade.currentOrganizationId();
-        ConnectionPartitionPlanEntity connectionPartitionPlanEntity =
-                connectionPartitionPlanMapper.modelToEntity(connectionPartitionPlan);
-        connectionPartitionPlanEntity.setCreatorId(currentUserId);
-        connectionPartitionPlanEntity.setModifierId(currentUserId);
-        connectionPartitionPlanEntity.setOrganizationId(currentOrganizationId);
-        connectionPartitionPlanEntity.setConfigEnabled(false);
-        connectionPartitionPlanRepository.save(connectionPartitionPlanEntity);
+        DatabasePartitionPlanEntity databasePartitionPlanEntity =
+                databasePartitionPlanMapper.modelToEntity(databasePartitionPlan);
+        databasePartitionPlanEntity.setCreatorId(currentUserId);
+        databasePartitionPlanEntity.setModifierId(currentUserId);
+        databasePartitionPlanEntity.setOrganizationId(currentOrganizationId);
+        databasePartitionPlanEntity.setConfigEnabled(false);
+        databasePartitionPlanEntity = databasePartitionPlanRepository.save(databasePartitionPlanEntity);
         // 新增分区计划
         List<TablePartitionPlanEntity> entities = new LinkedList<>();
-        for (TablePartitionPlan tablePlan : connectionPartitionPlan.getTablePartitionPlans()) {
+        for (TablePartitionPlan tablePlan : databasePartitionPlan.getTablePartitionPlans()) {
             TablePartitionPlanEntity tablePlanEntity = tablePartitionPlanMapper.modelToEntity(tablePlan);
-            tablePlanEntity.setConnectionId(connectionPartitionPlan.getConnectionId());
-            tablePlanEntity.setFlowInstanceId(connectionPartitionPlanEntity.getFlowInstanceId());
+            tablePlanEntity.setConnectionId(databasePartitionPlan.getConnectionId());
+            tablePlanEntity.setDatabaseId(databasePartitionPlan.getDatabaseId());
+            tablePlanEntity.setDatabasePartitionPlanId(databasePartitionPlanEntity.getId());
             tablePlanEntity.setOrganizationId(currentOrganizationId);
             tablePlanEntity.setCreatorId(currentUserId);
             tablePlanEntity.setModifierId(currentUserId);
@@ -265,5 +276,90 @@ public class PartitionPlanService {
             entities.add(tablePlanEntity);
         }
         tablePartitionPlanRepository.saveAll(entities);
+        enableDatabasePartitionPlan(databasePartitionPlanEntity);
+        try {
+            // Create partition plan job.
+            ScheduleEntity scheduleEntity = createDatabasePartitionPlanSchedule(
+                    databasePartitionPlanEntity);
+            // Bind partition plan job to entity.
+            databasePartitionPlanRepository.updateScheduleIdById(databasePartitionPlanEntity.getId(),
+                    scheduleEntity.getId());
+        } catch (Exception e) {
+            throw new UnExpectedException("Create database partition plan job failed.", e);
+        }
+    }
+
+    private void enableDatabasePartitionPlan(DatabasePartitionPlanEntity databasePartitionPlan) {
+        Optional<DatabasePartitionPlanEntity> oldPartitionPlan =
+                databasePartitionPlanRepository.findValidPlanByDatabaseId(databasePartitionPlan.getDatabaseId());
+        if (oldPartitionPlan.isPresent()) {
+            try {
+                log.info("Found a valid plan in this database,start to disable it.");
+                // Cancel previous plan.
+                flowInstanceService.cancelNotCheckPermission(oldPartitionPlan.get().getFlowInstanceId());
+                // Stop previous job.
+                if (oldPartitionPlan.get().getScheduleId() != null) {
+                    try {
+                        ScheduleEntity scheduleEntity = scheduleService.nullSafeGetById(
+                                oldPartitionPlan.get().getScheduleId());
+                        scheduleService.terminate(scheduleEntity);
+                        log.info("Terminate old partition plan job success,scheduleId={}",
+                                oldPartitionPlan.get().getScheduleId());
+                    } catch (Exception e) {
+                        log.warn("Terminate old partition plan job failed,scheduleId={}",
+                                oldPartitionPlan.get().getScheduleId());
+                    }
+                }
+            } catch (Exception e) {
+                log.warn("The previous plan has been abandoned,but stop previous instance failed.", e);
+            }
+        }
+        databasePartitionPlanRepository.disableConfigByDatabaseId(databasePartitionPlan.getDatabaseId());
+        tablePartitionPlanRepository.disableConfigByDatabaseId(databasePartitionPlan.getDatabaseId());
+        databasePartitionPlanRepository.enableConfigByFlowInstanceId(databasePartitionPlan.getFlowInstanceId());
+        tablePartitionPlanRepository.enableConfigByDatabasePartitionPlanId(databasePartitionPlan.getId());
+    }
+
+    /**
+     * Create a quartz job to execute partition-plan.
+     */
+    @Transactional
+    public ScheduleEntity createDatabasePartitionPlanSchedule(DatabasePartitionPlanEntity databasePartitionPlan)
+            throws SchedulerException, ClassNotFoundException {
+        ScheduleEntity scheduleEntity = new ScheduleEntity();
+        scheduleEntity.setDatabaseId(databasePartitionPlan.getDatabaseId());
+        scheduleEntity.setStatus(ScheduleStatus.ENABLED);
+        scheduleEntity.setCreatorId(authenticationFacade.currentUserId());
+        scheduleEntity.setModifierId(authenticationFacade.currentUserId());
+        scheduleEntity.setOrganizationId(authenticationFacade.currentOrganizationId());
+        scheduleEntity.setAllowConcurrent(false);
+        scheduleEntity.setMisfireStrategy(MisfireStrategy.MISFIRE_INSTRUCTION_DO_NOTHING);
+        scheduleEntity.setJobType(JobType.PARTITION_PLAN);
+
+        TriggerConfig triggerConfig = new TriggerConfig();
+        triggerConfig.setTriggerStrategy(TriggerStrategy.CRON);
+        triggerConfig.setCronExpression("0 * * * * ?");
+        scheduleEntity.setTriggerConfigJson(JsonUtils.toJson(triggerConfig));
+
+        Database database = databaseService.detail(scheduleEntity.getDatabaseId());
+        scheduleEntity.setProjectId(database.getProject().getId());
+        scheduleEntity.setConnectionId(database.getDataSource().getId());
+        scheduleEntity.setDatabaseName(database.getName());
+        PartitionPlanJobParameters jobParameters = new PartitionPlanJobParameters();
+        jobParameters.setDatabasePartitionPlanId(databasePartitionPlan.getId());
+        scheduleEntity.setJobParametersJson(JsonUtils.toJson(jobParameters));
+        scheduleEntity = scheduleService.create(scheduleEntity);
+        // Bind job to databasePartitionPlan.
+        databasePartitionPlan.setScheduleId(scheduleEntity.getId());
+        scheduleService.enable(scheduleEntity);
+        return scheduleEntity;
+    }
+
+    public DatabasePartitionPlanEntity getDatabasePartitionPlanById(Long id) {
+        return databasePartitionPlanRepository.findById(id).orElse(null);
+    }
+
+    public List<TablePartitionPlanEntity> getValidTablePlanByDatabasePartitionPlanId(Long databaseId) {
+        return tablePartitionPlanRepository.findValidPlanByDatabasePartitionPlanId(databaseId);
     }
 }

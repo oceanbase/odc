@@ -15,15 +15,15 @@
  */
 package com.oceanbase.odc.service.partitionplan;
 
-import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.List;
+import java.util.Optional;
 import java.util.regex.Pattern;
 
 import com.oceanbase.odc.service.partitionplan.model.PeriodUnit;
-import com.oceanbase.tools.dbbrowser.model.DBTablePartition;
-import com.oceanbase.tools.dbbrowser.model.DBTablePartitionDefinition;
+import com.oceanbase.tools.dbbrowser.model.DBTable;
+import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
+import com.oceanbase.tools.dbbrowser.model.DBTablePartitionType;
 
 /**
  * @Author：tianke
@@ -69,23 +69,28 @@ public class PartitionPlanFunction {
         return maxRightBound.getTime().getTime();
     }
 
-    public static PartitionExpressionType getPartitionExpressionType(DBTablePartition partition) {
-        List<DBTablePartitionDefinition> definitions = partition.getPartitionDefinitions();
-        String maxValue = definitions.get(definitions.size() - 1).getMaxValues().get(0);
-        String expression = partition.getPartitionOption().getExpression();
-        if (Pattern.matches("UNIX_TIMESTAMP\\(.*\\)", expression)) {
-            return PartitionExpressionType.UNIX_TIMESTAMP;
+    public static PartitionExpressionType getPartitionExpressionType(DBTable table) {
+        String expression = table.getPartition().getPartitionOption().getExpression();
+        PartitionExpressionType type = PartitionExpressionType.OTHER;
+        if (table.getPartition().getPartitionOption().getType() == DBTablePartitionType.RANGE) {
+            if (Pattern.matches("UNIX_TIMESTAMP\\(.*\\)", expression)) {
+                type = PartitionExpressionType.UNIX_TIMESTAMP;
+            }
         }
-        if (Pattern.matches(".*\\(.*\\)", expression)) {
-            return PartitionExpressionType.OTHER;
+        if (table.getPartition().getPartitionOption().getType() == DBTablePartitionType.RANGE_COLUMNS
+                && table.getPartition().getPartitionOption().getColumnNames().size() == 1) {
+            Optional<DBTableColumn> rangeColumn = table.getColumns().stream().filter(
+                    column -> column.getName()
+                            .equals(table.getPartition().getPartitionOption().getColumnNames().get(0)))
+                    .findFirst();
+            if (rangeColumn.isPresent()) {
+                if (rangeColumn.get().getTypeName().equalsIgnoreCase("DATE")
+                        || rangeColumn.get().getTypeName().equalsIgnoreCase("DATETIME")) {
+                    type = PartitionExpressionType.DATE;
+                }
+            }
         }
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-        try {
-            sdf.parse(maxValue.substring(1, maxValue.length() - 1));
-            return PartitionExpressionType.DATE;
-        } catch (Exception e) {
-            return PartitionExpressionType.OTHER;
-        }
+        return type;
 
     }
 

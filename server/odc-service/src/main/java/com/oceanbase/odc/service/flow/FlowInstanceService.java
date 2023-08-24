@@ -129,8 +129,6 @@ import com.oceanbase.odc.service.integration.model.ApprovalProperties;
 import com.oceanbase.odc.service.integration.model.IntegrationConfig;
 import com.oceanbase.odc.service.integration.model.TemplateVariables;
 import com.oceanbase.odc.service.integration.model.TemplateVariables.Variable;
-import com.oceanbase.odc.service.partitionplan.model.PartitionPlanTaskParameters;
-import com.oceanbase.odc.service.partitionplan.model.TablePartitionPlan;
 import com.oceanbase.odc.service.regulation.approval.model.ApprovalFlowConfig;
 import com.oceanbase.odc.service.regulation.approval.model.ApprovalNodeConfig;
 import com.oceanbase.odc.service.regulation.risklevel.RiskLevelService;
@@ -210,11 +208,6 @@ public class FlowInstanceService {
 
     private final List<Consumer<ShadowTableComparingUpdateEvent>> shadowTableComparingTaskHooks = new ArrayList<>();
     private static final long MAX_EXPORT_OBJECT_COUNT = 10000;
-    /**
-     * Max partition count for OB MySQL mode, refer to
-     * <a href="https://www.oceanbase.com/docs/common-oceanbase-database-10000000001702449">分区概述</a>
-     */
-    private static final long MAX_PARTITION_COUNT = 8192;
     private static final String ODC_SITE_URL = "odc.site.url";
     private static final String INVALID_EXTERNAL_INSTANCE_ID = "N/A";
 
@@ -259,19 +252,6 @@ public class FlowInstanceService {
     @EnablePreprocess
     @Transactional(rollbackFor = Throwable.class, propagation = Propagation.REQUIRED)
     public List<FlowInstanceDetailResp> create(@NotNull @Valid CreateFlowInstanceReq createReq) {
-        if (createReq.getTaskType() == TaskType.PARTITION_PLAN) {
-            PartitionPlanTaskParameters parameters = (PartitionPlanTaskParameters) createReq.getParameters();
-            List<TablePartitionPlan> tablePartitionPlans = parameters.getConnectionPartitionPlan()
-                    .getTablePartitionPlans();
-            for (TablePartitionPlan tablePartitionPlan : tablePartitionPlans) {
-                if (tablePartitionPlan.getPartitionCount() > MAX_PARTITION_COUNT
-                        && tablePartitionPlan.getDetail().getIsAutoPartition()) {
-                    throw new RuntimeException(
-                            String.format("Can not create more partition. TableName: %s,PartitionCount: %s",
-                                    tablePartitionPlan.getTableName(), tablePartitionPlan.getPartitionCount()));
-                }
-            }
-        }
         // TODO 原终止逻辑想表达的语意是终止执行中的计划，但目前线上的语意是终止审批流。暂保留逻辑，待前端修改后删除。
         if (createReq.getTaskType() == TaskType.ALTER_SCHEDULE) {
             AlterScheduleParameters parameters = (AlterScheduleParameters) createReq.getParameters();

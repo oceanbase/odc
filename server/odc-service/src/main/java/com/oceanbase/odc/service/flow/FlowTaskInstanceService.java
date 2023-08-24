@@ -601,8 +601,8 @@ public class FlowTaskInstanceService {
             return null;
         }
         Long flowInstanceId = partitionPlanTaskResults.get(0).getFlowInstanceId();
-        partitionPlanTaskResults.get(0).setConnectionPartitionPlan(
-                partitionPlanService.findTablePartitionPlanByFlowInstanceId(flowInstanceId));
+        partitionPlanTaskResults.get(0).setDatabasePartitionPlan(
+                partitionPlanService.findDatabasePartitionPlanByFlowInstanceId(flowInstanceId));
         return partitionPlanTaskResults;
     }
 
