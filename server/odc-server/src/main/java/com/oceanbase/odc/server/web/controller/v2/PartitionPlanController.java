@@ -36,7 +36,6 @@ import com.oceanbase.odc.service.partitionplan.model.ConnectionPartitionPlan;
  * @Descripition:
  */
 @RestController
-@ConditionalOnProperty(name = "odc.feature.partitionplan.enabled", havingValue = "true")
 public class PartitionPlanController {
 
     @Autowired
