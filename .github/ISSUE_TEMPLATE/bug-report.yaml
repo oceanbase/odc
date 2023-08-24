@@ -8,7 +8,7 @@ body:
     attributes:
       label: ODC version
       placeholder: |
-        Enter the version, eg. 4.2.0
+        Enter the version, e.g. 4.2.0
       description: |
         To submit a bug, you need to specify the version of ODC, find the version by: Help -> About Develop Center
     validations:

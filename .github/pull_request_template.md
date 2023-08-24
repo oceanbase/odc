@@ -10,17 +10,15 @@
 
 <!--
 Add one of the following kinds:
-/kind fix
-/kind refact
-/kind docs
-/kind feat
+type-bug
+type-feature
+type-docs
+etc.
 
 Optionally add one or more of the following kinds if applicable:
-/kind api-change
-/kind deprecation
-/kind failing-test
-/kind flake
-/kind regression
+module-resultset
+module-sql execution
+etc.
 -->
 
 #### What this PR does / why we need it:
