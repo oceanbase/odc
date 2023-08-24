@@ -18,15 +18,11 @@ body:
     id: obversion
     attributes:
       label: OB version
-      value: |
-        <details>
-
-        ```console
-        $ obclient > show variables like '%version%'
+      placeholder: |
         # paste output here
-        ```
-
-        </details>
+        $ obclient > show variables like '%version%'
+      description: |
+        To submit a bug, you need to specify the version of OceanBase, find the version by SQL query.
     validations:
       required: true
 
