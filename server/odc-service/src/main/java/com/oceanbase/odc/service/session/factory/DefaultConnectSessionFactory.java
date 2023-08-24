@@ -140,7 +140,6 @@ public class DefaultConnectSessionFactory implements ConnectionSessionFactory {
         ConnectionSessionUtil.setEventPublisher(session, eventPublisher);
         ConnectionSessionUtil.initArchitecture(session);
         ConnectionInfoUtil.initSessionVersion(session);
-        ConnectionSessionUtil.initCache(session);
         ConnectionSessionUtil.setConsoleSessionResetFlag(session, false);
         ConnectionInfoUtil.initConsoleConnectionId(session);
         ConnectionSessionUtil.setConnectionConfig(session, connectionConfig);

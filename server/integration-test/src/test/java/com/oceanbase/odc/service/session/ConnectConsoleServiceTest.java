@@ -20,14 +20,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -35,8 +33,6 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
 import com.oceanbase.odc.ServiceTestEnv;
 import com.oceanbase.odc.TestConnectionUtil;
 import com.oceanbase.odc.core.datasource.DataSourceFactory;
@@ -46,7 +42,6 @@ import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.session.ExpiredSessionException;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.DialectType;
-import com.oceanbase.odc.core.shared.model.TableIdentity;
 import com.oceanbase.odc.core.sql.execute.AsyncJdbcExecutor;
 import com.oceanbase.odc.core.sql.execute.FutureResult;
 import com.oceanbase.odc.core.sql.execute.GeneralAsyncJdbcExecutor;
@@ -70,7 +65,6 @@ import com.oceanbase.odc.service.session.model.BinaryContent;
 import com.oceanbase.odc.service.session.model.SqlAsyncExecuteReq;
 import com.oceanbase.odc.service.session.model.SqlAsyncExecuteResp;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
-import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 
 import lombok.NonNull;
 
@@ -288,13 +282,6 @@ class TestConnectionSession implements ConnectionSession {
         this.map.putIfAbsent(ConnectionSessionConstants.NLS_TIMESTAMP_FORMAT_NAME, "DD-MON-RR");
         this.map.putIfAbsent(ConnectionSessionConstants.NLS_TIMESTAMP_TZ_FORMAT_NAME, "DD-MON-RR");
         this.connectType = connectType;
-
-        Cache<TableIdentity, List<DBTableColumn>> tableColumnsCache =
-                Caffeine.newBuilder().maximumSize(1000).expireAfterAccess(20, TimeUnit.MINUTES).build();
-        List<DBTableColumn> columns = new ArrayList<>();
-        columns.add(new DBTableColumn());
-        tableColumnsCache.put(TableIdentity.of("schema_test", "table_test"), columns);
-        ConnectionSessionUtil.setTableColumnCache(this, tableColumnsCache);
     }
 
     public TestConnectionSession(String id, InputStream inputStream) {

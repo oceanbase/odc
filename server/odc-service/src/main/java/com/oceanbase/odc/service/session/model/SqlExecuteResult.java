@@ -37,7 +37,6 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonProperty.Access;
-import com.github.benmanes.caffeine.cache.Cache;
 import com.oceanbase.odc.common.util.TraceStage;
 import com.oceanbase.odc.common.util.TraceWatch;
 import com.oceanbase.odc.core.session.ConnectionSession;
@@ -245,7 +244,8 @@ public class SqlExecuteResult {
         Map<ColumnIdentity, DBTableColumn> columnMap = new HashMap<>();
         for (TableIdentity table : caredTables) {
             try {
-                List<DBTableColumn> columns = tryToGetTableColumnsFromCache(connectionSession, schemaAccessor, table);
+                List<DBTableColumn> columns =
+                        schemaAccessor.listTableColumns(table.getSchemaName(), table.getTableName());
                 for (DBTableColumn column : columns) {
                     columnMap.put(ColumnIdentity.of(table, column.getName()), column);
                 }
@@ -271,8 +271,8 @@ public class SqlExecuteResult {
         }
         // first assume a table related query, then assume a view related query
         // if neither, then not editable
-        List<DBTableColumn> dbTableColumns = tryToGetTableColumnsFromCache(connectionSession, schemaAccessor,
-                TableIdentity.of(resultTable.getDatabaseName(), resultTable.getTableName()));
+        List<DBTableColumn> dbTableColumns =
+                schemaAccessor.listTableColumns(resultTable.getDatabaseName(), resultTable.getTableName());
 
         if (!CollectionUtils.isEmpty(dbTableColumns)) {
             for (DBTableColumn column : dbTableColumns) {
@@ -282,8 +282,7 @@ public class SqlExecuteResult {
                 }
             }
         } else if (AllFeatures.getByConnectType(connectionSession.getConnectType()).supportsViewObject()) {
-            DBView dbView = tryToGetViewColumnsFromCache(connectionSession, schemaAccessor,
-                    TableIdentity.of(resultTable.getDatabaseName(), resultTable.getTableName()));
+            DBView dbView = schemaAccessor.getView(resultTable.getDatabaseName(), resultTable.getTableName());
             if (!CollectionUtils.isEmpty(dbView.getColumns())) {
                 for (DBTableColumn column : dbView.getColumns()) {
                     if (table2ColumnNames.get(resultTable).contains(column.getName())) {
@@ -295,21 +294,6 @@ public class SqlExecuteResult {
             }
         }
         resultSetMetaData.setColumnList(resultColumnList);
-    }
-
-    private List<DBTableColumn> tryToGetTableColumnsFromCache(@NonNull ConnectionSession connectionSession,
-            @NonNull DBSchemaAccessor schemaAccessor, @NonNull TableIdentity table) {
-        Cache<TableIdentity, List<DBTableColumn>> tableColumnsCache =
-                ConnectionSessionUtil.getTableColumnCache(connectionSession);
-        return tableColumnsCache.asMap().computeIfAbsent(table,
-                key -> schemaAccessor.listTableColumns(key.getSchemaName(), key.getTableName()));
-    }
-
-    private DBView tryToGetViewColumnsFromCache(@NonNull ConnectionSession connectionSession,
-            @NonNull DBSchemaAccessor schemaAccessor, @NonNull TableIdentity table) {
-        Cache<TableIdentity, DBView> viewColumnCache = ConnectionSessionUtil.getViewColumnCache(connectionSession);
-        return viewColumnCache.asMap().computeIfAbsent(table,
-                key -> schemaAccessor.getView(table.getSchemaName(), table.getTableName()));
     }
 
     public void initSqlType(DialectType dialectType) {
