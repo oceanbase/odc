@@ -19,16 +19,13 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.annotation.Validated;
 
 import com.oceanbase.odc.service.connection.model.ConnectionStringParseResult;
 import com.oceanbase.odc.service.connection.model.GenerateConnectionStringReq;
 import com.oceanbase.odc.service.connection.model.ParseConnectionStringReq;
-import com.oceanbase.odc.service.connection.util.ConnectionPasswordUtil;
 import com.oceanbase.odc.service.connection.util.MySQLClientArgsParser;
-import com.oceanbase.odc.service.encryption.SensitivePropertyHandler;
 
 /**
  * @author yizhou.xw
@@ -38,12 +35,9 @@ import com.oceanbase.odc.service.encryption.SensitivePropertyHandler;
 @Validated
 public class ConnectionHelper {
 
-    @Autowired
-    private SensitivePropertyHandler sensitiveHandler;
-
     public ConnectionStringParseResult parseConnectionStr(@NotNull @Valid ParseConnectionStringReq req) {
         ConnectionStringParseResult result = MySQLClientArgsParser.parse2(req.getConnStr());
-        result.setPassword(sensitiveHandler.encrypt(result.getPassword()));
+        result.setPassword(null);
         return result;
     }
 
@@ -79,11 +73,7 @@ public class ConnectionHelper {
             }
         }
         stringBuilder.append(" -p");
-        if (req.getPassword() != null) {
-            stringBuilder.append(ConnectionPasswordUtil.wrapPassword(req.getPassword()));
-        }
-        String connectStr = stringBuilder.toString();
-        return sensitiveHandler.encrypt(connectStr);
+        return stringBuilder.toString();
     }
 
 }

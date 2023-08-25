@@ -15,8 +15,6 @@
  */
 package com.oceanbase.odc.service.encryption;
 
-import java.util.Objects;
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -32,7 +30,6 @@ import lombok.extern.slf4j.Slf4j;
 public class SensitivePropertyHandlerImpl implements SensitivePropertyHandler {
     private static final int ENCRYPTION_KEY_SIZE = 1024;
     private final String publicKey;
-    private final String privateKey;
     private final TextEncryptor textEncryptor;
 
     public SensitivePropertyHandlerImpl(
@@ -40,15 +37,10 @@ public class SensitivePropertyHandlerImpl implements SensitivePropertyHandler {
         if (sensitiveInputEncrypted) {
             Pair<String, String> keyPair = RsaBytesEncryptor.generateBase64EncodeKeyPair(ENCRYPTION_KEY_SIZE);
             this.publicKey = keyPair.left;
-            this.privateKey = keyPair.right;
+            this.textEncryptor = Encryptors.rsaBase64Decryptor(keyPair.right);
         } else {
             this.publicKey = null;
-            this.privateKey = null;
-        }
-        if (Objects.isNull(this.publicKey) || Objects.isNull(this.privateKey)) {
             this.textEncryptor = Encryptors.empty();
-        } else {
-            this.textEncryptor = Encryptors.rsaBase64(this.publicKey, this.privateKey);
         }
         log.info("SensitiveInputHandler initialized, sensitiveInputEncrypted={}", sensitiveInputEncrypted);
     }
@@ -56,11 +48,6 @@ public class SensitivePropertyHandlerImpl implements SensitivePropertyHandler {
     @Override
     public String publicKey() {
         return this.publicKey;
-    }
-
-    @Override
-    public String encrypt(String plainText) {
-        return textEncryptor.encrypt(plainText);
     }
 
     @Override
