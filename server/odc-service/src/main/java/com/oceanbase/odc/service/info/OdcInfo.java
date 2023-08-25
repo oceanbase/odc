@@ -77,11 +77,6 @@ public class OdcInfo {
     private String supportGroupQRCodeUrl;
 
     /**
-     * 用于敏感数据在传输前加密的密钥, 如果为空，则表示不进行加密
-     */
-    private String encryptionSecret;
-
-    /**
      * 用户支持反馈邮箱
      */
     private String supportEmail;

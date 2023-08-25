@@ -94,7 +94,7 @@ public class ConnectionHelperTest {
 
     private static class EmptySensitivePropertyHandler implements SensitivePropertyHandler {
         @Override
-        public String encryptionSecret() {
+        public String publicKey() {
             return null;
         }
 
