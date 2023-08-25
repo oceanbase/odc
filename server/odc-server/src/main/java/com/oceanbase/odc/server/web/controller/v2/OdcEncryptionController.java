@@ -33,7 +33,7 @@ import io.swagger.annotations.ApiOperation;
  */
 @RestController
 @RequestMapping("/api/v2/encryption")
-public class EncryptionController {
+public class OdcEncryptionController {
 
     @Autowired
     private EncryptionService encryptionService;
