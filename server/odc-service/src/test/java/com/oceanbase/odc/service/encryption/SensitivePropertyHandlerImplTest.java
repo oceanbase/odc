@@ -35,11 +35,4 @@ public class SensitivePropertyHandlerImplTest {
         Assert.assertNull(s);
     }
 
-    @Test
-    public void encryptDecrypt_Matches() {
-        String encrypted = enabledHandler.encrypt("somevalue");
-        String decrypted = enabledHandler.decrypt(encrypted);
-        Assert.assertEquals("somevalue", decrypted);
-    }
-
 }

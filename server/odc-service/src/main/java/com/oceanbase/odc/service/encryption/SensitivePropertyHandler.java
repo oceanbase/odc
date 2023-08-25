@@ -23,14 +23,6 @@ public interface SensitivePropertyHandler {
     String publicKey();
 
     /**
-     * encrypt, call while output sensitive property
-     * 
-     * @param plainText
-     * @return encryptedText
-     */
-    String encrypt(String plainText);
-
-    /**
      * decrypt, call while input sensitive property
      * 
      * @param encryptedText

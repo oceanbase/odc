@@ -99,11 +99,6 @@ public class ConnectionHelperTest {
         }
 
         @Override
-        public String encrypt(String plainText) {
-            return plainText;
-        }
-
-        @Override
         public String decrypt(String encryptedText) {
             return encryptedText;
         }
