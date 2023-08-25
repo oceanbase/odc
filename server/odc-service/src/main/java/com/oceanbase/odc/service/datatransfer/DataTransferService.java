@@ -282,6 +282,7 @@ public class DataTransferService {
                 returnVal.putIfAbsent(ObjectType.PUBLIC_SYNONYM, accessor.getPublicSynonymNames());
                 returnVal.putIfAbsent(ObjectType.PACKAGE, accessor.getPackageNames());
                 returnVal.putIfAbsent(ObjectType.PACKAGE_BODY, accessor.getPackageBodyNames());
+                returnVal.putIfAbsent(ObjectType.TYPE, accessor.getTypeNames());
             } else if (Objects.nonNull(connection.getDialectType()) && connection.getDialectType().isOBMysql()
                     && VersionUtils.isGreaterThanOrEqualsTo(accessor.getDBVersion(), "4.0.0")) {
                 returnVal.putIfAbsent(ObjectType.SEQUENCE, accessor.getSequenceNames());
