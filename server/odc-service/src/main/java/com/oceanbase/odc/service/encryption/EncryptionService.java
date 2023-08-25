@@ -13,28 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.oceanbase.odc.service.encryption;
 
-public interface SensitivePropertyHandler {
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
-    /**
-     * encryption public key, return null if encryption not supported
-     */
-    String publicKey();
+/**
+ * @author gaoda.xy
+ * @date 2023/8/25 11:37
+ */
+@Service
+public class EncryptionService {
 
-    /**
-     * encrypt, call while output sensitive property
-     * 
-     * @param plainText
-     * @return encryptedText
-     */
-    String encrypt(String plainText);
+    @Autowired
+    private SensitivePropertyHandler sensitivePropertyHandler;
 
-    /**
-     * decrypt, call while input sensitive property
-     * 
-     * @param encryptedText
-     * @return plainText
-     */
-    String decrypt(String encryptedText);
+    public String getPublicKey() {
+        return sensitivePropertyHandler.publicKey();
+    }
+
 }
