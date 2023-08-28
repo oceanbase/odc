@@ -49,7 +49,7 @@ public class RollbackGeneratorFactory {
         ConnectType connectType = connectionSession.getConnectType();
         SyncJdbcExecutor syncJdbcExecutor =
                 connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY);
-        if (connectType.getDialectType().isOBMysql()) {
+        if (connectType.getDialectType().isMysql()) {
             OBMySQLParser parser = new OBMySQLParser();
             Statement statement = parser.parse(new StringReader(sql));
             if (statement instanceof Update) {
