@@ -55,6 +55,10 @@ public class TablePartitionPlanEntity {
 
     @Column(name = "connection_id", nullable = false, updatable = false)
     private Long connectionId;
+    @Column(name = "database_id", nullable = false, updatable = false)
+    private Long databaseId;
+    @Column(name = "database_partition_plan_id", updatable = false)
+    private Long databasePartitionPlanId;
     @Column(name = "flow_instance_id", nullable = false, updatable = false)
     private Long flowInstanceId;
     @Column(name = "schema_name", nullable = false, updatable = false)

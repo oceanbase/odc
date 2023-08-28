@@ -21,7 +21,6 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Primary;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.integration.jdbc.lock.DefaultLockRepository;
@@ -66,30 +65,8 @@ public class LockConfiguration {
     }
 
     @Bean
-    @Primary
     public JdbcLockRegistry jdbcLockRegistry(@Qualifier("odcLockRepository") LockRepository odcLockRepository) {
         return new JdbcLockRegistry(odcLockRepository);
-    }
-
-    @Bean("partitionPlanLockRepository")
-    public LockRepository partitionPlanLockRepository(DataSource dataSource,
-            @Value("${server.port:8989}") String listenPort) {
-        String localIpAddress = SystemUtils.getLocalIpAddress();
-        log.info("create partition plan lock repository..., localIpAddress={}, listenPort={}", localIpAddress,
-                listenPort);
-        initLockTable(dataSource);
-        String lockId = String.format("%s:%s", localIpAddress, listenPort);
-        DefaultLockRepository defaultLockRepository = new OdcLockRepository(dataSource, lockId);
-        defaultLockRepository.setPrefix("DISTRIBUTED_");
-        defaultLockRepository.setTimeToLive(1000 * 60 * 60 * 24);
-        log.info("partition plan lock repository created.");
-        return defaultLockRepository;
-    }
-
-    @Bean("partitionPlanJdbcLockRegistry")
-    public JdbcLockRegistry partitionPlanJdbcLockRegistry(
-            @Qualifier("partitionPlanLockRepository") LockRepository partitionPlanLockRepository) {
-        return new JdbcLockRegistry(partitionPlanLockRepository);
     }
 
     private void initLockTable(DataSource dataSource) {
