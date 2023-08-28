@@ -132,7 +132,7 @@ jobs:
           mvn help:system
           mvn clean install -Dmaven.test.skip=true
           echo "Build jar packages success"
-          mv --verbose server/odc-server/target/*-executable.jar distribution/jar/odc.jar
+          cp --verbose server/odc-server/target/*-executable.jar distribution/jar/odc.jar
           cp -fv distribution/jar/odc.jar distribution/jar/odc-slim.jar
           zip -d distribution/jar/odc-slim.jar "BOOT-INF/classes/static/*"
       - name: Upload jar
