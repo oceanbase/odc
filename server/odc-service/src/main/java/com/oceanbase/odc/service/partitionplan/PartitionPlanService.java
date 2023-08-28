@@ -270,6 +270,7 @@ public class PartitionPlanService {
         List<TablePartitionPlanEntity> entities = new LinkedList<>();
         for (TablePartitionPlan tablePlan : databasePartitionPlan.getTablePartitionPlans()) {
             TablePartitionPlanEntity tablePlanEntity = tablePartitionPlanMapper.modelToEntity(tablePlan);
+            tablePlanEntity.setFlowInstanceId(databasePartitionPlanEntity.getFlowInstanceId());
             tablePlanEntity.setConnectionId(databasePartitionPlan.getConnectionId());
             tablePlanEntity.setDatabaseId(databasePartitionPlan.getDatabaseId());
             tablePlanEntity.setDatabasePartitionPlanId(databasePartitionPlanEntity.getId());
