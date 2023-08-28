@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 
 import org.quartz.SchedulerException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -73,6 +74,8 @@ import lombok.extern.slf4j.Slf4j;
 @SkipAuthorize("permission check inside getForConnect")
 public class PartitionPlanService {
 
+    @Value("${odc.task.partition-plan.schedule-cron:0 0 * * * ?}")
+    private String defaultScheduleCron;
     @Autowired
     private TablePartitionPlanRepository tablePartitionPlanRepository;
     @Autowired
@@ -338,7 +341,7 @@ public class PartitionPlanService {
 
         TriggerConfig triggerConfig = new TriggerConfig();
         triggerConfig.setTriggerStrategy(TriggerStrategy.CRON);
-        triggerConfig.setCronExpression("0 * * * * ?");
+        triggerConfig.setCronExpression(defaultScheduleCron);
         scheduleEntity.setTriggerConfigJson(JsonUtils.toJson(triggerConfig));
 
         Database database = databaseService.detail(scheduleEntity.getDatabaseId());

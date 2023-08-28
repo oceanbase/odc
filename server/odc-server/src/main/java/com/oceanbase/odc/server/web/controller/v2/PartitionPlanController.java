@@ -35,27 +35,29 @@ import com.oceanbase.odc.service.partitionplan.model.DatabasePartitionPlan;
  * @Descripition:
  */
 @RestController
+@RequestMapping("/api/v2/partitionPlan")
 public class PartitionPlanController {
 
     @Autowired
     private PartitionPlanService partitionPlanService;
 
-    @RequestMapping(value = "/api/v2/patitionplan/DatabasePartitionPlan/", method = RequestMethod.GET)
-    public SuccessResponse<DatabasePartitionPlan> getConnectionPartitionPlan(@RequestParam Long databaseId,
+    @RequestMapping(value = "/partitionPlans", method = RequestMethod.GET)
+    public SuccessResponse<DatabasePartitionPlan> getPartitionPlans(@RequestParam Long databaseId,
             @RequestParam(required = false) Long flowInstanceId) {
         return Responses
                 .success(partitionPlanService.findRangeTablePlan(databaseId, flowInstanceId));
     }
 
-    @RequestMapping(value = "/api/v2/partitionplan/DatabasePartitionPlan/batchUpdate", method = RequestMethod.PUT)
-    public SuccessResponse<String> updateConnectionPartitionPlan(
+    @RequestMapping(value = "/partitionPlans/{id:[\\d]+}", method = RequestMethod.PUT)
+    public SuccessResponse<String> update(@RequestParam Long id,
             @RequestBody DatabasePartitionPlan databasePartitionPlan) throws IOException {
+        databasePartitionPlan.setId(id);
         partitionPlanService.updateTablePartitionPlan(databasePartitionPlan);
         return Responses.success("ok");
     }
 
-    @RequestMapping(value = "/api/v2/partitionplan/DatabasePartitionPlan/exist", method = RequestMethod.GET)
-    public SuccessResponse<Boolean> hasConnectionPartitionPlan(@RequestParam("databaseId") Long databaseId) {
+    @RequestMapping(value = "/partitionPlans/exists", method = RequestMethod.GET)
+    public SuccessResponse<Boolean> exist(@RequestParam("databaseId") Long databaseId) {
         return Responses.success(partitionPlanService.hasConnectionPartitionPlan(databaseId));
     }
 
