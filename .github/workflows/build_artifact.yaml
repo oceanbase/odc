@@ -1,24 +1,39 @@
 ###
-# This workflow is used to build all artifacts (jar, rpm, image and client) for testing
+# This workflow is used to quickly build artifacts (jar, rpm, image and client)
 # Triggers:
-#   1. Daily trigger at 04:00 (Beijing, UTC+08:00)
-#   2. Manual trigger
+#   1. Manual trigger
 # Jobs:
-#   1. Check Code Format
-#   2. PMD Scan
-#   3. Calculation Version Number
-#   4. Build Web Artifact (only x86_64 for now)
-#   5. Build Client Artifact
+#   1. Calculation Version Number
+#   2. Build Web Artifact (only x86_64 for now)
+#   3. Build Client Artifact
 ###
 
-name: Build Test
-run-name: Build Test triggered by ${{ github.actor }} 🛠️
+name: Build Artifact
+run-name: Build Artifact triggered by ${{ github.actor }} 🛠️
 
 on:
-  schedule:
-    - cron: '0 20 * * *'
   workflow_dispatch:
     inputs:
+      build_jar:
+        description: "Build jar package"
+        required: true
+        type: boolean
+        default: false
+      build_rpm:
+        description: "Build rpm package"
+        required: true
+        type: boolean
+        default: false
+      build_docker:
+        description: "Build docker image"
+        required: true
+        type: boolean
+        default: false
+      build_client:
+        description: "Build client"
+        required: true
+        type: boolean
+        default: false
       rpm_release:
         description: "Rpm release number"
         required: false
@@ -32,46 +47,10 @@ on:
 
 env:
   ODC_CURRENT_BRANCH: ${{ github.ref_name }}
-  ODC_TARGET_BRANCH: ${{ github.base_ref }}
 
 jobs:
-  check-format:
-    name: Check Code Format
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout workspace
-        uses: actions/checkout@v3
-      - name: Setup JDK 8
-        uses: actions/setup-java@v3
-        with:
-          java-version: "8"
-          distribution: "temurin"
-          cache: maven
-      - name: Check code format
-        run: mvn impsort:check formatter:validate
-      - name: Check license
-        run: mvn license:check
-
-  pmd-scan:
-    name: PMD Scan
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout workspace
-        uses: actions/checkout@v3
-      - name: Setup JDK 8
-        uses: actions/setup-java@v3
-        with:
-          java-version: "8"
-          distribution: "temurin"
-          cache: maven
-      - name: Build project
-        run: mvn clean install -Dmaven.test.skip=true
-      - name: Run PMD scan
-        run: mvn pmd:check
-
   calculate-version:
     name: Calculate Version Number
-    needs: [ check-format, pmd-scan ]
     runs-on: ubuntu-latest
     outputs:
       odc_rpm_release_number: ${{ steps.calculate_version.outputs.odc_rpm_release_number }}
@@ -86,8 +65,8 @@ jobs:
           if [[ -n "${{ inputs.rpm_release }}" ]]; then odc_rpm_release_number="${{ inputs.rpm_release }}"; fi
           echo "odc_rpm_release_number=${odc_rpm_release_number}" >> $GITHUB_OUTPUT
           echo "odc_rpm_release_number=${odc_rpm_release_number}"
-          branch_match_regex="^[0-9]\\.[0-9]\\.([0-9]{1,2}|x)_(release|dev)$"
-          tag_prefix=`[[ "${{ env.ODC_CURRENT_BRANCH }}" =~ ${branch_match_regex} ]] && echo "test-daily" || echo "dev-daily"`
+          branch_match_regex="^(((dev/)?[0-9]\\.[0-9]\\.([0-9]{1,2}|x))|(release\\S*))$"
+          tag_prefix=`[[ "${{ env.ODC_CURRENT_BRANCH }}" =~ ${branch_match_regex} ]] && echo "test-" || echo "dev-"`
           odc_docker_image_tag="${tag_prefix}-$(cat distribution/odc-server-VER.txt)-${odc_rpm_release_number}"
           if [[ -n "${{ inputs.image_tag }}" ]]; then odc_docker_image_tag="${{ inputs.image_tag }}"; fi
           echo "odc_docker_image_tag=${odc_docker_image_tag}" >> $GITHUB_OUTPUT
@@ -116,6 +95,7 @@ jobs:
         with:
           node-version: "16"
       - name: Build front static resources
+        if: ${{ github.event.inputs.build_jar == 'true' || github.event.inputs.build_rpm == 'true' || github.event.inputs.build_docker == 'true'}}
         run: |
           echo "Current directory: " `pwd`
           echo "Start build front static resources"
@@ -137,17 +117,9 @@ jobs:
           rm --force --recursive --verbose ${static_resources_path}/*
           cp --force --recursive --verbose client/dist/renderer/* ${static_resources_path}
           echo "Copy resources files success"
-      - name: Set release version
-        id: set_release_version
+      - name: Build jar
         run: |
-          main_version="$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout | cut -d - -f 1)"
-          new_version="${main_version}-${odc_rpm_release_number}"
-          echo "new_version=${new_version}" >> $GITHUB_OUTPUT
-          echo "RPM's version is "${new_version}
-          mvn versions:set -DnewVersion="${new_version}"
-          mvn versions:commit
-      - name: Build jar & rpm (x86_64)
-        run: |
+          echo "Start build jar packages"
           echo "Start prepare oceanbase-client"
           pushd import
           echo "Current dir is "`pwd`
@@ -159,15 +131,12 @@ jobs:
           echo "Start build rpm package"
           mvn help:system
           mvn clean install -Dmaven.test.skip=true
-          mvn --file server/odc-server/pom.xml rpm:rpm -Drpm.prefix=/opt
-          echo "Build rpm package success"
-          rm --force --recursive --verbose distribution/docker/resources/odc-*.rpm
-          mkdir -p distribution/docker/resources/
-          mv --verbose server/odc-server/target/rpm/odc-server/RPMS/*/odc-*.rpm distribution/docker/resources/
+          echo "Build jar packages success"
           mv --verbose server/odc-server/target/*-executable.jar distribution/jar/odc.jar
           cp -fv distribution/jar/odc.jar distribution/jar/odc-slim.jar
           zip -d distribution/jar/odc-slim.jar "BOOT-INF/classes/static/*"
       - name: Upload jar
+        if: ${{ github.event.inputs.build_jar == 'true' || github.event.inputs.build_client == 'true'}}
         uses: actions/upload-artifact@v3
         with:
           name: odc-artifact-jar
@@ -175,12 +144,33 @@ jobs:
             distribution/plugins/*.jar
             distribution/starters/*.jar
             distribution/jar/*.jar
+      - name: Set release version
+        if: ${{ github.event.inputs.build_rpm == 'true' || github.event.inputs.build_docker == 'true' }}
+        id: set_release_version
+        run: |
+          main_version="$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout | cut -d - -f 1)"
+          new_version="${main_version}-${odc_rpm_release_number}"
+          echo "new_version=${new_version}" >> $GITHUB_OUTPUT
+          echo "RPM's version is "${new_version}
+          mvn versions:set -DnewVersion="${new_version}"
+          mvn versions:commit
+      - name: Build rpm (x86_64)
+        if: ${{ github.event.inputs.build_rpm == 'true' || github.event.inputs.build_docker == 'true' }}
+        run: |
+          echo "Start build rpm package"
+          mvn --file server/odc-server/pom.xml rpm:rpm -Drpm.prefix=/opt
+          echo "Build rpm package success"
+          rm --force --recursive --verbose distribution/docker/resources/odc-*.rpm
+          mkdir -p distribution/docker/resources/
+          mv --verbose server/odc-server/target/rpm/odc-server/RPMS/*/odc-*.rpm distribution/docker/resources/
       - name: Upload rpm (x86_64)
+        if: ${{ github.event.inputs.build_rpm == 'true' }}
         uses: actions/upload-artifact@v3
         with:
           name: odc-server-${{ steps.set_release_version.outputs.new_version }}.x86_64.rpm
           path: distribution/docker/resources/odc-*.rpm
       - name: Build docker image (x86_64)
+        if: ${{ github.event.inputs.build_docker == 'true' }}
         run: |
           sed -e "s/DATE_CHANGE/$(date)/" -i distribution/docker/odc/Dockerfile
           echo "odc_docker_image_tag=${odc_docker_image_tag}"
@@ -189,6 +179,7 @@ jobs:
           docker save -o resources/odc-server-${odc_docker_image_tag}.tar.gz docker.io/oceanbase/odc-server:${odc_docker_image_tag}
           popd
       - name: Upload docker image (x86_64)
+        if: ${{ github.event.inputs.build_docker == 'true' }}
         uses: actions/upload-artifact@v3
         with:
           name: odc-server-${{ env.odc_docker_image_tag }}.tar.gz
@@ -197,6 +188,7 @@ jobs:
   build-client:
     name: Build Client Artifact
     needs: [ build-web-x86_64 ]
+    if: ${{ github.event.inputs.build_client == 'true' }}
     runs-on: macos-latest
     strategy:
       fail-fast: false
@@ -207,6 +199,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           submodules: "recursive"
+      # Build jar failed when run on macos-latest, so we need to build and upload jar on ubuntu-latest in the above job
       - name: Download resources
         uses: actions/download-artifact@v3
         with:
@@ -242,33 +235,11 @@ jobs:
             ${{ runner.os }}-pnpm-store-
       - name: Build artifact
         env:
-          # MACOS_CERTIFICATE: ${{ secrets.PROD_MACOS_CERTIFICATE }}
-          # MACOS_CERTIFICATE_PWD: ${{ secrets.PROD_MACOS_CERTIFICATE_PWD }}
-          # MACOS_CERTIFICATE_NAME: ${{ secrets.PROD_MACOS_CERTIFICATE_NAME }}
-          # MACOS_CI_KEYCHAIN_PWD: ${{ secrets.PROD_MACOS_CI_KEYCHAIN_PWD }}
-          # APPLE_ID: ${{ secrets.PROD_MACOS_NOTARIZATION_APPLE_ID }}
-          # APPLE_TEAM_ID: ${{ secrets.PROD_MACOS_NOTARIZATION_TEAM_ID }}
-          # APPLE_ID_PASSWORD: ${{ secrets.PROD_MACOS_NOTARIZATION_PWD }}
-          # APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.PROD_MACOS_NOTARIZATION_PWD }}
           WIN_CSC_LINK: ${{ secrets.PROD_WIN_CSC_LINK }}
           WIN_CSC_KEY_PASSWORD: ${{ secrets.PROD_WIN_CSC_KEY_PASSWORD }}
         run: |
-          # Turn our base64-encoded certificate back to a regular .p12 file
           cd client
-          # echo $MACOS_CERTIFICATE | base64 --decode > certificate.p12
-          # We need to create a new keychain, otherwise using the certificate will prompt
-          # with a UI dialog asking for the certificate password, which we can't
-          # use in a headless CI environment
-          # security create-keychain -p "$MACOS_CI_KEYCHAIN_PWD" build.keychain 
-          # security default-keychain -s build.keychain
-          # security unlock-keychain -p "$MACOS_CI_KEYCHAIN_PWD" build.keychain
-          # security import certificate.p12 -k build.keychain -P "$MACOS_CERTIFICATE_PWD" -T /usr/bin/codesign
-          # security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$MACOS_CI_KEYCHAIN_PWD" build.keychain
-          # echo "Cert Imported"
           pnpm install
-          # We need to create a new keychain, otherwise using the certificate will prompt
-          # with a UI dialog asking for the certificate password, which we can't
-          # use in a headless CI environment
           export ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/
           export ODC_BUILD_SKIP_JAR=true
           export CSC_IDENTITY_AUTO_DISCOVERY=false

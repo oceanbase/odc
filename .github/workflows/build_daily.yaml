@@ -1,20 +1,23 @@
 ###
-# This workflow is used to build and release all artifacts (jar, rpm, image and client)
+# This workflow is used to build all artifacts (jar, rpm, image and client) for testing
 # Triggers:
-#   1. Manual trigger
+#   1. Daily trigger at 04:00 (Beijing, UTC+08:00)
+#   2. Manual trigger
+#   3. Push tag with prefix "release"
 # Jobs:
 #   1. Check Code Format
 #   2. PMD Scan
 #   3. Calculation Version Number
 #   4. Build Web Artifact (only x86_64 for now)
 #   5. Build Client Artifact
-#   6. Release And Tag (TODO)
 ###
 
-name: Build Release
-run-name: Build Release triggered by ${{ github.actor }} 🎉
+name: Build Daily
+run-name: Build Daily triggered by ${{ github.actor }} 🛠️
 
 on:
+  schedule:
+    - cron: '0 20 * * *'
   workflow_dispatch:
     inputs:
       rpm_release:
@@ -27,10 +30,13 @@ on:
         required: false
         default: ''
         type: string
+  push:
+    tags:
+      - 'release/**'
+      - 'release*'
 
 env:
   ODC_CURRENT_BRANCH: ${{ github.ref_name }}
-  ODC_TARGET_BRANCH: ${{ github.base_ref }}
 
 jobs:
   check-format:
@@ -84,9 +90,9 @@ jobs:
           if [[ -n "${{ inputs.rpm_release }}" ]]; then odc_rpm_release_number="${{ inputs.rpm_release }}"; fi
           echo "odc_rpm_release_number=${odc_rpm_release_number}" >> $GITHUB_OUTPUT
           echo "odc_rpm_release_number=${odc_rpm_release_number}"
-          branch_match_regex="^[0-9]\\.[0-9]\\.([0-9]{1,2}|x)_(release|dev)$"
-          tag_prefix=`[[ "${{ env.ODC_CURRENT_BRANCH }}" =~ ${branch_match_regex} ]] && echo "" || echo "test-"`
-          odc_docker_image_tag="${tag_prefix}$(cat distribution/odc-server-VER.txt)-${odc_rpm_release_number}"
+          branch_match_regex="^(((dev/)?[0-9]\\.[0-9]\\.([0-9]{1,2}|x))|(release\\S*))$"
+          tag_prefix=`[[ "${{ env.ODC_CURRENT_BRANCH }}" =~ ${branch_match_regex} ]] && echo "test-daily" || echo "dev-daily"`
+          odc_docker_image_tag="${tag_prefix}-$(cat distribution/odc-server-VER.txt)-${odc_rpm_release_number}"
           if [[ -n "${{ inputs.image_tag }}" ]]; then odc_docker_image_tag="${{ inputs.image_tag }}"; fi
           echo "odc_docker_image_tag=${odc_docker_image_tag}" >> $GITHUB_OUTPUT
           echo "odc_docker_image_tag=${odc_docker_image_tag}"
@@ -115,7 +121,7 @@ jobs:
           node-version: "16"
       - name: Build front static resources
         run: |
-          echo "Current directory: "`pwd`
+          echo "Current directory: " `pwd`
           echo "Start build front static resources"
           pushd client
           echo "Run npm install pnpm -g"
@@ -240,33 +246,11 @@ jobs:
             ${{ runner.os }}-pnpm-store-
       - name: Build artifact
         env:
-          # MACOS_CERTIFICATE: ${{ secrets.PROD_MACOS_CERTIFICATE }}
-          # MACOS_CERTIFICATE_PWD: ${{ secrets.PROD_MACOS_CERTIFICATE_PWD }}
-          # MACOS_CERTIFICATE_NAME: ${{ secrets.PROD_MACOS_CERTIFICATE_NAME }}
-          # MACOS_CI_KEYCHAIN_PWD: ${{ secrets.PROD_MACOS_CI_KEYCHAIN_PWD }}
-          # APPLE_ID: ${{ secrets.PROD_MACOS_NOTARIZATION_APPLE_ID }}
-          # APPLE_TEAM_ID: ${{ secrets.PROD_MACOS_NOTARIZATION_TEAM_ID }}
-          # APPLE_ID_PASSWORD: ${{ secrets.PROD_MACOS_NOTARIZATION_PWD }}
-          # APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.PROD_MACOS_NOTARIZATION_PWD }}
           WIN_CSC_LINK: ${{ secrets.PROD_WIN_CSC_LINK }}
           WIN_CSC_KEY_PASSWORD: ${{ secrets.PROD_WIN_CSC_KEY_PASSWORD }}
         run: |
-          # Turn our base64-encoded certificate back to a regular .p12 file
           cd client
-          # echo $MACOS_CERTIFICATE | base64 --decode > certificate.p12
-          # We need to create a new keychain, otherwise using the certificate will prompt
-          # with a UI dialog asking for the certificate password, which we can't
-          # use in a headless CI environment
-          # security create-keychain -p "$MACOS_CI_KEYCHAIN_PWD" build.keychain 
-          # security default-keychain -s build.keychain
-          # security unlock-keychain -p "$MACOS_CI_KEYCHAIN_PWD" build.keychain
-          # security import certificate.p12 -k build.keychain -P "$MACOS_CERTIFICATE_PWD" -T /usr/bin/codesign
-          # security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$MACOS_CI_KEYCHAIN_PWD" build.keychain
-          # echo "Cert Imported"
           pnpm install
-          # We need to create a new keychain, otherwise using the certificate will prompt
-          # with a UI dialog asking for the certificate password, which we can't
-          # use in a headless CI environment
           export ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/
           export ODC_BUILD_SKIP_JAR=true
           export CSC_IDENTITY_AUTO_DISCOVERY=false
