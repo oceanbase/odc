@@ -1,14 +1,15 @@
 ###
-# This workflow is used for code inspection and basic artifacts' construction (rpm package) in your daily development
+# This workflow is used for daily development
 # Triggers:
 #   1. Push
 #   2. Pull-Request
 # Jobs:
 #   1. Check Code Format
 #   2. PMD Scan
-#   3. Calculation Version Number
-#   4. Build RPM (only x86_64 for now)
-#   (Job 3 and 4 are executed only when Pull-Request)
+#   3. Unit Test (TODO)
+#   4. Calculate Version Number
+#   5. Build RPM (exclude front resources and only x86_64 platform for now)
+#   (Job 4 and 5 are executed only when Pull-Request)
 ###
 
 name: Build Dev
@@ -57,9 +58,25 @@ jobs:
       - name: Run PMD scan
         run: mvn pmd:check
 
+  unit-test:
+    name: Unit Test (Skip for now)
+    needs: [ check-format, pmd-scan ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout workspace
+        uses: actions/checkout@v3
+      - name: Setup JDK 8
+        uses: actions/setup-java@v3
+        with:
+          java-version: "8"
+          distribution: "temurin"
+          cache: maven
+      - name: Run unit test
+        run: echo "Skip for now 🤪"
+
   calculate-version:
     name: Calculate Version Number
-    needs: [ check-format, pmd-scan ]
+    needs: [ unit-test ]
     if: ${{ github.event_name == 'pull_request' }}
     runs-on: ubuntu-latest
     outputs:
@@ -95,28 +112,6 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: "16"
-      - name: Build front static resources
-        run: |
-          echo "Current directory: "`pwd`
-          echo "Start build front static resources"
-          pushd client
-          echo "Run npm install pnpm -g"
-          npm install pnpm -g
-          echo "Run pnpm install"
-          pnpm install
-          echo "Run npm run build:odc"
-          npm run build:odc
-          popd
-          echo "Build front static resources success"
-          echo "Start copy resources files"
-          static_resources_path="server/odc-server/src/main/resources/static"
-          if [ ! -d "${static_resources_path}" ]; then
-            echo "mkdir -p ${static_resources_path}"
-            mkdir -p "${static_resources_path}"
-          fi
-          rm --force --recursive --verbose ${static_resources_path}/*
-          cp --force --recursive --verbose client/dist/renderer/* ${static_resources_path}
-          echo "Copy resources files success"
       - name: Set release version
         id: set_release_version
         run: |
