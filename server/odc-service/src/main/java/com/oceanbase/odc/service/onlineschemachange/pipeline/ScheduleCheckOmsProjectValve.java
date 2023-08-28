@@ -108,11 +108,11 @@ public class ScheduleCheckOmsProjectValve extends BaseValve {
                         projectStepResult.getFullVerificationResult() == FullVerificationResult.UNCHECK)) {
             getNext().invoke(valveContext);
         } else {
-            ContinueHandleProjectStepResult(projectStepResult, projectSteps);
+            continueHandleProjectStepResult(projectStepResult, projectSteps);
         }
     }
 
-    private void ContinueHandleProjectStepResult(ProjectStepResult projectStepResult,
+    private void continueHandleProjectStepResult(ProjectStepResult projectStepResult,
             List<ProjectStepVO> projectSteps) {
         if (CollectionUtils.isNotEmpty(projectSteps)) {
             log.warn("Oms project exec failed, projectStepResult: {}", JsonUtils.toJson(projectSteps));
