@@ -127,23 +127,25 @@ public class PartitionPlanService {
     @Transactional
     public void updateTablePartitionPlan(DatabasePartitionPlan databasePartitionPlan) throws IOException {
         // 更新连接配置
-        Optional<DatabasePartitionPlanEntity> connectionPartitionPlanEntity =
+        Optional<DatabasePartitionPlanEntity> databasePartitionPlanEntity =
                 databasePartitionPlanRepository.findByFlowInstanceId(databasePartitionPlan.getFlowInstanceId());
-        if (!connectionPartitionPlanEntity.isPresent())
+        if (!databasePartitionPlanEntity.isPresent())
             return;
-        connectionPartitionPlanEntity.get().setInspectEnabled(databasePartitionPlan.isInspectEnable());
-        connectionPartitionPlanEntity.get()
+        databasePartitionPlanEntity.get().setInspectEnabled(databasePartitionPlan.isInspectEnable());
+        databasePartitionPlanEntity.get()
                 .setInspectTriggerStrategy(databasePartitionPlan.getInspectTriggerStrategy());
-        connectionPartitionPlanEntity.get().setConfigEnabled(false);
-        databasePartitionPlanRepository.saveAndFlush(connectionPartitionPlanEntity.get());
+        databasePartitionPlanEntity.get().setConfigEnabled(false);
+        databasePartitionPlanRepository.saveAndFlush(databasePartitionPlanEntity.get());
         // 更新表分区配置
         List<TablePartitionPlan> tablePartitionPlans = databasePartitionPlan.getTablePartitionPlans();
-        List<TablePartitionPlanEntity> tablePartitionPlanEntities = tablePartitionPlanRepository.findByFlowInstanceId(
-                databasePartitionPlan.getFlowInstanceId());
+        List<TablePartitionPlanEntity> tablePartitionPlanEntities =
+                tablePartitionPlanRepository.findValidPlanByDatabasePartitionPlanId(
+                        databasePartitionPlan.getId());
         List<TablePartitionPlanEntity> updateEntities = new LinkedList<>();
         tablePartitionPlans.forEach(tablePartitionPlan -> {
             for (TablePartitionPlanEntity tablePartitionPlanEntity : tablePartitionPlanEntities) {
                 // 未修改的直接生效
+                tablePartitionPlanEntity.setFlowInstanceId(databasePartitionPlan.getFlowInstanceId());
                 tablePartitionPlanEntity.setIsConfigEnable(false);
                 tablePartitionPlanEntity.setModifierId(authenticationFacade.currentUserId());
                 if (tablePartitionPlanEntity.getSchemaName().equals(tablePartitionPlan.getSchemaName())

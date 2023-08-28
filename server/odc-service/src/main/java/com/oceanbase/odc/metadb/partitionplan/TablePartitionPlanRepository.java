@@ -53,6 +53,5 @@ public interface TablePartitionPlanRepository extends JpaRepository<TablePartiti
             + "where database_id=:id and is_config_enabled = true", nativeQuery = true)
     List<TablePartitionPlanEntity> findValidPlanByDatabaseId(@Param("id") Long databaseId);
 
-    List<TablePartitionPlanEntity> findByFlowInstanceId(Long flowInstanceId);
-
+    List<TablePartitionPlanEntity> findByDatabasePartitionPlanId(@Param("id") Long databasePartitionPlanId);
 }

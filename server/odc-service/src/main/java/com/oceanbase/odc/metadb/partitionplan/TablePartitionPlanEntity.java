@@ -59,8 +59,7 @@ public class TablePartitionPlanEntity {
     private Long databaseId;
     @Column(name = "database_partition_plan_id", updatable = false)
     private Long databasePartitionPlanId;
-    // Deprecated field from 4.2.0
-    @Column(name = "flow_instance_id", updatable = false)
+    @Column(name = "flow_instance_id", nullable = false, updatable = false)
     private Long flowInstanceId;
     @Column(name = "schema_name", nullable = false, updatable = false)
     private String schemaName;
