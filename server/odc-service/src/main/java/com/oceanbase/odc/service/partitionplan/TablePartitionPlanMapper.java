@@ -31,13 +31,16 @@ public class TablePartitionPlanMapper {
                 .partitionIntervalUnit(entity.getPartitionIntervalUnit())
                 .expirePeriodUnit(entity.getExpirePeriodUnit()).build();
         return TablePartitionPlan.builder()
+                .databasePartitionPlanId(entity.getDatabasePartitionPlanId())
                 .tableName(entity.getTableName())
+                .flowInstanceId(entity.getFlowInstanceId())
                 .schemaName(entity.getSchemaName())
                 .detail(detail).build();
     }
 
     public TablePartitionPlanEntity modelToEntity(TablePartitionPlan model) {
         return TablePartitionPlanEntity.builder()
+                .databasePartitionPlanId(model.getDatabasePartitionPlanId())
                 .isConfigEnable(model.getDetail().getIsAutoPartition())
                 .expirePeriod(model.getDetail().getExpirePeriod())
                 .expirePeriodUnit(model.getDetail().getExpirePeriodUnit())
@@ -47,6 +50,7 @@ public class TablePartitionPlanMapper {
                 .partitionNamingSuffixExpression(model.getDetail().getPartitionNamingSuffixExpression())
                 .preCreatePartitionCount(model.getDetail().getPreCreatePartitionCount())
                 .tableName(model.getTableName())
-                .schemaName(model.getSchemaName()).build();
+                .schemaName(model.getSchemaName())
+                .flowInstanceId(model.getFlowInstanceId()).build();
     }
 }
