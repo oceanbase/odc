@@ -18,6 +18,7 @@ package com.oceanbase.odc.server.web.controller.v2;
 import java.io.IOException;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -49,9 +50,8 @@ public class PartitionPlanController {
     }
 
     @RequestMapping(value = "/partitionPlans/{id:[\\d]+}", method = RequestMethod.PUT)
-    public SuccessResponse<String> update(@RequestParam Long id,
+    public SuccessResponse<String> update(@PathVariable Long id,
             @RequestBody DatabasePartitionPlan databasePartitionPlan) throws IOException {
-        databasePartitionPlan.setId(id);
         partitionPlanService.updateTablePartitionPlan(databasePartitionPlan);
         return Responses.success("ok");
     }

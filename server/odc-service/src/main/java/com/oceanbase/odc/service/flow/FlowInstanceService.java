@@ -750,17 +750,10 @@ public class FlowInstanceService {
                     log.warn("Create external approval instance failed, the instance will be force closed!");
                 }
             }
-            FlowApprovalInstance approvalInstance;
-            if (taskType == TaskType.PARTITION_PLAN && nodeSequence == 0) {
-                approvalInstance = flowFactory.generateFlowApprovalInstance(flowInstance.getId(),
-                        false, false, nodeConfig.getAutoApproval(),
-                        approvalFlowConfig.getApprovalExpirationIntervalSeconds(), true);
-            } else {
-                approvalInstance = flowFactory.generateFlowApprovalInstance(flowInstance.getId(),
-                        false, false,
-                        nodeConfig.getAutoApproval(), approvalFlowConfig.getApprovalExpirationIntervalSeconds(),
-                        externalApprovalId, externalFlowInstanceId);
-            }
+            FlowApprovalInstance approvalInstance = flowFactory.generateFlowApprovalInstance(flowInstance.getId(),
+                    false, false,
+                    nodeConfig.getAutoApproval(), approvalFlowConfig.getApprovalExpirationIntervalSeconds(),
+                    externalApprovalId, externalFlowInstanceId);
             if (Objects.nonNull(resourceRoleId)) {
                 approvalPermissionService.setCandidateResourceRole(approvalInstance.getId(),
                         StringUtils.join(flowInstanceReq.getProjectId(), ":", resourceRoleId));
