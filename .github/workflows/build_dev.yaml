@@ -97,7 +97,7 @@ jobs:
           node-version: "16"
       - name: Build front static resources
         run: |
-          echo "Current directory: " `pwd`
+          echo "Current directory: "`pwd`
           echo "Start build front static resources"
           pushd client
           echo "Run npm install pnpm -g"

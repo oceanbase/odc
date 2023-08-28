@@ -121,7 +121,7 @@ jobs:
           node-version: "16"
       - name: Build front static resources
         run: |
-          echo "Current directory: " `pwd`
+          echo "Current directory: "`pwd`
           echo "Start build front static resources"
           pushd client
           echo "Run npm install pnpm -g"
@@ -246,11 +246,33 @@ jobs:
             ${{ runner.os }}-pnpm-store-
       - name: Build artifact
         env:
+          # MACOS_CERTIFICATE: ${{ secrets.PROD_MACOS_CERTIFICATE }}
+          # MACOS_CERTIFICATE_PWD: ${{ secrets.PROD_MACOS_CERTIFICATE_PWD }}
+          # MACOS_CERTIFICATE_NAME: ${{ secrets.PROD_MACOS_CERTIFICATE_NAME }}
+          # MACOS_CI_KEYCHAIN_PWD: ${{ secrets.PROD_MACOS_CI_KEYCHAIN_PWD }}
+          # APPLE_ID: ${{ secrets.PROD_MACOS_NOTARIZATION_APPLE_ID }}
+          # APPLE_TEAM_ID: ${{ secrets.PROD_MACOS_NOTARIZATION_TEAM_ID }}
+          # APPLE_ID_PASSWORD: ${{ secrets.PROD_MACOS_NOTARIZATION_PWD }}
+          # APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.PROD_MACOS_NOTARIZATION_PWD }}
           WIN_CSC_LINK: ${{ secrets.PROD_WIN_CSC_LINK }}
           WIN_CSC_KEY_PASSWORD: ${{ secrets.PROD_WIN_CSC_KEY_PASSWORD }}
         run: |
+          # Turn our base64-encoded certificate back to a regular .p12 file
           cd client
+          # echo $MACOS_CERTIFICATE | base64 --decode > certificate.p12
+          # We need to create a new keychain, otherwise using the certificate will prompt
+          # with a UI dialog asking for the certificate password, which we can't
+          # use in a headless CI environment
+          # security create-keychain -p "$MACOS_CI_KEYCHAIN_PWD" build.keychain 
+          # security default-keychain -s build.keychain
+          # security unlock-keychain -p "$MACOS_CI_KEYCHAIN_PWD" build.keychain
+          # security import certificate.p12 -k build.keychain -P "$MACOS_CERTIFICATE_PWD" -T /usr/bin/codesign
+          # security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$MACOS_CI_KEYCHAIN_PWD" build.keychain
+          # echo "Cert Imported"
           pnpm install
+          # We need to create a new keychain, otherwise using the certificate will prompt
+          # with a UI dialog asking for the certificate password, which we can't
+          # use in a headless CI environment
           export ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/
           export ODC_BUILD_SKIP_JAR=true
           export CSC_IDENTITY_AUTO_DISCOVERY=false
