@@ -38,6 +38,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
+
+import javax.annotation.PostConstruct;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FileUtils;
@@ -52,6 +55,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -86,10 +90,15 @@ import com.oceanbase.odc.service.datatransfer.task.BaseDataTransferTask;
 import com.oceanbase.odc.service.datatransfer.task.DataTransferTaskContext;
 import com.oceanbase.odc.service.datatransfer.task.ExportDataTransferTask;
 import com.oceanbase.odc.service.datatransfer.task.ImportDataTransferTask;
+import com.oceanbase.odc.service.flow.FlowInstanceService;
+import com.oceanbase.odc.service.flow.task.model.DataTransferTaskResult;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
+import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
 import com.oceanbase.tools.loaddump.common.model.DumpParameter;
 import com.oceanbase.tools.loaddump.common.model.LoadParameter;
+import com.oceanbase.tools.loaddump.common.model.ObjectStatus;
+import com.oceanbase.tools.loaddump.common.model.ObjectStatus.Status;
 import com.oceanbase.tools.loaddump.manager.session.SessionProperties;
 import com.oceanbase.tools.loaddump.parser.record.Record;
 import com.oceanbase.tools.loaddump.parser.record.csv.CsvFormat;
@@ -134,6 +143,16 @@ public class DataTransferService {
     private DatabaseService databaseService;
     @Autowired
     private AuthenticationFacade authenticationFacade;
+    @Autowired
+    private TaskService taskService;
+    @Autowired
+    private FlowInstanceService flowInstanceService;
+
+    @PostConstruct
+    public void init() {
+        flowInstanceService
+                .addDataTransferTaskInitHook(event -> initTransferObjects(event.getTaskId(), event.getConfig()));
+    }
 
     /**
      * create a data transfer task
@@ -359,6 +378,32 @@ public class DataTransferService {
         int fileSize = fileManager.copy(TaskType.IMPORT, LocalFileManager.UPLOAD_BUCKET, inputStream, () -> fileName);
         log.info("Upload file successfully, fileName={}, fileSize={} Bytes", fileName, fileSize);
         return getMetaInfo(fileName);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void initTransferObjects(Long taskId, DataTransferConfig config) {
+        if (config.isExportAllObjects()) {
+            return;
+        }
+        DataTransferTaskResult result = new DataTransferTaskResult();
+        List<ObjectStatus> objects = config.getExportDbObjects().stream().map(obj -> {
+            ObjectStatus objectStatus = new ObjectStatus();
+            objectStatus.setName(obj.getObjectName());
+            objectStatus.setType(obj.getDbObjectType().getName());
+            objectStatus.setStatus(Status.INITIAL);
+            return objectStatus;
+        }).collect(Collectors.toList());
+
+        if (config.isTransferDDL()) {
+            result.setDataObjectsInfo(objects);
+        }
+        if (config.isTransferData()) {
+            List<ObjectStatus> tables =
+                    objects.stream().filter(objectStatus -> ObjectType.TABLE.getName().equals(objectStatus.getType()))
+                            .collect(Collectors.toList());
+            result.setSchemaObjectsInfo(tables);
+        }
+        taskService.updateResult(taskId, result);
     }
 
     private void injectSysConfig(ConnectionConfig connectionConfig, DataTransferConfig transferConfig) {
