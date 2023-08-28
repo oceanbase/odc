@@ -517,8 +517,6 @@ public class UserService {
                         managementPermissions.add(permission);
                     } else if (PermissionUtil.isSystemOperationPermission(permission)) {
                         operationPermissions.add(permission);
-                    } else {
-                        log.info("Permission classification filed, permissionEntity={}", permission);
                     }
                 }
             }
@@ -546,8 +544,6 @@ public class UserService {
                     managementPermissions.add(permission);
                 } else if (PermissionUtil.isSystemOperationPermission(permission)) {
                     operationPermissions.add(permission);
-                } else {
-                    log.info("Permission classification filed, permissionEntity={}", permission);
                 }
             }
         }
@@ -555,7 +551,7 @@ public class UserService {
 
     /**
      * roleId is exclusive to authorizedResource & includePermissions
-     * 
+     *
      * @return
      */
     @SkipAuthorize("permission check inside")

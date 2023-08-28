@@ -1,0 +1,62 @@
+name: 🐞 Bug Report
+description: Report a bug encountered while operating ODC
+labels: [type-bug, priority-medium]
+title: "[Bug]: "
+body:
+  - type: textarea
+    id: odcversion
+    attributes:
+      label: ODC version
+      placeholder: |
+        Enter the version, e.g. 4.2.0
+      description: |
+        To submit a bug, you need to specify the version of ODC, find the version by: Help -> About Develop Center
+    validations:
+      required: true
+
+  - type: textarea
+    id: obversion
+    attributes:
+      label: OB version
+      placeholder: |
+        # paste output here
+        $ obclient > show variables like '%version%'
+      description: |
+        To submit a bug, you need to specify the version of OceanBase, find the version by SQL query.
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What happened?
+      description: |
+        Please provide as much info as possible. Not doing so may result in your bug not being addressed in a timely manner.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect to happen?
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: How can we reproduce it (as minimally and precisely as possible)?
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Anything else we need to know?
+
+  - type: textarea
+    id: cloud
+    attributes:
+      label: Cloud
+      description: |
+        Please provide more information on the cloud, such as region information, etc.
