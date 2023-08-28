@@ -298,3 +298,19 @@ jobs:
             client/release/*.deb
             client/release/*.exe
             client/release/*.AppImage
+
+  release:
+    name: Release (Skip for now)
+    needs: [ build-client ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Release artifacts
+        run: echo "Skip for now 🤪"
+
+  tag:
+    name: Tag (Skip for now)
+    needs: [ release ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Tag release
+        run: echo "Skip for now 🤪"
