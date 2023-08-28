@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 
 /**
  * mock数据类型映射工具类
@@ -52,46 +53,46 @@ public class MockDataTypeUtil {
         TYPE_MAP.put("OB_ORACLE_VARCHAR", "CHAR");
         TYPE_MAP.put("OB_ORACLE_CHAR", "CHAR");
 
-        TYPE_MAP.put("OB_MYSQL_TINYINT", "DIGIT");
-        TYPE_MAP.put("OB_MYSQL_TINYINT_UNSIGNED", "DIGIT");
-        TYPE_MAP.put("OB_MYSQL_SMALLINT", "DIGIT");
-        TYPE_MAP.put("OB_MYSQL_SMALLINT_UNSIGNED", "DIGIT");
-        TYPE_MAP.put("OB_MYSQL_MEDIUMINT", "DIGIT");
-        TYPE_MAP.put("OB_MYSQL_MEDIUMINT_UNSIGNED", "DIGIT");
-        TYPE_MAP.put("OB_MYSQL_INT", "DIGIT");
-        TYPE_MAP.put("OB_MYSQL_INT_UNSIGNED", "DIGIT");
-        TYPE_MAP.put("OB_MYSQL_BIGINT", "DIGIT");
-        TYPE_MAP.put("OB_MYSQL_BIGINT_UNSIGNED", "DIGIT");
-        TYPE_MAP.put("OB_MYSQL_DECIMAL", "DIGIT");
-        TYPE_MAP.put("OB_MYSQL_DECIMAL_UNSIGNED", "DIGIT");
-        TYPE_MAP.put("OB_MYSQL_FLOAT", "DIGIT");
-        TYPE_MAP.put("OB_MYSQL_FLOAT_UNSIGNED", "DIGIT");
-        TYPE_MAP.put("OB_MYSQL_NUMBER", "DIGIT");
-        TYPE_MAP.put("OB_MYSQL_NUMBER_UNSIGNED", "DIGIT");
-        TYPE_MAP.put("OB_MYSQL_DOUBLE", "DIGIT");
-        TYPE_MAP.put("OB_MYSQL_DOUBLE_UNSIGNED", "DIGIT");
+        TYPE_MAP.put("MYSQL_TINYINT", "DIGIT");
+        TYPE_MAP.put("MYSQL_TINYINT_UNSIGNED", "DIGIT");
+        TYPE_MAP.put("MYSQL_SMALLINT", "DIGIT");
+        TYPE_MAP.put("MYSQL_SMALLINT_UNSIGNED", "DIGIT");
+        TYPE_MAP.put("MYSQL_MEDIUMINT", "DIGIT");
+        TYPE_MAP.put("MYSQL_MEDIUMINT_UNSIGNED", "DIGIT");
+        TYPE_MAP.put("MYSQL_INT", "DIGIT");
+        TYPE_MAP.put("MYSQL_INT_UNSIGNED", "DIGIT");
+        TYPE_MAP.put("MYSQL_BIGINT", "DIGIT");
+        TYPE_MAP.put("MYSQL_BIGINT_UNSIGNED", "DIGIT");
+        TYPE_MAP.put("MYSQL_DECIMAL", "DIGIT");
+        TYPE_MAP.put("MYSQL_DECIMAL_UNSIGNED", "DIGIT");
+        TYPE_MAP.put("MYSQL_FLOAT", "DIGIT");
+        TYPE_MAP.put("MYSQL_FLOAT_UNSIGNED", "DIGIT");
+        TYPE_MAP.put("MYSQL_NUMBER", "DIGIT");
+        TYPE_MAP.put("MYSQL_NUMBER_UNSIGNED", "DIGIT");
+        TYPE_MAP.put("MYSQL_DOUBLE", "DIGIT");
+        TYPE_MAP.put("MYSQL_DOUBLE_UNSIGNED", "DIGIT");
 
-        TYPE_MAP.put("OB_MYSQL_CHAR", "CHAR");
-        TYPE_MAP.put("OB_MYSQL_VARCHAR", "CHAR");
-        TYPE_MAP.put("OB_MYSQL_TINYTEXT", "CHAR");
-        TYPE_MAP.put("OB_MYSQL_TEXT", "CHAR");
-        TYPE_MAP.put("OB_MYSQL_MEDIUMTEXT", "CHAR");
-        TYPE_MAP.put("OB_MYSQL_LONGTEXT", "CHAR");
+        TYPE_MAP.put("MYSQL_CHAR", "CHAR");
+        TYPE_MAP.put("MYSQL_VARCHAR", "CHAR");
+        TYPE_MAP.put("MYSQL_TINYTEXT", "CHAR");
+        TYPE_MAP.put("MYSQL_TEXT", "CHAR");
+        TYPE_MAP.put("MYSQL_MEDIUMTEXT", "CHAR");
+        TYPE_MAP.put("MYSQL_LONGTEXT", "CHAR");
 
-        TYPE_MAP.put("OB_MYSQL_TINYBLOB", "BYTE");
-        TYPE_MAP.put("OB_MYSQL_BLOB", "BYTE");
-        TYPE_MAP.put("OB_MYSQL_MEDIUMBLOB", "BYTE");
-        TYPE_MAP.put("OB_MYSQL_LONGBLOB", "BYTE");
-        TYPE_MAP.put("OB_MYSQL_BINARY", "BYTE");
-        TYPE_MAP.put("OB_MYSQL_VARBINARY", "BYTE");
-        TYPE_MAP.put("OB_MYSQL_BIT", "BYTE");
+        TYPE_MAP.put("MYSQL_TINYBLOB", "BYTE");
+        TYPE_MAP.put("MYSQL_BLOB", "BYTE");
+        TYPE_MAP.put("MYSQL_MEDIUMBLOB", "BYTE");
+        TYPE_MAP.put("MYSQL_LONGBLOB", "BYTE");
+        TYPE_MAP.put("MYSQL_BINARY", "BYTE");
+        TYPE_MAP.put("MYSQL_VARBINARY", "BYTE");
+        TYPE_MAP.put("MYSQL_BIT", "BYTE");
 
-        TYPE_MAP.put("OB_MYSQL_DATE", "DATE");
-        TYPE_MAP.put("OB_MYSQL_YEAR", "DATE");
+        TYPE_MAP.put("MYSQL_DATE", "DATE");
+        TYPE_MAP.put("MYSQL_YEAR", "DATE");
 
-        TYPE_MAP.put("OB_MYSQL_TIMESTAMP", "TIMESTAMP");
-        TYPE_MAP.put("OB_MYSQL_TIME", "TIMESTAMP");
-        TYPE_MAP.put("OB_MYSQL_DATETIME", "TIMESTAMP");
+        TYPE_MAP.put("MYSQL_TIMESTAMP", "TIMESTAMP");
+        TYPE_MAP.put("MYSQL_TIME", "TIMESTAMP");
+        TYPE_MAP.put("MYSQL_DATETIME", "TIMESTAMP");
     }
 
     /**
@@ -105,7 +106,15 @@ public class MockDataTypeUtil {
         if (dialectType == null || dataType == null) {
             return null;
         }
-        String key = String.format("%s_%s", dialectType.name(), dataType);
+        String key;
+        if (dialectType.isMysql()) {
+            key = String.format("%s_%s", DialectType.MYSQL.name(), dataType);
+        } else if (DialectType.OB_ORACLE.equals(dialectType)) {
+            key = String.format("%s_%s", DialectType.OB_ORACLE, dataType);
+        } else {
+            throw new UnsupportedException(
+                    String.format("mock data for dialect type: %s has not been supported yet", dialectType));
+        }
         return TYPE_MAP.get(key);
     }
 
