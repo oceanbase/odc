@@ -57,7 +57,7 @@ abstract class BaseDMLBuilder implements DMLBuilder {
     protected final ConnectionSession connectionSession;
 
     public BaseDMLBuilder(@NonNull List<DataModifyUnit> modifyUnits, List<String> whereColumns,
-            @NonNull ConnectionSession connectionSession) {
+            @NonNull ConnectionSession connectionSession, List<DBTableConstraint> constraints) {
         Set<String> schemas = modifyUnits.stream()
                 .map(DataModifyUnit::getSchemaName)
                 .filter(Objects::nonNull).collect(Collectors.toSet());
@@ -78,7 +78,7 @@ abstract class BaseDMLBuilder implements DMLBuilder {
             this.schema = null;
         }
         this.connectionSession = connectionSession;
-        this.constraints = getConstraints(this.schema, this.tableName);
+        this.constraints = constraints == null ? getConstraints(schema, tableName) : constraints;
         this.whereColumns = whereColumns;
     }
 
