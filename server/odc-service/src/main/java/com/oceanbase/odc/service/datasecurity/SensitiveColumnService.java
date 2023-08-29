@@ -222,14 +222,17 @@ public class SensitiveColumnService {
     @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
     public Page<SensitiveColumn> list(@NotNull Long projectId, @NotNull QuerySensitiveColumnParams params,
             Pageable pageable) {
-        Set<Long> databaseIds = new HashSet<>();
+        Set<Long> databaseIds = databaseService.listDatabaseIdsByProjectId(projectId);
+        Set<Long> filteringDatabaseIds = new HashSet<>();
         if (CollectionUtils.isNotEmpty(params.getDatabaseIds())) {
-            databaseIds.addAll(params.getDatabaseIds());
+            filteringDatabaseIds.addAll(params.getDatabaseIds());
         }
         if (CollectionUtils.isNotEmpty(params.getDatasourceIds())) {
-            databaseIds.addAll(databaseService.listDatabaseIdsByConnectionIds(params.getDatasourceIds()));
+            filteringDatabaseIds.addAll(databaseService.listDatabaseIdsByConnectionIds(params.getDatasourceIds()));
         }
-        databaseIds = Sets.intersection(databaseService.listDatabaseIdsByProjectId(projectId), databaseIds);
+        if (CollectionUtils.isNotEmpty(filteringDatabaseIds)) {
+            databaseIds = Sets.intersection(databaseService.listDatabaseIdsByProjectId(projectId), databaseIds);
+        }
         if (databaseIds.isEmpty()) {
             return Page.empty(pageable);
         }
