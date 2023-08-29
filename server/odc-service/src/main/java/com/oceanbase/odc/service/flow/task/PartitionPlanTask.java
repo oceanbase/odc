@@ -15,21 +15,16 @@
  */
 package com.oceanbase.odc.service.flow.task;
 
-import java.util.List;
-
 import org.flowable.engine.delegate.DelegateExecution;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
-import com.oceanbase.odc.metadb.partitionplan.TablePartitionPlanEntity;
-import com.oceanbase.odc.metadb.partitionplan.TablePartitionPlanRepository;
 import com.oceanbase.odc.service.flow.task.model.PartitionPlanTaskResult;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
-import com.oceanbase.odc.service.iam.model.User;
-import com.oceanbase.odc.service.partitionplan.PartitionPlanTaskService;
+import com.oceanbase.odc.service.partitionplan.PartitionPlanService;
 import com.oceanbase.odc.service.partitionplan.PartitionPlanTaskTraceContextHolder;
-import com.oceanbase.odc.service.partitionplan.model.ConnectionPartitionPlan;
+import com.oceanbase.odc.service.partitionplan.model.DatabasePartitionPlan;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanTaskParameters;
 import com.oceanbase.odc.service.task.TaskService;
 
@@ -44,11 +39,9 @@ import lombok.extern.slf4j.Slf4j;
 public class PartitionPlanTask extends BaseODCFlowTaskDelegate<PartitionPlanTaskResult> {
 
     @Autowired
-    private TablePartitionPlanRepository tablePartitionPlanRepository;
-    @Autowired
     private AuthenticationFacade authenticationFacade;
     @Autowired
-    private PartitionPlanTaskService partitionPlanTaskService;
+    private PartitionPlanService partitionPlanService;
     private volatile boolean isSuccessful = false;
     private volatile boolean isFailure = false;
 
@@ -60,24 +53,14 @@ public class PartitionPlanTask extends BaseODCFlowTaskDelegate<PartitionPlanTask
         try {
 
             PartitionPlanTaskParameters taskParameters = FlowTaskUtil.getPartitionPlanParameter(execution);
-            ConnectionPartitionPlan connectionPartitionPlan = taskParameters.getConnectionPartitionPlan();
-            // 更新状态
+            DatabasePartitionPlan databasePartitionPlan = taskParameters.getConnectionPartitionPlan();
             taskService.start(taskId);
-            // 审批通过，生效配置
-            partitionPlanTaskService.enableFlowInstancePartitionPlan(connectionPartitionPlan.getConnectionId(),
-                    getFlowInstanceId());
-            // 拉取配置信息
-            List<TablePartitionPlanEntity> tablePlans = tablePartitionPlanRepository.findValidPlanByFlowInstanceId(
-                    getFlowInstanceId());
-
-            User taskCreator = FlowTaskUtil.getTaskCreator(execution);
-            partitionPlanTaskService.executePartitionPlan(connectionPartitionPlan.getConnectionId(),
-                    getFlowInstanceId(), tablePlans, taskCreator);
-
+            // Create and enable partition plan.
+            databasePartitionPlan.setFlowInstanceId(getFlowInstanceId());
+            partitionPlanService.createDatabasePartitionPlan(databasePartitionPlan);
             PartitionPlanTaskResult taskResult = new PartitionPlanTaskResult();
             taskResult.setFlowInstanceId(getFlowInstanceId());
-            taskResult.setConnectionPartitionPlan(connectionPartitionPlan);
-            // TODO 临时，改为周期性任务后变动
+            taskResult.setDatabasePartitionPlan(databasePartitionPlan);
             isSuccessful = true;
             taskService.succeed(taskId, taskResult);
             log.info("Partition plan task succeed.");

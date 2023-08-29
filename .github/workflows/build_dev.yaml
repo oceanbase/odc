@@ -1,14 +1,15 @@
 ###
-# This workflow is used for code inspection and basic artifacts' construction (rpm and image) in your daily development
+# This workflow is used for daily development
 # Triggers:
 #   1. Push
 #   2. Pull-Request
 # Jobs:
 #   1. Check Code Format
 #   2. PMD Scan
-#   3. Calculation Version Number
-#   4. Build Web Artifact (only x86_64 for now)
-#   (Job 3 and 4 are triggered only when Pull-Request)
+#   3. Unit Test (TODO)
+#   4. Calculate Version Number
+#   5. Build RPM (exclude front resources and only x86_64 platform for now)
+#   (Job 4 and 5 are executed only when Pull-Request)
 ###
 
 name: Build Dev
@@ -21,10 +22,6 @@ on:
   pull_request:
     branches:
       - "**"
-
-env:
-  ODC_CURRENT_BRANCH: ${{ github.ref_name }}
-  ODC_TARGET_BRANCH: ${{ github.base_ref }}
 
 jobs:
   check-format:
@@ -61,14 +58,29 @@ jobs:
       - name: Run PMD scan
         run: mvn pmd:check
 
+  unit-test:
+    name: Unit Test (Skip for now)
+    needs: [ check-format, pmd-scan ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout workspace
+        uses: actions/checkout@v3
+      - name: Setup JDK 8
+        uses: actions/setup-java@v3
+        with:
+          java-version: "8"
+          distribution: "temurin"
+          cache: maven
+      - name: Run unit test
+        run: echo "Skip for now 🤪"
+
   calculate-version:
     name: Calculate Version Number
-    needs: [ check-format, pmd-scan ]
+    needs: [ unit-test ]
     if: ${{ github.event_name == 'pull_request' }}
     runs-on: ubuntu-latest
     outputs:
       odc_rpm_release_number: ${{ steps.calculate_version.outputs.odc_rpm_release_number }}
-      odc_docker_image_tag: ${{ steps.calculate_version.outputs.odc_docker_image_tag }}
     steps:
       - name: Checkout workspace
         uses: actions/checkout@v3
@@ -78,19 +90,13 @@ jobs:
           odc_rpm_release_number=$(date +%Y%m%d%H%M%S)
           echo "odc_rpm_release_number=${odc_rpm_release_number}" >> $GITHUB_OUTPUT
           echo "odc_rpm_release_number=${odc_rpm_release_number}"
-          branch_match_regex="^[0-9]\\.[0-9]\\.([0-9]{1,2}|x)_(release|dev)$"
-          tag_prefix=`[[ "${{ env.ODC_CURRENT_BRANCH }}" =~ ${branch_match_regex} ]] && echo "test" || echo "dev"`
-          odc_docker_image_tag="${tag_prefix}-$(cat distribution/odc-server-VER.txt)-${{ github.actor }}-${odc_rpm_release_number}"
-          echo "odc_docker_image_tag=${odc_docker_image_tag}" >> $GITHUB_OUTPUT
-          echo "odc_docker_image_tag=${odc_docker_image_tag}"
 
-  build-web-x86_64:
-    name: Build Web Artifact (x86_64)
+  build-rpm-x86_64:
+    name: Build RPM (x86_64)
     needs: [ calculate-version ]
     runs-on: ubuntu-latest
     env:
       odc_rpm_release_number: ${{ needs.calculate-version.outputs.odc_rpm_release_number }}
-      odc_docker_image_tag: ${{ needs.calculate-version.outputs.odc_docker_image_tag }}
     steps:
       - name: Checkout workspace
         uses: actions/checkout@v3
@@ -106,28 +112,6 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: "16"
-      - name: Build front static resources
-        run: |
-          echo "Current directory: " `pwd`
-          echo "Start build front static resources"
-          pushd client
-          echo "Run npm install pnpm -g"
-          npm install pnpm -g
-          echo "Run pnpm install"
-          pnpm install
-          echo "Run npm run build:odc"
-          npm run build:odc
-          popd
-          echo "Build front static resources success"
-          echo "Start copy resources files"
-          static_resources_path="server/odc-server/src/main/resources/static"
-          if [ ! -d "${static_resources_path}" ]; then
-            echo "mkdir -p ${static_resources_path}"
-            mkdir -p "${static_resources_path}"
-          fi
-          rm --force --recursive --verbose ${static_resources_path}/*
-          cp --force --recursive --verbose client/dist/renderer/* ${static_resources_path}
-          echo "Copy resources files success"
       - name: Set release version
         id: set_release_version
         run: |
@@ -160,16 +144,3 @@ jobs:
         with:
           name: odc-server-${{ steps.set_release_version.outputs.new_version }}.x86_64.rpm
           path: distribution/docker/resources/odc-*.rpm
-      - name: Build docker image (x86_64)
-        run: |
-          sed -e "s/DATE_CHANGE/$(date)/" -i distribution/docker/odc/Dockerfile
-          echo "odc_docker_image_tag=${odc_docker_image_tag}"
-          pushd distribution/docker
-          docker build -t docker.io/oceanbase/odc-server:${odc_docker_image_tag} -f odc/Dockerfile .
-          docker save -o resources/odc-server-${odc_docker_image_tag}.tar.gz docker.io/oceanbase/odc-server:${odc_docker_image_tag}
-          popd
-      - name: Upload docker image (x86_64)
-        uses: actions/upload-artifact@v3
-        with:
-          name: odc-server-${{ env.odc_docker_image_tag }}.tar.gz
-          path: distribution/docker/resources/odc-server-*.tar.gz

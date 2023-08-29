@@ -172,10 +172,6 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
         } else {
             jdbcUrlParams.put("useSSL", "false");
         }
-        DialectType type = connectionConfig.getDialectType();
-        if (type != null && type.isOceanbase()) {
-            jdbcUrlParams.put("enableFullLinkTrace", "true");
-        }
 
         return jdbcUrlParams;
     }

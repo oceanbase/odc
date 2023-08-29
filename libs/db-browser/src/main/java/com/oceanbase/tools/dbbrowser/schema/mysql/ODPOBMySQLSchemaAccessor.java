@@ -21,6 +21,7 @@ import java.util.List;
 
 import org.springframework.jdbc.core.JdbcOperations;
 
+import com.oceanbase.tools.dbbrowser.model.DBDatabase;
 import com.oceanbase.tools.dbbrowser.model.DBFunction;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
@@ -39,6 +40,27 @@ public class ODPOBMySQLSchemaAccessor extends MySQLNoGreaterThan5740SchemaAccess
     }
 
     @Override
+    public List<DBDatabase> listDatabases() {
+        List<DBDatabase> dbDatabases = new ArrayList<>();
+        String sql = "show databases";
+        List<String> dbNames = jdbcOperations.queryForList(sql, String.class);
+        for (String dbName : dbNames) {
+            DBDatabase database = new DBDatabase();
+            jdbcOperations.execute("use " + dbName);
+            database.setName(dbName);
+            database.setId(dbName);
+            database.setCharset(
+                    jdbcOperations.queryForObject("show variables like 'character_set_database';",
+                            (rs, num) -> rs.getString(2)));
+            database.setCollation(
+                    jdbcOperations.queryForObject("show variables like 'collation_database';",
+                            (rs, num) -> rs.getString(2)));
+            dbDatabases.add(database);
+        }
+        return dbDatabases;
+    }
+
+    @Override
     public List<String> showTables(String schemaName) {
         MySQLSqlBuilder sb = new MySQLSqlBuilder();
         sb.append("SHOW TABLES ");
@@ -53,12 +75,13 @@ public class ODPOBMySQLSchemaAccessor extends MySQLNoGreaterThan5740SchemaAccess
 
     @Override
     public List<DBObjectIdentity> listTables(String schemaName, String tableNameLike) {
-        String sql = "select database()";
-        String currentSchema = jdbcOperations.queryForObject(sql, (rs, rowNum) -> rs.getString(1));
         List<DBObjectIdentity> results = new ArrayList<>();
-        sql = "show full tables where Table_type='BASE TABLE'";
-        List<String> views = jdbcOperations.query(sql, (rs, rowNum) -> rs.getString(1));
-        views.forEach(name -> results.add(DBObjectIdentity.of(currentSchema, DBObjectType.VIEW, name)));
+        MySQLSqlBuilder builder = new MySQLSqlBuilder();
+        builder.append("show full tables from ")
+                .identifier(schemaName)
+                .append(" where Table_type='BASE TABLE'");
+        List<String> tables = jdbcOperations.query(builder.toString(), (rs, rowNum) -> rs.getString(1));
+        tables.forEach(name -> results.add(DBObjectIdentity.of(schemaName, DBObjectType.TABLE, name)));
         return results;
     }
 

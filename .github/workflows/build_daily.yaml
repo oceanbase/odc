@@ -1,7 +1,8 @@
 ###
-# This workflow is used for release
+# This workflow is used for daily checking and testing
 # Triggers:
-#   1. Manual trigger
+#   1. Daily trigger at 04:00 (Beijing, UTC+08:00)
+#   2. Manual trigger
 # Jobs:
 #   1. Check Code Format
 #   2. PMD Scan
@@ -9,14 +10,14 @@
 #   4. Calculate Version Number
 #   5. Build Web Artifact (include front resource and only x86_64 platform for now)
 #   6. Build Client Artifact
-#   7. Release (TODO)
-#   8. Tag (TODO)
 ###
 
-name: Build Release
-run-name: Build Release triggered by ${{ github.actor }} 🎉
+name: Build Daily
+run-name: Build Daily triggered by ${{ github.actor }} 🛠️
 
 on:
+  schedule:
+    - cron: '0 20 * * *'
   workflow_dispatch:
     inputs:
       rpm_release:
@@ -32,7 +33,6 @@ on:
 
 env:
   ODC_CURRENT_BRANCH: ${{ github.ref_name }}
-  ODC_TARGET_BRANCH: ${{ github.base_ref }}
 
 jobs:
   check-format:
@@ -103,8 +103,8 @@ jobs:
           echo "odc_rpm_release_number=${odc_rpm_release_number}" >> $GITHUB_OUTPUT
           echo "odc_rpm_release_number=${odc_rpm_release_number}"
           branch_match_regex="^(((dev/)?[0-9]\\.[0-9]\\.([0-9]{1,2}|x))|(release\\S*))$"
-          tag_prefix=`[[ "${{ env.ODC_CURRENT_BRANCH }}" =~ ${branch_match_regex} ]] && echo "" || echo "test-"`
-          odc_docker_image_tag="${tag_prefix}$(cat distribution/odc-server-VER.txt)-${odc_rpm_release_number}"
+          tag_prefix=`[[ "${{ env.ODC_CURRENT_BRANCH }}" =~ ${branch_match_regex} ]] && echo "test-daily" || echo "dev-daily"`
+          odc_docker_image_tag="${tag_prefix}-$(cat distribution/odc-server-VER.txt)-${odc_rpm_release_number}"
           if [[ -n "${{ inputs.image_tag }}" ]]; then odc_docker_image_tag="${{ inputs.image_tag }}"; fi
           echo "odc_docker_image_tag=${odc_docker_image_tag}" >> $GITHUB_OUTPUT
           echo "odc_docker_image_tag=${odc_docker_image_tag}"
@@ -298,19 +298,3 @@ jobs:
             client/release/*.deb
             client/release/*.exe
             client/release/*.AppImage
-
-  release:
-    name: Release (Skip for now)
-    needs: [ build-client ]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Release artifacts
-        run: echo "Skip for now 🤪"
-
-  tag:
-    name: Tag (Skip for now)
-    needs: [ release ]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Tag release
-        run: echo "Skip for now 🤪"

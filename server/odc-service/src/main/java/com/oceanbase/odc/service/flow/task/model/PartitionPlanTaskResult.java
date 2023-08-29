@@ -15,7 +15,7 @@
  */
 package com.oceanbase.odc.service.flow.task.model;
 
-import com.oceanbase.odc.service.partitionplan.model.ConnectionPartitionPlan;
+import com.oceanbase.odc.service.partitionplan.model.DatabasePartitionPlan;
 
 import lombok.Data;
 
@@ -27,5 +27,5 @@ import lombok.Data;
 @Data
 public class PartitionPlanTaskResult implements FlowTaskResult {
     private Long flowInstanceId;
-    private ConnectionPartitionPlan connectionPartitionPlan;
+    private DatabasePartitionPlan databasePartitionPlan;
 }

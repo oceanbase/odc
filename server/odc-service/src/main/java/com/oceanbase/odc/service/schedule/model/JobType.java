@@ -23,6 +23,8 @@ package com.oceanbase.odc.service.schedule.model;
 public enum JobType {
 
     SQL_PLAN,
+    PARTITION_PLAN,
+
     DATA_ARCHIVE,
 
     DATA_ARCHIVE_DELETE,

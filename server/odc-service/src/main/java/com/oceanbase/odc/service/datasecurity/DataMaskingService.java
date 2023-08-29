@@ -218,7 +218,7 @@ public class DataMaskingService {
     }
 
     private SQLParser getSqlParser(DialectType dialectType) {
-        if (Objects.nonNull(dialectType) && dialectType.isOBMysql()) {
+        if (Objects.nonNull(dialectType) && dialectType.isMysql()) {
             return new OBMySQLParser();
         } else if (dialectType == DialectType.OB_ORACLE) {
             return new OBOracleSQLParser();

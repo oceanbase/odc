@@ -13,32 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.partitionplan.model;
 
-import java.io.Serializable;
-import java.util.List;
+package com.oceanbase.odc.service.schedule.model;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 /**
  * @Author：tinker
- * @Date: 2022/9/20 21:25
+ * @Date: 2023/8/23 14:26
  * @Descripition:
  */
 
 @Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class ConnectionPartitionPlan implements Serializable {
-
-    private Long flowInstanceId;
-    private Long connectionId;
-    private boolean inspectEnable;
-    private InspectTriggerStrategy inspectTriggerStrategy;
-    private List<TablePartitionPlan> tablePartitionPlans;
-
+public class PartitionPlanJobParameters {
+    private Long databasePartitionPlanId;
 }

@@ -16,7 +16,6 @@
 package com.oceanbase.odc.metadb.partitionplan;
 
 import java.util.List;
-import java.util.Optional;
 
 import javax.transaction.Transactional;
 
@@ -37,31 +36,22 @@ public interface TablePartitionPlanRepository extends JpaRepository<TablePartiti
     @Transactional
     @Modifying
     @Query(value = "update table_partition_plan set is_config_enabled = false "
-            + "where is_config_enabled = true and connection_id=:id", nativeQuery = true)
-    int disableConfigByConnectionId(@Param("id") Long connectionId);
+            + "where is_config_enabled = true and database_id=:id", nativeQuery = true)
+    int disableConfigByDatabaseId(@Param("id") Long databaseId);
 
     @Transactional
     @Modifying
     @Query(value = "update table_partition_plan set is_config_enabled = true "
-            + "where flow_instance_id=:flowInstanceId", nativeQuery = true)
-    int enableConfigByFlowInstanceId(@Param("flowInstanceId") Long flowInstanceId);
+            + "where database_partition_plan_id=:databasePartitionPlanId", nativeQuery = true)
+    int enableConfigByDatabasePartitionPlanId(@Param("databasePartitionPlanId") Long databasePartitionPlanId);
 
+    @Query(value = "select * from table_partition_plan "
+            + "where database_partition_plan_id=:id and is_config_enabled = true", nativeQuery = true)
+    List<TablePartitionPlanEntity> findValidPlanByDatabasePartitionPlanId(@Param("id") Long databasePartitionPlanId);
 
-    @Query(value = "select * from table_partition_plan where connection_id=:id and schema_name=:schemaName"
-            + " and table_name=:tableName and is_config_enabled=true", nativeQuery = true)
-    Optional<TablePartitionPlanEntity> findEnTablePlan(@Param("id") Long connectionId,
-            @Param("schemaName") String schemaName,
-            @Param("tableName") String tableName);
+    @Query(value = "select * from table_partition_plan "
+            + "where database_id=:id and is_config_enabled = true", nativeQuery = true)
+    List<TablePartitionPlanEntity> findValidPlanByDatabaseId(@Param("id") Long databaseId);
 
-
-    @Query(value = "select * from table_partition_plan where flow_instance_id=:flowInstanceId and is_config_enabled = true and is_auto_partition = true",
-            nativeQuery = true)
-    List<TablePartitionPlanEntity> findValidPlanByFlowInstanceId(@Param("flowInstanceId") Long flowInstanceId);
-
-    @Query(value = "select * from table_partition_plan ap "
-            + "where ap.connection_id=:connectionId and ap.is_config_enabled = true", nativeQuery = true)
-    List<TablePartitionPlanEntity> findValidPlanByConnectionId(@Param("connectionId") Long connectionId);
-
-    List<TablePartitionPlanEntity> findByFlowInstanceId(Long flowInstanceId);
-
+    List<TablePartitionPlanEntity> findByDatabasePartitionPlanId(@Param("id") Long databasePartitionPlanId);
 }

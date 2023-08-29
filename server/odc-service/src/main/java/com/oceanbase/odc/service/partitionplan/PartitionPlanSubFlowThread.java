@@ -47,8 +47,8 @@ public class PartitionPlanSubFlowThread extends Thread {
     @Setter
     protected long taskId;
 
-    public PartitionPlanSubFlowThread(String schemaName, Long parentFlowInstanceId,
-            Long connectionId, List<String> sqls, FlowInstanceService flowInstanceService, User user) {
+    public PartitionPlanSubFlowThread(Long parentFlowInstanceId,
+            Long databaseId, List<String> sqls, FlowInstanceService flowInstanceService, User user) {
         DatabaseChangeParameters taskParameters = new DatabaseChangeParameters();
         taskParameters.setErrorStrategy("ABORT");
         StringBuilder sqlContent = new StringBuilder();
@@ -59,10 +59,9 @@ public class PartitionPlanSubFlowThread extends Thread {
         CreateFlowInstanceReq flowInstanceReq = new CreateFlowInstanceReq();
         flowInstanceReq.setParameters(taskParameters);
         flowInstanceReq.setTaskType(TaskType.ASYNC);
-        flowInstanceReq.setConnectionId(connectionId);
+        flowInstanceReq.setDatabaseId(databaseId);
         flowInstanceReq.setParentFlowInstanceId(parentFlowInstanceId);
         flowInstanceReq.setExecutionStrategy(FlowTaskExecutionStrategy.AUTO);
-        flowInstanceReq.setDatabaseName(schemaName);
         this.createFlowInstanceReq = flowInstanceReq;
         this.flowInstanceService = flowInstanceService;
         this.user = user;
