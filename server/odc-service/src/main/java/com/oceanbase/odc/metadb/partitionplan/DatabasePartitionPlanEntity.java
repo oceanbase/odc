@@ -45,7 +45,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Table(name = "connection_partition_plan")
-public class ConnectionPartitionPlanEntity {
+public class DatabasePartitionPlanEntity {
 
     @Id
     @Column(name = "id", nullable = false, updatable = false)
@@ -54,8 +54,12 @@ public class ConnectionPartitionPlanEntity {
 
     @Column(name = "connection_id", nullable = false, updatable = false)
     private Long connectionId;
+    @Column(name = "database_id", nullable = false, updatable = false)
+    private Long databaseId;
     @Column(name = "flow_instance_id", nullable = false, updatable = false)
     private Long flowInstanceId;
+    @Column(name = "schedule_id", updatable = false)
+    private Long scheduleId;
     @Column(name = "organization_id", nullable = false, updatable = false)
     private Long organizationId;
 

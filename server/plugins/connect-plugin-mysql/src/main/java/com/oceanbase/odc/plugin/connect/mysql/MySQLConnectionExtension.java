@@ -21,6 +21,7 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import org.pf4j.Extension;
 
@@ -81,6 +82,14 @@ public class MySQLConnectionExtension extends OBMySQLConnectionExtension {
     protected HostAddress parseJdbcUrl(String jdbcUrl) throws SQLException {
         URI url = URI.create(jdbcUrl.substring(5));
         return new HostAddress(url.getHost(), url.getPort());
+    }
+
+    @Override
+    protected Map<String, String> appendDefaultJdbcUrlParameters(Map<String, String> jdbcUrlParams) {
+        if (!jdbcUrlParams.containsKey("tinyInt1isBit")) {
+            jdbcUrlParams.put("tinyInt1isBit", "false");
+        }
+        return jdbcUrlParams;
     }
 
 }

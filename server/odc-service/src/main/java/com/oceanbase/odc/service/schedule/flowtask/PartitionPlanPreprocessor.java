@@ -15,13 +15,15 @@
  */
 package com.oceanbase.odc.service.schedule.flowtask;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import java.util.List;
 
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
 import com.oceanbase.odc.service.flow.processor.FlowTaskPreprocessor;
 import com.oceanbase.odc.service.flow.processor.Preprocessor;
-import com.oceanbase.odc.service.partitionplan.PartitionPlanService;
+import com.oceanbase.odc.service.partitionplan.model.DatabasePartitionPlan;
+import com.oceanbase.odc.service.partitionplan.model.PartitionPlanTaskParameters;
+import com.oceanbase.odc.service.partitionplan.model.TablePartitionPlan;
 
 /**
  * @Author：tinker
@@ -31,11 +33,26 @@ import com.oceanbase.odc.service.partitionplan.PartitionPlanService;
 @FlowTaskPreprocessor(type = TaskType.PARTITION_PLAN)
 public class PartitionPlanPreprocessor implements Preprocessor {
 
-    @Autowired
-    private PartitionPlanService partitionPlanService;
+    /**
+     * Max partition count for OB MySQL mode, refer to
+     * <a href="https://www.oceanbase.com/docs/common-oceanbase-database-10000000001702449">分区概述</a>
+     */
+    private static final long MAX_PARTITION_COUNT = 8192;
 
     @Override
     public void process(CreateFlowInstanceReq req) {
-        // TODO
+
+        PartitionPlanTaskParameters parameters = (PartitionPlanTaskParameters) req.getParameters();
+        DatabasePartitionPlan databasePartitionPlan = parameters.getConnectionPartitionPlan();
+        databasePartitionPlan.setConnectionId(req.getConnectionId());
+        List<TablePartitionPlan> tablePartitionPlans = parameters.getConnectionPartitionPlan().getTablePartitionPlans();
+        for (TablePartitionPlan tablePartitionPlan : tablePartitionPlans) {
+            if (tablePartitionPlan.getPartitionCount() > MAX_PARTITION_COUNT
+                    && tablePartitionPlan.getDetail().getIsAutoPartition()) {
+                throw new RuntimeException(
+                        String.format("Can not create more partition. TableName: %s,PartitionCount: %s",
+                                tablePartitionPlan.getTableName(), tablePartitionPlan.getPartitionCount()));
+            }
+        }
     }
 }

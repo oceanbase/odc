@@ -104,11 +104,19 @@ public class OBMySQLConnectionExtension implements ConnectionExtensionPoint {
     }
 
     protected String getJdbcUrlParameters(Map<String, String> jdbcUrlParams) {
+        jdbcUrlParams = appendDefaultJdbcUrlParameters(jdbcUrlParams);
         if (CollectionUtils.isEmpty(jdbcUrlParams)) {
             return null;
         }
         return jdbcUrlParams.entrySet().stream().map(entry -> entry.getKey() + "=" + entry.getValue())
                 .collect(Collectors.joining("&"));
+    }
+
+    protected Map<String, String> appendDefaultJdbcUrlParameters(Map<String, String> jdbcUrlParams) {
+        if (!jdbcUrlParams.containsKey("enableFullLinkTrace")) {
+            jdbcUrlParams.put("enableFullLinkTrace", "true");
+        }
+        return jdbcUrlParams;
     }
 
     private TestResult test(String jdbcUrl, Properties properties, int queryTimeout) {

@@ -18,7 +18,7 @@ package com.oceanbase.odc.server.web.controller.v2;
 import java.io.IOException;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -28,7 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.partitionplan.PartitionPlanService;
-import com.oceanbase.odc.service.partitionplan.model.ConnectionPartitionPlan;
+import com.oceanbase.odc.service.partitionplan.model.DatabasePartitionPlan;
 
 /**
  * @Author：tianke
@@ -36,30 +36,29 @@ import com.oceanbase.odc.service.partitionplan.model.ConnectionPartitionPlan;
  * @Descripition:
  */
 @RestController
-@ConditionalOnProperty(name = "odc.feature.partitionplan.enabled", havingValue = "true")
+@RequestMapping("/api/v2/partitionPlan")
 public class PartitionPlanController {
 
     @Autowired
     private PartitionPlanService partitionPlanService;
 
-    @RequestMapping(value = "/api/v2/patitionplan/ConnectionPartitionPlan", method = RequestMethod.GET)
-    public SuccessResponse<ConnectionPartitionPlan> getConnectionPartitionPlan(@RequestParam Long connectionId,
+    @RequestMapping(value = "/partitionPlans", method = RequestMethod.GET)
+    public SuccessResponse<DatabasePartitionPlan> getPartitionPlans(@RequestParam Long databaseId,
             @RequestParam(required = false) Long flowInstanceId) {
         return Responses
-                .success(partitionPlanService.findRangeTablePlan(connectionId, flowInstanceId));
+                .success(partitionPlanService.findRangeTablePlan(databaseId, flowInstanceId));
     }
 
-
-    @RequestMapping(value = "/api/v2/partitionplan/ConnectionPartitionPlan/batchUpdate", method = RequestMethod.PUT)
-    public SuccessResponse<String> updateConnectionPartitionPlan(
-            @RequestBody ConnectionPartitionPlan connectionPartitionPlan) throws IOException {
-        partitionPlanService.updateTablePartitionPlan(connectionPartitionPlan);
+    @RequestMapping(value = "/partitionPlans/{id:[\\d]+}", method = RequestMethod.PUT)
+    public SuccessResponse<String> update(@PathVariable Long id,
+            @RequestBody DatabasePartitionPlan databasePartitionPlan) throws IOException {
+        partitionPlanService.updateTablePartitionPlan(databasePartitionPlan);
         return Responses.success("ok");
     }
 
-    @RequestMapping(value = "/api/v2/partitionplan/ConnectionPartitionPlan/exist", method = RequestMethod.GET)
-    public SuccessResponse<Boolean> hasConnectionPartitionPlan(@RequestParam("connectionId") Long connectionId) {
-        return Responses.success(partitionPlanService.hasConnectionPartitionPlan(connectionId));
+    @RequestMapping(value = "/partitionPlans/exists", method = RequestMethod.GET)
+    public SuccessResponse<Boolean> exist(@RequestParam("databaseId") Long databaseId) {
+        return Responses.success(partitionPlanService.hasConnectionPartitionPlan(databaseId));
     }
 
 }

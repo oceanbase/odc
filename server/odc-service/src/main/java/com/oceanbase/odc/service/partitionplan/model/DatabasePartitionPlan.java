@@ -16,17 +16,35 @@
 package com.oceanbase.odc.service.partitionplan.model;
 
 import java.io.Serializable;
+import java.util.List;
 
-import com.oceanbase.odc.service.flow.model.TaskParameters;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonProperty.Access;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
- * @Author：tianke
- * @Date: 2022/9/20 01:35
+ * @Author：tinker
+ * @Date: 2022/9/20 21:25
  * @Descripition:
  */
+
 @Data
-public class PartitionPlanTaskParameters implements Serializable, TaskParameters {
-    private DatabasePartitionPlan connectionPartitionPlan;
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class DatabasePartitionPlan implements Serializable {
+
+    @JsonProperty(access = Access.READ_ONLY)
+    private Long id;
+    private Long flowInstanceId;
+    private Long connectionId;
+    private Long databaseId;
+    private boolean inspectEnable;
+    private InspectTriggerStrategy inspectTriggerStrategy;
+    private List<TablePartitionPlan> tablePartitionPlans;
+
 }

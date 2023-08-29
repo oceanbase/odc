@@ -33,6 +33,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class TablePartitionPlan implements Serializable {
 
+    private Long databasePartitionPlanId;
     private Long flowInstanceId;
     private String schemaName;
     private String tableName;
