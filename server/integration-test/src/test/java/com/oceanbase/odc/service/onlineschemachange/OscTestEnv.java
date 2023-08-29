@@ -102,6 +102,7 @@ public class OscTestEnv extends ServiceTestEnv {
     protected static ConnectionConfig config;
     protected static ConnectionSession connectionSession;
     protected static SyncJdbcExecutor jdbcTemplate;
+    protected String oscCheckTaskCronExpression = "0/3 * * * * ?";
 
     @BeforeClass
     public static void before() {
@@ -181,7 +182,8 @@ public class OscTestEnv extends ServiceTestEnv {
         scheduleEntity.setJobType(JobType.ONLINE_SCHEMA_CHANGE_COMPLETE);
         scheduleEntity.setJobParametersJson(JsonUtils.toJson(changeParameters));
         TriggerConfig triggerConfig = new TriggerConfig();
-        triggerConfig.setTriggerStrategy(TriggerStrategy.START_NOW);
+        triggerConfig.setTriggerStrategy(TriggerStrategy.CRON);
+        triggerConfig.setCronExpression(oscCheckTaskCronExpression);
         scheduleEntity.setTriggerConfigJson(JsonUtils.toJson(triggerConfig));
         return scheduleRepository.saveAndFlush(scheduleEntity);
     }
