@@ -31,6 +31,7 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.DataFormatter;
+import org.apache.poi.ss.usermodel.DateUtil;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Row.MissingCellPolicy;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -38,6 +39,7 @@ import org.apache.poi.xssf.streaming.SXSSFSheet;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.PreConditions;
 
 import lombok.extern.slf4j.Slf4j;
@@ -50,31 +52,38 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class FileConvertUtils {
 
-    public static List<Map<String, String>> convertXlxToList(InputStream inputStream) throws IOException {
+    private final static int DEFAULT_SHEET_INDEX = 0;
+    private final static int DEFAULT_HEADER_ROW_NUM = 0;
 
-        XSSFWorkbook xssfWorkbook = new XSSFWorkbook(inputStream);
-        Sheet sheet = xssfWorkbook.getSheetAt(0);
-        Row firstRow = sheet.getRow(0);
-
-        // Excel内容校验
-        List<Map<String, String>> list = new ArrayList<>();
-        int rowNum = sheet.getPhysicalNumberOfRows();
-        int cellNum = firstRow.getPhysicalNumberOfCells();
-        for (int i = 1; i < rowNum; i++) {
-            Row row = sheet.getRow(i); // 获取表格中第i行的数据
+    public static List<Map<String, String>> convertXlsRowsToMapList(InputStream inputStream) throws IOException {
+        List<Map<String, String>> returnValue = new ArrayList<>();
+        Sheet sheet = new XSSFWorkbook(inputStream).getSheetAt(DEFAULT_SHEET_INDEX);
+        int firstRowNum = sheet.getFirstRowNum();
+        int lastRowNum = sheet.getLastRowNum();
+        if (firstRowNum < DEFAULT_HEADER_ROW_NUM || lastRowNum < DEFAULT_HEADER_ROW_NUM + 1) {
+            // Empty sheet
+            return returnValue;
+        }
+        Row header = sheet.getRow(firstRowNum);
+        int columnNum = getNotBlankColumnNum(header);
+        for (int i = firstRowNum + 1; i <= lastRowNum; i++) {
             Map<String, String> map = new HashMap<>();
-            for (int j = 0; j < cellNum; j++) { // 获取表格中第i行第j列的数据
+            Row row = sheet.getRow(i);
+            if (isEmptyRow(row)) {
+                // Skip empty row
+                continue;
+            }
+            for (int j = 0; j < columnNum; j++) {
                 DataFormatter formatter = new DataFormatter();
-                String key = formatter.formatCellValue(firstRow.getCell(j));
+                String key = formatter.formatCellValue(header.getCell(j));
                 Cell cell = row.getCell(j, MissingCellPolicy.CREATE_NULL_AS_BLANK);
                 String value = formatter.formatCellValue(cell);
                 map.put(key, value);
             }
-            list.add(map);
+            returnValue.add(map);
         }
-        return list;
+        return returnValue;
     }
-
 
     public static String convertCsvToXls(String csvFilePath, String xlsFilePath,
             List<String> anotherSheetContents)
@@ -121,4 +130,51 @@ public class FileConvertUtils {
         }
         return xlsFilePath;
     }
+
+    private static int getNotBlankColumnNum(Row row) {
+        int columnNum = 0;
+        for (Cell cell : row) {
+            if (!isEmptyCell(cell)) {
+                columnNum++;
+            }
+        }
+        return columnNum;
+    }
+
+    private static boolean isEmptyRow(Row row) {
+        if (row == null || row.getPhysicalNumberOfCells() == 0 || row.getLastCellNum() <= 0) {
+            return true;
+        }
+        for (Cell cell : row) {
+            if (!isEmptyCell(cell)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean isEmptyCell(Cell cell) {
+        return cell == null || StringUtils.isBlank(getCellValue(cell));
+    }
+
+    private static String getCellValue(Cell cell) {
+        if (cell != null) {
+            switch (cell.getCellType()) {
+                case STRING:
+                    return cell.getStringCellValue();
+                case NUMERIC:
+                    if (DateUtil.isCellDateFormatted(cell)) {
+                        return cell.getDateCellValue().toString();
+                    } else {
+                        return Double.toString(cell.getNumericCellValue());
+                    }
+                case BOOLEAN:
+                    return Boolean.toString(cell.getBooleanCellValue());
+                case FORMULA:
+                    return cell.getCellFormula();
+            }
+        }
+        return StringUtils.EMPTY;
+    }
+
 }
