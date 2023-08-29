@@ -14,6 +14,16 @@ run-name: Build Artifact triggered by ${{ github.actor }} 🛠️
 on:
   workflow_dispatch:
     inputs:
+      install_db_browser:
+        description: "Install db-browser"
+        required: true
+        type: boolean
+        default: false
+      install_ob_sql_parser:
+        description: "Install ob-sql-parser"
+        required: true
+        type: boolean
+        default: false
       build_jar:
         description: "Build jar package"
         required: true
@@ -126,6 +136,24 @@ jobs:
           echo "RPM's version is "${new_version}
           mvn versions:set -DnewVersion="${new_version}"
           mvn versions:commit
+      - name: Install db-browser
+        if: ${{ github.event.inputs.install_db_browser == 'true'}}
+        run: |
+          echo "Start install db-browser"
+          pushd libs/db-browser
+          echo "Current dir is "`pwd`
+          mvn clean install -Dmaven.test.skip=true
+          echo "Install db-browser success"
+          popd
+      - name: Install ob-sql-parser
+        if: ${{ github.event.inputs.install_ob_sql_parser == 'true'}}
+        run: |
+          echo "Start install ob-sql-parser"
+          pushd libs/ob-sql-parser
+          echo "Current dir is "`pwd`
+          mvn clean install -Dmaven.test.skip=true
+          echo "Install ob-sql-parser success"
+          popd
       - name: Build jar
         run: |
           echo "Start build jar packages"
