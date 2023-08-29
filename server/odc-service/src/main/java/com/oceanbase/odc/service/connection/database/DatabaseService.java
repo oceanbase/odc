@@ -423,6 +423,7 @@ public class DatabaseService {
                             database.setCollationName(latest.getCollationName());
                             database.setCharsetName(latest.getCharsetName());
                             database.setLastSyncTime(latest.getLastSyncTime());
+                            database.setExisted(Boolean.TRUE);
                         }
                         return database;
                     }).collect(Collectors.toList());

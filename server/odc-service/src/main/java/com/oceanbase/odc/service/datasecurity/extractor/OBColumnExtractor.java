@@ -710,7 +710,7 @@ public class OBColumnExtractor implements ColumnExtractor {
     }
 
     private String processIdentifier(String identifier) {
-        if (Objects.nonNull(dialectType) && dialectType.isOBMysql()) {
+        if (Objects.nonNull(dialectType) && dialectType.isMysql()) {
             String unquoted = StringUtils.unquoteMySqlIdentifier(identifier);
             return StringUtils.isBlank(unquoted) ? unquoted : unquoted.toLowerCase();
         } else if (dialectType == DialectType.OB_ORACLE) {

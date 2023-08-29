@@ -18,14 +18,14 @@ package com.oceanbase.odc.service.partitionplan;
 import org.mapstruct.Mapper;
 import org.mapstruct.factory.Mappers;
 
-import com.oceanbase.odc.metadb.partitionplan.ConnectionPartitionPlanEntity;
-import com.oceanbase.odc.service.partitionplan.model.ConnectionPartitionPlan;
+import com.oceanbase.odc.metadb.partitionplan.DatabasePartitionPlanEntity;
+import com.oceanbase.odc.service.partitionplan.model.DatabasePartitionPlan;
 
 @Mapper
-public interface ConnectionPartitionPlanMapper {
-    ConnectionPartitionPlanMapper INSTANCE = Mappers.getMapper(ConnectionPartitionPlanMapper.class);
+public interface DatabasePartitionPlanMapper {
+    DatabasePartitionPlanMapper INSTANCE = Mappers.getMapper(DatabasePartitionPlanMapper.class);
 
-    ConnectionPartitionPlan entityToModel(ConnectionPartitionPlanEntity entity);
+    DatabasePartitionPlan entityToModel(DatabasePartitionPlanEntity entity);
 
-    ConnectionPartitionPlanEntity modelToEntity(ConnectionPartitionPlan model);
+    DatabasePartitionPlanEntity modelToEntity(DatabasePartitionPlan model);
 }
