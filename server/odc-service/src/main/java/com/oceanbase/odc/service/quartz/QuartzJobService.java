@@ -41,7 +41,6 @@ import com.oceanbase.odc.service.quartz.executor.QuartzJob;
 import com.oceanbase.odc.service.quartz.model.MisfireStrategy;
 import com.oceanbase.odc.service.quartz.util.QuartzCronExpressionUtils;
 import com.oceanbase.odc.service.schedule.model.CreateQuartzJobReq;
-import com.oceanbase.odc.service.schedule.model.JobType;
 import com.oceanbase.odc.service.schedule.model.QuartzKeyGenerator;
 import com.oceanbase.odc.service.schedule.model.TriggerConfig;
 
