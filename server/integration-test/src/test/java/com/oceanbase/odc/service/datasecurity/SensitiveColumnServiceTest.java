@@ -43,7 +43,6 @@ import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.metadb.datasecurity.SensitiveColumnEntity;
 import com.oceanbase.odc.metadb.datasecurity.SensitiveColumnRepository;
 import com.oceanbase.odc.service.collaboration.project.model.Project;
-import com.oceanbase.odc.service.common.model.Stats;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
@@ -51,6 +50,7 @@ import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.datasecurity.model.MaskingAlgorithm;
 import com.oceanbase.odc.service.datasecurity.model.QuerySensitiveColumnParams;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveColumn;
+import com.oceanbase.odc.service.datasecurity.model.SensitiveColumnStats;
 import com.oceanbase.odc.service.datasecurity.util.SensitiveColumnMapper;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 
@@ -219,13 +219,9 @@ public class SensitiveColumnServiceTest extends ServiceTestEnv {
         List<SensitiveColumn> columns = new ArrayList<>();
         columns.addAll(batchCreateSensitiveColumn(1, 5, DEFAULT_DATABASE_ID, "test_stats", "test_stats"));
         service.batchCreate(DEFAULT_PROJECT_ID, columns);
-        Stats stats = service.stats(DEFAULT_PROJECT_ID);
-        Assert.assertTrue(stats.get("datasource").getDistinct().size() == 1
-                && stats.get("datasource").getDistinct().contains("datasource"));
-        Assert.assertTrue(stats.get("database").getDistinct().size() == 1
-                && stats.get("database").getDistinct().contains("database"));
-        Assert.assertTrue(stats.get("maskingAlgorithmId").getDistinct().size() == 1
-                && stats.get("maskingAlgorithmId").getDistinct().contains(DEFAULT_MASKING_ALGORITHM_ID.toString()));
+        SensitiveColumnStats stats = service.stats(DEFAULT_PROJECT_ID);
+        Assert.assertEquals(1, stats.getDatabases().size());
+        Assert.assertEquals(1, stats.getMaskingAlgorithms().size());
     }
 
     @Test
