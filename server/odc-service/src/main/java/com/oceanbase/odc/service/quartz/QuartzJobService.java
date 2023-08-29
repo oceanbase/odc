@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.quartz;
 
 import java.text.ParseException;
+import java.util.HashMap;
 import java.util.List;
 
 import org.quartz.CronScheduleBuilder;
@@ -58,14 +59,19 @@ public class QuartzJobService {
     private Scheduler scheduler;
 
     public void createJob(CreateQuartzJobReq req) throws SchedulerException {
+        createJob(req, null);
+    }
+
+    public void createJob(CreateQuartzJobReq req, JobDataMap triggerDataMap) throws SchedulerException {
 
         JobKey jobKey = QuartzKeyGenerator.generateJobKey(req.getScheduleId(), req.getType());
 
         Class<? extends Job> clazz = QuartzJob.class;
 
         if (req.getTriggerConfig() != null) {
+            JobDataMap forTrigger = triggerDataMap == null ? new JobDataMap(new HashMap<>(1)) : triggerDataMap;
             TriggerKey triggerKey = QuartzKeyGenerator.generateTriggerKey(req.getScheduleId(), req.getType());
-            Trigger trigger = buildTrigger(triggerKey, req.getTriggerConfig(), req.getMisfireStrategy());
+            Trigger trigger = buildTrigger(triggerKey, req.getTriggerConfig(), req.getMisfireStrategy(), forTrigger);
             JobDetail jobDetail = JobBuilder.newJob(clazz).withIdentity(jobKey)
                     .usingJobData(req.getJobDataMap()).build();
             scheduler.scheduleJob(jobDetail, trigger);
@@ -74,22 +80,21 @@ public class QuartzJobService {
                     .usingJobData(req.getJobDataMap()).storeDurably(true).build();
             scheduler.addJob(jobDetail, false);
         }
-
     }
 
-    private Trigger buildTrigger(TriggerKey key, TriggerConfig config, MisfireStrategy misfireStrategy)
-            throws SchedulerException {
+    private Trigger buildTrigger(TriggerKey key, TriggerConfig config,
+            MisfireStrategy misfireStrategy, JobDataMap triggerDataMap) throws SchedulerException {
         switch (config.getTriggerStrategy()) {
             case START_NOW:
                 return TriggerBuilder
                         .newTrigger().withIdentity(key).withSchedule(SimpleScheduleBuilder
                                 .simpleSchedule().withRepeatCount(0).withMisfireHandlingInstructionFireNow())
-                        .startNow().build();
+                        .startNow().usingJobData(triggerDataMap).build();
             case START_AT:
                 return TriggerBuilder.newTrigger().withIdentity(key)
                         .withSchedule(SimpleScheduleBuilder.simpleSchedule().withRepeatCount(0)
                                 .withMisfireHandlingInstructionFireNow())
-                        .startAt(config.getStartAt()).build();
+                        .startAt(config.getStartAt()).usingJobData(triggerDataMap).build();
             case CRON:
             case DAY:
             case MONTH:
@@ -119,7 +124,7 @@ public class QuartzJobService {
                 }
 
                 return TriggerBuilder.newTrigger().withIdentity(key)
-                        .withSchedule(cronScheduleBuilder).build();
+                        .withSchedule(cronScheduleBuilder).usingJobData(triggerDataMap).build();
 
             }
             default:
@@ -147,20 +152,12 @@ public class QuartzJobService {
         return scheduler.getTrigger(key);
     }
 
-    public CreateQuartzJobReq getQuartzJobReqOfJob(JobKey key) throws SchedulerException {
-        JobDetail jobDetail = scheduler.getJobDetail(key);
-        CreateQuartzJobReq req = new CreateQuartzJobReq();
-        req.setJobDataMap(jobDetail.getJobDataMap());
-        req.setType(JobType.valueOf(key.getGroup()));
-        req.setScheduleId(Long.parseLong(key.getName()));
-        return req;
-    }
-
-    public void updateJob(CreateQuartzJobReq req) throws SchedulerException {
-        JobKey jobKey = QuartzKeyGenerator.generateJobKey(req.getScheduleId(), req.getType());
-        JobDetail jobDetail = JobBuilder.newJob(QuartzJob.class).withIdentity(jobKey)
-                .usingJobData(req.getJobDataMap()).build();
-        scheduler.addJob(jobDetail, true, true);
+    public void updateTriggerDataMap(TriggerKey triggerKey, JobDataMap triggerDataMap) throws SchedulerException {
+        Trigger trigger = getTrigger(triggerKey);
+        if (trigger != null) {
+            trigger.getJobDataMap().putAll(triggerDataMap);
+            scheduler.rescheduleJob(triggerKey, trigger);
+        }
     }
 
     public void triggerJob(JobKey key) throws SchedulerException {

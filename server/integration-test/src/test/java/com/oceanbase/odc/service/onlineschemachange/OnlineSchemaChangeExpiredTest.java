@@ -44,10 +44,8 @@ import lombok.extern.slf4j.Slf4j;
  * @since 4.2.0
  */
 @Slf4j
-@TestPropertySource(properties = "osc-check-task-cron-expression=0/3 * * * * ?")
 @TestPropertySource(properties = "osc-task-expired-after-seconds=1")
 public class OnlineSchemaChangeExpiredTest extends OscTestEnv {
-
 
     @Test
     public void test_osc_task_expired_after_seconds() {

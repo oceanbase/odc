@@ -23,7 +23,6 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.quartz.SchedulerException;
 import org.quartz.SchedulerListener;
-import org.springframework.test.context.TestPropertySource;
 
 import com.oceanbase.odc.common.concurrent.Await;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
@@ -40,7 +39,6 @@ import lombok.extern.slf4j.Slf4j;
  * @since 4.2.0
  */
 @Slf4j
-@TestPropertySource(properties = "check-osc-task-cron-expression=0/5 * * * * ?")
 public class OnlineSchemaChangeMultiTaskTest extends OscTestEnv {
 
 

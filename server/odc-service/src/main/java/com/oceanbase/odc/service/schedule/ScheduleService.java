@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.schedule;
 import java.io.File;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -25,6 +26,7 @@ import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 
 import org.apache.commons.compress.utils.Lists;
+import org.quartz.JobDataMap;
 import org.quartz.JobKey;
 import org.quartz.SchedulerException;
 import org.quartz.Trigger;
@@ -162,6 +164,20 @@ public class ScheduleService {
         quartzJobService.createJob(buildCreateJobReq(scheduleConfig));
         scheduleRepository.updateStatusById(scheduleConfig.getId(), ScheduleStatus.ENABLED);
     }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void enable(ScheduleEntity scheduleConfig, Map<String, Object> triggerDataMap)
+            throws SchedulerException, ClassNotFoundException {
+        quartzJobService.createJob(buildCreateJobReq(scheduleConfig), new JobDataMap(triggerDataMap));
+        scheduleRepository.updateStatusById(scheduleConfig.getId(), ScheduleStatus.ENABLED);
+    }
+
+    public void updateTriggerDataMap(ScheduleEntity scheduleConfig, Map<String, Object> triggerDataMap)
+            throws SchedulerException {
+        Trigger scheduleTrigger = nullSafeGetScheduleTrigger(scheduleConfig);
+        quartzJobService.updateTriggerDataMap(scheduleTrigger.getKey(), new JobDataMap(triggerDataMap));
+    }
+
 
     @Transactional(rollbackFor = Exception.class)
     public void pause(ScheduleEntity scheduleConfig) throws SchedulerException {
@@ -451,7 +467,11 @@ public class ScheduleService {
         createQuartzJobReq.setScheduleId(schedule.getId());
         createQuartzJobReq.setType(schedule.getJobType());
         createQuartzJobReq.setTriggerConfig(JsonUtils.fromJson(schedule.getTriggerConfigJson(), TriggerConfig.class));
-        createQuartzJobReq.getJobDataMap().putAll(BeanMap.create(schedule));
+        if (schedule.getJobType() == JobType.ONLINE_SCHEMA_CHANGE_COMPLETE) {
+            createQuartzJobReq.getJobDataMap().putAll(JsonUtils.fromJson(schedule.getJobParametersJson(), Map.class));
+        } else {
+            createQuartzJobReq.getJobDataMap().putAll(BeanMap.create(schedule));
+        }
         if (schedule.getAllowConcurrent() != null) {
             createQuartzJobReq.setAllowConcurrent(schedule.getAllowConcurrent());
         }
