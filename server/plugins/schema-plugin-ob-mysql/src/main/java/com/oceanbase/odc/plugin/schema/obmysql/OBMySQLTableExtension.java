@@ -81,7 +81,7 @@ public class OBMySQLTableExtension implements TableExtensionPoint {
         table.setOwner(schemaName);
         table.setName(schemaAccessor.isLowerCaseTableName() ? tableName.toLowerCase() : tableName);
         table.setColumns(schemaAccessor.listTableColumns(schemaName, tableName));
-        table.setConstraints(parser.listConstraints());
+        table.setConstraints(schemaAccessor.listTableConstraints(schemaName, tableName));
         table.setPartition(parser.getPartition());
         table.setIndexes(schemaAccessor.listTableIndexes(schemaName, tableName));
         table.setDDL(ddl);
@@ -104,6 +104,12 @@ public class OBMySQLTableExtension implements TableExtensionPoint {
     public String generateUpdateDDL(@NonNull Connection connection, @NonNull DBTable oldTable,
             @NonNull DBTable newTable) {
         return getTableEditor(connection).generateUpdateObjectDDL(oldTable, newTable);
+    }
+
+    @Override
+    public String generateUpdateDDLWithoutRenaming(@NonNull Connection connection, @NonNull DBTable oldTable,
+            @NonNull DBTable newTable) {
+        return getTableEditor(connection).generateUpdateObjectDDLWithoutRenaming(oldTable, newTable);
     }
 
     protected DBTableEditor getTableEditor(Connection connection) {

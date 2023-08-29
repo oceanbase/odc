@@ -29,10 +29,10 @@ import com.oceanbase.odc.plugin.schema.obmysql.OBMySQLTableExtension;
 import com.oceanbase.odc.plugin.schema.oboracle.parser.OBOracleGetDBTableByParser;
 import com.oceanbase.odc.plugin.schema.oboracle.utils.DBAccessorUtil;
 import com.oceanbase.tools.dbbrowser.editor.DBTableEditor;
+import com.oceanbase.tools.dbbrowser.editor.oracle.OBOracleIndexEditor;
 import com.oceanbase.tools.dbbrowser.editor.oracle.OracleColumnEditor;
 import com.oceanbase.tools.dbbrowser.editor.oracle.OracleConstraintEditor;
 import com.oceanbase.tools.dbbrowser.editor.oracle.OracleDBTablePartitionEditor;
-import com.oceanbase.tools.dbbrowser.editor.oracle.OracleIndexEditor;
 import com.oceanbase.tools.dbbrowser.editor.oracle.OracleTableEditor;
 import com.oceanbase.tools.dbbrowser.model.DBIndexType;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
@@ -61,6 +61,7 @@ public class OBOracleTableExtension extends OBMySQLTableExtension {
     public DBTable getDetail(@NonNull Connection connection, @NonNull String schemaName, @NonNull String tableName) {
         DBSchemaAccessor schemaAccessor = getSchemaAccessor(connection);
         DBStatsAccessor statsAccessor = getStatsAccessor(connection);
+        // Time-consuming queries methods of DBSchemaAccessor are replaced by GetDBTableByParser
         OBOracleGetDBTableByParser parser = new OBOracleGetDBTableByParser(connection, schemaName, tableName);
 
         DBTable table = new DBTable();
@@ -84,7 +85,7 @@ public class OBOracleTableExtension extends OBMySQLTableExtension {
         AtomicReference<String> ddlRef = new AtomicReference<>();
         JdbcOperationsUtil.getJdbcOperations(connection).query(getTableDDlSql, t -> {
             // Create table ddl like this: CREATE [GLOBAL TEMPORARY|SHARDED|DUPLICATED] TABLE T...
-            String ddl = t.getString(2);
+            String ddl = t.getString(1);
             if (Objects.nonNull(ddl)) {
                 // fix: Replace " TABLE " to " TABLE schemaName."
                 ddlRef.set(StringUtils.replace(ddl, " TABLE ",
@@ -145,7 +146,7 @@ public class OBOracleTableExtension extends OBMySQLTableExtension {
 
     @Override
     protected DBTableEditor getTableEditor(Connection connection) {
-        return new OracleTableEditor(new OracleIndexEditor(), new OracleColumnEditor(),
+        return new OracleTableEditor(new OBOracleIndexEditor(), new OracleColumnEditor(),
                 new OracleConstraintEditor(), new OracleDBTablePartitionEditor());
     }
 }

@@ -43,4 +43,6 @@ public interface TableExtensionPoint extends ExtensionPoint {
     String generateCreateDDL(Connection connection, DBTable table);
 
     String generateUpdateDDL(Connection connection, DBTable oldTable, DBTable newTable);
+
+    String generateUpdateDDLWithoutRenaming(Connection connection, DBTable oldTable, DBTable newTable);
 }
