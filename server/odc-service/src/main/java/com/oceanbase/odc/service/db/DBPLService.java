@@ -116,7 +116,7 @@ public class DBPLService {
     @SkipAuthorize("inside connect session")
     public String startBatchCompile(@NonNull ConnectionSession session,
             String databaseName, StartBatchCompileReq req) {
-        if (Objects.nonNull(session.getDialectType()) && session.getDialectType().isOBMysql()) {
+        if (Objects.nonNull(session.getDialectType()) && session.getDialectType().isMysql()) {
             throw new UnsupportedException("Batch compile is not supported in mysql mode");
         }
         Validate.notNull(req.getScope(), "Parameter [scope] can not be null");
@@ -148,7 +148,7 @@ public class DBPLService {
     @SkipAuthorize("inside connect session")
     public String startBatchCompile(@NonNull ConnectionSession session,
             String databaseName, @NonNull List<DBPLObjectIdentity> identities) {
-        if (Objects.nonNull(session.getDialectType()) && session.getDialectType().isOBMysql()) {
+        if (Objects.nonNull(session.getDialectType()) && session.getDialectType().isMysql()) {
             throw new UnsupportedException("Batch compile is not supported in mysql mode");
         }
         BatchCompileTaskCallable taskCallable = new BatchCompileTaskCallable(session, identities);

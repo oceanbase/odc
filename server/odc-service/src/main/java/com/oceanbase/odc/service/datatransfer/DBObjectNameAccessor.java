@@ -100,7 +100,7 @@ public class DBObjectNameAccessor implements AutoCloseable {
     }
 
     public Set<String> getTriggerNames() {
-        if (session.getDialectType().isOBMysql()) {
+        if (session.getDialectType().isMysql()) {
             return Collections.emptySet();
         }
         return accessor.listTriggers(schema).stream().map(DBObjectIdentity::getName).collect(Collectors.toSet());
@@ -131,7 +131,7 @@ public class DBObjectNameAccessor implements AutoCloseable {
     }
 
     public Set<String> getSynonymNames() {
-        if (session.getDialectType().isOBMysql()) {
+        if (session.getDialectType().isMysql()) {
             return Collections.emptySet();
         }
         return accessor.listSynonyms(schema, DBSynonymType.COMMON).stream().map(DBObjectIdentity::getName)
@@ -139,7 +139,7 @@ public class DBObjectNameAccessor implements AutoCloseable {
     }
 
     public Set<String> getPublicSynonymNames() {
-        if (session.getDialectType().isOBMysql()) {
+        if (session.getDialectType().isMysql()) {
             return Collections.emptySet();
         }
         return accessor.listSynonyms(schema, DBSynonymType.PUBLIC).stream().map(DBObjectIdentity::getName)
@@ -147,7 +147,7 @@ public class DBObjectNameAccessor implements AutoCloseable {
     }
 
     public Set<String> getPackageNames() {
-        if (session.getDialectType().isOBMysql()) {
+        if (session.getDialectType().isMysql()) {
             return Collections.emptySet();
         }
         return accessor.listPackages(schema).stream()
@@ -157,7 +157,7 @@ public class DBObjectNameAccessor implements AutoCloseable {
     }
 
     public Set<String> getPackageBodyNames() {
-        if (session.getDialectType().isOBMysql()) {
+        if (session.getDialectType().isMysql()) {
             return Collections.emptySet();
         }
         return accessor.listPackages(schema).stream()

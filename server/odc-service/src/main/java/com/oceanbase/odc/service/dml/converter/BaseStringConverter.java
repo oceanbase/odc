@@ -39,7 +39,7 @@ public abstract class BaseStringConverter extends BaseDataConverter {
     protected String doConvert(@NonNull DataValue dataValue) {
         ValueEncodeType encodeType = dataValue.getEncodeType();
         String value = new String(encodeType.decode(dataValue.getValue()), StandardCharsets.UTF_8);
-        if (Objects.nonNull(dialectType()) && dialectType().isOBMysql()) {
+        if (Objects.nonNull(dialectType()) && dialectType().isMysql()) {
             value = StringUtils.escapeUseDouble(value, (char) 92);
         }
         return "'" + StringUtils.escapeUseDouble(value, (char) 39) + "'";

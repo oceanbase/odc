@@ -22,24 +22,25 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
-import com.oceanbase.odc.metadb.partitionplan.ConnectionPartitionPlanEntity;
-import com.oceanbase.odc.metadb.partitionplan.ConnectionPartitionPlanRepository;
+import com.oceanbase.odc.metadb.partitionplan.DatabasePartitionPlanRepository;
 import com.oceanbase.odc.metadb.partitionplan.TablePartitionPlanEntity;
 import com.oceanbase.odc.metadb.partitionplan.TablePartitionPlanRepository;
-import com.oceanbase.odc.service.connection.ConnectionService;
+import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.flow.FlowInstanceService;
-import com.oceanbase.odc.service.iam.model.User;
+import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
+import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartition;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartitionDefinition;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
@@ -62,17 +63,25 @@ public class PartitionPlanTaskService {
     @Autowired
     private TablePartitionPlanRepository tablePartitionPlanRepository;
     @Autowired
-    private ConnectionPartitionPlanRepository connectionPartitionPlanRepository;
+    private DatabasePartitionPlanRepository databasePartitionPlanRepository;
     @Autowired
     private FlowInstanceService flowInstanceService;
     @Autowired
-    private ConnectionService connectionService;
+    private DatabaseService databaseService;
 
-    public void executePartitionPlan(Long connectionId, Long flowInstanceId, List<TablePartitionPlanEntity> tablePlans,
-            User taskCreator)
+    @Autowired
+    private AuthenticationFacade authenticationFacade;
+
+    public void executePartitionPlan(Long flowInstanceId, List<TablePartitionPlanEntity> tablePlans)
             throws Exception {
-
-        ConnectionConfig conn = connectionService.getForConnect(connectionId);
+        Set<Long> databaseIds = tablePlans.stream().map(TablePartitionPlanEntity::getDatabaseId).collect(
+                Collectors.toSet());
+        Optional<Long> databaseId = databaseIds.stream().findFirst();
+        if (!databaseId.isPresent() || databaseIds.size() != 1) {
+            log.warn("Table plans belongs to multi database,its not allow here.");
+            return;
+        }
+        ConnectionConfig conn = databaseService.findDataSourceForConnectById(databaseId.get());
         DefaultConnectSessionFactory factory = new DefaultConnectSessionFactory(conn);
         ConnectionSession connectionSession = factory.generateSession();
         try {
@@ -81,16 +90,18 @@ public class PartitionPlanTaskService {
             List<String> addPartitionSqls = createAddPartitionDDL(accessor, tablePlans);
             if (!addPartitionSqls.isEmpty()) {
                 PartitionPlanSubFlowThread partitionPlanSubFlowThread =
-                        new PartitionPlanSubFlowThread(conn.getDefaultSchema(), flowInstanceId,
-                                conn.getId(), addPartitionSqls, flowInstanceService, taskCreator);
+                        new PartitionPlanSubFlowThread(flowInstanceId,
+                                databaseId.get(), addPartitionSqls, flowInstanceService,
+                                authenticationFacade.currentUser());
                 partitionPlanSubFlowThread.start();
             }
             // Task 2:查找过期分区，并发起数据库变更流程
             List<String> dropPartitionSqls = createDropPartitionDDL(accessor, tablePlans);
             if (!dropPartitionSqls.isEmpty()) {
                 PartitionPlanSubFlowThread partitionPlanSubFlowThread =
-                        new PartitionPlanSubFlowThread(conn.getDefaultSchema(), flowInstanceId,
-                                conn.getId(), dropPartitionSqls, flowInstanceService, taskCreator);
+                        new PartitionPlanSubFlowThread(flowInstanceId,
+                                databaseId.get(), dropPartitionSqls, flowInstanceService,
+                                authenticationFacade.currentUser());
                 partitionPlanSubFlowThread.start();
             }
         } finally {
@@ -111,8 +122,8 @@ public class PartitionPlanTaskService {
         long baseDate = System.currentTimeMillis();
         for (TablePartitionPlanEntity tablePlan : tablePlans) {
             // 查询表分区
-            DBTablePartition partition = accessor.getPartition(tablePlan.getSchemaName(), tablePlan.getTableName());
-            List<DBTablePartitionDefinition> definitions = partition.getPartitionDefinitions();
+            DBTable table = getTable(accessor, tablePlan.getSchemaName(), tablePlan.getTableName());
+            List<DBTablePartitionDefinition> definitions = table.getPartition().getPartitionDefinitions();
             // 分区计划生效中，但表被删除
             if (definitions.isEmpty()) {
                 log.warn("No partition found,table={}.{}", tablePlan.getSchemaName(), tablePlan.getTableName());
@@ -129,20 +140,22 @@ public class PartitionPlanTaskService {
             long maxRightBound = PartitionPlanFunction.getPartitionRightBound(baseDate,
                     tablePlan.getPreCreatePartitionCount() * tablePlan.getPartitionInterval(),
                     tablePlan.getPartitionIntervalUnit());
-            PartitionExpressionType expressionType = PartitionPlanFunction.getPartitionExpressionType(partition);
+            PartitionExpressionType expressionType = PartitionPlanFunction.getPartitionExpressionType(table);
             switch (expressionType) {
                 case DATE: {
-                    sqls.addAll(getCreateSqlForDateRangePartition(baseDate, maxRightBound, partition, tablePlan));
+                    sqls.addAll(getCreateSqlForDateRangePartition(baseDate, maxRightBound, table.getPartition(),
+                            tablePlan));
                     break;
                 }
                 case UNIX_TIMESTAMP: {
                     sqls.addAll(
-                            getCreateSqlForUnixTimeStampRangePartition(baseDate, maxRightBound, partition, tablePlan));
+                            getCreateSqlForUnixTimeStampRangePartition(baseDate, maxRightBound, table.getPartition(),
+                                    tablePlan));
                     break;
                 }
                 case OTHER: {
-                    log.warn("Unsupported partition expression!{}.{}:{}", partition.getSchemaName(),
-                            partition.getTableName(), partition.getPartitionOption().getExpression());
+                    log.warn("Unsupported partition expression!{}.{}:{}", table.getSchemaName(),
+                            table.getName(), table.getPartition().getPartitionOption().getExpression());
                     break;
                 }
                 default: {
@@ -204,17 +217,17 @@ public class PartitionPlanTaskService {
         long baseDate = System.currentTimeMillis();
         for (TablePartitionPlanEntity tablePlan : tablePlans) {
             // 查找表所有分区
-            DBTablePartition partition = accessor.getPartition(tablePlan.getSchemaName(), tablePlan.getTableName());
-            List<DBTablePartitionDefinition> definitions = partition.getPartitionDefinitions();
+            DBTable table = getTable(accessor, tablePlan.getSchemaName(), tablePlan.getTableName());
+            List<DBTablePartitionDefinition> definitions = table.getPartition().getPartitionDefinitions();
             if (definitions.isEmpty()) {
                 continue;
             }
-            PartitionExpressionType expressionType = PartitionPlanFunction.getPartitionExpressionType(partition);
+            PartitionExpressionType expressionType = PartitionPlanFunction.getPartitionExpressionType(table);
             // 查询结果按升序排列，从左开始查找到第一个未过期的分区则停止
             for (DBTablePartitionDefinition definition : definitions) {
                 if (expressionType == PartitionExpressionType.OTHER) {
-                    log.warn("Unsupported partition expression!{}.{}:{}", partition.getSchemaName(),
-                            partition.getTableName(), partition.getPartitionOption().getExpression());
+                    log.warn("Unsupported partition expression!{}.{}:{}", table.getSchemaName(),
+                            table.getName(), table.getPartition().getPartitionOption().getExpression());
                     break;
                 }
                 String maxValue = definition.getMaxValues().get(0);
@@ -225,31 +238,10 @@ public class PartitionPlanTaskService {
                         tablePlan.getExpirePeriodUnit())) {
                     break;
                 }
-                partition.setTableName(tablePlan.getTableName());
-                partition.setSchemaName(tablePlan.getSchemaName());
-                sqls.add(getDeleteSql(partition.getSchemaName(), partition.getTableName(), definition.getName()));
+                sqls.add(getDeleteSql(table.getSchemaName(), table.getName(), definition.getName()));
             }
         }
         return sqls;
-    }
-
-    @Transactional
-    public void enableFlowInstancePartitionPlan(Long connectionId, Long flowInstanceId) {
-        Optional<ConnectionPartitionPlanEntity> oldPartitionPlan =
-                connectionPartitionPlanRepository.findValidPlanByConnectionId(connectionId);
-        // 如果存在计划，先终止原有计划，并更新原任务状态。
-        if (oldPartitionPlan.isPresent()) {
-            try {
-                flowInstanceService.cancelNotCheckPermission(oldPartitionPlan.get().getFlowInstanceId());
-            } catch (Exception e) {
-                log.warn("The previous plan has been abandoned,but change status failed.");
-            }
-        }
-        // 还是改为每次都关闭所有生效数据，避免脏数据带来的异常
-        connectionPartitionPlanRepository.disableConfigByConnectionId(connectionId);
-        tablePartitionPlanRepository.disableConfigByConnectionId(connectionId);
-        connectionPartitionPlanRepository.enableConfigByFlowInstanceId(flowInstanceId);
-        tablePartitionPlanRepository.enableConfigByFlowInstanceId(flowInstanceId);
     }
 
     private String getCreateSql(DBTablePartition partition) {
@@ -269,5 +261,17 @@ public class PartitionPlanTaskService {
         sqlBuilder.append("alter table ").identifier(schema, table).append(" drop partition (").append(part)
                 .append(");");
         return sqlBuilder.toString();
+    }
+
+    private DBTable getTable(DBSchemaAccessor accessor, String schemaName, String tableName) {
+        DBTable table = new DBTable();
+        table.setSchemaName(schemaName);
+        table.setName(tableName);
+        DBTablePartition partition = accessor.getPartition(schemaName, tableName);
+        partition.setTableName(tableName);
+        partition.setSchemaName(schemaName);
+        table.setPartition(partition);
+        table.setColumns(accessor.listTableColumns(schemaName, tableName));
+        return table;
     }
 }

@@ -15,7 +15,6 @@
  */
 package com.oceanbase.odc.metadb.partitionplan;
 
-import java.util.List;
 import java.util.Optional;
 
 import javax.transaction.Transactional;
@@ -31,8 +30,8 @@ import org.springframework.data.repository.query.Param;
  * @Date: 2022/9/16 16:42
  * @Descripition:
  */
-public interface ConnectionPartitionPlanRepository extends JpaRepository<ConnectionPartitionPlanEntity, Long>,
-        JpaSpecificationExecutor<ConnectionPartitionPlanEntity> {
+public interface DatabasePartitionPlanRepository extends JpaRepository<DatabasePartitionPlanEntity, Long>,
+        JpaSpecificationExecutor<DatabasePartitionPlanEntity> {
 
     @Transactional
     @Modifying
@@ -41,19 +40,21 @@ public interface ConnectionPartitionPlanRepository extends JpaRepository<Connect
     int enableConfigByFlowInstanceId(@Param("flowInstanceId") Long flowInstanceId);
 
     @Query(value = "select * from connection_partition_plan "
-            + "where connection_id=:connectionId and is_config_enabled=true", nativeQuery = true)
-    Optional<ConnectionPartitionPlanEntity> findValidPlanByConnectionId(@Param("connectionId") Long connectionId);
+            + "where database_id=:databaseId and is_config_enabled=true", nativeQuery = true)
+    Optional<DatabasePartitionPlanEntity> findValidPlanByDatabaseId(@Param("databaseId") Long databaseId);
 
-    Optional<ConnectionPartitionPlanEntity> findByFlowInstanceId(Long flowInstanceId);
-
-    @Query(value = "select * from connection_partition_plan "
-            + "where is_config_enabled=true", nativeQuery = true)
-    List<ConnectionPartitionPlanEntity> findAllValidPlan();
+    Optional<DatabasePartitionPlanEntity> findByFlowInstanceId(Long flowInstanceId);
 
     @Transactional
     @Modifying
     @Query(value = "update connection_partition_plan set is_config_enabled = false "
-            + "where connection_id=:connectionId", nativeQuery = true)
-    int disableConfigByConnectionId(@Param("connectionId") Long connectionId);
+            + "where database_id=:databaseId", nativeQuery = true)
+    int disableConfigByDatabaseId(@Param("databaseId") Long databaseId);
+
+    @Transactional
+    @Modifying
+    @Query(value = "update connection_partition_plan set schedule_id =:scheduleId "
+            + "where id=:id", nativeQuery = true)
+    int updateScheduleIdById(@Param("id") Long id, @Param("scheduleId") Long scheduleId);
 
 }
