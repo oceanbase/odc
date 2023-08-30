@@ -231,7 +231,7 @@ public class SensitiveColumnService {
             filteringDatabaseIds.addAll(databaseService.listDatabaseIdsByConnectionIds(params.getDatasourceIds()));
         }
         if (CollectionUtils.isNotEmpty(filteringDatabaseIds)) {
-            databaseIds = Sets.intersection(databaseService.listDatabaseIdsByProjectId(projectId), databaseIds);
+            databaseIds = Sets.intersection(databaseIds, filteringDatabaseIds);
         }
         if (databaseIds.isEmpty()) {
             return Page.empty(pageable);
