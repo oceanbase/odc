@@ -162,6 +162,22 @@ jobs:
           echo "RPM's version is "${new_version}
           mvn versions:set -DnewVersion="${new_version}"
           mvn versions:commit
+      - name: Install db-browser
+        run: |
+          echo "Start install db-browser"
+          pushd libs/db-browser
+          echo "Current dir is "`pwd`
+          mvn clean install -Dmaven.test.skip=true
+          echo "Install db-browser success"
+          popd
+      - name: Install ob-sql-parser
+        run: |
+          echo "Start install ob-sql-parser"
+          pushd libs/ob-sql-parser
+          echo "Current dir is "`pwd`
+          mvn clean install -Dmaven.test.skip=true
+          echo "Install ob-sql-parser success"
+          popd
       - name: Build jar & rpm (x86_64)
         run: |
           echo "Start prepare oceanbase-client"
