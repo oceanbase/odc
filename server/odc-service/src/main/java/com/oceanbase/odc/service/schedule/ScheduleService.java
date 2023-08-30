@@ -159,11 +159,11 @@ public class ScheduleService {
         scheduleRepository.save(scheduleConfig);
     }
 
-    public void innerUpdateTriggerData(Long scheduleId, Map<String, Object> triggerData)
+    public void innerUpdateTriggerData(Long scheduleId, Map<String, Object> triggerDataMap)
             throws SchedulerException {
         ScheduleEntity scheduleConfig = nullSafeGetById(scheduleId);
         Trigger scheduleTrigger = nullSafeGetScheduleTrigger(scheduleConfig);
-        scheduleTrigger.getJobDataMap().putAll(triggerData);
+        scheduleTrigger.getJobDataMap().putAll(triggerDataMap);
         quartzJobService.rescheduleJob(scheduleTrigger.getKey(), scheduleTrigger);
     }
 
@@ -174,10 +174,10 @@ public class ScheduleService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public void innerEnable(Long scheduleId, Map<String, Object> triggerData)
+    public void innerEnable(Long scheduleId, Map<String, Object> triggerDataMap)
             throws SchedulerException {
         ScheduleEntity scheduleConfig = nullSafeGetById(scheduleId);
-        quartzJobService.createJob(buildCreateJobReq(scheduleConfig), new JobDataMap(triggerData));
+        quartzJobService.createJob(buildCreateJobReq(scheduleConfig), new JobDataMap(triggerDataMap));
         scheduleRepository.updateStatusById(scheduleConfig.getId(), ScheduleStatus.ENABLED);
     }
 
