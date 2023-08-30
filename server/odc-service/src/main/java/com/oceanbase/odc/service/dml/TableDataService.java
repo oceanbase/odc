@@ -34,7 +34,6 @@ import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.service.common.model.ResourceSql;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
-import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.dml.model.BatchDataModifyReq;
 import com.oceanbase.odc.service.dml.model.BatchDataModifyReq.Operate;
 import com.oceanbase.odc.service.dml.model.BatchDataModifyReq.Row;
@@ -43,9 +42,7 @@ import com.oceanbase.odc.service.dml.model.DataModifyUnit;
 import com.oceanbase.odc.service.feature.AllFeatures;
 import com.oceanbase.odc.service.feature.Features;
 import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
-import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 
-import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -70,7 +67,7 @@ public class TableDataService {
         BatchDataModifyResp resp = new BatchDataModifyResp();
         resp.setTableName(tableName);
         resp.setSchemaName(schemaName);
-        List<DBTableConstraint> constraints = getConstraints(schemaName, tableName, connectionSession);
+        List<DBTableConstraint> constraints = BaseDMLBuilder.getConstraints(schemaName, tableName, connectionSession);
         StringBuilder sqlBuilder = new StringBuilder();
         for (Row row : sortedRows) {
             Operate operate = row.getOperate();
@@ -148,16 +145,6 @@ public class TableDataService {
             default:
                 throw new UnexpectedException("Unexpected operate value:" + operate);
         }
-    }
-
-    private List<DBTableConstraint> getConstraints(String schema, @NonNull String tableName,
-            ConnectionSession connectionSession) {
-        DBSchemaAccessor accessor = DBSchemaAccessors.create(connectionSession);
-        String schemaName = schema;
-        if (schema == null) {
-            schemaName = ConnectionSessionUtil.getCurrentSchema(connectionSession);
-        }
-        return accessor.listTableConstraints(schemaName, tableName);
     }
 
 }
