@@ -5,7 +5,7 @@
     <parent>
         <artifactId>starter-parent</artifactId>
         <groupId>com.oceanbase</groupId>
-        <version>4.2.0-SNAPSHOT</version>
+        <version>4.2.1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>desktop-starter</artifactId>
