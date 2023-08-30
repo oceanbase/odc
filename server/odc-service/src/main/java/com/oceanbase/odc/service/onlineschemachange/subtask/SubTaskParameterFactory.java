@@ -52,8 +52,6 @@ public class SubTaskParameterFactory implements AutoCloseable {
         OnlineSchemaChangeScheduleTaskParameters taskParameter = createNewParameter(sql, sqlType);
         taskParameter.setDialectType(connectionConfig.getDialectType());
         taskParameter.setConnectionId(connectionId);
-        taskParameter.setNewTableName(DdlUtils.getNewTableName(taskParameter.getOriginTableName()));
-        taskParameter.setRenamedTableName(DdlUtils.getRenamedTableName(taskParameter.getOriginTableName()));
         taskParameter.setDatabaseName(schema);
         return taskParameter;
     }
@@ -68,7 +66,8 @@ public class SubTaskParameterFactory implements AutoCloseable {
     private OnlineSchemaChangeScheduleTaskParameters createNewParameter(String sql, OnlineSchemaChangeSqlType sqlType)
             throws SQLException {
         OnlineSchemaChangeScheduleTaskParameters taskParameter = new OnlineSchemaChangeScheduleTaskParameters();
-
+        taskParameter.setNewTableName(DdlUtils.getNewTableName(taskParameter.getOriginTableName()));
+        taskParameter.setRenamedTableName(DdlUtils.getRenamedTableName(taskParameter.getOriginTableName()));
         if (sqlType == OnlineSchemaChangeSqlType.ALTER) {
             AlterTable statement = (AlterTable) parse(sql);
             String tableName = statement.getTableName();
@@ -77,7 +76,7 @@ public class SubTaskParameterFactory implements AutoCloseable {
             String originTableCreateDdl = DdlUtils.queryOriginTableCreateDdl(session, tableName);
             taskParameter.setOriginTableCreateDdl(originTableCreateDdl);
             taskParameter.setNewTableCreateDdl(DdlUtils.replaceTableName(originTableCreateDdl,
-                    DdlUtils.getNewTableName(unquote(tableName)), session.getDialectType(), sqlType));
+                    DdlUtils.getNewTableName(tableName), session.getDialectType(), sqlType));
 
             taskParameter.setNewTableCreateDdlForDisplay("");
         } else {
@@ -87,7 +86,7 @@ public class SubTaskParameterFactory implements AutoCloseable {
 
             taskParameter.setOriginTableCreateDdl(DdlUtils.queryOriginTableCreateDdl(session, tableName));
             taskParameter.setNewTableCreateDdl(DdlUtils.replaceTableName(sql,
-                    DdlUtils.getNewTableName(unquote(tableName)), session.getDialectType(), sqlType));
+                    DdlUtils.getNewTableName(tableName), session.getDialectType(), sqlType));
 
             taskParameter.setNewTableCreateDdlForDisplay(sql);
         }
