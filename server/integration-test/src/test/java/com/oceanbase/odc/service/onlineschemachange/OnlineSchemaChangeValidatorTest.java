@@ -22,11 +22,11 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 
+import com.oceanbase.odc.ServiceTestEnv;
 import com.oceanbase.odc.TestConnectionUtil;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
-import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.exception.BadArgumentException;
 import com.oceanbase.odc.service.connection.ConnectionService;
@@ -36,7 +36,7 @@ import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangePara
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeSqlType;
 import com.oceanbase.odc.service.onlineschemachange.validator.OnlineSchemaChangeValidator;
 
-public class OnlineSchemaChangeValidatorTest extends OscTestEnv {
+public class OnlineSchemaChangeValidatorTest extends ServiceTestEnv {
     public String CREATE_STMT;
     public String ALTER_STMT;
     public String DROP_STMT;
@@ -58,8 +58,8 @@ public class OnlineSchemaChangeValidatorTest extends OscTestEnv {
         ALTER_STMT = String.format("ALTER TABLE %s ADD COLUMN C1 VARCHAR(20);", t1);
         DROP_STMT = String.format("DROP TABLE %s; DROP TABLE %s;", t1, t2);
 
+        config = TestConnectionUtil.getTestConnectionConfig(ConnectType.OB_MYSQL);
         session = TestConnectionUtil.getTestConnectionSession(ConnectType.OB_MYSQL);
-        config = (ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(session);
         Mockito.when(connectionService.getForConnectionSkipPermissionCheck(Mockito.anyLong())).thenReturn(config);
 
         session.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY).execute(CREATE_STMT);

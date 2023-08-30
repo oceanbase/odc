@@ -52,8 +52,8 @@ public class SubTaskParameterFactory implements AutoCloseable {
         OnlineSchemaChangeScheduleTaskParameters taskParameter = createNewParameter(sql, sqlType);
         taskParameter.setDialectType(connectionConfig.getDialectType());
         taskParameter.setConnectionId(connectionId);
-        taskParameter.setNewTableName(DdlUtils.getNewTableName(taskParameter.getOriginTableNameUnWrapped()));
-        taskParameter.setRenamedTableName(DdlUtils.getRenamedTableName(taskParameter.getOriginTableNameUnWrapped()));
+        taskParameter.setNewTableName(DdlUtils.getNewTableName(taskParameter.getOriginTableName()));
+        taskParameter.setRenamedTableName(DdlUtils.getRenamedTableName(taskParameter.getOriginTableName()));
         taskParameter.setDatabaseName(schema);
         return taskParameter;
     }

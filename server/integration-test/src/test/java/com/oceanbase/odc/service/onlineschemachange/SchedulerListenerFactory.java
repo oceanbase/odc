@@ -13,17 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.onlineschemachange.rename;
 
-import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
-import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeScheduleTaskParameters;
+package com.oceanbase.odc.service.onlineschemachange;
+
+import java.util.function.Consumer;
+
+import org.quartz.JobKey;
+import org.quartz.SchedulerListener;
+import org.quartz.listeners.SchedulerListenerSupport;
 
 /**
  * @author yaobin
- * @date 2023-08-04
+ * @date 2023-08-23
  * @since 4.2.0
  */
-public interface RenameTableInvoker {
+public class SchedulerListenerFactory {
 
-    void invoke(OnlineSchemaChangeScheduleTaskParameters taskParameters, OnlineSchemaChangeParameters parameters);
+    public SchedulerListener generateScheduleListener(Consumer<JobKey> JobDeletedConsumer) {
+        return new SchedulerListenerSupport() {
+            @Override
+            public void jobDeleted(JobKey jobKey) {
+                JobDeletedConsumer.accept(jobKey);
+            }
+        };
+    }
 }

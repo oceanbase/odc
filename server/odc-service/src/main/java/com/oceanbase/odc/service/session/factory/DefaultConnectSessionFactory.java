@@ -38,6 +38,7 @@ import com.oceanbase.odc.core.task.TaskManagerFactory;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.util.ConnectionInfoUtil;
 import com.oceanbase.odc.service.connection.util.DefaultConnectionExtensionExecutor;
+import com.oceanbase.odc.service.datasecurity.accessor.DatasourceColumnAccessor;
 import com.oceanbase.odc.service.session.initializer.SwitchSchemaInitializer;
 
 import lombok.NonNull;
@@ -144,6 +145,7 @@ public class DefaultConnectSessionFactory implements ConnectionSessionFactory {
         ConnectionInfoUtil.initConsoleConnectionId(session);
         ConnectionSessionUtil.setConnectionConfig(session, connectionConfig);
         ConnectionSessionUtil.setConnectionAccountType(session, accountType);
+        ConnectionSessionUtil.setColumnAccessor(session, new DatasourceColumnAccessor(session));
         setNlsFormat(session);
     }
 

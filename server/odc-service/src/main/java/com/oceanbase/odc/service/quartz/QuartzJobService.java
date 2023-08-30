@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.quartz;
 
 import java.text.ParseException;
+import java.util.HashMap;
 import java.util.List;
 
 import org.quartz.CronScheduleBuilder;
@@ -24,16 +25,13 @@ import org.quartz.JobBuilder;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
 import org.quartz.JobKey;
-import org.quartz.Matcher;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.SimpleScheduleBuilder;
 import org.quartz.Trigger;
 import org.quartz.TriggerBuilder;
 import org.quartz.TriggerKey;
-import org.quartz.TriggerListener;
 import org.quartz.UnableToInterruptJobException;
-import org.quartz.impl.matchers.KeyMatcher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -60,14 +58,19 @@ public class QuartzJobService {
     private Scheduler scheduler;
 
     public void createJob(CreateQuartzJobReq req) throws SchedulerException {
+        createJob(req, null);
+    }
+
+    public void createJob(CreateQuartzJobReq req, JobDataMap triggerDataMap) throws SchedulerException {
 
         JobKey jobKey = QuartzKeyGenerator.generateJobKey(req.getScheduleId(), req.getType());
 
         Class<? extends Job> clazz = QuartzJob.class;
 
         if (req.getTriggerConfig() != null) {
+            JobDataMap triData = triggerDataMap == null ? new JobDataMap(new HashMap<>(1)) : triggerDataMap;
             TriggerKey triggerKey = QuartzKeyGenerator.generateTriggerKey(req.getScheduleId(), req.getType());
-            Trigger trigger = buildTrigger(triggerKey, req.getTriggerConfig(), req.getMisfireStrategy());
+            Trigger trigger = buildTrigger(triggerKey, req.getTriggerConfig(), req.getMisfireStrategy(), triData);
             JobDetail jobDetail = JobBuilder.newJob(clazz).withIdentity(jobKey)
                     .usingJobData(req.getJobDataMap()).build();
             scheduler.scheduleJob(jobDetail, trigger);
@@ -76,22 +79,21 @@ public class QuartzJobService {
                     .usingJobData(req.getJobDataMap()).storeDurably(true).build();
             scheduler.addJob(jobDetail, false);
         }
-
     }
 
-    private Trigger buildTrigger(TriggerKey key, TriggerConfig config, MisfireStrategy misfireStrategy)
-            throws SchedulerException {
+    private Trigger buildTrigger(TriggerKey key, TriggerConfig config,
+            MisfireStrategy misfireStrategy, JobDataMap triggerDataMap) throws SchedulerException {
         switch (config.getTriggerStrategy()) {
             case START_NOW:
                 return TriggerBuilder
                         .newTrigger().withIdentity(key).withSchedule(SimpleScheduleBuilder
                                 .simpleSchedule().withRepeatCount(0).withMisfireHandlingInstructionFireNow())
-                        .startNow().build();
+                        .startNow().usingJobData(triggerDataMap).build();
             case START_AT:
                 return TriggerBuilder.newTrigger().withIdentity(key)
                         .withSchedule(SimpleScheduleBuilder.simpleSchedule().withRepeatCount(0)
                                 .withMisfireHandlingInstructionFireNow())
-                        .startAt(config.getStartAt()).build();
+                        .startAt(config.getStartAt()).usingJobData(triggerDataMap).build();
             case CRON:
             case DAY:
             case MONTH:
@@ -121,7 +123,7 @@ public class QuartzJobService {
                 }
 
                 return TriggerBuilder.newTrigger().withIdentity(key)
-                        .withSchedule(cronScheduleBuilder).build();
+                        .withSchedule(cronScheduleBuilder).usingJobData(triggerDataMap).build();
 
             }
             default:
@@ -149,13 +151,8 @@ public class QuartzJobService {
         return scheduler.getTrigger(key);
     }
 
-    /**
-     * TODO 看起来是 yaobin 专门写给单测用的，后面优化
-     */
-    public void addTriggerListener(TriggerKey key, TriggerListener triggerListener) throws SchedulerException {
-        Matcher<TriggerKey> matcher = KeyMatcher.keyEquals(key);
-        scheduler.getListenerManager().addTriggerListener(triggerListener, matcher);
-        scheduler.getListenerManager().removeJobListener("ODC_JOB_LISTENER");
+    public void rescheduleJob(TriggerKey triggerKey, Trigger newTrigger) throws SchedulerException {
+        scheduler.rescheduleJob(triggerKey, newTrigger);
     }
 
     public void triggerJob(JobKey key) throws SchedulerException {

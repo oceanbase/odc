@@ -70,7 +70,7 @@ public class AlterScheduleTask extends BaseODCFlowTaskDelegate<AlterScheduleResu
                     scheduleEntity.setDescription(parameters.getDescription());
                     scheduleEntity.setTriggerConfigJson(JSON.toJSONString(parameters.getTriggerConfig()));
                     scheduleEntity.setJobParametersJson(JSON.toJSONString(parameters.getScheduleTaskParameters()));
-                    scheduleService.update(scheduleEntity);
+                    scheduleService.updateJobData(scheduleEntity);
                     break;
                 }
                 case PAUSE: {
