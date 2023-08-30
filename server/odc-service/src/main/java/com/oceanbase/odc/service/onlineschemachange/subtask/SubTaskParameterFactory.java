@@ -66,13 +66,13 @@ public class SubTaskParameterFactory implements AutoCloseable {
     private OnlineSchemaChangeScheduleTaskParameters createNewParameter(String sql, OnlineSchemaChangeSqlType sqlType)
             throws SQLException {
         OnlineSchemaChangeScheduleTaskParameters taskParameter = new OnlineSchemaChangeScheduleTaskParameters();
-        taskParameter.setNewTableName(DdlUtils.getNewTableName(taskParameter.getOriginTableName()));
-        taskParameter.setRenamedTableName(DdlUtils.getRenamedTableName(taskParameter.getOriginTableName()));
+
         if (sqlType == OnlineSchemaChangeSqlType.ALTER) {
             AlterTable statement = (AlterTable) parse(sql);
             String tableName = statement.getTableName();
             taskParameter.setOriginTableName(tableName);
-
+            taskParameter.setNewTableName(DdlUtils.getNewTableName(taskParameter.getOriginTableName()));
+            taskParameter.setRenamedTableName(DdlUtils.getRenamedTableName(taskParameter.getOriginTableName()));
             String originTableCreateDdl = DdlUtils.queryOriginTableCreateDdl(session, tableName);
             taskParameter.setOriginTableCreateDdl(originTableCreateDdl);
             taskParameter.setNewTableCreateDdl(DdlUtils.replaceTableName(originTableCreateDdl,
@@ -83,7 +83,8 @@ public class SubTaskParameterFactory implements AutoCloseable {
             CreateTable statement = (CreateTable) parse(sql);
             String tableName = statement.getTableName();
             taskParameter.setOriginTableName(tableName);
-
+            taskParameter.setNewTableName(DdlUtils.getNewTableName(taskParameter.getOriginTableName()));
+            taskParameter.setRenamedTableName(DdlUtils.getRenamedTableName(taskParameter.getOriginTableName()));
             taskParameter.setOriginTableCreateDdl(DdlUtils.queryOriginTableCreateDdl(session, tableName));
             taskParameter.setNewTableCreateDdl(DdlUtils.replaceTableName(sql,
                     DdlUtils.getNewTableName(tableName), session.getDialectType(), sqlType));
