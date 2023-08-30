@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.onlineschemachange.oms.request;
 
+import java.util.Map;
+
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonFormat.Feature;
 
@@ -43,7 +45,7 @@ public class OmsApiReturnResult<T> implements ApiReturnResult<T> {
     /**
      * 错误详情
      */
-    private String errorDetail;
+    private Map<String, Object> errorDetail;
 
     /**
      * result code

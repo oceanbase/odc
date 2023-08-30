@@ -13,34 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.oceanbase.odc.service.onlineschemachange;
+
+import java.util.function.Consumer;
+
+import org.quartz.JobKey;
+import org.quartz.SchedulerListener;
+import org.quartz.listeners.SchedulerListenerSupport;
 
 /**
  * @author yaobin
- * @date 2023-07-10
+ * @date 2023-08-23
  * @since 4.2.0
  */
-public interface OnlineSchemaChangeTaskHandler {
-    /**
-     * to start single osc task
-     *
-     * @param scheduleId scheduleId
-     * @param scheduleTaskId scheduleTaskId
-     */
-    void start(Long scheduleId, Long scheduleTaskId);
+public class SchedulerListenerFactory {
 
-    /**
-     * to complete osc task
-     * 
-     * @param scheduleId scheduleId
-     * @param scheduleTaskId scheduleTaskId
-     */
-    void complete(Long scheduleId, Long scheduleTaskId);
-
-    /**
-     * to terminate osc task
-     * 
-     * @param scheduleTaskId scheduleTaskId
-     */
-    void terminate(Long scheduleId, Long scheduleTaskId);
+    public SchedulerListener generateScheduleListener(Consumer<JobKey> JobDeletedConsumer) {
+        return new SchedulerListenerSupport() {
+            @Override
+            public void jobDeleted(JobKey jobKey) {
+                JobDeletedConsumer.accept(jobKey);
+            }
+        };
+    }
 }
