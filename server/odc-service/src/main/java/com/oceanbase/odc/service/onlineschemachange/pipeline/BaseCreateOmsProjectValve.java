@@ -98,6 +98,7 @@ public abstract class BaseCreateOmsProjectValve extends BaseValve {
         try {
             omsDsId = dataSourceOpenApiService.createOceanBaseDataSource(dataSourceRequest);
         } catch (OmsException ex) {
+            log.warn("Create database occur error {}", ex.getMessage());
             omsDsId = reCreateDataSourceRequestAfterThrowsException(context.getTaskParameter(), dataSourceRequest, ex);
         }
 
