@@ -15,16 +15,14 @@
  */
 package com.oceanbase.odc.service.onlineschemachange.pipeline;
 
-import static com.oceanbase.odc.service.onlineschemachange.OnlineSchemaChangeContextHolder.TASK_ID;
-import static com.oceanbase.odc.service.onlineschemachange.OnlineSchemaChangeContextHolder.TASK_WORK_SPACE;
-
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
-import org.quartz.JobDataMap;
 import org.quartz.JobKey;
 import org.quartz.SchedulerException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,13 +32,13 @@ import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
+import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
-import com.oceanbase.odc.service.onlineschemachange.OnlineSchemaChangeContextHolder;
 import com.oceanbase.odc.service.onlineschemachange.configuration.OnlineSchemaChangeProperties;
+import com.oceanbase.odc.service.onlineschemachange.exception.OmsException;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeScheduleTaskParameters;
 import com.oceanbase.odc.service.onlineschemachange.oms.enums.OmsOceanBaseType;
-import com.oceanbase.odc.service.onlineschemachange.oms.exception.OmsException;
 import com.oceanbase.odc.service.onlineschemachange.oms.openapi.DataSourceOpenApiService;
 import com.oceanbase.odc.service.onlineschemachange.oms.openapi.ProjectOpenApiService;
 import com.oceanbase.odc.service.onlineschemachange.oms.request.CommonTransferConfig;
@@ -53,12 +51,9 @@ import com.oceanbase.odc.service.onlineschemachange.oms.request.ProjectControlRe
 import com.oceanbase.odc.service.onlineschemachange.oms.request.SpecificTransferMapping;
 import com.oceanbase.odc.service.onlineschemachange.oms.request.TableTransferObject;
 import com.oceanbase.odc.service.quartz.QuartzJobService;
-import com.oceanbase.odc.service.quartz.util.ScheduleTaskUtils;
-import com.oceanbase.odc.service.schedule.model.CreateQuartzJobReq;
+import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.model.JobType;
 import com.oceanbase.odc.service.schedule.model.QuartzKeyGenerator;
-import com.oceanbase.odc.service.schedule.model.TriggerConfig;
-import com.oceanbase.odc.service.schedule.model.TriggerStrategy;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -84,8 +79,11 @@ public abstract class BaseCreateOmsProjectValve extends BaseValve {
     @Autowired
     protected OnlineSchemaChangeProperties oscProperties;
 
-    @Value("${check-osc-task-cron-expression:0/10 * * * * ?}")
-    private String checkOscTaskCronExpression;
+    @Value("${osc-check-task-cron-expression:0/10 * * * * ?}")
+    private String oscCheckTaskCronExpression;
+
+    @Autowired
+    private ScheduleService scheduleService;
 
     @Override
     public void invoke(ValveContext valveContext) {
@@ -122,43 +120,38 @@ public abstract class BaseCreateOmsProjectValve extends BaseValve {
         try {
             projectOpenApiService.startProject(request);
         } finally {
-            scheduleCheckOmsProject(context.getSchedule().getId(), taskId);
+            scheduleCheckOmsProject(context.getSchedule(), taskId);
         }
     }
 
-    private void scheduleCheckOmsProject(Long scheduleId, Long scheduleTaskId) {
+    private void scheduleCheckOmsProject(ScheduleEntity scheduleEntity, Long scheduleTaskId) {
+        Long scheduleId = scheduleEntity.getId();
         JobKey jobKey = QuartzKeyGenerator.generateJobKey(scheduleId, JobType.ONLINE_SCHEMA_CHANGE_COMPLETE);
+        Map<String, Object> triggerData = getStringObjectMap(scheduleTaskId);
         try {
             if (quartzJobService.checkExists(jobKey)) {
+                scheduleService.innerUpdateTriggerData(scheduleId, triggerData);
                 return;
             }
         } catch (SchedulerException e) {
             throw new IllegalArgumentException(e);
         }
 
-        CreateQuartzJobReq createQuartzJobReq = new CreateQuartzJobReq();
-        createQuartzJobReq.setScheduleId(scheduleId);
-        createQuartzJobReq.setType(JobType.ONLINE_SCHEMA_CHANGE_COMPLETE);
-        TriggerConfig config = new TriggerConfig();
-        config.setTriggerStrategy(TriggerStrategy.CRON);
-        config.setCronExpression(checkOscTaskCronExpression);
-        createQuartzJobReq.setTriggerConfig(config);
-        JobDataMap jobDataMap = ScheduleTaskUtils.buildTriggerDataMap(scheduleTaskId);
-        jobDataMap.put(OdcConstants.SCHEDULE_ID, scheduleId);
-        jobDataMap.put(OdcConstants.CREATOR_ID, OnlineSchemaChangeContextHolder.get(TASK_WORK_SPACE));
-        jobDataMap.put(OdcConstants.FLOW_TASK_ID, OnlineSchemaChangeContextHolder.get(TASK_ID));
-        jobDataMap.put(OdcConstants.ORGANIZATION_ID, OnlineSchemaChangeContextHolder.get(OdcConstants.ORGANIZATION_ID));
-        createQuartzJobReq.setJobDataMap(jobDataMap);
-        log.info("Start check oms project status by quartz job, jobParameters={}",
-                JsonUtils.toJson(createQuartzJobReq));
-
         try {
-            quartzJobService.createJob(createQuartzJobReq);
+            scheduleService.innerEnable(scheduleId, triggerData);
+            log.info("Start check oms project status by quartz job, jobParameters={}",
+                    JsonUtils.toJson(scheduleEntity.getJobParametersJson()));
         } catch (SchedulerException e) {
             throw new IllegalArgumentException(MessageFormat.format(
                     "Create a quartz job check oms project occur error, jobParameters ={0}",
-                    JsonUtils.toJson(createQuartzJobReq)), e);
+                    JsonUtils.toJson(scheduleEntity.getJobParametersJson())), e);
         }
+    }
+
+    private Map<String, Object> getStringObjectMap(Long scheduleTaskId) {
+        Map<String, Object> dataMap = new HashMap<>(2);
+        dataMap.put(OdcConstants.SCHEDULE_TASK_ID, scheduleTaskId);
+        return dataMap;
     }
 
     private CreateProjectRequest getCreateProjectRequest(String omsDsId, Long scheduleId,
@@ -219,7 +212,6 @@ public abstract class BaseCreateOmsProjectValve extends BaseValve {
     protected abstract void doCreateDataSourceRequest(ConnectionConfig config,
             ConnectionSession connectionSession, OnlineSchemaChangeScheduleTaskParameters oscScheduleTaskParameters,
             CreateOceanBaseDataSourceRequest request);
-
 
     protected abstract String reCreateDataSourceRequestAfterThrowsException(
             OnlineSchemaChangeScheduleTaskParameters oscScheduleTaskParameters,

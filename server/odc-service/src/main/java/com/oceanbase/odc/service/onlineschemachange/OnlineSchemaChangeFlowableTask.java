@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.collections4.CollectionUtils;
 import org.flowable.engine.delegate.DelegateExecution;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -40,7 +41,6 @@ import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
 import com.oceanbase.odc.service.iam.OrganizationService;
 import com.oceanbase.odc.service.iam.model.Organization;
 import com.oceanbase.odc.service.iam.model.User;
-import com.oceanbase.odc.service.objectstorage.cloud.model.CloudEnvConfigurations;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeScheduleTaskParameters;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeScheduleTaskResult;
@@ -80,8 +80,9 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
     private OscTaskCompleteHandler completeHandler;
     @Autowired
     private OrganizationService organizationService;
-    @Autowired
-    private CloudEnvConfigurations cloudEnvConfigurations;
+
+    @Value("${osc-check-task-cron-expression:0/10 * * * * ?}")
+    private String oscCheckTaskCronExpression;
 
     private volatile TaskStatus status;
     private long scheduleId;
@@ -215,7 +216,7 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
         Optional<ScheduleTaskEntity> runningEntity = scheduleTaskService.listTask(Pageable.unpaged(), scheduleId)
                 .stream().filter(task -> task.getStatus() == TaskStatus.RUNNING)
                 .findFirst();
-        runningEntity.ifPresent(scheduleTask -> taskHandler.terminate(scheduleTask.getId()));
+        runningEntity.ifPresent(scheduleTask -> taskHandler.terminate(scheduleId, scheduleTask.getId()));
         this.status = TaskStatus.CANCELED;
         taskService.cancel(taskId);
         return true;
@@ -234,7 +235,6 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
         scheduleEntity.setJobType(JobType.ONLINE_SCHEMA_CHANGE_COMPLETE);
         scheduleEntity.setStatus(ScheduleStatus.ENABLED);
         scheduleEntity.setAllowConcurrent(false);
-        scheduleEntity.setJobParametersJson(JsonUtils.toJson(parameter));
         scheduleEntity.setCreatorId(creatorId);
         scheduleEntity.setOrganizationId(organizationId);
         // todo project id database id
@@ -242,10 +242,12 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
         scheduleEntity.setDatabaseId(1L);
         scheduleEntity.setModifierId(scheduleEntity.getCreatorId());
         TriggerConfig triggerConfig = new TriggerConfig();
-        triggerConfig.setTriggerStrategy(TriggerStrategy.START_NOW);
-        triggerConfig.setStartAt(new Date(System.currentTimeMillis() - 365 * 24 * 60 * 60 * 1000L));
+        triggerConfig.setTriggerStrategy(TriggerStrategy.CRON);
+        triggerConfig.setCronExpression(oscCheckTaskCronExpression);
         scheduleEntity.setTriggerConfigJson(JsonUtils.toJson(triggerConfig));
         scheduleEntity.setMisfireStrategy(MisfireStrategy.MISFIRE_INSTRUCTION_DO_NOTHING);
+        parameter.buildParameterDataMap();
+        scheduleEntity.setJobParametersJson(JsonUtils.toJson(parameter));
         return scheduleService.create(scheduleEntity);
     }
 
