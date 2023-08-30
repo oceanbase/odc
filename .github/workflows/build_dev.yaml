@@ -53,6 +53,22 @@ jobs:
           java-version: "8"
           distribution: "temurin"
           cache: maven
+      - name: Install db-browser
+        run: |
+          echo "Start install db-browser"
+          pushd libs/db-browser
+          echo "Current dir is "`pwd`
+          mvn clean install -Dmaven.test.skip=true
+          echo "Install db-browser success"
+          popd
+      - name: Install ob-sql-parser
+        run: |
+          echo "Start install ob-sql-parser"
+          pushd libs/ob-sql-parser
+          echo "Current dir is "`pwd`
+          mvn clean install -Dmaven.test.skip=true
+          echo "Install ob-sql-parser success"
+          popd
       - name: Build project
         run: mvn clean install -Dmaven.test.skip=true
       - name: Run PMD scan
@@ -71,6 +87,22 @@ jobs:
           java-version: "8"
           distribution: "temurin"
           cache: maven
+      - name: Install db-browser
+        run: |
+          echo "Start install db-browser"
+          pushd libs/db-browser
+          echo "Current dir is "`pwd`
+          mvn clean install -Dmaven.test.skip=true
+          echo "Install db-browser success"
+          popd
+      - name: Install ob-sql-parser
+        run: |
+          echo "Start install ob-sql-parser"
+          pushd libs/ob-sql-parser
+          echo "Current dir is "`pwd`
+          mvn clean install -Dmaven.test.skip=true
+          echo "Install ob-sql-parser success"
+          popd
       - name: Run unit test
         run: echo "Skip for now 🤪"
 
