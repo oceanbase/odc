@@ -18,6 +18,7 @@ package com.oceanbase.odc.test.database;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.Map;
 
 import com.oceanbase.odc.test.tool.EncryptableConfigurations;
@@ -30,19 +31,51 @@ public class TestProperties {
     private static final String TEST_CONFIG_FILE;
     private static final Map<String, String> properties;
 
+    public static final String TEST_OB_ORACLE_COMMAND_LINE_ENV_KEY = "TEST_OB_ORACLE_COMMAND_LINE";
+    public static final String TEST_OB_ORACLE_SYS_USERNAME_ENV_KEY = "TEST_OB_ORACLE_SYS_USERNAME";
+    public static final String TEST_OB_ORACLE_SYS_PASSWORD_ENV_KEY = "TEST_OB_ORACLE_SYS_PASSWORD";
+    public static final String TEST_OB_MYSQL_COMMAND_LINE_ENV_KEY = "TEST_OB_MYSQL_COMMAND_LINE";
+    public static final String TEST_OB_MYSQL_SYS_USERNAME_ENV_KEY = "TEST_OB_MYSQL_SYS_USERNAME";
+    public static final String TEST_OB_MYSQL_SYS_PASSWORD_ENV_KEY = "TEST_OB_MYSQL_SYS_PASSWORD";
+    public static final String TEST_MYSQL_COMMAND_LINE_ENV_KEY = "TEST_MYSQL_COMMAND_LINE";
+
+    public static final Map<String, String> PROPERTIES_ENV_MAP = new HashMap<>();
+
+
     static {
         try {
             URL location = TestProperties.class.getProtectionDomain().getCodeSource().getLocation();
             TEST_CONFIG_FILE = Paths.get(location.toURI())
                     .getParent().getParent().getParent().getParent()
                     .resolve("builds").resolve(".env").toString();
+
+            initPropertiesEnvMap();
+
         } catch (URISyntaxException e) {
             throw new IllegalStateException(e);
         }
         properties = EncryptableConfigurations.loadProperties(TEST_CONFIG_FILE);
+
+        // If environment variable value is not null will cover the properties value
+        // with same key in .env file
+        PROPERTIES_ENV_MAP.forEach((key, value) -> {
+            if (System.getenv(value) != null) {
+                properties.put(key, System.getenv(value));
+            }
+        });
     }
 
     public static String getProperty(String key) {
         return properties.get(key);
+    }
+
+    private static void initPropertiesEnvMap() {
+        PROPERTIES_ENV_MAP.put("odc.ob.default.oracle.commandline", TEST_OB_ORACLE_COMMAND_LINE_ENV_KEY);
+        PROPERTIES_ENV_MAP.put("odc.ob.default.oracle.sysUsername", TEST_OB_ORACLE_SYS_USERNAME_ENV_KEY);
+        PROPERTIES_ENV_MAP.put("odc.ob.default.oracle.sysPassword", TEST_OB_ORACLE_SYS_PASSWORD_ENV_KEY);
+        PROPERTIES_ENV_MAP.put("odc.ob.default.mysql.commandline", TEST_OB_MYSQL_COMMAND_LINE_ENV_KEY);
+        PROPERTIES_ENV_MAP.put("odc.ob.default.mysql.sysUsername", TEST_OB_MYSQL_SYS_USERNAME_ENV_KEY);
+        PROPERTIES_ENV_MAP.put("odc.ob.default.mysql.sysPassword", TEST_OB_MYSQL_SYS_PASSWORD_ENV_KEY);
+        PROPERTIES_ENV_MAP.put("odc.mysql.default.commandline", TEST_MYSQL_COMMAND_LINE_ENV_KEY);
     }
 }
