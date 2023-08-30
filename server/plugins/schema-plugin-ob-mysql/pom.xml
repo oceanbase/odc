@@ -21,17 +21,14 @@
         <dependency>
             <groupId>com.oceanbase</groupId>
             <artifactId>schema-plugin-api</artifactId>
-            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.oceanbase</groupId>
             <artifactId>connect-plugin-api</artifactId>
-            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.oceanbase</groupId>
             <artifactId>connect-plugin-ob-mysql</artifactId>
-            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>junit</groupId>

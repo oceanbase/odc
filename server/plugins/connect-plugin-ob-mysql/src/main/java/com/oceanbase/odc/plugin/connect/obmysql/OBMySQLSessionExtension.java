@@ -22,8 +22,8 @@ import java.util.Objects;
 import org.pf4j.Extension;
 
 import com.oceanbase.jdbc.OceanBaseConnection;
+import com.oceanbase.odc.common.util.JdbcOperationsUtil;
 import com.oceanbase.odc.plugin.connect.api.SessionExtensionPoint;
-import com.oceanbase.odc.plugin.connect.obmysql.util.JdbcOperationsUtil;
 
 import lombok.extern.slf4j.Slf4j;
 

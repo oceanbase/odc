@@ -26,8 +26,8 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+import com.oceanbase.odc.common.util.JdbcOperationsUtil;
 import com.oceanbase.odc.common.util.StringUtils;
-import com.oceanbase.odc.plugin.connect.obmysql.util.JdbcOperationsUtil;
 import com.oceanbase.odc.plugin.schema.obmysql.parser.GetDBTableByParser;
 import com.oceanbase.tools.dbbrowser.model.DBConstraintDeferability;
 import com.oceanbase.tools.dbbrowser.model.DBConstraintType;
@@ -359,7 +359,10 @@ public class OBOracleGetDBTableByParser implements GetDBTableByParser {
             parseListPartitionStmt((ListPartition) partitionStmt, partition);
         }
 
-        // Adapt the front-end to obtain the expression or column list according to the partition method
+        /**
+         * In order to adapt to the front-end only the expression field is used for Hash、List and Range
+         * partition types
+         */
         if (Objects.nonNull(partition.getPartitionOption().getType())
                 && partition.getPartitionOption().getType().supportExpression()
                 && StringUtils.isBlank(partition.getPartitionOption().getExpression())) {

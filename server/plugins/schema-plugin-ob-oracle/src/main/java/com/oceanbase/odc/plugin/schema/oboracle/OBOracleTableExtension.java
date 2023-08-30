@@ -24,7 +24,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.pf4j.Extension;
 
-import com.oceanbase.odc.plugin.connect.obmysql.util.JdbcOperationsUtil;
+import com.oceanbase.odc.common.util.JdbcOperationsUtil;
 import com.oceanbase.odc.plugin.schema.obmysql.OBMySQLTableExtension;
 import com.oceanbase.odc.plugin.schema.oboracle.parser.OBOracleGetDBTableByParser;
 import com.oceanbase.odc.plugin.schema.oboracle.utils.DBAccessorUtil;

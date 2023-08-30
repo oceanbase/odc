@@ -21,8 +21,8 @@ import java.util.stream.Collectors;
 
 import org.pf4j.Extension;
 
+import com.oceanbase.odc.common.util.JdbcOperationsUtil;
 import com.oceanbase.odc.common.util.VersionUtils;
-import com.oceanbase.odc.plugin.connect.obmysql.util.JdbcOperationsUtil;
 import com.oceanbase.odc.plugin.schema.api.TableExtensionPoint;
 import com.oceanbase.odc.plugin.schema.obmysql.parser.OBMySQLGetDBTableByParser;
 import com.oceanbase.odc.plugin.schema.obmysql.utils.DBAccessorUtil;

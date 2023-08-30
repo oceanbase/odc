@@ -223,7 +223,10 @@ public class OBMySQLGetDBTableByParser implements GetDBTableByParser {
             parseListPartitionStmt((ListPartition) partitionStmt, partition);
         }
 
-        // Adapt the front-end to obtain the expression or column list according to the partition method
+        /**
+         * In order to adapt to the front-end only the expression field is used for Hash、List and Range
+         * partition types
+         */
         if (Objects.nonNull(partition.getPartitionOption().getType())
                 && partition.getPartitionOption().getType().supportExpression()
                 && StringUtils.isBlank(partition.getPartitionOption().getExpression())) {

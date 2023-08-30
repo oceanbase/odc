@@ -15,7 +15,7 @@
     <properties>
         <root-project.basedir>${project.parent.parent.basedir}</root-project.basedir>
         <plugin.class>com.oceanbase.odc.plugin.schema.mysql.MySQLSchemaPlugin</plugin.class>
-        <plugin.dependencies>connect-plugin-mysql,schema-plugin-ob-mysql</plugin.dependencies>
+        <plugin.dependencies>schema-plugin-ob-mysql</plugin.dependencies>
     </properties>
 
     <dependencies>
@@ -25,19 +25,7 @@
         </dependency>
         <dependency>
             <groupId>com.oceanbase</groupId>
-            <artifactId>connect-plugin-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.oceanbase</groupId>
-            <artifactId>connect-plugin-mysql</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.oceanbase</groupId>
             <artifactId>schema-plugin-ob-mysql</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.oceanbase</groupId>
-            <artifactId>connect-plugin-ob-mysql</artifactId>
         </dependency>
     </dependencies>
 
