@@ -68,9 +68,9 @@ public class QuartzJobService {
         Class<? extends Job> clazz = QuartzJob.class;
 
         if (req.getTriggerConfig() != null) {
-            JobDataMap forTrigger = triggerDataMap == null ? new JobDataMap(new HashMap<>(1)) : triggerDataMap;
+            JobDataMap triData = triggerDataMap == null ? new JobDataMap(new HashMap<>(1)) : triggerDataMap;
             TriggerKey triggerKey = QuartzKeyGenerator.generateTriggerKey(req.getScheduleId(), req.getType());
-            Trigger trigger = buildTrigger(triggerKey, req.getTriggerConfig(), req.getMisfireStrategy(), forTrigger);
+            Trigger trigger = buildTrigger(triggerKey, req.getTriggerConfig(), req.getMisfireStrategy(), triData);
             JobDetail jobDetail = JobBuilder.newJob(clazz).withIdentity(jobKey)
                     .usingJobData(req.getJobDataMap()).build();
             scheduler.scheduleJob(jobDetail, trigger);
@@ -151,12 +151,8 @@ public class QuartzJobService {
         return scheduler.getTrigger(key);
     }
 
-    public void updateTriggerDataMap(TriggerKey triggerKey, JobDataMap triggerDataMap) throws SchedulerException {
-        Trigger trigger = getTrigger(triggerKey);
-        if (trigger != null) {
-            trigger.getJobDataMap().putAll(triggerDataMap);
-            scheduler.rescheduleJob(triggerKey, trigger);
-        }
+    public void rescheduleJob(TriggerKey triggerKey, Trigger newTrigger) throws SchedulerException {
+        scheduler.rescheduleJob(triggerKey, newTrigger);
     }
 
     public void triggerJob(JobKey key) throws SchedulerException {

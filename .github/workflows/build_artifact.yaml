@@ -18,12 +18,12 @@ on:
         description: "Install db-browser"
         required: true
         type: boolean
-        default: false
+        default: true
       install_ob_sql_parser:
         description: "Install ob-sql-parser"
         required: true
         type: boolean
-        default: false
+        default: true
       build_jar:
         description: "Build jar package"
         required: true

@@ -125,12 +125,12 @@ public abstract class BaseCreateOmsProjectValve extends BaseValve {
     }
 
     private void scheduleCheckOmsProject(ScheduleEntity scheduleEntity, Long scheduleTaskId) {
-        JobKey jobKey =
-                QuartzKeyGenerator.generateJobKey(scheduleEntity.getId(), JobType.ONLINE_SCHEMA_CHANGE_COMPLETE);
+        Long scheduleId = scheduleEntity.getId();
+        JobKey jobKey = QuartzKeyGenerator.generateJobKey(scheduleId, JobType.ONLINE_SCHEMA_CHANGE_COMPLETE);
+        Map<String, Object> triggerData = getStringObjectMap(scheduleTaskId);
         try {
             if (quartzJobService.checkExists(jobKey)) {
-                Map<String, Object> dataMap = getStringObjectMap(scheduleTaskId);
-                scheduleService.updateTriggerDataMap(scheduleEntity, dataMap);
+                scheduleService.innerUpdateTriggerData(scheduleId, triggerData);
                 return;
             }
         } catch (SchedulerException e) {
@@ -138,11 +138,10 @@ public abstract class BaseCreateOmsProjectValve extends BaseValve {
         }
 
         try {
-            Map<String, Object> map = getStringObjectMap(scheduleTaskId);
-            scheduleService.enable(scheduleEntity, map);
+            scheduleService.innerEnable(scheduleId, triggerData);
             log.info("Start check oms project status by quartz job, jobParameters={}",
                     JsonUtils.toJson(scheduleEntity.getJobParametersJson()));
-        } catch (SchedulerException | ClassNotFoundException e) {
+        } catch (SchedulerException e) {
             throw new IllegalArgumentException(MessageFormat.format(
                     "Create a quartz job check oms project occur error, jobParameters ={0}",
                     JsonUtils.toJson(scheduleEntity.getJobParametersJson())), e);
