@@ -60,7 +60,6 @@ public class OBOracleTableExtension extends OBMySQLTableExtension {
     @Override
     public DBTable getDetail(@NonNull Connection connection, @NonNull String schemaName, @NonNull String tableName) {
         DBSchemaAccessor schemaAccessor = getSchemaAccessor(connection);
-        DBStatsAccessor statsAccessor = getStatsAccessor(connection);
         // Time-consuming queries methods of DBSchemaAccessor are replaced by GetDBTableByParser
         OBOracleGetDBTableByParser parser = new OBOracleGetDBTableByParser(connection, schemaName, tableName);
 
@@ -74,7 +73,7 @@ public class OBOracleTableExtension extends OBMySQLTableExtension {
         table.setIndexes(parser.listIndexes());
         table.setDDL(getTableDDL(connection, schemaName, tableName, parser));
         table.setTableOptions(schemaAccessor.getTableOptions(schemaName, tableName));
-        table.setStats(statsAccessor.getTableStats(schemaName, tableName));
+        table.setStats(getTableStats(connection, schemaName, tableName));
         return table;
     }
 

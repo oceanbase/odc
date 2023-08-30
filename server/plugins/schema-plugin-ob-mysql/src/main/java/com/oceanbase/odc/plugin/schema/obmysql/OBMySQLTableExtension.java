@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
 
 import org.pf4j.Extension;
 
+import com.oceanbase.odc.common.unit.BinarySizeUnit;
 import com.oceanbase.odc.common.util.JdbcOperationsUtil;
 import com.oceanbase.odc.common.util.VersionUtils;
 import com.oceanbase.odc.plugin.schema.api.TableExtensionPoint;
@@ -39,6 +40,7 @@ import com.oceanbase.tools.dbbrowser.editor.mysql.OBMySQLLessThan2277PartitionEd
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
+import com.oceanbase.tools.dbbrowser.model.DBTableStats;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 import com.oceanbase.tools.dbbrowser.stats.DBStatsAccessor;
 
@@ -72,7 +74,6 @@ public class OBMySQLTableExtension implements TableExtensionPoint {
     @Override
     public DBTable getDetail(@NonNull Connection connection, @NonNull String schemaName, @NonNull String tableName) {
         DBSchemaAccessor schemaAccessor = getSchemaAccessor(connection);
-        DBStatsAccessor statsAccessor = getStatsAccessor(connection);
         String ddl = schemaAccessor.getTableDDL(schemaName, tableName);
         OBMySQLGetDBTableByParser parser = new OBMySQLGetDBTableByParser(ddl);
 
@@ -86,8 +87,21 @@ public class OBMySQLTableExtension implements TableExtensionPoint {
         table.setIndexes(schemaAccessor.listTableIndexes(schemaName, tableName));
         table.setDDL(ddl);
         table.setTableOptions(schemaAccessor.getTableOptions(schemaName, tableName));
-        table.setStats(statsAccessor.getTableStats(schemaName, tableName));
+        table.setStats(getTableStats(connection, schemaName, tableName));
         return table;
+    }
+
+    protected DBTableStats getTableStats(@NonNull Connection connection, @NonNull String schemaName,
+            @NonNull String tableName) {
+        DBStatsAccessor statsAccessor = getStatsAccessor(connection);
+        DBTableStats tableStats = statsAccessor.getTableStats(schemaName, tableName);
+        Long dataSizeInBytes = tableStats.getDataSizeInBytes();
+        if (dataSizeInBytes == null || dataSizeInBytes < 0) {
+            tableStats.setTableSize(null);
+        } else {
+            tableStats.setTableSize(BinarySizeUnit.B.of(dataSizeInBytes).toString());
+        }
+        return tableStats;
     }
 
     @Override

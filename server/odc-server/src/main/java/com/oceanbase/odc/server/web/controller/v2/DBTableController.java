@@ -33,7 +33,6 @@ import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.db.DBTableService;
 import com.oceanbase.odc.service.db.model.GenerateTableDDLResp;
 import com.oceanbase.odc.service.db.model.GenerateUpdateTableDDLReq;
-import com.oceanbase.odc.service.db.model.OdcDBTable;
 import com.oceanbase.odc.service.session.ConnectSessionService;
 import com.oceanbase.tools.dbbrowser.model.DBSchema;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
@@ -57,13 +56,13 @@ public class DBTableController {
 
     @GetMapping(value = {"/{sessionId}/databases/{databaseName}/tables/{tableName}",
             "/{sessionId}/currentDatabase/tables/{tableName}"})
-    public SuccessResponse<OdcDBTable> getTable(@PathVariable String sessionId,
+    public SuccessResponse<DBTable> getTable(@PathVariable String sessionId,
             @PathVariable(required = false) String databaseName,
             @PathVariable String tableName) {
         Base64.Decoder decoder = Base64.getDecoder();
         tableName = new String(decoder.decode(tableName));
         ConnectionSession session = sessionService.nullSafeGet(sessionId);
-        return Responses.success(new OdcDBTable(tableService.getTable(session, databaseName, tableName)));
+        return Responses.success(tableService.getTable(session, databaseName, tableName));
     }
 
     @PostMapping(value = {"/{sessionId}/databases/{databaseName}/tables/generateCreateTableDDL",
