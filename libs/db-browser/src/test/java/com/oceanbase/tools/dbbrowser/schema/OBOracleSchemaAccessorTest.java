@@ -150,6 +150,23 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
     }
 
     @Test
+    public void listBasicViewColumns_SchemaViewColumns_Success() {
+        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBOracleDataSource()).createOBOracle();
+        Map<String, List<DBTableColumn>> columns = accessor.listBasicViewColumns(getOBOracleSchema());
+        Assert.assertTrue(columns.containsKey("VIEW_TEST1"));
+        Assert.assertTrue(columns.containsKey("VIEW_TEST2"));
+        Assert.assertEquals(2, columns.get("VIEW_TEST1").size());
+        Assert.assertEquals(1, columns.get("VIEW_TEST2").size());
+    }
+
+    @Test
+    public void listBasicViewColumns_ViewColumns_Success() {
+        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBOracleDataSource()).createOBOracle();
+        List<DBTableColumn> columns = accessor.listBasicViewColumns(getOBOracleSchema(), "VIEW_TEST1");
+        Assert.assertEquals(2, columns.size());
+    }
+
+    @Test
     public void listTableColumns_TestAllColumnDataTypes_Success() {
         DBSchemaAccessor accessor = new DBSchemaAccessors(getOBOracleDataSource()).createOBOracle();
         List<DBTableColumn> columns =

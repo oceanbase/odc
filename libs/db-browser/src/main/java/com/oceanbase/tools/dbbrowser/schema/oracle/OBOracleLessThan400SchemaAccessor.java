@@ -18,17 +18,14 @@ package com.oceanbase.tools.dbbrowser.schema.oracle;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcOperations;
 
-import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
-import com.oceanbase.tools.dbbrowser.model.DBSynonymType;
+import com.oceanbase.tools.dbbrowser.model.*;
 import com.oceanbase.tools.dbbrowser.model.DBTable.DBTableOptions;
-import com.oceanbase.tools.dbbrowser.model.DBTablePartition;
-import com.oceanbase.tools.dbbrowser.model.DBTablePartitionDefinition;
-import com.oceanbase.tools.dbbrowser.model.DBTablePartitionOption;
-import com.oceanbase.tools.dbbrowser.model.DBTablePartitionType;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessorSqlMappers;
 import com.oceanbase.tools.dbbrowser.schema.constant.Statements;
 import com.oceanbase.tools.dbbrowser.schema.constant.StatementsFiles;
@@ -141,4 +138,53 @@ public class OBOracleLessThan400SchemaAccessor extends OBOracleSchemaAccessor {
             throw new UnsupportedOperationException("Not supported Synonym type");
         }
     }
+
+    @Override
+    public Map<String, List<DBTableColumn>> listBasicTableColumns(String schemaName) {
+        String sql = sqlMapper.getSql(Statements.LIST_BASIC_SCHEMA_TABLE_COLUMNS);
+        List<DBTableColumn> tableColumns =
+                jdbcOperations.query(sql, new Object[] {schemaName}, listBasicColumnsRowMapper());
+        return tableColumns.stream().collect(Collectors.groupingBy(DBTableColumn::getTableName));
+    }
+
+    @Override
+    public Map<String, List<DBTableColumn>> listBasicViewColumns(String schemaName) {
+        OracleSqlBuilder sb = new OracleSqlBuilder();
+        sb.append("select view_name from all_views where owner = ").value(schemaName);
+        List<String> viewNames = jdbcOperations.query(sb.toString(), (rs, rowNum) -> rs.getString("view_name"));
+        List<DBTableColumn> columns = new ArrayList<>();
+        for (String viewName : viewNames) {
+            columns.addAll(fillViewColumnInfoByDesc(schemaName, viewName));
+        }
+        return columns.stream().collect(Collectors.groupingBy(DBTableColumn::getTableName));
+    }
+
+    @Override
+    public List<DBTableColumn> listBasicViewColumns(String schemaName, String viewName) {
+        return fillViewColumnInfoByDesc(schemaName, viewName);
+    }
+
+    protected List<DBTableColumn> fillViewColumnInfoByDesc(String schemaName, String viewName) {
+        List<DBTableColumn> columns = new ArrayList<>();
+        try {
+            OracleSqlBuilder sb = new OracleSqlBuilder();
+            sb.append("desc ");
+            if (StringUtils.isNotBlank(schemaName)) {
+                sb.identifier(schemaName).append(".");
+            }
+            sb.identifier(viewName);
+            columns = jdbcOperations.query(sb.toString(), (rs, rowNum) -> {
+                DBTableColumn column = new DBTableColumn();
+                column.setSchemaName(schemaName);
+                column.setTableName(viewName);
+                column.setName(rs.getString(1));
+                column.setTypeName(rs.getString(2).split("\\(")[0]);
+                return column;
+            });
+        } catch (Exception e) {
+            log.warn("fail to get view column info, message={}", e.getMessage());
+        }
+        return columns;
+    }
+
 }
