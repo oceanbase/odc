@@ -151,12 +151,8 @@ public class QuartzJobService {
         return scheduler.getTrigger(key);
     }
 
-    public void updateTriggerDataMap(TriggerKey triggerKey, JobDataMap triggerDataMap) throws SchedulerException {
-        Trigger trigger = getTrigger(triggerKey);
-        if (trigger != null) {
-            trigger.getJobDataMap().putAll(triggerDataMap);
-            scheduler.rescheduleJob(triggerKey, trigger);
-        }
+    public void rescheduleJob(TriggerKey triggerKey, Trigger newTrigger) throws SchedulerException {
+        scheduler.rescheduleJob(triggerKey, newTrigger);
     }
 
     public void triggerJob(JobKey key) throws SchedulerException {

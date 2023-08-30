@@ -148,7 +148,7 @@ public class ScheduleService {
     // this function will be deleted because update is a high-risk operation,
     @Deprecated
     @Transactional(rollbackFor = Exception.class)
-    public void update(ScheduleEntity scheduleConfig) throws SchedulerException, ClassNotFoundException {
+    public void updateJobData(ScheduleEntity scheduleConfig) throws SchedulerException, ClassNotFoundException {
         Trigger scheduleTrigger = getScheduleTrigger(scheduleConfig);
 
         if (scheduleTrigger != null) {
@@ -159,6 +159,14 @@ public class ScheduleService {
         scheduleRepository.save(scheduleConfig);
     }
 
+    public void innerUpdateTriggerData(Long scheduleId, Map<String, Object> triggerData)
+            throws SchedulerException {
+        ScheduleEntity scheduleConfig = nullSafeGetById(scheduleId);
+        Trigger scheduleTrigger = nullSafeGetScheduleTrigger(scheduleConfig);
+        scheduleTrigger.getJobDataMap().putAll(triggerData);
+        quartzJobService.rescheduleJob(scheduleTrigger.getKey(), scheduleTrigger);
+    }
+
     @Transactional(rollbackFor = Exception.class)
     public void enable(ScheduleEntity scheduleConfig) throws SchedulerException, ClassNotFoundException {
         quartzJobService.createJob(buildCreateJobReq(scheduleConfig));
@@ -166,18 +174,12 @@ public class ScheduleService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public void enable(ScheduleEntity scheduleConfig, Map<String, Object> triggerDataMap)
-            throws SchedulerException, ClassNotFoundException {
-        quartzJobService.createJob(buildCreateJobReq(scheduleConfig), new JobDataMap(triggerDataMap));
+    public void innerEnable(Long scheduleId, Map<String, Object> triggerData)
+            throws SchedulerException {
+        ScheduleEntity scheduleConfig = nullSafeGetById(scheduleId);
+        quartzJobService.createJob(buildCreateJobReq(scheduleConfig), new JobDataMap(triggerData));
         scheduleRepository.updateStatusById(scheduleConfig.getId(), ScheduleStatus.ENABLED);
     }
-
-    public void updateTriggerDataMap(ScheduleEntity scheduleConfig, Map<String, Object> triggerDataMap)
-            throws SchedulerException {
-        Trigger scheduleTrigger = nullSafeGetScheduleTrigger(scheduleConfig);
-        quartzJobService.updateTriggerDataMap(scheduleTrigger.getKey(), new JobDataMap(triggerDataMap));
-    }
-
 
     @Transactional(rollbackFor = Exception.class)
     public void pause(ScheduleEntity scheduleConfig) throws SchedulerException {
