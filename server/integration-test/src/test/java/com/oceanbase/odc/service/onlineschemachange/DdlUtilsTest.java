@@ -34,7 +34,7 @@ public class DdlUtilsTest {
 
         String newName = DdlUtils.getNewNameWithSuffix(tableName, DdlConstants.RENAMED_TABLE_NAME_SUFFIX);
 
-        Assert.assertEquals("_t" + DdlConstants.RENAMED_TABLE_NAME_SUFFIX, newName);
+        Assert.assertEquals("\"_t" + DdlConstants.RENAMED_TABLE_NAME_SUFFIX + "\"", newName);
 
     }
 
@@ -44,7 +44,7 @@ public class DdlUtilsTest {
 
         String newName = DdlUtils.getNewNameWithSuffix(tableName, DdlConstants.RENAMED_TABLE_NAME_SUFFIX);
 
-        Assert.assertEquals("_t" + DdlConstants.RENAMED_TABLE_NAME_SUFFIX, newName);
+        Assert.assertEquals("`_t" + DdlConstants.RENAMED_TABLE_NAME_SUFFIX + "`", newName);
 
     }
 
