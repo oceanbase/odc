@@ -60,6 +60,7 @@ public class OBOracleTableExtension extends OBMySQLTableExtension {
     @Override
     public DBTable getDetail(@NonNull Connection connection, @NonNull String schemaName, @NonNull String tableName) {
         DBSchemaAccessor schemaAccessor = getSchemaAccessor(connection);
+        List<DBTableColumn> columns = schemaAccessor.listTableColumns(schemaName, tableName);
         // Time-consuming queries methods of DBSchemaAccessor are replaced by GetDBTableByParser
         OBOracleGetDBTableByParser parser = new OBOracleGetDBTableByParser(connection, schemaName, tableName);
 
@@ -67,18 +68,18 @@ public class OBOracleTableExtension extends OBMySQLTableExtension {
         table.setSchemaName(schemaName);
         table.setOwner(schemaName);
         table.setName(schemaAccessor.isLowerCaseTableName() ? tableName.toLowerCase() : tableName);
-        table.setColumns(schemaAccessor.listTableColumns(schemaName, tableName));
+        table.setColumns(columns);
         table.setConstraints(parser.listConstraints());
         table.setPartition(parser.getPartition());
         table.setIndexes(parser.listIndexes());
-        table.setDDL(getTableDDL(connection, schemaName, tableName, parser));
+        table.setDDL(getTableDDL(connection, schemaName, tableName, parser, columns));
         table.setTableOptions(schemaAccessor.getTableOptions(schemaName, tableName));
         table.setStats(getTableStats(connection, schemaName, tableName));
         return table;
     }
 
     private String getTableDDL(Connection connection, String schemaName, String tableName,
-            OBOracleGetDBTableByParser parser) {
+            OBOracleGetDBTableByParser parser, List<DBTableColumn> columns) {
         String getTableDDlSql =
                 "SELECT dbms_metadata.get_ddl('TABLE', '" + tableName + "', '" + schemaName + "') as DDL from dual";
         AtomicReference<String> ddlRef = new AtomicReference<>();
@@ -103,7 +104,6 @@ public class OBOracleTableExtension extends OBMySQLTableExtension {
             String tableCommentDdl = StringUtils.replaceVariables(ORACLE_TABLE_COMMENT_DDL_TEMPLATE, variables);
             ddl.append(tableCommentDdl).append(";\n");
         }
-        List<DBTableColumn> columns = getSchemaAccessor(connection).listTableColumns(schemaName, tableName);
         for (DBTableColumn column : columns) {
             if (StringUtils.isNotEmpty(column.getComment())) {
                 variables.put("columnName", StringUtils.quoteOracleIdentifier(column.getName()));
