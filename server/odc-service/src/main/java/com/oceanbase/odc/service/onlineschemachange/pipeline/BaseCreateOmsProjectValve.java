@@ -26,7 +26,6 @@ import java.util.UUID;
 import org.quartz.JobKey;
 import org.quartz.SchedulerException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.session.ConnectionSession;
@@ -78,9 +77,6 @@ public abstract class BaseCreateOmsProjectValve extends BaseValve {
 
     @Autowired
     protected OnlineSchemaChangeProperties oscProperties;
-
-    @Value("${osc-check-task-cron-expression:0/10 * * * * ?}")
-    private String oscCheckTaskCronExpression;
 
     @Autowired
     private ScheduleService scheduleService;
