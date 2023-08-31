@@ -23,7 +23,6 @@ import java.util.stream.Collectors;
 import org.apache.commons.collections4.CollectionUtils;
 import org.flowable.engine.delegate.DelegateExecution;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -81,8 +80,7 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
     @Autowired
     private OrganizationService organizationService;
 
-    @Value("${osc-check-task-cron-expression:0/10 * * * * ?}")
-    private String oscCheckTaskCronExpression;
+    private final static String checkTaskCronExpression = "0/10 * * * * ?";
 
     private volatile TaskStatus status;
     private long scheduleId;
@@ -107,9 +105,10 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
         ConnectionConfig connectionConfig = FlowTaskUtil.getConnectionConfig(execution);
         String schema = FlowTaskUtil.getSchemaName(execution);
         continueOnError = parameter.isContinueOnError();
+        OnlineSchemaChangeContextHolder.trace(this.creatorId, this.flowTaskId, this.organizationId);
+        parameter.buildParameterDataMap();
         ScheduleEntity schedule = createScheduleEntity(connectionConfig, parameter, schema);
         scheduleId = schedule.getId();
-        OnlineSchemaChangeContextHolder.trace(this.creatorId, this.flowTaskId, this.organizationId);
         try {
             List<ScheduleTaskEntity> tasks = parameter.generateSubTaskParameters(connectionConfig, schema).stream()
                     .map(param -> {
@@ -243,10 +242,9 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
         scheduleEntity.setModifierId(scheduleEntity.getCreatorId());
         TriggerConfig triggerConfig = new TriggerConfig();
         triggerConfig.setTriggerStrategy(TriggerStrategy.CRON);
-        triggerConfig.setCronExpression(oscCheckTaskCronExpression);
+        triggerConfig.setCronExpression(checkTaskCronExpression);
         scheduleEntity.setTriggerConfigJson(JsonUtils.toJson(triggerConfig));
         scheduleEntity.setMisfireStrategy(MisfireStrategy.MISFIRE_INSTRUCTION_DO_NOTHING);
-        parameter.buildParameterDataMap();
         scheduleEntity.setJobParametersJson(JsonUtils.toJson(parameter));
         return scheduleService.create(scheduleEntity);
     }

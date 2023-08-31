@@ -342,6 +342,8 @@ public class DefaultOnlineSchemaChangeTaskHandler implements OnlineSchemaChangeT
         completeHandler.onOscScheduleTaskFailed(valveContext.getTaskParameter().getOmsProjectId(),
                 valveContext.getTaskParameter().getUid(), valveContext.getSchedule().getId(),
                 valveContext.getScheduleTask().getId());
+
+        dropNewTableIfExits(valveContext.getTaskParameter(), valveContext.getConnectionSession());
     }
 
     private OscValveContext getOscValveContext(Long scheduleId, Long scheduleTaskId) {
@@ -380,13 +382,7 @@ public class DefaultOnlineSchemaChangeTaskHandler implements OnlineSchemaChangeT
     private void prepareSchema(OnlineSchemaChangeParameters param, OnlineSchemaChangeScheduleTaskParameters taskParam,
             ConnectionSession session, Long scheduleTaskId) throws SQLException {
 
-        List<String> list = DBSchemaAccessors.create(session)
-                .showTablesLike(taskParam.getDatabaseName(), taskParam.getNewTableName());
-        // Drop new table suffix with _osc_new_ if exists
-        if (CollectionUtils.isNotEmpty(list)) {
-            DBObjectOperators.create(session)
-                    .drop(DBObjectType.TABLE, taskParam.getDatabaseName(), taskParam.getNewTableName());
-        }
+        dropNewTableIfExits(taskParam, session);
 
         SyncJdbcExecutor executor = session.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY);
         executor.execute(taskParam.getNewTableCreateDdl());
@@ -402,6 +398,16 @@ public class DefaultOnlineSchemaChangeTaskHandler implements OnlineSchemaChangeT
                     JsonUtils.toJson(new OnlineSchemaChangeScheduleTaskResult(taskParam)));
         }
         log.info("Successfully created new table, ddl: {}", taskParam.getNewTableCreateDdl());
+    }
+
+    private void dropNewTableIfExits(OnlineSchemaChangeScheduleTaskParameters taskParam, ConnectionSession session) {
+        List<String> list = DBSchemaAccessors.create(session)
+                .showTablesLike(taskParam.getDatabaseName(), taskParam.getNewTableNameUnWrapped());
+        // Drop new table suffix with _osc_new_ if exists
+        if (CollectionUtils.isNotEmpty(list)) {
+            DBObjectOperators.create(session)
+                    .drop(DBObjectType.TABLE, taskParam.getDatabaseName(), taskParam.getNewTableNameUnWrapped());
+        }
     }
 
 }

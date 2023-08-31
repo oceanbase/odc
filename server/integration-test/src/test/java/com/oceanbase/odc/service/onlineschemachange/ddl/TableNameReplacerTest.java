@@ -20,7 +20,10 @@ import org.junit.Test;
 
 public class TableNameReplacerTest {
     private static final String CREATE_STMT = "create table t1 (id int);";
+    private static final String CREATE_QUOTE_STMT = "create table \"t1\" (id int);";
+    private static final String CREATE_ACCENT_STMT = "create table `t1` (id int);";
     private static final String ALTER_STMT = "alter table t1 add constraint constraint_t1_id unique (id);";
+    private static final String ALTER_QUOTE_STMT = "alter table \"t1\" add constraint constraint_t1_id unique (id);";
 
     @Test
     public void test_RewriteCreateStmt_Mysql() {
@@ -29,9 +32,23 @@ public class TableNameReplacerTest {
     }
 
     @Test
+    public void test_RewriteCreateStmtWithAccent_Mysql() {
+        String newSql =
+                new OBMysqlTableNameReplacer().replaceCreateStmt(CREATE_ACCENT_STMT, DdlUtils.getNewTableName("`t1`"));
+        Assert.assertEquals("create table `_t1_osc_new_` (id int);", newSql);
+    }
+
+    @Test
     public void test_RewriteCreateStmt_Oracle() {
         String newSql = new OBOracleTableNameReplacer().replaceCreateStmt(CREATE_STMT, DdlUtils.getNewTableName("t1"));
         Assert.assertEquals("create table _t1_osc_new_ (id int);", newSql);
+    }
+
+    @Test
+    public void test_RewriteCreateStmtWithQuote_Oracle() {
+        String newSql = new OBOracleTableNameReplacer().replaceCreateStmt(CREATE_QUOTE_STMT,
+                DdlUtils.getNewTableName("\"t1\""));
+        Assert.assertEquals("create table \"_t1_osc_new_\" (id int);", newSql);
     }
 
     @Test
@@ -44,6 +61,14 @@ public class TableNameReplacerTest {
     public void test_RewriteAlterStmt_Oracle() {
         String newSql = new OBOracleTableNameReplacer().replaceAlterStmt(ALTER_STMT, DdlUtils.getNewTableName("t1"));
         Assert.assertEquals("alter table _t1_osc_new_ add constraint constraint_t1_id unique (id);", newSql);
+    }
+
+    @Test
+    public void test_RewriteAlterStmtQuote_Oracle() {
+        String newSql =
+                new OBOracleTableNameReplacer().replaceAlterStmt(ALTER_QUOTE_STMT, DdlUtils.getNewTableName("\"t1\""));
+        Assert.assertEquals("alter table \"_t1_osc_new_\" add constraint constraint_t1_id unique (id);", newSql);
+
     }
 
 }
