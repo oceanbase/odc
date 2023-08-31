@@ -141,7 +141,9 @@ import com.oceanbase.odc.service.schedule.model.ScheduleStatus;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
@@ -206,6 +208,7 @@ public class FlowInstanceService {
     @Autowired
     private FlowInstanceViewRepository flowInstanceViewRepository;
 
+    private final List<Consumer<DataTransferTaskInitEvent>> dataTransferTaskInitHooks = new ArrayList<>();
     private final List<Consumer<ShadowTableComparingUpdateEvent>> shadowTableComparingTaskHooks = new ArrayList<>();
     private static final long MAX_EXPORT_OBJECT_COUNT = 10000;
     private static final String ODC_SITE_URL = "odc.site.url";
@@ -642,6 +645,8 @@ public class FlowInstanceService {
             if (taskType == TaskType.SHADOWTABLE_SYNC) {
                 consumeShadowTableHook((ShadowTableSyncTaskParameter) flowInstanceReq.getParameters(),
                         flowInstance.getId());
+            } else if (taskType == TaskType.EXPORT) {
+                consumeDataTransferHook((DataTransferConfig) flowInstanceReq.getParameters(), taskEntity.getId());
             }
             log.info("New flow instance succeeded, instanceId={}, flowInstanceReq={}",
                     flowInstance.getId(), flowInstanceReq);
@@ -707,6 +712,8 @@ public class FlowInstanceService {
         if (flowInstanceReq.getTaskType() == TaskType.SHADOWTABLE_SYNC) {
             consumeShadowTableHook((ShadowTableSyncTaskParameter) flowInstanceReq.getParameters(),
                     flowInstance.getId());
+        } else if (flowInstanceReq.getTaskType() == TaskType.EXPORT) {
+            consumeDataTransferHook((DataTransferConfig) flowInstanceReq.getParameters(), taskEntity.getId());
         }
         log.info("New flow instance succeeded, instanceId={}, flowInstanceReq={}",
                 flowInstance.getId(), flowInstanceReq);
@@ -924,6 +931,17 @@ public class FlowInstanceService {
         }
     }
 
+    public void addDataTransferTaskInitHook(Consumer<DataTransferTaskInitEvent> hook) {
+        dataTransferTaskInitHooks.add(hook);
+    }
+
+    private void consumeDataTransferHook(DataTransferConfig config, Long taskId) {
+        DataTransferTaskInitEvent event = new DataTransferTaskInitEvent(taskId, config);
+        for (Consumer<DataTransferTaskInitEvent> hook : dataTransferTaskInitHooks) {
+            hook.accept(event);
+        }
+    }
+
     private RiskLevelDescriber buildRiskLevelDescriber(CreateFlowInstanceReq req) {
         return RiskLevelDescriber.builder()
                 .projectName(req.getProjectName())
@@ -948,5 +966,12 @@ public class FlowInstanceService {
     public static class ShadowTableComparingUpdateEvent {
         private Long comparingTaskId;
         private Long flowInstanceId;
+    }
+
+    @Getter
+    @AllArgsConstructor
+    public static class DataTransferTaskInitEvent {
+        private Long taskId;
+        private DataTransferConfig config;
     }
 }
