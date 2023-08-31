@@ -31,6 +31,7 @@ import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveColumn;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveColumnScanningTaskInfo;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveColumnScanningTaskInfo.ScanningTaskStatus;
+import com.oceanbase.odc.service.datasecurity.model.SensitiveColumnType;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveRule;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 
@@ -44,17 +45,19 @@ import lombok.EqualsAndHashCode;
 public class SensitiveColumnScanningTask implements Callable<Void> {
 
     private final Database database;
-    private final List<SensitiveRule> rules;
+    private final SensitiveColumnRecognizer recognizer;
     private final SensitiveColumnScanningTaskInfo taskInfo;
     private final Map<String, List<DBTableColumn>> table2Columns;
+    private final Map<String, List<DBTableColumn>> view2Columns;
     private final Set<SimplifySensitiveColumn> existsSensitiveColumns;
 
     public SensitiveColumnScanningTask(Database database, List<SensitiveRule> rules,
-            SensitiveColumnScanningTaskInfo taskInfo, Map<String, List<DBTableColumn>> table2Columns,
-            List<SensitiveColumn> existsSensitiveColumns) {
+            SensitiveColumnScanningTaskInfo taskInfo, List<SensitiveColumn> existsSensitiveColumns,
+            Map<String, List<DBTableColumn>> table2Columns, Map<String, List<DBTableColumn>> view2Columns) {
         this.database = database;
-        this.rules = rules;
+        this.recognizer = new SensitiveColumnRecognizer(rules);
         this.table2Columns = table2Columns;
+        this.view2Columns = view2Columns;
         this.taskInfo = taskInfo;
         if (CollectionUtils.isNotEmpty(existsSensitiveColumns)) {
             this.existsSensitiveColumns = existsSensitiveColumns.stream()
@@ -69,26 +72,8 @@ public class SensitiveColumnScanningTask implements Callable<Void> {
     public Void call() throws Exception {
         try {
             taskInfo.setStatus(ScanningTaskStatus.RUNNING);
-            SensitiveColumnRecognizer recognizer = new SensitiveColumnRecognizer(rules);
-            Set<String> tables = table2Columns.keySet();
-            for (String tableName : tables) {
-                List<SensitiveColumn> sensitiveColumns = new ArrayList<>();
-                for (DBTableColumn dbTableColumn : table2Columns.get(tableName)) {
-                    if (recognizer.recognize(dbTableColumn) && !existsSensitiveColumns.contains(
-                            new SimplifySensitiveColumn(database.getId(), tableName, dbTableColumn.getName()))) {
-                        SensitiveColumn column = new SensitiveColumn();
-                        column.setDatabase(database);
-                        column.setTableName(tableName);
-                        column.setColumnName(dbTableColumn.getName());
-                        column.setMaskingAlgorithmId(recognizer.maskingAlgorithmId());
-                        column.setSensitiveRuleId(recognizer.sensitiveRuleId());
-                        column.setLevel(recognizer.sensitiveLevel());
-                        sensitiveColumns.add(column);
-                    }
-                }
-                taskInfo.addSensitiveColumns(sensitiveColumns);
-                taskInfo.addFinishedTableCount();
-            }
+            scanColumns(table2Columns, SensitiveColumnType.TABLE_COLUMN);
+            scanColumns(view2Columns, SensitiveColumnType.VIEW_COLUMN);
         } catch (Exception e) {
             taskInfo.setCompleteTime(new Date());
             taskInfo.setStatus(ScanningTaskStatus.FAILED);
@@ -97,6 +82,28 @@ public class SensitiveColumnScanningTask implements Callable<Void> {
                     database.getName()));
         }
         return null;
+    }
+
+    private void scanColumns(Map<String, List<DBTableColumn>> object2Columns, SensitiveColumnType columnType) {
+        for (String objectName : object2Columns.keySet()) {
+            List<SensitiveColumn> sensitiveColumns = new ArrayList<>();
+            for (DBTableColumn dbTableColumn : object2Columns.get(objectName)) {
+                if (recognizer.recognize(dbTableColumn) && !existsSensitiveColumns
+                        .contains(new SimplifySensitiveColumn(database.getId(), objectName, dbTableColumn.getName()))) {
+                    SensitiveColumn column = new SensitiveColumn();
+                    column.setType(columnType);
+                    column.setDatabase(database);
+                    column.setTableName(objectName);
+                    column.setColumnName(dbTableColumn.getName());
+                    column.setMaskingAlgorithmId(recognizer.maskingAlgorithmId());
+                    column.setSensitiveRuleId(recognizer.sensitiveRuleId());
+                    column.setLevel(recognizer.sensitiveLevel());
+                    sensitiveColumns.add(column);
+                }
+            }
+            taskInfo.addSensitiveColumns(sensitiveColumns);
+            taskInfo.addFinishedTableCount();
+        }
     }
 
     @AllArgsConstructor
