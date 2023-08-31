@@ -133,8 +133,10 @@ public class OBOracleTableNameReplacer implements TableNameReplacer {
                 ParseTree childNode = relation_nameContext.getChild(0);
                 if (childNode instanceof TerminalNode) {
                     TerminalNode terminalNode = (TerminalNode) childNode;
+                    // todo replace by OscFactoryWrapper
                     tokenStreamRewriter.replace(terminalNode.getSymbol(), DdlUtils.getNewNameWithSuffix(
-                            terminalNode.getSymbol().getText(), DdlUtils.getUUIDWithoutUnderline()));
+                            terminalNode.getSymbol().getText(), DdlConstants.OSC_TABLE_NAME_PREFIX_OB_ORACLE,
+                            DdlUtils.getUUIDWithoutUnderline()));
                 }
             }
         }
@@ -151,8 +153,10 @@ public class OBOracleTableNameReplacer implements TableNameReplacer {
                 ParseTree childNode = relation_nameContext.getChild(0);
                 if (childNode instanceof TerminalNode) {
                     TerminalNode terminalNode = (TerminalNode) childNode;
+                    // todo replace by OscFactoryWrapper
                     tokenStreamRewriter.replace(terminalNode.getSymbol(), DdlUtils.getNewNameWithSuffix(
-                            terminalNode.getSymbol().getText(), DdlUtils.getUUIDWithoutUnderline()));
+                            terminalNode.getSymbol().getText(), DdlConstants.OSC_TABLE_NAME_PREFIX,
+                            DdlUtils.getUUIDWithoutUnderline()));
                 }
             }
         }

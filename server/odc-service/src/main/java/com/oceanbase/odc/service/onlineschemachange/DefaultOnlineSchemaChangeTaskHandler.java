@@ -402,11 +402,11 @@ public class DefaultOnlineSchemaChangeTaskHandler implements OnlineSchemaChangeT
 
     private void dropNewTableIfExits(OnlineSchemaChangeScheduleTaskParameters taskParam, ConnectionSession session) {
         List<String> list = DBSchemaAccessors.create(session)
-                .showTablesLike(taskParam.getDatabaseName(), taskParam.getNewTableNameUnWrapped());
+                .showTablesLike(taskParam.getDatabaseName(), taskParam.getNewTableNameUnwrapped());
         // Drop new table suffix with _osc_new_ if exists
         if (CollectionUtils.isNotEmpty(list)) {
             DBObjectOperators.create(session)
-                    .drop(DBObjectType.TABLE, taskParam.getDatabaseName(), taskParam.getNewTableNameUnWrapped());
+                    .drop(DBObjectType.TABLE, taskParam.getDatabaseName(), taskParam.getNewTableNameUnwrapped());
         }
     }
 

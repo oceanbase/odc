@@ -24,7 +24,6 @@ import javax.validation.constraints.NotNull;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.constant.DialectType;
-import com.oceanbase.odc.service.onlineschemachange.ddl.DdlUtils;
 
 import lombok.Data;
 
@@ -59,6 +58,11 @@ public class OnlineSchemaChangeScheduleTaskParameters {
     @NotBlank
     private String newTableName;
 
+
+    private String originTableNameUnwrapped;
+
+    private String newTableNameUnwrapped;
+
     /**
      * Raw renamed table name without schema name
      */
@@ -90,14 +94,6 @@ public class OnlineSchemaChangeScheduleTaskParameters {
 
     public String getOriginTableNameWithSchema() {
         return tableNameWithSchema(originTableName);
-    }
-
-    public String getOriginTableNameUnWrapped() {
-        return DdlUtils.getUnwrappedName(originTableName);
-    }
-
-    public String getNewTableNameUnWrapped() {
-        return DdlUtils.getUnwrappedName(newTableName);
     }
 
     public String getNewTableNameWithSchema() {

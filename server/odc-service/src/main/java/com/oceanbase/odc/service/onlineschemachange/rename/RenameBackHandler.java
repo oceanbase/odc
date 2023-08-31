@@ -54,7 +54,7 @@ public class RenameBackHandler {
                     taskParameters.getRenamedTableName());
 
             List<String> originTable = dbSchemaAccessor.showTablesLike(taskParameters.getDatabaseName(),
-                    taskParameters.getOriginTableNameUnWrapped());
+                    taskParameters.getOriginTableNameUnwrapped());
 
             if (!CollectionUtils.isEmpty(renamedTable) && CollectionUtils.isEmpty(originTable)) {
                 renameTableHandler.rename(taskParameters.getDatabaseName(),
