@@ -15,12 +15,15 @@
  */
 package com.oceanbase.odc.service.info;
 
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.info.BuildProperties;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 
@@ -46,6 +49,8 @@ public class WebInfoAdapter implements InfoAdapter {
     private PlaysiteOpenApiProperties alipayOpenApiProperties;
     @Autowired
     protected IntegrationService integrationService;
+    @Autowired
+    private BuildProperties buildProperties;
 
     @Override
     public boolean isPasswordLoginEnabled() {
@@ -95,6 +100,16 @@ public class WebInfoAdapter implements InfoAdapter {
     @Override
     public String getSupportGroupQRCodeUrl() {
         return supportGroupQRCodeUrl;
+    }
+
+    @Override
+    public String getBuildVersion() {
+        return buildProperties.getVersion();
+    }
+
+    @Override
+    public OffsetDateTime getBuildTime() {
+        return OffsetDateTime.ofInstant(buildProperties.getTime(), ZoneId.systemDefault());
     }
 
 }
