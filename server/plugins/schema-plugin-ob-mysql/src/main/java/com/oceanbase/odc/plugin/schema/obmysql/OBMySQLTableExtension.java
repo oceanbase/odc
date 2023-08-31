@@ -120,12 +120,6 @@ public class OBMySQLTableExtension implements TableExtensionPoint {
         return getTableEditor(connection).generateUpdateObjectDDL(oldTable, newTable);
     }
 
-    @Override
-    public String generateUpdateDDLWithoutRenaming(@NonNull Connection connection, @NonNull DBTable oldTable,
-            @NonNull DBTable newTable) {
-        return getTableEditor(connection).generateUpdateObjectDDLWithoutRenaming(oldTable, newTable);
-    }
-
     protected DBTableEditor getTableEditor(Connection connection) {
         return new MySQLTableEditor(new OBMySQLIndexEditor(), new MySQLColumnEditor(), new MySQLConstraintEditor(),
                 getDBTablePartitionEditor(connection));

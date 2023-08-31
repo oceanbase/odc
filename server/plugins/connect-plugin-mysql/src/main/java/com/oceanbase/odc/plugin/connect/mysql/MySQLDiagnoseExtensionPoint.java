@@ -29,6 +29,8 @@ import com.oceanbase.odc.common.util.tableformat.CellStyle.AbbreviationStyle;
 import com.oceanbase.odc.common.util.tableformat.CellStyle.HorizontalAlign;
 import com.oceanbase.odc.common.util.tableformat.CellStyle.NullStyle;
 import com.oceanbase.odc.common.util.tableformat.Table;
+import com.oceanbase.odc.core.shared.constant.ErrorCodes;
+import com.oceanbase.odc.core.shared.exception.OBException;
 import com.oceanbase.odc.core.shared.model.SqlExecDetail;
 import com.oceanbase.odc.core.shared.model.SqlExplain;
 import com.oceanbase.odc.plugin.connect.api.SqlDiagnoseExtensionPoint;
@@ -48,22 +50,26 @@ public class MySQLDiagnoseExtensionPoint implements SqlDiagnoseExtensionPoint {
     public SqlExplain getExplain(Statement statement, @NonNull String sql) throws SQLException {
         String explainSql = "explain " + sql;
         SqlExplain sqlExplain = new SqlExplain();
-        ResultSet resultSet = statement.executeQuery(explainSql);
-        ResultSetMetaData metaData = resultSet.getMetaData();
-        int colCount = metaData.getColumnCount();
-        Table table = new Table(colCount, BorderStyle.HORIZONTAL_ONLY);
-        CellStyle cs = new CellStyle(HorizontalAlign.CENTER, AbbreviationStyle.DOTS, NullStyle.NULL_TEXT);
-        for (int i = 1; i <= colCount; i++) {
-            table.setColumnWidth(i - 1, 10, metaData.getColumnDisplaySize(i));
-            table.addCell(metaData.getColumnName(i), cs);
-        }
-        while (resultSet.next()) {
+        try {
+            ResultSet resultSet = statement.executeQuery(explainSql);
+            ResultSetMetaData metaData = resultSet.getMetaData();
+            int colCount = metaData.getColumnCount();
+            Table table = new Table(colCount, BorderStyle.HORIZONTAL_ONLY);
+            CellStyle cs = new CellStyle(HorizontalAlign.CENTER, AbbreviationStyle.DOTS, NullStyle.NULL_TEXT);
             for (int i = 1; i <= colCount; i++) {
-                table.addCell(resultSet.getString(i), cs);
+                table.setColumnWidth(i - 1, 10, metaData.getColumnDisplaySize(i));
+                table.addCell(metaData.getColumnName(i), cs);
             }
+            while (resultSet.next()) {
+                for (int i = 1; i <= colCount; i++) {
+                    table.addCell(resultSet.getString(i), cs);
+                }
+            }
+            sqlExplain.setOriginalText(table.render().toString());
+            sqlExplain.setShowFormatInfo(false);
+        } catch (Exception e) {
+            throw OBException.executeFailed(ErrorCodes.ObGetPlanExplainFailed, e.getMessage());
         }
-        sqlExplain.setOriginalText(table.render().toString());
-        sqlExplain.setShowFormatInfo(false);
         return sqlExplain;
     }
 

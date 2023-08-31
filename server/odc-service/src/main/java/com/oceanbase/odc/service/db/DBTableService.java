@@ -33,6 +33,7 @@ import org.springframework.stereotype.Service;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
+import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
@@ -40,11 +41,14 @@ import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.core.shared.model.TableIdentity;
 import com.oceanbase.odc.plugin.schema.api.TableExtensionPoint;
 import com.oceanbase.odc.service.common.util.SqlUtils;
+import com.oceanbase.odc.service.db.browser.DBObjectEditorFactory;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
+import com.oceanbase.odc.service.db.browser.DBTableEditorFactory;
 import com.oceanbase.odc.service.db.model.GenerateTableDDLResp;
 import com.oceanbase.odc.service.db.model.GenerateUpdateTableDDLReq;
 import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
 import com.oceanbase.odc.service.session.ConnectConsoleService;
+import com.oceanbase.tools.dbbrowser.editor.DBTableEditor;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.model.DBTable.DBTableOptions;
@@ -170,10 +174,11 @@ public class DBTableService {
 
     public GenerateTableDDLResp generateUpdateDDLWithoutRenaming(@NotNull ConnectionSession connectionSession,
             @NotNull GenerateUpdateTableDDLReq req) {
-        String ddl = connectionSession.getSyncJdbcExecutor(
-                ConnectionSessionConstants.BACKEND_DS_KEY)
-                .execute((ConnectionCallback<String>) con -> getTableExtensionPoint(connectionSession)
-                        .generateUpdateDDLWithoutRenaming(con, req.getPrevious(), req.getCurrent()));
+        DBObjectEditorFactory<DBTableEditor> tableEditorFactory =
+                new DBTableEditorFactory(connectionSession.getConnectType(),
+                        ConnectionSessionUtil.getVersion(connectionSession));
+        DBTableEditor tableEditor = tableEditorFactory.create();
+        String ddl = tableEditor.generateUpdateObjectDDLWithoutRenaming(req.getPrevious(), req.getCurrent());
         return GenerateTableDDLResp.builder()
                 .sql(ddl)
                 .currentIdentity(TableIdentity.of(req.getCurrent().getSchemaName(), req.getCurrent().getName()))
