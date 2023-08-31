@@ -302,7 +302,7 @@ public class FlowTaskUtil {
             }
             DefaultTaskConfig taskConfig = mapper.readValue(mapper.writeValueAsString(map), DefaultTaskConfig.class);
             taskConfig.setTaskName(config.getTaskName());
-            taskConfig.setDialectType(session.getDialectType().isMysql() ? ObModeType.OB_MYSQL : ObModeType.OB_ORACLE);
+            taskConfig.setDialectType(ObModeType.valueOf(session.getDialectType().name()));
             List<DefaultTableConfig> tableConfigList = taskConfig.tasks();
             PreConditions.notEmpty(tableConfigList, "tasks"); // table config list can not be null or empty
 
