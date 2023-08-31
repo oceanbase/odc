@@ -23,7 +23,6 @@ import java.util.stream.Collectors;
 import org.apache.commons.collections4.CollectionUtils;
 import org.flowable.engine.delegate.DelegateExecution;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -81,8 +80,7 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
     @Autowired
     private OrganizationService organizationService;
 
-    @Value("${osc-check-task-cron-expression:0/10 * * * * ?}")
-    private String oscCheckTaskCronExpression;
+    private final static String checkTaskCronExpression = "0/10 * * * * ?";
 
     private volatile TaskStatus status;
     private long scheduleId;
@@ -244,7 +242,7 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
         scheduleEntity.setModifierId(scheduleEntity.getCreatorId());
         TriggerConfig triggerConfig = new TriggerConfig();
         triggerConfig.setTriggerStrategy(TriggerStrategy.CRON);
-        triggerConfig.setCronExpression(oscCheckTaskCronExpression);
+        triggerConfig.setCronExpression(checkTaskCronExpression);
         scheduleEntity.setTriggerConfigJson(JsonUtils.toJson(triggerConfig));
         scheduleEntity.setMisfireStrategy(MisfireStrategy.MISFIRE_INSTRUCTION_DO_NOTHING);
         scheduleEntity.setJobParametersJson(JsonUtils.toJson(parameter));

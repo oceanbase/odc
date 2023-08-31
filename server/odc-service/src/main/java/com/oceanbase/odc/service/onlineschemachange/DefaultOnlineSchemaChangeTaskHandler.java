@@ -177,7 +177,6 @@ public class DefaultOnlineSchemaChangeTaskHandler implements OnlineSchemaChangeT
 
         } catch (Exception e) {
             log.warn("Failed to start osc job with taskId={}.", scheduleTaskId, e);
-            dropNewTableIfExits(valveContext.getTaskParameter(), connectionSession);
             failedOscTask(valveContext);
         } finally {
             if (connectionSession != null) {
@@ -343,6 +342,8 @@ public class DefaultOnlineSchemaChangeTaskHandler implements OnlineSchemaChangeT
         completeHandler.onOscScheduleTaskFailed(valveContext.getTaskParameter().getOmsProjectId(),
                 valveContext.getTaskParameter().getUid(), valveContext.getSchedule().getId(),
                 valveContext.getScheduleTask().getId());
+
+        dropNewTableIfExits(valveContext.getTaskParameter(), valveContext.getConnectionSession());
     }
 
     private OscValveContext getOscValveContext(Long scheduleId, Long scheduleTaskId) {
@@ -399,7 +400,7 @@ public class DefaultOnlineSchemaChangeTaskHandler implements OnlineSchemaChangeT
         log.info("Successfully created new table, ddl: {}", taskParam.getNewTableCreateDdl());
     }
 
-    private  void dropNewTableIfExits(OnlineSchemaChangeScheduleTaskParameters taskParam, ConnectionSession session) {
+    private void dropNewTableIfExits(OnlineSchemaChangeScheduleTaskParameters taskParam, ConnectionSession session) {
         List<String> list = DBSchemaAccessors.create(session)
                 .showTablesLike(taskParam.getDatabaseName(), taskParam.getNewTableNameUnWrapped());
         // Drop new table suffix with _osc_new_ if exists

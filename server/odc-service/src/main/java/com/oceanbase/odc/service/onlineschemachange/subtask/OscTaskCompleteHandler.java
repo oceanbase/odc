@@ -74,4 +74,5 @@ public class OscTaskCompleteHandler {
         }
         log.info("Successfully update schedule task id {} set status {}", scheduleTaskId, status);
     }
+
 }
