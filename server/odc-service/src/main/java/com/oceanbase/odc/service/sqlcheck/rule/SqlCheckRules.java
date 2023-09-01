@@ -44,6 +44,7 @@ import com.oceanbase.odc.service.sqlcheck.factory.NoDefaultValueExistsFactory;
 import com.oceanbase.odc.service.sqlcheck.factory.NoIndexNameExistsFactory;
 import com.oceanbase.odc.service.sqlcheck.factory.NoNotNullAtInExpressionFactory;
 import com.oceanbase.odc.service.sqlcheck.factory.NoPrimaryKeyExistsFactory;
+import com.oceanbase.odc.service.sqlcheck.factory.NoPrimaryKeyNameExistsFactory;
 import com.oceanbase.odc.service.sqlcheck.factory.NoSpecificColumnExistsFactory;
 import com.oceanbase.odc.service.sqlcheck.factory.NoTableCommentExistsFactory;
 import com.oceanbase.odc.service.sqlcheck.factory.NoValidWhereClauseFactory;
@@ -135,6 +136,7 @@ public class SqlCheckRules {
         rules.add(new ProhibitedDatatypeExistsFactory());
         rules.add(new RestrictIndexDataTypesFactory(jdbc));
         rules.add(new RestrictDropObjectTypesFactory());
+        rules.add(new NoPrimaryKeyNameExistsFactory());
         return rules;
     }
 

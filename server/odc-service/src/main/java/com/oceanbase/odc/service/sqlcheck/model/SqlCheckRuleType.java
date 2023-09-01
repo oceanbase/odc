@@ -223,7 +223,11 @@ public enum SqlCheckRuleType implements Translatable {
     /**
      * 不允许执行删除的数据库对象类型
      */
-    RESTRICT_DROP_OBJECT_TYPES("restrict-drop-object-types");
+    RESTRICT_DROP_OBJECT_TYPES("restrict-drop-object-types"),
+    /**
+     * 没有主键约束的命名
+     */
+    NO_PRIMARY_KEY_NAME_EXISTS("no-primary-key-name-exists");
 
     private final String name;
     private static final String NAME_CODE = "name";

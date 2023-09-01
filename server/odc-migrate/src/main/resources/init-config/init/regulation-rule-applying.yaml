@@ -475,6 +475,14 @@
 - enabled: 1
   level: 0
   environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.sit.name}
+  ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.no-primary-key-name-exists.name}
+  appliedDialectTypes:
+      - 'OB_MYSQL'
+      - 'OB_ORACLE'
+  propertiesJson: '{}'
+- enabled: 1
+  level: 0
+  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.sit.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.zerofill-exists.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -827,6 +835,14 @@
 - enabled: 1
   level: 0
   environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.dev.name}
+  ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.no-primary-key-name-exists.name}
+  appliedDialectTypes:
+      - 'OB_MYSQL'
+      - 'OB_ORACLE'
+  propertiesJson: '{}'
+- enabled: 1
+  level: 0
+  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.dev.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.zerofill-exists.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1179,6 +1195,14 @@
 - enabled: 1
   level: 0
   environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.prod.name}
+  ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.no-primary-key-name-exists.name}
+  appliedDialectTypes:
+      - 'OB_MYSQL'
+      - 'OB_ORACLE'
+  propertiesJson: '{}'
+- enabled: 1
+  level: 0
+  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.prod.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.zerofill-exists.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1516,6 +1540,14 @@
   level: 0
   environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.default.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.no-index-name-exists.name}
+  appliedDialectTypes:
+      - 'OB_MYSQL'
+      - 'OB_ORACLE'
+  propertiesJson: '{}'
+- enabled: 1
+  level: 0
+  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.default.name}
+  ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.no-primary-key-name-exists.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
       - 'OB_ORACLE'
