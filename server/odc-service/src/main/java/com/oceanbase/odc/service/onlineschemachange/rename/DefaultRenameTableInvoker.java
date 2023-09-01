@@ -125,8 +125,8 @@ public class DefaultRenameTableInvoker implements RenameTableInvoker {
             OnlineSchemaChangeParameters parameters) {
         // set lock table max timeout is 120s
         Integer lockTableTimeOutSeconds =
-                Math.min(parameters.getLockTableTimeOutSeconds() == null ? 15 : parameters.getLockTableTimeOutSeconds(),
-                        120);
+                Math.min(parameters.getLockTableTimeOutSeconds() == null ? 10 : parameters.getLockTableTimeOutSeconds(),
+                        60);
 
         return RenameTableParameters.builder()
                 .schemaName(taskParameters.getDatabaseName())

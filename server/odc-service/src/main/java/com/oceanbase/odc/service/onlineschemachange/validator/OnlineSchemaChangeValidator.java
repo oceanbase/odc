@@ -148,7 +148,7 @@ public class OnlineSchemaChangeValidator {
         OscFactoryWrapper oscFactoryWrapper = OscFactoryWrapperGenerator.generate(session.getDialectType());
         TableNameDescriptorFactory tableNameDescriptorFactory = oscFactoryWrapper.getTableNameDescriptorFactory();
         TableNameDescriptor tableNameDescriptor = tableNameDescriptorFactory.getTableNameDescriptor(tableName);
-        List<String> tables = accessor.showTablesLike(database, tableNameDescriptor.getRenamedTableName());
+        List<String> tables = accessor.showTablesLike(database, tableNameDescriptor.getRenamedTableNameUnWrapped());
         PreConditions.validNoDuplicated(ResourceType.OB_TABLE, "tableName",
                 tableNameDescriptor.getRenamedTableName(), () -> CollectionUtils.isNotEmpty(tables));
     }

@@ -32,5 +32,6 @@ public interface TableNameDescriptor {
     String getOriginTableNameUnwrapped();
 
     String getNewTableNameUnWrapped();
+    String getRenamedTableNameUnWrapped();
 
 }

@@ -25,6 +25,6 @@ public class OBOracleTableNameDescriptorFactory extends BaseTableNameDescriptorF
 
     @Override
     protected String tablePrefix() {
-        return "";
+        return DdlConstants.OSC_TABLE_NAME_PREFIX_OB_ORACLE;
     }
 }

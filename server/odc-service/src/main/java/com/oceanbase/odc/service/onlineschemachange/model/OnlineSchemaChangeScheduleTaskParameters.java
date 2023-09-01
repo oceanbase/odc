@@ -63,11 +63,13 @@ public class OnlineSchemaChangeScheduleTaskParameters {
 
     private String newTableNameUnwrapped;
 
+
     /**
      * Raw renamed table name without schema name
      */
     @NotBlank
     private String renamedTableName;
+    private String renamedTableNameUnwrapped;
 
     @NotBlank
     private String originTableCreateDdl;
