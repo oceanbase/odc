@@ -75,7 +75,7 @@ public class DefaultRenameTableInvoker implements RenameTableInvoker {
             renameSucceed(renameTableParameters);
         } catch (Exception ex) {
             renameFailed(renameTableParameters);
-            throw new OscException(ErrorCodes.Unexpected,"rename table occur error",ex);
+            throw new OscException(ErrorCodes.Unexpected, "rename table occur error", ex);
         } finally {
             try {
                 postRenamed(renameTableParameters);

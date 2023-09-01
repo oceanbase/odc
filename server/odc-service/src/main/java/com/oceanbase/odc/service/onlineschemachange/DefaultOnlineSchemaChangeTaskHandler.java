@@ -342,8 +342,15 @@ public class DefaultOnlineSchemaChangeTaskHandler implements OnlineSchemaChangeT
         completeHandler.onOscScheduleTaskFailed(valveContext.getTaskParameter().getOmsProjectId(),
                 valveContext.getTaskParameter().getUid(), valveContext.getSchedule().getId(),
                 valveContext.getScheduleTask().getId());
-
-        dropNewTableIfExits(valveContext.getTaskParameter(), valveContext.getConnectionSession());
+        ConnectionSession connectionSession =
+                new DefaultConnectSessionFactory(valveContext.getConnectionConfig()).generateSession();
+        try {
+            dropNewTableIfExits(valveContext.getTaskParameter(), connectionSession);
+        } finally {
+            if (connectionSession != null) {
+                connectionSession.expire();
+            }
+        }
     }
 
     private OscValveContext getOscValveContext(Long scheduleId, Long scheduleTaskId) {
