@@ -329,7 +329,7 @@ public class OBOracleGetDBTableByParser implements GetDBTableByParser {
     }
 
     private String readFile(String strFile) throws IOException {
-        try (InputStream input = OBOracleGetDBTableByParser.class.getClassLoader().getResourceAsStream(strFile)) {
+        try (InputStream input = this.getClass().getClassLoader().getResourceAsStream(strFile)) {
             int available = input.available();
             byte[] bytes = new byte[available];
             input.read(bytes);
