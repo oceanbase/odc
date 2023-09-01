@@ -25,6 +25,8 @@ import java.util.function.Consumer;
 
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
+import com.oceanbase.odc.core.shared.constant.ErrorCodes;
+import com.oceanbase.odc.service.onlineschemachange.exception.OscException;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeScheduleTaskParameters;
 import com.oceanbase.odc.service.session.DBSessionManageFacade;
@@ -73,6 +75,7 @@ public class DefaultRenameTableInvoker implements RenameTableInvoker {
             renameSucceed(renameTableParameters);
         } catch (Exception ex) {
             renameFailed(renameTableParameters);
+            throw new OscException(ErrorCodes.Unexpected,"rename table occur error",ex);
         } finally {
             try {
                 postRenamed(renameTableParameters);
