@@ -1080,3 +1080,19 @@
             - TYPE BODY
             - TYPE
             - DATABASE
+- id: 54
+  name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.no-primary-key-name-exists.name}
+  description: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.no-primary-key-name-exists.description}
+  type: SQL_CHECK
+  builtIn: 1
+  labels:
+      - label: SUB_TYPE
+        value: DDL
+      - label: SUB_TYPE
+        value: TABLE
+      - label: SUB_TYPE
+        value: ALTER
+      - label: SUPPORTED_DIALECT_TYPE
+        value: OB_MYSQL
+      - label: SUPPORTED_DIALECT_TYPE
+        value: OB_ORACLE
