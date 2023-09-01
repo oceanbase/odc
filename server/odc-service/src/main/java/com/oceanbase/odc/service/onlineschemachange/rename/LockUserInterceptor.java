@@ -132,7 +132,7 @@ public class LockUserInterceptor implements RenameTableInterceptor {
             users.add("PUBLIC");
             users.add("LBACSYS");
             users.add("ORAAUDITOR");
-            users.add(config.getUsername().toLowerCase());
+            users.add(config.getUsername().toUpperCase());
         }
         return users;
     }
