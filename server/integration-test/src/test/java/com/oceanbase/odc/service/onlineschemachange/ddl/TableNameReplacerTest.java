@@ -27,48 +27,57 @@ public class TableNameReplacerTest {
 
     @Test
     public void test_RewriteCreateStmt_Mysql() {
-        String newSql = new OBMysqlTableNameReplacer().replaceCreateStmt(CREATE_STMT, DdlUtils.getNewTableName("t1"));
+        String newSql = new OBMysqlTableNameReplacer().replaceCreateStmt(CREATE_STMT, getNewMySqlTableName("t1"));
         Assert.assertEquals("create table _t1_osc_new_ (id int);", newSql);
     }
 
     @Test
     public void test_RewriteCreateStmtWithAccent_Mysql() {
         String newSql =
-                new OBMysqlTableNameReplacer().replaceCreateStmt(CREATE_ACCENT_STMT, DdlUtils.getNewTableName("`t1`"));
+                new OBMysqlTableNameReplacer().replaceCreateStmt(CREATE_ACCENT_STMT, getNewMySqlTableName("`t1`"));
         Assert.assertEquals("create table `_t1_osc_new_` (id int);", newSql);
     }
 
     @Test
     public void test_RewriteCreateStmt_Oracle() {
-        String newSql = new OBOracleTableNameReplacer().replaceCreateStmt(CREATE_STMT, DdlUtils.getNewTableName("t1"));
-        Assert.assertEquals("create table _t1_osc_new_ (id int);", newSql);
+        String newSql = new OBOracleTableNameReplacer().replaceCreateStmt(CREATE_STMT, getNewOracleTableName("t1"));
+        Assert.assertEquals("create table t1_osc_new_ (id int);", newSql);
     }
 
     @Test
     public void test_RewriteCreateStmtWithQuote_Oracle() {
         String newSql = new OBOracleTableNameReplacer().replaceCreateStmt(CREATE_QUOTE_STMT,
-                DdlUtils.getNewTableName("\"t1\""));
-        Assert.assertEquals("create table \"_t1_osc_new_\" (id int);", newSql);
+                getNewOracleTableName("\"t1\""));
+        Assert.assertEquals("create table \"t1_osc_new_\" (id int);", newSql);
     }
 
     @Test
     public void test_RewriteAlterStmt_Mysql() {
-        String newSql = new OBMysqlTableNameReplacer().replaceCreateStmt(ALTER_STMT, DdlUtils.getNewTableName("t1"));
+        String newSql = new OBMysqlTableNameReplacer().replaceCreateStmt(ALTER_STMT, getNewMySqlTableName("t1"));
         Assert.assertEquals("alter table _t1_osc_new_ add constraint constraint_t1_id unique (id);", newSql);
     }
 
     @Test
     public void test_RewriteAlterStmt_Oracle() {
-        String newSql = new OBOracleTableNameReplacer().replaceAlterStmt(ALTER_STMT, DdlUtils.getNewTableName("t1"));
-        Assert.assertEquals("alter table _t1_osc_new_ add constraint constraint_t1_id unique (id);", newSql);
+        String newSql = new OBOracleTableNameReplacer().replaceAlterStmt(ALTER_STMT, getNewOracleTableName("t1"));
+        Assert.assertEquals("alter table t1_osc_new_ add constraint constraint_t1_id unique (id);", newSql);
     }
 
     @Test
     public void test_RewriteAlterStmtQuote_Oracle() {
         String newSql =
-                new OBOracleTableNameReplacer().replaceAlterStmt(ALTER_QUOTE_STMT, DdlUtils.getNewTableName("\"t1\""));
-        Assert.assertEquals("alter table \"_t1_osc_new_\" add constraint constraint_t1_id unique (id);", newSql);
+                new OBOracleTableNameReplacer().replaceAlterStmt(ALTER_QUOTE_STMT, getNewOracleTableName("\"t1\""));
+        Assert.assertEquals("alter table \"t1_osc_new_\" add constraint constraint_t1_id unique (id);", newSql);
 
     }
 
+    private String getNewOracleTableName(String tableName) {
+        return DdlUtils.getNewNameWithSuffix(tableName,
+                DdlConstants.OSC_TABLE_NAME_PREFIX_OB_ORACLE, DdlConstants.NEW_TABLE_NAME_SUFFIX);
+    }
+
+    private String getNewMySqlTableName(String tableName) {
+        return DdlUtils.getNewNameWithSuffix(tableName,
+                DdlConstants.OSC_TABLE_NAME_PREFIX, DdlConstants.NEW_TABLE_NAME_SUFFIX);
+    }
 }

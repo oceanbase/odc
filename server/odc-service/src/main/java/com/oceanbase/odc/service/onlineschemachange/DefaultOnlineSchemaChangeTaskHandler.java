@@ -342,8 +342,15 @@ public class DefaultOnlineSchemaChangeTaskHandler implements OnlineSchemaChangeT
         completeHandler.onOscScheduleTaskFailed(valveContext.getTaskParameter().getOmsProjectId(),
                 valveContext.getTaskParameter().getUid(), valveContext.getSchedule().getId(),
                 valveContext.getScheduleTask().getId());
-
-        dropNewTableIfExits(valveContext.getTaskParameter(), valveContext.getConnectionSession());
+        ConnectionSession connectionSession =
+                new DefaultConnectSessionFactory(valveContext.getConnectionConfig()).generateSession();
+        try {
+            dropNewTableIfExits(valveContext.getTaskParameter(), connectionSession);
+        } finally {
+            if (connectionSession != null) {
+                connectionSession.expire();
+            }
+        }
     }
 
     private OscValveContext getOscValveContext(Long scheduleId, Long scheduleTaskId) {
@@ -402,11 +409,11 @@ public class DefaultOnlineSchemaChangeTaskHandler implements OnlineSchemaChangeT
 
     private void dropNewTableIfExits(OnlineSchemaChangeScheduleTaskParameters taskParam, ConnectionSession session) {
         List<String> list = DBSchemaAccessors.create(session)
-                .showTablesLike(taskParam.getDatabaseName(), taskParam.getNewTableNameUnWrapped());
+                .showTablesLike(taskParam.getDatabaseName(), taskParam.getNewTableNameUnwrapped());
         // Drop new table suffix with _osc_new_ if exists
         if (CollectionUtils.isNotEmpty(list)) {
             DBObjectOperators.create(session)
-                    .drop(DBObjectType.TABLE, taskParam.getDatabaseName(), taskParam.getNewTableNameUnWrapped());
+                    .drop(DBObjectType.TABLE, taskParam.getDatabaseName(), taskParam.getNewTableNameUnwrapped());
         }
     }
 

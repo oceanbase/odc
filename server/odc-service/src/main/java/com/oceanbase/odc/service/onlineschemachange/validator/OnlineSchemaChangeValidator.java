@@ -39,6 +39,10 @@ import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
 import com.oceanbase.odc.service.onlineschemachange.ddl.DdlUtils;
+import com.oceanbase.odc.service.onlineschemachange.ddl.OscFactoryWrapper;
+import com.oceanbase.odc.service.onlineschemachange.ddl.OscFactoryWrapperGenerator;
+import com.oceanbase.odc.service.onlineschemachange.ddl.TableNameDescriptor;
+import com.oceanbase.odc.service.onlineschemachange.ddl.TableNameDescriptorFactory;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeSqlType;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
@@ -141,9 +145,12 @@ public class OnlineSchemaChangeValidator {
 
     private void validateOldTableNotExists(String database, String tableName, ConnectionSession session) {
         DBSchemaAccessor accessor = DBSchemaAccessors.create(session);
-        List<String> tables = accessor.showTablesLike(database, DdlUtils.getRenamedTableName(tableName));
+        OscFactoryWrapper oscFactoryWrapper = OscFactoryWrapperGenerator.generate(session.getDialectType());
+        TableNameDescriptorFactory tableNameDescriptorFactory = oscFactoryWrapper.getTableNameDescriptorFactory();
+        TableNameDescriptor tableNameDescriptor = tableNameDescriptorFactory.getTableNameDescriptor(tableName);
+        List<String> tables = accessor.showTablesLike(database, tableNameDescriptor.getRenamedTableNameUnWrapped());
         PreConditions.validNoDuplicated(ResourceType.OB_TABLE, "tableName",
-                DdlUtils.getRenamedTableName(tableName), () -> CollectionUtils.isNotEmpty(tables));
+                tableNameDescriptor.getRenamedTableName(), () -> CollectionUtils.isNotEmpty(tables));
     }
 
     private void validateTableConstraints(String database, String tableName, ConnectionSession session) {

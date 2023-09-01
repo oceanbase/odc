@@ -13,31 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.oceanbase.odc.service.onlineschemachange.ddl;
 
 /**
  * @author yaobin
- * @date 2023-06-10
+ * @date 2023-08-31
  * @since 4.2.0
  */
-public class DdlConstants {
+public interface TableNameDescriptor {
 
-    public static final String OSC_TABLE_NAME_PREFIX = "_";
-    public static final String OSC_TABLE_NAME_PREFIX_OB_ORACLE = "";
+    String getOriginTableName();
 
-    public static final String NEW_TABLE_NAME_SUFFIX = "_osc_new_";
+    String getNewTableName();
 
-    public static final String RENAMED_TABLE_NAME_SUFFIX = "_osc_old_";
+    String getRenamedTableName();
 
-    public static final String TABLE_NAME_WRAPPER = "`";
+    String getOriginTableNameUnwrapped();
 
-    public static final String TABLE_NAME_WRAPPED_QUOTE = "\"";
+    String getNewTableNameUnWrapped();
 
-    public static final String PRIMARY_KEY = "PRIMARY KEY";
-
-    public static final String UNIQUE = "UNIQUE";
-
-    public static final String OMS_GROUP_PREFIX = "ob_oms";
-
+    String getRenamedTableNameUnWrapped();
 
 }

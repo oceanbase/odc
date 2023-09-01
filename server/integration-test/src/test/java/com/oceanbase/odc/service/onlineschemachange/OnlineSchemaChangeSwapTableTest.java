@@ -146,14 +146,14 @@ public class OnlineSchemaChangeSwapTableTest extends OscTestEnv {
                 taskParameters.getRenamedTableName());
 
         List<String> originTable = dbSchemaAccessor.showTablesLike(taskParameters.getDatabaseName(),
-                taskParameters.getOriginTableNameUnWrapped());
+                taskParameters.getOriginTableNameUnwrapped());
 
         Assert.assertFalse(CollectionUtils.isEmpty(renamedTable));
         Assert.assertFalse(CollectionUtils.isEmpty(originTable));
 
         // if swap table successful
         List<DBTableColumn> tableColumnFromNew = dbSchemaAccessor.listTableColumns(taskParameters.getDatabaseName(),
-                taskParameters.getOriginTableNameUnWrapped());
+                taskParameters.getOriginTableNameUnwrapped());
 
         Optional<DBTableColumn> name1Col = tableColumnFromNew.stream()
                 .filter(a -> a.getName().equalsIgnoreCase("name1"))
@@ -179,7 +179,7 @@ public class OnlineSchemaChangeSwapTableTest extends OscTestEnv {
                 taskParameters.getRenamedTableName());
 
         List<String> originTable = dbSchemaAccessor.showTablesLike(taskParameters.getDatabaseName(),
-                taskParameters.getOriginTableNameUnWrapped());
+                taskParameters.getOriginTableNameUnwrapped());
 
         Assert.assertTrue(CollectionUtils.isEmpty(renamedTable));
         Assert.assertFalse(CollectionUtils.isEmpty(originTable));
@@ -191,17 +191,17 @@ public class OnlineSchemaChangeSwapTableTest extends OscTestEnv {
                 taskParameters.getRenamedTableName());
 
         List<String> originTable = dbSchemaAccessor.showTablesLike(taskParameters.getDatabaseName(),
-                taskParameters.getOriginTableNameUnWrapped());
+                taskParameters.getOriginTableNameUnwrapped());
 
         List<String> newTable = dbSchemaAccessor.showTablesLike(taskParameters.getDatabaseName(),
-                taskParameters.getNewTableNameUnWrapped());
+                taskParameters.getNewTableNameUnwrapped());
 
         Assert.assertTrue(CollectionUtils.isEmpty(renamedTable));
         Assert.assertFalse(CollectionUtils.isEmpty(originTable));
         Assert.assertTrue(CollectionUtils.isEmpty(newTable));
 
         List<DBTableColumn> tableColumnFromNew = dbSchemaAccessor.listTableColumns(taskParameters.getDatabaseName(),
-                taskParameters.getOriginTableNameUnWrapped());
+                taskParameters.getOriginTableNameUnwrapped());
 
         Optional<DBTableColumn> name1Col = tableColumnFromNew.stream()
                 .filter(a -> a.getName().equalsIgnoreCase("name1"))

@@ -23,6 +23,10 @@ import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.onlineschemachange.ddl.DdlUtils;
+import com.oceanbase.odc.service.onlineschemachange.ddl.OscFactoryWrapper;
+import com.oceanbase.odc.service.onlineschemachange.ddl.OscFactoryWrapperGenerator;
+import com.oceanbase.odc.service.onlineschemachange.ddl.TableNameDescriptor;
+import com.oceanbase.odc.service.onlineschemachange.ddl.TableNameDescriptorFactory;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeScheduleTaskParameters;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeSqlType;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
@@ -38,6 +42,7 @@ public class SubTaskParameterFactory implements AutoCloseable {
     private final ConnectionConfig connectionConfig;
     protected final ConnectionSession session;
     private final String schema;
+    private final TableNameDescriptorFactory tableNameDescriptorFactory;
 
     public SubTaskParameterFactory(ConnectionConfig connectionConfig, String schema) {
         this.connectionId = connectionConfig.id();
@@ -45,6 +50,9 @@ public class SubTaskParameterFactory implements AutoCloseable {
         this.session = new DefaultConnectSessionFactory(connectionConfig).generateSession();
         ConnectionSessionUtil.setCurrentSchema(session, schema);
         this.schema = schema;
+        OscFactoryWrapper oscFactoryWrapper = OscFactoryWrapperGenerator.generate(connectionConfig.getDialectType());
+        this.tableNameDescriptorFactory = oscFactoryWrapper.getTableNameDescriptorFactory();
+
     }
 
     public OnlineSchemaChangeScheduleTaskParameters generate(String sql, OnlineSchemaChangeSqlType sqlType)
@@ -66,32 +74,36 @@ public class SubTaskParameterFactory implements AutoCloseable {
     private OnlineSchemaChangeScheduleTaskParameters createNewParameter(String sql, OnlineSchemaChangeSqlType sqlType)
             throws SQLException {
         OnlineSchemaChangeScheduleTaskParameters taskParameter = new OnlineSchemaChangeScheduleTaskParameters();
-
         if (sqlType == OnlineSchemaChangeSqlType.ALTER) {
             AlterTable statement = (AlterTable) parse(sql);
             String tableName = statement.getTableName();
-            taskParameter.setOriginTableName(tableName);
-            taskParameter.setNewTableName(DdlUtils.getNewTableName(taskParameter.getOriginTableName()));
-            taskParameter.setRenamedTableName(DdlUtils.getRenamedTableName(taskParameter.getOriginTableName()));
-            String originTableCreateDdl = DdlUtils.queryOriginTableCreateDdl(session, tableName);
-            taskParameter.setOriginTableCreateDdl(originTableCreateDdl);
-            taskParameter.setNewTableCreateDdl(DdlUtils.replaceTableName(originTableCreateDdl,
-                    DdlUtils.getNewTableName(tableName), session.getDialectType(), sqlType));
-
             taskParameter.setNewTableCreateDdlForDisplay("");
+            populateTaskParameter(sqlType, taskParameter, tableName);
         } else {
             CreateTable statement = (CreateTable) parse(sql);
             String tableName = statement.getTableName();
-            taskParameter.setOriginTableName(tableName);
-            taskParameter.setNewTableName(DdlUtils.getNewTableName(taskParameter.getOriginTableName()));
-            taskParameter.setRenamedTableName(DdlUtils.getRenamedTableName(taskParameter.getOriginTableName()));
-            taskParameter.setOriginTableCreateDdl(DdlUtils.queryOriginTableCreateDdl(session, tableName));
-            taskParameter.setNewTableCreateDdl(DdlUtils.replaceTableName(sql,
-                    DdlUtils.getNewTableName(tableName), session.getDialectType(), sqlType));
-
             taskParameter.setNewTableCreateDdlForDisplay(sql);
+            populateTaskParameter(sqlType, taskParameter, tableName);
         }
         return taskParameter;
+    }
+
+    private void populateTaskParameter(OnlineSchemaChangeSqlType sqlType,
+            OnlineSchemaChangeScheduleTaskParameters taskParameter,
+            String tableName) throws SQLException {
+        taskParameter.setOriginTableName(tableName);
+        TableNameDescriptor tableNameDescriptor = tableNameDescriptorFactory.getTableNameDescriptor(tableName);
+
+        taskParameter.setNewTableName(tableNameDescriptor.getNewTableName());
+        taskParameter.setRenamedTableName(tableNameDescriptor.getRenamedTableName());
+        taskParameter.setNewTableNameUnwrapped(tableNameDescriptor.getNewTableNameUnWrapped());
+        taskParameter.setOriginTableNameUnwrapped(tableNameDescriptor.getOriginTableNameUnwrapped());
+        taskParameter.setRenamedTableNameUnwrapped(tableNameDescriptor.getRenamedTableNameUnWrapped());
+
+        String originTableCreateDdl = DdlUtils.queryOriginTableCreateDdl(session, tableName);
+        taskParameter.setOriginTableCreateDdl(originTableCreateDdl);
+        taskParameter.setNewTableCreateDdl(DdlUtils.replaceTableName(originTableCreateDdl,
+                tableNameDescriptor.getNewTableName(), session.getDialectType(), sqlType));
     }
 
     private Statement parse(String sql) {

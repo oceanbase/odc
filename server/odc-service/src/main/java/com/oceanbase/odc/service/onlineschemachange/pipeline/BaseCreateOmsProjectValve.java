@@ -170,8 +170,8 @@ public abstract class BaseCreateOmsProjectValve extends BaseValve {
 
         List<TableTransferObject> tables = new ArrayList<>();
         TableTransferObject tableTransferObject = new TableTransferObject();
-        tableTransferObject.setName(oscScheduleTaskParameters.getOriginTableNameUnWrapped());
-        tableTransferObject.setMappedName(oscScheduleTaskParameters.getNewTableNameUnWrapped());
+        tableTransferObject.setName(oscScheduleTaskParameters.getOriginTableNameUnwrapped());
+        tableTransferObject.setMappedName(oscScheduleTaskParameters.getNewTableNameUnwrapped());
         tables.add(tableTransferObject);
         databaseTransferObject.setTables(tables);
 

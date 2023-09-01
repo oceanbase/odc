@@ -46,23 +46,15 @@ public class DdlUtils {
 
     private static final List<Pattern> TABLE_PATTERNS = Lists.newArrayList(NAME_ACCENT_PATTERN, NAME_QUOTE_PATTERN);
 
-    public static String getNewTableName(String rawName) {
-        return getNewNameWithSuffix(rawName, DdlConstants.NEW_TABLE_NAME_SUFFIX);
-    }
-
-    public static String getRenamedTableName(String rawName) {
-        return getNewNameWithSuffix(rawName, DdlConstants.RENAMED_TABLE_NAME_SUFFIX);
-    }
-
-    public static String getNewNameWithSuffix(String rawName, String suffix) {
+    public static String getNewNameWithSuffix(String rawName, String prefix, String suffix) {
         Optional<Matcher> matcherOptional = findMatcher(rawName);
         String newTableName;
         if (matcherOptional.isPresent()) {
             Matcher matcher = matcherOptional.get();
             newTableName = rawName.replaceFirst(matcher.group(1),
-                    DdlConstants.OSC_TABLE_NAME_PREFIX + matcher.group(1) + suffix);
+                    prefix + matcher.group(1) + suffix);
         } else {
-            newTableName = DdlConstants.OSC_TABLE_NAME_PREFIX + rawName + suffix;
+            newTableName = prefix + rawName + suffix;
         }
         return newTableName;
     }
