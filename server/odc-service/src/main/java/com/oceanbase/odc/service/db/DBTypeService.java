@@ -19,19 +19,19 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.stereotype.Service;
 
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
-import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.core.session.ConnectionSessionConstants;
+import com.oceanbase.odc.plugin.schema.api.TypeExtensionPoint;
 import com.oceanbase.odc.service.common.model.OdcSqlExecuteResult;
 import com.oceanbase.odc.service.common.model.ResourceSql;
-import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
+import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
 import com.oceanbase.odc.service.session.ConnectConsoleService;
+import com.oceanbase.tools.dbbrowser.model.DBPLObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBType;
-import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
-import com.oceanbase.tools.dbbrowser.template.DBObjectTemplate;
-import com.oceanbase.tools.dbbrowser.template.oracle.OracleTypeTemplate;
 
 import lombok.NonNull;
 
@@ -46,37 +46,41 @@ public class DBTypeService {
     private ConnectConsoleService consoleService;
 
     public List<DBType> list(ConnectionSession connectionSession, String dbName) {
-        DBSchemaAccessor accessor = DBSchemaAccessors.create(connectionSession);
-        return accessor.listTypes(dbName).stream().map(item -> {
-            DBType type = new DBType();
-            type.setTypeName(item.getName());
-            type.setStatus(item.getStatus());
-            type.setErrorMessage(item.getErrorMessage());
-            return type;
-        }).collect(Collectors.toList());
+        return connectionSession.getSyncJdbcExecutor(
+                ConnectionSessionConstants.BACKEND_DS_KEY)
+                .execute((ConnectionCallback<List<DBPLObjectIdentity>>) con -> getTypeExtensionPoint(connectionSession)
+                        .list(con, dbName))
+                .stream()
+                .map(item -> {
+                    DBType type = new DBType();
+                    type.setTypeName(item.getName());
+                    type.setStatus(item.getStatus());
+                    type.setErrorMessage(item.getErrorMessage());
+                    return type;
+                }).collect(Collectors.toList());
     }
 
     public DBType detail(ConnectionSession connectionSession, String schemaName, String typeName) {
-        DBSchemaAccessor accessor = DBSchemaAccessors.create(connectionSession);
-        return accessor.getType(schemaName, typeName);
+        return connectionSession.getSyncJdbcExecutor(
+                ConnectionSessionConstants.BACKEND_DS_KEY)
+                .execute((ConnectionCallback<DBType>) con -> getTypeExtensionPoint(connectionSession).getDetail(con,
+                        schemaName, typeName));
     }
 
     public ResourceSql generateCreateSql(@NonNull ConnectionSession session,
             @NonNull DBType unit) {
-        dialectCheck(session);
-        DBObjectTemplate<DBType> template = new OracleTypeTemplate();
-        String ddl = template.generateCreateObjectTemplate(unit);
-        return ResourceSql.ofSql(ddl);
+        return ResourceSql.ofSql(session.getSyncJdbcExecutor(
+                ConnectionSessionConstants.BACKEND_DS_KEY)
+                .execute((ConnectionCallback<String>) con -> getTypeExtensionPoint(session)
+                        .generateCreateTemplate(unit)));
     }
 
     public OdcSqlExecuteResult compile(@NonNull ConnectionSession session, @NonNull String typeName) {
         throw new UnsupportedOperationException("Not supported yet");
     }
 
-    private void dialectCheck(@NonNull ConnectionSession session) {
-        if (session.getDialectType() != DialectType.OB_ORACLE) {
-            throw new UnsupportedOperationException("Type is not supported for " + session.getDialectType());
-        }
+    private TypeExtensionPoint getTypeExtensionPoint(@NonNull ConnectionSession session) {
+        return SchemaPluginUtil.getTypeExtension(session.getDialectType());
     }
 
 }

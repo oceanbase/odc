@@ -22,18 +22,26 @@ import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
+import javax.validation.constraints.NotNull;
+
 import org.springframework.util.CollectionUtils;
 
 import com.oceanbase.odc.common.util.ObjectUtil;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.session.ConnectionSession;
+import com.oceanbase.odc.core.session.ConnectionSessionUtil;
+import com.oceanbase.odc.core.shared.model.TableIdentity;
 import com.oceanbase.odc.metadb.shadowtable.TableComparingEntity;
 import com.oceanbase.odc.metadb.shadowtable.TableComparingRepository;
 import com.oceanbase.odc.service.db.DBTableService;
+import com.oceanbase.odc.service.db.browser.DBObjectEditorFactory;
+import com.oceanbase.odc.service.db.browser.DBTableEditorFactory;
+import com.oceanbase.odc.service.db.model.GenerateTableDDLResp;
 import com.oceanbase.odc.service.db.model.GenerateUpdateTableDDLReq;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.odc.service.shadowtable.model.ShadowTableSyncReq;
 import com.oceanbase.odc.service.shadowtable.model.TableComparingResult;
+import com.oceanbase.tools.dbbrowser.editor.DBTableEditor;
 import com.oceanbase.tools.dbbrowser.model.DBConstraintType;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
 
@@ -140,10 +148,10 @@ public class ShadowTableComparingTask implements Callable<Void> {
                         destTable = tableName2Tables.get(entity.getDestTableName());
                         originalTable.setName(destTable.getName());
                         String comparingDDL =
-                                dbTableService.generateUpdateDDLWithoutRenaming(connectionSession,
+                                generateUpdateDDLWithoutRenaming(connectionSession,
                                         GenerateUpdateTableDDLReq.builder().previous(destTable).current(originalTable)
                                                 .build())
-                                        .getSql();
+                                                        .getSql();
 
                         entity.setDestTableDDL(destTable.getDDL());
                         entity.setComparingDDL(comparingDDL);
@@ -184,5 +192,19 @@ public class ShadowTableComparingTask implements Callable<Void> {
         table.getConstraints().stream()
                 .filter(constraint -> constraint.getType() == DBConstraintType.FOREIGN_KEY)
                 .forEach(constraint -> constraint.setName(StringUtils.EMPTY));
+    }
+
+    public GenerateTableDDLResp generateUpdateDDLWithoutRenaming(@NotNull ConnectionSession connectionSession,
+            @NotNull GenerateUpdateTableDDLReq req) {
+        DBObjectEditorFactory<DBTableEditor> tableEditorFactory =
+                new DBTableEditorFactory(connectionSession.getConnectType(),
+                        ConnectionSessionUtil.getVersion(connectionSession));
+        DBTableEditor tableEditor = tableEditorFactory.create();
+        String ddl = tableEditor.generateUpdateObjectDDLWithoutRenaming(req.getPrevious(), req.getCurrent());
+        return GenerateTableDDLResp.builder()
+                .sql(ddl)
+                .currentIdentity(TableIdentity.of(req.getCurrent().getSchemaName(), req.getCurrent().getName()))
+                .previousIdentity(TableIdentity.of(req.getPrevious().getSchemaName(), req.getPrevious().getName()))
+                .build();
     }
 }

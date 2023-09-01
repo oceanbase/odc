@@ -104,10 +104,10 @@ public class OBMySQLConnectionExtension implements ConnectionExtensionPoint {
     }
 
     protected String getJdbcUrlParameters(Map<String, String> jdbcUrlParams) {
-        jdbcUrlParams = appendDefaultJdbcUrlParameters(jdbcUrlParams);
         if (CollectionUtils.isEmpty(jdbcUrlParams)) {
             return null;
         }
+        jdbcUrlParams = appendDefaultJdbcUrlParameters(jdbcUrlParams);
         return jdbcUrlParams.entrySet().stream().map(entry -> entry.getKey() + "=" + entry.getValue())
                 .collect(Collectors.joining("&"));
     }

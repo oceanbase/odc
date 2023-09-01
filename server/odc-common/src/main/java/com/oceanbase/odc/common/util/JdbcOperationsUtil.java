@@ -13,7 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.plugin.connect.obmysql.util;
+
+package com.oceanbase.odc.common.util;
 
 import java.sql.Connection;
 
@@ -21,18 +22,14 @@ import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.SingleConnectionDataSource;
 
-import lombok.extern.slf4j.Slf4j;
-
 /**
  * @author yaobin
  * @date 2023-04-14
  * @since 4.2.0
  */
-@Slf4j
 public class JdbcOperationsUtil {
 
     public static JdbcOperations getJdbcOperations(Connection connection) {
         return new JdbcTemplate(new SingleConnectionDataSource(connection, false));
     }
-
 }

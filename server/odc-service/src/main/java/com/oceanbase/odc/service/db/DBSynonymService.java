@@ -19,17 +19,18 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.stereotype.Service;
 
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
-import com.oceanbase.odc.core.shared.constant.DialectType;
-import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
+import com.oceanbase.odc.core.session.ConnectionSessionConstants;
+import com.oceanbase.odc.plugin.schema.api.SynonymExtensionPoint;
+import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
 import com.oceanbase.odc.service.session.ConnectConsoleService;
-import com.oceanbase.tools.dbbrowser.editor.oracle.OracleSynonymEditor;
+import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBSynonym;
 import com.oceanbase.tools.dbbrowser.model.DBSynonymType;
-import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 
 import lombok.NonNull;
 
@@ -48,29 +49,32 @@ public class DBSynonymService {
 
     public List<DBSynonym> list(ConnectionSession connectionSession, String dbName,
             DBSynonymType synonymType) {
-        DBSchemaAccessor accessor = DBSchemaAccessors.create(connectionSession);
-        return accessor.listSynonyms(dbName, synonymType).stream().map(item -> {
-            DBSynonym synonym = new DBSynonym();
-            synonym.setSynonymName(item.getName());
-            return synonym;
-        }).collect(Collectors.toList());
+        return connectionSession.getSyncJdbcExecutor(
+                ConnectionSessionConstants.BACKEND_DS_KEY)
+                .execute((ConnectionCallback<List<DBObjectIdentity>>) con -> getSynonymExtensionPoint(connectionSession)
+                        .list(con, dbName, synonymType))
+                .stream().map(item -> {
+                    DBSynonym synonym = new DBSynonym();
+                    synonym.setSynonymName(item.getName());
+                    return synonym;
+                }).collect(Collectors.toList());
     }
 
     public String generateCreateSql(@NonNull ConnectionSession session, @NonNull DBSynonym synonym) {
-        dialectCheck(session);
-        OracleSynonymEditor editor = new OracleSynonymEditor();
-        return editor.generateCreateDefinitionDDL(synonym);
+        return session.getSyncJdbcExecutor(
+                ConnectionSessionConstants.BACKEND_DS_KEY)
+                .execute((ConnectionCallback<String>) con -> getSynonymExtensionPoint(session)
+                        .generateCreateDDL(synonym));
     }
 
     public DBSynonym detail(ConnectionSession connectionSession, DBSynonym synonym) {
-        DBSchemaAccessor accessor = DBSchemaAccessors.create(connectionSession);
-        return accessor.getSynonym(synonym.getOwner(), synonym.getSynonymName(), synonym.getSynonymType());
+        return connectionSession.getSyncJdbcExecutor(
+                ConnectionSessionConstants.BACKEND_DS_KEY)
+                .execute((ConnectionCallback<DBSynonym>) con -> getSynonymExtensionPoint(connectionSession)
+                        .getDetail(con, synonym.getOwner(), synonym.getSynonymName(), synonym.getSynonymType()));
     }
 
-    private void dialectCheck(@NonNull ConnectionSession session) {
-        if (session.getDialectType() != DialectType.OB_ORACLE) {
-            throw new UnsupportedOperationException("Synonym is not supported for " + session.getDialectType());
-        }
+    private SynonymExtensionPoint getSynonymExtensionPoint(@NonNull ConnectionSession session) {
+        return SchemaPluginUtil.getSynonymExtension(session.getDialectType());
     }
-
 }

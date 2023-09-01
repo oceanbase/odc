@@ -27,35 +27,31 @@ import javax.validation.constraints.NotNull;
 import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.TransientDataAccessResourceException;
+import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.stereotype.Service;
 
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
-import com.oceanbase.odc.core.session.ConnectionSessionUtil;
+import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
-import com.oceanbase.odc.core.shared.exception.RequestTimeoutException;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.core.shared.model.TableIdentity;
+import com.oceanbase.odc.plugin.schema.api.TableExtensionPoint;
 import com.oceanbase.odc.service.common.util.SqlUtils;
-import com.oceanbase.odc.service.db.browser.DBObjectEditorFactory;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
-import com.oceanbase.odc.service.db.browser.DBStatsAccessors;
-import com.oceanbase.odc.service.db.browser.DBTableEditorFactory;
 import com.oceanbase.odc.service.db.model.GenerateTableDDLResp;
 import com.oceanbase.odc.service.db.model.GenerateUpdateTableDDLReq;
+import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
 import com.oceanbase.odc.service.session.ConnectConsoleService;
-import com.oceanbase.tools.dbbrowser.editor.DBTableEditor;
+import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.model.DBTable.DBTableOptions;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
 import com.oceanbase.tools.dbbrowser.model.DBTableIndex;
-import com.oceanbase.tools.dbbrowser.model.DBTablePartition;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
-import com.oceanbase.tools.dbbrowser.stats.DBStatsAccessor;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -74,11 +70,14 @@ public class DBTableService {
      * @param fuzzyTableName show all tables if null or blank
      */
     public List<String> showTablesLike(@NotNull ConnectionSession session, String schemaName, String fuzzyTableName) {
-        DBSchemaAccessor schemaAccessor = DBSchemaAccessors.create(session);
         String tableNameLike = SqlUtils.anyLike(fuzzyTableName);
-        List<String> tableNames = schemaAccessor.showTablesLike(schemaName, tableNameLike).stream()
-                .filter(name -> !StringUtils.endsWith(name.toUpperCase(), OdcConstants.VALIDATE_DDL_TABLE_POSTFIX))
-                .collect(Collectors.toList());
+        List<String> tableNames = session.getSyncJdbcExecutor(
+                ConnectionSessionConstants.BACKEND_DS_KEY)
+                .execute((ConnectionCallback<List<String>>) con -> getTableExtensionPoint(session)
+                        .showNamesLike(con, schemaName, tableNameLike).stream()
+                        .filter(name -> !StringUtils.endsWith(name.toUpperCase(),
+                                OdcConstants.VALIDATE_DDL_TABLE_POSTFIX))
+                        .collect(Collectors.toList()));
         log.debug("showTablesLike, schemaName={}, tableNameLike={}, tableNamesCount={}",
                 schemaName, tableNameLike, tableNames.size());
         return tableNames;
@@ -87,8 +86,19 @@ public class DBTableService {
     public DBTable getTable(@NotNull ConnectionSession connectionSession, String schemaName,
             @NotBlank String tableName) {
         DBSchemaAccessor schemaAccessor = DBSchemaAccessors.create(connectionSession);
-        DBStatsAccessor statsAccessor = DBStatsAccessors.create(connectionSession);
-        return buildTable(schemaAccessor, statsAccessor, schemaName, tableName);
+        PreConditions.validExists(ResourceType.OB_TABLE, "tableName", tableName,
+                () -> schemaAccessor.showTables(schemaName).stream().filter(name -> name.equals(tableName))
+                        .collect(Collectors.toList()).size() > 0);
+        try {
+            return connectionSession.getSyncJdbcExecutor(
+                    ConnectionSessionConstants.BACKEND_DS_KEY)
+                    .execute((ConnectionCallback<DBTable>) con -> getTableExtensionPoint(connectionSession)
+                            .getDetail(con, schemaName, tableName));
+        } catch (Exception e) {
+            throw new UnexpectedException(String
+                    .format("Query table information failed, table name=%s, error massage=%s", tableName,
+                            e.getMessage()));
+        }
     }
 
     public List<DBTable> listTables(@NotNull ConnectionSession connectionSession, String schemaName,
@@ -119,65 +129,42 @@ public class DBTableService {
     }
 
     public List<DBTable> listTables(@NotNull ConnectionSession connectionSession, String schemaName) {
-        DBSchemaAccessor accessor = DBSchemaAccessors.create(connectionSession);
-        return accessor.showTables(schemaName).stream()
-                .filter(name -> !StringUtils.endsWithIgnoreCase(name, OdcConstants.VALIDATE_DDL_TABLE_POSTFIX))
-                .map(item -> {
-                    DBTable table = new DBTable();
-                    table.setName(item);
-                    table.setSchemaName(schemaName);
-                    return table;
-                }).collect(Collectors.toList());
+        return connectionSession.getSyncJdbcExecutor(
+                ConnectionSessionConstants.BACKEND_DS_KEY)
+                .execute((ConnectionCallback<List<DBObjectIdentity>>) con -> getTableExtensionPoint(connectionSession)
+                        .list(con, schemaName))
+                .stream().map(
+                        item -> {
+                            DBTable table = new DBTable();
+                            table.setName(item.getName());
+                            table.setSchemaName(schemaName);
+                            return table;
+                        })
+                .collect(Collectors.toList());
     }
 
     public GenerateTableDDLResp generateCreateDDL(@NotNull ConnectionSession session, @NotNull DBTable table) {
-        DBObjectEditorFactory<DBTableEditor> tableEditorFactory = new DBTableEditorFactory(
-                session.getConnectType(), ConnectionSessionUtil.getVersion(session));
-        return innerGenerateCreateDDL(tableEditorFactory, table);
-    }
-
-    public GenerateTableDDLResp generateUpdateDDL(@NotNull ConnectionSession session,
-            @NotNull GenerateUpdateTableDDLReq req) {
-        DBObjectEditorFactory<DBTableEditor> tableEditorFactory =
-                new DBTableEditorFactory(session.getConnectType(), ConnectionSessionUtil.getVersion(session));
-        return innerGenerateUpdateDDL(tableEditorFactory, req);
-    }
-
-    public GenerateTableDDLResp generateUpdateDDLWithoutRenaming(@NotNull ConnectionSession connectionSession,
-            @NotNull GenerateUpdateTableDDLReq req) {
-        DBObjectEditorFactory<DBTableEditor> tableEditorFactory =
-                new DBTableEditorFactory(connectionSession.getConnectType(),
-                        ConnectionSessionUtil.getVersion(connectionSession));
-        DBTableEditor tableEditor = tableEditorFactory.create();
-        String ddl = tableEditor.generateUpdateObjectDDLWithoutRenaming(req.getPrevious(), req.getCurrent());
-        return GenerateTableDDLResp.builder()
-                .sql(ddl)
-                .currentIdentity(TableIdentity.of(req.getCurrent().getSchemaName(), req.getCurrent().getName()))
-                .previousIdentity(TableIdentity.of(req.getPrevious().getSchemaName(), req.getPrevious().getName()))
-                .build();
-    }
-
-    private GenerateTableDDLResp innerGenerateUpdateDDL(
-            @NotNull DBObjectEditorFactory<DBTableEditor> tableEditorFactory,
-            @NotNull GenerateUpdateTableDDLReq req) {
-        DBTableEditor tableEditor = tableEditorFactory.create();
-        String ddl = tableEditor.generateUpdateObjectDDL(req.getPrevious(), req.getCurrent());
-        return GenerateTableDDLResp.builder()
-                .sql(ddl)
-                .currentIdentity(TableIdentity.of(req.getCurrent().getSchemaName(), req.getCurrent().getName()))
-                .previousIdentity(TableIdentity.of(req.getPrevious().getSchemaName(), req.getPrevious().getName()))
-                .build();
-    }
-
-    private GenerateTableDDLResp innerGenerateCreateDDL(
-            @NotNull DBObjectEditorFactory<DBTableEditor> tableEditorFactory,
-            @NotNull DBTable table) {
-        DBTableEditor tableEditor = tableEditorFactory.create();
-        String ddl = tableEditor.generateCreateObjectDDL(table);
+        String ddl = session.getSyncJdbcExecutor(
+                ConnectionSessionConstants.BACKEND_DS_KEY)
+                .execute((ConnectionCallback<String>) con -> getTableExtensionPoint(session).generateCreateDDL(con,
+                        table));
         return GenerateTableDDLResp.builder()
                 .sql(ddl)
                 .currentIdentity(TableIdentity.of(table.getSchemaName(), table.getName()))
                 .previousIdentity(TableIdentity.of(table.getSchemaName(), table.getName()))
+                .build();
+    }
+
+    public GenerateTableDDLResp generateUpdateDDL(@NotNull ConnectionSession session,
+            @NotNull GenerateUpdateTableDDLReq req) {
+        String ddl = session.getSyncJdbcExecutor(
+                ConnectionSessionConstants.BACKEND_DS_KEY)
+                .execute((ConnectionCallback<String>) con -> getTableExtensionPoint(session).generateUpdateDDL(con,
+                        req.getPrevious(), req.getCurrent()));
+        return GenerateTableDDLResp.builder()
+                .sql(ddl)
+                .currentIdentity(TableIdentity.of(req.getCurrent().getSchemaName(), req.getCurrent().getName()))
+                .previousIdentity(TableIdentity.of(req.getPrevious().getSchemaName(), req.getPrevious().getName()))
                 .build();
     }
 
@@ -186,39 +173,8 @@ public class DBTableService {
         return schemaAccessor.isLowerCaseTableName();
     }
 
-    private DBTable buildTable(@NotNull DBSchemaAccessor schemaAccessor, @NotNull DBStatsAccessor statsAccessor,
-            String schemaName, @NotBlank String tableName) {
-        PreConditions.validExists(ResourceType.OB_TABLE, "tableName", tableName,
-                () -> schemaAccessor.showTables(schemaName).stream().filter(name -> name.equals(tableName))
-                        .collect(Collectors.toList()).size() > 0);
-        try {
-            DBTable table = new DBTable();
-            table.setSchemaName(schemaName);
-            table.setOwner(schemaName);
-            table.setName(schemaAccessor.isLowerCaseTableName() ? tableName.toLowerCase() : tableName);
-            table.setColumns(schemaAccessor.listTableColumns(schemaName, tableName));
-            table.setConstraints(schemaAccessor.listTableConstraints(schemaName, tableName));
-            try {
-                table.setPartition(schemaAccessor.getPartition(schemaName, tableName));
-            } catch (Exception e) {
-                DBTablePartition partition = new DBTablePartition();
-                partition.setWarning(e.getMessage());
-                table.setPartition(partition);
-            }
-            table.setIndexes(schemaAccessor.listTableIndexes(schemaName, tableName));
-            table.setDDL(schemaAccessor.getTableDDL(schemaName, tableName));
-            table.setTableOptions(schemaAccessor.getTableOptions(schemaName, tableName));
-            table.setStats(statsAccessor.getTableStats(schemaName, tableName));
-            return table;
-        } catch (TransientDataAccessResourceException e1) {
-            throw new RequestTimeoutException(String
-                    .format("Query table information timeout, table name=%s, error massage=%s", tableName,
-                            e1.getMessage()));
-        } catch (Exception e) {
-            throw new UnexpectedException(String
-                    .format("Query table information failed, table name=%s, error massage=%s", tableName,
-                            e.getMessage()));
-        }
+    private TableExtensionPoint getTableExtensionPoint(@NotNull ConnectionSession connectionSession) {
+        return SchemaPluginUtil.getTableExtension(connectionSession.getDialectType());
     }
 
 }
