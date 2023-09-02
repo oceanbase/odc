@@ -21,7 +21,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.pf4j.Extension;
 
 import com.oceanbase.odc.plugin.connect.obmysql.util.JdbcOperationsUtil;
@@ -56,6 +58,29 @@ public class OBOracleTableExtension extends OBMySQLTableExtension {
             "COMMENT ON TABLE ${schemaName}.${tableName} IS ${comment}";
     private static final String ORACLE_COLUMN_COMMENT_DDL_TEMPLATE =
             "COMMENT ON COLUMN ${schemaName}.${tableName}.${columnName} IS ${comment}";
+
+    @Override
+    public boolean checkTableExist(Connection connection, String schemaName, String tableName) {
+        if (tableName == null) {
+            return false;
+        }
+        // tableName wrapped by ""
+        if ((tableName.startsWith("\"") && tableName.endsWith("\""))) {
+            return doCheckTableExist(connection, schemaName, () -> StringUtils.unquoteOracleIdentifier(tableName));
+        }
+        String lowerCaseVarSql = "show variables like 'lower_case_table_names'";
+        Integer queryResult = JdbcOperationsUtil.getJdbcOperations(connection)
+                .query(lowerCaseVarSql, rs -> rs.next() ? rs.getInt("VALUE") : null);
+        if (queryResult == null || queryResult == 0) {
+            return doCheckTableExist(connection, schemaName, () -> tableName);
+        }
+        return doCheckTableExist(connection, schemaName, tableName::toUpperCase);
+    }
+
+    private boolean doCheckTableExist(Connection connection, String schemaName, Supplier<String> tableName) {
+        List<String> names = showNamesLike(connection, schemaName, tableName.get());
+        return CollectionUtils.isNotEmpty(names);
+    }
 
     @Override
     public DBTable getDetail(@NonNull Connection connection, @NonNull String schemaName, @NonNull String tableName) {

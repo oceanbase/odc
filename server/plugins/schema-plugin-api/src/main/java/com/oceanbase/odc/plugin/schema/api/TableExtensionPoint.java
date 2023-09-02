@@ -36,6 +36,8 @@ public interface TableExtensionPoint extends ExtensionPoint {
 
     List<String> showNamesLike(Connection connection, String schemaName, String tableNameLike);
 
+    boolean checkTableExist(Connection connection, String schemaName, String tableName);
+
     DBTable getDetail(Connection connection, String schemaName, String tableName);
 
     void drop(Connection connection, String schemaName, String tableName);
@@ -43,4 +45,5 @@ public interface TableExtensionPoint extends ExtensionPoint {
     String generateCreateDDL(Connection connection, DBTable table);
 
     String generateUpdateDDL(Connection connection, DBTable oldTable, DBTable newTable);
+
 }

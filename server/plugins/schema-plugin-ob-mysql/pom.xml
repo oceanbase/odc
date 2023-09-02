@@ -37,6 +37,10 @@
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.oceanbase</groupId>
+            <artifactId>odc-test</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

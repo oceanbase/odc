@@ -19,6 +19,7 @@ import java.sql.Connection;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.pf4j.Extension;
 
 import com.oceanbase.odc.common.util.VersionUtils;
@@ -41,6 +42,7 @@ import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 import com.oceanbase.tools.dbbrowser.stats.DBStatsAccessor;
+import com.oceanbase.tools.dbbrowser.util.StringUtils;
 
 import lombok.NonNull;
 
@@ -67,6 +69,16 @@ public class OBMySQLTableExtension implements TableExtensionPoint {
     public List<String> showNamesLike(@NonNull Connection connection, @NonNull String schemaName,
             @NonNull String tableNameLike) {
         return getSchemaAccessor(connection).showTablesLike(schemaName, tableNameLike);
+    }
+
+    @Override
+    public boolean checkTableExist(Connection connection, String schemaName, String tableName) {
+        if (tableName == null) {
+            return false;
+        }
+        List<String> names = showNamesLike(connection, schemaName,
+                StringUtils.unquoteMySqlIdentifier(tableName).toLowerCase());
+        return CollectionUtils.isNotEmpty(names);
     }
 
     @Override
