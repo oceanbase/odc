@@ -81,7 +81,7 @@ public class SubTaskParameterFactory implements AutoCloseable {
             String originTableCreateDdl = DdlUtils.queryOriginTableCreateDdl(session, tableName);
             taskParameter.setOriginTableCreateDdl(originTableCreateDdl);
             taskParameter.setNewTableCreateDdl(DdlUtils.replaceTableName(originTableCreateDdl,
-                tableNameDescriptor.getNewTableName(), session.getDialectType(), OnlineSchemaChangeSqlType.CREATE));
+                    tableNameDescriptor.getNewTableName(), session.getDialectType(), OnlineSchemaChangeSqlType.CREATE));
 
             populateTaskParameter(tableNameDescriptor, taskParameter, tableName);
         } else {
@@ -91,7 +91,7 @@ public class SubTaskParameterFactory implements AutoCloseable {
             taskParameter.setOriginTableCreateDdl(originTableCreateDdl);
             TableNameDescriptor tableNameDescriptor = tableNameDescriptorFactory.getTableNameDescriptor(tableName);
             taskParameter.setNewTableCreateDdl(DdlUtils.replaceTableName(sql,
-                tableNameDescriptor.getNewTableName(), session.getDialectType(), OnlineSchemaChangeSqlType.CREATE));
+                    tableNameDescriptor.getNewTableName(), session.getDialectType(), OnlineSchemaChangeSqlType.CREATE));
             taskParameter.setNewTableCreateDdlForDisplay(sql);
 
             populateTaskParameter(tableNameDescriptor, taskParameter, tableName);
@@ -101,7 +101,7 @@ public class SubTaskParameterFactory implements AutoCloseable {
 
     private void populateTaskParameter(TableNameDescriptor tableNameDescriptor,
             OnlineSchemaChangeScheduleTaskParameters taskParameter,
-            String tableName){
+            String tableName) {
         taskParameter.setOriginTableName(tableName);
         taskParameter.setNewTableName(tableNameDescriptor.getNewTableName());
         taskParameter.setRenamedTableName(tableNameDescriptor.getRenamedTableName());
