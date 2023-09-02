@@ -134,7 +134,7 @@ public class OBOracleTableNameReplacer implements TableNameReplacer {
                 ParseTree childNode = relation_nameContext.getChild(0);
                 if (childNode instanceof TerminalNode) {
                     TerminalNode terminalNode = (TerminalNode) childNode;
-                    tokenStreamRewriter.replace(terminalNode.getSymbol(),  StringUtils.uuidNoHyphen());
+                    tokenStreamRewriter.replace(terminalNode.getSymbol(), "A" + StringUtils.uuidNoHyphen());
                 }
             }
         }
@@ -152,7 +152,7 @@ public class OBOracleTableNameReplacer implements TableNameReplacer {
                 if (childNode instanceof TerminalNode) {
                     TerminalNode terminalNode = (TerminalNode) childNode;
                     // replace constraints name
-                    tokenStreamRewriter.replace(terminalNode.getSymbol(), StringUtils.uuidNoHyphen());
+                    tokenStreamRewriter.replace(terminalNode.getSymbol(), "A" + StringUtils.uuidNoHyphen());
                 }
             }
         }
