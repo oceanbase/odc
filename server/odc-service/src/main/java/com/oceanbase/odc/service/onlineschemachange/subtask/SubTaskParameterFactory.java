@@ -77,7 +77,6 @@ public class SubTaskParameterFactory implements AutoCloseable {
         if (sqlType == OnlineSchemaChangeSqlType.ALTER) {
             AlterTable statement = (AlterTable) parse(sql);
             String tableName = statement.getTableName();
-            taskParameter.setNewTableCreateDdlForDisplay("");
             populateTaskParameter(sqlType, taskParameter, tableName);
         } else {
             CreateTable statement = (CreateTable) parse(sql);
@@ -103,7 +102,7 @@ public class SubTaskParameterFactory implements AutoCloseable {
         String originTableCreateDdl = DdlUtils.queryOriginTableCreateDdl(session, tableName);
         taskParameter.setOriginTableCreateDdl(originTableCreateDdl);
         taskParameter.setNewTableCreateDdl(DdlUtils.replaceTableName(originTableCreateDdl,
-                tableNameDescriptor.getNewTableName(), session.getDialectType(), sqlType));
+                tableNameDescriptor.getNewTableName(), session.getDialectType(), OnlineSchemaChangeSqlType.CREATE));
     }
 
     private Statement parse(String sql) {

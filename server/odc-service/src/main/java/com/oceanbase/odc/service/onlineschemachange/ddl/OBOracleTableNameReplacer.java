@@ -153,7 +153,7 @@ public class OBOracleTableNameReplacer implements TableNameReplacer {
                 ParseTree childNode = relation_nameContext.getChild(0);
                 if (childNode instanceof TerminalNode) {
                     TerminalNode terminalNode = (TerminalNode) childNode;
-                    // todo replace by OscFactoryWrapper
+                    // replace constraints name
                     tokenStreamRewriter.replace(terminalNode.getSymbol(), DdlUtils.getNewNameWithSuffix(
                             terminalNode.getSymbol().getText(), DdlConstants.OSC_TABLE_NAME_PREFIX,
                             DdlUtils.getUUIDWithoutUnderline()));
