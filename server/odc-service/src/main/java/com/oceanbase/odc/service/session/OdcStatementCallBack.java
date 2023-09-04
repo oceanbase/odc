@@ -403,8 +403,8 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
             try (EditableTraceStage dbServerExecute =
                     traceWatch.startEditableStage(SqlExecuteStages.DB_SERVER_EXECUTE_SQL)) {
                 dbServerExecute.setStartTime(traceWatch.getByTaskName(SqlExecuteStages.EXECUTE).get(0).getStartTime(),
-                        TimeUnit.MILLISECONDS);
-                dbServerExecute.setTime(executeDetails.getExecuteMicroseconds(), TimeUnit.MILLISECONDS);
+                        TimeUnit.MICROSECONDS);
+                dbServerExecute.setTime(executeDetails.getExecuteMicroseconds(), TimeUnit.MICROSECONDS);
             }
             try (EditableTraceStage calculateDuration =
                     traceWatch.startEditableStage(SqlExecuteStages.CALCULATE_DURATION)) {
@@ -436,7 +436,7 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
                     TimeUnit.MICROSECONDS);
         }
         try (EditableTraceStage obServerExecute =
-                traceWatch.startEditableStage(SqlExecuteStages.OBSERVER_EXECUTE_SQL)) {
+                traceWatch.startEditableStage(SqlExecuteStages.DB_SERVER_EXECUTE_SQL)) {
             obServerExecute.setStartTime(
                     lastPacketResponseTimestamp - networkConsumption / 2 - executeDetails.getExecuteMicroseconds(),
                     TimeUnit.MICROSECONDS);

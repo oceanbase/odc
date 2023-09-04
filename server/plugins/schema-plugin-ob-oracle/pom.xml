@@ -15,20 +15,17 @@
     <properties>
         <root-project.basedir>${project.parent.parent.basedir}</root-project.basedir>
         <plugin.class>com.oceanbase.odc.plugin.schema.oboracle.OBOracleSchemaPlugin</plugin.class>
-        <plugin.dependencies>connect-plugin-ob-oracle</plugin.dependencies>
-        <plugin.dependencies>schema-plugin-ob-mysql</plugin.dependencies>
+        <plugin.dependencies>connect-plugin-ob-oracle,schema-plugin-ob-mysql</plugin.dependencies>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>com.oceanbase</groupId>
             <artifactId>schema-plugin-api</artifactId>
-            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.oceanbase</groupId>
             <artifactId>connect-plugin-api</artifactId>
-            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.oceanbase</groupId>

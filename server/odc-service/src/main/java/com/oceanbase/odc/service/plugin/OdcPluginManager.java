@@ -22,6 +22,8 @@ import java.util.stream.Collectors;
 import org.pf4j.ExtensionPoint;
 import org.pf4j.PluginManager;
 
+import com.oceanbase.odc.core.shared.exception.UnsupportedException;
+
 import lombok.NonNull;
 
 public class OdcPluginManager<V> {
@@ -56,6 +58,8 @@ public class OdcPluginManager<V> {
                     + "{}, extension : {}", object, collection.size(),
                     collection.stream().map(t -> t.getClass().getSimpleName()).collect(Collectors.toList()));
             throw new IllegalStateException(message);
+        } else if (collection.isEmpty()) {
+            throw new UnsupportedException(String.format("Feature extension point is not supported for %s", object));
         }
         return collection.get(0);
     }

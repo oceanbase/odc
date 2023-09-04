@@ -75,13 +75,18 @@ public class ODPOBMySQLSchemaAccessor extends MySQLNoGreaterThan5740SchemaAccess
 
     @Override
     public List<DBObjectIdentity> listTables(String schemaName, String tableNameLike) {
+        String sql = "select database()";
+        String currentSchema = jdbcOperations.queryForObject(sql, (rs, rowNum) -> rs.getString(1));
         List<DBObjectIdentity> results = new ArrayList<>();
         MySQLSqlBuilder builder = new MySQLSqlBuilder();
-        builder.append("show full tables from ")
-                .identifier(schemaName)
-                .append(" where Table_type='BASE TABLE'");
+        builder.append("show full tables");
+        if (StringUtils.isNotBlank(schemaName)) {
+            builder.append(" from ").identifier(schemaName);
+        }
+        builder.append(" where Table_type='BASE TABLE'");
         List<String> tables = jdbcOperations.query(builder.toString(), (rs, rowNum) -> rs.getString(1));
-        tables.forEach(name -> results.add(DBObjectIdentity.of(schemaName, DBObjectType.TABLE, name)));
+        tables.forEach(name -> results.add(DBObjectIdentity
+                .of(StringUtils.isBlank(schemaName) ? currentSchema : schemaName, DBObjectType.TABLE, name)));
         return results;
     }
 
