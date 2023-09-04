@@ -106,6 +106,7 @@ stmt
     | create_savepoint_stmt
     | rollback_savepoint_stmt
     | lock_tables_stmt
+    | lock_table_stmt
     | unlock_tables_stmt
     | flashback_stmt
     | purge_stmt
@@ -2807,6 +2808,16 @@ lock_spec_mysql57
 
 lock_tables_stmt
     : LOCK_ table_or_tables lock_table_list
+    ;
+
+lock_table_stmt
+    : LOCK TABLE relation_factor IN lock_mode MODE ((WAIT INTNUM) | NOWAIT)?
+    ;
+
+lock_mode
+    : (ROW|SHARE ROW)? EXCLUSIVE
+    | ROW? SHARE
+    | SHARE UPDATE
     ;
 
 unlock_tables_stmt
