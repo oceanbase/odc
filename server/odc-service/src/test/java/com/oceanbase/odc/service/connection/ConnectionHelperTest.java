@@ -44,7 +44,7 @@ public class ConnectionHelperTest {
 
         String connectionStr = helper.generateConnectionStr(req);
 
-        Assert.assertEquals("obclient -h127.0.0.1 -P46774 -uroot@sys#C1 -Doceanbase -p'pwd'", connectionStr);
+        Assert.assertEquals("obclient -h127.0.0.1 -P46774 -uroot@sys#C1 -Doceanbase -p", connectionStr);
     }
 
     @Test
@@ -55,7 +55,7 @@ public class ConnectionHelperTest {
 
         String connectionStr = helper.generateConnectionStr(req);
 
-        Assert.assertEquals("obclient -h127.0.0.1 -P46774 -uroot -Doceanbase -p'pwd'", connectionStr);
+        Assert.assertEquals("obclient -h127.0.0.1 -P46774 -uroot -Doceanbase -p", connectionStr);
     }
 
     private GenerateConnectionStringReq buildGenerateConnectionStringReq() {
