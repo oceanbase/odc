@@ -50,12 +50,12 @@ public interface ScheduleRepository extends OdcJpaRepository<ScheduleEntity, Lon
 
     default Page<ScheduleEntity> find(@NotNull Pageable pageable, @NotNull QueryScheduleParams params) {
         Specification<ScheduleEntity> specification = Specification
-                .where(OdcJpaRepository.between(ScheduleEntity_.createTime, params.getStartTime(), params.getEndTime())
-                        .and(OdcJpaRepository.eq(ScheduleEntity_.jobType, params.getType()))
-                        .and(OdcJpaRepository.in(ScheduleEntity_.projectId, params.getProjectIds()))
-                        .and(OdcJpaRepository.in(ScheduleEntity_.creatorId, params.getCreatorIds()))
-                        .and(OdcJpaRepository.eq(ScheduleEntity_.id, params.getId()))
-                        .and(OdcJpaRepository.in(ScheduleEntity_.status, params.getStatuses())))
+                .where(OdcJpaRepository.between(ScheduleEntity_.createTime, params.getStartTime(), params.getEndTime()))
+                .and(OdcJpaRepository.eq(ScheduleEntity_.jobType, params.getType()))
+                .and(OdcJpaRepository.in(ScheduleEntity_.projectId, params.getProjectIds()))
+                .and(OdcJpaRepository.in(ScheduleEntity_.creatorId, params.getCreatorIds()))
+                .and(OdcJpaRepository.eq(ScheduleEntity_.id, params.getId()))
+                .and(OdcJpaRepository.in(ScheduleEntity_.status, params.getStatuses()))
                 .and(OdcJpaRepository.eq(ScheduleEntity_.organizationId, params.getOrganizationId()));
         return findAll(specification, pageable);
     }

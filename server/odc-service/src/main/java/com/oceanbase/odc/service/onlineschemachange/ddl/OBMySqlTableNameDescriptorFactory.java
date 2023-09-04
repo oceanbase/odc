@@ -27,4 +27,14 @@ public class OBMySqlTableNameDescriptorFactory extends BaseTableNameDescriptorFa
     protected String tablePrefix() {
         return DdlConstants.OSC_TABLE_NAME_PREFIX;
     }
+
+    @Override
+    protected String newTableSuffix() {
+        return DdlConstants.NEW_TABLE_NAME_SUFFIX;
+    }
+
+    @Override
+    protected String renamedTableSuffix() {
+        return DdlConstants.RENAMED_TABLE_NAME_SUFFIX;
+    }
 }
