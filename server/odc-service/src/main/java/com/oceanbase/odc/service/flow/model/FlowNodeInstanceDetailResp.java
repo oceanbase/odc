@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.flow.model;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
@@ -142,8 +143,7 @@ public class FlowNodeInstanceDetailResp {
                     }
                     if (Objects.nonNull(result.getPermissionCheckResult())) {
                         resp.setUnauthorizedDatabaseNames(
-                                result.getPermissionCheckResult().getUnauthorizedDatabaseNames().stream().collect(
-                                        Collectors.toList()));
+                                new ArrayList<>(result.getPermissionCheckResult().getUnauthorizedDatabaseNames()));
                     }
                 }
             }
@@ -153,7 +153,8 @@ public class FlowNodeInstanceDetailResp {
         public FlowNodeInstanceDetailResp map(@NonNull FlowApprovalInstance instance) {
             FlowNodeInstanceDetailResp resp = commonMap(instance);
             resp.setAutoApprove(instance.isAutoApprove());
-            if (StringUtils.isNotBlank(instance.getExternalFlowInstanceId())) {
+            if (Objects.nonNull(instance.getExternalApprovalId())
+                    || StringUtils.isNotBlank(instance.getExternalFlowInstanceId())) {
                 resp.setExternalApprove(true);
                 ExternalApproval externalApproval = ExternalApproval.builder()
                         .approvalId(instance.getExternalApprovalId())

@@ -212,13 +212,13 @@ public class FlowInstanceConfigurer extends GraphConfigurer<FlowInstance, BaseFl
             return builder;
         });
         if (Objects.nonNull(nextNode.getExternalApprovalId())) {
-            String serviceTaskName = "create_external_approval_task_" + nextNode.getId();
+            String serviceTaskName = FlowNodeType.APPROVAL_TASK.name() + "_external_approval_task_" + nextNode.getId();
             ServiceTaskBuilder serviceTaskBuilder = nullSafeGetNodeBuilder(serviceTaskName, nextNode,
                     () -> new ServiceTaskBuilder(serviceTaskName, CreateExternalApprovalTask.class));
             if (this.requiresActivityIdAndName) {
                 flowableAdaptor.setFlowableElement(nextNode, new FlowableElement(serviceTaskBuilder));
             }
-            String gatewayName = "create_external_approval_gateway_" + nextNode.getId();
+            String gatewayName = FlowNodeType.APPROVAL_TASK.name() + "_external_approval_gateway_" + nextNode.getId();
             ExclusiveGatewayBuilder gatewayBuilder = nullSafeGetNodeBuilder(gatewayName, nextNode,
                     () -> new ExclusiveGatewayBuilder(gatewayName));
             targetExecution.next(serviceTaskBuilder).next(gatewayBuilder);
