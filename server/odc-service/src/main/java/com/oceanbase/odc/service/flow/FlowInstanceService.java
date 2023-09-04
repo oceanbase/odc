@@ -209,7 +209,6 @@ public class FlowInstanceService {
     private final List<Consumer<ShadowTableComparingUpdateEvent>> shadowTableComparingTaskHooks = new ArrayList<>();
     private static final long MAX_EXPORT_OBJECT_COUNT = 10000;
     private static final String ODC_SITE_URL = "odc.site.url";
-    private static final String INVALID_EXTERNAL_INSTANCE_ID = "N/A";
 
     @PostConstruct
     public void init() {
@@ -270,11 +269,6 @@ public class FlowInstanceService {
             PreConditions.maxLength(taskParameters.getSqlContent(), "sql content",
                     flowTaskProperties.getSqlContentMaxLength());
         }
-
-        Long connId = createReq.getConnectionId();
-        ConnectionConfig conn = connectionService.getForConnectionSkipPermissionCheck(connId);
-
-        // acquire export masking policy
         if (createReq.getTaskType() == TaskType.EXPORT) {
             DataTransferConfig dataTransferConfig = (DataTransferConfig) createReq.getParameters();
             if (dataTransferConfig.getExportDbObjects().size() > MAX_EXPORT_OBJECT_COUNT) {
@@ -285,6 +279,7 @@ public class FlowInstanceService {
         }
         List<RiskLevel> riskLevels = riskLevelService.list();
         Verify.notEmpty(riskLevels, "riskLevels");
+        ConnectionConfig conn = connectionService.getForConnectionSkipPermissionCheck(createReq.getConnectionId());
         return Collections.singletonList(buildFlowInstance(riskLevels, createReq, conn));
     }
 
@@ -686,8 +681,8 @@ public class FlowInstanceService {
                     flowInstance.newFlowInstance().next(riskDetectInstance).next(riskLevelGateway);
             for (int i = 0; i < riskLevels.size(); i++) {
                 FlowInstanceConfigurer targetConfigurer = buildConfigurer(riskLevels.get(i).getApprovalFlowConfig(),
-                        flowInstance, flowInstanceReq.getTaskType(), connectionConfig,
-                        taskEntity.getId(), flowInstanceReq.getParameters(), flowInstanceReq);
+                        flowInstance, flowInstanceReq.getTaskType(), taskEntity.getId(),
+                        flowInstanceReq.getParameters(), flowInstanceReq);
                 startConfigurer.route(
                         String.format("${%s == %d}", RuntimeTaskConstants.RISKLEVEL, riskLevels.get(i).getLevel()),
                         targetConfigurer);
@@ -726,7 +721,6 @@ public class FlowInstanceService {
             @NonNull ApprovalFlowConfig approvalFlowConfig,
             @NonNull FlowInstance flowInstance,
             @NonNull TaskType taskType,
-            @NonNull ConnectionConfig connectionConfig,
             @NonNull Long targetTaskId,
             @NonNull TaskParameters parameters,
             @NonNull CreateFlowInstanceReq flowInstanceReq) {
@@ -737,23 +731,10 @@ public class FlowInstanceService {
             FlowInstanceConfigurer configurer;
             ApprovalNodeConfig nodeConfig = nodeConfigs.get(nodeSequence);
             Long resourceRoleId = nodeConfig.getResourceRoleId();
-            String externalFlowInstanceId = null;
-            Long externalApprovalId = nodeConfig.getExternalApprovalId();
-            if (Objects.nonNull(externalApprovalId)) {
-                IntegrationConfig config = integrationService.detailWithoutPermissionCheck(externalApprovalId);
-                ApprovalProperties properties = ApprovalProperties.from(config);
-                TemplateVariables variables = buildTemplateVariables(flowInstanceReq, connectionConfig);
-                try {
-                    externalFlowInstanceId = approvalClient.start(properties, variables);
-                } catch (Exception e) {
-                    externalFlowInstanceId = INVALID_EXTERNAL_INSTANCE_ID;
-                    log.warn("Create external approval instance failed, the instance will be force closed!");
-                }
-            }
             FlowApprovalInstance approvalInstance = flowFactory.generateFlowApprovalInstance(flowInstance.getId(),
                     false, false,
                     nodeConfig.getAutoApproval(), approvalFlowConfig.getApprovalExpirationIntervalSeconds(),
-                    externalApprovalId, externalFlowInstanceId);
+                    nodeConfig.getExternalApprovalId());
             if (Objects.nonNull(resourceRoleId)) {
                 approvalPermissionService.setCandidateResourceRole(approvalInstance.getId(),
                         StringUtils.join(flowInstanceReq.getProjectId(), ":", resourceRoleId));
@@ -854,11 +835,10 @@ public class FlowInstanceService {
         variables.setAttribute(Variable.TASK_TYPE, taskType.getLocalizedMessage());
         variables.setAttribute(Variable.TASK_DETAILS, JsonUtils.toJson(flowInstanceReq.getParameters()));
         // set connection related variables
-        ConnectionConfig connection = connectionService.getWithoutPermissionCheck(flowInstanceReq.getConnectionId());
-        if (Objects.nonNull(connection)) {
-            variables.setAttribute(Variable.CONNECTION_NAME, connection.getName());
-            variables.setAttribute(Variable.CONNECTION_TENANT, connection.getTenantName());
-            for (Entry<String, String> entry : connection.getProperties().entrySet()) {
+        if (Objects.nonNull(config)) {
+            variables.setAttribute(Variable.CONNECTION_NAME, config.getName());
+            variables.setAttribute(Variable.CONNECTION_TENANT, config.getTenantName());
+            for (Entry<String, String> entry : config.getProperties().entrySet()) {
                 variables.setAttribute(Variable.CONNECTION_PROPERTIES, entry.getKey(), entry.getValue());
             }
         }

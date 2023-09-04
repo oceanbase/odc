@@ -296,7 +296,7 @@ public class FlowInstanceTest extends ServiceTestEnv {
     }
 
     private FlowApprovalInstance createApprovalInstance(Long flowInstanceId, Integer expireIntervalSeconds) {
-        return new FlowApprovalInstance(authenticationFacade.currentOrganizationId(), flowInstanceId, null, null,
+        return new FlowApprovalInstance(authenticationFacade.currentOrganizationId(), flowInstanceId, null,
                 expireIntervalSeconds, false, false, false, flowableAdaptor, taskService, formService,
                 new LocalEventPublisher(), authenticationFacade, nodeRepository, sequenceRepository,
                 userTaskInstanceRepository);

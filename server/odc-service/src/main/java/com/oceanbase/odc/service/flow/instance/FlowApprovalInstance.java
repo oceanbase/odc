@@ -40,6 +40,7 @@ import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -61,7 +62,8 @@ public class FlowApprovalInstance extends BaseFlowUserTaskInstance {
     private boolean approved;
     private final Integer expireIntervalSeconds;
     private final boolean autoApprove;
-    private final String externalFlowInstanceId;
+    @Setter
+    private String externalFlowInstanceId;
     private final Long externalApprovalId;
     private boolean waitForConfirm;
 
@@ -94,7 +96,7 @@ public class FlowApprovalInstance extends BaseFlowUserTaskInstance {
     }
 
     public FlowApprovalInstance(@NonNull Long organizationId, @NonNull Long flowInstanceId,
-            Long externalApprovalId, String externalFlowInstanceId,
+            Long externalApprovalId,
             @NonNull Integer expireIntervalSeconds, boolean startEndpoint, boolean endEndPoint, boolean autoApprove,
             @NonNull FlowableAdaptor flowableAdaptor, @NonNull TaskService taskService,
             @NonNull FormService formService,
@@ -109,7 +111,6 @@ public class FlowApprovalInstance extends BaseFlowUserTaskInstance {
         this.authenticationFacade = authenticationFacade;
         this.expireIntervalSeconds = expireIntervalSeconds;
         this.autoApprove = autoApprove;
-        this.externalFlowInstanceId = externalFlowInstanceId;
         this.externalApprovalId = externalApprovalId;
         alloc();
         create();
@@ -135,7 +136,6 @@ public class FlowApprovalInstance extends BaseFlowUserTaskInstance {
         this.expireIntervalSeconds = expireIntervalSeconds;
         this.autoApprove = autoApprove;
         this.waitForConfirm = waitForConfirm;
-        this.externalFlowInstanceId = null;
         this.externalApprovalId = null;
         alloc();
         create();
@@ -188,6 +188,7 @@ public class FlowApprovalInstance extends BaseFlowUserTaskInstance {
         entity.setOperatorId(getOperatorId());
         entity.setComment(getComment());
         entity.setExpireIntervalSeconds(getExpireIntervalSeconds());
+        entity.setExternalFlowInstanceId(getExternalFlowInstanceId());
         int affectRows = userTaskInstanceRepository.update(entity);
         log.info("Update approval task instance successfully, affectRows={}, approvalTask={}", affectRows, entity);
     }

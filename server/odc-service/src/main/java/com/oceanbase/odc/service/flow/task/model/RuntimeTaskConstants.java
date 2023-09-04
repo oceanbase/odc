@@ -34,5 +34,5 @@ public class RuntimeTaskConstants {
     public static final Integer DEFAULT_TASK_CHECK_INTERVAL_SECONDS = 5;
     public static final String RISKLEVEL_DESCRIBER = "riskLevelDescriber";
     public static final String RISKLEVEL = "riskLevel";
-    public static final String SQL_CHECK_RESULT = "sql_check_result";
+    public static final String SUCCESS_CREATE_EXT_INS = "successCreateExternalApprovalInstance";
 }
