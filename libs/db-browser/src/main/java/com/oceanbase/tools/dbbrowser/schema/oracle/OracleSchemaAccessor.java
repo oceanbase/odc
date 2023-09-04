@@ -86,12 +86,13 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
             "COMMENT ON TABLE ${schemaName}.${tableName} IS ${comment}";
     private static final String ORACLE_COLUMN_COMMENT_DDL_TEMPLATE =
             "COMMENT ON COLUMN ${schemaName}.${tableName}.${columnName} IS ${comment}";
-    private static final Set<String> ESCAPE_USER_SET = new HashSet<>(3);
+    protected static final Set<String> ESCAPE_USER_SET = new HashSet<>(3);
 
     static {
         ESCAPE_USER_SET.add("PUBLIC");
         ESCAPE_USER_SET.add("LBACSYS");
         ESCAPE_USER_SET.add("ORAAUDITOR");
+        ESCAPE_USER_SET.add("__public");
     }
     protected OracleDataDictTableNames dataDictTableNames;
     protected JdbcOperations jdbcOperations;
