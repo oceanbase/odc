@@ -57,6 +57,7 @@ import lombok.extern.slf4j.Slf4j;
 public class FlowApprovalInstance extends BaseFlowUserTaskInstance {
 
     public static final String APPROVAL_VARIABLE_NAME = "approved";
+    @Setter
     private String comment;
     private Long operatorId;
     private boolean approved;
