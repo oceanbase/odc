@@ -57,17 +57,17 @@ public class RsaBytesEncryptor implements BytesEncryptor {
     public RsaBytesEncryptor(@NonNull RsaEncryptorType type, String publicKeyBase64, String privateKeyBase64) {
         this.type = type;
         if (type == RsaEncryptorType.ENCRYPT_MODE) {
-            Validate.notBlank(publicKeyBase64);
+            Validate.notBlank(publicKeyBase64, "The public key is required");
             this.encryptor = createCipher(Cipher.ENCRYPT_MODE, transformToPublicKey(publicKeyBase64));
             this.decryptor = null;
         } else if (type == RsaEncryptorType.DECRYPT_MODE) {
-            Validate.notBlank(privateKeyBase64);
+            Validate.notBlank(privateKeyBase64, "The private key is required");
             this.encryptor = null;
             this.decryptor = createCipher(Cipher.DECRYPT_MODE, transformToPrivateKey(privateKeyBase64));
         } else {
-            Validate.notBlank(publicKeyBase64);
+            Validate.notBlank(publicKeyBase64, "The public key is required");
             this.encryptor = createCipher(Cipher.ENCRYPT_MODE, transformToPublicKey(publicKeyBase64));
-            Validate.notBlank(privateKeyBase64);
+            Validate.notBlank(privateKeyBase64, "The private key is required");
             this.decryptor = createCipher(Cipher.DECRYPT_MODE, transformToPrivateKey(privateKeyBase64));
         }
     }

@@ -22,10 +22,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.annotation.Validated;
 
-import com.oceanbase.odc.service.connection.model.ConnectionStringParseResult;
 import com.oceanbase.odc.service.connection.model.GenerateConnectionStringReq;
-import com.oceanbase.odc.service.connection.model.ParseConnectionStringReq;
-import com.oceanbase.odc.service.connection.util.MySQLClientArgsParser;
 
 /**
  * @author yizhou.xw
@@ -34,12 +31,6 @@ import com.oceanbase.odc.service.connection.util.MySQLClientArgsParser;
 @Component
 @Validated
 public class ConnectionHelper {
-
-    public ConnectionStringParseResult parseConnectionStr(@NotNull @Valid ParseConnectionStringReq req) {
-        ConnectionStringParseResult result = MySQLClientArgsParser.parse2(req.getConnStr());
-        result.setPassword(null);
-        return result;
-    }
 
     public String generateConnectionStr(@NotNull @Valid GenerateConnectionStringReq req) {
         StringBuilder stringBuilder = new StringBuilder();

@@ -49,9 +49,7 @@ import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.model.ConnectionPreviewBatchImportResp;
-import com.oceanbase.odc.service.connection.model.ConnectionStringParseResult;
 import com.oceanbase.odc.service.connection.model.GenerateConnectionStringReq;
-import com.oceanbase.odc.service.connection.model.ParseConnectionStringReq;
 import com.oceanbase.odc.service.connection.model.QueryConnectionParams;
 
 import io.swagger.annotations.ApiOperation;
@@ -162,12 +160,6 @@ public class DataSourceController {
     public SuccessResponse<String> generateConnectionStr(@RequestBody GenerateConnectionStringReq req) {
         // TODO：公有云支持生成连接串, 这里交互比较特殊在于 host/port 的值是没有的，需要给出公网地址，需要和 OCP 进行交互
         return Responses.single(connectionHelper.generateConnectionStr(req));
-    }
-
-    @ApiOperation(value = "parseConnectionStr", notes = " parse connection string")
-    @RequestMapping(value = "/help/parseConnectionStr", method = RequestMethod.POST)
-    public SuccessResponse<ConnectionStringParseResult> parseConnectionStr(@RequestBody ParseConnectionStringReq req) {
-        return Responses.single(connectionHelper.parseConnectionStr(req));
     }
 
     @ApiOperation(value = "previewBatchImportDataSources", notes = "Parse imported file")
