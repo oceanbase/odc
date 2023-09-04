@@ -60,7 +60,7 @@ public class FlowNodeInstanceDetailResp {
     private Date createTime;
     private Date completeTime;
     private Date deadlineTime;
-    private Boolean externalApprove;
+    private String externalApprovalName;
     private String externalFlowInstanceUrl;
     private Integer issueCount;
     private List<String> unauthorizedDatabaseNames;
@@ -75,6 +75,13 @@ public class FlowNodeInstanceDetailResp {
         private Function<Long, List<RoleEntity>> getRolesByUserId = null;
         private Function<Long, List<UserEntity>> getCandidatesByApprovalId = null;
         private Function<ExternalApproval, String> getExternalUrlByExternalId = null;
+        private Function<Long, String> getExternalApprovalNameById = null;
+
+        public FlowNodeInstanceMapper withGetExternalApprovalNameById(
+                @NonNull Function<Long, String> getExternalApprovalNameById) {
+            this.getExternalApprovalNameById = getExternalApprovalNameById;
+            return this;
+        }
 
         public FlowNodeInstanceMapper withGetExternalUrlByExternalId(
                 @NonNull Function<ExternalApproval, String> getExternalUrlByExternalId) {
@@ -153,13 +160,13 @@ public class FlowNodeInstanceDetailResp {
         public FlowNodeInstanceDetailResp map(@NonNull FlowApprovalInstance instance) {
             FlowNodeInstanceDetailResp resp = commonMap(instance);
             resp.setAutoApprove(instance.isAutoApprove());
-            if (Objects.nonNull(instance.getExternalApprovalId())
-                    || StringUtils.isNotBlank(instance.getExternalFlowInstanceId())) {
-                resp.setExternalApprove(true);
-                ExternalApproval externalApproval = ExternalApproval.builder()
-                        .approvalId(instance.getExternalApprovalId())
-                        .instanceId(instance.getExternalFlowInstanceId()).build();
-                resp.setExternalFlowInstanceUrl(getExternalUrlByExternalId.apply(externalApproval));
+            if (Objects.nonNull(instance.getExternalApprovalId())) {
+                resp.setExternalApprovalName(getExternalApprovalNameById.apply(instance.getExternalApprovalId()));
+                if (StringUtils.isNotBlank(instance.getExternalFlowInstanceId())) {
+                    resp.setExternalFlowInstanceUrl(getExternalUrlByExternalId.apply(ExternalApproval.builder()
+                            .approvalId(instance.getExternalApprovalId())
+                            .instanceId(instance.getExternalFlowInstanceId()).build()));
+                }
             }
             if (instance.getStatus().isFinalStatus()) {
                 if (!instance.isApproved() && instance.getStatus() == FlowNodeStatus.COMPLETED) {
