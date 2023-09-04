@@ -50,4 +50,4 @@ lib/odc-*.jar
 .mvn/
 maven/
 venv/
-local-unit-test.properties
+**/local-unit-test.properties
