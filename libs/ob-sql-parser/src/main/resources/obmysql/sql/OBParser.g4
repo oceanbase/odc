@@ -125,6 +125,7 @@ stmt
     | optimize_stmt
     | dump_memory_stmt
     | protection_mode_stmt
+    | get_diagnostics_stmt
     ;
 
 expr_list
@@ -2136,6 +2137,65 @@ show_stmt
     | SHOW RECYCLEBIN
     | SHOW CREATE TABLEGROUP relation_name
     | SHOW RESTORE PREVIEW
+    ;
+
+get_diagnostics_stmt
+    : get_condition_diagnostics_stmt
+    | get_statement_diagnostics_stmt
+    ;
+
+get_condition_diagnostics_stmt
+    : GET (CURRENT|STACKED)? DIAGNOSTICS CONDITION condition_arg condition_information_item_list
+    ;
+
+condition_arg
+    : INTNUM
+    | USER_VARIABLE
+    | STRING_VALUE
+    | BOOL_VALUE
+    | QUESTIONMARK
+    | column_name
+    ;
+
+condition_information_item_list
+    : condition_information_item (Comma condition_information_item)*
+    ;
+
+condition_information_item
+    : (QUESTIONMARK|USER_VARIABLE|column_name) COMP_EQ condition_information_item_name
+    ;
+
+condition_information_item_name
+    : CLASS_ORIGIN
+    | SUBCLASS_ORIGIN
+    | RETURNED_SQLSTATE
+    | MESSAGE_TEXT
+    | MYSQL_ERRNO
+    | CONSTRAINT_CATALOG
+    | CONSTRAINT_SCHEMA
+    | CONSTRAINT_NAME
+    | CATALOG_NAME
+    | SCHEMA_NAME
+    | TABLE_NAME
+    | COLUMN_NAME
+    | CURSOR_NAME
+    ;
+
+get_statement_diagnostics_stmt
+    : GET (CURRENT|STACKED)? DIAGNOSTICS statement_information_item_list
+    ;
+
+statement_information_item_list
+    : statement_information_item (Comma statement_information_item)*
+    ;
+
+statement_information_item
+    : (QUESTIONMARK|USER_VARIABLE|column_name) COMP_EQ statement_information_item_name
+    ;
+
+statement_information_item_name
+    : NUMBER
+    | ROW_COUNT
     ;
 
 databases_or_schemas

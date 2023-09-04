@@ -2714,6 +2714,10 @@ CURRENT
     : C U R R E N T
     ;
 
+STACKED
+    : S T A C K E D
+    ;
+
 RETURNED_SQLSTATE
     : R E T U R N E D '_' S Q L S T A T E
     ;
