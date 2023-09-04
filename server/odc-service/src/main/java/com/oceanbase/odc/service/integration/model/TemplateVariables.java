@@ -26,21 +26,21 @@ import org.apache.commons.text.StringSubstitutor;
  * @date 2023/3/28 19:52
  */
 public class TemplateVariables implements Serializable {
-    private final Map<String, Object> variables;
+    private final Map<String, Serializable> variables;
 
     public TemplateVariables() {
         this.variables = new HashMap<>();
     }
 
-    public TemplateVariables(Map<String, Object> variables) {
+    public TemplateVariables(Map<String, Serializable> variables) {
         this.variables = new HashMap<>(variables);
     }
 
-    public void setAttribute(Variable variable, Object value) {
+    public void setAttribute(Variable variable, Serializable value) {
         this.variables.put(variable.key, value);
     }
 
-    public void setAttribute(Variable variable, String subKey, Object value) {
+    public void setAttribute(Variable variable, String subKey, Serializable value) {
         this.variables.put(variable.key + "." + subKey, value);
     }
 
@@ -63,7 +63,7 @@ public class TemplateVariables implements Serializable {
         SQL_CONTENT("sql.content"),
         SQL_CONTENT_JSON_ARRAY("sql.content.json.array");
 
-        private String key;
+        private final String key;
 
         public String key() {
             return key;
