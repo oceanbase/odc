@@ -37,14 +37,18 @@ public class OscFactoryWrapperGeneratorTest {
     private static String oraclePrefix;
     private static String mysqlPrefix;
     private static String newTableSuffix;
+    private static String newTableSuffixOBOracle;
     private static String renamedTableSuffix;
+    private static String renamedTableSuffixOBOracle;
 
     @BeforeClass
     public static void before() {
         oraclePrefix = DdlConstants.OSC_TABLE_NAME_PREFIX_OB_ORACLE;
         mysqlPrefix = DdlConstants.OSC_TABLE_NAME_PREFIX;
         newTableSuffix = DdlConstants.NEW_TABLE_NAME_SUFFIX;
+        newTableSuffixOBOracle = DdlConstants.NEW_TABLE_NAME_SUFFIX_OB_ORACLE;
         renamedTableSuffix = DdlConstants.RENAMED_TABLE_NAME_SUFFIX;
+        renamedTableSuffixOBOracle = DdlConstants.RENAMED_TABLE_NAME_SUFFIX_OB_ORACLE;
     }
 
     @Test
@@ -52,11 +56,11 @@ public class OscFactoryWrapperGeneratorTest {
         TableNameDescriptorFactory tableNameDescriptorFactory = getTableNameDescriptorFactory(DialectType.OB_ORACLE);
         TableNameDescriptor descriptor = tableNameDescriptorFactory.getTableNameDescriptor("t");
         Assert.equals("t", descriptor.getOriginTableNameUnwrapped());
-        Assert.equals(oraclePrefix + "t" + newTableSuffix,
+        Assert.equals(oraclePrefix + "t" + newTableSuffixOBOracle,
                 descriptor.getNewTableName());
-        Assert.equals(oraclePrefix + "t" + newTableSuffix,
+        Assert.equals(oraclePrefix + "t" + newTableSuffixOBOracle,
                 descriptor.getNewTableNameUnWrapped());
-        Assert.equals(oraclePrefix + "t" + renamedTableSuffix,
+        Assert.equals(oraclePrefix + "t" + renamedTableSuffixOBOracle,
                 descriptor.getRenamedTableName());
 
     }
@@ -66,12 +70,12 @@ public class OscFactoryWrapperGeneratorTest {
         TableNameDescriptorFactory tableNameDescriptorFactory = getTableNameDescriptorFactory(DialectType.OB_ORACLE);
         TableNameDescriptor descriptor = tableNameDescriptorFactory.getTableNameDescriptor("\"t\"");
         Assert.equals("t", descriptor.getOriginTableNameUnwrapped());
-        Assert.equals(quote(oraclePrefix + "t" + newTableSuffix),
+        Assert.equals(quote(oraclePrefix + "t" + newTableSuffixOBOracle),
                 descriptor.getNewTableName());
-        Assert.equals(oraclePrefix + "t" + newTableSuffix,
+        Assert.equals(oraclePrefix + "t" + newTableSuffixOBOracle,
                 descriptor.getNewTableNameUnWrapped());
         Assert.equals(
-                quote(oraclePrefix + "t" + renamedTableSuffix),
+                quote(oraclePrefix + "t" + renamedTableSuffixOBOracle),
                 descriptor.getRenamedTableName());
     }
 
@@ -92,15 +96,15 @@ public class OscFactoryWrapperGeneratorTest {
 
     @Test
     public void test_ob_mysql_table_name_accent() {
-        TableNameDescriptorFactory tableNameDescriptorFactory = getTableNameDescriptorFactory(DialectType.OB_ORACLE);
+        TableNameDescriptorFactory tableNameDescriptorFactory = getTableNameDescriptorFactory(DialectType.OB_MYSQL);
         TableNameDescriptor descriptor = tableNameDescriptorFactory.getTableNameDescriptor("`t`");
         Assert.equals("t", descriptor.getOriginTableNameUnwrapped());
-        Assert.equals(accent(oraclePrefix + "t" + newTableSuffix),
+        Assert.equals(accent(mysqlPrefix + "t" + newTableSuffix),
                 descriptor.getNewTableName());
-        Assert.equals(oraclePrefix + "t" + newTableSuffix,
+        Assert.equals(mysqlPrefix + "t" + newTableSuffix,
                 descriptor.getNewTableNameUnWrapped());
         Assert.equals(
-                accent(oraclePrefix + "t" + renamedTableSuffix),
+                accent(mysqlPrefix + "t" + renamedTableSuffix),
                 descriptor.getRenamedTableName());
     }
 

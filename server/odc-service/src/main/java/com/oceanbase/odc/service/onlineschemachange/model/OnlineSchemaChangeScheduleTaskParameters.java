@@ -21,7 +21,6 @@ import java.util.List;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 
@@ -91,7 +90,6 @@ public class OnlineSchemaChangeScheduleTaskParameters {
     /**
      * For ODC internal usage
      */
-    @JsonIgnore
     private List<String> sqlsToBeExecuted = new ArrayList<>();
 
     public String getOriginTableNameWithSchema() {

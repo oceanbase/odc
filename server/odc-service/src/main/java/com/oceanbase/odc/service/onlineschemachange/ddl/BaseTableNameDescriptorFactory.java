@@ -29,19 +29,22 @@ public abstract class BaseTableNameDescriptorFactory implements TableNameDescrip
         nameDescriptor.setOriginTableName(tableName);
         nameDescriptor.setOriginTableNameUnwrapped(DdlUtils.getUnwrappedName(tableName));
 
-        String newTableName = DdlUtils.getNewNameWithSuffix(tableName, tablePrefix(),
-                DdlConstants.NEW_TABLE_NAME_SUFFIX);
+        String newTableName = DdlUtils.getNewNameWithSuffix(tableName, tablePrefix(), newTableSuffix());
         nameDescriptor.setNewTableName(newTableName);
         nameDescriptor.setNewTableNameUnWrapped(DdlUtils.getUnwrappedName(newTableName));
 
-        String renamedTableName = DdlUtils.getNewNameWithSuffix(tableName, tablePrefix(),
-                DdlConstants.RENAMED_TABLE_NAME_SUFFIX);
+        String renamedTableName = DdlUtils.getNewNameWithSuffix(tableName, tablePrefix(), renamedTableSuffix());
         nameDescriptor.setRenamedTableName(renamedTableName);
         nameDescriptor.setRenamedTableNameUnWrapped(DdlUtils.getUnwrappedName(renamedTableName));
         return nameDescriptor;
     }
 
     protected abstract String tablePrefix();
+
+    protected abstract String newTableSuffix();
+
+    protected abstract String renamedTableSuffix();
+
 
 
 }
