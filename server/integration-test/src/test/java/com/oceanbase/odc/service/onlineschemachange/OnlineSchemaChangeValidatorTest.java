@@ -21,6 +21,7 @@ import org.junit.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.util.Assert;
 
 import com.oceanbase.odc.ServiceTestEnv;
 import com.oceanbase.odc.TestConnectionUtil;
@@ -28,7 +29,9 @@ import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
+import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.BadArgumentException;
+import com.oceanbase.odc.core.shared.exception.HttpException;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
@@ -67,7 +70,9 @@ public class OnlineSchemaChangeValidatorTest extends ServiceTestEnv {
 
     @After
     public void tearDown() {
-        session.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY).execute(DROP_STMT);
+        if (session != null) {
+            session.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY).execute(DROP_STMT);
+        }
     }
 
     @Test
@@ -96,6 +101,20 @@ public class OnlineSchemaChangeValidatorTest extends ServiceTestEnv {
         validService.validate(getCreateRequest(
                 ALTER_STMT,
                 OnlineSchemaChangeSqlType.CREATE));
+    }
+
+    @Test(expected = BadArgumentException.class)
+    public void test_Validate_Invalid_Sql() {
+        String sql = " CREATE TABLE \"ABC10_OSC_NEW_111\" (\n  \"COL\" NUMBER(38) DEFAULT NULL";
+        try {
+            validService.validate(getCreateRequest(
+                    sql,
+                    OnlineSchemaChangeSqlType.CREATE));
+        } catch (Exception ex) {
+            Assert.isTrue(ex instanceof BadArgumentException);
+            Assert.isTrue(((HttpException) ex).getErrorCode() == ErrorCodes.ObPreCheckDdlFailed);
+            throw ex;
+        }
     }
 
     private CreateFlowInstanceReq getCreateRequest(String sql, OnlineSchemaChangeSqlType sqlType) {
