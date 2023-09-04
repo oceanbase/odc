@@ -2891,7 +2891,7 @@ tenant
     ;
 
 begin_stmt
-    : BEGI WORK?
+    : BEGIN WORK?
     | START TRANSACTION ((WITH CONSISTENT SNAPSHOT) | transaction_access_mode | (WITH CONSISTENT SNAPSHOT Comma transaction_access_mode) | (transaction_access_mode Comma WITH CONSISTENT SNAPSHOT))?
     ;
 
@@ -3633,7 +3633,7 @@ partition_role
     ;
 
 upgrade_action
-    : BEGI
+    : BEGIN
     | END
     ;
 
@@ -3982,7 +3982,7 @@ oracle_unreserved_keyword
     | BACKUP
     | BECOME
     | BEFORE
-    | BEGI
+    | BEGIN
     | BLOCK
     | BODY
     | CACHE

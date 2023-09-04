@@ -2444,12 +2444,12 @@ alter_sequence_stmt
     ;
 
 begin_stmt
-    : BEGI WORK?
+    : BEGIN WORK?
     | START TRANSACTION ((WITH CONSISTENT SNAPSHOT) | transaction_access_mode | (WITH CONSISTENT SNAPSHOT Comma transaction_access_mode) | (transaction_access_mode Comma WITH CONSISTENT SNAPSHOT))?
     ;
 
 xa_begin_stmt
-    : XA (BEGI|START) STRING_VALUE
+    : XA (BEGIN|START) STRING_VALUE
     ;
 
 xa_end_stmt
@@ -3146,7 +3146,7 @@ partition_role
     ;
 
 upgrade_action
-    : BEGI
+    : BEGIN
     | END
     ;
 
@@ -3381,7 +3381,7 @@ unreserved_keyword_normal
     | BASIC
     | BALANCE
     | BANDWIDTH
-    | BEGI
+    | BEGIN
     | BINDING
     | BINLOG
     | BIT
