@@ -16,12 +16,12 @@
 package com.oceanbase.odc.service.onlineschemachange;
 
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.util.Assert;
 
 import com.oceanbase.odc.ServiceTestEnv;
 import com.oceanbase.odc.TestConnectionUtil;
@@ -31,7 +31,6 @@ import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.BadArgumentException;
-import com.oceanbase.odc.core.shared.exception.HttpException;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
@@ -110,9 +109,8 @@ public class OnlineSchemaChangeValidatorTest extends ServiceTestEnv {
             validService.validate(getCreateRequest(
                     sql,
                     OnlineSchemaChangeSqlType.CREATE));
-        } catch (Exception ex) {
-            Assert.isTrue(ex instanceof BadArgumentException);
-            Assert.isTrue(((HttpException) ex).getErrorCode() == ErrorCodes.ObPreCheckDdlFailed);
+        } catch (BadArgumentException ex) {
+            Assert.assertSame(ex.getErrorCode(), ErrorCodes.ObPreCheckDdlFailed);
             throw ex;
         }
     }
