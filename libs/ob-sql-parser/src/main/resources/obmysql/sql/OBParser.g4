@@ -126,6 +126,34 @@ stmt
     | dump_memory_stmt
     | protection_mode_stmt
     | get_diagnostics_stmt
+    | pl_expr_stmt
+    | switchover_tenant_stmt
+    | recover_tenant_stmt
+    ;
+
+pl_expr_stmt
+    : DO expr
+    ;
+
+switchover_tenant_stmt
+    : ALTER SYSTEM switchover_clause
+    ;
+
+switchover_clause
+    : ACTIVATE STANDBY tenant_name?
+    | SWITCHOVER TO PRIMARY tenant_name?
+    | SWITCHOVER TO STANDBY tenant_name?
+    ;
+
+recover_tenant_stmt
+    : ALTER SYSTEM RECOVER STANDBY tenant_name? recover_point_clause?
+    ;
+
+recover_point_clause
+    : UNTIL TIME COMP_EQ STRING_VALUE
+    | UNTIL SCN COMP_EQ INTNUM
+    | UNTIL UNLIMITED
+    | CANCEL
     ;
 
 expr_list

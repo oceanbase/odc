@@ -551,6 +551,10 @@ LONG
     : ( L O N G )
     ;
 
+UNLIMITED
+    : U N L I M I T E D
+    ;
+
 LONGBLOB
     : ( L O N G B L O B )
     ;
@@ -991,6 +995,10 @@ WHEN
 
 WHILE
     : ( W H I L E )
+    ;
+
+SCN
+    : S C N
     ;
 
 WINDOW
