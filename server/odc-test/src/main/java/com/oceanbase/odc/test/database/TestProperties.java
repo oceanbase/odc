@@ -45,4 +45,5 @@ public class TestProperties {
     public static String getProperty(String key) {
         return properties.get(key);
     }
+
 }
