@@ -46,7 +46,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public abstract class BasePropertiesEnv {
 
-    private static final String TEST_CONFIG_FILE = "../../builds/local-unit-test.properties";
+    private static final String TEST_CONFIG_FILE = "../../local-unit-test.properties";
     private static final String ENCRYPTED_PREFIX = "ENC@";
     private static final Properties PROPERTIES = new Properties();
 

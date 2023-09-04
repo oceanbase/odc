@@ -34,7 +34,7 @@ public class TestProperties {
         try {
             URL location = TestProperties.class.getProtectionDomain().getCodeSource().getLocation();
             TEST_CONFIG_FILE = Paths.get(location.toURI())
-                    .getParent().getParent().getParent().getParent()
+                    .getParent().getParent().getParent()
                     .resolve("builds").resolve("local-unit-test.properties").toString();
         } catch (URISyntaxException e) {
             throw new IllegalStateException(e);
