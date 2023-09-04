@@ -33,15 +33,16 @@ public class OdcDBSession {
     private String svrIp;
 
     public static OdcDBSession from(DBSession dbSession) {
-        OdcDBSession odcDBSession = new OdcDBSession();
-        odcDBSession.setSessionId(Long.parseLong(dbSession.getId()));
-        odcDBSession.setDbUser(dbSession.getUsername());
-        odcDBSession.setSrcIp(dbSession.getHost());
-        odcDBSession.setDatabase(dbSession.getDatabaseName());
-        odcDBSession.setCommand(dbSession.getCommand());
-        odcDBSession.setExecuteTime(dbSession.getExecuteTime());
-        odcDBSession.setStatus(dbSession.getState());
-        odcDBSession.setObproxyIp(dbSession.getProxyHost());
-        return odcDBSession;
+        OdcDBSession odcdbsession = new OdcDBSession();
+        odcdbsession.setSessionId(Long.parseLong(dbSession.getId()));
+        odcdbsession.setDbUser(dbSession.getUsername());
+        odcdbsession.setSrcIp(dbSession.getHost());
+        odcdbsession.setDatabase(dbSession.getDatabaseName());
+        odcdbsession.setCommand(dbSession.getCommand());
+        odcdbsession.setExecuteTime(dbSession.getExecuteTime());
+        odcdbsession.setStatus(dbSession.getState());
+        odcdbsession.setObproxyIp(dbSession.getProxyHost());
+        odcdbsession.setSql(dbSession.getLatestQueries());
+        return odcdbsession;
     }
 }
