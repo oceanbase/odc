@@ -123,7 +123,7 @@ public class FlowFactoryTest extends ServiceTestEnv {
     public void generateFlowApprovalInstance_createNewOne_returnFlowApprovalInstance() {
         FlowInstance flowInstance = flowFactory.generateFlowInstance("Test FlowInstance", "Test");
         FlowApprovalInstance approvalInstance =
-                flowFactory.generateFlowApprovalInstance(flowInstance.getId(), true, false, false, 15, null, null);
+                flowFactory.generateFlowApprovalInstance(flowInstance.getId(), true, false, false, 15, null);
 
         Assert.assertEquals((long) flowInstance.getId(), approvalInstance.getFlowInstanceId());
     }
@@ -190,7 +190,7 @@ public class FlowFactoryTest extends ServiceTestEnv {
 
     private FlowApprovalInstance createApprovalInstance(Long flowInstanceId) {
         return new FlowApprovalInstance(authenticationFacade.currentOrganizationId(), flowInstanceId, null,
-                null, 10, false, false, false, flowAdaptor, taskService, formService, new LocalEventPublisher(),
+                10, false, false, false, flowAdaptor, taskService, formService, new LocalEventPublisher(),
                 authenticationFacade, nodeRepository, sequenceRepository, userTaskInstanceRepository);
     }
 
