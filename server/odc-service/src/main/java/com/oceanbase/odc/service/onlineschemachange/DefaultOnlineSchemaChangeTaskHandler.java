@@ -140,7 +140,7 @@ public class DefaultOnlineSchemaChangeTaskHandler implements OnlineSchemaChangeT
 
         terminalErrorCodes = Lists.newArrayList(ErrorCodes.BadArgument, ErrorCodes.BadRequest,
                 ErrorCodes.OmsConnectivityTestFailed, ErrorCodes.Unexpected,
-                ErrorCodes.OmsPreCheckFailed, ErrorCodes.OscDataCheckInconsistent,
+                ErrorCodes.OmsPreCheckFailed, ErrorCodes.OmsDataCheckInconsistent,
                 ErrorCodes.OmsParamError);
 
         expectedTaskStatus = Lists.newArrayList(TaskStatus.DONE, TaskStatus.FAILED,

@@ -36,6 +36,7 @@ import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.service.onlineschemachange.exception.OmsException;
 import com.oceanbase.odc.service.onlineschemachange.oms.request.BaseOmsRequest;
+import com.oceanbase.odc.service.onlineschemachange.oms.request.CreateOceanBaseDataSourceRequest;
 import com.oceanbase.odc.service.onlineschemachange.oms.request.OmsApiReturnResult;
 
 import lombok.extern.slf4j.Slf4j;
@@ -114,6 +115,13 @@ public abstract class BaseOmsClient implements OmsClient {
             OmsApiReturnResult<T> result) {
         if (result.isSuccess()) {
             return;
+        }
+        if ("CreateOceanBaseDataSource".equals(requestParams.getAction())
+                && requestParams.getRequest() instanceof CreateOceanBaseDataSourceRequest) {
+            CreateOceanBaseDataSourceRequest request = (CreateOceanBaseDataSourceRequest) requestParams.getRequest();
+            // Clean password in log
+            request.setPassword(null);
+            request.setDrcPassword(null);
         }
         String msg = MessageFormat.format(
                 "Failed response oms result,Action={0}, Request Params={1}, Response={2}",
