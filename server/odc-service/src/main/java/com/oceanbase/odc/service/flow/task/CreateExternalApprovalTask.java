@@ -16,7 +16,6 @@
 
 package com.oceanbase.odc.service.flow.task;
 
-import java.util.Objects;
 import java.util.Optional;
 
 import org.flowable.engine.delegate.DelegateExecution;
@@ -24,6 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import com.oceanbase.odc.common.util.RetryExecutor;
 import com.oceanbase.odc.core.flow.BaseFlowableDelegate;
+import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.metadb.flow.FlowInstanceRepository;
 import com.oceanbase.odc.service.flow.FlowableAdaptor;
@@ -62,31 +62,39 @@ public class CreateExternalApprovalTask extends BaseFlowableDelegate {
         try {
             flowApprovalInstance = getFlowApprovalInstance(execution);
         } catch (Exception e) {
-            log.warn("Get flow approval instance failed, activityId={}, processDefinitionId={}",
+            log.warn(
+                    "Get flow approval instance failed, the flow instance is coming to an end, activityId={}, processDefinitionId={}",
                     execution.getCurrentActivityId(), execution.getProcessDefinitionId(), e);
+            try {
+                flowInstanceRepository.updateStatusById(FlowTaskUtil.getFlowInstanceId(execution),
+                        FlowStatus.EXECUTION_FAILED);
+            } finally {
+                execution.setVariable(RuntimeTaskConstants.SUCCESS_CREATE_EXT_INS, false);
+            }
             return;
         }
         Long externalApprovalId = flowApprovalInstance.getExternalApprovalId();
-        String expr = RuntimeTaskConstants.SUCCESS_CREATE_EXT_INS + "_" + flowApprovalInstance.getId();
-        if (Objects.nonNull(externalApprovalId)) {
+        try {
+            Verify.notNull(externalApprovalId, "externalApprovalId");
+            IntegrationConfig config = integrationService.detailWithoutPermissionCheck(externalApprovalId);
+            ApprovalProperties properties = ApprovalProperties.from(config);
+            TemplateVariables variables = FlowTaskUtil.getTemplateVariables(execution.getVariables());
+            String externalFlowInstanceId = approvalClient.start(properties, variables);
+            flowApprovalInstance.setExternalFlowInstanceId(externalFlowInstanceId);
+            flowApprovalInstance.update();
+            execution.setVariable(RuntimeTaskConstants.SUCCESS_CREATE_EXT_INS, true);
+        } catch (Exception e) {
+            log.warn("Create external approval instance failed, the flow instance is coming to an end, "
+                    + "flowApprovalInstanceId={}, externalApprovalId={}",
+                    flowApprovalInstance.getId(), externalApprovalId, e);
             try {
-                IntegrationConfig config = integrationService.detailWithoutPermissionCheck(externalApprovalId);
-                ApprovalProperties properties = ApprovalProperties.from(config);
-                TemplateVariables variables = FlowTaskUtil.getTemplateVariables(execution.getVariables());
-                String externalFlowInstanceId = approvalClient.start(properties, variables);
-                flowApprovalInstance.setExternalFlowInstanceId(externalFlowInstanceId);
-                flowApprovalInstance.update();
-                execution.setVariable(expr, true);
-            } catch (Exception e) {
-                log.warn("Create external approval instance failed, the flow instance is coming to an end, "
-                        + "flowApprovalInstanceId={}, externalApprovalId={}",
-                        flowApprovalInstance.getId(), externalApprovalId, e);
                 flowApprovalInstance.setStatus(FlowNodeStatus.FAILED);
                 flowApprovalInstance.setComment(e.getLocalizedMessage());
                 flowApprovalInstance.update();
                 flowInstanceRepository.updateStatusById(flowApprovalInstance.getFlowInstanceId(),
                         FlowStatus.EXECUTION_FAILED);
-                execution.setVariable(expr, false);
+            } finally {
+                execution.setVariable(RuntimeTaskConstants.SUCCESS_CREATE_EXT_INS, false);
             }
         }
     }
@@ -97,8 +105,7 @@ public class CreateExternalApprovalTask extends BaseFlowableDelegate {
         Optional<Optional<Long>> flowInstanceIdOpt = retryExecutor.run(
                 () -> flowableAdaptor.getFlowInstanceIdByProcessDefinitionId(processDefinitionId), Optional::isPresent);
         if (!flowInstanceIdOpt.isPresent() || !flowInstanceIdOpt.get().isPresent()) {
-            log.warn("Flow instance id does not exist, activityId={}, processDefinitionId={}", activityId,
-                    processDefinitionId);
+            log.warn("Flow instance id does not exist, processDefinitionId={}", processDefinitionId);
             throw new IllegalStateException(
                     "Can not find flow instance id by process definition id " + processDefinitionId);
         }
@@ -108,7 +115,7 @@ public class CreateExternalApprovalTask extends BaseFlowableDelegate {
         if (!instanceOpt.isPresent()) {
             log.warn("Flow approval instance does not exist, activityId={}, flowInstanceId={}", activityId,
                     flowInstanceId);
-            throw new IllegalStateException("Can not find instance by activityId " + activityId);
+            throw new IllegalStateException("Can not find flow approval instance by activityId " + activityId);
         }
         return instanceOpt.get();
     }

@@ -629,7 +629,17 @@ public class FlowInstanceService {
                             strategyConfig);
             taskInstance.setTargetTaskId(taskEntity.getId());
             taskInstance.update();
-            FlowInstanceConfigurer taskConfigurer = flowInstance.newFlowInstance().next(taskInstance);
+            TaskParameters parameters = flowInstanceReq.getParameters();
+            FlowInstanceConfigurer taskConfigurer;
+            if (taskType == TaskType.ASYNC
+                    && Boolean.TRUE.equals(((DatabaseChangeParameters) parameters).getGenerateRollbackPlan())) {
+                FlowTaskInstance rollbackPlanInstance =
+                        flowFactory.generateFlowTaskInstance(flowInstance.getId(), false, false,
+                                TaskType.GENERATE_ROLLBACK, ExecutionStrategyConfig.autoStrategy());
+                taskConfigurer = flowInstance.newFlowInstance().next(rollbackPlanInstance).next(taskInstance);
+            } else {
+                taskConfigurer = flowInstance.newFlowInstance().next(taskInstance);
+            }
             taskConfigurer.endFlowInstance();
             flowInstance.buildTopology();
 
@@ -700,6 +710,7 @@ public class FlowInstanceService {
             flowInstance.dealloc();
         }
         Map<String, Object> variables = new HashMap<>();
+        FlowTaskUtil.setFlowInstanceId(variables, flowInstance.getId());
         FlowTaskUtil.setTemplateVariables(variables, buildTemplateVariables(flowInstanceReq, connectionConfig));
         initVariables(variables, taskEntity, preCheckTaskEntity, connectionConfig,
                 buildRiskLevelDescriber(flowInstanceReq));

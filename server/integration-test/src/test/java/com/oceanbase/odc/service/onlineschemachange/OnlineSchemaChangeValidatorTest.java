@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.onlineschemachange;
 
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -28,6 +29,7 @@ import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
+import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.BadArgumentException;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.core.sql.execute.SyncJdbcExecutor;
@@ -70,7 +72,9 @@ public class OnlineSchemaChangeValidatorTest extends ServiceTestEnv {
 
     @After
     public void tearDown() {
-        session.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY).execute(DROP_STMT);
+        if (session != null) {
+            session.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY).execute(DROP_STMT);
+        }
     }
 
     @Test
@@ -99,6 +103,19 @@ public class OnlineSchemaChangeValidatorTest extends ServiceTestEnv {
         validService.validate(getCreateRequest(
                 ALTER_STMT,
                 OnlineSchemaChangeSqlType.CREATE));
+    }
+
+    @Test(expected = BadArgumentException.class)
+    public void test_Validate_Invalid_Sql() {
+        String sql = " CREATE TABLE \"ABC10_OSC_NEW_111\" (\n  \"COL\" NUMBER(38) DEFAULT NULL";
+        try {
+            validService.validate(getCreateRequest(
+                    sql,
+                    OnlineSchemaChangeSqlType.CREATE));
+        } catch (BadArgumentException ex) {
+            Assert.assertSame(ex.getErrorCode(), ErrorCodes.ObPreCheckDdlFailed);
+            throw ex;
+        }
     }
 
     @Test

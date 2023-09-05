@@ -22,6 +22,7 @@ package com.oceanbase.odc.service.flow.task.model;
 public class RuntimeTaskConstants {
     public static final String PRE_CHECK_TASK_ID = "preCheckTaskId";
     public static final String TASK_ID = "taskId";
+    public static final String FLOW_INSTANCE_ID = "flowInstanceId";
     public static final String TIMEOUT_MILLI_SECONDS = "timeOutMilliSeconds";
     public static final String CONNECTION_CONFIG = "connectionConfig";
     public static final String SCHEMA_NAME = "schemaName";
