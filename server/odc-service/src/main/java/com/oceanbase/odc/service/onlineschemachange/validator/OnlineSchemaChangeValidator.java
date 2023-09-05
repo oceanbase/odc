@@ -178,7 +178,7 @@ public class OnlineSchemaChangeValidator {
                 accessor.listTableConstraints(database, DdlUtils.getUnwrappedName(tableName));
         if (CollectionUtils.isEmpty(constraints)) {
             throw new UnsupportedException(ErrorCodes.NoUniqueKeyExists, new Object[] {tableName},
-                    "There is no primary key or unique key exists in table " + tableName);
+                    "There is no primary key or not nullable unique key in table " + tableName);
         }
         if (constraints.stream().anyMatch(index -> index.getType() == DBConstraintType.PRIMARY_KEY)) {
             return;
@@ -189,7 +189,7 @@ public class OnlineSchemaChangeValidator {
 
         if (CollectionUtils.isEmpty(uniques)) {
             throw new UnsupportedException(ErrorCodes.NoUniqueKeyExists, new Object[] {tableName},
-                    "There is no primary key or unique key exists in table " + tableName);
+                    "There is no primary key or not nullable unique key in table " + tableName);
         }
 
         validNullableColumnsUk(database, tableName, session, uniques);
@@ -206,8 +206,7 @@ public class OnlineSchemaChangeValidator {
 
         if (!existsNullableColumnUk) {
             throw new UnsupportedException(ErrorCodes.NoUniqueKeyExists, new Object[] {tableName},
-                    "There is no primary key or unique key "
-                            + "which constraint to not nullable column exists in table " + tableName);
+                    "There is no primary key or not nullable unique key in table " + tableName);
         }
     }
 
