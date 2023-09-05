@@ -15,10 +15,9 @@
  */
 package com.oceanbase.odc.service.onlineschemachange.validator;
 
-import static com.oceanbase.tools.dbbrowser.model.DBIndexType.UNIQUE;
-
 import java.io.StringReader;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections.CollectionUtils;
@@ -47,7 +46,9 @@ import com.oceanbase.odc.service.onlineschemachange.ddl.TableNameDescriptorFacto
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeSqlType;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
-import com.oceanbase.tools.dbbrowser.model.DBTableIndex;
+import com.oceanbase.tools.dbbrowser.model.DBConstraintType;
+import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
+import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 import com.oceanbase.tools.sqlparser.OBMySQLParser;
 import com.oceanbase.tools.sqlparser.OBOracleSQLParser;
@@ -173,10 +174,39 @@ public class OnlineSchemaChangeValidator {
 
     private void validateTableConstraints(String database, String tableName, ConnectionSession session) {
         DBSchemaAccessor accessor = DBSchemaAccessors.create(session);
-        List<DBTableIndex> indexes = accessor.listTableIndexes(database, DdlUtils.getUnwrappedName(tableName));
-        if (indexes.stream().noneMatch(index -> index.getType() == UNIQUE)) {
+        List<DBTableConstraint> constraints =
+                accessor.listTableConstraints(database, DdlUtils.getUnwrappedName(tableName));
+        if (CollectionUtils.isEmpty(constraints)) {
             throw new UnsupportedException(ErrorCodes.NoUniqueKeyExists, new Object[] {tableName},
-                    "There is no primary key or unique key exists in table " + tableName);
+                    "There is no primary key or not nullable unique key in table " + tableName);
+        }
+        if (constraints.stream().anyMatch(index -> index.getType() == DBConstraintType.PRIMARY_KEY)) {
+            return;
+        }
+        // Check unique key reference columns is not null
+        List<DBTableConstraint> uniques = constraints.stream()
+                .filter(c -> c.getType() == DBConstraintType.UNIQUE_KEY).collect(Collectors.toList());
+
+        if (CollectionUtils.isEmpty(uniques)) {
+            throw new UnsupportedException(ErrorCodes.NoUniqueKeyExists, new Object[] {tableName},
+                    "There is no primary key or not nullable unique key in table " + tableName);
+        }
+
+        validateUniqueKeyIsConstraintNullable(database, tableName, session, uniques);
+    }
+
+    private void validateUniqueKeyIsConstraintNullable(String database, String tableName, ConnectionSession session,
+            List<DBTableConstraint> uniques) {
+        Map<String, DBTableColumn> dbTableColumns =
+                DBSchemaAccessors.create(session).listTableColumns(database,
+                        DdlUtils.getUnwrappedName(tableName)).stream().collect(
+                                Collectors.toMap(DBTableColumn::getName, v -> v));
+        boolean existsNullableColumnUk = uniques.stream().anyMatch(
+                uk -> uk.getColumnNames().stream().noneMatch(column -> dbTableColumns.get(column).getNullable()));
+
+        if (!existsNullableColumnUk) {
+            throw new UnsupportedException(ErrorCodes.NoUniqueKeyExists, new Object[] {tableName},
+                    "There is no primary key or not nullable unique key in table " + tableName);
         }
     }
 
