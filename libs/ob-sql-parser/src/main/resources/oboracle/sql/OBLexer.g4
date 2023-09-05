@@ -3002,8 +3002,8 @@ SIMPLE
     : S I M P L E
     ;
 
-BEGI
-    : B E G I
+BEGIN
+    : B E G I N
     ;
 
 VARIABLES

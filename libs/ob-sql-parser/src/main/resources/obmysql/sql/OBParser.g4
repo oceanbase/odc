@@ -125,6 +125,35 @@ stmt
     | optimize_stmt
     | dump_memory_stmt
     | protection_mode_stmt
+    | get_diagnostics_stmt
+    | pl_expr_stmt
+    | switchover_tenant_stmt
+    | recover_tenant_stmt
+    ;
+
+pl_expr_stmt
+    : DO expr
+    ;
+
+switchover_tenant_stmt
+    : ALTER SYSTEM switchover_clause
+    ;
+
+switchover_clause
+    : ACTIVATE STANDBY tenant_name?
+    | SWITCHOVER TO PRIMARY tenant_name?
+    | SWITCHOVER TO STANDBY tenant_name?
+    ;
+
+recover_tenant_stmt
+    : ALTER SYSTEM RECOVER STANDBY tenant_name? recover_point_clause?
+    ;
+
+recover_point_clause
+    : UNTIL TIME COMP_EQ STRING_VALUE
+    | UNTIL SCN COMP_EQ INTNUM
+    | UNTIL UNLIMITED
+    | CANCEL
     ;
 
 expr_list
@@ -2138,6 +2167,65 @@ show_stmt
     | SHOW RESTORE PREVIEW
     ;
 
+get_diagnostics_stmt
+    : get_condition_diagnostics_stmt
+    | get_statement_diagnostics_stmt
+    ;
+
+get_condition_diagnostics_stmt
+    : GET (CURRENT|STACKED)? DIAGNOSTICS CONDITION condition_arg condition_information_item_list
+    ;
+
+condition_arg
+    : INTNUM
+    | USER_VARIABLE
+    | STRING_VALUE
+    | BOOL_VALUE
+    | QUESTIONMARK
+    | column_name
+    ;
+
+condition_information_item_list
+    : condition_information_item (Comma condition_information_item)*
+    ;
+
+condition_information_item
+    : (QUESTIONMARK|USER_VARIABLE|column_name) COMP_EQ condition_information_item_name
+    ;
+
+condition_information_item_name
+    : CLASS_ORIGIN
+    | SUBCLASS_ORIGIN
+    | RETURNED_SQLSTATE
+    | MESSAGE_TEXT
+    | MYSQL_ERRNO
+    | CONSTRAINT_CATALOG
+    | CONSTRAINT_SCHEMA
+    | CONSTRAINT_NAME
+    | CATALOG_NAME
+    | SCHEMA_NAME
+    | TABLE_NAME
+    | COLUMN_NAME
+    | CURSOR_NAME
+    ;
+
+get_statement_diagnostics_stmt
+    : GET (CURRENT|STACKED)? DIAGNOSTICS statement_information_item_list
+    ;
+
+statement_information_item_list
+    : statement_information_item (Comma statement_information_item)*
+    ;
+
+statement_information_item
+    : (QUESTIONMARK|USER_VARIABLE|column_name) COMP_EQ statement_information_item_name
+    ;
+
+statement_information_item_name
+    : NUMBER
+    | ROW_COUNT
+    ;
+
 databases_or_schemas
     : DATABASES
     | SCHEMAS
@@ -2356,12 +2444,12 @@ alter_sequence_stmt
     ;
 
 begin_stmt
-    : BEGI WORK?
+    : BEGIN WORK?
     | START TRANSACTION ((WITH CONSISTENT SNAPSHOT) | transaction_access_mode | (WITH CONSISTENT SNAPSHOT Comma transaction_access_mode) | (transaction_access_mode Comma WITH CONSISTENT SNAPSHOT))?
     ;
 
 xa_begin_stmt
-    : XA (BEGI|START) STRING_VALUE
+    : XA (BEGIN|START) STRING_VALUE
     ;
 
 xa_end_stmt
@@ -3058,7 +3146,7 @@ partition_role
     ;
 
 upgrade_action
-    : BEGI
+    : BEGIN
     | END
     ;
 
@@ -3293,7 +3381,7 @@ unreserved_keyword_normal
     | BASIC
     | BALANCE
     | BANDWIDTH
-    | BEGI
+    | BEGIN
     | BINDING
     | BINLOG
     | BIT
