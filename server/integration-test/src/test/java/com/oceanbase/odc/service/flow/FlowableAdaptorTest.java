@@ -207,7 +207,7 @@ public class FlowableAdaptorTest extends ServiceTestEnv {
     }
 
     private FlowApprovalInstance createApprovalInstance(Long flowInstanceId) {
-        return new FlowApprovalInstance(1L, flowInstanceId, null, null, 12, true, true, false, flowableAdaptor,
+        return new FlowApprovalInstance(1L, flowInstanceId, null, 12, true, true, false, flowableAdaptor,
                 taskService, formService, new LocalEventPublisher(), authenticationFacade,
                 nodeRepository, sequenceRepository, userTaskInstanceRepository);
     }

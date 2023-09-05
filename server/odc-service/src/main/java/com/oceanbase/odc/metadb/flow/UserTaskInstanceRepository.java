@@ -72,7 +72,8 @@ public interface UserTaskInstanceRepository
     @Transactional
     @Query("update UserTaskInstanceEntity as ut set ut.userTaskId=:#{#param.userTaskId},ut.status=:#{#param.status},"
             + "ut.approved=:#{#param.approved},ut.operatorId=:#{#param.operatorId},ut.comment=:#{#param.comment},"
-            + "ut.expireIntervalSeconds=:#{#param.expireIntervalSeconds} where ut.id=:#{#param.id}")
+            + "ut.expireIntervalSeconds=:#{#param.expireIntervalSeconds},ut.externalFlowInstanceId=:#{#param.externalFlowInstanceId}"
+            + " where ut.id=:#{#param.id}")
     @Modifying
     int update(@Param("param") UserTaskInstanceEntity entity);
 

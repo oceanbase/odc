@@ -117,7 +117,6 @@ public class TeamOrganizationMigrator {
         List<String> resourceLocations = new LinkedList<>();
         resourceLocations.add("migrate/rbac/V_3_2_0_5__iam_role.yaml");
         resourceLocations.add("migrate/rbac/V_4_2_0_24__resource_role.yaml");
-        resourceLocations.add("init-config/iam");
         resourceLocations.add("init-config/regulation");
 
         return ResourceConfig.builder()

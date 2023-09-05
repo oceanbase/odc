@@ -19,6 +19,7 @@ import static com.oceanbase.tools.dbbrowser.model.DBIndexType.UNIQUE;
 
 import java.io.StringReader;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,6 +51,8 @@ import com.oceanbase.tools.dbbrowser.model.DBTableIndex;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 import com.oceanbase.tools.sqlparser.OBMySQLParser;
 import com.oceanbase.tools.sqlparser.OBOracleSQLParser;
+import com.oceanbase.tools.sqlparser.SQLParser;
+import com.oceanbase.tools.sqlparser.SyntaxErrorException;
 import com.oceanbase.tools.sqlparser.statement.Statement;
 import com.oceanbase.tools.sqlparser.statement.alter.table.AlterTable;
 import com.oceanbase.tools.sqlparser.statement.createtable.CreateTable;
@@ -67,25 +70,24 @@ public class OnlineSchemaChangeValidator {
     private OscConnectionConfigValidator oscConnectionConfigValidator;
 
     public void validate(CreateFlowInstanceReq createReq) {
+
         OnlineSchemaChangeParameters parameter = (OnlineSchemaChangeParameters) createReq.getParameters();
+        PreConditions.notEmpty(parameter.getSqlContent(), "Input sql cant not bee empty");
+
         ConnectionConfig connectionConfig =
                 connectionService.getForConnectionSkipPermissionCheck(createReq.getConnectionId());
         connectionConfig.setDefaultSchema(createReq.getDatabaseName());
-        ConnectionSession session = new DefaultConnectSessionFactory(connectionConfig).generateSession();
+        List<String> sqls = SqlUtils.split(connectionConfig.getDialectType(), parameter.getSqlContent(),
+                parameter.getDelimiter());;
 
+        PreConditions.notEmpty(sqls, "Parser sqls is empty");
         oscConnectionConfigValidator.valid(connectionConfig);
 
+        List<Statement> statements = parseStatements(parameter, connectionConfig, sqls);
+
+        ConnectionSession session = new DefaultConnectSessionFactory(connectionConfig).generateSession();
         try {
-            List<String> sqls =
-                    SqlUtils.split(connectionConfig.getDialectType(), parameter.getSqlContent(),
-                            parameter.getDelimiter());
-            for (String sql : sqls) {
-                Statement statement =
-                        (connectionConfig.getDialectType().isMysql() ? new OBMySQLParser() : new OBOracleSQLParser())
-                                .parse(new StringReader(sql));
-
-                validateType(sql, getSqlType(statement), parameter.getSqlType());
-
+            for (Statement statement : statements) {
                 String database = createReq.getDatabaseName();
                 String tableName;
                 if (parameter.getSqlType() == OnlineSchemaChangeSqlType.CREATE) {
@@ -103,7 +105,6 @@ public class OnlineSchemaChangeValidator {
                 }
 
                 validateTableNameLength(tableName, connectionConfig.getDialectType());
-
                 validateOriginTableExists(database, tableName, session);
                 validateOldTableNotExists(database, tableName, session);
                 validateTableConstraints(database, tableName, session);
@@ -120,6 +121,23 @@ public class OnlineSchemaChangeValidator {
         // 数据库账号要有ALL PRIVILEGES权限或以下读写权限：
         // ALTER、CREATE、DELETE、DROP、INDEX、INSERT、SELECT、TRIGGER、UPDATE
 
+    }
+
+    private List<Statement> parseStatements(OnlineSchemaChangeParameters parameter,
+            ConnectionConfig connectionConfig, List<String> sqls) {
+        List<Statement> statements = null;
+        try {
+            SQLParser sqlParser =
+                    connectionConfig.getDialectType().isMysql() ? new OBMySQLParser() : new OBOracleSQLParser();
+            statements = sqls.stream().map(sql -> {
+                Statement statement = sqlParser.parse(new StringReader(sql));
+                validateType(sql, getSqlType(statement), parameter.getSqlType());
+                return statement;
+            }).collect(Collectors.toList());
+        } catch (SyntaxErrorException ex) {
+            throw new BadArgumentException(ErrorCodes.ObPreCheckDdlFailed, ex.getLocalizedMessage());
+        }
+        return statements;
     }
 
     private void validateSchema(String currentSchema, String expectedSchema, DialectType dialectType) {
