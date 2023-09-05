@@ -222,11 +222,11 @@ public class FlowInstanceConfigurer extends GraphConfigurer<FlowInstance, BaseFl
             ExclusiveGatewayBuilder gatewayBuilder = nullSafeGetNodeBuilder(gatewayName, nextNode,
                     () -> new ExclusiveGatewayBuilder(gatewayName));
             targetExecution.next(serviceTaskBuilder).next(gatewayBuilder);
-            String expr = RuntimeTaskConstants.SUCCESS_CREATE_EXT_INS + "_" + nextNode.getId();
-            targetExecution.route(String.format("${!%s}", expr), this.targetProcessBuilder.endProcess());
+            targetExecution.route(String.format("${!%s}", RuntimeTaskConstants.SUCCESS_CREATE_EXT_INS),
+                    this.targetProcessBuilder.endProcess());
             targetExecution.next(userTaskBuilder, new ConditionSequenceFlowBuilder(
                     gatewayBuilder.getGraphId() + " -> " + serviceTaskBuilder.getGraphId(),
-                    String.format("${%s}", expr)));
+                    String.format("${%s}", RuntimeTaskConstants.SUCCESS_CREATE_EXT_INS)));
         } else {
             targetExecution.next(userTaskBuilder);
         }
