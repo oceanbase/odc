@@ -224,6 +224,15 @@ public class FlowTaskUtil {
                 () -> new VerifyException("ConnectionConfig is absent"));
     }
 
+    public static void setFlowInstanceId(@NonNull Map<String, Object> variables, @NonNull Long flowInstanceId) {
+        variables.put(RuntimeTaskConstants.FLOW_INSTANCE_ID, flowInstanceId);
+    }
+
+    public static Long getFlowInstanceId(@NonNull DelegateExecution execution) {
+        Object value = execution.getVariables().get(RuntimeTaskConstants.FLOW_INSTANCE_ID);
+        return internalGet(value, Long.class).orElseThrow(() -> new VerifyException("FlowInstanceId is absent"));
+    }
+
     public static void setTemplateVariables(@NonNull Map<String, Object> variables,
             @NonNull TemplateVariables templateVariables) {
         variables.put(RuntimeTaskConstants.INTEGRATION_TEMPLATE_VARIABLES, templateVariables);
