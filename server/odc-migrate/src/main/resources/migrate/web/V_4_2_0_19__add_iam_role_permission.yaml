@@ -14,7 +14,7 @@ templates:
       - column_name: permission_id
         value_from:
           field_ref:
-            ref_file: init-config/iam/V_4_2_0_18__iam_permission.yaml
+            ref_file: migrate/web/V_4_2_0_18__iam_permission.yaml
             field_path: templates.*.specs.0.value
       - column_name: organization_id
         value: ${ORGANIZATION_ID}
