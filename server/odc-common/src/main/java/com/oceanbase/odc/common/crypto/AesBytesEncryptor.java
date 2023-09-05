@@ -37,8 +37,6 @@ import javax.crypto.spec.SecretKeySpec;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 
-import lombok.extern.slf4j.Slf4j;
-
 /**
  * AES encryptor。 <br>
  * - use random IV <br>
@@ -49,7 +47,6 @@ import lombok.extern.slf4j.Slf4j;
  * @author yizhou.xw
  * @version : AesBytesEncryptor.java, v 0.1 2020-04-27 15:01
  */
-@Slf4j
 public class AesBytesEncryptor implements BytesEncryptor {
 
     private static final String FACTORY_INSTANCE = "PBKDF2WithHmacSHA256";

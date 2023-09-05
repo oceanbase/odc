@@ -42,7 +42,6 @@ import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.common.util.UrlUtils;
 import com.oceanbase.odc.service.common.util.WebRequestUtils;
 import com.oceanbase.odc.service.config.model.FeaturesProperties;
-import com.oceanbase.odc.service.encryption.SensitivePropertyHandler;
 import com.oceanbase.odc.service.flow.task.model.FlowTaskProperties;
 import com.oceanbase.odc.service.integration.IntegrationService;
 import com.oceanbase.odc.service.lab.model.LabProperties;
@@ -73,9 +72,6 @@ public class OdcInfoService {
 
     @Autowired
     private ScriptProperties scriptProperties;
-
-    @Autowired
-    private SensitivePropertyHandler sensitivePropertyHandler;
 
     @Autowired
     private FlowTaskProperties flowTaskProperties;
@@ -114,7 +110,6 @@ public class OdcInfoService {
         staticOdcInfo.setSupportEmail(infoProperties.getSupportEmail());
         staticOdcInfo.setSupportUrl(infoProperties.getSupportUrl());
         staticOdcInfo.setMockDataMaxRowCount(infoProperties.getMockDataMaxRowCount());
-        staticOdcInfo.setEncryptionSecret(sensitivePropertyHandler.encryptionSecret());
         staticOdcInfo.setMaxScriptEditLength(scriptProperties.getMaxEditLength());
         staticOdcInfo.setMaxScriptUploadLength(scriptProperties.getMaxUploadLength());
         staticOdcInfo.setFileExpireHours(flowTaskProperties.getFileExpireHours());
