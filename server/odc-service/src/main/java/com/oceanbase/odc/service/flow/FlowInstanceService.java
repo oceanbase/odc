@@ -483,7 +483,7 @@ public class FlowInstanceService {
             Verify.singleton(approvalInstances, "FlowApprovalInstance");
             FlowApprovalInstance instance = approvalInstances.get(0);
             Verify.verify(instance.isPresentOnThisMachine(), "Approval instance is not on this machine");
-            // Cancel external process instance when related ODC approval node is cancelled
+            // Cancel external process instance when related ODC flow instance is cancelled
             cancelAllRelatedExternalInstance(flowInstance);
             instance.disApprove(null, !skipAuth);
             flowInstanceRepository.updateStatusById(instance.getFlowInstanceId(), FlowStatus.CANCELLED);
