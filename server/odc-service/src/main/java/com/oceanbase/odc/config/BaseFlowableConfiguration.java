@@ -210,20 +210,20 @@ public abstract class BaseFlowableConfiguration {
         }
 
         private ThreadPoolExecutor defaultExecutorService() {
-            int corePoolSize = getCorePoolSize(Runtime.getRuntime().availableProcessors() * 5, 0.8f);
+            int corePoolSize = getCorePoolSize(Runtime.getRuntime().availableProcessors() * 5, 3f);
             log.info("Init default executor core pool size, corePoolSize={}", corePoolSize);
             return generateThreadPoolExecutor(DEFAULT_THREAD_POOL_NAMING_PATTERN, corePoolSize);
         }
 
         private ThreadPoolExecutor customExecutorService() {
-            int corePoolSize = getCorePoolSize(Runtime.getRuntime().availableProcessors(), 0.2f);
+            int corePoolSize = getCorePoolSize(Runtime.getRuntime().availableProcessors(), 2f);
             log.info("Init custom executor core pool size, corePoolSize={}", corePoolSize);
             return generateThreadPoolExecutor(CUSTOM_THREAD_POOL_NAMING_PATTERN, corePoolSize);
         }
 
         private ThreadPoolExecutor generateThreadPoolExecutor(String namePattern, int corePoolSize) {
             BasicThreadFactory threadFactory = new BasicThreadFactory.Builder().namingPattern(namePattern).build();
-            BlockingQueue<Runnable> threadPoolQueue = new LinkedBlockingDeque<>();
+            BlockingQueue<Runnable> threadPoolQueue = new LinkedBlockingDeque<>(corePoolSize + 8);
             return new ThreadPoolExecutor(corePoolSize, corePoolSize + 8, KEEP_ALIVE_TIME, TimeUnit.MILLISECONDS,
                     threadPoolQueue, threadFactory);
         }
