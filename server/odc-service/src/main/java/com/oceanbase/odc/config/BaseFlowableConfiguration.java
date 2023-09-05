@@ -223,7 +223,7 @@ public abstract class BaseFlowableConfiguration {
 
         private ThreadPoolExecutor generateThreadPoolExecutor(String namePattern, int corePoolSize) {
             BasicThreadFactory threadFactory = new BasicThreadFactory.Builder().namingPattern(namePattern).build();
-            BlockingQueue<Runnable> threadPoolQueue = new LinkedBlockingDeque<>(corePoolSize + 8);
+            BlockingQueue<Runnable> threadPoolQueue = new LinkedBlockingDeque<>(corePoolSize);
             return new ThreadPoolExecutor(corePoolSize, corePoolSize + 8, KEEP_ALIVE_TIME, TimeUnit.MILLISECONDS,
                     threadPoolQueue, threadFactory);
         }
