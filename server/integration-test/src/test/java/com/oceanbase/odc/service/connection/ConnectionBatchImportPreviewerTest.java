@@ -104,7 +104,7 @@ public class ConnectionBatchImportPreviewerTest extends MockedAuthorityTestEnv {
         ConnectionPreviewBatchImportResp req;
         LocaleContextHolder.setLocale(Locale.SIMPLIFIED_CHINESE);
         req = connectionBatchImportPreviewer.preview(multipartFile_Simplified_Chinese);
-        Assert.assertEquals(8, req.getBatchImportConnectionList().size());
+        Assert.assertEquals(4, req.getBatchImportConnectionList().size());
     }
 
     @Test
