@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.flow.instance;
 import java.time.Duration;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -54,6 +55,8 @@ import com.oceanbase.odc.service.flow.model.ExecutionStrategyConfig;
 import com.oceanbase.odc.service.flow.model.FlowNodeType;
 import com.oceanbase.odc.service.flow.model.FlowTaskExecutionStrategy;
 import com.oceanbase.odc.service.flow.task.BaseRuntimeFlowableDelegate;
+import com.oceanbase.odc.service.flow.task.CreateExternalApprovalTask;
+import com.oceanbase.odc.service.flow.task.model.RuntimeTaskConstants;
 
 import lombok.Getter;
 import lombok.NonNull;
@@ -208,10 +211,28 @@ public class FlowInstanceConfigurer extends GraphConfigurer<FlowInstance, BaseFl
             userTaskConsumer.accept(builder);
             return builder;
         });
-        targetExecution.next(userTaskBuilder);
+        if (Objects.nonNull(nextNode.getExternalApprovalId())) {
+            String serviceTaskName = FlowNodeType.APPROVAL_TASK.name() + "_external_approval_task_" + nextNode.getId();
+            ServiceTaskBuilder serviceTaskBuilder = nullSafeGetNodeBuilder(serviceTaskName, nextNode,
+                    () -> new ServiceTaskBuilder(serviceTaskName, CreateExternalApprovalTask.class));
+            if (this.requiresActivityIdAndName) {
+                flowableAdaptor.setFlowableElement(nextNode, new FlowableElement(serviceTaskBuilder));
+            }
+            String gatewayName = FlowNodeType.APPROVAL_TASK.name() + "_external_approval_gateway_" + nextNode.getId();
+            ExclusiveGatewayBuilder gatewayBuilder = nullSafeGetNodeBuilder(gatewayName, nextNode,
+                    () -> new ExclusiveGatewayBuilder(gatewayName));
+            targetExecution.next(serviceTaskBuilder).next(gatewayBuilder);
+            String expr = RuntimeTaskConstants.SUCCESS_CREATE_EXT_INS + "_" + nextNode.getId();
+            targetExecution.route(String.format("${!%s}", expr), this.targetProcessBuilder.endProcess());
+            targetExecution.next(userTaskBuilder, new ConditionSequenceFlowBuilder(
+                    gatewayBuilder.getGraphId() + " -> " + serviceTaskBuilder.getGraphId(),
+                    String.format("${%s}", expr)));
+        } else {
+            targetExecution.next(userTaskBuilder);
+        }
         if (log.isDebugEnabled()) {
             log.debug(
-                    "Successfully set up the approval task node instance, instanceId={}, intanceType={}, activityId={}, name={}",
+                    "Successfully set up the approval task node instance, instanceId={}, instanceType={}, activityId={}, name={}",
                     nextNode.getId(), nextNode.getNodeType(), userTaskBuilder.getGraphId(), userTaskBuilder.getName());
         }
         return next(userTaskBuilder, nextNode);
