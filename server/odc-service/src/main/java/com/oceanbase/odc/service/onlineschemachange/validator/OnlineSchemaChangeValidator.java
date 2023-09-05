@@ -192,10 +192,10 @@ public class OnlineSchemaChangeValidator {
                     "There is no primary key or not nullable unique key in table " + tableName);
         }
 
-        validNullableColumnsUk(database, tableName, session, uniques);
+        validateUniqueKeyIsConstraintNullable(database, tableName, session, uniques);
     }
 
-    private void validNullableColumnsUk(String database, String tableName, ConnectionSession session,
+    private void validateUniqueKeyIsConstraintNullable(String database, String tableName, ConnectionSession session,
             List<DBTableConstraint> uniques) {
         Map<String, DBTableColumn> dbTableColumns =
                 DBSchemaAccessors.create(session).listTableColumns(database,
