@@ -47,4 +47,20 @@ public class SSRFChecker {
         }
         return false;
     }
+
+    public static boolean checkUrlInWhiteList(String url, List<String> urlWhiteList) {
+        if (Objects.isNull(urlWhiteList) || urlWhiteList.isEmpty()) {
+            return true;
+        }
+        if (StringUtils.isBlank(url)) {
+            return false;
+        }
+        for (String whiteUrl : urlWhiteList) {
+            if (StringUtils.startsWith(url, whiteUrl)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
 }

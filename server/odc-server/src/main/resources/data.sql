@@ -683,3 +683,9 @@ INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES
 
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.data-security.masking.enabled', 'true', '是否开启数据脱敏，默认为开启' ) ON DUPLICATE KEY UPDATE `id` = `id`;
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task.partition-plan.schedule-cron', '0 0 * * * ?', '默认调度周期：每天 0 点' ) ON DUPLICATE KEY UPDATE `id` = `id`;
+
+--
+-- v4.2.1
+--
+INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.integration.url-white-list',
+ '', 'ODC 外部集成允许访问的 URL 白名单，配置集成 API 时只允许使白名单内的 URL，防止 SSRF 安全漏洞。默认为空，表示允许所有访问所有 URL') ON DUPLICATE KEY UPDATE `id`=`id`;
