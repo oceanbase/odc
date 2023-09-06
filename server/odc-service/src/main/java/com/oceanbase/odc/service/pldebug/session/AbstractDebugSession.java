@@ -143,7 +143,7 @@ public abstract class AbstractDebugSession implements AutoCloseable {
             userNameBuilder.append("@").append(connectionConfig.getTenantName());
         }
         if (!directConnect) {
-            userNameBuilder.append("#").append(connectionConfig.getTenantName());
+            userNameBuilder.append("#").append(connectionConfig.getClusterName());
         }
         return userNameBuilder.toString();
     }
