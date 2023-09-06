@@ -19,6 +19,7 @@ package com.oceanbase.odc.service.onlineschemachange.oms.client;
 import java.text.MessageFormat;
 import java.util.Objects;
 
+import org.springframework.beans.BeanUtils;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -116,13 +117,7 @@ public abstract class BaseOmsClient implements OmsClient {
         if (result.isSuccess()) {
             return;
         }
-        if ("CreateOceanBaseDataSource".equals(requestParams.getAction())
-                && requestParams.getRequest() instanceof CreateOceanBaseDataSourceRequest) {
-            CreateOceanBaseDataSourceRequest request = (CreateOceanBaseDataSourceRequest) requestParams.getRequest();
-            // Clean password in log
-            request.setPassword(null);
-            request.setDrcPassword(null);
-        }
+        cleanUpSensitiveMsgInRequest(requestParams);
         String msg = MessageFormat.format(
                 "Failed response oms result,Action={0}, Request Params={1}, Response={2}",
                 requestParams.getAction(), JsonUtils.toJson(requestParams.getRequest()), result);
@@ -141,6 +136,19 @@ public abstract class BaseOmsClient implements OmsClient {
         }
         throw new OmsException(ErrorCodes.BadArgument, msg, result.getRequestId(),
                 responseEntity.getStatusCode());
+    }
+
+    private  void cleanUpSensitiveMsgInRequest(ClientRequestParams requestParams) {
+        if ("CreateOceanBaseDataSource".equals(requestParams.getAction())
+            && requestParams.getRequest() instanceof CreateOceanBaseDataSourceRequest) {
+            CreateOceanBaseDataSourceRequest request = (CreateOceanBaseDataSourceRequest) requestParams.getRequest();
+            CreateOceanBaseDataSourceRequest copiedRequest = new CreateOceanBaseDataSourceRequest();
+            BeanUtils.copyProperties(request, copiedRequest);
+            // Clean password in log
+            copiedRequest.setPassword(null);
+            copiedRequest.setDrcPassword(null);
+            requestParams.setRequest(copiedRequest);
+        }
     }
 
     protected abstract void setHttpHeaders(HttpHeaders httpHeaders);
