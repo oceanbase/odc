@@ -36,7 +36,6 @@ import com.oceanbase.odc.service.datasecurity.model.SensitiveRule;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 
 import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
 
 /**
  * @author gaoda.xy
