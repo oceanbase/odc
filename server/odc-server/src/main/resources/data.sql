@@ -688,4 +688,4 @@ INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES
 -- v4.2.1
 --
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.integration.url-white-list',
- '', 'ODC 外部集成允许访问的 URL 白名单，配置集成 API 时只允许使白名单内的 URL，防止 SSRF 安全漏洞。默认为空，表示允许所有访问所有 URL') ON DUPLICATE KEY UPDATE `id`=`id`;
+ '', 'Only whitelisted URLs are allowed when configuring the integration API to prevent SSRF security vulnerabilities. The whitelist is empty by default, allowing access to all URLs.') ON DUPLICATE KEY UPDATE `id`=`id`;
