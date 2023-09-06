@@ -320,20 +320,18 @@ public class DefaultOnlineSchemaChangeTaskHandler implements OnlineSchemaChangeT
             }
         } catch (Exception e) {
             log.warn("Failed to complete osc job with scheduleTaskId " + scheduleTaskId, e);
-            handleExceptionResult(scheduleTaskId, valveContext, e);
+            handleExceptionResult(valveContext, e);
         }
     }
 
-    private void handleExceptionResult(Long scheduleTaskId, OscValveContext valveContext, Exception e) {
+    private void handleExceptionResult(OscValveContext valveContext, Exception e) {
         if (e instanceof OdcException) {
             OdcException actual = (OdcException) e;
             ErrorCode errorCode = actual.getErrorCode();
             if (terminalErrorCodes.contains(errorCode)) {
-                log.warn("Failed to complete osc job with scheduleTaskId " + scheduleTaskId, e);
                 failedOscTask(valveContext);
             }
         } else {
-            log.warn("Failed to complete osc job with scheduleTaskId " + scheduleTaskId, e);
             failedOscTask(valveContext);
         }
     }

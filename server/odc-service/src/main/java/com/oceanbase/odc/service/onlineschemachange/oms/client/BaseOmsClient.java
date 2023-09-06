@@ -138,9 +138,9 @@ public abstract class BaseOmsClient implements OmsClient {
                 responseEntity.getStatusCode());
     }
 
-    private  void cleanUpSensitiveMsgInRequest(ClientRequestParams requestParams) {
+    private void cleanUpSensitiveMsgInRequest(ClientRequestParams requestParams) {
         if ("CreateOceanBaseDataSource".equals(requestParams.getAction())
-            && requestParams.getRequest() instanceof CreateOceanBaseDataSourceRequest) {
+                && requestParams.getRequest() instanceof CreateOceanBaseDataSourceRequest) {
             CreateOceanBaseDataSourceRequest request = (CreateOceanBaseDataSourceRequest) requestParams.getRequest();
             CreateOceanBaseDataSourceRequest copiedRequest = new CreateOceanBaseDataSourceRequest();
             BeanUtils.copyProperties(request, copiedRequest);
