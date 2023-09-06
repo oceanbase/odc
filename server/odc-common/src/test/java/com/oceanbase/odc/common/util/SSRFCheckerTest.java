@@ -25,16 +25,18 @@ import org.junit.Test;
 import com.google.common.collect.Lists;
 
 public class SSRFCheckerTest {
-    private List<String> whiteList = Arrays.asList("127.0.0.1", "1.1.1.1", "aliyun.com");
+    private final List<String> hostWhiteList = Arrays.asList("127.0.0.1", "1.1.1.1", "aliyun.com");
+
+    private final List<String> urlWhiteList = Arrays.asList("http://127.0.0.1/api");
 
     @Test
     public void checkHostWhiteList_IpNotInWhiteList_ReturnFalse() {
-        assertFalse(SSRFChecker.checkHostInWhiteList("2.2.2.2", whiteList));
+        assertFalse(SSRFChecker.checkHostInWhiteList("2.2.2.2", hostWhiteList));
     }
 
     @Test
     public void checkHostWhiteList_IpInWhiteList_ReturnTrue() {
-        assertTrue(SSRFChecker.checkHostInWhiteList("127.0.0.1", whiteList));
+        assertTrue(SSRFChecker.checkHostInWhiteList("127.0.0.1", hostWhiteList));
     }
 
     @Test
@@ -49,16 +51,37 @@ public class SSRFCheckerTest {
 
     @Test
     public void checkHostWhiteList_ExactDomain_ReturnTrue() {
-        assertTrue(SSRFChecker.checkHostInWhiteList("aliyun.com", whiteList));
+        assertTrue(SSRFChecker.checkHostInWhiteList("aliyun.com", hostWhiteList));
     }
 
     @Test
     public void checkHostWhiteList_FuzzyDomain_ReturnTrue() {
-        assertTrue(SSRFChecker.checkHostInWhiteList("a.aliyun.com", whiteList));
+        assertTrue(SSRFChecker.checkHostInWhiteList("a.aliyun.com", hostWhiteList));
     }
 
     @Test
     public void checkHostWhiteList_DomainNotInWhiteList_ReturnFalse() {
-        assertFalse(SSRFChecker.checkHostInWhiteList("alipay.com", whiteList));
+        assertFalse(SSRFChecker.checkHostInWhiteList("alipay.com", hostWhiteList));
     }
+
+    @Test
+    public void checkUrlWhiteList_UrlInWhiteList_ReturnTrue() {
+        assertTrue(SSRFChecker.checkUrlInWhiteList("http://127.0.0.1/api", urlWhiteList));
+    }
+
+    @Test
+    public void checkUrlWhiteList_UrlInWhiteList_ReturnTrue_2() {
+        assertTrue(SSRFChecker.checkUrlInWhiteList("http://127.0.0.1/api/a/b/c", urlWhiteList));
+    }
+
+    @Test
+    public void checkUrlWhiteList_UrlNotInWhiteList_ReturnFalse() {
+        assertFalse(SSRFChecker.checkUrlInWhiteList("http://128.0.0.1/api", urlWhiteList));
+    }
+
+    @Test
+    public void checkUrlWhiteList_UrlNotInWhiteList_ReturnFalse_2() {
+        assertFalse(SSRFChecker.checkUrlInWhiteList("http://127.0.0.1/API", urlWhiteList));
+    }
+
 }
