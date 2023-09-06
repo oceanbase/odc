@@ -74,8 +74,9 @@ public class SensitiveColumnScanningTask implements Callable<Void> {
             for (String tableName : tables) {
                 List<SensitiveColumn> sensitiveColumns = new ArrayList<>();
                 for (DBTableColumn dbTableColumn : table2Columns.get(tableName)) {
-                    if (recognizer.recognize(dbTableColumn) && !existsSensitiveColumns.contains(
-                            new SimplifySensitiveColumn(database.getId(), tableName, dbTableColumn.getName()))) {
+                    SimplifySensitiveColumn currentColumn =
+                            new SimplifySensitiveColumn(database.getId(), tableName, dbTableColumn.getName());
+                    if (recognizer.recognize(dbTableColumn) && !existsSensitiveColumns.contains(currentColumn)) {
                         SensitiveColumn column = new SensitiveColumn();
                         column.setDatabase(database);
                         column.setTableName(tableName);
@@ -84,6 +85,7 @@ public class SensitiveColumnScanningTask implements Callable<Void> {
                         column.setSensitiveRuleId(recognizer.sensitiveRuleId());
                         column.setLevel(recognizer.sensitiveLevel());
                         sensitiveColumns.add(column);
+                        existsSensitiveColumns.add(currentColumn);
                     }
                 }
                 taskInfo.addSensitiveColumns(sensitiveColumns);
