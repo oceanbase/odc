@@ -19,6 +19,7 @@ import java.sql.Connection;
 import java.sql.Statement;
 import java.util.List;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.JdbcOperations;
@@ -92,75 +93,59 @@ public abstract class AbstractDebugSession implements AutoCloseable {
         }
     }
 
-    protected void acquireNewConnection(ConnectionSession connectionSession, boolean useCurrentSession)
+    protected void acquireNewConnection(ConnectionSession connectionSession, boolean directConnect)
             throws Exception {
         this.connectionSession = connectionSession;
         ConnectionConfig connectionConfig =
                 (ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(connectionSession);
         this.dialectType = connectionConfig.getDialectType();
-
-        this.newDataSource =
-                acquireDataSource(connectionConfig, connectionConfig.getHost(), connectionConfig.getPort(),
-                        connectionSession);
-        if (!useCurrentSession) {
-            this.newDataSource = acquireDirectConnectDataSource();
-        }
+        this.newDataSource = acquireDataSource(connectionSession, directConnect);
         this.jdbcOperations = new JdbcTemplate(this.newDataSource);
         this.connection = newDataSource.getConnection();
-
     }
 
-    private SingleConnectionDataSource acquireDirectConnectDataSource() {
-        List<OdcDBSession> sessions = connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY)
-                .query("show full processlist", new OdcDBSessionRowMapper());
-
-        ConnectionConfig connectionConfig =
-                (ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(connectionSession);
-
-        if (sessions.size() == 0) {
-            throw new UnexpectedException("Empty db session list");
-        }
-
-        String directServerIp = null;
-        for (OdcDBSession odcDbSession : sessions) {
-            if (StringUtils.isNotBlank(odcDbSession.getSvrIp())) {
-                directServerIp = odcDbSession.getSvrIp();
-                break;
-            }
-        }
-        if (StringUtils.isEmpty(directServerIp)) {
-            throw new UnexpectedException("Empty direct server ip and port from 'show full processlist'");
-        }
-        String host = directServerIp.split(":")[0];
-        int port = Integer.parseInt(directServerIp.split(":")[1]);
-
-        return acquireDataSource(connectionConfig, host, port, connectionSession);
-    }
-
-    private SingleConnectionDataSource acquireDataSource(ConnectionConfig connectionConfig, String host, int port,
-            ConnectionSession connectionSession) {
-        // Because of exist concurrent get connection from datasource, and connection need set some session
-        // attribute, So we need a single with no lock datasource.
-        String schema = ConnectionSessionUtil.getCurrentSchema(connectionSession);
+    private SingleConnectionDataSource acquireDataSource(ConnectionSession connectionSession, boolean directConnect) {
         SingleConnectionDataSource dataSource = new SingleConnectionDataSource();
-        String url = String.format("jdbc:%s://%s:%d/%s", OB_JDBC_PROTOCOL, host, port, schema);
+        ConnectionConfig config = (ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(connectionSession);
+        String schema = ConnectionSessionUtil.getCurrentSchema(connectionSession);
+        String host = config.getHost();
+        Integer port = config.getPort();
+        if (directConnect) {
+            List<OdcDBSession> sessions =
+                    connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY)
+                            .query("show full processlist", new OdcDBSessionRowMapper());
+            if (CollectionUtils.isEmpty(sessions)) {
+                throw new UnexpectedException("Empty db session list");
+            }
+            String directServerIp = null;
+            for (OdcDBSession odcDbSession : sessions) {
+                if (StringUtils.isNotBlank(odcDbSession.getSvrIp())) {
+                    directServerIp = odcDbSession.getSvrIp();
+                    break;
+                }
+            }
+            if (StringUtils.isEmpty(directServerIp)) {
+                throw new UnexpectedException("Empty direct server ip and port from 'show full processlist'");
+            }
+            host = directServerIp.split(":")[0];
+            port = Integer.parseInt(directServerIp.split(":")[1]);
+        }
+        String url = String.format("jdbc:%s://%s:%d/\"%s\"", OB_JDBC_PROTOCOL, host, port, schema);
         dataSource.setUrl(url);
-        dataSource.setUsername(buildUserName(connectionConfig));
-        dataSource.setPassword(connectionConfig.getPassword());
+        dataSource.setUsername(buildUserName(config, directConnect));
+        dataSource.setPassword(config.getPassword());
         return dataSource;
     }
 
-    private String buildUserName(ConnectionConfig connectionConfig) {
-
-        int index = connectionConfig.getUsername().indexOf("#");
-        String username =
-                index < 0 ? connectionConfig.getUsername() : connectionConfig.getUsername().substring(0, index);
-
-        StringBuilder builder = new StringBuilder(username);
-        if (org.apache.commons.lang3.StringUtils.isNotBlank(connectionConfig.getTenantName())) {
-            builder.append("@").append(connectionConfig.getTenantName());
+    private String buildUserName(ConnectionConfig connectionConfig, boolean directConnect) {
+        StringBuilder userNameBuilder = new StringBuilder(connectionConfig.getUsername());
+        if (StringUtils.isNotBlank(connectionConfig.getTenantName())) {
+            userNameBuilder.append("@").append(connectionConfig.getTenantName());
         }
-        return builder.toString();
+        if (!directConnect) {
+            userNameBuilder.append("#").append(connectionConfig.getClusterName());
+        }
+        return userNameBuilder.toString();
     }
 
     public JdbcOperations getJdbcOperations() {

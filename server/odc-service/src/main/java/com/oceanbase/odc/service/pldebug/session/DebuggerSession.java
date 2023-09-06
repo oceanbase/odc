@@ -107,7 +107,7 @@ public class DebuggerSession extends AbstractDebugSession {
         ddl = req.getAnonymousBlock();
         this.syncEnabled = syncEnabled;
 
-        acquireNewConnection(debuggeeSession.getConnectionSession(), true);
+        acquireNewConnection(debuggeeSession.getConnectionSession(), false);
         try (Statement stmt = connection.createStatement()) {
             // 设置超时时间, 单位：us
             stmt.execute(String.format("set session ob_query_timeout = %s;", DEBUG_TIMEOUT_MS * 1000));
