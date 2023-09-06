@@ -20,6 +20,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
@@ -100,11 +101,26 @@ public class SensitiveColumnScanningTask implements Callable<Void> {
     }
 
     @AllArgsConstructor
-    @EqualsAndHashCode
     private static class SimplifySensitiveColumn {
         private Long databaseId;
         private String tableName;
         private String columnName;
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(databaseId, tableName.toLowerCase(), columnName.toLowerCase());
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj instanceof SimplifySensitiveColumn) {
+                SimplifySensitiveColumn other = (SimplifySensitiveColumn) obj;
+                return Objects.equals(databaseId, other.databaseId)
+                        && Objects.equals(tableName.toLowerCase(), other.tableName.toLowerCase())
+                        && Objects.equals(columnName.toLowerCase(), other.columnName.toLowerCase());
+            }
+            return false;
+        }
     }
 
 }
