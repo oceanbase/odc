@@ -59,7 +59,7 @@ public class DebuggeeSession extends AbstractDebugSession {
     public DebuggeeSession(ConnectionSession connectionSession, ThreadPoolExecutor debugThreadPoolExecutor,
             StartPLDebugReq req) throws Exception {
 
-        acquireNewConnection(connectionSession, false);
+        acquireNewConnection(connectionSession, true);
         // OceanBaseConnection can accept null as executor
         // 0 for timeout means wait infinitely
         connection.setNetworkTimeout(null, 0);
