@@ -430,7 +430,7 @@ public class DatabaseService {
             databaseRepository.saveAll(toUpdate);
             return true;
         } catch (Exception ex) {
-            log.info("sync database failed, dataSourceId={}", dataSourceId);
+            log.info("sync database failed, dataSourceId={}, error message={}", dataSourceId, ex.getLocalizedMessage());
             return false;
         } finally {
             lock.unlock();

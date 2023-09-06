@@ -42,7 +42,7 @@ public class DatabaseSyncSchedules {
     @Autowired
     private ConnectionService connectionService;
 
-    @Scheduled(fixedDelayString = "${odc.connect.session.sync-databases-interval-millis:180000}")
+    @Scheduled(fixedDelayString = "${odc.connect.session.sync-databases-interval-millis:600000}")
     public void syncDatabases() {
         List<ConnectionConfig> allConnections = connectionService.listAllConnections();
         if (CollectionUtils.isEmpty(allConnections)) {
