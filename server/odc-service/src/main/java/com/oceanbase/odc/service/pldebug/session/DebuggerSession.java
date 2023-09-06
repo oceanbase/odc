@@ -49,6 +49,7 @@ import com.oceanbase.odc.service.pldebug.model.DBPLError;
 import com.oceanbase.odc.service.pldebug.model.PLDebugBreakpoint;
 import com.oceanbase.odc.service.pldebug.model.PLDebugErrorCode;
 import com.oceanbase.odc.service.pldebug.model.PLDebugPrintBacktrace;
+import com.oceanbase.odc.service.pldebug.model.PLDebugResult;
 import com.oceanbase.odc.service.pldebug.model.PLDebugStatusReason;
 import com.oceanbase.odc.service.pldebug.model.PLDebugVariable;
 import com.oceanbase.odc.service.pldebug.model.StartPLDebugReq;
@@ -163,7 +164,11 @@ public class DebuggerSession extends AbstractDebugSession {
         if (!debuggeeSession.detectSessionAlive()) {
             // if debuggee is not alive, do not sync and throw exception
             log.warn("Debuggee session is not alive");
-            throw OBException.executeFailed("Debuggee session is not alive before debugger start");
+            PLDebugResult result = debuggeeSession.getResult();
+            if (result == null || result.getExecutionErrorMessage() == null) {
+                throw OBException.executeFailed("Debuggee session is not alive before debugger start");
+            }
+            throw OBException.executeFailed(result.getExecutionErrorMessage());
         }
         synchronize();
         if (req.getFunction() != null || req.getProcedure() != null) {
