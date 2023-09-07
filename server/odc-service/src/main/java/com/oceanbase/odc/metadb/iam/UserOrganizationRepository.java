@@ -20,5 +20,5 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 public interface UserOrganizationRepository extends JpaRepository<UserOrganizationEntity, Long>,
         JpaSpecificationExecutor<UserOrganizationEntity> {
-
+    boolean existsByOrganizationId(Long organizationId);
 }

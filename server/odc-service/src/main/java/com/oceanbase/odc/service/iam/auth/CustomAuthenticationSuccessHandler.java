@@ -97,7 +97,6 @@ public class CustomAuthenticationSuccessHandler extends SavedRequestAwareAuthent
         loginHistory.setSuccess(true);
         loginHistoryService.record(loginHistory);
 
-        SpringContextUtil.publishEvent(new TriggerEvent(LOGIN_SUCCESS, authentication.getPrincipal()));
         if (authentication.getPrincipal() instanceof User) {
             User user = (User) authentication.getPrincipal();
             organizationResourceMigrator.migrate(user);
@@ -111,6 +110,7 @@ public class CustomAuthenticationSuccessHandler extends SavedRequestAwareAuthent
             user.setOrganizationType(OrganizationType.TEAM);
             SecurityContextUtils.switchCurrentUserOrganization(user, team, httpServletRequest, true);
         }
+        SpringContextUtil.publishEvent(new TriggerEvent(LOGIN_SUCCESS, authentication.getPrincipal()));
 
         // Login logic for Security Framework
         if (log.isDebugEnabled()) {
