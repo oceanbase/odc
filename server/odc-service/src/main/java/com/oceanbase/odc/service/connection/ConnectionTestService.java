@@ -80,7 +80,8 @@ public class ConnectionTestService {
         req.setDefaultSchema(ConnectionSessionUtil.getUserOrSchemaString(req.getDefaultSchema(), req.getDialectType()));
         ConnectionTestResult result = connectionTesting.test(req);
         ErrorCode errorCode = result.getErrorCode();
-        if (errorCode != ErrorCodes.Unknown && errorCode != ErrorCodes.ConnectionUnsupportedConnectType) {
+        if (errorCode != ErrorCodes.Unknown && errorCode != ErrorCodes.ConnectionUnsupportedConnectType
+                && errorCode != ErrorCodes.ConnectionDatabaseTypeMismatched) {
             return result;
         }
         /**

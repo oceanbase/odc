@@ -21,6 +21,7 @@ import java.util.List;
 import org.pf4j.Extension;
 
 import com.oceanbase.odc.core.datasource.ConnectionInitializer;
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.plugin.connect.obmysql.OBMySQLConnectionExtension;
 import com.oceanbase.odc.plugin.connect.obmysql.initializer.EnableTraceInitializer;
 import com.oceanbase.odc.plugin.connect.oboracle.initializer.OBOracleDBMSOutputInitializer;
@@ -41,4 +42,8 @@ public class OBOracleConnectionExtension extends OBMySQLConnectionExtension {
         return initializers;
     }
 
+    @Override
+    public DialectType getDBType() {
+        return DialectType.OB_ORACLE;
+    }
 }
