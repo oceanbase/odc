@@ -19,8 +19,6 @@ import java.sql.Connection;
 
 import org.pf4j.ExtensionPoint;
 
-import com.oceanbase.odc.core.shared.constant.DialectType;
-
 /**
  * @author yaobin
  * @date 2023-04-14
@@ -29,6 +27,4 @@ import com.oceanbase.odc.core.shared.constant.DialectType;
 public interface InformationExtensionPoint extends ExtensionPoint {
 
     String getDBVersion(Connection connection);
-
-    DialectType getDBType(Connection connection);
 }

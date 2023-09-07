@@ -34,7 +34,6 @@ import org.springframework.util.CollectionUtils;
 import com.oceanbase.odc.common.util.ExceptionUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.datasource.ConnectionInitializer;
-import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
 import com.oceanbase.odc.plugin.connect.api.ConnectionExtensionPoint;
 import com.oceanbase.odc.plugin.connect.api.TestResult;
@@ -128,10 +127,6 @@ public class OBMySQLConnectionExtension implements ConnectionExtensionPoint {
             return TestResult.unknownError(e);
         }
         try (Connection connection = DriverManager.getConnection(jdbcUrl, properties)) {
-            OBMySQLInformationExtension informationExtension = new OBMySQLInformationExtension();
-            if (informationExtension.getDBType(connection) != getDBType()) {
-                return TestResult.databaseTypeMismatched(getDBType().name());
-            }
             try (Statement statement = connection.createStatement()) {
                 if (queryTimeout >= 0) {
                     statement.setQueryTimeout(queryTimeout);
@@ -173,10 +168,6 @@ public class OBMySQLConnectionExtension implements ConnectionExtensionPoint {
         JdbcUrlParser urlParser = new DefaultJdbcUrlParser(jdbcUrl);
         return new HostAddress(urlParser.getHostAddresses().get(0).getHost(),
                 urlParser.getHostAddresses().get(0).getPort());
-    }
-
-    public DialectType getDBType() {
-        return DialectType.OB_MYSQL;
     }
 
 }
