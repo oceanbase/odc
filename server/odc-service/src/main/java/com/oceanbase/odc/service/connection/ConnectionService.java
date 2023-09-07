@@ -203,7 +203,7 @@ public class ConnectionService {
             transactionManager.rollback(transactionStatus);
             throw e;
         }
-        databaseSyncManager.submitSyncDataSourceTask(saved.getId());
+        databaseSyncManager.submitSyncDataSourceTask(saved);
         return saved;
     }
 
@@ -213,7 +213,7 @@ public class ConnectionService {
         List<ConnectionConfig> connectionConfigs = new ArrayList<>();
         for (ConnectionConfig connection : connections) {
             ConnectionConfig saved = innerCreate(connection);
-            databaseSyncManager.submitSyncDataSourceTask(saved.getId());
+            databaseSyncManager.submitSyncDataSourceTask(saved);
             userPermissionService.bindUserAndDataSourcePermission(currentUserId(), currentOrganizationId(),
                     saved.getId(),
                     Arrays.asList("read", "update", "delete"));
