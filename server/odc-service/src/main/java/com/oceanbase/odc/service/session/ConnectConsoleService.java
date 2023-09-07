@@ -195,9 +195,11 @@ public class ConnectConsoleService {
             PreConditions.lessThanOrEqualTo("sqlLength", LimitMetric.SQL_LENGTH,
                     StringUtils.length(request.getSql()), maxSqlLength);
         }
-        SqlAsyncExecuteResp result = filterKillSession(connectionSession, request);
-        if (result != null) {
-            return result;
+        if (connectionSession.getDialectType().isOceanbase()) {
+            SqlAsyncExecuteResp result = filterKillSession(connectionSession, request);
+            if (result != null) {
+                return result;
+            }
         }
         List<String> sqls = request.ifSplitSqls()
                 ? SqlUtils.split(connectionSession, request.getSql(), sessionProperties.isOracleRemoveCommentPrefix())
