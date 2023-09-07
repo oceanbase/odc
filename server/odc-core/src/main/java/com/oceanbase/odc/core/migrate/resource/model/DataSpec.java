@@ -47,7 +47,7 @@ public class DataSpec {
         this.entity = entity;
     }
 
-    static DataSpec copyFrom(@NonNull DataSpec spec, Object value) {
+    public static DataSpec copyFrom(@NonNull DataSpec spec, Object value) {
         return new DataSpec(spec.entity, value);
     }
 
