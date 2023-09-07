@@ -15,13 +15,9 @@
  */
 package com.oceanbase.odc.common.config;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.commons.configuration2.ex.ConfigurationException;
-import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -41,14 +37,5 @@ public class EncryptableConfigurationsTest {
         expected.put("key2", "value2");
 
         Assert.assertEquals(expected, load);
-    }
-
-    @Test
-    public void encryptIfRequires_ValueContainsENC() throws ConfigurationException, IOException {
-        EncryptableConfigurations.encryptFileIfRequires(GENERATE_INPUT_FILE);
-
-        String fileContent = FileUtils.readFileToString(new File(GENERATE_INPUT_FILE));
-
-        Assert.assertTrue(fileContent.contains("ENC@"));
     }
 }

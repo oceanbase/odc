@@ -15,7 +15,6 @@
  */
 package com.oceanbase.odc.plugin.schema.oboracle.parser;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
@@ -27,8 +26,8 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+import com.oceanbase.odc.common.util.JdbcOperationsUtil;
 import com.oceanbase.odc.common.util.StringUtils;
-import com.oceanbase.odc.plugin.connect.obmysql.util.JdbcOperationsUtil;
 import com.oceanbase.odc.plugin.schema.obmysql.parser.GetDBTableByParser;
 import com.oceanbase.tools.dbbrowser.model.DBConstraintDeferability;
 import com.oceanbase.tools.dbbrowser.model.DBConstraintType;
@@ -81,7 +80,7 @@ public class OBOracleGetDBTableByParser implements GetDBTableByParser {
     private final char ORACLE_IDENTIFIER_WRAP_CHAR = '"';
     private List<DBTableConstraint> constraints = new ArrayList<>();
     private List<DBTableIndex> indexes = new ArrayList<>();
-    private final String BASE_PATH = "src/main/resources/parser/";
+    private final String LIST_INDEX_SQL_PATH = "parser/getIndexInfo.sql";
 
     public OBOracleGetDBTableByParser(@NonNull Connection connection, @NonNull String schemaName,
             @NonNull String tableName) {
@@ -172,7 +171,8 @@ public class OBOracleGetDBTableByParser implements GetDBTableByParser {
                             } else if (item.getNullable() != null && !item.getNullable()) {
                                 constraint.setType(DBConstraintType.CHECK);
                                 constraint.setCheckClause(
-                                        "\"" + columnDefinition.getColumnReference().getColumn() + "\" IS NOT NULL");
+                                        "\"" + removeIdentifiers(columnDefinition.getColumnReference().getColumn())
+                                                + "\" IS NOT NULL");
                             }
                         }
                         constraints.add(constraint);
@@ -246,7 +246,7 @@ public class OBOracleGetDBTableByParser implements GetDBTableByParser {
         }
         String sql;
         try {
-            sql = readFile(BASE_PATH + "getIndexInfo.sql");
+            sql = readFile(LIST_INDEX_SQL_PATH);
         } catch (Exception e) {
             log.warn("Load get index info sql failed, error message={}", e.getMessage());
             return this.indexes;
@@ -328,8 +328,8 @@ public class OBOracleGetDBTableByParser implements GetDBTableByParser {
         return statement;
     }
 
-    private static String readFile(String strFile) throws IOException {
-        try (InputStream input = new FileInputStream(strFile)) {
+    private String readFile(String strFile) throws IOException {
+        try (InputStream input = this.getClass().getClassLoader().getResourceAsStream(strFile)) {
             int available = input.available();
             byte[] bytes = new byte[available];
             input.read(bytes);
@@ -348,12 +348,28 @@ public class OBOracleGetDBTableByParser implements GetDBTableByParser {
             return partition;
         }
         Partition partitionStmt = createTableStmt.getPartition();
+        if (Objects.isNull(partitionStmt)) {
+            return partition;
+        }
         if (partitionStmt instanceof HashPartition) {
             parseHashPartitionStmt((HashPartition) partitionStmt, partition);
         } else if (partitionStmt instanceof RangePartition) {
             parseRangePartitionStmt((RangePartition) partitionStmt, partition);
         } else if (partitionStmt instanceof ListPartition) {
             parseListPartitionStmt((ListPartition) partitionStmt, partition);
+        }
+
+        /**
+         * In order to adapt to the front-end only the expression field is used for Hash、List and Range
+         * partition types
+         */
+        if (Objects.nonNull(partition.getPartitionOption().getType())
+                && partition.getPartitionOption().getType().supportExpression()
+                && StringUtils.isBlank(partition.getPartitionOption().getExpression())) {
+            List<String> columnNames = partition.getPartitionOption().getColumnNames();
+            if (!columnNames.isEmpty()) {
+                partition.getPartitionOption().setExpression(String.join(", ", columnNames));
+            }
         }
         return partition;
     }

@@ -19,8 +19,9 @@ import java.io.Serializable;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import com.oceanbase.odc.common.json.SensitiveInput;
-import com.oceanbase.odc.common.json.SensitiveOutput;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.flow.model.TaskParameters;
 
@@ -84,7 +85,7 @@ public class DataTransferConfig implements Serializable, TaskParameters {
      */
     private String sysUser;
     @SensitiveInput
-    @SensitiveOutput
+    @JsonProperty(access = Access.WRITE_ONLY)
     private String sysPassword;
     /**
      * 导出数据输出路径，该参数只在客户端场景下有效

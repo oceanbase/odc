@@ -25,21 +25,14 @@ public class SensitivePropertyHandlerImplTest {
 
     @Test
     public void encryptionSecret_Enabled_NotEmpty() {
-        String s = enabledHandler.encryptionSecret();
+        String s = enabledHandler.publicKey();
         Assert.assertFalse(s.isEmpty());
     }
 
     @Test
     public void encryptionSecret_Disabled_Null() {
-        String s = disabledHandler.encryptionSecret();
+        String s = disabledHandler.publicKey();
         Assert.assertNull(s);
-    }
-
-    @Test
-    public void encryptDecrypt_Matches() {
-        String encrypted = enabledHandler.encrypt("somevalue");
-        String decrypted = enabledHandler.decrypt(encrypted);
-        Assert.assertEquals("somevalue", decrypted);
     }
 
 }

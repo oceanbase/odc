@@ -45,7 +45,6 @@ import lombok.EqualsAndHashCode;
 @Service
 @SkipAuthorize("odc internal usage")
 public class EncryptionFacadeImpl implements EncryptionFacade {
-    private static final int SALT_SIZE = 16;
     private static final long AES_CACHE_SIZE = 1000L;
     private static final long AES_CACHE_LIVE_SECONDS = 600L;
 

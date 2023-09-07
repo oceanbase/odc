@@ -106,6 +106,7 @@ stmt
     | create_savepoint_stmt
     | rollback_savepoint_stmt
     | lock_tables_stmt
+    | lock_table_stmt
     | unlock_tables_stmt
     | flashback_stmt
     | purge_stmt
@@ -2809,6 +2810,16 @@ lock_tables_stmt
     : LOCK_ table_or_tables lock_table_list
     ;
 
+lock_table_stmt
+    : LOCK TABLE relation_factor IN lock_mode MODE ((WAIT INTNUM) | NOWAIT)?
+    ;
+
+lock_mode
+    : (ROW|SHARE ROW)? EXCLUSIVE
+    | ROW? SHARE
+    | SHARE UPDATE
+    ;
+
 unlock_tables_stmt
     : UNLOCK TABLES
     ;
@@ -2880,7 +2891,7 @@ tenant
     ;
 
 begin_stmt
-    : BEGI WORK?
+    : BEGIN WORK?
     | START TRANSACTION ((WITH CONSISTENT SNAPSHOT) | transaction_access_mode | (WITH CONSISTENT SNAPSHOT Comma transaction_access_mode) | (transaction_access_mode Comma WITH CONSISTENT SNAPSHOT))?
     ;
 
@@ -3622,7 +3633,7 @@ partition_role
     ;
 
 upgrade_action
-    : BEGI
+    : BEGIN
     | END
     ;
 
@@ -3971,7 +3982,7 @@ oracle_unreserved_keyword
     | BACKUP
     | BECOME
     | BEFORE
-    | BEGI
+    | BEGIN
     | BLOCK
     | BODY
     | CACHE

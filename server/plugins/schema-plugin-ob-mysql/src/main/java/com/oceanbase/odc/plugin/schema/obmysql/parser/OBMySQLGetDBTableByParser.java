@@ -210,6 +210,9 @@ public class OBMySQLGetDBTableByParser implements GetDBTableByParser {
             return partition;
         }
         Partition partitionStmt = createTableStmt.getPartition();
+        if (Objects.isNull(partitionStmt)) {
+            return partition;
+        }
         if (partitionStmt instanceof HashPartition) {
             parseHashPartitionStmt((HashPartition) partitionStmt, partition);
         } else if (partitionStmt instanceof KeyPartition) {
@@ -220,6 +223,18 @@ public class OBMySQLGetDBTableByParser implements GetDBTableByParser {
             parseListPartitionStmt((ListPartition) partitionStmt, partition);
         }
 
+        /**
+         * In order to adapt to the front-end only the expression field is used for Hash、List and Range
+         * partition types
+         */
+        if (Objects.nonNull(partition.getPartitionOption().getType())
+                && partition.getPartitionOption().getType().supportExpression()
+                && StringUtils.isBlank(partition.getPartitionOption().getExpression())) {
+            List<String> columnNames = partition.getPartitionOption().getColumnNames();
+            if (!columnNames.isEmpty()) {
+                partition.getPartitionOption().setExpression(String.join(", ", columnNames));
+            }
+        }
         if (partitionStmt.getSubPartitionOption() == null) {
             return partition;
         }

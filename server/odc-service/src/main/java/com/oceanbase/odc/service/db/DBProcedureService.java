@@ -19,18 +19,18 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.stereotype.Service;
 
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
+import com.oceanbase.odc.core.session.ConnectionSessionConstants;
+import com.oceanbase.odc.plugin.schema.api.ProcedureExtensionPoint;
 import com.oceanbase.odc.service.common.model.ResourceSql;
-import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
+import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
 import com.oceanbase.odc.service.session.ConnectConsoleService;
+import com.oceanbase.tools.dbbrowser.model.DBPLObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBProcedure;
-import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
-import com.oceanbase.tools.dbbrowser.template.DBObjectTemplate;
-import com.oceanbase.tools.dbbrowser.template.mysql.MySQLProcedureTemplate;
-import com.oceanbase.tools.dbbrowser.template.oracle.OracleProcedureTemplate;
 
 import lombok.NonNull;
 
@@ -41,33 +41,38 @@ public class DBProcedureService {
     private ConnectConsoleService consoleService;
 
     public List<DBProcedure> list(ConnectionSession connectionSession, String dbName) {
-        DBSchemaAccessor accessor = DBSchemaAccessors.create(connectionSession);
-        return accessor.listProcedures(dbName).stream().map(item -> {
-            DBProcedure procedure = new DBProcedure();
-            procedure.setProName(item.getName());
-            procedure.setErrorMessage(item.getErrorMessage());
-            procedure.setStatus(item.getStatus());
-            return procedure;
-        }).collect(Collectors.toList());
+        return connectionSession.getSyncJdbcExecutor(
+                ConnectionSessionConstants.BACKEND_DS_KEY)
+                .execute((ConnectionCallback<List<DBPLObjectIdentity>>) con -> getProcedureExtensionPoint(
+                        connectionSession).list(con, dbName))
+                .stream().map(
+                        item -> {
+                            DBProcedure procedure = new DBProcedure();
+                            procedure.setProName(item.getName());
+                            procedure.setErrorMessage(item.getErrorMessage());
+                            procedure.setStatus(item.getStatus());
+                            return procedure;
+                        })
+                .collect(Collectors.toList());
     }
 
     public DBProcedure detail(ConnectionSession connectionSession, String dbName, String proName) {
-        DBSchemaAccessor accessor = DBSchemaAccessors.create(connectionSession);
-        return accessor.getProcedure(dbName, proName);
+        return connectionSession.getSyncJdbcExecutor(
+                ConnectionSessionConstants.BACKEND_DS_KEY)
+                .execute((ConnectionCallback<DBProcedure>) con -> getProcedureExtensionPoint(connectionSession)
+                        .getDetail(con, dbName, proName));
     }
 
     public ResourceSql getCreateSql(@NonNull ConnectionSession session,
             @NonNull DBProcedure resource) {
-        DBObjectTemplate<DBProcedure> template;
-        if (session.getDialectType().isMysql()) {
-            template = new MySQLProcedureTemplate();
-        } else if (session.getDialectType().isOracle()) {
-            template = new OracleProcedureTemplate();
-        } else {
-            throw new UnsupportedOperationException("Unsupported dialect, " + session.getDialectType());
-        }
-        String ddl = template.generateCreateObjectTemplate(resource);
-        return ResourceSql.ofSql(ddl);
+        return ResourceSql.ofSql(session.getSyncJdbcExecutor(
+                ConnectionSessionConstants.BACKEND_DS_KEY)
+                .execute((ConnectionCallback<String>) con -> getProcedureExtensionPoint(session)
+                        .generateCreateTemplate(resource)));
+    }
+
+    private ProcedureExtensionPoint getProcedureExtensionPoint(@NonNull ConnectionSession session) {
+        return SchemaPluginUtil.getProcedureExtension(session.getDialectType());
     }
 
 }
