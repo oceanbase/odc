@@ -16,7 +16,7 @@ SET
 where
   rule_metadata_id in (
     select
-      id
+      rrm.id
     from
       regulation_rule_metadata rrm
     where
@@ -45,7 +45,7 @@ SET
 where
   rule_metadata_id in (
     select
-      id
+      rrm.id
     from
       regulation_rule_metadata rrm
     where
