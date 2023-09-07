@@ -108,6 +108,7 @@ public class DebuggerSession extends AbstractDebugSession {
         ddl = req.getAnonymousBlock();
         this.syncEnabled = syncEnabled;
 
+        // Debugger must connect to the same database host with debuggee
         acquireNewConnection(debuggeeSession.getConnectionSession(),
                 () -> cloneDataSource(debuggeeSession.getNewDataSource()));
         try (Statement stmt = connection.createStatement()) {
