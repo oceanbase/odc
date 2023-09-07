@@ -18,6 +18,8 @@ package com.oceanbase.odc.service.collaboration;
 
 import com.oceanbase.odc.service.iam.model.User;
 
+import lombok.NonNull;
+
 public interface OrganizationResourceMigrator {
-    void migrate(User user);
+    void migrate(@NonNull User user);
 }

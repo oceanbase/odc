@@ -29,12 +29,14 @@ import org.springframework.transaction.support.TransactionTemplate;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.metadb.iam.OrganizationEntity;
+import com.oceanbase.odc.metadb.iam.UserOrganizationRepository;
 import com.oceanbase.odc.service.common.util.ConditionalOnProperty;
 import com.oceanbase.odc.service.iam.OrganizationService;
 import com.oceanbase.odc.service.iam.VerticalPermissionValidator;
 import com.oceanbase.odc.service.iam.model.Organization;
 import com.oceanbase.odc.service.iam.model.User;
 
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -51,6 +53,9 @@ public class DefaultOrganizationResourceMigrator implements OrganizationResource
 
     @Autowired
     private DataSource dataSource;
+
+    @Autowired
+    private UserOrganizationRepository userOrganizationRepository;
 
     @Autowired
     private IndividualOrganizationMigrator individualOrganizationMigrator;
@@ -71,15 +76,14 @@ public class DefaultOrganizationResourceMigrator implements OrganizationResource
     private VerticalPermissionValidator verticalPermissionValidator;
 
     @Override
-    public void migrate(User user) {
+    public void migrate(@NonNull User user) {
         if (Objects.isNull(user)) {
             return;
         }
         this.transactionTemplate.execute((transactionStatus -> {
             try {
-                Optional<Organization> organization = organizationService.getByOrganizationTypeAndUserId(
-                        OrganizationType.TEAM, user.getId());
-                if (!organization.isPresent()) {
+                boolean exists = userOrganizationRepository.existsByOrganizationId(user.getOrganizationId());
+                if (!exists) {
                     log.info(
                             "First user login to team organization, start to initialize resource, organizationId={}, userId={}",
                             user.getOrganizationId(), user.getId());
