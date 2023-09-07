@@ -20,7 +20,6 @@ import java.sql.Connection;
 import org.pf4j.Extension;
 
 import com.oceanbase.odc.core.shared.Verify;
-import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.plugin.connect.api.InformationExtensionPoint;
 import com.oceanbase.odc.plugin.connect.obmysql.util.JdbcOperationsUtil;
 
@@ -50,10 +49,5 @@ public class MySQLInformationExtension implements InformationExtensionPoint {
         }
         Verify.notNull(dbVersion, "MySQL DB Version");
         return dbVersion;
-    }
-
-    @Override
-    public DialectType getDBType(Connection connection) {
-        return null;
     }
 }

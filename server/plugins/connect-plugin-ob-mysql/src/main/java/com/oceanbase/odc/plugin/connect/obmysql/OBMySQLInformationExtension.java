@@ -19,9 +19,7 @@ import java.sql.Connection;
 
 import org.pf4j.Extension;
 
-import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.Verify;
-import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.sql.util.OBUtils;
 import com.oceanbase.odc.plugin.connect.api.InformationExtensionPoint;
 import com.oceanbase.odc.plugin.connect.obmysql.util.JdbcOperationsUtil;
@@ -37,7 +35,8 @@ import lombok.extern.slf4j.Slf4j;
 @Extension
 public class OBMySQLInformationExtension implements InformationExtensionPoint {
 
-    private String getDBVersionComment(Connection connection) {
+    @Override
+    public String getDBVersion(Connection connection) {
         String querySql = "show variables like 'version_comment'";
         String v = null;
         try {
@@ -52,30 +51,7 @@ public class OBMySQLInformationExtension implements InformationExtensionPoint {
         } catch (Exception exception) {
             log.warn("Failed to get ob version", exception);
         }
-        return v;
+        return OBUtils.parseObVersionComment(v);
     }
 
-    @Override
-    public String getDBVersion(Connection connection) {
-        String dbVersionComment = getDBVersionComment(connection);
-        return dbVersionComment == null ? null : OBUtils.parseObVersionComment(dbVersionComment);
-    }
-
-    @Override
-    public DialectType getDBType(Connection connection) {
-        try {
-            String dbVersionComment = getDBVersionComment(connection);
-            if (StringUtils.isNotEmpty(dbVersionComment) && dbVersionComment.toUpperCase().contains("OCEANBASE")) {
-                if (connection.getMetaData().getDatabaseProductName().equalsIgnoreCase("MYSQL")) {
-                    return DialectType.OB_MYSQL;
-                }
-                if (connection.getMetaData().getDatabaseProductName().equalsIgnoreCase("ORACLE")) {
-                    return DialectType.OB_ORACLE;
-                }
-            }
-        } catch (Exception e) {
-            log.warn("Failed to parse database type.", e);
-        }
-        return DialectType.UNKNOWN;
-    }
 }
