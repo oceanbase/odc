@@ -137,9 +137,6 @@ public class ResourceMigrator implements Migrator {
                     ResourceSpec resourceSpec = findResourceSpec(manager, path);
                     resourceSpec.getTemplates().stream().flatMap(t -> t.getSpecs().stream())
                             .forEach(t -> fullFillFieldReference(manager, migrator, t.getValueFrom()));
-                    if (behavior() == Behavior.VERSIONED) {
-                        resourceSpec.getTemplates().forEach(t -> t.getMetadata().setAllowDuplicate(true));
-                    }
                     migrator.migrate(resourceSpec);
                 }
                 return true;
