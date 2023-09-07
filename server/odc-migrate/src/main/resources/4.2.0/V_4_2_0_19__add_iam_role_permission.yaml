@@ -9,13 +9,13 @@ templates:
       - column_name: role_id
         value_from:
           field_ref:
-            ref_file: migrate/web/V_4_2_1_2__iam_role.yaml
+            ref_file: migrate/rbac/V_3_2_0_5__iam_role.yaml
             field_path: templates.0.specs.0.value
       - column_name: permission_id
         value_from:
           field_ref:
-            ref_file: migrate/web/V_4_2_0_18__iam_permission.yaml
-            field_path: templates.[18-21].specs.0.value
+            ref_file: 4.2.0/V_4_2_0_18__iam_permission.yaml
+            field_path: templates.*.specs.0.value
       - column_name: organization_id
         value: ${ORGANIZATION_ID}
         data_type: java.lang.Long

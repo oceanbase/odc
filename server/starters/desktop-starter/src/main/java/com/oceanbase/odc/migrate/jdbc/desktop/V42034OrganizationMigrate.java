@@ -74,7 +74,7 @@ public class V42034OrganizationMigrate implements JdbcMigratable {
         parameters.putIfAbsent(ResourceConstants.CREATOR_ID_PLACEHOLDER_NAME, 0L);
         List<String> resourceLocations = new LinkedList<>();
         resourceLocations.add("migrate/rbac/V_3_2_0_5__iam_role.yaml");
-        resourceLocations.add("migrate/rbac/V_4_2_0_24__resource_role.yaml");
+        resourceLocations.add("4.2.0/V_4_2_0_24__resource_role.yaml");
         resourceLocations.add("init-config/regulation");
 
         return ResourceConfig.builder()

@@ -132,6 +132,7 @@ public class RuleApplyingMigrator {
             }
         }
         if (CollectionUtils.isNotEmpty(toAdd)) {
+
             affectRules = ruleApplyingRepository.saveAll(toAdd).size();
         }
         log.info("sync regulation rules successfully, organizationId={}, affectRules={}", organizationId, affectRules);

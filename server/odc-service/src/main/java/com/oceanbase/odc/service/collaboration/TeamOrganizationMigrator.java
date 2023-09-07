@@ -115,6 +115,7 @@ public class TeamOrganizationMigrator {
         parameters.putIfAbsent(ResourceConstants.ORGANIZATION_ID_PLACEHOLDER_NAME, organizationId);
         parameters.putIfAbsent(ResourceConstants.CREATOR_ID_PLACEHOLDER_NAME, userId);
         List<String> resourceLocations = new LinkedList<>();
+        resourceLocations.add("4.2.0");
         resourceLocations.add("migrate/rbac/V_3_2_0_5__iam_role.yaml");
         resourceLocations.add("migrate/rbac/V_4_2_0_24__resource_role.yaml");
         resourceLocations.add("init-config/regulation");
