@@ -28,6 +28,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 import org.apache.commons.lang3.Validate;
+import org.springframework.jdbc.datasource.SingleConnectionDataSource;
 
 import com.alibaba.fastjson.JSONObject;
 import com.oceanbase.odc.common.util.StringUtils;
@@ -107,7 +108,8 @@ public class DebuggerSession extends AbstractDebugSession {
         ddl = req.getAnonymousBlock();
         this.syncEnabled = syncEnabled;
 
-        acquireNewConnection(debuggeeSession.getConnectionSession(), false);
+        acquireNewConnection(debuggeeSession.getConnectionSession(),
+                () -> cloneDataSource(debuggeeSession.getNewDataSource()));
         try (Statement stmt = connection.createStatement()) {
             // 设置超时时间, 单位：us
             stmt.execute(String.format("set session ob_query_timeout = %s;", DEBUG_TIMEOUT_MS * 1000));
@@ -174,6 +176,15 @@ public class DebuggerSession extends AbstractDebugSession {
         if (req.getFunction() != null || req.getProcedure() != null) {
             debugBefore();
         }
+    }
+
+    private static SingleConnectionDataSource cloneDataSource(SingleConnectionDataSource originDataSource) {
+        SingleConnectionDataSource debuggerDataSource = new SingleConnectionDataSource();
+        debuggerDataSource.setUrl(originDataSource.getUrl());
+        debuggerDataSource.setUsername(originDataSource.getUsername());
+        debuggerDataSource.setPassword(originDataSource.getPassword());
+        debuggerDataSource.setDriverClassName(OdcConstants.DEFAULT_DRIVER_CLASS_NAME);
+        return debuggerDataSource;
     }
 
     private void debugBefore() {

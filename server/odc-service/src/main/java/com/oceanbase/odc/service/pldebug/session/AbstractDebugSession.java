@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.pldebug.session;
 import java.sql.Connection;
 import java.sql.Statement;
 import java.util.List;
+import java.util.function.Supplier;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -31,6 +32,7 @@ import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.core.shared.constant.OdcConstants;
 import com.oceanbase.odc.core.shared.exception.OBException;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.core.shared.model.OdcDBSession;
@@ -93,57 +95,60 @@ public abstract class AbstractDebugSession implements AutoCloseable {
         }
     }
 
-    protected void acquireNewConnection(ConnectionSession connectionSession, boolean directConnect)
+    protected void acquireNewConnection(ConnectionSession connectionSession,
+            Supplier<SingleConnectionDataSource> dataSourceSupplier)
             throws Exception {
         this.connectionSession = connectionSession;
         ConnectionConfig connectionConfig =
                 (ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(connectionSession);
         this.dialectType = connectionConfig.getDialectType();
-        this.newDataSource = acquireDataSource(connectionSession, directConnect);
+        this.newDataSource = dataSourceSupplier.get();
         this.jdbcOperations = new JdbcTemplate(this.newDataSource);
         this.connection = newDataSource.getConnection();
     }
 
-    private SingleConnectionDataSource acquireDataSource(ConnectionSession connectionSession, boolean directConnect) {
+
+    protected SingleConnectionDataSource acquireDataSource(ConnectionSession connectionSession) {
         SingleConnectionDataSource dataSource = new SingleConnectionDataSource();
         ConnectionConfig config = (ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(connectionSession);
         String schema = ConnectionSessionUtil.getCurrentSchema(connectionSession);
-        String host = config.getHost();
-        Integer port = config.getPort();
-        if (directConnect) {
-            List<OdcDBSession> sessions =
-                    connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY)
-                            .query("show full processlist", new OdcDBSessionRowMapper());
-            if (CollectionUtils.isEmpty(sessions)) {
-                throw new UnexpectedException("Empty db session list");
+        List<OdcDBSession> sessions =
+                connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY)
+                        .query("show full processlist", new OdcDBSessionRowMapper());
+        if (CollectionUtils.isEmpty(sessions)) {
+            throw new UnexpectedException("Empty db session list");
+        }
+        String directServerIp = null;
+        for (OdcDBSession odcDbSession : sessions) {
+            if (StringUtils.isNotBlank(odcDbSession.getSvrIp())) {
+                directServerIp = odcDbSession.getSvrIp();
+                break;
             }
-            String directServerIp = null;
-            for (OdcDBSession odcDbSession : sessions) {
-                if (StringUtils.isNotBlank(odcDbSession.getSvrIp())) {
-                    directServerIp = odcDbSession.getSvrIp();
-                    break;
-                }
-            }
-            if (StringUtils.isEmpty(directServerIp)) {
-                throw new UnexpectedException("Empty direct server ip and port from 'show full processlist'");
-            }
+        }
+        if (StringUtils.isEmpty(directServerIp)) {
+            throw new UnexpectedException("Empty direct server ip and port from 'show full processlist'");
+        }
+        String host = null;
+        Integer port = null;
+        if (directServerIp.contains(":")) {
             host = directServerIp.split(":")[0];
             port = Integer.parseInt(directServerIp.split(":")[1]);
+        } else {
+            host = config.getHost();
+            port = config.getPort();
         }
         String url = String.format("jdbc:%s://%s:%d/\"%s\"", OB_JDBC_PROTOCOL, host, port, schema);
         dataSource.setUrl(url);
-        dataSource.setUsername(buildUserName(config, directConnect));
+        dataSource.setUsername(buildUserName(config));
         dataSource.setPassword(config.getPassword());
+        dataSource.setDriverClassName(OdcConstants.DEFAULT_DRIVER_CLASS_NAME);
         return dataSource;
     }
 
-    private String buildUserName(ConnectionConfig connectionConfig, boolean directConnect) {
+    private String buildUserName(ConnectionConfig connectionConfig) {
         StringBuilder userNameBuilder = new StringBuilder(connectionConfig.getUsername());
         if (StringUtils.isNotBlank(connectionConfig.getTenantName())) {
             userNameBuilder.append("@").append(connectionConfig.getTenantName());
-        }
-        if (!directConnect) {
-            userNameBuilder.append("#").append(connectionConfig.getClusterName());
         }
         return userNameBuilder.toString();
     }
