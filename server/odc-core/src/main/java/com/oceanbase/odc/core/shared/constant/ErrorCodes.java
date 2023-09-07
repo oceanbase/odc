@@ -189,6 +189,7 @@ public enum ErrorCodes implements ErrorCode {
     ExternalRAMServiceError,
     ExternalOssError,
     ExternalVpcError,
+    ExternalUrlNotAllowed,
 
     /**
      * ob operation

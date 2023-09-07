@@ -20,6 +20,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
@@ -35,7 +36,6 @@ import com.oceanbase.odc.service.datasecurity.model.SensitiveRule;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 
 import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
 
 /**
  * @author gaoda.xy
@@ -74,8 +74,9 @@ public class SensitiveColumnScanningTask implements Callable<Void> {
             for (String tableName : tables) {
                 List<SensitiveColumn> sensitiveColumns = new ArrayList<>();
                 for (DBTableColumn dbTableColumn : table2Columns.get(tableName)) {
-                    if (recognizer.recognize(dbTableColumn) && !existsSensitiveColumns.contains(
-                            new SimplifySensitiveColumn(database.getId(), tableName, dbTableColumn.getName()))) {
+                    SimplifySensitiveColumn currentColumn =
+                            new SimplifySensitiveColumn(database.getId(), tableName, dbTableColumn.getName());
+                    if (recognizer.recognize(dbTableColumn) && !existsSensitiveColumns.contains(currentColumn)) {
                         SensitiveColumn column = new SensitiveColumn();
                         column.setDatabase(database);
                         column.setTableName(tableName);
@@ -84,6 +85,7 @@ public class SensitiveColumnScanningTask implements Callable<Void> {
                         column.setSensitiveRuleId(recognizer.sensitiveRuleId());
                         column.setLevel(recognizer.sensitiveLevel());
                         sensitiveColumns.add(column);
+                        existsSensitiveColumns.add(currentColumn);
                     }
                 }
                 taskInfo.addSensitiveColumns(sensitiveColumns);
@@ -100,11 +102,26 @@ public class SensitiveColumnScanningTask implements Callable<Void> {
     }
 
     @AllArgsConstructor
-    @EqualsAndHashCode
     private static class SimplifySensitiveColumn {
         private Long databaseId;
         private String tableName;
         private String columnName;
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(databaseId, tableName.toLowerCase(), columnName.toLowerCase());
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj instanceof SimplifySensitiveColumn) {
+                SimplifySensitiveColumn other = (SimplifySensitiveColumn) obj;
+                return Objects.equals(databaseId, other.databaseId)
+                        && Objects.equals(tableName.toLowerCase(), other.tableName.toLowerCase())
+                        && Objects.equals(columnName.toLowerCase(), other.columnName.toLowerCase());
+            }
+            return false;
+        }
     }
 
 }
