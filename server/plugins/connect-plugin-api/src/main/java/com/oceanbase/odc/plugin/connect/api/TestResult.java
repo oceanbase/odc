@@ -72,6 +72,10 @@ public class TestResult {
         return fail(ErrorCodes.ConnectionUnsupportedDBVersion, new String[] {version});
     }
 
+    public static TestResult databaseTypeMismatched(@NonNull String dbType) {
+        return fail(ErrorCodes.ConnectionDatabaseTypeMismatched, new String[] {dbType});
+    }
+
     public static TestResult success() {
         TestResult result = new TestResult();
         result.setActive(true);
