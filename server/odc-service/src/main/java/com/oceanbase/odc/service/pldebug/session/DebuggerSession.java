@@ -179,7 +179,7 @@ public class DebuggerSession extends AbstractDebugSession {
         }
     }
 
-    private static SingleConnectionDataSource cloneDataSource(SingleConnectionDataSource originDataSource) {
+    private SingleConnectionDataSource cloneDataSource(SingleConnectionDataSource originDataSource) {
         SingleConnectionDataSource debuggerDataSource = new SingleConnectionDataSource();
         debuggerDataSource.setUrl(originDataSource.getUrl());
         debuggerDataSource.setUsername(originDataSource.getUsername());
