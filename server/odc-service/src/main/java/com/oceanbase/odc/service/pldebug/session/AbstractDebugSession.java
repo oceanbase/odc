@@ -96,8 +96,7 @@ public abstract class AbstractDebugSession implements AutoCloseable {
     }
 
     protected void acquireNewConnection(ConnectionSession connectionSession,
-            Supplier<SingleConnectionDataSource> dataSourceSupplier)
-            throws Exception {
+            Supplier<SingleConnectionDataSource> dataSourceSupplier) throws Exception {
         this.connectionSession = connectionSession;
         ConnectionConfig connectionConfig =
                 (ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(connectionSession);
