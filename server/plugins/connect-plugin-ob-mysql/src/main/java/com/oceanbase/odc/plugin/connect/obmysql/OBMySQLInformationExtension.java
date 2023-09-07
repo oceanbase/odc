@@ -37,8 +37,7 @@ import lombok.extern.slf4j.Slf4j;
 @Extension
 public class OBMySQLInformationExtension implements InformationExtensionPoint {
 
-    @Override
-    public String getDBVersionComment(Connection connection) {
+    private String getDBVersionComment(Connection connection) {
         String querySql = "show variables like 'version_comment'";
         String v = null;
         try {

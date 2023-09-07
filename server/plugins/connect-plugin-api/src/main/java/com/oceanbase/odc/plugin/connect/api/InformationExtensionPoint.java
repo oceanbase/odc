@@ -30,7 +30,5 @@ public interface InformationExtensionPoint extends ExtensionPoint {
 
     String getDBVersion(Connection connection);
 
-    String getDBVersionComment(Connection connection);
-
     DialectType getDBType(Connection connection);
 }

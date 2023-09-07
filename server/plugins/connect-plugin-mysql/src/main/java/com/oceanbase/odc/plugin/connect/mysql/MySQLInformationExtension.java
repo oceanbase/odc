@@ -53,11 +53,6 @@ public class MySQLInformationExtension implements InformationExtensionPoint {
     }
 
     @Override
-    public String getDBVersionComment(Connection connection) {
-        return null;
-    }
-
-    @Override
     public DialectType getDBType(Connection connection) {
         return null;
     }
