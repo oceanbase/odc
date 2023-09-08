@@ -35,7 +35,7 @@ import org.springframework.integration.jdbc.lock.JdbcLockRegistry;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.oceanbase.odc.common.lang.Holder;
-import com.oceanbase.odc.core.migrate.BootstrapSchemaHistoryRepository;
+import com.oceanbase.odc.core.migrate.DefaultSchemaHistoryRepository;
 import com.oceanbase.odc.core.migrate.MigrateConfiguration;
 import com.oceanbase.odc.core.migrate.Migrates;
 
@@ -72,7 +72,7 @@ abstract public class AbstractMetaDBMigrate {
                 log.info("init configuration success, migrate starting, initVersion={}",
                         configuration.getInitVersion());
 
-                new Migrates(configuration, new BootstrapSchemaHistoryRepository(
+                new Migrates(configuration, new DefaultSchemaHistoryRepository(
                         configuration.getDataSource())).migrate();
                 log.info("migrate success");
             } finally {

@@ -48,7 +48,7 @@ import lombok.extern.slf4j.Slf4j;
  * @version : SchemaHistoryRepository.java, v 0.1 2021-03-26 14:26
  */
 @Slf4j
-public class BootstrapSchemaHistoryRepository implements SchemaHistoryRepository {
+public class DefaultSchemaHistoryRepository implements SchemaHistoryRepository {
 
     private static final String DEFAULT_TABLE = "migrate_schema_history";
     private final String TABLE_TEMPLATE_FILE_NAME = "migrate_schema_history_table_template.sql";
@@ -62,7 +62,7 @@ public class BootstrapSchemaHistoryRepository implements SchemaHistoryRepository
     private final SimpleJdbcInsert simpleJdbcInsert;
     private final String table;
 
-    public BootstrapSchemaHistoryRepository(String table, DataSource dataSource) {
+    public DefaultSchemaHistoryRepository(String table, DataSource dataSource) {
         Validate.notBlank(table, "parameter table may not be blank");
         Validate.notNull(dataSource, "parameter dataSource may not be null");
 
@@ -80,7 +80,7 @@ public class BootstrapSchemaHistoryRepository implements SchemaHistoryRepository
         }
     }
 
-    public BootstrapSchemaHistoryRepository(DataSource dataSource) {
+    public DefaultSchemaHistoryRepository(DataSource dataSource) {
         this(DEFAULT_TABLE, dataSource);
     }
 

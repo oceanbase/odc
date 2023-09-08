@@ -29,11 +29,11 @@ import org.junit.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.SingleConnectionDataSource;
 
-public class BootstrapSchemaHistoryRepositoryTest {
+public class DefaultSchemaHistoryRepositoryTest {
 
     private static final String JDBC_URL = "jdbc:h2:mem:test;MODE=MySQL";
 
-    private BootstrapSchemaHistoryRepository repository;
+    private DefaultSchemaHistoryRepository repository;
     private Timestamp now = Timestamp.from(Instant.now());
     private DataSource dataSource;
 
@@ -41,7 +41,7 @@ public class BootstrapSchemaHistoryRepositoryTest {
     public void setUp() throws Exception {
         Class.forName("org.h2.Driver");
         dataSource = new SingleConnectionDataSource(JDBC_URL, false);
-        repository = new BootstrapSchemaHistoryRepository("migrate_schema_history", dataSource);
+        repository = new DefaultSchemaHistoryRepository("migrate_schema_history", dataSource);
     }
 
     @After
