@@ -104,6 +104,7 @@ public class IndividualOrganizationMigrator {
         resourceLocations.add("migrate/common/V_3_4_0_14__data_masking_rule_segment.yaml");
         resourceLocations.add("migrate/common/V_4_1_0_7__automation_event_metadata.yaml");
         resourceLocations.add("migrate/common/V_4_1_0_14__iam_permission.yaml");
+        resourceLocations.add("migrate/common/V_4_2_0_24__resource_role.yaml");
 
         resourceLocations.add("migrate/rbac");
         resourceLocations.add("runtime");
