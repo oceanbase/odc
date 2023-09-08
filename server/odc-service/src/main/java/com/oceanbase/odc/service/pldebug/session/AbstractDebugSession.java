@@ -111,9 +111,28 @@ public abstract class AbstractDebugSession implements AutoCloseable {
         SingleConnectionDataSource dataSource = new SingleConnectionDataSource();
         ConnectionConfig config = (ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(connectionSession);
         String schema = ConnectionSessionUtil.getCurrentSchema(connectionSession);
+        String host = null;
+        Integer port = null;
+        if (config.getClusterName() == null) {
+            host = config.getHost();
+            port = config.getPort();
+        }else {
+            String directServerIp = getDirectServerIp(connectionSession);
+            host = directServerIp.split(":")[0];
+            port = Integer.parseInt(directServerIp.split(":")[1]);
+        }
+        String url = String.format("jdbc:%s://%s:%d/\"%s\"", OB_JDBC_PROTOCOL, host, port, schema);
+        dataSource.setUrl(url);
+        dataSource.setUsername(buildUserName(config));
+        dataSource.setPassword(config.getPassword());
+        dataSource.setDriverClassName(OdcConstants.DEFAULT_DRIVER_CLASS_NAME);
+        return dataSource;
+    }
+
+    private  String getDirectServerIp(ConnectionSession connectionSession) {
         List<OdcDBSession> sessions =
-                connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY)
-                        .query("show full processlist", new OdcDBSessionRowMapper());
+            connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY)
+                .query("show full processlist", new OdcDBSessionRowMapper());
         if (CollectionUtils.isEmpty(sessions)) {
             throw new UnexpectedException("Empty db session list");
         }
@@ -127,21 +146,7 @@ public abstract class AbstractDebugSession implements AutoCloseable {
         if (StringUtils.isEmpty(directServerIp)) {
             throw new UnexpectedException("Empty direct server ip and port from 'show full processlist'");
         }
-        String host = null;
-        Integer port = null;
-        if (directServerIp.contains(":")) {
-            host = directServerIp.split(":")[0];
-            port = Integer.parseInt(directServerIp.split(":")[1]);
-        } else {
-            host = config.getHost();
-            port = config.getPort();
-        }
-        String url = String.format("jdbc:%s://%s:%d/\"%s\"", OB_JDBC_PROTOCOL, host, port, schema);
-        dataSource.setUrl(url);
-        dataSource.setUsername(buildUserName(config));
-        dataSource.setPassword(config.getPassword());
-        dataSource.setDriverClassName(OdcConstants.DEFAULT_DRIVER_CLASS_NAME);
-        return dataSource;
+        return directServerIp;
     }
 
     private String buildUserName(ConnectionConfig connectionConfig) {

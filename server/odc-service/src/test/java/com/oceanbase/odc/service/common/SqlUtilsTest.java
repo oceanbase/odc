@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.common;
 
+import java.util.List;
+
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -83,7 +85,7 @@ public class SqlUtilsTest {
         String resultSql = SqlUtils.removeComments(commentProcessor, sql);
         Assert.assertEquals("select xx from table ", resultSql);
     }
-
+    
     @Test
     public void addInternalROWIDColumn_WithAlias_AddRowId() {
         String sql = SqlUtils.addInternalROWIDColumn("select t.ROWID, t.* from TEST t");
