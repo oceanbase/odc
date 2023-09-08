@@ -113,10 +113,10 @@ public abstract class AbstractDebugSession implements AutoCloseable {
         String schema = ConnectionSessionUtil.getCurrentSchema(connectionSession);
         String host = null;
         Integer port = null;
-        if (config.getClusterName() == null) {
+        if (StringUtils.isBlank(config.getClusterName())) {
             host = config.getHost();
             port = config.getPort();
-        }else {
+        } else {
             String directServerIp = getDirectServerIp(connectionSession);
             host = directServerIp.split(":")[0];
             port = Integer.parseInt(directServerIp.split(":")[1]);
@@ -129,10 +129,10 @@ public abstract class AbstractDebugSession implements AutoCloseable {
         return dataSource;
     }
 
-    private  String getDirectServerIp(ConnectionSession connectionSession) {
+    private String getDirectServerIp(ConnectionSession connectionSession) {
         List<OdcDBSession> sessions =
-            connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY)
-                .query("show full processlist", new OdcDBSessionRowMapper());
+                connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY)
+                        .query("show full processlist", new OdcDBSessionRowMapper());
         if (CollectionUtils.isEmpty(sessions)) {
             throw new UnexpectedException("Empty db session list");
         }
