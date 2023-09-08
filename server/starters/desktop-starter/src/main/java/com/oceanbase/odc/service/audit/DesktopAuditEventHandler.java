@@ -38,19 +38,20 @@ public class DesktopAuditEventHandler implements AuditEventHandler {
                     AuditEventAction.STOP_MOCKDATA_TASK,
                     AuditEventAction.STOP_IMPORT_TASK,
                     AuditEventAction.STOP_EXPORT_TASK,
+                    AuditEventAction.STOP_EXPORT_RESULT_SET_TASK,
                     AuditEventAction.STOP_SHADOWTABLE_SYNC_TASK,
-                    AuditEventAction.STOP_PARTITION_PLAN_TASK,
                     AuditEventAction.STOP_ALTER_SCHEDULE_TASK,
                     AuditEventAction.CREATE_ASYNC_TASK,
                     AuditEventAction.CREATE_MOCKDATA_TASK,
                     AuditEventAction.CREATE_IMPORT_TASK,
                     AuditEventAction.CREATE_EXPORT_TASK,
+                    AuditEventAction.CREATE_EXPORT_RESULT_SET_TASK,
                     AuditEventAction.CREATE_SHADOWTABLE_SYNC_TASK,
-                    AuditEventAction.CREATE_PARTITION_PLAN_TASK,
                     AuditEventAction.CREATE_ALTER_SCHEDULE_TASK,
                     AuditEventAction.ROLLBACK_TASK);
     private final List<AuditEventType> supportedAuditEventTypeInClientMode =
-            Arrays.asList(AuditEventType.PERSONAL_CONFIGURATION, AuditEventType.SCRIPT_MANAGEMENT);
+            Arrays.asList(AuditEventType.PERSONAL_CONFIGURATION,
+                    AuditEventType.SCRIPT_MANAGEMENT, AuditEventType.DATABASE_OPERATION);
 
     @Override
     public void handle(List<AuditEventEntity> events, HttpServletRequest servletRequest) {}
