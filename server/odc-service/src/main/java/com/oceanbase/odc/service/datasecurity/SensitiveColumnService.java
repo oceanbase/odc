@@ -45,6 +45,7 @@ import com.google.common.collect.Sets;
 import com.oceanbase.odc.core.authority.util.Authenticated;
 import com.oceanbase.odc.core.authority.util.PreAuthenticate;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
+import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
@@ -58,6 +59,8 @@ import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.datasecurity.extractor.model.DBColumn;
+import com.oceanbase.odc.service.datasecurity.model.ListColumnsResp;
+import com.oceanbase.odc.service.datasecurity.model.ListColumnsResp.SchemaColumn;
 import com.oceanbase.odc.service.datasecurity.model.MaskingAlgorithm;
 import com.oceanbase.odc.service.datasecurity.model.QuerySensitiveColumnParams;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveColumn;
@@ -66,9 +69,12 @@ import com.oceanbase.odc.service.datasecurity.model.SensitiveColumnScanningTaskI
 import com.oceanbase.odc.service.datasecurity.model.SensitiveColumnStats;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveRule;
 import com.oceanbase.odc.service.datasecurity.util.SensitiveColumnMapper;
+import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.iam.HorizontalDataPermissionValidator;
 import com.oceanbase.odc.service.iam.UserService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
+import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
+import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -112,6 +118,36 @@ public class SensitiveColumnService {
     private HorizontalDataPermissionValidator permissionValidator;
 
     private static final SensitiveColumnMapper mapper = SensitiveColumnMapper.INSTANCE;
+
+    @Transactional(rollbackFor = Exception.class)
+    @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
+    public ListColumnsResp listColumns(@NotNull Long projectId, @NotEmpty List<Long> databaseIds) {
+        checkProjectDatabases(projectId, databaseIds);
+        List<Database> databases = databaseService.listDatabasesByIds(databaseIds);
+        Map<Long, Long> databaseId2DatasourceId = databases.stream()
+                .collect(Collectors.toMap(Database::getId, d -> d.getDataSource().getId(), (d1, d2) -> d1));
+        List<SchemaColumn> schemaColumns = new ArrayList<>();
+        for (Database database : databases) {
+            ConnectionConfig config = connectionService
+                    .getForConnectionSkipPermissionCheck(databaseId2DatasourceId.get(database.getId()));
+            ConnectionSession session = new DefaultConnectSessionFactory(config).generateSession();
+            try {
+                DBSchemaAccessor accessor = DBSchemaAccessors.create(session);
+                SchemaColumn schemaColumn = new SchemaColumn();
+                schemaColumn.setSchemaName(database.getName());
+                schemaColumn.setTableColumns(accessor.listBasicTableColumns(database.getName()));
+                schemaColumn.setViewColumns(accessor.listBasicViewColumns(database.getName()));
+                if (!schemaColumn.getTableColumns().isEmpty() || !schemaColumn.getViewColumns().isEmpty()) {
+                    schemaColumns.add(schemaColumn);
+                }
+            } catch (Exception e) {
+                log.error("List columns failed, databaseId={}", database.getId(), e);
+            } finally {
+                session.expire();
+            }
+        }
+        return ListColumnsResp.of(schemaColumns);
+    }
 
     @Transactional(rollbackFor = Exception.class)
     @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
