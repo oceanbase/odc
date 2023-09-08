@@ -140,8 +140,6 @@ public class SensitiveColumnService {
                 if (!schemaColumn.getTableColumns().isEmpty() || !schemaColumn.getViewColumns().isEmpty()) {
                     schemaColumns.add(schemaColumn);
                 }
-            } catch (Exception e) {
-                log.error("List columns failed, databaseId={}", database.getId(), e);
             } finally {
                 session.expire();
             }
