@@ -21,8 +21,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import javax.sql.DataSource;
-
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -71,9 +69,6 @@ public class RuleApplyingMigrator {
 
     @Autowired
     private RuleApplyingRepository ruleApplyingRepository;
-
-    @Autowired
-    private DataSource dataSource;
 
     @Transactional(rollbackFor = Exception.class)
     public int migrate(Long organizationId) {
