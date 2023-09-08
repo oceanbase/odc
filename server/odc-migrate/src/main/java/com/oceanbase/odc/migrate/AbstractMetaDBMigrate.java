@@ -35,8 +35,8 @@ import org.springframework.integration.jdbc.lock.JdbcLockRegistry;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.oceanbase.odc.common.lang.Holder;
+import com.oceanbase.odc.core.migrate.BootstrapMigrates;
 import com.oceanbase.odc.core.migrate.MigrateConfiguration;
-import com.oceanbase.odc.core.migrate.Migrates;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -71,7 +71,7 @@ abstract public class AbstractMetaDBMigrate {
                 log.info("init configuration success, migrate starting, initVersion={}",
                         configuration.getInitVersion());
 
-                new Migrates(configuration).migrate();
+                new BootstrapMigrates(configuration).migrate();
                 log.info("migrate success");
             } finally {
                 lock.unlock();

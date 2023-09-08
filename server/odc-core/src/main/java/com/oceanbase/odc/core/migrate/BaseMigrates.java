@@ -13,18 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.oceanbase.odc.core.migrate;
 
 import java.io.IOException;
 import java.net.URL;
-import java.sql.Timestamp;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -46,27 +44,25 @@ import com.oceanbase.odc.core.migrate.ResourceMigrator.ResourceMigrateMetaInfo;
 import com.oceanbase.odc.core.migrate.resource.ResourceManager;
 import com.oceanbase.odc.core.migrate.resource.model.ResourceConfig;
 
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * metadb migrate entry
- * 
- * @author yizhou.xw
- * @version : Migrates.java, v 0.1 2021-03-23 16:23
+ * {@link BaseMigrates}
+ *
+ * @author yh263208
+ * @date 2023-09-08 10:23
+ * @since ODC_release_4.2.1
  */
 @Slf4j
-public class Migrates {
-    private final MigrateConfiguration configuration;
-    private final SchemaHistoryRepository repository;
-    private final Map<String, List<SchemaHistory>> version2Histories;
+abstract public class BaseMigrates {
+
+    protected final MigrateConfiguration configuration;
     private final List<ResourceMigrateMetaInfo> migrateMetas = new LinkedList<>();
 
-    public Migrates(MigrateConfiguration configuration) {
-        this.configuration = configuration;
-        this.repository = new SchemaHistoryRepository(configuration.getHistoryTable(), configuration.getDataSource());
-        this.version2Histories = repository.listSuccess().stream().collect(
-                Collectors.groupingBy(SchemaHistory::getVersion));
+    public BaseMigrates(@NonNull MigrateConfiguration configuration) {
         initResourceManager(configuration);
+        this.configuration = configuration;
     }
 
     public void migrate() {
@@ -75,7 +71,7 @@ public class Migrates {
         allMigrators.addAll(scanJdbc());
         allMigrators.addAll(scanResource());
 
-        validate(allMigrators);
+        validateDuplicated(allMigrators);
         log.info("validate success");
 
         Map<String, List<Migrator>> version2Migratables =
@@ -84,54 +80,25 @@ public class Migrates {
                 version2Migratables.keySet().stream().map(Version::new).sorted().collect(Collectors.toList());
         log.info("versionCount={}", sortedVersions.size());
 
-        degradeCheck(sortedVersions.get(sortedVersions.size() - 1).getVersion());
+        preCheck(allMigrators);
         for (Version version : sortedVersions) {
             log.debug("version={}", version);
             List<Migrator> migratables = version2Migratables.get(version.getVersion());
             List<Migrator> versionedMigratables =
                     migratables.stream().filter(m -> m.behavior() == Behavior.VERSIONED).collect(Collectors.toList());
-            for (Migrator migratable : versionedMigratables) {
-                Optional<SchemaHistory> history = getHistory(migratable);
-                if (history.isPresent()) {
-                    log.info("skip migrated versioned migrator, version={}, script={}",
-                            migratable.version(), migratable.script());
-                } else {
-                    migrate(migratable);
-                }
-            }
+            versionedMigratables.stream().filter(this::preHandle).forEach(this::migrate);
             List<Migrator> repeatableMigratables =
                     migratables.stream().filter(m -> m.behavior() == Behavior.REPEATABLE).collect(Collectors.toList());
-            for (Migrator migratable : repeatableMigratables) {
-                if (migratable.ignoreChecksum()) {
-                    log.info("ignore checksum and start to migrate directly, version={}, script={}",
-                            migratable.version(), migratable.script());
-                    migrate(migratable);
-                } else {
-                    SchemaHistory history = getHistory(migratable).orElse(new SchemaHistory());
-                    if (StringUtils.equalsIgnoreCase(history.getChecksum(), migratable.checksum())) {
-                        log.info("skip checksum matched repeatable migrator, version={}, script={}",
-                                migratable.version(), migratable.script());
-                    } else {
-                        migrate(migratable);
-                    }
-                }
-            }
+            repeatableMigratables.stream().filter(this::preHandle).forEach(this::migrate);
         }
         log.debug("migrate done");
     }
 
-    private void degradeCheck(String currentVersion) {
-        log.info("Version check");
-        Optional<Version> version = version2Histories.keySet().stream().map(Version::new).max(Version::compareTo);
-        if (version.isPresent()) {
-            String historyMaximumVersion = version.get().getVersion();
-            if (VersionUtils.isGreaterThan(historyMaximumVersion, currentVersion)) {
-                throw new RuntimeException(String.format(
-                        "Software degrade is not allowed, please check your ODC version which should be greater than or equal to %s",
-                        historyMaximumVersion));
-            }
-        }
-    }
+    protected abstract boolean preHandle(Migrator migrator);
+
+    protected abstract void preCheck(List<Migrator> allMigrators);
+
+    protected abstract void afterCompletion(Migrator migrator, boolean result, long durationMillis);
 
     private void initResourceManager(MigrateConfiguration configuration) {
         List<ResourceConfig> resourceConfigs = configuration.getResourceConfigs();
@@ -159,7 +126,7 @@ public class Migrates {
         }
     }
 
-    private void validate(List<Migrator> allMigrators) {
+    private void validateDuplicated(List<Migrator> allMigrators) {
         long distinctCount = allMigrators.stream().map(migrator -> migrator.version() + migrator.script())
                 .distinct().count();
         Validate.isTrue(distinctCount == allMigrators.size(),
@@ -171,21 +138,6 @@ public class Migrates {
         Validate.isTrue(distinctVersionCount == versionedMigrators.size(),
                 String.format("duplicated versioned script exists, total=%d, distinct=%d",
                         versionedMigrators.size(), distinctVersionCount));
-    }
-
-    private Optional<SchemaHistory> getHistory(Migrator migratable) {
-        String version = migratable.version();
-        String script = migratable.script();
-        List<SchemaHistory> histories = version2Histories.get(version);
-        if (CollectionUtils.isEmpty(histories)) {
-            return Optional.empty();
-        }
-        for (SchemaHistory history : histories) {
-            if (StringUtils.equalsIgnoreCase(script, history.getScript())) {
-                return Optional.of(history);
-            }
-        }
-        return Optional.empty();
     }
 
     private void migrate(Migrator migratable) {
@@ -211,15 +163,8 @@ public class Migrates {
                 result = migratable.doMigrate();
             }
         } finally {
-            long end = System.currentTimeMillis();
-            long durationMillis = end - start;
-            SchemaHistory history = SchemaHistory.fromMigratable(migratable);
-            history.setSuccess(result);
-            history.setExecutionMillis(durationMillis);
-            history.setInstalledOn(Timestamp.from(Instant.ofEpochMilli(end)));
-
+            afterCompletion(migratable, result, System.currentTimeMillis() - start);
             log.info("migrate {} done, result={}", migrateIdentify, result);
-            repository.create(history);
         }
     }
 
@@ -281,4 +226,5 @@ public class Migrates {
         }
         return list;
     }
+
 }
