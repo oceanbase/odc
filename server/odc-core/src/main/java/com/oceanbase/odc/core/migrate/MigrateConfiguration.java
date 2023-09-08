@@ -34,19 +34,11 @@ import lombok.Data;
 @Data
 @Builder
 public class MigrateConfiguration {
-    private static final String DEFAULT_TABLE = "migrate_schema_history";
 
     /**
      * dataSource for connect to target database, the history table will also be created into
      */
     private DataSource dataSource;
-
-    /**
-     * schema history table name
-     */
-    @Builder.Default
-    private String historyTable = DEFAULT_TABLE;
-
     /**
      * if run in dry mode
      */

@@ -58,7 +58,8 @@ public class MigratesTest {
                 .basePackages(Arrays.asList("com.oceanbase.odc.core.migrate"))
                 .build();
 
-        Migrates migrates = new Migrates(configuration);
+        Migrates migrates = new Migrates(configuration,
+                new BootstrapSchemaHistoryRepository(configuration.getDataSource()));
 
         migrates.migrate();
 
@@ -76,7 +77,7 @@ public class MigratesTest {
                 .resourceLocations(Collections.singletonList("migrate/migrate"))
                 .basePackages(Arrays.asList("com.oceanbase.odc.core.migrate"))
                 .build();
-        new Migrates(init).migrate();
+        new Migrates(init, new BootstrapSchemaHistoryRepository(init.getDataSource())).migrate();
         new JdbcTemplate(dataSource).execute("drop table migrate_schema_history");
 
         MigrateConfiguration second = MigrateConfiguration.builder()
@@ -86,7 +87,7 @@ public class MigratesTest {
                 .initVersion("1.3.2")
                 .build();
 
-        new Migrates(second).migrate();
+        new Migrates(second, new BootstrapSchemaHistoryRepository(second.getDataSource())).migrate();
         Long rowCount = new JdbcTemplate(dataSource)
                 .queryForObject("select count(*) from migrate_schema_history where script like '%V%'", Long.class);
 
@@ -103,7 +104,8 @@ public class MigratesTest {
 
         thrown.expectMessage("no JdbcMigratable implementation found under basePackages");
 
-        Migrates migrates = new Migrates(configuration);
+        Migrates migrates = new Migrates(configuration,
+                new BootstrapSchemaHistoryRepository(configuration.getDataSource()));
         migrates.migrate();
     }
 
@@ -116,8 +118,8 @@ public class MigratesTest {
                 .build();
 
         // prepare
-        SchemaHistoryRepository repository =
-                new SchemaHistoryRepository(configuration.getHistoryTable(), configuration.getDataSource());
+        BootstrapSchemaHistoryRepository repository =
+                new BootstrapSchemaHistoryRepository(configuration.getDataSource());
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
         jdbcTemplate.update(
                 "INSERT INTO `migrate_schema_history` (`install_rank`,`version`,`description`,`type`,`script`,`checksum`,"
@@ -137,7 +139,8 @@ public class MigratesTest {
         thrown.expectMessage(
                 "Software degrade is not allowed, please check your ODC version which should be greater than or equal to 3.4.0");
 
-        Migrates migrates = new Migrates(configuration);
+        Migrates migrates = new Migrates(configuration,
+                new BootstrapSchemaHistoryRepository(configuration.getDataSource()));
         migrates.migrate();
     }
 
