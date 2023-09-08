@@ -170,10 +170,18 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
     }
 
     @Test
+    public void listTableIndex_TestIndexAvailable_Success() {
+        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBMySQLDataSource()).createOBMysql();
+        List<DBTableIndex> indexList = accessor.listTableIndexes(getOBMySQLDataBaseName(), "test_index_type");
+        Assert.assertTrue(indexList.get(0).getAvailable());
+    }
+
+    @Test
     public void listTableIndex_Success() {
         DBSchemaAccessor accessor = new DBSchemaAccessors(getOBMySQLDataSource()).createOBMysql();
         Map<String, List<DBTableIndex>> indexes = accessor.listTableIndexes(getOBMySQLDataBaseName());
         Assert.assertTrue(indexes.size() > 0);
+        Assert.assertTrue(indexes.get("test_index_type").get(0).getAvailable());
     }
 
     @Test

@@ -260,6 +260,7 @@ public class OBOracleGetDBTableByParser implements GetDBTableByParser {
                     idx.setTableName(tableName);
                     idx.setName(rs.getString("INDEX_NAME"));
                     idx.setVisible("VISIBLE".equals(rs.getString("VISIBILITY")));
+                    idx.setAvailable("VALID".equals(rs.getString("STATUS")));
                     return idx;
                 });
         /**
