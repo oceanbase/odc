@@ -19,7 +19,7 @@ spring:
   datasource:
     type: com.alibaba.druid.pool.DruidDataSource
     driver-class-name: com.oceanbase.jdbc.Driver
-    url: jdbc:oceanbase://${ODC_DATABASE_HOST}:${ODC_DATABASE_FPORT}/${ODC_DATABASE_NAME}?allowMultiQueries=true
+    url: jdbc:oceanbase://${ODC_DATABASE_HOST}:${ODC_DATABASE_PORT}/${ODC_DATABASE_NAME}?allowMultiQueries=true
     username: ${ODC_DATABASE_USERNAME}
     password: ${ODC_DATABASE_PASSWORD}
     druid:
