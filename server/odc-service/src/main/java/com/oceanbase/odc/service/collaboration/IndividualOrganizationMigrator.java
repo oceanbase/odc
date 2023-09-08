@@ -104,15 +104,11 @@ public class IndividualOrganizationMigrator {
         resourceLocations.add("migrate/common/V_3_4_0_14__data_masking_rule_segment.yaml");
         resourceLocations.add("migrate/common/V_4_1_0_7__automation_event_metadata.yaml");
         resourceLocations.add("migrate/common/V_4_1_0_14__iam_permission.yaml");
-        resourceLocations.add("migrate/common/V_4_2_0_4__iam_permission.yaml");
-        resourceLocations.add("migrate/common/V_4_2_0_8__add_automation_event_metadata.yaml");
-        resourceLocations.add("migrate/common/V_4_2_0_27__add_masking_algorithm.yaml");
-        resourceLocations.add("migrate/common/V_4_2_0_28__add_masking_algorithm_segment.yaml");
 
         resourceLocations.add("migrate/rbac");
+        resourceLocations.add("runtime");
 
         resourceLocations.add("init-config/runtime/iam_user_system_admin.yaml");
-        resourceLocations.add("init-config/regulation");
 
         return ResourceConfig.builder()
                 .dataSource(dataSource)
