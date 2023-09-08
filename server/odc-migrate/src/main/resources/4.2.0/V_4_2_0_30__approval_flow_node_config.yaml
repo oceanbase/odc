@@ -36,7 +36,7 @@ templates:
           - column_name: resource_role_id
             value_from:
                 field_ref:
-                    ref_file: migrate/rbac/V_4_2_0_24__resource_role.yaml
+                    ref_file: 4.2.0/V_4_2_0_24__resource_role.yaml
                     field_path: templates.0.specs.0.value
           - column_name: sequence_number
             value: 0
@@ -57,7 +57,7 @@ templates:
           - column_name: resource_role_id
             value_from:
                 field_ref:
-                    ref_file: migrate/rbac/V_4_2_0_24__resource_role.yaml
+                    ref_file: 4.2.0/V_4_2_0_24__resource_role.yaml
                     field_path: templates.1.specs.0.value
           - column_name: sequence_number
             value: 0
@@ -78,7 +78,7 @@ templates:
           - column_name: resource_role_id
             value_from:
                 field_ref:
-                    ref_file: migrate/rbac/V_4_2_0_24__resource_role.yaml
+                    ref_file: 4.2.0/V_4_2_0_24__resource_role.yaml
                     field_path: templates.0.specs.0.value
           - column_name: sequence_number
             value: 0
@@ -99,7 +99,7 @@ templates:
           - column_name: resource_role_id
             value_from:
                 field_ref:
-                    ref_file: migrate/rbac/V_4_2_0_24__resource_role.yaml
+                    ref_file: 4.2.0/V_4_2_0_24__resource_role.yaml
                     field_path: templates.1.specs.0.value
           - column_name: sequence_number
             value: 1
