@@ -51,7 +51,8 @@ public class DesktopAuditEventHandler implements AuditEventHandler {
                     AuditEventAction.ROLLBACK_TASK);
     private final List<AuditEventType> supportedAuditEventTypeInClientMode =
             Arrays.asList(AuditEventType.PERSONAL_CONFIGURATION,
-                    AuditEventType.SCRIPT_MANAGEMENT, AuditEventType.DATABASE_OPERATION);
+                    AuditEventType.SCRIPT_MANAGEMENT, AuditEventType.DATABASE_OPERATION,
+                    AuditEventType.DATASOURCE_MANAGEMENT);
 
     @Override
     public void handle(List<AuditEventEntity> events, HttpServletRequest servletRequest) {}
