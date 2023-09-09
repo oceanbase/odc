@@ -75,6 +75,9 @@ public class DefaultOrganizationResourceMigrator implements OrganizationResource
     @Autowired
     private VerticalPermissionValidator verticalPermissionValidator;
 
+    @Autowired
+    private UserOrganizationMigrator userOrganizationMigrator;
+
     @Override
     public void migrate(@NonNull User user) {
         if (Objects.isNull(user)) {
@@ -92,6 +95,7 @@ public class DefaultOrganizationResourceMigrator implements OrganizationResource
                             user.getOrganizationId(), user.getId());
                     ruleApplyingMigrator.migrate(user.getOrganizationId());
                 }
+                userOrganizationMigrator.migrate(user);
                 return null;
             } catch (Exception ex) {
                 transactionStatus.setRollbackOnly();
