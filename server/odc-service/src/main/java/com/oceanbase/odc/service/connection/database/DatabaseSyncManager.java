@@ -25,6 +25,8 @@ import org.springframework.stereotype.Service;
 
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
+import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.iam.util.SecurityContextUtils;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -45,8 +47,11 @@ public class DatabaseSyncManager {
     private ThreadPoolTaskExecutor executor;
 
     @SkipAuthorize("internal usage")
-    public Future<Boolean> submitSyncDataSourceTask(@NonNull Long dataSourceId) {
-        return doExecute(() -> executor.submit(() -> databaseService.internalSyncDataSourceSchemas(dataSourceId)));
+    public Future<Boolean> submitSyncDataSourceTask(@NonNull ConnectionConfig connection) {
+        return doExecute(() -> executor.submit(() -> {
+            SecurityContextUtils.setCurrentUser(connection.getCreatorId(), connection.getOrganizationId(), null);
+            return databaseService.internalSyncDataSourceSchemas(connection.getId());
+        }));
     }
 
     @SkipAuthorize("internal usage")
