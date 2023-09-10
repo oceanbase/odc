@@ -51,6 +51,7 @@ import com.oceanbase.odc.core.authority.util.PreAuthenticate;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
+import com.oceanbase.odc.core.shared.constant.ConnectionVisibleScope;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
@@ -77,6 +78,7 @@ import com.oceanbase.odc.service.connection.database.model.TransferDatabasesReq;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.db.DBIdentitiesService;
 import com.oceanbase.odc.service.db.DBSchemaService;
+import com.oceanbase.odc.service.iam.HorizontalDataPermissionValidator;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.auth.AuthorizationFacade;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
@@ -128,6 +130,9 @@ public class DatabaseService {
     @Autowired
     private JdbcLockRegistry jdbcLockRegistry;
 
+    @Autowired
+    private HorizontalDataPermissionValidator horizontalDataPermissionValidator;
+
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("internal authenticated")
     public Database detail(@NonNull Long id) {
@@ -154,7 +159,9 @@ public class DatabaseService {
                 .connectionIdEquals(id)
                 .and(DatabaseSpecs.nameLike(name));
         Page<DatabaseEntity> entities = databaseRepository.findAll(specs, pageable);
-        return entitiesToModels(entities);
+        Page<Database> databases = entitiesToModels(entities);
+        horizontalDataPermissionValidator.checkCurrentOrganization(databases.getContent());
+        return databases;
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -364,9 +371,11 @@ public class DatabaseService {
                 return false;
             }
             ConnectionConfig connection = connectionService.getForConnectionSkipPermissionCheck(dataSourceId);
-            if (connection.getEnvironmentId().longValue() == -1L) {
+            if (connection.getEnvironmentId().longValue() == -1L
+                    || connection.getVisibleScope() == ConnectionVisibleScope.PRIVATE) {
                 return false;
             }
+            horizontalDataPermissionValidator.checkCurrentOrganization(connection);
             DefaultConnectSessionFactory factory = new DefaultConnectSessionFactory(connection);
             connectionSession = factory.generateSession();
             List<DatabaseEntity> latestDatabases =

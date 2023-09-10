@@ -577,13 +577,16 @@ public class ConnectionService {
     @Transactional(rollbackFor = Exception.class)
     @PreAuthenticate(actions = "update", resourceType = "ODC_CONNECTION", indexOfIdParam = 0)
     public ConnectionConfig getForConnect(@NotNull Long id) {
-        return getForConnectionSkipPermissionCheck(id);
+        ConnectionConfig connection = getForConnectionSkipPermissionCheck(id);
+        permissionValidator.checkCurrentOrganization(connection);
+        return connection;
     }
 
     @SkipAuthorize("check permission inside")
     public boolean checkPermission(@NotNull Long connectionId, @NotEmpty List<String> actions) {
         try {
             ConnectionConfig connection = internalGetSkipUserCheck(connectionId, false);
+            permissionValidator.checkCurrentOrganization(connection);
             securityManager.checkPermission(
                     securityManager.getPermissionByActions(connection, actions));
         } catch (Exception ex) {
