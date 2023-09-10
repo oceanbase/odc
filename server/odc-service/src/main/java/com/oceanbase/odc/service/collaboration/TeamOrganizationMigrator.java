@@ -38,7 +38,6 @@ import com.oceanbase.odc.metadb.collaboration.EnvironmentRepository;
 import com.oceanbase.odc.metadb.connection.ConnectionConfigRepository;
 import com.oceanbase.odc.metadb.iam.OrganizationRepository;
 import com.oceanbase.odc.metadb.iam.RoleRepository;
-import com.oceanbase.odc.metadb.iam.UserOrganizationEntity;
 import com.oceanbase.odc.metadb.iam.UserOrganizationRepository;
 import com.oceanbase.odc.service.common.migrate.DefaultValueEncoderFactory;
 import com.oceanbase.odc.service.common.migrate.DefaultValueGeneratorFactory;
@@ -89,25 +88,21 @@ public class TeamOrganizationMigrator {
 
     @Transactional(rollbackFor = Exception.class)
     public void migrate(@NonNull User user) {
-        UserOrganizationEntity userOrganizationEntity = new UserOrganizationEntity();
-        userOrganizationEntity.setOrganizationId(user.getOrganizationId());
-        userOrganizationEntity.setUserId(user.getId());
-        UserOrganizationEntity saved = userOrganizationRepository.saveAndFlush(userOrganizationEntity);
         /**
          * init resources for this TEAM organization
          */
         ResourceInitializer initializer = new ResourceInitializer(
-                getResourceConfig(dataSource, saved.getUserId(), saved.getOrganizationId()));
+                getResourceConfig(dataSource, user.getId(), user.getOrganizationId()));
         try {
             initializer.init();
-            migrateDataSource(saved.getOrganizationId());
-            migrateRole(saved.getOrganizationId());
+            migrateDataSource(user.getOrganizationId());
+            migrateRole(user.getOrganizationId());
         } catch (Exception e) {
-            throw new RuntimeException("init organization resource failed, organizationId=" + saved.getOrganizationId(),
+            throw new RuntimeException("init organization resource failed, organizationId=" + user.getOrganizationId(),
                     e);
         }
         log.info("create TEAM organization and resources for user succeed, userId={}, organizationId={}",
-                saved.getUserId(), saved.getOrganizationId());
+                user.getId(), user.getOrganizationId());
     }
 
     private ResourceConfig getResourceConfig(DataSource dataSource, Long userId, Long organizationId) {
