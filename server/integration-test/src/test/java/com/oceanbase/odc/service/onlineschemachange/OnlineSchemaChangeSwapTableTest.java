@@ -77,20 +77,6 @@ public class OnlineSchemaChangeSwapTableTest extends OscTestEnv {
                 this::checkSwapTableAndRenameDrop);
     }
 
-    @Test
-    public void test_osc_swap_table_failed_drop_new_table() {
-
-        String originTableName = getOriginTableName();
-        doThrow(new BadArgumentException(ErrorCodes.BadArgument, "bad argument"))
-                .when(dbSessionManager)
-                .killAllSessions(Mockito.any(ConnectionSession.class), Mockito.any(Predicate.class), Mockito.anyInt());
-
-        executeOscSwapTable(
-                originTableName,
-                c -> c.setOriginTableCleanStrategy(OriginTableCleanStrategy.ORIGIN_TABLE_DROP),
-                this::checkSwapTableFailedAndDropNewTable);
-    }
-
     private void executeOscSwapTable(String originTableName,
             Consumer<OnlineSchemaChangeParameters> changeParametersConsumer,
             Consumer<OnlineSchemaChangeScheduleTaskParameters> resultAssert) {
@@ -185,29 +171,5 @@ public class OnlineSchemaChangeSwapTableTest extends OscTestEnv {
         Assert.assertFalse(CollectionUtils.isEmpty(originTable));
     }
 
-    private void checkSwapTableFailedAndDropNewTable(OnlineSchemaChangeScheduleTaskParameters taskParameters) {
-        DBSchemaAccessor dbSchemaAccessor = DBSchemaAccessors.create(connectionSession);
-        List<String> renamedTable = dbSchemaAccessor.showTablesLike(taskParameters.getDatabaseName(),
-                taskParameters.getRenamedTableName());
-
-        List<String> originTable = dbSchemaAccessor.showTablesLike(taskParameters.getDatabaseName(),
-                taskParameters.getOriginTableNameUnwrapped());
-
-        List<String> newTable = dbSchemaAccessor.showTablesLike(taskParameters.getDatabaseName(),
-                taskParameters.getNewTableNameUnwrapped());
-
-        Assert.assertTrue(CollectionUtils.isEmpty(renamedTable));
-        Assert.assertFalse(CollectionUtils.isEmpty(originTable));
-        Assert.assertTrue(CollectionUtils.isEmpty(newTable));
-
-        List<DBTableColumn> tableColumnFromNew = dbSchemaAccessor.listTableColumns(taskParameters.getDatabaseName(),
-                taskParameters.getOriginTableNameUnwrapped());
-
-        Optional<DBTableColumn> name1Col = tableColumnFromNew.stream()
-                .filter(a -> a.getName().equalsIgnoreCase("name1"))
-                .findFirst();
-        Assert.assertTrue(name1Col.isPresent());
-        Assert.assertEquals(20L, name1Col.get().getMaxLength().longValue());
-    }
 
 }
