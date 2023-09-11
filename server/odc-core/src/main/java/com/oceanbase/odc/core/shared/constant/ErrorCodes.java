@@ -223,6 +223,7 @@ public enum ErrorCodes implements ErrorCode {
 
     ObPreCheckDdlFailed,
     ObCopySchemaFailed,
+    ObInvalidObjectTypesForRecyclebin,
 
     /**
      * TODO: ob sql validate, mysql mode
