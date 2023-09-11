@@ -39,6 +39,7 @@ import com.oceanbase.odc.service.sqlcheck.rule.MySQLMissingRequiredColumns;
 import com.oceanbase.odc.service.sqlcheck.rule.MySQLNoColumnCommentExists;
 import com.oceanbase.odc.service.sqlcheck.rule.MySQLNoNotNullAtInExpression;
 import com.oceanbase.odc.service.sqlcheck.rule.MySQLNoTableCommentExists;
+import com.oceanbase.odc.service.sqlcheck.rule.MySQLRestrictAutoIncrementDataTypes;
 import com.oceanbase.odc.service.sqlcheck.rule.MySQLRestrictAutoIncrementUnsigned;
 import com.oceanbase.odc.service.sqlcheck.rule.MySQLRestrictIndexDataTypes;
 import com.oceanbase.odc.service.sqlcheck.rule.MySQLRestrictPKAutoIncrement;
@@ -633,6 +634,27 @@ public class MySQLCheckerTest {
         CheckViolation c1 = new CheckViolation(sqls[1], 1, 19, 19, 44, type, new Object[] {});
 
         List<CheckViolation> expect = Collections.singletonList(c1);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void check_restrictAutoIncrementDataTypes_violationGenerated() {
+        String[] sqls = new String[] {
+                "create table abcd(id varchar(64) primary key auto_increment, name int)",
+                "create table abcd1(id varchar(64) primary key, name bigint auto_increment)",
+                "alter table abcd1 add column id int(11) primary key auto_increment",
+                "alter table abcd1 add column name bigint auto_increment)"
+        };
+        DefaultSqlChecker sqlChecker = new DefaultSqlChecker(DialectType.OB_MYSQL, "$$",
+                Collections.singletonList(new MySQLRestrictAutoIncrementDataTypes(Collections.singleton("bigint"))));
+        List<CheckViolation> actual = sqlChecker.check(joinAndAppend(sqls, "$$"));
+
+        SqlCheckRuleType type = SqlCheckRuleType.RESTRICT_AUTO_INCREMENT_DATATYPES;
+        CheckViolation c1 =
+                new CheckViolation(sqls[0], 1, 21, 21, 31, type, new Object[] {"id", "varchar(64)", "bigint"});
+        CheckViolation c2 = new CheckViolation(sqls[2], 1, 32, 32, 38, type, new Object[] {"id", "int(11)", "bigint"});
+
+        List<CheckViolation> expect = Arrays.asList(c1, c2);
         Assert.assertEquals(expect, actual);
     }
 

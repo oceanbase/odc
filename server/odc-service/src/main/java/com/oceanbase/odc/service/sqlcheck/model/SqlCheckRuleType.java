@@ -227,7 +227,11 @@ public enum SqlCheckRuleType implements Translatable {
     /**
      * 没有主键约束的命名
      */
-    NO_PRIMARY_KEY_NAME_EXISTS("no-primary-key-name-exists");
+    NO_PRIMARY_KEY_NAME_EXISTS("no-primary-key-name-exists"),
+    /**
+     * 限制被声明为 auto-increment 的列的类型
+     */
+    RESTRICT_AUTO_INCREMENT_DATATYPES("restrict-auto-increment-datatypes");
 
     private final String name;
     private static final String NAME_CODE = "name";
