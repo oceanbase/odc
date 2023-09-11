@@ -21,6 +21,7 @@ import java.util.concurrent.TimeUnit;
 import org.flowable.engine.delegate.DelegateExecution;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.metadb.task.TaskEntity;
@@ -146,7 +147,10 @@ public class DataTransferRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Voi
         if (Objects.isNull(context)) {
             return;
         }
-        taskService.updateProgress(taskId, context.getProgress());
+        TaskEntity task = taskService.detail(taskId);
+        task.setProgressPercentage(context.getProgress());
+        task.setResultJson(JsonUtils.toJson(DataTransferTaskResult.of(context)));
+        taskService.update(task);
     }
 
 }
