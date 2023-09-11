@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.datatransfer;
+package com.oceanbase.odc.service.datatransfer.task.obloaderdumper;
 
 import static com.oceanbase.odc.service.datatransfer.model.DataTransferConstants.MAX_BLOCK_SIZE_MEGABYTE;
 import static com.oceanbase.odc.service.datatransfer.model.DataTransferConstants.MAX_CURSOR_FETCH_SIZE;

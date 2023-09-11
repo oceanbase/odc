@@ -59,4 +59,8 @@ public enum ConnectType {
         return this == CLOUD_OB_MYSQL || this == CLOUD_OB_ORACLE;
     }
 
+    public boolean isOceanBase() {
+        return this == OB_MYSQL || this == OB_ORACLE || this == CLOUD_OB_MYSQL || this == CLOUD_OB_ORACLE;
+    }
+
 }

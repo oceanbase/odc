@@ -14,14 +14,10 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.datatransfer.task;
+package com.oceanbase.odc.service.datatransfer.model;
 
-public class BaseDataTransferTask implements DataTransferTask {
+public class TransferStrategy {
 
-    public BaseDataTransferTask() {}
 
-    @Override
-    public void transfer() {
 
-    }
 }

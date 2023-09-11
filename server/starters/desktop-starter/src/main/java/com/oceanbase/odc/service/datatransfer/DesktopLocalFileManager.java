@@ -26,6 +26,8 @@ import org.springframework.stereotype.Service;
 
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.constant.TaskType;
+import com.oceanbase.odc.service.datatransfer.file.DefaultLocalFileManager;
+import com.oceanbase.odc.service.datatransfer.file.LocalFileManager;
 
 import lombok.NonNull;
 

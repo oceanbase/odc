@@ -74,6 +74,7 @@ import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.model.TestConnectionReq;
 import com.oceanbase.odc.service.datasecurity.DataMaskingService;
 import com.oceanbase.odc.service.datatransfer.dumper.DumperOutput;
+import com.oceanbase.odc.service.datatransfer.file.LocalFileManager;
 import com.oceanbase.odc.service.datatransfer.loader.ThirdPartyOutputConverter;
 import com.oceanbase.odc.service.datatransfer.model.CsvColumnMapping;
 import com.oceanbase.odc.service.datatransfer.model.CsvConfig;
@@ -82,10 +83,14 @@ import com.oceanbase.odc.service.datatransfer.model.DataTransferFormat;
 import com.oceanbase.odc.service.datatransfer.model.DataTransferProperties;
 import com.oceanbase.odc.service.datatransfer.model.DataTransferType;
 import com.oceanbase.odc.service.datatransfer.model.UploadFileResult;
-import com.oceanbase.odc.service.datatransfer.task.BaseDataTransferTask;
-import com.oceanbase.odc.service.datatransfer.task.DataTransferTaskContext;
-import com.oceanbase.odc.service.datatransfer.task.ExportDataTransferTask;
-import com.oceanbase.odc.service.datatransfer.task.ImportDataTransferTask;
+import com.oceanbase.odc.service.datatransfer.task.obloaderdumper.BaseObLoaderDumperTransferTask;
+import com.oceanbase.odc.service.datatransfer.task.obloaderdumper.DataTransferTaskContext;
+import com.oceanbase.odc.service.datatransfer.task.obloaderdumper.ObLoaderDumperExportTask;
+import com.oceanbase.odc.service.datatransfer.task.obloaderdumper.ObLoaderDumperImportTask;
+import com.oceanbase.odc.service.datatransfer.task.obloaderdumper.BaseParameterFactory;
+import com.oceanbase.odc.service.datatransfer.task.obloaderdumper.DumpParameterFactory;
+import com.oceanbase.odc.service.datatransfer.task.obloaderdumper.LoadParameterFactory;
+import com.oceanbase.odc.service.datatransfer.util.DBObjectNameAccessor;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
 import com.oceanbase.tools.loaddump.common.model.DumpParameter;
@@ -121,9 +126,9 @@ public class DataTransferService {
     @Autowired
     private ConnectionService connectionService;
     @Autowired
-    private LocalFileManager fileManager;
+    private LocalFileManager  fileManager;
     @Value("${odc.log.directory:./log}")
-    private String taskLogDir;
+    private String            taskLogDir;
     @Autowired
     private DataTransferAdapter dataTransferAdapter;
     @Autowired
@@ -189,29 +194,29 @@ public class DataTransferService {
                 BaseParameterFactory<LoadParameter> factory =
                         new LoadParameterFactory(workingDir, logDir, connectionConfig);
                 LoadParameter parameter = factory.generate(transferConfig);
-                ImportDataTransferTask transferTask;
+                ObLoaderDumperImportTask transferTask;
                 try {
-                    transferTask = new ImportDataTransferTask(parameter, transferData, transferSchema);
+                    transferTask = new ObLoaderDumperImportTask(parameter, transferData, transferSchema);
                 } catch (Exception e) {
                     logger.warn("Failed to init load task, reason : {}", e.getMessage(), e);
                     throw e;
                 }
-                return BaseDataTransferTask.start(executor, transferTask);
+                return BaseObLoaderDumperTransferTask.start(executor, transferTask);
             } else if (transferType == DataTransferType.EXPORT) {
                 BaseParameterFactory<DumpParameter> factory = new DumpParameterFactory(workingDir, logDir,
                         connectionConfig, dataTransferAdapter.getMaxDumpSizeBytes(),
                         dataTransferProperties.getCursorFetchSize(), maskingService);
                 DumpParameter parameter = factory.generate(transferConfig);
-                ExportDataTransferTask transferTask;
+                ObLoaderDumperExportTask transferTask;
                 try {
-                    transferTask = new ExportDataTransferTask(
+                    transferTask = new ObLoaderDumperExportTask(
                             parameter, transferData, transferSchema, dataTransferAdapter);
                 } catch (Exception e) {
                     logger.warn("Failed to init dump task, reason : {}", e.getMessage(), e);
                     throw e;
                 }
                 transferTask.setMergeSchemaFiles(transferConfig.isMergeSchemaFiles());
-                return BaseDataTransferTask.start(executor, transferTask);
+                return BaseObLoaderDumperTransferTask.start(executor, transferTask);
             }
             throw new IllegalArgumentException("Illegal transfer type " + transferType);
         } finally {

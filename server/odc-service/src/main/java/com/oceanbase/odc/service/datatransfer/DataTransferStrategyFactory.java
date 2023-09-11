@@ -13,29 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.oceanbase.odc.service.datatransfer;
 
-import org.springframework.context.annotation.Profile;
-import org.springframework.stereotype.Service;
+import com.oceanbase.odc.service.datatransfer.model.TransferStrategy;
 
-import com.oceanbase.odc.core.authority.util.SkipAuthorize;
-import com.oceanbase.odc.service.datatransfer.file.DefaultLocalFileManager;
-import com.oceanbase.odc.service.datatransfer.file.LocalFileManager;
+public class DataTransferStrategyFactory {
 
-import lombok.extern.slf4j.Slf4j;
-
-/**
- * {@link WebLocalFileManager}
- *
- * @author yh263208
- * @date 2022-07-28 14:49
- * @since ODC_release_3.4.0
- * @see LocalFileManager
- */
-@Slf4j
-@Profile({"alipay"})
-@Service
-@SkipAuthorize("odc internal usage")
-public class WebLocalFileManager extends DefaultLocalFileManager {
+    public TransferStrategy generate() {
+        return null;
+    }
 
 }

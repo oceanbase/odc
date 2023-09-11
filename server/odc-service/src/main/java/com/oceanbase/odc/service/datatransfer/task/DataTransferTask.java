@@ -16,12 +16,8 @@
 
 package com.oceanbase.odc.service.datatransfer.task;
 
-public class BaseDataTransferTask implements DataTransferTask {
+public interface DataTransferTask {
 
-    public BaseDataTransferTask() {}
+    void transfer();
 
-    @Override
-    public void transfer() {
-
-    }
 }

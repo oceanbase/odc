@@ -18,7 +18,7 @@ package com.oceanbase.odc.service.flow.task.model;
 import java.util.LinkedList;
 import java.util.List;
 
-import com.oceanbase.odc.service.datatransfer.task.DataTransferTaskContext;
+import com.oceanbase.odc.service.datatransfer.task.obloaderdumper.DataTransferTaskContext;
 import com.oceanbase.tools.loaddump.common.model.ObjectStatus;
 
 import lombok.Getter;

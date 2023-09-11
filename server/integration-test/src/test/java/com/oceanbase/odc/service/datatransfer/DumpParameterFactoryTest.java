@@ -43,6 +43,7 @@ import com.oceanbase.odc.service.datatransfer.model.DataTransferConfig;
 import com.oceanbase.odc.service.datatransfer.model.DataTransferFormat;
 import com.oceanbase.odc.service.datatransfer.model.DataTransferObject;
 import com.oceanbase.odc.service.datatransfer.model.DataTransferType;
+import com.oceanbase.odc.service.datatransfer.task.obloaderdumper.DumpParameterFactory;
 import com.oceanbase.tools.loaddump.common.enums.DataFormat;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
 import com.oceanbase.tools.loaddump.common.model.DumpParameter;

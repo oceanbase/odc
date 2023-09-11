@@ -26,7 +26,7 @@ import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.service.datatransfer.DataTransferService;
 import com.oceanbase.odc.service.datatransfer.model.DataTransferConfig;
-import com.oceanbase.odc.service.datatransfer.task.DataTransferTaskContext;
+import com.oceanbase.odc.service.datatransfer.task.obloaderdumper.DataTransferTaskContext;
 import com.oceanbase.odc.service.flow.OdcInternalFileService;
 import com.oceanbase.odc.service.flow.task.model.DataTransferTaskResult;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;

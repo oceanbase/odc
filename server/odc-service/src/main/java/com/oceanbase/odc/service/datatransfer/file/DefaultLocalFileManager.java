@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.datatransfer;
+package com.oceanbase.odc.service.datatransfer.file;
 
 import java.io.File;
 import java.io.FileOutputStream;

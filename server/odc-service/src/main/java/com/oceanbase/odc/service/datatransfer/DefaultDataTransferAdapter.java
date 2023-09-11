@@ -23,7 +23,7 @@ import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.oceanbase.odc.service.datatransfer.model.DataTransferConfig;
-import com.oceanbase.odc.service.datatransfer.task.DataTransferTaskContext;
+import com.oceanbase.odc.service.datatransfer.task.obloaderdumper.DataTransferTaskContext;
 import com.oceanbase.odc.service.flow.task.OssTaskReferManager;
 import com.oceanbase.odc.service.flow.task.model.DataTransferTaskResult;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;

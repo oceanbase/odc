@@ -22,6 +22,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import com.oceanbase.odc.common.json.SensitiveInput;
+import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.flow.model.TaskParameters;
 
@@ -92,6 +93,11 @@ public class DataTransferConfig implements Serializable, TaskParameters {
      */
     private String exportFilePath;
     private boolean mergeSchemaFiles;
+
+    /**
+     * For internal usage
+     */
+    private ConnectType type;
 
     public String getFileType() {
         if (!this.notObLoaderDumperCompatible) {

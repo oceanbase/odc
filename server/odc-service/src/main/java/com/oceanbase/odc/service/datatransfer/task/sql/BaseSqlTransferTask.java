@@ -14,14 +14,9 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.datatransfer.task;
+package com.oceanbase.odc.service.datatransfer.task.sql;
 
-public class BaseDataTransferTask implements DataTransferTask {
+import com.oceanbase.odc.service.datatransfer.task.BaseDataTransferTask;
 
-    public BaseDataTransferTask() {}
-
-    @Override
-    public void transfer() {
-
-    }
+public class BaseSqlTransferTask extends BaseDataTransferTask {
 }

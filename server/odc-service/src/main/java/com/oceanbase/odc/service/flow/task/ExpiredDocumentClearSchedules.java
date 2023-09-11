@@ -27,7 +27,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 
 import com.oceanbase.odc.service.connection.ssl.SslExpiredDocumentProvider;
-import com.oceanbase.odc.service.datatransfer.LocalFileManager;
+import com.oceanbase.odc.service.datatransfer.file.LocalFileManager;
 import com.oceanbase.odc.service.flow.provider.BaseExpiredDocumentProvider;
 import com.oceanbase.odc.service.flow.provider.DataTransferExpiredDocumentProvider;
 import com.oceanbase.odc.service.flow.provider.DatabaseChangeExpiredFileProvider;

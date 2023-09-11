@@ -72,6 +72,7 @@ import com.oceanbase.odc.service.datatransfer.dumper.AbstractOutputFile;
 import com.oceanbase.odc.service.datatransfer.dumper.DataFile;
 import com.oceanbase.odc.service.datatransfer.dumper.DumperOutput;
 import com.oceanbase.odc.service.datatransfer.dumper.SchemaFile;
+import com.oceanbase.odc.service.datatransfer.file.LocalFileManager;
 import com.oceanbase.odc.service.datatransfer.model.CsvColumnMapping;
 import com.oceanbase.odc.service.datatransfer.model.CsvConfig;
 import com.oceanbase.odc.service.datatransfer.model.DataTransferConfig;
@@ -79,7 +80,7 @@ import com.oceanbase.odc.service.datatransfer.model.DataTransferFormat;
 import com.oceanbase.odc.service.datatransfer.model.DataTransferObject;
 import com.oceanbase.odc.service.datatransfer.model.DataTransferType;
 import com.oceanbase.odc.service.datatransfer.model.UploadFileResult;
-import com.oceanbase.odc.service.datatransfer.task.DataTransferTaskContext;
+import com.oceanbase.odc.service.datatransfer.task.obloaderdumper.DataTransferTaskContext;
 import com.oceanbase.odc.service.session.factory.DruidDataSourceFactory;
 import com.oceanbase.tools.loaddump.common.enums.DataFormat;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
@@ -103,9 +104,9 @@ public class DataTransferServiceTest extends ServiceTestEnv {
     private ConnectionConfig oracleConnConfig;
     private ConnectionConfig mysqlConnConfig;
     @MockBean
-    private ConnectionService connectionService;
+    private ConnectionService   connectionService;
     @Autowired
-    private LocalFileManager fileManager;
+    private LocalFileManager    fileManager;
     @Autowired
     private DataTransferService dataTransferService;
     @MockBean

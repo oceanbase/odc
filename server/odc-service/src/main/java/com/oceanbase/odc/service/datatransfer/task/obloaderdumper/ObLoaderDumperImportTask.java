@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.datatransfer.task;
+package com.oceanbase.odc.service.datatransfer.task.obloaderdumper;
 
 import static com.oceanbase.odc.service.datatransfer.model.DataTransferConstants.LOG_PATH_NAME;
 
@@ -36,18 +36,18 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * {@link ImportDataTransferTask}
+ * {@link ObLoaderDumperImportTask}
  *
  * @author yh263208
  * @date 2022-07-25 20:25
  * @since ODC_release_3.4.0
  */
 @Slf4j
-public class ImportDataTransferTask extends BaseDataTransferTask<LoadParameter> {
+public class ObLoaderDumperImportTask extends BaseObLoaderDumperTransferTask<LoadParameter> {
 
     private final LoadClient loadClient;
 
-    public ImportDataTransferTask(@NonNull LoadParameter parameter,
+    public ObLoaderDumperImportTask(@NonNull LoadParameter parameter,
             boolean transferData, boolean transferSchema) throws Exception {
         super(parameter, transferData, transferSchema);
         loadClient = new LoadClient.Builder(parameter).build();
@@ -74,7 +74,7 @@ public class ImportDataTransferTask extends BaseDataTransferTask<LoadParameter> 
     @Override
     protected void afterHandle(LoadParameter parameter, DataTransferTaskContext context,
             DataTransferTaskResult result) throws IOException {
-        BaseDataTransferTask.validAllTasksSuccessed(context);
+        BaseObLoaderDumperTransferTask.validAllTasksSuccessed(context);
         String filePath = parameter.getFilePath();
         Verify.verify(StringUtils.isNotBlank(filePath), "File path is blank");
         File importPath = new File(filePath + File.separator + "data");

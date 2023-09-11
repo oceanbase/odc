@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import com.oceanbase.odc.core.shared.constant.TaskType;
-import com.oceanbase.odc.service.datatransfer.LocalFileManager;
+import com.oceanbase.odc.service.datatransfer.file.LocalFileManager;
 
 import lombok.NonNull;
 
