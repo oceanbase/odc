@@ -620,7 +620,7 @@
       - 'OB_ORACLE'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-index-datatypes.allowed-datatypes}":["int", "varchar2", "number", "float", "bigint"]}'
 - enabled: 1
-  level: 0
+  level: 1
   environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.sit.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-auto-increment-datatypes.name}
   appliedDialectTypes:
@@ -987,7 +987,7 @@
       - 'OB_ORACLE'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-index-datatypes.allowed-datatypes}":["int", "varchar2", "number", "float", "bigint"]}'
 - enabled: 1
-  level: 0
+  level: 2
   environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.dev.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-auto-increment-datatypes.name}
   appliedDialectTypes:
@@ -1354,7 +1354,7 @@
       - 'OB_ORACLE'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-index-datatypes.allowed-datatypes}":["int", "varchar2", "number", "float", "bigint"]}'
 - enabled: 1
-  level: 0
+  level: 2
   environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.prod.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-auto-increment-datatypes.name}
   appliedDialectTypes:
@@ -1713,7 +1713,7 @@
       - 'OB_ORACLE'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-index-datatypes.allowed-datatypes}":["int", "varchar2", "number", "float", "bigint"]}'
 - enabled: 1
-  level: 0
+  level: 1
   environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.default.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-auto-increment-datatypes.name}
   appliedDialectTypes:
