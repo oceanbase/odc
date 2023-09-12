@@ -229,6 +229,9 @@ public class ConnectionTesting {
 
     private void testInitScript(ConnectionExtensionPoint extensionPoint, String schema,
             ConnectionConfig config, ConnectionAccountType accountType) throws SQLException {
+        if (StringUtils.isEmpty(config.getSessionInitScript())) {
+            return;
+        }
         String jdbcUrl = extensionPoint.generateJdbcUrl(config.getHost(),
                 config.getPort(), schema, OBConsoleDataSourceFactory.getJdbcParams(config));
         String username = OBConsoleDataSourceFactory.getUsername(config, accountType);
