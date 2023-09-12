@@ -16,9 +16,12 @@
 
 package com.oceanbase.odc.service.datatransfer.task;
 
-import com.oceanbase.odc.core.shared.constant.TaskStatus;
+import java.util.List;
 
-public interface DataTransferTask {
+import com.oceanbase.odc.service.datatransfer.model.DataTransferScope;
+import com.oceanbase.tools.loaddump.common.model.ObjectStatus;
+
+public interface TransferTask {
 
     void init();
 
@@ -26,6 +29,14 @@ public interface DataTransferTask {
 
     void destroyQuietly();
 
-    TaskStatus status();
+    void fail(Throwable throwable);
+
+    double progress();
+
+    List<ObjectStatus> status();
+
+    DataTransferScope scope();
+
+    String errMsg();
 
 }

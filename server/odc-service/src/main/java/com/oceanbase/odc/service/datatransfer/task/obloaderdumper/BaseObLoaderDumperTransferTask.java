@@ -30,7 +30,8 @@ import org.apache.logging.log4j.ThreadContext;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import com.oceanbase.odc.core.shared.Verify;
-import com.oceanbase.odc.service.datatransfer.task.DataTransferTask;
+import com.oceanbase.odc.service.datatransfer.task.TransferTask;
+import com.oceanbase.odc.service.datatransfer.task.common.GeneralDataTransferTask;
 import com.oceanbase.odc.service.flow.task.model.DataTransferTaskResult;
 import com.oceanbase.tools.loaddump.common.enums.DataFormat;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
@@ -51,8 +52,8 @@ import lombok.extern.slf4j.Slf4j;
  * @since ODC_release_3.4.0
  */
 @Slf4j
-public abstract class BaseObLoaderDumperTransferTask<T extends BaseParameter>
-        implements Callable<DataTransferTaskResult>, DataTransferTask {
+public abstract class BaseObLoaderDumperTransferTask<T extends BaseParameter> extends GeneralDataTransferTask
+        implements Callable<DataTransferTaskResult> {
     protected final T parameter;
     private final boolean transferData;
     private final boolean transferSchema;

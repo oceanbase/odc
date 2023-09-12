@@ -84,7 +84,7 @@ import com.oceanbase.odc.service.datatransfer.model.DataTransferFormat;
 import com.oceanbase.odc.service.datatransfer.model.DataTransferProperties;
 import com.oceanbase.odc.service.datatransfer.model.DataTransferType;
 import com.oceanbase.odc.service.datatransfer.model.UploadFileResult;
-import com.oceanbase.odc.service.datatransfer.task.DataTransferTask;
+import com.oceanbase.odc.service.datatransfer.task.TransferTask;
 import com.oceanbase.odc.service.datatransfer.task.common.DataTransferTaskRunner;
 import com.oceanbase.odc.service.datatransfer.task.common.DataTransferTracer;
 import com.oceanbase.odc.service.datatransfer.task.obloaderdumper.BaseObLoaderDumperTransferTask;
@@ -95,7 +95,7 @@ import com.oceanbase.odc.service.datatransfer.task.obloaderdumper.LoadParameterF
 import com.oceanbase.odc.service.datatransfer.task.obloaderdumper.ObLoaderDumperExportTask;
 import com.oceanbase.odc.service.datatransfer.task.obloaderdumper.ObLoaderDumperImportTask;
 import com.oceanbase.odc.service.datatransfer.util.DBObjectNameAccessor;
-import com.oceanbase.odc.service.datatransfer.util.TransferTaskQueueBuilder;
+import com.oceanbase.odc.service.datatransfer.task.common.TransferTaskQueueBuilder;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
 import com.oceanbase.tools.loaddump.common.model.DumpParameter;
@@ -146,7 +146,7 @@ public class DataTransferService {
     private AuthenticationFacade authenticationFacade;
 
     public DataTransferTracer create(DataTransferConfig transferConfig) {
-        List<DataTransferTask> taskQueue = TransferTaskQueueBuilder.build(transferConfig);
+        List<TransferTask> taskQueue = TransferTaskQueueBuilder.build(transferConfig);
         DataTransferTaskRunner job = new DataTransferTaskRunner(taskQueue, transferConfig.isStopWhenError());
         Future<Void> future = executor.submit(job);
 
@@ -160,6 +160,7 @@ public class DataTransferService {
      * @param transferConfig config of the data transfer task
      * @return control handle of the task
      */
+    @Deprecated
     public DataTransferTaskContext create(@NonNull String bucket,
             @NonNull DataTransferConfig transferConfig) throws Exception {
         File workingDir = fileManager.getWorkingDir(TaskType.EXPORT, bucket);

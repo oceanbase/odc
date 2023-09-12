@@ -19,7 +19,7 @@ package com.oceanbase.odc.service.datatransfer.task.sql;
 import java.util.List;
 
 import com.oceanbase.odc.service.datatransfer.model.DataTransferConfig;
-import com.oceanbase.odc.service.datatransfer.task.DataTransferTask;
+import com.oceanbase.odc.service.datatransfer.task.TransferTask;
 import com.oceanbase.odc.service.datatransfer.task.TransferTaskFactory;
 
 public class SqlTaskFactory implements TransferTaskFactory {
@@ -29,7 +29,7 @@ public class SqlTaskFactory implements TransferTaskFactory {
     }
 
     @Override
-    public List<DataTransferTask> generate() {
+    public List<TransferTask> generate() {
         return null;
     }
 }

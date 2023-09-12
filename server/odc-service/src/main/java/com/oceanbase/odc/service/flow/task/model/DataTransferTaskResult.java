@@ -20,6 +20,7 @@ import java.util.List;
 
 import com.oceanbase.odc.service.datatransfer.task.obloaderdumper.DataTransferTaskContext;
 import com.oceanbase.tools.loaddump.common.model.ObjectStatus;
+import com.oceanbase.tools.loaddump.common.model.ObjectStatus.Status;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -46,6 +47,11 @@ public class DataTransferTaskResult implements FlowTaskResult {
         result.getSchemaObjectsInfo().addAll(context.getSchemaObjectsInfo());
         result.getDataObjectsInfo().addAll(context.getDataObjectsInfo());
         return result;
+    }
+
+    public boolean isAllTasksSucceeded() {
+        return !(dataObjectsInfo.stream().anyMatch(status -> status.getStatus() == Status.FAILURE)
+                && schemaObjectsInfo.stream().anyMatch(status -> status.getStatus() == Status.FAILURE));
     }
 
 }

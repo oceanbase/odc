@@ -20,17 +20,19 @@ import static com.oceanbase.odc.service.datatransfer.model.DataTransferConstants
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.List;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.ThreadContext;
 
 import com.oceanbase.odc.core.shared.Verify;
-import com.oceanbase.odc.core.shared.constant.TaskStatus;
+import com.oceanbase.odc.service.datatransfer.model.DataTransferScope;
 import com.oceanbase.odc.service.flow.task.model.DataTransferTaskResult;
 import com.oceanbase.tools.loaddump.client.LoadClient;
 import com.oceanbase.tools.loaddump.common.enums.DataFormat;
 import com.oceanbase.tools.loaddump.common.model.LoadParameter;
+import com.oceanbase.tools.loaddump.common.model.ObjectStatus;
 import com.oceanbase.tools.loaddump.context.TaskContext;
 
 import lombok.NonNull;
@@ -116,7 +118,17 @@ public class ObLoaderDumperImportTask extends BaseObLoaderDumperTransferTask<Loa
     }
 
     @Override
-    public TaskStatus status() {
+    public double progress() {
+        return 0;
+    }
+
+    @Override
+    public List<ObjectStatus> status() {
+        return null;
+    }
+
+    @Override
+    public DataTransferScope scope() {
         return null;
     }
 }

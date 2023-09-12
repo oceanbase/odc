@@ -20,6 +20,7 @@ import static com.oceanbase.odc.service.datatransfer.model.DataTransferConstants
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.io.FileUtils;
@@ -28,14 +29,15 @@ import org.apache.logging.log4j.ThreadContext;
 
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
-import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.service.datatransfer.DataTransferAdapter;
 import com.oceanbase.odc.service.datatransfer.dumper.DumperOutput;
 import com.oceanbase.odc.service.datatransfer.dumper.SchemaMergeOperator;
+import com.oceanbase.odc.service.datatransfer.model.DataTransferScope;
 import com.oceanbase.odc.service.flow.task.model.DataTransferTaskResult;
 import com.oceanbase.tools.loaddump.client.DumpClient;
 import com.oceanbase.tools.loaddump.common.enums.ServerMode;
 import com.oceanbase.tools.loaddump.common.model.DumpParameter;
+import com.oceanbase.tools.loaddump.common.model.ObjectStatus;
 import com.oceanbase.tools.loaddump.context.TaskContext;
 
 import lombok.NonNull;
@@ -54,6 +56,7 @@ public class ObLoaderDumperExportTask extends BaseObLoaderDumperTransferTask<Dum
 
     private final DumpClient dumpClient;
     private final DataTransferAdapter transferAdapter;
+    //private final DataTransferScope scope;
 
     public ObLoaderDumperExportTask(@NonNull DumpParameter parameter,
             boolean transferData, boolean transferSchema,
@@ -131,7 +134,18 @@ public class ObLoaderDumperExportTask extends BaseObLoaderDumperTransferTask<Dum
     }
 
     @Override
-    public TaskStatus status() {
+    public double progress() {
+        return 0;
+    }
+
+    @Override
+    public List<ObjectStatus> status() {
+        return null;
+    }
+
+    @Override
+    public DataTransferScope scope() {
+        //return this.scope;
         return null;
     }
 }

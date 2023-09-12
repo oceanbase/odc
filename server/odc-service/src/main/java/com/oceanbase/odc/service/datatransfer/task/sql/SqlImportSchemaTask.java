@@ -16,9 +16,12 @@
 
 package com.oceanbase.odc.service.datatransfer.task.sql;
 
-import com.oceanbase.odc.core.shared.constant.TaskStatus;
+import java.util.List;
 
-public class SqlImportSchemaTask extends BaseSqlTransferTask{
+import com.oceanbase.odc.service.datatransfer.model.DataTransferScope;
+import com.oceanbase.tools.loaddump.common.model.ObjectStatus;
+
+public class SqlImportSchemaTask extends BaseSqlTransferTask {
     @Override
     public void init() {
 
@@ -35,7 +38,17 @@ public class SqlImportSchemaTask extends BaseSqlTransferTask{
     }
 
     @Override
-    public TaskStatus status() {
+    public double progress() {
+        return 0;
+    }
+
+    @Override
+    public List<ObjectStatus> status() {
         return null;
+    }
+
+    @Override
+    public DataTransferScope scope() {
+        return DataTransferScope.SCHEMA;
     }
 }

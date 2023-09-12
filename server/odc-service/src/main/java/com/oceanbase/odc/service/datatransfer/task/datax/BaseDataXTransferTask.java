@@ -16,7 +16,14 @@
 
 package com.oceanbase.odc.service.datatransfer.task.datax;
 
-import com.oceanbase.odc.service.datatransfer.task.DataTransferTask;
+import com.oceanbase.odc.service.datatransfer.model.DataTransferScope;
+import com.oceanbase.odc.service.datatransfer.task.common.GeneralDataTransferTask;
 
-public abstract class BaseDataXTransferTask implements DataTransferTask {
+public abstract class BaseDataXTransferTask extends GeneralDataTransferTask {
+
+    @Override
+    public DataTransferScope scope() {
+        return DataTransferScope.DATA;
+    }
+
 }

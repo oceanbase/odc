@@ -16,7 +16,10 @@
 
 package com.oceanbase.odc.service.datatransfer.task.datax;
 
-import com.oceanbase.odc.core.shared.constant.TaskStatus;
+import java.util.List;
+
+import com.oceanbase.odc.service.datatransfer.model.DataTransferScope;
+import com.oceanbase.tools.loaddump.common.model.ObjectStatus;
 
 public class DataXImportTask extends BaseDataXTransferTask{
 
@@ -36,7 +39,12 @@ public class DataXImportTask extends BaseDataXTransferTask{
     }
 
     @Override
-    public TaskStatus status() {
+    public double progress() {
+        return 0;
+    }
+
+    @Override
+    public List<ObjectStatus> status() {
         return null;
     }
 }

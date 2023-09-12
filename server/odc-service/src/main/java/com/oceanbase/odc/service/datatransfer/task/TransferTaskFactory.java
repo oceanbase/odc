@@ -20,6 +20,6 @@ import java.util.List;
 
 public interface TransferTaskFactory {
 
-    List<DataTransferTask> generate();
+    List<TransferTask> generate();
 
 }

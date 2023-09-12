@@ -14,20 +14,22 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.datatransfer;
+package com.oceanbase.odc.service.datatransfer.task.common;
 
-import com.oceanbase.odc.core.shared.constant.TaskStatus;
+import com.oceanbase.odc.common.util.ExceptionUtils;
+import com.oceanbase.odc.service.datatransfer.task.TransferTask;
 
-public class DataTransferTracer  {
-    public TaskStatus status() {
-        return null;
+public abstract class GeneralDataTransferTask implements TransferTask {
+    private String errMsg;
+
+    @Override
+    public void fail(Throwable ex) {
+        this.errMsg = ExceptionUtils.getRootCauseMessage(ex);
     }
 
-    public void cancel() {
-
+    @Override
+    public String errMsg() {
+        return this.errMsg;
     }
 
-    public double progress() {
-        return 0;
-    }
 }

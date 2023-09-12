@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.datatransfer.util;
+package com.oceanbase.odc.service.datatransfer.task.common;
 
 import static com.oceanbase.odc.service.datatransfer.model.DataTransferFormat.CSV;
 import static com.oceanbase.odc.service.datatransfer.model.DataTransferFormat.EXCEL;
@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
 
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.service.datatransfer.model.DataTransferConfig;
-import com.oceanbase.odc.service.datatransfer.task.DataTransferTask;
+import com.oceanbase.odc.service.datatransfer.task.TransferTask;
 import com.oceanbase.odc.service.datatransfer.task.TransferTaskFactory;
 import com.oceanbase.odc.service.datatransfer.task.datax.DataXTaskFactory;
 import com.oceanbase.odc.service.datatransfer.task.obloaderdumper.ObLoaderDumperTaskFactory;
@@ -36,7 +36,7 @@ import com.oceanbase.odc.service.datatransfer.task.sql.SqlTaskFactory;
 
 public class TransferTaskQueueBuilder {
 
-    public static List<DataTransferTask> build(DataTransferConfig config) {
+    public static List<TransferTask> build(DataTransferConfig config) {
 
         return getFactories(config).stream()
                 .map(TransferTaskFactory::generate)
