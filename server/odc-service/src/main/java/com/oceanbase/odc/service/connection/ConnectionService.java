@@ -541,6 +541,7 @@ public class ConnectionService {
 
         ConnectionConfig updated = entityToModel(savedEntity, true);
 
+        this.attributeRepository.deleteByConnectionId(updated.getId());
         List<ConnectionAttributeEntity> attrEntities = connToAttrEntities(updated);
         attrEntities = this.attributeRepository.saveAll(attrEntities);
         updated.setAttributes(attrEntitiesToMap(attrEntities));
@@ -732,10 +733,8 @@ public class ConnectionService {
             connection.setEnvironmentStyle(environment.getStyle());
             String environmentName = environment.getName();
             if (environmentName.startsWith("${") && environmentName.endsWith("}")) {
-                connection
-                        .setEnvironmentName(
-                                I18n.translate(environmentName.substring(2, environmentName.length() - 1), null,
-                                        LocaleContextHolder.getLocale()));
+                connection.setEnvironmentName(I18n.translate(environmentName.substring(2,
+                        environmentName.length() - 1), null, LocaleContextHolder.getLocale()));
             } else {
                 connection.setEnvironmentName(environmentName);
             }
@@ -768,8 +767,9 @@ public class ConnectionService {
         Map<Long, List<ConnectionAttributeEntity>> map = entities.stream().collect(
                 Collectors.groupingBy(ConnectionAttributeEntity::getConnectionId));
         Verify.verify(map.size() <= 1, "Attributes's size is illegal, actual: " + map.size());
-        return entities.stream().collect(Collectors.toMap(
-                ConnectionAttributeEntity::getName, e -> JsonUtils.fromJson(e.getContent(), Object.class)));
+        return entities.stream().filter(e -> JsonUtils.fromJson(e.getContent(), Object.class) != null)
+                .collect(Collectors.toMap(ConnectionAttributeEntity::getName, e -> JsonUtils.fromJson(
+                        e.getContent(), Object.class)));
     }
 
     private Long currentOrganizationId() {
