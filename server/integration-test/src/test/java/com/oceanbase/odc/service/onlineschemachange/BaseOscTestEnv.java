@@ -21,13 +21,14 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 
-import java.text.MessageFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Predicate;
 
+import org.apache.commons.collections4.CollectionUtils;
+import org.junit.Assert;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.mockito.Mockito;
 import org.quartz.Scheduler;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,7 +41,7 @@ import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
-import com.oceanbase.odc.core.shared.constant.TaskErrorStrategy;
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.core.sql.execute.SyncJdbcExecutor;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
@@ -49,10 +50,9 @@ import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeScheduleTaskParameters;
-import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeSqlType;
-import com.oceanbase.odc.service.onlineschemachange.model.OriginTableCleanStrategy;
 import com.oceanbase.odc.service.onlineschemachange.oms.enums.ProjectStatusEnum;
 import com.oceanbase.odc.service.onlineschemachange.oms.openapi.DataSourceOpenApiService;
 import com.oceanbase.odc.service.onlineschemachange.oms.openapi.ProjectOpenApiService;
@@ -69,13 +69,15 @@ import com.oceanbase.odc.service.schedule.model.ScheduleStatus;
 import com.oceanbase.odc.service.schedule.model.TriggerConfig;
 import com.oceanbase.odc.service.schedule.model.TriggerStrategy;
 import com.oceanbase.odc.service.session.DBSessionManageFacade;
+import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
+import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 
 /**
  * @author yaobin
  * @date 2023-07-17
  * @since 4.2.0
  */
-public class OscTestEnv extends ServiceTestEnv {
+public abstract class BaseOscTestEnv extends ServiceTestEnv {
 
     @Autowired
     protected ScheduleRepository scheduleRepository;
@@ -99,20 +101,17 @@ public class OscTestEnv extends ServiceTestEnv {
     @Autowired
     protected Scheduler scheduler;
 
-    protected static ConnectionConfig config;
-    protected static ConnectionSession connectionSession;
-    protected static SyncJdbcExecutor jdbcTemplate;
+    protected ConnectionConfig config;
+    protected ConnectionSession connectionSession;
+    protected SyncJdbcExecutor jdbcTemplate;
     protected String oscCheckTaskCronExpression = "0/3 * * * * ?";
-
-    @BeforeClass
-    public static void before() {
-        config = TestConnectionUtil.getTestConnectionConfig(ConnectType.OB_MYSQL);
-        connectionSession = TestConnectionUtil.getTestConnectionSession(ConnectType.OB_MYSQL);
-        jdbcTemplate = connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY);
-    }
 
     @Before
     public void beforeEveryTestCase() {
+        ConnectType connectType = ConnectType.from(getDialectType());
+        config = TestConnectionUtil.getTestConnectionConfig(connectType);
+        connectionSession = TestConnectionUtil.getTestConnectionSession(connectType);
+        jdbcTemplate = connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY);
         mock();
     }
 
@@ -188,36 +187,52 @@ public class OscTestEnv extends ServiceTestEnv {
         return scheduleRepository.saveAndFlush(scheduleEntity);
     }
 
-    protected void createTableForTask(String tableName) {
-        String createTemplate = "create table if not exists {0} (id int(20) primary key, name1 varchar(20))";
-        jdbcTemplate.execute(MessageFormat.format(createTemplate, tableName));
+
+    protected void checkSwapTableAndRenameReserved(OnlineSchemaChangeScheduleTaskParameters taskParameters) {
+        DBSchemaAccessor dbSchemaAccessor = DBSchemaAccessors.create(connectionSession);
+        List<String> renamedTable = dbSchemaAccessor.showTablesLike(taskParameters.getDatabaseName(),
+                taskParameters.getRenamedTableNameUnwrapped());
+
+        List<String> originTable = dbSchemaAccessor.showTablesLike(taskParameters.getDatabaseName(),
+                taskParameters.getOriginTableNameUnwrapped());
+
+        Assert.assertFalse(CollectionUtils.isEmpty(renamedTable));
+        Assert.assertFalse(CollectionUtils.isEmpty(originTable));
+
+        // if swap table successful
+        List<DBTableColumn> tableColumnFromNew = dbSchemaAccessor.listTableColumns(taskParameters.getDatabaseName(),
+                taskParameters.getOriginTableNameUnwrapped());
+
+        Optional<DBTableColumn> name1Col = tableColumnFromNew.stream()
+                .filter(a -> a.getName().equalsIgnoreCase("name1"))
+                .findFirst();
+        Assert.assertTrue(name1Col.isPresent());
+        Assert.assertEquals(30L, name1Col.get().getMaxLength().longValue());
+
+
+        List<DBTableColumn> renamedTableColumns = dbSchemaAccessor.listTableColumns(taskParameters.getDatabaseName(),
+                taskParameters.getRenamedTableNameUnwrapped());
+
+        Optional<DBTableColumn> name2Col = renamedTableColumns.stream()
+                .filter(a -> a.getName().equalsIgnoreCase("name1"))
+                .findFirst();
+        Assert.assertTrue(name2Col.isPresent());
+        Assert.assertEquals(20L, name2Col.get().getMaxLength().longValue());
+
     }
 
-    protected void dropTableForTask(String tableName) {
-        String dropTemplate = "drop table if exists {0}";
-        jdbcTemplate.execute(MessageFormat.format(dropTemplate, tableName));
+    protected void checkSwapTableAndRenameDrop(OnlineSchemaChangeScheduleTaskParameters taskParameters) {
+        DBSchemaAccessor dbSchemaAccessor = DBSchemaAccessors.create(connectionSession);
+        List<String> renamedTable = dbSchemaAccessor.showTablesLike(taskParameters.getDatabaseName(),
+                taskParameters.getRenamedTableNameUnwrapped());
+
+        List<String> originTable = dbSchemaAccessor.showTablesLike(taskParameters.getDatabaseName(),
+                taskParameters.getOriginTableNameUnwrapped());
+
+        Assert.assertTrue(CollectionUtils.isEmpty(renamedTable));
+        Assert.assertFalse(CollectionUtils.isEmpty(originTable));
     }
 
-    protected void createTableForMultiTask() {
-        createTableForTask("t1");
-        createTableForTask("t2");
-    }
-
-    protected void dropTableForMultiTask() {
-        dropTableForTask("t1");
-        dropTableForTask("t2");
-    }
-
-    protected OnlineSchemaChangeParameters getOnlineSchemaChangeParameters() {
-        OnlineSchemaChangeParameters changeParameters = new OnlineSchemaChangeParameters();
-        changeParameters.setSwapTableNameRetryTimes(3);
-        changeParameters.setSqlType(OnlineSchemaChangeSqlType.CREATE);
-        changeParameters.setErrorStrategy(TaskErrorStrategy.ABORT);
-        changeParameters.setOriginTableCleanStrategy(OriginTableCleanStrategy.ORIGIN_TABLE_RENAME_AND_RESERVED);
-        changeParameters.setSqlContent("create table t1 (id int(20) primary key, name1 varchar(20));"
-                + "create table t2 (id int(20) primary key, name1 varchar(20));");
-        return changeParameters;
-    }
-
+    protected abstract DialectType getDialectType();
 
 }

@@ -23,11 +23,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 import com.oceanbase.odc.core.session.ConnectionSession;
-import com.oceanbase.odc.core.session.ConnectionSessionConstants;
+import com.oceanbase.odc.service.db.browser.DBObjectOperators;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeScheduleTaskParameters;
 import com.oceanbase.odc.service.onlineschemachange.model.OriginTableCleanStrategy;
 import com.oceanbase.odc.service.session.DBSessionManageFacade;
+import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -66,7 +67,7 @@ public class DefaultRenameTableInvoker implements RenameTableInvoker {
         RenameTableParameters renameTableParameters = getRenameTableParameters(taskParameters, parameters);
         try {
             retryRename(taskParameters, parameters, renameTableParameters);
-            dropOldTable(renameTableParameters);
+            dropOldTable(renameTableParameters, taskParameters);
         } finally {
             renameBackHandler.renameBack(connectionSession, taskParameters);
         }
@@ -84,7 +85,7 @@ public class DefaultRenameTableInvoker implements RenameTableInvoker {
         boolean succeed;
         do {
             succeed = doTryRename(taskParameters, renameTableParameters, retryTime);
-        } while (retryTime.incrementAndGet() < swapTableNameRetryTimes && !succeed);
+        } while (!succeed && retryTime.incrementAndGet() < swapTableNameRetryTimes);
 
         if (!succeed) {
             throw new IllegalStateException(
@@ -159,28 +160,14 @@ public class DefaultRenameTableInvoker implements RenameTableInvoker {
         }
     }
 
-    private void dropOldTable(RenameTableParameters parameters) {
+    private void dropOldTable(RenameTableParameters parameters,
+            OnlineSchemaChangeScheduleTaskParameters taskParameters) {
         if (parameters.getOriginTableCleanStrategy() == OriginTableCleanStrategy.ORIGIN_TABLE_DROP) {
             log.info("Because origin table clean strategy is {}, so we drop the old table. ",
                     parameters.getOriginTableCleanStrategy());
-            String oldTable = getWithSchema(parameters.getSchemaName(), parameters.getRenamedTableName());
-            dropTable(oldTable);
+            DBObjectOperators.create(connectionSession)
+                    .drop(DBObjectType.TABLE, parameters.getSchemaName(),
+                            taskParameters.getRenamedTableNameUnwrapped());
         }
     }
-
-    private void dropTable(String tableName) {
-        try {
-            // drop table
-            connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY)
-                    .execute("DROP TABLE " + tableName);
-            log.info("DROP TABLE {}", tableName);
-        } catch (Exception exception) {
-            log.warn("Drop old table {} occur error {} ", tableName, exception.getMessage());
-        }
-    }
-
-    private String getWithSchema(String schema, String tableName) {
-        return schema + "." + tableName;
-    }
-
 }

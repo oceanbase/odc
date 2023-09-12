@@ -39,7 +39,7 @@ import lombok.extern.slf4j.Slf4j;
  * @since 4.2.0
  */
 @Slf4j
-public class OnlineSchemaChangeMultiTaskTest extends OscTestEnv {
+public class OnlineSchemaChangeMultiTaskTest extends OBMySqlOscTestEnv {
 
 
     @Test
