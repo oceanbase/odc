@@ -16,8 +16,16 @@
 
 package com.oceanbase.odc.service.datatransfer.task;
 
+import com.oceanbase.odc.core.shared.constant.TaskStatus;
+
 public interface DataTransferTask {
 
+    void init();
+
     void transfer();
+
+    void destroyQuietly();
+
+    TaskStatus status();
 
 }

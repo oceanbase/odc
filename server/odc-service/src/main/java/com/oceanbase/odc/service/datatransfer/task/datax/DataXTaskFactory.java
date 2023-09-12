@@ -14,10 +14,22 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.datatransfer.model;
+package com.oceanbase.odc.service.datatransfer.task.datax;
 
-public class TransferStrategy {
+import java.util.List;
 
+import com.oceanbase.odc.service.datatransfer.model.DataTransferConfig;
+import com.oceanbase.odc.service.datatransfer.task.DataTransferTask;
+import com.oceanbase.odc.service.datatransfer.task.TransferTaskFactory;
 
+public class DataXTaskFactory implements TransferTaskFactory {
 
+    public DataXTaskFactory(DataTransferConfig config) {
+
+    }
+
+    @Override
+    public List<DataTransferTask> generate() {
+        return null;
+    }
 }

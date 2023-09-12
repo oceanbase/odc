@@ -26,6 +26,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.ThreadContext;
 
 import com.oceanbase.odc.core.shared.Verify;
+import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.service.flow.task.model.DataTransferTaskResult;
 import com.oceanbase.tools.loaddump.client.LoadClient;
 import com.oceanbase.tools.loaddump.common.enums.DataFormat;
@@ -99,4 +100,23 @@ public class ObLoaderDumperImportTask extends BaseObLoaderDumperTransferTask<Loa
         return parameter.getDataFormat() == DataFormat.MIX && parameter.isExternal();
     }
 
+    @Override
+    public void init() {
+
+    }
+
+    @Override
+    public void transfer() {
+
+    }
+
+    @Override
+    public void destroyQuietly() {
+
+    }
+
+    @Override
+    public TaskStatus status() {
+        return null;
+    }
 }

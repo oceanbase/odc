@@ -38,6 +38,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.Future;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FileUtils;
@@ -83,14 +84,18 @@ import com.oceanbase.odc.service.datatransfer.model.DataTransferFormat;
 import com.oceanbase.odc.service.datatransfer.model.DataTransferProperties;
 import com.oceanbase.odc.service.datatransfer.model.DataTransferType;
 import com.oceanbase.odc.service.datatransfer.model.UploadFileResult;
+import com.oceanbase.odc.service.datatransfer.task.DataTransferTask;
+import com.oceanbase.odc.service.datatransfer.task.common.DataTransferTaskRunner;
+import com.oceanbase.odc.service.datatransfer.task.common.DataTransferTracer;
 import com.oceanbase.odc.service.datatransfer.task.obloaderdumper.BaseObLoaderDumperTransferTask;
-import com.oceanbase.odc.service.datatransfer.task.obloaderdumper.DataTransferTaskContext;
-import com.oceanbase.odc.service.datatransfer.task.obloaderdumper.ObLoaderDumperExportTask;
-import com.oceanbase.odc.service.datatransfer.task.obloaderdumper.ObLoaderDumperImportTask;
 import com.oceanbase.odc.service.datatransfer.task.obloaderdumper.BaseParameterFactory;
+import com.oceanbase.odc.service.datatransfer.task.obloaderdumper.DataTransferTaskContext;
 import com.oceanbase.odc.service.datatransfer.task.obloaderdumper.DumpParameterFactory;
 import com.oceanbase.odc.service.datatransfer.task.obloaderdumper.LoadParameterFactory;
+import com.oceanbase.odc.service.datatransfer.task.obloaderdumper.ObLoaderDumperExportTask;
+import com.oceanbase.odc.service.datatransfer.task.obloaderdumper.ObLoaderDumperImportTask;
 import com.oceanbase.odc.service.datatransfer.util.DBObjectNameAccessor;
+import com.oceanbase.odc.service.datatransfer.util.TransferTaskQueueBuilder;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
 import com.oceanbase.tools.loaddump.common.model.DumpParameter;
@@ -126,9 +131,9 @@ public class DataTransferService {
     @Autowired
     private ConnectionService connectionService;
     @Autowired
-    private LocalFileManager  fileManager;
+    private LocalFileManager fileManager;
     @Value("${odc.log.directory:./log}")
-    private String            taskLogDir;
+    private String taskLogDir;
     @Autowired
     private DataTransferAdapter dataTransferAdapter;
     @Autowired
@@ -139,6 +144,14 @@ public class DataTransferService {
     private DatabaseService databaseService;
     @Autowired
     private AuthenticationFacade authenticationFacade;
+
+    public DataTransferTracer create(DataTransferConfig transferConfig) {
+        List<DataTransferTask> taskQueue = TransferTaskQueueBuilder.build(transferConfig);
+        DataTransferTaskRunner job = new DataTransferTaskRunner(taskQueue, transferConfig.isStopWhenError());
+        Future<Void> future = executor.submit(job);
+
+        return new DataTransferTracer(job, future);
+    }
 
     /**
      * create a data transfer task

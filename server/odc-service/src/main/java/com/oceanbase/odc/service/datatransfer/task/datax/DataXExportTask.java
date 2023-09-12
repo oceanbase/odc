@@ -16,5 +16,27 @@
 
 package com.oceanbase.odc.service.datatransfer.task.datax;
 
+import com.oceanbase.odc.core.shared.constant.TaskStatus;
+
 public class DataXExportTask extends BaseDataXTransferTask{
+
+    @Override
+    public void init() {
+
+    }
+
+    @Override
+    public void transfer() {
+
+    }
+
+    @Override
+    public void destroyQuietly() {
+
+    }
+
+    @Override
+    public TaskStatus status() {
+        return null;
+    }
 }

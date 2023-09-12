@@ -14,14 +14,22 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.datatransfer.task;
+package com.oceanbase.odc.service.datatransfer.task.sql;
 
-public class BaseDataTransferTask implements DataTransferTask {
+import java.util.List;
 
-    public BaseDataTransferTask() {}
+import com.oceanbase.odc.service.datatransfer.model.DataTransferConfig;
+import com.oceanbase.odc.service.datatransfer.task.DataTransferTask;
+import com.oceanbase.odc.service.datatransfer.task.TransferTaskFactory;
+
+public class SqlTaskFactory implements TransferTaskFactory {
+
+    public SqlTaskFactory(DataTransferConfig config) {
+
+    }
 
     @Override
-    public void transfer() {
-
+    public List<DataTransferTask> generate() {
+        return null;
     }
 }

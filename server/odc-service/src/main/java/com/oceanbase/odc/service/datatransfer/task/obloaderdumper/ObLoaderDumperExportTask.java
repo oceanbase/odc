@@ -28,6 +28,7 @@ import org.apache.logging.log4j.ThreadContext;
 
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
+import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.service.datatransfer.DataTransferAdapter;
 import com.oceanbase.odc.service.datatransfer.dumper.DumperOutput;
 import com.oceanbase.odc.service.datatransfer.dumper.SchemaMergeOperator;
@@ -114,4 +115,23 @@ public class ObLoaderDumperExportTask extends BaseObLoaderDumperTransferTask<Dum
         this.transferAdapter.afterHandle(parameter, context, result, dest);
     }
 
+    @Override
+    public void init() {
+
+    }
+
+    @Override
+    public void transfer() {
+
+    }
+
+    @Override
+    public void destroyQuietly() {
+
+    }
+
+    @Override
+    public TaskStatus status() {
+        return null;
+    }
 }

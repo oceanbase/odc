@@ -14,10 +14,28 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.datatransfer;
+package com.oceanbase.odc.service.datatransfer.task.sql;
 
-public class DataTransferInvoker {
+import com.oceanbase.odc.core.shared.constant.TaskStatus;
 
-    public void invoke() {}
+public class SqlExportSchemaTask extends BaseSqlTransferTask{
+    @Override
+    public void init() {
 
+    }
+
+    @Override
+    public void transfer() {
+
+    }
+
+    @Override
+    public void destroyQuietly() {
+
+    }
+
+    @Override
+    public TaskStatus status() {
+        return null;
+    }
 }

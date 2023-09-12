@@ -16,7 +16,7 @@
 
 package com.oceanbase.odc.service.datatransfer.task.sql;
 
-import com.oceanbase.odc.service.datatransfer.task.BaseDataTransferTask;
+import com.oceanbase.odc.service.datatransfer.task.DataTransferTask;
 
-public class BaseSqlTransferTask extends BaseDataTransferTask {
+public abstract class BaseSqlTransferTask implements DataTransferTask {
 }

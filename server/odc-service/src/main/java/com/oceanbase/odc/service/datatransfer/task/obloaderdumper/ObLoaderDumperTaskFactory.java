@@ -14,9 +14,22 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.datatransfer.task.datax;
+package com.oceanbase.odc.service.datatransfer.task.obloaderdumper;
 
+import java.util.List;
+
+import com.oceanbase.odc.service.datatransfer.model.DataTransferConfig;
 import com.oceanbase.odc.service.datatransfer.task.DataTransferTask;
+import com.oceanbase.odc.service.datatransfer.task.TransferTaskFactory;
 
-public abstract class BaseDataXTransferTask implements DataTransferTask {
+public class ObLoaderDumperTaskFactory implements TransferTaskFactory {
+
+    public ObLoaderDumperTaskFactory(DataTransferConfig config) {
+
+    }
+
+    @Override
+    public List<DataTransferTask> generate() {
+        return null;
+    }
 }

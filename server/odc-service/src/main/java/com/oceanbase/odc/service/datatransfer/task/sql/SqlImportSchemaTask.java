@@ -14,14 +14,28 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.datatransfer;
+package com.oceanbase.odc.service.datatransfer.task.sql;
 
-import com.oceanbase.odc.service.datatransfer.model.TransferStrategy;
+import com.oceanbase.odc.core.shared.constant.TaskStatus;
 
-public class DataTransferStrategyFactory {
+public class SqlImportSchemaTask extends BaseSqlTransferTask{
+    @Override
+    public void init() {
 
-    public TransferStrategy generate() {
-        return null;
     }
 
+    @Override
+    public void transfer() {
+
+    }
+
+    @Override
+    public void destroyQuietly() {
+
+    }
+
+    @Override
+    public TaskStatus status() {
+        return null;
+    }
 }

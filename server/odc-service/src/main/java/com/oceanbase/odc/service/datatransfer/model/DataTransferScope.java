@@ -14,7 +14,18 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.datatransfer.task.sql;
+package com.oceanbase.odc.service.datatransfer.model;
 
-public class SqlImportTask extends BaseSqlTransferTask{
+public enum DataTransferScope {
+
+    /**
+     * transfer data
+     */
+    DATA,
+
+    /**
+     * transfer
+     */
+    SCHEMA
+
 }

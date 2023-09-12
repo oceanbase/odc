@@ -14,9 +14,12 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.datatransfer.task.datax;
+package com.oceanbase.odc.service.datatransfer.task;
 
-import com.oceanbase.odc.service.datatransfer.task.DataTransferTask;
+import java.util.List;
 
-public abstract class BaseDataXTransferTask implements DataTransferTask {
+public interface TransferTaskFactory {
+
+    List<DataTransferTask> generate();
+
 }

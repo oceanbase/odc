@@ -16,5 +16,26 @@
 
 package com.oceanbase.odc.service.datatransfer.task.sql;
 
-public class SqlExportTask extends BaseSqlTransferTask{
+import com.oceanbase.odc.core.shared.constant.TaskStatus;
+
+public class SqlImportDataTask extends BaseSqlTransferTask{
+    @Override
+    public void init() {
+
+    }
+
+    @Override
+    public void transfer() {
+
+    }
+
+    @Override
+    public void destroyQuietly() {
+
+    }
+
+    @Override
+    public TaskStatus status() {
+        return null;
+    }
 }
