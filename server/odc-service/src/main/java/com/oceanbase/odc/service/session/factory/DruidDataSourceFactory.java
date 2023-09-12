@@ -42,6 +42,7 @@ import lombok.NonNull;
  * @see OBConsoleDataSourceFactory
  */
 public class DruidDataSourceFactory extends OBConsoleDataSourceFactory {
+
     private long queryTimeOut;
 
     public DruidDataSourceFactory(ConnectionConfig connectionConfig, ConnectionAccountType accountType,
