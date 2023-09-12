@@ -30,17 +30,21 @@ import lombok.Data;
 @Data
 public class ListColumnsResp {
 
-    private List<SchemaColumn> schemaColumns;
+    /**
+     * Table columns and view columns of each database
+     */
+    private List<DatabaseColumn> databaseColumns;
 
-    public static ListColumnsResp of(List<SchemaColumn> schemaColumns) {
+    public static ListColumnsResp of(List<DatabaseColumn> databaseColumns) {
         ListColumnsResp resp = new ListColumnsResp();
-        resp.setSchemaColumns(schemaColumns);
+        resp.setDatabaseColumns(databaseColumns);
         return resp;
     }
 
     @Data
-    public static class SchemaColumn {
-        private String schemaName;
+    public static class DatabaseColumn {
+        private Long databaseId;
+        private String databaseName;
         private Map<String, List<DBTableColumn>> tableColumns;
         private Map<String, List<DBTableColumn>> viewColumns;
     }

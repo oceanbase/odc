@@ -60,7 +60,7 @@ import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.datasecurity.extractor.model.DBColumn;
 import com.oceanbase.odc.service.datasecurity.model.ListColumnsResp;
-import com.oceanbase.odc.service.datasecurity.model.ListColumnsResp.SchemaColumn;
+import com.oceanbase.odc.service.datasecurity.model.ListColumnsResp.DatabaseColumn;
 import com.oceanbase.odc.service.datasecurity.model.MaskingAlgorithm;
 import com.oceanbase.odc.service.datasecurity.model.QuerySensitiveColumnParams;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveColumn;
@@ -126,25 +126,26 @@ public class SensitiveColumnService {
         List<Database> databases = databaseService.listDatabasesByIds(databaseIds);
         Map<Long, Long> databaseId2DatasourceId = databases.stream()
                 .collect(Collectors.toMap(Database::getId, d -> d.getDataSource().getId(), (d1, d2) -> d1));
-        List<SchemaColumn> schemaColumns = new ArrayList<>();
+        List<DatabaseColumn> databaseColumns = new ArrayList<>();
         for (Database database : databases) {
             ConnectionConfig config = connectionService
                     .getForConnectionSkipPermissionCheck(databaseId2DatasourceId.get(database.getId()));
             ConnectionSession session = new DefaultConnectSessionFactory(config).generateSession();
             try {
                 DBSchemaAccessor accessor = DBSchemaAccessors.create(session);
-                SchemaColumn schemaColumn = new SchemaColumn();
-                schemaColumn.setSchemaName(database.getName());
-                schemaColumn.setTableColumns(accessor.listBasicTableColumns(database.getName()));
-                schemaColumn.setViewColumns(accessor.listBasicViewColumns(database.getName()));
-                if (!schemaColumn.getTableColumns().isEmpty() || !schemaColumn.getViewColumns().isEmpty()) {
-                    schemaColumns.add(schemaColumn);
+                DatabaseColumn databaseColumn = new DatabaseColumn();
+                databaseColumn.setDatabaseId(database.getId());
+                databaseColumn.setDatabaseName(database.getName());
+                databaseColumn.setTableColumns(accessor.listBasicTableColumns(database.getName()));
+                databaseColumn.setViewColumns(accessor.listBasicViewColumns(database.getName()));
+                if (!databaseColumn.getTableColumns().isEmpty() || !databaseColumn.getViewColumns().isEmpty()) {
+                    databaseColumns.add(databaseColumn);
                 }
             } finally {
                 session.expire();
             }
         }
-        return ListColumnsResp.of(schemaColumns);
+        return ListColumnsResp.of(databaseColumns);
     }
 
     @Transactional(rollbackFor = Exception.class)
