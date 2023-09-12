@@ -70,7 +70,7 @@ public class PartitionPlanSubFlowThread extends Thread {
     @Override
     public void run() {
         SecurityContextUtils.setCurrentUser(user);
-        flowInstanceService.create(this.createFlowInstanceReq);
+        flowInstanceService.createWithoutApprovalNode(this.createFlowInstanceReq);
     }
 
     public Object getResult() {
