@@ -758,8 +758,8 @@ public class ConnectionService {
             ConnectionAttributeEntity entity = new ConnectionAttributeEntity();
             entity.setConnectionId(model.getId());
             entity.setOrganizationId(model.getOrganizationId());
-            entity.setKey(entry.getKey());
-            entity.setValue(JsonUtils.toJson(entry.getValue()));
+            entity.setName(entry.getKey());
+            entity.setContent(JsonUtils.toJson(entry.getValue()));
             return entity;
         }).collect(Collectors.toList());
     }
@@ -769,7 +769,7 @@ public class ConnectionService {
                 Collectors.groupingBy(ConnectionAttributeEntity::getConnectionId));
         Verify.verify(map.size() <= 1, "Attributes's size is illegal, actual: " + map.size());
         return entities.stream().collect(Collectors.toMap(
-                ConnectionAttributeEntity::getKey, e -> JsonUtils.fromJson(e.getValue(), Object.class)));
+                ConnectionAttributeEntity::getName, e -> JsonUtils.fromJson(e.getContent(), Object.class)));
     }
 
     private Long currentOrganizationId() {

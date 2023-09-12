@@ -47,8 +47,8 @@ public class ConnectionAttributeEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "key", nullable = false)
-    private String key;
+    @Column(name = "name", nullable = false)
+    private String name;
 
     @Column(name = "organization_id", updatable = false, nullable = false)
     private Long organizationId;
@@ -56,8 +56,8 @@ public class ConnectionAttributeEntity {
     @Column(name = "connection_id", updatable = false, nullable = false)
     private Long connectionId;
 
-    @Column(name = "value")
-    private String value;
+    @Column(name = "content")
+    private String content;
 
     @Generated(GenerationTime.ALWAYS)
     @Column(name = "create_time", insertable = false, updatable = false,
