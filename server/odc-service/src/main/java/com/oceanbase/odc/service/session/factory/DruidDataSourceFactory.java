@@ -15,16 +15,22 @@
  */
 package com.oceanbase.odc.service.session.factory;
 
-import java.util.Collections;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.Map;
 
 import javax.sql.DataSource;
 
 import com.alibaba.druid.pool.DruidDataSource;
 import com.oceanbase.odc.core.datasource.CloneableDataSourceFactory;
+import com.oceanbase.odc.core.datasource.ConnectionInitializer;
 import com.oceanbase.odc.core.datasource.DataSourceFactory;
 import com.oceanbase.odc.core.shared.constant.ConnectionAccountType;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.util.ConnectionMapper;
+import com.oceanbase.odc.service.session.initializer.SessionCreatedInitializer;
+
+import lombok.NonNull;
 
 /**
  * {@link DruidDataSourceFactory} used to init {@link DruidDataSource}
@@ -53,7 +59,7 @@ public class DruidDataSourceFactory extends OBConsoleDataSourceFactory {
         String jdbcUrl = getJdbcUrl();
         String username = getUsername();
         String password = getPassword();
-        DruidDataSource dataSource = new DruidDataSource();
+        DruidDataSource dataSource = new InnerDataSource(new SessionCreatedInitializer(connectionConfig));
         dataSource.setUrl(jdbcUrl);
         dataSource.setUsername(username);
         dataSource.setPassword(password);
@@ -71,9 +77,6 @@ public class DruidDataSourceFactory extends OBConsoleDataSourceFactory {
         dataSource.setDefaultAutoCommit(true);
         dataSource.setMaxActive(5);
         dataSource.setInitialSize(2);
-        if (queryTimeOut > 0 && getConnectType().getDialectType().isOceanbase()) {
-            dataSource.setConnectionInitSqls(Collections.singletonList("SET OB_QUERY_TIMEOUT=" + queryTimeOut));
-        }
         // wait for get available connection from connection pool
         dataSource.setMaxWait(10_000L);
     }
@@ -82,6 +85,29 @@ public class DruidDataSourceFactory extends OBConsoleDataSourceFactory {
     public CloneableDataSourceFactory deepCopy() {
         ConnectionMapper mapper = ConnectionMapper.INSTANCE;
         return new DruidDataSourceFactory(mapper.clone(connectionConfig), this.accountType, queryTimeOut);
+    }
+
+    static class InnerDataSource extends DruidDataSource {
+
+        private final ConnectionInitializer initializer;
+
+        private InnerDataSource(@NonNull ConnectionInitializer initializer) {
+            this.initializer = initializer;
+        }
+
+        @Override
+        public void initPhysicalConnection(Connection conn, Map<String, Object> variables,
+                Map<String, Object> globalVariables) throws SQLException {
+            try {
+                super.initPhysicalConnection(conn, variables, globalVariables);
+            } finally {
+                try {
+                    this.initializer.init(conn);
+                } catch (Exception e) {
+                    // eat exception
+                }
+            }
+        }
     }
 
 }

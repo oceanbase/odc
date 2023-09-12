@@ -15,7 +15,12 @@
  */
 package com.oceanbase.odc.service.connection;
 
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.Objects;
+import java.util.Properties;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -26,6 +31,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.validation.annotation.Validated;
 
 import com.oceanbase.odc.common.util.StringUtils;
+import com.oceanbase.odc.core.datasource.ConnectionInitializer;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.ConnectionAccountType;
@@ -43,6 +49,7 @@ import com.oceanbase.odc.service.connection.ssl.ConnectionSSLAdaptor;
 import com.oceanbase.odc.service.connection.util.ConnectTypeUtil;
 import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 import com.oceanbase.odc.service.session.factory.OBConsoleDataSourceFactory;
+import com.oceanbase.odc.service.session.initializer.SessionCreatedInitializer;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -177,6 +184,11 @@ public class ConnectionTesting {
             if (type != null && connectType != null && !Objects.equals(connectType, type)) {
                 return ConnectionTestResult.connectTypeMismatch(connectType);
             }
+            try {
+                testInitScript(connectionExtensionPoint, schema, config, accountType);
+            } catch (Exception e) {
+                return ConnectionTestResult.initScriptFailed(e);
+            }
             return testResult;
         } catch (Exception e) {
             return new ConnectionTestResult(TestResult.unknownError(e), null);
@@ -214,4 +226,31 @@ public class ConnectionTesting {
         config.setSslConfig(req.getSslConfig());
         return config;
     }
+
+    private void testInitScript(ConnectionExtensionPoint extensionPoint, String schema,
+            ConnectionConfig config, ConnectionAccountType accountType) throws SQLException {
+        String jdbcUrl = extensionPoint.generateJdbcUrl(config.getHost(),
+                config.getPort(), schema, OBConsoleDataSourceFactory.getJdbcParams(config));
+        String username = OBConsoleDataSourceFactory.getUsername(config, accountType);
+        String password = OBConsoleDataSourceFactory.getPassword(config, accountType);
+        Properties properties = new Properties();
+        properties.setProperty("user", username);
+        if (password == null) {
+            properties.setProperty("password", "");
+        } else {
+            properties.setProperty("password", password);
+        }
+        properties.setProperty("socketTimeout", ConnectTypeUtil.REACHABLE_TIMEOUT_MILLIS + "");
+        properties.setProperty("connectTimeout", ConnectTypeUtil.REACHABLE_TIMEOUT_MILLIS + "");
+
+        ConnectionInitializer initializer = new SessionCreatedInitializer(config, false);
+        try (Connection connection = DriverManager.getConnection(jdbcUrl, properties);
+                Statement statement = connection.createStatement()) {
+            if (queryTimeoutSeconds >= 0) {
+                statement.setQueryTimeout(queryTimeoutSeconds);
+            }
+            initializer.init(connection);
+        }
+    }
+
 }

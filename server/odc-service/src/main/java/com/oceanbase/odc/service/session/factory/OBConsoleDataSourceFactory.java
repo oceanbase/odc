@@ -21,7 +21,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 import javax.sql.DataSource;
 
@@ -46,6 +45,7 @@ import com.oceanbase.odc.service.connection.model.ConnectionConfig.SSLFileEntry;
 import com.oceanbase.odc.service.connection.model.OBTenantEndpoint;
 import com.oceanbase.odc.service.connection.util.ConnectionMapper;
 import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
+import com.oceanbase.odc.service.session.initializer.SessionCreatedInitializer;
 
 import lombok.NonNull;
 import lombok.Setter;
@@ -172,7 +172,11 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
         } else {
             jdbcUrlParams.put("useSSL", "false");
         }
-
+        connectionConfig.getJdbcUrlParameters().forEach((key, value) -> {
+            if (value != null) {
+                jdbcUrlParams.putIfAbsent(key, value.toString());
+            }
+        });
         return jdbcUrlParams;
     }
 
@@ -195,6 +199,7 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
                 initializers.forEach(dataSource::addInitializer);
             }
         }
+        dataSource.addInitializer(new SessionCreatedInitializer(connectionConfig));
         return dataSource;
     }
 
@@ -280,8 +285,4 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
         return defaultSchema;
     }
 
-    private static String getJdbcUrlParameters(Map<String, String> jdbcUrlParams) {
-        return jdbcUrlParams.entrySet().stream().map(entry -> entry.getKey() + "=" + entry.getValue())
-                .collect(Collectors.joining("&"));
-    }
 }
