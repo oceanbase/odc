@@ -17,6 +17,7 @@
 package com.oceanbase.odc.metadb.connection;
 
 import java.util.List;
+import java.util.Set;
 
 import javax.transaction.Transactional;
 
@@ -45,5 +46,10 @@ public interface ConnectionAttributeRepository extends JpaRepository<ConnectionA
     @Modifying
     @Query(value = "delete from connect_connection_attribute where connection_id=?1", nativeQuery = true)
     int deleteByConnectionId(@NonNull Long connectionId);
+
+    @Transactional
+    @Modifying
+    @Query(value = "delete from connect_connection_attribute where connection_id in (?1)", nativeQuery = true)
+    int deleteByConnectionIds(Set<Long> connectionIds);
 
 }

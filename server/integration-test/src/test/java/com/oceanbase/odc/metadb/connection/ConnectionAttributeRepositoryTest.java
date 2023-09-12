@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.junit.Assert;
 import org.junit.Before;
@@ -71,6 +72,19 @@ public class ConnectionAttributeRepositoryTest extends ServiceTestEnv {
         entities.forEach(e -> e.setConnectionId(connectionId));
         entities = this.repository.saveAll(entities);
         int affectRows = this.repository.deleteByConnectionId(connectionId);
+        Assert.assertEquals(entities.size(), affectRows);
+    }
+
+    @Test
+    public void delete_deleteByConnectionIds_deleteSucceed() {
+        List<ConnectionAttributeEntity> entities = new ArrayList<>();
+        entities.add(TestRandom.nextObject(ConnectionAttributeEntity.class));
+        entities.add(TestRandom.nextObject(ConnectionAttributeEntity.class));
+        entities = this.repository.saveAll(entities);
+
+        Set<Long> connectionIds = entities.stream().map(
+                ConnectionAttributeEntity::getConnectionId).collect(Collectors.toSet());
+        int affectRows = this.repository.deleteByConnectionIds(connectionIds);
         Assert.assertEquals(entities.size(), affectRows);
     }
 

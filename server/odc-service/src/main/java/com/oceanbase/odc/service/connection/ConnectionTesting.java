@@ -199,6 +199,8 @@ public class ConnectionTesting {
         config.setUsername(req.getUsername());
         config.setPassword(req.getPassword());
         config.setDefaultSchema(req.getDefaultSchema());
+        config.setSessionInitScript(req.getSessionInitScript());
+        config.setJdbcUrlParameters(req.getJdbcUrlParameters());
 
         OBTenantEndpoint endpoint = req.getEndpoint();
         if (Objects.nonNull(endpoint) && OceanBaseAccessMode.IC_PROXY == endpoint.getAccessMode()) {
