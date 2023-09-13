@@ -300,6 +300,16 @@ public class OBColumnExtractorTest {
     }
 
     @Test
+    public void test_extract_OBMySQL_fromMultiJoinTable() {
+        String sql = TestColumnExtractorUtil.getTestSql(DialectType.OB_MYSQL, "from-multi-join-table");
+        LogicalTable result = obMySQLColumnExtractor.extract(obMySQLParser.parse(new StringReader(sql)));
+        List<String> actualLabels = getResultColumnLabels(result);
+        List<String> expectLabels = Arrays.asList("id", "name", "birthday", "description");
+        Assert.assertEquals(4, result.getColumnList().size());
+        Assert.assertEquals(expectLabels, actualLabels);
+    }
+
+    @Test
     public void test_extract_OBMySQL_fromSingleSubquery() {
         String sql = TestColumnExtractorUtil.getTestSql(DialectType.OB_MYSQL, "from-single-subquery");
         LogicalTable result = obMySQLColumnExtractor.extract(obMySQLParser.parse(new StringReader(sql)));
