@@ -38,17 +38,18 @@ import com.oceanbase.odc.core.datamasking.config.MaskConfig;
 import com.oceanbase.odc.core.datamasking.masker.AbstractDataMasker;
 import com.oceanbase.odc.core.datamasking.masker.DataMaskerFactory;
 import com.oceanbase.odc.core.datamasking.masker.MaskValueType;
+import com.oceanbase.odc.core.datasource.SingleConnectionDataSource;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
-import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig.SimpleConnectionConfig;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferFormat;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferObject;
 import com.oceanbase.odc.service.datasecurity.DataMaskingFunction;
 import com.oceanbase.odc.service.datasecurity.DataMaskingService;
 import com.oceanbase.odc.service.datasecurity.model.MaskingAlgorithm;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveColumn;
 import com.oceanbase.odc.service.datasecurity.util.MaskingAlgorithmUtil;
-import com.oceanbase.odc.service.datatransfer.model.DataTransferConfig;
-import com.oceanbase.odc.service.datatransfer.model.DataTransferFormat;
-import com.oceanbase.odc.service.datatransfer.model.DataTransferObject;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
@@ -77,7 +78,7 @@ public class DumpParameterFactory extends BaseParameterFactory<DumpParameter> {
     private final int fetchSize;
     private final DataMaskingService maskingService;
 
-    public DumpParameterFactory(File workingDir, File logDir, ConnectionConfig connectionConfig,
+    public DumpParameterFactory(File workingDir, File logDir, SimpleConnectionConfig connectionConfig,
             Long maxDumpSizeBytes, int fetchSize, DataMaskingService maskingService) throws FileNotFoundException {
         super(workingDir, logDir, connectionConfig);
         if (maxDumpSizeBytes != null) {
@@ -89,8 +90,7 @@ public class DumpParameterFactory extends BaseParameterFactory<DumpParameter> {
     }
 
     @Override
-    protected DumpParameter doGenerate(File workingDir, ConnectionConfig target,
-            DataTransferConfig transferConfig) throws IOException {
+    protected DumpParameter doGenerate(File workingDir, DataTransferConfig transferConfig) throws IOException {
         DumpParameter parameter = new DumpParameter();
         parameter.setSkipCheckDir(true);
         if (this.maxDumpSizeBytes != null) {
@@ -99,7 +99,7 @@ public class DumpParameterFactory extends BaseParameterFactory<DumpParameter> {
         parameter.setSchemaless(true);
         setFetchSize(parameter);
         setTransferFormat(parameter, transferConfig);
-        setDumpObjects(parameter, target, transferConfig);
+        setDumpObjects(parameter, transferConfig);
         if (transferConfig.isTransferDDL()) {
             parameter.setIncludeDdl(true);
             parameter.setDroppable(transferConfig.isWithDropDDL());
@@ -136,7 +136,7 @@ public class DumpParameterFactory extends BaseParameterFactory<DumpParameter> {
         return parameter;
     }
 
-    private void setDumpObjects(DumpParameter parameter, ConnectionConfig target, DataTransferConfig transferConfig)
+    private void setDumpObjects(DumpParameter parameter, DataTransferConfig transferConfig)
             throws IOException {
         Map<ObjectType, Set<String>> whiteListMap = parameter.getWhiteListMap();
         if (whiteListMap == null) {
@@ -145,7 +145,7 @@ public class DumpParameterFactory extends BaseParameterFactory<DumpParameter> {
         if (transferConfig.isExportAllObjects()) {
             // 导出对象为空默认导出全部
             Map<ObjectType, Set<String>> allDumpObjects = getWhiteListMapForAll();
-            Set<String> tableNames = getTableNames(target, transferConfig);
+            Set<String> tableNames = getTableNames(transferConfig);
             if (tableNames.isEmpty()) {
                 allDumpObjects.remove(ObjectType.TABLE);
             }
@@ -164,7 +164,8 @@ public class DumpParameterFactory extends BaseParameterFactory<DumpParameter> {
                 whiteListMap.putAll(getWhiteListMap(objectList, o -> true));
             }
             if (transferConfig.isTransferData()) {
-                whiteListMap.putAll(getWhiteListMap(objectList, o -> o.getDbObjectType() == ObjectType.TABLE));
+                whiteListMap.putAll(getWhiteListMap(objectList, o -> Objects.equals(o.getDbObjectType(),
+                        ObjectType.TABLE.getName())));
             }
         }
     }
@@ -199,7 +200,8 @@ public class DumpParameterFactory extends BaseParameterFactory<DumpParameter> {
         }
     }
 
-    private Set<String> getTableNames(ConnectionConfig target, DataTransferConfig transferConfig) throws IOException {
+    private Set<String> getTableNames(DataTransferConfig transferConfig)
+            throws IOException {
         ConnectionSession session = new DefaultConnectSessionFactory(target).generateSession();
         try {
             DBSchemaAccessor accessor = DBSchemaAccessors.create(session);
@@ -222,7 +224,7 @@ public class DumpParameterFactory extends BaseParameterFactory<DumpParameter> {
         parameter.setFetchSize(Math.min(fetchSize, MAX_CURSOR_FETCH_SIZE));
     }
 
-    private void setMaskConfig(DumpParameter parameter, ConnectionConfig target, DataTransferConfig transferConfig) {
+    private void setMaskConfig(DumpParameter parameter, DataTransferConfig transferConfig) {
         ConnectionSession connectionSession = new DefaultConnectSessionFactory(target).generateSession();
         String schemaName = transferConfig.getSchemaName();
         Map<String, List<String>> tableName2ColumnNames = new HashMap<>();
@@ -235,7 +237,8 @@ public class DumpParameterFactory extends BaseParameterFactory<DumpParameter> {
                         .collect(Collectors.toList());
             } else {
                 tableNames = transferConfig.getExportDbObjects().stream()
-                        .filter(o -> ObjectType.TABLE == o.getDbObjectType()).map(DataTransferObject::getObjectName)
+                        .filter(o -> Objects.equals(ObjectType.TABLE.getName(), o.getDbObjectType()))
+                        .map(DataTransferObject::getObjectName)
                         .collect(Collectors.toList());
             }
             for (String tableName : tableNames) {

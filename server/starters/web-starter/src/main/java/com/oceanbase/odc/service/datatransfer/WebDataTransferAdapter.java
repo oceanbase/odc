@@ -23,7 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
-import com.oceanbase.odc.service.datatransfer.model.DataTransferConfig;
+import com.oceanbase.odc.service.datatransfer.model.DataTransferParameter;
 import com.oceanbase.odc.service.datatransfer.task.DataTransferTaskContext;
 import com.oceanbase.odc.service.flow.task.OssTaskReferManager;
 import com.oceanbase.odc.service.flow.task.model.DataTransferTaskResult;
@@ -48,7 +48,7 @@ public class WebDataTransferAdapter implements DataTransferAdapter {
     }
 
     @Override
-    public File preHandleWorkDir(DataTransferConfig transferConfig,
+    public File preHandleWorkDir(DataTransferParameter transferConfig,
             String bucket, File workDir) {
         return workDir;
     }

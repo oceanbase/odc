@@ -72,12 +72,7 @@ import com.oceanbase.odc.service.datatransfer.dumper.AbstractOutputFile;
 import com.oceanbase.odc.service.datatransfer.dumper.DataFile;
 import com.oceanbase.odc.service.datatransfer.dumper.DumperOutput;
 import com.oceanbase.odc.service.datatransfer.dumper.SchemaFile;
-import com.oceanbase.odc.service.datatransfer.model.CsvColumnMapping;
-import com.oceanbase.odc.service.datatransfer.model.CsvConfig;
-import com.oceanbase.odc.service.datatransfer.model.DataTransferConfig;
-import com.oceanbase.odc.service.datatransfer.model.DataTransferFormat;
-import com.oceanbase.odc.service.datatransfer.model.DataTransferObject;
-import com.oceanbase.odc.service.datatransfer.model.DataTransferType;
+import com.oceanbase.odc.service.datatransfer.model.DataTransferParameter;
 import com.oceanbase.odc.service.datatransfer.model.UploadFileResult;
 import com.oceanbase.odc.service.datatransfer.task.DataTransferTaskContext;
 import com.oceanbase.odc.service.session.factory.DruidDataSourceFactory;
@@ -148,7 +143,7 @@ public class DataTransferServiceTest extends ServiceTestEnv {
 
     @Test
     public void create_dumpSchemaForOracleMode_onlySchemaDumped_mergeSchemaFiles() throws Exception {
-        DataTransferConfig config = getOracleDumpConfig(false, true);
+        DataTransferParameter config = getOracleDumpConfig(false, true);
         config.setMergeSchemaFiles(true);
         DataTransferTaskContext context = dataTransferService.create(BUCKET, config);
         Assert.assertNotNull(context.get(10, TimeUnit.SECONDS));
@@ -277,7 +272,7 @@ public class DataTransferServiceTest extends ServiceTestEnv {
 
     @Test
     public void create_validSysUserExists_nonCloudModeUsed() throws Exception {
-        DataTransferConfig config = getOracleDumpConfig(true, true);
+        DataTransferParameter config = getOracleDumpConfig(true, true);
         config.setSysUser(oracleConnConfig.getSysTenantUsername());
         DataTransferTaskContext context = dataTransferService.create(BUCKET, config);
         Assert.assertNotNull(context.get(10, TimeUnit.SECONDS));
@@ -285,7 +280,7 @@ public class DataTransferServiceTest extends ServiceTestEnv {
 
     @Test
     public void create_validSysUserPasswdExists_nonCloudModeUsed() throws Exception {
-        DataTransferConfig config = getOracleDumpConfig(true, true);
+        DataTransferParameter config = getOracleDumpConfig(true, true);
         config.setSysUser(oracleConnConfig.getSysTenantUsername());
         config.setSysPassword(oracleConnConfig.getSysTenantPassword());
         DataTransferTaskContext context = dataTransferService.create(BUCKET, config);
@@ -294,7 +289,7 @@ public class DataTransferServiceTest extends ServiceTestEnv {
 
     @Test
     public void create_validSysUserInvalidPasswdExists_nonCloudModeUsed() throws Exception {
-        DataTransferConfig config = getOracleDumpConfig(true, true);
+        DataTransferParameter config = getOracleDumpConfig(true, true);
         config.setSysUser(oracleConnConfig.getSysTenantUsername());
         config.setSysPassword("abcde");
         DataTransferTaskContext context = dataTransferService.create(BUCKET, config);
@@ -379,7 +374,7 @@ public class DataTransferServiceTest extends ServiceTestEnv {
     }
 
     private File dumpSchemaAndDataForLoad(DialectType dialectType) throws Exception {
-        DataTransferConfig config;
+        DataTransferParameter config;
         if (dialectType == DialectType.OB_MYSQL) {
             config = getMysqlDumpConfig(true, true);
         } else {
@@ -556,17 +551,17 @@ public class DataTransferServiceTest extends ServiceTestEnv {
         return connection;
     }
 
-    private DataTransferConfig getOracleDumpConfig(boolean data, boolean ddl) {
+    private DataTransferParameter getOracleDumpConfig(boolean data, boolean ddl) {
         return getDumpConfig(DialectType.OB_ORACLE, oracleConnConfig.getDefaultSchema(), data, ddl);
     }
 
-    private DataTransferConfig getMysqlDumpConfig(boolean data, boolean ddl) {
+    private DataTransferParameter getMysqlDumpConfig(boolean data, boolean ddl) {
         return getDumpConfig(DialectType.OB_MYSQL, mysqlConnConfig.getDefaultSchema(), data, ddl);
     }
 
-    private DataTransferConfig getDumpConfig(DialectType dialectType,
+    private DataTransferParameter getDumpConfig(DialectType dialectType,
             String schema, boolean data, boolean ddl) {
-        DataTransferConfig config = new DataTransferConfig();
+        DataTransferParameter config = new DataTransferParameter();
         config.setConnectionId(dialectType == DialectType.OB_MYSQL ? mysqlConnId : oracleConnId);
         config.setSchemaName(schema);
         config.setTransferType(DataTransferType.EXPORT);
@@ -590,21 +585,21 @@ public class DataTransferServiceTest extends ServiceTestEnv {
         return config;
     }
 
-    private DataTransferConfig getOracleLoadConfig(List<String> importFileNames,
+    private DataTransferParameter getOracleLoadConfig(List<String> importFileNames,
             boolean external, boolean data, boolean ddl) {
         return getLoadConfig(DialectType.OB_ORACLE, external,
                 oracleConnConfig.getDefaultSchema(), importFileNames, data, ddl);
     }
 
-    private DataTransferConfig getMysqlLoadConfig(List<String> importFileNames,
+    private DataTransferParameter getMysqlLoadConfig(List<String> importFileNames,
             boolean external, boolean data, boolean ddl) {
         return getLoadConfig(DialectType.OB_MYSQL, external,
                 mysqlConnConfig.getDefaultSchema(), importFileNames, data, ddl);
     }
 
-    private DataTransferConfig getLoadConfig(DialectType dialectType, boolean external,
+    private DataTransferParameter getLoadConfig(DialectType dialectType, boolean external,
             String schema, List<String> importFileNames, boolean data, boolean ddl) {
-        DataTransferConfig config = new DataTransferConfig();
+        DataTransferParameter config = new DataTransferParameter();
         config.setSchemaName(schema);
         config.setConnectionId(dialectType == DialectType.OB_MYSQL ? mysqlConnId : oracleConnId);
         config.setTransferType(DataTransferType.IMPORT);

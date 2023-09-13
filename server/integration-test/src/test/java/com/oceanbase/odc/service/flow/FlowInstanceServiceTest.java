@@ -69,8 +69,7 @@ import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
-import com.oceanbase.odc.service.datatransfer.model.DataTransferConfig;
-import com.oceanbase.odc.service.datatransfer.model.DataTransferObject;
+import com.oceanbase.odc.service.datatransfer.model.DataTransferParameter;
 import com.oceanbase.odc.service.flow.instance.BaseFlowNodeInstance;
 import com.oceanbase.odc.service.flow.instance.FlowApprovalInstance;
 import com.oceanbase.odc.service.flow.instance.FlowGatewayInstance;
@@ -465,7 +464,7 @@ public class FlowInstanceServiceTest extends ServiceTestEnv {
     private CreateFlowInstanceReq createExport10001ObjectsFlowInstanceReq() {
         CreateFlowInstanceReq req = TestRandom.nextObject(CreateFlowInstanceReq.class);
         req.setTaskType(TaskType.EXPORT);
-        DataTransferConfig param = new DataTransferConfig();
+        DataTransferParameter param = new DataTransferParameter();
         param.setExportDbObjects(
                 IntStream.range(0, 10001).mapToObj(i -> new DataTransferObject(null, null))
                         .collect(Collectors.toList()));

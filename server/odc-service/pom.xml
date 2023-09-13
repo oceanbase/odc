@@ -109,6 +109,10 @@
             <artifactId>schema-plugin-api</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.oceanbase</groupId>
+            <artifactId>task-plugin-api</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.pf4j</groupId>
             <artifactId>pf4j</artifactId>
         </dependency>

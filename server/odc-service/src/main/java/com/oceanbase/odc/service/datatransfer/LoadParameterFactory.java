@@ -23,6 +23,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -31,14 +32,14 @@ import org.apache.commons.lang3.Validate;
 
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.constant.DialectType;
-import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.CsvColumnMapping;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig.SimpleConnectionConfig;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferFormat;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferObject;
 import com.oceanbase.odc.service.datatransfer.dumper.AbstractOutputFile;
 import com.oceanbase.odc.service.datatransfer.dumper.BinaryFile;
 import com.oceanbase.odc.service.datatransfer.dumper.DumperOutput;
-import com.oceanbase.odc.service.datatransfer.model.CsvColumnMapping;
-import com.oceanbase.odc.service.datatransfer.model.DataTransferConfig;
-import com.oceanbase.odc.service.datatransfer.model.DataTransferFormat;
-import com.oceanbase.odc.service.datatransfer.model.DataTransferObject;
 import com.oceanbase.tools.loaddump.common.enums.DataFormat;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
 import com.oceanbase.tools.loaddump.common.model.LoadParameter;
@@ -59,14 +60,13 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class LoadParameterFactory extends BaseParameterFactory<LoadParameter> {
-    public LoadParameterFactory(File workingDir, File logDir, ConnectionConfig connectionConfig)
+    public LoadParameterFactory(File workingDir, File logDir, SimpleConnectionConfig connectionConfig)
             throws FileNotFoundException {
         super(workingDir, logDir, connectionConfig);
     }
 
     @Override
-    protected LoadParameter doGenerate(File workingDir, ConnectionConfig target,
-            DataTransferConfig config) throws IOException {
+    protected LoadParameter doGenerate(File workingDir, DataTransferConfig config) throws IOException {
         LoadParameter parameter = new LoadParameter();
         parameter.setMaxErrors(config.isStopWhenError() ? 0 : -1);
         setTransferFormat(parameter, config);
@@ -74,7 +74,7 @@ public class LoadParameterFactory extends BaseParameterFactory<LoadParameter> {
             /**
              * 导入导出组件产出物导入，需要详细设置
              */
-            setWhiteListForZip(parameter, config, workingDir, target);
+            setWhiteListForZip(parameter, config, workingDir);
             if (config.isTransferDDL()) {
                 parameter.setIncludeDdl(true);
                 parameter.setReplaceObjectIfExists(config.isReplaceSchemaWhenExists());
@@ -101,7 +101,7 @@ public class LoadParameterFactory extends BaseParameterFactory<LoadParameter> {
     }
 
     private void setWhiteListForZip(LoadParameter parameter, DataTransferConfig config,
-            File workingDir, ConnectionConfig target) throws IOException {
+            File workingDir) throws IOException {
         if (config.isNotObLoaderDumperCompatible()) {
             return;
         }
@@ -118,7 +118,7 @@ public class LoadParameterFactory extends BaseParameterFactory<LoadParameter> {
         if (CollectionUtils.isEmpty(objectList)) {
             for (AbstractOutputFile outputFile : outputFiles) {
                 Set<String> names = whiteList.computeIfAbsent(outputFile.getObjectType(), t -> new HashSet<>());
-                if (DialectType.OB_ORACLE.equals(target.getDialectType())) {
+                if (DialectType.OB_ORACLE.equals(config.getConnectionConfig().getConnectType().getDialectType())) {
                     names.add(StringUtils.quoteOracleIdentifier(outputFile.getObjectName()));
                 } else {
                     names.add(StringUtils.quoteMysqlIdentifier(outputFile.getObjectName()));
@@ -216,7 +216,8 @@ public class LoadParameterFactory extends BaseParameterFactory<LoadParameter> {
         parameter.setInputFile(csvFile);
         List<DataTransferObject> objectList = config.getExportDbObjects();
         Validate.isTrue(CollectionUtils.isNotEmpty(objectList), "Import objects is necessary");
-        parameter.getWhiteListMap().putAll(getWhiteListMap(objectList, o -> o.getDbObjectType() == ObjectType.TABLE));
+        parameter.getWhiteListMap().putAll(
+                getWhiteListMap(objectList, o -> Objects.equals(o.getDbObjectType(), ObjectType.TABLE.getName())));
         if (parameter.getWhiteListMap().size() != 0) {
             return;
         }

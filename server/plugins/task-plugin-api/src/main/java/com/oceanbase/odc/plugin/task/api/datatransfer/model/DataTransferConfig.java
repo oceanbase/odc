@@ -13,85 +13,56 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.datatransfer.model;
 
-import java.io.Serializable;
+package com.oceanbase.odc.plugin.task.api.datatransfer.model;
+
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import com.oceanbase.odc.common.json.SensitiveInput;
-import com.oceanbase.odc.service.connection.model.ConnectionConfig;
-import com.oceanbase.odc.service.flow.model.TaskParameters;
+import com.oceanbase.odc.core.shared.constant.ConnectType;
 
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 import lombok.ToString;
 
-/**
- * data transfer config object which is used to packaged information
- *
- * @author yh263208
- * @date 2021-03-23 17:04
- * @since ODC_release_2.4.1
- */
-@Getter
-@Setter
-@EqualsAndHashCode
+@Data
 @ToString(exclude = {"sysPassword"})
-public class DataTransferConfig implements Serializable, TaskParameters {
+public class DataTransferConfig {
+
     private String schemaName;
-    private Long databaseId;
-    private Long connectionId;
     @JsonIgnore
-    private ConnectionConfig connectionConfig;
+    private SimpleConnectionConfig connectionConfig;
     private DataTransferType transferType;
     private DataTransferFormat dataTransferFormat;
     private boolean transferData;
     private boolean transferDDL;
     private Integer batchCommitNum;
-
-    /**
-     * dump or export settings
-     */
-    private List<DataTransferObject> exportDbObjects;
     private int exportFileMaxSize;
-    /**
-     * 是否导出全部数据库对象，若为 true 则 {@link #exportDbObjects} 无效
-     */
     private boolean exportAllObjects = false;
     private boolean globalSnapshot = false;
-    /**
-     * if this flag is true, the script you dump will include drop ddl
-     */
     private boolean withDropDDL;
     private List<String> skippedDataType;
-
-    /**
-     * load or import settings
-     */
     private List<String> importFileName;
+    private List<DataTransferObject> exportDbObjects;
     private boolean replaceSchemaWhenExists;
     private boolean truncateTableBeforeImport;
     private EncodingType encoding = EncodingType.UTF_8;
     private CsvConfig csvConfig;
     private List<CsvColumnMapping> csvColumnMappings;
     private boolean stopWhenError;
-    private boolean notObLoaderDumperCompatible;
+    private String exportFilePath;
+    private boolean mergeSchemaFiles;
+    private String querySql;
     /**
-     * xxx@sys account settings
+     * only for ob-loader-dumper
      */
+    private boolean notObLoaderDumperCompatible;
     private String sysUser;
     @SensitiveInput
     @JsonProperty(access = Access.WRITE_ONLY)
     private String sysPassword;
-    /**
-     * 导出数据输出路径，该参数只在客户端场景下有效
-     */
-    private String exportFilePath;
-    private boolean mergeSchemaFiles;
 
     public String getFileType() {
         if (!this.notObLoaderDumperCompatible) {
@@ -103,4 +74,21 @@ public class DataTransferConfig implements Serializable, TaskParameters {
     public void setFileType(String fileType) {
         this.notObLoaderDumperCompatible = !"ZIP".equals(fileType);
     }
+
+    @Data
+    public static class SimpleConnectionConfig {
+        private String host;
+        private Integer port;
+        private String username;
+        private String password;
+        private String tenant;
+        private String cluster;
+        private ConnectType connectType;
+        private String proxyHost;
+        private Integer proxyPort;
+        private String OBTenant;
+        private String sysTenantUsername;
+        private String sysTenantPassword;
+    }
+
 }

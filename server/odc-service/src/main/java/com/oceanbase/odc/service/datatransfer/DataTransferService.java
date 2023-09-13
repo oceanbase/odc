@@ -57,8 +57,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.oceanbase.odc.common.util.VersionUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
-import com.oceanbase.odc.core.shared.PreConditions;
-import com.oceanbase.odc.core.shared.constant.ConnectionAccountType;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
@@ -66,21 +64,19 @@ import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.core.shared.exception.AccessDeniedException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferFormat;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.CsvColumnMapping;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.CsvConfig;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferType;
 import com.oceanbase.odc.service.connection.ConnectionService;
-import com.oceanbase.odc.service.connection.ConnectionTesting;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
-import com.oceanbase.odc.service.connection.model.TestConnectionReq;
 import com.oceanbase.odc.service.datasecurity.DataMaskingService;
 import com.oceanbase.odc.service.datatransfer.dumper.DumperOutput;
 import com.oceanbase.odc.service.datatransfer.loader.ThirdPartyOutputConverter;
-import com.oceanbase.odc.service.datatransfer.model.CsvColumnMapping;
-import com.oceanbase.odc.service.datatransfer.model.CsvConfig;
-import com.oceanbase.odc.service.datatransfer.model.DataTransferConfig;
-import com.oceanbase.odc.service.datatransfer.model.DataTransferFormat;
+import com.oceanbase.odc.service.datatransfer.model.DataTransferParameter;
 import com.oceanbase.odc.service.datatransfer.model.DataTransferProperties;
-import com.oceanbase.odc.service.datatransfer.model.DataTransferType;
 import com.oceanbase.odc.service.datatransfer.model.UploadFileResult;
 import com.oceanbase.odc.service.datatransfer.task.BaseDataTransferTask;
 import com.oceanbase.odc.service.datatransfer.task.DataTransferTaskContext;
@@ -117,8 +113,6 @@ public class DataTransferService {
     @Qualifier("loaderdumperExecutor")
     private ThreadPoolTaskExecutor executor;
     @Autowired
-    private ConnectionTesting connectionTesting;
-    @Autowired
     private ConnectionService connectionService;
     @Autowired
     private LocalFileManager fileManager;
@@ -143,7 +137,7 @@ public class DataTransferService {
      * @return control handle of the task
      */
     public DataTransferTaskContext create(@NonNull String bucket,
-            @NonNull DataTransferConfig transferConfig) throws Exception {
+            @NonNull DataTransferParameter transferConfig) throws Exception {
         File workingDir = fileManager.getWorkingDir(TaskType.EXPORT, bucket);
         DataTransferType transferType = transferConfig.getTransferType();
         workingDir = this.dataTransferAdapter.preHandleWorkDir(transferConfig, bucket, workingDir);
@@ -168,14 +162,6 @@ public class DataTransferService {
             if (!workingDir.exists() || !workingDir.isDirectory()) {
                 throw new IllegalStateException("Failed to create working dir, " + workingDir.getAbsolutePath());
             }
-            ConnectionConfig connectionConfig = transferConfig.getConnectionConfig();
-            if (connectionConfig == null) {
-                Long connectionId = transferConfig.getConnectionId();
-                PreConditions.validArgumentState(connectionId != null, ErrorCodes.BadArgument,
-                        new Object[] {"ConnectionId can not be null"}, "ConnectionId can not be null");
-                connectionConfig = connectionService.getForConnectionSkipPermissionCheck(connectionId);
-            }
-            injectSysConfig(connectionConfig, transferConfig);
 
             boolean transferData = transferConfig.isTransferData();
             boolean transferSchema = transferConfig.isTransferDDL();
@@ -187,7 +173,7 @@ public class DataTransferService {
                     copyImportZip(importFileNames, workingDir);
                 }
                 BaseParameterFactory<LoadParameter> factory =
-                        new LoadParameterFactory(workingDir, logDir, connectionConfig);
+                        new LoadParameterFactory(workingDir, logDir, transferConfig.getConnectionConfig());
                 LoadParameter parameter = factory.generate(transferConfig);
                 ImportDataTransferTask transferTask;
                 try {
@@ -199,7 +185,7 @@ public class DataTransferService {
                 return BaseDataTransferTask.start(executor, transferTask);
             } else if (transferType == DataTransferType.EXPORT) {
                 BaseParameterFactory<DumpParameter> factory = new DumpParameterFactory(workingDir, logDir,
-                        connectionConfig, dataTransferAdapter.getMaxDumpSizeBytes(),
+                        transferConfig.getConnectionConfig(), dataTransferAdapter.getMaxDumpSizeBytes(),
                         dataTransferProperties.getCursorFetchSize(), maskingService);
                 DumpParameter parameter = factory.generate(transferConfig);
                 ExportDataTransferTask transferTask;
@@ -360,59 +346,6 @@ public class DataTransferService {
         return getMetaInfo(fileName);
     }
 
-    private void injectSysConfig(ConnectionConfig connectionConfig, DataTransferConfig transferConfig) {
-        if (StringUtils.isBlank(transferConfig.getSysUser())) {
-            log.info("No Sys user setting, connectionId={}", connectionConfig.getId());
-            logger.info("No Sys user setting, connectionId={}", connectionConfig.getId());
-            connectionConfig.setSysTenantUsername(null);
-            connectionConfig.setSysTenantPassword(null);
-            return;
-        }
-        String sysUserInMeta = connectionConfig.getSysTenantUsername();
-        String sysPasswdInMeta = connectionConfig.getSysTenantPassword();
-        String sysUserInConfig = transferConfig.getSysUser();
-        String sysPasswdInConfig = transferConfig.getSysPassword();
-        if (sysPasswdInConfig == null) {
-            if (sysPasswdInMeta == null) {
-                log.info("No password for sys, connectionId={}", connectionConfig.getId());
-                logger.info("No password for sys, connectionId={}", connectionConfig.getId());
-                return;
-            }
-            Validate.isTrue(sysUserInConfig.equals(sysUserInMeta), "Sys user is illegal");
-            if (!testSysTenantAccount(connectionConfig)) {
-                log.warn("Access denied, Sys tenant account and password error, connectionId={}, sysUserInMeta={}",
-                        connectionConfig.getId(), sysUserInMeta);
-                logger.warn(
-                        "Access denied, Sys tenant account and password error, connectionId={}, sysUserInMeta={}",
-                        connectionConfig.getId(), sysUserInMeta);
-                throw new IllegalStateException("AccessDenied, " + sysUserInMeta);
-            }
-            return;
-        }
-        connectionConfig.setSysTenantUsername(sysUserInConfig);
-        connectionConfig.setSysTenantPassword(sysPasswdInConfig);
-        if (testSysTenantAccount(connectionConfig)) {
-            log.info("Sys user has been approved, connectionId={}", connectionConfig.getId());
-            logger.info("Sys user has been approved, connectionId={}", connectionConfig.getId());
-            return;
-        }
-        log.info("Access denied, Sys tenant account and password error, connectionId={}, sysUserInConfig={}",
-                connectionConfig.getId(), sysUserInConfig);
-        logger.info("Access denied, Sys tenant account and password error, connectionId={}, sysUserInConfig={}",
-                connectionConfig.getId(), sysUserInConfig);
-        connectionConfig.setSysTenantUsername(null);
-        connectionConfig.setSysTenantPassword(null);
-    }
-
-    private boolean testSysTenantAccount(ConnectionConfig connectionConfig) {
-        TestConnectionReq req = TestConnectionReq.fromConnection(connectionConfig, ConnectionAccountType.SYS_READ);
-        try {
-            return connectionTesting.test(req).isActive();
-        } catch (Exception e) {
-            // eat exp
-            return false;
-        }
-    }
 
     private void copyImportScripts(List<String> fileNames, DataTransferFormat format, File destDir)
             throws IOException {

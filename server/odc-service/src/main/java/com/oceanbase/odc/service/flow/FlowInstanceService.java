@@ -89,7 +89,7 @@ import com.oceanbase.odc.service.config.model.Configuration;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
-import com.oceanbase.odc.service.datatransfer.model.DataTransferConfig;
+import com.oceanbase.odc.service.datatransfer.model.DataTransferParameter;
 import com.oceanbase.odc.service.dispatch.DispatchResponse;
 import com.oceanbase.odc.service.dispatch.RequestDispatcher;
 import com.oceanbase.odc.service.dispatch.TaskDispatchChecker;
@@ -276,12 +276,12 @@ public class FlowInstanceService {
 
         // acquire export masking policy
         if (createReq.getTaskType() == TaskType.EXPORT) {
-            DataTransferConfig dataTransferConfig = (DataTransferConfig) createReq.getParameters();
-            if (dataTransferConfig.getExportDbObjects().size() > MAX_EXPORT_OBJECT_COUNT) {
+            DataTransferParameter dataTransferParameter = (DataTransferParameter) createReq.getParameters();
+            if (dataTransferParameter.getExportDbObjects().size() > MAX_EXPORT_OBJECT_COUNT) {
                 throw new OverLimitException(LimitMetric.EXPORT_OBJECT_COUNT, (double) MAX_EXPORT_OBJECT_COUNT,
                         String.format("export object has exceeded max size limit: %s", MAX_EXPORT_OBJECT_COUNT));
             }
-            createReq.setParameters(dataTransferConfig);
+            createReq.setParameters(dataTransferParameter);
         }
         List<RiskLevel> riskLevels = riskLevelService.list();
         Verify.notEmpty(riskLevels, "riskLevels");

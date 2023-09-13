@@ -13,35 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.datatransfer.model;
 
-import com.oceanbase.tools.loaddump.common.enums.ObjectType;
+package com.oceanbase.odc.plugin.task.api.datatransfer.model;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.Data;
 
-/**
- * odc export object which illustrate this map relationshit between name and db object
- *
- * @author yh263208
- * @date 2021-03-22 17:53
- * @since ODC_release_2.4.1
- */
-@Setter
-@Getter
-@ToString
-@NoArgsConstructor
-@AllArgsConstructor
-public class DataTransferObject {
+@Data
+public class CsvConfig {
+    private EncodingType encoding = EncodingType.UTF_8;
+    private String fileName;
     /**
-     * object type enum
+     * flag to illustrate whether convert empty string to null
      */
-    private ObjectType dbObjectType;
+    private boolean blankToNull;
     /**
-     * object name
+     * flag to illustrate whether skip csv's header
      */
-    private String objectName;
+    private boolean skipHeader = true;
+    private String columnSeparator = ",";
+    private String lineSeparator = "\n";
+    private String columnDelimiter = "'";
 }

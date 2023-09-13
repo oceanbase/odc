@@ -36,12 +36,7 @@ import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.datatransfer.dumper.DumperOutput;
-import com.oceanbase.odc.service.datatransfer.model.CsvColumnMapping;
-import com.oceanbase.odc.service.datatransfer.model.CsvConfig;
-import com.oceanbase.odc.service.datatransfer.model.DataTransferConfig;
-import com.oceanbase.odc.service.datatransfer.model.DataTransferFormat;
-import com.oceanbase.odc.service.datatransfer.model.DataTransferObject;
-import com.oceanbase.odc.service.datatransfer.model.DataTransferType;
+import com.oceanbase.odc.service.datatransfer.model.DataTransferParameter;
 import com.oceanbase.tools.loaddump.common.enums.DataFormat;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
 import com.oceanbase.tools.loaddump.common.model.LoadParameter;
@@ -63,7 +58,7 @@ public class LoadParameterFactoryTest {
     public void generate_stopWhenErrorSetting_return1() throws IOException {
         LoadParameterFactory factory =
                 new LoadParameterFactory(getWorkingDir(), getWorkingDir(), getConnectionConfig());
-        DataTransferConfig config = generateConfig(DataTransferFormat.CSV, false, true, true);
+        DataTransferParameter config = generateConfig(DataTransferFormat.CSV, false, true, true);
         config.setStopWhenError(true);
         LoadParameter parameter = factory.generate(config);
         Assert.assertEquals(0, parameter.getMaxErrors());
@@ -73,7 +68,7 @@ public class LoadParameterFactoryTest {
     public void generate_doNotStopWhenErrorSetting_returnMaxInteger() throws IOException {
         LoadParameterFactory factory =
                 new LoadParameterFactory(getWorkingDir(), getWorkingDir(), getConnectionConfig());
-        DataTransferConfig config = generateConfig(DataTransferFormat.CSV, false, true, true);
+        DataTransferParameter config = generateConfig(DataTransferFormat.CSV, false, true, true);
         config.setStopWhenError(false);
         LoadParameter parameter = factory.generate(config);
         Assert.assertEquals(-1, parameter.getMaxErrors());
@@ -107,7 +102,7 @@ public class LoadParameterFactoryTest {
     public void generate_nonExternalNonExportDbObjectsMysqlWhiteListMap_returnTESTTable() throws IOException {
         LoadParameterFactory factory =
                 new LoadParameterFactory(getWorkingDir(), getWorkingDir(), getConnectionConfig(DialectType.OB_MYSQL));
-        DataTransferConfig config = generateConfig(DataTransferFormat.SQL, false, false, true);
+        DataTransferParameter config = generateConfig(DataTransferFormat.SQL, false, false, true);
         config.setExportDbObjects(null);
         LoadParameter parameter = factory.generate(config);
         Map<ObjectType, Set<String>> actual = parameter.getWhiteListMap();
@@ -120,7 +115,7 @@ public class LoadParameterFactoryTest {
     public void generate_nonExternalNonExportDbObjectsOracleWhiteListMap_returnTESTTable() throws IOException {
         LoadParameterFactory factory =
                 new LoadParameterFactory(getWorkingDir(), getWorkingDir(), getConnectionConfig(DialectType.OB_ORACLE));
-        DataTransferConfig config = generateConfig(DataTransferFormat.SQL, false, false, true);
+        DataTransferParameter config = generateConfig(DataTransferFormat.SQL, false, false, true);
         config.setExportDbObjects(null);
         LoadParameter parameter = factory.generate(config);
         Map<ObjectType, Set<String>> actual = parameter.getWhiteListMap();
@@ -133,7 +128,7 @@ public class LoadParameterFactoryTest {
     public void generate_nonExternalMysqlWhiteListMap_returnTESTTable() throws IOException {
         LoadParameterFactory factory =
                 new LoadParameterFactory(getWorkingDir(), getWorkingDir(), getConnectionConfig(DialectType.OB_MYSQL));
-        DataTransferConfig config = generateConfig(DataTransferFormat.SQL, false, false, true);
+        DataTransferParameter config = generateConfig(DataTransferFormat.SQL, false, false, true);
         LoadParameter parameter = factory.generate(config);
         Map<ObjectType, Set<String>> actual = parameter.getWhiteListMap();
         Map<ObjectType, Set<String>> expect = new HashMap<>();
@@ -148,7 +143,7 @@ public class LoadParameterFactoryTest {
     public void generate_nonExternalOracleWhiteListMap_returnTESTTable() throws IOException {
         LoadParameterFactory factory =
                 new LoadParameterFactory(getWorkingDir(), getWorkingDir(), getConnectionConfig(DialectType.OB_ORACLE));
-        DataTransferConfig config = generateConfig(DataTransferFormat.SQL, false, false, true);
+        DataTransferParameter config = generateConfig(DataTransferFormat.SQL, false, false, true);
         LoadParameter parameter = factory.generate(config);
         Map<ObjectType, Set<String>> actual = parameter.getWhiteListMap();
         Map<ObjectType, Set<String>> expect = new HashMap<>();
@@ -171,7 +166,7 @@ public class LoadParameterFactoryTest {
     public void generate_externalCsvCsvMappingConfig_returnTrue() throws IOException {
         LoadParameterFactory factory =
                 new LoadParameterFactory(getWorkingDir(), getWorkingDir(), getConnectionConfig(DialectType.OB_ORACLE));
-        DataTransferConfig config = generateConfig(DataTransferFormat.CSV, true, true, false);
+        DataTransferParameter config = generateConfig(DataTransferFormat.CSV, true, true, false);
         LoadParameter parameter = factory.generate(config);
         Map<String, Map<String, MapObject>> actual = parameter.getColumnNameMapping();
 
@@ -203,7 +198,7 @@ public class LoadParameterFactoryTest {
     public void generate_externalCsvInvalidObjectList_expThrown() throws IOException {
         LoadParameterFactory factory =
                 new LoadParameterFactory(getWorkingDir(), getWorkingDir(), getConnectionConfig(DialectType.OB_ORACLE));
-        DataTransferConfig config = generateConfig(DataTransferFormat.CSV, true, true, false);
+        DataTransferParameter config = generateConfig(DataTransferFormat.CSV, true, true, false);
         DataTransferObject object = new DataTransferObject();
         object.setObjectName("TAB");
         object.setDbObjectType(ObjectType.VIEW);
@@ -228,7 +223,7 @@ public class LoadParameterFactoryTest {
     public void generate_setCsvInfoDoubleExcapeN_returnExpectedCsvInfo() throws IOException {
         LoadParameterFactory factory =
                 new LoadParameterFactory(getWorkingDir(), getWorkingDir(), getConnectionConfig(DialectType.OB_ORACLE));
-        DataTransferConfig config = generateConfig(DataTransferFormat.CSV, true, true, false);
+        DataTransferParameter config = generateConfig(DataTransferFormat.CSV, true, true, false);
         CsvConfig csvConfig = new CsvConfig();
         csvConfig.setLineSeparator("\\n");
         config.setCsvConfig(csvConfig);
@@ -248,7 +243,7 @@ public class LoadParameterFactoryTest {
     public void generate_setCsvInfoDoubleExcapeR_returnExpectedCsvInfo() throws IOException {
         LoadParameterFactory factory =
                 new LoadParameterFactory(getWorkingDir(), getWorkingDir(), getConnectionConfig(DialectType.OB_ORACLE));
-        DataTransferConfig config = generateConfig(DataTransferFormat.CSV, true, true, false);
+        DataTransferParameter config = generateConfig(DataTransferFormat.CSV, true, true, false);
         CsvConfig csvConfig = new CsvConfig();
         csvConfig.setLineSeparator("\\r");
         config.setCsvConfig(csvConfig);
@@ -260,7 +255,7 @@ public class LoadParameterFactoryTest {
     public void generate_blankToNull_returnNullEmptyReplacer() throws IOException {
         LoadParameterFactory factory =
                 new LoadParameterFactory(getWorkingDir(), getWorkingDir(), getConnectionConfig(DialectType.OB_ORACLE));
-        DataTransferConfig config = generateConfig(DataTransferFormat.CSV, true, true, false);
+        DataTransferParameter config = generateConfig(DataTransferFormat.CSV, true, true, false);
         CsvConfig csvConfig = new CsvConfig();
         csvConfig.setBlankToNull(true);
         config.setCsvConfig(csvConfig);
@@ -283,7 +278,7 @@ public class LoadParameterFactoryTest {
         File workingDir = getWorkingDir();
         LoadParameterFactory factory =
                 new LoadParameterFactory(workingDir, getWorkingDir(), getConnectionConfig(DialectType.OB_ORACLE));
-        DataTransferConfig config = generateConfig(DataTransferFormat.CSV, true, true, false);
+        DataTransferParameter config = generateConfig(DataTransferFormat.CSV, true, true, false);
         LoadParameter parameter = factory.generate(config);
         Assert.assertEquals(config.getEncoding().getAlias(), parameter.getFileEncoding());
     }
@@ -302,9 +297,9 @@ public class LoadParameterFactoryTest {
         new LoadParameterFactory(getDumpZip(), getWorkingDir(), getConnectionConfig(DialectType.OB_ORACLE));
     }
 
-    private DataTransferConfig generateConfig(DataTransferFormat format, boolean external,
+    private DataTransferParameter generateConfig(DataTransferFormat format, boolean external,
             boolean transferData, boolean transferDdl) {
-        DataTransferConfig config = new DataTransferConfig();
+        DataTransferParameter config = new DataTransferParameter();
         config.setSchemaName("test");
         config.setTransferType(DataTransferType.IMPORT);
         config.setDataTransferFormat(format);

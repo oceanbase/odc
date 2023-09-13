@@ -18,7 +18,6 @@ package com.oceanbase.odc.service.datatransfer;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -27,24 +26,18 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Predicate;
 
-import javax.sql.DataSource;
-
 import org.apache.commons.collections4.CollectionUtils;
 
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.VersionUtils;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
-import com.oceanbase.odc.core.shared.constant.ConnectionAccountType;
 import com.oceanbase.odc.core.shared.constant.DialectType;
-import com.oceanbase.odc.core.sql.util.OBUtils;
-import com.oceanbase.odc.service.connection.model.ConnectionConfig;
-import com.oceanbase.odc.service.connection.model.OBTenantEndpoint;
-import com.oceanbase.odc.service.datatransfer.model.CsvConfig;
-import com.oceanbase.odc.service.datatransfer.model.DataTransferConfig;
-import com.oceanbase.odc.service.datatransfer.model.DataTransferFormat;
-import com.oceanbase.odc.service.datatransfer.model.DataTransferObject;
-import com.oceanbase.odc.service.datatransfer.model.DataTransferType;
-import com.oceanbase.odc.service.session.factory.OBConsoleDataSourceFactory;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.CsvConfig;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig.SimpleConnectionConfig;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferFormat;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferObject;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferType;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
 import com.oceanbase.tools.loaddump.common.model.BaseParameter;
 import com.oceanbase.tools.loaddump.parser.record.csv.CsvFormat;
@@ -63,10 +56,10 @@ import lombok.extern.slf4j.Slf4j;
 public abstract class BaseParameterFactory<T extends BaseParameter> {
     private final File workingDir;
     private final File logDir;
-    private final ConnectionConfig target;
+    private final SimpleConnectionConfig target;
 
     public BaseParameterFactory(@NonNull File workingDir, @NonNull File logDir,
-            @NonNull ConnectionConfig connectionConfig)
+            @NonNull DataTransferConfig.SimpleConnectionConfig connectionConfig)
             throws FileNotFoundException {
         if (!workingDir.exists()) {
             throw new FileNotFoundException("Working dir does not exist, " + workingDir);
@@ -86,7 +79,7 @@ public abstract class BaseParameterFactory<T extends BaseParameter> {
     }
 
     public T generate(@NonNull DataTransferConfig transferConfig) throws IOException {
-        T parameter = doGenerate(workingDir, target, transferConfig);
+        T parameter = doGenerate(workingDir, transferConfig);
         parameter.setLogPath(logDir.toString());
         setSessionInfo(parameter, transferConfig.getSchemaName());
         setFileConfig(parameter, transferConfig, workingDir);
@@ -105,17 +98,17 @@ public abstract class BaseParameterFactory<T extends BaseParameter> {
         return parameter;
     }
 
-    protected abstract T doGenerate(File workingDir, ConnectionConfig target,
-            DataTransferConfig transferConfig) throws IOException;
+    protected abstract T doGenerate(File workingDir, DataTransferConfig transferConfig) throws IOException;
 
     private void setSessionInfo(@NonNull T parameter, @NonNull String schema) {
         parameter.setHost(target.getHost());
         parameter.setPort(target.getPort());
         parameter.setPassword(target.getPassword());
-        parameter.setCluster(target.getClusterName());
-        parameter.setTenant(target.getTenantName());
-        String username = ConnectionSessionUtil.getUserOrSchemaString(target.getUsername(), target.getDialectType());
-        if (DialectType.OB_ORACLE == target.getDialectType()) {
+        parameter.setCluster(target.getCluster());
+        parameter.setTenant(target.getTenant());
+        String username = ConnectionSessionUtil.getUserOrSchemaString(target.getUsername(),
+                target.getConnectType().getDialectType());
+        if (DialectType.OB_ORACLE == target.getConnectType().getDialectType()) {
             parameter.setUser("\"" + username + "\"");
             parameter.setDatabaseName("\"" + schema + "\"");
             parameter.setConnectDatabaseName("\"" + schema + "\"");
@@ -124,23 +117,7 @@ public abstract class BaseParameterFactory<T extends BaseParameter> {
             parameter.setDatabaseName("`" + schema + "`");
             parameter.setConnectDatabaseName(schema);
         }
-        String version;
-        DataSource ds = null;
-        try {
-            ds = new OBConsoleDataSourceFactory(target,
-                    ConnectionAccountType.MAIN, null, false).getDataSource();
-            version = OBUtils.getObVersion(ds.getConnection());
-        } catch (SQLException e) {
-            throw new IllegalStateException(e);
-        } finally {
-            if (ds instanceof AutoCloseable) {
-                try {
-                    ((AutoCloseable) ds).close();
-                } catch (Exception e) {
-                    // eat exception
-                }
-            }
-        }
+        String version = target.getVersion();
         if (VersionUtils.isGreaterThanOrEqualsTo(version, "4.0")) {
             parameter.setNoSys(false);
         } else {
@@ -149,7 +126,7 @@ public abstract class BaseParameterFactory<T extends BaseParameter> {
                 parameter.setSysPassword(target.getSysTenantPassword());
                 log.info("Sys user exists");
             } else {
-                if (target.getType().isCloud()) {
+                if (target.getConnectType().isCloud()) {
                     log.info("Sys user does not exist, use cloud mode");
                     parameter.setPubCloud(true);
                 } else {
@@ -159,17 +136,12 @@ public abstract class BaseParameterFactory<T extends BaseParameter> {
             }
         }
 
-        OBTenantEndpoint endpoint = target.getEndpoint();
-        if (Objects.nonNull(endpoint)) {
-            String proxyHost = endpoint.getProxyHost();
-            Integer proxyPort = endpoint.getProxyPort();
-            if (StringUtils.isNotBlank(proxyHost) && Objects.nonNull(proxyPort)) {
-                parameter.setSocksProxyHost(proxyHost);
-                parameter.setSocksProxyPort(proxyPort.toString());
-            }
+        if (StringUtils.isNotBlank(target.getProxyHost()) && Objects.nonNull(target.getProxyPort())) {
+            parameter.setSocksProxyHost(target.getProxyHost());
+            parameter.setSocksProxyPort(target.getProxyPort().toString());
         }
-        if (StringUtils.isNotBlank(target.getOBTenantName())) {
-            parameter.setTenant(target.getOBTenantName());
+        if (StringUtils.isNotBlank(target.getOBTenant())) {
+            parameter.setTenant(target.getOBTenant());
         }
     }
 
@@ -230,13 +202,13 @@ public abstract class BaseParameterFactory<T extends BaseParameter> {
                 log.info("Invalid db object type found, object={}", dbObject);
                 continue;
             }
-            ObjectType objectType = dbObject.getDbObjectType();
+            ObjectType objectType = ObjectType.valueOf(dbObject.getDbObjectType());
             String objectName = StringUtils.unquoteOracleIdentifier(dbObject.getObjectName());
             if (StringUtils.isBlank(objectName)) {
                 throw new IllegalArgumentException("Can not accept a blank object name");
             }
             Set<String> nameSet = whiteListMap.computeIfAbsent(objectType, k -> new HashSet<>());
-            if (DialectType.OB_ORACLE == target.getDialectType()) {
+            if (DialectType.OB_ORACLE == target.getConnectType().getDialectType()) {
                 nameSet.add(StringUtils.quoteOracleIdentifier(objectName));
             } else {
                 nameSet.add(StringUtils.quoteMysqlIdentifier(objectName));

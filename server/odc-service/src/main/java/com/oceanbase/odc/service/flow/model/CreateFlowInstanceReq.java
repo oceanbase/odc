@@ -27,7 +27,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo.As;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.TaskType;
-import com.oceanbase.odc.service.datatransfer.model.DataTransferConfig;
+import com.oceanbase.odc.service.datatransfer.model.DataTransferParameter;
 import com.oceanbase.odc.service.flow.processor.CreateFlowInstanceProcessAspect;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.MockTaskConfig;
@@ -81,7 +81,7 @@ public class CreateFlowInstanceReq {
     @JsonTypeInfo(use = Id.NAME, include = As.EXTERNAL_PROPERTY, property = "taskType")
     @JsonSubTypes(value = {
             @JsonSubTypes.Type(value = MockTaskConfig.class, name = "MOCKDATA"),
-            @JsonSubTypes.Type(value = DataTransferConfig.class, names = {"EXPORT", "IMPORT"}),
+            @JsonSubTypes.Type(value = DataTransferParameter.class, names = {"EXPORT", "IMPORT"}),
             @JsonSubTypes.Type(value = DatabaseChangeParameters.class, names = {"ASYNC"}),
             @JsonSubTypes.Type(value = PartitionPlanTaskParameters.class, name = "PARTITION_PLAN"),
             @JsonSubTypes.Type(value = ShadowTableSyncTaskParameter.class, name = "SHADOWTABLE_SYNC"),

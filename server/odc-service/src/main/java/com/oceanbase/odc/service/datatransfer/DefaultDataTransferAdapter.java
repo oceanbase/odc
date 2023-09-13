@@ -22,7 +22,7 @@ import java.io.IOException;
 import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import com.oceanbase.odc.service.datatransfer.model.DataTransferConfig;
+import com.oceanbase.odc.service.datatransfer.model.DataTransferParameter;
 import com.oceanbase.odc.service.datatransfer.task.DataTransferTaskContext;
 import com.oceanbase.odc.service.flow.task.OssTaskReferManager;
 import com.oceanbase.odc.service.flow.task.model.DataTransferTaskResult;
@@ -45,7 +45,7 @@ public class DefaultDataTransferAdapter implements DataTransferAdapter {
     }
 
     @Override
-    public File preHandleWorkDir(DataTransferConfig transferConfig,
+    public File preHandleWorkDir(DataTransferParameter transferConfig,
             String bucket, File workDir) {
         return workDir;
     }

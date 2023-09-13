@@ -15,25 +15,28 @@
  */
 package com.oceanbase.odc.service.datatransfer.model;
 
+import java.io.Serializable;
+
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
+import com.oceanbase.odc.service.flow.model.TaskParameters;
+
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
 /**
- * csv file mapping
+ * data transfer config object which is used to packaged information
  *
  * @author yh263208
- * @date 2021-03-22 17:59
+ * @date 2021-03-23 17:04
  * @since ODC_release_2.4.1
  */
 @Getter
 @Setter
-@ToString
-public class CsvColumnMapping {
-    private Integer srcColumnPosition;
-    private String srcColumnName;
-    private String firstLineValue;
-    private String destColumnName;
-    private String destColumnType;
-    private Integer destColumnPosition;
+@EqualsAndHashCode(callSuper = true)
+@ToString(callSuper = true)
+public class DataTransferParameter extends DataTransferConfig implements Serializable, TaskParameters {
+    private Long databaseId;
+    private Long connectionId;
 }

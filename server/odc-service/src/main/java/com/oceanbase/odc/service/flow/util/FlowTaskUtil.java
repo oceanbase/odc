@@ -38,7 +38,7 @@ import com.oceanbase.odc.core.shared.exception.VerifyException;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.model.OBTenantEndpoint;
 import com.oceanbase.odc.service.connection.model.OceanBaseAccessMode;
-import com.oceanbase.odc.service.datatransfer.model.DataTransferConfig;
+import com.oceanbase.odc.service.datatransfer.model.DataTransferParameter;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.MockProperties;
@@ -82,9 +82,9 @@ public class FlowTaskUtil {
                 () -> new VerifyException("OdcAsyncTaskParameters is absent"));
     }
 
-    public static DataTransferConfig getDataTransferParameter(@NonNull DelegateExecution execution) {
-        return internalGetParameter(execution, DataTransferConfig.class).orElseThrow(
-                () -> new VerifyException("DataTransferConfig is absent"));
+    public static DataTransferParameter getDataTransferParameter(@NonNull DelegateExecution execution) {
+        return internalGetParameter(execution, DataTransferParameter.class).orElseThrow(
+                () -> new VerifyException("DataTransferParameter is absent"));
     }
 
     public static MockTaskConfig getMockParameter(@NonNull DelegateExecution execution) {

@@ -35,14 +35,14 @@ import com.oceanbase.odc.ServiceTestEnv;
 import com.oceanbase.odc.TestConnectionUtil;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.DialectType;
-import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferFormat;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.CsvConfig;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig.SimpleConnectionConfig;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferObject;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferType;
 import com.oceanbase.odc.service.datasecurity.DataMaskingService;
 import com.oceanbase.odc.service.datatransfer.dumper.DumperOutput;
-import com.oceanbase.odc.service.datatransfer.model.CsvConfig;
-import com.oceanbase.odc.service.datatransfer.model.DataTransferConfig;
-import com.oceanbase.odc.service.datatransfer.model.DataTransferFormat;
-import com.oceanbase.odc.service.datatransfer.model.DataTransferObject;
-import com.oceanbase.odc.service.datatransfer.model.DataTransferType;
+import com.oceanbase.odc.service.datatransfer.model.DataTransferParameter;
 import com.oceanbase.tools.loaddump.common.enums.DataFormat;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
 import com.oceanbase.tools.loaddump.common.model.DumpParameter;
@@ -114,7 +114,7 @@ public class DumpParameterFactoryTest extends ServiceTestEnv {
         DumpParameterFactory factory =
                 new DumpParameterFactory(getWorkingDir(), getWorkingDir(), getConnectionConfig(DialectType.OB_ORACLE),
                         null, 1000, maskingService);
-        DataTransferConfig config = generateConfig(DataTransferFormat.SQL, false, true);
+        DataTransferParameter config = generateConfig(DataTransferFormat.SQL, false, true);
         DataTransferObject object = new DataTransferObject();
         object.setObjectName("V");
         object.setDbObjectType(ObjectType.VIEW);
@@ -132,7 +132,7 @@ public class DumpParameterFactoryTest extends ServiceTestEnv {
         DumpParameterFactory factory =
                 new DumpParameterFactory(getWorkingDir(), getWorkingDir(), getConnectionConfig(DialectType.OB_MYSQL),
                         null, 1000, maskingService);
-        DataTransferConfig config = generateConfig(DataTransferFormat.SQL, true, false);
+        DataTransferParameter config = generateConfig(DataTransferFormat.SQL, true, false);
         DataTransferObject object = new DataTransferObject();
         object.setObjectName("V");
         object.setDbObjectType(ObjectType.VIEW);
@@ -153,9 +153,9 @@ public class DumpParameterFactoryTest extends ServiceTestEnv {
         Assert.assertTrue(parameter.isIncludeDdl());
     }
 
-    private DataTransferConfig generateConfig(DataTransferFormat format,
+    private DataTransferParameter generateConfig(DataTransferFormat format,
             boolean transferData, boolean transferDdl) {
-        DataTransferConfig config = new DataTransferConfig();
+        DataTransferParameter config = new DataTransferParameter();
         config.setSchemaName("test");
         config.setTransferType(DataTransferType.EXPORT);
         config.setDataTransferFormat(format);
@@ -178,11 +178,11 @@ public class DumpParameterFactoryTest extends ServiceTestEnv {
         return new File(url.getPath());
     }
 
-    private ConnectionConfig getConnectionConfig() {
-        return getConnectionConfig(DialectType.OB_ORACLE);
+    private SimpleConnectionConfig getConnectionConfig() {
+        return getConnectionConfig(DialectType.OB_ORACLE).simplify();
     }
 
-    private ConnectionConfig getConnectionConfig(DialectType dialectType) {
-        return TestConnectionUtil.getTestConnectionConfig(ConnectType.from(dialectType));
+    private getConnectionConfig(DialectType dialectType) {
+        return TestConnectionUtil.getTestConnectionConfig(ConnectType.from(dialectType)).simplify();
     }
 }

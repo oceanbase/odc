@@ -55,6 +55,7 @@ import com.oceanbase.odc.metadb.audit.AuditEventRepository;
 import com.oceanbase.odc.metadb.audit.AuditSpecs;
 import com.oceanbase.odc.service.audit.model.AuditEvent;
 import com.oceanbase.odc.service.audit.model.AuditEventExportReq;
+import com.oceanbase.odc.service.audit.model.DownloadFormat;
 import com.oceanbase.odc.service.audit.model.QueryAuditEventParams;
 import com.oceanbase.odc.service.audit.util.AuditEventMapper;
 import com.oceanbase.odc.service.common.FileManager;
@@ -64,7 +65,6 @@ import com.oceanbase.odc.service.common.util.FileConvertUtils;
 import com.oceanbase.odc.service.common.util.OdcFileUtil;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
-import com.oceanbase.odc.service.datatransfer.model.DataTransferFormat;
 import com.oceanbase.odc.service.iam.UserService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.model.User;
@@ -236,7 +236,7 @@ public class AuditEventService {
         return userService.getByOrganizationId(authenticationFacade.currentOrganizationId());
     }
 
-    private <T> String getFileDownloadUrl(Iterable<T> records, Class<T> clazz, DataTransferFormat format)
+    private <T> String getFileDownloadUrl(Iterable<T> records, Class<T> clazz, DownloadFormat format)
             throws IOException {
         String csvStr = CSVUtils.buildCSVFormatData(records, clazz);
         String fileId = StringUtils.uuid();
@@ -245,21 +245,21 @@ public class AuditEventService {
          * TODO: Fix file path traversal after merging code
          */
         String csvFilePath = String.format("%s/%s", FileManager.generateDir(FileBucket.AUDIT),
-                fileId + DataTransferFormat.CSV.getExtension());
+            fileId + DownloadFormat.CSV.getExtension());
         File file = new File(csvFilePath);
         FileUtils.write(file, csvStr);
         String downloadBaseUrl = FileManager.generateBaseDownloadUrl(FileBucket.AUDIT);
         String downloadUrl;
-        if (DataTransferFormat.CSV == format) {
-            downloadUrl = downloadBaseUrl + fileId + DataTransferFormat.CSV.getExtension();
-        } else if (DataTransferFormat.EXCEL == format) {
+        if (DownloadFormat.CSV == format) {
+            downloadUrl = downloadBaseUrl + fileId + DownloadFormat.CSV.getExtension();
+        } else if (DownloadFormat.EXCEL == format) {
             String xlsFilePath =
                     FileConvertUtils.convertCsvToXls(csvFilePath,
                             FileManager.generateDir(FileBucket.AUDIT) + "/" + fileId
-                                    + DataTransferFormat.EXCEL.getExtension(),
+                                    + DownloadFormat.EXCEL.getExtension(),
                             null);
             file = new File(xlsFilePath);
-            downloadUrl = downloadBaseUrl + fileId + DataTransferFormat.EXCEL.getExtension();
+            downloadUrl = downloadBaseUrl + fileId + DownloadFormat.EXCEL.getExtension();
         } else {
             throw new NotImplementedException("File format: " + format + " not supported");
         }

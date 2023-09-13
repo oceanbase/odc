@@ -13,22 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.datatransfer.model;
 
-/**
- * transfer data task type
- *
- * @author yh263208
- * @date 2021-03-22 20:08
- * @since ODC_release_2.4.1
- */
-public enum DataTransferType {
-    /**
-     * load data task
-     */
-    IMPORT,
-    /**
-     * dump data task
-     */
-    EXPORT;
+package com.oceanbase.odc.plugin.task.api.datatransfer;
+
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
+
+public interface DataTransferExtensionPoint {
+
+    void transfer(DataTransferConfig config);
+
 }

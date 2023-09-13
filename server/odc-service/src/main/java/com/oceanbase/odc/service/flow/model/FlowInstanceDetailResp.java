@@ -42,7 +42,7 @@ import com.oceanbase.odc.metadb.iam.RoleEntity;
 import com.oceanbase.odc.metadb.iam.UserEntity;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.service.common.model.InnerUser;
-import com.oceanbase.odc.service.datatransfer.model.DataTransferConfig;
+import com.oceanbase.odc.service.datatransfer.model.DataTransferParameter;
 import com.oceanbase.odc.service.flow.instance.BaseFlowNodeInstance;
 import com.oceanbase.odc.service.flow.instance.FlowApprovalInstance;
 import com.oceanbase.odc.service.flow.instance.FlowInstance;
@@ -308,7 +308,7 @@ public class FlowInstanceDetailResp {
                     break;
                 case EXPORT:
                 case IMPORT:
-                    resp.setParameters(JsonUtils.fromJson(parameterJson, DataTransferConfig.class));
+                    resp.setParameters(JsonUtils.fromJson(parameterJson, DataTransferParameter.class));
                     break;
                 case MOCKDATA:
                     resp.setParameters(JsonUtils.fromJson(parameterJson, MockTaskConfig.class));
