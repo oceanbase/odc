@@ -53,19 +53,25 @@ public class IntegrationProperties {
         private Body body;
         private boolean requestEncrypted = false;
         private boolean responseEncrypted = false;
+        private ResponseType responseType = ResponseType.JSON;
         @NotBlank
         private String requestSuccessExpression = "true";
     }
 
     @Data
     public static class Body {
-        private BodyType type;
+        private BodyType type = BodyType.RAW;
         private Object content;
     }
 
     public enum BodyType {
         RAW,
         FORM_DATA
+    }
+
+    public enum ResponseType {
+        JSON,
+        XML
     }
 
     public enum RequestMethod {

@@ -37,6 +37,7 @@ import com.oceanbase.odc.service.integration.model.ApprovalStatus;
 import com.oceanbase.odc.service.integration.model.Encryption;
 import com.oceanbase.odc.service.integration.model.IntegrationProperties.ApiProperties;
 import com.oceanbase.odc.service.integration.model.IntegrationProperties.HttpProperties;
+import com.oceanbase.odc.service.integration.model.IntegrationProperties.ResponseType;
 import com.oceanbase.odc.service.integration.model.TemplateVariables;
 import com.oceanbase.odc.service.integration.model.TemplateVariables.Variable;
 import com.oceanbase.odc.service.integration.util.EncryptionUtil;
@@ -84,6 +85,7 @@ public class ApprovalClient {
      */
     public String start(@NonNull ApprovalProperties properties, TemplateVariables variables) {
         StartProperties start = properties.getApi().getStart();
+        ResponseType responseType = properties.getApi().getStart().getResponseType();
         HttpProperties http = properties.getHttp();
         Encryption encryption = properties.getEncryption();
         HttpUriRequest request;
@@ -99,9 +101,10 @@ public class ApprovalClient {
             throw new ExternalServiceError("Request execute failed: " + e.getMessage());
         }
         String decrypt = EncryptionUtil.decrypt(response, encryption);
-        checkResponse(decrypt, start.getRequestSuccessExpression());
+        checkResponse(decrypt, responseType, start.getRequestSuccessExpression());
         try {
-            return httpService.extractHttpResponse(decrypt, start.getExtractInstanceIdExpression(), String.class);
+            return httpService.extractHttpResponse(decrypt, start.getExtractInstanceIdExpression(), responseType,
+                    String.class);
         } catch (Exception e) {
             throw new UnexpectedException("Extract process instance ID failed: " + e.getMessage());
         }
@@ -116,6 +119,7 @@ public class ApprovalClient {
      */
     public ApprovalStatus status(@NonNull ApprovalProperties properties, TemplateVariables variables) {
         StatusProperties status = properties.getApi().getStatus();
+        ResponseType responseType = properties.getApi().getStatus().getResponseType();
         HttpProperties http = properties.getHttp();
         Encryption encryption = properties.getEncryption();
         HttpUriRequest request;
@@ -131,15 +135,19 @@ public class ApprovalClient {
             throw new ExternalServiceError("Request execute failed: " + e.getMessage());
         }
         String decrypt = EncryptionUtil.decrypt(response, encryption);
-        checkResponse(decrypt, status.getRequestSuccessExpression());
+        checkResponse(decrypt, responseType, status.getRequestSuccessExpression());
         try {
-            if (httpService.extractHttpResponse(decrypt, status.getProcessTerminatedExpression(), Boolean.class)) {
+            if (httpService.extractHttpResponse(decrypt, status.getProcessTerminatedExpression(), responseType,
+                    Boolean.class)) {
                 return ApprovalStatus.TERMINATED;
-            } else if (httpService.extractHttpResponse(decrypt, status.getProcessPendingExpression(), Boolean.class)) {
+            } else if (httpService.extractHttpResponse(decrypt, status.getProcessPendingExpression(), responseType,
+                    Boolean.class)) {
                 return ApprovalStatus.PENDING;
-            } else if (httpService.extractHttpResponse(decrypt, status.getProcessApprovedExpression(), Boolean.class)) {
+            } else if (httpService.extractHttpResponse(decrypt, status.getProcessApprovedExpression(), responseType,
+                    Boolean.class)) {
                 return ApprovalStatus.APPROVED;
-            } else if (httpService.extractHttpResponse(decrypt, status.getProcessRejectedExpression(), Boolean.class)) {
+            } else if (httpService.extractHttpResponse(decrypt, status.getProcessRejectedExpression(), responseType,
+                    Boolean.class)) {
                 return ApprovalStatus.REJECTED;
             } else {
                 throw new RuntimeException("Response mismatch any status expression, response body: " + decrypt);
@@ -157,6 +165,7 @@ public class ApprovalClient {
      */
     public void cancel(@NonNull ApprovalProperties properties, TemplateVariables variables) {
         ApiProperties cancel = properties.getApi().getCancel();
+        ResponseType responseType = properties.getApi().getCancel().getResponseType();
         HttpProperties http = properties.getHttp();
         Encryption encryption = properties.getEncryption();
         HttpUriRequest request;
@@ -172,7 +181,7 @@ public class ApprovalClient {
             throw new ExternalServiceError("Request execute failed: " + e.getMessage());
         }
         String decrypt = EncryptionUtil.decrypt(response, encryption);
-        checkResponse(decrypt, cancel.getRequestSuccessExpression());
+        checkResponse(decrypt, responseType, cancel.getRequestSuccessExpression());
     }
 
     /**
@@ -186,10 +195,10 @@ public class ApprovalClient {
         return variables.process(expression);
     }
 
-    private void checkResponse(String response, String expression) {
+    private void checkResponse(String response, ResponseType responseType, String expression) {
         boolean valid;
         try {
-            valid = httpService.extractHttpResponse(response, expression, Boolean.class);
+            valid = httpService.extractHttpResponse(response, expression, responseType, Boolean.class);
         } catch (Exception e) {
             throw new UnexpectedException("Extract request success expression failed: " + e.getMessage());
         }

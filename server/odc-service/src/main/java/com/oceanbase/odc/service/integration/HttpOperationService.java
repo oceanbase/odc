@@ -37,12 +37,14 @@ import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.common.json.JsonPathUtils;
+import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.service.integration.model.Encryption;
 import com.oceanbase.odc.service.integration.model.IntegrationProperties.ApiProperties;
 import com.oceanbase.odc.service.integration.model.IntegrationProperties.Body;
 import com.oceanbase.odc.service.integration.model.IntegrationProperties.BodyType;
 import com.oceanbase.odc.service.integration.model.IntegrationProperties.HttpProperties;
+import com.oceanbase.odc.service.integration.model.IntegrationProperties.ResponseType;
 import com.oceanbase.odc.service.integration.model.TemplateVariables;
 import com.oceanbase.odc.service.integration.util.EncryptionUtil;
 
@@ -107,8 +109,13 @@ public class HttpOperationService {
         return builder.build();
     }
 
-    public <T> T extractHttpResponse(String decryptedResponse, String extractExpression, Class<T> type) {
-        Object responseObject = JsonPathUtils.read(decryptedResponse, "$");
+    public <T> T extractHttpResponse(String decryptedResponse, String extractExpression, ResponseType responseType,
+            Class<T> type) {
+        String response = decryptedResponse;
+        if (responseType == ResponseType.XML) {
+            response = JsonUtils.xmlToJson(decryptedResponse);
+        }
+        Object responseObject = JsonPathUtils.read(response, "$");
         Expression expression = EXPRESSION_PARSER.parseExpression(extractExpression);
         return expression.getValue(responseObject, type);
     }

@@ -14,7 +14,8 @@ api:
         processCode: approval_integration_test
     queryParameters: ~
     requestEncrypted: false
-    requestSuccessExpression: "[success] == true"
+    responseType: XML
+    requestSuccessExpression: '[success]=="true"'
     extractInstanceIdExpression: "[content][processInstanceId]"
     responseEncrypted: false
   status:
