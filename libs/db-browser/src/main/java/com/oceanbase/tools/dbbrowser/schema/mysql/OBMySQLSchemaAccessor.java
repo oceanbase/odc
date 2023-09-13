@@ -180,6 +180,15 @@ public class OBMySQLSchemaAccessor extends MySQLNoGreaterThan5740SchemaAccessor 
     }
 
     @Override
+    protected void handleIndexAvailability(DBTableIndex index, String availability) {
+        if ("available".equals(availability)) {
+            index.setAvailable(true);
+        } else if ("unavailable".equals(availability)) {
+            index.setAvailable(false);
+        }
+    }
+
+    @Override
     public Map<String, List<DBTableIndex>> listTableIndexes(String schemaName) {
         Map<String, List<DBTableIndex>> tableName2Indexes = super.listTableIndexes(schemaName);
         for (Map.Entry<String, List<DBTableIndex>> entry : tableName2Indexes.entrySet()) {

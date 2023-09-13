@@ -206,6 +206,15 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
     }
 
     @Test
+    public void listTableIndex_TestIndexAvailable_Success() {
+        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBOracleDataSource()).createOBOracle();
+        List<DBTableIndex> indexList = accessor.listTableIndexes(getOBOracleSchema(), "TEST_INDEX_RANGE");
+        Assert.assertEquals(2, indexList.size());
+        Assert.assertTrue(indexList.get(0).getAvailable());
+        Assert.assertTrue(indexList.get(1).getAvailable());
+    }
+
+    @Test
     public void listTableConstraint_TestForeignKey_Success() {
         DBSchemaAccessor accessor = new DBSchemaAccessors(getOBOracleDataSource()).createOBOracle();
         List<DBTableConstraint> constraintListList =
