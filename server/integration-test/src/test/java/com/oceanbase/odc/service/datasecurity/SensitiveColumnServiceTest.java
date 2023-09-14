@@ -51,6 +51,7 @@ import com.oceanbase.odc.service.datasecurity.model.MaskingAlgorithm;
 import com.oceanbase.odc.service.datasecurity.model.QuerySensitiveColumnParams;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveColumn;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveColumnStats;
+import com.oceanbase.odc.service.datasecurity.model.SensitiveColumnType;
 import com.oceanbase.odc.service.datasecurity.util.SensitiveColumnMapper;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 
@@ -276,6 +277,7 @@ public class SensitiveColumnServiceTest extends ServiceTestEnv {
     private SensitiveColumn createSensitiveColumn(Long databaseId, String tableName, String columnName) {
         SensitiveColumn column = new SensitiveColumn();
         column.setEnabled(true);
+        column.setType(SensitiveColumnType.TABLE_COLUMN);
         column.setDatabase(createDatabase(databaseId, DEFAULT_PROJECT_ID));
         column.setTableName(tableName);
         column.setColumnName(columnName);

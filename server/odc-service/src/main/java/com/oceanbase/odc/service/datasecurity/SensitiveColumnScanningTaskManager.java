@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.datasecurity;
 
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -37,6 +38,7 @@ import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveColumn;
+import com.oceanbase.odc.service.datasecurity.model.SensitiveColumnMeta;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveColumnScanningTaskInfo;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveColumnScanningTaskInfo.ScanningTaskStatus;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveRule;
@@ -62,7 +64,7 @@ public class SensitiveColumnScanningTaskManager {
     private final SensitiveColumnScanningResultCache cache = SensitiveColumnScanningResultCache.getInstance();
 
     public SensitiveColumnScanningTaskInfo start(List<Database> databases, List<SensitiveRule> rules,
-            ConnectionConfig connectionConfig, Map<Long, List<SensitiveColumn>> databaseId2SensitiveColumns) {
+            ConnectionConfig connectionConfig, Map<Long, List<SensitiveColumnMeta>> databaseId2SensitiveColumns) {
         ConnectionSession session = new DefaultConnectSessionFactory(connectionConfig).generateSession();
         try {
             Long projectId = databases.get(0).getProject().getId();
@@ -92,9 +94,10 @@ public class SensitiveColumnScanningTaskManager {
             Set<Database> targetDatabases =
                     Sets.union(database2Table2ColumnsList.keySet(), database2View2ColumnsList.keySet());
             for (Database database : targetDatabases) {
-                List<SensitiveColumn> sensitiveColumns = null;
+                List<SensitiveColumnMeta> sensitiveColumns = Collections.emptyList();
                 if (databaseId2SensitiveColumns != null) {
-                    sensitiveColumns = databaseId2SensitiveColumns.get(database.getId());
+                    sensitiveColumns =
+                            databaseId2SensitiveColumns.getOrDefault(database.getId(), Collections.emptyList());
                 }
                 SensitiveColumnScanningTask subTask = new SensitiveColumnScanningTask(database, rules, taskInfo,
                         sensitiveColumns, database2Table2ColumnsList.getOrDefault(database, new HashMap<>()),

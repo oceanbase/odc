@@ -29,6 +29,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveColumn;
+import com.oceanbase.odc.service.datasecurity.model.SensitiveColumnMeta;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveColumnScanningTaskInfo;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveColumnScanningTaskInfo.ScanningTaskStatus;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveColumnType;
@@ -49,23 +50,17 @@ public class SensitiveColumnScanningTask implements Callable<Void> {
     private final SensitiveColumnScanningTaskInfo taskInfo;
     private final Map<String, List<DBTableColumn>> table2Columns;
     private final Map<String, List<DBTableColumn>> view2Columns;
-    private final Set<SimplifySensitiveColumn> existsSensitiveColumns;
+    private final Set<SensitiveColumnMeta> existsSensitiveColumns;
 
     public SensitiveColumnScanningTask(Database database, List<SensitiveRule> rules,
-            SensitiveColumnScanningTaskInfo taskInfo, List<SensitiveColumn> existsSensitiveColumns,
+            SensitiveColumnScanningTaskInfo taskInfo, List<SensitiveColumnMeta> existsSensitiveColumns,
             Map<String, List<DBTableColumn>> table2Columns, Map<String, List<DBTableColumn>> view2Columns) {
         this.database = database;
         this.recognizer = new SensitiveColumnRecognizer(rules);
         this.table2Columns = table2Columns;
         this.view2Columns = view2Columns;
         this.taskInfo = taskInfo;
-        if (CollectionUtils.isNotEmpty(existsSensitiveColumns)) {
-            this.existsSensitiveColumns = existsSensitiveColumns.stream()
-                    .map(c -> new SimplifySensitiveColumn(c.getDatabase().getId(), c.getTableName(), c.getColumnName()))
-                    .collect(Collectors.toSet());
-        } else {
-            this.existsSensitiveColumns = new HashSet<>();
-        }
+        this.existsSensitiveColumns = new HashSet<>(existsSensitiveColumns);
     }
 
     @Override
@@ -89,7 +84,7 @@ public class SensitiveColumnScanningTask implements Callable<Void> {
             List<SensitiveColumn> sensitiveColumns = new ArrayList<>();
             for (DBTableColumn dbTableColumn : object2Columns.get(objectName)) {
                 if (recognizer.recognize(dbTableColumn) && !existsSensitiveColumns
-                        .contains(new SimplifySensitiveColumn(database.getId(), objectName, dbTableColumn.getName()))) {
+                        .contains(new SensitiveColumnMeta(database.getId(), objectName, dbTableColumn.getName()))) {
                     SensitiveColumn column = new SensitiveColumn();
                     column.setType(columnType);
                     column.setDatabase(database);
@@ -104,14 +99,6 @@ public class SensitiveColumnScanningTask implements Callable<Void> {
             taskInfo.addSensitiveColumns(sensitiveColumns);
             taskInfo.addFinishedTableCount();
         }
-    }
-
-    @AllArgsConstructor
-    @EqualsAndHashCode
-    private static class SimplifySensitiveColumn {
-        private Long databaseId;
-        private String tableName;
-        private String columnName;
     }
 
 }
