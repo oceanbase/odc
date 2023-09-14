@@ -37,7 +37,7 @@ import com.oceanbase.odc.service.integration.model.ApprovalStatus;
 import com.oceanbase.odc.service.integration.model.Encryption;
 import com.oceanbase.odc.service.integration.model.IntegrationProperties.ApiProperties;
 import com.oceanbase.odc.service.integration.model.IntegrationProperties.HttpProperties;
-import com.oceanbase.odc.service.integration.model.IntegrationProperties.ResponseType;
+import com.oceanbase.odc.service.integration.model.IntegrationProperties.ResponseContentType;
 import com.oceanbase.odc.service.integration.model.TemplateVariables;
 import com.oceanbase.odc.service.integration.model.TemplateVariables.Variable;
 import com.oceanbase.odc.service.integration.util.EncryptionUtil;
@@ -85,7 +85,7 @@ public class ApprovalClient {
      */
     public String start(@NonNull ApprovalProperties properties, TemplateVariables variables) {
         StartProperties start = properties.getApi().getStart();
-        ResponseType responseType = properties.getApi().getStart().getResponseType();
+        ResponseContentType responseContentType = properties.getApi().getStart().getResponseContentType();
         HttpProperties http = properties.getHttp();
         Encryption encryption = properties.getEncryption();
         HttpUriRequest request;
@@ -101,9 +101,9 @@ public class ApprovalClient {
             throw new ExternalServiceError("Request execute failed: " + e.getMessage());
         }
         String decrypt = EncryptionUtil.decrypt(response, encryption);
-        checkResponse(decrypt, responseType, start.getRequestSuccessExpression());
+        checkResponse(decrypt, responseContentType, start.getRequestSuccessExpression());
         try {
-            return httpService.extractHttpResponse(decrypt, start.getExtractInstanceIdExpression(), responseType,
+            return httpService.extractHttpResponse(decrypt, start.getExtractInstanceIdExpression(), responseContentType,
                     String.class);
         } catch (Exception e) {
             throw new UnexpectedException("Extract process instance ID failed: " + e.getMessage());
@@ -119,7 +119,7 @@ public class ApprovalClient {
      */
     public ApprovalStatus status(@NonNull ApprovalProperties properties, TemplateVariables variables) {
         StatusProperties status = properties.getApi().getStatus();
-        ResponseType responseType = properties.getApi().getStatus().getResponseType();
+        ResponseContentType responseContentType = properties.getApi().getStatus().getResponseContentType();
         HttpProperties http = properties.getHttp();
         Encryption encryption = properties.getEncryption();
         HttpUriRequest request;
@@ -135,19 +135,19 @@ public class ApprovalClient {
             throw new ExternalServiceError("Request execute failed: " + e.getMessage());
         }
         String decrypt = EncryptionUtil.decrypt(response, encryption);
-        checkResponse(decrypt, responseType, status.getRequestSuccessExpression());
+        checkResponse(decrypt, responseContentType, status.getRequestSuccessExpression());
         try {
-            if (httpService.extractHttpResponse(decrypt, status.getProcessTerminatedExpression(), responseType,
+            if (httpService.extractHttpResponse(decrypt, status.getProcessTerminatedExpression(), responseContentType,
                     Boolean.class)) {
                 return ApprovalStatus.TERMINATED;
-            } else if (httpService.extractHttpResponse(decrypt, status.getProcessPendingExpression(), responseType,
-                    Boolean.class)) {
+            } else if (httpService.extractHttpResponse(decrypt, status.getProcessPendingExpression(),
+                    responseContentType, Boolean.class)) {
                 return ApprovalStatus.PENDING;
-            } else if (httpService.extractHttpResponse(decrypt, status.getProcessApprovedExpression(), responseType,
-                    Boolean.class)) {
+            } else if (httpService.extractHttpResponse(decrypt, status.getProcessApprovedExpression(),
+                    responseContentType, Boolean.class)) {
                 return ApprovalStatus.APPROVED;
-            } else if (httpService.extractHttpResponse(decrypt, status.getProcessRejectedExpression(), responseType,
-                    Boolean.class)) {
+            } else if (httpService.extractHttpResponse(decrypt, status.getProcessRejectedExpression(),
+                    responseContentType, Boolean.class)) {
                 return ApprovalStatus.REJECTED;
             } else {
                 throw new RuntimeException("Response mismatch any status expression, response body: " + decrypt);
@@ -165,7 +165,7 @@ public class ApprovalClient {
      */
     public void cancel(@NonNull ApprovalProperties properties, TemplateVariables variables) {
         ApiProperties cancel = properties.getApi().getCancel();
-        ResponseType responseType = properties.getApi().getCancel().getResponseType();
+        ResponseContentType responseContentType = properties.getApi().getCancel().getResponseContentType();
         HttpProperties http = properties.getHttp();
         Encryption encryption = properties.getEncryption();
         HttpUriRequest request;
@@ -181,7 +181,7 @@ public class ApprovalClient {
             throw new ExternalServiceError("Request execute failed: " + e.getMessage());
         }
         String decrypt = EncryptionUtil.decrypt(response, encryption);
-        checkResponse(decrypt, responseType, cancel.getRequestSuccessExpression());
+        checkResponse(decrypt, responseContentType, cancel.getRequestSuccessExpression());
     }
 
     /**
@@ -195,10 +195,10 @@ public class ApprovalClient {
         return variables.process(expression);
     }
 
-    private void checkResponse(String response, ResponseType responseType, String expression) {
+    private void checkResponse(String response, ResponseContentType responseContentType, String expression) {
         boolean valid;
         try {
-            valid = httpService.extractHttpResponse(response, expression, responseType, Boolean.class);
+            valid = httpService.extractHttpResponse(response, expression, responseContentType, Boolean.class);
         } catch (Exception e) {
             throw new UnexpectedException("Extract request success expression failed: " + e.getMessage());
         }

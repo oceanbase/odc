@@ -33,7 +33,7 @@ import com.oceanbase.odc.service.integration.HttpOperationService;
 import com.oceanbase.odc.service.integration.model.ApprovalProperties;
 import com.oceanbase.odc.service.integration.model.Encryption;
 import com.oceanbase.odc.service.integration.model.IntegrationProperties.HttpProperties;
-import com.oceanbase.odc.service.integration.model.IntegrationProperties.ResponseType;
+import com.oceanbase.odc.service.integration.model.IntegrationProperties.ResponseContentType;
 import com.oceanbase.odc.service.integration.model.SqlCheckStatus;
 import com.oceanbase.odc.service.integration.model.SqlInterceptorProperties;
 import com.oceanbase.odc.service.integration.model.SqlInterceptorProperties.CheckProperties;
@@ -84,7 +84,7 @@ public class SqlInterceptorClient {
      */
     public SqlCheckStatus check(@NonNull SqlInterceptorProperties properties, TemplateVariables variables) {
         CheckProperties check = properties.getApi().getCheck();
-        ResponseType responseType = properties.getApi().getCheck().getResponseType();
+        ResponseContentType responseContentType = properties.getApi().getCheck().getResponseContentType();
         HttpProperties http = properties.getHttp();
         Encryption encryption = properties.getEncryption();
         HttpUriRequest request;
@@ -102,15 +102,15 @@ public class SqlInterceptorClient {
         String decrypt = EncryptionUtil.decrypt(response, encryption);
         try {
             String expression = check.getRequestSuccessExpression();
-            boolean valid = httpService.extractHttpResponse(response, expression, responseType, Boolean.class);
+            boolean valid = httpService.extractHttpResponse(response, expression, responseContentType, Boolean.class);
             Verify.verify(valid, "Response is invalid, except: " + expression + ", response body: " + response);
-            if (httpService.extractHttpResponse(decrypt, check.getInWhiteListExpression(), responseType,
+            if (httpService.extractHttpResponse(decrypt, check.getInWhiteListExpression(), responseContentType,
                     Boolean.class)) {
                 return SqlCheckStatus.IN_WHITE_LIST;
-            } else if (httpService.extractHttpResponse(decrypt, check.getInBlackListExpression(), responseType,
+            } else if (httpService.extractHttpResponse(decrypt, check.getInBlackListExpression(), responseContentType,
                     Boolean.class)) {
                 return SqlCheckStatus.IN_BLACK_LIST;
-            } else if (httpService.extractHttpResponse(decrypt, check.getNeedReviewExpression(), responseType,
+            } else if (httpService.extractHttpResponse(decrypt, check.getNeedReviewExpression(), responseContentType,
                     Boolean.class)) {
                 return SqlCheckStatus.NEED_REVIEW;
             } else {

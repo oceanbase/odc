@@ -44,7 +44,7 @@ import com.oceanbase.odc.service.integration.model.IntegrationProperties.ApiProp
 import com.oceanbase.odc.service.integration.model.IntegrationProperties.Body;
 import com.oceanbase.odc.service.integration.model.IntegrationProperties.BodyType;
 import com.oceanbase.odc.service.integration.model.IntegrationProperties.HttpProperties;
-import com.oceanbase.odc.service.integration.model.IntegrationProperties.ResponseType;
+import com.oceanbase.odc.service.integration.model.IntegrationProperties.ResponseContentType;
 import com.oceanbase.odc.service.integration.model.TemplateVariables;
 import com.oceanbase.odc.service.integration.util.EncryptionUtil;
 
@@ -109,10 +109,11 @@ public class HttpOperationService {
         return builder.build();
     }
 
-    public <T> T extractHttpResponse(String decryptedResponse, String extractExpression, ResponseType responseType,
+    public <T> T extractHttpResponse(String decryptedResponse, String extractExpression,
+            ResponseContentType responseContentType,
             Class<T> type) {
         String response = decryptedResponse;
-        if (responseType == ResponseType.XML) {
+        if (responseContentType == ResponseContentType.XML) {
             response = JsonUtils.xmlToJson(decryptedResponse);
         }
         Object responseObject = JsonPathUtils.read(response, "$");

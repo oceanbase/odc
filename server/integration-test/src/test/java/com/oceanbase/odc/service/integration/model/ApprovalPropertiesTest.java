@@ -31,6 +31,7 @@ import com.oceanbase.odc.service.integration.model.IntegrationProperties.Body;
 import com.oceanbase.odc.service.integration.model.IntegrationProperties.BodyType;
 import com.oceanbase.odc.service.integration.model.IntegrationProperties.HttpProperties;
 import com.oceanbase.odc.service.integration.model.IntegrationProperties.RequestMethod;
+import com.oceanbase.odc.service.integration.model.IntegrationProperties.ResponseContentType;
 
 /**
  * @author gaoda.xy
@@ -54,7 +55,8 @@ public class ApprovalPropertiesTest {
         content.put("processCode", "approval_integration_test");
         body.setContent(content);
         start.setBody(body);
-        start.setRequestSuccessExpression("[success] == true");
+        start.setResponseContentType(ResponseContentType.XML);
+        start.setRequestSuccessExpression("[success]==\"true\"");
         start.setExtractInstanceIdExpression("[content][processInstanceId]");
         StatusProperties status = new StatusProperties();
         status.setMethod(RequestMethod.POST);
