@@ -205,6 +205,15 @@ public class FlowTaskUtil {
         return internalGet(value, Long.class).orElseThrow(() -> new VerifyException("TaskId is absent"));
     }
 
+    public static void setCloudMainAccountId(@NonNull Map<String, Object> variables, String cloudMainAccountId) {
+        variables.put(RuntimeTaskConstants.CLOUD_MAIN_ACCOUNT_ID, cloudMainAccountId);
+    }
+
+    public static String getCloudMainAccountId(@NonNull DelegateExecution execution) {
+        Object value = execution.getVariables().get(RuntimeTaskConstants.CLOUD_MAIN_ACCOUNT_ID);
+        return internalGet(value, String.class).orElseThrow(() -> new VerifyException("Cloud main account is absent"));
+    }
+
     public static void setSchemaName(@NonNull Map<String, Object> variables, @NonNull String schema) {
         variables.put(RuntimeTaskConstants.SCHEMA_NAME, schema);
     }
