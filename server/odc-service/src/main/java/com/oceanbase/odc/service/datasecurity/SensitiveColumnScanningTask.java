@@ -22,9 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
-import java.util.stream.Collectors;
-
-import org.apache.commons.collections4.CollectionUtils;
 
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.service.connection.database.model.Database;
@@ -35,9 +32,6 @@ import com.oceanbase.odc.service.datasecurity.model.SensitiveColumnScanningTaskI
 import com.oceanbase.odc.service.datasecurity.model.SensitiveColumnType;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveRule;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
-
-import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
 
 /**
  * @author gaoda.xy

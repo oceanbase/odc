@@ -37,7 +37,6 @@ import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
-import com.oceanbase.odc.service.datasecurity.model.SensitiveColumn;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveColumnMeta;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveColumnScanningTaskInfo;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveColumnScanningTaskInfo.ScanningTaskStatus;
