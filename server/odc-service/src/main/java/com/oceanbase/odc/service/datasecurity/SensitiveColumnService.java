@@ -59,8 +59,7 @@ import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.datasecurity.extractor.model.DBColumn;
-import com.oceanbase.odc.service.datasecurity.model.ListColumnsResp;
-import com.oceanbase.odc.service.datasecurity.model.ListColumnsResp.DatabaseColumn;
+import com.oceanbase.odc.service.datasecurity.model.DatabaseWithAllColumns;
 import com.oceanbase.odc.service.datasecurity.model.MaskingAlgorithm;
 import com.oceanbase.odc.service.datasecurity.model.QuerySensitiveColumnParams;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveColumn;
@@ -121,11 +120,11 @@ public class SensitiveColumnService {
 
     @Transactional(rollbackFor = Exception.class)
     @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
-    public ListColumnsResp listColumns(@NotNull Long projectId, @NotEmpty List<Long> databaseIds) {
+    public List<DatabaseWithAllColumns> listColumns(@NotNull Long projectId, @NotEmpty List<Long> databaseIds) {
         checkProjectDatabases(projectId, databaseIds);
         List<Database> databases = databaseService.listDatabasesByIds(databaseIds);
         Map<Long, List<SensitiveColumnMeta>> databaseId2Exists = listExistSensitiveColumns(databaseIds);
-        List<DatabaseColumn> databaseColumns = new ArrayList<>();
+        List<DatabaseWithAllColumns> databaseColumns = new ArrayList<>();
         for (Database database : databases) {
             ConnectionConfig config =
                     connectionService.getForConnectionSkipPermissionCheck(database.getDataSource().getId());
@@ -134,21 +133,21 @@ public class SensitiveColumnService {
                     new HashSet<>(databaseId2Exists.getOrDefault(database.getId(), Collections.emptyList()));
             try {
                 DBSchemaAccessor accessor = DBSchemaAccessors.create(session);
-                DatabaseColumn databaseColumn = new DatabaseColumn();
+                DatabaseWithAllColumns databaseColumn = new DatabaseWithAllColumns();
                 databaseColumn.setDatabaseId(database.getId());
                 databaseColumn.setDatabaseName(database.getName());
-                databaseColumn.setTableColumns(getFilteringExistColumns(database.getId(),
+                databaseColumn.setTable2Columns(getFilteringExistColumns(database.getId(),
                         accessor.listBasicTableColumns(database.getName()), exists));
-                databaseColumn.setViewColumns(getFilteringExistColumns(database.getId(),
+                databaseColumn.setView2Columns(getFilteringExistColumns(database.getId(),
                         accessor.listBasicViewColumns(database.getName()), exists));
-                if (!databaseColumn.getTableColumns().isEmpty() || !databaseColumn.getViewColumns().isEmpty()) {
+                if (!databaseColumn.getTable2Columns().isEmpty() || !databaseColumn.getView2Columns().isEmpty()) {
                     databaseColumns.add(databaseColumn);
                 }
             } finally {
                 session.expire();
             }
         }
-        return ListColumnsResp.of(databaseColumns);
+        return databaseColumns;
     }
 
     @Transactional(rollbackFor = Exception.class)

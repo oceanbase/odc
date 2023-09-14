@@ -25,28 +25,14 @@ import lombok.Data;
 
 /**
  * @author gaoda.xy
- * @date 2023/9/7 14:57
+ * @date 2023/9/14 15:18
  */
 @Data
-public class ListColumnsResp {
+public class DatabaseWithAllColumns {
 
-    /**
-     * Table columns and view columns of each database
-     */
-    private List<DatabaseColumn> databaseColumns;
-
-    public static ListColumnsResp of(List<DatabaseColumn> databaseColumns) {
-        ListColumnsResp resp = new ListColumnsResp();
-        resp.setDatabaseColumns(databaseColumns);
-        return resp;
-    }
-
-    @Data
-    public static class DatabaseColumn {
-        private Long databaseId;
-        private String databaseName;
-        private Map<String, List<DBTableColumn>> tableColumns;
-        private Map<String, List<DBTableColumn>> viewColumns;
-    }
+    private Long databaseId;
+    private String databaseName;
+    private Map<String, List<DBTableColumn>> table2Columns;
+    private Map<String, List<DBTableColumn>> view2Columns;
 
 }

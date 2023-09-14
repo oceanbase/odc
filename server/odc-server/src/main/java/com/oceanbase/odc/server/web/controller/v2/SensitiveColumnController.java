@@ -35,7 +35,7 @@ import com.oceanbase.odc.service.common.response.PaginatedResponse;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.datasecurity.SensitiveColumnService;
-import com.oceanbase.odc.service.datasecurity.model.ListColumnsResp;
+import com.oceanbase.odc.service.datasecurity.model.DatabaseWithAllColumns;
 import com.oceanbase.odc.service.datasecurity.model.QuerySensitiveColumnParams;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveColumn;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveColumnScanningReq;
@@ -58,9 +58,9 @@ public class SensitiveColumnController {
 
     @ApiOperation(value = "listColumns", notes = "List table columns and view columns")
     @RequestMapping(value = "/listColumns", method = RequestMethod.GET)
-    public SuccessResponse<ListColumnsResp> listColumns(@PathVariable Long projectId,
+    public ListResponse<DatabaseWithAllColumns> listColumns(@PathVariable Long projectId,
             @RequestParam(name = "database", required = false) List<Long> databaseIds) {
-        return Responses.success(service.listColumns(projectId, databaseIds));
+        return Responses.list(service.listColumns(projectId, databaseIds));
     }
 
     @ApiOperation(value = "sensitiveColumnExists", notes = "Check if sensitive column exists")

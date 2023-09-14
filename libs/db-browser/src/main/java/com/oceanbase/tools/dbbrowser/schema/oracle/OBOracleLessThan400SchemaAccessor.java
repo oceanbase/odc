@@ -24,8 +24,14 @@ import java.util.stream.Collectors;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcOperations;
 
-import com.oceanbase.tools.dbbrowser.model.*;
+import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
+import com.oceanbase.tools.dbbrowser.model.DBSynonymType;
 import com.oceanbase.tools.dbbrowser.model.DBTable.DBTableOptions;
+import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
+import com.oceanbase.tools.dbbrowser.model.DBTablePartition;
+import com.oceanbase.tools.dbbrowser.model.DBTablePartitionDefinition;
+import com.oceanbase.tools.dbbrowser.model.DBTablePartitionOption;
+import com.oceanbase.tools.dbbrowser.model.DBTablePartitionType;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessorSqlMappers;
 import com.oceanbase.tools.dbbrowser.schema.constant.Statements;
 import com.oceanbase.tools.dbbrowser.schema.constant.StatementsFiles;
