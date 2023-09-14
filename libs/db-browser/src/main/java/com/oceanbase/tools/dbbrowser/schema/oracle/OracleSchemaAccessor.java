@@ -751,6 +751,7 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
             index.setAlgorithm(DBIndexAlgorithm.fromString(rs.getString(OracleConstants.INDEX_TYPE)));
             index.setCompressInfo(rs.getString(OracleConstants.INDEX_COMPRESSION));
             index.setColumnNames(new ArrayList<>());
+            index.setAvailable("VALID".equals(rs.getString(OracleConstants.INDEX_STATUS)));
             indexName2Index.putIfAbsent(index.getName(), index);
             return index;
         });

@@ -69,6 +69,10 @@ public class DBTableIndex implements DBObject, DBObjectWarningDescriptor {
 
     private boolean nonUnique;
     private Long cardinality;
+    /**
+     * 是否可用，索引创建成功后是可用状态，否则不可用
+     */
+    private Boolean available;
 
     @JsonProperty(access = Access.READ_ONLY)
     private Timestamp createTime;

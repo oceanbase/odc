@@ -594,6 +594,7 @@ public class MySQLNoGreaterThan5740SchemaAccessor implements DBSchemaAccessor {
                 columnNames.add(rs.getString("COLUMN_NAME"));
                 index.setColumnNames(columnNames);
                 index.setGlobal(true);
+                handleIndexAvailability(index, rs.getString("COMMENT"));
                 fullIndexName2Index.put(tableName + indexName, index);
             } else {
                 fullIndexName2Index.get(tableName + indexName).getColumnNames()
@@ -958,6 +959,7 @@ public class MySQLNoGreaterThan5740SchemaAccessor implements DBSchemaAccessor {
                 columnNames.add(rs.getString(MySQLConstants.IDX_COLUMN_NAME));
                 index.setColumnNames(columnNames);
                 index.setGlobal(true);
+                handleIndexAvailability(index, rs.getString(MySQLConstants.IDX_COL_COMMENT));
                 indexName2Index.put(indexName, index);
             } else {
                 indexName2Index.get(indexName).getColumnNames().add(rs.getString(MySQLConstants.IDX_COLUMN_NAME));
@@ -965,6 +967,14 @@ public class MySQLNoGreaterThan5740SchemaAccessor implements DBSchemaAccessor {
             return null;
         });
         return new ArrayList<>(indexName2Index.values());
+    }
+
+    protected void handleIndexAvailability(DBTableIndex index, String availability) {
+        if (StringUtils.isBlank(availability)) {
+            index.setAvailable(true);
+        } else if ("disabled".equals(availability)) {
+            index.setAvailable(false);
+        }
     }
 
     @Override

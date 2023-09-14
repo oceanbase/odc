@@ -124,7 +124,8 @@ sqls:
       TABLE_NAME,
       UNIQUENESS,
       COMPRESSION,
-      VISIBILITY
+      VISIBILITY,
+      STATUS
     FROM
       ALL_INDEXES
     WHERE
