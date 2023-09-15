@@ -52,9 +52,9 @@ public class DatabaseSyncSchedules {
             try {
                 SecurityContextUtils.setCurrentUser(connection.getCreatorId(), connection.getOrganizationId(), null);
                 databaseSyncManager.syncDataSource(connection.getId());
-                log.info("sync datasource successfully, connectionId={}", connection.getId());
+                log.debug("sync datasource successfully, connectionId={}", connection.getId());
             } catch (Exception ex) {
-                log.warn("sync datasource failed, datasourceId={}", connection.getId(), ex);
+                log.debug("sync datasource failed, datasourceId={}", connection.getId(), ex);
             }
         }
     }
