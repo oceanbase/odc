@@ -24,6 +24,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
@@ -60,6 +61,8 @@ import com.oceanbase.odc.core.shared.exception.AccessDeniedException;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.shared.exception.ConflictException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
+import com.oceanbase.odc.metadb.connection.ConnectionConfigRepository;
+import com.oceanbase.odc.metadb.connection.ConnectionEntity;
 import com.oceanbase.odc.metadb.connection.DatabaseEntity;
 import com.oceanbase.odc.metadb.connection.DatabaseRepository;
 import com.oceanbase.odc.metadb.connection.DatabaseSpecs;
@@ -132,6 +135,9 @@ public class DatabaseService {
 
     @Autowired
     private HorizontalDataPermissionValidator horizontalDataPermissionValidator;
+
+    @Autowired
+    private ConnectionConfigRepository connectionConfigRepository;
 
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("internal authenticated")
@@ -367,14 +373,17 @@ public class DatabaseService {
         }
         ConnectionSession connectionSession = null;
         try {
-            if (!connectionService.existsById(dataSourceId)) {
+            Optional<ConnectionEntity> connectionOpt = connectionConfigRepository.findById(dataSourceId);
+            if (!connectionOpt.isPresent()) {
                 return false;
             }
+            ConnectionEntity saved = connectionOpt.get();
+            if (saved.getEnvironmentId().longValue() == -1L
+                    || saved.getVisibleScope() == ConnectionVisibleScope.PRIVATE) {
+                return false;
+            }
+
             ConnectionConfig connection = connectionService.getForConnectionSkipPermissionCheck(dataSourceId);
-            if (connection.getEnvironmentId().longValue() == -1L
-                    || connection.getVisibleScope() == ConnectionVisibleScope.PRIVATE) {
-                return false;
-            }
             horizontalDataPermissionValidator.checkCurrentOrganization(connection);
             DefaultConnectSessionFactory factory = new DefaultConnectSessionFactory(connection);
             connectionSession = factory.generateSession();
