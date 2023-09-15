@@ -569,9 +569,11 @@ public class ConnectionService {
             connection.setQueryTimeoutSeconds(minQueryTimeoutSeconds);
             log.debug("queryTimeoutSeconds less than minQueryTimeoutSeconds, use {} instead", minQueryTimeoutSeconds);
         }
+        connectionEncryption.decryptPasswords(connection);
+        // Adapter should be called after decrypting passwords.
         environmentAdapter.adaptConfig(connection);
         connectionSSLAdaptor.adapt(connection);
-        return connectionEncryption.decryptPasswords(connection);
+        return connection;
     }
 
     @Transactional(rollbackFor = Exception.class)
