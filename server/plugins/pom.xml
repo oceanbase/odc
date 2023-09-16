@@ -24,6 +24,8 @@
         <module>schema-plugin-odp-sharding-ob-mysql</module>
         <module>task-plugin-api</module>
         <module>task-plugin-ob-mysql</module>
+        <module>task-plugin-ob-oracle</module>
+        <module>task-plugin-mysql</module>
     </modules>
     <properties>
         <maven-assembly-plugin.version>2.4</maven-assembly-plugin.version>
