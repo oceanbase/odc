@@ -145,21 +145,27 @@ public class OBOracleGetDBTableByParserTest {
                 Assert.assertEquals(2, index.getColumnNames().size());
                 Assert.assertTrue(index.getUnique());
                 Assert.assertEquals(DBIndexType.UNIQUE, index.getType());
+                Assert.assertTrue(index.getAvailable());
             } else if ("IND_FUNCTION_BASED".equals(index.getName())) {
                 Assert.assertEquals("UPPER(\"COL1\")", index.getColumnNames().get(0));
                 Assert.assertEquals(DBIndexType.FUNCTION_BASED_NORMAL, index.getType());
+                Assert.assertTrue(index.getAvailable());
             } else if ("UNIQUE_IDX_TEST_INDEX_BY_PARSER".equals(index.getName())) {
                 Assert.assertEquals(DBIndexType.UNIQUE, index.getType());
                 Assert.assertEquals("COL3", index.getColumnNames().get(0));
                 Assert.assertFalse(index.getGlobal());
+                Assert.assertTrue(index.getAvailable());
             } else if ("NORMAL_IDX_TEST_INDEX_BY_PARSER".equals(index.getName())) {
                 Assert.assertEquals(DBIndexType.NORMAL, index.getType());
                 Assert.assertEquals("COL7", index.getColumnNames().get(0));
                 Assert.assertFalse(index.getGlobal());
+                Assert.assertTrue(index.getAvailable());
             } else if (index.getPrimary()) {
                 Assert.assertEquals("ID", index.getColumnNames().get(0));
+                Assert.assertTrue(index.getAvailable());
             } else {
                 Assert.assertEquals("COL2", index.getColumnNames().get(0));
+                Assert.assertTrue(index.getAvailable());
             }
         }
     }

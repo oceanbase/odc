@@ -39,6 +39,7 @@ public class OracleConstants {
     public static final String INDEX_TYPE = "INDEX_TYPE";
     public static final String INDEX_UNIQUENESS = "UNIQUENESS";
     public static final String INDEX_NAME = "INDEX_NAME";
+    public static final String INDEX_STATUS = "STATUS";
     public static final String INDEX_COMPRESSION = "COMPRESSION";
 
     public static final String CONS_NAME = "CONSTRAINT_NAME";
