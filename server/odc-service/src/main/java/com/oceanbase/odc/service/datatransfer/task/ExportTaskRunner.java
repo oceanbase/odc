@@ -49,6 +49,7 @@ import com.oceanbase.odc.service.datatransfer.DataTransferAdapter;
 import com.oceanbase.odc.service.datatransfer.dumper.DumperOutput;
 import com.oceanbase.odc.service.datatransfer.dumper.SchemaMergeOperator;
 import com.oceanbase.odc.service.datatransfer.model.DataTransferParameter;
+import com.oceanbase.odc.service.datatransfer.model.DataTransferProperties;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.flow.task.model.DataTransferTaskResult;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
@@ -70,17 +71,16 @@ public class ExportTaskRunner extends BaseTransferTaskRunner {
     }
 
     public ExportTaskRunner(DataTransferParameter parameter, Holder<DataTransferTask> jobHolder,
-            DataTransferAdapter adapter, DataMaskingService maskingService) {
-        super(parameter, jobHolder, adapter);
+            DataTransferAdapter adapter, DataMaskingService maskingService, DataTransferProperties properties) {
+        super(parameter, jobHolder, adapter, properties);
         this.maskingService = maskingService;
     }
 
     @Override
     protected void preHandle() throws Exception {
-        if (adapter.getMaxDumpSizeBytes() != null) {
-            parameter.setMaxDumpSizeBytes(adapter.getMaxDumpSizeBytes());
-        }
-
+        /*
+         * get mask config
+         */
         ConnectionSession connectionSession =
                 new DefaultConnectSessionFactory(parameter.getConnectionConfig()).generateSession();
         String schemaName = parameter.getSchemaName();
@@ -136,6 +136,18 @@ public class ExportTaskRunner extends BaseTransferTaskRunner {
             maskConfigMap.put(TableIdentity.of(schemaName, tableName), column2Masker);
         }
         parameter.setMaskConfig(maskConfigMap);
+        /*
+         * set max dump size
+         */
+        if (adapter.getMaxDumpSizeBytes() != null) {
+            parameter.setMaxDumpSizeBytes(adapter.getMaxDumpSizeBytes());
+        }
+        /*
+         * set cursor fetch size
+         */
+        parameter.setCursorFetchSize(properties.getCursorFetchSize());
+
+        super.preHandle();
     }
 
     @Override

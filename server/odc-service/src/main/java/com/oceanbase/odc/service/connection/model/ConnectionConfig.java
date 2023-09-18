@@ -46,7 +46,7 @@ import com.oceanbase.odc.core.shared.constant.ConnectionVisibleScope;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
-import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig.SimpleConnectionConfig;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig.ConnectionInfo;
 import com.oceanbase.odc.service.collaboration.environment.model.EnvironmentStyle;
 import com.oceanbase.odc.service.connection.ConnectionStatusManager.CheckState;
 
@@ -318,8 +318,8 @@ public class ConnectionConfig
         return null;
     }
 
-    public SimpleConnectionConfig simplify() {
-        SimpleConnectionConfig target = new SimpleConnectionConfig();
+    public ConnectionInfo simplify() {
+        ConnectionInfo target = new ConnectionInfo();
         target.setConnectType(type);
         target.setCluster(clusterName);
         target.setHost(host);

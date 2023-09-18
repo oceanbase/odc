@@ -28,28 +28,31 @@ import com.google.common.collect.ImmutableMap;
 import com.oceanbase.odc.common.lang.Holder;
 import com.oceanbase.odc.common.trace.TraceContextHolder;
 import com.oceanbase.odc.plugin.task.api.datatransfer.DataTransferTask;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConstants;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.ObjectStatus;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.ObjectStatus.Status;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.TransferTaskStatus;
 import com.oceanbase.odc.service.datatransfer.DataTransferAdapter;
-import com.oceanbase.odc.service.datatransfer.model.DataTransferConstants;
 import com.oceanbase.odc.service.datatransfer.model.DataTransferParameter;
+import com.oceanbase.odc.service.datatransfer.model.DataTransferProperties;
 import com.oceanbase.odc.service.flow.task.model.DataTransferTaskResult;
 import com.oceanbase.odc.service.plugin.TaskPluginUtil;
 
 import lombok.Getter;
 
 public abstract class BaseTransferTaskRunner implements Callable<DataTransferTaskResult> {
-    protected final DataTransferParameter parameter;
     @Getter
     private final Holder<DataTransferTask> jobHolder;
+    protected final DataTransferParameter parameter;
     protected final DataTransferAdapter adapter;
+    protected final DataTransferProperties properties;
 
     protected BaseTransferTaskRunner(DataTransferParameter parameter, Holder<DataTransferTask> jobHolder,
-            DataTransferAdapter adapter) {
+            DataTransferAdapter adapter, DataTransferProperties properties) {
         this.parameter = parameter;
         this.jobHolder = jobHolder;
         this.adapter = adapter;
+        this.properties = properties;
     }
 
     @Override
@@ -64,11 +67,11 @@ public abstract class BaseTransferTaskRunner implements Callable<DataTransferTas
                     .build(parameter);
             jobHolder.setValue(job);
 
-            job.transfer();
+            TransferTaskStatus status = job.transfer();
 
-            DataTransferTaskResult result = DataTransferTaskResult.of(job.getStatus());
+            validateSuccessful(status);
 
-            validSuccessful(result);
+            DataTransferTaskResult result = DataTransferTaskResult.of(status);
 
             postHandle(result);
 
@@ -79,11 +82,13 @@ public abstract class BaseTransferTaskRunner implements Callable<DataTransferTas
         }
     }
 
-    abstract protected void preHandle() throws Exception;
+    protected void preHandle() throws Exception {
+        parameter.setUsePrepStmts(properties.isUseServerPrepStmts());
+    }
 
     abstract protected void postHandle(DataTransferTaskResult result) throws Exception;
 
-    private void validSuccessful(TransferTaskStatus result) {
+    private void validateSuccessful(TransferTaskStatus result) {
         List<String> failedObjects = ListUtils.union(result.getDataObjectsInfo(), result.getSchemaObjectsInfo())
                 .stream()
                 .filter(objectStatus -> objectStatus.getStatus() != Status.SUCCESS)

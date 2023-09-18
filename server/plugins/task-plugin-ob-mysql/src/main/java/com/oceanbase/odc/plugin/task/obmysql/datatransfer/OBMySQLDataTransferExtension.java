@@ -17,14 +17,35 @@
 package com.oceanbase.odc.plugin.task.obmysql.datatransfer;
 
 import com.oceanbase.odc.plugin.task.api.datatransfer.DataTransferExtensionPoint;
-import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
 import com.oceanbase.odc.plugin.task.api.datatransfer.DataTransferTask;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferType;
+import com.oceanbase.odc.plugin.task.obmysql.datatransfer.factory.BaseParameterFactory;
+import com.oceanbase.odc.plugin.task.obmysql.datatransfer.factory.DumpParameterFactory;
+import com.oceanbase.odc.plugin.task.obmysql.datatransfer.factory.LoadParameterFactory;
+import com.oceanbase.odc.plugin.task.obmysql.datatransfer.task.ObLoaderDumperExportTask;
+import com.oceanbase.odc.plugin.task.obmysql.datatransfer.task.ObLoaderDumperImportTask;
+import com.oceanbase.tools.loaddump.common.model.DumpParameter;
+import com.oceanbase.tools.loaddump.common.model.LoadParameter;
 
 public class OBMySQLDataTransferExtension implements DataTransferExtensionPoint {
 
     @Override
-    public DataTransferTask build(DataTransferConfig config) {
-        return null;
+    public DataTransferTask build(DataTransferConfig config) throws Exception {
+        boolean transferData = config.isTransferData();
+        boolean transferSchema = config.isTransferDDL();
+
+        if (config.getTransferType() == DataTransferType.IMPORT) {
+            BaseParameterFactory<LoadParameter> factory = new LoadParameterFactory(config);
+            LoadParameter parameter = factory.generate();
+            return new ObLoaderDumperImportTask(parameter, transferData, transferSchema, config.isUsePrepStmts());
+        } else if (config.getTransferType() == DataTransferType.EXPORT) {
+            BaseParameterFactory<DumpParameter> factory = new DumpParameterFactory(config);
+            DumpParameter parameter = factory.generate();
+            return new ObLoaderDumperExportTask(parameter, transferData, transferSchema, config.isUsePrepStmts());
+        }
+
+        throw new IllegalArgumentException("Illegal transfer type " + config.getTransferType());
     }
 
 }

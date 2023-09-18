@@ -23,7 +23,7 @@ import com.oceanbase.odc.plugin.task.api.datatransfer.DataTransferTask;
 public class OBOralceDataTransferExtension implements DataTransferExtensionPoint {
 
     @Override
-    public DataTransferTask build(DataTransferConfig config) {
+    public DataTransferTask build(DataTransferConfig config) throws Exception{
         return null;
     }
 

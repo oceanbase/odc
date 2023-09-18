@@ -121,7 +121,7 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
         Verify.notNull(connectionId, "ConnectionId");
         ConnectionAccountType accountType = ConnectionSessionUtil.getConnectionAccountType(session);
         ConnectionConfig conn = (ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(session);
-        Verify.notNull(conn, "SimpleConnectionConfig");
+        Verify.notNull(conn, "ConnectionConfig");
         Verify.notNull(accountType, "AccountType");
         DruidDataSourceFactory factory = new DruidDataSourceFactory(conn, accountType);
         try {

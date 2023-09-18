@@ -15,6 +15,10 @@
  */
 package com.oceanbase.odc.service.flow.task;
 
+import static com.oceanbase.odc.core.shared.constant.OdcConstants.DEFAULT_ZERO_DATE_TIME_BEHAVIOR;
+
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
@@ -27,6 +31,8 @@ import com.oceanbase.odc.core.shared.constant.ConnectionAccountType;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.metadb.task.TaskEntity;
+import com.oceanbase.odc.plugin.connect.api.ConnectionExtensionPoint;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig.ConnectionInfo;
 import com.oceanbase.odc.service.connection.ConnectionTesting;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.model.TestConnectionReq;
@@ -34,8 +40,8 @@ import com.oceanbase.odc.service.datatransfer.DataTransferService;
 import com.oceanbase.odc.service.datatransfer.model.DataTransferParameter;
 import com.oceanbase.odc.service.datatransfer.task.DataTransferTaskContext;
 import com.oceanbase.odc.service.flow.OdcInternalFileService;
-import com.oceanbase.odc.service.flow.task.model.DataTransferTaskResult;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
+import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
 
@@ -66,7 +72,7 @@ public class DataTransferRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Voi
         }
         boolean result = context.cancel(true);
         log.info("Data transfer task has been cancelled, taskId={}, result={}", taskId, result);
-        taskService.cancel(taskId, DataTransferTaskResult.of(context));
+        taskService.cancel(taskId, context.getStatus());
         return true;
     }
 
@@ -81,12 +87,11 @@ public class DataTransferRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Voi
     @Override
     protected Void start(Long taskId, TaskService taskService, DelegateExecution execution) throws Exception {
         log.info("Data transfer task starts, taskId={}", taskId);
-        DataTransferParameter config = FlowTaskUtil.getDataTransferParameter(execution);
-        config.setSchemaName(FlowTaskUtil.getSchemaName(execution));
-
+        DataTransferParameter parameter = FlowTaskUtil.getDataTransferParameter(execution);
         ConnectionConfig connectionConfig = FlowTaskUtil.getConnectionConfig(execution);
-        config.setConnectionConfig(connectionConfig.simplify());
-        injectSysConfig(connectionConfig, config);
+        parameter.setConnectionConfig(connectionConfig);
+        parameter.setConnectionInfo(connectionConfig.simplify());
+        parameter.setSchemaName(FlowTaskUtil.getSchemaName(execution));
 
         TaskEntity taskEntity = taskService.detail(taskId);
         ExecutorInfo executor = new ExecutorInfo(hostProperties);
@@ -95,10 +100,12 @@ public class DataTransferRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Voi
             /**
              * 导入任务不在当前机器上，需要进行 {@code HTTP GET} 获取导入文件
              */
-            odcInternalFileService.getExternalImportFiles(taskEntity, submitter, config.getImportFileName());
+            odcInternalFileService.getExternalImportFiles(taskEntity, submitter, parameter.getImportFileName());
         }
-        context = dataTransferService.create(taskId + "", config);
-        taskService.start(taskId, DataTransferTaskResult.of(context));
+
+        context = dataTransferService.create(taskId + "", parameter);
+
+        taskService.start(taskId);
         return null;
     }
 
@@ -126,11 +133,10 @@ public class DataTransferRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Voi
     @Override
     protected void onFailure(Long taskId, TaskService taskService) {
         log.warn("Data transfer task failed, taskId={}", taskId);
-        DataTransferTaskResult result = DataTransferTaskResult.of(context);
         if (context == null) {
-            taskService.fail(taskId, 0, result);
+            taskService.fail(taskId, 0, null);
         } else {
-            taskService.fail(taskId, context.getProgress(), result);
+            taskService.fail(taskId, context.getProgress(), context.getStatus());
         }
         super.onFailure(taskId, taskService);
     }
@@ -150,7 +156,7 @@ public class DataTransferRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Voi
     @Override
     protected void onTimeout(Long taskId, TaskService taskService) {
         log.warn("Data transfer task timeout, taskId={}", taskId);
-        taskService.fail(taskId, context.getProgress(), DataTransferTaskResult.of(context));
+        taskService.fail(taskId, context.getProgress(), context.getStatus());
     }
 
     @Override
@@ -160,50 +166,5 @@ public class DataTransferRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Voi
         }
         taskService.updateProgress(taskId, context.getProgress());
     }
-
-    private void injectSysConfig(ConnectionConfig connectionConfig, DataTransferParameter transferConfig) {
-        if (StringUtils.isBlank(transferConfig.getSysUser())) {
-            log.info("No Sys user setting, connectionId={}", connectionConfig.getId());
-            return;
-        }
-        String sysUserInMeta = connectionConfig.getSysTenantUsername();
-        String sysPasswdInMeta = connectionConfig.getSysTenantPassword();
-        String sysUserInConfig = transferConfig.getSysUser();
-        String sysPasswdInConfig = transferConfig.getSysPassword();
-        if (sysPasswdInConfig == null) {
-            if (sysPasswdInMeta == null) {
-                log.info("No password for sys, connectionId={}", connectionConfig.getId());
-                return;
-            }
-            Validate.isTrue(sysUserInConfig.equals(sysUserInMeta), "Sys user is illegal");
-            if (!testSysTenantAccount(connectionConfig)) {
-                log.warn("Access denied, Sys tenant account and password error, connectionId={}, sysUserInMeta={}",
-                        connectionConfig.getId(), sysUserInMeta);
-                throw new IllegalStateException("AccessDenied, " + sysUserInMeta);
-            }
-            return;
-        }
-        transferConfig.getConnectionConfig().setSysTenantUsername(sysUserInConfig);
-        transferConfig.getConnectionConfig().setSysTenantPassword(sysPasswdInConfig);
-        if (testSysTenantAccount(connectionConfig)) {
-            log.info("Sys user has been approved, connectionId={}", connectionConfig.getId());
-            return;
-        }
-        log.info("Access denied, Sys tenant account and password error, connectionId={}, sysUserInConfig={}",
-                connectionConfig.getId(), sysUserInConfig);
-        transferConfig.getConnectionConfig().setSysTenantUsername(null);
-        transferConfig.getConnectionConfig().setSysTenantPassword(null);
-    }
-
-    private boolean testSysTenantAccount(ConnectionConfig connectionConfig) {
-        TestConnectionReq req = TestConnectionReq.fromConnection(connectionConfig, ConnectionAccountType.SYS_READ);
-        try {
-            return connectionTesting.test(req).isActive();
-        } catch (Exception e) {
-            // eat exp
-            return false;
-        }
-    }
-
 
 }

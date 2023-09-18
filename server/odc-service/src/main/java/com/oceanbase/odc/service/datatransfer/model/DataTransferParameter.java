@@ -17,7 +17,9 @@ package com.oceanbase.odc.service.datatransfer.model;
 
 import java.io.Serializable;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
+import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.flow.model.TaskParameters;
 
 import lombok.EqualsAndHashCode;
@@ -39,4 +41,6 @@ import lombok.ToString;
 public class DataTransferParameter extends DataTransferConfig implements Serializable, TaskParameters {
     private Long databaseId;
     private Long connectionId;
+    @JsonIgnore
+    private ConnectionConfig connectionConfig;
 }

@@ -13,56 +13,48 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.datatransfer;
 
-import static com.oceanbase.odc.service.datatransfer.model.DataTransferConstants.MAX_BLOCK_SIZE_MEGABYTE;
-import static com.oceanbase.odc.service.datatransfer.model.DataTransferConstants.MAX_CURSOR_FETCH_SIZE;
+package com.oceanbase.odc.plugin.task.obmysql.datatransfer.factory;
+
+import static com.oceanbase.odc.core.shared.constant.OdcConstants.VALIDATE_DDL_TABLE_POSTFIX;
+import static com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConstants.MAX_BLOCK_SIZE_MEGABYTE;
+import static com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConstants.MAX_CURSOR_FETCH_SIZE;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.sql.Connection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 
 import com.oceanbase.odc.common.unit.BinarySizeUnit;
-import com.oceanbase.odc.core.datamasking.config.MaskConfig;
 import com.oceanbase.odc.core.datamasking.masker.AbstractDataMasker;
-import com.oceanbase.odc.core.datamasking.masker.DataMaskerFactory;
-import com.oceanbase.odc.core.datamasking.masker.MaskValueType;
 import com.oceanbase.odc.core.datasource.SingleConnectionDataSource;
-import com.oceanbase.odc.core.session.ConnectionSession;
-import com.oceanbase.odc.core.shared.constant.OdcConstants;
+import com.oceanbase.odc.core.shared.exception.UnexpectedException;
+import com.oceanbase.odc.core.shared.model.TableIdentity;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
-import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig.SimpleConnectionConfig;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferFormat;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferObject;
-import com.oceanbase.odc.service.datasecurity.DataMaskingFunction;
-import com.oceanbase.odc.service.datasecurity.DataMaskingService;
-import com.oceanbase.odc.service.datasecurity.model.MaskingAlgorithm;
-import com.oceanbase.odc.service.datasecurity.model.SensitiveColumn;
-import com.oceanbase.odc.service.datasecurity.util.MaskingAlgorithmUtil;
-import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
-import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
-import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
-import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
+import com.oceanbase.odc.plugin.task.obmysql.datatransfer.export.DataMaskingFunction;
+import com.oceanbase.odc.plugin.task.obmysql.datatransfer.util.ConnectionUtil;
+import com.oceanbase.odc.plugin.task.obmysql.datatransfer.util.PluginUtil;
 import com.oceanbase.tools.loaddump.common.enums.DataFormat;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
 import com.oceanbase.tools.loaddump.common.model.DumpParameter;
 import com.oceanbase.tools.loaddump.function.context.ControlContext;
 import com.oceanbase.tools.loaddump.function.context.ControlDescription;
 import com.oceanbase.tools.loaddump.manager.ControlManager;
-
-import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
 
 /**
  * {@link DumpParameterFactory} to generate {@link DumpParameter}
@@ -74,27 +66,19 @@ import lombok.EqualsAndHashCode;
  */
 public class DumpParameterFactory extends BaseParameterFactory<DumpParameter> {
 
-    private final Long maxDumpSizeBytes;
-    private final int fetchSize;
-    private final DataMaskingService maskingService;
-
-    public DumpParameterFactory(File workingDir, File logDir, SimpleConnectionConfig connectionConfig,
-            Long maxDumpSizeBytes, int fetchSize, DataMaskingService maskingService) throws FileNotFoundException {
-        super(workingDir, logDir, connectionConfig);
-        if (maxDumpSizeBytes != null) {
-            Validate.isTrue(maxDumpSizeBytes > 0, "Max dump size can not be negative");
+    public DumpParameterFactory(DataTransferConfig config) throws FileNotFoundException {
+        super(config);
+        if (config.getMaxDumpSizeBytes() != null) {
+            Validate.isTrue(config.getMaxDumpSizeBytes() > 0, "Max dump size can not be negative");
         }
-        this.maxDumpSizeBytes = maxDumpSizeBytes;
-        this.fetchSize = fetchSize;
-        this.maskingService = maskingService;
     }
 
     @Override
-    protected DumpParameter doGenerate(File workingDir, DataTransferConfig transferConfig) throws IOException {
+    protected DumpParameter doGenerate(File workingDir) throws IOException {
         DumpParameter parameter = new DumpParameter();
         parameter.setSkipCheckDir(true);
-        if (this.maxDumpSizeBytes != null) {
-            parameter.setMaxFileSize(maxDumpSizeBytes);
+        if (transferConfig.getMaxDumpSizeBytes() != null) {
+            parameter.setMaxFileSize(transferConfig.getMaxDumpSizeBytes());
         }
         parameter.setSchemaless(true);
         setFetchSize(parameter);
@@ -113,8 +97,8 @@ public class DumpParameterFactory extends BaseParameterFactory<DumpParameter> {
             if (transferConfig.getSkippedDataType() != null) {
                 parameter.getExcludeDataTypes().addAll(transferConfig.getSkippedDataType());
             }
-            if (maskingService.isMaskingEnabled()) {
-                setMaskConfig(parameter, target, transferConfig);
+            if (MapUtils.isNotEmpty(transferConfig.getMaskConfig())) {
+                setMaskConfig(parameter, transferConfig);
             }
         }
         if (transferConfig.getDataTransferFormat() == DataTransferFormat.CSV) {
@@ -136,8 +120,7 @@ public class DumpParameterFactory extends BaseParameterFactory<DumpParameter> {
         return parameter;
     }
 
-    private void setDumpObjects(DumpParameter parameter, DataTransferConfig transferConfig)
-            throws IOException {
+    private void setDumpObjects(DumpParameter parameter, DataTransferConfig transferConfig) {
         Map<ObjectType, Set<String>> whiteListMap = parameter.getWhiteListMap();
         if (whiteListMap == null) {
             throw new IllegalStateException("White list map is null");
@@ -200,18 +183,15 @@ public class DumpParameterFactory extends BaseParameterFactory<DumpParameter> {
         }
     }
 
-    private Set<String> getTableNames(DataTransferConfig transferConfig)
-            throws IOException {
-        ConnectionSession session = new DefaultConnectSessionFactory(target).generateSession();
-        try {
-            DBSchemaAccessor accessor = DBSchemaAccessors.create(session);
-            return accessor.showTables(transferConfig.getSchemaName()).stream()
-                    .filter(name -> !StringUtils.endsWithIgnoreCase(name, OdcConstants.VALIDATE_DDL_TABLE_POSTFIX))
+    private Set<String> getTableNames(DataTransferConfig transferConfig) {
+        try (SingleConnectionDataSource dataSource = ConnectionUtil.getDataSource(transferConfig);
+                Connection connection = dataSource.getConnection()) {
+            return PluginUtil.getTableExtension(transferConfig)
+                    .showNamesLike(connection, transferConfig.getSchemaName(), "").stream()
+                    .filter(table -> !StringUtils.endsWithIgnoreCase(table, VALIDATE_DDL_TABLE_POSTFIX))
                     .collect(Collectors.toSet());
         } catch (Exception e) {
-            throw new IOException(e);
-        } finally {
-            session.expire();
+            throw new UnexpectedException("Failed to get export table names.", e);
         }
     }
 
@@ -221,74 +201,24 @@ public class DumpParameterFactory extends BaseParameterFactory<DumpParameter> {
          * {@value 1000} 以下。在桌面版这种 ODC 与 OBServer 网络延迟比较高的环境下，性能瓶颈为网络 I/O，因此默认设置为{@value 100}；而对于私有云/公有云这种
          * 延迟比较低的场景，导出性能的瓶颈并非是网络 I/O，用内存换性能的边际成本太低了，默认设置为 {@value 20} 即可.
          */
-        parameter.setFetchSize(Math.min(fetchSize, MAX_CURSOR_FETCH_SIZE));
+        parameter.setFetchSize(Math.min(transferConfig.getCursorFetchSize(), MAX_CURSOR_FETCH_SIZE));
     }
 
     private void setMaskConfig(DumpParameter parameter, DataTransferConfig transferConfig) {
-        ConnectionSession connectionSession = new DefaultConnectSessionFactory(target).generateSession();
-        String schemaName = transferConfig.getSchemaName();
-        Map<String, List<String>> tableName2ColumnNames = new HashMap<>();
-        try {
-            DBSchemaAccessor accessor = DBSchemaAccessors.create(connectionSession);
-            List<String> tableNames;
-            if (transferConfig.isExportAllObjects()) {
-                tableNames = accessor.showTablesLike(schemaName, null).stream()
-                        .filter(name -> !StringUtils.endsWithIgnoreCase(name, OdcConstants.VALIDATE_DDL_TABLE_POSTFIX))
-                        .collect(Collectors.toList());
-            } else {
-                tableNames = transferConfig.getExportDbObjects().stream()
-                        .filter(o -> Objects.equals(ObjectType.TABLE.getName(), o.getDbObjectType()))
-                        .map(DataTransferObject::getObjectName)
-                        .collect(Collectors.toList());
-            }
-            for (String tableName : tableNames) {
-                List<String> tableColumns = accessor.listTableColumns(schemaName, tableName).stream()
-                        .map(DBTableColumn::getName).collect(Collectors.toList());
-                tableName2ColumnNames.put(tableName, tableColumns);
-            }
-        } finally {
-            try {
-                connectionSession.expire();
-            } catch (Exception e) {
-                // eat exception
-            }
-        }
-
-        Map<SensitiveColumn, MaskingAlgorithm> sensitiveColumn2Algorithm = maskingService
-                .listColumnsAndMaskingAlgorithm(transferConfig.getDatabaseId(), tableName2ColumnNames.keySet());
-        if (sensitiveColumn2Algorithm.isEmpty()) {
-            return;
-        }
-        Map<TableColumn, MaskingAlgorithm> column2Algorithm = sensitiveColumn2Algorithm.keySet().stream()
-                .collect(Collectors.toMap(c -> new TableColumn(c.getTableName(), c.getColumnName()),
-                        sensitiveColumn2Algorithm::get, (c1, c2) -> c1));
-        DataMaskerFactory maskerFactory = new DataMaskerFactory();
+        Map<TableIdentity, Map<String, AbstractDataMasker>> maskConfigMap = transferConfig.getMaskConfig();
         ControlManager controlManager = ControlManager.newInstance();
-        for (String tableName : tableName2ColumnNames.keySet()) {
+        for (Entry<TableIdentity, Map<String, AbstractDataMasker>> entry : maskConfigMap.entrySet()) {
             ControlContext controlContext = new ControlContext();
-            for (String columnName : tableName2ColumnNames.get(tableName)) {
-                MaskingAlgorithm algorithm = column2Algorithm.get(new TableColumn(tableName, columnName));
-                if (Objects.isNull(algorithm)) {
-                    continue;
-                }
-                ControlDescription controlDescription = new ControlDescription(columnName);
-                MaskConfig maskConfig = MaskingAlgorithmUtil.toSingleFieldMaskConfig(algorithm, columnName);
-                AbstractDataMasker masker =
-                        maskerFactory.createDataMasker(MaskValueType.SINGLE_VALUE.name(), maskConfig);
-                DataMaskingFunction function = new DataMaskingFunction(masker);
+            for (Entry<String, AbstractDataMasker> column2Masker : entry.getValue().entrySet()) {
+                ControlDescription controlDescription = new ControlDescription(column2Masker.getKey());
+                DataMaskingFunction function = new DataMaskingFunction(column2Masker.getValue());
                 controlDescription.add(function);
                 controlContext.add(controlDescription);
             }
-            controlManager.register(schemaName, tableName, controlContext);
+            controlManager.register(entry.getKey().getSchemaName(), entry.getKey().getTableName(), controlContext);
         }
         parameter.setControlManager(controlManager);
     }
 
-    @AllArgsConstructor
-    @EqualsAndHashCode
-    private static class TableColumn {
-        private String tableName;
-        private String columnName;
-    }
-
 }
+

@@ -15,14 +15,11 @@
  */
 package com.oceanbase.odc.service.flow.task.model;
 
-import java.util.LinkedList;
-import java.util.List;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.TransferTaskStatus;
 
-import com.oceanbase.odc.service.datatransfer.task.DataTransferTaskContext;
-import com.oceanbase.tools.loaddump.common.model.ObjectStatus;
-
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 /**
  * Task result for {@code DataTransfer}
@@ -31,20 +28,17 @@ import lombok.Setter;
  * @date 2022-03-07 11:10
  * @since ODC_release_3.3.0
  */
-@Getter
-@Setter
-public class DataTransferTaskResult implements FlowTaskResult {
-    private String exportZipFilePath;
-    private List<ObjectStatus> dataObjectsInfo = new LinkedList<>();
-    private List<ObjectStatus> schemaObjectsInfo = new LinkedList<>();
+@Data
+@ToString(callSuper = true)
+@EqualsAndHashCode(callSuper = true)
+public class DataTransferTaskResult extends TransferTaskStatus implements FlowTaskResult {
 
-    public static DataTransferTaskResult of(DataTransferTaskContext context) {
+    private String exportZipFilePath;
+
+    public static DataTransferTaskResult of(TransferTaskStatus status) {
         DataTransferTaskResult result = new DataTransferTaskResult();
-        if (context == null) {
-            return result;
-        }
-        result.getSchemaObjectsInfo().addAll(context.getSchemaObjectsInfo());
-        result.getDataObjectsInfo().addAll(context.getDataObjectsInfo());
+        result.setDataObjectsInfo(status.getDataObjectsInfo());
+        result.setSchemaObjectsInfo(status.getSchemaObjectsInfo());
         return result;
     }
 

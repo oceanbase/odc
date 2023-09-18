@@ -27,6 +27,7 @@ import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.session.ConnectionSession;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferFormat;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
 import com.oceanbase.odc.service.session.util.SqlRewriteUtil;
 

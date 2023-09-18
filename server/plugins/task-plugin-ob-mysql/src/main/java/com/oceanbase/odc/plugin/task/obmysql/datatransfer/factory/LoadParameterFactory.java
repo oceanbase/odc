@@ -13,13 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.datatransfer;
+
+package com.oceanbase.odc.plugin.task.obmysql.datatransfer.factory;
 
 import java.io.File;
-import java.io.FileNotFoundException;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Paths;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,22 +33,17 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.Validate;
 
 import com.oceanbase.odc.common.util.StringUtils;
-import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.CsvColumnMapping;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
-import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig.SimpleConnectionConfig;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferFormat;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferObject;
-import com.oceanbase.odc.service.datatransfer.dumper.AbstractOutputFile;
-import com.oceanbase.odc.service.datatransfer.dumper.BinaryFile;
-import com.oceanbase.odc.service.datatransfer.dumper.DumperOutput;
 import com.oceanbase.tools.loaddump.common.enums.DataFormat;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
 import com.oceanbase.tools.loaddump.common.model.LoadParameter;
-import com.oceanbase.tools.loaddump.common.model.Manifest;
 import com.oceanbase.tools.loaddump.common.model.MapObject;
 import com.oceanbase.tools.loaddump.function.context.ControlContext;
 import com.oceanbase.tools.loaddump.manager.ControlManager;
+import com.oceanbase.tools.loaddump.utils.SerializeUtils;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -60,82 +57,75 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class LoadParameterFactory extends BaseParameterFactory<LoadParameter> {
-    public LoadParameterFactory(File workingDir, File logDir, SimpleConnectionConfig connectionConfig)
-            throws FileNotFoundException {
-        super(workingDir, logDir, connectionConfig);
+    public LoadParameterFactory(DataTransferConfig config) {
+        super(config);
     }
 
     @Override
-    protected LoadParameter doGenerate(File workingDir, DataTransferConfig config) throws IOException {
+    protected LoadParameter doGenerate(File workingDir) throws IOException {
         LoadParameter parameter = new LoadParameter();
-        parameter.setMaxErrors(config.isStopWhenError() ? 0 : -1);
-        setTransferFormat(parameter, config);
-        if (!config.isNotObLoaderDumperCompatible()) {
+        parameter.setMaxErrors(transferConfig.isStopWhenError() ? 0 : -1);
+        setTransferFormat(parameter, transferConfig);
+        if (transferConfig.isCompressed()) {
             /**
              * 导入导出组件产出物导入，需要详细设置
              */
-            setWhiteListForZip(parameter, config, workingDir);
-            if (config.isTransferDDL()) {
+            setWhiteListForZip(parameter, transferConfig);
+            if (transferConfig.isTransferDDL()) {
                 parameter.setIncludeDdl(true);
-                parameter.setReplaceObjectIfExists(config.isReplaceSchemaWhenExists());
+                parameter.setReplaceObjectIfExists(transferConfig.isReplaceSchemaWhenExists());
             }
-            if (config.isTransferData()) {
-                parameter.setTruncatable(config.isTruncateTableBeforeImport());
-                if (config.getBatchCommitNum() != null) {
-                    parameter.setBatchSize(config.getBatchCommitNum());
+            if (transferConfig.isTransferData()) {
+                parameter.setTruncatable(transferConfig.isTruncateTableBeforeImport());
+                if (transferConfig.getBatchCommitNum() != null) {
+                    parameter.setBatchSize(transferConfig.getBatchCommitNum());
                 }
-                if (config.getSkippedDataType() != null) {
-                    parameter.getExcludeDataTypes().addAll(config.getSkippedDataType());
+                if (transferConfig.getSkippedDataType() != null) {
+                    parameter.getExcludeDataTypes().addAll(transferConfig.getSkippedDataType());
                 }
             }
-        } else if (isExternalCsv(config)) {
+        } else if (isExternalCsv(transferConfig)) {
             // 单表导入 csv 文件场景
-            parameter.setTruncatable(config.isTruncateTableBeforeImport());
-            setCsvMappings(parameter, config);
-            setWhiteListForExternalCsv(parameter, config, workingDir);
+            parameter.setTruncatable(transferConfig.isTruncateTableBeforeImport());
+            setCsvMappings(parameter, transferConfig);
+            setWhiteListForExternalCsv(parameter, transferConfig, workingDir);
             parameter.setFileSuffix(DataFormat.CSV.getDefaultFileSuffix());
-        } else if (config.getDataTransferFormat() == DataTransferFormat.SQL) {
+        } else if (transferConfig.getDataTransferFormat() == DataTransferFormat.SQL) {
             parameter.setFileSuffix(DataFormat.SQL.getDefaultFileSuffix());
         }
         return parameter;
     }
 
-    private void setWhiteListForZip(LoadParameter parameter, DataTransferConfig config,
-            File workingDir) throws IOException {
-        if (config.isNotObLoaderDumperCompatible()) {
+    private void setWhiteListForZip(LoadParameter parameter, DataTransferConfig config) throws IOException {
+        if (!config.isCompressed()) {
             return;
         }
-        DumperOutput dumperOutput = new DumperOutput(new File(workingDir.getAbsolutePath() + File.separator + "data"));
-        List<AbstractOutputFile> outputFiles = dumperOutput.getAllDumpFiles();
-        Validate.isTrue(!outputFiles.isEmpty(), "No import object found");
-        Validate.isTrue(!config.isTransferData() || dumperOutput.isContainsData(), "Input does not contain data");
-        Validate.isTrue(!config.isTransferDDL() || dumperOutput.isContainsSchema(), "Input does not contain schema");
         Map<ObjectType, Set<String>> whiteList = parameter.getWhiteListMap();
         if (whiteList == null) {
             throw new IllegalStateException("White list map is null");
         }
+
         List<DataTransferObject> objectList = config.getExportDbObjects();
         if (CollectionUtils.isEmpty(objectList)) {
-            for (AbstractOutputFile outputFile : outputFiles) {
-                Set<String> names = whiteList.computeIfAbsent(outputFile.getObjectType(), t -> new HashSet<>());
-                if (DialectType.OB_ORACLE.equals(config.getConnectionConfig().getConnectType().getDialectType())) {
-                    names.add(StringUtils.quoteOracleIdentifier(outputFile.getObjectName()));
-                } else {
-                    names.add(StringUtils.quoteMysqlIdentifier(outputFile.getObjectName()));
-                }
-            }
-        } else {
-            whiteList.putAll(getWhiteListMap(objectList, o -> true));
+            throw new IllegalArgumentException("No object was found for white list.");
         }
-        BinaryFile<Manifest> manifest = dumperOutput.getManifest();
+        whiteList.putAll(getWhiteListMap(objectList, o -> true));
+
+        File manifest = Paths.get(config.getWorkingDir().getPath(), "MANIFEST.BIN").toFile();
         /**
          * only CSV format would save the manifest {@link com.oceanbase.tools.loaddump.client.DumpClient}
          */
-        if (manifest != null) {
+        if (manifest.exists() && manifest.isFile()) {
+            try (InputStream inputStream = new FileInputStream(manifest)) {
+                if (SerializeUtils.deserializeObjectByKryo(inputStream) == null) {
+                    log.warn("Failed to deserialize MANIFEST.BIN, please check if different versions of ODC or "
+                            + "ob-loader-dumper were used between export and import.");
+                }
+            }
             parameter.setFileSuffix(DataFormat.CSV.getDefaultFileSuffix());
-        } else {
-            parameter.setFileSuffix(DataFormat.SQL.getDefaultFileSuffix());
         }
+
+        parameter.setFileSuffix(DataFormat.SQL.getDefaultFileSuffix());
 
     }
 
@@ -145,21 +135,21 @@ public class LoadParameterFactory extends BaseParameterFactory<LoadParameter> {
         }
         DataTransferFormat format = transferConfig.getDataTransferFormat();
         if (DataTransferFormat.SQL.equals(format)) {
-            if (transferConfig.isNotObLoaderDumperCompatible()) {
+            if (transferConfig.isCompressed()) {
+                parameter.setDataFormat(DataFormat.SQL);
+            } else {
                 parameter.setDataFormat(DataFormat.MIX);
                 parameter.setFileSuffix(DataFormat.MIX.getDefaultFileSuffix());
-            } else {
-                parameter.setDataFormat(DataFormat.SQL);
             }
-            parameter.setExternal(transferConfig.isNotObLoaderDumperCompatible());
+            parameter.setExternal(!transferConfig.isCompressed());
         } else if (DataTransferFormat.CSV.equals(format)) {
             parameter.setDataFormat(DataFormat.CSV);
-            parameter.setExternal(transferConfig.isNotObLoaderDumperCompatible());
+            parameter.setExternal(!transferConfig.isCompressed());
         }
     }
 
     private boolean isExternalCsv(DataTransferConfig config) {
-        return DataTransferFormat.CSV == config.getDataTransferFormat() && config.isNotObLoaderDumperCompatible();
+        return DataTransferFormat.CSV == config.getDataTransferFormat() && !transferConfig.isCompressed();
     }
 
     private void setCsvMappings(LoadParameter parameter, DataTransferConfig transferConfig) {

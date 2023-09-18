@@ -18,18 +18,18 @@ package com.oceanbase.odc.plugin.task.api.datatransfer.model;
 
 public enum DataTransferFormat {
 
-        SQL(".sql"),
-        CSV(".csv"),
-        EXCEL(".xlsx");
+    SQL(".sql"),
+    CSV(".csv"),
+    EXCEL(".xlsx");
 
 
-        private final String extension;
+    private final String extension;
 
-        public String getExtension() {
-            return this.extension;
-        }
-
-        DataTransferFormat(String extension) {
-            this.extension = extension;
-        }
+    public String getExtension() {
+        return this.extension;
     }
+
+    DataTransferFormat(String extension) {
+        this.extension = extension;
+    }
+}

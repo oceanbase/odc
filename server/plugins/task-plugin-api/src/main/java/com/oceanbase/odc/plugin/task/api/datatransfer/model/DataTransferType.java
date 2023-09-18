@@ -17,6 +17,6 @@
 package com.oceanbase.odc.plugin.task.api.datatransfer.model;
 
 public enum DataTransferType {
-        IMPORT,
-        EXPORT
-    }
+    IMPORT,
+    EXPORT
+}

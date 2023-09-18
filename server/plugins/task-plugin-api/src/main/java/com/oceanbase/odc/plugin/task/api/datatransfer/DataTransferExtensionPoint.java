@@ -16,10 +16,12 @@
 
 package com.oceanbase.odc.plugin.task.api.datatransfer;
 
+import org.pf4j.ExtensionPoint;
+
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
 
-public interface DataTransferExtensionPoint {
+public interface DataTransferExtensionPoint extends ExtensionPoint {
 
-    void transfer(DataTransferConfig config);
+    DataTransferTask build(DataTransferConfig config) throws Exception;
 
 }

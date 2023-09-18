@@ -74,7 +74,7 @@ import com.oceanbase.odc.service.datatransfer.dumper.DumperOutput;
 import com.oceanbase.odc.service.datatransfer.dumper.SchemaFile;
 import com.oceanbase.odc.service.datatransfer.model.DataTransferParameter;
 import com.oceanbase.odc.service.datatransfer.model.UploadFileResult;
-import com.oceanbase.odc.service.datatransfer.task.DataTransferTaskContext;
+import com.oceanbase.odc.service.datatransfer.task.ObLoaderDumperContext;
 import com.oceanbase.odc.service.session.factory.DruidDataSourceFactory;
 import com.oceanbase.tools.loaddump.common.enums.DataFormat;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
@@ -121,7 +121,7 @@ public class DataTransferServiceTest extends ServiceTestEnv {
 
     @Test
     public void create_dumpSchemaAndDataForOracleMode_bothSchemaAndDataDumped() throws Exception {
-        DataTransferTaskContext context = dataTransferService.create(BUCKET, getOracleDumpConfig(true, true));
+        ObLoaderDumperContext context = dataTransferService.create(BUCKET, getOracleDumpConfig(true, true));
         Assert.assertNotNull(context.get(10, TimeUnit.SECONDS));
 
         DumperOutput dumperOutput = new DumperOutput(getDumpFile());
@@ -132,7 +132,7 @@ public class DataTransferServiceTest extends ServiceTestEnv {
 
     @Test
     public void create_dumpSchemaForOracleMode_onlySchemaDumped() throws Exception {
-        DataTransferTaskContext context = dataTransferService.create(BUCKET, getOracleDumpConfig(false, true));
+        ObLoaderDumperContext context = dataTransferService.create(BUCKET, getOracleDumpConfig(false, true));
         Assert.assertNotNull(context.get(10, TimeUnit.SECONDS));
 
         DumperOutput dumperOutput = new DumperOutput(getDumpFile());
@@ -145,7 +145,7 @@ public class DataTransferServiceTest extends ServiceTestEnv {
     public void create_dumpSchemaForOracleMode_onlySchemaDumped_mergeSchemaFiles() throws Exception {
         DataTransferParameter config = getOracleDumpConfig(false, true);
         config.setMergeSchemaFiles(true);
-        DataTransferTaskContext context = dataTransferService.create(BUCKET, config);
+        ObLoaderDumperContext context = dataTransferService.create(BUCKET, config);
         Assert.assertNotNull(context.get(10, TimeUnit.SECONDS));
 
         File target = new File(fileManager
@@ -156,7 +156,7 @@ public class DataTransferServiceTest extends ServiceTestEnv {
 
     @Test
     public void create_dumpDataForOracleMode_onlyDataDumped() throws Exception {
-        DataTransferTaskContext context = dataTransferService.create(BUCKET, getOracleDumpConfig(true, false));
+        ObLoaderDumperContext context = dataTransferService.create(BUCKET, getOracleDumpConfig(true, false));
         Assert.assertNotNull(context.get(10, TimeUnit.SECONDS));
 
         DumperOutput dumperOutput = new DumperOutput(getDumpFile());
@@ -167,7 +167,7 @@ public class DataTransferServiceTest extends ServiceTestEnv {
 
     @Test
     public void create_dumpSchemaAndDataForMysqlMode_bothSchemaAndDataDumped() throws Exception {
-        DataTransferTaskContext context = dataTransferService.create(BUCKET, getMysqlDumpConfig(true, true));
+        ObLoaderDumperContext context = dataTransferService.create(BUCKET, getMysqlDumpConfig(true, true));
         Assert.assertNotNull(context.get(10, TimeUnit.SECONDS));
 
         DumperOutput dumperOutput = new DumperOutput(getDumpFile());
@@ -178,7 +178,7 @@ public class DataTransferServiceTest extends ServiceTestEnv {
 
     @Test
     public void create_dumpSchemaForMysqlMode_onlySchemaDumped() throws Exception {
-        DataTransferTaskContext context = dataTransferService.create(BUCKET, getMysqlDumpConfig(false, true));
+        ObLoaderDumperContext context = dataTransferService.create(BUCKET, getMysqlDumpConfig(false, true));
         Assert.assertNotNull(context.get(10, TimeUnit.SECONDS));
 
         DumperOutput dumperOutput = new DumperOutput(getDumpFile());
@@ -189,7 +189,7 @@ public class DataTransferServiceTest extends ServiceTestEnv {
 
     @Test
     public void create_dumpDataForMysqlMode_onlyDataDumped() throws Exception {
-        DataTransferTaskContext context = dataTransferService.create(BUCKET, getMysqlDumpConfig(true, false));
+        ObLoaderDumperContext context = dataTransferService.create(BUCKET, getMysqlDumpConfig(true, false));
         Assert.assertNotNull(context.get(10, TimeUnit.SECONDS));
 
         DumperOutput dumperOutput = new DumperOutput(getDumpFile());
@@ -203,7 +203,7 @@ public class DataTransferServiceTest extends ServiceTestEnv {
         File dumpFile = dumpSchemaAndDataForLoad(DialectType.OB_ORACLE);
         assertOracleModeTableNotExists();
 
-        DataTransferTaskContext context = dataTransferService.create(BUCKET,
+        ObLoaderDumperContext context = dataTransferService.create(BUCKET,
                 getOracleLoadConfig(Collections.singletonList(dumpFile.getAbsolutePath()), false, true, true));
         Assert.assertNotNull(context.get(10, TimeUnit.SECONDS));
         assertOracleModeTableExists();
@@ -215,7 +215,7 @@ public class DataTransferServiceTest extends ServiceTestEnv {
         File dumpFile = dumpSchemaAndDataForLoad(DialectType.OB_ORACLE);
         assertOracleModeTableNotExists();
 
-        DataTransferTaskContext context = dataTransferService.create(BUCKET,
+        ObLoaderDumperContext context = dataTransferService.create(BUCKET,
                 getOracleLoadConfig(Collections.singletonList(dumpFile.getAbsolutePath()), false, false, true));
         Assert.assertNotNull(context.get(10, TimeUnit.SECONDS));
         assertOracleModeTableExists();
@@ -227,7 +227,7 @@ public class DataTransferServiceTest extends ServiceTestEnv {
         File dumpFile = dumpSchemaAndDataForLoad(DialectType.OB_MYSQL);
         assertMysqlModeTableNotExists();
 
-        DataTransferTaskContext context = dataTransferService.create(BUCKET,
+        ObLoaderDumperContext context = dataTransferService.create(BUCKET,
                 getMysqlLoadConfig(Collections.singletonList(dumpFile.getAbsolutePath()), false, true, true));
         Assert.assertNotNull(context.get(10, TimeUnit.SECONDS));
         assertMysqlModeTableExists();
@@ -239,7 +239,7 @@ public class DataTransferServiceTest extends ServiceTestEnv {
         File dumpFile = dumpSchemaAndDataForLoad(DialectType.OB_MYSQL);
         assertMysqlModeTableNotExists();
 
-        DataTransferTaskContext context = dataTransferService.create(BUCKET,
+        ObLoaderDumperContext context = dataTransferService.create(BUCKET,
                 getMysqlLoadConfig(Collections.singletonList(dumpFile.getAbsolutePath()), false, false, true));
         Assert.assertNotNull(context.get(10, TimeUnit.SECONDS));
         assertMysqlModeTableExists();
@@ -251,7 +251,7 @@ public class DataTransferServiceTest extends ServiceTestEnv {
         String sqlScript = "INSERT INTO " + TEST_TABLE_NAME + " VALUES ('3', 'Marry'),('4', 'Tom');";
         File target = copyFile(new ByteArrayInputStream(sqlScript.getBytes()), "sql");
 
-        DataTransferTaskContext context = dataTransferService.create(BUCKET,
+        ObLoaderDumperContext context = dataTransferService.create(BUCKET,
                 getOracleLoadConfig(Collections.singletonList(target.getAbsolutePath()), true, true, false));
         Assert.assertNotNull(context.get(10, TimeUnit.SECONDS));
         assertOracleModeTableExists();
@@ -263,7 +263,7 @@ public class DataTransferServiceTest extends ServiceTestEnv {
         String sqlScript = "INSERT INTO " + TEST_TABLE_NAME + " VALUES ('3', 'Marry'),('4', 'Tom');";
         File target = copyFile(new ByteArrayInputStream(sqlScript.getBytes()), "sql");
 
-        DataTransferTaskContext context = dataTransferService.create(BUCKET,
+        ObLoaderDumperContext context = dataTransferService.create(BUCKET,
                 getMysqlLoadConfig(Collections.singletonList(target.getAbsolutePath()), true, true, false));
         Assert.assertNotNull(context.get(10, TimeUnit.SECONDS));
         assertMysqlModeTableExists();
@@ -274,7 +274,7 @@ public class DataTransferServiceTest extends ServiceTestEnv {
     public void create_validSysUserExists_nonCloudModeUsed() throws Exception {
         DataTransferParameter config = getOracleDumpConfig(true, true);
         config.setSysUser(oracleConnConfig.getSysTenantUsername());
-        DataTransferTaskContext context = dataTransferService.create(BUCKET, config);
+        ObLoaderDumperContext context = dataTransferService.create(BUCKET, config);
         Assert.assertNotNull(context.get(10, TimeUnit.SECONDS));
     }
 
@@ -283,7 +283,7 @@ public class DataTransferServiceTest extends ServiceTestEnv {
         DataTransferParameter config = getOracleDumpConfig(true, true);
         config.setSysUser(oracleConnConfig.getSysTenantUsername());
         config.setSysPassword(oracleConnConfig.getSysTenantPassword());
-        DataTransferTaskContext context = dataTransferService.create(BUCKET, config);
+        ObLoaderDumperContext context = dataTransferService.create(BUCKET, config);
         Assert.assertNotNull(context.get(10, TimeUnit.SECONDS));
     }
 
@@ -292,7 +292,7 @@ public class DataTransferServiceTest extends ServiceTestEnv {
         DataTransferParameter config = getOracleDumpConfig(true, true);
         config.setSysUser(oracleConnConfig.getSysTenantUsername());
         config.setSysPassword("abcde");
-        DataTransferTaskContext context = dataTransferService.create(BUCKET, config);
+        ObLoaderDumperContext context = dataTransferService.create(BUCKET, config);
         Assert.assertNotNull(context.get(10, TimeUnit.SECONDS));
     }
 
@@ -380,7 +380,7 @@ public class DataTransferServiceTest extends ServiceTestEnv {
         } else {
             config = getOracleDumpConfig(true, true);
         }
-        DataTransferTaskContext context = dataTransferService.create(BUCKET, config);
+        ObLoaderDumperContext context = dataTransferService.create(BUCKET, config);
         Assert.assertNotNull(context.get(10, TimeUnit.SECONDS));
         File dumpFile = getDumpFile();
         File returnVal = copyFile(new FileInputStream(dumpFile), "zip");

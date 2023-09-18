@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.datasecurity;
+package com.oceanbase.odc.plugin.task.obmysql.datatransfer.export;
 
 import com.oceanbase.odc.core.datamasking.masker.AbstractDataMasker;
 import com.oceanbase.odc.core.datamasking.masker.ValueMeta;

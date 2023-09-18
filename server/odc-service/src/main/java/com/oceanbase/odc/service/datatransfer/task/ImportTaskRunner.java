@@ -23,8 +23,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FileUtils;
@@ -35,12 +37,15 @@ import com.oceanbase.odc.common.lang.Holder;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.plugin.task.api.datatransfer.DataTransferTask;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferFormat;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferObject;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferType;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.datatransfer.DataTransferAdapter;
 import com.oceanbase.odc.service.datatransfer.LocalFileManager;
+import com.oceanbase.odc.service.datatransfer.dumper.DumpDBObject;
 import com.oceanbase.odc.service.datatransfer.dumper.DumperOutput;
 import com.oceanbase.odc.service.datatransfer.model.DataTransferParameter;
+import com.oceanbase.odc.service.datatransfer.model.DataTransferProperties;
 import com.oceanbase.odc.service.flow.task.model.DataTransferTaskResult;
 
 import lombok.extern.slf4j.Slf4j;
@@ -49,23 +54,41 @@ import lombok.extern.slf4j.Slf4j;
 public class ImportTaskRunner extends BaseTransferTaskRunner {
 
     public ImportTaskRunner(DataTransferParameter parameter, Holder<DataTransferTask> jobHolder,
-            DataTransferAdapter adapter) {
-        super(parameter, jobHolder, adapter);
+            DataTransferAdapter adapter, DataTransferProperties transferProperties) {
+        super(parameter, jobHolder, adapter, transferProperties);
     }
 
     @Override
     public void preHandle() throws Exception {
+        if (parameter.getTransferType() != DataTransferType.IMPORT) {
+            return;
+        }
         /*
          * move import files
          */
-        if (parameter.getTransferType() == DataTransferType.IMPORT) {
-            List<String> importFileNames = parameter.getImportFileName();
-            if (parameter.isCompressed()) {
-                copyImportZip(importFileNames, parameter.getWorkingDir());
-            } else {
-                copyImportScripts(importFileNames, parameter.getDataTransferFormat(), parameter.getWorkingDir());
+        List<String> importFileNames = parameter.getImportFileName();
+        if (parameter.isCompressed()) {
+            DumperOutput dumperOutput = copyImportZip(importFileNames, parameter.getWorkingDir());
+            /*
+             * set whiteList for ob-loader
+             */
+            List<DataTransferObject> objects = new ArrayList<>();
+            List<DumpDBObject> dumpDbObjects = dumperOutput.getDumpDbObjects();
+            for (DumpDBObject dbObject : dumpDbObjects) {
+                objects.addAll(dbObject.getOutputFiles().stream().map(abstractOutputFile -> {
+                    DataTransferObject transferObject = new DataTransferObject();
+                    transferObject.setDbObjectType(dbObject.getObjectType().getName());
+                    transferObject.setObjectName(abstractOutputFile.getObjectName());
+                    return transferObject;
+                }).collect(Collectors.toList()));
             }
+            parameter.setExportDbObjects(objects);
+
+        } else {
+            copyImportScripts(importFileNames, parameter.getDataTransferFormat(), parameter.getWorkingDir());
         }
+
+        super.preHandle();
     }
 
     @Override
@@ -111,7 +134,7 @@ public class ImportTaskRunner extends BaseTransferTaskRunner {
         }
     }
 
-    private void copyImportZip(List<String> fileNames, File destDir) throws IOException {
+    private DumperOutput copyImportZip(List<String> fileNames, File destDir) throws IOException {
         if (fileNames == null || fileNames.size() != 1) {
             log.warn("Single zip file is available, importFileNames={}", fileNames);
             throw new IllegalArgumentException("Single zip file is available");
@@ -125,5 +148,6 @@ public class ImportTaskRunner extends BaseTransferTaskRunner {
         DumperOutput dumperOutput = new DumperOutput(from);
         dumperOutput.toFolder(dest);
         log.info("Unzip file to working dir, from={}, dest={}", from.getAbsolutePath(), dest.getAbsolutePath());
+        return dumperOutput;
     }
 }

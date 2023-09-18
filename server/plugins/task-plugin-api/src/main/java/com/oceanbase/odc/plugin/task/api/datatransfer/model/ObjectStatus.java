@@ -16,8 +16,6 @@
 
 package com.oceanbase.odc.plugin.task.api.datatransfer.model;
 
-import java.util.concurrent.atomic.AtomicLong;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import lombok.Data;
@@ -28,10 +26,14 @@ public class ObjectStatus {
     private String schema;
     private String type;
     private String name;
-    private AtomicLong total;
-    private AtomicLong count;
+    private Long total;
+    private Long count;
     private Status status;
-    private String exportPath;
+    /**
+     * for export only, internal usage
+     */
+    @JsonIgnore
+    private String[] exportPaths;
 
     @JsonIgnore
     public String getSummary() {

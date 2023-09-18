@@ -19,18 +19,15 @@ import java.io.File;
 import java.io.IOException;
 
 import com.oceanbase.odc.service.datatransfer.model.DataTransferParameter;
-import com.oceanbase.odc.service.datatransfer.task.DataTransferTaskContext;
 import com.oceanbase.odc.service.flow.task.model.DataTransferTaskResult;
-import com.oceanbase.tools.loaddump.common.model.BaseParameter;
 
 public interface DataTransferAdapter {
 
     Long getMaxDumpSizeBytes();
 
-    File preHandleWorkDir(DataTransferParameter transferConfig,
-            String bucket, File workDir) throws IOException;
+    File preHandleWorkDir(DataTransferParameter parameter, String bucket, File workDir) throws IOException;
 
-    void afterHandle(BaseParameter parameter, DataTransferTaskContext context,
-            DataTransferTaskResult result, File exportFile) throws IOException;
+    void afterHandle(DataTransferParameter parameter, DataTransferTaskResult result, File exportFile)
+            throws IOException;
 
 }

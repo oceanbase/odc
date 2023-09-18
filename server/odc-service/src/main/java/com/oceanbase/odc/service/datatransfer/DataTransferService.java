@@ -16,20 +16,15 @@
 package com.oceanbase.odc.service.datatransfer;
 
 import static com.oceanbase.odc.core.shared.constant.OdcConstants.DEFAULT_ZERO_DATE_TIME_BEHAVIOR;
-import static com.oceanbase.odc.service.datatransfer.model.DataTransferConstants.LOG_PATH_NAME;
-import static com.oceanbase.tools.loaddump.common.constants.Constants.JdbcConsts.JDBC_URL_USE_SERVER_PREP_STMTS;
-import static com.oceanbase.tools.loaddump.common.constants.Constants.JdbcConsts.JDBC_URL_ZERO_DATETIME_BEHAVIOR;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.nio.charset.Charset;
-import java.util.Arrays;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -38,13 +33,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.Future;
 
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.Validate;
-import org.apache.logging.log4j.ThreadContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -55,8 +48,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.oceanbase.odc.common.lang.Holder;
 import com.oceanbase.odc.common.util.VersionUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
+import com.oceanbase.odc.core.shared.constant.ConnectionAccountType;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
@@ -64,29 +59,32 @@ import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.core.shared.exception.AccessDeniedException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
-import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferFormat;
+import com.oceanbase.odc.plugin.connect.api.ConnectionExtensionPoint;
+import com.oceanbase.odc.plugin.task.api.datatransfer.DataTransferTask;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.CsvColumnMapping;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.CsvConfig;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig.ConnectionInfo;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferType;
 import com.oceanbase.odc.service.connection.ConnectionService;
+import com.oceanbase.odc.service.connection.ConnectionTesting;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.connection.model.TestConnectionReq;
 import com.oceanbase.odc.service.datasecurity.DataMaskingService;
 import com.oceanbase.odc.service.datatransfer.dumper.DumperOutput;
 import com.oceanbase.odc.service.datatransfer.loader.ThirdPartyOutputConverter;
 import com.oceanbase.odc.service.datatransfer.model.DataTransferParameter;
 import com.oceanbase.odc.service.datatransfer.model.DataTransferProperties;
 import com.oceanbase.odc.service.datatransfer.model.UploadFileResult;
-import com.oceanbase.odc.service.datatransfer.task.BaseDataTransferTask;
+import com.oceanbase.odc.service.datatransfer.task.BaseTransferTaskRunner;
 import com.oceanbase.odc.service.datatransfer.task.DataTransferTaskContext;
-import com.oceanbase.odc.service.datatransfer.task.ExportDataTransferTask;
-import com.oceanbase.odc.service.datatransfer.task.ImportDataTransferTask;
+import com.oceanbase.odc.service.datatransfer.task.ExportTaskRunner;
+import com.oceanbase.odc.service.datatransfer.task.ImportTaskRunner;
+import com.oceanbase.odc.service.flow.task.model.DataTransferTaskResult;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
+import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
-import com.oceanbase.tools.loaddump.common.model.DumpParameter;
-import com.oceanbase.tools.loaddump.common.model.LoadParameter;
-import com.oceanbase.tools.loaddump.manager.session.SessionProperties;
 import com.oceanbase.tools.loaddump.parser.record.Record;
 import com.oceanbase.tools.loaddump.parser.record.csv.CsvFormat;
 import com.oceanbase.tools.loaddump.parser.record.csv.CsvRecordParser;
@@ -128,81 +126,44 @@ public class DataTransferService {
     private DatabaseService databaseService;
     @Autowired
     private AuthenticationFacade authenticationFacade;
+    @Autowired
+    private ConnectionTesting connectionTesting;
 
     /**
      * create a data transfer task
      *
      * @param bucket This parameter can be any value that can mark the task, eg. taskId
-     * @param transferConfig config of the data transfer task
+     * @param parameter config of the data transfer task
      * @return control handle of the task
      */
-    public DataTransferTaskContext create(@NonNull String bucket,
-            @NonNull DataTransferParameter transferConfig) throws Exception {
-        File workingDir = fileManager.getWorkingDir(TaskType.EXPORT, bucket);
-        DataTransferType transferType = transferConfig.getTransferType();
-        workingDir = this.dataTransferAdapter.preHandleWorkDir(transferConfig, bucket, workingDir);
-        // 目标目录可能已经存在且其中可能存留有导入导出历史脏数据，这里需要清理避免潜在问题，且为了影响最小化，只清理导入导出相关的目录
-        String parent = new File(workingDir, "data").getAbsolutePath();
-        Arrays.stream(ObjectType.values()).map(ObjectType::getName).forEach(objectName -> {
-            File target = new File(parent, objectName);
-            if (target.exists() && target.isDirectory()) {
-                boolean deleteRes = FileUtils.deleteQuietly(target);
-                log.info("Delete object directory, dir={}, result={}", target.getAbsolutePath(), deleteRes);
-            }
-        });
-        File logDir = new File(taskLogDir + "/data-transfer/" + bucket);
-        if (!logDir.exists()) {
-            FileUtils.forceMkdir(logDir);
+    public DataTransferTaskContext create(@NonNull String bucket, DataTransferParameter parameter)
+            throws Exception {
+        // set log path
+        parameter.setLogPath(Paths.get(taskLogDir, "data-transfer", bucket).toString());
+        // clear working directory and create bucket for client mode
+        File workingDir = dataTransferAdapter.preHandleWorkDir(parameter, bucket,
+                fileManager.getWorkingDir(TaskType.EXPORT, bucket));
+        if (!workingDir.exists() || !workingDir.isDirectory()) {
+            throw new IllegalStateException("Failed to create working dir, " + workingDir.getAbsolutePath());
         }
+        parameter.setWorkingDir(workingDir);
+        // set sys tenant account for ob-loader-dumper
+        injectSysConfig(parameter);
+        // set jdbc url
+        setJdbcUrl(parameter);
 
-        ThreadContext.put(LOG_PATH_NAME, logDir.toString());
-        setSessionProperties();
-
-        try {
-            if (!workingDir.exists() || !workingDir.isDirectory()) {
-                throw new IllegalStateException("Failed to create working dir, " + workingDir.getAbsolutePath());
-            }
-
-            boolean transferData = transferConfig.isTransferData();
-            boolean transferSchema = transferConfig.isTransferDDL();
-            if (transferType == DataTransferType.IMPORT) {
-                List<String> importFileNames = transferConfig.getImportFileName();
-                if (transferConfig.isNotObLoaderDumperCompatible()) {
-                    copyImportScripts(importFileNames, transferConfig.getDataTransferFormat(), workingDir);
-                } else {
-                    copyImportZip(importFileNames, workingDir);
-                }
-                BaseParameterFactory<LoadParameter> factory =
-                        new LoadParameterFactory(workingDir, logDir, transferConfig.getConnectionConfig());
-                LoadParameter parameter = factory.generate(transferConfig);
-                ImportDataTransferTask transferTask;
-                try {
-                    transferTask = new ImportDataTransferTask(parameter, transferData, transferSchema);
-                } catch (Exception e) {
-                    logger.warn("Failed to init load task, reason : {}", e.getMessage(), e);
-                    throw e;
-                }
-                return BaseDataTransferTask.start(executor, transferTask);
-            } else if (transferType == DataTransferType.EXPORT) {
-                BaseParameterFactory<DumpParameter> factory = new DumpParameterFactory(workingDir, logDir,
-                        transferConfig.getConnectionConfig(), dataTransferAdapter.getMaxDumpSizeBytes(),
-                        dataTransferProperties.getCursorFetchSize(), maskingService);
-                DumpParameter parameter = factory.generate(transferConfig);
-                ExportDataTransferTask transferTask;
-                try {
-                    transferTask = new ExportDataTransferTask(
-                            parameter, transferData, transferSchema, dataTransferAdapter);
-                } catch (Exception e) {
-                    logger.warn("Failed to init dump task, reason : {}", e.getMessage(), e);
-                    throw e;
-                }
-                transferTask.setMergeSchemaFiles(transferConfig.isMergeSchemaFiles());
-                return BaseDataTransferTask.start(executor, transferTask);
-            }
-            throw new IllegalArgumentException("Illegal transfer type " + transferType);
-        } finally {
-            ThreadContext.clearAll();
+        // task placeholder
+        Holder<DataTransferTask> taskHolder = new Holder<>();
+        BaseTransferTaskRunner runner;
+        if (parameter.getTransferType() == DataTransferType.EXPORT) {
+            runner = new ExportTaskRunner(parameter, taskHolder, dataTransferAdapter, maskingService,
+                    dataTransferProperties);
+        } else {
+            runner = new ImportTaskRunner(parameter, taskHolder, dataTransferAdapter, dataTransferProperties);
         }
+        Future<DataTransferTaskResult> future = executor.submit(runner);
+
+        return new DataTransferTaskContext(future, taskHolder);
     }
 
     public UploadFileResult getMetaInfo(@NonNull String fileName) throws IOException {
@@ -347,50 +308,77 @@ public class DataTransferService {
     }
 
 
-    private void copyImportScripts(List<String> fileNames, DataTransferFormat format, File destDir)
-            throws IOException {
-        Validate.isTrue(CollectionUtils.isNotEmpty(fileNames), "No script found");
-        Validate.notNull(format, "DataTransferFormat can not be null");
-        if (DataTransferFormat.CSV.equals(format) && fileNames.size() > 1) {
-            log.warn("Multiple files for CSV format is invalid, importFileNames={}", fileNames);
-            logger.warn("Multiple files for CSV format is invalid, importFileNames={}", fileNames);
-            throw new IllegalArgumentException("Multiple files isn't accepted for CSV format");
+    private void injectSysConfig(DataTransferParameter parameter) {
+        if (StringUtils.isBlank(parameter.getSysUser())) {
+            log.info("No Sys user setting");
+            return;
         }
-        for (String fileName : fileNames) {
-            Optional<File> importFile =
-                    fileManager.findByName(TaskType.IMPORT, LocalFileManager.UPLOAD_BUCKET, fileName);
-            File from = importFile.orElseThrow(() -> new FileNotFoundException("File not found, " + fileName));
-            File dest = new File(destDir.getAbsolutePath() + File.separator + from.getName());
-            try (InputStream inputStream = from.toURI().toURL().openStream();
-                    OutputStream outputStream = new FileOutputStream(dest)) {
-                IOUtils.copy(inputStream, outputStream);
+        ConnectionConfig connectionConfig = parameter.getConnectionConfig();
+        String sysUserInMeta = connectionConfig.getSysTenantUsername();
+        String sysPasswdInMeta = connectionConfig.getSysTenantPassword();
+        String sysUserInConfig = parameter.getSysUser();
+        String sysPasswdInConfig = parameter.getSysPassword();
+        if (sysPasswdInConfig == null) {
+            if (sysPasswdInMeta == null) {
+                log.info("No password for sys, connectionId={}", connectionConfig.getId());
+                return;
             }
-            log.info("Copy script to working dir, from={}, dest={}", from.getAbsolutePath(), dest.getAbsolutePath());
+            Validate.isTrue(sysUserInConfig.equals(sysUserInMeta), "Sys user is illegal");
+            if (!testSysTenantAccount(connectionConfig)) {
+                log.warn("Access denied, Sys tenant account and password error, connectionId={}, sysUserInMeta={}",
+                    connectionConfig.getId(), sysUserInMeta);
+                throw new IllegalStateException("AccessDenied, " + sysUserInMeta);
+            }
+            return;
+        }
+        parameter.getConnectionInfo().setSysTenantUsername(sysUserInConfig);
+        parameter.getConnectionInfo().setSysTenantPassword(sysPasswdInConfig);
+        if (testSysTenantAccount(connectionConfig)) {
+            log.info("Sys user has been approved, connectionId={}", connectionConfig.getId());
+            return;
+        }
+        log.info("Access denied, Sys tenant account and password error, connectionId={}, sysUserInConfig={}",
+            connectionConfig.getId(), sysUserInConfig);
+        parameter.getConnectionInfo().setSysTenantUsername(null);
+        parameter.getConnectionInfo().setSysTenantPassword(null);
+    }
+
+    private boolean testSysTenantAccount(ConnectionConfig connectionConfig) {
+        TestConnectionReq req = TestConnectionReq.fromConnection(connectionConfig, ConnectionAccountType.SYS_READ);
+        try {
+            return connectionTesting.test(req).isActive();
+        } catch (Exception e) {
+            // eat exp
+            return false;
         }
     }
 
-    private void copyImportZip(List<String> fileNames, File destDir) throws IOException {
-        if (fileNames == null || fileNames.size() != 1) {
-            log.warn("Single zip file is available, importFileNames={}", fileNames);
-            logger.warn("Single zip file is available, importFileNames={}", fileNames);
-            throw new IllegalArgumentException("Single zip file is available");
+    private void setJdbcUrl(DataTransferParameter transferParameter) {
+        ConnectionInfo connectionConfig = transferParameter.getConnectionInfo();
+
+        Map<String, String> jdbcUrlParams = new HashMap<>();
+        jdbcUrlParams.put("maxAllowedPacket", "64000000");
+        jdbcUrlParams.put("allowMultiQueries", "true");
+        jdbcUrlParams.put("connectTimeout", "5000");
+        jdbcUrlParams.put("zeroDateTimeBehavior", DEFAULT_ZERO_DATE_TIME_BEHAVIOR);
+        jdbcUrlParams.put("noDatetimeStringSync", "true");
+        jdbcUrlParams.put("useSSL", "false");
+        jdbcUrlParams.put("allowLoadLocalInfile", "false");
+        jdbcUrlParams.put("jdbcCompliantTruncation", "false");
+        jdbcUrlParams.put("sendConnectionAttributes", "false");
+
+        if (StringUtils.isNotBlank(connectionConfig.getProxyHost())
+            && Objects.nonNull(connectionConfig.getProxyPort())) {
+            jdbcUrlParams.put("socksProxyHost", connectionConfig.getProxyHost());
+            jdbcUrlParams.put("socksProxyPort", connectionConfig.getProxyPort() + "");
         }
-        String fileName = fileNames.get(0);
-        Optional<File> uploadFile = fileManager.findByName(TaskType.IMPORT, LocalFileManager.UPLOAD_BUCKET, fileName);
-        File from = uploadFile.orElseThrow(() -> new FileNotFoundException("File not found, " + fileName));
-        File dest = new File(destDir.getAbsolutePath() + File.separator + "data");
-        FileUtils.forceMkdir(dest);
-        DumperOutput dumperOutput = new DumperOutput(from);
-        dumperOutput.toFolder(dest);
-        log.info("Unzip file to working dir, from={}, dest={}", from.getAbsolutePath(), dest.getAbsolutePath());
+        ConnectionExtensionPoint connectionExtension = ConnectionPluginUtil.getConnectionExtension(
+            connectionConfig.getConnectType().getDialectType());
+        connectionConfig.setJdbcUrl(connectionExtension.generateJdbcUrl(connectionConfig.getHost(),
+            connectionConfig.getPort(), transferParameter.getSchemaName(), jdbcUrlParams));
     }
 
     private String truncateValue(String val) {
         return val.substring(0, Math.min(val.length(), PREVIEW_PRESERVE_LENGTH));
-    }
-
-    private void setSessionProperties() {
-        SessionProperties.setString(JDBC_URL_USE_SERVER_PREP_STMTS, dataTransferProperties.getUseServerPrepStmts());
-        SessionProperties.setString(JDBC_URL_ZERO_DATETIME_BEHAVIOR, DEFAULT_ZERO_DATE_TIME_BEHAVIOR);
     }
 }

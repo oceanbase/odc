@@ -16,24 +16,29 @@
 
 package com.oceanbase.odc.plugin.task.api.datatransfer.model;
 
+import java.io.File;
 import java.util.List;
+import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import com.oceanbase.odc.common.json.SensitiveInput;
+import com.oceanbase.odc.common.util.StringUtils;
+import com.oceanbase.odc.core.datamasking.masker.AbstractDataMasker;
+import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
+import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.core.shared.model.TableIdentity;
 
 import lombok.Data;
 import lombok.ToString;
 
 @Data
-@ToString(exclude = {"sysPassword"})
+@ToString(exclude = {"sysPassword", "connectionInfo"})
 public class DataTransferConfig {
 
     private String schemaName;
-    @JsonIgnore
-    private SimpleConnectionConfig connectionConfig;
     private DataTransferType transferType;
     private DataTransferFormat dataTransferFormat;
     private boolean transferData;
@@ -58,25 +63,36 @@ public class DataTransferConfig {
     /**
      * only for ob-loader-dumper
      */
-    private boolean notObLoaderDumperCompatible;
     private String sysUser;
     @SensitiveInput
     @JsonProperty(access = Access.WRITE_ONLY)
     private String sysPassword;
+    /**
+     * for internal usage
+     */
+    @JsonIgnore
+    private ConnectionInfo connectionInfo;
+    @JsonIgnore
+    private File workingDir;
+    @JsonIgnore
+    private String logPath;
+    @JsonIgnore
+    private Map<TableIdentity, Map<String, AbstractDataMasker>> maskConfig;
+    @JsonIgnore
+    private String fileType;
+    @JsonIgnore
+    private Long maxDumpSizeBytes;
+    @JsonIgnore
+    private boolean usePrepStmts;
+    @JsonIgnore
+    private int cursorFetchSize;
 
-    public String getFileType() {
-        if (!this.notObLoaderDumperCompatible) {
-            return "ZIP";
-        }
-        return dataTransferFormat.name();
-    }
-
-    public void setFileType(String fileType) {
-        this.notObLoaderDumperCompatible = !"ZIP".equals(fileType);
+    public boolean isCompressed() {
+        return "ZIP".equals(fileType);
     }
 
     @Data
-    public static class SimpleConnectionConfig {
+    public static class ConnectionInfo {
         private String host;
         private Integer port;
         private String username;
@@ -89,6 +105,23 @@ public class DataTransferConfig {
         private String OBTenant;
         private String sysTenantUsername;
         private String sysTenantPassword;
+        private String jdbcUrl;
+
+        public String getUserNameForConnect() {
+            String username = ConnectionSessionUtil.getUserOrSchemaString(this.username, connectType.getDialectType());
+            if (DialectType.OB_ORACLE.equals(connectType.getDialectType())) {
+                username = "\"" + username + "\"";
+            }
+            if (StringUtils.isNotBlank(OBTenant)) {
+                username = username + "@" + OBTenant;
+            } else if (StringUtils.isNotBlank(tenant)) {
+                username = username + "@" + tenant;
+            }
+            if (StringUtils.isNotBlank(cluster)) {
+                username = username + "#" + cluster;
+            }
+            return username;
+        }
     }
 
 }

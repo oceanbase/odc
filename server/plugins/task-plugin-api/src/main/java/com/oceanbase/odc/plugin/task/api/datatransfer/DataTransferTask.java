@@ -20,7 +20,7 @@ import com.oceanbase.odc.plugin.task.api.datatransfer.model.TransferTaskStatus;
 
 public interface DataTransferTask {
 
-    void transfer() throws Exception;
+    TransferTaskStatus transfer() throws Exception;
 
     TransferTaskStatus getStatus();
 
