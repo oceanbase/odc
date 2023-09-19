@@ -164,6 +164,8 @@ public enum ErrorCodes implements ErrorCode {
     OscSqlTypeInconsistent,
     NoUniqueKeyExists,
     OscNotEnabled,
+    OscUnsupportedForeignKeyTable,
+    OscColumnNameInconsistent,
     OscDataCheckInconsistent,
     OmsDataCheckInconsistent,
     OmsGhanaOperateFailed,
