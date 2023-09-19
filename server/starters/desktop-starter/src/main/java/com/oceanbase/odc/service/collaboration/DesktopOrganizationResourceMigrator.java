@@ -19,5 +19,5 @@ package com.oceanbase.odc.service.collaboration;
 import org.springframework.context.annotation.Profile;
 
 @Profile("clientMode")
-public class DesktopOrganizationResourceMigrator extends DefaultOrganizationResourceMigrator{
+public class DesktopOrganizationResourceMigrator extends DefaultOrganizationResourceMigrator {
 }
