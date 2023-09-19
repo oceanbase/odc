@@ -840,6 +840,7 @@ public class FlowInstanceService {
         FlowTaskUtil.setTaskCreator(variables, authenticationFacade.currentUser());
         FlowTaskUtil.setTaskSubmitter(variables, JsonUtils.fromJson(taskEntity.getSubmitter(), ExecutorInfo.class));
         FlowTaskUtil.setRiskLevelDescriber(variables, riskLevelDescriber);
+        FlowTaskUtil.setCloudMainAccountId(variables, authenticationFacade.currentUser().getUid());
     }
 
     private TemplateVariables buildTemplateVariables(CreateFlowInstanceReq flowInstanceReq, ConnectionConfig config) {

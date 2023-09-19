@@ -36,4 +36,6 @@ public class RuntimeTaskConstants {
     public static final String RISKLEVEL_DESCRIBER = "riskLevelDescriber";
     public static final String RISKLEVEL = "riskLevel";
     public static final String SUCCESS_CREATE_EXT_INS = "successCreateExternalApprovalInstance";
+    public static final String CLOUD_MAIN_ACCOUNT_ID = "cloudMainAccountId";
+
 }
