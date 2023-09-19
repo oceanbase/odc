@@ -108,6 +108,7 @@ public class OnlineSchemaChangeValidator {
                 validateTableNameLength(tableName, connectionConfig.getDialectType());
                 validateOriginTableExists(database, tableName, session);
                 validateOldTableNotExists(database, tableName, session);
+                validateForeignKeyTable(database, tableName, session);
                 validateTableConstraints(database, tableName, session);
             }
         } finally {
@@ -170,6 +171,17 @@ public class OnlineSchemaChangeValidator {
         List<String> tables = accessor.showTablesLike(database, tableNameDescriptor.getRenamedTableNameUnWrapped());
         PreConditions.validNoDuplicated(ResourceType.OB_TABLE, "tableName",
                 tableNameDescriptor.getRenamedTableName(), () -> CollectionUtils.isNotEmpty(tables));
+    }
+
+    private void validateForeignKeyTable(String database, String tableName, ConnectionSession session) {
+        DBSchemaAccessor accessor = DBSchemaAccessors.create(session);
+        List<DBTableConstraint> constraints =
+                accessor.listTableConstraints(database, DdlUtils.getUnwrappedName(tableName));
+
+        if (constraints.stream().anyMatch(index -> index.getType() == DBConstraintType.FOREIGN_KEY)) {
+            throw new UnsupportedException(ErrorCodes.OscUnsupportedForeignKeyTable, new Object[] {tableName},
+                    "Unsupported foreign key table " + tableName);
+        }
     }
 
     private void validateTableConstraints(String database, String tableName, ConnectionSession session) {

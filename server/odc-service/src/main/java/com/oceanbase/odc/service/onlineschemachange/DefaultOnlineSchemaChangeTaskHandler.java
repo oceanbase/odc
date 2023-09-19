@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
 
@@ -49,6 +50,7 @@ import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.TaskErrorStrategy;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.core.shared.exception.OdcException;
+import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.core.sql.execute.SyncJdbcExecutor;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
@@ -82,6 +84,7 @@ import com.oceanbase.odc.service.schedule.model.JobType;
 import com.oceanbase.odc.service.schedule.model.QuartzKeyGenerator;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
+import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -170,7 +173,6 @@ public class DefaultOnlineSchemaChangeTaskHandler implements OnlineSchemaChangeT
                     valveContext.getTaskParameter().getDatabaseName());
             prepareSchema(valveContext.getParameter(), valveContext.getTaskParameter(),
                     connectionSession, scheduleTaskId);
-
             valveContext.setConnectionSession(connectionSession);
             valveContext.setLinkType(LinkType.OMS);
             preparePipelineMap.get(LinkType.OMS).invoke(valveContext);
@@ -403,6 +405,25 @@ public class DefaultOnlineSchemaChangeTaskHandler implements OnlineSchemaChangeT
                     JsonUtils.toJson(new OnlineSchemaChangeScheduleTaskResult(taskParam)));
         }
         log.info("Successfully created new table, ddl: {}", taskParam.getNewTableCreateDdl());
+        validateColumnDifferent(taskParam, session);
+    }
+
+    private void validateColumnDifferent(OnlineSchemaChangeScheduleTaskParameters taskParam,
+            ConnectionSession session) {
+        List<String> originTableColumns =
+                DBSchemaAccessors.create(session).listTableColumns(taskParam.getDatabaseName(),
+                        DdlUtils.getUnwrappedName(taskParam.getOriginTableNameUnwrapped())).stream()
+                        .map(DBTableColumn::getName).collect(Collectors.toList());
+
+        List<String> newTableColumns =
+                DBSchemaAccessors.create(session).listTableColumns(taskParam.getDatabaseName(),
+                        DdlUtils.getUnwrappedName(taskParam.getNewTableNameUnwrapped())).stream()
+                        .map(DBTableColumn::getName).collect(Collectors.toList());
+
+        if (!CollectionUtils.isEqualCollection(originTableColumns, newTableColumns)) {
+            throw new UnsupportedException(ErrorCodes.OscColumnNameInconsistent,
+                    null, "Column name of origin table is inconsistent with new table.");
+        }
     }
 
     private void dropNewTableIfExits(OnlineSchemaChangeScheduleTaskParameters taskParam, ConnectionSession session) {
