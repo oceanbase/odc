@@ -13,23 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.oceanbase.odc.service.datasecurity.model;
 
-import java.util.List;
+import com.oceanbase.odc.metadb.datasecurity.SensitiveColumnEntity;
 
-import lombok.Builder;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 /**
  * @author gaoda.xy
- * @date 2023/5/22 16:55
+ * @date 2023/9/14 10:33
  */
 @Data
-@Builder
-public class QuerySensitiveColumnParams {
-    private String fuzzyTableColumn;
-    private List<Long> databaseIds;
-    private List<Long> datasourceIds;
-    private List<Long> maskingAlgorithmIds;
-    private Boolean enabled;
+@EqualsAndHashCode
+@AllArgsConstructor
+public class SensitiveColumnMeta {
+    private Long databaseId;
+    private String tableName;
+    private String columnName;
+
+    public SensitiveColumnMeta(SensitiveColumnEntity entity) {
+        this.databaseId = entity.getDatabaseId();
+        this.tableName = entity.getTableName();
+        this.columnName = entity.getColumnName();
+    }
+
 }
