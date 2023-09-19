@@ -405,7 +405,7 @@ public class DefaultOnlineSchemaChangeTaskHandler implements OnlineSchemaChangeT
                     JsonUtils.toJson(new OnlineSchemaChangeScheduleTaskResult(taskParam)));
         }
         log.info("Successfully created new table, ddl: {}", taskParam.getNewTableCreateDdl());
-        validateColumnDifferent(taskParam,session);
+        validateColumnDifferent(taskParam, session);
     }
 
     private void validateColumnDifferent(OnlineSchemaChangeScheduleTaskParameters taskParam,
