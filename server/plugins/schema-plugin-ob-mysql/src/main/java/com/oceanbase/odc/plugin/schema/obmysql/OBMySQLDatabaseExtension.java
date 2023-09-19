@@ -17,16 +17,20 @@ package com.oceanbase.odc.plugin.schema.obmysql;
 
 import java.sql.Connection;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.pf4j.Extension;
 
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.plugin.schema.api.DatabaseExtensionPoint;
+import com.oceanbase.odc.plugin.schema.model.SchemaPluginConstants;
 import com.oceanbase.odc.plugin.schema.obmysql.utils.DBAccessorUtil;
 import com.oceanbase.tools.dbbrowser.model.DBDatabase;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
+import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
 
 import lombok.NonNull;
 
@@ -57,6 +61,21 @@ public class OBMySQLDatabaseExtension implements DatabaseExtensionPoint {
     public List<DBDatabase> listDetails(@NonNull Connection connection) {
         DBSchemaAccessor accessor = getSchemaAccessor(connection);
         return accessor.listDatabases();
+    }
+
+    @Override
+    public String getCreateDatabaseSql(String databaseName, Map<String, String> parameters) {
+        MySQLSqlBuilder sqlBuilder = new MySQLSqlBuilder();
+        String charsetName = parameters.get(SchemaPluginConstants.CREATE_DATABASE_CHARSET_NAME);
+        String collationName = parameters.get(SchemaPluginConstants.CREATE_DATABASE_COLLATION_NAME);
+        sqlBuilder.append("create database ").identifier(databaseName);
+        if (StringUtils.isNotEmpty(charsetName)) {
+            sqlBuilder.append(" character set ").append(charsetName);
+        }
+        if (StringUtils.isNotEmpty(collationName)) {
+            sqlBuilder.append(" collate ").append(collationName);
+        }
+        return sqlBuilder.toString();
     }
 
     protected DBSchemaAccessor getSchemaAccessor(Connection connection) {

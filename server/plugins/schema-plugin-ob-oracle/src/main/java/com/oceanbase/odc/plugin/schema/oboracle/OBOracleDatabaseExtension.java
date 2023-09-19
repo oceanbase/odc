@@ -16,12 +16,15 @@
 package com.oceanbase.odc.plugin.schema.oboracle;
 
 import java.sql.Connection;
+import java.util.Map;
 
 import org.pf4j.Extension;
 
+import com.oceanbase.odc.plugin.schema.model.SchemaPluginConstants;
 import com.oceanbase.odc.plugin.schema.obmysql.OBMySQLDatabaseExtension;
 import com.oceanbase.odc.plugin.schema.oboracle.utils.DBAccessorUtil;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
+import com.oceanbase.tools.dbbrowser.util.OracleSqlBuilder;
 
 /**
  * @author jingtian
@@ -33,5 +36,16 @@ public class OBOracleDatabaseExtension extends OBMySQLDatabaseExtension {
     @Override
     protected DBSchemaAccessor getSchemaAccessor(Connection connection) {
         return DBAccessorUtil.getSchemaAccessor(connection);
+    }
+
+    @Override
+    public String getCreateDatabaseSql(String databaseName, Map<String, String> parameters) {
+        OracleSqlBuilder sqlBuilder = new OracleSqlBuilder();
+        if (!parameters.containsKey(SchemaPluginConstants.CREATE_USER_PASSWORD)) {
+            throw new IllegalStateException("password cannot be null for ob oracle creating user");
+        }
+        sqlBuilder.append("CREATE USER ").identifier(databaseName).append(" IDENTIFIED BY ")
+                .identifier(parameters.get(SchemaPluginConstants.CREATE_USER_PASSWORD));
+        return sqlBuilder.toString();
     }
 }

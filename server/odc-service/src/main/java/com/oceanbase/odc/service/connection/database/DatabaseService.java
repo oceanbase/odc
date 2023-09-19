@@ -21,6 +21,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -33,7 +34,6 @@ import java.util.stream.Collectors;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
-import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.Page;
@@ -62,6 +62,7 @@ import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.metadb.connection.DatabaseEntity;
 import com.oceanbase.odc.metadb.connection.DatabaseRepository;
 import com.oceanbase.odc.metadb.connection.DatabaseSpecs;
+import com.oceanbase.odc.plugin.schema.model.SchemaPluginConstants;
 import com.oceanbase.odc.service.collaboration.environment.EnvironmentService;
 import com.oceanbase.odc.service.collaboration.environment.model.Environment;
 import com.oceanbase.odc.service.collaboration.project.ProjectService;
@@ -79,12 +80,10 @@ import com.oceanbase.odc.service.db.DBIdentitiesService;
 import com.oceanbase.odc.service.db.DBSchemaService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.auth.AuthorizationFacade;
+import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.tools.dbbrowser.model.DBDatabase;
-import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
-import com.oceanbase.tools.dbbrowser.util.OracleSqlBuilder;
-import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -240,10 +239,14 @@ public class DatabaseService {
         ConnectionConfig connection = connectionService.getForConnectionSkipPermissionCheck(req.getDataSourceId());
         DefaultConnectSessionFactory factory = new DefaultConnectSessionFactory(connection);
         ConnectionSession session = factory.generateSession();
+        Map<String, String> createDatabaseMap = new HashMap<>();
+        createDatabaseMap.put(SchemaPluginConstants.CREATE_USER_PASSWORD, connection.getPassword());
+        createDatabaseMap.put(SchemaPluginConstants.CREATE_DATABASE_COLLATION_NAME, req.getCollationName());
+        createDatabaseMap.put(SchemaPluginConstants.CREATE_DATABASE_CHARSET_NAME, req.getCharsetName());
         try {
             session.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY)
-                    .execute(getCreateDatabaseSql(connection,
-                            req.getName(), req.getCollationName(), req.getCharsetName()));
+                    .execute(SchemaPluginUtil.getDatabaseExtension(connection.getDialectType())
+                            .getCreateDatabaseSql(req.getName(), createDatabaseMap));
             DBDatabase dbDatabase = dbSchemaService.detail(session, req.getName());
             DatabaseEntity database = new DatabaseEntity();
             database.setDatabaseId(dbDatabase.getId());
@@ -462,26 +465,6 @@ public class DatabaseService {
         Set<String> authorizedDatabaseNames = databases.stream().map(Database::getName).collect(Collectors.toSet());
         return databaseNames.stream().filter(name -> !authorizedDatabaseNames.contains(name))
                 .collect(Collectors.toSet());
-    }
-
-    private String getCreateDatabaseSql(@NonNull ConnectionConfig connectionConfig, String databaseName,
-            String collationName, String charsetName) {
-        SqlBuilder sqlBuilder = null;
-        if (connectionConfig.getDialectType().isMysql()) {
-            sqlBuilder = new MySQLSqlBuilder();
-            sqlBuilder.append("create database ").identifier(databaseName);
-            if (StringUtils.isNotEmpty(charsetName)) {
-                sqlBuilder.append(" character set ").append(charsetName);
-            }
-            if (StringUtils.isNotEmpty(collationName)) {
-                sqlBuilder.append(" collate ").append(collationName);
-            }
-        } else if (connectionConfig.getDialectType().isOracle()) {
-            sqlBuilder = new OracleSqlBuilder();
-            sqlBuilder.append("CREATE USER ").identifier(databaseName).append(" IDENTIFIED BY ")
-                    .identifier(connectionConfig.getPassword());
-        }
-        return Objects.isNull(sqlBuilder) ? StringUtils.EMPTY : sqlBuilder.toString();
     }
 
     private void checkPermission(Long projectId, Long dataSourceId) {
