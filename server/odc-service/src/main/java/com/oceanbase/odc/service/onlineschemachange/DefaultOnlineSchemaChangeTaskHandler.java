@@ -420,7 +420,7 @@ public class DefaultOnlineSchemaChangeTaskHandler implements OnlineSchemaChangeT
                         DdlUtils.getUnwrappedName(taskParam.getNewTableNameUnwrapped())).stream()
                         .map(DBTableColumn::getName).collect(Collectors.toList());
 
-        if (CollectionUtils.isEqualCollection(originTableColumns, newTableColumns)) {
+        if (!CollectionUtils.isEqualCollection(originTableColumns, newTableColumns)) {
             throw new UnsupportedException(ErrorCodes.OscColumnNameInconsistent,
                     null, "Column name of origin table is inconsistent with new table.");
         }
