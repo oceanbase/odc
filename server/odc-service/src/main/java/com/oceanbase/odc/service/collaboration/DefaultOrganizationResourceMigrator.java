@@ -22,6 +22,7 @@ import java.util.Optional;
 import javax.sql.DataSource;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -43,6 +44,7 @@ import lombok.extern.slf4j.Slf4j;
  * @Date: 2023/5/30 10:53
  * @Description: []
  */
+@Profile("alipay")
 @ConditionalOnProperty(value = {"odc.iam.auth.type"}, havingValues = {"local", "alipay"})
 @Service("organizationResourceMigrator")
 @Slf4j
