@@ -155,11 +155,19 @@ public class MySQLNoGreaterThan5740SchemaAccessorTest extends BaseTestEnv {
     }
 
     @Test
+    public void listTableIndex_TestIndexAvailable_Success() {
+        DBSchemaAccessor accessor = new DBSchemaAccessors(getMySQLDataSource()).createMysql();
+        List<DBTableIndex> indexList = accessor.listTableIndexes(getMySQLDataBaseName(), "test_index_type");
+        Assert.assertTrue(indexList.get(0).getAvailable());
+    }
+
+    @Test
     public void listTableIndex_get_all_index_in_schema_Success() {
         DBSchemaAccessor accessor = new DBSchemaAccessors(getMySQLDataSource()).createMysql();
         Map<String, List<DBTableIndex>> map = accessor.listTableIndexes(getMySQLDataBaseName());
         Assert.assertNotNull(map);
         Assert.assertTrue(map.size() > 0);
+        Assert.assertTrue(map.get("test_index_type").get(0).getAvailable());
     }
 
     @Test

@@ -45,6 +45,7 @@ import com.google.common.collect.Sets;
 import com.oceanbase.odc.core.authority.util.Authenticated;
 import com.oceanbase.odc.core.authority.util.PreAuthenticate;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
+import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
@@ -53,24 +54,29 @@ import com.oceanbase.odc.metadb.datasecurity.SensitiveColumnEntity;
 import com.oceanbase.odc.metadb.datasecurity.SensitiveColumnRepository;
 import com.oceanbase.odc.metadb.datasecurity.SensitiveColumnSpecs;
 import com.oceanbase.odc.service.common.model.InnerUser;
-import com.oceanbase.odc.service.common.model.Stats;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.datasecurity.extractor.model.DBColumn;
+import com.oceanbase.odc.service.datasecurity.model.DatabaseWithAllColumns;
+import com.oceanbase.odc.service.datasecurity.model.MaskingAlgorithm;
 import com.oceanbase.odc.service.datasecurity.model.QuerySensitiveColumnParams;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveColumn;
+import com.oceanbase.odc.service.datasecurity.model.SensitiveColumnMeta;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveColumnScanningReq;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveColumnScanningTaskInfo;
+import com.oceanbase.odc.service.datasecurity.model.SensitiveColumnStats;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveRule;
 import com.oceanbase.odc.service.datasecurity.util.SensitiveColumnMapper;
+import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.iam.HorizontalDataPermissionValidator;
 import com.oceanbase.odc.service.iam.UserService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
+import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
+import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
+import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 
-import lombok.Data;
-import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -114,6 +120,38 @@ public class SensitiveColumnService {
 
     @Transactional(rollbackFor = Exception.class)
     @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
+    public List<DatabaseWithAllColumns> listColumns(@NotNull Long projectId, @NotEmpty List<Long> databaseIds) {
+        checkProjectDatabases(projectId, databaseIds);
+        List<Database> databases = databaseService.listDatabasesByIds(databaseIds);
+        Map<Long, List<SensitiveColumnMeta>> databaseId2Exists = listExistSensitiveColumns(databaseIds);
+        List<DatabaseWithAllColumns> databaseColumns = new ArrayList<>();
+        for (Database database : databases) {
+            ConnectionConfig config =
+                    connectionService.getForConnectionSkipPermissionCheck(database.getDataSource().getId());
+            ConnectionSession session = new DefaultConnectSessionFactory(config).generateSession();
+            Set<SensitiveColumnMeta> exists =
+                    new HashSet<>(databaseId2Exists.getOrDefault(database.getId(), Collections.emptyList()));
+            try {
+                DBSchemaAccessor accessor = DBSchemaAccessors.create(session);
+                DatabaseWithAllColumns databaseColumn = new DatabaseWithAllColumns();
+                databaseColumn.setDatabaseId(database.getId());
+                databaseColumn.setDatabaseName(database.getName());
+                databaseColumn.setTable2Columns(getFilteringExistColumns(database.getId(),
+                        accessor.listBasicTableColumns(database.getName()), exists));
+                databaseColumn.setView2Columns(getFilteringExistColumns(database.getId(),
+                        accessor.listBasicViewColumns(database.getName()), exists));
+                if (!databaseColumn.getTable2Columns().isEmpty() || !databaseColumn.getView2Columns().isEmpty()) {
+                    databaseColumns.add(databaseColumn);
+                }
+            } finally {
+                session.expire();
+            }
+        }
+        return databaseColumns;
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
     public Boolean exists(@NotNull Long projectId, @NotNull SensitiveColumn column) {
         PreConditions.notNull(column.getDatabase(), "database");
         PreConditions.notEmpty(column.getTableName(), "tableName");
@@ -139,11 +177,8 @@ public class SensitiveColumnService {
         permissionValidator.checkCurrentOrganization(algorithmService.batchNullSafeGetModel(maskingAlgorithmIds));
         Long organizationId = authenticationFacade.currentOrganizationId();
         Long userId = authenticationFacade.currentUserId();
-        Specification<SensitiveColumnEntity> spec = Specification
-                .where(SensitiveColumnSpecs.databaseIdIn(databaseIds))
-                .and(SensitiveColumnSpecs.organizationIdEqual(organizationId));
-        Set<SensitiveColumnMeta> exists =
-                repository.findAll(spec).stream().map(SensitiveColumnMeta::new).collect(Collectors.toSet());
+        Set<SensitiveColumnMeta> exists = listExistSensitiveColumns(databaseIds).values().stream()
+                .flatMap(Collection::stream).collect(Collectors.toSet());
         List<SensitiveColumnEntity> entities = new ArrayList<>();
         for (SensitiveColumn column : columns) {
             SensitiveColumnEntity entity = mapper.modelToEntity(column);
@@ -222,20 +257,15 @@ public class SensitiveColumnService {
     public Page<SensitiveColumn> list(@NotNull Long projectId, @NotNull QuerySensitiveColumnParams params,
             Pageable pageable) {
         Set<Long> databaseIds = databaseService.listDatabaseIdsByProjectId(projectId);
-        if (CollectionUtils.isNotEmpty(params.getDatasourceNames())) {
-            List<Long> connectionIds = connectionService.innerListIdByOrganizationIdAndNames(
-                    authenticationFacade.currentOrganizationId(), params.getDatasourceNames());
-            if (CollectionUtils.isEmpty(connectionIds)) {
-                return Page.empty(pageable);
-            }
-            databaseIds = Sets.intersection(databaseIds, databaseService.listDatabaseIdsByConnectionIds(connectionIds));
+        Set<Long> filteringDatabaseIds = new HashSet<>();
+        if (CollectionUtils.isNotEmpty(params.getDatabaseIds())) {
+            filteringDatabaseIds.addAll(params.getDatabaseIds());
         }
-        if (CollectionUtils.isNotEmpty(params.getDatabaseNames())) {
-            Set<String> databaseNames = new HashSet<>(params.getDatabaseNames());
-            databaseIds = Sets.intersection(databaseIds,
-                    databaseService.listDatabaseByNames(params.getDatabaseNames()).stream()
-                            .filter(e -> databaseNames.contains(e.getName())).map(Database::getId)
-                            .collect(Collectors.toSet()));
+        if (CollectionUtils.isNotEmpty(params.getDatasourceIds())) {
+            filteringDatabaseIds.addAll(databaseService.listDatabaseIdsByConnectionIds(params.getDatasourceIds()));
+        }
+        if (CollectionUtils.isNotEmpty(filteringDatabaseIds)) {
+            databaseIds = Sets.intersection(databaseIds, filteringDatabaseIds);
         }
         if (databaseIds.isEmpty()) {
             return Page.empty(pageable);
@@ -265,24 +295,26 @@ public class SensitiveColumnService {
 
     @Transactional(rollbackFor = Exception.class)
     @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
-    public Stats stats(@NotNull Long projectId) {
+    public SensitiveColumnStats stats(@NotNull Long projectId) {
+        SensitiveColumnStats stats = new SensitiveColumnStats();
         Set<Long> databaseIds = databaseService.listDatabaseIdsByProjectId(projectId);
         List<SensitiveColumnEntity> entities = repository.findByDatabaseIdIn(databaseIds);
         if (entities.isEmpty()) {
-            return null;
+            return stats;
         }
         List<Database> databases = databaseService.listDatabasesByIds(
                 entities.stream().map(SensitiveColumnEntity::getDatabaseId).collect(Collectors.toSet()));
-        Set<String> databaseNames = databases.stream().map(Database::getName).collect(Collectors.toSet());
-        Set<String> datasourceNames = connectionService
+        Map<Long, ConnectionConfig> id2Datasource = connectionService
                 .innerListByIds(databases.stream().map(d -> d.getDataSource().getId()).collect(Collectors.toSet()))
-                .stream().map(ConnectionConfig::getName).collect(Collectors.toSet());
-        Set<String> algorithmIds =
-                entities.stream().map(e -> e.getMaskingAlgorithmId().toString()).collect(Collectors.toSet());
-        Stats stats = new Stats();
-        stats.andDistinct("datasource", datasourceNames);
-        stats.andDistinct("database", databaseNames);
-        stats.andDistinct("maskingAlgorithmId", algorithmIds);
+                .stream().collect(Collectors.toMap(ConnectionConfig::getId, c -> c, (c1, c2) -> c1));
+        for (Database database : databases) {
+            database.setDataSource(id2Datasource.get(database.getDataSource().getId()));
+        }
+        List<MaskingAlgorithm> algorithms = algorithmService
+                .batchNullSafeGetModel(entities.stream().map(SensitiveColumnEntity::getMaskingAlgorithmId)
+                        .collect(Collectors.toSet()));
+        stats.setDatabases(databases);
+        stats.setMaskingAlgorithms(algorithms);
         return stats;
     }
 
@@ -326,8 +358,7 @@ public class SensitiveColumnService {
         PreConditions.notEmpty(databases, "databases");
         PreConditions.notEmpty(rules, "sensitiveRules");
         ConnectionConfig connectionConfig = databaseService.findDataSourceForConnectById(databases.get(0).getId());
-        Map<Long, List<SensitiveColumn>> databaseId2SensitiveColumns = repository.findByDatabaseIdIn(databaseIds)
-                .stream().map(mapper::entityToModel).collect(Collectors.groupingBy(e -> e.getDatabase().getId()));
+        Map<Long, List<SensitiveColumnMeta>> databaseId2SensitiveColumns = listExistSensitiveColumns(databaseIds);
         return scanningTaskManager.start(databases, rules, connectionConfig, databaseId2SensitiveColumns);
     }
 
@@ -429,18 +460,29 @@ public class SensitiveColumnService {
         }
     }
 
-    @Data
-    @EqualsAndHashCode
-    private static class SensitiveColumnMeta {
-        private Long databaseId;
-        private String tableName;
-        private String columnName;
+    private Map<Long, List<SensitiveColumnMeta>> listExistSensitiveColumns(Collection<Long> databaseIds) {
+        return repository.findByDatabaseIdIn(databaseIds).stream().map(SensitiveColumnMeta::new)
+                .collect(Collectors.groupingBy(SensitiveColumnMeta::getDatabaseId));
+    }
 
-        public SensitiveColumnMeta(SensitiveColumnEntity entity) {
-            this.databaseId = entity.getDatabaseId();
-            this.tableName = entity.getTableName();
-            this.columnName = entity.getColumnName();
+    private Map<String, List<DBTableColumn>> getFilteringExistColumns(Long databaseId,
+            Map<String, List<DBTableColumn>> tableColumns, Set<SensitiveColumnMeta> exists) {
+        Map<String, List<DBTableColumn>> filtered = new HashMap<>();
+        for (Map.Entry<String, List<DBTableColumn>> entry : tableColumns.entrySet()) {
+            if (CollectionUtils.isEmpty(entry.getValue())) {
+                continue;
+            }
+            List<DBTableColumn> columns = new ArrayList<>();
+            for (DBTableColumn dbTableColumn : entry.getValue()) {
+                if (!exists.contains(new SensitiveColumnMeta(databaseId, entry.getKey(), dbTableColumn.getName()))) {
+                    columns.add(dbTableColumn);
+                }
+            }
+            if (CollectionUtils.isNotEmpty(columns)) {
+                filtered.put(entry.getKey(), columns);
+            }
         }
+        return filtered;
     }
 
 }

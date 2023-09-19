@@ -13,23 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.oceanbase.odc.service.datasecurity.model;
 
 import java.util.List;
+import java.util.Map;
 
-import lombok.Builder;
+import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
+
 import lombok.Data;
 
 /**
  * @author gaoda.xy
- * @date 2023/5/22 16:55
+ * @date 2023/9/14 15:18
  */
 @Data
-@Builder
-public class QuerySensitiveColumnParams {
-    private String fuzzyTableColumn;
-    private List<Long> databaseIds;
-    private List<Long> datasourceIds;
-    private List<Long> maskingAlgorithmIds;
-    private Boolean enabled;
+public class DatabaseWithAllColumns {
+
+    private Long databaseId;
+    private String databaseName;
+    private Map<String, List<DBTableColumn>> table2Columns;
+    private Map<String, List<DBTableColumn>> view2Columns;
+
 }

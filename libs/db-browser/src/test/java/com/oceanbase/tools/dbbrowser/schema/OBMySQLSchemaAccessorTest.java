@@ -122,6 +122,23 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
     }
 
     @Test
+    public void listBasicViewColumns_SchemaViewColumns_Success() {
+        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBMySQLDataSource()).createOBMysql();
+        Map<String, List<DBTableColumn>> columns = accessor.listBasicViewColumns(getOBMySQLDataBaseName());
+        Assert.assertTrue(columns.containsKey("view_test1"));
+        Assert.assertTrue(columns.containsKey("view_test2"));
+        Assert.assertEquals(2, columns.get("view_test1").size());
+        Assert.assertEquals(1, columns.get("view_test2").size());
+    }
+
+    @Test
+    public void listBasicViewColumns_ViewColumns_Success() {
+        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBMySQLDataSource()).createOBMysql();
+        List<DBTableColumn> columns = accessor.listBasicViewColumns(getOBMySQLDataBaseName(), "view_test1");
+        Assert.assertEquals(2, columns.size());
+    }
+
+    @Test
     public void listTableColumns_TestAllColumnDataTypes_Success() {
         DBSchemaAccessor accessor = new DBSchemaAccessors(getOBMySQLDataSource()).createOBMysql();
         List<DBTableColumn> columns =
@@ -170,10 +187,18 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
     }
 
     @Test
+    public void listTableIndex_TestIndexAvailable_Success() {
+        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBMySQLDataSource()).createOBMysql();
+        List<DBTableIndex> indexList = accessor.listTableIndexes(getOBMySQLDataBaseName(), "test_index_type");
+        Assert.assertTrue(indexList.get(0).getAvailable());
+    }
+
+    @Test
     public void listTableIndex_Success() {
         DBSchemaAccessor accessor = new DBSchemaAccessors(getOBMySQLDataSource()).createOBMysql();
         Map<String, List<DBTableIndex>> indexes = accessor.listTableIndexes(getOBMySQLDataBaseName());
         Assert.assertTrue(indexes.size() > 0);
+        Assert.assertTrue(indexes.get("test_index_type").get(0).getAvailable());
     }
 
     @Test

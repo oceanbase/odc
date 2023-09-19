@@ -150,6 +150,23 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
     }
 
     @Test
+    public void listBasicViewColumns_SchemaViewColumns_Success() {
+        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBOracleDataSource()).createOBOracle();
+        Map<String, List<DBTableColumn>> columns = accessor.listBasicViewColumns(getOBOracleSchema());
+        Assert.assertTrue(columns.containsKey("VIEW_TEST1"));
+        Assert.assertTrue(columns.containsKey("VIEW_TEST2"));
+        Assert.assertEquals(2, columns.get("VIEW_TEST1").size());
+        Assert.assertEquals(1, columns.get("VIEW_TEST2").size());
+    }
+
+    @Test
+    public void listBasicViewColumns_ViewColumns_Success() {
+        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBOracleDataSource()).createOBOracle();
+        List<DBTableColumn> columns = accessor.listBasicViewColumns(getOBOracleSchema(), "VIEW_TEST1");
+        Assert.assertEquals(2, columns.size());
+    }
+
+    @Test
     public void listTableColumns_TestAllColumnDataTypes_Success() {
         DBSchemaAccessor accessor = new DBSchemaAccessors(getOBOracleDataSource()).createOBOracle();
         List<DBTableColumn> columns =
@@ -203,6 +220,15 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
         Assert.assertEquals(2, indexList.size());
         Assert.assertEquals(true, indexList.get(0).getGlobal());
         Assert.assertEquals(false, indexList.get(1).getGlobal());
+    }
+
+    @Test
+    public void listTableIndex_TestIndexAvailable_Success() {
+        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBOracleDataSource()).createOBOracle();
+        List<DBTableIndex> indexList = accessor.listTableIndexes(getOBOracleSchema(), "TEST_INDEX_RANGE");
+        Assert.assertEquals(2, indexList.size());
+        Assert.assertTrue(indexList.get(0).getAvailable());
+        Assert.assertTrue(indexList.get(1).getAvailable());
     }
 
     @Test
