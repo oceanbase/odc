@@ -17,14 +17,13 @@ package com.oceanbase.odc.plugin.schema.obmysql;
 
 import java.sql.Connection;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.pf4j.Extension;
 
+import com.oceanbase.odc.common.util.JdbcOperationsUtil;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.plugin.schema.api.DatabaseExtensionPoint;
-import com.oceanbase.odc.plugin.schema.model.SchemaPluginConstants;
 import com.oceanbase.odc.plugin.schema.obmysql.utils.DBAccessorUtil;
 import com.oceanbase.tools.dbbrowser.model.DBDatabase;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
@@ -64,18 +63,18 @@ public class OBMySQLDatabaseExtension implements DatabaseExtensionPoint {
     }
 
     @Override
-    public String getCreateDatabaseSql(String databaseName, Map<String, String> parameters) {
+    public void create(Connection connection, DBDatabase database, String password) {
         MySQLSqlBuilder sqlBuilder = new MySQLSqlBuilder();
-        String charsetName = parameters.get(SchemaPluginConstants.CREATE_DATABASE_CHARSET_NAME);
-        String collationName = parameters.get(SchemaPluginConstants.CREATE_DATABASE_COLLATION_NAME);
-        sqlBuilder.append("create database ").identifier(databaseName);
+        String charsetName = database.getCharset();
+        String collationName = database.getCollation();
+        sqlBuilder.append("create database ").identifier(database.getName());
         if (StringUtils.isNotEmpty(charsetName)) {
             sqlBuilder.append(" character set ").append(charsetName);
         }
         if (StringUtils.isNotEmpty(collationName)) {
             sqlBuilder.append(" collate ").append(collationName);
         }
-        return sqlBuilder.toString();
+        JdbcOperationsUtil.getJdbcOperations(connection).execute(sqlBuilder.toString());
     }
 
     protected DBSchemaAccessor getSchemaAccessor(Connection connection) {

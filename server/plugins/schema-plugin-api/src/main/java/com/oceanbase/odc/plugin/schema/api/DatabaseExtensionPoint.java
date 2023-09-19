@@ -17,7 +17,6 @@ package com.oceanbase.odc.plugin.schema.api;
 
 import java.sql.Connection;
 import java.util.List;
-import java.util.Map;
 
 import org.pf4j.ExtensionPoint;
 
@@ -38,5 +37,5 @@ public interface DatabaseExtensionPoint extends ExtensionPoint {
 
     List<DBDatabase> listDetails(Connection connection);
 
-    String getCreateDatabaseSql(String databaseName, Map<String, String> parameters);
+    void create(Connection connection, DBDatabase database, String password);
 }

@@ -16,13 +16,14 @@
 package com.oceanbase.odc.plugin.schema.oboracle;
 
 import java.sql.Connection;
-import java.util.Map;
 
 import org.pf4j.Extension;
 
-import com.oceanbase.odc.plugin.schema.model.SchemaPluginConstants;
+import com.oceanbase.odc.common.util.JdbcOperationsUtil;
+import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.plugin.schema.obmysql.OBMySQLDatabaseExtension;
 import com.oceanbase.odc.plugin.schema.oboracle.utils.DBAccessorUtil;
+import com.oceanbase.tools.dbbrowser.model.DBDatabase;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 import com.oceanbase.tools.dbbrowser.util.OracleSqlBuilder;
 
@@ -39,13 +40,11 @@ public class OBOracleDatabaseExtension extends OBMySQLDatabaseExtension {
     }
 
     @Override
-    public String getCreateDatabaseSql(String databaseName, Map<String, String> parameters) {
+    public void create(Connection connection, DBDatabase database, String password) {
         OracleSqlBuilder sqlBuilder = new OracleSqlBuilder();
-        if (!parameters.containsKey(SchemaPluginConstants.CREATE_USER_PASSWORD)) {
-            throw new IllegalStateException("password cannot be null for ob oracle creating user");
-        }
-        sqlBuilder.append("CREATE USER ").identifier(databaseName).append(" IDENTIFIED BY ")
-                .identifier(parameters.get(SchemaPluginConstants.CREATE_USER_PASSWORD));
-        return sqlBuilder.toString();
+        PreConditions.notBlank(password, "password");
+        sqlBuilder.append("CREATE USER ").identifier(database.getName()).append(" IDENTIFIED BY ")
+                .identifier(password);
+        JdbcOperationsUtil.getJdbcOperations(connection).execute(sqlBuilder.toString());
     }
 }

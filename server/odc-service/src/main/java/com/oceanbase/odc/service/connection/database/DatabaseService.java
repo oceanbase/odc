@@ -21,7 +21,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -40,6 +39,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.integration.jdbc.lock.JdbcLockRegistry;
+import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
@@ -62,7 +62,6 @@ import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.metadb.connection.DatabaseEntity;
 import com.oceanbase.odc.metadb.connection.DatabaseRepository;
 import com.oceanbase.odc.metadb.connection.DatabaseSpecs;
-import com.oceanbase.odc.plugin.schema.model.SchemaPluginConstants;
 import com.oceanbase.odc.service.collaboration.environment.EnvironmentService;
 import com.oceanbase.odc.service.collaboration.environment.model.Environment;
 import com.oceanbase.odc.service.collaboration.project.ProjectService;
@@ -239,14 +238,17 @@ public class DatabaseService {
         ConnectionConfig connection = connectionService.getForConnectionSkipPermissionCheck(req.getDataSourceId());
         DefaultConnectSessionFactory factory = new DefaultConnectSessionFactory(connection);
         ConnectionSession session = factory.generateSession();
-        Map<String, String> createDatabaseMap = new HashMap<>();
-        createDatabaseMap.put(SchemaPluginConstants.CREATE_USER_PASSWORD, connection.getPassword());
-        createDatabaseMap.put(SchemaPluginConstants.CREATE_DATABASE_COLLATION_NAME, req.getCollationName());
-        createDatabaseMap.put(SchemaPluginConstants.CREATE_DATABASE_CHARSET_NAME, req.getCharsetName());
         try {
+            DBDatabase dBdatabase = new DBDatabase();
+            dBdatabase.setName(req.getName());
+            dBdatabase.setCharset(req.getCharsetName());
+            dBdatabase.setCollation(req.getCollationName());
             session.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY)
-                    .execute(SchemaPluginUtil.getDatabaseExtension(connection.getDialectType())
-                            .getCreateDatabaseSql(req.getName(), createDatabaseMap));
+                    .execute((ConnectionCallback<Void>) con -> {
+                        SchemaPluginUtil.getDatabaseExtension(connection.getDialectType()).create(con, dBdatabase,
+                                connection.getPassword());
+                        return null;
+                    });
             DBDatabase dbDatabase = dbSchemaService.detail(session, req.getName());
             DatabaseEntity database = new DatabaseEntity();
             database.setDatabaseId(dbDatabase.getId());
