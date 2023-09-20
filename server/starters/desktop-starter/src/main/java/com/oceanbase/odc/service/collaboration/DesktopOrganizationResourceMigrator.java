@@ -17,7 +17,12 @@
 package com.oceanbase.odc.service.collaboration;
 
 import org.springframework.context.annotation.Profile;
+import org.springframework.stereotype.Service;
+
+import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 
 @Profile("clientMode")
+@Service("organizationResourceMigrator")
+@SkipAuthorize
 public class DesktopOrganizationResourceMigrator extends DefaultOrganizationResourceMigrator {
 }
