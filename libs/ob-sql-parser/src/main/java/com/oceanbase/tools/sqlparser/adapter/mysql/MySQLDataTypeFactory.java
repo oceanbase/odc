@@ -38,6 +38,7 @@ import com.oceanbase.tools.sqlparser.obmysql.OBParser.Data_type_precisionContext
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Date_year_type_iContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Datetime_type_iContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Float_type_iContext;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Geo_type_iContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Int_type_iContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Json_type_iContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Number_type_iContext;
@@ -119,7 +120,6 @@ public class MySQLDataTypeFactory extends OBParserBaseVisitor<DataType> implemen
         return visitChildren(ctx);
     }
 
-
     @Override
     public DataType visitBinary_type_i(Binary_type_iContext ctx) {
         List<String> args = new ArrayList<>();
@@ -128,6 +128,11 @@ public class MySQLDataTypeFactory extends OBParserBaseVisitor<DataType> implemen
             args.add(arg);
         }
         return new GeneralDataType(ctx, ctx.getChild(0).getText(), args);
+    }
+
+    @Override
+    public DataType visitGeo_type_i(Geo_type_iContext ctx) {
+        return new GeneralDataType(ctx, ctx.getChild(0).getText(), null);
     }
 
     @Override

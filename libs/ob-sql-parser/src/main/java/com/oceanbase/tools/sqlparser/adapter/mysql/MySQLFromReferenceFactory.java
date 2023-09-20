@@ -121,6 +121,8 @@ public class MySQLFromReferenceFactory extends OBParserBaseVisitor<FromReference
                 joinType = JoinType.CROSS_JOIN;
             } else if (ctx.inner_join_type().INNER() != null) {
                 joinType = JoinType.INNER_JOIN;
+            } else if (ctx.inner_join_type().STRAIGHT_JOIN() != null) {
+                joinType = JoinType.STRAIGHT_JOIN;
             } else {
                 joinType = JoinType.JOIN;
             }
@@ -223,12 +225,18 @@ public class MySQLFromReferenceFactory extends OBParserBaseVisitor<FromReference
     public static RelationFactor getRelationFactor(Normal_relation_factorContext ctx) {
         RelationFactor relationFactor = new RelationFactor(ctx, getRelation(ctx));
         relationFactor.setSchema(getSchemaName(ctx));
+        if (ctx.USER_VARIABLE() != null) {
+            relationFactor.setUserVariable(ctx.USER_VARIABLE().getText());
+        }
         return relationFactor;
     }
 
     public static RelationFactor getRelationFactor(Relation_factorContext ctx) {
         RelationFactor relationFactor = new RelationFactor(ctx, getRelation(ctx));
         relationFactor.setSchema(getSchemaName(ctx));
+        if (ctx.normal_relation_factor() != null && ctx.normal_relation_factor().USER_VARIABLE() != null) {
+            relationFactor.setUserVariable(ctx.normal_relation_factor().USER_VARIABLE().getText());
+        }
         return relationFactor;
     }
 

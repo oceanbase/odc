@@ -54,6 +54,9 @@ public class MySQLAlterTableFactory extends OBParserBaseVisitor<AlterTable> impl
         AlterTable alterTable = new AlterTable(ctx,
                 MySQLFromReferenceFactory.getRelation(ctx.relation_factor()),
                 getAlterTableActions(ctx.alter_table_actions()));
+        if (ctx.EXTERNAL() != null) {
+            alterTable.setExternal(true);
+        }
         alterTable.setSchema(MySQLFromReferenceFactory.getSchemaName(ctx.relation_factor()));
         return alterTable;
     }

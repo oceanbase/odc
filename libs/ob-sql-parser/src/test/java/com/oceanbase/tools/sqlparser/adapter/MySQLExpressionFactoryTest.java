@@ -813,6 +813,18 @@ public class MySQLExpressionFactoryTest {
     }
 
     @Test
+    public void generate_sys_interval_func_check_generateFunctionCallSucceed() {
+        ExprContext context = getExprContext("CHECK(12)");
+        StatementFactory<Expression> factory = new MySQLExpressionFactory(context);
+        Expression actual = factory.generate();
+
+        List<FunctionParam> params = new ArrayList<>();
+        params.add(new ExpressionParam(new ConstExpression("12")));
+        FunctionCall expect = new FunctionCall("CHECK", params);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
     public void generate_boolPriIsTrue_generateSucceed() {
         ExprContext context = getExprContext("abc is true");
         StatementFactory<Expression> factory = new MySQLExpressionFactory(context);
@@ -1036,6 +1048,18 @@ public class MySQLExpressionFactoryTest {
 
         Expression left = new ConstExpression("1");
         Expression right = new IntervalExpression(new ConstExpression("4"), "day");
+        Expression expect = new CompoundExpression(left, right, Operator.ADD);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_intervalBitExpr_generateSucceed() {
+        Bit_exprContext context = getBitExprContext("interval 4 day + 1");
+        StatementFactory<Expression> factory = new MySQLExpressionFactory(context);
+        Expression actual = factory.generate();
+
+        Expression right = new ConstExpression("1");
+        Expression left = new IntervalExpression(new ConstExpression("4"), "day");
         Expression expect = new CompoundExpression(left, right, Operator.ADD);
         Assert.assertEquals(expect, actual);
     }

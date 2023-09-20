@@ -27,18 +27,22 @@ import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.commons.collections4.CollectionUtils;
 
 import com.oceanbase.tools.sqlparser.adapter.StatementFactory;
+import com.oceanbase.tools.sqlparser.obmysql.OBLexer;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Bit_exprContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Bool_priContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Case_exprContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Complex_func_exprContext;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Complex_string_literalContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Cur_date_funcContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Cur_time_funcContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Cur_timestamp_funcContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Date_paramsContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.ExprContext;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Expr_constContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Expr_listContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.In_exprContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Json_value_exprContext;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.LiteralContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Parameterized_trimContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.PredicateContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Select_no_parensContext;
@@ -89,25 +93,23 @@ import lombok.NonNull;
  */
 public class MySQLExpressionFactory extends OBParserBaseVisitor<Expression> implements StatementFactory<Expression> {
 
-    private final ExprContext exprContext;
-    private final Bit_exprContext bitExprContext;
+    private final ParserRuleContext parserRuleContext;
 
     public MySQLExpressionFactory(@NonNull ExprContext exprContext) {
-        this.bitExprContext = null;
-        this.exprContext = exprContext;
+        this.parserRuleContext = exprContext;
     }
 
     public MySQLExpressionFactory(@NonNull Bit_exprContext bitExprContext) {
-        this.exprContext = null;
-        this.bitExprContext = bitExprContext;
+        this.parserRuleContext = bitExprContext;
+    }
+
+    public MySQLExpressionFactory(@NonNull LiteralContext literalContext) {
+        this.parserRuleContext = literalContext;
     }
 
     @Override
     public Expression generate() {
-        if (this.exprContext != null) {
-            return visit(this.exprContext);
-        }
-        return visit(this.bitExprContext);
+        return visit(this.parserRuleContext);
     }
 
     @Override
@@ -281,6 +283,22 @@ public class MySQLExpressionFactory extends OBParserBaseVisitor<Expression> impl
     }
 
     @Override
+    public Expression visitLiteral(LiteralContext ctx) {
+        if (ctx.complex_string_literal() != null) {
+            return visit(ctx.complex_string_literal());
+        }
+        return new ConstExpression(ctx);
+    }
+
+    @Override
+    public Expression visitExpr_const(Expr_constContext ctx) {
+        if (ctx.literal() != null) {
+            return visit(ctx.literal());
+        }
+        return new ConstExpression(ctx);
+    }
+
+    @Override
     public Expression visitSimple_expr(Simple_exprContext ctx) {
         List<Simple_exprContext> simpleExprContexts = ctx.simple_expr();
         if (CollectionUtils.isNotEmpty(simpleExprContexts)) {
@@ -310,7 +328,7 @@ public class MySQLExpressionFactory extends OBParserBaseVisitor<Expression> impl
             StatementFactory<ColumnReference> factory = new MySQLColumnRefFactory(ctx.column_ref());
             return factory.generate();
         } else if (ctx.expr_const() != null) {
-            return new ConstExpression(ctx.expr_const());
+            return visit(ctx.expr_const());
         } else if (ctx.expr_list() != null) {
             if (ctx.ROW() == null) {
                 return visit(ctx.expr_list());
@@ -347,8 +365,7 @@ public class MySQLExpressionFactory extends OBParserBaseVisitor<Expression> impl
         } else if (ctx.column_definition_ref() != null) {
             StatementFactory<ColumnReference> factory = new MySQLColumnRefFactory(ctx.column_definition_ref());
             Operator operator = ctx.JSON_EXTRACT() == null ? Operator.JSON_EXTRACT_UNQUOTED : Operator.JSON_EXTRACT;
-            return new CompoundExpression(ctx, factory.generate(),
-                    new ConstExpression(ctx.complex_string_literal()), operator);
+            return new CompoundExpression(ctx, factory.generate(), visit(ctx.complex_string_literal()), operator);
         } else if (ctx.case_expr() != null) {
             return visit(ctx.case_expr());
         }
@@ -412,6 +429,18 @@ public class MySQLExpressionFactory extends OBParserBaseVisitor<Expression> impl
         FunctionCall fCall = new FunctionCall(ctx, funcName, params);
         fCall.setParamsFlag(getParamFlags(ctx));
         return fCall;
+    }
+
+    @Override
+    public Expression visitComplex_string_literal(Complex_string_literalContext ctx) {
+        if (ctx.string_val_list() == null) {
+            return new ConstExpression(ctx);
+        }
+        List<Expression> exprs = new ArrayList<>(ctx.string_val_list().STRING_VALUE().size());
+        exprs.add(new ConstExpression(ctx.STRING_VALUE()));
+        exprs.addAll(
+                ctx.string_val_list().STRING_VALUE().stream().map(ConstExpression::new).collect(Collectors.toList()));
+        return new CollectionExpression(ctx, exprs);
     }
 
     @Override
@@ -542,7 +571,7 @@ public class MySQLExpressionFactory extends OBParserBaseVisitor<Expression> impl
             Json_value_exprContext jsonValue = ctx.json_value_expr();
             List<FunctionParam> params = new ArrayList<>();
             params.add(new ExpressionParam(visit(jsonValue.simple_expr())));
-            params.add(new ExpressionParam(new ConstExpression(jsonValue.complex_string_literal())));
+            params.add(new ExpressionParam(visit(jsonValue.complex_string_literal())));
             FunctionCall fCall = new FunctionCall(ctx, jsonValue.JSON_VALUE().getText(), params);
             fCall.addParamsOption(new MySQLDataTypeFactory(jsonValue.cast_data_type()).generate());
             return fCall;
@@ -587,7 +616,11 @@ public class MySQLExpressionFactory extends OBParserBaseVisitor<Expression> impl
         } else if (ctx.sys_interval_func() != null) {
             params = ctx.sys_interval_func().expr()
                     .stream().map(e -> wrap(e, null)).collect(Collectors.toList());
-            funcName = ctx.sys_interval_func().INTERVAL().getText();
+            if (ctx.sys_interval_func().INTERVAL() != null) {
+                funcName = ctx.sys_interval_func().INTERVAL().getText();
+            } else if (ctx.sys_interval_func().CHECK() != null) {
+                funcName = ctx.sys_interval_func().CHECK().getText();
+            }
         }
         if (funcName == null) {
             throw new IllegalStateException("Missing function name");
@@ -726,6 +759,12 @@ public class MySQLExpressionFactory extends OBParserBaseVisitor<Expression> impl
             right = visit(ctx.bit_expr(1));
         } else if (ctx.expr() != null) {
             right = new IntervalExpression(ctx, visit(ctx.expr()), ctx.date_unit().getText());
+            ParseTree firstNode = ctx.getChild(0);
+            if (firstNode instanceof TerminalNode
+                    && ((TerminalNode) firstNode).getSymbol().getType() == OBLexer.INTERVAL) {
+                return new CompoundExpression(ctx, right, left, operator);
+            }
+            return new CompoundExpression(ctx, left, right, operator);
         }
         if (right == null) {
             throw new IllegalStateException("Missing expression");

@@ -16,8 +16,10 @@
 package com.oceanbase.tools.sqlparser.adapter;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
 import org.antlr.v4.runtime.BailErrorStrategy;
 import org.antlr.v4.runtime.CharStreams;
@@ -33,6 +35,7 @@ import com.oceanbase.tools.sqlparser.statement.Expression;
 import com.oceanbase.tools.sqlparser.statement.Operator;
 import com.oceanbase.tools.sqlparser.statement.common.CharacterType;
 import com.oceanbase.tools.sqlparser.statement.common.DataType;
+import com.oceanbase.tools.sqlparser.statement.common.GeneralDataType;
 import com.oceanbase.tools.sqlparser.statement.createtable.ColumnAttributes;
 import com.oceanbase.tools.sqlparser.statement.createtable.ColumnDefinition;
 import com.oceanbase.tools.sqlparser.statement.createtable.ColumnDefinition.Location;
@@ -51,11 +54,13 @@ import com.oceanbase.tools.sqlparser.statement.createtable.OutOfLineForeignConst
 import com.oceanbase.tools.sqlparser.statement.createtable.OutOfLineIndex;
 import com.oceanbase.tools.sqlparser.statement.createtable.SortColumn;
 import com.oceanbase.tools.sqlparser.statement.createtable.TableElement;
+import com.oceanbase.tools.sqlparser.statement.expression.CaseWhen;
 import com.oceanbase.tools.sqlparser.statement.expression.ColumnReference;
 import com.oceanbase.tools.sqlparser.statement.expression.CompoundExpression;
 import com.oceanbase.tools.sqlparser.statement.expression.ConstExpression;
 import com.oceanbase.tools.sqlparser.statement.expression.ExpressionParam;
 import com.oceanbase.tools.sqlparser.statement.expression.FunctionCall;
+import com.oceanbase.tools.sqlparser.statement.expression.WhenClause;
 import com.oceanbase.tools.sqlparser.statement.select.SortDirection;
 
 /**
@@ -253,6 +258,20 @@ public class MySQLTableElementFactoryTest {
     }
 
     @Test
+    public void generate_columnDefsrId_generateSuccees() {
+        StatementFactory<TableElement> factory =
+                new MySQLTableElementFactory(getTableElementContext("tb.col GEOMETRYCOLLECTION srid 12"));
+        ColumnDefinition actual = (ColumnDefinition) factory.generate();
+
+        DataType dataType = new GeneralDataType("GEOMETRYCOLLECTION", null);
+        ColumnDefinition expect = new ColumnDefinition(new ColumnReference(null, "tb", "col"), dataType);
+        ColumnAttributes attributes = new ColumnAttributes();
+        attributes.setSrid(12);
+        expect.setColumnAttributes(attributes);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
     public void generate_columnDefAutoIncrement_generateSuccees() {
         StatementFactory<TableElement> factory =
                 new MySQLTableElementFactory(getTableElementContext("tb.col varchar(64) auto_increment"));
@@ -276,6 +295,20 @@ public class MySQLTableElementFactoryTest {
         ColumnDefinition expect = new ColumnDefinition(new ColumnReference(null, "tb", "col"), dataType);
         ColumnAttributes attributes = new ColumnAttributes();
         attributes.setComment("'abcd'");
+        expect.setColumnAttributes(attributes);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_columnDefCollate_generateSuccees() {
+        StatementFactory<TableElement> factory =
+                new MySQLTableElementFactory(getTableElementContext("tb.col point collate 'abcd'"));
+        ColumnDefinition actual = (ColumnDefinition) factory.generate();
+
+        DataType dataType = new GeneralDataType("point", null);
+        ColumnDefinition expect = new ColumnDefinition(new ColumnReference(null, "tb", "col"), dataType);
+        ColumnAttributes attributes = new ColumnAttributes();
+        attributes.setCollation("'abcd'");
         expect.setColumnAttributes(attributes);
         Assert.assertEquals(expect, actual);
     }
@@ -323,6 +356,54 @@ public class MySQLTableElementFactoryTest {
         DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
         ColumnDefinition expect = new ColumnDefinition(new ColumnReference(null, "tb", "col"), dataType);
         InLineConstraint first = new InLineCheckConstraint(null, null, new ConstExpression("false"));
+        ColumnAttributes attributes = new ColumnAttributes();
+        attributes.setConstraints(Collections.singletonList(first));
+        expect.setColumnAttributes(attributes);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_columnDefCheck1_generateSuccees() {
+        StatementFactory<TableElement> factory =
+                new MySQLTableElementFactory(getTableElementContext("tb.col varchar(64) constraint check(false)"));
+        ColumnDefinition actual = (ColumnDefinition) factory.generate();
+
+        DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
+        ColumnDefinition expect = new ColumnDefinition(new ColumnReference(null, "tb", "col"), dataType);
+        InLineConstraint first = new InLineCheckConstraint(null, null, new ConstExpression("false"));
+        ColumnAttributes attributes = new ColumnAttributes();
+        attributes.setConstraints(Collections.singletonList(first));
+        expect.setColumnAttributes(attributes);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_columnDefCheck2_generateSuccees() {
+        StatementFactory<TableElement> factory =
+                new MySQLTableElementFactory(getTableElementContext("tb.col varchar(64) constraint abcd check(false)"));
+        ColumnDefinition actual = (ColumnDefinition) factory.generate();
+
+        DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
+        ColumnDefinition expect = new ColumnDefinition(new ColumnReference(null, "tb", "col"), dataType);
+        InLineConstraint first = new InLineCheckConstraint("abcd", null, new ConstExpression("false"));
+        ColumnAttributes attributes = new ColumnAttributes();
+        attributes.setConstraints(Collections.singletonList(first));
+        expect.setColumnAttributes(attributes);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_columnDefCheck3_generateSuccees() {
+        StatementFactory<TableElement> factory =
+                new MySQLTableElementFactory(
+                        getTableElementContext("tb.col varchar(64) constraint abcd check(false) not enforced"));
+        ColumnDefinition actual = (ColumnDefinition) factory.generate();
+
+        DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
+        ColumnDefinition expect = new ColumnDefinition(new ColumnReference(null, "tb", "col"), dataType);
+        ConstraintState state = new ConstraintState();
+        state.setEnforced(false);
+        InLineConstraint first = new InLineCheckConstraint("abcd", state, new ConstExpression("false"));
         ColumnAttributes attributes = new ColumnAttributes();
         attributes.setConstraints(Collections.singletonList(first));
         expect.setColumnAttributes(attributes);
@@ -493,6 +574,29 @@ public class MySQLTableElementFactoryTest {
     }
 
     @Test
+    public void generate_generatedColumnDefAsSRIDMultiAttrs_generateSuccees() {
+        StatementFactory<TableElement> factory = new MySQLTableElementFactory(
+                getTableElementContext("tb.col varchar(64) generated always as (tb.col+1) virtual not null srid 12"));
+        ColumnDefinition actual = (ColumnDefinition) factory.generate();
+
+        DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
+        ColumnDefinition expect = new ColumnDefinition(new ColumnReference(null, "tb", "col"), dataType);
+        ColumnReference r1 = new ColumnReference(null, "tb", "col");
+        Expression e = new CompoundExpression(r1, new ConstExpression("1"), Operator.ADD);
+        GenerateOption option = new GenerateOption(e);
+        option.setType(Type.VIRTUAL);
+        option.setGenerateOption("always");
+        InLineConstraint first = new InLineConstraint(null, null);
+        first.setNullable(false);
+        ColumnAttributes attributes = new ColumnAttributes();
+        attributes.setConstraints(Collections.singletonList(first));
+        attributes.setSrid(12);
+        expect.setColumnAttributes(attributes);
+        expect.setGenerateOption(option);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
     public void generate_columnDefCheckConstraint_generateSuccees() {
         StatementFactory<TableElement> factory = new MySQLTableElementFactory(
                 getTableElementContext("tb.col varchar(64) generated always as (tb.col+1) stored check(true)"));
@@ -514,6 +618,30 @@ public class MySQLTableElementFactoryTest {
     }
 
     @Test
+    public void generate_columnDefCheckConstraint1_generateSuccees() {
+        StatementFactory<TableElement> factory = new MySQLTableElementFactory(
+                getTableElementContext(
+                        "tb.col varchar(64) generated always as (tb.col+1) stored constraint abcd check(true) enforced"));
+        ColumnDefinition actual = (ColumnDefinition) factory.generate();
+
+        DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
+        ColumnDefinition expect = new ColumnDefinition(new ColumnReference(null, "tb", "col"), dataType);
+        ColumnReference r1 = new ColumnReference(null, "tb", "col");
+        Expression e = new CompoundExpression(r1, new ConstExpression("1"), Operator.ADD);
+        GenerateOption option = new GenerateOption(e);
+        option.setType(Type.STORED);
+        option.setGenerateOption("always");
+        ConstraintState state = new ConstraintState();
+        state.setEnforced(true);
+        InLineConstraint first = new InLineCheckConstraint("abcd", state, new ConstExpression("true"));
+        ColumnAttributes attributes = new ColumnAttributes();
+        attributes.setConstraints(Collections.singletonList(first));
+        expect.setColumnAttributes(attributes);
+        expect.setGenerateOption(option);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
     public void generate_indexBtree_succeed() {
         StatementFactory<TableElement> factory = new MySQLTableElementFactory(
                 getTableElementContext("index idx_name using btree (col, col1) global with parser 'aaaa'"));
@@ -522,6 +650,29 @@ public class MySQLTableElementFactoryTest {
         SortColumn s1 = new SortColumn(new ColumnReference(null, null, "col"));
         SortColumn s2 = new SortColumn(new ColumnReference(null, null, "col1"));
         OutOfLineIndex expect = new OutOfLineIndex("idx_name", Arrays.asList(s1, s2));
+        IndexOptions indexOptions = new IndexOptions();
+        indexOptions.setUsingBtree(true);
+        indexOptions.setGlobal(true);
+        indexOptions.setWithParser("'aaaa'");
+        expect.setIndexOptions(indexOptions);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_exprIndexBtree_succeed() {
+        StatementFactory<TableElement> factory = new MySQLTableElementFactory(
+                getTableElementContext(
+                        "index idx_name using btree ((CASE a WHEN 1 THEN 11 WHEN 2 THEN 22 ELSE 33 END)) global with parser 'aaaa'"));
+        OutOfLineIndex actual = (OutOfLineIndex) factory.generate();
+
+        List<WhenClause> whenClauses = new ArrayList<>();
+        whenClauses.add(new WhenClause(new ConstExpression("1"), new ConstExpression("11")));
+        whenClauses.add(new WhenClause(new ConstExpression("2"), new ConstExpression("22")));
+        CaseWhen caseWhen = new CaseWhen(whenClauses);
+        caseWhen.setCaseValue(new ColumnReference(null, null, "a"));
+        caseWhen.setCaseDefault(new ConstExpression("33"));
+        SortColumn s = new SortColumn(caseWhen);
+        OutOfLineIndex expect = new OutOfLineIndex("idx_name", Collections.singletonList(s));
         IndexOptions indexOptions = new IndexOptions();
         indexOptions.setUsingBtree(true);
         indexOptions.setGlobal(true);

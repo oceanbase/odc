@@ -47,6 +47,7 @@ public class CreateTable extends BaseStatement {
     private String schema;
     private boolean global;
     private boolean temporary;
+    private boolean external;
     private Select as;
     private List<TableElement> tableElements;
     private TableOptions tableOptions;
@@ -97,6 +98,9 @@ public class CreateTable extends BaseStatement {
         }
         if (this.temporary) {
             builder.append(" TEMPORARY");
+        }
+        if (this.external) {
+            builder.append(" EXTERNAL");
         }
         builder.append(" TABLE");
         if (this.ifNotExists) {

@@ -84,6 +84,9 @@ public class MySQLAlterTableActionFactory extends OBParserBaseVisitor<AlterTable
                 alterTableAction.setCollation(ctx.collation().collation_name().getText());
             }
             return alterTableAction;
+        } else if (ctx.REFRESH() != null) {
+            alterTableAction.setRefresh(true);
+            return alterTableAction;
         }
         return visitChildren(ctx);
     }

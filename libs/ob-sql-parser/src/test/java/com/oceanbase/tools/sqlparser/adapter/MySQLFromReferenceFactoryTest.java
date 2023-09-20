@@ -169,6 +169,21 @@ public class MySQLFromReferenceFactoryTest {
     }
 
     @Test
+    public void generate_straightJoin_generateJoinRefSucceed() {
+        Table_referenceContext context = getTableReferenceContext(
+                "select a from chz.tab1 straight_join gsh.tab2");
+        StatementFactory<FromReference> factory = new MySQLFromReferenceFactory(context);
+        FromReference actual = factory.generate();
+
+        NameReference left = new NameReference("chz", "tab1", null);
+        NameReference right = new NameReference("gsh", "tab2", null);
+        ColumnReference chz = new ColumnReference("chz", "tab1", "col1");
+        ColumnReference gsh = new ColumnReference("gsh", "tab2", "col2");
+        JoinReference expect = new JoinReference(left, right, JoinType.STRAIGHT_JOIN, null);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
     public void generate_joinedTableWithFullJoinOnCondition_generateJoinRefSucceed() {
         Table_referenceContext context = getTableReferenceContext(
                 "select a from chz.tab1 a full join gsh.tab2 using (chz.tab1.col1, gsh.tab2.col2)");

@@ -134,6 +134,7 @@ public class AlterTableAction extends BaseStatement {
 
     private Boolean dropPrimaryKey;
     private OutOfLineConstraint modifyPrimaryKey;
+    private boolean refresh;
 
     public AlterTableAction(@NonNull ParserRuleContext context) {
         super(context);
@@ -370,6 +371,9 @@ public class AlterTableAction extends BaseStatement {
         }
         if (this.modifyPrimaryKey != null) {
             builder.append(" MODIFY ").append(this.modifyPrimaryKey);
+        }
+        if (this.refresh) {
+            builder.append(" REFRESH");
         }
         return builder.length() == 0 ? "" : builder.substring(1);
     }
