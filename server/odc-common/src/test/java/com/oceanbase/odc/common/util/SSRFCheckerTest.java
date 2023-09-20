@@ -76,7 +76,7 @@ public class SSRFCheckerTest {
 
     @Test
     public void checkUrlWhiteList_UrlNotInWhiteList_ReturnFalse() {
-        assertFalse(SSRFChecker.checkUrlInWhiteList("http://128.0.0.1/api", urlWhiteList));
+        assertFalse(SSRFChecker.checkUrlInWhiteList("http://127.0.0.100/api", urlWhiteList));
     }
 
     @Test
