@@ -44,7 +44,7 @@ import com.oceanbase.odc.service.integration.model.IntegrationProperties.ApiProp
 import com.oceanbase.odc.service.integration.model.IntegrationProperties.Body;
 import com.oceanbase.odc.service.integration.model.IntegrationProperties.BodyType;
 import com.oceanbase.odc.service.integration.model.IntegrationProperties.HttpProperties;
-import com.oceanbase.odc.service.integration.model.IntegrationProperties.ResponseContentType;
+import com.oceanbase.odc.service.integration.model.OdcIntegrationResponse;
 import com.oceanbase.odc.service.integration.model.TemplateVariables;
 import com.oceanbase.odc.service.integration.util.EncryptionUtil;
 
@@ -109,15 +109,32 @@ public class HttpOperationService {
         return builder.build();
     }
 
-    public <T> T extractHttpResponse(String decryptedResponse, String extractExpression,
-            ResponseContentType responseContentType,
-            Class<T> type) {
-        String response = decryptedResponse;
-        if (responseContentType == ResponseContentType.XML) {
-            response = JsonUtils.xmlToJson(decryptedResponse);
-        }
-        Object responseObject = JsonPathUtils.read(response, "$");
+    public <T> T extractHttpResponse(String decryptedResponse, String extractExpression, Class<T> type) {
+        Object responseObject = JsonPathUtils.read(decryptedResponse, "$");
         Expression expression = EXPRESSION_PARSER.parseExpression(extractExpression);
         return expression.getValue(responseObject, type);
     }
+
+    public <T> T extractHttpResponse(OdcIntegrationResponse decryptedResponse, String extractExpression,
+            Class<T> type) {
+        String content = decryptedResponse.getContent();
+        String mineType = decryptedResponse.getContentType().getMimeType();
+        // ODC treats the response body as a JSON string by default.
+        // If the Content-Type is XML, then try to convert it to JSON.
+        switch (mineType) {
+            case "text/xml":
+            case "application/xml":
+            case "application/atom+xml":
+            case "application/xhtml+xml":
+            case "application/soap+xml":
+                content = JsonUtils.xmlToJson(content);
+                break;
+            default:
+                break;
+        }
+        Object responseObject = JsonPathUtils.read(content, "$");
+        Expression expression = EXPRESSION_PARSER.parseExpression(extractExpression);
+        return expression.getValue(responseObject, type);
+    }
+
 }
