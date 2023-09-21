@@ -163,6 +163,7 @@ public class MySQLTableElementFactory extends OBParserBaseVisitor<TableElement>
         }
         OutOfLineConstraint constraint = new OutOfLineConstraint(ctx, state, columns);
         constraint.setPrimaryKey(true);
+        constraint.setIndexName(ctx.index_name() == null ? null : ctx.index_name().getText());
         return constraint;
     }
 

@@ -850,7 +850,7 @@ out_of_line_index
     ;
 
 out_of_line_primary_index
-    : PRIMARY KEY index_using_algorithm? LeftParen column_name_list RightParen opt_index_options?
+    : PRIMARY KEY index_name? index_using_algorithm? LeftParen column_name_list RightParen opt_index_options?
     ;
 
 out_of_line_unique_index
