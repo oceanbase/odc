@@ -145,6 +145,11 @@ public class MySQLTableElementFactory extends OBParserBaseVisitor<TableElement>
         index.setIndexOptions(getIndexOptions(ctx.index_using_algorithm(), ctx.opt_index_options()));
         index.setSpatial(ctx.SPATIAL() != null);
         index.setFullText(ctx.FULLTEXT() != null);
+        if (ctx.partition_option() != null) {
+            index.setPartition(new MySQLPartitionFactory(ctx.partition_option()).generate());
+        } else if (ctx.auto_partition_option() != null) {
+            index.setPartition(new MySQLPartitionFactory(ctx.auto_partition_option()).generate());
+        }
         return index;
     }
 
@@ -177,9 +182,20 @@ public class MySQLTableElementFactory extends OBParserBaseVisitor<TableElement>
                     : new ConstraintState(ctx.index_using_algorithm());
             state.setIndexOptions(indexOptions);
         }
+        if (ctx.partition_option() != null) {
+            if (state == null) {
+                state = new ConstraintState(ctx.partition_option());
+            }
+            state.setPartition(new MySQLPartitionFactory(ctx.partition_option()).generate());
+        } else if (ctx.auto_partition_option() != null) {
+            if (state == null) {
+                state = new ConstraintState(ctx.auto_partition_option());
+            }
+            state.setPartition(new MySQLPartitionFactory(ctx.auto_partition_option()).generate());
+        }
         OutOfLineConstraint constraint = new OutOfLineConstraint(ctx, state, getSortColumns(ctx.sort_column_list()));
-        constraint.setIndexName(ctx.index_name() == null ? null : ctx.index_name().getText());
         constraint.setUniqueKey(true);
+        constraint.setIndexName(ctx.index_name() == null ? null : ctx.index_name().getText());
         return constraint;
     }
 

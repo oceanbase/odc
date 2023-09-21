@@ -845,8 +845,8 @@ references_clause
     ;
 
 out_of_line_index
-    : key_or_index index_name? index_using_algorithm? LeftParen sort_column_list RightParen opt_index_options?
-    | (FULLTEXT | SPATIAL) key_or_index? index_name? index_using_algorithm? LeftParen sort_column_list RightParen opt_index_options?
+    : key_or_index index_name? index_using_algorithm? LeftParen sort_column_list RightParen opt_index_options? (partition_option | auto_partition_option)?
+    | (FULLTEXT | SPATIAL) key_or_index? index_name? index_using_algorithm? LeftParen sort_column_list RightParen opt_index_options? (partition_option | auto_partition_option)?
     ;
 
 out_of_line_primary_index
@@ -854,7 +854,7 @@ out_of_line_primary_index
     ;
 
 out_of_line_unique_index
-    : UNIQUE key_or_index? index_name? index_using_algorithm? LeftParen sort_column_list RightParen opt_index_options?
+    : UNIQUE key_or_index? index_name? index_using_algorithm? LeftParen sort_column_list RightParen opt_index_options? (partition_option | auto_partition_option)?
     ;
 
 opt_reference_option_list

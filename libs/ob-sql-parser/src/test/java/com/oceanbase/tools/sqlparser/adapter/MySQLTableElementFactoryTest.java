@@ -45,6 +45,7 @@ import com.oceanbase.tools.sqlparser.statement.createtable.ForeignReference.Matc
 import com.oceanbase.tools.sqlparser.statement.createtable.ForeignReference.OnOption;
 import com.oceanbase.tools.sqlparser.statement.createtable.GenerateOption;
 import com.oceanbase.tools.sqlparser.statement.createtable.GenerateOption.Type;
+import com.oceanbase.tools.sqlparser.statement.createtable.HashPartition;
 import com.oceanbase.tools.sqlparser.statement.createtable.InLineCheckConstraint;
 import com.oceanbase.tools.sqlparser.statement.createtable.InLineConstraint;
 import com.oceanbase.tools.sqlparser.statement.createtable.IndexOptions;
@@ -52,6 +53,7 @@ import com.oceanbase.tools.sqlparser.statement.createtable.OutOfLineCheckConstra
 import com.oceanbase.tools.sqlparser.statement.createtable.OutOfLineConstraint;
 import com.oceanbase.tools.sqlparser.statement.createtable.OutOfLineForeignConstraint;
 import com.oceanbase.tools.sqlparser.statement.createtable.OutOfLineIndex;
+import com.oceanbase.tools.sqlparser.statement.createtable.RangePartition;
 import com.oceanbase.tools.sqlparser.statement.createtable.SortColumn;
 import com.oceanbase.tools.sqlparser.statement.createtable.TableElement;
 import com.oceanbase.tools.sqlparser.statement.expression.CaseWhen;
@@ -699,6 +701,40 @@ public class MySQLTableElementFactoryTest {
     }
 
     @Test
+    public void generate_indexHashPartitioned_succeed() {
+        StatementFactory<TableElement> factory = new MySQLTableElementFactory(
+                getTableElementContext("index idx_name (col, col1) partition by hash(col)"));
+        OutOfLineIndex actual = (OutOfLineIndex) factory.generate();
+
+        SortColumn s1 = new SortColumn(new ColumnReference(null, null, "col"));
+        SortColumn s2 = new SortColumn(new ColumnReference(null, null, "col1"));
+        OutOfLineIndex expect = new OutOfLineIndex("idx_name", Arrays.asList(s1, s2));
+        HashPartition p =
+                new HashPartition(Collections.singletonList(new ColumnReference(null, null, "col")), null, null, null);
+        expect.setPartition(p);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_indexAutoPartitioned_succeed() {
+        StatementFactory<TableElement> factory = new MySQLTableElementFactory(
+                getTableElementContext(
+                        "index idx_name (col, col1) partition by range columns(a,b) partition size 'auto' PARTITIONS AUTO"));
+        OutOfLineIndex actual = (OutOfLineIndex) factory.generate();
+
+        SortColumn s1 = new SortColumn(new ColumnReference(null, null, "col"));
+        SortColumn s2 = new SortColumn(new ColumnReference(null, null, "col1"));
+        OutOfLineIndex expect = new OutOfLineIndex("idx_name", Arrays.asList(s1, s2));
+        RangePartition p = new RangePartition(Arrays.asList(
+                new ColumnReference(null, null, "a"),
+                new ColumnReference(null, null, "b")), null, null, null, true);
+        p.setAuto(true);
+        p.setPartitionSize(new ConstExpression("'auto'"));
+        expect.setPartition(p);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
     public void generate_noNameIndex_succeed() {
         StatementFactory<TableElement> factory = new MySQLTableElementFactory(
                 getTableElementContext("index (col, col1) data_table_id=12 virtual_column_id=13 max_used_part_id=14"));
@@ -775,7 +811,7 @@ public class MySQLTableElementFactoryTest {
     @Test
     public void generate_indexPrimaryKey_succeed() {
         StatementFactory<TableElement> factory = new MySQLTableElementFactory(
-                getTableElementContext("primary key using hash (col, col1) comment 'abcd'"));
+                getTableElementContext("primary key `aaaa` using hash (col, col1) comment 'abcd'"));
         TableElement actual = factory.generate();
 
         SortColumn s1 = new SortColumn(new ColumnReference(null, null, "col"));
@@ -787,13 +823,14 @@ public class MySQLTableElementFactoryTest {
         state.setIndexOptions(indexOptions);
         OutOfLineConstraint expect = new OutOfLineConstraint(state, Arrays.asList(s1, s2));
         expect.setPrimaryKey(true);
+        expect.setIndexName("`aaaa`");
         Assert.assertEquals(expect, actual);
     }
 
     @Test
     public void generate_indexPrimaryKeyNoUsingHash_succeed() {
         StatementFactory<TableElement> factory = new MySQLTableElementFactory(
-                getTableElementContext("constraint abcd primary key (col, col1) comment 'abcd'"));
+                getTableElementContext("constraint abcd primary key oop (col, col1) comment 'abcd'"));
         TableElement actual = factory.generate();
 
         SortColumn s1 = new SortColumn(new ColumnReference(null, null, "col"));
@@ -805,6 +842,7 @@ public class MySQLTableElementFactoryTest {
         OutOfLineConstraint expect = new OutOfLineConstraint(state, Arrays.asList(s1, s2));
         expect.setPrimaryKey(true);
         expect.setConstraintName("abcd");
+        expect.setIndexName("oop");
         Assert.assertEquals(expect, actual);
     }
 
@@ -839,6 +877,50 @@ public class MySQLTableElementFactoryTest {
         indexOptions.setGlobal(true);
         indexOptions.setWithParser("'aaaa'");
         state.setIndexOptions(indexOptions);
+        OutOfLineConstraint expect = new OutOfLineConstraint(state, Arrays.asList(s1, s2));
+        expect.setUniqueKey(true);
+        expect.setIndexName("idx_name");
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_uniqueIndexHashPartition_succeed() {
+        StatementFactory<TableElement> factory = new MySQLTableElementFactory(
+                getTableElementContext("unique index idx_name (col asc id 16, col1) partition by hash(col)"));
+        TableElement actual = factory.generate();
+
+        SortColumn s1 = new SortColumn(new ColumnReference(null, null, "col"));
+        s1.setId(16);
+        s1.setDirection(SortDirection.ASC);
+        SortColumn s2 = new SortColumn(new ColumnReference(null, null, "col1"));
+        ConstraintState state = new ConstraintState();
+        HashPartition p =
+                new HashPartition(Collections.singletonList(new ColumnReference(null, null, "col")), null, null, null);
+        state.setPartition(p);
+        OutOfLineConstraint expect = new OutOfLineConstraint(state, Arrays.asList(s1, s2));
+        expect.setUniqueKey(true);
+        expect.setIndexName("idx_name");
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_uniqueIndexAutoPartition_succeed() {
+        StatementFactory<TableElement> factory = new MySQLTableElementFactory(
+                getTableElementContext(
+                        "unique index idx_name (col asc id 16, col1) partition by range columns(a,b) partition size 'auto' PARTITIONS AUTO"));
+        TableElement actual = factory.generate();
+
+        SortColumn s1 = new SortColumn(new ColumnReference(null, null, "col"));
+        s1.setId(16);
+        s1.setDirection(SortDirection.ASC);
+        SortColumn s2 = new SortColumn(new ColumnReference(null, null, "col1"));
+        ConstraintState state = new ConstraintState();
+        RangePartition p = new RangePartition(Arrays.asList(
+                new ColumnReference(null, null, "a"),
+                new ColumnReference(null, null, "b")), null, null, null, true);
+        p.setAuto(true);
+        p.setPartitionSize(new ConstExpression("'auto'"));
+        state.setPartition(p);
         OutOfLineConstraint expect = new OutOfLineConstraint(state, Arrays.asList(s1, s2));
         expect.setUniqueKey(true);
         expect.setIndexName("idx_name");
