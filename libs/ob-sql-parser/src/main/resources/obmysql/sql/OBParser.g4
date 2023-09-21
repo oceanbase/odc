@@ -2891,6 +2891,7 @@ alter_table_action
 
 alter_constraint_option
     : ADD out_of_line_constraint
+    | ADD LeftParen out_of_line_constraint RightParen
     | DROP (CHECK | CONSTRAINT) LeftParen name_list RightParen
     | DROP (CHECK | CONSTRAINT) constraint_name
     | DROP FOREIGN KEY index_name
@@ -2940,6 +2941,7 @@ modify_tg_partition_info
 
 alter_index_option
     : ADD out_of_line_index
+    | ADD LeftParen out_of_line_index RightParen
     | DROP key_or_index index_name
     | ALTER INDEX index_name (visibility_option | parallel_option)
     | RENAME key_or_index index_name TO index_name
