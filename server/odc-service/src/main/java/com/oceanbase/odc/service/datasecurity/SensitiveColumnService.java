@@ -126,6 +126,13 @@ public class SensitiveColumnService {
         return repository.exists(Example.of(entity));
     }
 
+    @SkipAuthorize("odc internal usages")
+    public boolean existsInCurrentOrganization() {
+        SensitiveColumnEntity entity = new SensitiveColumnEntity();
+        entity.setOrganizationId(authenticationFacade.currentOrganizationId());
+        return repository.exists(Example.of(entity));
+    }
+
     @Transactional(rollbackFor = Exception.class)
     @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
     public List<SensitiveColumn> batchCreate(@NotNull Long projectId,
