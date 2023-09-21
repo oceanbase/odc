@@ -42,6 +42,7 @@ import com.oceanbase.tools.sqlparser.obmysql.OBParser.Use_partitionContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParserBaseVisitor;
 import com.oceanbase.tools.sqlparser.statement.Expression;
 import com.oceanbase.tools.sqlparser.statement.JoinType;
+import com.oceanbase.tools.sqlparser.statement.common.BraceBlock;
 import com.oceanbase.tools.sqlparser.statement.common.RelationFactor;
 import com.oceanbase.tools.sqlparser.statement.expression.ColumnReference;
 import com.oceanbase.tools.sqlparser.statement.select.ExpressionReference;
@@ -103,7 +104,11 @@ public class MySQLFromReferenceFactory extends OBParserBaseVisitor<FromReference
         } else if (ctx.table_subquery() != null) {
             return visit(ctx.table_subquery());
         } else if (ctx.table_reference() != null) {
-            return visit(ctx.table_reference());
+            FromReference from = visit(ctx.table_reference());
+            if (ctx.LeftBrace() == null || ctx.OJ() == null || ctx.RightBrace() == null) {
+                return from;
+            }
+            return new BraceBlock(ctx, ctx.OJ().getText(), from);
         }
         StatementFactory<SelectBody> factory = new MySQLSelectBodyFactory(ctx.select_with_parens());
         ExpressionReference reference = new ExpressionReference(ctx, factory.generate(), null);

@@ -4148,6 +4148,14 @@ At
     : '@'
     ;
 
+LeftBrace
+    : '{'
+    ;
+
+RightBrace
+    : '}'
+    ;
+
 Quote
     : '\''
     ;

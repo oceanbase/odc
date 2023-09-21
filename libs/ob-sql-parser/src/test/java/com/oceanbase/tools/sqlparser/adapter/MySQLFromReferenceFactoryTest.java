@@ -31,6 +31,7 @@ import com.oceanbase.tools.sqlparser.obmysql.OBParser.Table_referenceContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Table_referencesContext;
 import com.oceanbase.tools.sqlparser.statement.JoinType;
 import com.oceanbase.tools.sqlparser.statement.Operator;
+import com.oceanbase.tools.sqlparser.statement.common.BraceBlock;
 import com.oceanbase.tools.sqlparser.statement.expression.ColumnReference;
 import com.oceanbase.tools.sqlparser.statement.expression.CompoundExpression;
 import com.oceanbase.tools.sqlparser.statement.select.FlashBackType;
@@ -70,6 +71,16 @@ public class MySQLFromReferenceFactoryTest {
         FromReference actual = factory.generate();
 
         NameReference expect = new NameReference("tab", "ADD", null);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_ojBrace_generateNameRefSucceed() {
+        Table_referenceContext context = getTableReferenceContext("select a from {oj tab.ADD}");
+        StatementFactory<FromReference> factory = new MySQLFromReferenceFactory(context);
+        FromReference actual = factory.generate();
+
+        BraceBlock expect = new BraceBlock("oj", new NameReference("tab", "ADD", null));
         Assert.assertEquals(expect, actual);
     }
 

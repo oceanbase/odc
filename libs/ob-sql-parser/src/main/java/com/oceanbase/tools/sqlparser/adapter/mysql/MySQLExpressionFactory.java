@@ -59,6 +59,7 @@ import com.oceanbase.tools.sqlparser.obmysql.OBParserBaseVisitor;
 import com.oceanbase.tools.sqlparser.statement.Expression;
 import com.oceanbase.tools.sqlparser.statement.Operator;
 import com.oceanbase.tools.sqlparser.statement.Statement;
+import com.oceanbase.tools.sqlparser.statement.common.BraceBlock;
 import com.oceanbase.tools.sqlparser.statement.common.CharacterType;
 import com.oceanbase.tools.sqlparser.statement.common.GeneralDataType;
 import com.oceanbase.tools.sqlparser.statement.common.WindowSpec;
@@ -368,6 +369,8 @@ public class MySQLExpressionFactory extends OBParserBaseVisitor<Expression> impl
             return new CompoundExpression(ctx, factory.generate(), visit(ctx.complex_string_literal()), operator);
         } else if (ctx.case_expr() != null) {
             return visit(ctx.case_expr());
+        } else if (ctx.LeftBrace() != null && ctx.RightBrace() != null) {
+            return new BraceBlock(ctx, ctx.relation_name().getText(), visit(ctx.expr()));
         }
         return new DefaultExpression(ctx);
     }

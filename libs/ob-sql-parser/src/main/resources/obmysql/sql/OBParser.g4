@@ -279,6 +279,7 @@ simple_expr
     | case_expr
     | func_expr
     | window_function
+    | LeftBrace relation_name expr RightBrace
     | USER_VARIABLE
     | column_definition_ref (JSON_EXTRACT|JSON_EXTRACT_UNQUOTED) complex_string_literal
     ;
@@ -1955,6 +1956,7 @@ table_factor
     | table_subquery
     | select_with_parens use_flashback?
     | LeftParen table_reference RightParen
+    | LeftBrace OJ table_reference RightBrace
     ;
 
 tbl_name

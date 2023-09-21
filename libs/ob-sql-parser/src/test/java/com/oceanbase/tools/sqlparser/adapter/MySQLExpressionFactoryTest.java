@@ -33,6 +33,7 @@ import com.oceanbase.tools.sqlparser.obmysql.OBParser.Bit_exprContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.ExprContext;
 import com.oceanbase.tools.sqlparser.statement.Expression;
 import com.oceanbase.tools.sqlparser.statement.Operator;
+import com.oceanbase.tools.sqlparser.statement.common.BraceBlock;
 import com.oceanbase.tools.sqlparser.statement.common.CharacterType;
 import com.oceanbase.tools.sqlparser.statement.common.GeneralDataType;
 import com.oceanbase.tools.sqlparser.statement.common.NumberType;
@@ -1269,6 +1270,16 @@ public class MySQLExpressionFactoryTest {
         CompoundExpression left = new CompoundExpression(c1, c2, Operator.ADD);
         ConstExpression right = new ConstExpression("20");
         CompoundExpression expect = new CompoundExpression(left, right, Operator.NE);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_braceExpr_succeed() {
+        ExprContext context = getExprContext("{abcd 'aaaa'}");
+        StatementFactory<Expression> factory = new MySQLExpressionFactory(context);
+        Expression actual = factory.generate();
+
+        BraceBlock expect = new BraceBlock("abcd", new ConstExpression("'aaaa'"));
         Assert.assertEquals(expect, actual);
     }
 
