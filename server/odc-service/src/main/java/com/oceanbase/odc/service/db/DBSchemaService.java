@@ -39,10 +39,9 @@ import lombok.extern.slf4j.Slf4j;
 @SkipAuthorize("inside connect session")
 public class DBSchemaService {
 
-    public List<DBDatabase> listDatabases(ConnectionSession connectionSession) {
-        return connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY)
-                .execute((ConnectionCallback<List<DBDatabase>>) con -> SchemaPluginUtil
-                        .getDatabaseExtension(connectionSession.getDialectType()).listDetails(con));
+    public List<DBDatabase> listDatabases(ConnectionSession sess) {
+        return sess.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY)
+                .execute((ConnectionCallback<List<DBDatabase>>) con -> listDatabases(sess.getDialectType(), con));
     }
 
     public List<DBDatabase> listDatabases(@NonNull DialectType dialectType, @NonNull Connection connection) {
@@ -58,10 +57,9 @@ public class DBSchemaService {
         return SchemaPluginUtil.getDatabaseExtension(dialectType).getDetail(connection, dbName);
     }
 
-    public DBDatabase detail(ConnectionSession connectionSession, String dbName) {
-        return connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY)
-                .execute((ConnectionCallback<DBDatabase>) con -> SchemaPluginUtil
-                        .getDatabaseExtension(connectionSession.getDialectType()).getDetail(con, dbName));
+    public DBDatabase detail(ConnectionSession sess, String dbName) {
+        return sess.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY)
+                .execute((ConnectionCallback<DBDatabase>) con -> detail(sess.getDialectType(), con, dbName));
     }
 
 }

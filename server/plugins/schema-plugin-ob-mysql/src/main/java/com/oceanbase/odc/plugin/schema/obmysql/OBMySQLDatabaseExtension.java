@@ -21,12 +21,15 @@ import java.util.stream.Collectors;
 
 import org.pf4j.Extension;
 
+import com.oceanbase.odc.common.util.JdbcOperationsUtil;
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.plugin.schema.api.DatabaseExtensionPoint;
 import com.oceanbase.odc.plugin.schema.obmysql.utils.DBAccessorUtil;
 import com.oceanbase.tools.dbbrowser.model.DBDatabase;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
+import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
 
 import lombok.NonNull;
 
@@ -56,6 +59,21 @@ public class OBMySQLDatabaseExtension implements DatabaseExtensionPoint {
     @Override
     public List<DBDatabase> listDetails(@NonNull Connection connection) {
         return getSchemaAccessor(connection).listDatabases();
+    }
+
+    @Override
+    public void create(Connection connection, DBDatabase database, String password) {
+        MySQLSqlBuilder sqlBuilder = new MySQLSqlBuilder();
+        String charsetName = database.getCharset();
+        String collationName = database.getCollation();
+        sqlBuilder.append("create database ").identifier(database.getName());
+        if (StringUtils.isNotEmpty(charsetName)) {
+            sqlBuilder.append(" character set ").append(charsetName);
+        }
+        if (StringUtils.isNotEmpty(collationName)) {
+            sqlBuilder.append(" collate ").append(collationName);
+        }
+        JdbcOperationsUtil.getJdbcOperations(connection).execute(sqlBuilder.toString());
     }
 
     protected DBSchemaAccessor getSchemaAccessor(Connection connection) {
