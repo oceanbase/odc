@@ -34,6 +34,12 @@ import com.oceanbase.odc.core.shared.model.TableIdentity;
 import lombok.Data;
 import lombok.ToString;
 
+/**
+ * Data transfer configuration entity
+ *
+ * @author liuyizhuo.lyz
+ * @date 2023-09-15
+ */
 @Data
 @ToString(exclude = {"sysPassword", "connectionInfo"})
 public class DataTransferConfig {

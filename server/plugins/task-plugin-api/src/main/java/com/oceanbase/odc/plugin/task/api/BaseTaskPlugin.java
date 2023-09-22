@@ -20,6 +20,10 @@ import org.pf4j.Plugin;
 
 import com.oceanbase.odc.core.shared.constant.DialectType;
 
+/**
+ * @author liuyizhuo.lyz
+ * @date 2023-09-15
+ */
 public abstract class BaseTaskPlugin extends Plugin {
 
     /**

@@ -30,6 +30,13 @@ import com.oceanbase.tools.loaddump.context.TaskContext;
 
 import lombok.NonNull;
 
+/**
+ * {@link ObLoaderDumperExportTask}
+ *
+ * @author yh263208
+ * @date 2022-07-25 20:25
+ * @since ODC_release_3.4.0
+ */
 public class ObLoaderDumperExportTask extends BaseObLoaderDumperTransferTask<DumpParameter> {
     private static final Pattern SCHEMA_FILE_PATTERN =
             Pattern.compile("^\"?(.+)\"?-schema\\.(sql)$", Pattern.CASE_INSENSITIVE);

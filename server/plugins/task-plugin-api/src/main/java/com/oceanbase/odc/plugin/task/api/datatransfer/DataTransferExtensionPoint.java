@@ -20,6 +20,10 @@ import org.pf4j.ExtensionPoint;
 
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
 
+/**
+ * @author liuyizhuo.lyz
+ * @date 2023-09-15
+ */
 public interface DataTransferExtensionPoint extends ExtensionPoint {
 
     DataTransferTask build(DataTransferConfig config) throws Exception;

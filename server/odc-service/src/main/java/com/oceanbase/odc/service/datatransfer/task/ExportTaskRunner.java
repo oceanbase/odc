@@ -65,6 +65,12 @@ import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * {@link ExportTaskRunner}
+ *
+ * @author liuyizhuo.lyz
+ * @date 2023-09-22
+ */
 @Slf4j
 public class ExportTaskRunner extends BaseTransferTaskRunner {
     private static final Set<String> OUTPUT_FILTER_FILES = new HashSet<>();

@@ -32,6 +32,7 @@ import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConstant
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.ObjectStatus;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.ObjectStatus.Status;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.TransferTaskStatus;
+import com.oceanbase.odc.plugin.task.obmysql.datatransfer.task.ObLoaderDumperExportTask;
 import com.oceanbase.odc.service.datatransfer.DataTransferAdapter;
 import com.oceanbase.odc.service.datatransfer.model.DataTransferParameter;
 import com.oceanbase.odc.service.datatransfer.model.DataTransferProperties;
@@ -44,6 +45,12 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * {@link BaseTransferTaskRunner}
+ *
+ * @author liuyizhuo.lyz
+ * @date 2023-09-22
+ */
 @Slf4j
 public abstract class BaseTransferTaskRunner implements Callable<DataTransferTaskResult> {
     @Getter

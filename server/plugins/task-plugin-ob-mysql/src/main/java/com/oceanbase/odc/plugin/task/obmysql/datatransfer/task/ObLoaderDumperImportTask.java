@@ -24,6 +24,13 @@ import com.oceanbase.tools.loaddump.common.enums.DataFormat;
 import com.oceanbase.tools.loaddump.common.model.LoadParameter;
 import com.oceanbase.tools.loaddump.context.TaskContext;
 
+/**
+ * {@link ObLoaderDumperImportTask}
+ *
+ * @author yh263208
+ * @date 2022-07-25 20:29
+ * @since ODC_release_3.4.0
+ */
 public class ObLoaderDumperImportTask extends BaseObLoaderDumperTransferTask<LoadParameter> {
 
     private final LoadClient loadClient;

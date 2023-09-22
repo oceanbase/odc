@@ -16,14 +16,36 @@
 
 package com.oceanbase.odc.plugin.task.api.datatransfer;
 
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.ObjectStatus;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.TransferTaskStatus;
 
+/**
+ * @author liuyizhuo.lyz
+ * @date 2023-09-15
+ */
 public interface DataTransferTask {
 
+    /**
+     * transfer data, this is a synchronous process.
+     *
+     * @return transfer result, including data objects and schema objects. The two are independent of
+     *         each other. An object can appear in two lists at the same time. The
+     *         {@link ObjectStatus#getExportPaths()} of each object cannot be null.
+     * @see DataTransferTask#getStatus()
+     */
     TransferTaskStatus transfer() throws Exception;
 
+    /**
+     * get current task status for monitoring.
+     * 
+     * @return transfer result, including data objects and schema objects. The two are independent of
+     *         each other. An object can appear in two lists at the same time.
+     */
     TransferTaskStatus getStatus();
 
+    /**
+     * @return current progress percentage
+     */
     double getProgress();
 
 }

@@ -51,6 +51,12 @@ import com.oceanbase.odc.service.iam.model.User;
 
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * {@link ImportTaskRunner}
+ *
+ * @author liuyizhuo.lyz
+ * @date 2023-09-22
+ */
 @Slf4j
 public class ImportTaskRunner extends BaseTransferTaskRunner {
 

@@ -46,6 +46,13 @@ import com.oceanbase.tools.loaddump.manager.session.SessionProperties;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * {@link BaseObLoaderDumperTransferTask}
+ *
+ * @author yh263208
+ * @date 2022-07-25 14:41
+ * @since ODC_release_3.4.0
+ */
 public abstract class BaseObLoaderDumperTransferTask<T extends BaseParameter> implements DataTransferTask {
     private static final Logger LOGGER = LoggerFactory.getLogger("DataTransferLogger");
 
