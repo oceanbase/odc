@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.datatransfer;
+package com.oceanbase.odc.plugin.task.obmysql.datatransfer;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -29,20 +29,18 @@ import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-import org.springframework.beans.factory.annotation.Autowired;
 
-import com.oceanbase.odc.ServiceTestEnv;
-import com.oceanbase.odc.TestConnectionUtil;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.DialectType;
-import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferFormat;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.CsvConfig;
-import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig.SimpleConnectionConfig;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig.ConnectionInfo;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferFormat;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferObject;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferType;
-import com.oceanbase.odc.service.datasecurity.DataMaskingService;
-import com.oceanbase.odc.service.datatransfer.dumper.DumperOutput;
-import com.oceanbase.odc.service.datatransfer.model.DataTransferParameter;
+import com.oceanbase.odc.plugin.task.obmysql.datatransfer.factory.DumpParameterFactory;
+import com.oceanbase.odc.test.database.TestDBConfiguration;
+import com.oceanbase.odc.test.database.TestDBConfigurations;
 import com.oceanbase.tools.loaddump.common.enums.DataFormat;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
 import com.oceanbase.tools.loaddump.common.model.DumpParameter;
@@ -54,10 +52,7 @@ import com.oceanbase.tools.loaddump.common.model.DumpParameter;
  * @date 2022-07-27 16:06
  * @since ODC_release_3.4.0
  */
-public class DumpParameterFactoryTest extends ServiceTestEnv {
-
-    @Autowired
-    private DataMaskingService maskingService;
+public class DumpParameterFactoryTest {
 
     @Rule
     public ExpectedException thrown = ExpectedException.none();
@@ -66,43 +61,45 @@ public class DumpParameterFactoryTest extends ServiceTestEnv {
     public void dumpParameterFactory_negativeDumpSize_expThrown() throws FileNotFoundException {
         thrown.expect(IllegalArgumentException.class);
         thrown.expectMessage("Max dump size can not be negative");
-        new DumpParameterFactory(getWorkingDir(), getWorkingDir(), getConnectionConfig(), -100L, 1000, maskingService);
+        DataTransferConfig config = generateConfig(DataTransferFormat.SQL, true, true, DialectType.OB_ORACLE);
+        config.setMaxDumpSizeBytes(-100L);
+        new DumpParameterFactory(config);
     }
 
     @Test
     public void generate_positiveDumpSize_returnSettings() throws IOException {
         long maxDumpSize = 1000L;
-        DumpParameterFactory factory =
-                new DumpParameterFactory(getWorkingDir(), getWorkingDir(), getConnectionConfig(), maxDumpSize, 1000,
-                        maskingService);
-        DumpParameter parameter = factory.generate(generateConfig(DataTransferFormat.CSV, true, true));
+        DataTransferConfig config = generateConfig(DataTransferFormat.CSV, true, true, DialectType.OB_ORACLE);
+        config.setMaxDumpSizeBytes(maxDumpSize);
+        DumpParameterFactory factory = new DumpParameterFactory(config);
+        DumpParameter parameter = factory.generate();
         Assert.assertEquals(maxDumpSize, parameter.getMaxFileSize());
     }
 
     @Test
     public void generate_setTransferFormat_returnCsvFormat() throws IOException {
-        DumpParameterFactory factory =
-                new DumpParameterFactory(getWorkingDir(), getWorkingDir(), getConnectionConfig(), null, 1000,
-                        maskingService);
-        DumpParameter parameter = factory.generate(generateConfig(DataTransferFormat.CSV, true, true));
+        DataTransferConfig config = generateConfig(DataTransferFormat.CSV, true, true,
+                DialectType.OB_ORACLE);
+        DumpParameterFactory factory = new DumpParameterFactory(config);
+        DumpParameter parameter = factory.generate();
         Assert.assertEquals(DataFormat.CSV, parameter.getDataFormat());
     }
 
     @Test
     public void generate_setTransferFormat_returnSqlFormat() throws IOException {
-        DumpParameterFactory factory =
-                new DumpParameterFactory(getWorkingDir(), getWorkingDir(), getConnectionConfig(), null, 1000,
-                        maskingService);
-        DumpParameter parameter = factory.generate(generateConfig(DataTransferFormat.SQL, true, true));
+        DataTransferConfig config = generateConfig(DataTransferFormat.SQL, true, true,
+                DialectType.OB_ORACLE);
+        DumpParameterFactory factory = new DumpParameterFactory(config);
+        DumpParameter parameter = factory.generate();
         Assert.assertEquals(DataFormat.SQL, parameter.getDataFormat());
     }
 
     @Test
     public void generate_onlyIncludDdl_tabTableInWhiteMap() throws IOException {
-        DumpParameterFactory factory =
-                new DumpParameterFactory(getWorkingDir(), getWorkingDir(), getConnectionConfig(DialectType.OB_MYSQL),
-                        null, 1000, maskingService);
-        DumpParameter parameter = factory.generate(generateConfig(DataTransferFormat.SQL, false, true));
+        DataTransferConfig config = generateConfig(DataTransferFormat.SQL, false, true,
+                DialectType.OB_MYSQL);
+        DumpParameterFactory factory = new DumpParameterFactory(config);
+        DumpParameter parameter = factory.generate();
         Map<ObjectType, Set<String>> actual = parameter.getWhiteListMap();
         Map<ObjectType, Set<String>> expect = new HashMap<>();
         expect.putIfAbsent(ObjectType.TABLE, Collections.singleton("`TAB`"));
@@ -111,15 +108,13 @@ public class DumpParameterFactoryTest extends ServiceTestEnv {
 
     @Test
     public void generate_onlyIncludDdl_ViewAndTableInWhiteMap() throws IOException {
-        DumpParameterFactory factory =
-                new DumpParameterFactory(getWorkingDir(), getWorkingDir(), getConnectionConfig(DialectType.OB_ORACLE),
-                        null, 1000, maskingService);
-        DataTransferParameter config = generateConfig(DataTransferFormat.SQL, false, true);
+        DataTransferConfig config = generateConfig(DataTransferFormat.SQL, false, true, DialectType.OB_ORACLE);
         DataTransferObject object = new DataTransferObject();
         object.setObjectName("V");
-        object.setDbObjectType(ObjectType.VIEW);
+        object.setDbObjectType(ObjectType.VIEW.getName());
         config.getExportDbObjects().add(object);
-        DumpParameter parameter = factory.generate(config);
+        DumpParameterFactory factory = new DumpParameterFactory(config);
+        DumpParameter parameter = factory.generate();
         Map<ObjectType, Set<String>> actual = parameter.getWhiteListMap();
         Map<ObjectType, Set<String>> expect = new HashMap<>();
         expect.putIfAbsent(ObjectType.TABLE, Collections.singleton("\"TAB\""));
@@ -129,15 +124,14 @@ public class DumpParameterFactoryTest extends ServiceTestEnv {
 
     @Test
     public void generate_onlyIncludData_whiteMapOnlyIncludeTable() throws IOException {
-        DumpParameterFactory factory =
-                new DumpParameterFactory(getWorkingDir(), getWorkingDir(), getConnectionConfig(DialectType.OB_MYSQL),
-                        null, 1000, maskingService);
-        DataTransferParameter config = generateConfig(DataTransferFormat.SQL, true, false);
+        DataTransferConfig config = generateConfig(DataTransferFormat.SQL, true, false,
+                DialectType.OB_MYSQL);
         DataTransferObject object = new DataTransferObject();
         object.setObjectName("V");
-        object.setDbObjectType(ObjectType.VIEW);
+        object.setDbObjectType(ObjectType.VIEW.getName());
         config.getExportDbObjects().add(object);
-        DumpParameter parameter = factory.generate(config);
+        DumpParameterFactory factory = new DumpParameterFactory(config);
+        DumpParameter parameter = factory.generate();
         Map<ObjectType, Set<String>> actual = parameter.getWhiteListMap();
         Map<ObjectType, Set<String>> expect = new HashMap<>();
         expect.putIfAbsent(ObjectType.TABLE, Collections.singleton("`TAB`"));
@@ -147,15 +141,17 @@ public class DumpParameterFactoryTest extends ServiceTestEnv {
     @Test
     public void generate_onlyIncludDdl_includeDdlIsTrue() throws IOException {
         DumpParameterFactory factory =
-                new DumpParameterFactory(getWorkingDir(), getWorkingDir(), getConnectionConfig(), null, 1000,
-                        maskingService);
-        DumpParameter parameter = factory.generate(generateConfig(DataTransferFormat.SQL, false, true));
+                new DumpParameterFactory(generateConfig(DataTransferFormat.SQL, false, true, DialectType.OB_ORACLE));
+        DumpParameter parameter = factory.generate();
         Assert.assertTrue(parameter.isIncludeDdl());
     }
 
-    private DataTransferParameter generateConfig(DataTransferFormat format,
-            boolean transferData, boolean transferDdl) {
-        DataTransferParameter config = new DataTransferParameter();
+    private DataTransferConfig generateConfig(DataTransferFormat format,
+            boolean transferData, boolean transferDdl, DialectType dialectType) {
+        DataTransferConfig config = new DataTransferConfig();
+        config.setWorkingDir(getWorkingDir());
+        config.setLogPath(getWorkingDir().getPath());
+        config.setConnectionInfo(getConnectionInfo(dialectType));
         config.setSchemaName("test");
         config.setTransferType(DataTransferType.EXPORT);
         config.setDataTransferFormat(format);
@@ -164,7 +160,7 @@ public class DumpParameterFactoryTest extends ServiceTestEnv {
         config.setBatchCommitNum(100);
         DataTransferObject object = new DataTransferObject();
         object.setObjectName("TAB");
-        object.setDbObjectType(ObjectType.TABLE);
+        object.setDbObjectType(ObjectType.TABLE.getName());
         config.setExportDbObjects(new LinkedList<>(Collections.singleton(object)));
         config.setReplaceSchemaWhenExists(true);
         config.setTruncateTableBeforeImport(true);
@@ -173,16 +169,26 @@ public class DumpParameterFactoryTest extends ServiceTestEnv {
     }
 
     private File getWorkingDir() {
-        URL url = DumperOutput.class.getClassLoader().getResource("datatransfer");
+        URL url = this.getClass().getClassLoader().getResource("datatransfer");
         assert url != null;
         return new File(url.getPath());
     }
 
-    private SimpleConnectionConfig getConnectionConfig() {
-        return getConnectionConfig(DialectType.OB_ORACLE).simplify();
-    }
-
-    private getConnectionConfig(DialectType dialectType) {
-        return TestConnectionUtil.getTestConnectionConfig(ConnectType.from(dialectType)).simplify();
+    private ConnectionInfo getConnectionInfo(DialectType dialectType) {
+        TestDBConfiguration configuration;
+        if (dialectType.isMysql()) {
+            configuration = TestDBConfigurations.getInstance().getTestOBMysqlConfiguration();
+        } else {
+            configuration = TestDBConfigurations.getInstance().getTestOBOracleConfiguration();
+        }
+        ConnectionInfo connectionInfo = new ConnectionInfo();
+        connectionInfo.setHost(configuration.getHost());
+        connectionInfo.setPort(configuration.getPort());
+        connectionInfo.setConnectType(ConnectType.from(dialectType));
+        connectionInfo.setCluster(configuration.getCluster());
+        connectionInfo.setTenant(configuration.getTenant());
+        connectionInfo.setUsername(configuration.getUsername());
+        connectionInfo.setPassword(configuration.getPassword());
+        return connectionInfo;
     }
 }

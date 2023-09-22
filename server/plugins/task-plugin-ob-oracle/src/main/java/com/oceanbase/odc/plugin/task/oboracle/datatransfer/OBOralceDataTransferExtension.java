@@ -14,17 +14,13 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.plugin.oboracle.datatransfer;
+package com.oceanbase.odc.plugin.task.oboracle.datatransfer;
 
-import com.oceanbase.odc.plugin.task.api.datatransfer.DataTransferExtensionPoint;
-import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
-import com.oceanbase.odc.plugin.task.api.datatransfer.DataTransferTask;
+import org.pf4j.Extension;
 
-public class OBOralceDataTransferExtension implements DataTransferExtensionPoint {
+import com.oceanbase.odc.plugin.task.obmysql.datatransfer.OBMySQLDataTransferExtension;
 
-    @Override
-    public DataTransferTask build(DataTransferConfig config) throws Exception{
-        return null;
-    }
+@Extension
+public class OBOralceDataTransferExtension extends OBMySQLDataTransferExtension {
 
 }

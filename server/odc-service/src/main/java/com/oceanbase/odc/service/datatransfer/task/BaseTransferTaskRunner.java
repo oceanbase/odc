@@ -36,29 +36,37 @@ import com.oceanbase.odc.service.datatransfer.DataTransferAdapter;
 import com.oceanbase.odc.service.datatransfer.model.DataTransferParameter;
 import com.oceanbase.odc.service.datatransfer.model.DataTransferProperties;
 import com.oceanbase.odc.service.flow.task.model.DataTransferTaskResult;
+import com.oceanbase.odc.service.iam.model.User;
+import com.oceanbase.odc.service.iam.util.SecurityContextUtils;
 import com.oceanbase.odc.service.plugin.TaskPluginUtil;
 
 import lombok.Getter;
+import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public abstract class BaseTransferTaskRunner implements Callable<DataTransferTaskResult> {
     @Getter
     private final Holder<DataTransferTask> jobHolder;
+    private final User creator;
     protected final DataTransferParameter parameter;
     protected final DataTransferAdapter adapter;
     protected final DataTransferProperties properties;
 
     protected BaseTransferTaskRunner(DataTransferParameter parameter, Holder<DataTransferTask> jobHolder,
-            DataTransferAdapter adapter, DataTransferProperties properties) {
+            @NonNull User creator, DataTransferAdapter adapter, DataTransferProperties properties) {
         this.parameter = parameter;
         this.jobHolder = jobHolder;
+        this.creator = creator;
         this.adapter = adapter;
         this.properties = properties;
     }
 
     @Override
     public DataTransferTaskResult call() throws Exception {
-        TraceContextHolder.span(ImmutableMap.of(DataTransferConstants.LOG_PATH_NAME, parameter.getLogPath()));
         try {
+            SecurityContextUtils.setCurrentUser(creator);
+            TraceContextHolder.span(ImmutableMap.of(DataTransferConstants.LOG_PATH_NAME, parameter.getLogPath()));
 
             preHandle();
 
@@ -77,7 +85,12 @@ public abstract class BaseTransferTaskRunner implements Callable<DataTransferTas
 
             return result;
 
+        } catch (Exception e) {
+            log.warn("Failed to run data transfer task.", e);
+            throw e;
+
         } finally {
+            SecurityContextUtils.clear();
             TraceContextHolder.clear();
         }
     }

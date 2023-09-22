@@ -37,10 +37,10 @@ public class TaskPluginFinder implements PluginFinder<DialectType> {
 
     protected void init() {
         this.dialect2PluginId = pluginManager.getPlugins()
-            .stream().filter(p -> p.getPlugin() instanceof BaseTaskPlugin)
-            .collect(Collectors.toMap(
-                p -> ((BaseTaskPlugin) p.getPlugin()).getDialectType(),
-                PluginWrapper::getPluginId));
+                .stream().filter(p -> p.getPlugin() instanceof BaseTaskPlugin)
+                .collect(Collectors.toMap(
+                        p -> ((BaseTaskPlugin) p.getPlugin()).getDialectType(),
+                        PluginWrapper::getPluginId));
         if (dialect2PluginId.isEmpty()) {
             throw new IllegalStateException("BaseSchemaPlugin is empty.");
         }

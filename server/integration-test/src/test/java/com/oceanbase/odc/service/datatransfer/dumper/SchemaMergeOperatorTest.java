@@ -25,7 +25,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.oceanbase.tools.loaddump.common.enums.ServerMode;
+import com.oceanbase.odc.core.shared.constant.DialectType;
 
 public class SchemaMergeOperatorTest {
     private DumperOutput dumperOutput;
@@ -45,7 +45,7 @@ public class SchemaMergeOperatorTest {
 
     @Test
     public void test_MergeSchemaFiles_Success() throws Exception {
-        SchemaMergeOperator operator = new SchemaMergeOperator(dumperOutput, "SYS", ServerMode.ORACLE);
+        SchemaMergeOperator operator = new SchemaMergeOperator(dumperOutput, "SYS", DialectType.OB_ORACLE);
         File dest = new File("datatransfer/temp-export/schema.sql");
         operator.mergeSchemaFiles(dest, null);
 

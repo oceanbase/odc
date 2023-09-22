@@ -39,8 +39,7 @@
     </dependencies>
 
     <properties>
-        <maven.compiler.source>8</maven.compiler.source>
-        <maven.compiler.target>8</maven.compiler.target>
+        <root-project.basedir>${project.parent.parent.basedir}</root-project.basedir>
     </properties>
 
 </project>

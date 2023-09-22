@@ -245,7 +245,7 @@ public class AuditEventService {
          * TODO: Fix file path traversal after merging code
          */
         String csvFilePath = String.format("%s/%s", FileManager.generateDir(FileBucket.AUDIT),
-            fileId + DownloadFormat.CSV.getExtension());
+                fileId + DownloadFormat.CSV.getExtension());
         File file = new File(csvFilePath);
         FileUtils.write(file, csvStr);
         String downloadBaseUrl = FileManager.generateBaseDownloadUrl(FileBucket.AUDIT);

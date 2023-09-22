@@ -146,7 +146,10 @@ public class DataTransferService {
         if (!workingDir.exists() || !workingDir.isDirectory()) {
             throw new IllegalStateException("Failed to create working dir, " + workingDir.getAbsolutePath());
         }
+        // set connection info
         parameter.setWorkingDir(workingDir);
+        ConnectionConfig connectionConfig = Objects.requireNonNull(parameter.getConnectionConfig());
+        parameter.setConnectionInfo(connectionConfig.simplify());
         // set sys tenant account for ob-loader-dumper
         injectSysConfig(parameter);
         // set jdbc url
@@ -156,10 +159,11 @@ public class DataTransferService {
         Holder<DataTransferTask> taskHolder = new Holder<>();
         BaseTransferTaskRunner runner;
         if (parameter.getTransferType() == DataTransferType.EXPORT) {
-            runner = new ExportTaskRunner(parameter, taskHolder, dataTransferAdapter, maskingService,
-                    dataTransferProperties);
+            runner = new ExportTaskRunner(parameter, taskHolder, authenticationFacade.currentUser(),
+                    dataTransferAdapter, maskingService, dataTransferProperties);
         } else {
-            runner = new ImportTaskRunner(parameter, taskHolder, dataTransferAdapter, dataTransferProperties);
+            runner = new ImportTaskRunner(parameter, taskHolder, authenticationFacade.currentUser(),
+                    dataTransferAdapter, dataTransferProperties);
         }
         Future<DataTransferTaskResult> future = executor.submit(runner);
 
@@ -307,34 +311,20 @@ public class DataTransferService {
         return getMetaInfo(fileName);
     }
 
-
     private void injectSysConfig(DataTransferParameter parameter) {
-        if (StringUtils.isBlank(parameter.getSysUser())) {
+        String sysUserInConfig = parameter.getSysUser();
+        if (StringUtils.isBlank(sysUserInConfig)) {
             log.info("No Sys user setting");
             return;
         }
+        String sysPasswordInConfig = parameter.getSysPassword();
         ConnectionConfig connectionConfig = parameter.getConnectionConfig();
-        String sysUserInMeta = connectionConfig.getSysTenantUsername();
-        String sysPasswdInMeta = connectionConfig.getSysTenantPassword();
-        String sysUserInConfig = parameter.getSysUser();
-        String sysPasswdInConfig = parameter.getSysPassword();
-        if (sysPasswdInConfig == null) {
-            if (sysPasswdInMeta == null) {
-                log.info("No password for sys, connectionId={}", connectionConfig.getId());
-                return;
-            }
-            Validate.isTrue(sysUserInConfig.equals(sysUserInMeta), "Sys user is illegal");
-            if (!testSysTenantAccount(connectionConfig)) {
-                log.warn("Access denied, Sys tenant account and password error, connectionId={}, sysUserInMeta={}",
-                    connectionConfig.getId(), sysUserInMeta);
-                throw new IllegalStateException("AccessDenied, " + sysUserInMeta);
-            }
-            return;
-        }
-        parameter.getConnectionInfo().setSysTenantUsername(sysUserInConfig);
-        parameter.getConnectionInfo().setSysTenantPassword(sysPasswdInConfig);
+        connectionConfig.setSysTenantUsername(sysUserInConfig);
+        connectionConfig.setSysTenantPassword(sysPasswordInConfig);
         if (testSysTenantAccount(connectionConfig)) {
             log.info("Sys user has been approved, connectionId={}", connectionConfig.getId());
+            parameter.getConnectionInfo().setSysTenantUsername(sysUserInConfig);
+            parameter.getConnectionInfo().setSysTenantPassword(sysPasswordInConfig);
             return;
         }
         log.info("Access denied, Sys tenant account and password error, connectionId={}, sysUserInConfig={}",
@@ -354,7 +344,7 @@ public class DataTransferService {
     }
 
     private void setJdbcUrl(DataTransferParameter transferParameter) {
-        ConnectionInfo connectionConfig = transferParameter.getConnectionInfo();
+        ConnectionInfo connectionInfo = transferParameter.getConnectionInfo();
 
         Map<String, String> jdbcUrlParams = new HashMap<>();
         jdbcUrlParams.put("maxAllowedPacket", "64000000");
@@ -367,15 +357,15 @@ public class DataTransferService {
         jdbcUrlParams.put("jdbcCompliantTruncation", "false");
         jdbcUrlParams.put("sendConnectionAttributes", "false");
 
-        if (StringUtils.isNotBlank(connectionConfig.getProxyHost())
-            && Objects.nonNull(connectionConfig.getProxyPort())) {
-            jdbcUrlParams.put("socksProxyHost", connectionConfig.getProxyHost());
-            jdbcUrlParams.put("socksProxyPort", connectionConfig.getProxyPort() + "");
+        if (StringUtils.isNotBlank(connectionInfo.getProxyHost())
+                && Objects.nonNull(connectionInfo.getProxyPort())) {
+            jdbcUrlParams.put("socksProxyHost", connectionInfo.getProxyHost());
+            jdbcUrlParams.put("socksProxyPort", connectionInfo.getProxyPort() + "");
         }
         ConnectionExtensionPoint connectionExtension = ConnectionPluginUtil.getConnectionExtension(
-            connectionConfig.getConnectType().getDialectType());
-        connectionConfig.setJdbcUrl(connectionExtension.generateJdbcUrl(connectionConfig.getHost(),
-            connectionConfig.getPort(), transferParameter.getSchemaName(), jdbcUrlParams));
+                connectionInfo.getConnectType().getDialectType());
+        connectionInfo.setJdbcUrl(connectionExtension.generateJdbcUrl(connectionInfo.getHost(),
+                connectionInfo.getPort(), transferParameter.getSchemaName(), jdbcUrlParams));
     }
 
     private String truncateValue(String val) {

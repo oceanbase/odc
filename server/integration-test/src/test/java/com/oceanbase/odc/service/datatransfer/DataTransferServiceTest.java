@@ -63,6 +63,11 @@ import com.oceanbase.odc.core.shared.constant.ConnectionAccountType;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.TaskType;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.CsvColumnMapping;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.CsvConfig;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferFormat;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferObject;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferType;
 import com.oceanbase.odc.service.collaboration.project.model.Project;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
@@ -74,7 +79,7 @@ import com.oceanbase.odc.service.datatransfer.dumper.DumperOutput;
 import com.oceanbase.odc.service.datatransfer.dumper.SchemaFile;
 import com.oceanbase.odc.service.datatransfer.model.DataTransferParameter;
 import com.oceanbase.odc.service.datatransfer.model.UploadFileResult;
-import com.oceanbase.odc.service.datatransfer.task.ObLoaderDumperContext;
+import com.oceanbase.odc.service.datatransfer.task.DataTransferTaskContext;
 import com.oceanbase.odc.service.session.factory.DruidDataSourceFactory;
 import com.oceanbase.tools.loaddump.common.enums.DataFormat;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
@@ -121,7 +126,7 @@ public class DataTransferServiceTest extends ServiceTestEnv {
 
     @Test
     public void create_dumpSchemaAndDataForOracleMode_bothSchemaAndDataDumped() throws Exception {
-        ObLoaderDumperContext context = dataTransferService.create(BUCKET, getOracleDumpConfig(true, true));
+        DataTransferTaskContext context = dataTransferService.create(BUCKET, getOracleDumpConfig(true, true));
         Assert.assertNotNull(context.get(10, TimeUnit.SECONDS));
 
         DumperOutput dumperOutput = new DumperOutput(getDumpFile());
@@ -132,7 +137,7 @@ public class DataTransferServiceTest extends ServiceTestEnv {
 
     @Test
     public void create_dumpSchemaForOracleMode_onlySchemaDumped() throws Exception {
-        ObLoaderDumperContext context = dataTransferService.create(BUCKET, getOracleDumpConfig(false, true));
+        DataTransferTaskContext context = dataTransferService.create(BUCKET, getOracleDumpConfig(false, true));
         Assert.assertNotNull(context.get(10, TimeUnit.SECONDS));
 
         DumperOutput dumperOutput = new DumperOutput(getDumpFile());
@@ -145,7 +150,7 @@ public class DataTransferServiceTest extends ServiceTestEnv {
     public void create_dumpSchemaForOracleMode_onlySchemaDumped_mergeSchemaFiles() throws Exception {
         DataTransferParameter config = getOracleDumpConfig(false, true);
         config.setMergeSchemaFiles(true);
-        ObLoaderDumperContext context = dataTransferService.create(BUCKET, config);
+        DataTransferTaskContext context = dataTransferService.create(BUCKET, config);
         Assert.assertNotNull(context.get(10, TimeUnit.SECONDS));
 
         File target = new File(fileManager
@@ -156,7 +161,7 @@ public class DataTransferServiceTest extends ServiceTestEnv {
 
     @Test
     public void create_dumpDataForOracleMode_onlyDataDumped() throws Exception {
-        ObLoaderDumperContext context = dataTransferService.create(BUCKET, getOracleDumpConfig(true, false));
+        DataTransferTaskContext context = dataTransferService.create(BUCKET, getOracleDumpConfig(true, false));
         Assert.assertNotNull(context.get(10, TimeUnit.SECONDS));
 
         DumperOutput dumperOutput = new DumperOutput(getDumpFile());
@@ -167,7 +172,7 @@ public class DataTransferServiceTest extends ServiceTestEnv {
 
     @Test
     public void create_dumpSchemaAndDataForMysqlMode_bothSchemaAndDataDumped() throws Exception {
-        ObLoaderDumperContext context = dataTransferService.create(BUCKET, getMysqlDumpConfig(true, true));
+        DataTransferTaskContext context = dataTransferService.create(BUCKET, getMysqlDumpConfig(true, true));
         Assert.assertNotNull(context.get(10, TimeUnit.SECONDS));
 
         DumperOutput dumperOutput = new DumperOutput(getDumpFile());
@@ -178,7 +183,7 @@ public class DataTransferServiceTest extends ServiceTestEnv {
 
     @Test
     public void create_dumpSchemaForMysqlMode_onlySchemaDumped() throws Exception {
-        ObLoaderDumperContext context = dataTransferService.create(BUCKET, getMysqlDumpConfig(false, true));
+        DataTransferTaskContext context = dataTransferService.create(BUCKET, getMysqlDumpConfig(false, true));
         Assert.assertNotNull(context.get(10, TimeUnit.SECONDS));
 
         DumperOutput dumperOutput = new DumperOutput(getDumpFile());
@@ -189,7 +194,7 @@ public class DataTransferServiceTest extends ServiceTestEnv {
 
     @Test
     public void create_dumpDataForMysqlMode_onlyDataDumped() throws Exception {
-        ObLoaderDumperContext context = dataTransferService.create(BUCKET, getMysqlDumpConfig(true, false));
+        DataTransferTaskContext context = dataTransferService.create(BUCKET, getMysqlDumpConfig(true, false));
         Assert.assertNotNull(context.get(10, TimeUnit.SECONDS));
 
         DumperOutput dumperOutput = new DumperOutput(getDumpFile());
@@ -203,7 +208,7 @@ public class DataTransferServiceTest extends ServiceTestEnv {
         File dumpFile = dumpSchemaAndDataForLoad(DialectType.OB_ORACLE);
         assertOracleModeTableNotExists();
 
-        ObLoaderDumperContext context = dataTransferService.create(BUCKET,
+        DataTransferTaskContext context = dataTransferService.create(BUCKET,
                 getOracleLoadConfig(Collections.singletonList(dumpFile.getAbsolutePath()), false, true, true));
         Assert.assertNotNull(context.get(10, TimeUnit.SECONDS));
         assertOracleModeTableExists();
@@ -215,7 +220,7 @@ public class DataTransferServiceTest extends ServiceTestEnv {
         File dumpFile = dumpSchemaAndDataForLoad(DialectType.OB_ORACLE);
         assertOracleModeTableNotExists();
 
-        ObLoaderDumperContext context = dataTransferService.create(BUCKET,
+        DataTransferTaskContext context = dataTransferService.create(BUCKET,
                 getOracleLoadConfig(Collections.singletonList(dumpFile.getAbsolutePath()), false, false, true));
         Assert.assertNotNull(context.get(10, TimeUnit.SECONDS));
         assertOracleModeTableExists();
@@ -227,7 +232,7 @@ public class DataTransferServiceTest extends ServiceTestEnv {
         File dumpFile = dumpSchemaAndDataForLoad(DialectType.OB_MYSQL);
         assertMysqlModeTableNotExists();
 
-        ObLoaderDumperContext context = dataTransferService.create(BUCKET,
+        DataTransferTaskContext context = dataTransferService.create(BUCKET,
                 getMysqlLoadConfig(Collections.singletonList(dumpFile.getAbsolutePath()), false, true, true));
         Assert.assertNotNull(context.get(10, TimeUnit.SECONDS));
         assertMysqlModeTableExists();
@@ -239,7 +244,7 @@ public class DataTransferServiceTest extends ServiceTestEnv {
         File dumpFile = dumpSchemaAndDataForLoad(DialectType.OB_MYSQL);
         assertMysqlModeTableNotExists();
 
-        ObLoaderDumperContext context = dataTransferService.create(BUCKET,
+        DataTransferTaskContext context = dataTransferService.create(BUCKET,
                 getMysqlLoadConfig(Collections.singletonList(dumpFile.getAbsolutePath()), false, false, true));
         Assert.assertNotNull(context.get(10, TimeUnit.SECONDS));
         assertMysqlModeTableExists();
@@ -251,7 +256,7 @@ public class DataTransferServiceTest extends ServiceTestEnv {
         String sqlScript = "INSERT INTO " + TEST_TABLE_NAME + " VALUES ('3', 'Marry'),('4', 'Tom');";
         File target = copyFile(new ByteArrayInputStream(sqlScript.getBytes()), "sql");
 
-        ObLoaderDumperContext context = dataTransferService.create(BUCKET,
+        DataTransferTaskContext context = dataTransferService.create(BUCKET,
                 getOracleLoadConfig(Collections.singletonList(target.getAbsolutePath()), true, true, false));
         Assert.assertNotNull(context.get(10, TimeUnit.SECONDS));
         assertOracleModeTableExists();
@@ -263,7 +268,7 @@ public class DataTransferServiceTest extends ServiceTestEnv {
         String sqlScript = "INSERT INTO " + TEST_TABLE_NAME + " VALUES ('3', 'Marry'),('4', 'Tom');";
         File target = copyFile(new ByteArrayInputStream(sqlScript.getBytes()), "sql");
 
-        ObLoaderDumperContext context = dataTransferService.create(BUCKET,
+        DataTransferTaskContext context = dataTransferService.create(BUCKET,
                 getMysqlLoadConfig(Collections.singletonList(target.getAbsolutePath()), true, true, false));
         Assert.assertNotNull(context.get(10, TimeUnit.SECONDS));
         assertMysqlModeTableExists();
@@ -274,7 +279,7 @@ public class DataTransferServiceTest extends ServiceTestEnv {
     public void create_validSysUserExists_nonCloudModeUsed() throws Exception {
         DataTransferParameter config = getOracleDumpConfig(true, true);
         config.setSysUser(oracleConnConfig.getSysTenantUsername());
-        ObLoaderDumperContext context = dataTransferService.create(BUCKET, config);
+        DataTransferTaskContext context = dataTransferService.create(BUCKET, config);
         Assert.assertNotNull(context.get(10, TimeUnit.SECONDS));
     }
 
@@ -283,7 +288,7 @@ public class DataTransferServiceTest extends ServiceTestEnv {
         DataTransferParameter config = getOracleDumpConfig(true, true);
         config.setSysUser(oracleConnConfig.getSysTenantUsername());
         config.setSysPassword(oracleConnConfig.getSysTenantPassword());
-        ObLoaderDumperContext context = dataTransferService.create(BUCKET, config);
+        DataTransferTaskContext context = dataTransferService.create(BUCKET, config);
         Assert.assertNotNull(context.get(10, TimeUnit.SECONDS));
     }
 
@@ -292,7 +297,7 @@ public class DataTransferServiceTest extends ServiceTestEnv {
         DataTransferParameter config = getOracleDumpConfig(true, true);
         config.setSysUser(oracleConnConfig.getSysTenantUsername());
         config.setSysPassword("abcde");
-        ObLoaderDumperContext context = dataTransferService.create(BUCKET, config);
+        DataTransferTaskContext context = dataTransferService.create(BUCKET, config);
         Assert.assertNotNull(context.get(10, TimeUnit.SECONDS));
     }
 
@@ -380,7 +385,7 @@ public class DataTransferServiceTest extends ServiceTestEnv {
         } else {
             config = getOracleDumpConfig(true, true);
         }
-        ObLoaderDumperContext context = dataTransferService.create(BUCKET, config);
+        DataTransferTaskContext context = dataTransferService.create(BUCKET, config);
         Assert.assertNotNull(context.get(10, TimeUnit.SECONDS));
         File dumpFile = getDumpFile();
         File returnVal = copyFile(new FileInputStream(dumpFile), "zip");
@@ -562,6 +567,7 @@ public class DataTransferServiceTest extends ServiceTestEnv {
     private DataTransferParameter getDumpConfig(DialectType dialectType,
             String schema, boolean data, boolean ddl) {
         DataTransferParameter config = new DataTransferParameter();
+        config.setConnectionConfig(dialectType == DialectType.OB_MYSQL ? mysqlConnConfig : oracleConnConfig);
         config.setConnectionId(dialectType == DialectType.OB_MYSQL ? mysqlConnId : oracleConnId);
         config.setSchemaName(schema);
         config.setTransferType(DataTransferType.EXPORT);
@@ -574,7 +580,7 @@ public class DataTransferServiceTest extends ServiceTestEnv {
         if (dialectType.isMysql()) {
             object.setObjectName(TEST_TABLE_NAME.toLowerCase());
         }
-        object.setDbObjectType(ObjectType.TABLE);
+        object.setDbObjectType(ObjectType.TABLE.getName());
         config.setExportDbObjects(new LinkedList<>(Collections.singleton(object)));
         config.setCsvConfig(new CsvConfig());
         try {
@@ -600,12 +606,16 @@ public class DataTransferServiceTest extends ServiceTestEnv {
     private DataTransferParameter getLoadConfig(DialectType dialectType, boolean external,
             String schema, List<String> importFileNames, boolean data, boolean ddl) {
         DataTransferParameter config = new DataTransferParameter();
+        config.setConnectionConfig(dialectType == DialectType.OB_MYSQL ? mysqlConnConfig : oracleConnConfig);
         config.setSchemaName(schema);
         config.setConnectionId(dialectType == DialectType.OB_MYSQL ? mysqlConnId : oracleConnId);
         config.setTransferType(DataTransferType.IMPORT);
         config.setDataTransferFormat(DataTransferFormat.SQL);
         config.setTransferData(data);
         config.setImportFileName(importFileNames);
+        if (importFileNames.size() == 1 && importFileNames.get(0).endsWith("zip")) {
+            config.setFileType("zip");
+        }
         config.setTransferDDL(ddl);
         if (external) {
             config.setTransferData(true);
@@ -617,7 +627,7 @@ public class DataTransferServiceTest extends ServiceTestEnv {
         if (dialectType.isMysql()) {
             object.setObjectName(TEST_TABLE_NAME.toLowerCase());
         }
-        object.setDbObjectType(ObjectType.TABLE);
+        object.setDbObjectType(ObjectType.TABLE.getName());
         config.setExportDbObjects(Collections.singletonList(object));
         config.setReplaceSchemaWhenExists(true);
         config.setTruncateTableBeforeImport(true);

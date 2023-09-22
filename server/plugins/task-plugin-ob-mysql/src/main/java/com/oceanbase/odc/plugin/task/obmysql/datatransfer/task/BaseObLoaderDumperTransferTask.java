@@ -47,8 +47,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public abstract class BaseObLoaderDumperTransferTask<T extends BaseParameter> implements DataTransferTask {
     protected final T parameter;
-    private final boolean transferData;
-    private final boolean transferSchema;
+    protected final boolean transferData;
+    protected final boolean transferSchema;
     private final long sleepInterval;
     private final boolean usePrepStmts;
     private TaskContext schemaContext;

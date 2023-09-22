@@ -30,8 +30,6 @@
         <dependency>
             <groupId>com.oceanbase</groupId>
             <artifactId>task-plugin-api</artifactId>
-            <version>4.2.1-SNAPSHOT</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.oceanbase</groupId>
@@ -52,35 +50,50 @@
         <dependency>
             <groupId>com.oceanbase</groupId>
             <artifactId>schema-plugin-ob-mysql</artifactId>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.oceanbase</groupId>
             <artifactId>connect-plugin-ob-oracle</artifactId>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.oceanbase</groupId>
             <artifactId>connect-plugin-mysql</artifactId>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.oceanbase</groupId>
             <artifactId>schema-plugin-ob-oracle</artifactId>
-            <version>4.2.1-SNAPSHOT</version>
-            <scope>compile</scope>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>com.oceanbase</groupId>
             <artifactId>schema-plugin-mysql</artifactId>
-            <version>4.2.1-SNAPSHOT</version>
-            <scope>compile</scope>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.oceanbase</groupId>
+            <artifactId>odc-test</artifactId>
         </dependency>
     </dependencies>
 
     <properties>
-        <maven.compiler.source>8</maven.compiler.source>
-        <maven.compiler.target>8</maven.compiler.target>
+        <root-project.basedir>${project.parent.parent.basedir}</root-project.basedir>
+        <plugin.class>com.oceanbase.odc.plugin.task.obmysql.ObMySQLTaskPlugin</plugin.class>
+        <plugin.dependencies>schema-plugin-ob-oracle, schema-plugin-mysql,
+            connect-plugin-ob-oracle,connect-plugin-ob-mysql
+        </plugin.dependencies>
     </properties>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>

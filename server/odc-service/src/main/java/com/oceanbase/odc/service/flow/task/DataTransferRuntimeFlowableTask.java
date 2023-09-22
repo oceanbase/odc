@@ -15,33 +15,21 @@
  */
 package com.oceanbase.odc.service.flow.task;
 
-import static com.oceanbase.odc.core.shared.constant.OdcConstants.DEFAULT_ZERO_DATE_TIME_BEHAVIOR;
-
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang3.Validate;
 import org.flowable.engine.delegate.DelegateExecution;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import com.oceanbase.odc.core.shared.constant.ConnectionAccountType;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.metadb.task.TaskEntity;
-import com.oceanbase.odc.plugin.connect.api.ConnectionExtensionPoint;
-import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig.ConnectionInfo;
 import com.oceanbase.odc.service.connection.ConnectionTesting;
-import com.oceanbase.odc.service.connection.model.ConnectionConfig;
-import com.oceanbase.odc.service.connection.model.TestConnectionReq;
 import com.oceanbase.odc.service.datatransfer.DataTransferService;
 import com.oceanbase.odc.service.datatransfer.model.DataTransferParameter;
 import com.oceanbase.odc.service.datatransfer.task.DataTransferTaskContext;
 import com.oceanbase.odc.service.flow.OdcInternalFileService;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
-import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
 
@@ -88,9 +76,7 @@ public class DataTransferRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Voi
     protected Void start(Long taskId, TaskService taskService, DelegateExecution execution) throws Exception {
         log.info("Data transfer task starts, taskId={}", taskId);
         DataTransferParameter parameter = FlowTaskUtil.getDataTransferParameter(execution);
-        ConnectionConfig connectionConfig = FlowTaskUtil.getConnectionConfig(execution);
-        parameter.setConnectionConfig(connectionConfig);
-        parameter.setConnectionInfo(connectionConfig.simplify());
+        parameter.setConnectionConfig(FlowTaskUtil.getConnectionConfig(execution));
         parameter.setSchemaName(FlowTaskUtil.getSchemaName(execution));
 
         TaskEntity taskEntity = taskService.detail(taskId);

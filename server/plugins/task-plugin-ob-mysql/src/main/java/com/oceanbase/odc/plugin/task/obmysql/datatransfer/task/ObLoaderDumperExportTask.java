@@ -22,9 +22,6 @@ import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.commons.lang3.ArrayUtils;
-
-import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.ObjectStatus;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.TransferTaskStatus;
 import com.oceanbase.tools.loaddump.client.DumpClient;
@@ -65,8 +62,12 @@ public class ObLoaderDumperExportTask extends BaseObLoaderDumperTransferTask<Dum
     @Override
     protected void postHandle(TransferTaskStatus result) {
         File dataDir = Paths.get(parameter.getFilePath(), "data").toFile();
-        result.getSchemaObjectsInfo().forEach(object -> findExportFiles(dataDir, object, SCHEMA_FILE_PATTERN));
-        result.getDataObjectsInfo().forEach(object -> findExportFiles(dataDir, object, DATA_FILE_PATTERN));
+        if (transferSchema) {
+            result.getSchemaObjectsInfo().forEach(object -> findExportFiles(dataDir, object, SCHEMA_FILE_PATTERN));
+        }
+        if (transferData) {
+            result.getDataObjectsInfo().forEach(object -> findExportFiles(dataDir, object, DATA_FILE_PATTERN));
+        }
     }
 
     private void findExportFiles(File root, ObjectStatus object, Pattern pattern) {
@@ -77,9 +78,6 @@ public class ObLoaderDumperExportTask extends BaseObLoaderDumperTransferTask<Dum
             }
             return Objects.equals(matcher.group(1), object.getName());
         }));
-        if (ArrayUtils.isEmpty(exported)) {
-            throw new UnexpectedException("No exported file found for object " + object.getSummary());
-        }
         object.setExportPaths(exported);
     }
 

@@ -16,8 +16,6 @@
 
 package com.oceanbase.odc.plugin.task.obmysql.datatransfer.util;
 
-import javax.sql.DataSource;
-
 import com.oceanbase.odc.core.datasource.SingleConnectionDataSource;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
 

@@ -88,7 +88,7 @@ public class DataTransferConfig {
     private int cursorFetchSize;
 
     public boolean isCompressed() {
-        return "ZIP".equals(fileType);
+        return StringUtils.equalsIgnoreCase("ZIP", fileType);
     }
 
     @Data

@@ -16,6 +16,8 @@
 
 package com.oceanbase.odc.plugin.task.obmysql.datatransfer;
 
+import org.pf4j.Extension;
+
 import com.oceanbase.odc.plugin.task.api.datatransfer.DataTransferExtensionPoint;
 import com.oceanbase.odc.plugin.task.api.datatransfer.DataTransferTask;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
@@ -28,6 +30,7 @@ import com.oceanbase.odc.plugin.task.obmysql.datatransfer.task.ObLoaderDumperImp
 import com.oceanbase.tools.loaddump.common.model.DumpParameter;
 import com.oceanbase.tools.loaddump.common.model.LoadParameter;
 
+@Extension
 public class OBMySQLDataTransferExtension implements DataTransferExtensionPoint {
 
     @Override

@@ -3,7 +3,7 @@
     "logs":null,
     "tags":[
       {
-        "sess_id":3221625055
+        "sess_id":3221663134
       },
       {
         "action_name":""
@@ -15,177 +15,174 @@
         "client_info":""
       },
       {
-        "receive_ts":1684931827602435
+        "receive_ts":1695102278763511
       },
       {
-        "log_trace_id":"Y2F170BA2D939-0005FB02C184A359-0-0"
+        "log_trace_id":"YB42C0A8171C-000605AD62B0C448-0-0"
       }
     ],
-    "elapse":110511,
-    "end_ts":"2023-05-24 20:37:07.713033",
-    "parent":"0005fc6f-c30e-1367-e185-8b3ae888c18d",
-    "span_id":"0005fc6f-c30e-145a-3d2d-44f5bb2fb2ba",
-    "start_ts":"2023-05-24 20:37:07.602522",
-    "trace_id":"0005fc6f-c30e-1366-3962-06074af7b7e5",
+    "elapse":299,
+    "end_ts":"19-SEP-23 01.44.38.763828 PM",
+    "parent":"000605af-c12e-fabe-b172-7e6cb10576ca",
+    "span_id":"000605af-c12f-0409-6e7d-8787b0ae1c59",
+    "start_ts":"19-SEP-23 01.44.38.763529 PM",
+    "trace_id":"000605af-c12e-fabd-e933-afe27cc684ee",
     "span_name":"com_query_process",
-    "tenant_id":9999,
-    "rec_svr_ip":"xxx.xxx.xxx.xxx",
-    "rec_svr_port":9999
+    "tenant_id":1002,
+    "rec_svr_ip":"192.168.23.28",
+    "rec_svr_port":2882
   },
   {
     "logs":null,
     "tags":null,
-    "elapse":110487,
-    "end_ts":"2023-05-24 20:37:07.713017",
-    "parent":"0005fc6f-c30e-145a-3d2d-44f5bb2fb2ba",
-    "span_id":"0005fc6f-c30e-1462-37a6-ca89952ef75a",
-    "start_ts":"2023-05-24 20:37:07.602530",
-    "trace_id":"0005fc6f-c30e-1366-3962-06074af7b7e5",
+    "elapse":289,
+    "end_ts":"19-SEP-23 01.44.38.763822 PM",
+    "parent":"000605af-c12f-0409-6e7d-8787b0ae1c59",
+    "span_id":"000605af-c12f-040d-f24c-f3dc28801739",
+    "start_ts":"19-SEP-23 01.44.38.763533 PM",
+    "trace_id":"000605af-c12e-fabd-e933-afe27cc684ee",
     "span_name":"mpquery_single_stmt",
-    "tenant_id":9999,
-    "rec_svr_ip":"xxx.xxx.xxx.xxx",
-    "rec_svr_port":9999
+    "tenant_id":1002,
+    "rec_svr_ip":"192.168.23.28",
+    "rec_svr_port":2882
   },
   {
     "logs":null,
     "tags":[
       {
-        "sql_text":"show trace format='json'"
-      },
-      {
-        "sql_id":"6D04262D28361B3F866675F8C118221B"
-      },
-      {
-        "database_id":18446744073709551615
-      },
-      {
-        "plan_hash":13465692160314901852
+        "sql_text":"set @@SQL_SELECT_LIMIT=1000"
       },
       {
         "hit_plan":false
+      },
+      {
+        "sql_id":"29C060D3F13EDCD76D17F22670364DD5"
+      },
+      {
+        "database_id":500007
       }
     ],
-    "elapse":6260,
-    "end_ts":"2023-05-24 20:37:07.608807",
-    "parent":"0005fc6f-c30e-1462-37a6-ca89952ef75a",
-    "span_id":"0005fc6f-c30e-1473-8a06-25984bb107e2",
-    "start_ts":"2023-05-24 20:37:07.602547",
-    "trace_id":"0005fc6f-c30e-1366-3962-06074af7b7e5",
+    "elapse":141,
+    "end_ts":"19-SEP-23 01.44.38.763678 PM",
+    "parent":"000605af-c12f-040d-f24c-f3dc28801739",
+    "span_id":"000605af-c12f-0411-00fc-540ca9a11b8d",
+    "start_ts":"19-SEP-23 01.44.38.763537 PM",
+    "trace_id":"000605af-c12e-fabd-e933-afe27cc684ee",
     "span_name":"sql_compile",
-    "tenant_id":9999,
-    "rec_svr_ip":"xxx.xxx.xxx.xxx",
-    "rec_svr_port":9999
+    "tenant_id":1002,
+    "rec_svr_ip":"192.168.23.28",
+    "rec_svr_port":2882
   },
   {
     "logs":null,
     "tags":null,
-    "elapse":7,
-    "end_ts":"2023-05-24 20:37:07.602557",
-    "parent":"0005fc6f-c30e-1473-8a06-25984bb107e2",
-    "span_id":"0005fc6f-c30e-1476-fc04-8624165fc567",
-    "start_ts":"2023-05-24 20:37:07.602550",
-    "trace_id":"0005fc6f-c30e-1366-3962-06074af7b7e5",
+    "elapse":28,
+    "end_ts":"19-SEP-23 01.44.38.763566 PM",
+    "parent":"000605af-c12f-0411-00fc-540ca9a11b8d",
+    "span_id":"000605af-c12f-0412-3e69-696e6f34c504",
+    "start_ts":"19-SEP-23 01.44.38.763538 PM",
+    "trace_id":"000605af-c12e-fabd-e933-afe27cc684ee",
     "span_name":"pc_get_plan",
-    "tenant_id":9999,
-    "rec_svr_ip":"xxx.xxx.xxx.xxx",
-    "rec_svr_port":9999
+    "tenant_id":1002,
+    "rec_svr_ip":"192.168.23.28",
+    "rec_svr_port":2882
   },
   {
     "logs":null,
     "tags":null,
-    "elapse":6087,
-    "end_ts":"2023-05-24 20:37:07.608774",
-    "parent":"0005fc6f-c30e-1473-8a06-25984bb107e2",
-    "span_id":"0005fc6f-c30e-14ff-52a1-04e9eca015ba",
-    "start_ts":"2023-05-24 20:37:07.602687",
-    "trace_id":"0005fc6f-c30e-1366-3962-06074af7b7e5",
+    "elapse":73,
+    "end_ts":"19-SEP-23 01.44.38.763672 PM",
+    "parent":"000605af-c12f-0411-00fc-540ca9a11b8d",
+    "span_id":"000605af-c12f-044f-1e61-192bd295147b",
+    "start_ts":"19-SEP-23 01.44.38.763599 PM",
+    "trace_id":"000605af-c12e-fabd-e933-afe27cc684ee",
     "span_name":"hard_parse",
-    "tenant_id":9999,
-    "rec_svr_ip":"xxx.xxx.xxx.xxx",
-    "rec_svr_port":9999
+    "tenant_id":1002,
+    "rec_svr_ip":"192.168.23.28",
+    "rec_svr_port":2882
   },
   {
     "logs":null,
     "tags":null,
-    "elapse":36,
-    "end_ts":"2023-05-24 20:37:07.602725",
-    "parent":"0005fc6f-c30e-14ff-52a1-04e9eca015ba",
-    "span_id":"0005fc6f-c30e-1501-5c9f-d2c1ecc0071b",
-    "start_ts":"2023-05-24 20:37:07.602689",
-    "trace_id":"0005fc6f-c30e-1366-3962-06074af7b7e5",
+    "elapse":19,
+    "end_ts":"19-SEP-23 01.44.38.763619 PM",
+    "parent":"000605af-c12f-044f-1e61-192bd295147b",
+    "span_id":"000605af-c12f-0450-130f-4d81331c2428",
+    "start_ts":"19-SEP-23 01.44.38.763600 PM",
+    "trace_id":"000605af-c12e-fabd-e933-afe27cc684ee",
     "span_name":"parse",
-    "tenant_id":9999,
-    "rec_svr_ip":"xxx.xxx.xxx.xxx",
-    "rec_svr_port":9999
+    "tenant_id":1002,
+    "rec_svr_ip":"192.168.23.28",
+    "rec_svr_port":2882
   },
   {
     "logs":null,
     "tags":null,
-    "elapse":1191,
-    "end_ts":"2023-05-24 20:37:07.603954",
-    "parent":"0005fc6f-c30e-14ff-52a1-04e9eca015ba",
-    "span_id":"0005fc6f-c30e-154b-cd40-e3edd294f492",
-    "start_ts":"2023-05-24 20:37:07.602763",
-    "trace_id":"0005fc6f-c30e-1366-3962-06074af7b7e5",
+    "elapse":23,
+    "end_ts":"19-SEP-23 01.44.38.763660 PM",
+    "parent":"000605af-c12f-044f-1e61-192bd295147b",
+    "span_id":"000605af-c12f-0475-086f-62a0f7cda2d8",
+    "start_ts":"19-SEP-23 01.44.38.763637 PM",
+    "trace_id":"000605af-c12e-fabd-e933-afe27cc684ee",
     "span_name":"resolve",
-    "tenant_id":9999,
-    "rec_svr_ip":"xxx.xxx.xxx.xxx",
-    "rec_svr_port":9999
+    "tenant_id":1002,
+    "rec_svr_ip":"192.168.23.28",
+    "rec_svr_port":2882
   },
   {
     "logs":null,
     "tags":null,
-    "elapse":1515,
-    "end_ts":"2023-05-24 20:37:07.605558",
-    "parent":"0005fc6f-c30e-14ff-52a1-04e9eca015ba",
-    "span_id":"0005fc6f-c30e-1a4b-eb80-1398c79f16a1",
-    "start_ts":"2023-05-24 20:37:07.604043",
-    "trace_id":"0005fc6f-c30e-1366-3962-06074af7b7e5",
-    "span_name":"rewrite",
-    "tenant_id":9999,
-    "rec_svr_ip":"xxx.xxx.xxx.xxx",
-    "rec_svr_port":9999
-  },
-  {
-    "logs":null,
-    "tags":null,
-    "elapse":1602,
-    "end_ts":"2023-05-24 20:37:07.607193",
-    "parent":"0005fc6f-c30e-14ff-52a1-04e9eca015ba",
-    "span_id":"0005fc6f-c30e-2057-5988-21da8c4ca60a",
-    "start_ts":"2023-05-24 20:37:07.605591",
-    "trace_id":"0005fc6f-c30e-1366-3962-06074af7b7e5",
-    "span_name":"optimize",
-    "tenant_id":9999,
-    "rec_svr_ip":"xxx.xxx.xxx.xxx",
-    "rec_svr_port":9999
-  },
-  {
-    "logs":null,
-    "tags":null,
-    "elapse":364,
-    "end_ts":"2023-05-24 20:37:07.607590",
-    "parent":"0005fc6f-c30e-14ff-52a1-04e9eca015ba",
-    "span_id":"0005fc6f-c30e-26ba-f9bd-879a80ae0656",
-    "start_ts":"2023-05-24 20:37:07.607226",
-    "trace_id":"0005fc6f-c30e-1366-3962-06074af7b7e5",
-    "span_name":"code_generate",
-    "tenant_id":9999,
-    "rec_svr_ip":"xxx.xxx.xxx.xxx",
-    "rec_svr_port":9999
-  },
-  {
-    "logs":null,
-    "tags":null,
-    "elapse":103991,
-    "end_ts":"2023-05-24 20:37:07.712811",
-    "parent":"0005fc6f-c30e-1462-37a6-ca89952ef75a",
-    "span_id":"0005fc6f-c30e-2cf4-c31f-21e0057a7482",
-    "start_ts":"2023-05-24 20:37:07.608820",
-    "trace_id":"0005fc6f-c30e-1366-3962-06074af7b7e5",
+    "elapse":121,
+    "end_ts":"19-SEP-23 01.44.38.763805 PM",
+    "parent":"000605af-c12f-040d-f24c-f3dc28801739",
+    "span_id":"000605af-c12f-04a4-b988-ae3979a6a590",
+    "start_ts":"19-SEP-23 01.44.38.763684 PM",
+    "trace_id":"000605af-c12e-fabd-e933-afe27cc684ee",
     "span_name":"sql_execute",
-    "tenant_id":9999,
-    "rec_svr_ip":"xxx.xxx.xxx.xxx",
-    "rec_svr_port":9999
+    "tenant_id":1002,
+    "rec_svr_ip":"192.168.23.28",
+    "rec_svr_port":2882
+  },
+  {
+    "logs":null,
+    "tags":null,
+    "elapse":73,
+    "end_ts":"19-SEP-23 01.44.38.763758 PM",
+    "parent":"000605af-c12f-04a4-b988-ae3979a6a590",
+    "span_id":"000605af-c12f-04a5-12f4-577e4e733f29",
+    "start_ts":"19-SEP-23 01.44.38.763685 PM",
+    "trace_id":"000605af-c12e-fabd-e933-afe27cc684ee",
+    "span_name":"open",
+    "tenant_id":1002,
+    "rec_svr_ip":"192.168.23.28",
+    "rec_svr_port":2882
+  },
+  {
+    "logs":null,
+    "tags":null,
+    "elapse":66,
+    "end_ts":"19-SEP-23 01.44.38.763751 PM",
+    "parent":"000605af-c12f-04a5-12f4-577e4e733f29",
+    "span_id":"000605af-c12f-04a5-9a34-0fd9a00715fb",
+    "start_ts":"19-SEP-23 01.44.38.763685 PM",
+    "trace_id":"000605af-c12e-fabd-e933-afe27cc684ee",
+    "span_name":"cmd_open",
+    "tenant_id":1002,
+    "rec_svr_ip":"192.168.23.28",
+    "rec_svr_port":2882
+  },
+  {
+    "logs":null,
+    "tags":null,
+    "elapse":1,
+    "end_ts":"19-SEP-23 01.44.38.763764 PM",
+    "parent":"000605af-c12f-04a4-b988-ae3979a6a590",
+    "span_id":"000605af-c12f-04f3-8a6f-ef876b527b1a",
+    "start_ts":"19-SEP-23 01.44.38.763763 PM",
+    "trace_id":"000605af-c12e-fabd-e933-afe27cc684ee",
+    "span_name":"close",
+    "tenant_id":1002,
+    "rec_svr_ip":"192.168.23.28",
+    "rec_svr_port":2882
   }
 ]

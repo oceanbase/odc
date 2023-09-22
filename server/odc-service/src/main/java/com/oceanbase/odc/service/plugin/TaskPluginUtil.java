@@ -26,7 +26,7 @@ public class TaskPluginUtil {
 
     public static OdcPluginManager<DialectType> getOdcPluginManager() {
         PluginService pluginService = new PluginService();
-        return pluginService.getSchemaPluginManager();
+        return pluginService.getTaskPluginManager();
     }
 
     public static DataTransferExtensionPoint getDataTransferExtension(DialectType dialectType) {

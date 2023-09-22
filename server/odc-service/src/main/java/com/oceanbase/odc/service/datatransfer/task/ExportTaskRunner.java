@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.datatransfer.task;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -27,6 +28,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -41,6 +43,7 @@ import com.oceanbase.odc.core.shared.constant.OdcConstants;
 import com.oceanbase.odc.core.shared.model.TableIdentity;
 import com.oceanbase.odc.plugin.task.api.datatransfer.DataTransferTask;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferObject;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.ObjectStatus;
 import com.oceanbase.odc.service.datasecurity.DataMaskingService;
 import com.oceanbase.odc.service.datasecurity.model.MaskingAlgorithm;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveColumn;
@@ -52,6 +55,7 @@ import com.oceanbase.odc.service.datatransfer.model.DataTransferParameter;
 import com.oceanbase.odc.service.datatransfer.model.DataTransferProperties;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.flow.task.model.DataTransferTaskResult;
+import com.oceanbase.odc.service.iam.model.User;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
@@ -70,9 +74,9 @@ public class ExportTaskRunner extends BaseTransferTaskRunner {
         OUTPUT_FILTER_FILES.add(OdcConstants.PL_DEBUG_PACKAGE + "-schema.sql");
     }
 
-    public ExportTaskRunner(DataTransferParameter parameter, Holder<DataTransferTask> jobHolder,
+    public ExportTaskRunner(DataTransferParameter parameter, Holder<DataTransferTask> jobHolder, User creator,
             DataTransferAdapter adapter, DataMaskingService maskingService, DataTransferProperties properties) {
-        super(parameter, jobHolder, adapter, properties);
+        super(parameter, jobHolder, creator, adapter, properties);
         this.maskingService = maskingService;
     }
 
@@ -158,6 +162,7 @@ public class ExportTaskRunner extends BaseTransferTaskRunner {
         }
 
         File exportPath = Paths.get(workingDir.getPath(), "data").toFile();
+        moveExportedFiles(result, exportPath.getPath());
         File dest = new File(workingDir.getPath() + File.separator + workingDir.getName() + "_export_file.zip");
         try {
             DumperOutput output = new DumperOutput(exportPath);
@@ -183,6 +188,35 @@ public class ExportTaskRunner extends BaseTransferTaskRunner {
             log.info("Delete export directory, dir={}, result={}", exportPath.getAbsolutePath(), deleteRes);
         }
         adapter.afterHandle(parameter, result, dest);
+    }
+
+    private void moveExportedFiles(DataTransferTaskResult result, String exportPath) {
+        doMove(result.getSchemaObjectsInfo(), exportPath);
+        doMove(result.getDataObjectsInfo(), exportPath);
+    }
+
+    private void doMove(List<ObjectStatus> objects, String exportPath) {
+        if (CollectionUtils.isEmpty(objects)) {
+            return;
+        }
+        for (ObjectStatus object : objects) {
+            String objectType = object.getType();
+            File objectDir = Paths.get(exportPath, objectType).toFile();
+            try {
+                if (!objectDir.exists()) {
+                    FileUtils.forceMkdir(objectDir);
+                }
+                for (String source : object.getExportPaths()) {
+                    File file = new File(source);
+                    if (!file.exists() || Objects.equals(file.getParentFile(), objectDir)) {
+                        continue;
+                    }
+                    FileUtils.moveFileToDirectory(file, objectDir, false);
+                }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     @AllArgsConstructor

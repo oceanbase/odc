@@ -47,15 +47,16 @@ import com.oceanbase.odc.service.datatransfer.dumper.DumperOutput;
 import com.oceanbase.odc.service.datatransfer.model.DataTransferParameter;
 import com.oceanbase.odc.service.datatransfer.model.DataTransferProperties;
 import com.oceanbase.odc.service.flow.task.model.DataTransferTaskResult;
+import com.oceanbase.odc.service.iam.model.User;
 
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class ImportTaskRunner extends BaseTransferTaskRunner {
 
-    public ImportTaskRunner(DataTransferParameter parameter, Holder<DataTransferTask> jobHolder,
+    public ImportTaskRunner(DataTransferParameter parameter, Holder<DataTransferTask> jobHolder, User creator,
             DataTransferAdapter adapter, DataTransferProperties transferProperties) {
-        super(parameter, jobHolder, adapter, transferProperties);
+        super(parameter, jobHolder, creator, adapter, transferProperties);
     }
 
     @Override
