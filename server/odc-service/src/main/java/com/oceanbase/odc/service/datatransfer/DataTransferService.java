@@ -37,7 +37,6 @@ import java.util.concurrent.Future;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,7 +47,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.google.common.collect.ImmutableMap;
 import com.oceanbase.odc.common.lang.Holder;
+import com.oceanbase.odc.common.trace.TaskContextHolder;
+import com.oceanbase.odc.common.trace.TraceContextHolder;
 import com.oceanbase.odc.common.util.VersionUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.constant.ConnectionAccountType;
@@ -64,6 +66,7 @@ import com.oceanbase.odc.plugin.task.api.datatransfer.DataTransferTask;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.CsvColumnMapping;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.CsvConfig;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig.ConnectionInfo;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConstants;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferType;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.ConnectionTesting;
@@ -104,7 +107,7 @@ import lombok.extern.slf4j.Slf4j;
 @Validated
 @SkipAuthorize("permission check inside")
 public class DataTransferService {
-    private static final Logger logger = LoggerFactory.getLogger("DataTransferLogger");
+    private static final Logger LOGGER = LoggerFactory.getLogger("DataTransferLogger");
     public static final String CLIENT_DIR_PREFIX = "export_";
     public static final int PREVIEW_PRESERVE_LENGTH = 1024;
     @Autowired
@@ -138,36 +141,47 @@ public class DataTransferService {
      */
     public DataTransferTaskContext create(@NonNull String bucket, DataTransferParameter parameter)
             throws Exception {
-        // set log path
-        parameter.setLogPath(Paths.get(taskLogDir, "data-transfer", bucket).toString());
-        // clear working directory and create bucket for client mode
-        File workingDir = dataTransferAdapter.preHandleWorkDir(parameter, bucket,
-                fileManager.getWorkingDir(TaskType.EXPORT, bucket));
-        if (!workingDir.exists() || !workingDir.isDirectory()) {
-            throw new IllegalStateException("Failed to create working dir, " + workingDir.getAbsolutePath());
-        }
-        // set connection info
-        parameter.setWorkingDir(workingDir);
-        ConnectionConfig connectionConfig = Objects.requireNonNull(parameter.getConnectionConfig());
-        parameter.setConnectionInfo(connectionConfig.simplify());
-        // set sys tenant account for ob-loader-dumper
-        injectSysConfig(parameter);
-        // set jdbc url
-        setJdbcUrl(parameter);
+        try {
+            // set log path
+            parameter.setLogPath(Paths.get(taskLogDir, "data-transfer", bucket).toString());
+            TraceContextHolder.span(ImmutableMap.of(DataTransferConstants.LOG_PATH_NAME, parameter.getLogPath()));
 
-        // task placeholder
-        Holder<DataTransferTask> taskHolder = new Holder<>();
-        BaseTransferTaskRunner runner;
-        if (parameter.getTransferType() == DataTransferType.EXPORT) {
-            runner = new ExportTaskRunner(parameter, taskHolder, authenticationFacade.currentUser(),
-                    dataTransferAdapter, maskingService, dataTransferProperties);
-        } else {
-            runner = new ImportTaskRunner(parameter, taskHolder, authenticationFacade.currentUser(),
-                    dataTransferAdapter, dataTransferProperties);
-        }
-        Future<DataTransferTaskResult> future = executor.submit(runner);
+            // clear working directory and create bucket for client mode
+            File workingDir = dataTransferAdapter.preHandleWorkDir(parameter, bucket,
+                    fileManager.getWorkingDir(TaskType.EXPORT, bucket));
+            if (!workingDir.exists() || !workingDir.isDirectory()) {
+                throw new IllegalStateException("Failed to create working dir, " + workingDir.getAbsolutePath());
+            }
+            // set connection info
+            parameter.setWorkingDir(workingDir);
+            ConnectionConfig connectionConfig = Objects.requireNonNull(parameter.getConnectionConfig());
+            parameter.setConnectionInfo(connectionConfig.simplify());
+            // set sys tenant account for ob-loader-dumper
+            injectSysConfig(parameter);
+            // set jdbc url
+            setJdbcUrl(parameter);
 
-        return new DataTransferTaskContext(future, taskHolder);
+            // task placeholder
+            Holder<DataTransferTask> taskHolder = new Holder<>();
+            BaseTransferTaskRunner runner;
+            if (parameter.getTransferType() == DataTransferType.EXPORT) {
+                runner = new ExportTaskRunner(parameter, taskHolder, authenticationFacade.currentUser(),
+                        dataTransferAdapter, maskingService, dataTransferProperties);
+            } else {
+                runner = new ImportTaskRunner(parameter, taskHolder, authenticationFacade.currentUser(),
+                        dataTransferAdapter, dataTransferProperties);
+            }
+            Future<DataTransferTaskResult> future = executor.submit(runner);
+
+            return new DataTransferTaskContext(future, taskHolder);
+
+        } catch (Exception e) {
+            LOGGER.warn("Failed to init data transfer task.", e);
+            throw e;
+
+        } finally {
+            TaskContextHolder.clear();
+        }
     }
 
     public UploadFileResult getMetaInfo(@NonNull String fileName) throws IOException {
@@ -188,7 +202,7 @@ public class DataTransferService {
                 return UploadFileResult.ofDumperOutput(fileName, dumperOutput);
             } catch (Exception e) {
                 log.warn("Not a valid zip file, file={}", fileName, e);
-                logger.warn("Not a valid zip file, file={}", fileName, e);
+                LOGGER.warn("Not a valid zip file, file={}", fileName, e);
                 return UploadFileResult.ofFail(ErrorCodes.ImportInvalidFileType, new Object[] {uploadFileName});
             }
         } else if (StringUtils.endsWithIgnoreCase(uploadFileName, ".csv")) {
@@ -297,7 +311,7 @@ public class DataTransferService {
             }
         } catch (IOException e) {
             log.warn("Errors occured when parse CSV file, csvConfig={}", csvConfig, e);
-            logger.warn("Errors occured when parse CSV file, csvConfig={}", csvConfig, e);
+            LOGGER.warn("Errors occured when parse CSV file, csvConfig={}", csvConfig, e);
             throw e;
         }
         return mappingList;
@@ -328,7 +342,7 @@ public class DataTransferService {
             return;
         }
         log.info("Access denied, Sys tenant account and password error, connectionId={}, sysUserInConfig={}",
-            connectionConfig.getId(), sysUserInConfig);
+                connectionConfig.getId(), sysUserInConfig);
         parameter.getConnectionInfo().setSysTenantUsername(null);
         parameter.getConnectionInfo().setSysTenantPassword(null);
     }

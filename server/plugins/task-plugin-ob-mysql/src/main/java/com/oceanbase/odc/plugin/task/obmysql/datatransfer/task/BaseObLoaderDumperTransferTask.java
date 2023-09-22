@@ -26,6 +26,8 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.Verify;
@@ -44,8 +46,9 @@ import com.oceanbase.tools.loaddump.manager.session.SessionProperties;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 public abstract class BaseObLoaderDumperTransferTask<T extends BaseParameter> implements DataTransferTask {
+    private static final Logger LOGGER = LoggerFactory.getLogger("DataTransferLogger");
+
     protected final T parameter;
     protected final boolean transferData;
     protected final boolean transferSchema;
@@ -113,7 +116,7 @@ public abstract class BaseObLoaderDumperTransferTask<T extends BaseParameter> im
 
             String fileSuffix = parameter.getFileSuffix();
             if (transferSchema) {
-                log.info("Begin transferring schema");
+                LOGGER.info("Begin transferring schema");
                 parameter.setFileSuffix(DataFormat.SQL.getDefaultFileSuffix());
                 schemaContext = startTransferSchema();
                 if (schemaContext == null) {
@@ -123,7 +126,7 @@ public abstract class BaseObLoaderDumperTransferTask<T extends BaseParameter> im
             }
 
             if (transferData) {
-                log.info("Begin transferring data");
+                LOGGER.info("Begin transferring data");
                 parameter.setFileSuffix(fileSuffix);
                 dataContext = startTransferData();
                 if (dataContext == null) {
@@ -132,9 +135,8 @@ public abstract class BaseObLoaderDumperTransferTask<T extends BaseParameter> im
                 syncWaitFinished(dataContext);
             }
 
-            log.info("Transfer task finished by ob-loader-dumper!");
+            LOGGER.info("Transfer task finished by ob-loader-dumper!");
         } catch (Exception e) {
-            log.warn("Failed to execute data transfer task", e);
             if (schemaContext != null) {
                 schemaContext.shutdownNow();
             }
@@ -181,17 +183,17 @@ public abstract class BaseObLoaderDumperTransferTask<T extends BaseParameter> im
     private void shutdownContext(TaskContext context) {
         try {
             context.shutdown();
-            log.info("shutdown task context finished");
+            LOGGER.info("shutdown task context finished");
         } catch (Exception e) {
             try {
                 context.shutdownNow();
-                log.info("shutdown task context immediately finished");
+                LOGGER.info("shutdown task context immediately finished");
             } catch (Exception ex) {
-                log.warn("shutdown task context immediately failed", ex);
+                LOGGER.warn("shutdown task context immediately failed", ex);
             }
         } finally {
-            log.info(context.getProgress().toString());
-            log.info(context.getSummary().toHumanReadableFormat());
+            LOGGER.info(context.getProgress().toString());
+            LOGGER.info(context.getSummary().toHumanReadableFormat());
         }
     }
 

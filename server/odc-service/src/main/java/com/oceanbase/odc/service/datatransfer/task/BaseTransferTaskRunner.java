@@ -66,7 +66,6 @@ public abstract class BaseTransferTaskRunner implements Callable<DataTransferTas
     public DataTransferTaskResult call() throws Exception {
         try {
             SecurityContextUtils.setCurrentUser(creator);
-            TraceContextHolder.span(ImmutableMap.of(DataTransferConstants.LOG_PATH_NAME, parameter.getLogPath()));
 
             preHandle();
 
@@ -91,7 +90,6 @@ public abstract class BaseTransferTaskRunner implements Callable<DataTransferTas
 
         } finally {
             SecurityContextUtils.clear();
-            TraceContextHolder.clear();
         }
     }
 
