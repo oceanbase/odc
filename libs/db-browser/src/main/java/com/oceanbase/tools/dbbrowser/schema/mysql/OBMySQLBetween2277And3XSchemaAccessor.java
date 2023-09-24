@@ -18,7 +18,6 @@ package com.oceanbase.tools.dbbrowser.schema.mysql;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.lang.NonNull;
@@ -81,20 +80,6 @@ public class OBMySQLBetween2277And3XSchemaAccessor extends OBMySQLSchemaAccessor
             database.setCollation(rs.getString("DEFAULT_COLLATION_NAME"));
         });
         return database;
-    }
-
-    @Override
-    public List<DBDatabase> listDatabases() {
-        String sql = "select a.database_id, a.database_name, b.DEFAULT_CHARACTER_SET_NAME, b.DEFAULT_COLLATION_NAME "
-                + "from oceanbase.gv$database a inner join information_schema.schemata b on a.database_name=b.SCHEMA_NAME where a.tenant_id=EFFECTIVE_TENANT_ID()";
-        return jdbcOperations.query(sql, (rs, num) -> {
-            DBDatabase database = new DBDatabase();
-            database.setId(rs.getString("database_id"));
-            database.setName(rs.getString("database_name"));
-            database.setCharset(rs.getString("DEFAULT_CHARACTER_SET_NAME"));
-            database.setCollation(rs.getString("DEFAULT_COLLATION_NAME"));
-            return database;
-        }).stream().filter(database -> !ESCAPE_SCHEMA_SET.contains(database.getName())).collect(Collectors.toList());
     }
 
     @Override

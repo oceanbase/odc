@@ -62,6 +62,8 @@ public interface ConnectionConfigRepository
     List<ConnectionEntity> findByVisibleScopeAndCreatorId(ConnectionVisibleScope visibleScope,
             Long creatorId);
 
+    List<ConnectionEntity> findByVisibleScope(ConnectionVisibleScope visibleScope);
+
     @Transactional
     int deleteByVisibleScopeAndOwnerId(ConnectionVisibleScope visibleScope, Long ownerId);
 
