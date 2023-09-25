@@ -146,6 +146,9 @@ public class SqlExecuteResult {
         boolean editable = true;
         OdcTable resultTable = null;
         Set<OdcTable> relatedTablesOrViews = new HashSet<>();
+        Set<String> rowid_column_names = new HashSet<>();
+        rowid_column_names.add(OdcConstants.ODC_INTERNAL_ROWID);
+        rowid_column_names.add(OdcConstants.ROWID);
         if (Objects.isNull(this.resultSetMetaData)) {
             return null;
         }
@@ -176,7 +179,8 @@ public class SqlExecuteResult {
             } else {
                 columnNames.add(columnName);
             }
-            if (Types.ROWID == odcFieldMetaData.getColumnType()) {
+            if (Types.ROWID == odcFieldMetaData.getColumnType()
+                    && rowid_column_names.contains(odcFieldMetaData.getColumnName())) {
                 // not editable if there is more than one RowId
                 if (Objects.nonNull(resultTable)) {
                     editable = false;
@@ -203,10 +207,12 @@ public class SqlExecuteResult {
         resultSetMetaData.setTable(resultTable);
         // set rows of the table with rowid editable
         for (JdbcColumnMetaData odcFieldMetaData : resultSetMetaData.getFieldMetaDataList()) {
+            boolean isRowid = Types.ROWID == odcFieldMetaData.getColumnType()
+                    && rowid_column_names.contains(odcFieldMetaData.getColumnName());
             odcFieldMetaData.setEditable(
                     odcFieldMetaData.schemaName().equals(resultTable.getDatabaseName())
                             && odcFieldMetaData.getTableName().equals(resultTable.getTableName())
-                            && Types.ROWID != odcFieldMetaData.getColumnType());
+                            && !isRowid);
         }
         return resultTable;
     }
