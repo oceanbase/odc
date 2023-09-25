@@ -52,9 +52,9 @@ public class DatabaseSyncSchedules {
         for (ConnectionConfig dataSource : orgDataSources) {
             try {
                 databaseSyncManager.submitSyncDataSourceTask(dataSource);
-                log.debug("sync datasource successfully, connectionId={}", dataSource.getId());
+                log.debug("submit sync datasource task successfully, connectionId={}", dataSource.getId());
             } catch (Exception ex) {
-                log.debug("sync datasource failed, datasourceId={}", dataSource.getId(), ex);
+                log.debug("submit sync datasource task failed, datasourceId={}", dataSource.getId(), ex);
             }
         }
     }

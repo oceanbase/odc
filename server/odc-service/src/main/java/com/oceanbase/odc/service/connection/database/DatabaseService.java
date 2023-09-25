@@ -436,8 +436,10 @@ public class DatabaseService {
             Map<String, List<DatabaseEntity>> existedDatabaseName2Database =
                     existedDatabasesInDb.stream().collect(Collectors.groupingBy(DatabaseEntity::getName));
 
+            Set<String> existedDatabaseNames = existedDatabaseName2Database.keySet();
+            Set<String> latestDatabaseNames = latestDatabaseName2Database.keySet();
             List<Object[]> toAdd = latestDatabases.stream()
-                    .filter(database -> !existedDatabaseName2Database.keySet().contains(database.getName()))
+                    .filter(database -> !existedDatabaseNames.contains(database.getName()))
                     .map(database -> new Object[] {
                             database.getDatabaseId(),
                             database.getOrganizationId(),
@@ -461,7 +463,7 @@ public class DatabaseService {
             }
             List<Object[]> toDelete =
                     existedDatabasesInDb.stream()
-                            .filter(database -> !latestDatabaseName2Database.keySet().contains(database.getName()))
+                            .filter(database -> !latestDatabaseNames.contains(database.getName()))
                             .map(database -> new Object[] {database.getId()})
                             .collect(Collectors.toList());
             /**
@@ -474,7 +476,7 @@ public class DatabaseService {
             }
 
             List<Object[]> toUpdate = existedDatabasesInDb.stream()
-                    .filter(database -> latestDatabaseName2Database.keySet().contains(database.getName()))
+                    .filter(database -> latestDatabaseNames.contains(database.getName()))
                     .map(database -> {
                         DatabaseEntity latest = latestDatabaseName2Database.get(database.getName()).get(0);
                         return new Object[] {latest.getTableCount(), latest.getCollationName(), latest.getCharsetName(),
@@ -507,9 +509,10 @@ public class DatabaseService {
                                     Collectors.toList());
             Map<String, List<DatabaseEntity>> existedDatabaseName2Database =
                     existedDatabasesInDb.stream().collect(Collectors.groupingBy(DatabaseEntity::getName));
+            Set<String> existedDatabaseNames = existedDatabaseName2Database.keySet();
 
             List<Object[]> toAdd = latestDatabaseNames.stream()
-                    .filter(latestDatabaseName -> !existedDatabaseName2Database.keySet().contains(latestDatabaseName))
+                    .filter(latestDatabaseName -> !existedDatabaseNames.contains(latestDatabaseName))
                     .map(latestDatabaseName -> new Object[] {
                             com.oceanbase.odc.common.util.StringUtils.uuid(),
                             connection.getOrganizationId(),
