@@ -193,8 +193,6 @@ public abstract class BaseCreateOmsProjectValve extends BaseValve {
             ConnectionSession connectionSession, OnlineSchemaChangeScheduleTaskParameters oscScheduleTaskParameters) {
 
         CreateOceanBaseDataSourceRequest request = new CreateOceanBaseDataSourceRequest();
-        doCreateDataSourceRequest(config, connectionSession, oscScheduleTaskParameters, request);
-
         request.setName(UUID.randomUUID().toString().replace("-", ""));
         request.setType(OmsOceanBaseType.from(config.getType()).name());
         request.setTenant(config.getTenantName());
@@ -203,6 +201,7 @@ public abstract class BaseCreateOmsProjectValve extends BaseValve {
         if (config.getPassword() != null) {
             request.setPassword(Base64.getEncoder().encodeToString(config.getPassword().getBytes()));
         }
+        doCreateDataSourceRequest(config, connectionSession, oscScheduleTaskParameters, request);
         return request;
     }
 
