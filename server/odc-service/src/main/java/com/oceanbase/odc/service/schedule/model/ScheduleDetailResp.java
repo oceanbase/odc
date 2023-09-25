@@ -159,15 +159,20 @@ public class ScheduleDetailResp implements OrganizationIsolated {
             resp.setDatabaseId(entity.getDatabaseId());
             resp.setProjectId(entity.getProjectId());
             resp.setDatabaseName(entity.getDatabaseName());
-            resp.setDatasource(new InnerConnection(getDatasourceById.apply(entity.getConnectionId())));
+            ConnectionConfig datasource = getDatasourceById.apply(entity.getConnectionId());
+            if (datasource != null) {
+                resp.setDatasource(new InnerConnection(datasource));
+            }
 
             resp.setJobParameters(entity.getJobParametersJson());
             resp.setTriggerConfig(entity.getTriggerConfigJson());
             resp.setNextFireTimes(
                     QuartzCronExpressionUtils.getNextFireTimes(JsonUtils.fromJson(entity.getTriggerConfigJson(),
                             TriggerConfig.class).getCronExpression()));
-
-            resp.setCreator(new InnerUser(getUserById.apply(entity.getCreatorId())));
+            UserEntity user = getUserById.apply(entity.getCreatorId());
+            if (user != null) {
+                resp.setCreator(new InnerUser(user));
+            }
             resp.setCreateTime(entity.getCreateTime());
             resp.setUpdateTime(entity.getUpdateTime());
             resp.setDescription(entity.getDescription());
