@@ -330,6 +330,36 @@ public class OBColumnExtractorTest {
     }
 
     @Test
+    public void test_extract_OBMySQL_whereSingleCondition() {
+        String sql = TestColumnExtractorUtil.getTestSql(DialectType.OB_MYSQL, "where-single-condition");
+        LogicalTable result = obMySQLColumnExtractor.extract(obMySQLParser.parse(new StringReader(sql)));
+        List<String> actualLabels = getResultColumnLabels(result);
+        List<String> expectLabels = Arrays.asList("id", "name", "birthday", "description");
+        Assert.assertEquals(4, result.getColumnList().size());
+        Assert.assertEquals(expectLabels, actualLabels);
+    }
+
+    @Test
+    public void test_extract_OBMySQL_whereMultiCondition() {
+        String sql = TestColumnExtractorUtil.getTestSql(DialectType.OB_MYSQL, "where-multi-condition");
+        LogicalTable result = obMySQLColumnExtractor.extract(obMySQLParser.parse(new StringReader(sql)));
+        List<String> actualLabels = getResultColumnLabels(result);
+        List<String> expectLabels = Arrays.asList("id", "name", "birthday", "description");
+        Assert.assertEquals(4, result.getColumnList().size());
+        Assert.assertEquals(expectLabels, actualLabels);
+    }
+
+    @Test
+    public void test_extract_OBMySQL_whereNestingSelect() {
+        String sql = TestColumnExtractorUtil.getTestSql(DialectType.OB_MYSQL, "where-nesting-select");
+        LogicalTable result = obMySQLColumnExtractor.extract(obMySQLParser.parse(new StringReader(sql)));
+        List<String> actualLabels = getResultColumnLabels(result);
+        List<String> expectLabels = Arrays.asList("id", "name", "birthday", "description");
+        Assert.assertEquals(4, result.getColumnList().size());
+        Assert.assertEquals(expectLabels, actualLabels);
+    }
+
+    @Test
     public void test_extract_OBMySQL_unionTwoTables() {
         String sql = TestColumnExtractorUtil.getTestSql(DialectType.OB_MYSQL, "union-two-tables");
         LogicalTable result = obMySQLColumnExtractor.extract(obMySQLParser.parse(new StringReader(sql)));
