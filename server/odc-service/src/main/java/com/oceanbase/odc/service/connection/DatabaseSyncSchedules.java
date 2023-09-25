@@ -22,9 +22,9 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
+import com.oceanbase.odc.core.shared.constant.ConnectionVisibleScope;
 import com.oceanbase.odc.service.connection.database.DatabaseSyncManager;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
-import com.oceanbase.odc.service.iam.util.SecurityContextUtils;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -44,17 +44,17 @@ public class DatabaseSyncSchedules {
 
     @Scheduled(fixedDelayString = "${odc.connect.session.sync-databases-interval-millis:180000}")
     public void syncDatabases() {
-        List<ConnectionConfig> allConnections = connectionService.listAllConnections();
-        if (CollectionUtils.isEmpty(allConnections)) {
+        List<ConnectionConfig> orgDataSources =
+                connectionService.listByVisibleScope(ConnectionVisibleScope.ORGANIZATION);
+        if (CollectionUtils.isEmpty(orgDataSources)) {
             return;
         }
-        for (ConnectionConfig connection : allConnections) {
+        for (ConnectionConfig dataSource : orgDataSources) {
             try {
-                SecurityContextUtils.setCurrentUser(connection.getCreatorId(), connection.getOrganizationId(), null);
-                databaseSyncManager.syncDataSource(connection.getId());
-                log.debug("sync datasource successfully, connectionId={}", connection.getId());
+                databaseSyncManager.submitSyncDataSourceTask(dataSource);
+                log.debug("submit sync datasource task successfully, connectionId={}", dataSource.getId());
             } catch (Exception ex) {
-                log.debug("sync datasource failed, datasourceId={}", connection.getId(), ex);
+                log.debug("submit sync datasource task failed, datasourceId={}", dataSource.getId(), ex);
             }
         }
     }

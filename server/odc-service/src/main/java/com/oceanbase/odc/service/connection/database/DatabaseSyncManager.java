@@ -54,11 +54,6 @@ public class DatabaseSyncManager {
         }));
     }
 
-    @SkipAuthorize("internal usage")
-    public Boolean syncDataSource(@NonNull Long dataSourceId) throws InterruptedException {
-        return databaseService.internalSyncDataSourceSchemas(dataSourceId);
-    }
-
     private Future<Boolean> doExecute(Supplier<Future<Boolean>> supplier) {
         try {
             return supplier.get();

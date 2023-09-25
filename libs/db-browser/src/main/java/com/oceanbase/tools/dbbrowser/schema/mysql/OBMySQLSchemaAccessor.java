@@ -42,7 +42,6 @@ import com.oceanbase.tools.dbbrowser.util.StringUtils;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- *
  * 适用 OB 版本：[4.0.0, ~)
  *
  * @author jingtian
@@ -96,15 +95,12 @@ public class OBMySQLSchemaAccessor extends MySQLNoGreaterThan5740SchemaAccessor 
 
     @Override
     public List<DBDatabase> listDatabases() {
-        String sql = "select a.object_name, a.timestamp, b.DEFAULT_CHARACTER_SET_NAME, b.DEFAULT_COLLATION_NAME "
-                + "from oceanbase.DBA_OBJECTS a inner join information_schema.schemata b on a.object_name=b.SCHEMA_NAME and a"
-                + ".object_type='DATABASE';";
+        String sql =
+                "SELECT SCHEMA_NAME, DEFAULT_CHARACTER_SET_NAME, DEFAULT_COLLATION_NAME FROM information_schema.schemata;";
         return jdbcOperations.query(sql, (rs, num) -> {
             DBDatabase database = new DBDatabase();
-            String objectName = rs.getString("object_name");
-            String timestamp = rs.getString("timestamp");
-            database.setName(objectName);
-            database.setId(objectName + "_" + timestamp);
+            database.setId(rs.getString("SCHEMA_NAME"));
+            database.setName(rs.getString("SCHEMA_NAME"));
             database.setCharset(rs.getString("DEFAULT_CHARACTER_SET_NAME"));
             database.setCollation(rs.getString("DEFAULT_COLLATION_NAME"));
             return database;
@@ -269,6 +265,5 @@ public class OBMySQLSchemaAccessor extends MySQLNoGreaterThan5740SchemaAccessor 
         return sequenceNames.stream().map(name -> DBObjectIdentity.of(schemaName, DBObjectType.SEQUENCE, name)).collect(
                 Collectors.toList());
     }
-
 
 }

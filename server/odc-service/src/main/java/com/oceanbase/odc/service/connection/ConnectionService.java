@@ -65,6 +65,7 @@ import com.oceanbase.odc.core.authority.util.PreAuthenticate;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ConnectionStatus;
+import com.oceanbase.odc.core.shared.constant.ConnectionVisibleScope;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.PermissionType;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
@@ -437,7 +438,11 @@ public class ConnectionService {
         return repository.findAll().stream().map(mapper::entityToModel).collect(Collectors.toList());
     }
 
-
+    @SkipAuthorize("internal usage")
+    public List<ConnectionConfig> listByVisibleScope(ConnectionVisibleScope visibleScope) {
+        return repository.findByVisibleScope(visibleScope).stream().map(mapper::entityToModel)
+                .collect(Collectors.toList());
+    }
 
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("permission check inside")
@@ -529,6 +534,7 @@ public class ConnectionService {
         entityManager.refresh(savedEntity);
 
         ConnectionConfig updated = entityToModel(savedEntity, true);
+        databaseSyncManager.submitSyncDataSourceTask(updated);
         log.info("Connection updated, connection={}", updated);
         return updated;
     }

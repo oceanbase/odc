@@ -111,11 +111,12 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
     @Override
     public List<DBDatabase> listDatabases() {
         List<DBDatabase> databases = new ArrayList<>();
-        String sql = "SELECT USERNAME, USERID from ALL_USERS;";
+        String sql = "SELECT USERNAME from ALL_USERS;";
         jdbcOperations.query(sql, rs -> {
             DBDatabase database = new DBDatabase();
-            database.setId(rs.getString("USERID"));
-            database.setName(rs.getString("USERNAME"));
+            String userName = rs.getString("USERNAME");
+            database.setId(userName);
+            database.setName(userName);
             databases.add(database);
         });
         sql = "select value from v$nls_parameters where PARAMETER = 'NLS_CHARACTERSET'";
