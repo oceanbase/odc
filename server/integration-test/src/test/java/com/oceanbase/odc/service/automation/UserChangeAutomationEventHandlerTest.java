@@ -19,6 +19,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.junit.After;
@@ -34,7 +35,10 @@ import com.oceanbase.odc.MockedAuthorityTestEnv;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.constant.Cipher;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
+import com.oceanbase.odc.core.shared.constant.RoleType;
 import com.oceanbase.odc.core.shared.constant.UserType;
+import com.oceanbase.odc.metadb.iam.RoleEntity;
+import com.oceanbase.odc.metadb.iam.RoleRepository;
 import com.oceanbase.odc.metadb.iam.UserEntity;
 import com.oceanbase.odc.metadb.iam.UserRepository;
 import com.oceanbase.odc.metadb.iam.UserRoleEntity;
@@ -52,6 +56,8 @@ public class UserChangeAutomationEventHandlerTest extends MockedAuthorityTestEnv
     private AutomationService automationService;
     @MockBean
     private AuthenticationFacade authenticationFacade;
+    @MockBean
+    private RoleRepository roleRepository;
     @Autowired
     private UserRoleRepository userRoleRepository;
     @Autowired
@@ -71,6 +77,7 @@ public class UserChangeAutomationEventHandlerTest extends MockedAuthorityTestEnv
 
         Mockito.when(authenticationFacade.currentOrganizationId()).thenReturn(ORGANIZATION_ID);
         Mockito.when(authenticationFacade.currentUserId()).thenReturn(ADMIN_USER_ID);
+        Mockito.when(roleRepository.findById(ADMIN_ROLE_ID)).thenReturn(Optional.of(createRoleEntity()));
 
         AutomationCondition condition = new AutomationCondition();
         condition.setExpression("extra#department");
@@ -114,4 +121,17 @@ public class UserChangeAutomationEventHandlerTest extends MockedAuthorityTestEnv
         entity.setExtraPropertiesJson(JsonUtils.toJson(extraInfo));
         return userRepository.saveAndFlush(entity);
     }
+
+    private RoleEntity createRoleEntity() {
+        RoleEntity roleEntity = new RoleEntity();
+        roleEntity.setId(ADMIN_ROLE_ID);
+        roleEntity.setEnabled(true);
+        roleEntity.setBuiltIn(true);
+        roleEntity.setType(RoleType.ADMIN);
+        roleEntity.setName("test");
+        roleEntity.setCreatorId(ADMIN_USER_ID);
+        roleEntity.setOrganizationId(ORGANIZATION_ID);
+        return roleEntity;
+    }
+
 }

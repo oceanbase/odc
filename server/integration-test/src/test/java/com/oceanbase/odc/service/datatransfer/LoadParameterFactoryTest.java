@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -215,6 +216,7 @@ public class LoadParameterFactoryTest {
     }
 
     @Test
+    @Ignore("LoadParameter#noSys is always false when OB version grater than 4.0")
     public void generate_isNoSys_returnTrue() throws IOException {
         ConnectionConfig connectionConfig = getConnectionConfig(DialectType.OB_ORACLE);
         connectionConfig.setSysTenantPassword(null);

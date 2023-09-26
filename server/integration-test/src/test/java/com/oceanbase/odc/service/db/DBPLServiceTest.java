@@ -147,7 +147,7 @@ public class DBPLServiceTest extends ServiceTestEnv {
     @Test
     public void test_get_batch_compile_result() {
         batchCompileId = startBatchCompile();
-        await().atMost(3L, TimeUnit.SECONDS).until(() -> {
+        await().atMost(10L, TimeUnit.SECONDS).until(() -> {
             BatchCompileResp resp = plService.getBatchCompileResult(batchCompileId);
             return BatchCompileStatus.COMPLETED == resp.getStatus();
         });

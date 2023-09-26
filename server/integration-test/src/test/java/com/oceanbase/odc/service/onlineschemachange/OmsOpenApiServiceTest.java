@@ -213,7 +213,7 @@ public class OmsOpenApiServiceTest {
         request.setIp(config.getHost());
         request.setPort(config.getPort());
         request.setUserName(config.getUsername());
-        request.setPassword(Base64.getEncoder().encodeToString(config.getSysPassword().getBytes()));
+        request.setPassword(Base64.getEncoder().encodeToString(config.getPassword().getBytes()));
 
         request.setRegion("cn-anhui");
         request.setDescription(null);
@@ -221,8 +221,8 @@ public class OmsOpenApiServiceTest {
 
         String configUrl = getConfigUrl();
         request.setConfigUrl(configUrl);
-        request.setDrcUserName(config.getSysUsername());
-        request.setDrcPassword(Base64.getEncoder().encodeToString(config.getSysPassword().getBytes()));
+        request.setDrcUserName(config.getUsername());
+        request.setDrcPassword(Base64.getEncoder().encodeToString(config.getPassword().getBytes()));
         return request;
     }
 
@@ -232,8 +232,8 @@ public class OmsOpenApiServiceTest {
         String configUrl;
         try (Connection connection = DriverManager.getConnection(
                 TestDBUtil.buildUrl(config.getHost(), config.getPort(), config.getDefaultDBName(), "OB_MYSQL"),
-                TestDBUtil.buildUser(config.getSysUsername(), config.getTenant(), config.getCluster()),
-                config.getSysPassword())) {
+                TestDBUtil.buildUser(config.getUsername(), config.getTenant(), config.getCluster()),
+                config.getPassword())) {
             configUrl = new JdbcTemplate(new SingleConnectionDataSource(connection, false))
                     .query(queryClusterUrlSql, rs -> {
                         if (!rs.next()) {
