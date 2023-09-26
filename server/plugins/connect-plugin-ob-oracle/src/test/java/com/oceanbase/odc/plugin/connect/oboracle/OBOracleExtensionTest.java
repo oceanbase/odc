@@ -23,6 +23,7 @@ import java.util.UUID;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.util.CollectionUtils;
@@ -100,6 +101,7 @@ public class OBOracleExtensionTest extends BaseExtensionPointTest {
     }
 
     @Test
+    @Ignore("Unmatched exception when using cloud OB Oracle")
     public void test_ob_oracle_connect_invalid_port() {
         String url = connectionExtensionPoint.generateJdbcUrl(configuration.getHost(), configuration.getPort() + 100,
                 configuration.getDefaultDBName(), null);

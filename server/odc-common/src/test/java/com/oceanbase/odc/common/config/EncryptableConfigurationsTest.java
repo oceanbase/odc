@@ -26,7 +26,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class EncryptableConfigurationsTest {
     private static final String TEST_CONFIG_FILE = "src/test/resources/test-encrypt-configuration.properties";
-    private static final String GENERATE_INPUT_FILE = "src/test/resources/generate-input.properties";
 
     @Test
     public void loadProperties_WithEncryptedValue() {
