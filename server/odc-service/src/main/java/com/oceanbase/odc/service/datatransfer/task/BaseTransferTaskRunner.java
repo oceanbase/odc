@@ -24,15 +24,11 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.ListUtils;
 
 import com.google.common.base.Verify;
-import com.google.common.collect.ImmutableMap;
 import com.oceanbase.odc.common.lang.Holder;
-import com.oceanbase.odc.common.trace.TraceContextHolder;
 import com.oceanbase.odc.plugin.task.api.datatransfer.DataTransferTask;
-import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConstants;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.ObjectStatus;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.ObjectStatus.Status;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.TransferTaskStatus;
-import com.oceanbase.odc.plugin.task.obmysql.datatransfer.task.ObLoaderDumperExportTask;
 import com.oceanbase.odc.service.datatransfer.DataTransferAdapter;
 import com.oceanbase.odc.service.datatransfer.model.DataTransferParameter;
 import com.oceanbase.odc.service.datatransfer.model.DataTransferProperties;
