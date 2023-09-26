@@ -134,7 +134,6 @@ public class EncryptableConfigurations {
     private static class SecretKeyGetter {
         private static final String SECRET_ENV_KEY = "ODC_CONFIG_SECRET";
         private static final String SECRET_ENV_ACI_KEY = "ACI_VAR_ODC_CONFIG_SECRET";
-        private static final String SECRET_ENV_GITHUB_KEY = "GITHUB_ACTION_ODC_CONFIG_SECRET";
         private final Properties envProperties;
 
         public SecretKeyGetter() {
@@ -143,10 +142,6 @@ public class EncryptableConfigurations {
 
         public String getSecretKey() {
             String secretKey = getSystemProperty(SECRET_ENV_KEY);
-            if (StringUtils.isNotBlank(secretKey)) {
-                return secretKey;
-            }
-            secretKey = getSystemProperty(SECRET_ENV_GITHUB_KEY);
             if (StringUtils.isNotBlank(secretKey)) {
                 return secretKey;
             }

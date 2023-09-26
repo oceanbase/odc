@@ -6,10 +6,10 @@
 # Jobs:
 #   1. Check Code Format
 #   2. PMD Scan
-#   3. Unit Test (TODO)
+#   3. Unit Test
 #   4. Calculate Version Number
 #   5. Build RPM (exclude front resources and only x86_64 platform for now)
-#   (Job 4 and 5 are executed only when Pull-Request)
+#   (Job 3 to 5 are executed only when Pull-Request)
 ###
 
 name: Build Dev
@@ -75,9 +75,16 @@ jobs:
         run: mvn pmd:check
 
   unit-test:
-    name: Unit Test (Skip for now)
+    name: Unit Test
     needs: [ check-format, pmd-scan ]
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        ut-args:
+          - -Dtest="com.oceanbase.odc.service.**"
+          - -Dtest="com.oceanbase.odc.core.**","com.oceanbase.odc.common.**"
+          - -DtestExcludes="com.oceanbase.odc.service.**","com.oceanbase.odc.core.**","com.oceanbase.odc.common.**"
     steps:
       - name: Checkout workspace
         uses: actions/checkout@v3
@@ -103,9 +110,12 @@ jobs:
           mvn clean install -Dmaven.test.skip=true
           echo "Install ob-sql-parser success"
           popd
+      - name: Build project
+        run: mvn clean install -Dmaven.test.skip=true
       - name: Run unit test
-        run: echo "Skip for now 🤪"
-
+        run: |
+          export ODC_CONFIG_SECRET=${{ secrets.ODC_UT_SECRET }}
+          mvn test -Dmaven.test.failure.ignore=true -DfailIfNoTests=false ${{ matrix.ut-args }}
   calculate-version:
     name: Calculate Version Number
     needs: [ unit-test ]
