@@ -19,8 +19,7 @@ package com.oceanbase.odc.service.audit.model;
 public enum DownloadFormat {
 
     CSV(".csv"),
-    EXCEL(".xlsx")
-    ;
+    EXCEL(".xlsx");
 
     private String extension;
 
