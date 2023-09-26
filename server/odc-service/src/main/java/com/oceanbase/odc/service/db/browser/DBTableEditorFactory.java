@@ -24,6 +24,7 @@ import com.oceanbase.tools.dbbrowser.editor.DBTableEditor;
 import com.oceanbase.tools.dbbrowser.editor.DBTableIndexEditor;
 import com.oceanbase.tools.dbbrowser.editor.DBTablePartitionEditor;
 import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLTableEditor;
+import com.oceanbase.tools.dbbrowser.editor.mysql.OBMySQLTableEditor;
 import com.oceanbase.tools.dbbrowser.editor.oracle.OracleTableEditor;
 
 /**
@@ -52,9 +53,11 @@ public class DBTableEditorFactory extends DBObjectEditorFactory<DBTableEditor> {
                 new DBTablePartitionEditorFactory(connectType, dbVersion);
         switch (connectType) {
             case OB_MYSQL:
-            case MYSQL:
             case CLOUD_OB_MYSQL:
             case ODP_SHARDING_OB_MYSQL:
+                return new OBMySQLTableEditor(indexEditorFactory.create(), columnEditorFactory.create(),
+                        constraintEditorFactory.create(), partitionEditorFactory.create());
+            case MYSQL:
                 return new MySQLTableEditor(indexEditorFactory.create(), columnEditorFactory.create(),
                         constraintEditorFactory.create(), partitionEditorFactory.create());
             case CLOUD_OB_ORACLE:
