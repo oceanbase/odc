@@ -92,10 +92,6 @@ public class TestDBConfigurations {
         Properties properties = new Properties();
         properties.setProperty(TestDBConfiguration.DB_COMMANDLINE_KEY,
                 TestProperties.getProperty("odc.ob.default.mysql.commandline"));
-        properties.setProperty(TestDBConfiguration.DB_SYS_USERNAME_KEY,
-                TestProperties.getProperty("odc.ob.default.mysql.sysUsername"));
-        properties.setProperty(TestDBConfiguration.DB_SYS_PASSWORD_KEY,
-                TestProperties.getProperty("odc.ob.default.mysql.sysPassword"));
         properties.setProperty(TestDBConfiguration.DB_TYPE_KEY, ConnectType.OB_MYSQL.toString());
         return properties;
     }
@@ -104,10 +100,6 @@ public class TestDBConfigurations {
         Properties properties = new Properties();
         properties.setProperty(TestDBConfiguration.DB_COMMANDLINE_KEY,
                 TestProperties.getProperty("odc.ob.default.oracle.commandline"));
-        properties.setProperty(TestDBConfiguration.DB_SYS_USERNAME_KEY,
-                TestProperties.getProperty("odc.ob.default.oracle.sysUsername"));
-        properties.setProperty(TestDBConfiguration.DB_SYS_PASSWORD_KEY,
-                TestProperties.getProperty("odc.ob.default.oracle.sysPassword"));
         properties.setProperty(TestDBConfiguration.DB_TYPE_KEY, ConnectType.OB_ORACLE.toString());
         return properties;
     }

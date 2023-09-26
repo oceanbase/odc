@@ -17,6 +17,8 @@ package com.oceanbase.odc.test.database;
 
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
 
@@ -33,9 +35,13 @@ public class TestProperties {
     static {
         try {
             URL location = TestProperties.class.getProtectionDomain().getCodeSource().getLocation();
-            TEST_CONFIG_FILE = Paths.get(location.toURI())
-                    .getParent().getParent().getParent().getParent()
-                    .resolve("local-unit-test.properties").toString();
+            Path filepath = Paths.get(location.toURI()).getParent().getParent().getParent().getParent()
+                    .resolve("builds/local-unit-test.properties");
+            if (Files.exists(filepath)) {
+                TEST_CONFIG_FILE = filepath.toString();
+            } else {
+                TEST_CONFIG_FILE = filepath.getParent().resolve("unit-test.properties").toString();
+            }
         } catch (URISyntaxException e) {
             throw new IllegalStateException(e);
         }
