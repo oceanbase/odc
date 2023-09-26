@@ -101,7 +101,7 @@ public class OBOracleExtensionTest extends BaseExtensionPointTest {
     }
 
     @Test
-    @Ignore("Unmatched exception when using cloud OB Oracle")
+    @Ignore("TODO: fix this test")
     public void test_ob_oracle_connect_invalid_port() {
         String url = connectionExtensionPoint.generateJdbcUrl(configuration.getHost(), configuration.getPort() + 100,
                 configuration.getDefaultDBName(), null);

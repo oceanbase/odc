@@ -216,7 +216,7 @@ public class LoadParameterFactoryTest {
     }
 
     @Test
-    @Ignore("LoadParameter#noSys is always false when OB version grater than 4.0")
+    @Ignore("TODO: fix this test")
     public void generate_isNoSys_returnTrue() throws IOException {
         ConnectionConfig connectionConfig = getConnectionConfig(DialectType.OB_ORACLE);
         connectionConfig.setSysTenantPassword(null);

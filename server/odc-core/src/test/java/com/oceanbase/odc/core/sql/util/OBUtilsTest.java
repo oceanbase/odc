@@ -96,7 +96,7 @@ public class OBUtilsTest {
     }
 
     @Test
-    @Ignore("Unmatched OB version")
+    @Ignore("TODO: fix this test")
     public void test_QueryExecuteDetailByTraceId() throws Exception {
         SqlExecDetail sqlExecTime;
         String sql = "select 'test' from dual";
@@ -121,7 +121,7 @@ public class OBUtilsTest {
     }
 
     @Test
-    @Ignore("Unmatched OB version")
+    @Ignore("TODO: fix this test")
     public void test_GetLastExecuteDetails() throws Exception {
         SqlExecDetail sqlExecTime;
         String sql = "select 'test' from dual";
@@ -143,7 +143,7 @@ public class OBUtilsTest {
     }
 
     @Test
-    @Ignore("Unmatched OB version")
+    @Ignore("TODO: fix this test")
     public void test_getLastExecuteDetailsBefore400() throws Exception {
         SqlExecTime sqlExecTime;
         String sql = "select 'test' from dual";

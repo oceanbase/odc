@@ -90,7 +90,7 @@ public class MySQLExtensionTest extends BaseExtensionPointTest {
     }
 
     @Test
-    @Ignore("Unmatched exception when using cloud MySQL")
+    @Ignore("TODO: fix this test")
     public void test_mysql_connect_invalid_port() {
         String url = connectionExtensionPoint.generateJdbcUrl(configuration.getHost(), configuration.getPort() + 100,
                 configuration.getDefaultDBName(), parameter);

@@ -114,9 +114,20 @@ jobs:
       - name: Build project
         run: mvn clean install -Dmaven.test.skip=true
       - name: Run unit test
+        id: unit_test
         run: |
           export ODC_CONFIG_SECRET=${{ secrets.ODC_UT_SECRET }}
-          mvn test -Dmaven.test.failure.ignore=true -DfailIfNoTests=false ${{ matrix.ut-args }}
+          rm -rf odc_unit_test.log && touch odc_unit_test.log
+          mvn test -Dmaven.test.failure.ignore=true -DfailIfNoTests=false ${{ matrix.ut-args }} > odc_unit_test.log
+          if grep -q "Failed tests:" odc_unit_test.log; then ut_success="false"; else ut_success="true"; fi
+          echo "ut_success=${ut_success}" >> $GITHUB_OUTPUT
+          if [ "${ut_success}" = "false" ]; then echo "Unit test failed, please check odc_unit_test.log for details"; exit 1; fi
+      - name: Upload unit test log
+        if: ${{ steps.unit_test.outputs.ut_success }} == 'false'
+        uses: actions/upload-artifact@v3
+        with:
+          name: odc_unit_test.log
+          path: odc_unit_test.log
   calculate-version:
     name: Calculate Version Number
     needs: [ unit-test ]

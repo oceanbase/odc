@@ -64,7 +64,7 @@ public class ConnectionTestUtilTest {
     }
 
     @Test
-    @Ignore("Unmatched exception when using cloud database")
+    @Ignore("TODO: fix this test")
     public void test_portIsUnreachable_returnPortUnreachable() throws SQLException {
         ConnectionConfig config = getConnectionConfig(ConnectType.OB_MYSQL);
         String url = String.format("jdbc:oceanbase://%s:%d", config.getHost(), 4321);
