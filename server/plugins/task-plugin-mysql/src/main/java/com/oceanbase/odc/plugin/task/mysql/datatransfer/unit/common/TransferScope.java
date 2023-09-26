@@ -13,18 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.onlineschemachange.logger;
 
-import java.util.List;
+package com.oceanbase.odc.plugin.task.mysql.datatransfer.unit.common;
 
-import com.oceanbase.odc.common.util.tableformat.Table;
+public enum TransferScope {
 
-/**
- * @author yaobin
- * @date 2023-07-20
- * @since 4.2.0
- */
-public interface TableFactory {
+    DATA,
 
-    Table generateTable(int tableColumn, List<String> header, List<String> body);
+    SCHEMA;
+
 }

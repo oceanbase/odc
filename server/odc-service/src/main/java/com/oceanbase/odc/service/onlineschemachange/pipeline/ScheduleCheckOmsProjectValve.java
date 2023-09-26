@@ -30,7 +30,7 @@ import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
 import com.oceanbase.odc.service.onlineschemachange.configuration.OnlineSchemaChangeProperties;
 import com.oceanbase.odc.service.onlineschemachange.exception.OscException;
-import com.oceanbase.odc.service.onlineschemachange.logger.DefaultTableFactory;
+import com.oceanbase.odc.common.util.tableformat.DefaultTableFactory;
 import com.oceanbase.odc.service.onlineschemachange.model.FullVerificationResult;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeScheduleTaskParameters;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeScheduleTaskResult;

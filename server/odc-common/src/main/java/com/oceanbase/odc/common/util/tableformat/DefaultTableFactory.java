@@ -13,18 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.onlineschemachange.logger;
+package com.oceanbase.odc.common.util.tableformat;
 
 import java.util.List;
 
 import org.apache.commons.collections4.CollectionUtils;
 
-import com.oceanbase.odc.common.util.tableformat.BorderStyle;
-import com.oceanbase.odc.common.util.tableformat.CellStyle;
 import com.oceanbase.odc.common.util.tableformat.CellStyle.AbbreviationStyle;
 import com.oceanbase.odc.common.util.tableformat.CellStyle.HorizontalAlign;
 import com.oceanbase.odc.common.util.tableformat.CellStyle.NullStyle;
-import com.oceanbase.odc.common.util.tableformat.Table;
 
 /**
  * @author yaobin
