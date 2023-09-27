@@ -58,7 +58,7 @@ public class TestProperties {
         }
         // We prefer to use "." in property key, but "." is not allowed in environment variable
         key = StringUtils.replace(key, ".", "_").toUpperCase();
-        property = PropertiesUtil.getSystemEnvProperty(key);
+        property = EncryptableConfigurations.getDecryptedProperty(key);
         if (StringUtils.isNotBlank(property)) {
             return property;
         }

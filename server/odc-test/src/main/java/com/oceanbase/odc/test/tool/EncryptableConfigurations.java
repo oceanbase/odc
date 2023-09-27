@@ -76,7 +76,19 @@ public class EncryptableConfigurations {
         return properties;
     }
 
-    public static void encryptFileIfRequires(String fileName) {
+    public static String getDecryptedProperty(String key) {
+        String property = PropertiesUtil.getSystemEnvProperty(key);
+        if (StringUtils.isNotBlank(property)) {
+            return decryptIfRequired(property);
+        }
+        property = PropertiesUtil.getDotEnvProperties(key);
+        if (StringUtils.isNotBlank(property)) {
+            return decryptIfRequired(property);
+        }
+        return null;
+    }
+
+    private static void encryptFileIfRequires(String fileName) {
         File file = new File(fileName);
         PropertiesConfiguration config = new PropertiesConfiguration();
         PropertiesConfigurationLayout layout = new PropertiesConfigurationLayout();

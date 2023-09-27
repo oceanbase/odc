@@ -40,7 +40,7 @@ public class PropertiesUtil {
 
     public static String getSystemEnvProperty(@NonNull String key) {
         String property = System.getProperty(key);
-        if (StringUtils.isNoneBlank(property)) {
+        if (StringUtils.isNotBlank(property)) {
             return property;
         }
         property = System.getenv(key);

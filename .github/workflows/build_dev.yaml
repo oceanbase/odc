@@ -142,7 +142,7 @@ jobs:
           path: ${{ steps.unit_test.outputs.ut_log_file }}
       - name: Check unit test result
         run: |
-          if grep -q "There are test failures" ${{ steps.unit_test.outputs.ut_log_file }}; then echo "Unit test failed, please check ${ut_log_file} for details"; exist 1; fi
+          if grep -q "There are test failures" ${{ steps.unit_test.outputs.ut_log_file }}; then echo "Unit test failed, please check ${{ steps.unit_test.outputs.ut_log_file }} for details"; exist 1; fi
   calculate-version:
     name: Calculate Version Number
     needs: [ check-format, pmd-scan, unit-test ]
