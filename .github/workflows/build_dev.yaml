@@ -37,7 +37,9 @@ jobs:
           distribution: "temurin"
           cache: maven
       - name: Check code format
-        run: mvn impsort:check formatter:validate
+        run: |
+          date -R
+          mvn impsort:check formatter:validate
       - name: Check license
         run: mvn license:check
 
