@@ -41,6 +41,9 @@ public class SensitiveColumn implements SecurityResource, OrganizationIsolated {
     private Long id;
 
     @NotNull
+    private SensitiveColumnType type;
+
+    @NotNull
     private Boolean enabled;
 
     @NotNull

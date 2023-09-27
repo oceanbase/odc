@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.common.json;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,11 +24,14 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.type.CollectionType;
 import com.fasterxml.jackson.databind.type.MapType;
+import com.fasterxml.jackson.dataformat.xml.XmlMapper;
+import com.oceanbase.odc.common.util.StringUtils;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -149,6 +153,24 @@ public class JsonUtils {
 
     public static String toJsonUpperCamelCase(Object obj) {
         return innerToJson(OBJECT_MAPPER_UPPER_CAMEL_CASE, obj);
+    }
+
+    /**
+     * 将 XML 转换成 JSON
+     */
+    public static String xmlToJson(String xml) {
+        if (StringUtils.isBlank(xml)) {
+            return xml;
+        }
+        try {
+            XmlMapper xmlMapper = new XmlMapper();
+            JsonNode jsonNode = xmlMapper.readTree(xml.getBytes());
+            ObjectMapper objectMapper = new ObjectMapper();
+            return objectMapper.writeValueAsString(jsonNode);
+        } catch (IOException e) {
+            log.error("failed to convert xml to json string, reason:{}", e.getMessage());
+            return null;
+        }
     }
 
     private static String innerToJson(ObjectMapper objectMapper, Object obj) {

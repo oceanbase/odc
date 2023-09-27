@@ -37,12 +37,14 @@ import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.common.json.JsonPathUtils;
+import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.service.integration.model.Encryption;
 import com.oceanbase.odc.service.integration.model.IntegrationProperties.ApiProperties;
 import com.oceanbase.odc.service.integration.model.IntegrationProperties.Body;
 import com.oceanbase.odc.service.integration.model.IntegrationProperties.BodyType;
 import com.oceanbase.odc.service.integration.model.IntegrationProperties.HttpProperties;
+import com.oceanbase.odc.service.integration.model.OdcIntegrationResponse;
 import com.oceanbase.odc.service.integration.model.TemplateVariables;
 import com.oceanbase.odc.service.integration.util.EncryptionUtil;
 
@@ -112,4 +114,27 @@ public class HttpOperationService {
         Expression expression = EXPRESSION_PARSER.parseExpression(extractExpression);
         return expression.getValue(responseObject, type);
     }
+
+    public <T> T extractHttpResponse(OdcIntegrationResponse decryptedResponse, String extractExpression,
+            Class<T> type) {
+        String content = decryptedResponse.getContent();
+        String mineType = decryptedResponse.getContentType().getMimeType();
+        // ODC treats the response body as a JSON string by default.
+        // If the Content-Type is XML, then try to convert it to JSON.
+        switch (mineType) {
+            case "text/xml":
+            case "application/xml":
+            case "application/atom+xml":
+            case "application/xhtml+xml":
+            case "application/soap+xml":
+                content = JsonUtils.xmlToJson(content);
+                break;
+            default:
+                break;
+        }
+        Object responseObject = JsonPathUtils.read(content, "$");
+        Expression expression = EXPRESSION_PARSER.parseExpression(extractExpression);
+        return expression.getValue(responseObject, type);
+    }
+
 }

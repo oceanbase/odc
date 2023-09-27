@@ -19,9 +19,13 @@ import java.sql.Connection;
 
 import org.pf4j.Extension;
 
+import com.oceanbase.odc.common.util.JdbcOperationsUtil;
+import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.plugin.schema.obmysql.OBMySQLDatabaseExtension;
 import com.oceanbase.odc.plugin.schema.oboracle.utils.DBAccessorUtil;
+import com.oceanbase.tools.dbbrowser.model.DBDatabase;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
+import com.oceanbase.tools.dbbrowser.util.OracleSqlBuilder;
 
 /**
  * @author jingtian
@@ -33,5 +37,14 @@ public class OBOracleDatabaseExtension extends OBMySQLDatabaseExtension {
     @Override
     protected DBSchemaAccessor getSchemaAccessor(Connection connection) {
         return DBAccessorUtil.getSchemaAccessor(connection);
+    }
+
+    @Override
+    public void create(Connection connection, DBDatabase database, String password) {
+        OracleSqlBuilder sqlBuilder = new OracleSqlBuilder();
+        PreConditions.notBlank(password, "password");
+        sqlBuilder.append("CREATE USER ").identifier(database.getName()).append(" IDENTIFIED BY ")
+                .identifier(password);
+        JdbcOperationsUtil.getJdbcOperations(connection).execute(sqlBuilder.toString());
     }
 }

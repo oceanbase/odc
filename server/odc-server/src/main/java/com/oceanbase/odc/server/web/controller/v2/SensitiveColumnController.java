@@ -30,16 +30,17 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.oceanbase.odc.service.common.model.SetEnabledReq;
-import com.oceanbase.odc.service.common.model.Stats;
 import com.oceanbase.odc.service.common.response.ListResponse;
 import com.oceanbase.odc.service.common.response.PaginatedResponse;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.datasecurity.SensitiveColumnService;
+import com.oceanbase.odc.service.datasecurity.model.DatabaseWithAllColumns;
 import com.oceanbase.odc.service.datasecurity.model.QuerySensitiveColumnParams;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveColumn;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveColumnScanningReq;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveColumnScanningTaskInfo;
+import com.oceanbase.odc.service.datasecurity.model.SensitiveColumnStats;
 import com.oceanbase.odc.service.datasecurity.model.UpdateSensitiveColumnsReq;
 
 import io.swagger.annotations.ApiOperation;
@@ -54,6 +55,13 @@ public class SensitiveColumnController {
 
     @Autowired
     private SensitiveColumnService service;
+
+    @ApiOperation(value = "listColumns", notes = "List table columns and view columns")
+    @RequestMapping(value = "/listColumns", method = RequestMethod.GET)
+    public ListResponse<DatabaseWithAllColumns> listColumns(@PathVariable Long projectId,
+            @RequestParam(name = "database", required = false) List<Long> databaseIds) {
+        return Responses.list(service.listColumns(projectId, databaseIds));
+    }
 
     @ApiOperation(value = "sensitiveColumnExists", notes = "Check if sensitive column exists")
     @RequestMapping(value = "/exists", method = RequestMethod.POST)
@@ -93,16 +101,16 @@ public class SensitiveColumnController {
     @RequestMapping(value = "/", method = RequestMethod.GET)
     public PaginatedResponse<SensitiveColumn> listSensitiveColumns(@PathVariable Long projectId,
             @RequestParam(name = "fuzzyTableColumn", required = false) String fuzzyTableColumn,
-            @RequestParam(name = "datasource", required = false) List<String> datasourceNames,
-            @RequestParam(name = "database", required = false) List<String> databaseNames,
+            @RequestParam(name = "datasource", required = false) List<Long> datasourceIds,
+            @RequestParam(name = "database", required = false) List<Long> databaseIds,
             @RequestParam(name = "maskingAlgorithm", required = false) List<Long> maskingAlgorithmIds,
             @RequestParam(name = "enabled", required = false) List<Boolean> enabledList,
             @PageableDefault(size = Integer.MAX_VALUE, sort = {"id"}, direction = Direction.ASC) Pageable pageable) {
         Boolean enabled = CollectionUtils.size(enabledList) == 1 ? enabledList.get(0) : null;
         QuerySensitiveColumnParams params = QuerySensitiveColumnParams.builder()
                 .fuzzyTableColumn(fuzzyTableColumn)
-                .datasourceNames(datasourceNames)
-                .databaseNames(databaseNames)
+                .datasourceIds(datasourceIds)
+                .databaseIds(databaseIds)
                 .maskingAlgorithmIds(maskingAlgorithmIds)
                 .enabled(enabled).build();
         return Responses.paginated(service.list(projectId, params, pageable));
@@ -110,7 +118,7 @@ public class SensitiveColumnController {
 
     @ApiOperation(value = "statsSensitiveColumns", notes = "Get sensitive column stats")
     @RequestMapping(value = "/stats", method = RequestMethod.GET)
-    public SuccessResponse<Stats> getStats(@PathVariable Long projectId) {
+    public SuccessResponse<SensitiveColumnStats> getStats(@PathVariable Long projectId) {
         return Responses.success(service.stats(projectId));
     }
 

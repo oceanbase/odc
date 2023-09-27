@@ -7,12 +7,12 @@ sqls:
       DATA_TYPE,
       COMMENTS
     FROM
-      ALL_TAB_COLS NATURAL JOIN ALL_COL_COMMENTS
+      SYS.ALL_TAB_COLS NATURAL JOIN SYS.ALL_COL_COMMENTS
     WHERE
       OWNER = ? AND TABLE_NAME = ?
     ORDER BY
       COLUMN_ID ASC
-  list-basic-schema-columns: |-
+  list-basic-schema-table-columns: |-
     SELECT
       OWNER,
       TABLE_NAME,
@@ -20,11 +20,11 @@ sqls:
       DATA_TYPE,
       COMMENTS
     FROM
-      ALL_TAB_COLS NATURAL JOIN ALL_COL_COMMENTS
+      SYS.ALL_TAB_COLS NATURAL JOIN SYS.ALL_COL_COMMENTS
     WHERE
       OWNER = ?
     ORDER BY
-      TABLE_NAME ASC, 
+      TABLE_NAME ASC,
       COLUMN_ID ASC
   list-table-columns: |-
     SELECT
