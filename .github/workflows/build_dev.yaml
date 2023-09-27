@@ -119,16 +119,19 @@ jobs:
         id: unit_test
         run: |
           export ODC_CONFIG_SECRET=${{ secrets.ODC_UT_SECRET }}
+          echo "Current dir is "`pwd`
           ut_log_file="unit_test_${{ matrix.ut-group }}.log"
           echo "ut_log_file=${ut_log_file}" >> $GITHUB_OUTPUT
           rm -rf ${ut_log_file} && touch ${ut_log_file}
           if [ ${{ matrix.ut-group }} = "group_1" ]; then ut_args='-Dtest="com.oceanbase.odc.core.**","com.oceanbase.odc.common.**"'; fi
-          if [ ${{ matrix.ut-group }} = "group_2" ]; then ut_args='-Dtest="%regex[^com.oceanbase.odc.service.[a,c,e,g,i,k]+.*$]"'; fi
-          if [ ${{ matrix.ut-group }} = "group_3" ]; then ut_args='-Dtest="%regex[^com.oceanbase.odc.service.[m,o,q,s,u,w,y]+.*$]"'; fi
-          if [ ${{ matrix.ut-group }} = "group_4" ]; then ut_args='-Dtest="%regex[^com.oceanbase.odc.service.[b,d,f,h,j,l]+.*$]"'; fi
-          if [ ${{ matrix.ut-group }} = "group_5" ]; then ut_args='-Dtest="%regex[^com.oceanbase.odc.service.[n,p,r,t,v,x,z]+.*$]"'; fi
+          if [ ${{ matrix.ut-group }} = "group_2" ]; then ut_args='-Dtest="%regex[^com.oceanbase.odc.service.[acegik]+.*$]"'; fi
+          if [ ${{ matrix.ut-group }} = "group_3" ]; then ut_args='-Dtest="%regex[^com.oceanbase.odc.service.[moqsuwy]+.*$]"'; fi
+          if [ ${{ matrix.ut-group }} = "group_4" ]; then ut_args='-Dtest="%regex[^com.oceanbase.odc.service.[bdfhjl]+.*$]"'; fi
+          if [ ${{ matrix.ut-group }} = "group_5" ]; then ut_args='-Dtest="%regex[^com.oceanbase.odc.service.[nprtvxz]+.*$]"'; fi
           if [ ${{ matrix.ut-group }} = "group_6" ]; then ut_args='-Dtest="!com.oceanbase.odc.core.**","!com.oceanbase.odc.common.**","!com.oceanbase.odc.service.**"'; fi
-          mvn test -Dmaven.test.failure.ignore=true -DfailIfNoTests=false ${ut_args} > ${ut_log_file}
+          mvn_test_cmd="mvn test -Dmaven.test.failure.ignore=true -DfailIfNoTests=false ${ut_args} > ${ut_log_file}"
+          echo "Execute unit test command: ${mvn_test_cmd}"
+          eval $mvn_test_cmd
           if grep -q "[ERROR] There are test failures." ${ut_log_file}; then ut_success="false"; else ut_success="true"; fi
           echo "ut_success=${ut_success}" >> $GITHUB_OUTPUT
           if [ "${ut_success}" = "false" ]; then echo "Unit test failed, please check ${ut_log_file} for details"; exit 1; fi
