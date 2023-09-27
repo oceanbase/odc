@@ -163,13 +163,10 @@ jobs:
           java-version: "8"
           distribution: "temurin"
           cache: maven
-      - name: Check work dir
-        run: |
-          pushd libs/${{ matrix.lib }}
-          echo "Current dir is "`pwd`
       - name: Build project
         run: |
           echo "Start install ${{ matrix.lib }}"
+          pushd libs/${{ matrix.lib }}
           echo "Current dir is "`pwd`
           mvn clean install -Dmaven.test.skip=true
           echo "Install ${{ matrix.lib }} success"
@@ -181,6 +178,7 @@ jobs:
           export ODC_OB_DEFAULT_ORACLE_COMMANDLINE=${{ secrets.ODC_OB_DEFAULT_ORACLE_COMMANDLINE }}
           export ODC_MYSQL_DEFAULT_COMMANDLINE=${{ secrets.ODC_MYSQL_DEFAULT_COMMANDLINE }}
           echo "Start test ${{ matrix.lib }}"
+          pushd libs/${{ matrix.lib }}
           echo "Current dir is "`pwd`
           ut_log_file="unit_test_${{ matrix.lib }}.log"
           echo "ut_log_file=${ut_log_file}" >> $GITHUB_OUTPUT
@@ -192,9 +190,11 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: ${{ steps.unit_test.outputs.ut_log_file }}
-          path: ${{ steps.unit_test.outputs.ut_log_file }}
+          path: libs/${{ matrix.lib }}/${{ steps.unit_test.outputs.ut_log_file }}
       - name: Check unit test result
         run: |
+          pushd libs/${{ matrix.lib }}
+          echo "Current dir is "`pwd`
           if grep -q "There are test failures" ${{ steps.unit_test.outputs.ut_log_file }}; then echo "Unit test failed, please check ${{ steps.unit_test.outputs.ut_log_file }} for details"; exist 1; fi
 
   calculate-version:
