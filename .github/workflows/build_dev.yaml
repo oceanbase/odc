@@ -119,9 +119,9 @@ jobs:
         id: unit_test
         run: |
           export ODC_CONFIG_SECRET=${{ secrets.ODC_UT_SECRET }}
-          export odc_ob_default_mysql_commandline=${{ secrets.ODC_OB_DEFAULT_MYSQL_COMMANDLINE }}
-          export odc_ob_default_oracle_commandline=${{ secrets.ODC_OB_DEFAULT_ORACLE_COMMANDLINE }}
-          export odc_mysql_default_commandline=${{ secrets.ODC_MYSQL_DEFAULT_COMMANDLINE }}
+          export ODC_OB_DEFAULT_MYSQL_COMMANDLINE=${{ secrets.ODC_OB_DEFAULT_MYSQL_COMMANDLINE }}
+          export ODC_OB_DEFAULT_ORACLE_COMMANDLINE=${{ secrets.ODC_OB_DEFAULT_ORACLE_COMMANDLINE }}
+          export ODC_MYSQL_DEFAULT_COMMANDLINE=${{ secrets.ODC_MYSQL_DEFAULT_COMMANDLINE }}
           echo "Current dir is "`pwd`
           ut_log_file="unit_test_${{ matrix.ut-group }}.log"
           echo "ut_log_file=${ut_log_file}" >> $GITHUB_OUTPUT

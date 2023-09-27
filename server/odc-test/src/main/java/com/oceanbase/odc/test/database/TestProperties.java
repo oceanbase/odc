@@ -57,7 +57,7 @@ public class TestProperties {
             return property;
         }
         // We prefer to use "." in property key, but "." is not allowed in environment variable
-        key = StringUtils.replace(key, ".", "_");
+        key = StringUtils.replace(key, ".", "_").toUpperCase();
         property = PropertiesUtil.getSystemEnvProperty(key);
         if (StringUtils.isNotBlank(property)) {
             return property;
