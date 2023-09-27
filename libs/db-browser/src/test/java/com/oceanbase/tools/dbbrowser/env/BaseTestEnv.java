@@ -37,8 +37,8 @@ import lombok.extern.slf4j.Slf4j;
  *
  * @author yh263208
  * @date 2023-02-21 15:06
- * @since db-browser_1.0.0-SNAPSHOT
  * @see BasePropertiesEnv
+ * @since db-browser_1.0.0-SNAPSHOT
  */
 @Slf4j
 public abstract class BaseTestEnv extends BasePropertiesEnv {
@@ -55,7 +55,7 @@ public abstract class BaseTestEnv extends BasePropertiesEnv {
     private static final String TEST_OB_ORACLE_DATABASE_NAME = generate().toUpperCase();
     private static final String TEST_MYSQL_DATABASE_NAME = generate().toLowerCase();
 
-    protected BaseTestEnv() {
+    static {
         String obMysqlCommandLine = get(OB_MYSQL_COMMANDLINE_KEY);
         ConnectionParseResult obMysqlParseResult = MySQLClientArgsParser.parse(obMysqlCommandLine);
         initDataSource(obMysqlParseResult, OB_MYSQL_DS_KEY);
@@ -83,27 +83,27 @@ public abstract class BaseTestEnv extends BasePropertiesEnv {
         Runtime.getRuntime().addShutdownHook(shutdownHookThread);
     }
 
-    protected DataSource getOBMySQLDataSource() {
+    protected static DataSource getOBMySQLDataSource() {
         return DATASOURCE_MAP.get(OB_MYSQL_DS_KEY);
     }
 
-    protected DataSource getOBOracleDataSource() {
+    protected static DataSource getOBOracleDataSource() {
         return DATASOURCE_MAP.get(OB_ORACLE_DS_KEY);
     }
 
-    protected DataSource getMySQLDataSource() {
+    protected static DataSource getMySQLDataSource() {
         return DATASOURCE_MAP.get(MYSQL_DS_KEY);
     }
 
-    protected String getOBMySQLDataBaseName() {
+    protected static String getOBMySQLDataBaseName() {
         return TEST_OB_MYSQL_DATABASE_NAME;
     }
 
-    protected String getOBOracleSchema() {
+    protected static String getOBOracleSchema() {
         return TEST_OB_ORACLE_DATABASE_NAME;
     }
 
-    protected String getMySQLDataBaseName() {
+    protected static String getMySQLDataBaseName() {
         return TEST_MYSQL_DATABASE_NAME;
     }
 
@@ -136,7 +136,7 @@ public abstract class BaseTestEnv extends BasePropertiesEnv {
         return "dbbrowser_" + hostName + "_" + currentMillis;
     }
 
-    private void initDataSource(ConnectionParseResult parseResult, String dataSourceKey) {
+    private static void initDataSource(ConnectionParseResult parseResult, String dataSourceKey) {
         clear(parseResult, dataSourceKey);
         String jdbcUrl = buildOBJdbcUrl(parseResult);
         String username = buildUser(parseResult);
@@ -186,7 +186,7 @@ public abstract class BaseTestEnv extends BasePropertiesEnv {
         parseResult.setDefaultDBName(origin);
     }
 
-    private void clear(ConnectionParseResult parseResult, String dataSourceKey) {
+    private static void clear(ConnectionParseResult parseResult, String dataSourceKey) {
         String jdbcUrl = buildOBJdbcUrl(parseResult);
         String username = buildUser(parseResult);
         if (OB_MYSQL_DS_KEY.equals(dataSourceKey)) {

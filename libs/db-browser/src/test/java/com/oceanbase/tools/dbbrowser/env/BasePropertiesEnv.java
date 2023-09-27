@@ -19,17 +19,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.StringReader;
-import java.util.Arrays;
 import java.util.Base64;
 import java.util.Properties;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import javax.crypto.Cipher;
-import javax.crypto.spec.SecretKeySpec;
-
-import org.apache.commons.lang3.Validate;
-import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import com.oceanbase.tools.dbbrowser.util.StringUtils;
 
@@ -38,7 +29,7 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * {@link BasePropertiesEnv}
- * 
+ *
  * @author yh263208
  * @date 2023-02-21 14:08
  * @since db-browser_1.0.0-SNAPSHOT
@@ -49,6 +40,7 @@ public abstract class BasePropertiesEnv {
     private static final String TEST_CONFIG_FILE = "../../local-unit-test.properties";
     private static final String ENCRYPTED_PREFIX = "ENC@";
     private static final Properties PROPERTIES = new Properties();
+    private static final AesBytesEncryptor DECRYPTOR = new AesBytesEncryptor(new SecretKey().getSecretKey(), null, 256);
 
     static {
         try {
@@ -61,11 +53,17 @@ public abstract class BasePropertiesEnv {
     }
 
     public static String get(@NonNull String key) {
-        return PROPERTIES.getProperty(key);
-    }
-
-    public static Set<String> getKeys() {
-        return PROPERTIES.keySet().stream().map(Object::toString).collect(Collectors.toSet());
+        String property = PROPERTIES.getProperty(key);
+        if (StringUtils.isNotBlank(property)) {
+            return property;
+        }
+        // Get from environment variable
+        key = StringUtils.replace(key, ".", "_").toUpperCase();
+        property = PropertiesUtil.getSystemProperty(key);
+        if (StringUtils.isNotBlank(property)) {
+            return decryptIfRequired(property);
+        }
+        return null;
     }
 
     private static String readFromFile(File file) throws IOException {
@@ -80,69 +78,66 @@ public abstract class BasePropertiesEnv {
     }
 
     private static void decryptIfRequired() {
-        SecretKey secretKey = new SecretKey();
-        for (Object key : PROPERTIES.keySet()) {
-            String value = PROPERTIES.get(key).toString();
-            if (!StringUtils.startsWith(value, ENCRYPTED_PREFIX)) {
-                continue;
-            }
-            value = value.substring(ENCRYPTED_PREFIX.length());
-            byte[] encrypted = Base64.getDecoder().decode(value.getBytes());
-            byte[] decrypted = decrypt(encrypted, secretKey.getSecretKey().getBytes());
-            PROPERTIES.put(key, new String(decrypted));
-        }
+        PROPERTIES.replaceAll((k, v) -> decryptIfRequired(PROPERTIES.get(k).toString()));
     }
 
-    public static byte[] decrypt(byte[] encrypted, byte[] password) {
-        Validate.notNull(encrypted, "null input for decrypt");
-        try {
-            Cipher cipher = Cipher.getInstance("Blowfish/ECB/NoPadding");
-            SecretKeySpec key = new SecretKeySpec(password, "Blowfish");
-            cipher.init(Cipher.DECRYPT_MODE, key);
-            byte[] decrypted = cipher.doFinal(encrypted);
-            return zeroUnpad(decrypted);
-        } catch (Exception e) {
-            String rootCauseMessage = ExceptionUtils.getRootCauseMessage(e);
-            throw new RuntimeException(rootCauseMessage);
+    private static String decryptIfRequired(String value) {
+        if (!StringUtils.startsWith(value, ENCRYPTED_PREFIX)) {
+            return value;
         }
-    }
-
-    private static byte[] zeroUnpad(byte[] decrypted) {
-        int end = decrypted.length;
-        while (end > 0) {
-            if (decrypted[end - 1] == 0) {
-                end--;
-            } else {
-                break;
-            }
-        }
-        return Arrays.copyOf(decrypted, end);
+        value = value.substring(ENCRYPTED_PREFIX.length());
+        byte[] encrypted = Base64.getDecoder().decode(value.getBytes());
+        byte[] decrypted = DECRYPTOR.decrypt(encrypted);
+        return new String(decrypted);
     }
 
     private static class SecretKey {
 
-        private static final String ENV_FILE = "../../.env";
         private static final String SECRET_ENV_KEY = "ODC_CONFIG_SECRET";
         private static final String SECRET_ENV_ACI_KEY = "ACI_VAR_ODC_CONFIG_SECRET";
-        private final Properties envProperties;
 
-        public SecretKey() {
-            envProperties = getEnvProperties();
-        }
+        public SecretKey() {}
 
         public String getSecretKey() {
-            String secretKey = getSystemProperty(SECRET_ENV_KEY);
-            if (org.apache.commons.lang3.StringUtils.isNotBlank(secretKey)) {
+            String secretKey = PropertiesUtil.getSystemProperty(SECRET_ENV_KEY);
+            if (StringUtils.isNotBlank(secretKey)) {
                 return secretKey;
             }
-            secretKey = getSystemProperty(SECRET_ENV_ACI_KEY);
-            if (org.apache.commons.lang3.StringUtils.isNotBlank(secretKey)) {
+            secretKey = PropertiesUtil.getSystemProperty(SECRET_ENV_ACI_KEY);
+            if (StringUtils.isNotBlank(secretKey)) {
                 return secretKey;
             }
             throw new RuntimeException("environment variable 'ODC_CONFIG_SECRET' is not set");
         }
 
-        private Properties getEnvProperties() {
+    }
+
+    private static class PropertiesUtil {
+
+        private static final String ENV_FILE = "../../.env";
+        private static final Properties ENV_PROPERTIES;
+
+        static {
+            ENV_PROPERTIES = getEnvProperties();
+        }
+
+        public static String getSystemProperty(String key) {
+            String property = System.getProperty(key);
+            if (StringUtils.isNotBlank(property)) {
+                return property;
+            }
+            property = System.getenv(key);
+            if (StringUtils.isNotBlank(property)) {
+                return property;
+            }
+            property = ENV_PROPERTIES.getProperty(key);
+            if (StringUtils.isNotBlank(property)) {
+                return property;
+            }
+            return null;
+        }
+
+        private static Properties getEnvProperties() {
             Properties properties = new Properties();
             File file = new File(ENV_FILE);
             if (file.exists()) {
@@ -157,21 +152,6 @@ public abstract class BasePropertiesEnv {
             return properties;
         }
 
-        private String getSystemProperty(String key) {
-            String property = System.getProperty(key);
-            if (org.apache.commons.lang3.StringUtils.isNoneBlank(property)) {
-                return property;
-            }
-            property = System.getenv(key);
-            if (org.apache.commons.lang3.StringUtils.isNotBlank(property)) {
-                return property;
-            }
-            property = envProperties.getProperty(key);
-            if (org.apache.commons.lang3.StringUtils.isNotBlank(property)) {
-                return property;
-            }
-            return null;
-        }
     }
 
 }
