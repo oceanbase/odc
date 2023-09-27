@@ -22,6 +22,7 @@ import javax.sql.DataSource;
 import com.alibaba.druid.pool.DruidDataSource;
 import com.oceanbase.odc.test.cli.ConnectionParseResult;
 import com.oceanbase.odc.test.cli.MysqlClientArgsParser;
+import com.oceanbase.odc.test.util.JdbcUtil;
 
 import lombok.Data;
 
@@ -32,6 +33,7 @@ import lombok.Data;
 @Data
 public class TestDBConfiguration {
     private DataSource dataSource;
+    private TestDBType type;
     private String host;
     private Integer port;
     private String cluster;
@@ -41,9 +43,7 @@ public class TestDBConfiguration {
     private String sysUsername;
     private String sysPassword;
     private String defaultDBName;
-    private String type;
 
-    private static final String OB_JDBC_PROTOCOL = "oceanbase";
     public static final String DB_TYPE_KEY = "dbType";
     public static final String DB_COMMANDLINE_KEY = "commandline";
     public static final String DB_SYS_USERNAME_KEY = "sysUsername";
@@ -61,16 +61,16 @@ public class TestDBConfiguration {
         this.defaultDBName = parseResult.getDefaultDBName();
         this.sysUsername = properties.getProperty(DB_SYS_USERNAME_KEY);
         this.sysPassword = properties.getProperty(DB_SYS_PASSWORD_KEY);
-        this.type = properties.getProperty(DB_TYPE_KEY);
+        this.type = TestDBType.valueOf(properties.getProperty(DB_TYPE_KEY));
         initDataSource();
     }
 
     private void initDataSource() {
         DruidDataSource dataSource = new DruidDataSource();
-        dataSource.setUrl(TestDBUtil.buildUrl(host, port, defaultDBName, getType()));
-        dataSource.setUsername(TestDBUtil.buildUser(username, tenant, cluster));
+        dataSource.setUrl(JdbcUtil.buildUrl(host, port, defaultDBName, type));
+        dataSource.setUsername(JdbcUtil.buildUser(username, tenant, cluster));
         dataSource.setPassword(password);
-        String validationQuery = "OB_MYSQL".equals(getType()) ? "select 1" : "select 1 from dual";
+        String validationQuery = type == TestDBType.OB_MYSQL ? "select 1" : "select 1 from dual";
         dataSource.setValidationQuery(validationQuery);
         dataSource.setTestWhileIdle(true);
         dataSource.setTimeBetweenEvictionRunsMillis(30000);

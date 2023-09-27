@@ -13,21 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.test.database;
+package com.oceanbase.odc.test.util;
 
 import org.apache.commons.lang3.StringUtils;
+
+import com.oceanbase.odc.test.database.TestDBType;
 
 /**
  * @author gaoda.xy
  * @date 2023/2/21 00:54
  */
-public class TestDBUtil {
+public class JdbcUtil {
     private static final String OB_JDBC_PROTOCOL = "oceanbase";
     private static final String MYSQL_JDBC_PROTOCOL = "mysql";
 
-    public static String buildUrl(String host, Integer port, String database, String type) {
+    public static String buildUrl(String host, Integer port, String database, TestDBType type) {
         StringBuilder builder = new StringBuilder();
-        if ("MYSQL".equals(type)) {
+        if (type == TestDBType.MYSQL) {
             builder.append(String.format("jdbc:%s://%s:%d", MYSQL_JDBC_PROTOCOL, host, port));
         } else {
             builder.append(String.format("jdbc:%s://%s:%d", OB_JDBC_PROTOCOL, host, port));
@@ -35,7 +37,7 @@ public class TestDBUtil {
         if (StringUtils.isNotBlank(database)) {
             builder.append(String.format("/%s", database));
         }
-        if ("MYSQL".equals(type)) {
+        if (type == TestDBType.MYSQL) {
             builder.append("?").append("useSSL=false");
         }
         return builder.toString();

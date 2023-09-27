@@ -54,7 +54,8 @@ import com.oceanbase.odc.service.onlineschemachange.oms.response.ProjectFullVeri
 import com.oceanbase.odc.service.onlineschemachange.oms.response.ProjectProgressResponse;
 import com.oceanbase.odc.test.database.TestDBConfiguration;
 import com.oceanbase.odc.test.database.TestDBConfigurations;
-import com.oceanbase.odc.test.database.TestDBUtil;
+import com.oceanbase.odc.test.database.TestDBType;
+import com.oceanbase.odc.test.util.JdbcUtil;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -231,8 +232,8 @@ public class OmsOpenApiServiceTest {
         String queryClusterUrlSql = "show parameters like 'obconfig_url'";
         String configUrl;
         try (Connection connection = DriverManager.getConnection(
-                TestDBUtil.buildUrl(config.getHost(), config.getPort(), config.getDefaultDBName(), "OB_MYSQL"),
-                TestDBUtil.buildUser(config.getUsername(), config.getTenant(), config.getCluster()),
+                JdbcUtil.buildUrl(config.getHost(), config.getPort(), config.getDefaultDBName(), TestDBType.OB_MYSQL),
+                JdbcUtil.buildUser(config.getUsername(), config.getTenant(), config.getCluster()),
                 config.getPassword())) {
             configUrl = new JdbcTemplate(new SingleConnectionDataSource(connection, false))
                     .query(queryClusterUrlSql, rs -> {

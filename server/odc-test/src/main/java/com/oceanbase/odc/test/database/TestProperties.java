@@ -20,36 +20,49 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.commons.lang3.StringUtils;
+
 import com.oceanbase.odc.test.tool.EncryptableConfigurations;
+import com.oceanbase.odc.test.util.PropertiesUtil;
 
 /**
  * @author gaoda.xy
  * @date 2023/2/16 17:19
  */
 public class TestProperties {
-    private static final String TEST_CONFIG_FILE;
+
     private static final Map<String, String> properties;
 
     static {
         try {
             URL location = TestProperties.class.getProtectionDomain().getCodeSource().getLocation();
             Path filepath = Paths.get(location.toURI()).getParent().getParent().getParent().getParent()
-                    .resolve("builds/local-unit-test.properties");
+                    .resolve("local-unit-test.properties");
             if (Files.exists(filepath)) {
-                TEST_CONFIG_FILE = filepath.toString();
+                properties = EncryptableConfigurations.loadProperties(filepath.toString());
             } else {
-                TEST_CONFIG_FILE = filepath.getParent().resolve("unit-test.properties").toString();
+                properties = new HashMap<>();
             }
         } catch (URISyntaxException e) {
             throw new IllegalStateException(e);
         }
-        properties = EncryptableConfigurations.loadProperties(TEST_CONFIG_FILE);
     }
 
     public static String getProperty(String key) {
-        return properties.get(key);
+        String property = properties.get(key);
+        if (StringUtils.isNotBlank(property)) {
+            return property;
+        }
+        // We prefer to use "." in property key, but "." is not allowed in environment variable
+        key = StringUtils.replace(key, ".", "_");
+        property = PropertiesUtil.getSystemEnvProperty(key);
+        if (StringUtils.isNotBlank(property)) {
+            return property;
+        }
+        return null;
     }
 
 }

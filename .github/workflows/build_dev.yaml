@@ -119,6 +119,9 @@ jobs:
         id: unit_test
         run: |
           export ODC_CONFIG_SECRET=${{ secrets.ODC_UT_SECRET }}
+          export odc_ob_default_mysql_commandline=${{ secrets.odc_ob_default_mysql_commandline }}
+          export odc_ob_default_oracle_commandline=${{ secrets.odc_ob_default_oracle_commandline }}
+          export odc_mysql_default_commandline=${{ secrets.odc_mysql_default_commandline }}
           echo "Current dir is "`pwd`
           ut_log_file="unit_test_${{ matrix.ut-group }}.log"
           echo "ut_log_file=${ut_log_file}" >> $GITHUB_OUTPUT

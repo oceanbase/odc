@@ -26,6 +26,7 @@ import org.junit.Test;
 import com.oceanbase.odc.common.util.JdbcOperationsUtil;
 import com.oceanbase.odc.test.database.TestDBConfiguration;
 import com.oceanbase.odc.test.database.TestDBConfigurations;
+import com.oceanbase.odc.test.util.FileUtil;
 import com.oceanbase.tools.dbbrowser.model.DBConstraintType;
 import com.oceanbase.tools.dbbrowser.model.DBForeignKeyModifyRule;
 import com.oceanbase.tools.dbbrowser.model.DBIndexType;
@@ -50,9 +51,9 @@ public class OBOracleGetDBTableByParserTest {
     @BeforeClass
     public static void setUp() throws Exception {
         connection = configuration.getDataSource().getConnection();
-        dropTables = TestDBConfigurations.loadAsString(BASE_PATH + "drop.sql");
+        dropTables = FileUtil.loadAsString(BASE_PATH + "drop.sql");
         batchExcuteSql(dropTables);
-        ddl = TestDBConfigurations.loadAsString(BASE_PATH + "testGetTableByParser.sql");
+        ddl = FileUtil.loadAsString(BASE_PATH + "testGetTableByParser.sql");
         JdbcOperationsUtil.getJdbcOperations(connection).execute(ddl);
     }
 

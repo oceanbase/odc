@@ -44,6 +44,7 @@ import com.oceanbase.odc.plugin.connect.api.TestResult;
 import com.oceanbase.odc.plugin.connect.api.TraceExtensionPoint;
 import com.oceanbase.odc.test.database.TestDBConfiguration;
 import com.oceanbase.odc.test.database.TestDBConfigurations;
+import com.oceanbase.odc.test.util.FileUtil;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -72,12 +73,12 @@ public class OBOracleExtensionTest extends BaseExtensionPointTest {
         informationExtensionPoint = getInstance(OBOracleInformationExtension.class);
         traceExtensionPoint = getInstance(OBOracleTraceExtension.class);
         sqlDiagnoseExtensionPoint = getInstance(OBOracleDiagnoseExtension.class);
-        jdbcTemplate.execute(TestDBConfigurations.loadAsString(BASE_PATH + "tableDDL.sql"));
+        jdbcTemplate.execute(FileUtil.loadAsString(BASE_PATH + "tableDDL.sql"));
     }
 
     @AfterClass
     public static void clear() {
-        jdbcTemplate.execute(TestDBConfigurations.loadAsString(BASE_PATH + "drop.sql"));
+        jdbcTemplate.execute(FileUtil.loadAsString(BASE_PATH + "drop.sql"));
     }
 
     @Test
