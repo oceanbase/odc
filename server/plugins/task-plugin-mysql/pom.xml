@@ -28,8 +28,11 @@
     <artifactId>task-plugin-mysql</artifactId>
 
     <properties>
-        <maven.compiler.source>8</maven.compiler.source>
-        <maven.compiler.target>8</maven.compiler.target>
+        <root-project.basedir>${project.parent.parent.basedir}</root-project.basedir>
+        <plugin.class>com.oceanbase.odc.plugin.task.obmysql.ObMySQLTaskPlugin</plugin.class>
+        <plugin.dependencies>schema-plugin-ob-oracle, schema-plugin-mysql,
+            connect-plugin-ob-oracle,connect-plugin-ob-mysql
+        </plugin.dependencies>
     </properties>
 
     <build>
