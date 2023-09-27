@@ -76,16 +76,18 @@ jobs:
 
   unit-test:
     name: Unit Test
-    needs: [ check-format, pmd-scan ]
     if: ${{ github.event_name == 'pull_request' }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        ut-args:
-          - -Dtest="com.oceanbase.odc.service.**"
-          - -Dtest="com.oceanbase.odc.core.**","com.oceanbase.odc.common.**"
-          - -DtestExcludes="com.oceanbase.odc.service.**","com.oceanbase.odc.core.**","com.oceanbase.odc.common.**"
+        ut-group:
+          - group_1
+          - group_2
+          - group_3
+          - group_4
+          - group_5
+          - group_6
     steps:
       - name: Checkout workspace
         uses: actions/checkout@v3
@@ -117,20 +119,27 @@ jobs:
         id: unit_test
         run: |
           export ODC_CONFIG_SECRET=${{ secrets.ODC_UT_SECRET }}
-          rm -rf odc_unit_test.log && touch odc_unit_test.log
-          mvn test -Dmaven.test.failure.ignore=true -DfailIfNoTests=false ${{ matrix.ut-args }} > odc_unit_test.log
-          if grep -q "Failed tests:" odc_unit_test.log; then ut_success="false"; else ut_success="true"; fi
+          ut_log_file="unit_test_${{ matrix.ut-group }}.log"
+          echo "ut_log_file=${ut_log_file}" >> $GITHUB_OUTPUT
+          rm -rf ${ut_log_file} && touch ${ut_log_file}
+          if [ ${{ matrix.ut-group }} = "group_1" ]; then ut_args='-Dtest="com.oceanbase.odc.core.**","com.oceanbase.odc.common.**"'; fi
+          if [ ${{ matrix.ut-group }} = "group_2" ]; then ut_args='-Dtest="%regex[^com.oceanbase.odc.service.[a,c,e,g,i,k]+.*$]"'; fi
+          if [ ${{ matrix.ut-group }} = "group_3" ]; then ut_args='-Dtest="%regex[^com.oceanbase.odc.service.[m,o,q,s,u,w,y]+.*$]"'; fi
+          if [ ${{ matrix.ut-group }} = "group_4" ]; then ut_args='-Dtest="%regex[^com.oceanbase.odc.service.[b,d,f,h,j,l]+.*$]"'; fi
+          if [ ${{ matrix.ut-group }} = "group_5" ]; then ut_args='-Dtest="%regex[^com.oceanbase.odc.service.[n,p,r,t,v,x,z]+.*$]"'; fi
+          if [ ${{ matrix.ut-group }} = "group_6" ]; then ut_args='-Dtest="!com.oceanbase.odc.core.**","!com.oceanbase.odc.common.**","!com.oceanbase.odc.service.**"'; fi
+          mvn test -Dmaven.test.failure.ignore=true -DfailIfNoTests=false ${ut_args} > ${ut_log_file}
+          if grep -q "[ERROR] There are test failures." ${ut_log_file}; then ut_success="false"; else ut_success="true"; fi
           echo "ut_success=${ut_success}" >> $GITHUB_OUTPUT
-          if [ "${ut_success}" = "false" ]; then echo "Unit test failed, please check odc_unit_test.log for details"; exit 1; fi
+          if [ "${ut_success}" = "false" ]; then echo "Unit test failed, please check ${ut_log_file} for details"; exit 1; fi
       - name: Upload unit test log
-        if: ${{ steps.unit_test.outputs.ut_success }} == 'false'
         uses: actions/upload-artifact@v3
         with:
-          name: odc_unit_test.log
-          path: odc_unit_test.log
+          name: ${{ steps.unit_test.outputs.ut_log_file }}
+          path: ${{ steps.unit_test.outputs.ut_log_file }}
   calculate-version:
     name: Calculate Version Number
-    needs: [ unit-test ]
+    needs: [ check-format, pmd-scan, unit-test ]
     if: ${{ github.event_name == 'pull_request' }}
     runs-on: ubuntu-latest
     outputs:
