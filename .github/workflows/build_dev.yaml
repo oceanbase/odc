@@ -132,7 +132,7 @@ jobs:
           mvn_test_cmd="mvn test -Dmaven.test.failure.ignore=true -DfailIfNoTests=false ${ut_args} > ${ut_log_file}"
           echo "Execute unit test command: ${mvn_test_cmd}"
           eval $mvn_test_cmd
-          if grep -q "[ERROR] There are test failures." ${ut_log_file}; then ut_success="false"; else ut_success="true"; fi
+          if grep -q "There are test failures" ${ut_log_file}; then ut_success="false"; else ut_success="true"; fi
           echo "ut_success=${ut_success}" >> $GITHUB_OUTPUT
           if [ "${ut_success}" = "false" ]; then echo "Unit test failed, please check ${ut_log_file} for details"; exit 1; fi
       - name: Upload unit test log
