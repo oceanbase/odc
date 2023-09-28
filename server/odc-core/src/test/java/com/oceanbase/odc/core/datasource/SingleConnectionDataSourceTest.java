@@ -131,7 +131,9 @@ public class SingleConnectionDataSourceTest {
     private String getUsername(DialectType dialectType) {
         TestDBConfiguration config = getConfig(dialectType);
         StringBuilder stringBuilder = new StringBuilder(config.getUsername());
-        stringBuilder.append("@").append(config.getTenant());
+        if (StringUtils.isNotBlank(config.getTenant())) {
+            stringBuilder.append("@").append(config.getTenant());
+        }
         if (StringUtils.isNotBlank(config.getCluster())) {
             stringBuilder.append("#").append(config.getCluster());
         }

@@ -20,11 +20,13 @@ package com.oceanbase.odc.test.crypto;
  * @date 2023/2/16 21:10
  */
 public class Encryptors {
-    public static BytesEncryptor blowFishZeroPadding(String key) {
-        return new BlowFishZeroPaddingBytesEncryptor(key);
+
+    public static BytesEncryptor aes256(String key, String salt) {
+        return new AesBytesEncryptor(key, salt);
     }
 
-    public static TextEncryptor blowFishZeroPaddingBase64(String key) {
-        return new TextEncryptorWrapper(blowFishZeroPadding(key));
+    public static TextEncryptor aes256Base64(String key, String salt) {
+        return new TextEncryptorWrapper(aes256(key, salt));
     }
+
 }
