@@ -44,7 +44,10 @@ public abstract class BasePropertiesEnv {
 
     static {
         try {
-            PROPERTIES.load(new StringReader(readFromFile(new File(TEST_CONFIG_FILE))));
+            File file = new File(TEST_CONFIG_FILE);
+            if (file.exists()) {
+                PROPERTIES.load(new StringReader(readFromFile(file)));
+            }
         } catch (IOException e) {
             log.warn("Failed to read content");
             throw new IllegalStateException(e);
