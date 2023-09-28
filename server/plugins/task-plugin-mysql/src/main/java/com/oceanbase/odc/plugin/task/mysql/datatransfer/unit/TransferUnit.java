@@ -19,9 +19,17 @@ package com.oceanbase.odc.plugin.task.mysql.datatransfer.unit;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.ObjectStatus;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.unit.common.TransferScope;
 
+import lombok.Getter;
+
 public abstract class TransferUnit extends ObjectStatus {
 
     private TransferScope scope;
+
+    @Getter
+    protected Long bytes = 0L;
+
+    @Getter
+    protected Long records = 0L;
 
     public abstract void handle();
 

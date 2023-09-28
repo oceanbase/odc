@@ -17,8 +17,6 @@ package com.oceanbase.odc.common.util.tableformat;
 
 import java.util.List;
 
-import com.oceanbase.odc.common.util.tableformat.Table;
-
 /**
  * @author yaobin
  * @date 2023-07-20

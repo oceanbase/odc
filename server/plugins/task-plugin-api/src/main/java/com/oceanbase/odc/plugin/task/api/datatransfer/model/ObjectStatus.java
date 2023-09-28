@@ -28,12 +28,16 @@ public class ObjectStatus {
     private String name;
     private Long total;
     private Long count;
-    private Status status;
+    private Status status = Status.INITIAL;
     /**
      * for export only, internal usage
      */
     @JsonIgnore
     private String[] exportPaths;
+
+    public boolean isDone() {
+        return status == Status.SUCCESS || status == Status.FAILURE;
+    }
 
     @JsonIgnore
     public String getSummary() {

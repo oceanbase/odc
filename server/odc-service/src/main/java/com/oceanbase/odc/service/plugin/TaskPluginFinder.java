@@ -42,7 +42,7 @@ public class TaskPluginFinder implements PluginFinder<DialectType> {
                         p -> ((BaseTaskPlugin) p.getPlugin()).getDialectType(),
                         PluginWrapper::getPluginId));
         if (dialect2PluginId.isEmpty()) {
-            throw new IllegalStateException("BaseSchemaPlugin is empty.");
+            throw new IllegalStateException("BaseTaskPlugin is empty.");
         }
     }
 

@@ -99,33 +99,34 @@ public class MySQLDataTransferTask implements DataTransferTask {
             }
         }
         /*
-         * then transfer data
+         * then transfer data. If any error occurred when transferring schema and user has configured
+         * {DataTransferConfig#stopWhenError} as true, data transfer will not be executed.
          */
-        if (CollectionUtils.isNotEmpty(dataUnits)) {
+        if (CollectionUtils.isNotEmpty(dataUnits) && !exit) {
 
-            // log.info("start datatransfer monitoring thread");
-            // todo start a monitor thread
+            ThroughputReportThread reporter = new ThroughputReportThread();
+            new Thread(reporter).start();
 
-            for (TransferUnit unit : dataUnits) {
-                if (exit) {
-                    break;
-                }
-                try {
-                    unit.handle();
-                    log.info("Successfully finished transferring data {} .", unit.getSummary());
-                } catch (Exception e) {
-                    log.warn("Object {} failed for {}.", unit.getSummary(), e.getMessage());
-                    if (baseConfig.isStopWhenError()) {
-                        throw e;
+            try {
+                for (TransferUnit unit : dataUnits) {
+                    try {
+                        reporter.collect(unit);
+                        unit.handle();
+                        log.info("Successfully finished transferring data {} .", unit.getSummary());
+                    } catch (Exception e) {
+                        log.warn("Object {} failed for {}.", unit.getSummary(), e.getMessage());
+                        if (baseConfig.isStopWhenError()) {
+                            throw e;
+                        }
+                    }
+                    if (unit.getStatus() == Status.FAILURE && baseConfig.isStopWhenError()) {
+                        break;
                     }
                 }
-                if (unit.getStatus() == Status.FAILURE && baseConfig.isStopWhenError()) {
-                    break;
-                }
+
+            } finally {
+                reporter.stop();
             }
-
-            // todo end monitor thread
-
         }
     }
 
