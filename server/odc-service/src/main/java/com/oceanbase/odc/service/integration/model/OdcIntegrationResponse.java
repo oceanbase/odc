@@ -13,23 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.datasecurity.model;
 
-import java.util.List;
+package com.oceanbase.odc.service.integration.model;
+
+import org.apache.http.entity.ContentType;
 
 import lombok.Builder;
 import lombok.Data;
 
 /**
  * @author gaoda.xy
- * @date 2023/5/22 16:55
+ * @date 2023/9/20 11:29
  */
 @Data
 @Builder
-public class QuerySensitiveColumnParams {
-    private String fuzzyTableColumn;
-    private List<Long> databaseIds;
-    private List<Long> datasourceIds;
-    private List<Long> maskingAlgorithmIds;
-    private Boolean enabled;
+public class OdcIntegrationResponse {
+    private String content;
+    private ContentType contentType;
 }

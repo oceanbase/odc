@@ -13,23 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.oceanbase.odc.service.datasecurity.model;
 
 import java.util.List;
 
-import lombok.Builder;
+import com.oceanbase.odc.service.connection.database.model.Database;
+
 import lombok.Data;
 
 /**
  * @author gaoda.xy
- * @date 2023/5/22 16:55
+ * @date 2023/8/29 16:46
  */
 @Data
-@Builder
-public class QuerySensitiveColumnParams {
-    private String fuzzyTableColumn;
-    private List<Long> databaseIds;
-    private List<Long> datasourceIds;
-    private List<Long> maskingAlgorithmIds;
-    private Boolean enabled;
+public class SensitiveColumnStats {
+
+    /**
+     * Sensitive column related databases
+     */
+    private List<Database> databases;
+    /**
+     * Sensitive column related masking algorithms
+     */
+    private List<MaskingAlgorithm> maskingAlgorithms;
+
 }
