@@ -94,16 +94,11 @@ public abstract class BasePropertiesEnv {
     private static class SecretKey {
 
         private static final String SECRET_ENV_KEY = "ODC_CONFIG_SECRET";
-        private static final String SECRET_ENV_ACI_KEY = "ACI_VAR_ODC_CONFIG_SECRET";
 
         public SecretKey() {}
 
         public String getSecretKey() {
             String secretKey = PropertiesUtil.getSystemProperty(SECRET_ENV_KEY);
-            if (StringUtils.isNotBlank(secretKey)) {
-                return secretKey;
-            }
-            secretKey = PropertiesUtil.getSystemProperty(SECRET_ENV_ACI_KEY);
             if (StringUtils.isNotBlank(secretKey)) {
                 return secretKey;
             }

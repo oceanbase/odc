@@ -142,15 +142,9 @@ public class EncryptableConfigurations {
     @NoArgsConstructor
     private static class SecretKeyGetter {
         private static final String SECRET_ENV_KEY = "ODC_CONFIG_SECRET";
-        @Deprecated
-        private static final String SECRET_ENV_ACI_KEY = "ACI_VAR_ODC_CONFIG_SECRET";
 
         public String getSecretKey() {
             String secretKey = getProperty(SECRET_ENV_KEY);
-            if (StringUtils.isNotBlank(secretKey)) {
-                return secretKey;
-            }
-            secretKey = getProperty(SECRET_ENV_ACI_KEY);
             if (StringUtils.isNotBlank(secretKey)) {
                 return secretKey;
             }
