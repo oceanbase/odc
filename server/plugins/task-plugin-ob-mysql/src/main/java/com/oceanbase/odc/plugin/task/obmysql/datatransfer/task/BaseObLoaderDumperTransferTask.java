@@ -62,6 +62,7 @@ public abstract class BaseObLoaderDumperTransferTask<T extends BaseParameter> im
     private final boolean usePrepStmts;
     private TaskContext schemaContext;
     private TaskContext dataContext;
+    private int totalTaskCount = 0;
 
     public BaseObLoaderDumperTransferTask(@NonNull T parameter, boolean transferData, boolean transferSchema,
             boolean usePrepStmts) {
@@ -75,6 +76,8 @@ public abstract class BaseObLoaderDumperTransferTask<T extends BaseParameter> im
         } else {
             this.transferData = transferData;
         }
+        totalTaskCount += transferData ? 1 : 0;
+        totalTaskCount += transferSchema ? 1 : 0;
         this.sleepInterval = 500;
         this.usePrepStmts = usePrepStmts;
     }
@@ -100,14 +103,19 @@ public abstract class BaseObLoaderDumperTransferTask<T extends BaseParameter> im
     @Override
     public double getProgress() {
         double returnVal = 0.0;
-        int totalTaskCount = 0;
         if (this.schemaContext != null) {
-            totalTaskCount++;
-            returnVal += this.schemaContext.getProgress().getProgress();
+            try {
+                returnVal += this.schemaContext.getProgress().getProgress();
+            } catch (Exception e) {
+                LOGGER.warn("Failed to get progress from ob-loader-dumper, reason:{}", e.getMessage());
+            }
         }
         if (this.dataContext != null) {
-            totalTaskCount++;
-            returnVal += this.dataContext.getProgress().getProgress();
+            try {
+                returnVal += this.dataContext.getProgress().getProgress();
+            } catch (Exception e) {
+                LOGGER.warn("Failed to get progress from ob-loader-dumper, reason:{}", e.getMessage());
+            }
         }
         if (totalTaskCount <= 0) {
             return 0.0;

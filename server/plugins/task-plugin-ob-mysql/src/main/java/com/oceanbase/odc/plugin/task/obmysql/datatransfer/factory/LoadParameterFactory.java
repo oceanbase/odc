@@ -64,7 +64,18 @@ public class LoadParameterFactory extends BaseParameterFactory<LoadParameter> {
     @Override
     protected LoadParameter doGenerate(File workingDir) throws IOException {
         LoadParameter parameter = new LoadParameter();
-        parameter.setMaxErrors(transferConfig.isStopWhenError() ? 0 : -1);
+        if (transferConfig.isStopWhenError()) {
+            parameter.setMaxErrors(0);
+            parameter.setMaxDiscards(0);
+            /*
+             * set it to TRUE indicates the process should exit with failure if there is any bad or discard
+             * record.
+             */
+            parameter.setStrict(true);
+        } else {
+            parameter.setMaxErrors(-1);
+            parameter.setMaxDiscards(-1);
+        }
         setTransferFormat(parameter, transferConfig);
         if (transferConfig.isCompressed()) {
             /**
@@ -89,9 +100,6 @@ public class LoadParameterFactory extends BaseParameterFactory<LoadParameter> {
             parameter.setTruncatable(transferConfig.isTruncateTableBeforeImport());
             setCsvMappings(parameter, transferConfig);
             setWhiteListForExternalCsv(parameter, transferConfig, workingDir);
-            parameter.setFileSuffix(DataFormat.CSV.getDefaultFileSuffix());
-        } else if (transferConfig.getDataTransferFormat() == DataTransferFormat.SQL) {
-            parameter.setFileSuffix(DataFormat.SQL.getDefaultFileSuffix());
         }
         return parameter;
     }
@@ -122,21 +130,20 @@ public class LoadParameterFactory extends BaseParameterFactory<LoadParameter> {
                             + "ob-loader-dumper were used between export and import.");
                 }
             }
-            parameter.setFileSuffix(DataFormat.CSV.getDefaultFileSuffix());
         }
-
-        parameter.setFileSuffix(DataFormat.SQL.getDefaultFileSuffix());
 
     }
 
     private void setTransferFormat(LoadParameter parameter, DataTransferConfig transferConfig) {
         if (!transferConfig.isTransferData()) {
+            parameter.setFileSuffix(DataFormat.SQL.getDefaultFileSuffix());
             return;
         }
         DataTransferFormat format = transferConfig.getDataTransferFormat();
         if (DataTransferFormat.SQL.equals(format)) {
             if (transferConfig.isCompressed()) {
                 parameter.setDataFormat(DataFormat.SQL);
+                parameter.setFileSuffix(DataFormat.SQL.getDefaultFileSuffix());
             } else {
                 parameter.setDataFormat(DataFormat.MIX);
                 parameter.setFileSuffix(DataFormat.MIX.getDefaultFileSuffix());
@@ -144,6 +151,7 @@ public class LoadParameterFactory extends BaseParameterFactory<LoadParameter> {
             parameter.setExternal(!transferConfig.isCompressed());
         } else if (DataTransferFormat.CSV.equals(format)) {
             parameter.setDataFormat(DataFormat.CSV);
+            parameter.setFileSuffix(DataFormat.CSV.getDefaultFileSuffix());
             parameter.setExternal(!transferConfig.isCompressed());
         }
     }

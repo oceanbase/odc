@@ -191,7 +191,7 @@ public abstract class BaseParameterFactory<T extends BaseParameter> {
                 log.info("Invalid db object type found, object={}", dbObject);
                 continue;
             }
-            ObjectType objectType = ObjectType.valueOf(dbObject.getDbObjectType());
+            ObjectType objectType = ObjectType.valueOfName(dbObject.getDbObjectType());
             String objectName = StringUtils.unquoteOracleIdentifier(dbObject.getObjectName());
             if (StringUtils.isBlank(objectName)) {
                 throw new IllegalArgumentException("Can not accept a blank object name");

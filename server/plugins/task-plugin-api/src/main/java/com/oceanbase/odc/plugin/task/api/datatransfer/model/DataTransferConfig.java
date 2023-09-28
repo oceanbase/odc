@@ -66,6 +66,7 @@ public class DataTransferConfig {
     private String exportFilePath;
     private boolean mergeSchemaFiles;
     private String querySql;
+    private String fileType;
     /**
      * only for ob-loader-dumper
      */
@@ -84,8 +85,6 @@ public class DataTransferConfig {
     private String logPath;
     @JsonIgnore
     private Map<TableIdentity, Map<String, AbstractDataMasker>> maskConfig;
-    @JsonIgnore
-    private String fileType;
     @JsonIgnore
     private Long maxDumpSizeBytes;
     @JsonIgnore
