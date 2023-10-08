@@ -121,7 +121,7 @@ public class AbstractDlmJobPreprocessor implements Preprocessor {
         // Ensure the conditions are valid when executing.
         sqlMap.forEach((key, value) -> {
             try {
-                syncJdbcExecutor.execute("explain" + value);
+                syncJdbcExecutor.execute("explain " + value);
             } catch (Exception e) {
                 log.warn("Test condition failed,sql={}", value, e);
                 throw new IllegalArgumentException(String.format("Condition is not supported!TableName=%s,Condition=%s",
