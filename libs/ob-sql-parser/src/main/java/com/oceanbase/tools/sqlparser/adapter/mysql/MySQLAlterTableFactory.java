@@ -26,6 +26,7 @@ import com.oceanbase.tools.sqlparser.obmysql.OBParser.Alter_table_stmtContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParserBaseVisitor;
 import com.oceanbase.tools.sqlparser.statement.alter.table.AlterTable;
 import com.oceanbase.tools.sqlparser.statement.alter.table.AlterTableAction;
+import com.oceanbase.tools.sqlparser.statement.common.RelationFactor;
 
 import lombok.NonNull;
 
@@ -51,13 +52,15 @@ public class MySQLAlterTableFactory extends OBParserBaseVisitor<AlterTable> impl
 
     @Override
     public AlterTable visitAlter_table_stmt(Alter_table_stmtContext ctx) {
+        RelationFactor factor = MySQLFromReferenceFactory.getRelationFactor(ctx.relation_factor());
         AlterTable alterTable = new AlterTable(ctx,
-                MySQLFromReferenceFactory.getRelation(ctx.relation_factor()),
+                factor.getRelation(),
                 getAlterTableActions(ctx.alter_table_actions()));
         if (ctx.EXTERNAL() != null) {
             alterTable.setExternal(true);
         }
-        alterTable.setSchema(MySQLFromReferenceFactory.getSchemaName(ctx.relation_factor()));
+        alterTable.setSchema(factor.getSchema());
+        alterTable.setUserVariable(factor.getUserVariable());
         return alterTable;
     }
 

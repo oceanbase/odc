@@ -19,8 +19,8 @@ import java.util.stream.Collectors;
 
 import com.oceanbase.tools.sqlparser.adapter.StatementFactory;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Create_table_stmtContext;
-import com.oceanbase.tools.sqlparser.obmysql.OBParser.Relation_factorContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParserBaseVisitor;
+import com.oceanbase.tools.sqlparser.statement.common.RelationFactor;
 import com.oceanbase.tools.sqlparser.statement.createtable.CreateTable;
 
 import lombok.NonNull;
@@ -48,8 +48,8 @@ public class MySQLCreateTableFactory extends OBParserBaseVisitor<CreateTable> im
 
     @Override
     public CreateTable visitCreate_table_stmt(Create_table_stmtContext ctx) {
-        Relation_factorContext relationFactor = ctx.relation_factor();
-        CreateTable createTable = new CreateTable(ctx, MySQLFromReferenceFactory.getRelation(relationFactor));
+        RelationFactor factor = MySQLFromReferenceFactory.getRelationFactor(ctx.relation_factor());
+        CreateTable createTable = new CreateTable(ctx, factor.getRelation());
         if (ctx.temporary_option().TEMPORARY() != null) {
             createTable.setTemporary(true);
         } else if (ctx.temporary_option().EXTERNAL() != null) {
@@ -58,7 +58,8 @@ public class MySQLCreateTableFactory extends OBParserBaseVisitor<CreateTable> im
         if (ctx.IF() != null && ctx.not() != null && ctx.EXISTS() != null) {
             createTable.setIfNotExists(true);
         }
-        createTable.setSchema(MySQLFromReferenceFactory.getSchemaName(relationFactor));
+        createTable.setSchema(factor.getSchema());
+        createTable.setUserVariable(factor.getUserVariable());
         if (ctx.table_element_list() != null) {
             createTable.setTableElements(ctx.table_element_list().table_element().stream()
                     .map(c -> new MySQLTableElementFactory(c).generate()).collect(Collectors.toList()));

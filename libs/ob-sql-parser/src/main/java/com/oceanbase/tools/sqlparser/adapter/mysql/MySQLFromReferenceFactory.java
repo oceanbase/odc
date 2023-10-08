@@ -175,56 +175,20 @@ public class MySQLFromReferenceFactory extends OBParserBaseVisitor<FromReference
 
     @Override
     public FromReference visitTbl_name(Tbl_nameContext ctx) {
-        Relation_factorContext relationFactor = ctx.relation_factor();
-        String schema = getSchemaName(relationFactor);
-        String relationName = getRelation(relationFactor);
+        RelationFactor factor = getRelationFactor(ctx.relation_factor());
         String alias = null;
         if (ctx.relation_name() != null) {
             alias = ctx.relation_name().getText();
         }
-        NameReference nameReference = new NameReference(ctx, schema, relationName, alias);
+        NameReference nameReference = new NameReference(ctx, factor.getSchema(), factor.getRelation(), alias);
         if (ctx.use_partition() != null) {
             nameReference.setPartitionUsage(visitPartitonUsage(ctx.use_partition()));
         }
         if (ctx.use_flashback() != null) {
             nameReference.setFlashbackUsage(visitFlashbackUsage(ctx.use_flashback()));
         }
+        nameReference.setUserVariable(factor.getUserVariable());
         return nameReference;
-    }
-
-    public static String getSchemaName(Relation_factorContext context) {
-        if (context == null || context.normal_relation_factor() == null) {
-            return null;
-        }
-        return getSchemaName(context.normal_relation_factor());
-    }
-
-    public static String getRelation(Relation_factorContext context) {
-        if (context == null) {
-            return null;
-        }
-        if (context.normal_relation_factor() != null) {
-            return getRelation(context.normal_relation_factor());
-        }
-        Dot_relation_factorContext d = context.dot_relation_factor();
-        if (d.relation_name() != null) {
-            return d.relation_name().getText();
-        } else if (d.mysql_reserved_keyword() != null) {
-            return d.mysql_reserved_keyword().getText();
-        }
-        return null;
-    }
-
-    public static String getSchemaName(Normal_relation_factorContext c) {
-        List<String> names = c.relation_name().stream()
-                .map(RuleContext::getText).collect(Collectors.toList());
-        if (c.mysql_reserved_keyword() != null) {
-            return names.get(0);
-        }
-        if (names.size() == 2) {
-            return names.get(0);
-        }
-        return null;
     }
 
     public static RelationFactor getRelationFactor(Normal_relation_factorContext ctx) {
@@ -245,7 +209,18 @@ public class MySQLFromReferenceFactory extends OBParserBaseVisitor<FromReference
         return relationFactor;
     }
 
-    public static String getRelation(Normal_relation_factorContext c) {
+    @Override
+    public FromReference visitTable_subquery(Table_subqueryContext ctx) {
+        StatementFactory<SelectBody> factory = new MySQLSelectBodyFactory(ctx.select_with_parens());
+        String alias = ctx.relation_name().getText();
+        ExpressionReference reference = new ExpressionReference(ctx, factory.generate(), alias);
+        if (ctx.use_flashback() != null) {
+            reference.setFlashbackUsage(visitFlashbackUsage(ctx.use_flashback()));
+        }
+        return reference;
+    }
+
+    private static String getRelation(Normal_relation_factorContext c) {
         List<String> names = c.relation_name().stream()
                 .map(RuleContext::getText).collect(Collectors.toList());
         if (c.mysql_reserved_keyword() != null) {
@@ -258,15 +233,39 @@ public class MySQLFromReferenceFactory extends OBParserBaseVisitor<FromReference
         return null;
     }
 
-    @Override
-    public FromReference visitTable_subquery(Table_subqueryContext ctx) {
-        StatementFactory<SelectBody> factory = new MySQLSelectBodyFactory(ctx.select_with_parens());
-        String alias = ctx.relation_name().getText();
-        ExpressionReference reference = new ExpressionReference(ctx, factory.generate(), alias);
-        if (ctx.use_flashback() != null) {
-            reference.setFlashbackUsage(visitFlashbackUsage(ctx.use_flashback()));
+    private static String getRelation(Relation_factorContext context) {
+        if (context == null) {
+            return null;
         }
-        return reference;
+        if (context.normal_relation_factor() != null) {
+            return getRelation(context.normal_relation_factor());
+        }
+        Dot_relation_factorContext d = context.dot_relation_factor();
+        if (d.relation_name() != null) {
+            return d.relation_name().getText();
+        } else if (d.mysql_reserved_keyword() != null) {
+            return d.mysql_reserved_keyword().getText();
+        }
+        return null;
+    }
+
+    private static String getSchemaName(Relation_factorContext context) {
+        if (context == null || context.normal_relation_factor() == null) {
+            return null;
+        }
+        return getSchemaName(context.normal_relation_factor());
+    }
+
+    private static String getSchemaName(Normal_relation_factorContext c) {
+        List<String> names = c.relation_name().stream()
+                .map(RuleContext::getText).collect(Collectors.toList());
+        if (c.mysql_reserved_keyword() != null) {
+            return names.get(0);
+        }
+        if (names.size() == 2) {
+            return names.get(0);
+        }
+        return null;
     }
 
     private FlashbackUsage visitFlashbackUsage(Use_flashbackContext ctx) {

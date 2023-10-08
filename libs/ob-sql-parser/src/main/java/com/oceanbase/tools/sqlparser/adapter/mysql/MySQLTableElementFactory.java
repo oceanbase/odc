@@ -42,7 +42,6 @@ import com.oceanbase.tools.sqlparser.obmysql.OBParser.Out_of_line_unique_indexCo
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Reference_actionContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Reference_optionContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.References_clauseContext;
-import com.oceanbase.tools.sqlparser.obmysql.OBParser.Relation_factorContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Signed_literalContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Sort_column_listContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Table_elementContext;
@@ -50,6 +49,7 @@ import com.oceanbase.tools.sqlparser.obmysql.OBParserBaseVisitor;
 import com.oceanbase.tools.sqlparser.statement.Expression;
 import com.oceanbase.tools.sqlparser.statement.Operator;
 import com.oceanbase.tools.sqlparser.statement.common.DataType;
+import com.oceanbase.tools.sqlparser.statement.common.RelationFactor;
 import com.oceanbase.tools.sqlparser.statement.createtable.ColumnAttributes;
 import com.oceanbase.tools.sqlparser.statement.createtable.ColumnDefinition;
 import com.oceanbase.tools.sqlparser.statement.createtable.ColumnDefinition.Location;
@@ -241,16 +241,16 @@ public class MySQLTableElementFactory extends OBParserBaseVisitor<TableElement>
     }
 
     private ForeignReference visitForeignReference(References_clauseContext context) {
-        Relation_factorContext relationFactor = context.relation_factor();
-        String schema = MySQLFromReferenceFactory.getSchemaName(relationFactor);
-        String tableName = MySQLFromReferenceFactory.getRelation(relationFactor);
+        RelationFactor factor = MySQLFromReferenceFactory.getRelationFactor(context.relation_factor());
         List<ColumnReference> columns = new ArrayList<>();
         if (context.column_name_list() != null) {
             columns = context.column_name_list().column_name().stream()
                     .map(c1 -> new ColumnReference(c1, null, null, c1.getText()))
                     .collect(Collectors.toList());
         }
-        ForeignReference foreignReference = new ForeignReference(context, schema, tableName, columns);
+        ForeignReference foreignReference = new ForeignReference(context,
+                factor.getSchema(), factor.getRelation(), columns);
+        foreignReference.setUserVariable(factor.getUserVariable());
         if (context.match_action() != null) {
             foreignReference.setMatchOption(MatchOption.valueOf(context.match_action().getText().toUpperCase()));
         }
