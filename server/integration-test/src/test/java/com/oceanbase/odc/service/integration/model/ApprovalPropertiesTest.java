@@ -54,7 +54,7 @@ public class ApprovalPropertiesTest {
         content.put("processCode", "approval_integration_test");
         body.setContent(content);
         start.setBody(body);
-        start.setRequestSuccessExpression("[success] == true");
+        start.setRequestSuccessExpression("[success]==\"true\"");
         start.setExtractInstanceIdExpression("[content][processInstanceId]");
         StatusProperties status = new StatusProperties();
         status.setMethod(RequestMethod.POST);

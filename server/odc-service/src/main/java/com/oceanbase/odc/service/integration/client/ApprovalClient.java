@@ -20,7 +20,6 @@ import javax.annotation.PostConstruct;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpUriRequest;
-import org.apache.http.impl.client.BasicResponseHandler;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -37,6 +36,7 @@ import com.oceanbase.odc.service.integration.model.ApprovalStatus;
 import com.oceanbase.odc.service.integration.model.Encryption;
 import com.oceanbase.odc.service.integration.model.IntegrationProperties.ApiProperties;
 import com.oceanbase.odc.service.integration.model.IntegrationProperties.HttpProperties;
+import com.oceanbase.odc.service.integration.model.OdcIntegrationResponse;
 import com.oceanbase.odc.service.integration.model.TemplateVariables;
 import com.oceanbase.odc.service.integration.model.TemplateVariables.Variable;
 import com.oceanbase.odc.service.integration.util.EncryptionUtil;
@@ -92,16 +92,16 @@ public class ApprovalClient {
         } catch (Exception e) {
             throw new UnexpectedException("Build request failed: " + e.getMessage());
         }
-        String response;
+        OdcIntegrationResponse response;
         try {
-            response = httpClient.execute(request, new BasicResponseHandler());
+            response = httpClient.execute(request, new OdcIntegrationResponseHandler());
         } catch (Exception e) {
             throw new ExternalServiceError("Request execute failed: " + e.getMessage());
         }
-        String decrypt = EncryptionUtil.decrypt(response, encryption);
-        checkResponse(decrypt, start.getRequestSuccessExpression());
+        response.setContent(EncryptionUtil.decrypt(response.getContent(), encryption));
+        checkResponse(response, start.getRequestSuccessExpression());
         try {
-            return httpService.extractHttpResponse(decrypt, start.getExtractInstanceIdExpression(), String.class);
+            return httpService.extractHttpResponse(response, start.getExtractInstanceIdExpression(), String.class);
         } catch (Exception e) {
             throw new UnexpectedException("Extract process instance ID failed: " + e.getMessage());
         }
@@ -124,25 +124,28 @@ public class ApprovalClient {
         } catch (Exception e) {
             throw new UnexpectedException("Build request failed: " + e.getMessage());
         }
-        String response;
+        OdcIntegrationResponse response;
         try {
-            response = httpClient.execute(request, new BasicResponseHandler());
+            response = httpClient.execute(request, new OdcIntegrationResponseHandler());
         } catch (Exception e) {
             throw new ExternalServiceError("Request execute failed: " + e.getMessage());
         }
-        String decrypt = EncryptionUtil.decrypt(response, encryption);
-        checkResponse(decrypt, status.getRequestSuccessExpression());
+        response.setContent(EncryptionUtil.decrypt(response.getContent(), encryption));
+        checkResponse(response, status.getRequestSuccessExpression());
         try {
-            if (httpService.extractHttpResponse(decrypt, status.getProcessTerminatedExpression(), Boolean.class)) {
+            if (httpService.extractHttpResponse(response, status.getProcessTerminatedExpression(), Boolean.class)) {
                 return ApprovalStatus.TERMINATED;
-            } else if (httpService.extractHttpResponse(decrypt, status.getProcessPendingExpression(), Boolean.class)) {
+            } else if (httpService.extractHttpResponse(response, status.getProcessPendingExpression(), Boolean.class)) {
                 return ApprovalStatus.PENDING;
-            } else if (httpService.extractHttpResponse(decrypt, status.getProcessApprovedExpression(), Boolean.class)) {
+            } else if (httpService.extractHttpResponse(response, status.getProcessApprovedExpression(),
+                    Boolean.class)) {
                 return ApprovalStatus.APPROVED;
-            } else if (httpService.extractHttpResponse(decrypt, status.getProcessRejectedExpression(), Boolean.class)) {
+            } else if (httpService.extractHttpResponse(response, status.getProcessRejectedExpression(),
+                    Boolean.class)) {
                 return ApprovalStatus.REJECTED;
             } else {
-                throw new RuntimeException("Response mismatch any status expression, response body: " + decrypt);
+                throw new RuntimeException(
+                        "Response mismatch any status expression, response body: " + response.getContent());
             }
         } catch (Exception e) {
             throw new UnexpectedException("Extract process instance status failed: " + e.getMessage());
@@ -165,14 +168,14 @@ public class ApprovalClient {
         } catch (Exception e) {
             throw new UnexpectedException("Build request failed: " + e.getMessage());
         }
-        String response;
+        OdcIntegrationResponse response;
         try {
-            response = httpClient.execute(request, new BasicResponseHandler());
+            response = httpClient.execute(request, new OdcIntegrationResponseHandler());
         } catch (Exception e) {
             throw new ExternalServiceError("Request execute failed: " + e.getMessage());
         }
-        String decrypt = EncryptionUtil.decrypt(response, encryption);
-        checkResponse(decrypt, cancel.getRequestSuccessExpression());
+        response.setContent(EncryptionUtil.decrypt(response.getContent(), encryption));
+        checkResponse(response, cancel.getRequestSuccessExpression());
     }
 
     /**
@@ -186,7 +189,7 @@ public class ApprovalClient {
         return variables.process(expression);
     }
 
-    private void checkResponse(String response, String expression) {
+    private void checkResponse(OdcIntegrationResponse response, String expression) {
         boolean valid;
         try {
             valid = httpService.extractHttpResponse(response, expression, Boolean.class);
