@@ -46,7 +46,18 @@ public class MySQLDataTransferTask implements DataTransferTask {
 
         initTransferUnits();
 
-        serialHandle();
+        /*
+         * transfer schema first
+         */
+        boolean isSchemaDone = doSchemaUnits();
+
+        /*
+         * then transfer data. If any error occurred when transferring schema and user has configured
+         * stopWhenError as true, data transfer will not be executed.
+         */
+        if (isSchemaDone) {
+            doDataUnits();
+        }
 
         return getStatus();
 
@@ -78,14 +89,40 @@ public class MySQLDataTransferTask implements DataTransferTask {
     private void serialHandle() {
         boolean exit = false;
 
-        /*
-         * transfer schema first
-         */
-        if (CollectionUtils.isNotEmpty(schemaUnits)) {
-            for (TransferUnit unit : schemaUnits) {
+    private boolean doSchemaUnits() {
+        if (CollectionUtils.isEmpty(schemaUnits)) {
+            return true;
+        }
+        for (TransferUnit unit : schemaUnits) {
+            try {
+                unit.handle();
+                log.info("Successfully finished transferring schema {} .", unit.getSummary());
+            } catch (Exception e) {
+                log.warn("Object {} failed for {}.", unit.getSummary(), e.getMessage());
+                if (baseConfig.isStopWhenError()) {
+                    throw e;
+                }
+            }
+            if (unit.getStatus() == Status.FAILURE && baseConfig.isStopWhenError()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private void doDataUnits() {
+        if (CollectionUtils.isEmpty(dataUnits)) {
+            return;
+        }
+        ThroughputReportThread reporter = new ThroughputReportThread();
+        new Thread(reporter).start();
+
+        try {
+            for (TransferUnit unit : dataUnits) {
                 try {
+                    reporter.collect(unit);
                     unit.handle();
-                    log.info("Successfully finished transferring schema {} .", unit.getSummary());
+                    log.info("Successfully finished transferring data {} .", unit.getSummary());
                 } catch (Exception e) {
                     log.warn("Object {} failed for {}.", unit.getSummary(), e.getMessage());
                     if (baseConfig.isStopWhenError()) {
@@ -93,40 +130,12 @@ public class MySQLDataTransferTask implements DataTransferTask {
                     }
                 }
                 if (unit.getStatus() == Status.FAILURE && baseConfig.isStopWhenError()) {
-                    exit = true;
                     break;
                 }
             }
-        }
-        /*
-         * then transfer data. If any error occurred when transferring schema and user has configured
-         * {DataTransferConfig#stopWhenError} as true, data transfer will not be executed.
-         */
-        if (CollectionUtils.isNotEmpty(dataUnits) && !exit) {
 
-            ThroughputReportThread reporter = new ThroughputReportThread();
-            new Thread(reporter).start();
-
-            try {
-                for (TransferUnit unit : dataUnits) {
-                    try {
-                        reporter.collect(unit);
-                        unit.handle();
-                        log.info("Successfully finished transferring data {} .", unit.getSummary());
-                    } catch (Exception e) {
-                        log.warn("Object {} failed for {}.", unit.getSummary(), e.getMessage());
-                        if (baseConfig.isStopWhenError()) {
-                            throw e;
-                        }
-                    }
-                    if (unit.getStatus() == Status.FAILURE && baseConfig.isStopWhenError()) {
-                        break;
-                    }
-                }
-
-            } finally {
-                reporter.stop();
-            }
+        } finally {
+            reporter.stop();
         }
     }
 

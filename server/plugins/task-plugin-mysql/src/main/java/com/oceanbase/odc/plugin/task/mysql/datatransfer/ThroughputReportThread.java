@@ -42,12 +42,13 @@ public class ThroughputReportThread implements Runnable {
     private final AtomicBoolean stopReportControl = new AtomicBoolean(true);
     /**
      * <pre>
-     *     [Records, bytes]
+     *     [Records, Bytes]
      * </pre>
      */
     private final Pair<Long, Long> runningUnitVolumeContainer = new Pair<>(0L, 0L);
     private final Pair<Long, Long> archivedVolumeContainer = new Pair<>(0L, 0L);
     private final Pair<Long, Long> incrementalVolumeContainer = new Pair<>(0L, 0L);
+
     private long startTime;
     private long collectTime;
     private long lastCollectTime;
@@ -59,20 +60,27 @@ public class ThroughputReportThread implements Runnable {
         startTime = System.currentTimeMillis();
         collectTime = System.currentTimeMillis();
 
-        try {
-            while (!stopReportControl.get() && !Thread.currentThread().isInterrupted()) {
+        while (!stopReportControl.get() && !Thread.currentThread().isInterrupted()) {
+            try {
                 Thread.sleep(5000);
+            } catch (InterruptedException e) {
+                log.warn("Report thread was interrupted. Will stop report.");
+                stop();
+                Thread.currentThread().interrupt();
+            }
 
+            try {
                 if (Objects.nonNull(now)) {
                     collect(now);
                     doReport();
                 }
+            } catch (Exception ignore) {
+                // eat exception
             }
-            collect(now);
-            doReport();
-        } catch (Exception ignore) {
-            stopReportControl.getAndSet(true);
         }
+        collect(now);
+        doReport();
+        stop();
     }
 
     public void stop() {
@@ -112,14 +120,16 @@ public class ThroughputReportThread implements Runnable {
         List<String> reportContent = new ArrayList<>();
 
         reportContent.add("Real-time");
-        Double realTimeRecordSpeed = incrementalVolumeContainer.left * 1D / (collectTime - lastCollectTime) / 1000;
-        Long realTimeByteSpeed = incrementalVolumeContainer.right / (collectTime - lastCollectTime) / 1000;
+        double duration = (collectTime - lastCollectTime) * 1D / 1000D;
+        Double realTimeRecordSpeed = incrementalVolumeContainer.left / duration;
+        Long realTimeByteSpeed = (long) (incrementalVolumeContainer.right / duration);
         reportContent.add(realTimeRecordSpeed + " Records/sec");
         reportContent.add(BinarySizeUnit.B.of(realTimeByteSpeed) + "/sec");
 
         reportContent.add("Average");
-        Double averageRecordSpeed = archivedVolumeContainer.left * 1D / (collectTime - startTime) / 1000;
-        Long averageByteSpeed = archivedVolumeContainer.right / (collectTime - startTime) / 1000;
+        double elapsed = (collectTime - startTime) * 1D / 1000;
+        Double averageRecordSpeed = archivedVolumeContainer.left / elapsed;
+        Long averageByteSpeed = (long) (archivedVolumeContainer.right / elapsed);
         reportContent.add(averageRecordSpeed + " Records/sec");
         reportContent.add(BinarySizeUnit.B.of(averageByteSpeed) + "/sec");
 
@@ -133,5 +143,4 @@ public class ThroughputReportThread implements Runnable {
     private Table createReportTable(List<String> reportContent) {
         return new DefaultTableFactory().generateTable(3, REPORT_HEADER, reportContent);
     }
-
 }

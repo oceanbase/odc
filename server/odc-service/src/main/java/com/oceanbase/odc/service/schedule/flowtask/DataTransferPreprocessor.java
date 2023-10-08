@@ -21,8 +21,10 @@ import java.io.FileNotFoundException;
 import java.util.List;
 import java.util.Optional;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.Validate;
 
+import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
@@ -42,6 +44,8 @@ public class DataTransferPreprocessor implements Preprocessor {
     @Override
     public void process(CreateFlowInstanceReq req) {
         DataTransferParameter parameters = (DataTransferParameter) req.getParameters();
+
+        Verify.verify(CollectionUtils.isNotEmpty(parameters.getImportFileName()), "No import file detected.");
 
         if (parameters.isCompressed()) {
             try {
