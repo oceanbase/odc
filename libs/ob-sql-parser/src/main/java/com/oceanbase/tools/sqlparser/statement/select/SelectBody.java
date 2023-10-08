@@ -22,9 +22,9 @@ import java.util.stream.Collectors;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.apache.commons.collections4.CollectionUtils;
 
-import com.oceanbase.tools.sqlparser.statement.BaseStatement;
 import com.oceanbase.tools.sqlparser.statement.Expression;
 import com.oceanbase.tools.sqlparser.statement.common.Window;
+import com.oceanbase.tools.sqlparser.statement.expression.BaseExpression;
 import com.oceanbase.tools.sqlparser.statement.select.mysql.Limit;
 import com.oceanbase.tools.sqlparser.statement.select.oracle.Fetch;
 
@@ -42,8 +42,8 @@ import lombok.Setter;
  */
 @Getter
 @Setter
-@EqualsAndHashCode(callSuper = false)
-public class SelectBody extends BaseStatement implements Expression {
+@EqualsAndHashCode(callSuper = true)
+public class SelectBody extends BaseExpression {
 
     private Expression where;
     private Expression having;
@@ -54,6 +54,7 @@ public class SelectBody extends BaseStatement implements Expression {
     private boolean recursive;
     private List<GroupBy> groupBy = new ArrayList<>();
     boolean withRollUp;
+    boolean withCheckOption;
     private List<Window> windows = new ArrayList<>();
     private Fetch fetch;
     private Limit limit;
@@ -81,6 +82,7 @@ public class SelectBody extends BaseStatement implements Expression {
         this.recursive = other.recursive;
         this.groupBy = other.groupBy;
         this.withRollUp = other.withRollUp;
+        this.withCheckOption = other.withCheckOption;
         this.windows = other.windows;
         this.fetch = other.fetch;
         this.limit = other.limit;
@@ -97,7 +99,7 @@ public class SelectBody extends BaseStatement implements Expression {
     }
 
     @Override
-    public String toString() {
+    public String doToString() {
         StringBuilder builder = new StringBuilder();
         if (CollectionUtils.isNotEmpty(this.with)) {
             builder.append("WITH ");
@@ -148,6 +150,9 @@ public class SelectBody extends BaseStatement implements Expression {
         }
         if (this.fetch != null) {
             builder.append(" ").append(this.fetch.toString());
+        }
+        if (this.withCheckOption) {
+            builder.append(" WITH CHECK OPTION");
         }
         if (this.limit != null) {
             builder.append(" ").append(this.limit.toString());

@@ -134,6 +134,10 @@ stmt
     | drop_function_stmt
     | drop_trigger_stmt
     | drop_type_stmt
+    | create_context_stmt
+    | drop_context_stmt
+    | switchover_tenant_stmt
+    | recover_tenant_stmt
     ;
 
 drop_package_stmt
@@ -219,6 +223,10 @@ complex_string_literal
     : STRING_VALUE
     ;
 
+js_literal
+    : literal
+    ;
+
 literal
     : complex_string_literal
     | DATE_VALUE
@@ -257,8 +265,40 @@ conf_const
 
 bool_pri
     : bit_expr IS not? (NULLX|is_nan_inf_value)
+    | bit_expr IS NOT? (JSON FORMAT)? is_json_constrain
     | bit_expr ((((COMP_EQ|COMP_GE)|(COMP_LE|COMP_LT)) SOME|((COMP_GT|COMP_NE) SOME|COMP_NE_PL))|(((COMP_GE|COMP_GT? COMP_EQ)|(COMP_LE|COMP_LT COMP_EQ?))|((COMP_LT? COMP_GT|COMP_NE)|(Caret|Not) COMP_EQ)) sub_query_flag?) bit_expr
     | predicate
+    ;
+
+is_json_constrain
+    : JSON strict_opt? ((scalars_opt unique_keys_opt?)?|unique_keys_opt scalars_opt?)
+    | JSON LeftParen strict_opt scalars_opt? unique_keys_opt? RightParen
+    | JSON LeftParen strict_opt? unique_keys_opt scalars_opt RightParen
+    | JSON LeftParen scalars_opt strict_opt? unique_keys_opt? RightParen
+    | JSON scalars_opt strict_opt unique_keys_opt?
+    | JSON scalars_opt? unique_keys_opt strict_opt
+    | JSON LeftParen scalars_opt? unique_keys_opt strict_opt RightParen
+    | JSON LeftParen unique_keys_opt ((strict_opt scalars_opt)?|scalars_opt strict_opt) RightParen
+    | JSON unique_keys_opt strict_opt scalars_opt
+    | JSON unique_keys_opt scalars_opt strict_opt
+    ;
+
+strict_opt
+    : LAX
+    | STRICT
+    ;
+
+scalars_opt
+    : ALLOW SCALARS
+    | DISALLOW SCALARS
+    ;
+
+unique_keys_opt
+    : (WITH|WITHOUT) UNIQUE KEYS
+    ;
+
+json_equal_option
+    : (BOOL_VALUE|ERROR_P) ON ERROR_P
     ;
 
 predicate
@@ -323,10 +363,22 @@ simple_expr
     | cursor_attribute_expr
     | window_function
     | USER_VARIABLE
+    | PLSQL_VARIABLE
     | PRIOR unary_expr
     | CONNECT_BY_ROOT unary_expr
     | SET LeftParen bit_expr RightParen
+    | MULTISET select_with_parens
     | {this.is_pl_parse_}? QUESTIONMARK Dot column_name
+    ;
+
+json_function
+    : json_value_expr
+    | json_query_expr
+    | json_mergepatch_expr
+    | json_array_expr
+    | json_exists_expr
+    | json_object_expr
+    | json_table_expr
     ;
 
 common_cursor_attribute
@@ -365,6 +417,39 @@ obj_access_ref
     | column_ref Dot FIRST LeftParen RightParen
     | column_ref Dot LAST LeftParen RightParen
     | column_ref Dot COUNT LeftParen RightParen
+    | column_ref dot_notation_path
+    | dot_notation_fun_sys
+    ;
+
+dot_notation_path
+    : LeftBracket path_param_array RightBracket dot_notation_path_obj_access_ref
+    ;
+
+dot_notation_path_obj_access_ref
+    : empty
+    | Dot obj_access_ref
+    | dot_notation_path
+    ;
+
+path_param_array
+    : Star (Comma path_param_list)?
+    | path_param_list
+    ;
+
+path_param_list
+    : path_param (Comma path_param)*
+    ;
+
+path_param
+    : INTNUM (TO path_param)?
+    ;
+
+dot_notation_fun_sys
+    : dot_notation_fun
+    ;
+
+dot_notation_fun
+    : func_name=(DATE|SIZE|NUMBER) LeftParen RightParen
     ;
 
 obj_access_ref_normal
@@ -376,7 +461,7 @@ obj_access_ref_normal
     ;
 
 func_access_ref
-    : Dot obj_access_ref
+    : table_element_access_list? Dot obj_access_ref
     | table_element_access_list
     ;
 
@@ -386,8 +471,7 @@ table_element_access_list
     ;
 
 table_index
-    : INTNUM
-    | var_name
+    : bit_expr
     ;
 
 expr
@@ -557,6 +641,14 @@ sql_function
     | special_func_expr
     ;
 
+xml_function
+    : xmlparse_expr
+    | xml_element_expr
+    | xml_extract_expr
+    | xmlserialize_expr
+    | xmlcast_expr
+    ;
+
 single_row_function
     : numeric_function
     | character_function
@@ -564,6 +656,8 @@ single_row_function
     | conversion_function
     | hierarchical_function
     | environment_id_function
+    | json_function
+    | xml_function ((Dot obj_access_ref_normal) | table_element_access_list)?
     ;
 
 numeric_function
@@ -588,6 +682,7 @@ extract_function
 
 conversion_function
     : CAST LeftParen bit_expr AS cast_data_type RightParen
+    | TREAT LeftParen bit_expr AS treat_data_type RightParen
     ;
 
 hierarchical_function
@@ -607,6 +702,9 @@ aggregate_function
     | funcName=MAX LeftParen (ALL | DISTINCT | UNIQUE)? bit_expr RightParen
     | funcName=MIN LeftParen (ALL | DISTINCT | UNIQUE)? bit_expr RightParen
     | funcName=AVG LeftParen (ALL | DISTINCT | UNIQUE)? bit_expr RightParen
+    | funcName=JSON_ARRAYAGG LeftParen (ALL | DISTINCT | UNIQUE)? bit_expr (FORMAT JSON)? order_by? js_agg_on_null? js_agg_returning_type_opt? STRICT? RightParen
+    | funcName=JSON_OBJECTAGG LeftParen KEY? bit_expr VALUE bit_expr (FORMAT JSON)? js_agg_on_null? js_agg_returning_type_opt? STRICT? json_obj_unique_key? RightParen
+    | funcName=JSON_OBJECTAGG LeftParen bit_expr Comma bit_expr (FORMAT JSON)? js_agg_on_null? js_agg_returning_type_opt? STRICT? json_obj_unique_key? RightParen
     | funcName=MEDIAN LeftParen (ALL | DISTINCT | UNIQUE)? bit_expr RightParen
     | funcName=STDDEV LeftParen (ALL | DISTINCT | UNIQUE)? bit_expr RightParen
     | funcName=VARIANCE LeftParen (ALL | DISTINCT | UNIQUE)? bit_expr RightParen
@@ -649,6 +747,21 @@ aggregate_function
     | funcName=HYBRID_HIST LeftParen bit_expr Comma bit_expr RightParen
     ;
 
+js_agg_on_null
+    : (ABSENT | NULLX) ON NULLX
+    ;
+
+js_agg_returning_type_opt
+    : RETURNING js_return_type
+    | RETURNING js_agg_returning_type
+    ;
+
+js_agg_returning_type
+    : RAW LeftParen zero_suffix_intnum RightParen
+    | RAW
+    | NVARCHAR2 nstring_length_i?
+    ;
+
 special_func_expr
     : (((DATE|ISNULL)|(TIME|YEAR))|MONTH) LeftParen bit_expr RightParen
     | cur_timestamp_func
@@ -656,6 +769,7 @@ special_func_expr
     | (CALC_PARTITION_ID|LEFT) LeftParen bit_expr Comma bit_expr RightParen
     | POSITION LeftParen bit_expr IN bit_expr RightParen
     | (DEFAULT|VALUES) LeftParen column_definition_ref RightParen
+    | CALC_PARTITION_ID LeftParen bit_expr Comma bit_expr Comma bit_expr RightParen
     ;
 
 access_func_expr_count
@@ -671,6 +785,10 @@ access_func_expr
     : access_func_expr_count
     | function_name LeftParen RightParen
     | function_name LeftParen func_param_list RightParen
+    | NEW NAME_OB LeftParen RightParen
+    | NEW NAME_OB LeftParen func_param_list RightParen
+    | function_name LeftParen func_param_list opt_json_exist RightParen
+    | function_name LeftParen func_param_list json_equal_option RightParen
     | aggregate_function_keyword LeftParen RightParen
     | aggregate_function_keyword LeftParen func_param_list RightParen
     | function_name LeftParen ALL func_param_list RightParen
@@ -724,12 +842,12 @@ substr_params
     ;
 
 delete_stmt
-    : delete_with_opt_hint FROM table_factor opt_where_extension ((RETURNING returning_exprs opt_into_clause) | (RETURN returning_exprs opt_into_clause))?
-    | delete_with_opt_hint table_factor ((WHERE expr) | (WHERE HINT_VALUE expr))? ((RETURNING returning_exprs opt_into_clause) | (RETURN returning_exprs opt_into_clause))?
+    : delete_with_opt_hint FROM table_factor opt_where_extension ((RETURNING returning_exprs opt_into_clause) | (RETURN returning_exprs opt_into_clause))? (LOG ERRORS into_err_log_caluse opt_simple_expression reject_limit)?
+    | delete_with_opt_hint table_factor ((WHERE expr) | (WHERE HINT_VALUE expr))? ((RETURNING returning_exprs opt_into_clause) | (RETURN returning_exprs opt_into_clause))? (LOG ERRORS into_err_log_caluse opt_simple_expression reject_limit)?
     ;
 
 update_stmt
-    : update_with_opt_hint dml_table_clause SET update_asgn_list opt_where_extension ((RETURNING returning_exprs opt_into_clause) | (RETURN returning_exprs opt_into_clause))?
+    : update_with_opt_hint dml_table_clause SET update_asgn_list opt_where_extension ((RETURNING returning_exprs opt_into_clause) | (RETURN returning_exprs opt_into_clause))? (LOG ERRORS into_err_log_caluse opt_simple_expression reject_limit)?
     ;
 
 update_asgn_list
@@ -743,7 +861,7 @@ normal_asgn_list
 
 update_asgn_factor
     : column_definition_ref COMP_EQ expr_or_default
-    | LeftParen column_list RightParen COMP_EQ LeftParen subquery RightParen
+    | LeftParen column_list RightParen COMP_EQ LeftParen subquery order_by? fetch_next_clause? RightParen
     ;
 
 create_resource_stmt
@@ -763,9 +881,12 @@ resource_unit_option
     | MIN_MEMORY COMP_EQ? conf_const
     | MAX_CPU COMP_EQ? conf_const
     | MAX_MEMORY COMP_EQ? conf_const
+    | MEMORY_SIZE COMP_EQ? conf_const
     | MAX_IOPS COMP_EQ? conf_const
     | MAX_DISK_SIZE COMP_EQ? conf_const
     | MAX_SESSION_NUM COMP_EQ? conf_const
+    | IOPS_WEIGHT COMP_EQ? conf_const
+    | LOG_DISK_SIZE COMP_EQ? conf_const
     ;
 
 opt_create_resource_pool_option_list
@@ -785,13 +906,13 @@ alter_resource_pool_option_list
     : alter_resource_pool_option (Comma alter_resource_pool_option)*
     ;
 
-unit_id_list
+id_list
     : INTNUM (Comma INTNUM)*
     ;
 
 alter_resource_pool_option
     : UNIT COMP_EQ? relation_name_or_string
-    | UNIT_NUM COMP_EQ? INTNUM (DELETE UNIT opt_equal_mark LeftParen unit_id_list RightParen)?
+    | UNIT_NUM COMP_EQ? INTNUM (DELETE UNIT opt_equal_mark LeftParen id_list RightParen)?
     | ZONE_LIST COMP_EQ? LeftParen zone_list RightParen
     ;
 
@@ -800,6 +921,7 @@ alter_resource_stmt
     | ALTER RESOURCE POOL relation_name alter_resource_pool_option_list
     | ALTER RESOURCE POOL relation_name SPLIT INTO LeftParen resource_pool_list RightParen ON LeftParen zone_list RightParen
     | ALTER RESOURCE POOL MERGE LeftParen resource_pool_list RightParen INTO LeftParen resource_pool_list RightParen
+    | ALTER RESOURCE TENANT relation_name UNIT_NUM COMP_EQ? INTNUM (DELETE UNIT_GROUP opt_equal_mark LeftParen id_list RightParen)?
     ;
 
 drop_resource_stmt
@@ -830,6 +952,7 @@ tenant_option
     | read_only_or_write
     | COMMENT COMP_EQ? STRING_VALUE
     | default_tablegroup
+    | ENABLE_EXTENDED_ROWID COMP_EQ? BOOL_VALUE
     ;
 
 zone_list
@@ -898,8 +1021,8 @@ database_name
     ;
 
 load_data_stmt
-    : load_data_with_opt_hint (LOCAL | REMOTE_OSS)? INFILE STRING_VALUE (IGNORE | REPLACE)? INTO TABLE relation_factor (CHARACTER SET charset_name_or_default)? field_opt line_opt (IGNORE INTNUM lines_or_rows)? ((LeftParen RightParen) | (LeftParen field_or_vars_list RightParen))? (SET load_set_list)?
-    | load_data_with_opt_hint (LOCAL | REMOTE_OSS)? INFILE STRING_VALUE (IGNORE | REPLACE)? INTO TABLE relation_factor use_partition (CHARACTER SET charset_name_or_default)? field_opt line_opt (IGNORE INTNUM lines_or_rows)? ((LeftParen RightParen) | (LeftParen field_or_vars_list RightParen))? (SET load_set_list)?
+    : load_data_with_opt_hint (LOCAL | REMOTE_OSS)? INFILE STRING_VALUE (IGNORE | REPLACE)? INTO TABLE relation_factor (CHARACTER SET charset_name_or_default)? field_opt line_opt (IGNORE INTNUM lines_or_rows)? ((LeftParen RightParen) | (LeftParen field_or_vars_list RightParen))? (SET load_set_list)? load_data_extended_option_list?
+    | load_data_with_opt_hint (LOCAL | REMOTE_OSS)? INFILE STRING_VALUE (IGNORE | REPLACE)? INTO TABLE relation_factor use_partition (CHARACTER SET charset_name_or_default)? field_opt line_opt (IGNORE INTNUM lines_or_rows)? ((LeftParen RightParen) | (LeftParen field_or_vars_list RightParen))? (SET load_set_list)? load_data_extended_option_list?
     ;
 
 load_data_with_opt_hint
@@ -929,11 +1052,21 @@ load_set_element
     : column_definition_ref COMP_EQ expr_or_default
     ;
 
+load_data_extended_option_list
+    : load_data_extended_option load_data_extended_option_list?
+    ;
+
+load_data_extended_option
+    : LOGFILE COMP_EQ? STRING_VALUE
+    | REJECT LIMIT COMP_EQ? INTNUM
+    | BADFILE COMP_EQ? STRING_VALUE
+    ;
+
 create_synonym_stmt
-    : CREATE (OR REPLACE)? PUBLIC? SYNONYM synonym_name FOR synonym_object USER_VARIABLE?
-    | CREATE (OR REPLACE)? PUBLIC? SYNONYM database_factor Dot synonym_name FOR synonym_object USER_VARIABLE?
-    | CREATE (OR REPLACE)? PUBLIC? SYNONYM synonym_name FOR database_factor Dot synonym_object USER_VARIABLE?
-    | CREATE (OR REPLACE)? PUBLIC? SYNONYM database_factor Dot synonym_name FOR database_factor Dot synonym_object USER_VARIABLE?
+    : CREATE (OR REPLACE)? PUBLIC? SYNONYM synonym_name FOR synonym_object (USER_VARIABLE opt_reverse_link_flag)?
+    | CREATE (OR REPLACE)? PUBLIC? SYNONYM database_factor Dot synonym_name FOR synonym_object (USER_VARIABLE opt_reverse_link_flag)?
+    | CREATE (OR REPLACE)? PUBLIC? SYNONYM synonym_name FOR database_factor Dot synonym_object (USER_VARIABLE opt_reverse_link_flag)?
+    | CREATE (OR REPLACE)? PUBLIC? SYNONYM database_factor Dot synonym_name FOR database_factor Dot synonym_object (USER_VARIABLE opt_reverse_link_flag)?
     ;
 
 synonym_name
@@ -953,6 +1086,7 @@ drop_synonym_stmt
 
 temporary_option
     : GLOBAL TEMPORARY
+    | EXTERNAL
     | empty
     ;
 
@@ -1095,6 +1229,7 @@ generated_column_attribute
     | UNIQUE
     | COMMENT STRING_VALUE
     | ID INTNUM
+    | constraint_and_name? CHECK LeftParen expr RightParen constraint_state
     ;
 
 opt_identity_attribute
@@ -1134,6 +1269,11 @@ cast_data_type
     | float_type_i
     | double_type_i
     | interval_type_i
+    | treat_data_type
+    ;
+
+treat_data_type
+    : JSON
     | udt_type_i
     ;
 
@@ -1155,6 +1295,8 @@ data_type
     | character_type_i[false] (charset_key charset_name)? collation?
     | binary_type_i
     | STRING_VALUE
+    | JSON
+    | XMLTYPE
     | interval_type_i
     | rowid_type_i
     ;
@@ -1243,6 +1385,10 @@ precision_decimal_num
     : DECIMAL_VAL
     ;
 
+nstring_length_i
+    : LeftParen zero_suffix_intnum RightParen
+    ;
+
 string_length_i
     : LeftParen zero_suffix_intnum (CHARACTER | CHAR | BYTE)? RightParen
     ;
@@ -1257,11 +1403,11 @@ collation_name
     ;
 
 trans_param_name
-    : Quote STRING_VALUE Quote
+    : STRING_VALUE
     ;
 
 trans_param_value
-    : Quote STRING_VALUE Quote
+    : STRING_VALUE
     | INTNUM
     ;
 
@@ -1365,6 +1511,9 @@ table_option
     | DISABLE ROW MOVEMENT
     | ENABLE_EXTENDED_ROWID COMP_EQ? BOOL_VALUE
     | physical_attributes_option
+    | LOCATION COMP_EQ? STRING_VALUE
+    | FORMAT COMP_EQ? LeftParen external_file_format_list RightParen
+    | PATTERN COMP_EQ? STRING_VALUE
     ;
 
 parallel_option
@@ -1487,7 +1636,7 @@ opt_column_partition_option
     ;
 
 column_partition_option
-    : PARTITION BY COLUMN LeftParen vertical_column_name (Comma aux_column_list)? RightParen
+    : PARTITION BY COLUMN? LeftParen vertical_column_name (Comma aux_column_list)? RightParen
     ;
 
 aux_column_list
@@ -1685,6 +1834,18 @@ opt_compress_level
     : (LOW | HIGH)?
     ;
 
+external_file_format_list
+    : external_file_format (opt_comma external_file_format)*
+    ;
+
+external_file_format
+    : format_key=(ENCODING|TYPE) COMP_EQ STRING_VALUE
+    | format_key=(ESCAPE|FIELD_OPTIONALLY_ENCLOSED_BY|FIELD_DELIMITER|LINE_DELIMITER) COMP_EQ bit_expr
+    | format_key=SKIP_HEADER COMP_EQ INTNUM
+    | format_key=(SKIP_BLANK_LINES|TRIM_SPACE|EMPTY_FIELD_AS_NULL) COMP_EQ BOOL_VALUE
+    | format_key=NULL_IF_EXETERNAL COMP_EQ LeftParen expr_list RightParen
+    ;
+
 create_tablegroup_stmt
     : CREATE TABLEGROUP relation_name tablegroup_option_list? (tg_hash_partition_option | tg_range_partition_option | tg_list_partition_option)?
     ;
@@ -1712,6 +1873,7 @@ tablegroup_option
     | PRIMARY_ZONE COMP_EQ? primary_zone_name
     | TABLEGROUP_ID COMP_EQ? INTNUM
     | BINDING COMP_EQ? BOOL_VALUE
+    | SHARDING COMP_EQ? STRING_VALUE
     | MAX_USED_PART_ID COMP_EQ? INTNUM
     ;
 
@@ -1738,7 +1900,12 @@ view_subquery
 
 view_with_opt
     : WITH READ ONLY
+    | with_check_option
     | empty
+    ;
+
+with_check_option
+    : WITH CHECK OPTION
     ;
 
 view_name
@@ -1826,10 +1993,25 @@ insert_stmt
     | insert_with_opt_hint multi_table_insert
     ;
 
+opt_simple_expression
+    : empty
+    | LeftParen simple_expr RightParen
+    ;
+
+into_err_log_caluse
+    : empty
+    | INTO relation_factor
+    ;
+
+reject_limit
+    : empty
+    | REJECT LIMIT (INTNUM|UNLIMITED)
+    ;
+
 single_table_insert
-    : INTO insert_table_clause NOLOGGING? LeftParen column_list RightParen values_clause ((RETURNING returning_exprs opt_into_clause) | (RETURN returning_exprs opt_into_clause))?
-    | INTO insert_table_clause NOLOGGING? LeftParen RightParen values_clause ((RETURNING returning_exprs opt_into_clause) | (RETURN returning_exprs opt_into_clause))?
-    | INTO insert_table_clause NOLOGGING? values_clause ((RETURNING returning_exprs opt_into_clause) | (RETURN returning_exprs opt_into_clause))?
+    : INTO insert_table_clause NOLOGGING? LeftParen column_list RightParen values_clause ((RETURNING returning_exprs opt_into_clause) | (RETURN returning_exprs opt_into_clause))? (LOG ERRORS into_err_log_caluse opt_simple_expression reject_limit)?
+    | INTO insert_table_clause NOLOGGING? LeftParen RightParen values_clause ((RETURNING returning_exprs opt_into_clause) | (RETURN returning_exprs opt_into_clause))? (LOG ERRORS into_err_log_caluse opt_simple_expression reject_limit)?
+    | INTO insert_table_clause NOLOGGING? values_clause ((RETURNING returning_exprs opt_into_clause) | (RETURN returning_exprs opt_into_clause))? (LOG ERRORS into_err_log_caluse opt_simple_expression reject_limit)?
     ;
 
 multi_table_insert
@@ -2130,7 +2312,7 @@ hint_option
     | TOPK LeftParen INTNUM INTNUM RightParen
     | HOTSPOT
     | LOG_LEVEL LeftParen NAME_OB RightParen
-    | LOG_LEVEL LeftParen Quote STRING_VALUE Quote RightParen
+    | LOG_LEVEL LeftParen STRING_VALUE RightParen
     | LEADING_HINT LeftParen qb_name_option relation_factor_in_leading_hint_list_entry RightParen
     | LEADING_HINT LeftParen qb_name_option relation_factor_in_hint_list RightParen
     | ORDERED
@@ -2189,7 +2371,8 @@ hint_option
     ;
 
 distribute_method
-    : NONE
+    : ALL
+    | NONE
     | PARTITION
     | RANDOM
     | RANDOM_LOCAL
@@ -2197,6 +2380,8 @@ distribute_method
     | BROADCAST
     | LOCAL
     | BC2HOST
+    | RANGE
+    | LIST
     ;
 
 consistency_level
@@ -2340,6 +2525,13 @@ table_factor
     | table_subquery
     | LeftParen table_reference RightParen
     | TABLE LeftParen simple_expr RightParen relation_name?
+    | select_function relation_name?
+    | json_table_expr (AS? relation_name)?
+    ;
+
+select_function
+    : access_func_expr
+    | database_factor Dot select_function
     ;
 
 tbl_name
@@ -2406,23 +2598,23 @@ dml_table_name
     : relation_factor use_partition?
     ;
 
+order_by_fetch_with_check_option
+    : with_check_option
+    | fetch_next_clause with_check_option?
+    | order_by fetch_next_clause? with_check_option?
+    ;
+
 insert_table_clause
-    : dml_table_name
-    | dml_table_name relation_name
-    | select_with_parens
-    | select_with_parens relation_name
-    | LeftParen subquery fetch_next_clause RightParen
-    | LeftParen subquery fetch_next_clause RightParen relation_name
-    | LeftParen subquery order_by fetch_next_clause? RightParen
-    | LeftParen subquery order_by fetch_next_clause? RightParen relation_name
+    : dml_table_name relation_name?
+    | select_with_parens relation_name?
+    | LeftParen subquery order_by_fetch_with_check_option RightParen relation_name?
     ;
 
 dml_table_clause
     : dml_table_name relation_name?
     | ONLY LeftParen dml_table_name RightParen relation_name?
     | select_with_parens relation_name?
-    | LeftParen subquery fetch_next_clause RightParen relation_name?
-    | LeftParen subquery order_by fetch_next_clause? RightParen relation_name?
+    | LeftParen subquery order_by_fetch_with_check_option RightParen relation_name?
     ;
 
 seed
@@ -2440,7 +2632,7 @@ sample_clause
 
 table_subquery
     : select_with_parens use_flashback? relation_name? transpose_clause?
-    | LeftParen subquery (fetch_next_clause|order_by fetch_next_clause?) RightParen use_flashback? |relation_name? transpose_clause?
+    | LeftParen subquery order_by_fetch_with_check_option RightParen use_flashback? relation_name? transpose_clause?
     ;
 
 use_partition
@@ -2457,12 +2649,16 @@ relation_factor
     ;
 
 normal_relation_factor
-    : relation_name USER_VARIABLE?
-    | database_factor Dot relation_name USER_VARIABLE?
+    : relation_name (USER_VARIABLE opt_reverse_link_flag)?
+    | database_factor Dot relation_name (USER_VARIABLE opt_reverse_link_flag)?
     ;
 
 dot_relation_factor
     : Dot relation_name
+    ;
+
+opt_reverse_link_flag
+    : Not?
     ;
 
 relation_factor_in_hint
@@ -2559,7 +2755,7 @@ with_list
     ;
 
 common_table_expr
-    : relation_name (LeftParen alias_name_list RightParen)? AS LeftParen select_no_parens RightParen ((SEARCH DEPTH FIRST BY sort_list search_set_value) | (SEARCH BREADTH FIRST BY sort_list search_set_value))? (CYCLE alias_name_list SET var_name TO STRING_VALUE DEFAULT STRING_VALUE)?
+    : relation_name (LeftParen alias_name_list RightParen)? AS LeftParen select_no_parens order_by? fetch_next_clause? RightParen ((SEARCH DEPTH FIRST BY sort_list search_set_value) | (SEARCH BREADTH FIRST BY sort_list search_set_value))? (CYCLE alias_name_list SET var_name TO STRING_VALUE DEFAULT STRING_VALUE)?
     | relation_name (LeftParen alias_name_list RightParen)? AS LeftParen with_select RightParen ((SEARCH DEPTH FIRST BY sort_list search_set_value) | (SEARCH BREADTH FIRST BY sort_list search_set_value))? (CYCLE alias_name_list SET var_name TO STRING_VALUE DEFAULT STRING_VALUE)?
     | relation_name (LeftParen alias_name_list RightParen)? AS LeftParen select_with_parens RightParen ((SEARCH DEPTH FIRST BY sort_list search_set_value) | (SEARCH BREADTH FIRST BY sort_list search_set_value))? (CYCLE alias_name_list SET var_name TO STRING_VALUE DEFAULT STRING_VALUE)?
     | relation_name (LeftParen alias_name_list RightParen)? AS LeftParen subquery order_by fetch_next_clause? RightParen ((SEARCH DEPTH FIRST BY sort_list search_set_value) | (SEARCH BREADTH FIRST BY sort_list search_set_value))? (CYCLE alias_name_list SET var_name TO STRING_VALUE DEFAULT STRING_VALUE)?
@@ -2617,12 +2813,29 @@ drop_outline_stmt
 explain_stmt
     : explain_or_desc relation_factor (STRING_VALUE | column_name)?
     | explain_or_desc explainable_stmt
+    | explain_or_desc PRETTY explainable_stmt
+    | explain_or_desc PRETTY_COLOR explainable_stmt
     | explain_or_desc BASIC explainable_stmt
+    | explain_or_desc BASIC PRETTY explainable_stmt
+    | explain_or_desc BASIC PRETTY_COLOR explainable_stmt
     | explain_or_desc OUTLINE explainable_stmt
+    | explain_or_desc OUTLINE PRETTY explainable_stmt
+    | explain_or_desc OUTLINE PRETTY_COLOR explainable_stmt
     | explain_or_desc EXTENDED explainable_stmt
+    | explain_or_desc EXTENDED PRETTY explainable_stmt
+    | explain_or_desc EXTENDED PRETTY_COLOR explainable_stmt
     | explain_or_desc EXTENDED_NOADDR explainable_stmt
+    | explain_or_desc EXTENDED_NOADDR PRETTY explainable_stmt
+    | explain_or_desc EXTENDED_NOADDR PRETTY_COLOR explainable_stmt
     | explain_or_desc PLANREGRESS explainable_stmt
+    | explain_or_desc PLANREGRESS PRETTY explainable_stmt
+    | explain_or_desc PLANREGRESS PRETTY_COLOR explainable_stmt
     | explain_or_desc PARTITIONS explainable_stmt
+    | explain_or_desc PARTITIONS PRETTY explainable_stmt
+    | explain_or_desc PARTITIONS PRETTY_COLOR explainable_stmt
+    | explain_or_desc SET STATEMENT_ID COMP_EQ literal explainable_stmt
+    | explain_or_desc INTO relation_name explainable_stmt
+    | explain_or_desc INTO relation_name SET STATEMENT_ID COMP_EQ literal explainable_stmt
     | explain_or_desc FORMAT COMP_EQ format_name explainable_stmt
     ;
 
@@ -2657,6 +2870,7 @@ show_stmt
     | SHOW GRANTS opt_for_grant_user
     | SHOW charset_key ((LIKE STRING_VALUE) | (LIKE STRING_VALUE ESCAPE STRING_VALUE) | (WHERE expr))?
     | SHOW TRACE ((LIKE STRING_VALUE) | (LIKE STRING_VALUE ESCAPE STRING_VALUE) | (WHERE expr))?
+    | SHOW TRACE FORMAT COMP_EQ STRING_VALUE ((LIKE STRING_VALUE) | (LIKE STRING_VALUE ESCAPE STRING_VALUE) | (WHERE expr))?
     | SHOW COLLATION ((LIKE STRING_VALUE) | (LIKE STRING_VALUE ESCAPE STRING_VALUE) | (WHERE expr))?
     | SHOW PARAMETERS ((LIKE STRING_VALUE) | (LIKE STRING_VALUE ESCAPE STRING_VALUE) | (WHERE expr))? tenant_name?
     | SHOW FULL? PROCESSLIST
@@ -2811,7 +3025,15 @@ lock_tables_stmt
     ;
 
 lock_table_stmt
-    : LOCK TABLE relation_factor IN lock_mode MODE ((WAIT INTNUM) | NOWAIT)?
+    : LOCK TABLE lock_table_factors IN lock_mode MODE ((WAIT INTNUM) | NOWAIT)?
+    ;
+
+lock_table_factors
+    : lock_table_factor (Comma lock_table_factor)*
+    ;
+
+lock_table_factor
+    : relation_factor use_partition?
     ;
 
 lock_mode
@@ -2828,14 +3050,33 @@ lock_table_list
     : lock_table (Comma lock_table)*
     ;
 
+create_context_stmt
+    : CREATE (OR REPLACE)? CONTEXT relation_name USING context_package_name context_option
+    ;
+
+context_package_name
+    : relation_name (Dot relation_name)?
+    ;
+
 lock_table
     : relation_factor (AS relation_name|relation_name?) lock_type
+    ;
+
+context_option
+    : ACCESSED GLOBALLY
+    | INITIALIZED GLOBALLY
+    | INITIALIZED EXTERNALLY
+    | empty
     ;
 
 lock_type
     : READ LOCAL?
     | WRITE
     | LOW_PRIORITY WRITE
+    ;
+
+drop_context_stmt
+    : DROP CONTEXT relation_name
     ;
 
 create_sequence_stmt
@@ -2857,6 +3098,7 @@ sequence_option
     | NOCACHE
     | ORDER
     | NOORDER
+    | RESTART
     ;
 
 simple_num
@@ -2875,7 +3117,7 @@ alter_sequence_stmt
     ;
 
 create_dblink_stmt
-    : CREATE DATABASE LINK dblink CONNECT TO user tenant IDENTIFIED BY password ip_port (CLUSTER relation_name)?
+    : CREATE DATABASE LINK dblink CONNECT TO user tenant IDENTIFIED BY password NAME_OB? ip_port (CLUSTER relation_name)? (MY_NAME user tenant IDENTIFIED BY password ip_port opt_cluster)?
     ;
 
 drop_dblink_stmt
@@ -2890,18 +3132,24 @@ tenant
     : USER_VARIABLE
     ;
 
+opt_cluster
+    : CLUSTER relation_name
+    | empty
+    ;
+
 begin_stmt
-    : BEGIN WORK?
-    | START TRANSACTION ((WITH CONSISTENT SNAPSHOT) | transaction_access_mode | (WITH CONSISTENT SNAPSHOT Comma transaction_access_mode) | (transaction_access_mode Comma WITH CONSISTENT SNAPSHOT))?
+    : BEGIN HINT_VALUE? WORK?
+    | START HINT_VALUE? TRANSACTION ((WITH CONSISTENT SNAPSHOT) | transaction_access_mode | (WITH CONSISTENT SNAPSHOT Comma transaction_access_mode) | (transaction_access_mode Comma WITH CONSISTENT SNAPSHOT))?
     ;
 
 commit_stmt
-    : COMMIT WORK?
-    | COMMIT COMMENT STRING_VALUE
+    : COMMIT HINT_VALUE? WORK?
+    | COMMIT HINT_VALUE? WORK? COMMENT STRING_VALUE
     ;
 
 rollback_stmt
     : ROLLBACK WORK?
+    | ROLLBACK HINT_VALUE WORK?
     ;
 
 kill_stmt
@@ -2947,7 +3195,7 @@ role_opt_identified_by
 sys_and_obj_priv
     : priv_type
     | CREATE ((ANY? TABLE|SESSION)|ANY? (PROCEDURE|VIEW))
-    | EXEMPT REDACTION POLICY
+    | EXEMPT (ACCESS|REDACTION) POLICY
     | SYSDBA
     | SYSOPER
     | SYSBACKUP
@@ -2968,14 +3216,15 @@ sys_and_obj_priv
     | UNDER ANY TYPE
     | PURGE DBA_RECYCLEBIN
     | SYSKM
-    | CREATE (ANY DIRECTORY|TABLESPACE)
+    | CREATE ((ANY DIRECTORY|TABLESPACE)|ANY CONTEXT)
     | ALTER TABLESPACE
-    | DROP ((DATABASE LINK|TABLESPACE)|ANY DIRECTORY)
+    | DROP ((DATABASE LINK|TABLESPACE)|ANY (CONTEXT|DIRECTORY))
     | SHOW PROCESS
     | ALTER SYSTEM
     | CREATE PUBLIC? DATABASE LINK
-    | ALTER SESSION
+    | (ALTER|DEBUG CONNECT) SESSION
     | ALTER DATABASE
+    | DEBUG ANY PROCEDURE
     ;
 
 grant_stmt
@@ -3022,7 +3271,8 @@ priv_type
     | FLASHBACK
     | READ
     | WRITE
-    | FILEX
+    | FILE_KEY
+    | DEBUG
     ;
 
 obj_clause
@@ -3119,7 +3369,7 @@ deallocate_or_drop
     ;
 
 call_stmt
-    : CALL routine_access_name call_param_list
+    : CALL routine_access_name call_param_list?
     ;
 
 call_param_list
@@ -3136,6 +3386,10 @@ routine_name
     | oracle_unreserved_keyword
     | unreserved_keyword_normal
     | aggregate_function_keyword
+    | ADD
+    | SET
+    | MODIFY
+    | DELETE
     ;
 
 truncate_table_stmt
@@ -3173,7 +3427,7 @@ alter_index_option_oracle
     ;
 
 alter_table_stmt
-    : ALTER TABLE relation_factor alter_table_actions
+    : ALTER EXTERNAL? TABLE relation_factor alter_table_actions
     ;
 
 alter_table_actions
@@ -3193,6 +3447,7 @@ alter_table_action
     | modify_partition_info
     | DROP CONSTRAINT constraint_name
     | enable_option ALL TRIGGERS
+    | REFRESH
     ;
 
 alter_partition_option
@@ -3256,6 +3511,7 @@ tg_modify_partition_info
 
 alter_index_option
     : ADD out_of_line_constraint
+    | ADD LeftParen out_of_line_constraint RightParen
     | ALTER INDEX index_name visibility_option
     | DROP PRIMARY KEY
     | MODIFY out_of_line_primary_index[false]
@@ -3386,7 +3642,7 @@ audit_all_shortcut
 
 alter_system_stmt
     : ALTER SYSTEM BOOTSTRAP (CLUSTER partition_role)? server_info_list (PRIMARY_ROOTSERVICE_LIST STRING_VALUE)?
-    | ALTER SYSTEM FLUSH cache_type CACHE flush_scope
+    | ALTER SYSTEM FLUSH cache_type CACHE namespace_expr? flush_scope
     | ALTER SYSTEM FLUSH KVCACHE tenant_name? cache_name?
     | ALTER SYSTEM FLUSH ILOGCACHE file_id?
     | ALTER SYSTEM ALTER PLAN BASELINE tenant_name? sql_id_expr? baseline_id_expr? SET baseline_asgn_factor
@@ -3399,12 +3655,24 @@ alter_system_stmt
     | ALTER SYSTEM REPORT REPLICA server_or_zone?
     | ALTER SYSTEM RECYCLE REPLICA server_or_zone?
     | ALTER SYSTEM START MERGE zone_desc
-    | ALTER SYSTEM suspend_or_resume MERGE zone_desc?
-    | ALTER SYSTEM CLEAR MERGE ERROR_P
+    | ALTER SYSTEM suspend_or_resume MERGE tenant_list_tuple_v2?
+    | ALTER SYSTEM CLEAR MERGE ERROR_P tenant_list_tuple_v2?
     | ALTER SYSTEM CANCEL cancel_task_type TASK STRING_VALUE
-    | ALTER SYSTEM MAJOR FREEZE (IGNORE server_list)?
+    | ALTER SYSTEM MAJOR FREEZE tenant_list_tuple_v2?
     | ALTER SYSTEM CHECKPOINT
-    | ALTER SYSTEM MINOR FREEZE (tenant_list_tuple | partition_id_desc)? (SERVER opt_equal_mark LeftParen server_list RightParen)? zone_desc?
+    | ALTER SYSTEM MINOR FREEZE tenant_list_tuple? (SERVER opt_equal_mark LeftParen server_list RightParen)? zone_desc?
+    | ALTER SYSTEM ARCHIVELOG (TENANT opt_equal_mark tenant_name_list)? (DESCRIPTION opt_equal_mark STRING_VALUE)?
+    | ALTER SYSTEM NOARCHIVELOG (TENANT opt_equal_mark tenant_name_list)? (DESCRIPTION opt_equal_mark STRING_VALUE)?
+    | ALTER SYSTEM BACKUP DATABASE (TO opt_equal_mark STRING_VALUE)? (DESCRIPTION opt_equal_mark STRING_VALUE)?
+    | ALTER SYSTEM BACKUP INCREMENTAL DATABASE (TO opt_equal_mark STRING_VALUE)? (DESCRIPTION opt_equal_mark STRING_VALUE)?
+    | ALTER SYSTEM BACKUP DATABASE (TO opt_equal_mark STRING_VALUE)? PLUS ARCHIVELOG (DESCRIPTION opt_equal_mark STRING_VALUE)?
+    | ALTER SYSTEM BACKUP INCREMENTAL DATABASE (TO opt_equal_mark STRING_VALUE)? PLUS ARCHIVELOG (DESCRIPTION opt_equal_mark STRING_VALUE)?
+    | ALTER SYSTEM BACKUP KEY (TO opt_equal_mark STRING_VALUE)? (ENCRYPTED BY STRING_VALUE)?
+    | ALTER SYSTEM CANCEL BACKUP (TENANT opt_equal_mark tenant_name_list)?
+    | SET ENCRYPTION ON IDENTIFIED BY STRING_VALUE ONLY
+    | ALTER SYSTEM CANCEL DELETE BACKUP (TENANT opt_equal_mark tenant_name_list)? (DESCRIPTION opt_equal_mark STRING_VALUE)?
+    | ALTER SYSTEM ADD DELETE BACKUP policy_name (RECOVERY_WINDOW opt_equal_mark STRING_VALUE)? (REDUNDANCY opt_equal_mark INTNUM)? (BACKUP_COPIES opt_equal_mark INTNUM)? (TENANT opt_equal_mark tenant_name_list)?
+    | ALTER SYSTEM DROP DELETE BACKUP policy_name (TENANT opt_equal_mark tenant_name_list)?
     | ALTER SYSTEM CLEAR ROOTTABLE tenant_name?
     | ALTER SYSTEM server_action SERVER server_list zone_desc?
     | ALTER SYSTEM ADD ZONE relation_name_or_string add_or_alter_zone_options
@@ -3430,6 +3698,8 @@ alter_system_stmt
     | ALTER SYSTEM DROP TABLES IN SESSION INTNUM
     | ALTER SYSTEM REFRESH TABLES IN SESSION INTNUM
     | ALTER SYSTEM SET alter_system_set_clause_list
+    | ALTER SYSTEM KILL SESSION bit_expr IMMEDIATE
+    | ALTER SYSTEM KILL SESSION bit_expr
     ;
 
 opt_sql_throttle_using_cond
@@ -3469,6 +3739,7 @@ cache_type
     | BLOOM_FILTER
     | SCHEMA
     | PLAN
+    | LIB
     ;
 
 balance_task_type
@@ -3481,8 +3752,16 @@ tenant_list_tuple
     : TENANT COMP_EQ? LeftParen tenant_name_list RightParen
     ;
 
+tenant_list_tuple_v2
+    : TENANT COMP_EQ? tenant_name_list
+    ;
+
 tenant_name_list
     : relation_name_or_string (Comma relation_name_or_string)*
+    ;
+
+policy_name
+    : POLICY COMP_EQ? STRING_VALUE
     ;
 
 flush_scope
@@ -3600,6 +3879,10 @@ tenant_name
     : TENANT COMP_EQ? relation_name_or_string
     ;
 
+namespace_expr
+    : NAMESPACE COMP_EQ? STRING_VALUE
+    ;
+
 cache_name
     : CACHE COMP_EQ? relation_name_or_string
     ;
@@ -3625,6 +3908,7 @@ settp_option
     | OCCUR COMP_EQ? INTNUM
     | FREQUENCY COMP_EQ? INTNUM
     | ERROR_CODE COMP_EQ? INTNUM
+    | MATCH COMP_EQ? INTNUM
     ;
 
 partition_role
@@ -3648,11 +3932,13 @@ alter_session_stmt
 var_name_of_forced_module
     : PARALLEL DML
     | PARALLEL QUERY
+    | PARALLEL DDL
     ;
 
 var_name_of_module
     : PARALLEL DML
     | PARALLEL QUERY
+    | PARALLEL DDL
     ;
 
 switch_option
@@ -3844,6 +4130,26 @@ isolation_level
     | SERIALIZABLE
     ;
 
+switchover_tenant_stmt
+    : ALTER SYSTEM switchover_clause VERIFY?
+    ;
+
+switchover_clause
+    : ACTIVATE STANDBY tenant_name?
+    | SWITCHOVER TO PRIMARY tenant_name?
+    | SWITCHOVER TO STANDBY tenant_name?
+    ;
+
+recover_tenant_stmt
+    : ALTER SYSTEM RECOVER STANDBY tenant_name? recover_point_clause
+    ;
+
+recover_point_clause
+    : ((UNTIL TIME opt_equal_mark STRING_VALUE) | (UNTIL SCN opt_equal_mark INTNUM))?
+    | UNTIL UNLIMITED
+    | CANCEL
+    ;
+
 create_savepoint_stmt
     : SAVEPOINT var_name
     ;
@@ -3914,6 +4220,451 @@ date_unit_for_extract
     | timezone_unit
     ;
 
+json_mergepatch_expr
+    : JSON_MERGEPATCH LeftParen bit_expr Comma bit_expr js_mp_return_clause? opt_json_mergepatch json_mergepatch_on_error? RightParen
+    ;
+
+json_mergepatch_on_error
+    : (ERROR_P | NULLX) ON ERROR_P
+    ;
+
+opt_json_mergepatch
+    : ASCII? PRETTY? TRUNCATE?
+    | PRETTY ASCII TRUNCATE?
+    | TRUNCATE ASCII? PRETTY
+    | TRUNCATE PRETTY? ASCII
+    ;
+
+js_mp_return_clause
+    : RETURNING js_return_type
+    ;
+
+json_array_expr
+    : JSON_ARRAY LeftParen json_array_content? RightParen
+    | JSON LeftBracket json_array_content RightBracket
+    ;
+
+json_array_content
+    : js_array_eles json_array_on_null? js_array_return_clause? STRICT?
+    ;
+
+json_array_on_null
+    : (ABSENT | NULLX) ON NULLX
+    ;
+
+js_array_eles
+    : js_array_ele (Comma js_array_ele)*
+    ;
+
+js_array_ele
+    : bit_expr (FORMAT JSON)?
+    ;
+
+js_array_return_clause
+    : RETURNING js_return_type
+    ;
+
+json_value_expr
+    : JSON_VALUE LeftParen js_doc_expr Comma js_literal opt_js_value_returning_type TRUNCATE? ASCII? json_value_on_opt? RightParen
+    ;
+
+json_value_on_opt
+    : json_value_on_empty
+    | json_value_on_error
+    | json_value_on_empty json_value_on_error
+    | json_value_on_error json_value_on_empty
+    | opt_on_mismatchs
+    | json_value_on_empty opt_on_mismatchs
+    | json_value_on_error opt_on_mismatchs
+    | json_value_on_empty json_value_on_error opt_on_mismatchs
+    | json_value_on_error json_value_on_empty opt_on_mismatchs
+    ;
+
+js_doc_expr
+    : bit_expr (FORMAT JSON)?
+    ;
+
+opt_js_value_returning_type
+    : RETURNING (NCHAR nstring_length_i|js_value_return_type)
+    | RETURNING NVARCHAR2
+    | RETURNING CHAR string_length_i? BINARY?
+    | RETURNING RAW
+    | js_return_default_type
+    ;
+
+json_value_on_empty
+    : json_value_on_empty_response
+    ;
+
+json_value_on_empty_response
+    : (DEFAULT signed_literal|json_value_on_response) ON EMPTY
+    ;
+
+json_value_on_error
+    : json_value_on_error_response
+    ;
+
+json_value_on_error_response
+    : (DEFAULT signed_literal|json_value_on_response) ON ERROR_P
+    ;
+
+opt_on_mismatchs
+    : opt_on_mismatch+
+    ;
+
+opt_on_mismatch
+    : (IGNORE|json_value_on_response) ON MISMATCH
+    | (IGNORE|json_value_on_response) ON MISMATCH LeftParen mismatch_type_list RightParen
+    ;
+
+json_value_on_response
+    : ERROR_P
+    | NULLX
+    ;
+
+mismatch_type_list
+    : mismatch_type (Comma mismatch_type)*
+    ;
+
+mismatch_type
+    : MISSING DATA
+    | EXTRA DATA
+    | TYPE ERROR_P
+    | empty
+    ;
+
+json_exists_expr
+    : JSON_EXISTS LeftParen js_doc_expr Comma literal opt_json_exist? RightParen
+    ;
+
+opt_json_exist
+    : PASSING passing_elements opt_json_exists_on_error_on_empty?
+    | opt_json_exists_on_error_on_empty
+    ;
+
+passing_elements
+    : passing_context (Comma passing_context)*
+    ;
+
+passing_context
+    : bit_expr AS sql_var_name
+    ;
+
+sql_var_name
+    : NAME_OB
+    ;
+
+opt_json_exists_on_error_on_empty
+    : json_exists_on_error json_exists_on_empty?
+    | json_exists_on_empty
+    ;
+
+json_exists_on_error
+    : json_exists_response_type ON ERROR_P
+    ;
+
+json_exists_on_empty
+    : json_exists_response_type ON EMPTY
+    ;
+
+json_exists_response_type
+    : BOOL_VALUE
+    | ERROR_P
+    ;
+
+json_query_expr
+    : JSON_QUERY LeftParen js_doc_expr Comma js_literal (RETURNING js_query_return_type)? TRUNCATE? scalars_opt? PRETTY? ASCII? wrapper_opts? json_query_on_opt? RightParen
+    ;
+
+json_query_on_opt
+    : on_empty_query
+    | on_error_query
+    | on_mismatch_query
+    | on_error_query on_empty_query
+    | on_empty_query on_error_query
+    | on_error_query on_mismatch_query
+    | on_empty_query on_mismatch_query
+    | on_error_query on_empty_query on_mismatch_query
+    | on_empty_query on_error_query on_mismatch_query
+    ;
+
+wrapper_opts
+    : WITHOUT WRAPPER
+    | WITHOUT ARRAY WRAPPER
+    | WITH WRAPPER
+    | WITH ARRAY WRAPPER
+    | WITH UNCONDITIONAL WRAPPER
+    | WITH CONDITIONAL WRAPPER
+    | WITH UNCONDITIONAL ARRAY WRAPPER
+    | WITH CONDITIONAL ARRAY WRAPPER
+    ;
+
+js_query_return_type
+    : js_value_return_type
+    | BLOB
+    | JSON
+    ;
+
+on_mismatch_query
+    : (DOT|opt_response_query) ON MISMATCH
+    ;
+
+on_error_query
+    : opt_response_query_on_empty_error ON ERROR_P
+    ;
+
+on_empty_query
+    : opt_response_query_on_empty_error ON EMPTY
+    ;
+
+opt_response_query_on_empty_error
+    : EMPTY ARRAY?
+    | EMPTY OBJECT
+    | opt_response_query
+    ;
+
+opt_response_query
+    : ERROR_P
+    | NULLX
+    ;
+
+opt_json_table_on_error_on_empty
+    : json_table_on_error
+    | json_table_on_empty
+    | json_table_on_error json_table_on_empty
+    ;
+
+json_table_columns_def_opt
+    : json_table_columns_def
+    | LeftParen json_table_columns_def RightParen
+    ;
+
+json_table_expr
+    : JSON_TABLE LeftParen js_doc_expr (Comma literal)? opt_json_table_on_error_on_empty? COLUMNS json_table_columns_def_opt RightParen
+    ;
+
+json_table_columns_def
+    : json_table_column_def (Comma json_table_column_def)*
+    ;
+
+json_table_column_def
+    : json_table_ordinality_column_def
+    | json_table_exists_column_def
+    | json_table_query_column_def
+    | json_table_value_column_def
+    | json_table_nested_column_def
+    ;
+
+json_table_ordinality_column_def
+    : column_name FOR ORDINALITY
+    ;
+
+json_table_column_def_path
+    : PATH literal
+    | PATH column_name
+    | PATH column_name dot_notation_path
+    ;
+
+json_table_exists_column_def
+    : column_name opt_jt_value_type TRUNCATE? EXISTS json_table_column_def_path? ASIS? opt_json_exists_on_error_on_empty?
+    ;
+
+json_table_query_column_def
+    : column_name opt_jt_query_type FORMAT JSON TRUNCATE? scalars_opt? wrapper_opts? json_table_column_def_path? ASIS? json_query_on_opt?
+    | column_name JSON scalars_opt? wrapper_opts? json_table_column_def_path? ASIS? json_query_on_opt?
+    ;
+
+json_table_value_column_def
+    : column_name opt_jt_value_type TRUNCATE? json_table_column_def_path? ASIS? json_value_on_opt?
+    ;
+
+json_table_nested_column_def
+    : NESTED PATH literal COLUMNS LeftParen json_table_columns_def RightParen
+    ;
+
+opt_jt_query_type
+    : js_return_type
+    | js_return_default_type
+    ;
+
+opt_jt_value_type
+    : js_value_return_type
+    | int_type_i
+    | CHAR string_length_i? BINARY?
+    | NVARCHAR2 nstring_length_i
+    | NCHAR nstring_length_i
+    | js_return_default_type
+    ;
+
+js_value_return_type
+    : datetime_type_i
+    | timestamp_type_i
+    | NUMBER number_precision?
+    | double_type_i
+    | interval_type_i
+    | js_return_text_type
+    ;
+
+js_return_type
+    : BLOB
+    | JSON
+    | js_return_text_type
+    ;
+
+js_return_default_type
+    : empty
+    ;
+
+js_return_text_type
+    : CLOB
+    | varchar_type_i string_length_i BINARY?
+    | varchar_type_i
+    ;
+
+json_table_on_response
+    : ERROR_P
+    | NULLX
+    | DEFAULT signed_literal
+    ;
+
+json_table_on_error
+    : json_table_on_response ON ERROR_P
+    ;
+
+json_table_on_empty
+    : json_table_on_response ON EMPTY
+    ;
+
+json_object_expr
+    : JSON_OBJECT LeftParen opt_json_object_content RightParen
+    | JSON LeftBrace opt_json_object_content RightBrace
+    ;
+
+opt_json_object_content
+    : entry_op? opt_json_object_clause
+    | entry_op STRICT json_obj_unique_key?
+    | entry_op? json_obj_unique_key
+    ;
+
+opt_json_object_clause
+    : empty
+    | (js_on_null json_obj_returning_type?|json_obj_returning_type) STRICT? json_obj_unique_key?
+    ;
+
+entry_op
+    : Star
+    | entry_set
+    ;
+
+entry_set
+    : entry_obj (Comma entry_obj)*
+    ;
+
+entry_obj
+    : regular_entry_obj (FORMAT JSON)?
+    ;
+
+regular_entry_obj
+    : JSON_OBJECT_VALUE
+    | KEY? json_obj_literal_expr VALUE json_obj_literal_expr
+    | (json_obj_literal_key Colon)? json_obj_literal_expr
+    ;
+
+json_obj_literal_expr
+    : bit_expr
+    ;
+
+json_obj_literal_key
+    : complex_string_literal
+    | DATE_VALUE
+    | TIMESTAMP_VALUE
+    | INTNUM
+    | APPROXNUM
+    | DECIMAL_VAL
+    | INTERVAL_VALUE
+    ;
+
+js_on_null
+    : (ABSENT|NULLX) ON NULLX
+    ;
+
+json_obj_returning_type
+    : RETURNING js_return_type
+    ;
+
+json_obj_unique_key
+    : WITH UNIQUE KEYS
+    ;
+
+xmlparse_expr
+    : XMLPARSE LeftParen xml_doc_type xml_text WELLFORMED? RightParen
+    ;
+
+xml_text
+    : bit_expr
+    ;
+
+xml_doc_type
+    : DOCUMENT
+    | CONTENT
+    ;
+
+xml_element_expr
+    : XMLELEMENT LeftParen xml_tag (Comma xml_attributes_expr)? RightParen
+    | XMLELEMENT LeftParen xml_tag Comma (xml_attributes_expr Comma)? xml_value_clause RightParen
+    ;
+
+xml_tag
+    : ENTITYESCAPING? element_name
+    | NOENTITYESCAPING element_name
+    ;
+
+evalname_expr
+    : simple_expr
+    | evalname_expr CNNOP evalname_expr
+    ;
+
+element_name
+    : NAME? column_name
+    | EVALNAME evalname_expr
+    ;
+
+xml_value_clause
+    : xml_value (Comma xml_value)*
+    ;
+
+xml_value
+    : bit_expr (AS column_label|column_label?)
+    ;
+
+xml_attributes_expr
+    : XMLATTRIBUTES LeftParen (ENTITYESCAPING?|NOENTITYESCAPING) (NOSCHEMACHECK|SCHEMACHECK?) xml_attributes_value_clause RightParen
+    ;
+
+xml_attributes_value_clause
+    : xml_attributes_value (Comma xml_attributes_value_clause)?
+    ;
+
+attributes_name_value
+    : bit_expr
+    ;
+
+xml_attributes_value
+    : attributes_name_value ((AS EVALNAME bit_expr) | (AS relation_name))?
+    ;
+
+xml_extract_expr
+    : EXTRACT LeftParen bit_expr Comma bit_expr (Comma literal)? RightParen
+    ;
+
+xmlcast_expr
+    : XMLCAST LeftParen bit_expr AS cast_data_type RightParen
+    ;
+
+xmlserialize_expr
+    : XMLSERIALIZE LeftParen xml_doc_type bit_expr (AS cast_data_type)? (ENCODING STRING_VALUE)? (VERSION literal)? ((NO INDENT) | INDENT | (INDENT SIZE COMP_EQ signed_int_num))? ((HIDE DEFAULTS) | (SHOW DEFAULTS))? RightParen
+    ;
+
 unreserved_keyword
     : oracle_unreserved_keyword
     | unreserved_keyword_normal
@@ -3972,7 +4723,8 @@ aggregate_function_keyword
     ;
 
 oracle_unreserved_keyword
-    : ADMIN
+    : ACCESSED
+    | ADMIN
     | AFTER
     | ALLOCATE
     | ANALYZE
@@ -4023,6 +4775,7 @@ oracle_unreserved_keyword
     | EXECUTE
     | EXPLAIN
     | EXTENT
+    | EXTERNAL
     | EXTERNALLY
     | FETCH
     | FLUSH
@@ -4033,11 +4786,13 @@ oracle_unreserved_keyword
     | FREELIST
     | FREELISTS
     | FUNCTION
+    | GLOBALLY
     | GO
     | GOTO
     | GROUPS
     | INCLUDING
     | INDICATOR
+    | INITIALIZED
     | INITRANS
     | INSTANCE
     | INT
@@ -4143,23 +4898,30 @@ oracle_unreserved_keyword
 
 unreserved_keyword_normal
     : ACCOUNT
+    | ABSENT
     | ACCESSIBLE
     | ACTION
     | ACTIVE
+    | ACTIVATE
     | ADDDATE
     | ADMINISTER
     | AGGREGATE
     | AGAINST
     | ALGORITHM
+    | ALLOW
     | ALWAYS
     | ANALYSE
+    | ARRAY
     | ASCII
     | ASENSITIVE
+    | ASIS
     | AT
     | AUTHORS
     | AUTO
     | AUTOEXTEND_SIZE
     | AVG_ROW_LENGTH
+    | BACKUP_COPIES
+    | BADFILE
     | BASE
     | BASELINE
     | BASELINE_ID
@@ -4173,6 +4935,7 @@ unreserved_keyword_normal
     | BINARY_FLOAT_INFINITY
     | BINARY_FLOAT_NAN
     | BINDING
+    | SHARDING
     | BINLOG
     | BIT
     | BLOB
@@ -4194,6 +4957,7 @@ unreserved_keyword_normal
     | CASCADED
     | CAST
     | CATALOG_NAME
+    | CONTENT
     | CHAIN
     | CHANGED
     | CHARSET
@@ -4225,6 +4989,7 @@ unreserved_keyword_normal
     | COMPRESSION
     | COMPUTE
     | CONCURRENT
+    | CONDITIONAL
     | CONNECTION
     | CONNECT_BY_ISCYCLE
     | CONNECT_BY_ISLEAF
@@ -4260,6 +5025,7 @@ unreserved_keyword_normal
     | DBA_RECYCLEBIN
     | DBTIMEZONE
     | DEALLOCATE
+    | DEFAULTS
     | DEFAULT_AUTH
     | DEFINER
     | DELAY
@@ -4267,6 +5033,7 @@ unreserved_keyword_normal
     | DELAY_KEY_WRITE
     | DELETING
     | DEPTH
+    | DESCRIPTION
     | DES_KEY_FILE
     | DESCRIBE
     | DESTINATION
@@ -4274,21 +5041,28 @@ unreserved_keyword_normal
     | DIAGNOSTICS
     | DICTIONARY
     | DIRECTORY
+    | DISALLOW
     | DISCARD
     | DISK
     | DML
+    | DDL
     | DISTINCTROW
     | DIV
     | DO
+    | DOT
+    | DOCUMENT
     | DUMPFILE
     | DUPLICATE
     | DUPLICATE_SCOPE
     | DYNAMIC
     | DEFAULT_TABLEGROUP
+    | DEBUG
     | E_SIZE
     | EFFECTIVE
     | ELSEIF
     | ENCLOSED
+    | ENCODING
+    | ENCRYPTED
     | ENCRYPTION
     | ENDS
     | ENGINE_
@@ -4313,11 +5087,22 @@ unreserved_keyword_normal
     | EXTENDED
     | EXTENDED_NOADDR
     | EXTENT_SIZE
+    | EXTRA
     | EXTRACT
+    | EVALNAME
+    | ENTITYESCAPING
+    | EXTRACTVALUE
     | FAILED_LOGIN_ATTEMPTS
     | FAST
     | FAULTS
     | FIELDS
+    | FIELD_DELIMITER
+    | FIELD_OPTIONALLY_ENCLOSED_BY
+    | SKIP_HEADER
+    | SKIP_BLANK_LINES
+    | TRIM_SPACE
+    | NULL_IF_EXETERNAL
+    | EMPTY_FIELD_AS_NULL
     | FILE_ID
     | FILEX
     | FINAL_COUNT
@@ -4343,11 +5128,14 @@ unreserved_keyword_normal
     | GLOBAL
     | GLOBAL_ALIAS
     | GRANTS
+    | GROUP_ID
     | GROUPING
+    | GROUPING_ID
     | GTS
     | HANDLER
     | HASH
     | HELP
+    | HIDE
     | HIGH
     | HIGH_PRIORITY
     | HOUR_MICROSECOND
@@ -4366,10 +5154,12 @@ unreserved_keyword_normal
     | ILOG
     | ILOGCACHE
     | IMPORT
+    | INDENT
     | INDEXES
     | INDEX_TABLE_ID
     | INCR
     | INCLUDE
+    | INCREMENTAL
     | INFO
     | INFILE
     | INFINITE_VALUE
@@ -4389,6 +5179,7 @@ unreserved_keyword_normal
     | INTERVAL
     | INVOKER
     | IO
+    | IOPS_WEIGHT
     | IO_AFTER_GTIDS
     | IO_BEFORE_GTIDS
     | IO_THREAD
@@ -4400,6 +5191,17 @@ unreserved_keyword_normal
     | JOB
     | JOIN
     | JSON
+    | JSON_ARRAY
+    | JSON_EMPTY
+    | JSON_EQUAL
+    | JSON_TABLE
+    | JSON_VALUE
+    | JSON_QUERY
+    | JSON_EXISTS
+    | JSON_MERGEPATCH
+    | JSON_ARRAYAGG
+    | JSON_OBJECTAGG
+    | JSON_OBJECT
     | K_SIZE
     | KEY_BLOCK_SIZE
     | KEYS
@@ -4409,6 +5211,7 @@ unreserved_keyword_normal
     | KEEP
     | KVCACHE
     | LAST
+    | LAX
     | LEADER
     | LEADING
     | LEAVE
@@ -4419,6 +5222,7 @@ unreserved_keyword_normal
     | LINEAR
     | LINES
     | LINESTRING
+    | LINE_DELIMITER
     | LIST
     | LNNVL
     | LOAD
@@ -4429,6 +5233,7 @@ unreserved_keyword_normal
     | LOCKED
     | LOCKS
     | LOGONLY_REPLICA_NUM
+    | LOG
     | LOGS
     | LONGBLOB
     | LONGTEXT
@@ -4467,9 +5272,9 @@ unreserved_keyword_normal
     | MATCHED
     | MAX_CONNECTIONS_PER_HOUR
     | MAX_CPU
-    | MAX_DISK_SIZE
+    | LOG_DISK_SIZE
     | MAX_IOPS
-    | MAX_MEMORY
+    | MEMORY_SIZE
     | MAX_QUERIES_PER_HOUR
     | MAX_ROWS
     | MAX_SESSION_NUM
@@ -4499,6 +5304,8 @@ unreserved_keyword_normal
     | MINUTE
     | MINUTE_MICROSECOND
     | MINUTE_SECOND
+    | MISMATCH
+    | MISSING
     | MOD
     | MODIFIES
     | MONTH
@@ -4507,8 +5314,10 @@ unreserved_keyword_normal
     | MULTILINESTRING
     | MULTIPOINT
     | MULTIPOLYGON
+    | MULTISET
     | MUTEX
     | MYSQL_ERRNO
+    | MY_NAME
     | NAME
     | NAMES
     | NAN_VALUE
@@ -4518,10 +5327,14 @@ unreserved_keyword_normal
     | NCHAR_CS
     | NDB
     | NDBCLUSTER
+    | NESTED
     | NO
+    | NOENTITYESCAPING
     | NODEGROUP
     | NOLOGGING
+    | NOSCHEMACHECK
     | NOW
+    | NOWAIT
     | NO_WAIT
     | NO_WRITE_TO_BINLOG
     | NULLS
@@ -4529,6 +5342,7 @@ unreserved_keyword_normal
     | NVARCHAR2
     | OBJECT
     | OCCUR
+    | ORDINALITY
     | OFFSET
     | OLD_PASSWORD
     | OLD_KEY
@@ -4557,11 +5371,14 @@ unreserved_keyword_normal
     | PARTITION_ID
     | PARTITIONING
     | PARTITIONS
+    | PASSING
     | PASSWORD
     | PASSWORD_GRACE_TIME
     | PASSWORD_LIFE_TIME
     | PASSWORD_LOCK_TIME
     | PASSWORD_VERIFY_FUNCTION
+    | PATH
+    | PATTERN
     | PAUSE
     | PERCENTAGE
     | PHASE
@@ -4569,6 +5386,7 @@ unreserved_keyword_normal
     | PLUGIN
     | PLUGIN_DIR
     | PLUGINS
+    | PLUS
     | PIVOT
     | POINT
     | POLICY
@@ -4579,6 +5397,8 @@ unreserved_keyword_normal
     | PRECEDING
     | PREPARE
     | PRESERVE
+    | PRETTY
+    | PRETTY_COLOR
     | PREV
     | PRIMARY_ZONE
     | PRIVILEGE
@@ -4596,16 +5416,19 @@ unreserved_keyword_normal
     | READS
     | READ_ONLY
     | REBUILD
+    | RECOVERY_WINDOW
     | RECURSIVE
     | RECYCLE
     | RECYCLEBIN
     | REDACTION
     | REDO_BUFFER_SIZE
     | REDOFILE
+    | REDUNDANCY
     | REDUNDANT
     | REFRESH
     | REGEXP_LIKE
     | REGION
+    | REJECT
     | RELAY
     | RELAYLOG
     | RELAY_LOG_FILE
@@ -4654,7 +5477,9 @@ unreserved_keyword_normal
     | RTREE
     | RUN
     | SAMPLE
+    | SCALARS
     | SCHEDULE
+    | SCHEMACHECK
     | SCHEMAS
     | SCHEMA_NAME
     | SCOPE
@@ -4732,7 +5557,9 @@ unreserved_keyword_normal
     | STORAGE_FORMAT_WORK_VERSION
     | STORED
     | STORING
+    | STRICT
     | STRONG
+    | STANDBY
     | SUBCLASS_ORIGIN
     | SUBDATE
     | SUBJECT
@@ -4743,6 +5570,7 @@ unreserved_keyword_normal
     | SUSPEND
     | SWAPS
     | SWITCHES
+    | SWITCHOVER
     | SYSTEM_USER
     | SYSTIMESTAMP
     | SYSBACKUP
@@ -4783,11 +5611,14 @@ unreserved_keyword_normal
     | TRACE
     | TRADITIONAL
     | TRAILING
+    | TREAT
     | TRIM
     | TRANSLATE
     | TYPE
+    | TYPENAME
     | TYPES
     | UNCOMMITTED
+    | UNCONDITIONAL
     | UNDEFINED
     | UNDO
     | UNDO_BUFFER_SIZE
@@ -4796,12 +5627,14 @@ unreserved_keyword_normal
     | UNKNOWN
     | UNINSTALL
     | UNIT
+    | UNIT_GROUP
     | UNIT_NUM
     | UNLOCK
     | UNLOCKED
     | UNUSUAL
     | UNPIVOT
     | UPDATING
+    | UPDATEXML
     | UPGRADE
     | UROWID
     | USAGE
@@ -4813,12 +5646,15 @@ unreserved_keyword_normal
     | UNBOUNDED
     | VALID
     | VARIABLES
+    | VALUE
     | VERBOSE
+    | VERSION
     | MATERIALIZED
     | WAIT
     | WARNINGS
     | WEEK
     | WEIGHT_STRING
+    | WITHOUT
     | WMSYS
     | WRAPPER
     | X509
@@ -4832,14 +5668,22 @@ unreserved_keyword_normal
     | VARYING
     | VIRTUAL
     | VISIBLE
+    | VERIFY
     | INVISIBLE
     | RELY
     | NORELY
     | NOVALIDATE
     | WITHIN
     | WEAK
+    | WELLFORMED
     | WHILE
+    | XMLAGG
+    | XMLPARSE
     | XOR
+    | XMLELEMENT
+    | XMLATTRIBUTES
+    | XMLSERIALIZE
+    | XMLTYPE
     | YEAR_MONTH
     | ZEROFILL
     | PERCENT
@@ -4857,6 +5701,8 @@ unreserved_keyword_normal
     | HIDDEN_
     | INDEXED
     | SKEWONLY
+    | NAMESPACE
+    | LIB
     ;
 
 empty

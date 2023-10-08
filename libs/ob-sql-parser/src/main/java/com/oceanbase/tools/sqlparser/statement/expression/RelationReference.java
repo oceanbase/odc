@@ -34,37 +34,34 @@ import lombok.NonNull;
  * @see BaseStatement
  */
 @Getter
-@EqualsAndHashCode(callSuper = false)
-public class RelationReference extends BaseStatement implements Expression {
+@EqualsAndHashCode(callSuper = true)
+public class RelationReference extends BaseExpression {
 
     private final String relationName;
-    private final Expression reference;
 
     public RelationReference(@NonNull ParserRuleContext ctx,
-            @NonNull String relationName, Expression reference) {
+            @NonNull String relationName) {
         super(ctx);
-        this.reference = reference;
         this.relationName = relationName;
     }
 
     public RelationReference(@NonNull TerminalNode ctx,
-            @NonNull String relationName, Expression reference) {
+            @NonNull String relationName) {
         super(ctx);
-        this.reference = reference;
         this.relationName = relationName;
     }
 
-    public RelationReference(@NonNull String relationName, Expression reference) {
-        this.reference = reference;
+    public RelationReference(@NonNull String relationName,
+            Expression reference) {
         this.relationName = relationName;
+        if (reference != null) {
+            reference(reference, ReferenceOperator.DOT);
+        }
     }
 
     @Override
-    public String toString() {
-        if (this.reference == null) {
-            return this.relationName;
-        }
-        return this.relationName + "." + this.reference.toString();
+    public String doToString() {
+        return this.relationName;
     }
 
 }

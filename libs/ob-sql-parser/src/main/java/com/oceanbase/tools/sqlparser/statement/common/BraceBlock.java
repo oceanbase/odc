@@ -18,9 +18,8 @@ package com.oceanbase.tools.sqlparser.statement.common;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 
-import com.oceanbase.tools.sqlparser.statement.BaseStatement;
-import com.oceanbase.tools.sqlparser.statement.Expression;
 import com.oceanbase.tools.sqlparser.statement.Statement;
+import com.oceanbase.tools.sqlparser.statement.expression.BaseExpression;
 import com.oceanbase.tools.sqlparser.statement.select.FromReference;
 
 import lombok.EqualsAndHashCode;
@@ -35,8 +34,8 @@ import lombok.NonNull;
  * @since ODC_release_4.2.2
  */
 @Getter
-@EqualsAndHashCode(callSuper = false)
-public class BraceBlock extends BaseStatement implements Expression, FromReference {
+@EqualsAndHashCode(callSuper = true)
+public class BraceBlock extends BaseExpression implements FromReference {
 
     private final Statement wrappedTarget;
     private final String relation;
@@ -53,7 +52,7 @@ public class BraceBlock extends BaseStatement implements Expression, FromReferen
     }
 
     @Override
-    public String toString() {
+    protected String doToString() {
         StringBuilder builder = new StringBuilder("{");
         if (this.relation != null) {
             builder.append(this.relation);

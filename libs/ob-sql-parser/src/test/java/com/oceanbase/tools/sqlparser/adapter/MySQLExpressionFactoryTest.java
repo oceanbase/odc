@@ -57,7 +57,6 @@ import com.oceanbase.tools.sqlparser.statement.expression.IntervalExpression;
 import com.oceanbase.tools.sqlparser.statement.expression.NullExpression;
 import com.oceanbase.tools.sqlparser.statement.expression.TextSearchMode;
 import com.oceanbase.tools.sqlparser.statement.expression.WhenClause;
-import com.oceanbase.tools.sqlparser.statement.expression.WindowFunction;
 import com.oceanbase.tools.sqlparser.statement.select.OrderBy;
 import com.oceanbase.tools.sqlparser.statement.select.SortDirection;
 import com.oceanbase.tools.sqlparser.statement.select.SortKey;
@@ -292,7 +291,7 @@ public class MySQLExpressionFactoryTest {
         Expression actual = factory.generate();
 
         Expression left = new ColumnReference(null, "tab", "col");
-        Expression right = new ConstExpression("_UTF8'str'");
+        Expression right = new ConstExpression("_UTF8 'str'");
         Expression expect = new CompoundExpression(left, right, Operator.JSON_EXTRACT);
         Assert.assertEquals(expect, actual);
     }
@@ -304,7 +303,7 @@ public class MySQLExpressionFactoryTest {
         Expression actual = factory.generate();
 
         Expression left = new ColumnReference(null, "tab", "col");
-        Expression right = new ConstExpression("_UTF8'str'");
+        Expression right = new ConstExpression("_UTF8 'str'");
         Expression expect = new CompoundExpression(left, right, Operator.JSON_EXTRACT_UNQUOTED);
         Assert.assertEquals(expect, actual);
     }
@@ -318,7 +317,7 @@ public class MySQLExpressionFactoryTest {
         List<FunctionParam> params = new ArrayList<>();
         params.add(new ExpressionParam(new ConstExpression("*")));
         FunctionCall expect = new FunctionCall("count", params);
-        expect.setParamsFlag("all");
+        expect.addOption(new ConstExpression("all"));
         Assert.assertEquals(expect, actual);
     }
 
@@ -333,7 +332,7 @@ public class MySQLExpressionFactoryTest {
         params.add(new ExpressionParam(new ColumnReference(null, null, "b")));
         params.add(new ExpressionParam(new ColumnReference(null, null, "c")));
         FunctionCall expect = new FunctionCall("count", params);
-        expect.setParamsFlag("unique");
+        expect.addOption(new ConstExpression("unique"));
         Assert.assertEquals(expect, actual);
     }
 
@@ -346,7 +345,7 @@ public class MySQLExpressionFactoryTest {
         List<FunctionParam> params = new ArrayList<>();
         params.add(new ExpressionParam(new ConstExpression("1")));
         FunctionCall expect = new FunctionCall("STDDEV_POP", params);
-        expect.setParamsFlag("all");
+        expect.addOption(new ConstExpression("all"));
         Assert.assertEquals(expect, actual);
     }
 
@@ -386,7 +385,7 @@ public class MySQLExpressionFactoryTest {
 
         List<FunctionParam> params = new ArrayList<>();
         ExpressionParam p = new ExpressionParam(new ColumnReference(null, "tab", "col"));
-        p.setAlias("new_label");
+        p.addOption(new ConstExpression("new_label"));
         params.add(p);
         FunctionCall expect = new FunctionCall("function_name", params);
         Assert.assertEquals(expect, actual);
@@ -400,7 +399,7 @@ public class MySQLExpressionFactoryTest {
 
         List<FunctionParam> params = new ArrayList<>();
         ExpressionParam p = new ExpressionParam(new ColumnReference(null, "tab", "col"));
-        p.setAlias("'new_label'");
+        p.addOption(new ConstExpression("'new_label'"));
         params.add(p);
         FunctionCall expect = new FunctionCall("function_name", params);
         Assert.assertEquals(expect, actual);
@@ -438,13 +437,15 @@ public class MySQLExpressionFactoryTest {
 
         List<FunctionParam> params = new ArrayList<>();
         params.add(new ExpressionParam(new ColumnReference(null, "tab", "col")));
-        params.add(new ExpressionParam(new ColumnReference(null, null, "col")));
+
+        FunctionParam p = new ExpressionParam(new ColumnReference(null, null, "col"));
+        params.add(p);
         GroupConcat expect = new GroupConcat(params);
+        expect.addOption(new ConstExpression("distinct"));
         SortKey sortKey = new SortKey(new ColumnReference(null, null, "col"), SortDirection.DESC);
         OrderBy orderBy = new OrderBy(Collections.singletonList(sortKey));
-        expect.setOrderBy(orderBy);
-        expect.setSeparator("','");
-        expect.setParamsFlag("distinct");
+        expect.addOption(orderBy);
+        expect.addOption(new ConstExpression("SEPARATOR ','"));
         Assert.assertEquals(expect, actual);
     }
 
@@ -455,11 +456,12 @@ public class MySQLExpressionFactoryTest {
         Expression actual = factory.generate();
 
         List<FunctionParam> params = new ArrayList<>();
-        params.add(new ExpressionParam(new ConstExpression("'abc'")));
-        FunctionCall expect = new FunctionCall("cast", params);
+        FunctionParam p = new ExpressionParam(new ConstExpression("'abc'"));
         CharacterType type = new CharacterType("character", new BigDecimal(15));
         type.setBinary(true);
-        expect.addParamsOption(type);
+        p.addOption(type);
+        params.add(p);
+        FunctionCall expect = new FunctionCall("cast", params);
         Assert.assertEquals(expect, actual);
     }
 
@@ -470,10 +472,11 @@ public class MySQLExpressionFactoryTest {
         Expression actual = factory.generate();
 
         List<FunctionParam> params = new ArrayList<>();
-        params.add(new ExpressionParam(new ConstExpression("'abc'")));
-        FunctionCall expect = new FunctionCall("cast", params);
+        FunctionParam p = new ExpressionParam(new ConstExpression("'abc'"));
         NumberType type = new NumberType("numeric", new BigDecimal(3), new BigDecimal(2));
-        expect.addParamsOption(type);
+        p.addOption(type);
+        params.add(p);
+        FunctionCall expect = new FunctionCall("cast", params);
         Assert.assertEquals(expect, actual);
     }
 
@@ -484,10 +487,11 @@ public class MySQLExpressionFactoryTest {
         Expression actual = factory.generate();
 
         List<FunctionParam> params = new ArrayList<>();
-        params.add(new ExpressionParam(new ConstExpression("'abc'")));
-        FunctionCall expect = new FunctionCall("cast", params);
+        FunctionParam p = new ExpressionParam(new ConstExpression("'abc'"));
         NumberType type = new NumberType("float", new BigDecimal("2"), null);
-        expect.addParamsOption(type);
+        p.addOption(type);
+        params.add(p);
+        FunctionCall expect = new FunctionCall("cast", params);
         Assert.assertEquals(expect, actual);
     }
 
@@ -498,10 +502,10 @@ public class MySQLExpressionFactoryTest {
         Expression actual = factory.generate();
 
         List<FunctionParam> params = new ArrayList<>();
-        params.add(new ExpressionParam(new ConstExpression("'abc'")));
+        FunctionParam p = new ExpressionParam(new ConstExpression("'abc'"));
+        p.addOption(new GeneralDataType("json", null));
+        params.add(p);
         FunctionCall expect = new FunctionCall("cast", params);
-        GeneralDataType type = new GeneralDataType("json", null);
-        expect.addParamsOption(type);
         Assert.assertEquals(expect, actual);
     }
 
@@ -512,10 +516,11 @@ public class MySQLExpressionFactoryTest {
         Expression actual = factory.generate();
 
         List<FunctionParam> params = new ArrayList<>();
-        params.add(new ExpressionParam(new ConstExpression("'abc'")));
-        FunctionCall expect = new FunctionCall("cast", params);
+        FunctionParam ppp = new ExpressionParam(new ConstExpression("'abc'"));
         GeneralDataType type = new GeneralDataType("year", Collections.singletonList("3"));
-        expect.addParamsOption(type);
+        ppp.addOption(type);
+        params.add(ppp);
+        FunctionCall expect = new FunctionCall("cast", params);
         Assert.assertEquals(expect, actual);
     }
 
@@ -526,10 +531,11 @@ public class MySQLExpressionFactoryTest {
         Expression actual = factory.generate();
 
         List<FunctionParam> params = new ArrayList<>();
-        params.add(new ExpressionParam(new ConstExpression("'abc'")));
-        FunctionCall expect = new FunctionCall("cast", params);
+        FunctionParam p = new ExpressionParam(new ConstExpression("'abc'"));
         GeneralDataType type = new GeneralDataType("datetime", Collections.singletonList("3"));
-        expect.addParamsOption(type);
+        p.addOption(type);
+        params.add(p);
+        FunctionCall expect = new FunctionCall("cast", params);
         Assert.assertEquals(expect, actual);
     }
 
@@ -540,9 +546,10 @@ public class MySQLExpressionFactoryTest {
         Expression actual = factory.generate();
 
         List<FunctionParam> params = new ArrayList<>();
-        params.add(new ExpressionParam(new ConstExpression("'abc'")));
+        FunctionParam p = new ExpressionParam(new ConstExpression("'abc'"));
+        p.addOption(new GeneralDataType("binary", Collections.singletonList("12")));
+        params.add(p);
         FunctionCall expect = new FunctionCall("convert", params);
-        expect.addParamsOption(new GeneralDataType("binary", Collections.singletonList("12")));
         Assert.assertEquals(expect, actual);
     }
 
@@ -553,9 +560,10 @@ public class MySQLExpressionFactoryTest {
         Expression actual = factory.generate();
 
         List<FunctionParam> params = new ArrayList<>();
-        params.add(new ExpressionParam(new ConstExpression("'123'")));
+        FunctionParam p = new ExpressionParam(new ConstExpression("'123'"));
+        p.addOption(new GeneralDataType("unsigned integer", Collections.emptyList()));
+        params.add(p);
         FunctionCall expect = new FunctionCall("convert", params);
-        expect.addParamsOption(new GeneralDataType("unsigned integer", Collections.emptyList()));
         Assert.assertEquals(expect, actual);
     }
 
@@ -566,9 +574,10 @@ public class MySQLExpressionFactoryTest {
         Expression actual = factory.generate();
 
         List<FunctionParam> params = new ArrayList<>();
-        params.add(new ExpressionParam(new ConstExpression("'123'")));
+        FunctionParam p = new ExpressionParam(new ConstExpression("'123'"));
+        p.addOption(new ConstExpression("utf8"));
+        params.add(p);
         FunctionCall expect = new FunctionCall("convert", params);
-        expect.addParamsOption(new ConstExpression("utf8"));
         Assert.assertEquals(expect, actual);
     }
 
@@ -609,10 +618,26 @@ public class MySQLExpressionFactoryTest {
         Expression actual = factory.generate();
 
         List<FunctionParam> params = new ArrayList<>();
-        params.add(new ExpressionParam(new ConstExpression("'123'")));
-        params.add(new ExpressionParam(new ConstExpression("'abc'")));
+        FunctionParam p = new ExpressionParam(new ConstExpression("'123'"));
+        p.addOption(new ConstExpression("'abc'"));
+        params.add(p);
         FunctionCall expect = new FunctionCall("trim", params);
-        expect.setParamsFlag("both from");
+        expect.addOption(new ConstExpression("both"));
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_trim1_generateFunctionCallSucceed() {
+        ExprContext context = getExprContext("trim(both from 'abc')");
+        StatementFactory<Expression> factory = new MySQLExpressionFactory(context);
+        Expression actual = factory.generate();
+
+        List<FunctionParam> params = new ArrayList<>();
+        FunctionParam p = new ExpressionParam(new ConstExpression("'abc'"));
+        params.add(p);
+        FunctionCall expect = new FunctionCall("trim", params);
+        expect.addOption(new ConstExpression("both"));
+        expect.addOption(new ConstExpression("from"));
         Assert.assertEquals(expect, actual);
     }
 
@@ -639,7 +664,6 @@ public class MySQLExpressionFactoryTest {
         params.add(new ExpressionParam(new ColumnReference(null, null, "tab")));
         params.add(new ExpressionParam(new IntervalExpression(new ConstExpression("'12'"), "DAY_HOUR")));
         FunctionCall expect = new FunctionCall("DATE_ADD", params);
-        expect.addParamsOption(new ConstExpression("DAY_HOUR"));
         Assert.assertEquals(expect, actual);
     }
 
@@ -664,9 +688,10 @@ public class MySQLExpressionFactoryTest {
         Expression actual = factory.generate();
 
         List<FunctionParam> params = new ArrayList<>();
-        params.add(new ExpressionParam(new ConstExpression("123")));
+        FunctionParam p = new ExpressionParam(new ConstExpression("day"));
+        p.addOption(new ConstExpression("123"));
+        params.add(p);
         FunctionCall expect = new FunctionCall("extract", params);
-        expect.addParamsOption(new ConstExpression("day"));
         Assert.assertEquals(expect, actual);
     }
 
@@ -678,9 +703,10 @@ public class MySQLExpressionFactoryTest {
 
         List<FunctionParam> params = new ArrayList<>();
         params.add(new ExpressionParam(new ConstExpression("'123'")));
-        params.add(new ExpressionParam(new ConstExpression("'abc'")));
+        FunctionParam p = new ExpressionParam(new ConstExpression("'abc'"));
+        params.add(p);
         FunctionCall expect = new FunctionCall("character", params);
-        expect.addParamsOption(new ConstExpression("utf8"));
+        expect.addOption(new ConstExpression("using utf8"));
         Assert.assertEquals(expect, actual);
     }
 
@@ -691,9 +717,10 @@ public class MySQLExpressionFactoryTest {
         Expression actual = factory.generate();
 
         List<FunctionParam> params = new ArrayList<>();
-        params.add(new ExpressionParam(new ConstExpression("123")));
+        FunctionParam p = new ExpressionParam(new ConstExpression("123"));
+        p.addOption(new CharacterType("CHARACTER", new BigDecimal("12")));
+        params.add(p);
         FunctionCall expect = new FunctionCall("WEIGHT_STRING", params);
-        expect.addParamsOption(new CharacterType("CHARACTER", new BigDecimal("12")));
         Assert.assertEquals(expect, actual);
     }
 
@@ -704,9 +731,10 @@ public class MySQLExpressionFactoryTest {
         Expression actual = factory.generate();
 
         List<FunctionParam> params = new ArrayList<>();
-        params.add(new ExpressionParam(new ConstExpression("123")));
+        FunctionParam p = new ExpressionParam(new ConstExpression("123"));
+        p.addOption(new GeneralDataType("Binary", Collections.singletonList("12")));
+        params.add(p);
         FunctionCall expect = new FunctionCall("WEIGHT_STRING", params);
-        expect.addParamsOption(new GeneralDataType("Binary", Collections.singletonList("12")));
         Assert.assertEquals(expect, actual);
     }
 
@@ -728,15 +756,18 @@ public class MySQLExpressionFactoryTest {
 
     @Test
     public void generate_jsonValueExpr_generateFunctionCallSucceed() {
-        ExprContext context = getExprContext("JSON_VALUE('123', _utf8 'abc' returning double)");
+        ExprContext context = getExprContext("JSON_VALUE('123', _utf8 'abc' returning double TRUNCATE ASCII)");
         StatementFactory<Expression> factory = new MySQLExpressionFactory(context);
         Expression actual = factory.generate();
 
         List<FunctionParam> params = new ArrayList<>();
         params.add(new ExpressionParam(new ConstExpression("'123'")));
-        params.add(new ExpressionParam(new ConstExpression("_utf8'abc'")));
+        FunctionParam p = new ExpressionParam(new ConstExpression("_utf8 'abc'"));
+        params.add(p);
         FunctionCall expect = new FunctionCall("JSON_VALUE", params);
-        expect.addParamsOption(new NumberType("double", null, null));
+        expect.addOption(new NumberType("double", null, null));
+        expect.addOption(new ConstExpression("TRUNCATE"));
+        expect.addOption(new ConstExpression("ASCII"));
         Assert.assertEquals(expect, actual);
     }
 
@@ -1073,11 +1104,11 @@ public class MySQLExpressionFactoryTest {
 
         List<FunctionParam> params = new ArrayList<>();
         params.add(new ExpressionParam(new ConstExpression("*")));
-        WindowFunction expect = new WindowFunction("count", params);
+        FunctionCall expect = new FunctionCall("count", params);
         WindowSpec window = new WindowSpec();
         window.setName("name_ob");
         expect.setWindow(window);
-        expect.setParamsFlag("all");
+        expect.addOption(new ConstExpression("all"));
         Assert.assertEquals(expect, actual);
     }
 
@@ -1091,7 +1122,7 @@ public class MySQLExpressionFactoryTest {
         List<FunctionParam> params = new ArrayList<>();
         params.add(new ExpressionParam(new ConstExpression("5")));
         params.add(new ExpressionParam(new ConstExpression("6")));
-        WindowFunction expect = new WindowFunction("count", params);
+        FunctionCall expect = new FunctionCall("count", params);
         WindowSpec window = new WindowSpec();
         window.setName("name_ob");
         CollectionExpression p = new CollectionExpression();
@@ -1102,7 +1133,7 @@ public class MySQLExpressionFactoryTest {
         OrderBy orderBy = new OrderBy(Collections.singletonList(s));
         window.setOrderBy(orderBy);
         expect.setWindow(window);
-        expect.setParamsFlag("distinct");
+        expect.addOption(new ConstExpression("distinct"));
         Assert.assertEquals(expect, actual);
     }
 
@@ -1115,12 +1146,10 @@ public class MySQLExpressionFactoryTest {
 
         List<FunctionParam> params = new ArrayList<>();
         params.add(new ExpressionParam(new ConstExpression("5")));
-        params.add(new ExpressionParam(new ConstExpression("6")));
+        FunctionParam pppp = new ExpressionParam(new ConstExpression("6"));
+        params.add(pppp);
         GroupConcat expect = new GroupConcat(params);
-        expect.setParamsFlag("unique");
-        SortKey s0 = new SortKey(new ColumnReference(null, null, "col1"), SortDirection.ASC);
-        expect.setOrderBy(new OrderBy(Collections.singletonList(s0)));
-        expect.setSeparator("'mmm'");
+        expect.addOption(new ConstExpression("unique"));
         WindowSpec window = new WindowSpec();
         window.setName("name_ob");
         CollectionExpression p = new CollectionExpression();
@@ -1136,6 +1165,9 @@ public class MySQLExpressionFactoryTest {
         WindowBody body = new WindowBody(WindowType.ROWS, begin, end);
         window.setBody(body);
         expect.setWindow(window);
+        SortKey s0 = new SortKey(new ColumnReference(null, null, "col1"), SortDirection.ASC);
+        expect.addOption(new OrderBy(Collections.singletonList(s0)));
+        expect.addOption(new ConstExpression("SEPARATOR 'mmm'"));
         Assert.assertEquals(expect, actual);
     }
 
@@ -1148,12 +1180,10 @@ public class MySQLExpressionFactoryTest {
 
         List<FunctionParam> params = new ArrayList<>();
         params.add(new ExpressionParam(new ConstExpression("5")));
-        params.add(new ExpressionParam(new ConstExpression("6")));
-        WindowFunction expect = new WindowFunction("LISTAGG", params);
-        expect.setParamsFlag("unique");
-        SortKey s0 = new SortKey(new ColumnReference(null, null, "col1"), SortDirection.ASC);
-        expect.addParamsOption(new OrderBy(Collections.singletonList(s0)));
-        expect.addParamsOption(new ConstExpression("'mmm'"));
+        FunctionParam ppp = new ExpressionParam(new ConstExpression("6"));
+        params.add(ppp);
+        FunctionCall expect = new FunctionCall("LISTAGG", params);
+        expect.addOption(new ConstExpression("unique"));
         WindowSpec window = new WindowSpec();
         window.setName("name_ob");
         CollectionExpression p = new CollectionExpression();
@@ -1169,6 +1199,9 @@ public class MySQLExpressionFactoryTest {
         WindowBody body = new WindowBody(WindowType.ROWS, begin, end);
         window.setBody(body);
         expect.setWindow(window);
+        SortKey s0 = new SortKey(new ColumnReference(null, null, "col1"), SortDirection.ASC);
+        expect.addOption(new OrderBy(Collections.singletonList(s0)));
+        expect.addOption(new ConstExpression("SEPARATOR 'mmm'"));
         Assert.assertEquals(expect, actual);
     }
 
@@ -1180,9 +1213,10 @@ public class MySQLExpressionFactoryTest {
         Expression actual = factory.generate();
 
         List<FunctionParam> params = new ArrayList<>();
-        params.add(new ExpressionParam(new ConstExpression("5")));
-        WindowFunction expect = new WindowFunction("FIRST_VALUE", params);
-        expect.addParamsOption(new ConstExpression("respect"));
+        FunctionParam p1 = new ExpressionParam(new ConstExpression("5"));
+        p1.addOption(new ConstExpression("respect nulls"));
+        params.add(p1);
+        FunctionCall expect = new FunctionCall("FIRST_VALUE", params);
         WindowSpec window = new WindowSpec();
         window.setName("name_ob");
         CollectionExpression p = new CollectionExpression();
@@ -1210,9 +1244,9 @@ public class MySQLExpressionFactoryTest {
         List<FunctionParam> params = new ArrayList<>();
         params.add(new ExpressionParam(new ConstExpression("5")));
         params.add(new ExpressionParam(new ConstExpression("6")));
-        WindowFunction expect = new WindowFunction("NTH_VALUE", params);
-        expect.addParamsOption(new ConstExpression("first"));
-        expect.addParamsOption(new ConstExpression("respect"));
+        FunctionCall expect = new FunctionCall("NTH_VALUE", params);
+        expect.addOption(new ConstExpression("from first"));
+        expect.addOption(new ConstExpression("respect nulls"));
         WindowSpec window = new WindowSpec();
         window.setName("name_ob");
         CollectionExpression p = new CollectionExpression();
@@ -1241,7 +1275,7 @@ public class MySQLExpressionFactoryTest {
         params.add(new ExpressionParam(new ConstExpression("5")));
         params.add(new ExpressionParam(new ConstExpression("6")));
         params.add(new ExpressionParam(new ConstExpression("7")));
-        WindowFunction expect = new WindowFunction("TOP_K_FRE_HIST", params);
+        FunctionCall expect = new FunctionCall("TOP_K_FRE_HIST", params);
         WindowSpec window = new WindowSpec();
         window.setName("name_ob");
         CollectionExpression p = new CollectionExpression();
