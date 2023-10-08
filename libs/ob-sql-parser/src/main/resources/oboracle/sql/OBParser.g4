@@ -745,6 +745,7 @@ aggregate_function
     | funcName=WMSYS Dot subFuncName=WM_CONCAT LeftParen (ALL | DISTINCT | UNIQUE)? bit_expr RightParen KEEP LeftParen DENSE_RANK first_or_last order_by RightParen
     | funcName=TOP_K_FRE_HIST LeftParen bit_expr Comma bit_expr Comma bit_expr RightParen
     | funcName=HYBRID_HIST LeftParen bit_expr Comma bit_expr RightParen
+    | funcName=XMLAGG LeftParen simple_expr order_by? RightParen
     ;
 
 js_agg_on_null

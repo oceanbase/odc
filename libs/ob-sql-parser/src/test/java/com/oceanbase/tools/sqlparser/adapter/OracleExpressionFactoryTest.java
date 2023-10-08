@@ -1123,6 +1123,19 @@ public class OracleExpressionFactoryTest {
     }
 
     @Test
+    public void generate_xmlagg_generateFunctionCallSucceed() {
+        Bit_exprContext context = getBitExprContext("xmlagg(1 order by col desc)");
+        StatementFactory<Expression> factory = new OracleExpressionFactory(context);
+        Expression actual = factory.generate();
+
+        FunctionCall expect = new FunctionCall("xmlagg", Collections.singletonList(
+                new ExpressionParam(new ConstExpression("1"))));
+        SortKey s = new SortKey(new RelationReference("col", null), SortDirection.DESC);
+        expect.addOption(new OrderBy(Collections.singletonList(s)));
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
     public void generate_sysdate_generateFunctionCallSucceed() {
         Bit_exprContext context = getBitExprContext("sysdate");
         StatementFactory<Expression> factory = new OracleExpressionFactory(context);

@@ -1245,6 +1245,9 @@ public class OracleExpressionFactory extends OBParserBaseVisitor<Expression> imp
                 params.addAll(
                         ctx.bit_expr().stream().map(e -> new ExpressionParam(visit(e))).collect(Collectors.toList()));
             }
+            if (ctx.simple_expr() != null) {
+                params.add(new ExpressionParam(visit(ctx.simple_expr())));
+            }
         }
         FunctionCall fCall = new FunctionCall(ctx, funcName, params);
         setFunctionOptions(fCall, ctx);
