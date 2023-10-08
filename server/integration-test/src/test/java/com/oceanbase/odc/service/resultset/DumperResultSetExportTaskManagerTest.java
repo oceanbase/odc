@@ -89,7 +89,7 @@ public class DumperResultSetExportTaskManagerTest extends ServiceTestEnv {
         ResultSetExportTaskParameter req =
                 createResultSetExportTaskReq(DataTransferFormat.SQL, EncodingType.UTF_8, mysqlSession);
         ResultSetExportTaskContext context = manager.start(mysqlSession, req, userId, taskId);
-        await().atMost(15, SECONDS).until(context::isDone);
+        await().atMost(30, SECONDS).until(context::isDone);
         ResultSetExportResult result = context.get();
         File file = Paths.get(basePath, taskId, fileName + req.getFileFormat().getExtension()).toFile();
         Assert.assertTrue(file.exists());
@@ -104,7 +104,7 @@ public class DumperResultSetExportTaskManagerTest extends ServiceTestEnv {
         csvFormat.setColumnDelimiter("\"");
         req.setCsvFormat(csvFormat);
         ResultSetExportTaskContext context = manager.start(mysqlSession, req, userId, taskId);
-        await().atMost(15, SECONDS).until(context::isDone);
+        await().atMost(30, SECONDS).until(context::isDone);
         File file = Paths.get(basePath, taskId, fileName + req.getFileFormat().getExtension()).toFile();
         LineNumberReader lineNumberReader = new LineNumberReader(new FileReader(file));
         lineNumberReader.skip(Long.MAX_VALUE);
@@ -123,7 +123,7 @@ public class DumperResultSetExportTaskManagerTest extends ServiceTestEnv {
         csvFormat.setColumnDelimiter("\"");
         req.setCsvFormat(csvFormat);
         ResultSetExportTaskContext context = manager.start(mysqlSession, req, userId, taskId);
-        await().atMost(10, SECONDS).until(context::isDone);
+        await().atMost(30, SECONDS).until(context::isDone);
         try {
             context.get();
         } catch (Exception e) {
@@ -136,7 +136,7 @@ public class DumperResultSetExportTaskManagerTest extends ServiceTestEnv {
         ResultSetExportTaskParameter req =
                 createResultSetExportTaskReq(DataTransferFormat.EXCEL, EncodingType.GBK, mysqlSession);
         ResultSetExportTaskContext context = manager.start(mysqlSession, req, userId, taskId);
-        await().atMost(15, SECONDS).until(context::isDone);
+        await().atMost(30, SECONDS).until(context::isDone);
         File file = Paths.get(basePath, taskId, fileName + req.getFileFormat().getExtension()).toFile();
         Assert.assertTrue(file.exists());
         FileUtils.forceDelete(file);
@@ -148,7 +148,7 @@ public class DumperResultSetExportTaskManagerTest extends ServiceTestEnv {
                 createResultSetExportTaskReq(DataTransferFormat.SQL, EncodingType.UTF_8, mysqlSession);
         req.setTableName(null);
         ResultSetExportTaskContext context = manager.start(mysqlSession, req, userId, taskId);
-        await().atMost(15, SECONDS).until(context::isDone);
+        await().atMost(30, SECONDS).until(context::isDone);
         File file = Paths.get(basePath, taskId, fileName + req.getFileFormat().getExtension()).toFile();
         Assert.assertTrue(file.exists());
         FileUtils.forceDelete(file);

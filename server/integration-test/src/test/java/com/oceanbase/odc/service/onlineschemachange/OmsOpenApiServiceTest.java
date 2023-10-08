@@ -54,7 +54,8 @@ import com.oceanbase.odc.service.onlineschemachange.oms.response.ProjectFullVeri
 import com.oceanbase.odc.service.onlineschemachange.oms.response.ProjectProgressResponse;
 import com.oceanbase.odc.test.database.TestDBConfiguration;
 import com.oceanbase.odc.test.database.TestDBConfigurations;
-import com.oceanbase.odc.test.database.TestDBUtil;
+import com.oceanbase.odc.test.database.TestDBType;
+import com.oceanbase.odc.test.util.JdbcUtil;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -213,7 +214,7 @@ public class OmsOpenApiServiceTest {
         request.setIp(config.getHost());
         request.setPort(config.getPort());
         request.setUserName(config.getUsername());
-        request.setPassword(Base64.getEncoder().encodeToString(config.getSysPassword().getBytes()));
+        request.setPassword(Base64.getEncoder().encodeToString(config.getPassword().getBytes()));
 
         request.setRegion("cn-anhui");
         request.setDescription(null);
@@ -221,8 +222,8 @@ public class OmsOpenApiServiceTest {
 
         String configUrl = getConfigUrl();
         request.setConfigUrl(configUrl);
-        request.setDrcUserName(config.getSysUsername());
-        request.setDrcPassword(Base64.getEncoder().encodeToString(config.getSysPassword().getBytes()));
+        request.setDrcUserName(config.getUsername());
+        request.setDrcPassword(Base64.getEncoder().encodeToString(config.getPassword().getBytes()));
         return request;
     }
 
@@ -231,9 +232,9 @@ public class OmsOpenApiServiceTest {
         String queryClusterUrlSql = "show parameters like 'obconfig_url'";
         String configUrl;
         try (Connection connection = DriverManager.getConnection(
-                TestDBUtil.buildUrl(config.getHost(), config.getPort(), config.getDefaultDBName(), "OB_MYSQL"),
-                TestDBUtil.buildUser(config.getSysUsername(), config.getTenant(), config.getCluster()),
-                config.getSysPassword())) {
+                JdbcUtil.buildUrl(config.getHost(), config.getPort(), config.getDefaultDBName(), TestDBType.OB_MYSQL),
+                JdbcUtil.buildUser(config.getUsername(), config.getTenant(), config.getCluster()),
+                config.getPassword())) {
             configUrl = new JdbcTemplate(new SingleConnectionDataSource(connection, false))
                     .query(queryClusterUrlSql, rs -> {
                         if (!rs.next()) {
