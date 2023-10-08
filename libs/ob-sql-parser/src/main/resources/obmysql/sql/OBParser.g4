@@ -317,7 +317,7 @@ window_function
     | func_name=(APPROX_COUNT_DISTINCT|APPROX_COUNT_DISTINCT_SYNOPSIS|NTILE) LeftParen expr_list RightParen OVER new_generalized_window_clause
     | func_name=(SUM|MAX|MIN|AVG|JSON_ARRAYAGG|APPROX_COUNT_DISTINCT_SYNOPSIS_MERGE) LeftParen (ALL | DISTINCT | UNIQUE)? expr RightParen OVER new_generalized_window_clause
     | func_name=JSON_OBJECTAGG LeftParen expr Comma expr RightParen OVER new_generalized_window_clause
-    | func_name=(STD|STDDEV|VARIANCE|STDDEV_POP|STDDEV_SAMP|VAR_POP|VAR_SAMP) LeftParen ALL? expr RightParen OVER new_generalized_window_clause
+    | func_name=(STD|STDDEV|VARIANCE|STDDEV_POP|STDDEV_SAMP|VAR_POP|VAR_SAMP|BIT_AND|BIT_OR|BIT_XOR) LeftParen ALL? expr RightParen OVER new_generalized_window_clause
     | func_name=(GROUP_CONCAT|LISTAGG) LeftParen (DISTINCT | UNIQUE)? expr_list order_by? (SEPARATOR STRING_VALUE)? RightParen OVER new_generalized_window_clause
     | func_name=(RANK|DENSE_RANK|PERCENT_RANK|ROW_NUMBER|CUME_DIST) LeftParen RightParen OVER new_generalized_window_clause
     | func_name=(FIRST_VALUE|LAST_VALUE|LEAD|LAG) win_fun_first_last_params OVER new_generalized_window_clause
@@ -403,12 +403,12 @@ case_default
     ;
 
 func_expr
-    : func_name=COUNT LeftParen ALL? Star RightParen # simple_func_expr
+    : func_name=COUNT LeftParen ALL? (Star|expr) RightParen # simple_func_expr
     | func_name=COUNT LeftParen (DISTINCT|UNIQUE) expr_list RightParen # simple_func_expr
     | func_name=(APPROX_COUNT_DISTINCT|APPROX_COUNT_DISTINCT_SYNOPSIS|CHARACTER) LeftParen expr_list RightParen # simple_func_expr
     | func_name=(SUM|MAX|MIN|AVG|JSON_ARRAYAGG) LeftParen (ALL | DISTINCT | UNIQUE)? expr RightParen # simple_func_expr
     | func_name=(COUNT|STD|STDDEV|VARIANCE|STDDEV_POP|STDDEV_SAMP|VAR_POP|VAR_SAMP|BIT_AND|BIT_OR|BIT_XOR) LeftParen ALL? expr RightParen # simple_func_expr
-    | func_name=(GROUPING|ISNULL|DATE|YEAR|TIME|MONTH|WEEK|TIMESTAMP) LeftParen expr RightParen # simple_func_expr
+    | func_name=(GROUPING|ISNULL|DATE|YEAR|TIME|MONTH|WEEK|DAY|TIMESTAMP) LeftParen expr RightParen # simple_func_expr
     | GROUP_CONCAT LeftParen (DISTINCT | UNIQUE)? expr_list order_by? (SEPARATOR STRING_VALUE)? RightParen # complex_func_expr
     | func_name=TOP_K_FRE_HIST LeftParen bit_expr Comma bit_expr Comma bit_expr RightParen # simple_func_expr
     | func_name=HYBRID_HIST LeftParen bit_expr Comma bit_expr RightParen # simple_func_expr
@@ -440,10 +440,19 @@ func_expr
     | relation_name Dot function_name LeftParen expr_as_list? RightParen # simple_func_expr
     | sys_interval_func # complex_func_expr
     | func_name=CALC_PARTITION_ID LeftParen bit_expr Comma bit_expr RightParen # simple_func_expr
+    | func_name=CALC_PARTITION_ID LeftParen bit_expr Comma bit_expr Comma bit_expr RightParen # simple_func_expr
     | WEIGHT_STRING LeftParen expr (AS CHARACTER ws_nweights)? (LEVEL ws_level_list_or_range)? RightParen # complex_func_expr
     | WEIGHT_STRING LeftParen expr AS BINARY ws_nweights RightParen # complex_func_expr
     | WEIGHT_STRING LeftParen expr Comma INTNUM Comma INTNUM Comma INTNUM Comma INTNUM RightParen # complex_func_expr
     | json_value_expr # complex_func_expr
+    | func_name=POINT LeftParen expr Comma expr RightParen # simple_func_expr
+    | func_name=LINESTRING LeftParen expr_list RightParen # simple_func_expr
+    | func_name=MULTIPOINT LeftParen expr_list RightParen # simple_func_expr
+    | func_name=MULTILINESTRING LeftParen expr_list RightParen # simple_func_expr
+    | func_name=POLYGON LeftParen expr_list RightParen # simple_func_expr
+    | func_name=MULTIPOLYGON LeftParen expr_list RightParen # simple_func_expr
+    | func_name=GEOMETRYCOLLECTION LeftParen expr_list? RightParen # simple_func_expr
+    | func_name=GEOMCOLLECTION LeftParen expr_list? RightParen # simple_func_expr
     ;
 
 sys_interval_func
@@ -586,7 +595,7 @@ opt_resource_unit_option_list
     ;
 
 resource_unit_option
-    : (MIN_CPU|MIN_IOPS|MIN_MEMORY|MAX_CPU|MAX_MEMORY|MAX_IOPS|MAX_DISK_SIZE|MAX_SESSION_NUM) COMP_EQ? conf_const
+    : (MIN_CPU|MIN_IOPS|MIN_MEMORY|MAX_CPU|MAX_MEMORY|MAX_IOPS|MAX_DISK_SIZE|MAX_SESSION_NUM|MEMORY_SIZE|IOPS_WEIGHT|LOG_DISK_SIZE) COMP_EQ? conf_const
     ;
 
 opt_create_resource_pool_option_list
@@ -621,6 +630,7 @@ alter_resource_stmt
     | ALTER RESOURCE POOL relation_name alter_resource_pool_option_list
     | ALTER RESOURCE POOL relation_name SPLIT INTO LeftParen resource_pool_list RightParen ON LeftParen zone_list RightParen
     | ALTER RESOURCE POOL MERGE LeftParen resource_pool_list RightParen INTO LeftParen resource_pool_list RightParen
+    | ALTER RESOURCE TENANT relation_name UNIT_NUM COMP_EQ? INTNUM (DELETE UNIT_GROUP opt_equal_mark LeftParen unit_id_list RightParen)?
     ;
 
 drop_resource_stmt
