@@ -349,7 +349,7 @@ public class SensitiveColumnService {
         List<Database> databases = databaseService.listDatabasesByIds(databaseIds);
         List<SensitiveRule> rules;
         if (req.getAllSensitiveRules()) {
-            rules = ruleService.getByProjectId(projectId);
+            rules = ruleService.getByProjectIdAndEnabled(projectId);
         } else {
             PreConditions.notEmpty(req.getSensitiveRuleIds(), "sensitiveRuleIds");
             rules = ruleService.batchNullSafeGetModel(new HashSet<>(req.getSensitiveRuleIds()));
