@@ -53,7 +53,7 @@ public class EncryptableConfigurations {
 
     static {
         encryptableDetector = new EncryptablePropertyDetector();
-        valueEncryptor = Encryptors.aes256Base64(new SecretKeyGetter().getSecretKey(), "");
+        valueEncryptor = Encryptors.blowFishZeroPaddingBase64(new SecretKeyGetter().getSecretKey());
     }
 
     public static Map<String, String> loadProperties(String path) {
