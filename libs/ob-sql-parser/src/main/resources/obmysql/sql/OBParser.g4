@@ -2213,11 +2213,7 @@ for_columns_item
 
 column_clause
     : column_name
-    | extension
-    ;
-
-extension
-    : LeftParen column_name_list RightParen
+    | LeftParen column_name_list RightParen
     ;
 
 create_outline_stmt
