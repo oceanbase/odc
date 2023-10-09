@@ -428,7 +428,7 @@ public class FlowTaskInstanceService {
             return Collections.singletonList(url);
         } else if (taskEntity.getTaskType() == TaskType.EXPORT) {
             List<DataTransferTaskResult> taskResults = getDataTransferResult(taskEntity);
-            Verify.singleton(taskResults, "TransferTaskStatus");
+            Verify.singleton(taskResults, "TransferObjectsInfo");
 
             DataTransferTaskResult taskResult = taskResults.get(0);
             String objectName = ossTaskReferManager.get(taskResult.getExportZipFilePath());

@@ -28,7 +28,7 @@ import com.oceanbase.odc.common.lang.Holder;
 import com.oceanbase.odc.plugin.task.api.datatransfer.DataTransferTask;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.ObjectStatus;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.ObjectStatus.Status;
-import com.oceanbase.odc.plugin.task.api.datatransfer.model.TransferTaskStatus;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.TransferObjectsInfo;
 import com.oceanbase.odc.service.datatransfer.DataTransferAdapter;
 import com.oceanbase.odc.service.datatransfer.model.DataTransferParameter;
 import com.oceanbase.odc.service.datatransfer.model.DataTransferProperties;
@@ -77,7 +77,7 @@ public abstract class BaseTransferTaskRunner implements Callable<DataTransferTas
                     .build(parameter);
             jobHolder.setValue(job);
 
-            TransferTaskStatus status = job.transfer();
+            TransferObjectsInfo status = job.transfer();
 
             validateSuccessful(status);
 
@@ -102,7 +102,7 @@ public abstract class BaseTransferTaskRunner implements Callable<DataTransferTas
 
     abstract protected void postHandle(DataTransferTaskResult result) throws Exception;
 
-    private void validateSuccessful(TransferTaskStatus result) {
+    private void validateSuccessful(TransferObjectsInfo result) {
         List<String> failedObjects = ListUtils.union(result.getDataObjectsInfo(), result.getSchemaObjectsInfo())
                 .stream()
                 .filter(objectStatus -> objectStatus.getStatus() != Status.SUCCESS)

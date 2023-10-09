@@ -270,7 +270,7 @@
             </dependency>
             <dependency>
                 <groupId>com.oceanbase</groupId>
-                <artifactId>task-plugin-api</artifactId>
+                <artifactId>datatransfer-plugin-api</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

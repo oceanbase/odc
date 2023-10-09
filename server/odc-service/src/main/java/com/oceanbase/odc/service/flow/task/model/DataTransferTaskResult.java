@@ -15,7 +15,7 @@
  */
 package com.oceanbase.odc.service.flow.task.model;
 
-import com.oceanbase.odc.plugin.task.api.datatransfer.model.TransferTaskStatus;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.TransferObjectsInfo;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -31,11 +31,11 @@ import lombok.ToString;
 @Data
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
-public class DataTransferTaskResult extends TransferTaskStatus implements FlowTaskResult {
+public class DataTransferTaskResult extends TransferObjectsInfo implements FlowTaskResult {
 
     private String exportZipFilePath;
 
-    public static DataTransferTaskResult of(TransferTaskStatus status) {
+    public static DataTransferTaskResult of(TransferObjectsInfo status) {
         DataTransferTaskResult result = new DataTransferTaskResult();
         result.setDataObjectsInfo(status.getDataObjectsInfo());
         result.setSchemaObjectsInfo(status.getSchemaObjectsInfo());

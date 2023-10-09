@@ -23,7 +23,7 @@ import java.util.concurrent.TimeoutException;
 
 import com.oceanbase.odc.common.lang.Holder;
 import com.oceanbase.odc.plugin.task.api.datatransfer.DataTransferTask;
-import com.oceanbase.odc.plugin.task.api.datatransfer.model.TransferTaskStatus;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.TransferObjectsInfo;
 import com.oceanbase.odc.service.flow.task.model.DataTransferTaskResult;
 
 public class DataTransferTaskContext implements Future<DataTransferTaskResult> {
@@ -35,7 +35,7 @@ public class DataTransferTaskContext implements Future<DataTransferTaskResult> {
         this.job = job;
     }
 
-    public TransferTaskStatus getStatus() {
+    public TransferObjectsInfo getStatus() {
         if (job.getValue() == null) {
             return null;
         }
