@@ -317,8 +317,8 @@ collection_predicate_expr
     | bit_expr NOT MEMBER OF? bit_expr
     | bit_expr SUBMULTISET OF? bit_expr
     | bit_expr NOT SUBMULTISET OF? bit_expr
-    | bit_expr IS A SET
-    | bit_expr IS NOT A SET
+    | bit_expr IS A_ SET
+    | bit_expr IS NOT A_ SET
     | bit_expr IS EMPTY
     | bit_expr IS NOT EMPTY
     ;
@@ -5692,7 +5692,7 @@ unreserved_keyword_normal
     | MEMBER
     | SUBMULTISET
     | EMPTY
-    | A
+    | A_
     | THROTTLE
     | PRIORITY
     | RT

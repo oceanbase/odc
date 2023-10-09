@@ -1109,6 +1109,10 @@ RANGE
     : ( R A N G E )
     ;
 
+PLUS
+    : P L U S
+    ;
+
 READ
     : ( R E A D )
     ;
@@ -4902,6 +4906,10 @@ PLSQL_VARIABLE
 
 MULTISET_OP
     : ( M U L T I S E T [ \t\n\r\f]+( U N I O N | I N T E R S E C T | E X C E P T ))
+    ;
+
+A_
+    : A
     ;
 
 NAME_OB
