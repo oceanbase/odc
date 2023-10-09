@@ -169,8 +169,8 @@ public class OracleFromReferenceFactory extends OBParserBaseVisitor<FromReferenc
         } else if (ctx.table_reference() != null) {
             return visit(ctx.table_reference());
         } else if (ctx.simple_expr() != null) {
-            StatementFactory<Expression> factory = new OracleExpressionFactory(ctx.simple_expr());
-            return new ExpressionReference(ctx, factory.generate(), alias);
+            return new ExpressionReference(ctx,
+                    new OracleExpressionFactory(ctx.simple_expr()).generate(), alias);
         } else if (ctx.select_function() != null) {
             return new ExpressionReference(ctx, visitSelectFunction(ctx.select_function()), alias);
         }

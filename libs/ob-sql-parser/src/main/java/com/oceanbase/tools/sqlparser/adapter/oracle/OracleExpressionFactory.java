@@ -1284,6 +1284,9 @@ public class OracleExpressionFactory extends OBParserBaseVisitor<Expression> imp
         if (ctx.cur_timestamp_func() != null) {
             Cur_timestamp_funcContext cur = ctx.cur_timestamp_func();
             funcName = cur.getChild(0).getText();
+            if (cur.INTNUM() != null) {
+                params.add(new ExpressionParam(new ConstExpression(cur.INTNUM())));
+            }
         } else if (ctx.INSERT() != null) {
             funcName = ctx.INSERT().getText();
             params.addAll(ctx.bit_expr().stream().map(e -> new ExpressionParam(visit(e))).collect(Collectors.toList()));
