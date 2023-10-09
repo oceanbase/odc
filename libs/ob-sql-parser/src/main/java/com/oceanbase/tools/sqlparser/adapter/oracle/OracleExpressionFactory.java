@@ -794,7 +794,7 @@ public class OracleExpressionFactory extends OBParserBaseVisitor<Expression> imp
         if (left != null && right == null) {
             // is null or is not null 表达式
             operator = Operator.EQ;
-            if (boolPri.not() != null) {
+            if (boolPri.not() != null || boolPri.NOT() != null) {
                 operator = Operator.NE;
             }
             Expression rightExpr;
