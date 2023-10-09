@@ -1385,21 +1385,20 @@ public class OracleExpressionFactory extends OBParserBaseVisitor<Expression> imp
             Win_fun_first_last_paramsContext win = ctx.win_fun_first_last_params();
             FunctionParam functionParam = new ExpressionParam(visit(win.bit_expr()));
             if (win.respect_or_ignore() != null) {
-                functionParam.addOption(new ConstExpression(win.respect_or_ignore(), win.NULLS()));
+                functionOpts.add(new ConstExpression(win.respect_or_ignore(), win.NULLS()));
             }
             params.add(functionParam);
         } else if (ctx.win_fun_lead_lag_params() != null) {
             Win_fun_lead_lag_paramsContext win = ctx.win_fun_lead_lag_params();
-            if (win.bit_expr() != null && win.respect_or_ignore() != null) {
-                FunctionParam functionParam = new ExpressionParam(visit(win.bit_expr()));
-                functionParam.addOption(new ConstExpression(win.respect_or_ignore(), win.NULLS()));
-                params.add(functionParam);
-            } else if (win.respect_or_ignore() != null) {
-                functionOpts.add(new ConstExpression(win.respect_or_ignore(), win.NULLS()));
+            if (win.bit_expr() != null) {
+                params.add(new ExpressionParam(visit(win.bit_expr())));
             }
             if (win.expr_list() != null) {
                 params.addAll(win.expr_list().bit_expr().stream()
                         .map(e -> new ExpressionParam(visit(e))).collect(Collectors.toList()));
+            }
+            if (win.respect_or_ignore() != null) {
+                functionOpts.add(new ConstExpression(win.respect_or_ignore(), win.NULLS()));
             }
         } else if (ctx.func_param_list() != null) {
             params.addAll(ctx.func_param_list().func_param().stream()

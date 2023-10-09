@@ -663,11 +663,10 @@ public class MySQLExpressionFactory extends OBParserBaseVisitor<Expression> impl
             params.addAll(ctx.bit_expr().stream().map(e -> new ExpressionParam(visit(e))).collect(Collectors.toList()));
         } else if (ctx.win_fun_first_last_params() != null) {
             Win_fun_first_last_paramsContext c = ctx.win_fun_first_last_params();
-            FunctionParam p = new ExpressionParam(visit(c.expr()));
+            params.add(new ExpressionParam(visit(c.expr())));
             if (c.respect_or_ignore() != null) {
-                p.addOption(new ConstExpression(c.respect_or_ignore(), c.NULLS()));
+                functionOpts.add(new ConstExpression(c.respect_or_ignore(), c.NULLS()));
             }
-            params.add(p);
         }
         if (ctx.NTH_VALUE() != null) {
             if (ctx.first_or_last() != null) {

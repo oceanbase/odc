@@ -1214,7 +1214,6 @@ public class MySQLExpressionFactoryTest {
 
         List<FunctionParam> params = new ArrayList<>();
         FunctionParam p1 = new ExpressionParam(new ConstExpression("5"));
-        p1.addOption(new ConstExpression("respect nulls"));
         params.add(p1);
         FunctionCall expect = new FunctionCall("FIRST_VALUE", params);
         WindowSpec window = new WindowSpec();
@@ -1231,6 +1230,7 @@ public class MySQLExpressionFactoryTest {
         WindowBody body = new WindowBody(WindowType.RANGE, offset);
         window.setBody(body);
         expect.setWindow(window);
+        expect.addOption(new ConstExpression("respect nulls"));
         Assert.assertEquals(expect, actual);
     }
 
