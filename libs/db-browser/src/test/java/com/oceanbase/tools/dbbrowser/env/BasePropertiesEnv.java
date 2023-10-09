@@ -19,8 +19,15 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.StringReader;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Properties;
+
+import javax.crypto.Cipher;
+import javax.crypto.spec.SecretKeySpec;
+
+import org.apache.commons.lang3.Validate;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import com.oceanbase.tools.dbbrowser.util.StringUtils;
 
@@ -40,7 +47,7 @@ public abstract class BasePropertiesEnv {
     private static final String TEST_CONFIG_FILE = "../../local-unit-test.properties";
     private static final String ENCRYPTED_PREFIX = "ENC@";
     private static final Properties PROPERTIES = new Properties();
-    private static final AesBytesEncryptor DECRYPTOR = new AesBytesEncryptor(new SecretKey().getSecretKey(), null, 256);
+    private static final SecretKey SECRET_KEY = new SecretKey();
 
     static {
         try {
@@ -90,8 +97,34 @@ public abstract class BasePropertiesEnv {
         }
         value = value.substring(ENCRYPTED_PREFIX.length());
         byte[] encrypted = Base64.getDecoder().decode(value.getBytes());
-        byte[] decrypted = DECRYPTOR.decrypt(encrypted);
+        byte[] decrypted = decrypt(encrypted, SECRET_KEY.getSecretKey().getBytes());
         return new String(decrypted);
+    }
+
+    public static byte[] decrypt(byte[] encrypted, byte[] password) {
+        Validate.notNull(encrypted, "null input for decrypt");
+        try {
+            Cipher cipher = Cipher.getInstance("Blowfish/ECB/NoPadding");
+            SecretKeySpec key = new SecretKeySpec(password, "Blowfish");
+            cipher.init(Cipher.DECRYPT_MODE, key);
+            byte[] decrypted = cipher.doFinal(encrypted);
+            return zeroUnpad(decrypted);
+        } catch (Exception e) {
+            String rootCauseMessage = ExceptionUtils.getRootCauseMessage(e);
+            throw new RuntimeException(rootCauseMessage);
+        }
+    }
+
+    private static byte[] zeroUnpad(byte[] decrypted) {
+        int end = decrypted.length;
+        while (end > 0) {
+            if (decrypted[end - 1] == 0) {
+                end--;
+            } else {
+                break;
+            }
+        }
+        return Arrays.copyOf(decrypted, end);
     }
 
     private static class SecretKey {
