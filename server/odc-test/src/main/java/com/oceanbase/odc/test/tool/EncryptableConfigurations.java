@@ -18,17 +18,12 @@ package com.oceanbase.odc.test.tool;
 import static java.util.regex.Pattern.CASE_INSENSITIVE;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -39,8 +34,9 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.oceanbase.odc.test.crypto.Encryptors;
 import com.oceanbase.odc.test.crypto.TextEncryptor;
-import com.oceanbase.odc.test.database.TestProperties;
+import com.oceanbase.odc.test.util.PropertiesUtil;
 
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -80,7 +76,19 @@ public class EncryptableConfigurations {
         return properties;
     }
 
-    public static void encryptFileIfRequires(String fileName) {
+    public static String getDecryptedProperty(String key) {
+        String property = PropertiesUtil.getSystemEnvProperty(key);
+        if (StringUtils.isNotBlank(property)) {
+            return decryptIfRequired(property);
+        }
+        property = PropertiesUtil.getDotEnvProperties(key);
+        if (StringUtils.isNotBlank(property)) {
+            return decryptIfRequired(property);
+        }
+        return null;
+    }
+
+    private static void encryptFileIfRequires(String fileName) {
         File file = new File(fileName);
         PropertiesConfiguration config = new PropertiesConfiguration();
         PropertiesConfigurationLayout layout = new PropertiesConfigurationLayout();
@@ -131,65 +139,29 @@ public class EncryptableConfigurations {
         }
     }
 
+    @NoArgsConstructor
     private static class SecretKeyGetter {
-        private static final String ENV_FILE = "../../.env";
         private static final String SECRET_ENV_KEY = "ODC_CONFIG_SECRET";
-        private static final String SECRET_ENV_ACI_KEY = "ACI_VAR_ODC_CONFIG_SECRET";
-        private final Properties envProperties;
-
-        public SecretKeyGetter() {
-            envProperties = getEnvProperties();
-        }
 
         public String getSecretKey() {
-            String secretKey = getSystemProperty(SECRET_ENV_KEY);
-            if (StringUtils.isNotBlank(secretKey)) {
-                return secretKey;
-            }
-            secretKey = getSystemProperty(SECRET_ENV_ACI_KEY);
+            String secretKey = getProperty(SECRET_ENV_KEY);
             if (StringUtils.isNotBlank(secretKey)) {
                 return secretKey;
             }
             throw new RuntimeException("environment variable 'ODC_CONFIG_SECRET' is not set");
         }
 
-        private Properties getEnvProperties() {
-            Properties properties = new Properties();
-            File file;
-            try {
-                URL location = TestProperties.class.getProtectionDomain().getCodeSource().getLocation();
-                file = Paths.get(location.toURI())
-                        .getParent().getParent().getParent().getParent()
-                        .resolve(".env").toFile();
-            } catch (URISyntaxException e) {
-                throw new IllegalStateException(e);
-            }
-            if (file.exists()) {
-                try (FileInputStream inputStream = new FileInputStream(file)) {
-                    properties.load(inputStream);
-                } catch (IOException e) {
-                    log.warn("load .env failed, reason={}", e.getMessage());
-                }
-            } else {
-                log.info("skip load due .env file not exists");
-            }
-            return properties;
-        }
-
-        private String getSystemProperty(String key) {
-            String property = System.getProperty(key);
+        private String getProperty(String key) {
+            String property = PropertiesUtil.getSystemEnvProperty(key);
             if (StringUtils.isNoneBlank(property)) {
                 return property;
             }
-            property = System.getenv(key);
-            if (StringUtils.isNotBlank(property)) {
-                return property;
-            }
-            property = envProperties.getProperty(key);
+            property = PropertiesUtil.getDotEnvProperties(key);
             if (StringUtils.isNotBlank(property)) {
                 return property;
             }
             return null;
         }
     }
+
 }
