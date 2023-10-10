@@ -238,7 +238,7 @@ public abstract class BaseObLoaderDumperTransferTask<T extends BaseParameter> im
 
     /**
      * 导入导出组件在某些场景下（例如停止任务），会出现 {@link com.oceanbase.tools.loaddump.common.model.ObjectStatus#getName()}
-     * 为 {@code null} 的场景，这会造成前端显示错误。在这里过滤掉这个异常值。
+     * 为 {@code null} 的场景，这会造成前端显示错误。这里过滤掉这个异常值。
      */
     private List<ObjectStatus> transformStatus(List<com.oceanbase.tools.loaddump.common.model.ObjectStatus> origin) {
         return origin.stream()
