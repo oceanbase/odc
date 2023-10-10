@@ -23,15 +23,13 @@ import org.apache.commons.lang3.Validate;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
-import com.oceanbase.odc.service.datatransfer.model.DataTransferConfig;
-import com.oceanbase.odc.service.datatransfer.model.DataTransferType;
-import com.oceanbase.odc.service.datatransfer.task.DataTransferTaskContext;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferType;
+import com.oceanbase.odc.service.datatransfer.model.DataTransferParameter;
 import com.oceanbase.odc.service.flow.task.model.DataTransferTaskResult;
-import com.oceanbase.tools.loaddump.common.model.BaseParameter;
 
 @Component
 @Profile("clientMode")
-public class DesktopDataTransferAdapter implements DataTransferAdapter {
+public class DesktopDataTransferAdapter extends DefaultDataTransferAdapter {
 
     @Override
     public Long getMaxDumpSizeBytes() {
@@ -39,13 +37,14 @@ public class DesktopDataTransferAdapter implements DataTransferAdapter {
     }
 
     @Override
-    public File preHandleWorkDir(DataTransferConfig transferConfig,
-            String bucket, File workDir) throws IOException {
-        if (transferConfig.getTransferType() != DataTransferType.EXPORT) {
+    public File preHandleWorkDir(DataTransferParameter parameter, String bucket, File workDir) throws IOException {
+        workDir = super.preHandleWorkDir(parameter, bucket, workDir);
+
+        if (parameter.getTransferType() != DataTransferType.EXPORT) {
             return workDir;
         }
         // 客户端模式且为导出
-        String exportFilePath = transferConfig.getExportFilePath();
+        String exportFilePath = parameter.getExportFilePath();
         Validate.notNull(exportFilePath, "ExportFilePath can not be null");
         // 需要在用户传入的路径上增加 bucket，否则最终将在用户指定目录下形成 data 和 logs 两个子目录
         File newWorkingDir = new File(exportFilePath, DataTransferService.CLIENT_DIR_PREFIX + bucket);
@@ -54,8 +53,7 @@ public class DesktopDataTransferAdapter implements DataTransferAdapter {
     }
 
     @Override
-    public void afterHandle(BaseParameter parameter, DataTransferTaskContext context,
-            DataTransferTaskResult result, File exportFile) {
+    public void afterHandle(DataTransferParameter parameter, DataTransferTaskResult result, File exportFile) {
         result.setExportZipFilePath(exportFile.getAbsolutePath());
     }
 

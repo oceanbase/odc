@@ -39,11 +39,11 @@ import org.apache.commons.io.IOUtils;
 import com.oceanbase.odc.common.util.ListUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.TopoOrderComparator;
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
 import com.oceanbase.tools.dbbrowser.parser.SqlParser;
 import com.oceanbase.tools.dbbrowser.parser.result.ParseSqlResult;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
-import com.oceanbase.tools.loaddump.common.enums.ServerMode;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -83,7 +83,7 @@ public class SchemaMergeOperator {
     private static final String BLANK_SPACE = " ";
     private static final String UNDERLINE = "_";
 
-    private final ServerMode mode;
+    private final DialectType dialectType;
     private final String schemaName;
     private final DumperOutput dumperOutput;
 
@@ -106,10 +106,10 @@ public class SchemaMergeOperator {
         PROCESS_ORDER.add(ObjectType.PACKAGE_BODY);
     }
 
-    public SchemaMergeOperator(DumperOutput dumperOutput, String schemaName, ServerMode mode) throws Exception {
-        this.mode = mode;
+    public SchemaMergeOperator(DumperOutput dumperOutput, String schemaName, DialectType dialectType) throws Exception {
+        this.dialectType = dialectType;
         this.dumperOutput = dumperOutput;
-        this.schemaName = mode.isMysqlMode() ? StringUtils.unquoteMySqlIdentifier(schemaName)
+        this.schemaName = dialectType.isMysql() ? StringUtils.unquoteMySqlIdentifier(schemaName)
                 : StringUtils.unquoteOracleIdentifier(schemaName);
         this.objectMap = getSchemaFileIdentifiers();
     }
@@ -125,7 +125,7 @@ public class SchemaMergeOperator {
                     continue;
                 }
                 if (type.equals(ObjectType.TABLE)) {
-                    new TableProcessor(schemaName, mode).process(objectMap.get(type));
+                    new TableProcessor(schemaName, dialectType).process(objectMap.get(type));
                 }
 
                 for (SchemaFileIdentifier identifier : objectMap.get(type)) {
@@ -190,11 +190,11 @@ public class SchemaMergeOperator {
 
     private static class TableProcessor {
         private final String schemaName;
-        private final ServerMode mode;
+        private final DialectType dialectType;
 
-        public TableProcessor(String schemaName, ServerMode mode) {
+        public TableProcessor(String schemaName, DialectType dialectType) {
             this.schemaName = schemaName;
-            this.mode = mode;
+            this.dialectType = dialectType;
         }
 
         public void process(List<SchemaFileIdentifier> tables) throws IOException {
@@ -224,7 +224,7 @@ public class SchemaMergeOperator {
 
         private void findReferenceTables(SchemaFileIdentifier tableIdentifier, String content) {
             ParseSqlResult result;
-            if (mode.isMysqlMode()) {
+            if (dialectType.isMysql()) {
                 result = SqlParser.parseMysql(content);
             } else {
                 result = SqlParser.parseOracle(content);

@@ -19,9 +19,9 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferFormat;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.EncodingType;
 import com.oceanbase.odc.service.datasecurity.model.MaskingAlgorithm;
-import com.oceanbase.odc.service.datatransfer.model.DataTransferFormat;
-import com.oceanbase.odc.service.datatransfer.model.EncodingType;
 import com.oceanbase.odc.service.flow.model.TaskParameters;
 
 import lombok.Data;

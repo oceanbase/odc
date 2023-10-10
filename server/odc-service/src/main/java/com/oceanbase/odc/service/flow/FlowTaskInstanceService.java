@@ -67,7 +67,7 @@ import com.oceanbase.odc.service.common.response.ListResponse;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.common.util.OdcFileUtil;
 import com.oceanbase.odc.service.datatransfer.LocalFileManager;
-import com.oceanbase.odc.service.datatransfer.model.DataTransferConfig;
+import com.oceanbase.odc.service.datatransfer.model.DataTransferParameter;
 import com.oceanbase.odc.service.dispatch.DispatchResponse;
 import com.oceanbase.odc.service.dispatch.RequestDispatcher;
 import com.oceanbase.odc.service.dispatch.TaskDispatchChecker;
@@ -428,7 +428,7 @@ public class FlowTaskInstanceService {
             return Collections.singletonList(url);
         } else if (taskEntity.getTaskType() == TaskType.EXPORT) {
             List<DataTransferTaskResult> taskResults = getDataTransferResult(taskEntity);
-            Verify.singleton(taskResults, "DataTransferTaskResult");
+            Verify.singleton(taskResults, "TransferObjectsInfo");
 
             DataTransferTaskResult taskResult = taskResults.get(0);
             String objectName = ossTaskReferManager.get(taskResult.getExportZipFilePath());
@@ -501,8 +501,8 @@ public class FlowTaskInstanceService {
     }
 
     private Set<String> getDownloadImportFileNames(@NonNull TaskEntity taskEntity, String targetFileName) {
-        DataTransferConfig config = JsonUtils.fromJson(
-                taskEntity.getParametersJson(), DataTransferConfig.class);
+        DataTransferParameter config = JsonUtils.fromJson(
+                taskEntity.getParametersJson(), DataTransferParameter.class);
         if (config == null) {
             throw new InternalServerError("Json value is illegal");
         }

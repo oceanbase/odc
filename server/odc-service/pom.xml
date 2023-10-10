@@ -109,6 +109,10 @@
             <artifactId>schema-plugin-api</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.oceanbase</groupId>
+            <artifactId>datatransfer-plugin-api</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.pf4j</groupId>
             <artifactId>pf4j</artifactId>
         </dependency>
@@ -252,6 +256,12 @@
             <groupId>com.alibaba</groupId>
             <artifactId>transmittable-thread-local</artifactId>
             <version>2.13.2</version>
+        </dependency>
+        <dependency>
+            <groupId>com.oceanbase</groupId>
+            <artifactId>datatransfer-plugin-ob-mysql</artifactId>
+            <version>4.2.1-SNAPSHOT</version>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
 </project>

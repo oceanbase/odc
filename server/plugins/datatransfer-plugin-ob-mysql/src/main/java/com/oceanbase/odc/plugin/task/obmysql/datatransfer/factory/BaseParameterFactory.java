@@ -1,0 +1,208 @@
+/*
+ * Copyright (c) 2023 OceanBase.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.oceanbase.odc.plugin.task.obmysql.datatransfer.factory;
+
+import java.io.File;
+import java.io.IOException;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.Predicate;
+
+import org.apache.commons.collections4.CollectionUtils;
+
+import com.oceanbase.odc.common.util.StringUtils;
+import com.oceanbase.odc.common.util.VersionUtils;
+import com.oceanbase.odc.core.datasource.SingleConnectionDataSource;
+import com.oceanbase.odc.core.session.ConnectionSessionUtil;
+import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.CsvConfig;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig.ConnectionInfo;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferFormat;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferObject;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferType;
+import com.oceanbase.odc.plugin.task.obmysql.datatransfer.util.ConnectionUtil;
+import com.oceanbase.odc.plugin.task.obmysql.datatransfer.util.PluginUtil;
+import com.oceanbase.tools.loaddump.common.enums.ObjectType;
+import com.oceanbase.tools.loaddump.common.model.BaseParameter;
+import com.oceanbase.tools.loaddump.parser.record.csv.CsvFormat;
+
+import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
+public abstract class BaseParameterFactory<T extends BaseParameter> {
+    protected final DataTransferConfig transferConfig;
+
+    public BaseParameterFactory(@NonNull DataTransferConfig transferConfig) {
+        this.transferConfig = transferConfig;
+    }
+
+    public T generate() throws IOException {
+        T parameter = doGenerate(transferConfig.getWorkingDir());
+        parameter.setLogPath(transferConfig.getLogPath());
+        setSessionInfo(parameter);
+        setFileConfig(parameter, transferConfig.getWorkingDir());
+        parameter.setThreads(3);
+        if (transferConfig.getDataTransferFormat() != DataTransferFormat.CSV) {
+            return parameter;
+        }
+        if (transferConfig.getTransferType() == DataTransferType.EXPORT) {
+            setCsvInfo(parameter);
+        } else if (!transferConfig.isCompressed()) {
+            /*
+             * csv 文件导入时需要手动设置 csv 文件相关解析参数
+             */
+            setCsvInfo(parameter);
+        }
+        return parameter;
+    }
+
+    protected abstract T doGenerate(File workingDir) throws IOException;
+
+    private void setSessionInfo(@NonNull T parameter) {
+        ConnectionInfo target = transferConfig.getConnectionInfo();
+        parameter.setHost(target.getHost());
+        parameter.setPort(target.getPort());
+        parameter.setPassword(target.getPassword());
+        parameter.setCluster(target.getCluster());
+        parameter.setTenant(target.getTenant());
+        String username = ConnectionSessionUtil.getUserOrSchemaString(target.getUsername(),
+                target.getConnectType().getDialectType());
+        if (DialectType.OB_ORACLE == target.getConnectType().getDialectType()) {
+            parameter.setUser("\"" + username + "\"");
+            parameter.setDatabaseName("\"" + transferConfig.getSchemaName() + "\"");
+            parameter.setConnectDatabaseName("\"" + transferConfig.getSchemaName() + "\"");
+        } else {
+            parameter.setUser(username);
+            parameter.setDatabaseName("`" + transferConfig.getSchemaName() + "`");
+            parameter.setConnectDatabaseName(transferConfig.getSchemaName());
+        }
+
+        try (SingleConnectionDataSource dataSource = ConnectionUtil.getDataSource(transferConfig);
+                Connection conn = dataSource.getConnection()) {
+            String version = PluginUtil.getInformationExtension(transferConfig).getDBVersion(conn);
+            if (VersionUtils.isGreaterThanOrEqualsTo(version, "4.0")) {
+                parameter.setNoSys(false);
+            } else {
+                if (StringUtils.isNotBlank(target.getSysTenantUsername())) {
+                    parameter.setSysUser(target.getSysTenantUsername());
+                    parameter.setSysPassword(target.getSysTenantPassword());
+                    log.info("Sys user exists");
+                } else {
+                    if (target.getConnectType().isCloud()) {
+                        log.info("Sys user does not exist, use cloud mode");
+                        parameter.setPubCloud(true);
+                    } else {
+                        log.info("Sys user does not exist, use no sys mode");
+                        parameter.setNoSys(true);
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            log.warn("Failed to get version info, transfer will continue without sys tenant, reason:{}",
+                    e.getMessage());
+            parameter.setNoSys(true);
+        }
+
+        if (StringUtils.isNotBlank(target.getProxyHost()) && Objects.nonNull(target.getProxyPort())) {
+            parameter.setSocksProxyHost(target.getProxyHost());
+            parameter.setSocksProxyPort(target.getProxyPort().toString());
+        }
+        if (StringUtils.isNotBlank(target.getOBTenant())) {
+            parameter.setTenant(target.getOBTenant());
+        }
+    }
+
+    private void setCsvInfo(BaseParameter parameter) {
+        CsvConfig csvConfig = transferConfig.getCsvConfig();
+        parameter.setIgnoreEmptyLine(true);
+        if (csvConfig == null) {
+            return;
+        }
+        parameter.setColumnSeparator(CsvFormat.DEFAULT.toChar(csvConfig.getColumnSeparator()));
+        String lineSeparator = csvConfig.getLineSeparator();
+        StringBuilder realLineSeparator = new StringBuilder();
+        int length = lineSeparator.length();
+        boolean transferFlag = false;
+        for (int i = 0; i < length; i++) {
+            char item = lineSeparator.charAt(i);
+            if (item == '\\') {
+                transferFlag = true;
+                continue;
+            }
+            if (transferFlag) {
+                if (item == 'n') {
+                    realLineSeparator.append('\n');
+                } else if (item == 'r') {
+                    realLineSeparator.append('\r');
+                }
+                transferFlag = false;
+            } else {
+                realLineSeparator.append(item);
+            }
+        }
+        parameter.setLineSeparator(realLineSeparator.toString());
+        parameter.setSkipHeader(csvConfig.isSkipHeader());
+        parameter.setColumnDelimiter(CsvFormat.DEFAULT.toChar(csvConfig.getColumnDelimiter()));
+        /*
+         * oracle 模式下空字符即为 null ，因此 emptyString 参数仅对 mysql 模式生效，组件默认为 \E
+         */
+        parameter.setEmptyString("");
+        if (!csvConfig.isBlankToNull()) {
+            return;
+        }
+        parameter.setNullString("null");
+    }
+
+    private void setFileConfig(T parameter, File workingDir) {
+        parameter.setFilePath(workingDir.getAbsolutePath());
+        parameter.setFileEncoding(transferConfig.getEncoding().getAlias());
+    }
+
+    protected Map<ObjectType, Set<String>> getWhiteListMap(List<DataTransferObject> objectList,
+            Predicate<DataTransferObject> predicate) {
+        Map<ObjectType, Set<String>> whiteListMap = new HashMap<>();
+        if (CollectionUtils.isEmpty(objectList)) {
+            return whiteListMap;
+        }
+        for (DataTransferObject dbObject : objectList) {
+            if (!predicate.test(dbObject)) {
+                log.info("Invalid db object type found, object={}", dbObject);
+                continue;
+            }
+            ObjectType objectType = ObjectType.valueOfName(dbObject.getDbObjectType());
+            String objectName = StringUtils.unquoteOracleIdentifier(dbObject.getObjectName());
+            if (StringUtils.isBlank(objectName)) {
+                throw new IllegalArgumentException("Can not accept a blank object name");
+            }
+            Set<String> nameSet = whiteListMap.computeIfAbsent(objectType, k -> new HashSet<>());
+            if (transferConfig.getConnectionInfo().getConnectType().getDialectType().isOracle()) {
+                nameSet.add(StringUtils.quoteOracleIdentifier(objectName));
+            } else {
+                nameSet.add(StringUtils.quoteMysqlIdentifier(objectName));
+            }
+        }
+        return whiteListMap;
+    }
+}

@@ -29,11 +29,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.CsvColumnMapping;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.CsvConfig;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.datatransfer.DataTransferService;
-import com.oceanbase.odc.service.datatransfer.model.CsvColumnMapping;
-import com.oceanbase.odc.service.datatransfer.model.CsvConfig;
 import com.oceanbase.odc.service.datatransfer.model.UploadFileResult;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
 

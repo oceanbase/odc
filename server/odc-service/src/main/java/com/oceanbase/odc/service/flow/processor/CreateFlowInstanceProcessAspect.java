@@ -35,7 +35,7 @@ import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
-import com.oceanbase.odc.service.datatransfer.model.DataTransferConfig;
+import com.oceanbase.odc.service.datatransfer.model.DataTransferParameter;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.order.utils.DescriptionGenerator;
@@ -152,7 +152,7 @@ public class CreateFlowInstanceProcessAspect implements InitializingBean {
         req.setEnvironmentName(database.getEnvironment().getName());
         DescriptionGenerator.generateDescription(req);
         if (req.getTaskType() == TaskType.EXPORT) {
-            DataTransferConfig config = (DataTransferConfig) req.getParameters();
+            DataTransferParameter config = (DataTransferParameter) req.getParameters();
             config.setDatabaseId(req.getDatabaseId());
         }
     }
