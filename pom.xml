@@ -51,7 +51,7 @@
         <hibernate.jpamodelgen.version>5.6.3.Final</hibernate.jpamodelgen.version>
         <mybatis-spring-boot.version>2.1.1</mybatis-spring-boot.version>
         <mybatis.version>3.5.6</mybatis.version>
-        <tomcat-embed.version>9.0.62</tomcat-embed.version>
+        <tomcat-embed.version>9.0.80</tomcat-embed.version>
         <springcloud.version>2021.0.7</springcloud.version>
         <spring-cloud-config-server.version>3.1.4</spring-cloud-config-server.version>
         <spring-cloud-starter-config.version>2.2.1.RELEASE</spring-cloud-starter-config.version>
