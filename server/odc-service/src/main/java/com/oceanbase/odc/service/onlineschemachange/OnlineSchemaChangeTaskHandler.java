@@ -33,13 +33,14 @@ public interface OnlineSchemaChangeTaskHandler {
      * to complete osc task
      * 
      * @param scheduleId scheduleId
+     * @param scheduleTaskId scheduleTaskId
      */
-    void complete(Long scheduleId);
+    void complete(Long scheduleId, Long scheduleTaskId);
 
     /**
      * to terminate osc task
      * 
      * @param scheduleTaskId scheduleTaskId
      */
-    void terminate(Long scheduleTaskId);
+    void terminate(Long scheduleId, Long scheduleTaskId);
 }

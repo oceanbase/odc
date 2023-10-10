@@ -77,7 +77,7 @@ public class ConnectionBatchImportPreviewer {
         List<Map<String, String>> list;
         List<BatchImportConnection> batchImportConnectionList = new ArrayList<>();
         try (InputStream inputStream = file.getInputStream()) {
-            list = FileConvertUtils.convertXlxToList(inputStream);
+            list = FileConvertUtils.convertXlsRowsToMapList(inputStream);
         }
         Map<String, String> envMap = initEnvMap();
         for (Map<String, String> map : list) {
@@ -107,28 +107,23 @@ public class ConnectionBatchImportPreviewer {
     private BatchImportConnection createBatchImportConnection(Map<String, String> map, Map<String, String> envMap) {
         BatchImportConnection batchImportConnection = new BatchImportConnection();
         Long organizationId = authenticationFacade.currentOrganizationId();
-
         String name = map.get(DATASOURCE_NAME.getLocalizedMessage());
         if (StringUtils.isEmpty(name) || name.length() > NAME_MAX_LENGTH || !SPACE_PATTERN.matcher(name).matches()) {
-            batchImportConnection
-                    .setErrorMessage("file content error:" + DATASOURCE_NAME.getLocalizedMessage());
+            batchImportConnection.setErrorMessage("file content error:" + DATASOURCE_NAME.getLocalizedMessage());
         } else {
             batchImportConnection.setName(name);
         }
         String type = map.get(DATASOURCE_TYPE.getLocalizedMessage());
         batchImportConnection.setType(ConnectType.valueOf(type));
-
         String host = map.get(DATASOURCE_HOST.getLocalizedMessage());
         if (StringUtils.isEmpty(host)) {
-            batchImportConnection
-                    .setErrorMessage("file content error:" + DATASOURCE_HOST.getLocalizedMessage());
+            batchImportConnection.setErrorMessage("file content error:" + DATASOURCE_HOST.getLocalizedMessage());
         } else {
             batchImportConnection.setHost(host);
         }
         String port = map.get(DATASOURCE_PORT.getLocalizedMessage());
         if (!StringUtils.checkPort(port)) {
-            batchImportConnection
-                    .setErrorMessage("file content error:" + DATASOURCE_PORT.getLocalizedMessage());
+            batchImportConnection.setErrorMessage("file content error:" + DATASOURCE_PORT.getLocalizedMessage());
         } else {
             batchImportConnection.setPort(Integer.parseInt(port));
         }
@@ -136,15 +131,13 @@ public class ConnectionBatchImportPreviewer {
         batchImportConnection.setClusterName(clusterName);
         String tenantName = map.get(DATASOURCE_TENANTNAME.getLocalizedMessage());
         if (StringUtils.isEmpty(tenantName) || !SPACE_PATTERN.matcher(tenantName).matches()) {
-            batchImportConnection
-                    .setErrorMessage("file content error:" + DATASOURCE_TENANTNAME.getLocalizedMessage());
+            batchImportConnection.setErrorMessage("file content error:" + DATASOURCE_TENANTNAME.getLocalizedMessage());
         } else {
             batchImportConnection.setTenantName(tenantName);
         }
         String username = map.get(DATASOURCE_USERNAME.getLocalizedMessage());
         if (StringUtils.isEmpty(username) || !SPACE_PATTERN.matcher(username).matches()) {
-            batchImportConnection
-                    .setErrorMessage("file content error:" + DATASOURCE_USERNAME.getLocalizedMessage());
+            batchImportConnection.setErrorMessage("file content error:" + DATASOURCE_USERNAME.getLocalizedMessage());
         } else {
             batchImportConnection.setUsername(username);
         }
@@ -165,7 +158,6 @@ public class ConnectionBatchImportPreviewer {
         batchImportConnection.setSysTenantUsername(sysTenantUsername);
         String sysTenantPassword = map.get(DATASOURCE_SYSTENANTPASSWORD.getLocalizedMessage());
         batchImportConnection.setSysTenantPassword(sysTenantPassword);
-
         return batchImportConnection;
     }
 

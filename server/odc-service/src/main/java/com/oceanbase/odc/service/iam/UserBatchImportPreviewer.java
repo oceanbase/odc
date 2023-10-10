@@ -30,7 +30,9 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
@@ -87,22 +89,15 @@ public class UserBatchImportPreviewer {
         List<Map<String, String>> list;
         List<BatchImportUser> batchImportUserList = new ArrayList<>();
         try (InputStream inputStream = file.getInputStream()) {
-            list = FileConvertUtils.convertXlxToList(inputStream);
+            list = FileConvertUtils.convertXlsRowsToMapList(inputStream);
         }
         Long organizationId = authenticationFacade.currentOrganizationId();
-        List<User> users = userService.getByOrganizationId(organizationId);
-        List<String> allRelatedUserAccountNames = new ArrayList<>();
-        for (User user : users) {
-            allRelatedUserAccountNames.add(user.getAccountName());
-        }
-        List<String> allRelatedRoleNames = new ArrayList<>();
-        List<Role> roles = roleService.list(Pageable.unpaged()).getContent();
-        for (Role role : roles) {
-            allRelatedRoleNames.add(role.getName());
-        }
+        Set<String> accountNames = userService.getByOrganizationId(organizationId).stream().map(User::getAccountName)
+                .collect(Collectors.toSet());
+        Map<String, Role> roleName2RoleMap = roleService.list(Pageable.unpaged()).getContent().stream()
+                .collect(Collectors.toMap(Role::getName, role -> role, (k1, k2) -> k1));
         for (Map<String, String> map : list) {
-            BatchImportUser batchImportUser =
-                    createBatchImportUser(map, allRelatedUserAccountNames, roles, allRelatedRoleNames);
+            BatchImportUser batchImportUser = createBatchImportUser(map, accountNames, roleName2RoleMap);
             batchImportUserList.add(batchImportUser);
         }
         return UserPreviewBatchImportResp.ofUserExcel(batchImportUserList);
@@ -110,13 +105,10 @@ public class UserBatchImportPreviewer {
 
     private boolean checkFileType(MultipartFile file) {
         String originalFilename = file.getOriginalFilename();
-
         if (file.isEmpty()) {
             log.warn("The import file cannot be empty，fileName={}", originalFilename);
             return false;
         }
-
-        // Excel文件格式校验
         if (!StringUtils.endsWithIgnoreCase(originalFilename, ".xls")
                 && !StringUtils.endsWithIgnoreCase(originalFilename, ".xlsx")) {
             log.warn("The uploaded file is not an Excel file，fileName={}", originalFilename);
@@ -125,68 +117,52 @@ public class UserBatchImportPreviewer {
         return true;
     }
 
-    private BatchImportUser createBatchImportUser(Map<String, String> map, List<String> allRelatedUserAccountNames,
-            List<Role> roles, List<String> allRelatedRoleNames) {
+    private BatchImportUser createBatchImportUser(Map<String, String> map, Set<String> accountNames,
+            Map<String, Role> roleName2RoleMap) {
         BatchImportUser batchImportUser = new BatchImportUser();
-
         String accountName = map.get(USER_ACCOUNTNAME.getLocalizedMessage());
-        if (!checkAccountName(accountName) || allRelatedUserAccountNames.contains(accountName)) {
-            batchImportUser
-                    .setErrorMessage("file content error:" + USER_ACCOUNTNAME.getLocalizedMessage());
+        if (!checkAccountName(accountName) || accountNames.contains(accountName)) {
+            batchImportUser.setErrorMessage("file content error:" + USER_ACCOUNTNAME.getLocalizedMessage());
         } else {
             batchImportUser.setAccountName(accountName);
         }
-
         String name = map.get(USER_NAME.getLocalizedMessage());
         if (StringUtils.isEmpty(name) || name.length() > NAME_MAX_LENGTH || !SPACE_PATTERN.matcher(name).matches()) {
             batchImportUser.setErrorMessage("file content error:" + USER_NAME.getLocalizedMessage());
         } else {
             batchImportUser.setName(name);
         }
-
         String password = map.get(USER_PASSWORD.getLocalizedMessage());
         if (StringUtils.isEmpty(password) || !checkPassword(password)) {
             batchImportUser.setErrorMessage("file content error:" + USER_PASSWORD.getLocalizedMessage());
         } else {
             batchImportUser.setPassword(password);
         }
-
         String enabled = map.get(USER_ENABLED.getLocalizedMessage());
         if (!StringUtils.equalsIgnoreCase(enabled, "true") && !StringUtils.equalsIgnoreCase(enabled, "false")) {
             batchImportUser.setErrorMessage("file content error:" + USER_ENABLED.getLocalizedMessage());
         } else {
             batchImportUser.setEnabled(enabled.equalsIgnoreCase("true"));
         }
-
         String roleNameList = map.get(USER_ROLEIDS.getLocalizedMessage());
-        if (null != roleNameList) {
-            String[] roleNames = roleNameList.split(",");
-            List<String> allRoleNames = new ArrayList<>(Arrays.asList(roleNames));
-            if (StringUtils.isEmpty(roleNames[0])) {
-                batchImportUser.setRoleIds(Collections.emptyList());
-                batchImportUser.setRoleNames(Collections.emptyList());
-            } else if (new HashSet<>(allRelatedRoleNames).containsAll(allRoleNames)) {
-                List<Long> roleIds = new ArrayList<>();
-                List<String> names = new ArrayList<>();
-                for (String roleName : allRoleNames) {
-                    for (Role role : roles) {
-                        if (roleName.equals(role.getName())) {
-                            roleIds.add(role.getId());
-                            names.add(role.getName());
-                        }
-                    }
+        batchImportUser.setRoleIds(Collections.emptyList());
+        batchImportUser.setRoleNames(Collections.emptyList());
+        if (StringUtils.isNotBlank(roleNameList)) {
+            Set<String> roleNames = new HashSet<>(Arrays.asList(roleNameList.split(",")));
+            for (String roleName : roleNames) {
+                if (roleName2RoleMap.containsKey(roleName)) {
+                    Role role = roleName2RoleMap.get(roleName);
+                    batchImportUser.getRoleIds().add(role.getId());
+                    batchImportUser.getRoleNames().add(role.getName());
                 }
-                batchImportUser.setRoleIds(roleIds);
-                batchImportUser.setRoleNames(names);
-            } else {
+            }
+            if (batchImportUser.getRoleIds().isEmpty()) {
                 batchImportUser.setErrorMessage("file content error:" + USER_ROLEIDS.getLocalizedMessage());
             }
         }
-
         String description = map.get(USER_DESCRIPTION.getLocalizedMessage());
         if (description.length() > DESCRIPTION_MAX_LENGTH) {
-            batchImportUser
-                    .setErrorMessage("file content error:" + USER_DESCRIPTION.getLocalizedMessage());
+            batchImportUser.setErrorMessage("file content error:" + USER_DESCRIPTION.getLocalizedMessage());
         } else {
             batchImportUser.setDescription(description);
         }
@@ -223,7 +199,6 @@ public class UserBatchImportPreviewer {
     }
 
     private boolean checkAccountName(String accountName) {
-
         if (accountName == null || accountName.length() < ACCOUNTNAME_MIN_LENGTH
                 || accountName.length() > ACCOUNTNAME_MAX_LENGTH || accountName.contains(" ")) {
             return false;

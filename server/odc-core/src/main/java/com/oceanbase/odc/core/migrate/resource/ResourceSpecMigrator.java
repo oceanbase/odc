@@ -64,16 +64,15 @@ public class ResourceSpecMigrator {
         EntityMapper<ResourceSpec, List<DataRecord>> mapper = factory.generate(entity);
         List<DataRecord> recordList = mapper.entityToModel(entity);
         for (DataRecord record : recordList) {
-            List<DataRecord> savedRecords = repository.find(record);
-            if (CollectionUtils.isNotEmpty(savedRecords)) {
-                savedRecords.forEach(DataRecord::refresh);
-            }
-            if (CollectionUtils.isEmpty(savedRecords) || record.isAllowDuplicated()) {
-                DataRecord saved = repository.save(record);
-                if (log.isDebugEnabled()) {
-                    log.debug("Resource is saved successfully, resource={}", saved);
+            if (record.isAllowDuplicated()) {
+                save(record);
+            } else {
+                List<DataRecord> savedRecords = repository.find(record);
+                if (CollectionUtils.isEmpty(savedRecords)) {
+                    save(record);
+                } else {
+                    savedRecords.forEach(DataRecord::refresh);
                 }
-                saved.refresh();
             }
         }
         return entity;
@@ -93,6 +92,14 @@ public class ResourceSpecMigrator {
             }
         }
         return entity;
+    }
+
+    private void save(DataRecord record) {
+        DataRecord saved = repository.save(record);
+        if (log.isDebugEnabled()) {
+            log.debug("Resource is saved successfully, resource={}", saved);
+        }
+        saved.refresh();
     }
 
 }

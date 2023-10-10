@@ -70,7 +70,6 @@ import com.oceanbase.odc.service.iam.UserService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -123,6 +122,13 @@ public class SensitiveColumnService {
         entity.setDatabaseId(column.getDatabase().getId());
         entity.setTableName(column.getTableName());
         entity.setColumnName(column.getColumnName());
+        entity.setOrganizationId(authenticationFacade.currentOrganizationId());
+        return repository.exists(Example.of(entity));
+    }
+
+    @SkipAuthorize("odc internal usages")
+    public boolean existsInCurrentOrganization() {
+        SensitiveColumnEntity entity = new SensitiveColumnEntity();
         entity.setOrganizationId(authenticationFacade.currentOrganizationId());
         return repository.exists(Example.of(entity));
     }
@@ -430,7 +436,6 @@ public class SensitiveColumnService {
     }
 
     @Data
-    @EqualsAndHashCode
     private static class SensitiveColumnMeta {
         private Long databaseId;
         private String tableName;
@@ -441,6 +446,23 @@ public class SensitiveColumnService {
             this.tableName = entity.getTableName();
             this.columnName = entity.getColumnName();
         }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(databaseId, tableName.toLowerCase(), columnName.toLowerCase());
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj instanceof SensitiveColumnMeta) {
+                SensitiveColumnMeta other = (SensitiveColumnMeta) obj;
+                return Objects.equals(databaseId, other.databaseId)
+                        && Objects.equals(tableName.toLowerCase(), other.tableName.toLowerCase())
+                        && Objects.equals(columnName.toLowerCase(), other.columnName.toLowerCase());
+            }
+            return false;
+        }
+
     }
 
 }

@@ -37,6 +37,11 @@ public class DBSchemaService {
         return accessor.listDatabases();
     }
 
+    public List<String> showDatabases(ConnectionSession connectionSession) {
+        DBSchemaAccessor accessor = DBSchemaAccessors.create(connectionSession);
+        return accessor.showDatabases();
+    }
+
 
 
     public DBDatabase detail(ConnectionSession connectionSession, String dbName) {

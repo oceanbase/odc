@@ -27,6 +27,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.core.shared.Verify;
+import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.ExternalServiceError;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.service.integration.HttpOperationService;
@@ -95,7 +96,8 @@ public class SqlInterceptorClient {
         try {
             response = httpClient.execute(request, new BasicResponseHandler());
         } catch (Exception e) {
-            throw new ExternalServiceError("Request execute failed: " + e.getMessage());
+            throw new ExternalServiceError(ErrorCodes.ExternalServiceError,
+                    "Request execute failed: " + e.getMessage());
         }
         String decrypt = EncryptionUtil.decrypt(response, encryption);
         try {

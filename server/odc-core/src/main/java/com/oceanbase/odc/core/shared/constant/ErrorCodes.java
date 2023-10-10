@@ -164,6 +164,14 @@ public enum ErrorCodes implements ErrorCode {
     OscSqlTypeInconsistent,
     NoUniqueKeyExists,
     OscNotEnabled,
+    OscUnsupportedForeignKeyTable,
+    OscColumnNameInconsistent,
+    OscDataCheckInconsistent,
+    OmsDataCheckInconsistent,
+    OmsGhanaOperateFailed,
+    OmsParamError,
+    OmsConnectivityTestFailed,
+    OmsPreCheckFailed,
 
     // resource
     BuiltInResourceOperateNotAllowed,
@@ -183,6 +191,7 @@ public enum ErrorCodes implements ErrorCode {
     ExternalRAMServiceError,
     ExternalOssError,
     ExternalVpcError,
+    ExternalUrlNotAllowed,
 
     /**
      * ob operation
@@ -216,6 +225,7 @@ public enum ErrorCodes implements ErrorCode {
 
     ObPreCheckDdlFailed,
     ObCopySchemaFailed,
+    ObInvalidObjectTypesForRecyclebin,
 
     /**
      * TODO: ob sql validate, mysql mode

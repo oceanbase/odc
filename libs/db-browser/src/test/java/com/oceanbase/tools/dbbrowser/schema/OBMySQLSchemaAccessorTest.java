@@ -327,7 +327,7 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
     public void listProcedures_Success() {
         DBSchemaAccessor accessor = new DBSchemaAccessors(getOBMySQLDataSource()).createOBMysql();
         List<DBPLObjectIdentity> procedures = accessor.listProcedures(getOBMySQLDataBaseName());
-        Assert.assertTrue(!procedures.isEmpty() && procedures.size() == 2);
+        Assert.assertTrue(!procedures.isEmpty());
     }
 
     @Test

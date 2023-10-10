@@ -23,6 +23,7 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.tools.sqlparser.FastFailErrorListener;
 import com.oceanbase.tools.sqlparser.oboracle.OBLexer;
@@ -133,8 +134,7 @@ public class OBOracleTableNameReplacer implements TableNameReplacer {
                 ParseTree childNode = relation_nameContext.getChild(0);
                 if (childNode instanceof TerminalNode) {
                     TerminalNode terminalNode = (TerminalNode) childNode;
-                    tokenStreamRewriter.replace(terminalNode.getSymbol(), DdlUtils.getNewNameWithSuffix(
-                            terminalNode.getSymbol().getText(), DdlUtils.getUUIDWithoutUnderline()));
+                    tokenStreamRewriter.replace(terminalNode.getSymbol(), "A" + StringUtils.uuidNoHyphen());
                 }
             }
         }
@@ -151,8 +151,8 @@ public class OBOracleTableNameReplacer implements TableNameReplacer {
                 ParseTree childNode = relation_nameContext.getChild(0);
                 if (childNode instanceof TerminalNode) {
                     TerminalNode terminalNode = (TerminalNode) childNode;
-                    tokenStreamRewriter.replace(terminalNode.getSymbol(), DdlUtils.getNewNameWithSuffix(
-                            terminalNode.getSymbol().getText(), DdlUtils.getUUIDWithoutUnderline()));
+                    // replace constraints name
+                    tokenStreamRewriter.replace(terminalNode.getSymbol(), "A" + StringUtils.uuidNoHyphen());
                 }
             }
         }
