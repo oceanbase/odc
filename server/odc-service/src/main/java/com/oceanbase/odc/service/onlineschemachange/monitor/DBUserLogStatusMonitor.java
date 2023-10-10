@@ -22,6 +22,7 @@ import static com.oceanbase.odc.core.shared.constant.OdcConstants.FLOW_TASK_ID;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
@@ -119,7 +120,8 @@ public class DBUserLogStatusMonitor implements DBUserMonitor {
         userLockedStatus.forEach(u -> {
             tableColumns.add(u.getName());
             tableColumns.add(u.getUserStatus().name());
-            tableColumns.add(sessionMap.get(u.getName()) + "");
+            Long sessionCounts = sessionMap.get(u.getName());
+            tableColumns.add(Objects.isNull(sessionCounts) ? 0 + "" : sessionCounts + "");
         });
 
         List<String> headers = Lists.newArrayList("username", "status", "session");

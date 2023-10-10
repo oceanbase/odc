@@ -52,6 +52,7 @@ public class DBUserLogStatusMonitorTest {
     public void test_monitor_ob_mysql_successful() throws InterruptedException {
         List<String> toMonitorUsers = new ArrayList<>();
         toMonitorUsers.add("root");
+        toMonitorUsers.add("root1");
         doMonitor(toMonitorUsers, obMySqlConnSession);
     }
 
@@ -59,13 +60,14 @@ public class DBUserLogStatusMonitorTest {
     public void test_monitor_ob_oracle_successful() throws InterruptedException {
         List<String> toMonitorUsers = new ArrayList<>();
         toMonitorUsers.add("SYS");
+        toMonitorUsers.add("oceanbase");
         doMonitor(toMonitorUsers, obOracleConnSession);
     }
 
     private static void doMonitor(List<String> toMonitorUsers, ConnectionSession connectionSession)
             throws InterruptedException {
         Integer period = 200;
-        Integer timeout = 5000;
+        Integer timeout = 2000;
         TimeUnit timeUnit = TimeUnit.MILLISECONDS;
         DBUserLogStatusMonitorFactory monitorFactory = new DBUserLogStatusMonitorFactory(null);
         DBUserMonitor dbUserMonitor = monitorFactory.generateDBUserMonitor(connectionSession,
@@ -75,7 +77,7 @@ public class DBUserLogStatusMonitorTest {
         try {
             executorService.execute(dbUserMonitor);
             Assert.assertFalse(dbUserMonitor.isDone());
-            Thread.sleep(5000 - 1);
+            Thread.sleep(2000 - 1);
             dbUserMonitor.stop();
             Assert.assertTrue(dbUserMonitor.isDone());
         } finally {
