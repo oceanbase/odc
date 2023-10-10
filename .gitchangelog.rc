@@ -10,16 +10,16 @@
 ## of the regexps associated is matching.
 section_regexps = [
     ('New', [
-        r'^(PullRequest: ){1}([0-9])+( ){1}([fF]eat)(\([a-zA-Z\-\s,]+\))?\s*:\s*.*$'
+        r'^([fF]eat)(\([a-zA-Z\-\s,]+\))?\s*:\s*.*$'
      ]),
     ('Changes', [
-        r'^(PullRequest: ){1}([0-9])+( ){1}([cC]hore|[dD]oc|[rR]efactor)(\([a-zA-Z\-\s,]+\))?\s*:\s*.*$'
+        r'^([cC]hore|[dD]oc|[rR]efactor)(\([a-zA-Z\-\s,]+\))?\s*:\s*.*$'
      ]),
     ('Fix', [
-        r'^(PullRequest: ){1}([0-9])+( ){1}([fF]ix)(\([a-zA-Z\-\s,]+\))?\s*:\s*.*$'
+        r'^([fF]ix)(\([a-zA-Z\-\s,]+\))?\s*:\s*.*$'
      ]),
     ('Security', [
-        r'^(PullRequest: ){1}([0-9])+( ){1}([sS]ecurity|[sS]ecure)(\([a-zA-Z\-\s,]+\))?\s*:\s*.*$'
+        r'^([sS]ecurity|[sS]ecure)(\([a-zA-Z\-\s,]+\))?\s*:\s*.*$'
      ]),
     # Not generate other changes
     # ('Other', None ## Match all lines
@@ -75,16 +75,14 @@ body_process = ReSub(r'.*', r'') | strip
 ## be used in the changelog.
 ##
 ## Available constructs are those listed in ``body_process`` doc.
-## remove LinkE 'PullRequest: no.:' prefix
 subject_process = (strip |
-    ReSub(r'^(PullRequest: ){1}([0-9])+', r'') |
     ReSub(r'\r', r'') |
     SetIfEmpty("No commit message.") | ucfirst | final_dot)
 
 ## ``tag_filter_regexp`` is a regexp
 ## Tags that will be used for the changelog must match this regexp.
 # Match ODC release tag style
-tag_filter_regexp = r'^(release(_|-))?([0-9]+\.[0-9]+\.[0-9]+)((_|-)release)?(_|-)[0-9]+$'
+tag_filter_regexp = r'^v([0-9]+\.[0-9]+\.[0-9]+)$'
 
 ## ``revs`` is a list of callable or a list of string
 ##
@@ -98,7 +96,7 @@ tag_filter_regexp = r'^(release(_|-))?([0-9]+\.[0-9]+\.[0-9]+)((_|-)release)?(_|
 ##
 ## Using callables is especially useful, for instance, if you
 ## are using gitchangelog to generate incrementally your changelog.
-# ODC v2.0.0 start from tag_release_20191101
-revs = ["tag_release_20191101..HEAD"]
+# ODC v2.0.0 start from v4.2.0
+revs = ["v4.2.0..HEAD"]
 
 unreleased_version_label = "(unreleased)"

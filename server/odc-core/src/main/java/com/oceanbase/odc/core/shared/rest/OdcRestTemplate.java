@@ -85,18 +85,18 @@ public final class OdcRestTemplate extends RestTemplate {
             T res = super.doExecute(url, method, requestCallback, responseExtractor);
             ODCRestContext context = API_CALL_LOG_PREFIX.get();
             if (context.getLogResponseEnabled()) {
-                log.info("success call rest {}, url={}, response={}, cost={}ms", context.getApiName(),
+                log.debug("success call rest {}, url={}, response={}, cost={}ms", context.getApiName(),
                         context.getRealUrl(), res,
                         context.getExecTime());
             } else {
-                log.info("success call rest {}, url={},  cost={}ms", context.getApiName(),
+                log.debug("success call rest {}, url={},  cost={}ms", context.getApiName(),
                         context.getRealUrl(),
                         context.getExecTime());
             }
             return res;
         } catch (Exception e) {
             ODCRestContext context = API_CALL_LOG_PREFIX.get();
-            log.error("failed call rest {}, URL:{}, cost={} ms ", context.getApiName(), context.getRealUrl(),
+            log.debug("failed call rest {}, URL:{}, cost={} ms ", context.getApiName(), context.getRealUrl(),
                     context.getExecTime(), e);
             throw new UnexpectedException("Internal service call failed, please contact support team");
         } finally {

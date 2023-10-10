@@ -157,7 +157,7 @@ templates:
         unique_keys: ["action", "organization_id", "resource_identifier", "type"]
     specs:
         - column_name: id
-          default_value: 39
+          default_value: 54
           data_type: java.lang.Long
         - column_name: action
           value: "read"
@@ -182,7 +182,7 @@ templates:
         unique_keys: ["action", "organization_id", "resource_identifier", "type"]
     specs:
         - column_name: id
-          default_value: 40
+          default_value: 55
           data_type: java.lang.Long
         - column_name: action
           value: "create"
@@ -207,7 +207,7 @@ templates:
         unique_keys: ["action", "organization_id", "resource_identifier", "type"]
     specs:
         - column_name: id
-          default_value: 41
+          default_value: 56
           data_type: java.lang.Long
         - column_name: action
           value: "update"
@@ -232,7 +232,7 @@ templates:
         unique_keys: ["action", "organization_id", "resource_identifier", "type"]
     specs:
         - column_name: id
-          default_value: 42
+          default_value: 57
           data_type: java.lang.Long
         - column_name: action
           value: "delete"
@@ -257,7 +257,7 @@ templates:
         unique_keys: ["action", "organization_id", "resource_identifier", "type"]
     specs:
         - column_name: id
-          default_value: 39
+          default_value: 58
           data_type: java.lang.Long
         - column_name: action
           value: "read"
@@ -282,7 +282,7 @@ templates:
         unique_keys: ["action", "organization_id", "resource_identifier", "type"]
     specs:
         - column_name: id
-          default_value: 40
+          default_value: 59
           data_type: java.lang.Long
         - column_name: action
           value: "create"
@@ -307,7 +307,7 @@ templates:
         unique_keys: ["action", "organization_id", "resource_identifier", "type"]
     specs:
         - column_name: id
-          default_value: 41
+          default_value: 60
           data_type: java.lang.Long
         - column_name: action
           value: "update"
@@ -332,7 +332,7 @@ templates:
         unique_keys: ["action", "organization_id", "resource_identifier", "type"]
     specs:
         - column_name: id
-          default_value: 42
+          default_value: 61
           data_type: java.lang.Long
         - column_name: action
           value: "delete"
@@ -357,7 +357,7 @@ templates:
         unique_keys: ["action", "organization_id", "resource_identifier", "type"]
     specs:
         - column_name: id
-          default_value: 39
+          default_value: 62
           data_type: java.lang.Long
         - column_name: action
           value: "read"
@@ -382,7 +382,7 @@ templates:
         unique_keys: ["action", "organization_id", "resource_identifier", "type"]
     specs:
         - column_name: id
-          default_value: 40
+          default_value: 63
           data_type: java.lang.Long
         - column_name: action
           value: "create"
@@ -407,7 +407,7 @@ templates:
         unique_keys: ["action", "organization_id", "resource_identifier", "type"]
     specs:
         - column_name: id
-          default_value: 41
+          default_value: 64
           data_type: java.lang.Long
         - column_name: action
           value: "update"
@@ -432,7 +432,7 @@ templates:
         unique_keys: ["action", "organization_id", "resource_identifier", "type"]
     specs:
         - column_name: id
-          default_value: 42
+          default_value: 65
           data_type: java.lang.Long
         - column_name: action
           value: "delete"
@@ -457,7 +457,7 @@ templates:
         unique_keys: ["action", "organization_id", "resource_identifier", "type"]
     specs:
         - column_name: id
-          default_value: 43
+          default_value: 66
           data_type: java.lang.Long
         - column_name: action
           value: "read"
@@ -482,7 +482,7 @@ templates:
         unique_keys: ["action", "organization_id", "resource_identifier", "type"]
     specs:
         - column_name: id
-          default_value: 44
+          default_value: 67
           data_type: java.lang.Long
         - column_name: action
           value: "create"
@@ -507,7 +507,7 @@ templates:
         unique_keys: ["action", "organization_id", "resource_identifier", "type"]
     specs:
         - column_name: id
-          default_value: 45
+          default_value: 68
           data_type: java.lang.Long
         - column_name: action
           value: "update"
@@ -532,7 +532,7 @@ templates:
         unique_keys: ["action", "organization_id", "resource_identifier", "type"]
     specs:
         - column_name: id
-          default_value: 46
+          default_value: 69
           data_type: java.lang.Long
         - column_name: action
           value: "delete"

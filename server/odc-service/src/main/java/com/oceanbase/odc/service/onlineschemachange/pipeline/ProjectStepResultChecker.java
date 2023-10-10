@@ -251,8 +251,10 @@ public class ProjectStepResultChecker {
         if (enableFullVerify) {
             // Set full verifier process percentage
             ProjectStepVO fullVerifyStep = currentProjectStepMap.get(OmsStepName.FULL_VERIFIER);
-            checkerResult.setFullVerificationProgressPercentage(
-                    BigDecimal.valueOf(fullVerifyStep.getProgress()).doubleValue());
+            if (fullVerifyStep != null && fullVerifyStep.getProgress() != null) {
+                checkerResult.setFullVerificationProgressPercentage(
+                        BigDecimal.valueOf(fullVerifyStep.getProgress()).doubleValue());
+            }
         }
 
     }

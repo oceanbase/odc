@@ -16,8 +16,11 @@
 package com.oceanbase.odc.core.migrate.resource.repository;
 
 import java.sql.PreparedStatement;
+import java.sql.Statement;
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -27,6 +30,7 @@ import javax.sql.DataSource;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
 
 import com.oceanbase.odc.core.migrate.resource.model.DataRecord;
 import com.oceanbase.odc.core.migrate.resource.model.DataSpec;
@@ -55,21 +59,16 @@ public class DataRecordRepository {
         List<DataSpec> savedSpecs = record.getData().stream().filter(dataSpec -> !dataSpec.isIgnore())
                 .collect(Collectors.toList());
         String insertSql = generateInsertSql(record.getTableName(), savedSpecs);
-        int affectRows = update(insertSql, savedSpecs);
-        if (log.isDebugEnabled()) {
-            log.debug("Record has been saved, affectRows={}", affectRows);
-        }
-        List<DataRecord> savedOne = find(record);
-        if (savedOne.isEmpty()) {
-            throw new IllegalStateException("Saved nothing, record " + record);
-        }
-        if (savedOne.size() == 1) {
-            return savedOne.get(0);
-        }
-        if (!record.isAllowDuplicated()) {
-            throw new IllegalStateException("Duplicated records are found, record " + record);
-        }
-        return savedOne.get(savedOne.size() - 1);
+        final Long id = insert(insertSql, savedSpecs);
+        List<DataSpec> specs = new LinkedList<>();
+        record.getData().forEach(src -> {
+            Object value = src.getValue();
+            if ("id".equals(src.getName())) {
+                value = id;
+            }
+            specs.add(DataSpec.copyFrom(src, value));
+        });
+        return DataRecord.copyFrom(record, specs);
     }
 
     public List<DataRecord> find(@NonNull DataRecord record) {
@@ -85,14 +84,15 @@ public class DataRecordRepository {
         return result.get(0) >= 1;
     }
 
-    private int update(@NonNull String sql, List<DataSpec> dataSpecs) {
+    private Long insert(@NonNull String sql, List<DataSpec> dataSpecs) {
         if (log.isDebugEnabled()) {
             log.debug("Sql update, sql={}, params={}", sql,
                     dataSpecs == null ? null : dataSpecs.stream().map(DataSpec::getValue).collect(Collectors.toList()));
         }
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
-        return jdbcTemplate.update(connection -> {
-            PreparedStatement statement = connection.prepareStatement(sql);
+        GeneratedKeyHolder keyHolder = new GeneratedKeyHolder();
+        int affectRows = jdbcTemplate.update(connection -> {
+            PreparedStatement statement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             if (dataSpecs == null) {
                 return statement;
             }
@@ -100,7 +100,28 @@ public class DataRecordRepository {
                 statement.setObject(i + 1, dataSpecs.get(i).getValue());
             }
             return statement;
-        });
+        }, keyHolder);
+        if (log.isDebugEnabled()) {
+            log.debug("Record has been saved, affectRows={}", affectRows);
+        }
+        if (affectRows != 1) {
+            throw new IllegalStateException("Saved nothing, record " + affectRows);
+        }
+        Map<String, Object> keyMap = keyHolder.getKeys();
+        if (keyMap == null) {
+            return null;
+        }
+        if (keyMap.size() == 1) {
+            return keyHolder.getKeyAs(Long.class);
+        }
+        if (keyMap.get("id") != null) {
+            return Long.valueOf(keyMap.get("id").toString());
+        } else if (keyMap.get("ID") != null) {
+            return Long.valueOf(keyMap.get("ID").toString());
+        } else if (keyMap.get("GENERATED_KEY") != null) {
+            return Long.valueOf(keyMap.get("GENERATED_KEY").toString());
+        }
+        return null;
     }
 
     private <T> List<T> query(@NonNull String sql, List<DataSpec> params, @NonNull RowMapper<T> mapper) {
