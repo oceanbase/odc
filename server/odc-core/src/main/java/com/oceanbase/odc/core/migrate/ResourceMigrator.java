@@ -119,6 +119,9 @@ public class ResourceMigrator implements Migrator {
 
     @Override
     public boolean doMigrate() {
+        log.info("mark!!!!!!!!!!!");
+        log.info(System.getProperty("ODC_UT_SECRET", "not found"));
+        log.info(System.getProperty("ODC_CONFIG_SECRET", "not found"));
         for (ResourceMigrateMetaInfo migrateMeta : migrateMetas) {
             ResourceManager manager = migrateMeta.getManager();
             ResourceConfig config = migrateMeta.getConfig();
