@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.schedule;
 import java.io.File;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -25,6 +26,7 @@ import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 
 import org.apache.commons.compress.utils.Lists;
+import org.quartz.JobDataMap;
 import org.quartz.JobKey;
 import org.quartz.SchedulerException;
 import org.quartz.Trigger;
@@ -39,6 +41,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
+import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
@@ -146,7 +149,7 @@ public class ScheduleService {
     // this function will be deleted because update is a high-risk operation,
     @Deprecated
     @Transactional(rollbackFor = Exception.class)
-    public void update(ScheduleEntity scheduleConfig) throws SchedulerException, ClassNotFoundException {
+    public void updateJobData(ScheduleEntity scheduleConfig) throws SchedulerException, ClassNotFoundException {
         Trigger scheduleTrigger = getScheduleTrigger(scheduleConfig);
 
         if (scheduleTrigger != null) {
@@ -157,9 +160,25 @@ public class ScheduleService {
         scheduleRepository.save(scheduleConfig);
     }
 
+    public void innerUpdateTriggerData(Long scheduleId, Map<String, Object> triggerDataMap)
+            throws SchedulerException {
+        ScheduleEntity scheduleConfig = nullSafeGetById(scheduleId);
+        Trigger scheduleTrigger = nullSafeGetScheduleTrigger(scheduleConfig);
+        scheduleTrigger.getJobDataMap().putAll(triggerDataMap);
+        quartzJobService.rescheduleJob(scheduleTrigger.getKey(), scheduleTrigger);
+    }
+
     @Transactional(rollbackFor = Exception.class)
     public void enable(ScheduleEntity scheduleConfig) throws SchedulerException, ClassNotFoundException {
         quartzJobService.createJob(buildCreateJobReq(scheduleConfig));
+        scheduleRepository.updateStatusById(scheduleConfig.getId(), ScheduleStatus.ENABLED);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void innerEnable(Long scheduleId, Map<String, Object> triggerDataMap)
+            throws SchedulerException {
+        ScheduleEntity scheduleConfig = nullSafeGetById(scheduleId);
+        quartzJobService.createJob(buildCreateJobReq(scheduleConfig), new JobDataMap(triggerDataMap));
         scheduleRepository.updateStatusById(scheduleConfig.getId(), ScheduleStatus.ENABLED);
     }
 
@@ -365,14 +384,15 @@ public class ScheduleService {
             params.setCreatorIds(userService.getUsersByFuzzyNameWithoutPermissionCheck(
                     params.getCreator()).stream().map(User::getId).collect(Collectors.toSet()));
         }
-        Set<Long> projectIds = projectService.getMemberProjectIds(authenticationFacade.currentUserId());
-        if (params.getProjectId() != null) {
-            projectIds.retainAll(Collections.singleton(params.getProjectId()));
+        if (authenticationFacade.currentOrganization().getType() == OrganizationType.TEAM) {
+            Set<Long> projectIds = params.getProjectId() == null
+                    ? projectService.getMemberProjectIds(authenticationFacade.currentUserId())
+                    : Collections.singleton(params.getProjectId());
+            if (projectIds.isEmpty()) {
+                return Page.empty();
+            }
+            params.setProjectIds(projectIds);
         }
-        if (projectIds.isEmpty()) {
-            return Page.empty();
-        }
-        params.setProjectIds(projectIds);
         params.setOrganizationId(authenticationFacade.currentOrganizationId());
         Page<ScheduleEntity> returnValue = scheduleRepository.find(pageable, params);
         return returnValue.isEmpty() ? Page.empty()
@@ -451,7 +471,11 @@ public class ScheduleService {
         createQuartzJobReq.setScheduleId(schedule.getId());
         createQuartzJobReq.setType(schedule.getJobType());
         createQuartzJobReq.setTriggerConfig(JsonUtils.fromJson(schedule.getTriggerConfigJson(), TriggerConfig.class));
-        createQuartzJobReq.getJobDataMap().putAll(BeanMap.create(schedule));
+        if (schedule.getJobType() == JobType.ONLINE_SCHEMA_CHANGE_COMPLETE) {
+            createQuartzJobReq.getJobDataMap().putAll(JsonUtils.fromJson(schedule.getJobParametersJson(), Map.class));
+        } else {
+            createQuartzJobReq.getJobDataMap().putAll(BeanMap.create(schedule));
+        }
         if (schedule.getAllowConcurrent() != null) {
             createQuartzJobReq.setAllowConcurrent(schedule.getAllowConcurrent());
         }

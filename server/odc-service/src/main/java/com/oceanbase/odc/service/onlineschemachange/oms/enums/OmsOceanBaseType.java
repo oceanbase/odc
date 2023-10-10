@@ -28,6 +28,11 @@ public enum OmsOceanBaseType {
      */
     OB_MYSQL,
     /**
+     * OB CE
+     */
+    OB_MYSQL_CE,
+
+    /**
      * 专有云 ,公有云集群实例
      */
     OB_ORACLE,

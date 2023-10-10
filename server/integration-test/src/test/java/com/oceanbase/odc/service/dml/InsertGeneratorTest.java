@@ -110,7 +110,7 @@ public class InsertGeneratorTest {
         String schema = ConnectionSessionUtil.getCurrentSchema(connectionSession);
         list.forEach(u -> u.setSchemaName(schema));
 
-        MySQLDMLBuilder builder = new MySQLDMLBuilder(list, Collections.emptyList(), connectionSession);
+        MySQLDMLBuilder builder = new MySQLDMLBuilder(list, Collections.emptyList(), connectionSession, null);
         InsertGenerator generator = new InsertGenerator(builder);
         String expect = "insert into `" + schema + "`.`t_test_insert_data_sql`(`c1`,`c2`,`c3`) values(1,'abc',load_file"
                 + "('object@tmp_test.jpg'));";
@@ -146,7 +146,7 @@ public class InsertGeneratorTest {
         String schema = ConnectionSessionUtil.getCurrentSchema(connectionSession);
         list.forEach(u -> u.setSchemaName(schema));
 
-        MySQLDMLBuilder builder = new MySQLDMLBuilder(list, Collections.emptyList(), connectionSession);
+        MySQLDMLBuilder builder = new MySQLDMLBuilder(list, Collections.emptyList(), connectionSession, null);
         InsertGenerator generator = new InsertGenerator(builder);
         String expect = "insert into `" + schema + "`.`t_test_insert_data_sql`(`c1`,`c2`,`c3`) values(1,NULL,'');";
         Assert.assertEquals(expect, generator.generate());
@@ -194,7 +194,7 @@ public class InsertGeneratorTest {
         String schema = ConnectionSessionUtil.getCurrentSchema(connectionSession);
         list.forEach(u -> u.setSchemaName(schema));
 
-        OracleDMLBuilder builder = new OracleDMLBuilder(list, Collections.emptyList(), connectionSession);
+        OracleDMLBuilder builder = new OracleDMLBuilder(list, Collections.emptyList(), connectionSession, null);
         InsertGenerator generator = new InsertGenerator(builder);
         String expect = "insert into \"" + schema
                 + "\".\"t_test_insert_data_sql\"(\"c1\",\"c2\",\"c3\",\"c4\",\"c5\") values"
@@ -231,7 +231,7 @@ public class InsertGeneratorTest {
         String schema = ConnectionSessionUtil.getCurrentSchema(connectionSession);
         list.forEach(u -> u.setSchemaName(schema));
 
-        OracleDMLBuilder builder = new OracleDMLBuilder(list, Collections.emptyList(), connectionSession);
+        OracleDMLBuilder builder = new OracleDMLBuilder(list, Collections.emptyList(), connectionSession, null);
         InsertGenerator generator = new InsertGenerator(builder);
         String expect = "insert into \"" + schema + "\".\"t_test_insert_data_sql\"(\"c1\",\"c2\",\"c3\") values"
                 + "(to_timestamp_tz('2023-07-11 20:04:31.008891234 +08:00', 'YYYY-MM-DD HH24:MI:SS.FF TZH:TZM'),"

@@ -32,7 +32,7 @@ public class CommonTransferConfig {
      *
      * WITHOUT_UNIQUE_ROW_ID 没有唯一行标识的表。WITH_UNIQUE_ROW_ID 的反集。;
      */
-    private String tableCategory = "WITH_UNIQUE_ROW_ID";
+    private String tableCategory = "ALL";
     /**
      * 是否双活场景
      */

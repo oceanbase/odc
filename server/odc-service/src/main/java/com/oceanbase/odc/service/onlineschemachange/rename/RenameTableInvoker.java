@@ -15,7 +15,8 @@
  */
 package com.oceanbase.odc.service.onlineschemachange.rename;
 
-import java.util.function.Supplier;
+import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
+import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeScheduleTaskParameters;
 
 /**
  * @author yaobin
@@ -24,5 +25,5 @@ import java.util.function.Supplier;
  */
 public interface RenameTableInvoker {
 
-    void invoke(Supplier<Void> renameTableSupplier, RenameTableParameters parameters);
+    void invoke(OnlineSchemaChangeScheduleTaskParameters taskParameters, OnlineSchemaChangeParameters parameters);
 }

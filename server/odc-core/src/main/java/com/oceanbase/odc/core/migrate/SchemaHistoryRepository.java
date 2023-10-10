@@ -13,135 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.oceanbase.odc.core.migrate;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Collections;
 import java.util.List;
 
-import javax.sql.DataSource;
-
-import org.apache.commons.io.Charsets;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.Validate;
-import org.springframework.core.io.ByteArrayResource;
-import org.springframework.jdbc.core.BeanPropertyRowMapper;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.namedparam.BeanPropertySqlParameterSource;
-import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
-import org.springframework.jdbc.core.namedparam.SqlParameterSource;
-import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
-import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
-import org.springframework.util.CollectionUtils;
-
-import com.oceanbase.odc.common.util.ResourceUtils;
-
-import lombok.extern.slf4j.Slf4j;
-
 /**
- * schema history persistent, the table schema define in migrate_schema_history_table_template.sql
- * 
- * @author yizhou.xw
- * @version : SchemaHistoryRepository.java, v 0.1 2021-03-26 14:26
+ * {@link SchemaHistoryRepository}
+ *
+ * @author yh263208
+ * @date 2023-09-08 12:20
+ * @since ODC-release_4.2.1
  */
-@Slf4j
-class SchemaHistoryRepository {
-    private final String TABLE_TEMPLATE_FILE_NAME = "migrate_schema_history_table_template.sql";
-    private final String ALL_COLUMNS = "install_rank, version, description, type, script, checksum,"
-            + " installed_by, installed_on, execution_millis, success";
+public interface SchemaHistoryRepository {
 
-    private final DataSource dataSource;
-    private final JdbcTemplate jdbcTemplate;
-    private final NamedParameterJdbcTemplate namedJdbcTemplate;
+    List<SchemaHistory> listAll();
 
-    private final SimpleJdbcInsert simpleJdbcInsert;
-    private final String table;
+    List<SchemaHistory> listSuccess();
 
-    public SchemaHistoryRepository(String table, DataSource dataSource) {
-        Validate.notBlank(table, "parameter table may not be blank");
-        Validate.notNull(dataSource, "parameter dataSource may not be null");
-
-        this.dataSource = dataSource;
-        this.table = table;
-        this.jdbcTemplate = new JdbcTemplate(dataSource);
-        this.namedJdbcTemplate = new NamedParameterJdbcTemplate(dataSource);
-        this.simpleJdbcInsert = new SimpleJdbcInsert(jdbcTemplate).withTableName(table)
-                .usingGeneratedKeyColumns("install_rank");
-
-        try {
-            initialize();
-        } catch (IOException | ClassNotFoundException e) {
-            throw new RuntimeException("Initialize schema history repository failed", e);
-        }
-    }
-
-    public List<SchemaHistory> listAll() {
-        String sql = new StringBuilder()
-                .append("select ")
-                .append(ALL_COLUMNS)
-                .append(" from ")
-                .append("`").append(table).append("`")
-                .toString();
-        return jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(SchemaHistory.class));
-    }
-
-    public List<SchemaHistory> listSuccess() {
-        String selectLatestInstallRank = new StringBuilder()
-                .append("select ")
-                .append(" max(install_rank) as install_rank")
-                .append(" from ")
-                .append("`").append(table).append("`")
-                .append(" where `success`=1")
-                .append(" group by version, script")
-                .toString();
-        String selectInstallRankIn = new StringBuilder()
-                .append("select ")
-                .append(ALL_COLUMNS)
-                .append(" from ")
-                .append("`").append(table).append("`")
-                .append(" where install_rank in (:installRanks)")
-                .toString();
-        List<Long> installRanks = jdbcTemplate.queryForList(selectLatestInstallRank, Long.class);
-        if (CollectionUtils.isEmpty(installRanks)) {
-            return Collections.emptyList();
-        }
-        MapSqlParameterSource parameterSource = new MapSqlParameterSource();
-        parameterSource.addValue("installRanks", installRanks);
-        return namedJdbcTemplate.query(selectInstallRankIn, parameterSource,
-                new BeanPropertyRowMapper<>(SchemaHistory.class));
-    }
-
-    public SchemaHistory create(SchemaHistory schemaHistory) {
-        if (StringUtils.isEmpty(schemaHistory.getInstalledBy())) {
-            schemaHistory.setInstalledBy(currentUser());
-        }
-        SqlParameterSource beanPropertySqlParameterSource = new BeanPropertySqlParameterSource(schemaHistory);
-        Number installRank = simpleJdbcInsert.executeAndReturnKey(beanPropertySqlParameterSource);
-        schemaHistory.setInstallRank(installRank.longValue());
-        log.info("schema history created, history={}", schemaHistory);
-        return schemaHistory;
-    }
-
-    private void initialize() throws IOException, ClassNotFoundException {
-        String content;
-        try (InputStream inputStream = ResourceUtils.getFileAsStream(TABLE_TEMPLATE_FILE_NAME)) {
-            content = IOUtils.toString(inputStream, Charsets.UTF_8);
-        }
-        String replaced = StringUtils.replace(content, "${schema_history}", table);
-        ByteArrayResource resource = new ByteArrayResource(replaced.getBytes(Charsets.UTF_8));
-
-        ResourceDatabasePopulator databasePopulator = new ResourceDatabasePopulator(resource);
-        databasePopulator.setSqlScriptEncoding("UTF-8");
-        databasePopulator.execute(dataSource);
-        log.info("Schema history repository initialized.");
-    }
-
-    String currentUser() {
-        String sql = "select CURRENT_USER() as user_name FROM DUAL";
-        return jdbcTemplate.queryForObject(sql, String.class);
-    }
+    SchemaHistory create(SchemaHistory schemaHistory);
 
 }

@@ -57,6 +57,7 @@ import com.oceanbase.odc.metadb.iam.UserRoleEntity;
 import com.oceanbase.odc.metadb.iam.UserRoleRepository;
 import com.oceanbase.odc.metadb.iam.resourcerole.UserResourceRoleEntity;
 import com.oceanbase.odc.metadb.iam.resourcerole.UserResourceRoleRepository;
+import com.oceanbase.odc.metadb.integration.IntegrationEntity;
 import com.oceanbase.odc.metadb.regulation.risklevel.RiskLevelRepository;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.metadb.task.TaskRepository;
@@ -235,6 +236,10 @@ public class FlowResponseMapperFactory {
                 .withGetTaskById(taskId2TaskEntity::get)
                 .withGetUserById(userId2User::get)
                 .withGetRolesByUserId(userId2Roles::get)
+                .withGetExternalApprovalNameById(externalApprovalId -> {
+                    IntegrationEntity config = integrationService.nullSafeGet(externalApprovalId);
+                    return config.getName();
+                })
                 .withGetExternalUrlByExternalId(externalApproval -> {
                     IntegrationConfig config =
                             integrationService.detailWithoutPermissionCheck(externalApproval.getApprovalId());

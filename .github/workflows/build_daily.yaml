@@ -64,6 +64,22 @@ jobs:
           java-version: "8"
           distribution: "temurin"
           cache: maven
+      - name: Install db-browser
+        run: |
+          echo "Start install db-browser"
+          pushd libs/db-browser
+          echo "Current dir is "`pwd`
+          mvn clean install -Dmaven.test.skip=true
+          echo "Install db-browser success"
+          popd
+      - name: Install ob-sql-parser
+        run: |
+          echo "Start install ob-sql-parser"
+          pushd libs/ob-sql-parser
+          echo "Current dir is "`pwd`
+          mvn clean install -Dmaven.test.skip=true
+          echo "Install ob-sql-parser success"
+          popd
       - name: Build project
         run: mvn clean install -Dmaven.test.skip=true
       - name: Run PMD scan
@@ -82,6 +98,22 @@ jobs:
           java-version: "8"
           distribution: "temurin"
           cache: maven
+      - name: Install db-browser
+        run: |
+          echo "Start install db-browser"
+          pushd libs/db-browser
+          echo "Current dir is "`pwd`
+          mvn clean install -Dmaven.test.skip=true
+          echo "Install db-browser success"
+          popd
+      - name: Install ob-sql-parser
+        run: |
+          echo "Start install ob-sql-parser"
+          pushd libs/ob-sql-parser
+          echo "Current dir is "`pwd`
+          mvn clean install -Dmaven.test.skip=true
+          echo "Install ob-sql-parser success"
+          popd
       - name: Run unit test
         run: echo "Skip for now 🤪"
 
@@ -162,6 +194,22 @@ jobs:
           echo "RPM's version is "${new_version}
           mvn versions:set -DnewVersion="${new_version}"
           mvn versions:commit
+      - name: Install db-browser
+        run: |
+          echo "Start install db-browser"
+          pushd libs/db-browser
+          echo "Current dir is "`pwd`
+          mvn clean install -Dmaven.test.skip=true
+          echo "Install db-browser success"
+          popd
+      - name: Install ob-sql-parser
+        run: |
+          echo "Start install ob-sql-parser"
+          pushd libs/ob-sql-parser
+          echo "Current dir is "`pwd`
+          mvn clean install -Dmaven.test.skip=true
+          echo "Install ob-sql-parser success"
+          popd
       - name: Build jar & rpm (x86_64)
         run: |
           echo "Start prepare oceanbase-client"
@@ -281,6 +329,7 @@ jobs:
           # security import certificate.p12 -k build.keychain -P "$MACOS_CERTIFICATE_PWD" -T /usr/bin/codesign
           # security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$MACOS_CI_KEYCHAIN_PWD" build.keychain
           # echo "Cert Imported"
+          echo "node-linker=hoisted" >> .npmrc
           pnpm install
           # We need to create a new keychain, otherwise using the certificate will prompt
           # with a UI dialog asking for the certificate password, which we can't

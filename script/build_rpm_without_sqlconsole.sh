@@ -4,7 +4,6 @@
 
 # read parameters
 rpm_release=${1:-"1"}
-rpm_arch=${2:-"x86"}
 
 # read environment variables
 fetch_from_oss_flag=${FETCH_FROM_OSS:-"0"}
@@ -24,13 +23,13 @@ function build_rpm_without_sqlconsole() {
 
     if [ "${fetch_from_oss_flag}" == "1" ]; then
         log_info "oss fetch obclient start"
-        if ! oss_fetch_obclient "${rpm_arch}"; then
+        if ! oss_fetch_obclient; then
             log_error "oss fetch obclient failed"
             return 5
         fi
         log_info "oss fetch obclient done"
     else
-        if ! copy_obclient "${rpm_arch}"; then
+        if ! copy_obclient; then
             log_error "copy obclient.tar.gz to import folder failed"
             return 5
         fi

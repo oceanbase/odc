@@ -79,6 +79,7 @@ import com.oceanbase.odc.service.datasecurity.accessor.DatasourceColumnAccessor;
 import com.oceanbase.odc.service.db.DBCharsetService;
 import com.oceanbase.odc.service.db.session.DBSessionService;
 import com.oceanbase.odc.service.feature.VersionDiffConfigService;
+import com.oceanbase.odc.service.iam.HorizontalDataPermissionValidator;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.auth.AuthorizationFacade;
 import com.oceanbase.odc.service.lab.model.LabProperties;
@@ -131,6 +132,8 @@ public class ConnectSessionService {
     private DBSessionService dbSessionService;
     @Autowired
     private EnvironmentRepository environmentRepository;
+    @Autowired
+    private HorizontalDataPermissionValidator horizontalDataPermissionValidator;
 
     @PostConstruct
     public void init() {
@@ -212,6 +215,7 @@ public class ConnectSessionService {
         preCheckSessionLimit();
 
         ConnectionConfig connection = connectionService.getForConnectionSkipPermissionCheck(dataSourceId);
+        horizontalDataPermissionValidator.checkCurrentOrganization(connection);
         log.info("Begin to create session, connection id={}, name={}", connection.id(), connection.getName());
         Set<String> actions = authorizationFacade.getAllPermittedActions(authenticationFacade.currentUser(),
                 ResourceType.ODC_CONNECTION, "" + dataSourceId);

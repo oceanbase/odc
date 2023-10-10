@@ -38,9 +38,7 @@ import com.oceanbase.odc.service.flow.task.BaseODCFlowTaskDelegate;
 import com.oceanbase.odc.service.flow.task.model.OnlineSchemaChangeTaskResult;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
 import com.oceanbase.odc.service.iam.OrganizationService;
-import com.oceanbase.odc.service.iam.model.Organization;
 import com.oceanbase.odc.service.iam.model.User;
-import com.oceanbase.odc.service.objectstorage.cloud.model.CloudEnvConfigurations;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeScheduleTaskParameters;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeScheduleTaskResult;
@@ -80,8 +78,8 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
     private OscTaskCompleteHandler completeHandler;
     @Autowired
     private OrganizationService organizationService;
-    @Autowired
-    private CloudEnvConfigurations cloudEnvConfigurations;
+
+    private final static String checkTaskCronExpression = "0/10 * * * * ?";
 
     private volatile TaskStatus status;
     private long scheduleId;
@@ -99,16 +97,15 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
         this.status = TaskStatus.RUNNING;
         this.flowTaskId = taskId;
         // for public cloud
-        Optional<Organization> organization = organizationService.get(organizationId);
-        String uid = organization.get().getName();
-
+        String uid = FlowTaskUtil.getCloudMainAccountId(execution);
         OnlineSchemaChangeParameters parameter = FlowTaskUtil.getOnlineSchemaChangeParameter(execution);
         ConnectionConfig connectionConfig = FlowTaskUtil.getConnectionConfig(execution);
         String schema = FlowTaskUtil.getSchemaName(execution);
         continueOnError = parameter.isContinueOnError();
+        OnlineSchemaChangeContextHolder.trace(this.creatorId, this.flowTaskId, this.organizationId);
+        parameter.buildParameterDataMap();
         ScheduleEntity schedule = createScheduleEntity(connectionConfig, parameter, schema);
         scheduleId = schedule.getId();
-        OnlineSchemaChangeContextHolder.trace(this.creatorId, this.flowTaskId, this.organizationId);
         try {
             List<ScheduleTaskEntity> tasks = parameter.generateSubTaskParameters(connectionConfig, schema).stream()
                     .map(param -> {
@@ -215,7 +212,7 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
         Optional<ScheduleTaskEntity> runningEntity = scheduleTaskService.listTask(Pageable.unpaged(), scheduleId)
                 .stream().filter(task -> task.getStatus() == TaskStatus.RUNNING)
                 .findFirst();
-        runningEntity.ifPresent(scheduleTask -> taskHandler.terminate(scheduleTask.getId()));
+        runningEntity.ifPresent(scheduleTask -> taskHandler.terminate(scheduleId, scheduleTask.getId()));
         this.status = TaskStatus.CANCELED;
         taskService.cancel(taskId);
         return true;
@@ -234,7 +231,6 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
         scheduleEntity.setJobType(JobType.ONLINE_SCHEMA_CHANGE_COMPLETE);
         scheduleEntity.setStatus(ScheduleStatus.ENABLED);
         scheduleEntity.setAllowConcurrent(false);
-        scheduleEntity.setJobParametersJson(JsonUtils.toJson(parameter));
         scheduleEntity.setCreatorId(creatorId);
         scheduleEntity.setOrganizationId(organizationId);
         // todo project id database id
@@ -242,10 +238,11 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
         scheduleEntity.setDatabaseId(1L);
         scheduleEntity.setModifierId(scheduleEntity.getCreatorId());
         TriggerConfig triggerConfig = new TriggerConfig();
-        triggerConfig.setTriggerStrategy(TriggerStrategy.START_NOW);
-        triggerConfig.setStartAt(new Date(System.currentTimeMillis() - 365 * 24 * 60 * 60 * 1000L));
+        triggerConfig.setTriggerStrategy(TriggerStrategy.CRON);
+        triggerConfig.setCronExpression(checkTaskCronExpression);
         scheduleEntity.setTriggerConfigJson(JsonUtils.toJson(triggerConfig));
         scheduleEntity.setMisfireStrategy(MisfireStrategy.MISFIRE_INSTRUCTION_DO_NOTHING);
+        scheduleEntity.setJobParametersJson(JsonUtils.toJson(parameter));
         return scheduleService.create(scheduleEntity);
     }
 

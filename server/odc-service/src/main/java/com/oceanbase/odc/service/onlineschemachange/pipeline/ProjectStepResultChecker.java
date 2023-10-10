@@ -52,6 +52,7 @@ public class ProjectStepResultChecker {
     private final Map<OmsStepName, ProjectStepVO> currentProjectStepMap;
     private final ProjectStepResult checkerResult;
     private Supplier<ProjectFullVerifyResultResponse> verifyResultResponseSupplier;
+    private Supplier<Void> resumeProjectSupplier;
     private final ProjectProgressResponse progressResponse;
 
     private final boolean enableFullVerify;
@@ -62,8 +63,8 @@ public class ProjectStepResultChecker {
         this.currentProjectStepMap = projectSteps.stream().collect(Collectors.toMap(ProjectStepVO::getName, a -> a));
         this.checkerResult = new ProjectStepResult();
         this.enableFullVerify = enableFullVerify;
-        this.toCheckSteps = Lists.newArrayList(OmsStepName.TRANSFER_PRECHECK,
-                OmsStepName.TRANSFER_INCR_LOG_PULL, OmsStepName.FULL_TRANSFER, OmsStepName.INCR_TRANSFER);
+        this.toCheckSteps = Lists.newArrayList(OmsStepName.TRANSFER_INCR_LOG_PULL,
+                OmsStepName.FULL_TRANSFER, OmsStepName.INCR_TRANSFER);
         if (enableFullVerify) {
             this.toCheckSteps.add(OmsStepName.FULL_VERIFIER);
         }
@@ -75,6 +76,12 @@ public class ProjectStepResultChecker {
         return this;
     }
 
+    public ProjectStepResultChecker withResumeProject(Supplier<Void> projectResumeSupplier) {
+        this.resumeProjectSupplier = projectResumeSupplier;
+        return this;
+    }
+
+
     public ProjectStepResult getCheckerResult() {
         checkerResult.setCurrentStep(progressResponse.getCurrentStep());
         setCurrentStepStatus();
@@ -82,12 +89,19 @@ public class ProjectStepResultChecker {
         if (checkerResult.getPreCheckResult() == PrecheckResult.FAILED) {
             return checkerResult;
         }
+
         // todo 用户手动暂停了项目
         if (checkProjectFinished()) {
             checkerResult.setTaskStatus(TaskStatus.DONE);
-        } else if (checkStepFailed()) {
-            checkerResult.setTaskStatus(TaskStatus.FAILED);
         } else {
+            // try to resume oms project if oms project is failed
+            if (resumeProjectSupplier != null && checkStepFailed()) {
+                try {
+                    resumeProjectSupplier.get();
+                } catch (Exception ex) {
+                    log.warn("resume project error", ex);
+                }
+            }
             checkerResult.setTaskStatus(TaskStatus.RUNNING);
         }
         fillMigrateResult();
@@ -237,8 +251,10 @@ public class ProjectStepResultChecker {
         if (enableFullVerify) {
             // Set full verifier process percentage
             ProjectStepVO fullVerifyStep = currentProjectStepMap.get(OmsStepName.FULL_VERIFIER);
-            checkerResult.setFullVerificationProgressPercentage(
-                    BigDecimal.valueOf(fullVerifyStep.getProgress()).doubleValue());
+            if (fullVerifyStep != null && fullVerifyStep.getProgress() != null) {
+                checkerResult.setFullVerificationProgressPercentage(
+                        BigDecimal.valueOf(fullVerifyStep.getProgress()).doubleValue());
+            }
         }
 
     }
@@ -290,11 +306,6 @@ public class ProjectStepResultChecker {
          * task percentage
          */
         private double taskPercentage;
-
-        public boolean isTaskCompleted() {
-            return taskStatus == TaskStatus.DONE || taskStatus == TaskStatus.FAILED
-                    || preCheckResult == PrecheckResult.FAILED;
-        }
 
     }
 }

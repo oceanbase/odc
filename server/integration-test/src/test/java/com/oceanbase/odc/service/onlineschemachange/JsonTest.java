@@ -49,6 +49,27 @@ import lombok.extern.slf4j.Slf4j;
 public class JsonTest {
 
     @Test
+    public void test_json_error_detail() {
+        String json = "{\n"
+                + "    \"success\":false,\n"
+                + "    \"errorDetail\":{\n"
+                + "        \"code\":\"GHANA-OPERAT000001\",\n"
+                + "        \"message\":\"Pay attention that the CM service may be not available.\",\n"
+                + "        \"messageMcmsContext\":{\n"
+                + "            \"service\":\"CM\"\n"
+                + "        }\n"
+                + "    },\n"
+                + "    \"code\":\"GHANA-OPERAT000001\"\n"
+                + "}";
+
+        OmsApiReturnResult<List<ProjectStepVO>> apiReturnResults = JsonUtils.fromJsonIgnoreMissingProperty(json,
+                new TypeReference<OmsApiReturnResult<List<ProjectStepVO>>>() {});
+        Assert.assertNotNull(apiReturnResults);
+        Assert.assertNotNull(apiReturnResults.getErrorDetail());
+        Assert.assertTrue(apiReturnResults.getErrorDetail().containsKey("code"));
+    }
+
+    @Test
     public void test_json_sub_type_missing_property() {
 
         String json = "{\"Code\":200,\"Cost\":56,\"Data\":[{\"name\":\"TRANSFER_INCR_LOG_PULL\",\"progress\":0,"

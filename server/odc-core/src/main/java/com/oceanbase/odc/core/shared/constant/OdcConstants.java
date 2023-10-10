@@ -86,6 +86,7 @@ public class OdcConstants {
     public static final String CREATOR_ID = "CREATOR_ID";
     public static final String FLOW_TASK_ID = "FLOW_TASK_ID";
     public static final String SCHEDULE_ID = "SCHEDULE_ID";
+    public static final String SCHEDULE_TASK_ID = "SCHEDULE_TASK_ID";
     public static final String ORGANIZATION_ID = "ORGANIZATION_ID";
 
     /**

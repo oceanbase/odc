@@ -21,9 +21,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.oceanbase.odc.service.onlineschemachange.exception.OmsException;
 import com.oceanbase.odc.service.onlineschemachange.oms.client.ClientRequestParams;
 import com.oceanbase.odc.service.onlineschemachange.oms.client.OmsClient;
-import com.oceanbase.odc.service.onlineschemachange.oms.exception.OmsException;
 import com.oceanbase.odc.service.onlineschemachange.oms.request.CreateOceanBaseDataSourceRequest;
 import com.oceanbase.odc.service.onlineschemachange.oms.request.ListDataSourceRequest;
 import com.oceanbase.odc.service.onlineschemachange.oms.request.OmsApiReturnResult;
