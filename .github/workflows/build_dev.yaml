@@ -13,7 +13,7 @@
 ###
 
 name: Build Dev
-run-name: ${{ github.event_name }} triggered by ${{ github.actor }} 🚀
+run-name: ${{ github.event_name }} triggered by ${{ github.actor }} 🚀 (For Test)
 
 on:
   push:
