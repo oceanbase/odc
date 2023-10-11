@@ -390,7 +390,14 @@ public class OBColumnExtractor implements ColumnExtractor {
             // 1. 库名、表名均为空，则列名必不为空，且不为 *。此时仅查询 fromTable 的 columnList，如果不能唯一确定列名，则报错
             for (LogicalTable fromTable : fromTables) {
                 for (LogicalColumn column : fromTable.getColumnList()) {
-                    if (StringUtils.firstNonBlank(column.getAlias(), column.getName()).equals(columnName)) {
+                    /*
+                     * The sensitive column name stored in ODC metaDB is case-insensitive when executing comparison. So
+                     * we should compare the column name ignoring case. If there are two columns with the same name but
+                     * different case, then we will recognize both of them as sensitive columns even though only one of
+                     * them is marked sensitive.
+                     * 
+                     */
+                    if (StringUtils.firstNonBlank(column.getAlias(), column.getName()).equalsIgnoreCase(columnName)) {
                         return Collections.singletonList(inheritColumn(column));
                     }
                 }
@@ -426,7 +433,7 @@ public class OBColumnExtractor implements ColumnExtractor {
                                     break;
                                 }
                                 if (StringUtils.firstNonBlank(column.getAlias(), column.getName())
-                                        .equals(columnName)) {
+                                        .equalsIgnoreCase(columnName)) {
                                     return Collections.singletonList(inheritColumn(column));
                                 }
                             }
