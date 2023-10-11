@@ -66,24 +66,6 @@ public class OnlineSchemaChangeOBMysqlSwapTableTest extends OBMySqlOscTestEnv {
     }
 
 
-    private String getOriginTableName() {
-        return "`" + StringUtils.uuidNoHyphen() + "`";
-    }
-
-    private OnlineSchemaChangeParameters getOnlineSchemaChangeParameters(String originTableName) {
-        OnlineSchemaChangeParameters changeParameters = new OnlineSchemaChangeParameters();
-        changeParameters.setSwapTableNameRetryTimes(3);
-        changeParameters.setSqlType(OnlineSchemaChangeSqlType.CREATE);
-        changeParameters.setErrorStrategy(TaskErrorStrategy.ABORT);
-        changeParameters.setOriginTableCleanStrategy(OriginTableCleanStrategy.ORIGIN_TABLE_DROP);
-        String newTableTemplate = "create table if not exists {0} (id int(20) primary key, name1 varchar(30))";
-        String newTableNameDdl = MessageFormat.format(newTableTemplate, originTableName);
-        changeParameters.setSqlContent(newTableNameDdl);
-        return changeParameters;
-    }
-
-
-
     private void executeOscSwapTable(String originTableName,
             Consumer<OnlineSchemaChangeParameters> changeParametersConsumer,
             Consumer<OnlineSchemaChangeScheduleTaskParameters> resultAssert) {
@@ -115,6 +97,22 @@ public class OnlineSchemaChangeOBMysqlSwapTableTest extends OBMySqlOscTestEnv {
         } finally {
             dropTableForTask(originTableName);
         }
+    }
+
+    private String getOriginTableName() {
+        return "`" + StringUtils.uuidNoHyphen() + "`";
+    }
+
+    private OnlineSchemaChangeParameters getOnlineSchemaChangeParameters(String originTableName) {
+        OnlineSchemaChangeParameters changeParameters = new OnlineSchemaChangeParameters();
+        changeParameters.setSwapTableNameRetryTimes(3);
+        changeParameters.setSqlType(OnlineSchemaChangeSqlType.CREATE);
+        changeParameters.setErrorStrategy(TaskErrorStrategy.ABORT);
+        changeParameters.setOriginTableCleanStrategy(OriginTableCleanStrategy.ORIGIN_TABLE_DROP);
+        String newTableTemplate = "create table if not exists {0} (id int(20) primary key, name1 varchar(30))";
+        String newTableNameDdl = MessageFormat.format(newTableTemplate, originTableName);
+        changeParameters.setSqlContent(newTableNameDdl);
+        return changeParameters;
     }
 
 }
