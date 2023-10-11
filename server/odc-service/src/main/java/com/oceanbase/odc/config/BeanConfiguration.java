@@ -37,8 +37,6 @@ import com.oceanbase.odc.common.i18n.Internationalizable;
 import com.oceanbase.odc.common.json.JacksonFactory;
 import com.oceanbase.odc.common.json.JacksonModules;
 import com.oceanbase.odc.common.json.JacksonModules.CustomOutputSerializer;
-import com.oceanbase.odc.common.json.JacksonModules.SensitiveOutputSerializer;
-import com.oceanbase.odc.common.json.SensitiveOutput;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.service.connection.CloudMetadataClient;
 import com.oceanbase.odc.service.connection.model.OBDatabaseUser;
@@ -68,7 +66,6 @@ public class BeanConfiguration {
     @Bean
     public ObjectMapper objectMapper(SensitivePropertyHandler sensitivePropertyHandler) {
         CustomOutputSerializer customOutputSerializer = new CustomOutputSerializer()
-                .addSerializer(SensitiveOutput.class, new SensitiveOutputSerializer(sensitivePropertyHandler::encrypt))
                 .addSerializer(Internationalizable.class, new I18nOutputSerializer());
         return JacksonFactory.unsafeJsonMapper()
                 .registerModule(JacksonModules.sensitiveInputHandling(sensitivePropertyHandler::decrypt))

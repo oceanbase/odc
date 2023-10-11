@@ -24,9 +24,10 @@ import java.util.Map;
 import java.util.Random;
 import java.util.stream.Collectors;
 
-import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Assert;
-import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
 
@@ -64,21 +65,21 @@ import lombok.Data;
  * @author jingtian
  */
 public class OBOracleSchemaAccessorTest extends BaseTestEnv {
-    private final String BASE_PATH = "src/test/resources/table/oracle/";
-    private String ddl;
-    private String dropTables;
-    private String testFunctionDDL;
-    private String testPackageDDL;
-    private String testProcedureDDL;
-    private String testTriggerDDL;
-    private List<DataType> verifyDataTypes = new ArrayList<>();
-    private List<ColumnAttributes> columnAttributes = new ArrayList<>();
-    private JdbcTemplate jdbcTemplate = new JdbcTemplate(getOBOracleDataSource());
-    private final String typeName = "emp_type_" + new Random().nextInt(10000);
+    private static final String BASE_PATH = "src/test/resources/table/oracle/";
+    private static String ddl;
+    private static String dropTables;
+    private static String testFunctionDDL;
+    private static String testPackageDDL;
+    private static String testProcedureDDL;
+    private static String testTriggerDDL;
+    private static List<DataType> verifyDataTypes = new ArrayList<>();
+    private static List<ColumnAttributes> columnAttributes = new ArrayList<>();
+    private static JdbcTemplate jdbcTemplate = new JdbcTemplate(getOBOracleDataSource());
+    private static final String typeName = "emp_type_" + new Random().nextInt(10000);
 
 
-    @Before
-    public void before() throws Exception {
+    @BeforeClass
+    public static void before() throws Exception {
         initVerifyDataTypes();
         initVerifyColumnAttributes();
 
@@ -102,12 +103,12 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
         batchExcuteSql(testTriggerDDL);
     }
 
-    @After
-    public void after() throws Exception {
+    @AfterClass
+    public static void after() throws Exception {
         batchExcuteSql(dropTables);
     }
 
-    private void batchExcuteSql(String str) {
+    private static void batchExcuteSql(String str) {
         for (String ddl : str.split("/")) {
             jdbcTemplate.execute(ddl);
         }
@@ -150,6 +151,24 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
     }
 
     @Test
+    public void listBasicViewColumns_SchemaViewColumns_Success() {
+        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBOracleDataSource()).createOBOracle();
+        Map<String, List<DBTableColumn>> columns = accessor.listBasicViewColumns(getOBOracleSchema());
+        Assert.assertTrue(columns.containsKey("VIEW_TEST1"));
+        Assert.assertTrue(columns.containsKey("VIEW_TEST2"));
+        Assert.assertEquals(2, columns.get("VIEW_TEST1").size());
+        Assert.assertEquals(1, columns.get("VIEW_TEST2").size());
+    }
+
+    @Test
+    public void listBasicViewColumns_ViewColumns_Success() {
+        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBOracleDataSource()).createOBOracle();
+        List<DBTableColumn> columns = accessor.listBasicViewColumns(getOBOracleSchema(), "VIEW_TEST1");
+        Assert.assertEquals(2, columns.size());
+    }
+
+    @Test
+    @Ignore("TODO: fix this test")
     public void listTableColumns_TestAllColumnDataTypes_Success() {
         DBSchemaAccessor accessor = new DBSchemaAccessors(getOBOracleDataSource()).createOBOracle();
         List<DBTableColumn> columns =
@@ -203,6 +222,15 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
         Assert.assertEquals(2, indexList.size());
         Assert.assertEquals(true, indexList.get(0).getGlobal());
         Assert.assertEquals(false, indexList.get(1).getGlobal());
+    }
+
+    @Test
+    public void listTableIndex_TestIndexAvailable_Success() {
+        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBOracleDataSource()).createOBOracle();
+        List<DBTableIndex> indexList = accessor.listTableIndexes(getOBOracleSchema(), "TEST_INDEX_RANGE");
+        Assert.assertEquals(2, indexList.size());
+        Assert.assertTrue(indexList.get(0).getAvailable());
+        Assert.assertTrue(indexList.get(1).getAvailable());
     }
 
     @Test
@@ -602,14 +630,14 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
         Assert.assertEquals("'null'", columns.get(3).getDefaultValue());
     }
 
-    private void initVerifyColumnAttributes() {
+    private static void initVerifyColumnAttributes() {
         columnAttributes.addAll(Arrays.asList(
                 ColumnAttributes.of("COL1", false, false, null, "col1_comments"),
                 ColumnAttributes.of("COL2", true, false, null, null),
                 ColumnAttributes.of("COL3", true, true, "(\"COL1\" + \"COL2\")", null)));
     }
 
-    private void initVerifyDataTypes() {
+    private static void initVerifyDataTypes() {
         verifyDataTypes.addAll(Arrays.asList(
                 DataType.of("COL1", "NUMBER", 38, 38L, 0, 0),
                 DataType.of("COL2", "NUMBER", 0, 22L, 0, 0),

@@ -19,18 +19,18 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.stereotype.Service;
 
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
+import com.oceanbase.odc.core.session.ConnectionSessionConstants;
+import com.oceanbase.odc.plugin.schema.api.FunctionExtensionPoint;
 import com.oceanbase.odc.service.common.model.ResourceSql;
-import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
+import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
 import com.oceanbase.odc.service.session.ConnectConsoleService;
 import com.oceanbase.tools.dbbrowser.model.DBFunction;
-import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
-import com.oceanbase.tools.dbbrowser.template.DBObjectTemplate;
-import com.oceanbase.tools.dbbrowser.template.mysql.MySQLFunctionTemplate;
-import com.oceanbase.tools.dbbrowser.template.oracle.OracleFunctionTemplate;
+import com.oceanbase.tools.dbbrowser.model.DBPLObjectIdentity;
 
 import lombok.NonNull;
 
@@ -41,33 +41,37 @@ public class DBFunctionService {
     private ConnectConsoleService consoleService;
 
     public List<DBFunction> list(ConnectionSession connectionSession, String dbName) {
-        DBSchemaAccessor accessor = DBSchemaAccessors.create(connectionSession);
-        return accessor.listFunctions(dbName).stream().map(item -> {
-            DBFunction function = new DBFunction();
-            function.setFunName(item.getName());
-            function.setErrorMessage(item.getErrorMessage());
-            function.setStatus(item.getStatus());
-            return function;
-        }).collect(Collectors.toList());
+        return connectionSession.getSyncJdbcExecutor(
+                ConnectionSessionConstants.BACKEND_DS_KEY)
+                .execute((ConnectionCallback<List<DBPLObjectIdentity>>) con -> getFunctionExtensionPoint(
+                        connectionSession).list(con, dbName))
+                .stream().map(
+                        item -> {
+                            DBFunction function = new DBFunction();
+                            function.setFunName(item.getName());
+                            function.setErrorMessage(item.getErrorMessage());
+                            function.setStatus(item.getStatus());
+                            return function;
+                        })
+                .collect(Collectors.toList());
     }
 
     public DBFunction detail(ConnectionSession connectionSession, String dbName, String funName) {
-        DBSchemaAccessor accessor = DBSchemaAccessors.create(connectionSession);
-        return accessor.getFunction(dbName, funName);
+        return connectionSession.getSyncJdbcExecutor(
+                ConnectionSessionConstants.BACKEND_DS_KEY)
+                .execute((ConnectionCallback<DBFunction>) con -> getFunctionExtensionPoint(connectionSession)
+                        .getDetail(con, dbName, funName));
     }
 
     public ResourceSql getCreateSql(@NonNull ConnectionSession session,
             @NonNull DBFunction function) {
-        DBObjectTemplate<DBFunction> template;
-        if (session.getDialectType().isMysql()) {
-            template = new MySQLFunctionTemplate();
-        } else if (session.getDialectType().isOracle()) {
-            template = new OracleFunctionTemplate();
-        } else {
-            throw new UnsupportedOperationException("Unsupported dialect, " + session.getDialectType());
-        }
-        String ddl = template.generateCreateObjectTemplate(function);
-        return ResourceSql.ofSql(ddl);
+        return ResourceSql.ofSql(session.getSyncJdbcExecutor(
+                ConnectionSessionConstants.BACKEND_DS_KEY)
+                .execute((ConnectionCallback<String>) con -> getFunctionExtensionPoint(session)
+                        .generateCreateTemplate(function)));
     }
 
+    private FunctionExtensionPoint getFunctionExtensionPoint(@NonNull ConnectionSession session) {
+        return SchemaPluginUtil.getFunctionExtension(session.getDialectType());
+    }
 }

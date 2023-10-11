@@ -16,20 +16,11 @@
 package com.oceanbase.odc.service.encryption;
 
 public interface SensitivePropertyHandler {
-    String ENCRYPTION_NOT_SUPPORTED = null;
 
     /**
-     * encryption secret, return ENCRYPTION_NOT_SUPPORTED if encryption not supported
+     * encryption public key, return null if encryption not supported
      */
-    String encryptionSecret();
-
-    /**
-     * encrypt, call while output sensitive property
-     * 
-     * @param plainText
-     * @return encryptedText
-     */
-    String encrypt(String plainText);
+    String publicKey();
 
     /**
      * decrypt, call while input sensitive property

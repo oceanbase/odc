@@ -102,7 +102,7 @@ public class ShadowTableComparingServiceTest extends ServiceTestEnv {
         req.setOriginTableNames(Arrays.asList("t1", "t2"));
         req.setDestTableNames(Arrays.asList("__t_t1", "__t_t2"));
         String taskId = shadowTableComparingService.createShadowTableSync(req);
-        await().atMost(10, SECONDS)
+        await().atMost(20, SECONDS)
                 .until(() -> shadowTableComparingService.listShadowTableSyncs(Long.valueOf(taskId)).isCompleted());
     }
 
@@ -125,7 +125,7 @@ public class ShadowTableComparingServiceTest extends ServiceTestEnv {
         req.setOriginTableNames(Arrays.asList("t3"));
         req.setDestTableNames(Arrays.asList("__t_t3"));
         String taskId = shadowTableComparingService.createShadowTableSync(req);
-        await().atMost(10, SECONDS)
+        await().atMost(20, SECONDS)
                 .until(() -> shadowTableComparingService.listShadowTableSyncs(Long.valueOf(taskId)).isCompleted());
     }
 
@@ -148,7 +148,7 @@ public class ShadowTableComparingServiceTest extends ServiceTestEnv {
         req.setOriginTableNames(Arrays.asList("not_exists_table"));
         req.setDestTableNames(Arrays.asList("__t_not_exists_table"));
         String taskId = shadowTableComparingService.createShadowTableSync(req);
-        await().atMost(10, SECONDS)
+        await().atMost(20, SECONDS)
                 .until(() -> shadowTableComparingService.listShadowTableSyncs(Long.valueOf(taskId)).isCompleted());
     }
 

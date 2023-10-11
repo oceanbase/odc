@@ -97,13 +97,19 @@ public class IndividualOrganizationMigrator {
         parameters.putIfAbsent(ResourceConstants.ORGANIZATION_ID_PLACEHOLDER_NAME, organizationId);
         parameters.putIfAbsent(ResourceConstants.CREATOR_ID_PLACEHOLDER_NAME, userId);
         List<String> resourceLocations = new LinkedList<>();
-        resourceLocations.add("migrate/common");
+        resourceLocations.add("migrate/common/V_3_2_0_6__iam_permission.yaml");
+        resourceLocations.add("migrate/common/V_3_3_0_4__iam_permission.yaml");
+        resourceLocations.add("migrate/common/V_3_4_0_2__iam_permission.yaml");
+        resourceLocations.add("migrate/common/V_3_4_0_13__data_masking_rule.yaml");
+        resourceLocations.add("migrate/common/V_3_4_0_14__data_masking_rule_segment.yaml");
+        resourceLocations.add("migrate/common/V_4_1_0_7__automation_event_metadata.yaml");
+        resourceLocations.add("migrate/common/V_4_1_0_14__iam_permission.yaml");
+        resourceLocations.add("migrate/common/V_4_2_0_24__resource_role.yaml");
 
         resourceLocations.add("migrate/rbac");
-        resourceLocations.add("migrate/rbac/V_3_2_0_5__iam_role.yaml");
+        resourceLocations.add("runtime");
 
         resourceLocations.add("init-config/runtime/iam_user_system_admin.yaml");
-        resourceLocations.add("init-config/regulation");
 
         return ResourceConfig.builder()
                 .dataSource(dataSource)

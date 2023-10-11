@@ -13,42 +13,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.common.config;
 
-import java.io.File;
-import java.io.IOException;
+package com.oceanbase.odc.test.tool;
+
+import static org.junit.Assert.*;
+
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.commons.configuration2.ex.ConfigurationException;
-import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
-import lombok.extern.slf4j.Slf4j;
-
-@Slf4j
+/**
+ * @author gaoda.xy
+ * @date 2023/9/28 10:24
+ */
 public class EncryptableConfigurationsTest {
     private static final String TEST_CONFIG_FILE = "src/test/resources/test-encrypt-configuration.properties";
-    private static final String GENERATE_INPUT_FILE = "src/test/resources/generate-input.properties";
 
     @Test
     public void loadProperties_WithEncryptedValue() {
         Map<String, String> load = EncryptableConfigurations.loadProperties(TEST_CONFIG_FILE);
 
         Map<String, String> expected = new HashMap<>();
-        expected.put("key1", "value1");
-        expected.put("key2", "value2");
+        expected.put("key1", "oceanbase developer center");
+        expected.put("key2", "build the best database develop platform");
 
         Assert.assertEquals(expected, load);
     }
 
-    @Test
-    public void encryptIfRequires_ValueContainsENC() throws ConfigurationException, IOException {
-        EncryptableConfigurations.encryptFileIfRequires(GENERATE_INPUT_FILE);
-
-        String fileContent = FileUtils.readFileToString(new File(GENERATE_INPUT_FILE));
-
-        Assert.assertTrue(fileContent.contains("ENC@"));
-    }
 }

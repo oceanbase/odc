@@ -15,41 +15,39 @@
  */
 package com.oceanbase.odc.service.encryption;
 
-import java.util.Objects;
-
-import org.apache.commons.lang.RandomStringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.common.crypto.Encryptors;
+import com.oceanbase.odc.common.crypto.RsaBytesEncryptor;
 import com.oceanbase.odc.common.crypto.TextEncryptor;
+import com.oceanbase.odc.common.lang.Pair;
 
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Component
 public class SensitivePropertyHandlerImpl implements SensitivePropertyHandler {
-    private static final int SECRET_LENGTH = 16;
-    private String encryptionSecret;
-    private TextEncryptor textEncryptor;
+    private static final int ENCRYPTION_KEY_SIZE = 1024;
+    private final String publicKey;
+    private final TextEncryptor textEncryptor;
 
     public SensitivePropertyHandlerImpl(
             @Value("${odc.system.security.sensitive-property-encrypted:true}") Boolean sensitiveInputEncrypted) {
-        this.encryptionSecret = sensitiveInputEncrypted ? RandomStringUtils.randomAlphanumeric(SECRET_LENGTH)
-                : ENCRYPTION_NOT_SUPPORTED;
-        this.textEncryptor = Objects.equals(ENCRYPTION_NOT_SUPPORTED, this.encryptionSecret) ? Encryptors.empty()
-                : Encryptors.blowFishZeroPaddingBase64(this.encryptionSecret);
+        if (sensitiveInputEncrypted) {
+            Pair<String, String> keyPair = RsaBytesEncryptor.generateBase64EncodeKeyPair(ENCRYPTION_KEY_SIZE);
+            this.publicKey = keyPair.left;
+            this.textEncryptor = Encryptors.rsaBase64Decryptor(keyPair.right);
+        } else {
+            this.publicKey = null;
+            this.textEncryptor = Encryptors.empty();
+        }
         log.info("SensitiveInputHandler initialized, sensitiveInputEncrypted={}", sensitiveInputEncrypted);
     }
 
     @Override
-    public String encryptionSecret() {
-        return this.encryptionSecret;
-    }
-
-    @Override
-    public String encrypt(String plainText) {
-        return textEncryptor.encrypt(plainText);
+    public String publicKey() {
+        return this.publicKey;
     }
 
     @Override

@@ -11,7 +11,7 @@ templates:
       - column_name: masking_algorithm_id
         value_from:
           field_ref:
-            ref_file: migrate/common/V_4_2_0_27__add_masking_algorithm.yaml
+            ref_file: runtime/V_4_2_0_27__add_masking_algorithm.yaml
             field_path: templates.1.specs.0.value
       - column_name: is_mask
         value: true
@@ -39,7 +39,7 @@ templates:
       - column_name: masking_algorithm_id
         value_from:
           field_ref:
-            ref_file: migrate/common/V_4_2_0_27__add_masking_algorithm.yaml
+            ref_file: runtime/V_4_2_0_27__add_masking_algorithm.yaml
             field_path: templates.1.specs.0.value
       - column_name: is_mask
         value: false
@@ -68,7 +68,7 @@ templates:
       - column_name: masking_algorithm_id
         value_from:
           field_ref:
-            ref_file: migrate/common/V_4_2_0_27__add_masking_algorithm.yaml
+            ref_file: runtime/V_4_2_0_27__add_masking_algorithm.yaml
             field_path: templates.2.specs.0.value
       - column_name: is_mask
         value: false
@@ -97,7 +97,7 @@ templates:
       - column_name: masking_algorithm_id
         value_from:
           field_ref:
-            ref_file: migrate/common/V_4_2_0_27__add_masking_algorithm.yaml
+            ref_file: runtime/V_4_2_0_27__add_masking_algorithm.yaml
             field_path: templates.2.specs.0.value
       - column_name: is_mask
         value: true
@@ -125,7 +125,7 @@ templates:
       - column_name: masking_algorithm_id
         value_from:
           field_ref:
-            ref_file: migrate/common/V_4_2_0_27__add_masking_algorithm.yaml
+            ref_file: runtime/V_4_2_0_27__add_masking_algorithm.yaml
             field_path: templates.3.specs.0.value
       - column_name: is_mask
         value: false
@@ -154,7 +154,7 @@ templates:
       - column_name: masking_algorithm_id
         value_from:
           field_ref:
-            ref_file: migrate/common/V_4_2_0_27__add_masking_algorithm.yaml
+            ref_file: runtime/V_4_2_0_27__add_masking_algorithm.yaml
             field_path: templates.3.specs.0.value
       - column_name: is_mask
         value: true
@@ -182,7 +182,7 @@ templates:
       - column_name: masking_algorithm_id
         value_from:
           field_ref:
-            ref_file: migrate/common/V_4_2_0_27__add_masking_algorithm.yaml
+            ref_file: runtime/V_4_2_0_27__add_masking_algorithm.yaml
             field_path: templates.3.specs.0.value
       - column_name: is_mask
         value: false
@@ -211,7 +211,7 @@ templates:
       - column_name: masking_algorithm_id
         value_from:
           field_ref:
-            ref_file: migrate/common/V_4_2_0_27__add_masking_algorithm.yaml
+            ref_file: runtime/V_4_2_0_27__add_masking_algorithm.yaml
             field_path: templates.4.specs.0.value
       - column_name: is_mask
         value: false
@@ -240,7 +240,7 @@ templates:
       - column_name: masking_algorithm_id
         value_from:
           field_ref:
-            ref_file: migrate/common/V_4_2_0_27__add_masking_algorithm.yaml
+            ref_file: runtime/V_4_2_0_27__add_masking_algorithm.yaml
             field_path: templates.4.specs.0.value
       - column_name: is_mask
         value: true
@@ -270,7 +270,7 @@ templates:
       - column_name: masking_algorithm_id
         value_from:
           field_ref:
-            ref_file: migrate/common/V_4_2_0_27__add_masking_algorithm.yaml
+            ref_file: runtime/V_4_2_0_27__add_masking_algorithm.yaml
             field_path: templates.4.specs.0.value
       - column_name: is_mask
         value: false
@@ -296,7 +296,7 @@ templates:
       - column_name: masking_algorithm_id
         value_from:
           field_ref:
-            ref_file: migrate/common/V_4_2_0_27__add_masking_algorithm.yaml
+            ref_file: runtime/V_4_2_0_27__add_masking_algorithm.yaml
             field_path: templates.5.specs.0.value
       - column_name: is_mask
         value: false
@@ -325,7 +325,7 @@ templates:
       - column_name: masking_algorithm_id
         value_from:
           field_ref:
-            ref_file: migrate/common/V_4_2_0_27__add_masking_algorithm.yaml
+            ref_file: runtime/V_4_2_0_27__add_masking_algorithm.yaml
             field_path: templates.5.specs.0.value
       - column_name: is_mask
         value: true
@@ -353,7 +353,7 @@ templates:
       - column_name: masking_algorithm_id
         value_from:
           field_ref:
-            ref_file: migrate/common/V_4_2_0_27__add_masking_algorithm.yaml
+            ref_file: runtime/V_4_2_0_27__add_masking_algorithm.yaml
             field_path: templates.7.specs.0.value
       - column_name: is_mask
         value: true
@@ -379,7 +379,7 @@ templates:
       - column_name: masking_algorithm_id
         value_from:
           field_ref:
-            ref_file: migrate/common/V_4_2_0_27__add_masking_algorithm.yaml
+            ref_file: runtime/V_4_2_0_27__add_masking_algorithm.yaml
             field_path: templates.7.specs.0.value
       - column_name: is_mask
         value: false
@@ -408,7 +408,7 @@ templates:
       - column_name: masking_algorithm_id
         value_from:
           field_ref:
-            ref_file: migrate/common/V_4_2_0_27__add_masking_algorithm.yaml
+            ref_file: runtime/V_4_2_0_27__add_masking_algorithm.yaml
             field_path: templates.9.specs.0.value
       - column_name: is_mask
         value: true
@@ -434,7 +434,7 @@ templates:
       - column_name: masking_algorithm_id
         value_from:
           field_ref:
-            ref_file: migrate/common/V_4_2_0_27__add_masking_algorithm.yaml
+            ref_file: runtime/V_4_2_0_27__add_masking_algorithm.yaml
             field_path: templates.9.specs.0.value
       - column_name: is_mask
         value: false
@@ -463,7 +463,7 @@ templates:
       - column_name: masking_algorithm_id
         value_from:
           field_ref:
-            ref_file: migrate/common/V_4_2_0_27__add_masking_algorithm.yaml
+            ref_file: runtime/V_4_2_0_27__add_masking_algorithm.yaml
             field_path: templates.10.specs.0.value
       - column_name: is_mask
         value: false
@@ -492,10 +492,10 @@ templates:
       - column_name: masking_algorithm_id
         value_from:
           field_ref:
-            ref_file: migrate/common/V_4_2_0_27__add_masking_algorithm.yaml
+            ref_file: runtime/V_4_2_0_27__add_masking_algorithm.yaml
             field_path: templates.10.specs.0.value
       - column_name: is_mask
-        value: true
+        value: false
         data_type: java.lang.Boolean
       - column_name: type
         value: LEFT_OVER
@@ -518,7 +518,7 @@ templates:
       - column_name: masking_algorithm_id
         value_from:
           field_ref:
-            ref_file: migrate/common/V_4_2_0_27__add_masking_algorithm.yaml
+            ref_file: runtime/V_4_2_0_27__add_masking_algorithm.yaml
             field_path: templates.10.specs.0.value
       - column_name: is_mask
         value: true
@@ -547,7 +547,7 @@ templates:
       - column_name: masking_algorithm_id
         value_from:
           field_ref:
-            ref_file: migrate/common/V_4_2_0_27__add_masking_algorithm.yaml
+            ref_file: runtime/V_4_2_0_27__add_masking_algorithm.yaml
             field_path: templates.11.specs.0.value
       - column_name: is_mask
         value: true
@@ -578,7 +578,7 @@ templates:
       - column_name: masking_algorithm_id
         value_from:
           field_ref:
-            ref_file: migrate/common/V_4_2_0_27__add_masking_algorithm.yaml
+            ref_file: runtime/V_4_2_0_27__add_masking_algorithm.yaml
             field_path: templates.11.specs.0.value
       - column_name: is_mask
         value: false
@@ -604,7 +604,7 @@ templates:
       - column_name: masking_algorithm_id
         value_from:
           field_ref:
-            ref_file: migrate/common/V_4_2_0_27__add_masking_algorithm.yaml
+            ref_file: runtime/V_4_2_0_27__add_masking_algorithm.yaml
             field_path: templates.12.specs.0.value
       - column_name: is_mask
         value: false
@@ -632,7 +632,7 @@ templates:
       - column_name: masking_algorithm_id
         value_from:
           field_ref:
-            ref_file: migrate/common/V_4_2_0_27__add_masking_algorithm.yaml
+            ref_file: runtime/V_4_2_0_27__add_masking_algorithm.yaml
             field_path: templates.12.specs.0.value
       - column_name: is_mask
         value: true
@@ -662,7 +662,7 @@ templates:
       - column_name: masking_algorithm_id
         value_from:
           field_ref:
-            ref_file: migrate/common/V_4_2_0_27__add_masking_algorithm.yaml
+            ref_file: runtime/V_4_2_0_27__add_masking_algorithm.yaml
             field_path: templates.12.specs.0.value
       - column_name: is_mask
         value: true
@@ -692,7 +692,7 @@ templates:
       - column_name: masking_algorithm_id
         value_from:
           field_ref:
-            ref_file: migrate/common/V_4_2_0_27__add_masking_algorithm.yaml
+            ref_file: runtime/V_4_2_0_27__add_masking_algorithm.yaml
             field_path: templates.12.specs.0.value
       - column_name: is_mask
         value: true
@@ -720,7 +720,7 @@ templates:
       - column_name: masking_algorithm_id
         value_from:
           field_ref:
-            ref_file: migrate/common/V_4_2_0_27__add_masking_algorithm.yaml
+            ref_file: runtime/V_4_2_0_27__add_masking_algorithm.yaml
             field_path: templates.13.specs.0.value
       - column_name: is_mask
         value: false
@@ -748,7 +748,7 @@ templates:
       - column_name: masking_algorithm_id
         value_from:
           field_ref:
-            ref_file: migrate/common/V_4_2_0_27__add_masking_algorithm.yaml
+            ref_file: runtime/V_4_2_0_27__add_masking_algorithm.yaml
             field_path: templates.13.specs.0.value
       - column_name: is_mask
         value: true
@@ -778,7 +778,7 @@ templates:
       - column_name: masking_algorithm_id
         value_from:
           field_ref:
-            ref_file: migrate/common/V_4_2_0_27__add_masking_algorithm.yaml
+            ref_file: runtime/V_4_2_0_27__add_masking_algorithm.yaml
             field_path: templates.13.specs.0.value
       - column_name: is_mask
         value: true
@@ -808,7 +808,7 @@ templates:
       - column_name: masking_algorithm_id
         value_from:
           field_ref:
-            ref_file: migrate/common/V_4_2_0_27__add_masking_algorithm.yaml
+            ref_file: runtime/V_4_2_0_27__add_masking_algorithm.yaml
             field_path: templates.13.specs.0.value
       - column_name: is_mask
         value: true
@@ -838,7 +838,7 @@ templates:
       - column_name: masking_algorithm_id
         value_from:
           field_ref:
-            ref_file: migrate/common/V_4_2_0_27__add_masking_algorithm.yaml
+            ref_file: runtime/V_4_2_0_27__add_masking_algorithm.yaml
             field_path: templates.13.specs.0.value
       - column_name: is_mask
         value: true
@@ -868,7 +868,7 @@ templates:
       - column_name: masking_algorithm_id
         value_from:
           field_ref:
-            ref_file: migrate/common/V_4_2_0_27__add_masking_algorithm.yaml
+            ref_file: runtime/V_4_2_0_27__add_masking_algorithm.yaml
             field_path: templates.13.specs.0.value
       - column_name: is_mask
         value: true
@@ -896,7 +896,7 @@ templates:
       - column_name: masking_algorithm_id
         value_from:
           field_ref:
-            ref_file: migrate/common/V_4_2_0_27__add_masking_algorithm.yaml
+            ref_file: runtime/V_4_2_0_27__add_masking_algorithm.yaml
             field_path: templates.20.specs.0.value
       - column_name: is_mask
         value: false
@@ -925,7 +925,7 @@ templates:
       - column_name: masking_algorithm_id
         value_from:
           field_ref:
-            ref_file: migrate/common/V_4_2_0_27__add_masking_algorithm.yaml
+            ref_file: runtime/V_4_2_0_27__add_masking_algorithm.yaml
             field_path: templates.20.specs.0.value
       - column_name: is_mask
         value: true
@@ -951,7 +951,7 @@ templates:
       - column_name: masking_algorithm_id
         value_from:
           field_ref:
-            ref_file: migrate/common/V_4_2_0_27__add_masking_algorithm.yaml
+            ref_file: runtime/V_4_2_0_27__add_masking_algorithm.yaml
             field_path: templates.20.specs.0.value
       - column_name: is_mask
         value: false

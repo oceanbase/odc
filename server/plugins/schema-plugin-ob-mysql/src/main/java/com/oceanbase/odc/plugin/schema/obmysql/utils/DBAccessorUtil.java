@@ -17,8 +17,8 @@ package com.oceanbase.odc.plugin.schema.obmysql.utils;
 
 import java.sql.Connection;
 
+import com.oceanbase.odc.common.util.JdbcOperationsUtil;
 import com.oceanbase.odc.plugin.connect.obmysql.OBMySQLInformationExtension;
-import com.oceanbase.odc.plugin.connect.obmysql.util.JdbcOperationsUtil;
 import com.oceanbase.odc.plugin.schema.obmysql.browser.DBSchemaAccessors;
 import com.oceanbase.odc.plugin.schema.obmysql.browser.DBStatsAccessors;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;

@@ -19,10 +19,10 @@ import java.sql.Connection;
 
 import org.pf4j.Extension;
 
+import com.oceanbase.odc.common.util.JdbcOperationsUtil;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.sql.util.OBUtils;
 import com.oceanbase.odc.plugin.connect.api.InformationExtensionPoint;
-import com.oceanbase.odc.plugin.connect.obmysql.util.JdbcOperationsUtil;
 
 import lombok.extern.slf4j.Slf4j;
 

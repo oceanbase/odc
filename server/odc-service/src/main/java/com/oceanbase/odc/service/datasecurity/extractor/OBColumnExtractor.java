@@ -398,8 +398,7 @@ public class OBColumnExtractor implements ColumnExtractor {
         } else {
             // 2. 表名不为空，从 fromTable 和 fromTable#tableList 的 columnList 进行查询
             for (LogicalTable fromTable : fromTables) {
-                List<LogicalTable> tables = new ArrayList<>(Collections.singletonList(fromTable));
-                tables.addAll(fromTable.getTableList());
+                List<LogicalTable> tables = new ArrayList<>(retrieveLogicalTable(fromTable));
                 if (COLUMN_NAME_WILDCARD.equals(columnName)) {
                     // 2.1. 列名为 *，即只要库名和表名匹配的都输出
                     // 先查 fromTable，再查 fromTable#tableList
@@ -707,6 +706,19 @@ public class OBColumnExtractor implements ColumnExtractor {
             }
         }
         throw new NotFoundException(ErrorCodes.NotFound, new Object[] {"table", "name", tableName}, null);
+    }
+
+    private List<LogicalTable> retrieveLogicalTable(LogicalTable table) {
+        List<LogicalTable> returnValue = new ArrayList<>();
+        if (Objects.nonNull(table)) {
+            returnValue.add(table);
+            if (CollectionUtils.isNotEmpty(table.getTableList())) {
+                for (LogicalTable t : table.getTableList()) {
+                    returnValue.addAll(retrieveLogicalTable(t));
+                }
+            }
+        }
+        return returnValue;
     }
 
     private String processIdentifier(String identifier) {

@@ -19,7 +19,7 @@ import java.sql.Connection;
 
 import org.pf4j.Extension;
 
-import com.oceanbase.odc.plugin.connect.obmysql.util.JdbcOperationsUtil;
+import com.oceanbase.odc.common.util.JdbcOperationsUtil;
 import com.oceanbase.odc.plugin.schema.obmysql.OBMySQLTableExtension;
 import com.oceanbase.tools.dbbrowser.editor.DBTableEditor;
 import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLColumnEditor;
@@ -45,7 +45,6 @@ public class MySQLTableExtension extends OBMySQLTableExtension {
     @Override
     public DBTable getDetail(@NonNull Connection connection, @NonNull String schemaName, @NonNull String tableName) {
         DBSchemaAccessor schemaAccessor = getSchemaAccessor(connection);
-        DBStatsAccessor statsAccessor = getStatsAccessor(connection);
         DBTable table = new DBTable();
         table.setSchemaName(schemaName);
         table.setOwner(schemaName);
@@ -56,7 +55,7 @@ public class MySQLTableExtension extends OBMySQLTableExtension {
         table.setIndexes(schemaAccessor.listTableIndexes(schemaName, tableName));
         table.setDDL(schemaAccessor.getTableDDL(schemaName, tableName));
         table.setTableOptions(schemaAccessor.getTableOptions(schemaName, tableName));
-        table.setStats(statsAccessor.getTableStats(schemaName, tableName));
+        table.setStats(getTableStats(connection, schemaName, tableName));
         return table;
     }
 

@@ -13,26 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.plugin.connect.obmysql.util;
 
-import java.sql.Connection;
+package com.oceanbase.odc.service.dml.converter;
 
-import org.springframework.jdbc.core.JdbcOperations;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.datasource.SingleConnectionDataSource;
-
-import lombok.extern.slf4j.Slf4j;
+import java.util.Collection;
+import java.util.Collections;
 
 /**
- * @author yaobin
- * @date 2023-04-14
- * @since 4.2.0
+ * @author jingtian
+ * @date 2023/9/20
+ * @since ODC_release_4.2.2
  */
-@Slf4j
-public class JdbcOperationsUtil {
-
-    public static JdbcOperations getJdbcOperations(Connection connection) {
-        return new JdbcTemplate(new SingleConnectionDataSource(connection, false));
+public class OracleJsonConverter extends OracleStringConverter {
+    @Override
+    protected Collection<String> getSupportDataTypeNames() {
+        return Collections.singletonList("json");
     }
-
 }

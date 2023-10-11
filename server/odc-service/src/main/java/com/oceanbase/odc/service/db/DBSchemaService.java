@@ -17,11 +17,14 @@ package com.oceanbase.odc.service.db;
 
 import java.util.List;
 
+import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.stereotype.Service;
 
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
+import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
+import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
 import com.oceanbase.tools.dbbrowser.model.DBDatabase;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 
@@ -33,15 +36,22 @@ import lombok.extern.slf4j.Slf4j;
 public class DBSchemaService {
 
     public List<DBDatabase> listDatabases(ConnectionSession connectionSession) {
+        return connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY)
+                .execute((ConnectionCallback<List<DBDatabase>>) con -> SchemaPluginUtil
+                        .getDatabaseExtension(connectionSession.getDialectType()).listDetails(con));
+    }
+
+    public List<String> showDatabases(ConnectionSession connectionSession) {
         DBSchemaAccessor accessor = DBSchemaAccessors.create(connectionSession);
-        return accessor.listDatabases();
+        return accessor.showDatabases();
     }
 
 
 
     public DBDatabase detail(ConnectionSession connectionSession, String dbName) {
-        DBSchemaAccessor accessor = DBSchemaAccessors.create(connectionSession);
-        return accessor.getDatabase(dbName);
+        return connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY)
+                .execute((ConnectionCallback<DBDatabase>) con -> SchemaPluginUtil
+                        .getDatabaseExtension(connectionSession.getDialectType()).getDetail(con, dbName));
     }
 
 }
