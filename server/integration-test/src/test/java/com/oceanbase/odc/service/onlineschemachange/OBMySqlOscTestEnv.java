@@ -28,7 +28,7 @@ import com.oceanbase.odc.service.onlineschemachange.model.OriginTableCleanStrate
  * @date 2023-07-17
  * @since 4.2.0
  */
-public class OBMySqlOscTestEnv extends BaseOscTestEnv {
+public abstract class OBMySqlOscTestEnv extends BaseOscTestEnv {
 
     @Override
     protected DialectType getDialectType() {

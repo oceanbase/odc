@@ -29,7 +29,7 @@ import com.oceanbase.odc.service.onlineschemachange.model.OriginTableCleanStrate
  * @date 2023-07-17
  * @since 4.2.0
  */
-public class OBOracleOscTestEnv extends BaseOscTestEnv {
+public abstract class OBOracleOscTestEnv extends BaseOscTestEnv {
 
     @Override
     protected DialectType getDialectType() {
