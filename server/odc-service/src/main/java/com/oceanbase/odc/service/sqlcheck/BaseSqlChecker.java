@@ -88,8 +88,12 @@ abstract class BaseSqlChecker implements SqlChecker {
             }
             return new SqlHolder(s, null, null);
         }).filter(s -> s.statement != null || s.exception != null).collect(Collectors.toList());
-        checkContext.totalStmtCount = sqlHolders.stream().filter(s -> s.exception == null).count();
-        checkContext.currentStmtIndex = 0L;
+        if (checkContext.currentStmtIndex == null) {
+            checkContext.currentStmtIndex = 0L;
+        }
+        if (checkContext.totalStmtCount == null) {
+            checkContext.totalStmtCount = sqlHolders.stream().filter(s -> s.exception == null).count();
+        }
         return sqlHolders.stream().flatMap(holder -> {
             List<CheckViolation> violations = new ArrayList<>();
             if (holder.statement != null) {

@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.integration;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -70,7 +71,7 @@ public class IntegrationTestUtil {
     }
 
     public static TemplateVariables createTemplateVariables() {
-        Map<String, Object> variables = new HashMap<>();
+        Map<String, Serializable> variables = new HashMap<>();
         variables.put(Variable.USER_NAME.key(), "Jack");
         variables.put(Variable.USER_ACCOUNT.key(), "Jack");
         variables.put(Variable.USER_ID.key(), 10001L);

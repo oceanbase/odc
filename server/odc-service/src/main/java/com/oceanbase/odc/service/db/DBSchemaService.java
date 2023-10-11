@@ -23,8 +23,10 @@ import org.springframework.stereotype.Service;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
+import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
 import com.oceanbase.tools.dbbrowser.model.DBDatabase;
+import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -37,6 +39,11 @@ public class DBSchemaService {
         return connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY)
                 .execute((ConnectionCallback<List<DBDatabase>>) con -> SchemaPluginUtil
                         .getDatabaseExtension(connectionSession.getDialectType()).listDetails(con));
+    }
+
+    public List<String> showDatabases(ConnectionSession connectionSession) {
+        DBSchemaAccessor accessor = DBSchemaAccessors.create(connectionSession);
+        return accessor.showDatabases();
     }
 
 

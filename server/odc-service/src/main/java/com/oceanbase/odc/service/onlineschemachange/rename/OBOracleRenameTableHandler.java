@@ -34,13 +34,9 @@ public class OBOracleRenameTableHandler implements RenameTableHandler {
 
     @Override
     public void rename(String schema, String fromName, String toName) {
-        String renameTableSql = String.format("RENAME %s TO %s",
-                getWithSchema(schema, fromName),
-                getWithSchema(schema, toName));
+        String renameTableSql = String.format("RENAME %s TO %s", fromName, toName);
         jdbcOperations.execute(renameTableSql);
-        log.info("Renamed {} TO {}",
-                getWithSchema(schema, fromName),
-                getWithSchema(schema, toName));
+        log.info("Renamed {} TO {}", fromName, toName);
     }
 
     @Override
@@ -48,9 +44,4 @@ public class OBOracleRenameTableHandler implements RenameTableHandler {
         rename(schema, originName, oldName);
         rename(schema, newName, originName);
     }
-
-    private String getWithSchema(String schema, String tableName) {
-        return schema + "." + tableName;
-    }
-
 }
