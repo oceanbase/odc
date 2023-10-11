@@ -121,7 +121,7 @@ public class SensitiveColumnScanningTaskManagerTest extends ServiceTestEnv {
         SensitiveColumnScanningTaskInfo taskInfo = manager.start(databases, rules, oracleConnectionConfig, null);
         await().atMost(20, SECONDS)
                 .until(() -> manager.get(taskInfo.getTaskId()).getStatus() == ScanningTaskStatus.SUCCESS);
-        Assert.assertEquals(2, manager.get(taskInfo.getTaskId()).getSensitiveColumns().size());
+        Assert.assertEquals(3, manager.get(taskInfo.getTaskId()).getSensitiveColumns().size());
     }
 
     @Test
@@ -141,7 +141,7 @@ public class SensitiveColumnScanningTaskManagerTest extends ServiceTestEnv {
         SensitiveColumnScanningTaskInfo taskInfo = manager.start(databases, rules, oracleConnectionConfig, null);
         await().atMost(20, SECONDS)
                 .until(() -> manager.get(taskInfo.getTaskId()).getStatus() == ScanningTaskStatus.SUCCESS);
-        Assert.assertEquals(20, manager.get(taskInfo.getTaskId()).getSensitiveColumns().size());
+        Assert.assertEquals(27, manager.get(taskInfo.getTaskId()).getSensitiveColumns().size());
     }
 
     @Test

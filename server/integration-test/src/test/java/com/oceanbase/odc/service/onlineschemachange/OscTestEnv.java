@@ -28,7 +28,6 @@ import java.util.function.Predicate;
 
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.mockito.Mockito;
 import org.quartz.Scheduler;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -76,7 +75,6 @@ import com.oceanbase.odc.service.session.DBSessionManageFacade;
  * @date 2023-07-17
  * @since 4.2.0
  */
-@Ignore("TODO: fix this test")
 public class OscTestEnv extends ServiceTestEnv {
 
     @Autowired
