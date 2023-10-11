@@ -48,6 +48,7 @@ import com.oceanbase.odc.metadb.task.TaskSpecs;
 import com.oceanbase.odc.service.common.model.HostProperties;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
 import com.oceanbase.odc.service.flow.model.QueryTaskInstanceParams;
+import com.oceanbase.odc.service.flow.task.model.FlowTaskResult;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
@@ -281,6 +282,16 @@ public class TaskService {
         taskRepository.save(taskEntity);
         if (log.isDebugEnabled()) {
             log.debug("Task progress has been updated: taskId={}, progressPercentage={}", id, progressPercentage);
+        }
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void updateResult(Long id, FlowTaskResult result) {
+        TaskEntity taskEntity = nullSafeFindById(id);
+        taskEntity.setResultJson(JsonUtils.toJson(result));
+        taskRepository.save(taskEntity);
+        if (log.isDebugEnabled()) {
+            log.debug("Task result has been updated: taskId={}", id);
         }
     }
 

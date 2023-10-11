@@ -15,11 +15,7 @@
  */
 package com.oceanbase.odc.server.web.controller.v2;
 
-import java.io.IOException;
-
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -47,13 +43,6 @@ public class PartitionPlanController {
             @RequestParam(required = false) Long flowInstanceId) {
         return Responses
                 .success(partitionPlanService.findRangeTablePlan(databaseId, flowInstanceId));
-    }
-
-    @RequestMapping(value = "/partitionPlans/{id:[\\d]+}", method = RequestMethod.PUT)
-    public SuccessResponse<String> update(@PathVariable Long id,
-            @RequestBody DatabasePartitionPlan databasePartitionPlan) throws IOException {
-        partitionPlanService.updateTablePartitionPlan(databasePartitionPlan);
-        return Responses.success("ok");
     }
 
     @RequestMapping(value = "/partitionPlans/exists", method = RequestMethod.GET)

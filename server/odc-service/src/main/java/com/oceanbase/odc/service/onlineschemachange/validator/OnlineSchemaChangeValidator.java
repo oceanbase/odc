@@ -15,10 +15,10 @@
  */
 package com.oceanbase.odc.service.onlineschemachange.validator;
 
-import static com.oceanbase.tools.dbbrowser.model.DBIndexType.UNIQUE;
-
 import java.io.StringReader;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,13 +39,21 @@ import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
 import com.oceanbase.odc.service.onlineschemachange.ddl.DdlUtils;
+import com.oceanbase.odc.service.onlineschemachange.ddl.OscFactoryWrapper;
+import com.oceanbase.odc.service.onlineschemachange.ddl.OscFactoryWrapperGenerator;
+import com.oceanbase.odc.service.onlineschemachange.ddl.TableNameDescriptor;
+import com.oceanbase.odc.service.onlineschemachange.ddl.TableNameDescriptorFactory;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeSqlType;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
-import com.oceanbase.tools.dbbrowser.model.DBTableIndex;
+import com.oceanbase.tools.dbbrowser.model.DBConstraintType;
+import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
+import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 import com.oceanbase.tools.sqlparser.OBMySQLParser;
 import com.oceanbase.tools.sqlparser.OBOracleSQLParser;
+import com.oceanbase.tools.sqlparser.SQLParser;
+import com.oceanbase.tools.sqlparser.SyntaxErrorException;
 import com.oceanbase.tools.sqlparser.statement.Statement;
 import com.oceanbase.tools.sqlparser.statement.alter.table.AlterTable;
 import com.oceanbase.tools.sqlparser.statement.createtable.CreateTable;
@@ -63,25 +71,24 @@ public class OnlineSchemaChangeValidator {
     private OscConnectionConfigValidator oscConnectionConfigValidator;
 
     public void validate(CreateFlowInstanceReq createReq) {
+
         OnlineSchemaChangeParameters parameter = (OnlineSchemaChangeParameters) createReq.getParameters();
+        PreConditions.notEmpty(parameter.getSqlContent(), "Input sql cant not bee empty");
+
         ConnectionConfig connectionConfig =
                 connectionService.getForConnectionSkipPermissionCheck(createReq.getConnectionId());
         connectionConfig.setDefaultSchema(createReq.getDatabaseName());
-        ConnectionSession session = new DefaultConnectSessionFactory(connectionConfig).generateSession();
+        List<String> sqls = SqlUtils.split(connectionConfig.getDialectType(), parameter.getSqlContent(),
+                parameter.getDelimiter());;
 
+        PreConditions.notEmpty(sqls, "Parser sqls is empty");
         oscConnectionConfigValidator.valid(connectionConfig);
 
+        List<Statement> statements = parseStatements(parameter, connectionConfig, sqls);
+
+        ConnectionSession session = new DefaultConnectSessionFactory(connectionConfig).generateSession();
         try {
-            List<String> sqls =
-                    SqlUtils.split(connectionConfig.getDialectType(), parameter.getSqlContent(),
-                            parameter.getDelimiter());
-            for (String sql : sqls) {
-                Statement statement =
-                        (connectionConfig.getDialectType().isMysql() ? new OBMySQLParser() : new OBOracleSQLParser())
-                                .parse(new StringReader(sql));
-
-                validateType(sql, getSqlType(statement), parameter.getSqlType());
-
+            for (Statement statement : statements) {
                 String database = createReq.getDatabaseName();
                 String tableName;
                 if (parameter.getSqlType() == OnlineSchemaChangeSqlType.CREATE) {
@@ -99,9 +106,9 @@ public class OnlineSchemaChangeValidator {
                 }
 
                 validateTableNameLength(tableName, connectionConfig.getDialectType());
-
                 validateOriginTableExists(database, tableName, session);
                 validateOldTableNotExists(database, tableName, session);
+                validateForeignKeyTable(database, tableName, session);
                 validateTableConstraints(database, tableName, session);
             }
         } finally {
@@ -116,6 +123,23 @@ public class OnlineSchemaChangeValidator {
         // 数据库账号要有ALL PRIVILEGES权限或以下读写权限：
         // ALTER、CREATE、DELETE、DROP、INDEX、INSERT、SELECT、TRIGGER、UPDATE
 
+    }
+
+    private List<Statement> parseStatements(OnlineSchemaChangeParameters parameter,
+            ConnectionConfig connectionConfig, List<String> sqls) {
+        List<Statement> statements = null;
+        try {
+            SQLParser sqlParser =
+                    connectionConfig.getDialectType().isMysql() ? new OBMySQLParser() : new OBOracleSQLParser();
+            statements = sqls.stream().map(sql -> {
+                Statement statement = sqlParser.parse(new StringReader(sql));
+                validateType(sql, getSqlType(statement), parameter.getSqlType());
+                return statement;
+            }).collect(Collectors.toList());
+        } catch (SyntaxErrorException ex) {
+            throw new BadArgumentException(ErrorCodes.ObPreCheckDdlFailed, ex.getLocalizedMessage());
+        }
+        return statements;
     }
 
     private void validateSchema(String currentSchema, String expectedSchema, DialectType dialectType) {
@@ -141,17 +165,60 @@ public class OnlineSchemaChangeValidator {
 
     private void validateOldTableNotExists(String database, String tableName, ConnectionSession session) {
         DBSchemaAccessor accessor = DBSchemaAccessors.create(session);
-        List<String> tables = accessor.showTablesLike(database, DdlUtils.getRenamedTableName(tableName));
+        OscFactoryWrapper oscFactoryWrapper = OscFactoryWrapperGenerator.generate(session.getDialectType());
+        TableNameDescriptorFactory tableNameDescriptorFactory = oscFactoryWrapper.getTableNameDescriptorFactory();
+        TableNameDescriptor tableNameDescriptor = tableNameDescriptorFactory.getTableNameDescriptor(tableName);
+        List<String> tables = accessor.showTablesLike(database, tableNameDescriptor.getRenamedTableNameUnWrapped());
         PreConditions.validNoDuplicated(ResourceType.OB_TABLE, "tableName",
-                DdlUtils.getRenamedTableName(tableName), () -> CollectionUtils.isNotEmpty(tables));
+                tableNameDescriptor.getRenamedTableName(), () -> CollectionUtils.isNotEmpty(tables));
+    }
+
+    private void validateForeignKeyTable(String database, String tableName, ConnectionSession session) {
+        DBSchemaAccessor accessor = DBSchemaAccessors.create(session);
+        List<DBTableConstraint> constraints =
+                accessor.listTableConstraints(database, DdlUtils.getUnwrappedName(tableName));
+
+        if (constraints.stream().anyMatch(index -> index.getType() == DBConstraintType.FOREIGN_KEY)) {
+            throw new UnsupportedException(ErrorCodes.OscUnsupportedForeignKeyTable, new Object[] {tableName},
+                    "Unsupported foreign key table " + tableName);
+        }
     }
 
     private void validateTableConstraints(String database, String tableName, ConnectionSession session) {
         DBSchemaAccessor accessor = DBSchemaAccessors.create(session);
-        List<DBTableIndex> indexes = accessor.listTableIndexes(database, DdlUtils.getUnwrappedName(tableName));
-        if (indexes.stream().noneMatch(index -> index.getType() == UNIQUE)) {
+        List<DBTableConstraint> constraints =
+                accessor.listTableConstraints(database, DdlUtils.getUnwrappedName(tableName));
+        if (CollectionUtils.isEmpty(constraints)) {
             throw new UnsupportedException(ErrorCodes.NoUniqueKeyExists, new Object[] {tableName},
-                    "There is no primary key or unique key exists in table " + tableName);
+                    "There is no primary key or not nullable unique key in table " + tableName);
+        }
+        if (constraints.stream().anyMatch(index -> index.getType() == DBConstraintType.PRIMARY_KEY)) {
+            return;
+        }
+        // Check unique key reference columns is not null
+        List<DBTableConstraint> uniques = constraints.stream()
+                .filter(c -> c.getType() == DBConstraintType.UNIQUE_KEY).collect(Collectors.toList());
+
+        if (CollectionUtils.isEmpty(uniques)) {
+            throw new UnsupportedException(ErrorCodes.NoUniqueKeyExists, new Object[] {tableName},
+                    "There is no primary key or not nullable unique key in table " + tableName);
+        }
+
+        validateUniqueKeyIsConstraintNullable(database, tableName, session, uniques);
+    }
+
+    private void validateUniqueKeyIsConstraintNullable(String database, String tableName, ConnectionSession session,
+            List<DBTableConstraint> uniques) {
+        Map<String, DBTableColumn> dbTableColumns =
+                DBSchemaAccessors.create(session).listTableColumns(database,
+                        DdlUtils.getUnwrappedName(tableName)).stream().collect(
+                                Collectors.toMap(DBTableColumn::getName, v -> v));
+        boolean existsNullableColumnUk = uniques.stream().anyMatch(
+                uk -> uk.getColumnNames().stream().noneMatch(column -> dbTableColumns.get(column).getNullable()));
+
+        if (!existsNullableColumnUk) {
+            throw new UnsupportedException(ErrorCodes.NoUniqueKeyExists, new Object[] {tableName},
+                    "There is no primary key or not nullable unique key in table " + tableName);
         }
     }
 

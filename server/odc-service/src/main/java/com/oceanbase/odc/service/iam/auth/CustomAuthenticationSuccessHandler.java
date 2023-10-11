@@ -30,6 +30,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.lang.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.SavedRequestAwareAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
@@ -68,6 +69,7 @@ public class CustomAuthenticationSuccessHandler extends SavedRequestAwareAuthent
     private OrganizationRepository organizationRepository;
 
     @Autowired
+    @Qualifier("organizationResourceMigrator")
     private OrganizationResourceMigrator organizationResourceMigrator;
 
     private final OrganizationMapper organizationMapper = OrganizationMapper.INSTANCE;
@@ -95,7 +97,6 @@ public class CustomAuthenticationSuccessHandler extends SavedRequestAwareAuthent
         loginHistory.setSuccess(true);
         loginHistoryService.record(loginHistory);
 
-        SpringContextUtil.publishEvent(new TriggerEvent(LOGIN_SUCCESS, authentication.getPrincipal()));
         if (authentication.getPrincipal() instanceof User) {
             User user = (User) authentication.getPrincipal();
             organizationResourceMigrator.migrate(user);
@@ -109,6 +110,7 @@ public class CustomAuthenticationSuccessHandler extends SavedRequestAwareAuthent
             user.setOrganizationType(OrganizationType.TEAM);
             SecurityContextUtils.switchCurrentUserOrganization(user, team, httpServletRequest, true);
         }
+        SpringContextUtil.publishEvent(new TriggerEvent(LOGIN_SUCCESS, authentication.getPrincipal()));
 
         // Login logic for Security Framework
         if (log.isDebugEnabled()) {

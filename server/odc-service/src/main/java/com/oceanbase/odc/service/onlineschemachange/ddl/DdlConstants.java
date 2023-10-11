@@ -23,9 +23,15 @@ package com.oceanbase.odc.service.onlineschemachange.ddl;
 public class DdlConstants {
 
     public static final String OSC_TABLE_NAME_PREFIX = "_";
+    public static final String OSC_TABLE_NAME_PREFIX_OB_ORACLE = "";
+
     public static final String NEW_TABLE_NAME_SUFFIX = "_osc_new_";
 
     public static final String RENAMED_TABLE_NAME_SUFFIX = "_osc_old_";
+
+    public static final String NEW_TABLE_NAME_SUFFIX_OB_ORACLE = "_OSC_NEW_";
+
+    public static final String RENAMED_TABLE_NAME_SUFFIX_OB_ORACLE = "_OSC_OLD_";
 
     public static final String TABLE_NAME_WRAPPER = "`";
 
