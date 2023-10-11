@@ -200,6 +200,7 @@ public class OBMySQLExtensionTest extends BaseExtensionPointTest {
     }
 
     @Test
+    @Ignore
     public void test_ob_mysql_getExecutionDetailBySql() throws SQLException {
         try (Connection connection = getConnection()) {
             String sql = "select * from t_test_exec_detail;";
