@@ -46,7 +46,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @TestPropertySource(properties = "osc-task-expired-after-seconds=1")
-public class OnlineSchemaChangeExpiredTest extends OscTestEnv {
+public class OnlineSchemaChangeExpiredTest extends OBMySqlOscTestEnv {
 
     @Test
     @Ignore("TODO: fix this test")
