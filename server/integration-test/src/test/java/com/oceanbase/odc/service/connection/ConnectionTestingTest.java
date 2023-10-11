@@ -17,7 +17,6 @@ package com.oceanbase.odc.service.connection;
 
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -54,7 +53,6 @@ public class ConnectionTestingTest {
     }
 
     @Test
-    @Ignore("TODO: fix this test")
     public void test_Success_ReturnTrue() {
         TestConnectionReq req = createReq();
 
