@@ -41,6 +41,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
+import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
@@ -383,14 +384,15 @@ public class ScheduleService {
             params.setCreatorIds(userService.getUsersByFuzzyNameWithoutPermissionCheck(
                     params.getCreator()).stream().map(User::getId).collect(Collectors.toSet()));
         }
-        Set<Long> projectIds = projectService.getMemberProjectIds(authenticationFacade.currentUserId());
-        if (params.getProjectId() != null) {
-            projectIds.retainAll(Collections.singleton(params.getProjectId()));
+        if (authenticationFacade.currentOrganization().getType() == OrganizationType.TEAM) {
+            Set<Long> projectIds = params.getProjectId() == null
+                    ? projectService.getMemberProjectIds(authenticationFacade.currentUserId())
+                    : Collections.singleton(params.getProjectId());
+            if (projectIds.isEmpty()) {
+                return Page.empty();
+            }
+            params.setProjectIds(projectIds);
         }
-        if (projectIds.isEmpty()) {
-            return Page.empty();
-        }
-        params.setProjectIds(projectIds);
         params.setOrganizationId(authenticationFacade.currentOrganizationId());
         Page<ScheduleEntity> returnValue = scheduleRepository.find(pageable, params);
         return returnValue.isEmpty() ? Page.empty()

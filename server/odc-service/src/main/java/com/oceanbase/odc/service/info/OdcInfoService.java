@@ -102,10 +102,8 @@ public class OdcInfoService {
     @PostConstruct
     public void init() {
         staticOdcInfo = new OdcInfo();
-        staticOdcInfo.setVersion(buildProperties.getVersion());
         staticOdcInfo.setStartTime(
                 instant2OffsetDateTime(Instant.ofEpochMilli(ManagementFactory.getRuntimeMXBean().getStartTime())));
-        staticOdcInfo.setBuildTime(instant2OffsetDateTime(buildProperties.getTime()));
         staticOdcInfo.setHomePageText(infoProperties.getHomePageText());
         staticOdcInfo.setSupportEmail(infoProperties.getSupportEmail());
         staticOdcInfo.setSupportUrl(infoProperties.getSupportUrl());
@@ -134,6 +132,8 @@ public class OdcInfoService {
     public OdcInfo info() {
         OdcInfo odcInfo = ObjectUtil.deepCopy(this.staticOdcInfo, OdcInfo.class);
         String[] profiles = SpringContextUtil.getProfiles();
+        odcInfo.setVersion(infoAdapter.getBuildVersion());
+        odcInfo.setBuildTime(infoAdapter.getBuildTime());
         odcInfo.setProfiles(profiles);
         odcInfo.setPasswordLoginEnabled(this.infoAdapter.isPasswordLoginEnabled());
         odcInfo.setSsoLoginEnabled(Objects.nonNull(getLoginUrl()));

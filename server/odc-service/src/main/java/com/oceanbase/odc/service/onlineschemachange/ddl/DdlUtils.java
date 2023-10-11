@@ -17,12 +17,14 @@ package com.oceanbase.odc.service.onlineschemachange.ddl;
 
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.collections4.CollectionUtils;
 
+import com.google.common.collect.Lists;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
@@ -37,24 +39,29 @@ import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeSqlT
  */
 public class DdlUtils {
 
+    // Pattern for oracle table with wrapped by ""
     private static final Pattern NAME_QUOTE_PATTERN = Pattern.compile("^\"(.+)\"$");
+    // Pattern for mysql table with wrapped by ``
     private static final Pattern NAME_ACCENT_PATTERN = Pattern.compile("^`(.+)`$");
 
-    public static String getNewTableName(String rawName) {
+    private static final List<Pattern> TABLE_PATTERNS = Lists.newArrayList(NAME_ACCENT_PATTERN, NAME_QUOTE_PATTERN);
 
-        return getNewNameWithSuffix(rawName, DdlConstants.NEW_TABLE_NAME_SUFFIX);
-    }
-
-    public static String getRenamedTableName(String rawName) {
-
-        return getNewNameWithSuffix(rawName, DdlConstants.RENAMED_TABLE_NAME_SUFFIX);
-    }
-
-    public static String getNewNameWithSuffix(String rawName, String suffix) {
-        if (rawName == null) {
-            return null;
+    public static String getNewNameWithSuffix(String rawName, String prefix, String suffix) {
+        Optional<Matcher> matcherOptional = findMatcher(rawName);
+        String newTableName;
+        if (matcherOptional.isPresent()) {
+            Matcher matcher = matcherOptional.get();
+            newTableName = rawName.replaceFirst(matcher.group(1),
+                    prefix + matcher.group(1) + suffix);
+        } else {
+            newTableName = prefix + rawName + suffix;
         }
-        return DdlConstants.OSC_TABLE_NAME_PREFIX + getUnwrappedName(rawName) + suffix;
+        return newTableName;
+    }
+
+    public static String getUnwrappedName(String rawName) {
+        Optional<Matcher> matcherOptional = findMatcher(rawName);
+        return matcherOptional.isPresent() ? matcherOptional.get().group(1) : rawName;
     }
 
     public static String queryOriginTableCreateDdl(ConnectionSession session, String tableName)
@@ -68,16 +75,6 @@ public class DdlUtils {
         return ddl.get(0);
     }
 
-    public static String getUnwrappedName(String rawName) {
-        Matcher matcher = NAME_QUOTE_PATTERN.matcher(rawName);
-        if (matcher.matches()) {
-            return matcher.group(1);
-        }
-        matcher = NAME_ACCENT_PATTERN.matcher(rawName);
-
-        return matcher.matches() ? matcher.group(1) : rawName;
-    }
-
     public static String replaceTableName(String sql, String newTableName, DialectType dialectType,
             OnlineSchemaChangeSqlType sqlType) {
         TableNameReplacer rewriter =
@@ -88,6 +85,11 @@ public class DdlUtils {
 
     public static String getUUIDWithoutUnderline() {
         return UUID.randomUUID().toString().replace("-", "");
+    }
+
+
+    private static Optional<Matcher> findMatcher(String rawName) {
+        return TABLE_PATTERNS.stream().map(m -> m.matcher(rawName)).filter(Matcher::matches).findFirst();
     }
 
 }

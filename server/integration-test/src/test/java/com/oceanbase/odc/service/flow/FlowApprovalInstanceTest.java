@@ -204,7 +204,7 @@ public class FlowApprovalInstanceTest extends ServiceTestEnv {
 
     private FlowApprovalInstance createApprovalInstance(boolean startEndPoint, boolean endEndPoint, String name,
             String activityId, Long flowInstanceId) {
-        FlowApprovalInstance instance = new FlowApprovalInstance(1L, flowInstanceId, null, null, 12, startEndPoint,
+        FlowApprovalInstance instance = new FlowApprovalInstance(1L, flowInstanceId, null, 12, startEndPoint,
                 endEndPoint, false, flowableAdaptor, taskService, formService, new LocalEventPublisher(),
                 authenticationFacade, nodeRepository, sequenceRepository, userTaskInstanceRepository);
         instance.setName(name);

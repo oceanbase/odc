@@ -85,20 +85,6 @@ public class OBMySQLBetween2277And3XSchemaAccessor extends OBMySQLSchemaAccessor
     }
 
     @Override
-    public List<DBDatabase> listDatabases() {
-        String sql = "select a.database_id, a.database_name, b.DEFAULT_CHARACTER_SET_NAME, b.DEFAULT_COLLATION_NAME "
-                + "from oceanbase.gv$database a inner join information_schema.schemata b on a.database_name=b.SCHEMA_NAME;";
-        return jdbcOperations.query(sql, (rs, num) -> {
-            DBDatabase database = new DBDatabase();
-            database.setId(rs.getString("database_id"));
-            database.setName(rs.getString("database_name"));
-            database.setCharset(rs.getString("DEFAULT_CHARACTER_SET_NAME"));
-            database.setCollation(rs.getString("DEFAULT_COLLATION_NAME"));
-            return database;
-        });
-    }
-
-    @Override
     protected void fillIndexRange(List<DBTableIndex> indexList, String schemaName,
             String tableName) {
         setIndexRangeByDDL(indexList, schemaName, tableName);
