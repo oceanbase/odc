@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.connection.model;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -65,6 +66,8 @@ import lombok.ToString;
 public class ConnectionConfig
         implements SecurityResource, OrganizationIsolated, CloudConnectionConfig, SSLConnectionConfig, Serializable {
 
+    private static final String SESSION_INIT_SCRIPT_KEY = "SESSION_INIT_SCRIPT";
+    private static final String JDBC_URL_PARAMETERS_KEY = "JDBC_URL_PARAMETERS";
     /**
      * 连接ID，对应 /api/v1 的 sid 字段，注意这里和使用连接时的 sid 概念是不一样的，之前版本未区分，另外之前是 String 类型，现在统一为 Long 类型
      */
@@ -279,6 +282,9 @@ public class ConnectionConfig
     @JsonIgnore
     private String OBTenantName;
 
+    @JsonIgnore
+    private Map<String, Object> attributes;
+
     /**
      * SSL 安全设置
      */
@@ -396,6 +402,40 @@ public class ConnectionConfig
             return OdcConstants.DEFAULT_QUERY_TIMEOUT_SECONDS;
         }
         return queryTimeoutSeconds;
+    }
+
+    public String getSessionInitScript() {
+        if (this.attributes == null) {
+            return null;
+        }
+        Object value = this.attributes.get(SESSION_INIT_SCRIPT_KEY);
+        return value == null ? null : value.toString();
+    }
+
+    @SuppressWarnings("all")
+    public Map<String, Object> getJdbcUrlParameters() {
+        if (this.attributes == null) {
+            return new HashMap<>();
+        }
+        Object value = this.attributes.get(JDBC_URL_PARAMETERS_KEY);
+        if (value instanceof Map) {
+            return (Map<String, Object>) value;
+        }
+        return new HashMap<>();
+    }
+
+    public void setSessionInitScript(String sessionInitScript) {
+        if (this.attributes == null) {
+            this.attributes = new HashMap<>();
+        }
+        this.attributes.put(SESSION_INIT_SCRIPT_KEY, sessionInitScript);
+    }
+
+    public void setJdbcUrlParameters(Map<String, Object> jdbcUrlParameters) {
+        if (this.attributes == null) {
+            this.attributes = new HashMap<>();
+        }
+        this.attributes.put(JDBC_URL_PARAMETERS_KEY, jdbcUrlParameters);
     }
 
     @Data
