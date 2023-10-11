@@ -15,9 +15,6 @@
  */
 package com.oceanbase.odc.test.database;
 
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.Statement;
 import java.util.HashMap;
@@ -31,8 +28,8 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.alibaba.druid.pool.DruidDataSource;
 import com.oceanbase.odc.test.tool.IsolatedNameGenerator;
+import com.oceanbase.odc.test.util.JdbcUtil;
 
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -41,27 +38,22 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class TestDBConfigurations {
-    private final Map<ConnectType, TestDBConfiguration> connectType2ConfigurationMap = new HashMap<>();
+    private final Map<TestDBType, TestDBConfiguration> connectType2ConfigurationMap = new HashMap<>();
     private static volatile TestDBConfigurations instance;
     private static final String TEST_OB_MYSQL_DATABASE_NAME = IsolatedNameGenerator.generateLowerCase("ODC");
     private static final String TEST_OB_ORACLE_DATABASE_NAME = IsolatedNameGenerator.generateUpperCase("ODC");
     private static final String TEST_MYSQL_DATABASE_NAME = IsolatedNameGenerator.generateUpperCase("ODC");
 
     private TestDBConfigurations() {
-        TestDBConfiguration testOBMysql = new TestDBConfiguration(getTestOBMysqlProperties());
-        connectType2ConfigurationMap.put(ConnectType.OB_MYSQL, testOBMysql);
-        TestDBConfiguration testOBOracle = new TestDBConfiguration(getTestOBOracleProperties());
-        connectType2ConfigurationMap.put(ConnectType.OB_ORACLE, testOBOracle);
-        TestDBConfiguration testMysql = new TestDBConfiguration(getTestMysqlProperties());
-        connectType2ConfigurationMap.put(ConnectType.MYSQL, testMysql);
+        for (TestDBType type : TestDBType.values()) {
+            connectType2ConfigurationMap.put(type, new TestDBConfiguration(getTestDBProperties(type)));
+        }
         dropTestDatabases();
         createTestDatabasesAndUpdateConfig();
-
         Thread shutdownHookThread = new Thread(this::expireResources);
         shutdownHookThread.setDaemon(true);
         shutdownHookThread.setName("thread-odc-unit-test-shutdown-hook");
         Runtime.getRuntime().addShutdownHook(shutdownHookThread);
-
         log.info("TestDBConfigurations initialized");
     }
 
@@ -77,46 +69,21 @@ public class TestDBConfigurations {
     }
 
     public TestDBConfiguration getTestOBMysqlConfiguration() {
-        return connectType2ConfigurationMap.get(ConnectType.OB_MYSQL);
+        return connectType2ConfigurationMap.get(TestDBType.OB_MYSQL);
     }
 
     public TestDBConfiguration getTestOBOracleConfiguration() {
-        return connectType2ConfigurationMap.get(ConnectType.OB_ORACLE);
+        return connectType2ConfigurationMap.get(TestDBType.OB_ORACLE);
     }
 
     public TestDBConfiguration getTestMysqlConfiguration() {
-        return connectType2ConfigurationMap.get(ConnectType.MYSQL);
+        return connectType2ConfigurationMap.get(TestDBType.MYSQL);
     }
 
-    private Properties getTestOBMysqlProperties() {
+    private Properties getTestDBProperties(TestDBType type) {
         Properties properties = new Properties();
-        properties.setProperty(TestDBConfiguration.DB_COMMANDLINE_KEY,
-                TestProperties.getProperty("odc.ob.default.mysql.commandline"));
-        properties.setProperty(TestDBConfiguration.DB_SYS_USERNAME_KEY,
-                TestProperties.getProperty("odc.ob.default.mysql.sysUsername"));
-        properties.setProperty(TestDBConfiguration.DB_SYS_PASSWORD_KEY,
-                TestProperties.getProperty("odc.ob.default.mysql.sysPassword"));
-        properties.setProperty(TestDBConfiguration.DB_TYPE_KEY, ConnectType.OB_MYSQL.toString());
-        return properties;
-    }
-
-    private Properties getTestOBOracleProperties() {
-        Properties properties = new Properties();
-        properties.setProperty(TestDBConfiguration.DB_COMMANDLINE_KEY,
-                TestProperties.getProperty("odc.ob.default.oracle.commandline"));
-        properties.setProperty(TestDBConfiguration.DB_SYS_USERNAME_KEY,
-                TestProperties.getProperty("odc.ob.default.oracle.sysUsername"));
-        properties.setProperty(TestDBConfiguration.DB_SYS_PASSWORD_KEY,
-                TestProperties.getProperty("odc.ob.default.oracle.sysPassword"));
-        properties.setProperty(TestDBConfiguration.DB_TYPE_KEY, ConnectType.OB_ORACLE.toString());
-        return properties;
-    }
-
-    private Properties getTestMysqlProperties() {
-        Properties properties = new Properties();
-        properties.setProperty(TestDBConfiguration.DB_COMMANDLINE_KEY,
-                TestProperties.getProperty("odc.mysql.default.commandline"));
-        properties.setProperty(TestDBConfiguration.DB_TYPE_KEY, ConnectType.MYSQL.toString());
+        properties.setProperty(TestDBConfiguration.DB_COMMANDLINE_KEY, TestProperties.getProperty(type.commandlineKey));
+        properties.setProperty(TestDBConfiguration.DB_TYPE_KEY, type.toString());
         return properties;
     }
 
@@ -134,7 +101,7 @@ public class TestDBConfigurations {
         log.info("create test database/user start");
         connectType2ConfigurationMap.forEach((k, v) -> {
             try (Connection conn = v.getDataSource().getConnection(); Statement stmt = conn.createStatement()) {
-                if (k == ConnectType.OB_MYSQL) {
+                if (k == TestDBType.OB_MYSQL) {
                     String database = TEST_OB_MYSQL_DATABASE_NAME;
                     String sql = String.format("CREATE DATABASE %s;", database);
                     stmt.executeUpdate(sql);
@@ -142,7 +109,7 @@ public class TestDBConfigurations {
                     v.setDefaultDBName(database);
                     DataSource newSource = createNewDataSource(v);
                     v.setDataSource(newSource);
-                } else if (k == ConnectType.OB_ORACLE) {
+                } else if (k == TestDBType.OB_ORACLE) {
                     String username = TEST_OB_ORACLE_DATABASE_NAME;
                     StringBuilder sql = new StringBuilder("CREATE USER " + username);
                     if (StringUtils.isNotEmpty(v.getPassword())) {
@@ -158,7 +125,7 @@ public class TestDBConfigurations {
                     v.setUsername(username);
                     DataSource newSource = createNewDataSource(v);
                     v.setDataSource(newSource);
-                } else if (k == ConnectType.MYSQL) {
+                } else if (k == TestDBType.MYSQL) {
                     String database = TEST_MYSQL_DATABASE_NAME;
                     String sql = String.format("CREATE DATABASE %s;", database);
                     stmt.executeUpdate(sql);
@@ -179,17 +146,17 @@ public class TestDBConfigurations {
         log.info("drop test database/user start");
         connectType2ConfigurationMap.forEach((k, v) -> {
             try (Connection conn = v.getDataSource().getConnection(); Statement stmt = conn.createStatement()) {
-                if (k == ConnectType.OB_MYSQL) {
+                if (k == TestDBType.OB_MYSQL) {
                     String database = TEST_OB_MYSQL_DATABASE_NAME;
                     String sql = String.format("DROP DATABASE IF EXISTS %s;", database);
                     stmt.executeUpdate(sql);
                     log.info("drop test database for OB mysql mode, database name: {}", database);
-                } else if (k == ConnectType.OB_ORACLE) {
+                } else if (k == TestDBType.OB_ORACLE) {
                     String username = TEST_OB_ORACLE_DATABASE_NAME;
                     String sql = String.format("DROP USER %s CASCADE;", username);
                     stmt.executeUpdate(sql);
                     log.info("drop test user for OB oracle mode, username: {}", username);
-                } else if (k == ConnectType.MYSQL) {
+                } else if (k == TestDBType.MYSQL) {
                     String database = TEST_MYSQL_DATABASE_NAME;
                     String sql = String.format("DROP DATABASE IF EXISTS %s;", database);
                     stmt.executeUpdate(sql);
@@ -206,14 +173,14 @@ public class TestDBConfigurations {
         DruidDataSource deprecatedSource = (DruidDataSource) config.getDataSource();
         deprecatedSource.close();
         String jdbcUrl =
-                TestDBUtil.buildUrl(config.getHost(), config.getPort(), config.getDefaultDBName(), config.getType());
-        String username = TestDBUtil.buildUser(config.getUsername(), config.getTenant(), config.getCluster());
+                JdbcUtil.buildUrl(config.getHost(), config.getPort(), config.getDefaultDBName(), config.getType());
+        String username = JdbcUtil.buildUser(config.getUsername(), config.getTenant(), config.getCluster());
         String password = config.getPassword();
         DruidDataSource dataSource = new DruidDataSource();
         dataSource.setUrl(jdbcUrl);
         dataSource.setUsername(username);
         dataSource.setPassword(password);
-        String validationQuery = "OB_MYSQL".equals(config.getType()) ? "select 1" : "select 1 from dual";
+        String validationQuery = config.getType() == TestDBType.OB_MYSQL ? "select 1" : "select 1 from dual";
         dataSource.setValidationQuery(validationQuery);
         dataSource.setTestWhileIdle(true);
         dataSource.setTimeBetweenEvictionRunsMillis(30000);
@@ -223,28 +190,4 @@ public class TestDBConfigurations {
         return dataSource;
     }
 
-    private enum ConnectType {
-        OB_MYSQL,
-        OB_ORACLE,
-        MYSQL,
-    }
-
-    @SneakyThrows
-    public static String loadAsString(String... paths) {
-        StringBuilder sb = new StringBuilder();
-        for (String path : paths) {
-            sb.append(readFile(path));
-            sb.append("\n");
-        }
-        return sb.toString();
-    }
-
-    private static String readFile(String strFile) throws IOException {
-        try (InputStream input = new FileInputStream(strFile)) {
-            int available = input.available();
-            byte[] bytes = new byte[available];
-            input.read(bytes);
-            return new String(bytes);
-        }
-    }
 }

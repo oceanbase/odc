@@ -8,7 +8,7 @@ BEGIN
     WHERE table_name = upper(new_table);
     IF v_count > 0
     THEN
-        EXECUTE IMMEDIATE 'drop table ' || new_table || ' purge';
+        EXECUTE IMMEDIATE 'drop table ' || new_table || ' cascade constraints purge';
     END IF;
 END;
 /
