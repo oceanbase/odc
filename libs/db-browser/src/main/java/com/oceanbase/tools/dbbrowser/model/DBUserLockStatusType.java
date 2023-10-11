@@ -29,7 +29,7 @@ public enum DBUserLockStatusType {
 
     public static DBUserLockStatusType from(int lockedStatus) {
         if (lockedStatus != 1 && lockedStatus != 0) {
-            throw new IllegalArgumentException("invalid Statue");
+            throw new IllegalArgumentException("Invalid status");
         }
         return lockedStatus == 1 ? LOCKED : UNLOCKED;
     }
