@@ -29,8 +29,6 @@ import java.util.function.Predicate;
 import org.apache.commons.collections4.CollectionUtils;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.mockito.Mockito;
 import org.quartz.Scheduler;
 import org.springframework.beans.factory.annotation.Autowired;
