@@ -283,7 +283,7 @@ public class ConnectionConfig
     private String OBTenantName;
 
     @JsonIgnore
-    private Map<String, Object> attributes;
+    private transient Map<String, Object> attributes;
 
     /**
      * SSL 安全设置
