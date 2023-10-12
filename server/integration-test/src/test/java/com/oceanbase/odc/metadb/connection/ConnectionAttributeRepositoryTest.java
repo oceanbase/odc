@@ -103,19 +103,4 @@ public class ConnectionAttributeRepositoryTest extends ServiceTestEnv {
         Assert.assertEquals(actual, expect);
     }
 
-    @Test
-    public void find_findByConnectionIdAndOrganizationId_findSucceed() {
-        List<ConnectionAttributeEntity> entities = new ArrayList<>();
-        entities.add(TestRandom.nextObject(ConnectionAttributeEntity.class));
-        entities.add(TestRandom.nextObject(ConnectionAttributeEntity.class));
-        Long connectionId = 100L;
-        entities.forEach(e -> e.setConnectionId(connectionId));
-        entities = this.repository.saveAll(entities);
-
-        ConnectionAttributeEntity expect = entities.get(0);
-        List<ConnectionAttributeEntity> actual = this.repository
-                .findByConnectionIdAndOrganizationId(connectionId, expect.getOrganizationId());
-        Assert.assertEquals(actual.get(0), expect);
-    }
-
 }

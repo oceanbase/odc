@@ -763,7 +763,6 @@ public class ConnectionService {
 
     private List<ConnectionAttributeEntity> connToAttrEntities(@NonNull ConnectionConfig model) {
         Verify.notNull(model.getId(), "ConnectionId");
-        Verify.notNull(model.getOrganizationId(), "OrganizationId");
         Map<String, Object> attributes = model.getAttributes();
         if (attributes == null || attributes.size() == 0) {
             return Collections.emptyList();
@@ -771,7 +770,6 @@ public class ConnectionService {
         return attributes.entrySet().stream().map(entry -> {
             ConnectionAttributeEntity entity = new ConnectionAttributeEntity();
             entity.setConnectionId(model.getId());
-            entity.setOrganizationId(model.getOrganizationId());
             entity.setName(entry.getKey());
             entity.setContent(JsonUtils.toJson(entry.getValue()));
             return entity;

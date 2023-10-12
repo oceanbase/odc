@@ -50,9 +50,6 @@ public class ConnectionAttributeEntity {
     @Column(name = "name", nullable = false)
     private String name;
 
-    @Column(name = "organization_id", updatable = false, nullable = false)
-    private Long organizationId;
-
     @Column(name = "connection_id", updatable = false, nullable = false)
     private Long connectionId;
 

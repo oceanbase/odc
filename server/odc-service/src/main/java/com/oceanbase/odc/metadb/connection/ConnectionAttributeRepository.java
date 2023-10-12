@@ -40,8 +40,6 @@ public interface ConnectionAttributeRepository extends JpaRepository<ConnectionA
 
     List<ConnectionAttributeEntity> findByConnectionId(Long connectionId);
 
-    List<ConnectionAttributeEntity> findByConnectionIdAndOrganizationId(Long connectionId, Long organizationId);
-
     @Transactional
     @Modifying
     @Query(value = "delete from connect_connection_attribute where connection_id=?1", nativeQuery = true)
