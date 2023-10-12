@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Random;
 import java.util.stream.Collectors;
 
@@ -53,6 +54,8 @@ import com.oceanbase.tools.dbbrowser.model.DBTablePartitionType;
 import com.oceanbase.tools.dbbrowser.model.DBTrigger;
 import com.oceanbase.tools.dbbrowser.model.DBType;
 import com.oceanbase.tools.dbbrowser.model.DBTypeCode;
+import com.oceanbase.tools.dbbrowser.model.DBUserDetailIdentity;
+import com.oceanbase.tools.dbbrowser.model.DBUserLockStatusType;
 import com.oceanbase.tools.dbbrowser.model.DBVariable;
 import com.oceanbase.tools.dbbrowser.model.DBView;
 import com.oceanbase.tools.dbbrowser.schema.OBMySQLSchemaAccessorTest.DataType;
@@ -120,6 +123,18 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
         Assert.assertFalse(dbUsers.isEmpty());
         Assert.assertSame(DBObjectType.USER, dbUsers.get(0).getType());
         Assert.assertNotNull(dbUsers.get(0).getName());
+    }
+
+    @Test
+    public void listUsersDetail_Success() {
+        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBOracleDataSource()).createOBOracle();
+        List<DBUserDetailIdentity> dbUsers = accessor.listUsersDetail();
+        Assert.assertFalse(dbUsers.isEmpty());
+        Assert.assertSame(DBObjectType.USER, dbUsers.get(0).getType());
+        Assert.assertNotNull(dbUsers.get(0).getName());
+        Optional<DBUserDetailIdentity> dbUser = dbUsers.stream().filter(a -> a.getName().equals("SYS")).findFirst();
+        Assert.assertTrue(dbUser.isPresent());
+        Assert.assertSame(DBUserLockStatusType.UNLOCKED, dbUser.get().getUserStatus());
     }
 
     @Test

@@ -56,6 +56,8 @@ import com.oceanbase.tools.dbbrowser.model.DBTableIndex;
 import com.oceanbase.tools.dbbrowser.model.DBTrigger;
 import com.oceanbase.tools.dbbrowser.model.DBType;
 import com.oceanbase.tools.dbbrowser.model.DBTypeCode;
+import com.oceanbase.tools.dbbrowser.model.DBUserDetailIdentity;
+import com.oceanbase.tools.dbbrowser.model.DBUserLockStatusType;
 import com.oceanbase.tools.dbbrowser.model.DBView;
 import com.oceanbase.tools.dbbrowser.model.OracleConstants;
 import com.oceanbase.tools.dbbrowser.model.PLConstants;
@@ -132,6 +134,19 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
             item.setCollation(collation.get());
         });
         return databases;
+    }
+
+    @Override
+    public List<DBUserDetailIdentity> listUsersDetail() {
+        SqlBuilder sb = new OracleSqlBuilder();
+        sb.append("SELECT user_name,is_locked FROM SYS.ALL_VIRTUAL_USER_REAL_AGENT");
+        return jdbcOperations.query(sb.toString(), (rs, rowNum) -> {
+            DBUserDetailIdentity dbUser = new DBUserDetailIdentity();
+            dbUser.setName(rs.getString(1));
+            dbUser.setType(DBObjectType.USER);
+            dbUser.setUserStatus(DBUserLockStatusType.from(rs.getInt(2)));
+            return dbUser;
+        });
     }
 
     @Override

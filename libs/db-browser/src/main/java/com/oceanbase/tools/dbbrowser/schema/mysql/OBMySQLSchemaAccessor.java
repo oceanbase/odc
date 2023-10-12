@@ -29,6 +29,8 @@ import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBObjectWarningDescriptor;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.oceanbase.tools.dbbrowser.model.DBTableIndex;
+import com.oceanbase.tools.dbbrowser.model.DBUserDetailIdentity;
+import com.oceanbase.tools.dbbrowser.model.DBUserLockStatusType;
 import com.oceanbase.tools.dbbrowser.parser.SqlParser;
 import com.oceanbase.tools.dbbrowser.parser.result.ParseSqlResult;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessorSqlMappers;
@@ -106,6 +108,19 @@ public class OBMySQLSchemaAccessor extends MySQLNoGreaterThan5740SchemaAccessor 
             log.warn("List system tables from 'oceanbase' failed, reason={}", e.getMessage());
         }
         return results;
+    }
+
+    @Override
+    public List<DBUserDetailIdentity> listUsersDetail() {
+        MySQLSqlBuilder sb = new MySQLSqlBuilder();
+        sb.append("SELECT user_name,is_locked FROM oceanbase.__all_user");
+        return jdbcOperations.query(sb.toString(), (rs, rowNum) -> {
+            DBUserDetailIdentity dbUser = new DBUserDetailIdentity();
+            dbUser.setName(rs.getString(1));
+            dbUser.setType(DBObjectType.USER);
+            dbUser.setUserStatus(DBUserLockStatusType.from(rs.getInt(2)));
+            return dbUser;
+        });
     }
 
     @Override

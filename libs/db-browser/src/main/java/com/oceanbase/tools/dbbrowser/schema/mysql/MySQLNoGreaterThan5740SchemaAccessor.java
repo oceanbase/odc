@@ -75,6 +75,7 @@ import com.oceanbase.tools.dbbrowser.model.DBTablePartitionType;
 import com.oceanbase.tools.dbbrowser.model.DBTableSubpartitionDefinition;
 import com.oceanbase.tools.dbbrowser.model.DBTrigger;
 import com.oceanbase.tools.dbbrowser.model.DBType;
+import com.oceanbase.tools.dbbrowser.model.DBUserDetailIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBVariable;
 import com.oceanbase.tools.dbbrowser.model.DBView;
 import com.oceanbase.tools.dbbrowser.model.MySQLConstants;
@@ -1219,6 +1220,11 @@ public class MySQLNoGreaterThan5740SchemaAccessor implements DBSchemaAccessor {
 
     @Override
     public DBSynonym getSynonym(String schemaName, String synonymName, DBSynonymType synonymType) {
+        throw new UnsupportedOperationException("Not supported yet");
+    }
+
+    @Override
+    public List<DBUserDetailIdentity> listUsersDetail() {
         throw new UnsupportedOperationException("Not supported yet");
     }
 }
