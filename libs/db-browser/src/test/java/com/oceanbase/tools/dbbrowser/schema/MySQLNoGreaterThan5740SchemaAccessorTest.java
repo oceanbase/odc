@@ -23,9 +23,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Assert;
-import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
 
@@ -54,17 +54,17 @@ import lombok.Data;
  * @date 2023/6/8
  */
 public class MySQLNoGreaterThan5740SchemaAccessorTest extends BaseTestEnv {
-    private final String BASE_PATH = "src/test/resources/table/mysql/";
-    private String ddl;
-    private String dropTables;
-    private String testProcedureDDL;
-    private String testFunctionDDL;
-    private List<MySQLNoGreaterThan5740SchemaAccessorTest.DataType> verifyDataTypes = new ArrayList<>();
-    private List<MySQLNoGreaterThan5740SchemaAccessorTest.ColumnAttributes> columnAttributes = new ArrayList<>();
-    private JdbcTemplate jdbcTemplate = new JdbcTemplate(getMySQLDataSource());
+    private static final String BASE_PATH = "src/test/resources/table/mysql/";
+    private static String ddl;
+    private static String dropTables;
+    private static String testProcedureDDL;
+    private static String testFunctionDDL;
+    private static List<MySQLNoGreaterThan5740SchemaAccessorTest.DataType> verifyDataTypes = new ArrayList<>();
+    private static List<MySQLNoGreaterThan5740SchemaAccessorTest.ColumnAttributes> columnAttributes = new ArrayList<>();
+    private static JdbcTemplate jdbcTemplate = new JdbcTemplate(getMySQLDataSource());
 
-    @Before
-    public void setUp() throws Exception {
+    @BeforeClass
+    public static void setUp() throws Exception {
         initVerifyDataTypes();
         initVerifyColumnAttributes();
 
@@ -82,12 +82,12 @@ public class MySQLNoGreaterThan5740SchemaAccessorTest extends BaseTestEnv {
         batchExecuteSql(testProcedureDDL, "/");
     }
 
-    @After
-    public void tearDown() {
+    @AfterClass
+    public static void tearDown() {
         batchExecuteSql(dropTables, ";");
     }
 
-    private void batchExecuteSql(String str, String delimiter) {
+    private static void batchExecuteSql(String str, String delimiter) {
         for (String ddl : Arrays.stream(str.split(delimiter)).filter(item -> StringUtils.isNotBlank(item)).collect(
                 Collectors.toList())) {
             jdbcTemplate.execute(ddl);
@@ -155,11 +155,19 @@ public class MySQLNoGreaterThan5740SchemaAccessorTest extends BaseTestEnv {
     }
 
     @Test
+    public void listTableIndex_TestIndexAvailable_Success() {
+        DBSchemaAccessor accessor = new DBSchemaAccessors(getMySQLDataSource()).createMysql();
+        List<DBTableIndex> indexList = accessor.listTableIndexes(getMySQLDataBaseName(), "test_index_type");
+        Assert.assertTrue(indexList.get(0).getAvailable());
+    }
+
+    @Test
     public void listTableIndex_get_all_index_in_schema_Success() {
         DBSchemaAccessor accessor = new DBSchemaAccessors(getMySQLDataSource()).createMysql();
         Map<String, List<DBTableIndex>> map = accessor.listTableIndexes(getMySQLDataBaseName());
         Assert.assertNotNull(map);
         Assert.assertTrue(map.size() > 0);
+        Assert.assertTrue(map.get("test_index_type").get(0).getAvailable());
     }
 
     @Test
@@ -297,14 +305,14 @@ public class MySQLNoGreaterThan5740SchemaAccessorTest extends BaseTestEnv {
         Assert.assertTrue(tables.size() == 0);
     }
 
-    private void initVerifyColumnAttributes() {
+    private static void initVerifyColumnAttributes() {
         columnAttributes.addAll(Arrays.asList(
                 MySQLNoGreaterThan5740SchemaAccessorTest.ColumnAttributes.of("col1", false, false, true, null,
                         "col1_comments"),
                 MySQLNoGreaterThan5740SchemaAccessorTest.ColumnAttributes.of("col2", true, false, false, null, "")));
     }
 
-    private void initVerifyDataTypes() {
+    private static void initVerifyDataTypes() {
         verifyDataTypes.addAll(Arrays.asList(
                 MySQLNoGreaterThan5740SchemaAccessorTest.DataType.of("col1", "int", 10, 10L, 0, null),
                 MySQLNoGreaterThan5740SchemaAccessorTest.DataType.of("col2", "decimal", 10, 10L, 2, 2),

@@ -59,7 +59,7 @@ public class IntegrationProperties {
 
     @Data
     public static class Body {
-        private BodyType type;
+        private BodyType type = BodyType.RAW;
         private Object content;
     }
 

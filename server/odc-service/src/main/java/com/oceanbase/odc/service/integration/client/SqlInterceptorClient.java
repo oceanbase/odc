@@ -20,19 +20,20 @@ import javax.annotation.PostConstruct;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpUriRequest;
-import org.apache.http.impl.client.BasicResponseHandler;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.core.shared.Verify;
+import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.ExternalServiceError;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.service.integration.HttpOperationService;
 import com.oceanbase.odc.service.integration.model.ApprovalProperties;
 import com.oceanbase.odc.service.integration.model.Encryption;
 import com.oceanbase.odc.service.integration.model.IntegrationProperties.HttpProperties;
+import com.oceanbase.odc.service.integration.model.OdcIntegrationResponse;
 import com.oceanbase.odc.service.integration.model.SqlCheckStatus;
 import com.oceanbase.odc.service.integration.model.SqlInterceptorProperties;
 import com.oceanbase.odc.service.integration.model.SqlInterceptorProperties.CheckProperties;
@@ -91,25 +92,27 @@ public class SqlInterceptorClient {
         } catch (Exception e) {
             throw new UnexpectedException("Build request failed: " + e.getMessage());
         }
-        String response;
+        OdcIntegrationResponse response;
         try {
-            response = httpClient.execute(request, new BasicResponseHandler());
+            response = httpClient.execute(request, new OdcIntegrationResponseHandler());
         } catch (Exception e) {
-            throw new ExternalServiceError("Request execute failed: " + e.getMessage());
+            throw new ExternalServiceError(ErrorCodes.ExternalServiceError,
+                    "Request execute failed: " + e.getMessage());
         }
-        String decrypt = EncryptionUtil.decrypt(response, encryption);
+        response.setContent(EncryptionUtil.decrypt(response.getContent(), encryption));
         try {
             String expression = check.getRequestSuccessExpression();
             boolean valid = httpService.extractHttpResponse(response, expression, Boolean.class);
             Verify.verify(valid, "Response is invalid, except: " + expression + ", response body: " + response);
-            if (httpService.extractHttpResponse(decrypt, check.getInWhiteListExpression(), Boolean.class)) {
+            if (httpService.extractHttpResponse(response, check.getInWhiteListExpression(), Boolean.class)) {
                 return SqlCheckStatus.IN_WHITE_LIST;
-            } else if (httpService.extractHttpResponse(decrypt, check.getInBlackListExpression(), Boolean.class)) {
+            } else if (httpService.extractHttpResponse(response, check.getInBlackListExpression(), Boolean.class)) {
                 return SqlCheckStatus.IN_BLACK_LIST;
-            } else if (httpService.extractHttpResponse(decrypt, check.getNeedReviewExpression(), Boolean.class)) {
+            } else if (httpService.extractHttpResponse(response, check.getNeedReviewExpression(), Boolean.class)) {
                 return SqlCheckStatus.NEED_REVIEW;
             } else {
-                throw new RuntimeException("Response mismatch any check result expression, response body: " + decrypt);
+                throw new RuntimeException(
+                        "Response mismatch any check result expression, response body: " + response.getContent());
             }
         } catch (Exception e) {
             throw new UnexpectedException("Extract SQL check result failed: " + e.getMessage());

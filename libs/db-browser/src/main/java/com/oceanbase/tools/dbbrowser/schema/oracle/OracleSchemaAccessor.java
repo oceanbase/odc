@@ -86,12 +86,13 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
             "COMMENT ON TABLE ${schemaName}.${tableName} IS ${comment}";
     private static final String ORACLE_COLUMN_COMMENT_DDL_TEMPLATE =
             "COMMENT ON COLUMN ${schemaName}.${tableName}.${columnName} IS ${comment}";
-    private static final Set<String> ESCAPE_USER_SET = new HashSet<>(3);
+    protected static final Set<String> ESCAPE_USER_SET = new HashSet<>(3);
 
     static {
         ESCAPE_USER_SET.add("PUBLIC");
         ESCAPE_USER_SET.add("LBACSYS");
         ESCAPE_USER_SET.add("ORAAUDITOR");
+        ESCAPE_USER_SET.add("__public");
     }
     protected OracleDataDictTableNames dataDictTableNames;
     protected JdbcOperations jdbcOperations;
@@ -406,9 +407,9 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
 
     @Override
     public Map<String, List<DBTableColumn>> listBasicTableColumns(String schemaName) {
-        String sql = sqlMapper.getSql(Statements.LIST_BASIC_SCHEMA_COLUMNS);
+        String sql = sqlMapper.getSql(Statements.LIST_BASIC_SCHEMA_TABLE_COLUMNS);
         List<DBTableColumn> tableColumns =
-                jdbcOperations.query(sql, new Object[] {schemaName}, listBasicColumnsRowMapper());
+                jdbcOperations.query(sql, new Object[] {schemaName, schemaName}, listBasicColumnsRowMapper());
         return tableColumns.stream().collect(Collectors.groupingBy(DBTableColumn::getTableName));
     }
 
@@ -416,6 +417,20 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
     public List<DBTableColumn> listBasicTableColumns(String schemaName, String tableName) {
         String sql = sqlMapper.getSql(Statements.LIST_BASIC_TABLE_COLUMNS);
         return jdbcOperations.query(sql, new Object[] {schemaName, tableName}, listBasicColumnsRowMapper());
+    }
+
+    @Override
+    public Map<String, List<DBTableColumn>> listBasicViewColumns(String schemaName) {
+        String sql = sqlMapper.getSql(Statements.LIST_BASIC_SCHEMA_VIEW_COLUMNS);
+        List<DBTableColumn> tableColumns =
+                jdbcOperations.query(sql, new Object[] {schemaName, schemaName}, listBasicColumnsRowMapper());
+        return tableColumns.stream().collect(Collectors.groupingBy(DBTableColumn::getTableName));
+    }
+
+    @Override
+    public List<DBTableColumn> listBasicViewColumns(String schemaName, String viewName) {
+        String sql = sqlMapper.getSql(Statements.LIST_BASIC_VIEW_COLUMNS);
+        return jdbcOperations.query(sql, new Object[] {schemaName, viewName}, listBasicColumnsRowMapper());
     }
 
     @Override
@@ -737,6 +752,7 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
             index.setAlgorithm(DBIndexAlgorithm.fromString(rs.getString(OracleConstants.INDEX_TYPE)));
             index.setCompressInfo(rs.getString(OracleConstants.INDEX_COMPRESSION));
             index.setColumnNames(new ArrayList<>());
+            index.setAvailable("VALID".equals(rs.getString(OracleConstants.INDEX_STATUS)));
             indexName2Index.putIfAbsent(index.getName(), index);
             return index;
         });

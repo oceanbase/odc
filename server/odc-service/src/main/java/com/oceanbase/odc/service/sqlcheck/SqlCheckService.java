@@ -93,8 +93,7 @@ public class SqlCheckService {
     }
 
     public List<CheckViolation> check(@NotNull Long environmentId, @NonNull String databaseName,
-            @NotNull List<String> sqls,
-            @NotNull ConnectionConfig config) {
+            @NotNull List<String> sqls, @NotNull ConnectionConfig config) {
         if (CollectionUtils.isEmpty(sqls)) {
             return Collections.emptyList();
         }
@@ -103,7 +102,7 @@ public class SqlCheckService {
         OBConsoleDataSourceFactory factory =
                 new OBConsoleDataSourceFactory(config, ConnectionAccountType.MAIN, true, false);
         factory.resetSchema(origin -> databaseName);
-        SqlCheckContext checkContext = new SqlCheckContext();
+        SqlCheckContext checkContext = new SqlCheckContext((long) sqls.size());
         try (SingleConnectionDataSource dataSource = (SingleConnectionDataSource) factory.getDataSource()) {
             JdbcTemplate jdbc = new JdbcTemplate(dataSource);
             List<SqlCheckRule> checkRules = getRules(rules, config.getDialectType(), jdbc);

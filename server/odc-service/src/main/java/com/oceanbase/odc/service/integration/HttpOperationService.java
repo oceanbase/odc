@@ -30,6 +30,10 @@ import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.methods.RequestBuilder;
 import org.apache.http.message.BasicNameValuePair;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cloud.context.config.annotation.RefreshScope;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.expression.Expression;
 import org.springframework.expression.ExpressionParser;
 import org.springframework.expression.spel.SpelParserConfiguration;
@@ -37,15 +41,19 @@ import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.common.json.JsonPathUtils;
+import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.service.integration.model.Encryption;
 import com.oceanbase.odc.service.integration.model.IntegrationProperties.ApiProperties;
 import com.oceanbase.odc.service.integration.model.IntegrationProperties.Body;
 import com.oceanbase.odc.service.integration.model.IntegrationProperties.BodyType;
 import com.oceanbase.odc.service.integration.model.IntegrationProperties.HttpProperties;
+import com.oceanbase.odc.service.integration.model.OdcIntegrationResponse;
 import com.oceanbase.odc.service.integration.model.TemplateVariables;
 import com.oceanbase.odc.service.integration.util.EncryptionUtil;
 
+import lombok.Data;
 import lombok.NonNull;
 
 /**
@@ -54,6 +62,10 @@ import lombok.NonNull;
  */
 @Component
 public class HttpOperationService {
+
+    @Autowired
+    private IntegrationConfigProperties configProperties;
+
     private static final SpelParserConfiguration SPEL_PARSER_CONFIGURATION = new SpelParserConfiguration(true, true);
     private static final ExpressionParser EXPRESSION_PARSER = new SpelExpressionParser(SPEL_PARSER_CONFIGURATION);
 
@@ -70,6 +82,7 @@ public class HttpOperationService {
                 .build();
         builder.setConfig(requestConfig);
         // set url
+        PreConditions.validInUrlWhiteList(api.getUrl(), configProperties.getUrlWhiteList());
         builder.setUri(variables.process(api.getUrl()));
         // set headers
         if (Objects.nonNull(api.getHeaders())) {
@@ -112,4 +125,38 @@ public class HttpOperationService {
         Expression expression = EXPRESSION_PARSER.parseExpression(extractExpression);
         return expression.getValue(responseObject, type);
     }
+
+    @RefreshScope
+    @Configuration
+    @Data
+    public static class IntegrationConfigProperties {
+
+        @Value("${odc.integration.url-white-list:}")
+        private List<String> urlWhiteList;
+
+    }
+
+
+    public <T> T extractHttpResponse(OdcIntegrationResponse decryptedResponse, String extractExpression,
+            Class<T> type) {
+        String content = decryptedResponse.getContent();
+        String mineType = decryptedResponse.getContentType().getMimeType();
+        // ODC treats the response body as a JSON string by default.
+        // If the Content-Type is XML, then try to convert it to JSON.
+        switch (mineType) {
+            case "text/xml":
+            case "application/xml":
+            case "application/atom+xml":
+            case "application/xhtml+xml":
+            case "application/soap+xml":
+                content = JsonUtils.xmlToJson(content);
+                break;
+            default:
+                break;
+        }
+        Object responseObject = JsonPathUtils.read(content, "$");
+        Expression expression = EXPRESSION_PARSER.parseExpression(extractExpression);
+        return expression.getValue(responseObject, type);
+    }
+
 }

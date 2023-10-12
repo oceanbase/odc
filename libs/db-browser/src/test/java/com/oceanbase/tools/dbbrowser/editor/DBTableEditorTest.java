@@ -24,8 +24,8 @@ import org.junit.Test;
 import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLColumnEditor;
 import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLConstraintEditor;
 import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLDBTablePartitionEditor;
-import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLTableEditor;
 import com.oceanbase.tools.dbbrowser.editor.mysql.OBMySQLIndexEditor;
+import com.oceanbase.tools.dbbrowser.editor.mysql.OBMySQLTableEditor;
 import com.oceanbase.tools.dbbrowser.editor.util.DBObjectTestUtils;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
@@ -37,7 +37,7 @@ public class DBTableEditorTest {
 
     @BeforeClass
     public static void setUp() {
-        tableEditor = new MySQLTableEditor(new OBMySQLIndexEditor(), new MySQLColumnEditor(),
+        tableEditor = new OBMySQLTableEditor(new OBMySQLIndexEditor(), new MySQLColumnEditor(),
                 new MySQLConstraintEditor(), new MySQLDBTablePartitionEditor());
     }
 

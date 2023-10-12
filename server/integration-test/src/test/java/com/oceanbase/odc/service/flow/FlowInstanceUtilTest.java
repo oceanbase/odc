@@ -164,7 +164,7 @@ public class FlowInstanceUtilTest extends ServiceTestEnv {
 
     private FlowApprovalInstance createApprovalInstance(Long flowInstanceId) {
         return new FlowApprovalInstance(authenticationFacade.currentOrganizationId(), flowInstanceId, null,
-                null, 10, false, false, false, flowAdaptor, taskService, formService, new LocalEventPublisher(),
+                10, false, false, false, flowAdaptor, taskService, formService, new LocalEventPublisher(),
                 authenticationFacade, nodeRepository, sequenceRepository, userTaskInstanceRepository);
     }
 

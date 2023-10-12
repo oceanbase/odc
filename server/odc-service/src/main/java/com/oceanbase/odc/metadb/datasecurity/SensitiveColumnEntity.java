@@ -29,6 +29,7 @@ import javax.persistence.Table;
 import org.hibernate.annotations.Generated;
 import org.hibernate.annotations.GenerationTime;
 
+import com.oceanbase.odc.service.datasecurity.model.SensitiveColumnType;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveLevel;
 
 import lombok.Data;
@@ -46,6 +47,10 @@ public class SensitiveColumnEntity {
     @Column(name = "id", nullable = false)
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Enumerated(value = EnumType.STRING)
+    @Column(name = "type", nullable = false)
+    private SensitiveColumnType type;
 
     @Column(name = "is_enabled", nullable = false)
     private Boolean enabled;

@@ -180,6 +180,13 @@ mysql:
     FROM
       test_data_masking_1 AS t1 NATURAL
       JOIN test_data_masking_2 AS t2;
+  from-multi-join-table: |-
+    SELECT
+      t1.*
+    FROM
+      test_data_masking_1 t1
+      INNER JOIN test_data_masking_2 t2 ON t1.id = t2.id
+      INNER JOIN test_data_masking_3 t3 ON t2.id = t3.id;
   from-single-subquery: |-
     SELECT
       *
@@ -230,7 +237,7 @@ mysql:
     FROM
       test_data_masking_1 t1
     WHERE
-      t.id = (
+      t1.id = (
         SELECT
           id
         FROM
@@ -238,7 +245,7 @@ mysql:
         LIMIT
           1
       )
-      OR t.name IN (
+      OR t1.name IN (
         SELECT
           name
         FROM

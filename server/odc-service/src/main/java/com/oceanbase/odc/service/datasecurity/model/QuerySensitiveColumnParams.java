@@ -28,8 +28,8 @@ import lombok.Data;
 @Builder
 public class QuerySensitiveColumnParams {
     private String fuzzyTableColumn;
-    private List<String> datasourceNames;
-    private List<String> databaseNames;
+    private List<Long> databaseIds;
+    private List<Long> datasourceIds;
     private List<Long> maskingAlgorithmIds;
     private Boolean enabled;
 }
