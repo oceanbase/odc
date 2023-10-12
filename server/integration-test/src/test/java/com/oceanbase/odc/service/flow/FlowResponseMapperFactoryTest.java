@@ -259,7 +259,7 @@ public class FlowResponseMapperFactoryTest extends ServiceTestEnv {
     private FlowApprovalInstance createApprovalInstance(Long flowInstanceId, Integer expireIntervalSeconds,
             boolean startEndPoint, boolean endEndPoint) {
         return new FlowApprovalInstance(authenticationFacade.currentOrganizationId(), flowInstanceId, null,
-                null, expireIntervalSeconds, startEndPoint, endEndPoint, false, flowAdaptor, taskService, formService,
+                expireIntervalSeconds, startEndPoint, endEndPoint, false, flowAdaptor, taskService, formService,
                 eventPublisher, authenticationFacade, nodeRepository, sequenceRepository, userTaskInstanceRepository);
     }
 

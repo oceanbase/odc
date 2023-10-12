@@ -209,8 +209,8 @@ public class SensitiveRuleService {
     }
 
     @SkipAuthorize("odc internal usages")
-    public List<SensitiveRule> getByProjectId(@NotNull Long projectId) {
-        List<SensitiveRuleEntity> entities = ruleRepository.findByProjectId(projectId);
+    public List<SensitiveRule> getByProjectIdAndEnabled(@NotNull Long projectId) {
+        List<SensitiveRuleEntity> entities = ruleRepository.findByProjectIdAndEnabled(projectId, true);
         return entities.stream().map(ruleMapper::entityToModel).collect(Collectors.toList());
     }
 

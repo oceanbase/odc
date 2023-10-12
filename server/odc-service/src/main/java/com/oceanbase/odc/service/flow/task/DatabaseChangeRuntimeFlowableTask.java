@@ -174,7 +174,9 @@ public class DatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDelegate<D
         DatabaseChangeParameters parameters = FlowTaskUtil.getAsyncParameter(execution);
         ConnectionConfig connectionConfig = FlowTaskUtil.getConnectionConfig(execution);
         connectionConfig.setQueryTimeoutSeconds((int) TimeUnit.MILLISECONDS.toSeconds(parameters.getTimeoutMillis()));
-        ConnectionSession connectionSession = new DefaultConnectSessionFactory(connectionConfig).generateSession();
+        DefaultConnectSessionFactory sessionFactory = new DefaultConnectSessionFactory(connectionConfig);
+        sessionFactory.setSessionTimeoutMillis(parameters.getTimeoutMillis());
+        ConnectionSession connectionSession = sessionFactory.generateSession();
         if (connectionSession.getDialectType() == DialectType.OB_ORACLE) {
             ConnectionSessionUtil.initConsoleSessionTimeZone(connectionSession, connectProperties.getDefaultTimeZone());
         }

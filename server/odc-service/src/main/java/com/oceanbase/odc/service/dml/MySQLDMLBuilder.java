@@ -22,6 +22,7 @@ import java.util.Set;
 
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.service.dml.model.DataModifyUnit;
+import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
 import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
 
@@ -38,8 +39,8 @@ import lombok.NonNull;
 public class MySQLDMLBuilder extends BaseDMLBuilder {
 
     public MySQLDMLBuilder(@NonNull List<DataModifyUnit> modifyUnits, List<String> whereColumns,
-            ConnectionSession connectionSession) {
-        super(modifyUnits, whereColumns, connectionSession);
+            ConnectionSession connectionSession, List<DBTableConstraint> constraints) {
+        super(modifyUnits, whereColumns, connectionSession, constraints);
     }
 
     @Override

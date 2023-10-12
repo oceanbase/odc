@@ -33,15 +33,16 @@ public class OdcDBSession {
     private String svrIp;
 
     public static OdcDBSession from(DBSession dbSession) {
-        OdcDBSession odcDBSession = new OdcDBSession();
-        odcDBSession.setSessionId(Long.parseLong(dbSession.getId()));
-        odcDBSession.setDbUser(dbSession.getUsername());
-        odcDBSession.setSrcIp(dbSession.getHost());
-        odcDBSession.setDatabase(dbSession.getDatabaseName());
-        odcDBSession.setCommand(dbSession.getCommand());
-        odcDBSession.setExecuteTime(dbSession.getExecuteTime());
-        odcDBSession.setStatus(dbSession.getState());
-        odcDBSession.setObproxyIp(dbSession.getProxyHost());
-        return odcDBSession;
+        OdcDBSession session = new OdcDBSession();
+        session.setSessionId(Long.parseLong(dbSession.getId()));
+        session.setDbUser(dbSession.getUsername());
+        session.setSrcIp(dbSession.getHost());
+        session.setDatabase(dbSession.getDatabaseName());
+        session.setCommand(dbSession.getCommand());
+        session.setExecuteTime(dbSession.getExecuteTime());
+        session.setStatus(dbSession.getState());
+        session.setObproxyIp(dbSession.getProxyHost());
+        session.setSql(dbSession.getLatestQueries());
+        return session;
     }
 }

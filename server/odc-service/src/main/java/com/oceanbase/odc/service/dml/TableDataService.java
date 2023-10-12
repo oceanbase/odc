@@ -41,6 +41,7 @@ import com.oceanbase.odc.service.dml.model.BatchDataModifyResp;
 import com.oceanbase.odc.service.dml.model.DataModifyUnit;
 import com.oceanbase.odc.service.feature.AllFeatures;
 import com.oceanbase.odc.service.feature.Features;
+import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -66,7 +67,7 @@ public class TableDataService {
         BatchDataModifyResp resp = new BatchDataModifyResp();
         resp.setTableName(tableName);
         resp.setSchemaName(schemaName);
-
+        List<DBTableConstraint> constraints = BaseDMLBuilder.getConstraints(schemaName, tableName, connectionSession);
         StringBuilder sqlBuilder = new StringBuilder();
         for (Row row : sortedRows) {
             Operate operate = row.getOperate();
@@ -84,9 +85,10 @@ public class TableDataService {
             DMLBuilder dmlBuilder;
             DialectType dialectType = connectionSession.getDialectType();
             if (dialectType.isMysql()) {
-                dmlBuilder = new MySQLDMLBuilder(row.getUnits(), req.getWhereColumns(), connectionSession);
+                dmlBuilder = new MySQLDMLBuilder(row.getUnits(), req.getWhereColumns(), connectionSession, constraints);
             } else if (dialectType.isOracle()) {
-                dmlBuilder = new OracleDMLBuilder(row.getUnits(), req.getWhereColumns(), connectionSession);
+                dmlBuilder =
+                        new OracleDMLBuilder(row.getUnits(), req.getWhereColumns(), connectionSession, constraints);
             } else {
                 throw new IllegalArgumentException("Illegal dialect type, " + dialectType);
             }

@@ -36,7 +36,7 @@ class OdcRestLogInterceptor implements ClientHttpRequestInterceptor {
         ODCRestContext odcRestContext = OdcRestTemplate.get();
         Verify.notNull(odcRestContext, "odcRestContext");
         odcRestContext.setRealUrl(request.getURI().toString());
-        log.info("start call rest {} , method:{} , URL:{}", odcRestContext.getApiName(), request.getMethod(),
+        log.debug("start call rest {} , method:{} , URL:{}", odcRestContext.getApiName(), request.getMethod(),
                 request.getURI());
         return execution.execute(request, body);
     }

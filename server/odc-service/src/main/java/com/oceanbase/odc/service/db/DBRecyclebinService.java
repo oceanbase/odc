@@ -29,6 +29,7 @@ import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.service.db.model.DBRecycleObject;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
@@ -123,6 +124,9 @@ public class DBRecyclebinService {
             PreConditions.notBlank(recycleObject.getObjType(), "recycleObject.objType");
             String type = recycleObject.getObjType().toLowerCase();
             if (!SUPPORTED_TYPES.contains(type.toUpperCase())) {
+                String supportedTypes = String.join(",", SUPPORTED_TYPES);
+                sqlBuilder.append("-- ").append(ErrorCodes.ObInvalidObjectTypesForRecyclebin.getLocalizedMessage(
+                        new Object[] {recycleObject.getObjName(), type.toUpperCase(), supportedTypes}));
                 continue;
             }
             if ("view".equalsIgnoreCase(type)) {
@@ -151,6 +155,8 @@ public class DBRecyclebinService {
             String type = recycleObject.getObjType().toLowerCase();
             if ("view".equalsIgnoreCase(type)) {
                 type = "table";
+            } else if ("normal index".equalsIgnoreCase(type)) {
+                type = "index";
             }
             sqlBuilder.append("purge ").append(type).append(" ")
                     .identifier(recycleObject.getObjName()).append(";\r\n");

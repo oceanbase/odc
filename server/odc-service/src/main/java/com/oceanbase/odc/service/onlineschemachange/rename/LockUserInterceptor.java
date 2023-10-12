@@ -25,6 +25,7 @@ import org.springframework.util.CollectionUtils;
 
 import com.google.common.collect.Lists;
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
@@ -116,6 +117,9 @@ public class LockUserInterceptor implements RenameTableInterceptor {
     }
 
     private void executeAlterLock(String user, String lockMode) {
+        if (connSession.getDialectType().isOracle()) {
+            user = StringUtils.quoteOracleIdentifier(user);
+        }
         String sql = "alter user " + user + lockMode;
         jdbcOperations.execute(sql);
         log.info("Execute sql: {} ", sql);
@@ -132,6 +136,9 @@ public class LockUserInterceptor implements RenameTableInterceptor {
             users.add("PUBLIC");
             users.add("LBACSYS");
             users.add("ORAAUDITOR");
+            users.add("ROOT");
+
+            users.add(config.getUsername().toUpperCase());
         }
         return users;
     }

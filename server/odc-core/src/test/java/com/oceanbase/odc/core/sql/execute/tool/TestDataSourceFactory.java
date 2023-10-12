@@ -119,7 +119,9 @@ public class TestDataSourceFactory implements CloneableDataSourceFactory {
     private static String getUsername(DialectType dialectType) {
         TestDBConfiguration configuration = getConfiguration(dialectType);
         StringBuilder stringBuilder = new StringBuilder(configuration.getUsername());
-        stringBuilder.append("@").append(configuration.getTenant());
+        if (StringUtils.isNotBlank(configuration.getTenant())) {
+            stringBuilder.append("@").append(configuration.getTenant());
+        }
         if (StringUtils.isNotBlank(configuration.getCluster())) {
             stringBuilder.append("#").append(configuration.getCluster());
         }
