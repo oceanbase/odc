@@ -81,6 +81,8 @@ public class DBUserLogStatusMonitor implements DBUserMonitor {
                 .until(this::logAccountStatus)
                 .build()
                 .start();
+        // This monitor be called stopped or timeout
+        stopped.set(true);
     }
 
     @Override
