@@ -61,7 +61,8 @@ public class SubTaskParameterGeneratorTest {
                         getTestConnectionConfig(), ConnectionSessionUtil.getCurrentSchema(session));
         Assert.assertEquals(2, subTaskParameters.size());
         subTaskParameters.forEach(
-                param -> Assert.assertTrue(param.getNewTableName().endsWith(DdlConstants.NEW_TABLE_NAME_SUFFIX)));
+                param -> Assert
+                        .assertTrue(param.getNewTableName().endsWith(DdlConstants.NEW_TABLE_NAME_SUFFIX_OB_ORACLE)));
     }
 
     @Test
