@@ -90,8 +90,8 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
     protected static final Set<String> ESCAPE_USER_SET = new HashSet<>(3);
 
     static {
-        ESCAPE_USER_SET.add("LBACSYS");
         ESCAPE_USER_SET.add("PUBLIC");
+        ESCAPE_USER_SET.add("LBACSYS");
         ESCAPE_USER_SET.add("ORAAUDITOR");
         ESCAPE_USER_SET.add("__public");
     }
