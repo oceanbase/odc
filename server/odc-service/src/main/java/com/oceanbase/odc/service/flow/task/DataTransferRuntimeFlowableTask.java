@@ -21,14 +21,15 @@ import java.util.concurrent.TimeUnit;
 import org.flowable.engine.delegate.DelegateExecution;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.metadb.task.TaskEntity;
-import com.oceanbase.odc.service.connection.ConnectionTesting;
 import com.oceanbase.odc.service.datatransfer.DataTransferService;
 import com.oceanbase.odc.service.datatransfer.model.DataTransferParameter;
 import com.oceanbase.odc.service.datatransfer.task.DataTransferTaskContext;
 import com.oceanbase.odc.service.flow.OdcInternalFileService;
+import com.oceanbase.odc.service.flow.task.model.DataTransferTaskResult;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
@@ -49,8 +50,6 @@ public class DataTransferRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Voi
     private DataTransferService dataTransferService;
     @Autowired
     private OdcInternalFileService odcInternalFileService;
-    @Autowired
-    private ConnectionTesting connectionTesting;
     private volatile DataTransferTaskContext context;
 
     @Override
@@ -60,7 +59,7 @@ public class DataTransferRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Voi
         }
         boolean result = context.cancel(true);
         log.info("Data transfer task has been cancelled, taskId={}, result={}", taskId, result);
-        taskService.cancel(taskId, context.getStatus());
+        taskService.cancel(taskId, DataTransferTaskResult.of(context));
         return true;
     }
 
@@ -88,10 +87,8 @@ public class DataTransferRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Voi
              */
             odcInternalFileService.getExternalImportFiles(taskEntity, submitter, parameter.getImportFileName());
         }
-
         context = dataTransferService.create(taskId + "", parameter);
-
-        taskService.start(taskId);
+        taskService.start(taskId, DataTransferTaskResult.of(context));
         return null;
     }
 
@@ -119,10 +116,11 @@ public class DataTransferRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Voi
     @Override
     protected void onFailure(Long taskId, TaskService taskService) {
         log.warn("Data transfer task failed, taskId={}", taskId);
+        DataTransferTaskResult result = DataTransferTaskResult.of(context);
         if (context == null) {
-            taskService.fail(taskId, 0, null);
+            taskService.fail(taskId, 0, result);
         } else {
-            taskService.fail(taskId, context.getProgress(), context.getStatus());
+            taskService.fail(taskId, context.getProgress(), result);
         }
         super.onFailure(taskId, taskService);
     }
@@ -142,7 +140,7 @@ public class DataTransferRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Voi
     @Override
     protected void onTimeout(Long taskId, TaskService taskService) {
         log.warn("Data transfer task timeout, taskId={}", taskId);
-        taskService.fail(taskId, context.getProgress(), context.getStatus());
+        taskService.fail(taskId, context.getProgress(), DataTransferTaskResult.of(context));
     }
 
     @Override
@@ -150,7 +148,10 @@ public class DataTransferRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Voi
         if (Objects.isNull(context)) {
             return;
         }
-        taskService.updateProgress(taskId, context.getProgress());
+        TaskEntity task = taskService.detail(taskId);
+        task.setProgressPercentage(context.getProgress());
+        task.setResultJson(JsonUtils.toJson(DataTransferTaskResult.of(context)));
+        taskService.update(task);
     }
 
 }

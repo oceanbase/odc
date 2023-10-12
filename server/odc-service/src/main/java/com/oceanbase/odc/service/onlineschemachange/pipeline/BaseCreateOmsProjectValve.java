@@ -26,7 +26,6 @@ import java.util.UUID;
 import org.quartz.JobKey;
 import org.quartz.SchedulerException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.session.ConnectionSession;
@@ -79,9 +78,6 @@ public abstract class BaseCreateOmsProjectValve extends BaseValve {
     @Autowired
     protected OnlineSchemaChangeProperties oscProperties;
 
-    @Value("${osc-check-task-cron-expression:0/10 * * * * ?}")
-    private String oscCheckTaskCronExpression;
-
     @Autowired
     private ScheduleService scheduleService;
 
@@ -98,6 +94,7 @@ public abstract class BaseCreateOmsProjectValve extends BaseValve {
         try {
             omsDsId = dataSourceOpenApiService.createOceanBaseDataSource(dataSourceRequest);
         } catch (OmsException ex) {
+            log.warn("Create database occur error {}", ex.getMessage());
             omsDsId = reCreateDataSourceRequestAfterThrowsException(context.getTaskParameter(), dataSourceRequest, ex);
         }
 
@@ -173,8 +170,8 @@ public abstract class BaseCreateOmsProjectValve extends BaseValve {
 
         List<TableTransferObject> tables = new ArrayList<>();
         TableTransferObject tableTransferObject = new TableTransferObject();
-        tableTransferObject.setName(oscScheduleTaskParameters.getOriginTableNameUnWrapped());
-        tableTransferObject.setMappedName(oscScheduleTaskParameters.getNewTableNameUnWrapped());
+        tableTransferObject.setName(oscScheduleTaskParameters.getOriginTableNameUnwrapped());
+        tableTransferObject.setMappedName(oscScheduleTaskParameters.getNewTableNameUnwrapped());
         tables.add(tableTransferObject);
         databaseTransferObject.setTables(tables);
 
@@ -196,8 +193,6 @@ public abstract class BaseCreateOmsProjectValve extends BaseValve {
             ConnectionSession connectionSession, OnlineSchemaChangeScheduleTaskParameters oscScheduleTaskParameters) {
 
         CreateOceanBaseDataSourceRequest request = new CreateOceanBaseDataSourceRequest();
-        doCreateDataSourceRequest(config, connectionSession, oscScheduleTaskParameters, request);
-
         request.setName(UUID.randomUUID().toString().replace("-", ""));
         request.setType(OmsOceanBaseType.from(config.getType()).name());
         request.setTenant(config.getTenantName());
@@ -206,6 +201,7 @@ public abstract class BaseCreateOmsProjectValve extends BaseValve {
         if (config.getPassword() != null) {
             request.setPassword(Base64.getEncoder().encodeToString(config.getPassword().getBytes()));
         }
+        doCreateDataSourceRequest(config, connectionSession, oscScheduleTaskParameters, request);
         return request;
     }
 

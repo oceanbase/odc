@@ -104,8 +104,7 @@ public class ApprovalSynchronizer {
                     processInstance = flowInstanceId2ProcessInstance.get(entity.getFlowInstanceId());
                     variables = FlowTaskUtil.getTemplateVariables(processInstance.getProcessVariables());
                     variables.setAttribute(Variable.PROCESS_INSTANCE_ID, entity.getExternalFlowInstanceId());
-                    update(entity.getFlowInstanceId(), entity.getExternalApprovalId(), processInstance,
-                            entity.getExternalFlowInstanceId(), variables);
+                    update(entity.getFlowInstanceId(), entity.getExternalApprovalId(), processInstance, variables);
                 } catch (Exception e) {
                     log.warn(
                             "Failed to synchronize external approval status, flowInstanceId={}, integrationId={}, externalProcessInstanceId={}, variables={}",
@@ -119,10 +118,7 @@ public class ApprovalSynchronizer {
     }
 
     private void update(Long flowInstanceId, Long externalApprovalId, ProcessInstance processInstance,
-            String externalInstanceId, TemplateVariables variables) throws IOException {
-        if ("N/A".equals(externalInstanceId)) {
-            flowInstanceService.cancel(flowInstanceId, true);
-        }
+            TemplateVariables variables) throws IOException {
         ApprovalProperties properties =
                 (ApprovalProperties) integrationService.getIntegrationProperties(externalApprovalId);
         ApprovalStatus status = approvalClient.status(properties, variables);

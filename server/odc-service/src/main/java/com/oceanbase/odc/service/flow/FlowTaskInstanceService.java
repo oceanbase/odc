@@ -203,6 +203,8 @@ public class FlowTaskInstanceService {
         TaskEntity task = flowInstanceService.getTaskByFlowInstanceId(id);
         if (task.getTaskType() == TaskType.ONLINE_SCHEMA_CHANGE) {
             return getOnlineSchemaChangeResult(task);
+        } else if (task.getTaskType() == TaskType.EXPORT) {
+            return getDataTransferResult(task);
         }
 
         Optional<TaskEntity> taskEntityOptional = getCompleteTaskEntity(id);
@@ -214,7 +216,7 @@ public class FlowTaskInstanceService {
             return getAsyncResult(taskEntity);
         } else if (taskEntity.getTaskType() == TaskType.MOCKDATA) {
             return getMockDataResult(taskEntity);
-        } else if (taskEntity.getTaskType() == TaskType.EXPORT || taskEntity.getTaskType() == TaskType.IMPORT) {
+        } else if (taskEntity.getTaskType() == TaskType.IMPORT) {
             return getDataTransferResult(taskEntity);
         } else if (taskEntity.getTaskType() == TaskType.SHADOWTABLE_SYNC) {
             return getShadowTableSyncTaskResult(taskEntity);

@@ -15,36 +15,24 @@
  */
 package com.oceanbase.odc.service.onlineschemachange;
 
-import static org.mockito.Mockito.doThrow;
-
 import java.text.MessageFormat;
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Consumer;
-import java.util.function.Predicate;
 
-import org.apache.commons.collections4.CollectionUtils;
 import org.junit.Assert;
 import org.junit.Test;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.oceanbase.odc.common.util.StringUtils;
-import com.oceanbase.odc.core.session.ConnectionSession;
-import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.TaskErrorStrategy;
-import com.oceanbase.odc.core.shared.exception.BadArgumentException;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
-import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeScheduleTaskParameters;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeSqlType;
 import com.oceanbase.odc.service.onlineschemachange.model.OriginTableCleanStrategy;
 import com.oceanbase.odc.service.onlineschemachange.pipeline.OscValveContext;
 import com.oceanbase.odc.service.onlineschemachange.pipeline.SwapTableNameValve;
-import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
-import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -54,7 +42,7 @@ import lombok.extern.slf4j.Slf4j;
  * @since 4.2.0
  */
 @Slf4j
-public class OnlineSchemaChangeSwapTableTest extends OscTestEnv {
+public class OnlineSchemaChangeOBMysqlSwapTableTest extends OBMySqlOscTestEnv {
 
     @Autowired
     private SwapTableNameValve swapTableNameValve;
@@ -77,19 +65,6 @@ public class OnlineSchemaChangeSwapTableTest extends OscTestEnv {
                 this::checkSwapTableAndRenameDrop);
     }
 
-    @Test
-    public void test_osc_swap_table_failed_drop_new_table() {
-
-        String originTableName = getOriginTableName();
-        doThrow(new BadArgumentException(ErrorCodes.BadArgument, "bad argument"))
-                .when(dbSessionManager)
-                .killAllSessions(Mockito.any(ConnectionSession.class), Mockito.any(Predicate.class), Mockito.anyInt());
-
-        executeOscSwapTable(
-                originTableName,
-                c -> c.setOriginTableCleanStrategy(OriginTableCleanStrategy.ORIGIN_TABLE_DROP),
-                this::checkSwapTableFailedAndDropNewTable);
-    }
 
     private void executeOscSwapTable(String originTableName,
             Consumer<OnlineSchemaChangeParameters> changeParametersConsumer,
@@ -138,76 +113,6 @@ public class OnlineSchemaChangeSwapTableTest extends OscTestEnv {
         String newTableNameDdl = MessageFormat.format(newTableTemplate, originTableName);
         changeParameters.setSqlContent(newTableNameDdl);
         return changeParameters;
-    }
-
-    private void checkSwapTableAndRenameReserved(OnlineSchemaChangeScheduleTaskParameters taskParameters) {
-        DBSchemaAccessor dbSchemaAccessor = DBSchemaAccessors.create(connectionSession);
-        List<String> renamedTable = dbSchemaAccessor.showTablesLike(taskParameters.getDatabaseName(),
-                taskParameters.getRenamedTableName());
-
-        List<String> originTable = dbSchemaAccessor.showTablesLike(taskParameters.getDatabaseName(),
-                taskParameters.getOriginTableNameUnWrapped());
-
-        Assert.assertFalse(CollectionUtils.isEmpty(renamedTable));
-        Assert.assertFalse(CollectionUtils.isEmpty(originTable));
-
-        // if swap table successful
-        List<DBTableColumn> tableColumnFromNew = dbSchemaAccessor.listTableColumns(taskParameters.getDatabaseName(),
-                taskParameters.getOriginTableNameUnWrapped());
-
-        Optional<DBTableColumn> name1Col = tableColumnFromNew.stream()
-                .filter(a -> a.getName().equalsIgnoreCase("name1"))
-                .findFirst();
-        Assert.assertTrue(name1Col.isPresent());
-        Assert.assertEquals(30L, name1Col.get().getMaxLength().longValue());
-
-
-        List<DBTableColumn> renamedTableColumns = dbSchemaAccessor.listTableColumns(taskParameters.getDatabaseName(),
-                taskParameters.getRenamedTableName());
-
-        Optional<DBTableColumn> name2Col = renamedTableColumns.stream()
-                .filter(a -> a.getName().equalsIgnoreCase("name1"))
-                .findFirst();
-        Assert.assertTrue(name2Col.isPresent());
-        Assert.assertEquals(20L, name2Col.get().getMaxLength().longValue());
-
-    }
-
-    private void checkSwapTableAndRenameDrop(OnlineSchemaChangeScheduleTaskParameters taskParameters) {
-        DBSchemaAccessor dbSchemaAccessor = DBSchemaAccessors.create(connectionSession);
-        List<String> renamedTable = dbSchemaAccessor.showTablesLike(taskParameters.getDatabaseName(),
-                taskParameters.getRenamedTableName());
-
-        List<String> originTable = dbSchemaAccessor.showTablesLike(taskParameters.getDatabaseName(),
-                taskParameters.getOriginTableNameUnWrapped());
-
-        Assert.assertTrue(CollectionUtils.isEmpty(renamedTable));
-        Assert.assertFalse(CollectionUtils.isEmpty(originTable));
-    }
-
-    private void checkSwapTableFailedAndDropNewTable(OnlineSchemaChangeScheduleTaskParameters taskParameters) {
-        DBSchemaAccessor dbSchemaAccessor = DBSchemaAccessors.create(connectionSession);
-        List<String> renamedTable = dbSchemaAccessor.showTablesLike(taskParameters.getDatabaseName(),
-                taskParameters.getRenamedTableName());
-
-        List<String> originTable = dbSchemaAccessor.showTablesLike(taskParameters.getDatabaseName(),
-                taskParameters.getOriginTableNameUnWrapped());
-
-        List<String> newTable = dbSchemaAccessor.showTablesLike(taskParameters.getDatabaseName(),
-                taskParameters.getNewTableNameUnWrapped());
-
-        Assert.assertTrue(CollectionUtils.isEmpty(renamedTable));
-        Assert.assertFalse(CollectionUtils.isEmpty(originTable));
-        Assert.assertTrue(CollectionUtils.isEmpty(newTable));
-
-        List<DBTableColumn> tableColumnFromNew = dbSchemaAccessor.listTableColumns(taskParameters.getDatabaseName(),
-                taskParameters.getOriginTableNameUnWrapped());
-
-        Optional<DBTableColumn> name1Col = tableColumnFromNew.stream()
-                .filter(a -> a.getName().equalsIgnoreCase("name1"))
-                .findFirst();
-        Assert.assertTrue(name1Col.isPresent());
-        Assert.assertEquals(20L, name1Col.get().getMaxLength().longValue());
     }
 
 }

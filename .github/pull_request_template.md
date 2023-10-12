@@ -33,6 +33,13 @@ Fixes #
 
 #### Special notes for your reviewer:
 
+<!--
+This section is used to describe how this PR is implemented. 
+If this is a PR that fixes a bug, this section describes how the bug was fixed.
+If it's a new feature, this section briefly describes how to implement the new feature.
+etc.
+-->
+
 #### Additional documentation e.g., usage docs, etc.:
 
 <!--

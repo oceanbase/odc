@@ -67,11 +67,12 @@ public class OscTaskCompleteHandler {
 
 
     private void updateScheduleTask(Long scheduleTaskId, TaskStatus status) {
-        if (TaskStatus.DONE == status) {
+        if (TaskStatus.DONE == status || TaskStatus.FAILED == status || TaskStatus.CANCELED == status) {
             scheduleTaskRepository.updateStatusAndProcessPercentageById(scheduleTaskId, status, 100D);
         } else {
             scheduleTaskRepository.updateStatusById(scheduleTaskId, status);
         }
         log.info("Successfully update schedule task id {} set status {}", scheduleTaskId, status);
     }
+
 }

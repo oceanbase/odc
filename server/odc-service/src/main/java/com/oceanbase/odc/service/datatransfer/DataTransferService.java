@@ -34,6 +34,9 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Future;
+import java.util.stream.Collectors;
+
+import javax.annotation.PostConstruct;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
@@ -44,6 +47,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -84,10 +88,14 @@ import com.oceanbase.odc.service.datatransfer.task.BaseTransferTaskRunner;
 import com.oceanbase.odc.service.datatransfer.task.DataTransferTaskContext;
 import com.oceanbase.odc.service.datatransfer.task.ExportTaskRunner;
 import com.oceanbase.odc.service.datatransfer.task.ImportTaskRunner;
+import com.oceanbase.odc.service.flow.FlowInstanceService;
 import com.oceanbase.odc.service.flow.task.model.DataTransferTaskResult;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
+import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
+import com.oceanbase.tools.loaddump.common.model.ObjectStatus;
+import com.oceanbase.tools.loaddump.common.model.ObjectStatus.Status;
 import com.oceanbase.tools.loaddump.parser.record.Record;
 import com.oceanbase.tools.loaddump.parser.record.csv.CsvFormat;
 import com.oceanbase.tools.loaddump.parser.record.csv.CsvRecordParser;
@@ -131,6 +139,16 @@ public class DataTransferService {
     private AuthenticationFacade authenticationFacade;
     @Autowired
     private ConnectionTesting connectionTesting;
+    @Autowired
+    private TaskService taskService;
+    @Autowired
+    private FlowInstanceService flowInstanceService;
+
+    @PostConstruct
+    public void init() {
+        flowInstanceService
+                .addDataTransferTaskInitHook(event -> initTransferObjects(event.getTaskId(), event.getConfig()));
+    }
 
     /**
      * create a data transfer task
@@ -247,6 +265,7 @@ public class DataTransferService {
                 returnVal.putIfAbsent(ObjectType.PUBLIC_SYNONYM, accessor.getPublicSynonymNames());
                 returnVal.putIfAbsent(ObjectType.PACKAGE, accessor.getPackageNames());
                 returnVal.putIfAbsent(ObjectType.PACKAGE_BODY, accessor.getPackageBodyNames());
+                returnVal.putIfAbsent(ObjectType.TYPE, accessor.getTypeNames());
             } else if (Objects.nonNull(connection.getDialectType()) && connection.getDialectType().isOBMysql()
                     && VersionUtils.isGreaterThanOrEqualsTo(accessor.getDBVersion(), "4.0.0")) {
                 returnVal.putIfAbsent(ObjectType.SEQUENCE, accessor.getSequenceNames());
@@ -323,6 +342,32 @@ public class DataTransferService {
         int fileSize = fileManager.copy(TaskType.IMPORT, LocalFileManager.UPLOAD_BUCKET, inputStream, () -> fileName);
         log.info("Upload file successfully, fileName={}, fileSize={} Bytes", fileName, fileSize);
         return getMetaInfo(fileName);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void initTransferObjects(Long taskId, DataTransferConfig config) {
+        if (config.isExportAllObjects()) {
+            return;
+        }
+        DataTransferTaskResult result = new DataTransferTaskResult();
+        List<ObjectStatus> objects = config.getExportDbObjects().stream().map(obj -> {
+            ObjectStatus objectStatus = new ObjectStatus();
+            objectStatus.setName(obj.getObjectName());
+            objectStatus.setType(obj.getDbObjectType().getName());
+            objectStatus.setStatus(Status.INITIAL);
+            return objectStatus;
+        }).collect(Collectors.toList());
+
+        if (config.isTransferDDL()) {
+            result.setDataObjectsInfo(objects);
+        }
+        if (config.isTransferData()) {
+            List<ObjectStatus> tables =
+                    objects.stream().filter(objectStatus -> ObjectType.TABLE.getName().equals(objectStatus.getType()))
+                            .collect(Collectors.toList());
+            result.setSchemaObjectsInfo(tables);
+        }
+        taskService.updateResult(taskId, result);
     }
 
     private void injectSysConfig(DataTransferParameter parameter) {

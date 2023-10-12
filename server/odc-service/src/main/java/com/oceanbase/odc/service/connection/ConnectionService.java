@@ -65,6 +65,7 @@ import com.oceanbase.odc.core.authority.util.PreAuthenticate;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ConnectionStatus;
+import com.oceanbase.odc.core.shared.constant.ConnectionVisibleScope;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.PermissionType;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
@@ -203,7 +204,7 @@ public class ConnectionService {
             transactionManager.rollback(transactionStatus);
             throw e;
         }
-        databaseSyncManager.submitSyncDataSourceTask(saved.getId());
+        databaseSyncManager.submitSyncDataSourceTask(saved);
         return saved;
     }
 
@@ -213,7 +214,7 @@ public class ConnectionService {
         List<ConnectionConfig> connectionConfigs = new ArrayList<>();
         for (ConnectionConfig connection : connections) {
             ConnectionConfig saved = innerCreate(connection);
-            databaseSyncManager.submitSyncDataSourceTask(saved.getId());
+            databaseSyncManager.submitSyncDataSourceTask(saved);
             userPermissionService.bindUserAndDataSourcePermission(currentUserId(), currentOrganizationId(),
                     saved.getId(),
                     Arrays.asList("read", "update", "delete"));
@@ -437,7 +438,11 @@ public class ConnectionService {
         return repository.findAll().stream().map(mapper::entityToModel).collect(Collectors.toList());
     }
 
-
+    @SkipAuthorize("internal usage")
+    public List<ConnectionConfig> listByVisibleScope(ConnectionVisibleScope visibleScope) {
+        return repository.findByVisibleScope(visibleScope).stream().map(mapper::entityToModel)
+                .collect(Collectors.toList());
+    }
 
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("permission check inside")
@@ -529,6 +534,7 @@ public class ConnectionService {
         entityManager.refresh(savedEntity);
 
         ConnectionConfig updated = entityToModel(savedEntity, true);
+        databaseSyncManager.submitSyncDataSourceTask(updated);
         log.info("Connection updated, connection={}", updated);
         return updated;
     }
@@ -569,21 +575,26 @@ public class ConnectionService {
             connection.setQueryTimeoutSeconds(minQueryTimeoutSeconds);
             log.debug("queryTimeoutSeconds less than minQueryTimeoutSeconds, use {} instead", minQueryTimeoutSeconds);
         }
+        connectionEncryption.decryptPasswords(connection);
+        // Adapter should be called after decrypting passwords.
         environmentAdapter.adaptConfig(connection);
         connectionSSLAdaptor.adapt(connection);
-        return connectionEncryption.decryptPasswords(connection);
+        return connection;
     }
 
     @Transactional(rollbackFor = Exception.class)
     @PreAuthenticate(actions = "update", resourceType = "ODC_CONNECTION", indexOfIdParam = 0)
     public ConnectionConfig getForConnect(@NotNull Long id) {
-        return getForConnectionSkipPermissionCheck(id);
+        ConnectionConfig connection = getForConnectionSkipPermissionCheck(id);
+        permissionValidator.checkCurrentOrganization(connection);
+        return connection;
     }
 
     @SkipAuthorize("check permission inside")
     public boolean checkPermission(@NotNull Long connectionId, @NotEmpty List<String> actions) {
         try {
             ConnectionConfig connection = internalGetSkipUserCheck(connectionId, false);
+            permissionValidator.checkCurrentOrganization(connection);
             securityManager.checkPermission(
                     securityManager.getPermissionByActions(connection, actions));
         } catch (Exception ex) {

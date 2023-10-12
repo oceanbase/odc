@@ -79,6 +79,10 @@ public class DataRecord {
         return new DataRecord(record.getTableName(), record.isAllowDuplicated(), record.uniqueKeys, specs);
     }
 
+    public static DataRecord copyFrom(@NonNull DataRecord record, @NonNull List<DataSpec> specs) {
+        return new DataRecord(record.getTableName(), record.isAllowDuplicated(), record.uniqueKeys, specs);
+    }
+
     public Set<String> getKeys() {
         return name2DataSpecs.keySet();
     }

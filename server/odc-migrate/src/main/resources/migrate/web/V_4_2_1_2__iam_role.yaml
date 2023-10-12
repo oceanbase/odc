@@ -1,0 +1,29 @@
+kind: resource
+version: v2
+templates:
+  - metadata:
+      allow_duplicate: false
+      table_name: iam_role
+      unique_keys: [ "name", "organization_id" ]
+    specs:
+      - column_name: id
+        default_value: 4
+        data_type: java.lang.Long
+      - column_name: name
+        value: "individual_space"
+      - column_name: type
+        value: "CUSTOM"
+      - column_name: organization_id
+        value: ${ORGANIZATION_ID}
+        data_type: java.lang.Long
+      - column_name: is_enabled
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: creator_id
+        value: ${CREATOR_ID}
+        data_type: java.lang.Long
+      - column_name: is_builtin
+        value: true
+        data_type: java.lang.Boolean
+      - column_name: description
+        value: "Built-in individual space role"

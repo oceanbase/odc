@@ -551,7 +551,7 @@ class TestFlowApprovalInstance extends FlowApprovalInstance {
             @NonNull NodeInstanceEntityRepository nodeRepository,
             @NonNull SequenceInstanceRepository sequenceRepository,
             @NonNull UserTaskInstanceRepository userTaskInstanceRepository) {
-        super(organizationId, flowInstanceId, null, null, expireIntervalSeconds, startEndpoint, endEndPoint, false,
+        super(organizationId, flowInstanceId, null, expireIntervalSeconds, startEndpoint, endEndPoint, false,
                 flowableAdaptor, taskService, formService, eventPublisher, authenticationFacade, nodeRepository,
                 sequenceRepository, userTaskInstanceRepository);
     }

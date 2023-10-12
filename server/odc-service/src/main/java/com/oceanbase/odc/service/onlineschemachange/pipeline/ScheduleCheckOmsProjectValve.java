@@ -17,7 +17,6 @@ package com.oceanbase.odc.service.onlineschemachange.pipeline;
 
 import java.util.List;
 
-import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -97,26 +96,21 @@ public class ScheduleCheckOmsProjectValve extends BaseValve {
         scheduleTask.setProgressPercentage(projectStepResult.getTaskPercentage());
         scheduleTaskRepository.update(scheduleTask);
         recordCurrentProgress(taskParameter.getOmsProjectId(), result);
-        handleOmsProjectStepResult(valveContext, projectStepResult, projectSteps);
+        handleOmsProjectStepResult(valveContext, projectStepResult);
     }
 
-    private void handleOmsProjectStepResult(ValveContext valveContext, ProjectStepResult projectStepResult,
-            List<ProjectStepVO> projectSteps) {
+    private void handleOmsProjectStepResult(ValveContext valveContext, ProjectStepResult projectStepResult) {
 
         if (projectStepResult.getTaskStatus() == TaskStatus.DONE
                 && (projectStepResult.getFullVerificationResult() == FullVerificationResult.CONSISTENT ||
                         projectStepResult.getFullVerificationResult() == FullVerificationResult.UNCHECK)) {
             getNext().invoke(valveContext);
         } else {
-            continueHandleProjectStepResult(projectStepResult, projectSteps);
+            continueHandleProjectStepResult(projectStepResult);
         }
     }
 
-    private void continueHandleProjectStepResult(ProjectStepResult projectStepResult,
-            List<ProjectStepVO> projectSteps) {
-        if (CollectionUtils.isNotEmpty(projectSteps)) {
-            log.warn("Oms project exec failed, projectStepResult: {}", JsonUtils.toJson(projectSteps));
-        }
+    private void continueHandleProjectStepResult(ProjectStepResult projectStepResult) {
         if (projectStepResult.getPreCheckResult() == PrecheckResult.FAILED) {
             throw new OscException(ErrorCodes.OmsPreCheckFailed, projectStepResult.getErrorMsg());
         } else if (projectStepResult.getFullVerificationResult() == FullVerificationResult.INCONSISTENT) {
