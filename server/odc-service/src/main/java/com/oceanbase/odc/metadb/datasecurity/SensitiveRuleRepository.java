@@ -28,7 +28,7 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 public interface SensitiveRuleRepository
         extends JpaRepository<SensitiveRuleEntity, Long>, JpaSpecificationExecutor<SensitiveRuleEntity> {
 
-    List<SensitiveRuleEntity> findByProjectId(Long projectId);
+    List<SensitiveRuleEntity> findByProjectIdAndEnabled(Long projectId, Boolean enabled);
 
     List<SensitiveRuleEntity> findByIdIn(Collection<Long> ids);
 

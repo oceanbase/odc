@@ -495,7 +495,7 @@ templates:
             ref_file: runtime/V_4_2_0_27__add_masking_algorithm.yaml
             field_path: templates.10.specs.0.value
       - column_name: is_mask
-        value: true
+        value: false
         data_type: java.lang.Boolean
       - column_name: type
         value: LEFT_OVER
