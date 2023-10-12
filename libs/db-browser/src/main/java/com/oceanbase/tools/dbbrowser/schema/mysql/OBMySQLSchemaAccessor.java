@@ -128,7 +128,7 @@ public class OBMySQLSchemaAccessor extends MySQLNoGreaterThan5740SchemaAccessor 
         MySQLSqlBuilder sb = new MySQLSqlBuilder();
         sb.append("SELECT user_name, is_locked FROM oceanbase.__all_user");
         if (CollectionUtils.isNotEmpty(usernames)) {
-            sb.append(" where user_name in (");
+            sb.append(" WHERE user_name IN (");
             sb.values(usernames);
             sb.append(")");
         }

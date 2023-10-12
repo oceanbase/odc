@@ -144,7 +144,7 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
         SqlBuilder sb = new OracleSqlBuilder();
         sb.append("SELECT user_name, is_locked FROM SYS.ALL_VIRTUAL_USER_REAL_AGENT");
         if (CollectionUtils.isNotEmpty(usernames)) {
-            sb.append(" where user_name in (");
+            sb.append(" WHERE user_name IN (");
             sb.values(usernames);
             sb.append(")");
         }
