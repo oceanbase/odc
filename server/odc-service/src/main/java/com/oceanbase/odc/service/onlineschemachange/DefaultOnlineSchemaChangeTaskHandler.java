@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
 
@@ -49,6 +50,7 @@ import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.TaskErrorStrategy;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.core.shared.exception.OdcException;
+import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.core.sql.execute.SyncJdbcExecutor;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
@@ -82,6 +84,7 @@ import com.oceanbase.odc.service.schedule.model.JobType;
 import com.oceanbase.odc.service.schedule.model.QuartzKeyGenerator;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
+import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -140,7 +143,7 @@ public class DefaultOnlineSchemaChangeTaskHandler implements OnlineSchemaChangeT
 
         terminalErrorCodes = Lists.newArrayList(ErrorCodes.BadArgument, ErrorCodes.BadRequest,
                 ErrorCodes.OmsConnectivityTestFailed, ErrorCodes.Unexpected,
-                ErrorCodes.OmsPreCheckFailed, ErrorCodes.OscDataCheckInconsistent,
+                ErrorCodes.OmsPreCheckFailed, ErrorCodes.OmsDataCheckInconsistent,
                 ErrorCodes.OmsParamError);
 
         expectedTaskStatus = Lists.newArrayList(TaskStatus.DONE, TaskStatus.FAILED,
@@ -170,7 +173,6 @@ public class DefaultOnlineSchemaChangeTaskHandler implements OnlineSchemaChangeT
                     valveContext.getTaskParameter().getDatabaseName());
             prepareSchema(valveContext.getParameter(), valveContext.getTaskParameter(),
                     connectionSession, scheduleTaskId);
-
             valveContext.setConnectionSession(connectionSession);
             valveContext.setLinkType(LinkType.OMS);
             preparePipelineMap.get(LinkType.OMS).invoke(valveContext);
@@ -320,20 +322,18 @@ public class DefaultOnlineSchemaChangeTaskHandler implements OnlineSchemaChangeT
             }
         } catch (Exception e) {
             log.warn("Failed to complete osc job with scheduleTaskId " + scheduleTaskId, e);
-            handleExceptionResult(scheduleTaskId, valveContext, e);
+            handleExceptionResult(valveContext, e);
         }
     }
 
-    private void handleExceptionResult(Long scheduleTaskId, OscValveContext valveContext, Exception e) {
+    private void handleExceptionResult(OscValveContext valveContext, Exception e) {
         if (e instanceof OdcException) {
             OdcException actual = (OdcException) e;
             ErrorCode errorCode = actual.getErrorCode();
             if (terminalErrorCodes.contains(errorCode)) {
-                log.warn("Failed to complete osc job with scheduleTaskId " + scheduleTaskId, e);
                 failedOscTask(valveContext);
             }
         } else {
-            log.warn("Failed to complete osc job with scheduleTaskId " + scheduleTaskId, e);
             failedOscTask(valveContext);
         }
     }
@@ -342,6 +342,15 @@ public class DefaultOnlineSchemaChangeTaskHandler implements OnlineSchemaChangeT
         completeHandler.onOscScheduleTaskFailed(valveContext.getTaskParameter().getOmsProjectId(),
                 valveContext.getTaskParameter().getUid(), valveContext.getSchedule().getId(),
                 valveContext.getScheduleTask().getId());
+        ConnectionSession connectionSession =
+                new DefaultConnectSessionFactory(valveContext.getConnectionConfig()).generateSession();
+        try {
+            dropNewTableIfExits(valveContext.getTaskParameter(), connectionSession);
+        } finally {
+            if (connectionSession != null) {
+                connectionSession.expire();
+            }
+        }
     }
 
     private OscValveContext getOscValveContext(Long scheduleId, Long scheduleTaskId) {
@@ -380,13 +389,7 @@ public class DefaultOnlineSchemaChangeTaskHandler implements OnlineSchemaChangeT
     private void prepareSchema(OnlineSchemaChangeParameters param, OnlineSchemaChangeScheduleTaskParameters taskParam,
             ConnectionSession session, Long scheduleTaskId) throws SQLException {
 
-        List<String> list = DBSchemaAccessors.create(session)
-                .showTablesLike(taskParam.getDatabaseName(), taskParam.getNewTableName());
-        // Drop new table suffix with _osc_new_ if exists
-        if (CollectionUtils.isNotEmpty(list)) {
-            DBObjectOperators.create(session)
-                    .drop(DBObjectType.TABLE, taskParam.getDatabaseName(), taskParam.getNewTableName());
-        }
+        dropNewTableIfExits(taskParam, session);
 
         SyncJdbcExecutor executor = session.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY);
         executor.execute(taskParam.getNewTableCreateDdl());
@@ -396,12 +399,41 @@ public class DefaultOnlineSchemaChangeTaskHandler implements OnlineSchemaChangeT
             // update new table ddl for display
             String finalTableDdl = DdlUtils.queryOriginTableCreateDdl(session, taskParam.getNewTableName());
             String ddlForDisplay = DdlUtils.replaceTableName(finalTableDdl, taskParam.getOriginTableName(),
-                    session.getDialectType(), param.getSqlType());
+                    session.getDialectType(), OnlineSchemaChangeSqlType.CREATE);
             taskParam.setNewTableCreateDdlForDisplay(ddlForDisplay);
             scheduleTaskRepository.updateTaskResult(scheduleTaskId,
                     JsonUtils.toJson(new OnlineSchemaChangeScheduleTaskResult(taskParam)));
         }
         log.info("Successfully created new table, ddl: {}", taskParam.getNewTableCreateDdl());
+        validateColumnDifferent(taskParam, session);
+    }
+
+    private void validateColumnDifferent(OnlineSchemaChangeScheduleTaskParameters taskParam,
+            ConnectionSession session) {
+        List<String> originTableColumns =
+                DBSchemaAccessors.create(session).listTableColumns(taskParam.getDatabaseName(),
+                        DdlUtils.getUnwrappedName(taskParam.getOriginTableNameUnwrapped())).stream()
+                        .map(DBTableColumn::getName).collect(Collectors.toList());
+
+        List<String> newTableColumns =
+                DBSchemaAccessors.create(session).listTableColumns(taskParam.getDatabaseName(),
+                        DdlUtils.getUnwrappedName(taskParam.getNewTableNameUnwrapped())).stream()
+                        .map(DBTableColumn::getName).collect(Collectors.toList());
+
+        if (!CollectionUtils.isEqualCollection(originTableColumns, newTableColumns)) {
+            throw new UnsupportedException(ErrorCodes.OscColumnNameInconsistent,
+                    null, "Column name of origin table is inconsistent with new table.");
+        }
+    }
+
+    private void dropNewTableIfExits(OnlineSchemaChangeScheduleTaskParameters taskParam, ConnectionSession session) {
+        List<String> list = DBSchemaAccessors.create(session)
+                .showTablesLike(taskParam.getDatabaseName(), taskParam.getNewTableNameUnwrapped());
+        // Drop new table suffix with _osc_new_ if exists
+        if (CollectionUtils.isNotEmpty(list)) {
+            DBObjectOperators.create(session)
+                    .drop(DBObjectType.TABLE, taskParam.getDatabaseName(), taskParam.getNewTableNameUnwrapped());
+        }
     }
 
 }

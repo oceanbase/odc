@@ -56,8 +56,10 @@ import com.oceanbase.odc.service.iam.model.User;
  * @since ODC_release_3.2.2
  */
 public class ConnectSessionServiceTest extends ServiceTestEnv {
+
     private final Long connectionId = 1L;
     private final long userId = 1L;
+    private final Long organizationId = 1L;
     @Rule
     public ExpectedException thrown = ExpectedException.none();
     @MockBean
@@ -78,6 +80,7 @@ public class ConnectSessionServiceTest extends ServiceTestEnv {
         UserConfig userConfig = new UserConfig();
         when(userConfigFacade.queryByCache(eq(userId))).thenReturn(userConfig);
         when(authenticationFacade.currentUserId()).thenReturn(userId);
+        when(authenticationFacade.currentOrganizationId()).thenReturn(organizationId);
         User user = new User();
         user.setId(userId);
         user.setName("user1");
@@ -185,7 +188,9 @@ public class ConnectSessionServiceTest extends ServiceTestEnv {
 
 
     private ConnectionConfig buildTestConnection(DialectType dialectType) {
-        return TestConnectionUtil.getTestConnectionConfig(ConnectType.from(dialectType));
+        ConnectionConfig config = TestConnectionUtil.getTestConnectionConfig(ConnectType.from(dialectType));
+        config.setOrganizationId(organizationId);
+        return config;
     }
 
 }

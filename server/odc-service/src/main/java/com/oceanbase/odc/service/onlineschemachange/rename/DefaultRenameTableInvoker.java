@@ -19,15 +19,16 @@ import java.text.MessageFormat;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 import com.oceanbase.odc.core.session.ConnectionSession;
-import com.oceanbase.odc.core.session.ConnectionSessionConstants;
+import com.oceanbase.odc.service.db.browser.DBObjectOperators;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeScheduleTaskParameters;
+import com.oceanbase.odc.service.onlineschemachange.model.OriginTableCleanStrategy;
 import com.oceanbase.odc.service.session.DBSessionManageFacade;
+import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -53,9 +54,6 @@ public class DefaultRenameTableInvoker implements RenameTableInvoker {
         RenameTableInterceptor lockInterceptor =
                 lockRenameTableFactory.generate(connSession, dbSessionManageFacade);
         interceptors.add(lockInterceptor);
-        HandlerTableInterceptor handlerTableInterceptor =
-                new HandlerTableInterceptor(connSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY));
-        interceptors.add(handlerTableInterceptor);
         interceptors.add(new ForeignKeyInterceptor(connSession));
         this.interceptors = interceptors;
         this.connectionSession = connSession;
@@ -68,23 +66,15 @@ public class DefaultRenameTableInvoker implements RenameTableInvoker {
             OnlineSchemaChangeParameters parameters) {
         RenameTableParameters renameTableParameters = getRenameTableParameters(taskParameters, parameters);
         try {
-            preRename(renameTableParameters);
-            retryRename(taskParameters, parameters);
-            renameSucceed(renameTableParameters);
-        } catch (Exception ex) {
-            renameFailed(renameTableParameters);
+            retryRename(taskParameters, parameters, renameTableParameters);
+            dropOldTable(renameTableParameters, taskParameters);
         } finally {
-            try {
-                postRenamed(renameTableParameters);
-            } catch (Throwable throwable) {
-                // ignore
-            }
-            cleanUp(taskParameters);
+            renameBackHandler.renameBack(connectionSession, taskParameters);
         }
     }
 
     private void retryRename(OnlineSchemaChangeScheduleTaskParameters taskParameters,
-            OnlineSchemaChangeParameters parameters) {
+            OnlineSchemaChangeParameters parameters, RenameTableParameters renameTableParameters) {
 
         Integer swapTableNameRetryTimes = parameters.getSwapTableNameRetryTimes();
         if (swapTableNameRetryTimes == 0) {
@@ -92,13 +82,11 @@ public class DefaultRenameTableInvoker implements RenameTableInvoker {
         }
 
         AtomicInteger retryTime = new AtomicInteger();
-        boolean succeed = false;
-        while (retryTime.getAndIncrement() < swapTableNameRetryTimes) {
-            if (succeed) {
-                break;
-            }
-            succeed = doTryRename(taskParameters, retryTime);
-        }
+        boolean succeed;
+        do {
+            succeed = doTryRename(taskParameters, renameTableParameters, retryTime);
+        } while (!succeed && retryTime.incrementAndGet() < swapTableNameRetryTimes);
+
         if (!succeed) {
             throw new IllegalStateException(
                     MessageFormat.format("Swap table name failed after {0} times", retryTime.get()));
@@ -107,26 +95,37 @@ public class DefaultRenameTableInvoker implements RenameTableInvoker {
         }
     }
 
-    private boolean doTryRename(OnlineSchemaChangeScheduleTaskParameters taskParameters, AtomicInteger retryTime) {
-        AtomicBoolean atomicResult = new AtomicBoolean(false);
+    private boolean doTryRename(OnlineSchemaChangeScheduleTaskParameters taskParameters,
+            RenameTableParameters renameTableParameters, AtomicInteger retryTime) {
+        boolean succeed = false;
         try {
+            preRename(renameTableParameters);
             renameTableHandler.rename(taskParameters.getDatabaseName(), taskParameters.getOriginTableName(),
                     taskParameters.getRenamedTableName(), taskParameters.getNewTableName());
-            atomicResult.getAndSet(true);
+            succeed = true;
+            renameSucceed(renameTableParameters);
         } catch (Exception e) {
             log.warn(MessageFormat.format("Swap table name occur error, retry time {0}",
                     retryTime.get()), e);
             renameBackHandler.renameBack(connectionSession, taskParameters);
+            renameFailed(renameTableParameters);
+        } finally {
+            try {
+                postRenamed(renameTableParameters);
+            } catch (Throwable throwable) {
+                // ignore
+            }
         }
-        return atomicResult.get();
+        return succeed;
     }
+
 
     private RenameTableParameters getRenameTableParameters(OnlineSchemaChangeScheduleTaskParameters taskParameters,
             OnlineSchemaChangeParameters parameters) {
         // set lock table max timeout is 120s
         Integer lockTableTimeOutSeconds =
-                Math.min(parameters.getLockTableTimeOutSeconds() == null ? 15 : parameters.getLockTableTimeOutSeconds(),
-                        120);
+                Math.min(parameters.getLockTableTimeOutSeconds() == null ? 10 : parameters.getLockTableTimeOutSeconds(),
+                        60);
 
         return RenameTableParameters.builder()
                 .schemaName(taskParameters.getDatabaseName())
@@ -161,8 +160,14 @@ public class DefaultRenameTableInvoker implements RenameTableInvoker {
         }
     }
 
-    private void cleanUp(OnlineSchemaChangeScheduleTaskParameters taskParameters) {
-        renameBackHandler.renameBack(connectionSession, taskParameters);
+    private void dropOldTable(RenameTableParameters parameters,
+            OnlineSchemaChangeScheduleTaskParameters taskParameters) {
+        if (parameters.getOriginTableCleanStrategy() == OriginTableCleanStrategy.ORIGIN_TABLE_DROP) {
+            log.info("Because origin table clean strategy is {}, so we drop the old table. ",
+                    parameters.getOriginTableCleanStrategy());
+            DBObjectOperators.create(connectionSession)
+                    .drop(DBObjectType.TABLE, parameters.getSchemaName(),
+                            taskParameters.getRenamedTableNameUnwrapped());
+        }
     }
-
 }

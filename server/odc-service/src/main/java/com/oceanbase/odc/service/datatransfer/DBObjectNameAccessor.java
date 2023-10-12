@@ -28,6 +28,7 @@ import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
+import com.oceanbase.tools.dbbrowser.model.DBPLObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBSynonymType;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
@@ -164,6 +165,13 @@ public class DBObjectNameAccessor implements AutoCloseable {
                 .filter(i -> !StringUtils.equalsIgnoreCase(i.getName(), OdcConstants.PL_DEBUG_PACKAGE))
                 .filter(e -> e.getType().name().equals(ObjectType.PACKAGE_BODY.name())).map(DBObjectIdentity::getName)
                 .collect(Collectors.toSet());
+    }
+
+    public Set<String> getTypeNames() {
+        if (session.getDialectType().isMysql()) {
+            return Collections.emptySet();
+        }
+        return accessor.listTypes(schema).stream().map(DBPLObjectIdentity::getName).collect(Collectors.toSet());
     }
 
     @Override

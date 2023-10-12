@@ -76,7 +76,8 @@ public class ConnectionTestingTest {
         ConnectionSession session = TestConnectionUtil.getTestConnectionSession(ConnectType.OB_MYSQL);
         ConnectionConfig config = (ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(session);
         TestConnectionReq req = new TestConnectionReq();
-        req.setType(ConnectType.OB_MYSQL);
+        // Use cloud database for testing in GitHub
+        req.setType(ConnectType.CLOUD_OB_MYSQL);
         req.setHost(config.getHost());
         req.setPort(config.getPort());
         req.setClusterName(config.getClusterName());

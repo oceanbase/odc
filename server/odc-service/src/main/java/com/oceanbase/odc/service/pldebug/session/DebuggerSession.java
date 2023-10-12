@@ -28,6 +28,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 import org.apache.commons.lang3.Validate;
+import org.springframework.jdbc.datasource.SingleConnectionDataSource;
 
 import com.alibaba.fastjson.JSONObject;
 import com.oceanbase.odc.common.util.StringUtils;
@@ -49,6 +50,7 @@ import com.oceanbase.odc.service.pldebug.model.DBPLError;
 import com.oceanbase.odc.service.pldebug.model.PLDebugBreakpoint;
 import com.oceanbase.odc.service.pldebug.model.PLDebugErrorCode;
 import com.oceanbase.odc.service.pldebug.model.PLDebugPrintBacktrace;
+import com.oceanbase.odc.service.pldebug.model.PLDebugResult;
 import com.oceanbase.odc.service.pldebug.model.PLDebugStatusReason;
 import com.oceanbase.odc.service.pldebug.model.PLDebugVariable;
 import com.oceanbase.odc.service.pldebug.model.StartPLDebugReq;
@@ -106,7 +108,9 @@ public class DebuggerSession extends AbstractDebugSession {
         ddl = req.getAnonymousBlock();
         this.syncEnabled = syncEnabled;
 
-        acquireNewConnection(debuggeeSession.getConnectionSession(), true);
+        // Debugger must connect to database host the same as debuggee
+        acquireNewConnection(debuggeeSession.getConnectionSession(),
+                () -> cloneDataSource(debuggeeSession.getNewDataSource()));
         try (Statement stmt = connection.createStatement()) {
             // 设置超时时间, 单位：us
             stmt.execute(String.format("set session ob_query_timeout = %s;", DEBUG_TIMEOUT_MS * 1000));
@@ -163,12 +167,25 @@ public class DebuggerSession extends AbstractDebugSession {
         if (!debuggeeSession.detectSessionAlive()) {
             // if debuggee is not alive, do not sync and throw exception
             log.warn("Debuggee session is not alive");
-            throw OBException.executeFailed("Debuggee session is not alive before debugger start");
+            PLDebugResult result = debuggeeSession.getResult();
+            if (result == null || result.getExecutionErrorMessage() == null) {
+                throw OBException.executeFailed("Debuggee session is not alive before debugger start");
+            }
+            throw OBException.executeFailed(result.getExecutionErrorMessage());
         }
         synchronize();
         if (req.getFunction() != null || req.getProcedure() != null) {
             debugBefore();
         }
+    }
+
+    private SingleConnectionDataSource cloneDataSource(SingleConnectionDataSource originDataSource) {
+        SingleConnectionDataSource debuggerDataSource = new SingleConnectionDataSource();
+        debuggerDataSource.setUrl(originDataSource.getUrl());
+        debuggerDataSource.setUsername(originDataSource.getUsername());
+        debuggerDataSource.setPassword(originDataSource.getPassword());
+        debuggerDataSource.setDriverClassName(OdcConstants.DEFAULT_DRIVER_CLASS_NAME);
+        return debuggerDataSource;
     }
 
     private void debugBefore() {

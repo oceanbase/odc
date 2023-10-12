@@ -188,6 +188,7 @@ public class PartitionPlanService {
      * 查询当前连接下是否存在分区计划
      */
     public boolean hasConnectionPartitionPlan(Long databaseId) {
+        databaseService.detail(databaseId);
         Optional<DatabasePartitionPlanEntity> validConnectionPlan =
                 databasePartitionPlanRepository.findValidPlanByDatabaseId(databaseId);
         return validConnectionPlan.isPresent();
