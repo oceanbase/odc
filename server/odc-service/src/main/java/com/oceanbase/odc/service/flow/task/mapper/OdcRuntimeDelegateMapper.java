@@ -28,6 +28,7 @@ import com.oceanbase.odc.service.flow.task.PreCheckRuntimeFlowableTask;
 import com.oceanbase.odc.service.flow.task.RollbackPlanRuntimeFlowableTask;
 import com.oceanbase.odc.service.flow.task.ShadowtableSyncRuntimeFlowableTask;
 import com.oceanbase.odc.service.onlineschemachange.OnlineSchemaChangeFlowableTask;
+import com.oceanbase.odc.service.permissionapply.project.ApplyProjectFlowableTask;
 import com.oceanbase.odc.service.resultset.ResultSetExportFlowableTask;
 import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleTask;
 
@@ -67,6 +68,8 @@ public class OdcRuntimeDelegateMapper implements RuntimeDelegateMapper {
                 return ResultSetExportFlowableTask.class;
             case PRE_CHECK:
                 return PreCheckRuntimeFlowableTask.class;
+            case PERMISSION_APPLY_PROJECT:
+                return ApplyProjectFlowableTask.class;
             default:
                 throw new UnsupportedException(ErrorCodes.Unsupported, new Object[] {ResourceType.ODC_TASK},
                         "Unsupported task type: " + taskType);

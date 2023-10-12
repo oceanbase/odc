@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.resultset;
 
+import java.io.Serializable;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -32,7 +33,7 @@ import lombok.Data;
  * @Description: [result set export DTO]
  */
 @Data
-public class ResultSetExportTaskParameter implements TaskParameters {
+public class ResultSetExportTaskParameter implements Serializable, TaskParameters {
     private String sql;
     private String fileName;
     private DataTransferFormat fileFormat;

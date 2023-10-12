@@ -641,7 +641,8 @@ public class FlowTaskInstanceService {
         return getTaskEntity(flowInstanceId, i -> i.getStatus().isFinalStatus()
                 && i.getTaskType() != TaskType.SQL_CHECK
                 && i.getTaskType() != TaskType.PRE_CHECK
-                && i.getTaskType() != TaskType.GENERATE_ROLLBACK);
+                && i.getTaskType() != TaskType.GENERATE_ROLLBACK
+                && i.getTaskType() != TaskType.PERMISSION_APPLY_PROJECT);
     }
 
     private Optional<TaskEntity> getDownloadableTaskEntity(@NonNull Long flowInstanceId) {
@@ -655,7 +656,8 @@ public class FlowTaskInstanceService {
                         && instance.getTaskType() != TaskType.IMPORT
                         && instance.getTaskType() != TaskType.SQL_CHECK
                         && instance.getTaskType() != TaskType.PRE_CHECK
-                        && instance.getTaskType() != TaskType.GENERATE_ROLLBACK;
+                        && instance.getTaskType() != TaskType.GENERATE_ROLLBACK
+                        && instance.getTaskType() != TaskType.PERMISSION_APPLY_PROJECT;
             }
         });
     }

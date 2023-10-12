@@ -78,8 +78,14 @@ public enum TaskType implements Translatable {
      * 导出结果集
      */
     EXPORT_RESULT_SET,
-
+    /**
+     * 预检查
+     */
     PRE_CHECK,
+    /**
+     * 权限申请-项目
+     */
+    PERMISSION_APPLY_PROJECT,
     ;
 
     @Override
