@@ -214,7 +214,8 @@ public class DataMaskingService {
 
     @SkipAuthorize("odc internal usages")
     public boolean isMaskingEnabled() {
-        return maskingProperties.isMaskingEnabled();
+        return maskingProperties.isMaskingEnabled()
+                && columnService.existsInCurrentOrganization();
     }
 
     private SQLParser getSqlParser(DialectType dialectType) {

@@ -1,4 +1,3 @@
-#scenario of https://aone.alipay.com/v2/project/874455/bug/39224304
 origin: |-
   select 'hello \\world' as col1 from dual;
   insert into table_1 values ('sadasd');

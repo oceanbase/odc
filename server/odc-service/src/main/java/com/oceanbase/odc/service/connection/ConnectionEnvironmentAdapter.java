@@ -61,7 +61,7 @@ public class ConnectionEnvironmentAdapter {
             }
             if (cloudMetadataClient.needsSysTenantUser()) {
                 // 需要使用 sys 租户账密
-                OBDatabaseUser sysTenantUser = cloudMetadataClient.getSysTenantUser(clusterName);
+                OBDatabaseUser sysTenantUser = cloudMetadataClient.getSysTenantUser(connectionConfig.getClusterName());
                 connectionConfig.setSysTenantUsername(sysTenantUser.getUserName());
                 connectionConfig.setSysTenantPassword(sysTenantUser.getPassword());
             }

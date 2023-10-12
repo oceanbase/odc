@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.onlineschemachange;
 
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -28,7 +29,10 @@ import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
+import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.BadArgumentException;
+import com.oceanbase.odc.core.shared.exception.UnsupportedException;
+import com.oceanbase.odc.core.sql.execute.SyncJdbcExecutor;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
@@ -47,6 +51,7 @@ public class OnlineSchemaChangeValidatorTest extends ServiceTestEnv {
     private ConnectionService connectionService;
     private ConnectionSession session;
     private ConnectionConfig config;
+    private SyncJdbcExecutor obMySqlSyncJdbcExecutor;
 
 
     @Before
@@ -61,13 +66,15 @@ public class OnlineSchemaChangeValidatorTest extends ServiceTestEnv {
         config = TestConnectionUtil.getTestConnectionConfig(ConnectType.OB_MYSQL);
         session = TestConnectionUtil.getTestConnectionSession(ConnectType.OB_MYSQL);
         Mockito.when(connectionService.getForConnectionSkipPermissionCheck(Mockito.anyLong())).thenReturn(config);
-
-        session.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY).execute(CREATE_STMT);
+        obMySqlSyncJdbcExecutor = session.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY);
+        obMySqlSyncJdbcExecutor.execute(CREATE_STMT);
     }
 
     @After
     public void tearDown() {
-        session.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY).execute(DROP_STMT);
+        if (session != null) {
+            session.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY).execute(DROP_STMT);
+        }
     }
 
     @Test
@@ -97,6 +104,74 @@ public class OnlineSchemaChangeValidatorTest extends ServiceTestEnv {
                 ALTER_STMT,
                 OnlineSchemaChangeSqlType.CREATE));
     }
+
+    @Test(expected = BadArgumentException.class)
+    public void test_Validate_Invalid_Sql() {
+        String sql = " CREATE TABLE \"ABC10_OSC_NEW_111\" (\n  \"COL\" NUMBER(38) DEFAULT NULL";
+        try {
+            validService.validate(getCreateRequest(
+                    sql,
+                    OnlineSchemaChangeSqlType.CREATE));
+        } catch (BadArgumentException ex) {
+            Assert.assertSame(ex.getErrorCode(), ErrorCodes.ObPreCheckDdlFailed);
+            throw ex;
+        }
+    }
+
+    @Test
+    public void TestUniqueNotNullOBMySql_Successfully() {
+        String createSql = "CREATE TABLE `not_null_unique_key` (\n"
+                + "`col` int NOT NULL,\n"
+                + "`col1` int DEFAULT NULL,\n"
+                + "CONSTRAINT `u1` UNIQUE (`col`)\n"
+                + ")";
+        obMySqlSyncJdbcExecutor.execute(createSql);
+        try {
+            validService.validate(getCreateRequest(
+                    createSql,
+                    OnlineSchemaChangeSqlType.CREATE));
+        } finally {
+            obMySqlSyncJdbcExecutor.execute("DROP TABLE IF EXISTS `not_null_unique_key`");
+        }
+
+    }
+
+    @Test(expected = UnsupportedException.class)
+    public void TestUniqueContainNotNullOBMySql_Failed() {
+        String createSql = "CREATE TABLE `not_null_unique_key2` (\n"
+                + "`col` int NOT NULL,\n"
+                + "`col1` int DEFAULT NULL,\n"
+                + "CONSTRAINT `u1` UNIQUE (`col`,`col1`)\n"
+                + ")";
+        obMySqlSyncJdbcExecutor.execute(createSql);
+        try {
+            validService.validate(getCreateRequest(
+                    createSql,
+                    OnlineSchemaChangeSqlType.CREATE));
+        } finally {
+            obMySqlSyncJdbcExecutor.execute("DROP TABLE IF EXISTS `not_null_unique_key2`");
+        }
+
+    }
+
+    @Test(expected = UnsupportedException.class)
+    public void TestUniqueColumnNotNullOBMySql_Failed() {
+        String createSql = "CREATE TABLE `not_null_unique_key3` (\n"
+                + "`col` int NOT NULL,\n"
+                + "`col1` int DEFAULT NULL,\n"
+                + "CONSTRAINT `u1` UNIQUE (`col1`)\n"
+                + ")";
+        obMySqlSyncJdbcExecutor.execute(createSql);
+        try {
+            validService.validate(getCreateRequest(
+                    createSql,
+                    OnlineSchemaChangeSqlType.CREATE));
+        } finally {
+            obMySqlSyncJdbcExecutor.execute("DROP TABLE IF EXISTS `not_null_unique_key3`");
+        }
+
+    }
+
 
     private CreateFlowInstanceReq getCreateRequest(String sql, OnlineSchemaChangeSqlType sqlType) {
         OnlineSchemaChangeParameters parameter = new OnlineSchemaChangeParameters();

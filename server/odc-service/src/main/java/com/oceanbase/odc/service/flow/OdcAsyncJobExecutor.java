@@ -18,7 +18,6 @@ package com.oceanbase.odc.service.flow;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -27,7 +26,9 @@ import org.flowable.job.service.impl.asyncexecutor.DefaultAsyncJobExecutor;
 import org.flowable.job.service.impl.persistence.entity.AbstractJobEntityImpl;
 import org.springframework.data.jpa.domain.Specification;
 
+import com.oceanbase.odc.common.util.RetryExecutor;
 import com.oceanbase.odc.core.shared.Verify;
+import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.metadb.flow.FlowInstanceEntity;
 import com.oceanbase.odc.metadb.flow.FlowInstanceRepository;
@@ -57,6 +58,8 @@ public class OdcAsyncJobExecutor extends DefaultAsyncJobExecutor {
     private ExecutorService mockDataExecutorService;
     @Setter
     private ExecutorService loaderDumperExecutorService;
+    private final RetryExecutor retryExecutor =
+            RetryExecutor.builder().initialDelay(true).retryIntervalMillis(1000).retryTimes(3).build();
 
     public OdcAsyncJobExecutor(@NonNull FlowInstanceRepository flowInstanceRepository,
             @NonNull ServiceTaskInstanceRepository serviceTaskRepository) {
@@ -66,11 +69,14 @@ public class OdcAsyncJobExecutor extends DefaultAsyncJobExecutor {
 
     @Override
     protected boolean executeAsyncJob(final JobInfo job, Runnable runnable) {
-        if (mockDataExecutorService == null && loaderDumperExecutorService == null) {
-            return super.executeAsyncJob(job, runnable);
-        }
+        Long flowInstanceId = null;
         try {
-            Set<TaskType> taskTypes = getTaskTypesByJob((AbstractJobEntityImpl) job);
+            flowInstanceId = getFlowInstanceIdByJob((AbstractJobEntityImpl) job);
+            if (mockDataExecutorService == null && loaderDumperExecutorService == null) {
+                this.executorService.execute(runnable);
+                return true;
+            }
+            Set<TaskType> taskTypes = getTaskTypesByJob(flowInstanceId);
             if (taskTypes.contains(TaskType.MOCKDATA) && mockDataExecutorService != null) {
                 mockDataExecutorService.submit(runnable);
                 return true;
@@ -80,11 +86,25 @@ public class OdcAsyncJobExecutor extends DefaultAsyncJobExecutor {
                 loaderDumperExecutorService.submit(runnable);
                 return true;
             }
-        } catch (RejectedExecutionException e) {
-            unacquireJobAfterRejection(job);
+            this.executorService.execute(runnable);
+            return true;
+        } catch (Exception e) {
+            log.warn("Failed to submit a task", e);
+            this.unacquireJobAfterRejection(job);
+            if (flowInstanceId != null) {
+                final Long fId = flowInstanceId;
+                this.retryExecutor.run(() -> {
+                    try {
+                        flowInstanceRepository.updateStatusById(fId, FlowStatus.EXECUTION_FAILED);
+                        return true;
+                    } catch (Exception ex) {
+                        log.warn("Failed to update flow instance status, flowInstanceId={}", fId, ex);
+                        return false;
+                    }
+                }, b -> b);
+            }
             return false;
         }
-        return super.executeAsyncJob(job, runnable);
     }
 
     @Override
@@ -112,18 +132,20 @@ public class OdcAsyncJobExecutor extends DefaultAsyncJobExecutor {
         }
     }
 
-    private Set<TaskType> getTaskTypesByJob(@NonNull AbstractJobEntityImpl job) {
+    private Long getFlowInstanceIdByJob(@NonNull AbstractJobEntityImpl job) {
         String processDefinitionId = job.getProcessDefinitionId();
         Specification<FlowInstanceEntity> flowSpec =
                 Specification.where(FlowInstanceSpecs.processDefinitionIdEquals(processDefinitionId));
         List<FlowInstanceEntity> list = flowInstanceRepository.findAll(flowSpec);
-        Verify.singleton(list,
-                "Flow instance list has to be singleton by process definition id " + processDefinitionId);
-        Long flowInstanceId = list.get(0).getId();
+        Verify.singleton(list, "Flow instance list has to be singleton by " + processDefinitionId);
+        return list.get(0).getId();
+    }
+
+    private Set<TaskType> getTaskTypesByJob(Long flowInstanceId) {
         Specification<ServiceTaskInstanceEntity> serviceSpec =
                 Specification.where(ServiceTaskInstanceSpecs.flowInstanceIdEquals(flowInstanceId));
-        return serviceTaskRepository.findAll(serviceSpec).stream().map(ServiceTaskInstanceEntity::getTaskType)
-                .collect(Collectors.toSet());
+        return serviceTaskRepository.findAll(serviceSpec).stream()
+                .map(ServiceTaskInstanceEntity::getTaskType).collect(Collectors.toSet());
     }
 
 }

@@ -126,11 +126,10 @@ public class FlowFactory {
     }
 
     public FlowApprovalInstance generateFlowApprovalInstance(@NonNull Long flowInstanceId, boolean isStartEndPoint,
-            boolean isEndEndPoint, boolean autoApprove, int expireIntervalSeconds, Long externalApprovalId,
-            String externalFlowInstanceId) {
+            boolean isEndEndPoint, boolean autoApprove, int expireIntervalSeconds, Long externalApprovalId) {
         Verify.verify(expireIntervalSeconds > 0, "ApprovalExpirationInterval can not be negative");
         return new FlowApprovalInstance(authenticationFacade.currentOrganizationId(), flowInstanceId,
-                externalApprovalId, externalFlowInstanceId, expireIntervalSeconds, isStartEndPoint, isEndEndPoint,
+                externalApprovalId, expireIntervalSeconds, isStartEndPoint, isEndEndPoint,
                 autoApprove, flowableAdaptor, flowableTaskService, formService, eventPublisher, authenticationFacade,
                 nodeRepository, sequenceRepository, userTaskInstanceRepository);
     }
