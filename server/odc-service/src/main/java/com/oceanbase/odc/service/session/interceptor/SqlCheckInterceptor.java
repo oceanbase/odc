@@ -93,13 +93,14 @@ public class SqlCheckInterceptor implements SqlExecuteInterceptor {
         try (TraceWatch watch = new TraceWatch();
                 TraceStage s = watch.start(SqlExecuteStages.INIT_SQL_CHECK_MESSAGE)) {
             Map<String, List<CheckViolation>> sql2Violations = new HashMap<>();
-            SqlCheckContext checkContext = new SqlCheckContext();
-            response.getSqls().forEach(v -> sql2Violations.computeIfAbsent(v.getSqlTuple().getOriginalSql(), key -> {
-                List<CheckViolation> violations = sqlChecker.check(Collections.singletonList(key), checkContext);
+            SqlCheckContext checkContext = new SqlCheckContext((long) response.getSqls().size());
+            response.getSqls().forEach(v -> {
+                String sql = v.getSqlTuple().getOriginalSql();
+                List<CheckViolation> violations = sqlChecker.check(Collections.singletonList(sql), checkContext);
                 List<Rule> vRules = sqlCheckService.fullFillRiskLevel(rules, violations);
                 v.getViolatedRules().addAll(vRules.stream().filter(r -> r.getLevel() > 0).collect(Collectors.toList()));
-                return violations;
-            }));
+                sql2Violations.put(sql, violations);
+            });
             context.put(SQL_CHECK_RESULT_KEY, sql2Violations);
             context.put(SQL_CHECK_ELAPSED_TIME_KEY, s);
             return response.getSqls().stream().noneMatch(v -> CollectionUtils.isNotEmpty(v.getViolatedRules()));

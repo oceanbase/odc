@@ -194,6 +194,14 @@ public class PreConditions {
                 "Host is not in white list, host=" + host);
     }
 
+    public static boolean validInUrlWhiteList(String url, List<String> whiteList) {
+        if (SSRFChecker.checkUrlInWhiteList(url, whiteList)) {
+            return true;
+        }
+        throw new BadArgumentException(ErrorCodes.ExternalUrlNotAllowed, new Object[] {url},
+                "The URL is not in white list, URL=" + url);
+    }
+
     public static void validNoDuplicated(ResourceType resourceType,
             String parameterName, Object parameterValue, BooleanSupplier duplicatedChecker) {
         if (duplicatedChecker.getAsBoolean()) {

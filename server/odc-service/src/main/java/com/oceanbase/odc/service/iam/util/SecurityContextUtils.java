@@ -17,8 +17,8 @@ package com.oceanbase.odc.service.iam.util;
 
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 
 import javax.security.auth.Subject;
 import javax.servlet.http.HttpServletRequest;
@@ -33,7 +33,9 @@ import org.springframework.security.web.context.HttpSessionSecurityContextReposi
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.authority.DefaultLoginSecurityManager;
 import com.oceanbase.odc.core.authority.auth.SecurityContext;
+import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
+import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.metadb.iam.OrganizationEntity;
 import com.oceanbase.odc.metadb.iam.OrganizationRepository;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
@@ -74,7 +76,7 @@ public class SecurityContextUtils {
     public static void switchCurrentUserOrganization(@NotNull User user, @NotNull Organization organization,
             HttpServletRequest request,
             boolean createSession) {
-        setCloudUid(user, organization);
+        setCloudUid(user);
 
         // Spring Security Context
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -95,15 +97,10 @@ public class SecurityContextUtils {
         if (cloudMetadataClient.supportsCloudMetadata() && StringUtils.isEmpty(user.getUid())) {
             OrganizationRepository repository =
                     (OrganizationRepository) SpringContextUtil.getBean("organizationRepository");
-            Optional<OrganizationEntity> organizationEntityOptional = repository.findById(user.getOrganizationId());
-            organizationEntityOptional.ifPresent(entity -> user.setUid(entity.getName()));
-        }
-    }
-
-    private static void setCloudUid(User user, Organization organization) {
-        CloudMetadataClient cloudMetadataClient = SpringContextUtil.getBean(CloudMetadataClient.class);
-        if (cloudMetadataClient.supportsCloudMetadata() && StringUtils.isEmpty(user.getUid())) {
-            user.setUid(organization.getName());
+            List<OrganizationEntity> organizationEntities = repository.findByTypeAndUserId(OrganizationType.TEAM,
+                    user.getId());
+            PreConditions.validSingleton(organizationEntities, "organizationEntities");
+            user.setUid(organizationEntities.get(0).getName());
         }
     }
 
