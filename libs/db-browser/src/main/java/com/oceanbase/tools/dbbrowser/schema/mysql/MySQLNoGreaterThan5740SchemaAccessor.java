@@ -75,7 +75,7 @@ import com.oceanbase.tools.dbbrowser.model.DBTablePartitionType;
 import com.oceanbase.tools.dbbrowser.model.DBTableSubpartitionDefinition;
 import com.oceanbase.tools.dbbrowser.model.DBTrigger;
 import com.oceanbase.tools.dbbrowser.model.DBType;
-import com.oceanbase.tools.dbbrowser.model.DBUserDetailIdentity;
+import com.oceanbase.tools.dbbrowser.model.DBUser;
 import com.oceanbase.tools.dbbrowser.model.DBVariable;
 import com.oceanbase.tools.dbbrowser.model.DBView;
 import com.oceanbase.tools.dbbrowser.model.MySQLConstants;
@@ -1224,7 +1224,7 @@ public class MySQLNoGreaterThan5740SchemaAccessor implements DBSchemaAccessor {
     }
 
     @Override
-    public List<DBUserDetailIdentity> listUsersDetail() {
+    public List<DBUser> detailUsers(List<String> usernames) {
         throw new UnsupportedOperationException("Not supported yet");
     }
 }

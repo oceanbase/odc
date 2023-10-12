@@ -29,8 +29,8 @@ import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBObjectWarningDescriptor;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.oceanbase.tools.dbbrowser.model.DBTableIndex;
-import com.oceanbase.tools.dbbrowser.model.DBUserDetailIdentity;
-import com.oceanbase.tools.dbbrowser.model.DBUserLockStatusType;
+import com.oceanbase.tools.dbbrowser.model.DBUser;
+import com.oceanbase.tools.dbbrowser.model.DBUserLockType;
 import com.oceanbase.tools.dbbrowser.parser.SqlParser;
 import com.oceanbase.tools.dbbrowser.parser.result.ParseSqlResult;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessorSqlMappers;
@@ -111,14 +111,18 @@ public class OBMySQLSchemaAccessor extends MySQLNoGreaterThan5740SchemaAccessor 
     }
 
     @Override
-    public List<DBUserDetailIdentity> listUsersDetail() {
+    public List<DBUser> detailUsers(List<String> usernames) {
         MySQLSqlBuilder sb = new MySQLSqlBuilder();
-        sb.append("SELECT user_name,is_locked FROM oceanbase.__all_user");
+        sb.append("SELECT user_name, is_locked FROM oceanbase.__all_user");
+        if (CollectionUtils.isNotEmpty(usernames)) {
+            sb.append(" where user_name in (");
+            sb.values(usernames);
+            sb.append(")");
+        }
         return jdbcOperations.query(sb.toString(), (rs, rowNum) -> {
-            DBUserDetailIdentity dbUser = new DBUserDetailIdentity();
+            DBUser dbUser = new DBUser();
             dbUser.setName(rs.getString(1));
-            dbUser.setType(DBObjectType.USER);
-            dbUser.setUserStatus(DBUserLockStatusType.from(rs.getInt(2)));
+            dbUser.setLockedStatus(DBUserLockType.from(rs.getInt(2)));
             return dbUser;
         });
     }

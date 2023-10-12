@@ -16,18 +16,21 @@
 
 package com.oceanbase.tools.dbbrowser.model;
 
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-
 /**
  * @author yaobin
  * @date 2023-09-27
  * @since 4.2.3
  */
-@Data
-@EqualsAndHashCode(callSuper = false)
-public class DBUserDetailIdentity extends DBObjectIdentity {
+public enum DBUserLockType {
 
-    private DBUserLockStatusType userStatus;
+    LOCKED,
+
+    UNLOCKED;
+
+    public static DBUserLockType from(int lockedStatus) {
+        if (lockedStatus != 1 && lockedStatus != 0) {
+            throw new IllegalArgumentException("Invalid status");
+        }
+        return lockedStatus == 1 ? LOCKED : UNLOCKED;
+    }
 }
-

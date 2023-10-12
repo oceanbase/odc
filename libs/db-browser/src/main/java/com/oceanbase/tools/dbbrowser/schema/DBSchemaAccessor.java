@@ -35,7 +35,7 @@ import com.oceanbase.tools.dbbrowser.model.DBTablePartition;
 import com.oceanbase.tools.dbbrowser.model.DBTableSubpartitionDefinition;
 import com.oceanbase.tools.dbbrowser.model.DBTrigger;
 import com.oceanbase.tools.dbbrowser.model.DBType;
-import com.oceanbase.tools.dbbrowser.model.DBUserDetailIdentity;
+import com.oceanbase.tools.dbbrowser.model.DBUser;
 import com.oceanbase.tools.dbbrowser.model.DBVariable;
 import com.oceanbase.tools.dbbrowser.model.DBView;
 
@@ -65,11 +65,11 @@ public interface DBSchemaAccessor {
     List<DBObjectIdentity> listUsers();
 
     /**
-     * list all user details
+     * list user details
      *
-     * @return user detail list
+     * @return user detail
      */
-    List<DBUserDetailIdentity> listUsersDetail();
+    List<DBUser> detailUsers(List<String> usernames);
 
     /**
      * Show all table names list in the specified schema

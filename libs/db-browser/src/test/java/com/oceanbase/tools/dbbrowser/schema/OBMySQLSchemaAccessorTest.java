@@ -44,8 +44,8 @@ import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
 import com.oceanbase.tools.dbbrowser.model.DBTableIndex;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartition;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartitionType;
-import com.oceanbase.tools.dbbrowser.model.DBUserDetailIdentity;
-import com.oceanbase.tools.dbbrowser.model.DBUserLockStatusType;
+import com.oceanbase.tools.dbbrowser.model.DBUser;
+import com.oceanbase.tools.dbbrowser.model.DBUserLockType;
 import com.oceanbase.tools.dbbrowser.model.DBVariable;
 import com.oceanbase.tools.dbbrowser.model.DBView;
 import com.oceanbase.tools.dbbrowser.util.DBSchemaAccessorUtil;
@@ -105,15 +105,33 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
     }
 
     @Test
-    public void listUsersDetail_Success() {
+    public void listUsersDetail_SpecifyUsername_Success() {
         DBSchemaAccessor accessor = new DBSchemaAccessors(getOBMySQLDataSource()).createOBMysql();
-        List<DBUserDetailIdentity> dbUsers = accessor.listUsersDetail();
+        List<String> users = new ArrayList<>();
+        users.add("root");
+        users.add("roottest1");
+        List<DBUser> dbUsers = accessor.detailUsers(users);
         Assert.assertFalse(dbUsers.isEmpty());
-        Assert.assertSame(DBObjectType.USER, dbUsers.get(0).getType());
+        Assert.assertSame(DBObjectType.USER, dbUsers.get(0).type());
         Assert.assertNotNull(dbUsers.get(0).getName());
-        Optional<DBUserDetailIdentity> dbUser = dbUsers.stream().filter(a -> a.getName().equals("root")).findFirst();
+        Optional<DBUser> dbUser = dbUsers.stream().filter(a -> a.getName().equals("root")).findFirst();
         Assert.assertTrue(dbUser.isPresent());
-        Assert.assertSame(DBUserLockStatusType.UNLOCKED, dbUser.get().getUserStatus());
+        Assert.assertSame(DBUserLockType.UNLOCKED, dbUser.get().getLockedStatus());
+
+        boolean exists = dbUsers.stream().anyMatch(a -> a.getName().equals("roottest1"));
+        Assert.assertFalse(exists);
+    }
+
+    @Test
+    public void listUsersDetail_NoSpecifyUsername_Success() {
+        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBMySQLDataSource()).createOBMysql();
+        List<DBUser> dbUsers = accessor.detailUsers(null);
+        Assert.assertFalse(dbUsers.isEmpty());
+        Assert.assertSame(DBObjectType.USER, dbUsers.get(0).type());
+        Assert.assertNotNull(dbUsers.get(0).getName());
+        Optional<DBUser> dbUser = dbUsers.stream().filter(a -> a.getName().equals("root")).findFirst();
+        Assert.assertTrue(dbUser.isPresent());
+        Assert.assertSame(DBUserLockType.UNLOCKED, dbUser.get().getLockedStatus());
     }
 
     @Test

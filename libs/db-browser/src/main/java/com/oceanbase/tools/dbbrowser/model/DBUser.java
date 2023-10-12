@@ -16,21 +16,28 @@
 
 package com.oceanbase.tools.dbbrowser.model;
 
+import lombok.Data;
+
 /**
  * @author yaobin
  * @date 2023-09-27
  * @since 4.2.3
  */
-public enum DBUserLockStatusType {
+@Data
+public class DBUser implements DBObject {
 
-    LOCKED,
+    private String name;
 
-    UNLOCKED;
+    private DBUserLockType lockedStatus;
 
-    public static DBUserLockStatusType from(int lockedStatus) {
-        if (lockedStatus != 1 && lockedStatus != 0) {
-            throw new IllegalArgumentException("invalid Statue");
-        }
-        return lockedStatus == 1 ? LOCKED : UNLOCKED;
+    @Override
+    public String name() {
+        return this.name;
+    }
+
+    @Override
+    public DBObjectType type() {
+        return DBObjectType.USER;
     }
 }
+
