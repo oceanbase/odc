@@ -14,8 +14,8 @@ templates:
       - column_name: permission_id
         value_from:
           field_ref:
-            ref_file: migrate/common/V_4_2_0_4__iam_permission.yaml
-            field_path: templates.[0-3].specs.0.value
+            ref_file: runtime/V_4_2_0_18__iam_permission.yaml
+            field_path: templates.*.specs.0.value
       - column_name: organization_id
         value: ${ORGANIZATION_ID}
         data_type: java.lang.Long

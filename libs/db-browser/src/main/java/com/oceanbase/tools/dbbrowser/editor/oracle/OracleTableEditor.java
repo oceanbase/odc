@@ -61,7 +61,15 @@ public class OracleTableEditor extends DBTableEditor {
         if (StringUtils.isNotBlank(options.getCompressionOption())) {
             sqlBuilder.append("COMPRESS ").append(options.getCompressionOption()).space();
         }
-        super.appendTableOptions(table, sqlBuilder);
+        if (Objects.nonNull(options.getReplicaNum())) {
+            sqlBuilder.append("REPLICA_NUM = ").append(String.valueOf(options.getReplicaNum())).space();
+        }
+        if (Objects.nonNull(options.getUseBloomFilter())) {
+            sqlBuilder.append("USE_BLOOM_FILTER = ").append(options.getUseBloomFilter() ? "TRUE" : "FALSE").space();
+        }
+        if (Objects.nonNull(options.getTabletSize())) {
+            sqlBuilder.append("TABLET_SIZE = ").append(String.valueOf(options.getTabletSize())).space();
+        }
     }
 
     @Override

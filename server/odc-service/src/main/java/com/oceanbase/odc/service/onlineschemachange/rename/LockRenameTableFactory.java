@@ -43,7 +43,7 @@ public class LockRenameTableFactory {
         PreConditions.notNull(obVersion, "obVersion");
 
         if (connectType == ConnectType.OB_MYSQL || connectType == ConnectType.CLOUD_OB_MYSQL) {
-            if (VersionUtils.isGreaterThanOrEqualsTo(obVersion, "4.2.0")) {
+            if (VersionUtils.isGreaterThanOrEqualsTo(obVersion, "4.3.0")) {
                 // OB 版本 >= 4.2.0
                 return new LockTableInterceptor();
             } else {

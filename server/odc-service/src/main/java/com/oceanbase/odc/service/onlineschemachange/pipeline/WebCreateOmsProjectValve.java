@@ -22,10 +22,12 @@ import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.sql.execute.SyncJdbcExecutor;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.onlineschemachange.exception.OmsException;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeScheduleTaskParameters;
+import com.oceanbase.odc.service.onlineschemachange.oms.enums.OmsOceanBaseType;
 import com.oceanbase.odc.service.onlineschemachange.oms.request.CreateOceanBaseDataSourceRequest;
 import com.oceanbase.odc.service.onlineschemachange.oms.request.CreateProjectRequest;
 
@@ -48,6 +50,9 @@ public class WebCreateOmsProjectValve extends BaseCreateOmsProjectValve {
         request.setConfigUrl(configUrl);
         request.setDrcUserName(config.getSysTenantUsername());
         request.setDrcPassword(Base64.getEncoder().encodeToString(config.getSysTenantPassword().getBytes()));
+        if (config.getDialectType() == DialectType.OB_MYSQL && isObCE(connectionSession)) {
+            request.setType(OmsOceanBaseType.OB_MYSQL_CE.name());
+        }
     }
 
     @Override
@@ -74,5 +79,18 @@ public class WebCreateOmsProjectValve extends BaseCreateOmsProjectValve {
             }
             return rs.getString("value");
         });
+    }
+
+    private boolean isObCE(ConnectionSession connectionSession) {
+        SyncJdbcExecutor syncJdbcExecutor = connectionSession.getSyncJdbcExecutor(
+                ConnectionSessionConstants.BACKEND_DS_KEY);
+        String queryVersionSql = "show variables like 'version_comment'";
+        String versionString = syncJdbcExecutor.query(queryVersionSql, rs -> {
+            if (!rs.next()) {
+                throw new IllegalArgumentException("Get ob version is empty");
+            }
+            return rs.getString("value");
+        });
+        return versionString != null && versionString.startsWith("OceanBase_CE");
     }
 }

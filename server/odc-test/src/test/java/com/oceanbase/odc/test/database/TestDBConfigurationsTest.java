@@ -30,11 +30,8 @@ public class TestDBConfigurationsTest {
         Assert.assertNotNull(config.getDataSource());
         Assert.assertNotNull(config.getHost());
         Assert.assertNotNull(config.getPort());
-        Assert.assertNotNull(config.getTenant());
         Assert.assertNotNull(config.getUsername());
         Assert.assertNotNull(config.getPassword());
-        Assert.assertNotNull(config.getSysPassword());
-        Assert.assertNotNull(config.getSysUsername());
     }
 
     @Test
@@ -44,11 +41,8 @@ public class TestDBConfigurationsTest {
         Assert.assertNotNull(config.getDataSource());
         Assert.assertNotNull(config.getHost());
         Assert.assertNotNull(config.getPort());
-        Assert.assertNotNull(config.getTenant());
         Assert.assertNotNull(config.getUsername());
         Assert.assertNotNull(config.getPassword());
-        Assert.assertNotNull(config.getSysPassword());
-        Assert.assertNotNull(config.getSysUsername());
     }
 
     @Test

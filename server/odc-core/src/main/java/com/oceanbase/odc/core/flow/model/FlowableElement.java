@@ -16,6 +16,7 @@
 package com.oceanbase.odc.core.flow.model;
 
 import com.oceanbase.odc.core.flow.builder.ErrorBoundaryEventBuilder;
+import com.oceanbase.odc.core.flow.builder.ServiceTaskBuilder;
 import com.oceanbase.odc.core.flow.builder.SignalCatchEventBuilder;
 import com.oceanbase.odc.core.flow.builder.TimerBoundaryEventBuilder;
 import com.oceanbase.odc.core.flow.builder.UserTaskBuilder;
@@ -62,6 +63,10 @@ public class FlowableElement {
 
     public FlowableElement(@NonNull UserTaskBuilder userTaskBuilder) {
         this(userTaskBuilder.getGraphId(), userTaskBuilder.getName(), FlowableElementType.USER_TASK);
+    }
+
+    public FlowableElement(@NonNull ServiceTaskBuilder serviceTaskBuilder) {
+        this(serviceTaskBuilder.getGraphId(), serviceTaskBuilder.getName(), FlowableElementType.SERVICE_TASK);
     }
 
 }

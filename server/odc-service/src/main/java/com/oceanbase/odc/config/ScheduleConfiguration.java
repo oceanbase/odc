@@ -168,7 +168,7 @@ public class ScheduleConfiguration {
     @Bean(name = "syncDatabaseTaskExecutor")
     public ThreadPoolTaskExecutor syncDatabaseTaskExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        int poolSize = Math.max(SystemUtils.availableProcessors(), 5);
+        int poolSize = Math.max(SystemUtils.availableProcessors() * 8, 64);
         executor.setCorePoolSize(poolSize);
         executor.setMaxPoolSize(poolSize);
         executor.setQueueCapacity(0);

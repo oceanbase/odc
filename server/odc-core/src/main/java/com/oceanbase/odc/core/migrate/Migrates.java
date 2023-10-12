@@ -56,16 +56,17 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class Migrates {
+
     private final MigrateConfiguration configuration;
     private final SchemaHistoryRepository repository;
     private final Map<String, List<SchemaHistory>> version2Histories;
     private final List<ResourceMigrateMetaInfo> migrateMetas = new LinkedList<>();
 
-    public Migrates(MigrateConfiguration configuration) {
+    public Migrates(MigrateConfiguration configuration, SchemaHistoryRepository repository) {
         this.configuration = configuration;
-        this.repository = new SchemaHistoryRepository(configuration.getHistoryTable(), configuration.getDataSource());
-        this.version2Histories = repository.listSuccess().stream().collect(
-                Collectors.groupingBy(SchemaHistory::getVersion));
+        this.repository = repository;
+        this.version2Histories = repository.listSuccess().stream()
+                .collect(Collectors.groupingBy(SchemaHistory::getVersion));
         initResourceManager(configuration);
     }
 

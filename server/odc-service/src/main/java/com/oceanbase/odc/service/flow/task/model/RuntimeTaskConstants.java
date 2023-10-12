@@ -22,6 +22,7 @@ package com.oceanbase.odc.service.flow.task.model;
 public class RuntimeTaskConstants {
     public static final String PRE_CHECK_TASK_ID = "preCheckTaskId";
     public static final String TASK_ID = "taskId";
+    public static final String FLOW_INSTANCE_ID = "flowInstanceId";
     public static final String TIMEOUT_MILLI_SECONDS = "timeOutMilliSeconds";
     public static final String CONNECTION_CONFIG = "connectionConfig";
     public static final String SCHEMA_NAME = "schemaName";
@@ -34,5 +35,7 @@ public class RuntimeTaskConstants {
     public static final Integer DEFAULT_TASK_CHECK_INTERVAL_SECONDS = 5;
     public static final String RISKLEVEL_DESCRIBER = "riskLevelDescriber";
     public static final String RISKLEVEL = "riskLevel";
-    public static final String SQL_CHECK_RESULT = "sql_check_result";
+    public static final String SUCCESS_CREATE_EXT_INS = "successCreateExternalApprovalInstance";
+    public static final String CLOUD_MAIN_ACCOUNT_ID = "cloudMainAccountId";
+
 }

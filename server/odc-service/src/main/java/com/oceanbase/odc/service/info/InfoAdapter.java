@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.info;
 
+import java.time.OffsetDateTime;
+
 import javax.servlet.http.HttpServletRequest;
 
 public interface InfoAdapter {
@@ -24,6 +26,10 @@ public interface InfoAdapter {
     String getLogoutUrl(HttpServletRequest request);
 
     String getSupportGroupQRCodeUrl();
+
+    String getBuildVersion();
+
+    OffsetDateTime getBuildTime();
 
     boolean isPasswordLoginEnabled();
 
