@@ -50,7 +50,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -126,7 +125,6 @@ public class DataTransferServiceTest extends ServiceTestEnv {
     }
 
     @Test
-    //@Ignore("TODO: fix this test")
     public void create_dumpSchemaAndDataForOracleMode_bothSchemaAndDataDumped() throws Exception {
         DataTransferTaskContext context = dataTransferService.create(BUCKET, getOracleDumpConfig(true, true));
         Assert.assertNotNull(context.get(30, TimeUnit.SECONDS));
@@ -138,7 +136,6 @@ public class DataTransferServiceTest extends ServiceTestEnv {
     }
 
     @Test
-    //@Ignore("TODO: fix this test")
     public void create_dumpSchemaForOracleMode_onlySchemaDumped() throws Exception {
         DataTransferTaskContext context = dataTransferService.create(BUCKET, getOracleDumpConfig(false, true));
         Assert.assertNotNull(context.get(30, TimeUnit.SECONDS));
@@ -150,7 +147,6 @@ public class DataTransferServiceTest extends ServiceTestEnv {
     }
 
     @Test
-    //@Ignore("TODO: fix this test")
     public void create_dumpSchemaForOracleMode_onlySchemaDumped_mergeSchemaFiles() throws Exception {
         DataTransferConfig config = getOracleDumpConfig(false, true);
         config.setMergeSchemaFiles(true);
@@ -175,7 +171,6 @@ public class DataTransferServiceTest extends ServiceTestEnv {
     }
 
     @Test
-    //@Ignore("TODO: fix this test")
     public void create_dumpSchemaAndDataForMysqlMode_bothSchemaAndDataDumped() throws Exception {
         DataTransferTaskContext context = dataTransferService.create(BUCKET, getMysqlDumpConfig(true, true));
         Assert.assertNotNull(context.get(30, TimeUnit.SECONDS));
@@ -209,7 +204,6 @@ public class DataTransferServiceTest extends ServiceTestEnv {
     }
 
     @Test
-    //@Ignore("TODO: fix this test")
     public void create_loadSchemaAndDataForOracleMode_schemaAndDataLoaded() throws Exception {
         File dumpFile = dumpSchemaAndDataForLoad(DialectType.OB_ORACLE);
         assertOracleModeTableNotExists();
@@ -222,7 +216,6 @@ public class DataTransferServiceTest extends ServiceTestEnv {
     }
 
     @Test
-    //@Ignore("TODO: fix this test")
     public void create_loadSchemaForOracleMode_schemaLoaded() throws Exception {
         File dumpFile = dumpSchemaAndDataForLoad(DialectType.OB_ORACLE);
         assertOracleModeTableNotExists();
@@ -247,7 +240,6 @@ public class DataTransferServiceTest extends ServiceTestEnv {
     }
 
     @Test
-    //@Ignore("TODO: fix this test")
     public void create_loadSchemaForMysqlMode_schemaLoaded() throws Exception {
         File dumpFile = dumpSchemaAndDataForLoad(DialectType.OB_MYSQL);
         assertMysqlModeTableNotExists();
@@ -284,7 +276,6 @@ public class DataTransferServiceTest extends ServiceTestEnv {
     }
 
     @Test
-    //@Ignore("TODO: fix this test")
     public void create_validSysUserExists_nonCloudModeUsed() throws Exception {
         DataTransferConfig config = getOracleDumpConfig(true, true);
         config.setSysUser(oracleConnConfig.getSysTenantUsername());
@@ -293,7 +284,6 @@ public class DataTransferServiceTest extends ServiceTestEnv {
     }
 
     @Test
-    //@Ignore("TODO: fix this test")
     public void create_validSysUserPasswdExists_nonCloudModeUsed() throws Exception {
         DataTransferConfig config = getOracleDumpConfig(true, true);
         config.setSysUser(oracleConnConfig.getSysTenantUsername());
@@ -303,7 +293,6 @@ public class DataTransferServiceTest extends ServiceTestEnv {
     }
 
     @Test
-    //@Ignore("TODO: fix this test")
     public void create_validSysUserInvalidPasswdExists_nonCloudModeUsed() throws Exception {
         DataTransferConfig config = getOracleDumpConfig(true, true);
         config.setSysUser(oracleConnConfig.getSysTenantUsername());
@@ -313,7 +302,6 @@ public class DataTransferServiceTest extends ServiceTestEnv {
     }
 
     @Test
-    //@Ignore("TODO: fix this test")
     public void getMetaInfo_validZipFileInput_getMetaInfo() throws Exception {
         File target = dumpSchemaAndDataForLoad(DialectType.OB_ORACLE);
         assertOracleModeTableNotExists();
