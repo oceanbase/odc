@@ -120,6 +120,8 @@ public class TestDBConfigurations {
                     log.info("create test user for OB oracle mode, username: {}", username);
                     sql = new StringBuilder("GRANT ALL PRIVILEGES TO ").append(username).append(";");
                     stmt.executeUpdate(sql.toString());
+                    sql = new StringBuilder("GRANT SELECT ANY DICTIONARY TO ").append(username).append(";");
+                    stmt.execute(sql.toString());
                     log.info("grant all privileges to new created user, username: {}", username);
                     v.setDefaultDBName(username);
                     v.setUsername(username);
