@@ -283,7 +283,10 @@ public class FlowInstanceService {
         }
         List<RiskLevel> riskLevels = riskLevelService.list();
         Verify.notEmpty(riskLevels, "riskLevels");
-        ConnectionConfig conn = connectionService.getForConnectionSkipPermissionCheck(createReq.getConnectionId());
+        ConnectionConfig conn = null;
+        if (Objects.nonNull(createReq.getConnectionId())) {
+            conn = connectionService.getForConnectionSkipPermissionCheck(createReq.getConnectionId());
+        }
         return Collections.singletonList(buildFlowInstance(riskLevels, createReq, conn));
     }
 

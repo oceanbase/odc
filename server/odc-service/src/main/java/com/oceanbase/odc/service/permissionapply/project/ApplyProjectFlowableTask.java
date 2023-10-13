@@ -21,6 +21,7 @@ import org.flowable.engine.delegate.DelegateExecution;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import com.oceanbase.odc.common.trace.TaskContextHolder;
 import com.oceanbase.odc.core.flow.exception.BaseFlowException;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
@@ -66,6 +67,7 @@ public class ApplyProjectFlowableTask extends BaseODCFlowTaskDelegate<Void> {
 
     @Override
     protected Void start(Long taskId, TaskService taskService, DelegateExecution execution) throws Exception {
+        TaskContextHolder.trace(FlowTaskUtil.getTaskCreator(execution).getId(), taskId);
         transactionTemplate.executeWithoutResult(status -> {
             try {
                 log.info("Apply project permission task starts, taskId={}, activityId={}", taskId,
@@ -115,6 +117,8 @@ public class ApplyProjectFlowableTask extends BaseODCFlowTaskDelegate<Void> {
                 } else {
                     throw new ServiceTaskError(e);
                 }
+            } finally {
+                TaskContextHolder.clear();
             }
         });
         return null;
