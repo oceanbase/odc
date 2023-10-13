@@ -57,7 +57,7 @@ abstract class BaseDMLBuilder implements DMLBuilder {
     protected final ConnectionSession connectionSession;
 
     public BaseDMLBuilder(@NonNull List<DataModifyUnit> modifyUnits, List<String> whereColumns,
-            @NonNull ConnectionSession connectionSession) {
+            @NonNull ConnectionSession connectionSession, List<DBTableConstraint> constraints) {
         Set<String> schemas = modifyUnits.stream()
                 .map(DataModifyUnit::getSchemaName)
                 .filter(Objects::nonNull).collect(Collectors.toSet());
@@ -78,7 +78,7 @@ abstract class BaseDMLBuilder implements DMLBuilder {
             this.schema = null;
         }
         this.connectionSession = connectionSession;
-        this.constraints = getConstraints(this.schema, this.tableName);
+        this.constraints = constraints == null ? getConstraints(schema, tableName, connectionSession) : constraints;
         this.whereColumns = whereColumns;
     }
 
@@ -140,6 +140,16 @@ abstract class BaseDMLBuilder implements DMLBuilder {
                 .anyMatch(c -> columnNames.containsAll(c.getColumnNames()));
     }
 
+    public static List<DBTableConstraint> getConstraints(String schema,
+            @NonNull String tableName, ConnectionSession session) {
+        DBSchemaAccessor accessor = DBSchemaAccessors.create(session);
+        String schemaName = schema;
+        if (schema == null) {
+            schemaName = ConnectionSessionUtil.getCurrentSchema(session);
+        }
+        return accessor.listTableConstraints(schemaName, tableName);
+    }
+
     protected boolean isAppendable(DataModifyUnit unit) {
         if (CollectionUtils.isNotEmpty(this.whereColumns)) {
             return whereColumns.contains(unit.getColumnName());
@@ -184,16 +194,6 @@ abstract class BaseDMLBuilder implements DMLBuilder {
             return constraint;
         }
         return null;
-    }
-
-    private List<DBTableConstraint> getConstraints(String schema,
-            @NonNull String tableName) {
-        DBSchemaAccessor accessor = DBSchemaAccessors.create(connectionSession);
-        String schemaName = schema;
-        if (schema == null) {
-            schemaName = ConnectionSessionUtil.getCurrentSchema(connectionSession);
-        }
-        return accessor.listTableConstraints(schemaName, tableName);
     }
 
 }

@@ -21,10 +21,14 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Objects;
 
+import javax.sql.DataSource;
+
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import com.oceanbase.odc.common.util.HashUtils;
 import com.oceanbase.odc.common.util.MapperUtils;
@@ -119,17 +123,28 @@ public class ResourceMigrator implements Migrator {
 
     @Override
     public boolean doMigrate() {
-        for (ResourceMigrateMetaInfo migrateMeta : migrateMetas) {
-            ResourceManager manager = migrateMeta.getManager();
-            ResourceConfig config = migrateMeta.getConfig();
-            ResourceSpecMigrator migrator = new ResourceSpecMigrator(
-                    new DataRecordRepository(config.getDataSource()),
-                    new DefaultResourceMapperFactory(config, manager), config.getHandle());
-            ResourceSpec resourceSpec = findResourceSpec(manager, path);
-            resourceSpec.getTemplates().stream().flatMap(t -> t.getSpecs().stream())
-                    .forEach(t -> fullFillFieldReference(manager, migrator, t.getValueFrom()));
-            migrator.migrate(resourceSpec);
-        }
+        DataSource dataSource = migrateMetas.stream().filter(Objects::nonNull).findFirst()
+                .orElseThrow(() -> new NullPointerException("DS not found")).getConfig().getDataSource();
+        TransactionTemplate txTemplate = new TransactionTemplate(new DataSourceTransactionManager(dataSource));
+        txTemplate.execute(status -> {
+            try {
+                for (ResourceMigrateMetaInfo migrateMeta : migrateMetas) {
+                    ResourceManager manager = migrateMeta.getManager();
+                    ResourceConfig config = migrateMeta.getConfig();
+                    ResourceSpecMigrator migrator = new ResourceSpecMigrator(
+                            new DataRecordRepository(config.getDataSource()),
+                            new DefaultResourceMapperFactory(config, manager), config.getHandle());
+                    ResourceSpec resourceSpec = findResourceSpec(manager, path);
+                    resourceSpec.getTemplates().stream().flatMap(t -> t.getSpecs().stream())
+                            .forEach(t -> fullFillFieldReference(manager, migrator, t.getValueFrom()));
+                    migrator.migrate(resourceSpec);
+                }
+                return true;
+            } catch (Exception e) {
+                status.setRollbackOnly();
+                throw e;
+            }
+        });
         return true;
     }
 

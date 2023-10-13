@@ -32,9 +32,9 @@ public class DdlUtilsTest {
     public void test_table_name_with_quote_no_schema() {
         String tableName = "\"t\"";
 
-        String newName = DdlUtils.getNewNameWithSuffix(tableName, DdlConstants.RENAMED_TABLE_NAME_SUFFIX);
+        String newName = DdlUtils.getNewNameWithSuffix(tableName, "_", DdlConstants.RENAMED_TABLE_NAME_SUFFIX);
 
-        Assert.assertEquals("_t" + DdlConstants.RENAMED_TABLE_NAME_SUFFIX, newName);
+        Assert.assertEquals("\"_t" + DdlConstants.RENAMED_TABLE_NAME_SUFFIX + "\"", newName);
 
     }
 
@@ -42,9 +42,9 @@ public class DdlUtilsTest {
     public void test_table_name_with_accent_no_schema() {
         String tableName = "`t`";
 
-        String newName = DdlUtils.getNewNameWithSuffix(tableName, DdlConstants.RENAMED_TABLE_NAME_SUFFIX);
+        String newName = DdlUtils.getNewNameWithSuffix(tableName, "_", DdlConstants.RENAMED_TABLE_NAME_SUFFIX);
 
-        Assert.assertEquals("_t" + DdlConstants.RENAMED_TABLE_NAME_SUFFIX, newName);
+        Assert.assertEquals("`_t" + DdlConstants.RENAMED_TABLE_NAME_SUFFIX + "`", newName);
 
     }
 

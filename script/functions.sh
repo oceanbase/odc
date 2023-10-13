@@ -5,7 +5,7 @@ SQL_CONSOLE_DIR="client"
 NVS_HOME="$HOME/.nvs"
 RPM_DEFAULT_INSTALL_PREFIX="/opt"
 NVS_VERSION="v1.6.0"
-NODE_VERSION="14"
+NODE_VERSION="16.14.0"
 OSS_RETRY_TIMES=50
 OBCLIENT_VERSION=1_2_8
 
@@ -16,8 +16,8 @@ export ODC_SCRIPT_DIR=$(dirname ${ODC_FUNCTION_SCRIPT_SOURCE})
 export ODC_DIR=$(dirname ${ODC_SCRIPT_DIR})
 
 # oss related environment variables
-export ODC_OSS_ENDPOINT=${oss_endpoint:-cn-hangzhou-alipay-b-internal.oss-internal.aliyun-inc.com}
-export ODC_OSS_BUCKET_NAME=${oss_bucket_name:-antsys-obodc-build}
+export ODC_OSS_ENDPOINT=${oss_endpoint:-}
+export ODC_OSS_BUCKET_NAME=${oss_bucket_name:-}
 export ODC_OSS_ACCESS_KEY_ID=${oss_key_id:-}
 export ODC_OSS_ACCESS_KEY_SECRET=${oss_key_secret:-}
 export ODC_OSS_CONFIG_FILE_NAME=$(echo ~/.odcossutilconfig)
@@ -133,13 +133,13 @@ function init_node_env() {
         func_echo "install nvs succeed"
     fi
 
-    if ! nvs use node/${NODE_VERSION}; then
+    if ! nvs link node/${NODE_VERSION}; then
         func_echo "node ${NODE_VERSION} not installed, will install"
         if ! nvs add node/${NODE_VERSION}; then
             func_echo "nvs add ${NODE_VERSION} failed"
             return 3
         fi
-        if ! nvs use node/${NODE_VERSION}; then
+        if ! nvs link node/${NODE_VERSION}; then
             func_echo "nvs use ${NODE_VERSION} failed"
             return 4
         fi
@@ -163,6 +163,11 @@ function init_node_env() {
     fi
 
     return 0
+}
+
+# clean nvs temp files for avoid nvs use operation require interaction
+function clean_nvs_temp_files() {
+    rm -fv ${NVS_HOME}/nvs_tmp_*.sh
 }
 
 #############################################
@@ -294,7 +299,7 @@ function maven_build_jar() {
 }
 
 function oss_fetch_obclient() {
-    local rpm_arch=$1
+    local rpm_arch=$(get_cpu_arch)
     if ! config_ossutil; then
         log_error "config ossutil failed"
         return 1
@@ -311,23 +316,19 @@ function oss_fetch_obclient() {
 }
 
 #
-# copy architecture matched obclient.tar.gz to `import/` folder
+# copy architecture matched obclient install package to `import/obclient.tar.gz`
 #
 function copy_obclient() {
-    local rpm_arch=$1
-    if [ -z "$rpm_arch" ]; then
-        echo "Usage: copy_obclient <rpm_arch>"
-        return 1
-    fi
-
-    local source_obclient_file_path="${ODC_DIR}/build-resource/obclient/${OBCLIENT_VERSION}/${rpm_arch}/obclient.tar.gz"
+    local cpu_arch=$(get_cpu_arch)
+    local source_obclient_file_path="${ODC_DIR}/import/obclient_${cpu_arch}.tar.gz"
     local target_obclient_file_path="${ODC_DIR}/import/obclient.tar.gz"
-
     if [[ -f "${source_obclient_file_path}" ]]; then
         echo "${source_obclient_file_path} exists, will copy to ${target_obclient_file_path} ..."
         cp --force --verbose "${source_obclient_file_path}" "${target_obclient_file_path}"
+        return $?
     else
         echo "${source_obclient_file_path} not exists, skip copy."
+        return 0
     fi
 }
 
@@ -401,4 +402,40 @@ function print_env_info() {
     echo "-------------------------------"
     echo "---  environment check end  ---"
     echo "-------------------------------"
+}
+
+# get os version
+# optional return value: linux, macos, unknown
+function get_os_version() {
+    os_version=$(uname -s)
+    case "$os_version" in
+        Linux*)
+            os_version="linux"
+            ;;
+        Darwin*)
+            os_version="macos"
+            ;;
+        *)
+            os_version="unknown"
+            ;;
+    esac
+    echo "${os_version}"
+}
+
+# get cpu architecture
+# optional return value: x86, aarch, unknown
+function get_cpu_arch() {
+    local cpu_arch=$(uname -m)
+    case "$cpu_arch" in
+        x86*)
+            cpu_arch="x86"
+            ;;
+        aarch*)
+            cpu_arch="aarch"
+            ;;
+        *)
+            cpu_arch="unknown"
+            ;;
+    esac
+    echo "${cpu_arch}"
 }

@@ -55,6 +55,7 @@ public class DataConverters {
         converterList.add(new MySQLBitConverter());
         converterList.add(new MySQLEnumConverter());
         converterList.add(new MySQLSetConverter());
+        converterList.add(new MySQLJsonConverter());
     }
 
     private void initForOracleMode(String serverTimeZoneId) {
@@ -66,6 +67,7 @@ public class DataConverters {
         converterList.add(new OracleByteConverter());
         converterList.add(new OracleRowIDConverter());
         converterList.add(new OracleIntervalConverter());
+        converterList.add(new OracleJsonConverter());
     }
 
     public DataConverter get(@NonNull DataType dataType) {

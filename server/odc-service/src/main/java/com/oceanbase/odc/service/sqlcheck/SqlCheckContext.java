@@ -45,6 +45,11 @@ public class SqlCheckContext {
         this.stmt2Violations = new ArrayList<>();
     }
 
+    public SqlCheckContext(Long totalStmtCount) {
+        this.totalStmtCount = totalStmtCount;
+        this.stmt2Violations = new ArrayList<>();
+    }
+
     public void addCheckViolation(@NonNull Statement statement, @NonNull List<CheckViolation> violations) {
         this.stmt2Violations.add(new Pair<>(statement, violations));
     }
