@@ -14,20 +14,31 @@
  * limitations under the License.
  */
 
-package com.oceanbase.tools.dbbrowser.model;
-
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+package com.oceanbase.odc.service.onlineschemachange.ddl;
 
 /**
  * @author yaobin
- * @date 2023-09-27
+ * @date 2023-10-13
  * @since 4.2.3
  */
-@Data
-@EqualsAndHashCode(callSuper = false)
-public class DBUserDetailIdentity extends DBObjectIdentity {
+public enum DBAccountLockType {
 
-    private DBUserLockStatusType userStatus;
+    LOCKED(true),
+
+    UNLOCKED(false);
+
+    private final boolean value;
+
+    public boolean isValue() {
+        return value;
+    }
+
+    DBAccountLockType(boolean value) {
+        this.value = value;
+    }
+
+    public static DBAccountLockType from(int lockedStatus) {
+        return lockedStatus == 1 ? LOCKED : UNLOCKED;
+    }
+
 }
-

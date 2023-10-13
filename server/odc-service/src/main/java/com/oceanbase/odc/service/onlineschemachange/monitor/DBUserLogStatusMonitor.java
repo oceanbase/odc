@@ -32,13 +32,14 @@ import com.oceanbase.odc.common.concurrent.Await;
 import com.oceanbase.odc.common.util.tableformat.Table;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
-import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.db.browser.DBStatsAccessors;
 import com.oceanbase.odc.service.onlineschemachange.OnlineSchemaChangeContextHolder;
+import com.oceanbase.odc.service.onlineschemachange.ddl.DBUser;
+import com.oceanbase.odc.service.onlineschemachange.ddl.OscDBAccessor;
+import com.oceanbase.odc.service.onlineschemachange.ddl.OscFactoryWrapper;
+import com.oceanbase.odc.service.onlineschemachange.ddl.OscFactoryWrapperGenerator;
 import com.oceanbase.odc.service.onlineschemachange.logger.DefaultTableFactory;
 import com.oceanbase.tools.dbbrowser.model.DBSession;
-import com.oceanbase.tools.dbbrowser.model.DBUserDetailIdentity;
-import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 import com.oceanbase.tools.dbbrowser.stats.DBStatsAccessor;
 
 import lombok.extern.slf4j.Slf4j;
@@ -53,7 +54,7 @@ public class DBUserLogStatusMonitor implements DBUserMonitor {
 
     private final List<String> toMonitorUsers;
     private final AtomicBoolean stopped;
-    private final DBSchemaAccessor dbSchemaAccessor;
+    private final OscDBAccessor dbSchemaAccessor;
     private final DBStatsAccessor dbStatsAccessor;
     private final Map<String, Object> logParameter;
 
@@ -65,7 +66,8 @@ public class DBUserLogStatusMonitor implements DBUserMonitor {
             Map<String, Object> logParameter, Integer period, Integer timeout, TimeUnit timeUnit) {
         this.toMonitorUsers = toMonitorUsers;
         this.logParameter = logParameter;
-        this.dbSchemaAccessor = DBSchemaAccessors.create(connSession);
+        OscFactoryWrapper generate = OscFactoryWrapperGenerator.generate(connSession.getDialectType());
+        this.dbSchemaAccessor = generate.getOscDBAccessorFactory().generate(connSession);
         this.dbStatsAccessor = DBStatsAccessors.create(connSession);
         this.stopped = new AtomicBoolean(false);
         this.period = period;
@@ -112,16 +114,14 @@ public class DBUserLogStatusMonitor implements DBUserMonitor {
     }
 
     private boolean logAccountStatus() {
-        List<DBUserDetailIdentity> userLockedStatus = dbSchemaAccessor.listUsersDetail()
-                .stream().filter(a -> toMonitorUsers.contains(a.getName()))
-                .collect(Collectors.toList());
+        List<DBUser> userLockedStatus = dbSchemaAccessor.listUsers(toMonitorUsers);
         Map<String, Long> sessionMap = dbStatsAccessor.listAllSessions().stream()
                 .collect(Collectors.groupingBy(DBSession::getUsername, Collectors.counting()));
 
         List<String> tableColumns = new ArrayList<>();
         userLockedStatus.forEach(u -> {
             tableColumns.add(u.getName());
-            tableColumns.add(u.getUserStatus().name());
+            tableColumns.add(u.getAccountLocked().name());
             Long sessionCounts = sessionMap.get(u.getName());
             tableColumns.add(Objects.isNull(sessionCounts) ? 0 + "" : sessionCounts + "");
         });

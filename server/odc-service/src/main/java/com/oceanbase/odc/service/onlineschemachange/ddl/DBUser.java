@@ -14,23 +14,32 @@
  * limitations under the License.
  */
 
-package com.oceanbase.tools.dbbrowser.model;
+package com.oceanbase.odc.service.onlineschemachange.ddl;
+
+import com.oceanbase.tools.dbbrowser.model.DBObject;
+import com.oceanbase.tools.dbbrowser.model.DBObjectType;
+
+import lombok.Data;
 
 /**
  * @author yaobin
- * @date 2023-09-27
+ * @date 2023-10-13
  * @since 4.2.3
  */
-public enum DBUserLockStatusType {
+@Data
+public class DBUser implements DBObject {
 
-    LOCKED,
+    private String name;
 
-    UNLOCKED;
+    private DBAccountLockType accountLocked;
 
-    public static DBUserLockStatusType from(int lockedStatus) {
-        if (lockedStatus != 1 && lockedStatus != 0) {
-            throw new IllegalArgumentException("Invalid status");
-        }
-        return lockedStatus == 1 ? LOCKED : UNLOCKED;
+    @Override
+    public String name() {
+        return this.name;
+    }
+
+    @Override
+    public DBObjectType type() {
+        return DBObjectType.USER;
     }
 }
