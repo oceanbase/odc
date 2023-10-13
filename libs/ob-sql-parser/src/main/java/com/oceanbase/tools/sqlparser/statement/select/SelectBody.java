@@ -61,6 +61,7 @@ public class SelectBody extends BaseExpression {
     private Limit limit;
     private ForUpdate forUpdate;
     private OrderBy orderBy;
+    private boolean lockInShareMode;
     private RelatedSelectBody relatedSelect;
     private final List<List<Expression>> values;
     private final List<FromReference> froms;
@@ -165,7 +166,7 @@ public class SelectBody extends BaseExpression {
             }
             if (CollectionUtils.isNotEmpty(this.groupBy)) {
                 builder.append(" GROUP BY ").append(this.groupBy.stream()
-                    .map(Object::toString).collect(Collectors.joining(",")));
+                        .map(Object::toString).collect(Collectors.joining(",")));
                 if (this.withRollUp) {
                     builder.append(" WITH ROLLUP");
                 }
@@ -175,7 +176,7 @@ public class SelectBody extends BaseExpression {
             }
             if (CollectionUtils.isNotEmpty(this.windows)) {
                 builder.append(" WINDOW ").append(this.windows.stream()
-                    .map(Window::toString).collect(Collectors.joining(",")));
+                        .map(Window::toString).collect(Collectors.joining(",")));
             }
         }
         if (this.orderBy != null) {
@@ -192,6 +193,9 @@ public class SelectBody extends BaseExpression {
         }
         if (this.forUpdate != null) {
             builder.append(" ").append(this.forUpdate.toString());
+        }
+        if (this.lockInShareMode) {
+            builder.append(" LOCK IN SHARE MODE");
         }
         if (this.orderBy != null || this.fetch != null || this.limit != null || this.forUpdate != null) {
             builder.append(")");

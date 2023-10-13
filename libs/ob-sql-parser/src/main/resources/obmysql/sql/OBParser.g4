@@ -1651,9 +1651,9 @@ select_with_parens
     ;
 
 select_no_parens
-    : select_clause for_update_clause?
-    | select_clause_set for_update_clause?
-    | select_clause_set_with_order_and_limit for_update_clause?
+    : select_clause (for_update_clause | opt_lock_in_share_mode)?
+    | select_clause_set (for_update_clause | opt_lock_in_share_mode)?
+    | select_clause_set_with_order_and_limit (for_update_clause | opt_lock_in_share_mode)?
     ;
 
 no_table_select
@@ -1881,6 +1881,10 @@ limit_expr
 
 for_update_clause
     : FOR UPDATE opt_for_update_wait
+    ;
+
+opt_lock_in_share_mode
+    : LOCK_ IN SHARE MODE
     ;
 
 opt_for_update_wait

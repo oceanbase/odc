@@ -132,6 +132,9 @@ public class MySQLSelectBodyFactory
             StatementFactory<ForUpdate> factory = new MySQLForUpdateFactory(ctx.for_update_clause());
             select.getLastSelectBody().setForUpdate(factory.generate());
         }
+        if (ctx.opt_lock_in_share_mode() != null) {
+            select.getLastSelectBody().setLockInShareMode(true);
+        }
         return select;
     }
 

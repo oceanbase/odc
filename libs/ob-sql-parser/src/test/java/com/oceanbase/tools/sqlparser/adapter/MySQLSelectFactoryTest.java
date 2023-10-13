@@ -415,7 +415,7 @@ public class MySQLSelectFactoryTest {
 
     @Test
     public void generate_onlyHaving_generateSelectSucceed() {
-        String sql = "select all * from dual having tab.col3=123";
+        String sql = "select all * from dual having tab.col3=123 lock in share mode";
         Select_stmtContext context = getSelectContext(sql);
         StatementFactory<Select> factory = new MySQLSelectFactory(context);
         Select actual = factory.generate();
@@ -424,6 +424,7 @@ public class MySQLSelectFactoryTest {
         NameReference from = new NameReference(null, "dual", null);
         SelectBody body = new SelectBody(Collections.singletonList(p), Collections.singletonList(from));
         body.setQueryOptions("all");
+        body.setLockInShareMode(true);
         Expression e3 = new ColumnReference(null, "tab", "col3");
         Expression e4 = new ConstExpression("123");
         CompoundExpression having = new CompoundExpression(e3, e4, Operator.EQ);
