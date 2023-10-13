@@ -615,7 +615,19 @@ public class OracleExpressionFactory extends OBParserBaseVisitor<Expression> imp
     @Override
     public Expression visitRegular_entry_obj(Regular_entry_objContext ctx) {
         if (ctx.JSON_OBJECT_VALUE() != null) {
-            return new ConstExpression(ctx.JSON_OBJECT_VALUE());
+            String[] kvs = ctx.JSON_OBJECT_VALUE().getText().split(":");
+            if (kvs.length != 2) {
+                return new ConstExpression(ctx.JSON_OBJECT_VALUE());
+            }
+            Expression key = new ConstExpression(kvs[0].trim());
+            Expression value;
+            char firstC = kvs[1].charAt(0);
+            if (firstC > '0' && firstC < '9') {
+                value = new ConstExpression(kvs[1]);
+            } else {
+                value = new RelationReference(kvs[1], null);
+            }
+            return new JsonKeyValue(ctx, key, value);
         }
         if (ctx.VALUE() != null) {
             return new JsonKeyValue(ctx,

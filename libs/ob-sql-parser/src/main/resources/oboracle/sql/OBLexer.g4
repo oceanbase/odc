@@ -96,7 +96,7 @@ AUDIT
     ;
 
 JSON_OBJECT_VALUE
-    : '\''
+	: '\'' ([A-Za-z0-9$_ ]* | [A-Za-z][A-Za-z0-9$_#]*) '\'' ' '* ':' ([A-Za-z$_]+ | [A-Za-z][A-Za-z0-9$_#]* | [0-9]+)
     ;
 
 VALUE

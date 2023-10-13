@@ -2236,7 +2236,9 @@ public class OracleExpressionFactoryTest {
 
     @Test
     public void generate_jsonObject5_generateSucceed() {
-        ExprContext context = getExprContext("json{key 1 value 2, '111', 1:'222', ' format json strict}");
+        ExprContext context =
+                getExprContext(
+                        "json{key 1 value 2, '111', 1:'222', 'abc':1234 format json,    '  asdasdas  '     :col3 strict}");
         StatementFactory<Expression> factory = new OracleExpressionFactory(context);
         Expression actual = factory.generate();
 
@@ -2244,9 +2246,13 @@ public class OracleExpressionFactoryTest {
         FunctionParam p1 = new ExpressionParam(new ConstExpression("'111'"));
         FunctionParam p2 =
                 new ExpressionParam(new JsonKeyValue(new ConstExpression("1"), new ConstExpression("'222'")));
-        FunctionParam p3 = new ExpressionParam(new ConstExpression("'"));
+        FunctionParam p3 =
+                new ExpressionParam(new JsonKeyValue(new ConstExpression("'abc'"), new ConstExpression("1234")));
         p3.addOption(new ConstExpression("format json"));
-        FunctionCall expect = new FunctionCall("json_object", Arrays.asList(p, p1, p2, p3));
+        FunctionParam p4 =
+                new ExpressionParam(
+                        new JsonKeyValue(new ConstExpression("'  asdasdas  '"), new RelationReference("col3", null)));
+        FunctionCall expect = new FunctionCall("json_object", Arrays.asList(p, p1, p2, p3, p4));
         JsonConstraint jc = new JsonConstraint();
         jc.setStrictMode(StrictMode.STRICT);
         expect.addOption(jc);
