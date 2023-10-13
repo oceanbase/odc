@@ -136,8 +136,6 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
         return databases.stream().filter(database -> !ESCAPE_USER_SET.contains(database.getName()))
                 .collect(Collectors.toList());
     }
-
-
     @Override
     public List<DBTableIndex> listTableIndexes(String schemaName, String tableName) {
         List<DBTableIndex> indexList = super.listTableIndexes(schemaName, tableName);

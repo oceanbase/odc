@@ -102,7 +102,6 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
         Assert.assertNotNull(dbUsers.get(0).getName());
     }
 
-
     @Test
     public void listBasicSchemaColumns_TestAllColumnDataTypes_Success() {
         DBSchemaAccessor accessor = new DBSchemaAccessors(getOBMySQLDataSource()).createOBMysql();
