@@ -15,8 +15,6 @@
  */
 package com.oceanbase.odc.metadb.flow;
 
-import java.util.Collection;
-import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -75,25 +73,6 @@ public interface ServiceTaskInstanceRepository extends JpaRepository<ServiceTask
             @Param("name") String name, @Param("flowInstanceId") Long flowInstanceId);
 
     Optional<ServiceTaskInstanceEntity> findByFlowInstanceId(Long flowInstanceId);
-
-    @Query(value = "select nt.flow_instance_id from flow_instance_node_task nt inner join task_task tt on "
-            + "nt.task_task_id=tt.id where tt.connection_id in (:connectionIds) and "
-            + "(nt.create_time between :startTime and :endTime)",
-            nativeQuery = true)
-    List<Long> findIdByConnectionIdsAndPeriod(@Param("connectionIds") Collection<Long> connectionIds,
-            @Param("startTime") Date startTime, @Param("endTime") Date endTime);
-
-    @Query(value = "select nt.flow_instance_id from flow_instance_node_task nt inner join task_task tt on "
-            + "nt.task_task_id=tt.id where tt.database_name like %:databaseName% and "
-            + "(nt.create_time between :startTime and :endTime)",
-            nativeQuery = true)
-    List<Long> findIdByDatabaseNameLikeAndPeriod(@Param("databaseName") String databaseName,
-            @Param("startTime") Date startTime, @Param("endTime") Date endTime);
-
-    @Query(value = "select nt.flow_instance_id from flow_instance_node_task nt where nt.task_type=:taskType and "
-            + "(nt.create_time between :startTime and :endTime)", nativeQuery = true)
-    List<Long> findIdByTaskTypeAndPeriod(@Param("taskType") String taskType, @Param("startTime") Date startTime,
-            @Param("endTime") Date endTime);
 
     @Query(value = "select b.* from flow_instance a left join flow_instance_node_task b "
             + "on a.id = b.flow_instance_id "

@@ -113,7 +113,7 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
         } catch (VerifyException e) {
             log.info(e.getMessage());
         }
-        if (Objects.isNull(this.connectionConfig)) {
+        if (Objects.nonNull(this.connectionConfig)) {
             this.databaseChangeRelatedSqls = getFlowRelatedSqls(taskEntity.getTaskType(),
                     taskEntity.getParametersJson(), connectionConfig.getDialectType());
         }

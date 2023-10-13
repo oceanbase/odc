@@ -247,13 +247,15 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
     protected void onFailure(Long taskId, TaskService taskService) {
         if (notificationProperties.isEnabled()) {
             TaskEntity taskEntity = taskService.detail(taskId);
-            ConnectionConfig connection = connectionService.getWithoutPermissionCheck(taskEntity.getConnectionId());
             EventLabels labels = EventUtils.buildEventLabels(taskEntity.getTaskType(), "failed",
                     taskEntity.getConnectionId());
-            Map<String, String> extend = new HashMap<>();
-            extend.put(EventLabelKeys.VARIABLE_KEY_CLUSTER_NAME, connection.getClusterName());
-            extend.put(EventLabelKeys.VARIABLE_KEY_TENANT_NAME, connection.getTenantName());
-            labels.addLabels(extend);
+            if (taskEntity.getConnectionId() != null) {
+                ConnectionConfig connection = connectionService.getWithoutPermissionCheck(taskEntity.getConnectionId());
+                Map<String, String> extend = new HashMap<>();
+                extend.put(EventLabelKeys.VARIABLE_KEY_CLUSTER_NAME, connection.getClusterName());
+                extend.put(EventLabelKeys.VARIABLE_KEY_TENANT_NAME, connection.getTenantName());
+                labels.addLabels(extend);
+            }
             broker.enqueueEvent(Event.builder()
                     .status(EventStatus.CREATED)
                     .creatorId(taskEntity.getCreatorId())
@@ -270,13 +272,15 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
     protected void onSuccessful(Long taskId, TaskService taskService) {
         if (notificationProperties.isEnabled()) {
             TaskEntity taskEntity = taskService.detail(taskId);
-            ConnectionConfig connection = connectionService.getWithoutPermissionCheck(taskEntity.getConnectionId());
             EventLabels labels = EventUtils.buildEventLabels(taskEntity.getTaskType(), "succeed",
                     taskEntity.getConnectionId());
-            Map<String, String> extend = new HashMap<>();
-            extend.put(EventLabelKeys.VARIABLE_KEY_CLUSTER_NAME, connection.getClusterName());
-            extend.put(EventLabelKeys.VARIABLE_KEY_TENANT_NAME, connection.getTenantName());
-            labels.addLabels(extend);
+            if (taskEntity.getConnectionId() != null) {
+                ConnectionConfig connection = connectionService.getWithoutPermissionCheck(taskEntity.getConnectionId());
+                Map<String, String> extend = new HashMap<>();
+                extend.put(EventLabelKeys.VARIABLE_KEY_CLUSTER_NAME, connection.getClusterName());
+                extend.put(EventLabelKeys.VARIABLE_KEY_TENANT_NAME, connection.getTenantName());
+                labels.addLabels(extend);
+            }
             broker.enqueueEvent(Event.builder()
                     .status(EventStatus.CREATED)
                     .creatorId(taskEntity.getCreatorId())

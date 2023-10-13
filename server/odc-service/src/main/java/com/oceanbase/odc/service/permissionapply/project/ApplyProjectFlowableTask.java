@@ -22,7 +22,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import com.oceanbase.odc.common.trace.TaskContextHolder;
-import com.oceanbase.odc.core.flow.exception.BaseFlowException;
+import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.metadb.collaboration.ProjectEntity;
@@ -33,7 +33,6 @@ import com.oceanbase.odc.metadb.iam.resourcerole.ResourceRoleEntity;
 import com.oceanbase.odc.metadb.iam.resourcerole.ResourceRoleRepository;
 import com.oceanbase.odc.metadb.iam.resourcerole.UserResourceRoleEntity;
 import com.oceanbase.odc.metadb.iam.resourcerole.UserResourceRoleRepository;
-import com.oceanbase.odc.service.flow.exception.ServiceTaskError;
 import com.oceanbase.odc.service.flow.task.BaseODCFlowTaskDelegate;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
 import com.oceanbase.odc.service.task.TaskService;
@@ -45,7 +44,7 @@ import lombok.extern.slf4j.Slf4j;
  * @date 2023/10/12 10:59
  */
 @Slf4j
-public class ApplyProjectFlowableTask extends BaseODCFlowTaskDelegate<Void> {
+public class ApplyProjectFlowableTask extends BaseODCFlowTaskDelegate<ApplyProjectResult> {
 
     @Autowired
     private ProjectRepository projectRepository;
@@ -66,62 +65,75 @@ public class ApplyProjectFlowableTask extends BaseODCFlowTaskDelegate<Void> {
     private volatile boolean failure = false;
 
     @Override
-    protected Void start(Long taskId, TaskService taskService, DelegateExecution execution) throws Exception {
+    protected ApplyProjectResult start(Long taskId, TaskService taskService, DelegateExecution execution)
+            throws Exception {
         TaskContextHolder.trace(FlowTaskUtil.getTaskCreator(execution).getId(), taskId);
-        transactionTemplate.executeWithoutResult(status -> {
-            try {
-                log.info("Apply project permission task starts, taskId={}, activityId={}", taskId,
-                        execution.getCurrentActivityId());
-                taskService.start(taskId);
-                ApplyProjectParameter parameter = FlowTaskUtil.getApplyProjectParameter(execution);
-                UserEntity userEntity = userRepository.findById(parameter.getUserId()).orElseThrow(
-                        () -> {
-                            log.error("User not found, id={}", parameter.getUserId());
-                            return new NotFoundException(ResourceType.ODC_USER, "id", parameter.getUserId());
-                        });
-                ProjectEntity projectEntity = projectRepository.findById(parameter.getProjectId()).orElseThrow(
-                        () -> {
-                            log.error("Project not found, id={}", parameter.getProjectId());
-                            return new NotFoundException(ResourceType.ODC_PROJECT, "id", parameter.getProjectId());
-                        });
-                if (CollectionUtils.isEmpty(parameter.getResourceRoleIds())) {
-                    log.info("No project role to apply, skip grant");
-                    return;
-                }
-                for (Long resourceRoleId : parameter.getResourceRoleIds()) {
-                    log.info("Grant project role to user, userId={}, projectId={}, projectRoleId={}",
-                            parameter.getUserId(), parameter.getProjectId(), resourceRoleId);
-                    ResourceRoleEntity resourceRoleEntity = resourceRoleRepository.findById(resourceRoleId).orElseThrow(
+        ApplyProjectResult result = new ApplyProjectResult();
+        log.info("Apply project task starts, taskId={}, activityId={}", taskId, execution.getCurrentActivityId());
+        try {
+            transactionTemplate.executeWithoutResult(status -> {
+                try {
+                    taskService.start(taskId);
+                    ApplyProjectParameter parameter = FlowTaskUtil.getApplyProjectParameter(execution);
+                    result.setParameter(parameter);
+                    UserEntity userEntity = userRepository.findById(parameter.getUserId()).orElseThrow(
                             () -> {
-                                log.error("Project role not found, id={}", resourceRoleId);
-                                return new NotFoundException(ResourceType.ODC_RESOURCE_ROLE, "id", resourceRoleId);
+                                log.warn("User not found, id={}", parameter.getUserId());
+                                return new NotFoundException(ResourceType.ODC_USER, "id", parameter.getUserId());
                             });
-                    UserResourceRoleEntity entity = new UserResourceRoleEntity();
-                    entity.setUserId(userEntity.getId());
-                    entity.setResourceId(projectEntity.getId());
-                    entity.setResourceRoleId(resourceRoleEntity.getId());
-                    entity.setOrganizationId(projectEntity.getOrganizationId());
-                    userResourceRoleRepository.save(entity);
-                    log.info("Grant project role to user successfully, userId={}, projectId={}, projectRoleId={}",
-                            parameter.getUserId(), parameter.getProjectId(), resourceRoleId);
+                    ProjectEntity projectEntity = projectRepository.findById(parameter.getProjectId()).orElseThrow(
+                            () -> {
+                                log.warn("Project not found, id={}", parameter.getProjectId());
+                                return new NotFoundException(ResourceType.ODC_PROJECT, "id", parameter.getProjectId());
+                            });
+                    if (CollectionUtils.isEmpty(parameter.getResourceRoleIds())) {
+                        log.info("No project role to apply, skip granting");
+                        success = true;
+                        return;
+                    }
+                    for (Long resourceRoleId : parameter.getResourceRoleIds()) {
+                        log.info("Grant project role to user, userId={}, projectId={}, projectRoleId={}",
+                                parameter.getUserId(), parameter.getProjectId(), resourceRoleId);
+                        ResourceRoleEntity resourceRoleEntity =
+                                resourceRoleRepository.findById(resourceRoleId).orElseThrow(
+                                        () -> {
+                                            log.warn("Project role not found, id={}", resourceRoleId);
+                                            return new NotFoundException(ResourceType.ODC_RESOURCE_ROLE, "id",
+                                                    resourceRoleId);
+                                        });
+                        UserResourceRoleEntity entity = new UserResourceRoleEntity();
+                        entity.setUserId(userEntity.getId());
+                        entity.setResourceId(projectEntity.getId());
+                        entity.setResourceRoleId(resourceRoleEntity.getId());
+                        entity.setOrganizationId(projectEntity.getOrganizationId());
+                        userResourceRoleRepository.save(entity);
+                        log.info("Grant project role to user successfully, userId={}, projectId={}, projectRoleId={}",
+                                parameter.getUserId(), parameter.getProjectId(), resourceRoleId);
+                    }
                     success = true;
-                    taskService.succeed(taskId, null);
+                } catch (Exception e) {
+                    failure = true;
+                    log.warn("Error occurs while apply project task executing", e);
+                    status.setRollbackOnly();
                 }
-            } catch (Exception e) {
-                log.error("Error occurs while apply project permission task executing", e);
-                failure = true;
-                taskService.fail(taskId, 0, null);
-                status.setRollbackOnly();
-                if (e instanceof BaseFlowException) {
-                    throw e;
-                } else {
-                    throw new ServiceTaskError(e);
-                }
-            } finally {
-                TaskContextHolder.clear();
+            });
+            result.setSuccess(success);
+            if (result.isSuccess()) {
+                taskService.succeed(taskId, result);
+                log.info("Apply project task success");
+            } else {
+                taskService.fail(taskId, 0, result);
+                log.info("Apply project task failed");
             }
-        });
-        return null;
+        } catch (Exception e) {
+            failure = true;
+            result.setSuccess(false);
+            taskService.fail(taskId, 0, result);
+            log.warn("Apply project task failed, error={}", e.getMessage());
+        } finally {
+            TaskContextHolder.clear();
+        }
+        return result;
     }
 
     @Override
@@ -135,6 +147,19 @@ public class ApplyProjectFlowableTask extends BaseODCFlowTaskDelegate<Void> {
     }
 
     @Override
+    protected void onFailure(Long taskId, TaskService taskService) {
+        log.warn("Apply project task failed, taskId={}", taskId);
+        super.onFailure(taskId, taskService);
+    }
+
+    @Override
+    protected void onSuccessful(Long taskId, TaskService taskService) {
+        log.info("Apply project task succeed, taskId={}", taskId);
+        updateFlowInstanceStatus(FlowStatus.EXECUTION_SUCCEEDED);
+        super.onSuccessful(taskId, taskService);
+    }
+
+    @Override
     protected void onTimeout(Long taskId, TaskService taskService) {
         log.warn("Apply project permission task timeout, taskId={}", taskId);
     }
@@ -144,7 +169,8 @@ public class ApplyProjectFlowableTask extends BaseODCFlowTaskDelegate<Void> {
 
     @Override
     protected boolean cancel(boolean mayInterruptIfRunning, Long taskId, TaskService taskService) {
-        return false;
+        taskService.cancel(taskId);
+        return true;
     }
 
     @Override
