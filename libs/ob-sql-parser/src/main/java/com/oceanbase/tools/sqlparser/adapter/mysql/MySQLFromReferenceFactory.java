@@ -212,10 +212,15 @@ public class MySQLFromReferenceFactory extends OBParserBaseVisitor<FromReference
     @Override
     public FromReference visitTable_subquery(Table_subqueryContext ctx) {
         StatementFactory<SelectBody> factory = new MySQLSelectBodyFactory(ctx.select_with_parens());
-        String alias = ctx.relation_name().getText();
+        String alias = ctx.table_subquery_alias().relation_name().getText();
         ExpressionReference reference = new ExpressionReference(ctx, factory.generate(), alias);
         if (ctx.use_flashback() != null) {
             reference.setFlashbackUsage(visitFlashbackUsage(ctx.use_flashback()));
+        }
+        if (ctx.table_subquery_alias().alias_name_list() != null) {
+            reference.setAliasColumns(ctx.table_subquery_alias().alias_name_list()
+                    .column_alias_name().stream().map(c -> c.column_name().getText())
+                    .collect(Collectors.toList()));
         }
         return reference;
     }

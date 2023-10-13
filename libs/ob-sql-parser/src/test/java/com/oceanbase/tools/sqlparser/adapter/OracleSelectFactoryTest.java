@@ -348,9 +348,9 @@ public class OracleSelectFactoryTest {
         SelectBody related = new SelectBody(Collections.singletonList(pp), Collections.singletonList(f1));
         SortKey s = new SortKey(new RelationReference("col4", null), SortDirection.DESC, null);
         RelatedSelectBody body1 = new RelatedSelectBody(related, RelationType.UNION_ALL);
-        body1.setFetch(new Fetch(new ConstExpression("12"), FetchDirection.FIRST, FetchType.PERCENT,
+        related.setFetch(new Fetch(new ConstExpression("12"), FetchDirection.FIRST, FetchType.PERCENT,
                 FetchAddition.WITH_TIES, new ConstExpression("12")));
-        body1.setOrderBy(new OrderBy(false, Collections.singletonList(s)));
+        related.setOrderBy(new OrderBy(false, Collections.singletonList(s)));
         body.setRelatedSelect(body1);
 
         Select expect = new Select(body);
@@ -416,9 +416,9 @@ public class OracleSelectFactoryTest {
         SelectBody related = new SelectBody(Collections.singletonList(pp), Collections.singletonList(f1));
         SortKey s = new SortKey(new RelationReference("col4", null), SortDirection.DESC, null);
         RelatedSelectBody selectBody = new RelatedSelectBody(related, RelationType.UNION_ALL);
-        selectBody.setFetch(new Fetch(new ConstExpression("12"), FetchDirection.FIRST, FetchType.PERCENT,
+        related.setFetch(new Fetch(new ConstExpression("12"), FetchDirection.FIRST, FetchType.PERCENT,
                 FetchAddition.WITH_TIES, new ConstExpression("12")));
-        selectBody.setOrderBy(new OrderBy(false, Collections.singletonList(s)));
+        related.setOrderBy(new OrderBy(false, Collections.singletonList(s)));
         body.setRelatedSelect(selectBody);
         WithTable withTable = new WithTable("relation_name", getDefaultSelect());
         withTable.setAliasList(Arrays.asList("col1", "col2"));

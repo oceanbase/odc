@@ -15,7 +15,10 @@
  */
 package com.oceanbase.tools.sqlparser.statement.select;
 
+import java.util.List;
+
 import org.antlr.v4.runtime.ParserRuleContext;
+import org.apache.commons.collections4.CollectionUtils;
 
 import com.oceanbase.tools.sqlparser.statement.BaseStatement;
 import com.oceanbase.tools.sqlparser.statement.Expression;
@@ -47,6 +50,8 @@ public class ExpressionReference extends BaseStatement implements FromReference 
     private UnPivot unPivot;
     @Setter
     private FlashbackUsage flashbackUsage;
+    @Setter
+    private List<String> aliasColumns;
 
     public ExpressionReference(@NonNull ParserRuleContext context,
             @NonNull Expression target, String alias) {
@@ -74,6 +79,9 @@ public class ExpressionReference extends BaseStatement implements FromReference 
         }
         if (this.alias != null) {
             builder.append(" ").append(this.alias);
+        }
+        if (CollectionUtils.isNotEmpty(this.aliasColumns)) {
+            builder.append(" (").append(String.join(",", this.aliasColumns)).append(")");
         }
         return builder.toString();
     }

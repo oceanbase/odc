@@ -1664,6 +1664,8 @@ select_clause
     : no_table_select_with_order_and_limit
     | simple_select_with_order_and_limit
     | select_with_parens_with_order_and_limit
+    | table_values_clause
+    | table_values_clause_with_order_by_and_limit
     ;
 
 select_clause_set_with_order_and_limit
@@ -1672,21 +1674,21 @@ select_clause_set_with_order_and_limit
     ;
 
 select_clause_set
-    : select_clause_set order_by set_type select_clause_set_right
-    | select_clause_set order_by? limit_clause set_type select_clause_set_right
-    | select_clause_set_left (set_type select_clause_set_right)+
+    : select_clause_set order_by? limit_clause? set_type select_clause_set_right
+    | select_clause_set_left set_type select_clause_set_right
     ;
 
 select_clause_set_right
     : no_table_select
     | simple_select
     | select_with_parens
+    | table_values_clause
     ;
 
 select_clause_set_left
     : no_table_select_with_order_and_limit
     | simple_select_with_order_and_limit
-    | select_with_parens
+    | select_clause_set_right
     ;
 
 no_table_select_with_order_and_limit
@@ -1994,7 +1996,12 @@ sample_clause
     ;
 
 table_subquery
-    : select_with_parens use_flashback? AS? relation_name
+    : select_with_parens use_flashback? AS? table_subquery_alias
+    ;
+
+table_subquery_alias
+    : relation_name
+    | relation_name LeftParen alias_name_list RightParen
     ;
 
 use_partition
@@ -2159,6 +2166,23 @@ alias_name_list
 
 column_alias_name
     : column_name
+    ;
+
+table_values_clause
+    : VALUES values_row_list
+    ;
+
+table_values_clause_with_order_by_and_limit
+    : table_values_clause order_by
+    | table_values_clause order_by? limit_clause
+    ;
+
+values_row_list
+    : row_value (Comma row_value)*
+    ;
+
+row_value
+    : ROW LeftParen insert_vals RightParen
     ;
 
 analyze_stmt

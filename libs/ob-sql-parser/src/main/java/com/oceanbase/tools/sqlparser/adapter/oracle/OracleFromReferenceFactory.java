@@ -207,13 +207,13 @@ public class OracleFromReferenceFactory extends OBParserBaseVisitor<FromReferenc
         SelectBody select = factory.generate();
         Order_by_fetch_with_check_optionContext oCtx = ctx.order_by_fetch_with_check_option();
         if (oCtx.order_by() != null) {
-            select.setOrderBy(new OracleOrderByFactory(oCtx.order_by()).generate());
+            select.getLastSelectBody().setOrderBy(new OracleOrderByFactory(oCtx.order_by()).generate());
         }
         if (oCtx.fetch_next_clause() != null) {
-            select.setFetch(new OracleFetchFactory(oCtx.fetch_next_clause()).generate());
+            select.getLastSelectBody().setFetch(new OracleFetchFactory(oCtx.fetch_next_clause()).generate());
         }
         if (oCtx.with_check_option() != null) {
-            select.setWithCheckOption(true);
+            select.getLastSelectBody().setWithCheckOption(true);
         }
         ExpressionReference reference = new ExpressionReference(ctx, select, alias);
         if (ctx.use_flashback() != null) {

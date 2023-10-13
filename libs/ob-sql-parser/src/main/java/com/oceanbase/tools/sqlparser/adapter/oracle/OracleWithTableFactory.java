@@ -63,10 +63,10 @@ public class OracleWithTableFactory extends OBParserBaseVisitor<WithTable> imple
             StatementFactory<SelectBody> factory = new OracleSelectBodyFactory(ctx.select_no_parens());
             select = factory.generate();
             if (ctx.order_by() != null) {
-                select.setOrderBy(new OracleOrderByFactory(ctx.order_by()).generate());
+                select.getLastSelectBody().setOrderBy(new OracleOrderByFactory(ctx.order_by()).generate());
             }
             if (ctx.fetch_next_clause() != null) {
-                select.setFetch(new OracleFetchFactory(ctx.fetch_next_clause()).generate());
+                select.getLastSelectBody().setFetch(new OracleFetchFactory(ctx.fetch_next_clause()).generate());
             }
         } else if (ctx.with_select() != null) {
             StatementFactory<SelectBody> factory = new OracleSelectBodyFactory(ctx.with_select());
@@ -81,10 +81,10 @@ public class OracleWithTableFactory extends OBParserBaseVisitor<WithTable> imple
             StatementFactory<SelectBody> factory = new OracleSelectBodyFactory(ctx.subquery());
             select = factory.generate();
             StatementFactory<OrderBy> orderByFactory = new OracleOrderByFactory(ctx.order_by());
-            select.setOrderBy(orderByFactory.generate());
+            select.getLastSelectBody().setOrderBy(orderByFactory.generate());
             if (ctx.fetch_next_clause() != null) {
                 StatementFactory<Fetch> fetchFactory = new OracleFetchFactory(ctx.fetch_next_clause());
-                select.setFetch(fetchFactory.generate());
+                select.getLastSelectBody().setFetch(fetchFactory.generate());
             }
         }
         WithTable withTable = new WithTable(ctx, relationName, select);

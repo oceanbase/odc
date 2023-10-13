@@ -15,7 +15,9 @@
  */
 package com.oceanbase.tools.sqlparser.adapter;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import org.antlr.v4.runtime.BailErrorStrategy;
 import org.antlr.v4.runtime.CharStreams;
@@ -29,11 +31,14 @@ import com.oceanbase.tools.sqlparser.obmysql.OBLexer;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Table_referenceContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Table_referencesContext;
+import com.oceanbase.tools.sqlparser.statement.Expression;
 import com.oceanbase.tools.sqlparser.statement.JoinType;
 import com.oceanbase.tools.sqlparser.statement.Operator;
 import com.oceanbase.tools.sqlparser.statement.common.BraceBlock;
 import com.oceanbase.tools.sqlparser.statement.expression.ColumnReference;
 import com.oceanbase.tools.sqlparser.statement.expression.CompoundExpression;
+import com.oceanbase.tools.sqlparser.statement.expression.ConstExpression;
+import com.oceanbase.tools.sqlparser.statement.select.ExpressionReference;
 import com.oceanbase.tools.sqlparser.statement.select.FlashBackType;
 import com.oceanbase.tools.sqlparser.statement.select.FlashbackUsage;
 import com.oceanbase.tools.sqlparser.statement.select.FromReference;
@@ -43,6 +48,7 @@ import com.oceanbase.tools.sqlparser.statement.select.NameReference;
 import com.oceanbase.tools.sqlparser.statement.select.OnJoinCondition;
 import com.oceanbase.tools.sqlparser.statement.select.PartitionType;
 import com.oceanbase.tools.sqlparser.statement.select.PartitionUsage;
+import com.oceanbase.tools.sqlparser.statement.select.SelectBody;
 import com.oceanbase.tools.sqlparser.statement.select.UsingJoinCondition;
 
 /**
@@ -71,6 +77,22 @@ public class MySQLFromReferenceFactoryTest {
         FromReference actual = factory.generate();
 
         NameReference expect = new NameReference("tab", "ADD", null);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_fromValues_generateNameRefSucceed() {
+        Table_referenceContext context =
+                getTableReferenceContext("select * from (values row('David',2), row('Marry',4)) as l(name, age);");
+        StatementFactory<FromReference> factory = new MySQLFromReferenceFactory(context);
+        FromReference actual = factory.generate();
+
+        List<List<Expression>> values = new ArrayList<>();
+        values.add(Arrays.asList(new ConstExpression("'David'"), new ConstExpression("2")));
+        values.add(Arrays.asList(new ConstExpression("'Marry'"), new ConstExpression("4")));
+        SelectBody body = new SelectBody(values);
+        ExpressionReference expect = new ExpressionReference(body, "l");
+        expect.setAliasColumns(Arrays.asList("name", "age"));
         Assert.assertEquals(expect, actual);
     }
 
