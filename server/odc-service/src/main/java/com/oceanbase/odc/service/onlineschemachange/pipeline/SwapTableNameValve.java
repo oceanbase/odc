@@ -69,8 +69,11 @@ public class SwapTableNameValve extends BaseValve {
             defaultRenameTableInvoker.invoke(taskParameters, parameters);
             context.setSwapSucceedCallBack(true);
         } finally {
-            userMonitorExecutor.stop();
-            connectionSession.expire();
+            try {
+                userMonitorExecutor.stop();
+            } finally {
+                connectionSession.expire();
+            }
         }
     }
 }

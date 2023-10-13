@@ -23,19 +23,9 @@ package com.oceanbase.odc.service.onlineschemachange.ddl;
  */
 public enum DBAccountLockType {
 
-    LOCKED(true),
+    LOCKED,
 
-    UNLOCKED(false);
-
-    private final boolean value;
-
-    public boolean isValue() {
-        return value;
-    }
-
-    DBAccountLockType(boolean value) {
-        this.value = value;
-    }
+    UNLOCKED;
 
     public static DBAccountLockType from(int lockedStatus) {
         return lockedStatus == 1 ? LOCKED : UNLOCKED;
