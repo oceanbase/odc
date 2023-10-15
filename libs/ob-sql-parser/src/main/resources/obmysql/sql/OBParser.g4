@@ -2996,6 +2996,7 @@ alter_column_option
     | ALTER COLUMN? column_definition_ref alter_column_behavior
     | CHANGE COLUMN? column_definition_ref column_definition
     | MODIFY COLUMN? column_definition
+    | RENAME COLUMN column_definition_ref TO column_name
     ;
 
 alter_tablegroup_option

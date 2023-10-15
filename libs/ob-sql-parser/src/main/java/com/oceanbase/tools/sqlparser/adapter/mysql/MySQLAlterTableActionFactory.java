@@ -127,6 +127,9 @@ public class MySQLAlterTableActionFactory extends OBParserBaseVisitor<AlterTable
                 behavior.setDefaultValue(MySQLTableElementFactory.getSignedLiteral(aCtx.signed_literal()));
             }
             alterTableAction.alterColumnBehavior(colRef, behavior);
+        } else if (ctx.RENAME() != null) {
+            ColumnReference ref = new MySQLColumnRefFactory(ctx.column_definition_ref()).generate();
+            alterTableAction.renameColumn(ref, ctx.column_name().getText());
         }
         return alterTableAction;
     }
