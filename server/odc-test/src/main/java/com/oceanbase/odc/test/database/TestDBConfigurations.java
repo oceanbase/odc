@@ -135,7 +135,7 @@ public class TestDBConfigurations {
                     v.setDataSource(newSource);
                 }
             } catch (Exception e) {
-                log.error("create test database/user failed, connectType={}, testConfiguration={}", k, v, e);
+                log.error("create test database/user failed, connectType={}", k, e);
                 throw new RuntimeException("create test database/user failed", e);
             }
         });
@@ -163,7 +163,7 @@ public class TestDBConfigurations {
                     log.info("drop test database for mysql mode, database name: {}", database);
                 }
             } catch (Exception e) {
-                log.warn("drop test database/user failed, connectType={}, testConfiguration={}", k, v, e);
+                log.warn("drop test database/user failed, may the user is not exists, connectType={}", k);
             }
         });
         log.info("drop test database/user done");
