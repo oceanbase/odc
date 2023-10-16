@@ -41,7 +41,7 @@ import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangePara
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeSqlType;
 import com.oceanbase.odc.service.onlineschemachange.validator.OnlineSchemaChangeValidator;
 
-public class OnlineSchemaChangeValidatorTest extends ServiceTestEnv {
+public class OnlineSchemaChangeValidatorOBMySqlTest extends ServiceTestEnv {
     public String CREATE_STMT;
     public String ALTER_STMT;
     public String DROP_STMT;

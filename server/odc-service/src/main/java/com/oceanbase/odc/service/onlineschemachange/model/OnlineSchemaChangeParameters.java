@@ -60,9 +60,9 @@ public class OnlineSchemaChangeParameters implements Serializable, TaskParameter
 
     private String delimiter = ";";
 
-    private List<String> lockUsers;
 
     private Map<String, Object> parameterDataMap = new HashMap<>();
+    private List<String> lockUsers;
 
     public boolean isContinueOnError() {
         return this.errorStrategy == TaskErrorStrategy.CONTINUE;

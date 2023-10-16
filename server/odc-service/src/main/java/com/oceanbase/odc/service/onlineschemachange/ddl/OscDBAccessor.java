@@ -16,17 +16,19 @@
 
 package com.oceanbase.odc.service.onlineschemachange.ddl;
 
-import lombok.Data;
+import java.util.List;
 
 /**
  * @author yaobin
- * @date 2023-08-31
- * @since 4.2.0
+ * @date 2023-10-13
+ * @since 4.2.3
  */
-@Data
-public class OscFactoryWrapper {
+public interface OscDBAccessor {
 
-    private TableNameDescriptorFactory tableNameDescriptorFactory;
-
-    private OscDBAccessorFactory oscDBAccessorFactory;
+    /**
+     * list all user details
+     *
+     * @return user detail list
+     */
+    List<DBUser> listUsers(List<String> usernames);
 }

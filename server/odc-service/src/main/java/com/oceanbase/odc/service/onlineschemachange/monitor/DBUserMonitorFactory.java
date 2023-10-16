@@ -14,19 +14,20 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.onlineschemachange.ddl;
+package com.oceanbase.odc.service.onlineschemachange.monitor;
 
-import lombok.Data;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+
+import com.oceanbase.odc.core.session.ConnectionSession;
 
 /**
  * @author yaobin
- * @date 2023-08-31
- * @since 4.2.0
+ * @date 2023-09-27
+ * @since 4.2.3
  */
-@Data
-public class OscFactoryWrapper {
+public interface DBUserMonitorFactory {
 
-    private TableNameDescriptorFactory tableNameDescriptorFactory;
-
-    private OscDBAccessorFactory oscDBAccessorFactory;
+    DBUserMonitor generateDBUserMonitor(ConnectionSession connSession, List<String> toMonitorUsers,
+            Integer period, Integer timeout, TimeUnit timeUnit);
 }

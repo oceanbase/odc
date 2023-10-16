@@ -135,8 +135,8 @@ public class LockUserInterceptor implements RenameTableInterceptor {
         filterList.add(currentSessionId);
         log.info("Kill session filter session id : {}", JsonUtils.toJson(filterList));
 
-        List<String> whiteUserList = OscDBUserUtil.getLockUserWhiteList((
-            ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(connectionSession));
+        List<String> whiteUserList = OscDBUserUtil
+                .getLockUserWhiteList((ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(connectionSession));
         log.info("Kill session filter user: {}", JsonUtils.toJson(whiteUserList));
 
         // filter current session

@@ -44,9 +44,10 @@ public class OscDBUserUtil {
     }
 
     public static List<String> getLockUserWhiteList(ConnectionSession connSession) {
-        ConnectionConfig config=  (ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(connSession);
+        ConnectionConfig config = (ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(connSession);
         return getLockUserWhiteList(config);
     }
+
     public static List<String> getLockUserWhiteList(ConnectionConfig config) {
         List<String> users = Lists.newArrayList(config.getUsername());
         if (config.getDialectType().isMysql()) {

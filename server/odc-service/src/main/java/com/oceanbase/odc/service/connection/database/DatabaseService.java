@@ -242,7 +242,7 @@ public class DatabaseService {
 
         });
         connectionId2LockUserRequired.forEach((k, v) -> {
-            if(v != null) {
+            if (v != null) {
                 try {
                     v.left.expire();
                 } catch (Exception ex) {
@@ -604,18 +604,18 @@ public class DatabaseService {
     }
 
     @SkipAuthorize("internal authorized")
-    public List<String> listUsers(Long dataSourceId){
+    public List<String> listUsers(Long dataSourceId) {
         ConnectionConfig connection = connectionService.getForConnectionSkipPermissionCheck(dataSourceId);
         horizontalDataPermissionValidator.checkCurrentOrganization(connection);
         DefaultConnectSessionFactory factory = new DefaultConnectSessionFactory(connection);
         ConnectionSession connSession = factory.generateSession();
-        try{
+        try {
             DBSchemaAccessor dbSchemaAccessor = DBSchemaAccessors.create(connSession);
             List<DBObjectIdentity> dbUsers = dbSchemaAccessor.listUsers();
             List<String> whiteUsers = OscDBUserUtil.getLockUserWhiteList(connection);
             return dbUsers.stream().map(DBObjectIdentity::getName)
-                .filter(whiteUsers::contains).collect(Collectors.toList());
-        }finally {
+                    .filter(whiteUsers::contains).collect(Collectors.toList());
+        } finally {
             connSession.expire();
         }
     }
@@ -678,12 +678,12 @@ public class DatabaseService {
     }
 
     private Pair<ConnectionSession, Boolean> getConnectionSessionLockUserRequiredPair(
-        Map<String, Pair<ConnectionSession, Boolean>> connectionId2LockUserRequired, Database d) {
+            Map<String, Pair<ConnectionSession, Boolean>> connectionId2LockUserRequired, Database d) {
         return connectionId2LockUserRequired.computeIfAbsent(d.getDataSource().getId() + "", k -> {
             DefaultConnectSessionFactory factory = new DefaultConnectSessionFactory(d.getDataSource());
             ConnectionSession connSession = factory.generateSession();
             return new Pair<>(connSession, OscDBUserUtil.isLockUserRequired(connSession.getDialectType(),
-                ConnectionSessionUtil.getVersion(connSession)));
+                    ConnectionSessionUtil.getVersion(connSession)));
         });
     }
 }
