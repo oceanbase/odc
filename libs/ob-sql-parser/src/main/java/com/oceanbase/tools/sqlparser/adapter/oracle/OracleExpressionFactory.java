@@ -20,8 +20,10 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import com.oceanbase.tools.sqlparser.oboracle.OBParser.Column_refContext;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.RuleContext;
@@ -323,16 +325,21 @@ public class OracleExpressionFactory extends OBParserBaseVisitor<Expression> imp
             if (CollectionUtils.isEmpty(ctx.column_ref())) {
                 return new ConstExpression(ctx.USER_VARIABLE());
             }
-            List<String> relations = ctx.column_ref().stream()
-                    .map(RuleContext::getText).collect(Collectors.toList());
-            String column = relations.get(relations.size() - 1);
-            String relation = relations.get(relations.size() - 2);
-            String schema = null;
-            if (relations.size() >= 3) {
-                schema = relations.get(relations.size() - 3);
+            RelationReference seq = new RelationReference(
+                    ctx.column_ref(ctx.column_ref().size() - 2), 
+                    ctx.column_ref(ctx.column_ref().size() - 2).getText());
+            RelationReference column = new RelationReference(
+                ctx.column_ref(ctx.column_ref().size() - 1),
+                ctx.column_ref(ctx.column_ref().size() - 1).getText());
+            column.setUserVariable(ctx.USER_VARIABLE().getText());
+            seq.reference(column, ReferenceOperator.DOT);
+            if (ctx.column_ref().size() < 3) {
+                return seq;
             }
-            ColumnReference ref = new ColumnReference(ctx, schema, relation, column);
-            ref.setUserVariable(ctx.USER_VARIABLE().getText());
+            RelationReference ref = new RelationReference(
+                    ctx.column_ref(ctx.column_ref().size() - 3), 
+                    ctx.column_ref(ctx.column_ref().size() - 3).getText());
+            ref.reference(seq, ReferenceOperator.DOT);
             return ref;
         } else if (ctx.PLSQL_VARIABLE() != null) {
             return new ConstExpression(ctx.PLSQL_VARIABLE());

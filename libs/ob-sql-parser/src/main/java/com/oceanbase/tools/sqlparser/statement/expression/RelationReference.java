@@ -15,6 +15,7 @@
  */
 package com.oceanbase.tools.sqlparser.statement.expression;
 
+import lombok.Setter;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
@@ -38,6 +39,8 @@ import lombok.NonNull;
 public class RelationReference extends BaseExpression {
 
     private final String relationName;
+    @Setter
+    private String userVariable;
 
     public RelationReference(@NonNull ParserRuleContext ctx,
             @NonNull String relationName) {
@@ -61,7 +64,10 @@ public class RelationReference extends BaseExpression {
 
     @Override
     public String doToString() {
-        return this.relationName;
+        if (this.userVariable == null) {
+            return this.relationName;
+        }
+        return this.relationName + this.userVariable;
     }
 
 }

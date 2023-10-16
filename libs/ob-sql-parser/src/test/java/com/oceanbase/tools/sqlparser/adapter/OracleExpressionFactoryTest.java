@@ -866,8 +866,10 @@ public class OracleExpressionFactoryTest {
         StatementFactory<Expression> factory = new OracleExpressionFactory(context);
         Expression actual = factory.generate();
 
-        ColumnReference expect = new ColumnReference(null, "a", "b");
-        expect.setUserVariable("@link");
+        RelationReference expect = new RelationReference("a", null);
+        RelationReference second = new RelationReference("b", null);
+        second.setUserVariable("@link");
+        expect.reference(second, ReferenceOperator.DOT);
         Assert.assertEquals(expect, actual);
     }
 
@@ -877,8 +879,11 @@ public class OracleExpressionFactoryTest {
         StatementFactory<Expression> factory = new OracleExpressionFactory(context);
         Expression actual = factory.generate();
 
-        ColumnReference expect = new ColumnReference("schema", "a", "b");
-        expect.setUserVariable("@link");
+        RelationReference expect = new RelationReference("schema", null);
+        RelationReference second = new RelationReference("a", null);
+        RelationReference third = new RelationReference("b", null);
+        third.setUserVariable("@link");
+        expect.reference(second, ReferenceOperator.DOT).reference(third, ReferenceOperator.DOT);
         Assert.assertEquals(expect, actual);
     }
 
