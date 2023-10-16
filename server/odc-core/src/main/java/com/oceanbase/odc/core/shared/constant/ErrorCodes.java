@@ -101,6 +101,7 @@ public enum ErrorCodes implements ErrorCode {
     SysTenantAccountInvalid,
     ConnectionVerifyFailed,
     ConnectionDatabaseTypeMismatched,
+    ConnectionInitScriptFailed,
     ConnectionInsufficientPermissions,
     ConnectionTooManyPermissions,
     ConnectionReadonly,
