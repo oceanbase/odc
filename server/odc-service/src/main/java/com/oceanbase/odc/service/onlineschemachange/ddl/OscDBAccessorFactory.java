@@ -16,17 +16,22 @@
 
 package com.oceanbase.odc.service.onlineschemachange.ddl;
 
-import lombok.Data;
+import com.oceanbase.odc.core.session.ConnectionSession;
+import com.oceanbase.odc.core.session.ConnectionSessionConstants;
+import com.oceanbase.odc.core.sql.execute.SyncJdbcExecutor;
 
 /**
  * @author yaobin
- * @date 2023-08-31
- * @since 4.2.0
+ * @date 2023-10-13
+ * @since 4.2.3
  */
-@Data
-public class OscFactoryWrapper {
+public class OscDBAccessorFactory {
 
-    private TableNameDescriptorFactory tableNameDescriptorFactory;
+    public OscDBAccessor generate(ConnectionSession connSession) {
 
-    private OscDBAccessorFactory oscDBAccessorFactory;
+        SyncJdbcExecutor syncJdbcExecutor = connSession.getSyncJdbcExecutor(
+                ConnectionSessionConstants.BACKEND_DS_KEY);
+        return connSession.getDialectType().isOracle() ? new OscOBOracleAccessor(syncJdbcExecutor)
+                : new OscOBMySqlAccessor(syncJdbcExecutor);
+    }
 }

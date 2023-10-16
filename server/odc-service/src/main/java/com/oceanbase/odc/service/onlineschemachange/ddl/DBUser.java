@@ -16,17 +16,30 @@
 
 package com.oceanbase.odc.service.onlineschemachange.ddl;
 
+import com.oceanbase.tools.dbbrowser.model.DBObject;
+import com.oceanbase.tools.dbbrowser.model.DBObjectType;
+
 import lombok.Data;
 
 /**
  * @author yaobin
- * @date 2023-08-31
- * @since 4.2.0
+ * @date 2023-10-13
+ * @since 4.2.3
  */
 @Data
-public class OscFactoryWrapper {
+public class DBUser implements DBObject {
 
-    private TableNameDescriptorFactory tableNameDescriptorFactory;
+    private String name;
 
-    private OscDBAccessorFactory oscDBAccessorFactory;
+    private DBAccountLockType accountLocked;
+
+    @Override
+    public String name() {
+        return this.name;
+    }
+
+    @Override
+    public DBObjectType type() {
+        return DBObjectType.USER;
+    }
 }
