@@ -16,17 +16,19 @@
 
 package com.oceanbase.odc.service.onlineschemachange.ddl;
 
-import lombok.Data;
-
 /**
  * @author yaobin
- * @date 2023-08-31
- * @since 4.2.0
+ * @date 2023-10-13
+ * @since 4.2.3
  */
-@Data
-public class OscFactoryWrapper {
+public enum DBAccountLockType {
 
-    private TableNameDescriptorFactory tableNameDescriptorFactory;
+    LOCKED,
 
-    private OscDBAccessorFactory oscDBAccessorFactory;
+    UNLOCKED;
+
+    public static DBAccountLockType from(int lockedStatus) {
+        return lockedStatus == 1 ? LOCKED : UNLOCKED;
+    }
+
 }

@@ -14,19 +14,18 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.onlineschemachange.ddl;
-
-import lombok.Data;
+package com.oceanbase.odc.service.onlineschemachange.monitor;
 
 /**
  * @author yaobin
- * @date 2023-08-31
- * @since 4.2.0
+ * @date 2023-09-27
+ * @since 4.2.3
  */
-@Data
-public class OscFactoryWrapper {
+public interface DBUserMonitor extends Runnable {
 
-    private TableNameDescriptorFactory tableNameDescriptorFactory;
+    void start();
 
-    private OscDBAccessorFactory oscDBAccessorFactory;
+    void stop();
+
+    boolean isDone();
 }
