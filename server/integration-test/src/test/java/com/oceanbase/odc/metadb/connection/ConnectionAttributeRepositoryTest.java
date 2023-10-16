@@ -34,7 +34,7 @@ import com.oceanbase.odc.test.tool.TestRandom;
  * Test cases for {@link ConnectionAttributeRepository}
  *
  * @author yh263208
- * @date 2023-09-12 15:46
+ * @date 2023-10-16 11:45
  * @since ODC_release_4.2.2
  */
 public class ConnectionAttributeRepositoryTest extends ServiceTestEnv {
