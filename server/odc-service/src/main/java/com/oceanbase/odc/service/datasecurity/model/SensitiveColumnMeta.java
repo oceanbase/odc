@@ -29,7 +29,6 @@ import lombok.EqualsAndHashCode;
  * @date 2023/9/14 10:33
  */
 @Data
-@EqualsAndHashCode
 @AllArgsConstructor
 public class SensitiveColumnMeta {
     private Long databaseId;
