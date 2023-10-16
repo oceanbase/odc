@@ -19,6 +19,7 @@ package com.oceanbase.odc.service.permissionapply.project;
 import org.apache.commons.collections4.CollectionUtils;
 import org.flowable.engine.delegate.DelegateExecution;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Example;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import com.oceanbase.odc.common.trace.TaskContextHolder;
@@ -92,8 +93,6 @@ public class ApplyProjectFlowableTask extends BaseODCFlowTaskDelegate<ApplyProje
                         return;
                     }
                     for (Long resourceRoleId : parameter.getResourceRoleIds()) {
-                        log.info("Grant project role to user, userId={}, projectId={}, projectRoleId={}",
-                                parameter.getUserId(), parameter.getProjectId(), resourceRoleId);
                         ResourceRoleEntity resourceRoleEntity =
                                 resourceRoleRepository.findById(resourceRoleId).orElseThrow(
                                         () -> {
@@ -101,11 +100,17 @@ public class ApplyProjectFlowableTask extends BaseODCFlowTaskDelegate<ApplyProje
                                             return new NotFoundException(ResourceType.ODC_RESOURCE_ROLE, "id",
                                                     resourceRoleId);
                                         });
+                        log.info("Start grant project role to user, userId={}, projectId={}, projectRoleId={}",
+                                parameter.getUserId(), parameter.getProjectId(), resourceRoleId);
                         UserResourceRoleEntity entity = new UserResourceRoleEntity();
                         entity.setUserId(userEntity.getId());
                         entity.setResourceId(projectEntity.getId());
                         entity.setResourceRoleId(resourceRoleEntity.getId());
                         entity.setOrganizationId(projectEntity.getOrganizationId());
+                        if (userResourceRoleRepository.exists(Example.of(entity))) {
+                            log.info("Project role already granted to user, skip granting");
+                            continue;
+                        }
                         userResourceRoleRepository.save(entity);
                         log.info("Grant project role to user successfully, userId={}, projectId={}, projectRoleId={}",
                                 parameter.getUserId(), parameter.getProjectId(), resourceRoleId);
