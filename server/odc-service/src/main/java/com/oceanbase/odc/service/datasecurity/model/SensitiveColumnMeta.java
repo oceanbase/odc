@@ -16,6 +16,8 @@
 
 package com.oceanbase.odc.service.datasecurity.model;
 
+import java.util.Objects;
+
 import com.oceanbase.odc.metadb.datasecurity.SensitiveColumnEntity;
 
 import lombok.AllArgsConstructor;
@@ -38,6 +40,22 @@ public class SensitiveColumnMeta {
         this.databaseId = entity.getDatabaseId();
         this.tableName = entity.getTableName();
         this.columnName = entity.getColumnName();
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(databaseId, tableName.toLowerCase(), columnName.toLowerCase());
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof SensitiveColumnMeta) {
+            SensitiveColumnMeta other = (SensitiveColumnMeta) obj;
+            return Objects.equals(databaseId, other.databaseId)
+                    && Objects.equals(tableName.toLowerCase(), other.tableName.toLowerCase())
+                    && Objects.equals(columnName.toLowerCase(), other.columnName.toLowerCase());
+        }
+        return false;
     }
 
 }
