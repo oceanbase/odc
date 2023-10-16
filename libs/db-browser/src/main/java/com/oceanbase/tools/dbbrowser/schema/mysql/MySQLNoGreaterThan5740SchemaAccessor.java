@@ -1033,7 +1033,7 @@ public class MySQLNoGreaterThan5740SchemaAccessor implements DBSchemaAccessor {
             view.setDefiner(rs.getString(7));
         });
         MySQLSqlBuilder getDDL = new MySQLSqlBuilder();
-        getDDL.append("show create view ");
+        getDDL.append("show create table ");
         getDDL.identifier(schemaName);
         getDDL.append(".");
         getDDL.identifier(viewName);
