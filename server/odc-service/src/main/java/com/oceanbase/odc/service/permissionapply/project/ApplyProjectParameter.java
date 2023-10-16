@@ -19,8 +19,6 @@ package com.oceanbase.odc.service.permissionapply.project;
 import java.io.Serializable;
 import java.util.List;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import com.oceanbase.odc.service.flow.model.TaskParameters;
 
 import lombok.Data;
@@ -45,9 +43,8 @@ public class ApplyProjectParameter implements Serializable, TaskParameters {
      */
     private String applyReason;
     /**
-     * ID of the user who applied for the project
+     * ID of the user who applied for the project, filled in by {@link ApplyProjectPreprocessor}
      */
-    @JsonProperty(access = Access.READ_ONLY)
     private Long userId;
 
 }
