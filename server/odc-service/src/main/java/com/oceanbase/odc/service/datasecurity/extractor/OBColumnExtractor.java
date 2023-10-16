@@ -410,11 +410,11 @@ public class OBColumnExtractor implements ColumnExtractor {
                     // 2.1. 列名为 *，即只要库名和表名匹配的都输出
                     // 先查 fromTable，再查 fromTable#tableList
                     for (LogicalTable table : tables) {
-                        if (tableName.equals(table.getAlias())
-                                || tableName.equals(table.getName())) {
+                        if (tableName.equalsIgnoreCase(table.getAlias())
+                                || tableName.equalsIgnoreCase(table.getName())) {
                             for (LogicalColumn column : table.getColumnList()) {
                                 if (StringUtils.isNotBlank(databaseName)
-                                        && !databaseName.equals(column.getDatabaseName())) {
+                                        && !databaseName.equalsIgnoreCase(column.getDatabaseName())) {
                                     break;
                                 }
                                 result.add(inheritColumn(column));
@@ -425,11 +425,11 @@ public class OBColumnExtractor implements ColumnExtractor {
                     // 2.2 列名不为 *，即需要唯一确定一列（这里暂且不处理列名冲突的情况，因为运行此代码的前提是 SQL 语句被成功执行）
                     // 先查 fromTable，再查 fromTable#tableList
                     for (LogicalTable table : tables) {
-                        if (tableName.equals(table.getAlias())
-                                || tableName.equals(table.getName())) {
+                        if (tableName.equalsIgnoreCase(table.getAlias())
+                                || tableName.equalsIgnoreCase(table.getName())) {
                             for (LogicalColumn column : table.getColumnList()) {
                                 if (StringUtils.isNotBlank(databaseName)
-                                        && !databaseName.equals(column.getDatabaseName())) {
+                                        && !databaseName.equalsIgnoreCase(column.getDatabaseName())) {
                                     break;
                                 }
                                 if (StringUtils.firstNonBlank(column.getAlias(), column.getName())
@@ -575,7 +575,7 @@ public class OBColumnExtractor implements ColumnExtractor {
             for (int j = 0; j < rightColumns.size(); j++) {
                 LogicalColumn rightColumn = rightColumns.get(j);
                 String rightLabel = StringUtils.firstNonBlank(rightColumn.getAlias(), rightColumn.getName());
-                if (leftLabel.equals(rightLabel)) {
+                if (leftLabel.equalsIgnoreCase(rightLabel)) {
                     LogicalColumn c = LogicalColumn.empty();
                     c.setName(leftLabel);
                     c.setType(ColumnType.JOIN);
@@ -691,7 +691,7 @@ public class OBColumnExtractor implements ColumnExtractor {
     private List<LogicalColumn> getColumnsFromCteTable(String tableName) throws NotFoundException {
         List<LogicalColumn> result = new ArrayList<>();
         for (LogicalTable table : cteTables) {
-            if (tableName.equals(table.getName())) {
+            if (tableName.equalsIgnoreCase(table.getName())) {
                 for (LogicalColumn column : table.getColumnList()) {
                     result.add(inheritColumn(column));
                 }
@@ -731,14 +731,16 @@ public class OBColumnExtractor implements ColumnExtractor {
     private String processIdentifier(String identifier) {
         if (Objects.nonNull(dialectType) && dialectType.isMysql()) {
             String unquoted = StringUtils.unquoteMySqlIdentifier(identifier);
-            return StringUtils.isBlank(unquoted) ? unquoted : unquoted.toLowerCase();
+            if (StringUtils.isBlank(unquoted)) {
+                return unquoted;
+            }
+            return StringUtils.checkMysqlIdentifierQuoted(identifier) ? unquoted : unquoted.toLowerCase();
         } else if (dialectType == DialectType.OB_ORACLE) {
             String unquoted = StringUtils.unquoteOracleIdentifier(identifier);
             if (StringUtils.isBlank(unquoted)) {
                 return unquoted;
-            } else {
-                return StringUtils.checkOracleIdentifierQuoted(identifier) ? unquoted : unquoted.toUpperCase();
             }
+            return StringUtils.checkOracleIdentifierQuoted(identifier) ? unquoted : unquoted.toUpperCase();
         } else {
             throw new IllegalStateException("Unknown dialect type: " + dialectType);
         }
