@@ -680,7 +680,9 @@ public class DatabaseService {
     private Pair<ConnectionSession, Boolean> getConnectionSessionLockUserRequiredPair(
             Map<String, Pair<ConnectionSession, Boolean>> connectionId2LockUserRequired, Database d) {
         return connectionId2LockUserRequired.computeIfAbsent(d.getDataSource().getId() + "", k -> {
-            DefaultConnectSessionFactory factory = new DefaultConnectSessionFactory(d.getDataSource());
+            ConnectionConfig connConfig =
+                connectionService.getForConnectionSkipPermissionCheck(d.getDataSource().getId());
+            DefaultConnectSessionFactory factory = new DefaultConnectSessionFactory(connConfig);
             ConnectionSession connSession = factory.generateSession();
             return new Pair<>(connSession, OscDBUserUtil.isLockUserRequired(connSession.getDialectType(),
                     ConnectionSessionUtil.getVersion(connSession)));
