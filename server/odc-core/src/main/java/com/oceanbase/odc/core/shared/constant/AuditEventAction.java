@@ -177,6 +177,8 @@ public enum AuditEventAction implements Translatable {
 
     CREATE_PERMISSION_APPLY_TASK,
 
+    CREATE_PERMISSION_APPLY_PROJECT_TASK,
+
     CREATE_SHADOWTABLE_SYNC_TASK,
 
     CREATE_PARTITION_PLAN_TASK,
@@ -202,6 +204,8 @@ public enum AuditEventAction implements Translatable {
 
     STOP_ONLINE_SCHEMA_CHANGE_TASK,
 
+    STOP_PERMISSION_APPLY_PROJECT_TASK,
+
     EXECUTE_ASYNC_TASK,
 
     EXECUTE_MOCKDATA_TASK,
@@ -219,6 +223,8 @@ public enum AuditEventAction implements Translatable {
     EXECUTE_ALTER_SCHEDULE_TASK,
 
     EXECUTE_ONLINE_SCHEMA_CHANGE_TASK,
+
+    EXECUTE_PERMISSION_APPLY_PROJECT_TASK,
 
     APPROVE_ASYNC_TASK,
 
@@ -239,6 +245,8 @@ public enum AuditEventAction implements Translatable {
 
     APPROVE_ONLINE_SCHEMA_CHANGE_TASK,
 
+    APPROVE_PERMISSION_APPLY_PROJECT_TASK,
+
     REJECT_ASYNC_TASK,
 
     REJECT_MOCKDATA_TASK,
@@ -257,6 +265,8 @@ public enum AuditEventAction implements Translatable {
     REJECT_ALTER_SCHEDULE_TASK,
 
     REJECT_ONLINE_SCHEMA_CHANGE_TASK,
+
+    REJECT_PERMISSION_APPLY_PROJECT_TASK,
 
     /**
      * 数据脱敏规则

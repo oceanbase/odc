@@ -60,6 +60,8 @@ public enum AuditEventType implements Translatable {
 
     ONLINE_SCHEMA_CHANGE,
 
+    PERMISSION_APPLY_PROJECT,
+
     DATA_MASKING_RULE,
 
     DATA_MASKING_POLICY,
