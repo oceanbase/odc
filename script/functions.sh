@@ -217,7 +217,7 @@ function build_sqlconsole() {
     func_echo "npm install pnpm -g success"
 
     pushd "${sqlconsole_path}"
-    if ! (pnpm install || pnpm install || pnpm install ); then
+    if ! (pnpm install || pnpm install || pnpm install); then
         func_echo "pnpm install failed"
         popd
         return 2
@@ -294,6 +294,31 @@ function maven_build_jar() {
     fi
     func_echo "maven build jar ${maven_extra_args}[@] succeed"
 
+    popd
+    return 0
+}
+
+# local install libs
+function maven_install_libs() {
+    local maven_extra_args=$@
+    pushd "${ODC_DIR}/libs" || return 1
+
+    func_echo "maven install libs ..."
+
+    for module_name in *; do
+        if [ -d "$module_name" ]; then
+            pushd "$module_name" || return 2
+            func_echo "start install lib $module_name"
+            if ! mvn clean install -Dmaven.test.skip=true ${maven_extra_args[@]}; then
+                func_echo "maven install lib $module_name with args ${maven_extra_args[@]} failed"
+            else
+                func_echo "maven install lib $module_name with args ${maven_extra_args[@]} succeed"
+            fi
+            popd
+        fi
+    done
+
+    func_echo "maven install libs with args ${maven_extra_args}[@] succeed"
     popd
     return 0
 }
@@ -409,15 +434,15 @@ function print_env_info() {
 function get_os_version() {
     os_version=$(uname -s)
     case "$os_version" in
-        Linux*)
-            os_version="linux"
-            ;;
-        Darwin*)
-            os_version="macos"
-            ;;
-        *)
-            os_version="unknown"
-            ;;
+    Linux*)
+        os_version="linux"
+        ;;
+    Darwin*)
+        os_version="macos"
+        ;;
+    *)
+        os_version="unknown"
+        ;;
     esac
     echo "${os_version}"
 }
@@ -427,15 +452,15 @@ function get_os_version() {
 function get_cpu_arch() {
     local cpu_arch=$(uname -m)
     case "$cpu_arch" in
-        x86*)
-            cpu_arch="x86"
-            ;;
-        aarch*)
-            cpu_arch="aarch"
-            ;;
-        *)
-            cpu_arch="unknown"
-            ;;
+    x86*)
+        cpu_arch="x86"
+        ;;
+    aarch*)
+        cpu_arch="aarch"
+        ;;
+    *)
+        cpu_arch="unknown"
+        ;;
     esac
     echo "${cpu_arch}"
 }
