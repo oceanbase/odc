@@ -200,4 +200,11 @@ public class DataSourceController {
     public SuccessResponse<Boolean> syncDataSource(@PathVariable Long id) throws InterruptedException {
         return Responses.success(databaseService.syncDataSourceSchemas(id));
     }
+
+    @ApiOperation(value = "listUsers", notes = "list users in datasoures")
+    @RequestMapping(value = "/datasources/{id:[\\d]+}/users", method = RequestMethod.GET)
+    public SuccessResponse<Boolean> listUsers(@PathVariable Long id) throws InterruptedException {
+        return Responses.success(databaseService.syncDataSourceSchemas(id));
+    }
+
 }

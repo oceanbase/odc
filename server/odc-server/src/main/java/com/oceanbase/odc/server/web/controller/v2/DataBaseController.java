@@ -70,6 +70,7 @@ public class DataBaseController {
             @RequestParam(required = false, name = "environmentId") Long environmentId,
             @RequestParam(required = false, name = "projectName") String projectName,
             @RequestParam(required = false, name = "projectId") Long projectId,
+            @RequestParam(required = false, name = "type") String type,
             @RequestParam(required = false, defaultValue = "false",
                     name = "containsUnassigned") Boolean containsUnassigned,
             @PageableDefault(size = Integer.MAX_VALUE, sort = {"id"}, direction = Direction.DESC) Pageable pageable) {
@@ -79,6 +80,7 @@ public class DataBaseController {
                 .environmentId(environmentId)
                 .schemaName(name)
                 .containsUnassigned(containsUnassigned)
+                .type(type)
                 .projectId(projectId).build();
         return Responses.paginated(databaseService.list(params, pageable));
     }

@@ -21,6 +21,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -48,15 +49,18 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.validation.annotation.Validated;
 
 import com.oceanbase.odc.common.i18n.I18n;
+import com.oceanbase.odc.common.lang.Pair;
 import com.oceanbase.odc.core.authority.util.Authenticated;
 import com.oceanbase.odc.core.authority.util.PreAuthenticate;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
+import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
+import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.core.shared.exception.AccessDeniedException;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.shared.exception.ConflictException;
@@ -80,14 +84,18 @@ import com.oceanbase.odc.service.connection.database.model.TransferDatabasesReq;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.db.DBIdentitiesService;
 import com.oceanbase.odc.service.db.DBSchemaService;
+import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.iam.HorizontalDataPermissionValidator;
 import com.oceanbase.odc.service.iam.OrganizationService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.auth.AuthorizationFacade;
+import com.oceanbase.odc.service.onlineschemachange.rename.OscDBUserUtil;
 import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.tools.dbbrowser.model.DBDatabase;
+import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
+import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -222,8 +230,29 @@ public class DatabaseService {
             specs = specs.and(DatabaseSpecs.connectionIdEquals(params.getDataSourceId()));
         }
         Page<DatabaseEntity> entities = databaseRepository.findAll(specs, pageable);
-        return entitiesToModels(entities);
+        Page<Database> databases = entitiesToModels(entities);
+
+        Map<String, Pair<ConnectionSession, Boolean>> connectionId2LockUserRequired = new HashMap<>();
+        databases.forEach(d -> {
+            if (Objects.equals(TaskType.ONLINE_SCHEMA_CHANGE.name(), params.getType()) && d.getDataSource() != null) {
+                Pair<ConnectionSession, Boolean> pair =
+                        getConnectionSessionLockUserRequiredPair(connectionId2LockUserRequired, d);
+                d.setLockDatabaseUserRequired(pair.right);
+            }
+
+        });
+        connectionId2LockUserRequired.forEach((k, v) -> {
+            if(v != null) {
+                try {
+                    v.left.expire();
+                } catch (Exception ex) {
+                    // ignore exception
+                }
+            }
+        });
+        return databases;
     }
+
 
     @SkipAuthorize("internal authenticated")
     public List<ConnectionConfig> statsConnectionConfig() {
@@ -574,6 +603,23 @@ public class DatabaseService {
                 .collect(Collectors.toSet());
     }
 
+    @SkipAuthorize("internal authorized")
+    public List<String> listUsers(Long dataSourceId){
+        ConnectionConfig connection = connectionService.getForConnectionSkipPermissionCheck(dataSourceId);
+        horizontalDataPermissionValidator.checkCurrentOrganization(connection);
+        DefaultConnectSessionFactory factory = new DefaultConnectSessionFactory(connection);
+        ConnectionSession connSession = factory.generateSession();
+        try{
+            DBSchemaAccessor dbSchemaAccessor = DBSchemaAccessors.create(connSession);
+            List<DBObjectIdentity> dbUsers = dbSchemaAccessor.listUsers();
+            List<String> whiteUsers = OscDBUserUtil.getLockUserWhiteList(connection);
+            return dbUsers.stream().map(DBObjectIdentity::getName)
+                .filter(whiteUsers::contains).collect(Collectors.toList());
+        }finally {
+            connSession.expire();
+        }
+    }
+
     private void checkPermission(Long projectId, Long dataSourceId) {
         if (Objects.isNull(projectId) && Objects.isNull(dataSourceId)) {
             throw new AccessDeniedException("invalid projectId or dataSourceId");
@@ -631,4 +677,13 @@ public class DatabaseService {
         return "DataSource_" + connectionId;
     }
 
+    private Pair<ConnectionSession, Boolean> getConnectionSessionLockUserRequiredPair(
+        Map<String, Pair<ConnectionSession, Boolean>> connectionId2LockUserRequired, Database d) {
+        return connectionId2LockUserRequired.computeIfAbsent(d.getDataSource().getId() + "", k -> {
+            DefaultConnectSessionFactory factory = new DefaultConnectSessionFactory(d.getDataSource());
+            ConnectionSession connSession = factory.generateSession();
+            return new Pair<>(connSession, OscDBUserUtil.isLockUserRequired(connSession.getDialectType(),
+                ConnectionSessionUtil.getVersion(connSession)));
+        });
+    }
 }

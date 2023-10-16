@@ -67,7 +67,8 @@ public class LockUserInterceptor implements RenameTableInterceptor {
     @Override
     public void postRenamed(RenameTableParameters parameters) {
         List<String> users = getUserIds();
-        users.removeAll(getWhiteUserList(connSession));
+        List<String> whiteUsers = OscDBUserUtil.getLockUserWhiteList(connSession);
+        users.removeAll(whiteUsers);
         batchExecuteUnlockUser(users);
     }
 
@@ -83,7 +84,8 @@ public class LockUserInterceptor implements RenameTableInterceptor {
 
     private void lockUserAndKillSession(Integer lockTableTimeOutSeconds) {
         List<String> users = getUserIds();
-        users.removeAll(getWhiteUserList(connSession));
+        List<String> whiteUsers = OscDBUserUtil.getLockUserWhiteList(connSession);
+        users.removeAll(whiteUsers);
         batchExecuteLockUser(users);
         dbSessionManageFacade.killAllSessions(connSession,
                 getSessionFilter(connSession.getDialectType(), connSession), lockTableTimeOutSeconds);
@@ -125,24 +127,6 @@ public class LockUserInterceptor implements RenameTableInterceptor {
         log.info("Execute sql: {} ", sql);
     }
 
-    private List<String> getWhiteUserList(ConnectionSession connectionSession) {
-        ConnectionConfig config = (ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(connectionSession);
-        List<String> users = Lists.newArrayList(config.getUsername());
-        if (config.getDialectType().isMysql()) {
-            users.add("root");
-        } else {
-            users.add("SYS");
-            users.add("SYSTEM");
-            users.add("PUBLIC");
-            users.add("LBACSYS");
-            users.add("ORAAUDITOR");
-            users.add("ROOT");
-
-            users.add(config.getUsername().toUpperCase());
-        }
-        return users;
-    }
-
     private Predicate<OdcDBSession> getSessionFilter(DialectType dialectType, ConnectionSession connectionSession) {
         String currentSessionId = connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY)
                 .execute((ConnectionCallback<? extends String>) conn -> ConnectionPluginUtil
@@ -151,7 +135,8 @@ public class LockUserInterceptor implements RenameTableInterceptor {
         filterList.add(currentSessionId);
         log.info("Kill session filter session id : {}", JsonUtils.toJson(filterList));
 
-        List<String> whiteUserList = getWhiteUserList(connectionSession);
+        List<String> whiteUserList = OscDBUserUtil.getLockUserWhiteList((
+            ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(connectionSession));
         log.info("Kill session filter user: {}", JsonUtils.toJson(whiteUserList));
 
         // filter current session
