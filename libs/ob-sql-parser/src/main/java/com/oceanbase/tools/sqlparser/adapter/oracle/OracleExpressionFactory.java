@@ -20,13 +20,10 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import com.oceanbase.tools.sqlparser.oboracle.OBParser.Column_refContext;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.ParserRuleContext;
-import org.antlr.v4.runtime.RuleContext;
 import org.antlr.v4.runtime.misc.Interval;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
@@ -326,18 +323,18 @@ public class OracleExpressionFactory extends OBParserBaseVisitor<Expression> imp
                 return new ConstExpression(ctx.USER_VARIABLE());
             }
             RelationReference seq = new RelationReference(
-                    ctx.column_ref(ctx.column_ref().size() - 2), 
+                    ctx.column_ref(ctx.column_ref().size() - 2),
                     ctx.column_ref(ctx.column_ref().size() - 2).getText());
             RelationReference column = new RelationReference(
-                ctx.column_ref(ctx.column_ref().size() - 1),
-                ctx.column_ref(ctx.column_ref().size() - 1).getText());
+                    ctx.column_ref(ctx.column_ref().size() - 1),
+                    ctx.column_ref(ctx.column_ref().size() - 1).getText());
             column.setUserVariable(ctx.USER_VARIABLE().getText());
             seq.reference(column, ReferenceOperator.DOT);
             if (ctx.column_ref().size() < 3) {
                 return seq;
             }
             RelationReference ref = new RelationReference(
-                    ctx.column_ref(ctx.column_ref().size() - 3), 
+                    ctx.column_ref(ctx.column_ref().size() - 3),
                     ctx.column_ref(ctx.column_ref().size() - 3).getText());
             ref.reference(seq, ReferenceOperator.DOT);
             return ref;

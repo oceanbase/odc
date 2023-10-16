@@ -15,7 +15,6 @@
  */
 package com.oceanbase.tools.sqlparser.statement.expression;
 
-import lombok.Setter;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
@@ -25,6 +24,7 @@ import com.oceanbase.tools.sqlparser.statement.Expression;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.Setter;
 
 /**
  * {@link RelationReference}
