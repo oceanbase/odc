@@ -53,6 +53,10 @@ public class JsonOnOption extends BaseStatement {
         super(context);
     }
 
+    public JsonOnOption(@NonNull ParserRuleContext begin, @NonNull ParserRuleContext end) {
+        super(begin, end);
+    }
+
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();

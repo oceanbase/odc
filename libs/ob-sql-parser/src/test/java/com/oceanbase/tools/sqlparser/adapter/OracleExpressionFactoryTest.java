@@ -861,6 +861,28 @@ public class OracleExpressionFactoryTest {
     }
 
     @Test
+    public void generate_colDbLink_generateFunctionCallSucceed() {
+        Bit_exprContext context = getBitExprContext("a.b@link");
+        StatementFactory<Expression> factory = new OracleExpressionFactory(context);
+        Expression actual = factory.generate();
+
+        ColumnReference expect = new ColumnReference(null, "a", "b");
+        expect.setUserVariable("@link");
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_colDbLink2_generateFunctionCallSucceed() {
+        Bit_exprContext context = getBitExprContext("schema.a.b@link");
+        StatementFactory<Expression> factory = new OracleExpressionFactory(context);
+        Expression actual = factory.generate();
+
+        ColumnReference expect = new ColumnReference("schema", "a", "b");
+        expect.setUserVariable("@link");
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
     public void generate_priorExpr_generateFunctionCallSucceed() {
         Bit_exprContext context = getBitExprContext("prior a");
         StatementFactory<Expression> factory = new OracleExpressionFactory(context);

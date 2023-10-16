@@ -54,6 +54,7 @@ import com.oceanbase.tools.sqlparser.statement.expression.FunctionCall;
 import com.oceanbase.tools.sqlparser.statement.expression.FunctionParam;
 import com.oceanbase.tools.sqlparser.statement.expression.GroupConcat;
 import com.oceanbase.tools.sqlparser.statement.expression.IntervalExpression;
+import com.oceanbase.tools.sqlparser.statement.expression.JsonOnOption;
 import com.oceanbase.tools.sqlparser.statement.expression.NullExpression;
 import com.oceanbase.tools.sqlparser.statement.expression.TextSearchMode;
 import com.oceanbase.tools.sqlparser.statement.expression.WhenClause;
@@ -281,6 +282,28 @@ public class MySQLExpressionFactoryTest {
         Expression actual = factory.generate();
 
         Expression expect = new ConstExpression("@user_var");
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_columnUserVariables_generateSucceed() {
+        ExprContext context = getExprContext("a.b@user_var");
+        StatementFactory<Expression> factory = new MySQLExpressionFactory(context);
+        Expression actual = factory.generate();
+
+        ColumnReference expect = new ColumnReference(null, "a", "b");
+        expect.setUserVariable("@user_var");
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_columnUserVariables1_generateSucceed() {
+        ExprContext context = getExprContext("db.a.b@user_var");
+        StatementFactory<Expression> factory = new MySQLExpressionFactory(context);
+        Expression actual = factory.generate();
+
+        ColumnReference expect = new ColumnReference("db", "a", "b");
+        expect.setUserVariable("@user_var");
         Assert.assertEquals(expect, actual);
     }
 
@@ -768,6 +791,70 @@ public class MySQLExpressionFactoryTest {
         expect.addOption(new NumberType("double", null, null));
         expect.addOption(new ConstExpression("TRUNCATE"));
         expect.addOption(new ConstExpression("ASCII"));
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_jsonValueExprOnEmpty_generateFunctionCallSucceed() {
+        ExprContext context =
+                getExprContext("JSON_VALUE('123', _utf8 'abc' returning double TRUNCATE ASCII error_p on empty)");
+        StatementFactory<Expression> factory = new MySQLExpressionFactory(context);
+        Expression actual = factory.generate();
+
+        List<FunctionParam> params = new ArrayList<>();
+        params.add(new ExpressionParam(new ConstExpression("'123'")));
+        FunctionParam p = new ExpressionParam(new ConstExpression("_utf8 'abc'"));
+        params.add(p);
+        FunctionCall expect = new FunctionCall("JSON_VALUE", params);
+        expect.addOption(new NumberType("double", null, null));
+        expect.addOption(new ConstExpression("TRUNCATE"));
+        expect.addOption(new ConstExpression("ASCII"));
+        JsonOnOption jsonOnOption = new JsonOnOption();
+        jsonOnOption.setOnEmpty(new ConstExpression("error_p"));
+        expect.addOption(jsonOnOption);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_jsonValueExprOnError_generateFunctionCallSucceed() {
+        ExprContext context =
+                getExprContext("JSON_VALUE('123', _utf8 'abc' returning double TRUNCATE ASCII null on error_p)");
+        StatementFactory<Expression> factory = new MySQLExpressionFactory(context);
+        Expression actual = factory.generate();
+
+        List<FunctionParam> params = new ArrayList<>();
+        params.add(new ExpressionParam(new ConstExpression("'123'")));
+        FunctionParam p = new ExpressionParam(new ConstExpression("_utf8 'abc'"));
+        params.add(p);
+        FunctionCall expect = new FunctionCall("JSON_VALUE", params);
+        expect.addOption(new NumberType("double", null, null));
+        expect.addOption(new ConstExpression("TRUNCATE"));
+        expect.addOption(new ConstExpression("ASCII"));
+        JsonOnOption jsonOnOption = new JsonOnOption();
+        jsonOnOption.setOnError(new NullExpression());
+        expect.addOption(jsonOnOption);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_jsonValueExprOnErrorEmpty_generateFunctionCallSucceed() {
+        ExprContext context = getExprContext(
+                "JSON_VALUE('123', _utf8 'abc' returning double TRUNCATE ASCII default 12 on empty null on error_p)");
+        StatementFactory<Expression> factory = new MySQLExpressionFactory(context);
+        Expression actual = factory.generate();
+
+        List<FunctionParam> params = new ArrayList<>();
+        params.add(new ExpressionParam(new ConstExpression("'123'")));
+        FunctionParam p = new ExpressionParam(new ConstExpression("_utf8 'abc'"));
+        params.add(p);
+        FunctionCall expect = new FunctionCall("JSON_VALUE", params);
+        expect.addOption(new NumberType("double", null, null));
+        expect.addOption(new ConstExpression("TRUNCATE"));
+        expect.addOption(new ConstExpression("ASCII"));
+        JsonOnOption jsonOnOption = new JsonOnOption();
+        jsonOnOption.setOnError(new NullExpression());
+        jsonOnOption.setOnEmpty(new ConstExpression("12"));
+        expect.addOption(jsonOnOption);
         Assert.assertEquals(expect, actual);
     }
 

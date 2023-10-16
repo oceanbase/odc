@@ -109,6 +109,13 @@ public class MySQLFromReferenceFactory extends OBParserBaseVisitor<FromReference
                 return from;
             }
             return new BraceBlock(ctx, ctx.OJ().getText(), from);
+        } else if (ctx.json_table_expr() != null) {
+            String alias = null;
+            if (ctx.relation_name() != null) {
+                alias = ctx.relation_name().getText();
+            }
+            MySQLExpressionFactory factory = new MySQLExpressionFactory();
+            return new ExpressionReference(ctx, factory.visitJson_table_expr(ctx.json_table_expr()), alias);
         }
         StatementFactory<SelectBody> factory = new MySQLSelectBodyFactory(ctx.select_with_parens());
         ExpressionReference reference = new ExpressionReference(ctx, factory.generate(), null);

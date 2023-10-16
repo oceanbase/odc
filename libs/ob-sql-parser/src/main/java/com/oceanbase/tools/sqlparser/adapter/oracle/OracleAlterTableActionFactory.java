@@ -297,6 +297,14 @@ public class OracleAlterTableActionFactory extends OBParserBaseVisitor<AlterTabl
                 actions.setIntos(elts);
             }
             alterTableAction.splitPartition(getRelationFactor(ctx.relation_factor()), actions);
+        } else if (ctx.RENAME() != null) {
+            String from = ctx.relation_name(0).getText();
+            String to = ctx.relation_name(1).getText();
+            if (ctx.PARTITION() != null) {
+                alterTableAction.renamePartition(from, to);
+            } else {
+                alterTableAction.renameSubPartition(from, to);
+            }
         }
         return alterTableAction;
     }

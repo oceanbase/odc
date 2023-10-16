@@ -368,6 +368,8 @@ simple_expr
     | CONNECT_BY_ROOT unary_expr
     | SET LeftParen bit_expr RightParen
     | MULTISET select_with_parens
+    | column_ref Dot column_ref USER_VARIABLE
+    | column_ref Dot column_ref Dot column_ref USER_VARIABLE
     | {this.is_pl_parse_}? QUESTIONMARK Dot column_name
     ;
 
@@ -3454,6 +3456,7 @@ alter_table_action
 alter_partition_option
     : DROP (PARTITION|SUBPARTITION) drop_partition_name_list
     | DROP (PARTITION|SUBPARTITION) drop_partition_name_list UPDATE GLOBAL INDEXES
+    | RENAME (PARTITION|SUBPARTITION) relation_name TO relation_name
     | add_range_or_list_partition
     | SPLIT PARTITION relation_factor split_actions
     | TRUNCATE (PARTITION|SUBPARTITION) name_list

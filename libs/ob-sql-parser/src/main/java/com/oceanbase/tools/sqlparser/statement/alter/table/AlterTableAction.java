@@ -135,6 +135,14 @@ public class AlterTableAction extends BaseStatement {
     private Boolean dropPrimaryKey;
     private OutOfLineConstraint modifyPrimaryKey;
     private boolean refresh;
+    @Setter(AccessLevel.NONE)
+    private String renameFromPartitionName;
+    @Setter(AccessLevel.NONE)
+    private String renameToPartitionName;
+    @Setter(AccessLevel.NONE)
+    private String renameFromSubPartitionName;
+    @Setter(AccessLevel.NONE)
+    private String renameToSubPartitionName;
 
     public AlterTableAction(@NonNull ParserRuleContext context) {
         super(context);
@@ -149,6 +157,16 @@ public class AlterTableAction extends BaseStatement {
     public void renameColumn(@NonNull ColumnReference from, @NonNull String to) {
         this.renameFromColumn = from;
         this.renameToColumnName = to;
+    }
+
+    public void renamePartition(@NonNull String from, @NonNull String to) {
+        this.renameFromPartitionName = from;
+        this.renameToPartitionName = to;
+    }
+
+    public void renameSubPartition(@NonNull String from, @NonNull String to) {
+        this.renameFromSubPartitionName = from;
+        this.renameToSubPartitionName = to;
     }
 
     public void renameIndex(@NonNull String from, @NonNull String to) {
@@ -324,6 +342,16 @@ public class AlterTableAction extends BaseStatement {
             } else {
                 builder.append(" DROP CONSTRAINT(").append(String.join(",", this.dropConstraintNames)).append(")");
             }
+        }
+        if (this.renameFromPartitionName != null && this.renameToPartitionName != null) {
+            builder.append(" RENAME PARTITION ")
+                    .append(this.renameFromPartitionName).append(" TO ")
+                    .append(this.renameToPartitionName);
+        }
+        if (this.renameFromSubPartitionName != null && this.renameToSubPartitionName != null) {
+            builder.append(" RENAME SUBPARTITION ")
+                    .append(this.renameFromSubPartitionName).append(" TO ")
+                    .append(this.renameToSubPartitionName);
         }
         if (this.alterColumn != null && this.alterColumnBehavior != null) {
             builder.append(" ALTER ").append(this.alterColumn).append(" ").append(this.alterColumnBehavior);

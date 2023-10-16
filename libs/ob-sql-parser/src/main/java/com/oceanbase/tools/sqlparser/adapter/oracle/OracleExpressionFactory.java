@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.RuleContext;
 import org.antlr.v4.runtime.misc.Interval;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
@@ -319,7 +320,20 @@ public class OracleExpressionFactory extends OBParserBaseVisitor<Expression> imp
             }
             return visit(ctx.bit_expr());
         } else if (ctx.USER_VARIABLE() != null) {
-            return new ConstExpression(ctx.USER_VARIABLE());
+            if (CollectionUtils.isEmpty(ctx.column_ref())) {
+                return new ConstExpression(ctx.USER_VARIABLE());
+            }
+            List<String> relations = ctx.column_ref().stream()
+                    .map(RuleContext::getText).collect(Collectors.toList());
+            String column = relations.get(relations.size() - 1);
+            String relation = relations.get(relations.size() - 2);
+            String schema = null;
+            if (relations.size() >= 3) {
+                schema = relations.get(relations.size() - 3);
+            }
+            ColumnReference ref = new ColumnReference(ctx, schema, relation, column);
+            ref.setUserVariable(ctx.USER_VARIABLE().getText());
+            return ref;
         } else if (ctx.PLSQL_VARIABLE() != null) {
             return new ConstExpression(ctx.PLSQL_VARIABLE());
         } else if (ctx.unary_expr() != null) {

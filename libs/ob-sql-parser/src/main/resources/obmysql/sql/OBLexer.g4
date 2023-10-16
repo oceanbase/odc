@@ -463,6 +463,10 @@ INSERT
     : ( I N S E R T )
     ;
 
+ORDINALITY
+    : O R D I N A L I T Y
+    ;
+
 INTO
     : ( I N T O )
     ;
@@ -2658,6 +2662,10 @@ XML
     : X M L
     ;
 
+PATH
+    : P A T H
+    ;
+
 IPC
     : I P C
     ;
@@ -3374,6 +3382,10 @@ MAX_MEMORY
     : M A X '_' M E M O R Y
     ;
 
+NESTED
+    : N E S T E D
+    ;
+
 CLEAN
     : C L E A N
     ;
@@ -3924,6 +3936,10 @@ DAY
 
 GROUP_CONCAT
     : G R O U P '_' C O N C A T
+    ;
+
+JSON_TABLE
+    : J S O N '_' T A B L E
     ;
 
 LEAD

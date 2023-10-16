@@ -22,6 +22,7 @@ import com.oceanbase.tools.sqlparser.statement.BaseStatement;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.Setter;
 
 /**
  * {@link ColumnReference}
@@ -38,6 +39,8 @@ public class ColumnReference extends BaseExpression {
     private final String schema;
     private final String relation;
     private final String column;
+    @Setter
+    private String userVariable;
 
     public ColumnReference(@NonNull ParserRuleContext context,
             String schema, String relation, @NonNull String column) {
@@ -63,7 +66,11 @@ public class ColumnReference extends BaseExpression {
         if (this.relation != null) {
             builder.append(this.relation).append(".");
         }
-        return builder.append(this.column).toString();
+        builder.append(this.column);
+        if (this.userVariable != null) {
+            builder.append(this.userVariable);
+        }
+        return builder.toString();
     }
 
 }

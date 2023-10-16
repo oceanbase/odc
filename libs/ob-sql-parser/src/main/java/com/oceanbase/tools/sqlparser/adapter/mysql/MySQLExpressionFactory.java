@@ -17,11 +17,13 @@ package com.oceanbase.tools.sqlparser.adapter.mysql;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.RuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.commons.collections4.CollectionUtils;
@@ -41,8 +43,19 @@ import com.oceanbase.tools.sqlparser.obmysql.OBParser.ExprContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Expr_constContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Expr_listContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.In_exprContext;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Json_on_responseContext;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Json_table_column_defContext;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Json_table_exists_column_defContext;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Json_table_exprContext;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Json_table_nested_column_defContext;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Json_table_ordinality_column_defContext;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Json_table_value_column_defContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Json_value_exprContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.LiteralContext;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Mock_jt_on_error_on_emptyContext;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.On_emptyContext;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.On_errorContext;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Opt_value_on_empty_or_error_or_mismatchContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Parameterized_trimContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.PredicateContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Select_no_parensContext;
@@ -76,6 +89,7 @@ import com.oceanbase.tools.sqlparser.statement.expression.FunctionCall;
 import com.oceanbase.tools.sqlparser.statement.expression.FunctionParam;
 import com.oceanbase.tools.sqlparser.statement.expression.GroupConcat;
 import com.oceanbase.tools.sqlparser.statement.expression.IntervalExpression;
+import com.oceanbase.tools.sqlparser.statement.expression.JsonOnOption;
 import com.oceanbase.tools.sqlparser.statement.expression.NullExpression;
 import com.oceanbase.tools.sqlparser.statement.expression.TextSearchMode;
 import com.oceanbase.tools.sqlparser.statement.expression.WhenClause;
@@ -98,6 +112,10 @@ public class MySQLExpressionFactory extends OBParserBaseVisitor<Expression> impl
         this.parserRuleContext = exprContext;
     }
 
+    public MySQLExpressionFactory() {
+        this.parserRuleContext = null;
+    }
+
     public MySQLExpressionFactory(@NonNull Bit_exprContext bitExprContext) {
         this.parserRuleContext = bitExprContext;
     }
@@ -109,6 +127,14 @@ public class MySQLExpressionFactory extends OBParserBaseVisitor<Expression> impl
     @Override
     public Expression generate() {
         return visit(this.parserRuleContext);
+    }
+
+    @Override
+    public Expression visit(ParseTree tree) {
+        if (tree == null) {
+            return null;
+        }
+        return super.visit(tree);
     }
 
     @Override
@@ -360,7 +386,20 @@ public class MySQLExpressionFactory extends OBParserBaseVisitor<Expression> impl
         } else if (ctx.window_function() != null) {
             return visit(ctx.window_function());
         } else if (ctx.USER_VARIABLE() != null) {
-            return new ConstExpression(ctx.USER_VARIABLE());
+            if (CollectionUtils.isEmpty(ctx.relation_name())) {
+                return new ConstExpression(ctx.USER_VARIABLE());
+            }
+            List<String> relations = ctx.relation_name().stream()
+                    .map(RuleContext::getText).collect(Collectors.toList());
+            String column = relations.get(relations.size() - 1);
+            String relation = relations.get(relations.size() - 2);
+            String schema = null;
+            if (relations.size() >= 3) {
+                schema = relations.get(relations.size() - 3);
+            }
+            ColumnReference ref = new ColumnReference(ctx, schema, relation, column);
+            ref.setUserVariable(ctx.USER_VARIABLE().getText());
+            return ref;
         } else if (ctx.column_definition_ref() != null) {
             StatementFactory<ColumnReference> factory = new MySQLColumnRefFactory(ctx.column_definition_ref());
             Operator operator = ctx.JSON_EXTRACT() == null ? Operator.JSON_EXTRACT_UNQUOTED : Operator.JSON_EXTRACT;
@@ -368,7 +407,7 @@ public class MySQLExpressionFactory extends OBParserBaseVisitor<Expression> impl
         } else if (ctx.case_expr() != null) {
             return visit(ctx.case_expr());
         } else if (ctx.LeftBrace() != null && ctx.RightBrace() != null) {
-            return new BraceBlock(ctx, ctx.relation_name().getText(), visit(ctx.expr()));
+            return new BraceBlock(ctx, ctx.relation_name(0).getText(), visit(ctx.expr()));
         }
         return new DefaultExpression(ctx);
     }
@@ -581,6 +620,21 @@ public class MySQLExpressionFactory extends OBParserBaseVisitor<Expression> impl
             if (jsonValue.ASCII() != null) {
                 fCall.addOption(new ConstExpression(jsonValue.ASCII()));
             }
+            JsonOnOption jsonOnOption;
+            if (jsonValue.on_empty() != null && jsonValue.on_error() != null) {
+                jsonOnOption = new JsonOnOption(jsonValue.on_empty(), jsonValue.on_error());
+                setOnError(jsonOnOption, jsonValue.on_error());
+                setOnEmpty(jsonOnOption, jsonValue.on_empty());
+                fCall.addOption(jsonOnOption);
+            } else if (jsonValue.on_error() != null) {
+                jsonOnOption = new JsonOnOption(jsonValue.on_error());
+                setOnError(jsonOnOption, jsonValue.on_error());
+                fCall.addOption(jsonOnOption);
+            } else if (jsonValue.on_empty() != null) {
+                jsonOnOption = new JsonOnOption(jsonValue.on_empty());
+                setOnEmpty(jsonOnOption, jsonValue.on_empty());
+                fCall.addOption(jsonOnOption);
+            }
             return fCall;
         }
         String funcName = null;
@@ -768,6 +822,112 @@ public class MySQLExpressionFactory extends OBParserBaseVisitor<Expression> impl
             throw new IllegalStateException("Missing expression");
         }
         return new CompoundExpression(ctx, left, right, operator);
+    }
+
+    @Override
+    public Expression visitJson_on_response(Json_on_responseContext ctx) {
+        if (ctx.ERROR_P() != null) {
+            return new ConstExpression(ctx.ERROR_P());
+        } else if (ctx.NULLX() != null) {
+            return new NullExpression(ctx.NULLX());
+        }
+        return MySQLTableElementFactory.getSignedLiteral(ctx.signed_literal());
+    }
+
+    @Override
+    public Expression visitJson_table_expr(Json_table_exprContext ctx) {
+        FunctionCall fCall = new FunctionCall(ctx, ctx.JSON_TABLE().getText(),
+                Arrays.asList(new ExpressionParam(visit(ctx.simple_expr())),
+                        new ExpressionParam(visit(ctx.literal()))));
+        fCall.addOption(getJsonOnOption(ctx.mock_jt_on_error_on_empty()));
+        ctx.jt_column_list().json_table_column_def().forEach(c -> fCall.addOption(visitJsonTableColumnDef(c)));
+        return fCall;
+    }
+
+    private JsonOnOption getJsonOnOption(Mock_jt_on_error_on_emptyContext ctx) {
+        return null;
+    }
+
+    private JsonOnOption getJsonOnOption(Opt_value_on_empty_or_error_or_mismatchContext ctx) {
+        if (ctx == null) {
+            return null;
+        } else if (ctx.opt_on_empty_or_error().empty() != null) {
+            return null;
+        }
+        JsonOnOption jsonOnOption = new JsonOnOption(ctx);
+        setOnEmpty(jsonOnOption, ctx.opt_on_empty_or_error().on_empty());
+        setOnError(jsonOnOption, ctx.opt_on_empty_or_error().on_error());
+        return jsonOnOption;
+    }
+
+    private void setOnEmpty(JsonOnOption jsonOnOption, On_emptyContext ctx) {
+        if (ctx == null) {
+            return;
+        }
+        jsonOnOption.setOnEmpty(visit(ctx.json_on_response()));
+    }
+
+    private void setOnError(JsonOnOption jsonOnOption, On_errorContext ctx) {
+        if (ctx == null) {
+            return;
+        }
+        jsonOnOption.setOnError(visit(ctx.json_on_response()));
+    }
+
+    private FunctionParam visitJsonTableColumnDef(Json_table_column_defContext ctx) {
+        if (ctx.json_table_ordinality_column_def() != null) {
+            return visitJsonTableOrdinalityColumnDef(ctx.json_table_ordinality_column_def());
+        } else if (ctx.json_table_exists_column_def() != null) {
+            return visitJsonTableExistsColumnDef(ctx.json_table_exists_column_def());
+        } else if (ctx.json_table_value_column_def() != null) {
+            return visitJsonTableValueColumnDef(ctx.json_table_value_column_def());
+        }
+        return visitJsonTableNestedColumnDef(ctx.json_table_nested_column_def());
+    }
+
+    private FunctionParam visitJsonTableOrdinalityColumnDef(Json_table_ordinality_column_defContext ctx) {
+        FunctionParam param = new ExpressionParam(new ColumnReference(
+                ctx.column_name(), null, null, ctx.column_name().getText()));
+        param.addOption(new ConstExpression(ctx.FOR(), ctx.ORDINALITY()));
+        return param;
+    }
+
+    private FunctionParam visitJsonTableExistsColumnDef(Json_table_exists_column_defContext ctx) {
+        FunctionParam param = new ExpressionParam(new ColumnReference(
+                ctx.column_name(), null, null, ctx.column_name().getText()));
+        param.addOption(new MySQLDataTypeFactory(ctx.data_type()).generate());
+        if (ctx.collation() != null) {
+            param.addOption(new ConstExpression(ctx.collation().collation_name()));
+        }
+        param.addOption(new ConstExpression(ctx.EXISTS()));
+        param.addOption(visit(ctx.literal()));
+        param.addOption(getJsonOnOption(ctx.mock_jt_on_error_on_empty()));
+        return param;
+    }
+
+    private FunctionParam visitJsonTableValueColumnDef(Json_table_value_column_defContext ctx) {
+        FunctionParam param = new ExpressionParam(new ColumnReference(
+                ctx.column_name(), null, null, ctx.column_name().getText()));
+        param.addOption(new MySQLDataTypeFactory(ctx.data_type()).generate());
+        if (ctx.collation() != null) {
+            param.addOption(new ConstExpression(ctx.collation().collation_name()));
+        }
+        param.addOption(visit(ctx.literal()));
+        param.addOption(getJsonOnOption(ctx.opt_value_on_empty_or_error_or_mismatch()));
+        return param;
+    }
+
+    private FunctionParam visitJsonTableNestedColumnDef(Json_table_nested_column_defContext ctx) {
+        FunctionParam param;
+        if (ctx.PATH() == null) {
+            param = new ExpressionParam(new ConstExpression(ctx.NESTED()));
+        } else {
+            param = new ExpressionParam(new ConstExpression(ctx.NESTED(), ctx.PATH()));
+        }
+        param.addOption(visit(ctx.literal()));
+        ctx.jt_column_list().json_table_column_def()
+                .forEach(c -> param.addOption(visitJsonTableColumnDef(c)));
+        return param;
     }
 
     private ConstExpression getAggregator(Simple_func_exprContext ctx) {

@@ -282,6 +282,7 @@ simple_expr
     | LeftBrace relation_name expr RightBrace
     | USER_VARIABLE
     | column_definition_ref (JSON_EXTRACT|JSON_EXTRACT_UNQUOTED) complex_string_literal
+    | relation_name Dot relation_name (Dot relation_name)? USER_VARIABLE
     ;
 
 expr
@@ -1973,6 +1974,7 @@ table_factor
     | select_with_parens use_flashback?
     | LeftParen table_reference RightParen
     | LeftBrace OJ table_reference RightBrace
+    | json_table_expr (AS? relation_name)?
     ;
 
 tbl_name
@@ -3585,8 +3587,57 @@ date_unit
     | YEAR_MONTH
     ;
 
+json_table_expr
+    : JSON_TABLE LeftParen simple_expr Comma literal mock_jt_on_error_on_empty COLUMNS LeftParen jt_column_list RightParen RightParen
+    ;
+
+mock_jt_on_error_on_empty
+    : empty
+    ;
+
+jt_column_list
+    : json_table_column_def (Comma json_table_column_def)*
+    ;
+
+json_table_column_def
+    : json_table_ordinality_column_def
+    | json_table_exists_column_def
+    | json_table_value_column_def
+    | json_table_nested_column_def
+    ;
+
+json_table_ordinality_column_def
+    : column_name FOR ORDINALITY
+    ;
+
+json_table_exists_column_def
+    : column_name data_type collation? EXISTS PATH literal mock_jt_on_error_on_empty
+    ;
+
+json_table_value_column_def
+    : column_name data_type collation? PATH literal opt_value_on_empty_or_error_or_mismatch
+    ;
+
+json_table_nested_column_def
+    : NESTED PATH? literal COLUMNS LeftParen jt_column_list RightParen
+    ;
+
+opt_value_on_empty_or_error_or_mismatch
+    : opt_on_empty_or_error opt_on_mismatch
+    ;
+
+opt_on_mismatch
+    : empty
+    ;
+
 json_value_expr
     : JSON_VALUE LeftParen simple_expr Comma complex_string_literal (RETURNING cast_data_type)? TRUNCATE? ASCII? (on_empty | on_error | (on_empty on_error))? RightParen
+    ;
+
+opt_on_empty_or_error
+    : empty
+    | on_empty on_error?
+    | on_error
     ;
 
 on_empty
