@@ -17,7 +17,6 @@ package com.oceanbase.odc.service.datasecurity.extractor.model;
 
 import java.util.Objects;
 
-
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

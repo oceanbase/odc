@@ -22,7 +22,6 @@ import com.oceanbase.odc.metadb.datasecurity.SensitiveColumnEntity;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 
 /**
  * @author gaoda.xy
