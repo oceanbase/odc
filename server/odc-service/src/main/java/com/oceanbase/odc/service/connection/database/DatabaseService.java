@@ -689,6 +689,7 @@ public class DatabaseService {
             } catch (Exception ex) {
                 log.info("Get Connection occur error", ex);
             }
+            // connSession is null indicate this datasource is not connected
             return new Pair<>(connSession, connSession != null &&
                 OscDBUserUtil.isLockUserRequired(connSession.getDialectType(),
                     ConnectionSessionUtil.getVersion(connSession)));
