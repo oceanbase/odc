@@ -681,11 +681,18 @@ public class DatabaseService {
             Map<String, Pair<ConnectionSession, Boolean>> connectionId2LockUserRequired, Database d) {
         return connectionId2LockUserRequired.computeIfAbsent(d.getDataSource().getId() + "", k -> {
             ConnectionConfig connConfig =
-                connectionService.getForConnectionSkipPermissionCheck(d.getDataSource().getId());
+                    connectionService.getForConnectionSkipPermissionCheck(d.getDataSource().getId());
             DefaultConnectSessionFactory factory = new DefaultConnectSessionFactory(connConfig);
-            ConnectionSession connSession = factory.generateSession();
-            return new Pair<>(connSession, OscDBUserUtil.isLockUserRequired(connSession.getDialectType(),
+            ConnectionSession connSession = null;
+            try {
+                connSession = factory.generateSession();
+            } catch (Exception ex) {
+                log.info("Get Connection occur error", ex);
+            }
+            return new Pair<>(connSession, connSession != null &&
+                OscDBUserUtil.isLockUserRequired(connSession.getDialectType(),
                     ConnectionSessionUtil.getVersion(connSession)));
+
         });
     }
 }
