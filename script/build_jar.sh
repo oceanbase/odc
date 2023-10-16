@@ -20,7 +20,7 @@ fi
 echo "maven build jar success, copy executable jar to ${ODC_DIR}/lib for use script/start-odc.sh locally."
 
 mkdir -p "${ODC_DIR}/"{lib,conf}
-rm --force --verbose "${ODC_DIR}"/lib/*.jar
+[[ -f "${ODC_DIR}"/lib/*.jar ]] && rm -fv "${ODC_DIR}"/lib/*.jar
 cp -fv "${ODC_DIR}"/server/odc-server/target/odc-*-executable.jar "${ODC_DIR}"/lib/
 cp -fv "${ODC_DIR}"/server/odc-server/target/classes/log4j2.xml "${ODC_DIR}"/conf/
 exit $?
