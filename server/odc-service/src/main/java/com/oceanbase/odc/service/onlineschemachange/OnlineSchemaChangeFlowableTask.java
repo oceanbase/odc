@@ -96,7 +96,8 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
         this.organizationId = creator.getOrganizationId();
         this.status = TaskStatus.RUNNING;
         this.flowTaskId = taskId;
-
+        // for public cloud
+        String uid = FlowTaskUtil.getCloudMainAccountId(execution);
         OnlineSchemaChangeParameters parameter = FlowTaskUtil.getOnlineSchemaChangeParameter(execution);
         ConnectionConfig connectionConfig = FlowTaskUtil.getConnectionConfig(execution);
         String schema = FlowTaskUtil.getSchemaName(execution);
@@ -108,8 +109,7 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
         try {
             List<ScheduleTaskEntity> tasks = parameter.generateSubTaskParameters(connectionConfig, schema).stream()
                     .map(param -> {
-                        // for public cloud
-                        param.setUid(FlowTaskUtil.getCloudMainAccountId(execution));
+                        param.setUid(uid);
                         return createScheduleTaskEntity(schedule.getId(), param);
                     }).collect(Collectors.toList());
 
