@@ -33,11 +33,9 @@ import com.oceanbase.tools.sqlparser.obmysql.OBParser.Alter_tablegroup_optionCon
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Modify_partition_infoContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Name_listContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Opt_partition_range_or_listContext;
-import com.oceanbase.tools.sqlparser.obmysql.OBParser.Relation_factorContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParserBaseVisitor;
 import com.oceanbase.tools.sqlparser.statement.alter.table.AlterTableAction;
 import com.oceanbase.tools.sqlparser.statement.alter.table.AlterTableAction.AlterColumnBehavior;
-import com.oceanbase.tools.sqlparser.statement.common.RelationFactor;
 import com.oceanbase.tools.sqlparser.statement.createtable.ColumnDefinition;
 import com.oceanbase.tools.sqlparser.statement.createtable.ConstraintState;
 import com.oceanbase.tools.sqlparser.statement.createtable.OutOfLineConstraint;
@@ -76,13 +74,16 @@ public class MySQLAlterTableActionFactory extends OBParserBaseVisitor<AlterTable
                     ctx.table_option_list_space_seperated()).generate());
             return alterTableAction;
         } else if (ctx.RENAME() != null) {
-            alterTableAction.setRenameToTable(getRelationFactor(ctx.relation_factor()));
+            alterTableAction.setRenameToTable(MySQLFromReferenceFactory.getRelationFactor(ctx.relation_factor()));
             return alterTableAction;
         } else if (ctx.CONVERT() != null && ctx.TO() != null) {
             alterTableAction.setCharset(ctx.charset_name().getText());
             if (ctx.collation() != null) {
                 alterTableAction.setCollation(ctx.collation().collation_name().getText());
             }
+            return alterTableAction;
+        } else if (ctx.REFRESH() != null) {
+            alterTableAction.setRefresh(true);
             return alterTableAction;
         }
         return visitChildren(ctx);
@@ -126,6 +127,9 @@ public class MySQLAlterTableActionFactory extends OBParserBaseVisitor<AlterTable
                 behavior.setDefaultValue(MySQLTableElementFactory.getSignedLiteral(aCtx.signed_literal()));
             }
             alterTableAction.alterColumnBehavior(colRef, behavior);
+        } else if (ctx.RENAME() != null) {
+            ColumnReference ref = new MySQLColumnRefFactory(ctx.column_definition_ref()).generate();
+            alterTableAction.renameColumn(ref, ctx.column_name().getText());
         }
         return alterTableAction;
     }
@@ -226,12 +230,6 @@ public class MySQLAlterTableActionFactory extends OBParserBaseVisitor<AlterTable
             action.modifyConstraint(ctx.constraint_name().getText(), state);
         }
         return action;
-    }
-
-    private RelationFactor getRelationFactor(Relation_factorContext ctx) {
-        RelationFactor relationFactor = new RelationFactor(ctx, MySQLFromReferenceFactory.getRelation(ctx));
-        relationFactor.setSchema(MySQLFromReferenceFactory.getSchemaName(ctx));
-        return relationFactor;
     }
 
     private List<String> getNames(Name_listContext context) {

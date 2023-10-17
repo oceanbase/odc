@@ -43,12 +43,24 @@ P_SIZE
     : P
     ;
 
+HIDE
+    : H I D E
+    ;
+
+DEFAULTS
+    : D E F A U L T S
+    ;
+
 ACCESS
     : ( A C C E S S )
     ;
 
 ADD
     : ( A D D )
+    ;
+
+NAMESPACE
+    : N A M E S P A C E
     ;
 
 ALL
@@ -75,8 +87,20 @@ ASC
     : ( A S C )
     ;
 
+XMLATTRIBUTES
+    : X M L A T T R I B U T E S
+    ;
+
 AUDIT
     : ( A U D I T )
+    ;
+
+JSON_OBJECT_VALUE
+	: '\'' ([A-Za-z0-9$_ ]* | [A-Za-z][A-Za-z0-9$_#]*) '\'' ' '* ':' ([A-Za-z$_]+ | [A-Za-z][A-Za-z0-9$_#]* | [0-9]+)
+    ;
+
+VALUE
+    : V A L U E
     ;
 
 BETWEEN
@@ -167,8 +191,36 @@ DISTINCT
     : ( D I S T I N C T )
     ;
 
+DOT
+    : D O T
+    ;
+
 DROP
     : ( D R O P )
+    ;
+
+MULTISET
+    : M U L T I S E T
+    ;
+
+JSON_ARRAYAGG
+    : J S O N '_' A R R A Y A G G
+    ;
+
+ARRAY
+    : A R R A Y
+    ;
+
+JSON_ARRAY
+    : J S O N '_' A R R A Y
+    ;
+
+JSON_EMPTY
+    : J S O N '_' E M P T Y
+    ;
+
+PASSING
+    : P A S S I N G
     ;
 
 ELSE
@@ -219,6 +271,10 @@ HOST
     : ( H O S T )
     ;
 
+ABSENT
+    : A B S E N T
+    ;
+
 IDENTIFIED
     : ( I D E N T I F I E D )
     ;
@@ -251,6 +307,10 @@ INSERT
     : ( I N S E R T )
     ;
 
+FIELD_DELIMITER
+    : F I E L D '_' D E L I M I T E R
+    ;
+
 INTEGER
     : ( I N T E G E R )
     ;
@@ -261,6 +321,10 @@ INTERSECT
 
 INTO
     : ( I N T O )
+    ;
+
+ORDINALITY
+    : O R D I N A L I T Y
     ;
 
 IS
@@ -325,6 +389,10 @@ NOWAIT
 
 NULLX
     : ( N U L L )
+    ;
+
+MISSING
+    : M I S S I N G
     ;
 
 NUMBER
@@ -409,6 +477,10 @@ ROWID
 
 ROWLABEL
     : ( R O W L A B E L )
+    ;
+
+ACTIVATE
+    : A C T I V A T E
     ;
 
 ROWNUM
@@ -536,8 +608,20 @@ WHERE
     : ( W H E R E )
     ;
 
+REDUNDANCY
+    : R E D U N D A N C Y
+    ;
+
 WITH
     : ( W I T H )
+    ;
+
+STANDBY
+    : S T A N D B Y
+    ;
+
+WITHOUT
+    : W I T H O U T
     ;
 
 WITHIN
@@ -705,6 +789,10 @@ ESCAPED
     : ( E S C A P E D )
     ;
 
+ALLOW
+    : A L L O W
+    ;
+
 EXIT
     : ( E X I T )
     ;
@@ -715,6 +803,10 @@ EXPLAIN
 
 FETCH
     : ( F E T C H )
+    ;
+
+EVALNAME
+    : E V A L N A M E
     ;
 
 FLOAT4
@@ -793,6 +885,10 @@ INT2
     : ( I N T '2')
     ;
 
+LIB
+    : L I B
+    ;
+
 INT3
     : ( I N T '3')
     ;
@@ -857,6 +953,14 @@ LINES
     : ( L I N E S )
     ;
 
+BADFILE
+    : B A D F I L E
+    ;
+
+LOG_DISK_SIZE
+    : L O G '_' D I S K '_' S I Z E
+    ;
+
 LOAD
     : ( L O A D )
     ;
@@ -867,6 +971,10 @@ LOCALTIMESTAMP
 
 LONGBLOB
     : ( L O N G B L O B )
+    ;
+
+SWITCHOVER
+    : S W I T C H O V E R
     ;
 
 LONGTEXT
@@ -907,6 +1015,10 @@ MEDIUMINT
 
 MERGE
     : ( M E R G E )
+    ;
+
+REJECT
+    : R E J E C T
     ;
 
 MEDIUMTEXT
@@ -969,6 +1081,10 @@ OUTER
     : ( O U T E R )
     ;
 
+IOPS_WEIGHT
+    : I O P S '_' W E I G H T
+    ;
+
 OUTFILE
     : ( O U T F I L E )
     ;
@@ -991,6 +1107,10 @@ PARTITION
 
 RANGE
     : ( R A N G E )
+    ;
+
+PLUS
+    : P L U S
     ;
 
 READ
@@ -1039,6 +1159,10 @@ RETURN
 
 RIGHT
     : ( R I G H T )
+    ;
+
+SCALARS
+    : S C A L A R S
     ;
 
 SECOND_MICROSECOND
@@ -1167,6 +1291,10 @@ UNDO
 
 UNLOCK
     : ( U N L O C K )
+    ;
+
+LINE_DELIMITER
+    : L I N E '_' D E L I M I T E R
     ;
 
 USE
@@ -1310,6 +1438,14 @@ MINVALUE
     : M I N V A L U E
     ;
 
+EXTRA
+    : E X T R A
+    ;
+
+EMPTY_FIELD_AS_NULL
+    : E M P T Y '_' F I E L D '_' A S '_' N U L L
+    ;
+
 UNINSTALL
     : U N I N S T A L L
     ;
@@ -1388,6 +1524,10 @@ PRECISION
 
 ROLE
     : R O L E
+    ;
+
+JSON_QUERY
+    : J S O N '_' Q U E R Y
     ;
 
 REWRITE_MERGE_VERSION
@@ -1530,6 +1670,10 @@ DISABLE
     : D I S A B L E
     ;
 
+STRICT
+    : S T R I C T
+    ;
+
 PORT
     : P O R T
     ;
@@ -1588,6 +1732,14 @@ NOLOGGING
 
 SEQUENCE
     : S E Q U E N C E
+    ;
+
+PRETTY
+    : P R E T T Y
+    ;
+
+PRETTY_COLOR
+    : P R E T T Y '_' C O L O R
     ;
 
 COLUMNS
@@ -1704,6 +1856,10 @@ EVERY
 
 BYTE
     : B Y T E
+    ;
+
+SHARDING
+    : S H A R D I N G
     ;
 
 FLUSH
@@ -1842,8 +1998,16 @@ DUPLICATE
     : D U P L I C A T E
     ;
 
+XMLTYPE
+    : X M L T Y P E
+    ;
+
 USAGE
     : U S A G E
+    ;
+
+FIELD_OPTIONALLY_ENCLOSED_BY
+    : F I E L D '_' O P T I O N A L L Y '_' E N C L O S E D '_' B Y
     ;
 
 WAIT
@@ -2074,6 +2238,10 @@ SHARED
     : S H A R E D
     ;
 
+EXTERNAL
+    : E X T E R N A L
+    ;
+
 DUMP
     : D U M P
     ;
@@ -2104,6 +2272,10 @@ MAX_CONNECTIONS_PER_HOUR
 
 FAILED_LOGIN_ATTEMPTS
     : F A I L E D '_' L O G I N '_' A T T E M P T S
+    ;
+
+ENCODING
+    : E N C O D I N G
     ;
 
 SECOND
@@ -2156,6 +2328,14 @@ POSITION
 
 DISCARD
     : D I S C A R D
+    ;
+
+PATTERN
+    : P A T T E R N
+    ;
+
+RECOVERY_WINDOW
+    : R E C O V E R Y '_' W I N D O W
     ;
 
 RECOVER
@@ -2272,6 +2452,10 @@ VARIANCE
 
 SNAPSHOT
     : S N A P S H O T
+    ;
+
+JSON_EXISTS
+    : J S O N '_' E X I S T S
     ;
 
 STATISTICS
@@ -2406,8 +2590,16 @@ SUBDATE
     : S U B D A T E
     ;
 
+INCREMENTAL
+    : I N C R E M E N T A L
+    ;
+
 QUOTA
     : Q U O T A
+    ;
+
+VERIFY
+    : V E R I F Y
     ;
 
 CONTAINS
@@ -2460,6 +2652,10 @@ SHUTDOWN
 
 VERBOSE
     : V E R B O S E
+    ;
+
+JSON_EQUAL
+    : J S O N '_' E Q U A L
     ;
 
 CLUSTER_NAME
@@ -2626,6 +2822,18 @@ SQL_CALC_FOUND_ROW
     : S Q L '_' C A L C '_' F O U N D '_' R O W
     ;
 
+TREAT
+    : T R E A T
+    ;
+
+TYPENAME
+    : T Y P E N A M E
+    ;
+
+MY_NAME
+    : M Y '_' N A M E
+    ;
+
 NAMES
     : N A M E S
     ;
@@ -2648,6 +2856,10 @@ REPLICATION
 
 REGR_SYY
     : R E G R '_' S Y Y
+    ;
+
+INITIALIZED
+    : I N I T I A L I Z E D
     ;
 
 REMOVE
@@ -2684,6 +2896,10 @@ OWN
 
 NO_WAIT
     : N O '_' W A I T
+    ;
+
+BACKUP_COPIES
+    : B A C K U P '_' C O P I E S
     ;
 
 UNIT_NUM
@@ -2778,6 +2994,10 @@ REORGANIZE
     : R E O R G A N I Z E
     ;
 
+TRIM_SPACE
+    : T R I M '_' S P A C E
+    ;
+
 BLOCK_SIZE
     : B L O C K '_' S I Z E
     ;
@@ -2792,6 +3012,10 @@ MINOR
 
 RESTRICTED
     : R E S T R I C T E D
+    ;
+
+GLOBALLY
+    : G L O B A L L Y
     ;
 
 RESUME
@@ -2820,6 +3044,10 @@ MAXTRANS
 
 SUPER
     : S U P E R
+    ;
+
+JSON_OBJECT
+    : J S O N '_' O B J E C T
     ;
 
 COMMIT
@@ -2870,6 +3098,10 @@ IPC
     : I P C
     ;
 
+PATH
+    : P A T H
+    ;
+
 TRIM
     : T R I M
     ;
@@ -2908,6 +3140,22 @@ STORAGE
 
 MEDIUM
     : M E D I U M
+    ;
+
+XMLPARSE
+    : X M L P A R S E
+    ;
+
+WELLFORMED
+    : W E L L F O R M E D
+    ;
+
+DOCUMENT
+    : D O C U M E N T
+    ;
+
+XMLAGG
+    : X M L A G G
     ;
 
 USE_FRM
@@ -3046,6 +3294,10 @@ SQL_THREAD
     : S Q L '_' T H R E A D
     ;
 
+SKIP_HEADER
+    : S K I P '_' H E A D E R
+    ;
+
 TYPES
     : T Y P E S
     ;
@@ -3070,6 +3322,14 @@ PERCENTILE_DISC
     : P E R C E N T I L E '_' D I S C
     ;
 
+XMLCAST
+    : X M L C A S T
+    ;
+
+XMLSERIALIZE
+    : X M L S E R I A L I Z E
+    ;
+
 FIXED
     : F I X E D
     ;
@@ -3088,6 +3348,10 @@ END
 
 PRESERVE
     : P R E S E R V E
+    ;
+
+ASIS
+    : A S I S
     ;
 
 SQL_BUFFER_RESULT
@@ -3142,6 +3406,14 @@ STORAGE_FORMAT_VERSION
     : S T O R A G E '_' F O R M A T '_' V E R S I O N
     ;
 
+VERSION
+    : V E R S I O N
+    ;
+
+INDENT
+    : I N D E N T
+    ;
+
 ISOLATION_LEVEL
     : I S O L A T I O N '_' L E V E L
     ;
@@ -3192,6 +3464,10 @@ SLAVE
 
 GTS
     : G T S
+    ;
+
+SKIP_BLANK_LINES
+    : S K I P '_' B L A N K '_' L I N E S
     ;
 
 EXPORT
@@ -3342,6 +3618,10 @@ HIGH
     : H I G H
     ;
 
+LAX
+    : L A X
+    ;
+
 SQL_TSI_YEAR
     : S Q L '_' T S I '_' Y E A R
     ;
@@ -3490,8 +3770,16 @@ PLI
     : P L I
     ;
 
+UNIT_GROUP
+    : U N I T '_' G R O U P
+    ;
+
 ERROR_CODE
     : E R R O R '_' C O D E
+    ;
+
+UPDATEXML
+    : U P D A T E X M L
     ;
 
 PHASE
@@ -3534,6 +3822,10 @@ BLOCK_INDEX
     : B L O C K '_' I N D E X
     ;
 
+DEBUG
+    : D E B U G
+    ;
+
 SERVER_IP
     : S E R V E R '_' I P
     ;
@@ -3574,6 +3866,10 @@ CLEAN
     : C L E A N
     ;
 
+NESTED
+    : N E S T E D
+    ;
+
 MASTER_SSL
     : M A S T E R '_' S S L
     ;
@@ -3608,6 +3904,10 @@ MAXINSTANCES
 
 CLOSE
     : C L O S E
+    ;
+
+JSON_OBJECTAGG
+    : J S O N '_' O B J E C T A G G
     ;
 
 SET_TP
@@ -3694,6 +3994,10 @@ EXTENDED_NOADDR
     : E X T E N D E D '_' N O A D D R
     ;
 
+JSON_MERGEPATCH
+    : J S O N '_' M E R G E P A T C H
+    ;
+
 SPLIT
     : S P L I T
     ;
@@ -3712,6 +4016,10 @@ COVAR_POP
 
 SEED
     : S E E D
+    ;
+
+DESCRIPTION
+    : D E S C R I P T I O N
     ;
 
 RTREE
@@ -3768,6 +4076,10 @@ BREADTH
 
 NOCACHE
     : N O C A C H E
+    ;
+
+DISALLOW
+    : D I S A L L O W
     ;
 
 PRIVILEGE
@@ -3882,6 +4194,10 @@ CONTRIBUTORS
     : C O N T R I B U T O R S
     ;
 
+MEMORY_SIZE
+    : M E M O R Y '_' S I Z E
+    ;
+
 EMPTY
     : E M P T Y
     ;
@@ -3968,6 +4284,10 @@ EXTENDED
 
 LISTS
     : L I S T S
+    ;
+
+LOG
+    : L O G
     ;
 
 TIME_ZONE_INFO
@@ -4070,6 +4390,10 @@ SQL_NO_CACHE
     : S Q L '_' N O '_' C A C H E
     ;
 
+MISMATCH
+    : M I S M A T C H
+    ;
+
 EXECUTE
     : E X E C U T E
     ;
@@ -4114,6 +4438,14 @@ LEAD
     : L E A D
     ;
 
+JSON_TABLE
+    : J S O N '_' T A B L E
+    ;
+
+JSON_VALUE
+    : J S O N '_' V A L U E
+    ;
+
 DBA
     : D B A
     ;
@@ -4134,6 +4466,14 @@ TABLEGROUP_ID
     : T A B L E G R O U P '_' I D
     ;
 
+GROUP_ID
+    : G R O U P '_' I D
+    ;
+
+GROUPING_ID
+    : G R O U P I N G '_' I D
+    ;
+
 TOP_K_FRE_HIST
     : T O P '_' K '_' F R E '_' H I S T
     ;
@@ -4152,6 +4492,10 @@ TRACING
 
 NTILE
     : N T I L E
+    ;
+
+NULL_IF_EXETERNAL
+    : N U L L '_' I F '_' E X E T E R N A L
     ;
 
 SKEWONLY
@@ -4218,6 +4562,10 @@ OCCUR
     : O C C U R
     ;
 
+ACCESSED
+    : A C C E S S E D
+    ;
+
 DATA
     : D A T A
     ;
@@ -4254,6 +4602,10 @@ APPROX_COUNT_DISTINCT
     : A P P R O X '_' C O U N T '_' D I S T I N C T
     ;
 
+DDL
+    : D D L
+    ;
+
 BASIC
     : B A S I C
     ;
@@ -4264,6 +4616,34 @@ DEFAULT_TABLEGROUP
 
 CONTENTS
     : C O N T E N T S
+    ;
+
+CONTENT
+    : C O N T E N T
+    ;
+
+XMLELEMENT
+    : X M L E L E M E N T
+    ;
+
+ENTITYESCAPING
+    : E N T I T Y E S C A P I N G
+    ;
+
+EXTRACTVALUE
+    : E X T R A C T V A L U E
+    ;
+
+NOENTITYESCAPING
+    : N O E N T I T Y E S C A P I N G
+    ;
+
+NOSCHEMACHECK
+    : N O S C H E M A C H E C K
+    ;
+
+SCHEMACHECK
+    : S C H E M A C H E C K
     ;
 
 NO_PX_JOIN_FILTER
@@ -4286,6 +4666,14 @@ WEEK
     : W E E K
     ;
 
+UNCONDITIONAL
+    : U N C O N D I T I O N A L
+    ;
+
+CONDITIONAL
+    : C O N D I T I O N A L
+    ;
+
 NULLS
     : N U L L S
     ;
@@ -4300,6 +4688,10 @@ CASCADED
 
 PLUGIN
     : P L U G I N
+    ;
+
+ENCRYPTED
+    : E N C R Y P T E D
     ;
 
 TENANT
@@ -4340,8 +4732,20 @@ At
     : '@'
     ;
 
-Quote
-    : '\''
+LeftBracket
+    : '['
+    ;
+
+LeftBrace
+    : '{'
+    ;
+
+RightBracket
+    : ']'
+    ;
+
+RightBrace
+    : '}'
     ;
 
 DATE_VALUE
@@ -4496,8 +4900,16 @@ PARSER_SYNTAX_ERROR
     | '.'
     ;
 
+PLSQL_VARIABLE
+    : ('$''$'[A-Za-z_][A-Za-z0-9_$#]*)
+    ;
+
 MULTISET_OP
     : ( M U L T I S E T [ \t\n\r\f]+( U N I O N | I N T E R S E C T | E X C E P T ))
+    ;
+
+A_
+    : A
     ;
 
 NAME_OB

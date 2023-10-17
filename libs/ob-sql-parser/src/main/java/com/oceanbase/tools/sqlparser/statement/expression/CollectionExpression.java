@@ -40,8 +40,8 @@ import lombok.NonNull;
  */
 @Getter
 @NoArgsConstructor
-@EqualsAndHashCode(callSuper = false)
-public class CollectionExpression extends BaseStatement implements Expression {
+@EqualsAndHashCode(callSuper = true)
+public class CollectionExpression extends BaseExpression {
 
     private final List<Expression> expressionList = new ArrayList<>();
 
@@ -61,7 +61,7 @@ public class CollectionExpression extends BaseStatement implements Expression {
     }
 
     @Override
-    public String toString() {
+    public String doToString() {
         return "(" + this.expressionList.stream().map(Object::toString).collect(Collectors.joining(",")) + ")";
     }
 

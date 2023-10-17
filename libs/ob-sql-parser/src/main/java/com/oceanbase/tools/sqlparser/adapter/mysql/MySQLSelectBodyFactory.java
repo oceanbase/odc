@@ -29,14 +29,12 @@ import com.oceanbase.tools.sqlparser.adapter.StatementFactory;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.ExprContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.From_listContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Groupby_clauseContext;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Insert_valsContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Named_windowsContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.No_table_selectContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.No_table_select_with_order_and_limitContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Query_expression_option_listContext;
-import com.oceanbase.tools.sqlparser.obmysql.OBParser.Select_clauseContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Select_clause_setContext;
-import com.oceanbase.tools.sqlparser.obmysql.OBParser.Select_clause_set_leftContext;
-import com.oceanbase.tools.sqlparser.obmysql.OBParser.Select_clause_set_rightContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Select_clause_set_with_order_and_limitContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Select_expr_listContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Select_no_parensContext;
@@ -47,10 +45,13 @@ import com.oceanbase.tools.sqlparser.obmysql.OBParser.Set_typeContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Simple_selectContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Simple_select_with_order_and_limitContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Table_referencesContext;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Table_values_clauseContext;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Table_values_clause_with_order_by_and_limitContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.With_clauseContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParserBaseVisitor;
 import com.oceanbase.tools.sqlparser.statement.Expression;
 import com.oceanbase.tools.sqlparser.statement.common.Window;
+import com.oceanbase.tools.sqlparser.statement.expression.ConstExpression;
 import com.oceanbase.tools.sqlparser.statement.select.ForUpdate;
 import com.oceanbase.tools.sqlparser.statement.select.FromReference;
 import com.oceanbase.tools.sqlparser.statement.select.GroupBy;
@@ -129,24 +130,31 @@ public class MySQLSelectBodyFactory
         }
         if (ctx.for_update_clause() != null) {
             StatementFactory<ForUpdate> factory = new MySQLForUpdateFactory(ctx.for_update_clause());
-            ForUpdate forUpdate = factory.generate();
-            if (select.getRelatedSelect() == null) {
-                select.setForUpdate(forUpdate);
-            } else {
-                select.getRelatedSelect().setForUpdate(forUpdate);
-            }
+            select.getLastSelectBody().setForUpdate(factory.generate());
+        }
+        if (ctx.opt_lock_in_share_mode() != null) {
+            select.getLastSelectBody().setLockInShareMode(true);
         }
         return select;
     }
 
     @Override
-    public SelectBody visitSelect_clause(Select_clauseContext ctx) {
-        if (ctx.no_table_select_with_order_and_limit() != null) {
-            return visit(ctx.no_table_select_with_order_and_limit());
-        } else if (ctx.simple_select_with_order_and_limit() != null) {
-            return visit(ctx.simple_select_with_order_and_limit());
+    public SelectBody visitTable_values_clause(Table_values_clauseContext ctx) {
+        return new SelectBody(ctx, ctx.values_row_list().row_value().stream()
+                .map(c -> getValueRows(c.insert_vals())).collect(Collectors.toList()));
+    }
+
+    @Override
+    public SelectBody visitTable_values_clause_with_order_by_and_limit(
+            Table_values_clause_with_order_by_and_limitContext ctx) {
+        SelectBody selectBody = new SelectBody(ctx, visit(ctx.table_values_clause()));
+        if (ctx.order_by() != null) {
+            selectBody.setOrderBy(new MySQLOrderByFactory(ctx.order_by()).generate());
         }
-        return visit(ctx.select_with_parens_with_order_and_limit());
+        if (ctx.limit_clause() != null) {
+            selectBody.setLimit(new MySQLLimitFactory(ctx.limit_clause()).generate());
+        }
+        return selectBody;
     }
 
     @Override
@@ -154,21 +162,11 @@ public class MySQLSelectBodyFactory
         SelectBody select = new SelectBody(ctx, visit(ctx.select_with_parens()));
         if (ctx.order_by() != null) {
             StatementFactory<OrderBy> factory = new MySQLOrderByFactory(ctx.order_by());
-            OrderBy orderBy = factory.generate();
-            if (select.getRelatedSelect() == null) {
-                select.setOrderBy(orderBy);
-            } else {
-                select.getRelatedSelect().setOrderBy(orderBy);
-            }
+            select.getLastSelectBody().setOrderBy(factory.generate());
         }
         if (ctx.limit_clause() != null) {
             StatementFactory<Limit> factory = new MySQLLimitFactory(ctx.limit_clause());
-            Limit limit = factory.generate();
-            if (select.getRelatedSelect() == null) {
-                select.setLimit(limit);
-            } else {
-                select.getRelatedSelect().setLimit(limit);
-            }
+            select.getLastSelectBody().setLimit(factory.generate());
         }
         return select;
     }
@@ -178,11 +176,11 @@ public class MySQLSelectBodyFactory
         SelectBody select = new SelectBody(ctx, visit(ctx.select_clause_set()));
         if (ctx.order_by() != null) {
             StatementFactory<OrderBy> factory = new MySQLOrderByFactory(ctx.order_by());
-            select.getRelatedSelect().setOrderBy(factory.generate());
+            select.getLastSelectBody().setOrderBy(factory.generate());
         }
         if (ctx.limit_clause() != null) {
             StatementFactory<Limit> factory = new MySQLLimitFactory(ctx.limit_clause());
-            select.getRelatedSelect().setLimit(factory.generate());
+            select.getLastSelectBody().setLimit(factory.generate());
         }
         return select;
     }
@@ -194,11 +192,11 @@ public class MySQLSelectBodyFactory
             left = new SelectBody(ctx, visit(ctx.select_clause_set()));
             if (ctx.order_by() != null) {
                 StatementFactory<OrderBy> factory = new MySQLOrderByFactory(ctx.order_by());
-                left.getRelatedSelect().setOrderBy(factory.generate());
+                left.getLastSelectBody().setOrderBy(factory.generate());
             }
             if (ctx.limit_clause() != null) {
                 StatementFactory<Limit> factory = new MySQLLimitFactory(ctx.limit_clause());
-                left.getRelatedSelect().setLimit(factory.generate());
+                left.getLastSelectBody().setLimit(factory.generate());
             }
         } else if (ctx.select_clause_set_left() != null) {
             left = new SelectBody(ctx, visit(ctx.select_clause_set_left()));
@@ -206,44 +204,10 @@ public class MySQLSelectBodyFactory
         if (left == null) {
             throw new IllegalStateException("Missing left clause");
         }
-        List<Select_clause_set_rightContext> s = ctx.select_clause_set_right();
-        SelectBody target = left;
-        while (target.getRelatedSelect() != null) {
-            target = target.getRelatedSelect().getSelect();
-        }
-        if (s.size() == 1) {
-            RelationType type = getRelationType(ctx.set_type(0));
-            SelectBody right = visit(s.get(0));
-            target.setRelatedSelect(new RelatedSelectBody(right, type));
-        } else {
-            for (int i = 0; i < s.size(); i++) {
-                RelationType type = getRelationType(ctx.set_type(i));
-                SelectBody right = visit(s.get(i));
-                target.setRelatedSelect(new RelatedSelectBody(right, type));
-                target = target.getRelatedSelect().getSelect();
-            }
-        }
+        RelationType type = getRelationType(ctx.set_type());
+        SelectBody right = visit(ctx.select_clause_set_right());
+        left.getLastSelectBody().setRelatedSelect(new RelatedSelectBody(right, type));
         return left;
-    }
-
-    @Override
-    public SelectBody visitSelect_clause_set_left(Select_clause_set_leftContext ctx) {
-        if (ctx.no_table_select_with_order_and_limit() != null) {
-            return visit(ctx.no_table_select_with_order_and_limit());
-        } else if (ctx.simple_select_with_order_and_limit() != null) {
-            return visit(ctx.simple_select_with_order_and_limit());
-        }
-        return visit(ctx.select_with_parens());
-    }
-
-    @Override
-    public SelectBody visitSelect_clause_set_right(Select_clause_set_rightContext ctx) {
-        if (ctx.no_table_select() != null) {
-            return visit(ctx.no_table_select());
-        } else if (ctx.simple_select() != null) {
-            return visit(ctx.simple_select());
-        }
-        return visit(ctx.select_with_parens());
     }
 
     private RelationType getRelationType(Set_typeContext setType) {
@@ -487,6 +451,28 @@ public class MySQLSelectBodyFactory
 
     private String getQueryExpr(Query_expression_option_listContext context) {
         return context.query_expression_option().stream().map(RuleContext::getText).collect(Collectors.joining(" "));
+    }
+
+    private List<Expression> getValueRows(Insert_valsContext ctx) {
+        Expression expr = null;
+        if (ctx.expr_or_default() != null) {
+            if (ctx.expr_or_default().expr() == null) {
+                expr = new ConstExpression(ctx.expr_or_default().DEFAULT());
+            } else {
+                expr = new MySQLExpressionFactory(ctx.expr_or_default().expr()).generate();
+            }
+        }
+        if (ctx.empty() != null || expr == null) {
+            return new ArrayList<>();
+        }
+        List<Expression> exprs;
+        if (ctx.insert_vals() == null) {
+            exprs = new ArrayList<>();
+        } else {
+            exprs = getValueRows(ctx.insert_vals());
+        }
+        exprs.add(expr);
+        return exprs;
     }
 
     /**

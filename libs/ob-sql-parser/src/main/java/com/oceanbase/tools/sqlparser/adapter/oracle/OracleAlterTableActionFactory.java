@@ -89,6 +89,9 @@ public class OracleAlterTableActionFactory extends OBParserBaseVisitor<AlterTabl
         } else if (ctx.RENAME() != null) {
             alterTableAction.setRenameToTable(getRelationFactor(ctx.relation_factor()));
             return alterTableAction;
+        } else if (ctx.REFRESH() != null) {
+            alterTableAction.setRefresh(true);
+            return alterTableAction;
         } else if (ctx.DROP() != null && ctx.CONSTRAINT() != null) {
             alterTableAction.setDropConstraintNames(Collections.singletonList(ctx.constraint_name().getText()));
             return alterTableAction;
@@ -294,6 +297,14 @@ public class OracleAlterTableActionFactory extends OBParserBaseVisitor<AlterTabl
                 actions.setIntos(elts);
             }
             alterTableAction.splitPartition(getRelationFactor(ctx.relation_factor()), actions);
+        } else if (ctx.RENAME() != null) {
+            String from = ctx.relation_name(0).getText();
+            String to = ctx.relation_name(1).getText();
+            if (ctx.PARTITION() != null) {
+                alterTableAction.renamePartition(from, to);
+            } else {
+                alterTableAction.renameSubPartition(from, to);
+            }
         }
         return alterTableAction;
     }
@@ -315,6 +326,11 @@ public class OracleAlterTableActionFactory extends OBParserBaseVisitor<AlterTabl
         RelationFactor relationFactor = new RelationFactor(ctx, OracleFromReferenceFactory.getRelation(ctx));
         relationFactor.setSchema(OracleFromReferenceFactory.getSchemaName(ctx));
         relationFactor.setUserVariable(OracleFromReferenceFactory.getUserVariable(ctx));
+        if (ctx.normal_relation_factor() != null
+                && ctx.normal_relation_factor().opt_reverse_link_flag() != null
+                && ctx.normal_relation_factor().opt_reverse_link_flag().Not() != null) {
+            relationFactor.setReverseLink(true);
+        }
         return relationFactor;
     }
 

@@ -54,6 +54,8 @@ public class ColumnAttributes extends BaseOptions {
     private Integer id;
     private String comment;
     private Expression onUpdate;
+    private String collation;
+    private Integer srid;
     private List<InLineConstraint> constraints;
 
     public ColumnAttributes(@NonNull ParserRuleContext context) {
@@ -115,6 +117,12 @@ public class ColumnAttributes extends BaseOptions {
             builder.append(" ").append(this.constraints.stream()
                     .map(InLineConstraint::toString)
                     .collect(Collectors.joining(" ")));
+        }
+        if (this.srid != null) {
+            builder.append(" SRID ").append(this.srid);
+        }
+        if (this.collation != null) {
+            builder.append(" COLLATE ").append(this.collation);
         }
         return builder.length() == 0 ? "" : builder.substring(1);
     }

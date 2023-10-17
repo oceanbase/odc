@@ -21,7 +21,6 @@ import java.util.stream.Collectors;
 import org.apache.commons.collections4.CollectionUtils;
 
 import com.oceanbase.tools.sqlparser.adapter.StatementFactory;
-import com.oceanbase.tools.sqlparser.oboracle.OBParser;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Alias_name_listContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Common_table_exprContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParserBaseVisitor;
@@ -57,12 +56,18 @@ public class OracleWithTableFactory extends OBParserBaseVisitor<WithTable> imple
     }
 
     @Override
-    public WithTable visitCommon_table_expr(OBParser.Common_table_exprContext ctx) {
+    public WithTable visitCommon_table_expr(Common_table_exprContext ctx) {
         String relationName = ctx.relation_name().getText();
         SelectBody select;
         if (ctx.select_no_parens() != null) {
             StatementFactory<SelectBody> factory = new OracleSelectBodyFactory(ctx.select_no_parens());
             select = factory.generate();
+            if (ctx.order_by() != null) {
+                select.getLastSelectBody().setOrderBy(new OracleOrderByFactory(ctx.order_by()).generate());
+            }
+            if (ctx.fetch_next_clause() != null) {
+                select.getLastSelectBody().setFetch(new OracleFetchFactory(ctx.fetch_next_clause()).generate());
+            }
         } else if (ctx.with_select() != null) {
             StatementFactory<SelectBody> factory = new OracleSelectBodyFactory(ctx.with_select());
             select = factory.generate();
@@ -76,10 +81,10 @@ public class OracleWithTableFactory extends OBParserBaseVisitor<WithTable> imple
             StatementFactory<SelectBody> factory = new OracleSelectBodyFactory(ctx.subquery());
             select = factory.generate();
             StatementFactory<OrderBy> orderByFactory = new OracleOrderByFactory(ctx.order_by());
-            select.setOrderBy(orderByFactory.generate());
+            select.getLastSelectBody().setOrderBy(orderByFactory.generate());
             if (ctx.fetch_next_clause() != null) {
                 StatementFactory<Fetch> fetchFactory = new OracleFetchFactory(ctx.fetch_next_clause());
-                select.setFetch(fetchFactory.generate());
+                select.getLastSelectBody().setFetch(fetchFactory.generate());
             }
         }
         WithTable withTable = new WithTable(ctx, relationName, select);

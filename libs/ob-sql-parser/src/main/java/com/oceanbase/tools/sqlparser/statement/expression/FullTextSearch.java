@@ -52,15 +52,14 @@ public class FullTextSearch extends FunctionCall {
     }
 
     @Override
-    public String toString() {
+    public String doToString() {
         StringBuilder builder = new StringBuilder();
-        builder.append(super.toString());
+        builder.append(super.doToString());
         builder.append(" AGAINST(").append(this.against);
         if (this.searchMode != null) {
             builder.append(" ").append(this.searchMode.getValue());
         }
-        builder.append(")");
-        return builder.toString();
+        return builder.append(")").toString();
     }
 
 }

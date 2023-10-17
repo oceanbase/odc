@@ -32,15 +32,15 @@ import lombok.NonNull;
 public abstract class BaseOptions extends BaseStatement {
 
     protected BaseOptions() {
-        super(null, null);
+        super();
     }
 
     protected BaseOptions(TerminalNode terminalNode) {
-        super(null, terminalNode);
+        super(terminalNode);
     }
 
     protected BaseOptions(ParserRuleContext ruleNode) {
-        super(ruleNode, null);
+        super(ruleNode);
     }
 
     public <T extends BaseOptions> void merge(@NonNull T other) {

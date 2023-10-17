@@ -679,6 +679,17 @@ public class MySQLAlterTableActionFactoryTest {
         Assert.assertEquals(expect, actual);
     }
 
+    @Test
+    public void generate_renameColumn_succeed() {
+        StatementFactory<AlterTableAction> factory = new MySQLAlterTableActionFactory(
+                getActionContext("rename column id to abcd"));
+        AlterTableAction actual = factory.generate();
+
+        AlterTableAction expect = new AlterTableAction();
+        expect.renameColumn(new ColumnReference(null, null, "id"), "abcd");
+        Assert.assertEquals(expect, actual);
+    }
+
     private Alter_table_actionContext getActionContext(String action) {
         OBLexer lexer = new OBLexer(CharStreams.fromString(action));
         CommonTokenStream tokens = new CommonTokenStream(lexer);

@@ -71,6 +71,20 @@ public class MySQLAlterTableFactoryTest {
         Assert.assertEquals(expect, actual);
     }
 
+    @Test
+    public void generate_alterExternalTable1_succeed() {
+        StatementFactory<AlterTable> factory = new MySQLAlterTableFactory(
+                getAlterContext("alter external table a.b refresh"));
+        AlterTable actual = factory.generate();
+
+        AlterTableAction a = new AlterTableAction();
+        a.setRefresh(true);
+        AlterTable expect = new AlterTable("b", Collections.singletonList(a));
+        expect.setExternal(true);
+        expect.setSchema("a");
+        Assert.assertEquals(expect, actual);
+    }
+
     private Alter_table_stmtContext getAlterContext(String action) {
         OBLexer lexer = new OBLexer(CharStreams.fromString(action));
         CommonTokenStream tokens = new CommonTokenStream(lexer);
