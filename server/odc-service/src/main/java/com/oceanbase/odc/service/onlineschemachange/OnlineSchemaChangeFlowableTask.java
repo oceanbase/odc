@@ -33,6 +33,8 @@ import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
 import com.oceanbase.odc.metadb.task.TaskEntity;
+import com.oceanbase.odc.service.common.util.SpringContextUtil;
+import com.oceanbase.odc.service.connection.CloudMetadataClient;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.flow.task.BaseODCFlowTaskDelegate;
 import com.oceanbase.odc.service.flow.task.model.OnlineSchemaChangeTaskResult;
@@ -96,8 +98,7 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
         this.organizationId = creator.getOrganizationId();
         this.status = TaskStatus.RUNNING;
         this.flowTaskId = taskId;
-        // for public cloud
-        String uid = FlowTaskUtil.getCloudMainAccountId(execution);
+
         OnlineSchemaChangeParameters parameter = FlowTaskUtil.getOnlineSchemaChangeParameter(execution);
         ConnectionConfig connectionConfig = FlowTaskUtil.getConnectionConfig(execution);
         String schema = FlowTaskUtil.getSchemaName(execution);
@@ -109,7 +110,10 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
         try {
             List<ScheduleTaskEntity> tasks = parameter.generateSubTaskParameters(connectionConfig, schema).stream()
                     .map(param -> {
-                        param.setUid(uid);
+                        // for public cloud
+                        if (SpringContextUtil.getBean(CloudMetadataClient.class).supportsCloudMetadata()) {
+                            param.setUid(FlowTaskUtil.getCloudMainAccountId(execution));
+                        }
                         return createScheduleTaskEntity(schedule.getId(), param);
                     }).collect(Collectors.toList());
 
