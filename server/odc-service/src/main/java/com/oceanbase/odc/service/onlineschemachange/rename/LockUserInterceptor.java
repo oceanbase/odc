@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.onlineschemachange.rename;
 
 import java.util.List;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -28,10 +29,8 @@ import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
-import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.model.OdcDBSession;
-import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 import com.oceanbase.odc.service.session.DBSessionManageFacade;
@@ -67,7 +66,7 @@ public class LockUserInterceptor implements RenameTableInterceptor {
     @Override
     public void postRenamed(RenameTableParameters parameters) {
         List<String> users = getUserIds();
-        List<String> whiteUsers = OscDBUserUtil.getLockUserWhiteList(connSession);
+        Set<String> whiteUsers = OscDBUserUtil.getLockUserWhiteList(connSession);
         users.removeAll(whiteUsers);
         batchExecuteUnlockUser(users);
     }
@@ -84,7 +83,7 @@ public class LockUserInterceptor implements RenameTableInterceptor {
 
     private void lockUserAndKillSession(Integer lockTableTimeOutSeconds) {
         List<String> users = getUserIds();
-        List<String> whiteUsers = OscDBUserUtil.getLockUserWhiteList(connSession);
+        Set<String> whiteUsers = OscDBUserUtil.getLockUserWhiteList(connSession);
         users.removeAll(whiteUsers);
         batchExecuteLockUser(users);
         dbSessionManageFacade.killAllSessions(connSession,
@@ -135,8 +134,7 @@ public class LockUserInterceptor implements RenameTableInterceptor {
         filterList.add(currentSessionId);
         log.info("Kill session filter session id : {}", JsonUtils.toJson(filterList));
 
-        List<String> whiteUserList = OscDBUserUtil
-                .getLockUserWhiteList((ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(connectionSession));
+        Set<String> whiteUserList = OscDBUserUtil.getLockUserWhiteList(connectionSession);
         log.info("Kill session filter user: {}", JsonUtils.toJson(whiteUserList));
 
         // filter current session

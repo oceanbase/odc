@@ -16,9 +16,9 @@
 
 package com.oceanbase.odc.service.onlineschemachange.rename;
 
-import java.util.List;
+import java.util.Set;
 
-import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.oceanbase.odc.common.util.VersionUtils;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
@@ -43,13 +43,13 @@ public class OscDBUserUtil {
         }
     }
 
-    public static List<String> getLockUserWhiteList(ConnectionSession connSession) {
+    public static Set<String> getLockUserWhiteList(ConnectionSession connSession) {
         ConnectionConfig config = (ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(connSession);
         return getLockUserWhiteList(config);
     }
 
-    public static List<String> getLockUserWhiteList(ConnectionConfig config) {
-        List<String> users = Lists.newArrayList(config.getUsername());
+    public static Set<String> getLockUserWhiteList(ConnectionConfig config) {
+        Set<String> users = Sets.newHashSet(config.getUsername());
         if (config.getDialectType().isMysql()) {
             users.add("root");
         } else {

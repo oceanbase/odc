@@ -612,7 +612,7 @@ public class DatabaseService {
         try {
             DBSchemaAccessor dbSchemaAccessor = DBSchemaAccessors.create(connSession);
             List<DBObjectIdentity> dbUsers = dbSchemaAccessor.listUsers();
-            List<String> whiteUsers = OscDBUserUtil.getLockUserWhiteList(config);
+            Set<String> whiteUsers = OscDBUserUtil.getLockUserWhiteList(config);
             return dbUsers.stream().map(DBObjectIdentity::getName)
                     .filter(u -> !whiteUsers.contains(u)).collect(Collectors.toList());
         } finally {
