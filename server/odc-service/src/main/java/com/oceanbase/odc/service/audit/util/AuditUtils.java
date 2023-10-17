@@ -193,8 +193,6 @@ public class AuditUtils {
                     return AuditEventAction.STOP_ALTER_SCHEDULE_TASK;
                 case ONLINE_SCHEMA_CHANGE:
                     return AuditEventAction.STOP_ONLINE_SCHEMA_CHANGE_TASK;
-                case PERMISSION_APPLY_PROJECT:
-                    return AuditEventAction.STOP_PERMISSION_APPLY_PROJECT_TASK;
             }
         }
         if (action == AuditEventAction.EXECUTE_TASK) {
@@ -217,8 +215,6 @@ public class AuditUtils {
                     return AuditEventAction.EXECUTE_ALTER_SCHEDULE_TASK;
                 case ONLINE_SCHEMA_CHANGE:
                     return AuditEventAction.EXECUTE_ONLINE_SCHEMA_CHANGE_TASK;
-                case PERMISSION_APPLY_PROJECT:
-                    return AuditEventAction.EXECUTE_PERMISSION_APPLY_PROJECT_TASK;
             }
         }
         if (action == AuditEventAction.APPROVE) {

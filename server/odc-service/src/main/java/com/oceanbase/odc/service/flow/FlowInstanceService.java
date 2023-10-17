@@ -688,7 +688,6 @@ public class FlowInstanceService {
             CreateFlowInstanceReq flowInstanceReq, ConnectionConfig connectionConfig) {
         log.info("Start creating flow instance, flowInstanceReq={}", flowInstanceReq);
         CreateFlowInstanceReq preCheckReq = new CreateFlowInstanceReq();
-        preCheckReq.setConnectionId(flowInstanceReq.getConnectionId());
         preCheckReq.setTaskType(TaskType.PRE_CHECK);
         preCheckReq.setConnectionId(flowInstanceReq.getConnectionId());
         preCheckReq.setDatabaseId(flowInstanceReq.getDatabaseId());

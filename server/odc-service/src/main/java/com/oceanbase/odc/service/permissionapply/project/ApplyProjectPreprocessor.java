@@ -16,16 +16,22 @@
 
 package com.oceanbase.odc.service.permissionapply.project;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.i18n.LocaleContextHolder;
 
+import com.oceanbase.odc.common.i18n.I18n;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.metadb.collaboration.ProjectEntity;
+import com.oceanbase.odc.metadb.iam.resourcerole.ResourceRoleEntity;
 import com.oceanbase.odc.service.collaboration.project.ProjectService;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
 import com.oceanbase.odc.service.flow.processor.FlowTaskPreprocessor;
@@ -55,27 +61,36 @@ public class ApplyProjectPreprocessor implements Preprocessor {
         Verify.notNull(parameter.getProjectId(), "projectId");
         Verify.notEmpty(parameter.getResourceRoleIds(), "resourceRoleIds");
         Verify.notBlank(parameter.getApplyReason(), "applyReason");
-        checkProjectExistAndValid(parameter.getProjectId());
-        checkResourceRoleExist(parameter.getResourceRoleIds());
+        ProjectEntity projectEntity = checkProjectExistAndValid(parameter.getProjectId());
+        List<ResourceRoleEntity> resourceRoleEntities = checkResourceRoleExist(parameter.getResourceRoleIds());
         parameter.setUserId(authenticationFacade.currentUserId());
-        req.setProjectId(parameter.getProjectId());
+        req.setProjectId(projectEntity.getId());
+        req.setProjectName(projectEntity.getName());
+        Locale locale = LocaleContextHolder.getLocale();
+        String i18nKey = "com.oceanbase.odc.builtin-resource.permission-apply.project.description";
+        req.setDescription(I18n.translate(i18nKey, new Object[] {projectEntity.getName(),
+                resourceRoleEntities.stream().map(r -> r.getRoleName().name()).collect(Collectors.joining(","))},
+                locale));
     }
 
-    private void checkProjectExistAndValid(Long projectId) {
+    private ProjectEntity checkProjectExistAndValid(Long projectId) {
         ProjectEntity projectEntity = projectService.nullSafeGet(projectId);
         if (projectEntity.getOrganizationId() != authenticationFacade.currentOrganizationId()) {
             throw new NotFoundException(ResourceType.ODC_PROJECT, "id", projectId);
         }
+        return projectEntity;
     }
 
-    private void checkResourceRoleExist(List<Long> resourceRoleIds) {
+    private List<ResourceRoleEntity> checkResourceRoleExist(List<Long> resourceRoleIds) {
+        List<ResourceRoleEntity> resourceRoleEntities = new ArrayList<>();
         if (CollectionUtils.isEmpty(resourceRoleIds)) {
-            return;
+            return resourceRoleEntities;
         }
         for (Long resourceRoleId : resourceRoleIds) {
-            resourceRoleService.findResourceRoleById(resourceRoleId)
-                    .orElseThrow(() -> new NotFoundException(ResourceType.ODC_RESOURCE_ROLE, "id", resourceRoleId));
+            resourceRoleEntities.add(resourceRoleService.findResourceRoleById(resourceRoleId)
+                    .orElseThrow(() -> new NotFoundException(ResourceType.ODC_RESOURCE_ROLE, "id", resourceRoleId)));
         }
+        return resourceRoleEntities;
     }
 
 }
