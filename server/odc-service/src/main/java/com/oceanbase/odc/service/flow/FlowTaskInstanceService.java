@@ -648,8 +648,7 @@ public class FlowTaskInstanceService {
         return getTaskEntity(flowInstanceId, i -> i.getStatus().isFinalStatus()
                 && i.getTaskType() != TaskType.SQL_CHECK
                 && i.getTaskType() != TaskType.PRE_CHECK
-                && i.getTaskType() != TaskType.GENERATE_ROLLBACK
-                && i.getTaskType() != TaskType.PERMISSION_APPLY_PROJECT);
+                && i.getTaskType() != TaskType.GENERATE_ROLLBACK);
     }
 
     private Optional<TaskEntity> getDownloadableTaskEntity(@NonNull Long flowInstanceId) {
