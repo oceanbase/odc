@@ -241,7 +241,7 @@ public class DatabaseService {
             }
         });
         connectionId2LockUserRequired.forEach((k, v) -> {
-            if (v != null) {
+            if (v != null && v.left != null) {
                 try {
                     v.left.expire();
                 } catch (Exception ex) {
