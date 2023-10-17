@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
@@ -77,12 +78,18 @@ public class DBUserLogStatusMonitor implements DBUserMonitor {
 
     @Override
     public void start() {
-        Await.await().period(period)
-                .timeout(timeout)
-                .timeUnit(timeUnit)
-                .until(this::logAccountStatus)
-                .build()
-                .start();
+        try {
+            Await.await().period(period)
+                    .timeout(timeout)
+                    .timeUnit(timeUnit)
+                    .until(this::logAccountStatus)
+                    .build()
+                    .start();
+        } catch (CompletionException e) {
+            if (!(e.getCause() instanceof InterruptedException)) {
+                log.warn("DB user status monitor occur error: ", e);
+            }
+        }
         // This monitor be called stopped or timeout
         stopped.set(true);
     }

@@ -67,7 +67,7 @@ public class DBUserLogStatusMonitorTest {
     private static void doMonitor(List<String> toMonitorUsers, ConnectionSession connectionSession)
             throws InterruptedException {
         Integer period = 200;
-        Integer timeout = 2000;
+        Integer timeout = Integer.MAX_VALUE;
         TimeUnit timeUnit = TimeUnit.MILLISECONDS;
         DBUserLogStatusMonitorFactory monitorFactory = new DBUserLogStatusMonitorFactory(null);
         DBUserMonitor dbUserMonitor = monitorFactory.generateDBUserMonitor(connectionSession,
@@ -77,7 +77,7 @@ public class DBUserLogStatusMonitorTest {
         try {
             executorService.execute(dbUserMonitor);
             Assert.assertFalse(dbUserMonitor.isDone());
-            Thread.sleep(2000 - 1);
+            Thread.sleep(1000);
             dbUserMonitor.stop();
             Assert.assertTrue(dbUserMonitor.isDone());
         } finally {

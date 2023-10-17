@@ -234,12 +234,11 @@ public class DatabaseService {
 
         Map<String, Pair<ConnectionSession, Boolean>> connectionId2LockUserRequired = new HashMap<>();
         databases.forEach(d -> {
-            if (Objects.equals(TaskType.ONLINE_SCHEMA_CHANGE.name(), params.getType()) && d.getDataSource() != null) {
+            if (Objects.equals(TaskType.ONLINE_SCHEMA_CHANGE.name(), params.getTaskType()) && d.getDataSource() != null) {
                 Pair<ConnectionSession, Boolean> pair =
                         getConnectionSessionLockUserRequiredPair(connectionId2LockUserRequired, d);
                 d.setLockDatabaseUserRequired(pair.right);
             }
-
         });
         connectionId2LockUserRequired.forEach((k, v) -> {
             if (v != null) {
