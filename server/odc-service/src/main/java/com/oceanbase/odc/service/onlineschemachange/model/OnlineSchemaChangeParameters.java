@@ -60,7 +60,6 @@ public class OnlineSchemaChangeParameters implements Serializable, TaskParameter
 
     private String delimiter = ";";
 
-
     private Map<String, Object> parameterDataMap = new HashMap<>();
     private List<String> lockUsers;
 
