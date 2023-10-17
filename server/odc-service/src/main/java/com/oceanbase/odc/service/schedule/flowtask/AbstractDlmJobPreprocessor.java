@@ -93,7 +93,9 @@ public class AbstractDlmJobPreprocessor implements Preprocessor {
         if (datasource.getDialectType().isOracle()) {
             throw new UnsupportedException("This function is not supported for Oracle data sources.");
         }
-        PreConditions.notEmpty(datasource.getSysTenantUsername(), "SysTenantUser");
+        if (datasource.getDialectType().isOBMysql()) {
+            PreConditions.notEmpty(datasource.getSysTenantUsername(), "SysTenantUser");
+        }
     }
 
     private void checkPrimaryKey(ConnectionSession connectionSession, String databaseName,
