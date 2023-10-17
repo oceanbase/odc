@@ -484,7 +484,6 @@ public class OBColumnExtractor implements ColumnExtractor {
         if (param instanceof ExpressionParam) {
             ExpressionParam expressionParam = (ExpressionParam) param;
             column = extractCommonExpression(expressionParam.getTarget());
-            column.setAlias(processIdentifier(expressionParam.getAlias()));
         }
         return column;
     }
