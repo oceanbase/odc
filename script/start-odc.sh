@@ -110,8 +110,8 @@ function init_jvm_options() {
     fi
     local log_options="-Dlog4j.configurationFile=${app_log_config_file} -Dodc.log.directory=${app_log_directory}"
     local work_dir_options="-Duser.dir=${ODC_WORK_DIR:-${current_work_directory}}"
-    local plugin_options="--plugin.dir=${plugin_directory}"
-    local starter_options="--starter.dir=${starter_directory}"
+    local plugin_options="-Dplugin.dir=${plugin_directory}"
+    local starter_options="-Dstarter.dir=${starter_directory}"
 
     app_options="${log_options} ${work_dir_options} ${plugin_options} ${starter_options}"
 
