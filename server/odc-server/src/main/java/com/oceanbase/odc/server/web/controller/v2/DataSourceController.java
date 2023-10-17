@@ -46,6 +46,7 @@ import com.oceanbase.odc.service.connection.ConnectionHelper;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.ConnectionStatusManager.CheckState;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
+import com.oceanbase.odc.service.connection.database.model.DataBaseUser;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.model.ConnectionPreviewBatchImportResp;
@@ -203,8 +204,8 @@ public class DataSourceController {
 
     @ApiOperation(value = "listUsers", notes = "list users in datasource")
     @RequestMapping(value = "/datasources/{id:[\\d]+}/users", method = RequestMethod.GET)
-    public SuccessResponse<List<String>> listUsers(@PathVariable Long id) {
-        return Responses.success(databaseService.listUsers(id));
+    public PaginatedResponse<DataBaseUser> listUsers(@PathVariable Long id) {
+        return Responses.paginated(databaseService.listUsers(id));
     }
 
 }

@@ -38,6 +38,7 @@ import javax.validation.constraints.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.integration.jdbc.lock.JdbcLockRegistry;
@@ -76,6 +77,7 @@ import com.oceanbase.odc.service.collaboration.project.model.Project;
 import com.oceanbase.odc.service.collaboration.project.model.QueryProjectParams;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.model.CreateDatabaseReq;
+import com.oceanbase.odc.service.connection.database.model.DataBaseUser;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.database.model.DatabaseSyncStatus;
 import com.oceanbase.odc.service.connection.database.model.DeleteDatabasesReq;
@@ -234,7 +236,8 @@ public class DatabaseService {
 
         Map<String, Pair<ConnectionSession, Boolean>> connectionId2LockUserRequired = new HashMap<>();
         databases.forEach(d -> {
-            if (Objects.equals(TaskType.ONLINE_SCHEMA_CHANGE.name(), params.getTaskType()) && d.getDataSource() != null) {
+            if (Objects.equals(TaskType.ONLINE_SCHEMA_CHANGE.name(), params.getTaskType())
+                    && d.getDataSource() != null) {
                 Pair<ConnectionSession, Boolean> pair =
                         getConnectionSessionLockUserRequiredPair(connectionId2LockUserRequired, d);
                 d.setLockDatabaseUserRequired(pair.right);
@@ -603,7 +606,7 @@ public class DatabaseService {
     }
 
     @SkipAuthorize("internal authorized")
-    public List<String> listUsers(Long dataSourceId) {
+    public Page<DataBaseUser> listUsers(Long dataSourceId) {
         ConnectionConfig config = connectionService.getForConnectionSkipPermissionCheck(dataSourceId);
         horizontalDataPermissionValidator.checkCurrentOrganization(config);
         DefaultConnectSessionFactory factory = new DefaultConnectSessionFactory(config);
@@ -612,8 +615,10 @@ public class DatabaseService {
             DBSchemaAccessor dbSchemaAccessor = DBSchemaAccessors.create(connSession);
             List<DBObjectIdentity> dbUsers = dbSchemaAccessor.listUsers();
             Set<String> whiteUsers = OscDBUserUtil.getLockUserWhiteList(config);
-            return dbUsers.stream().map(DBObjectIdentity::getName)
-                    .filter(u -> !whiteUsers.contains(u)).collect(Collectors.toList());
+            return new PageImpl<>(dbUsers.stream()
+                    .filter(u -> !whiteUsers.contains(u.getName()))
+                    .map(d -> DataBaseUser.builder().name(d.getName()).build())
+                    .collect(Collectors.toList()));
         } finally {
             connSession.expire();
         }
