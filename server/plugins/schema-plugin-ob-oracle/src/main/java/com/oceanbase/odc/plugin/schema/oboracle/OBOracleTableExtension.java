@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.pf4j.Extension;
@@ -38,6 +39,7 @@ import com.oceanbase.tools.dbbrowser.model.DBIndexType;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.model.DBTable.DBTableOptions;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
+import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
 import com.oceanbase.tools.dbbrowser.model.DBTableIndex;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 import com.oceanbase.tools.dbbrowser.stats.DBStatsAccessor;
@@ -59,27 +61,42 @@ public class OBOracleTableExtension extends OBMySQLTableExtension {
 
     @Override
     public DBTable getDetail(@NonNull Connection connection, @NonNull String schemaName, @NonNull String tableName) {
-        DBSchemaAccessor schemaAccessor = getSchemaAccessor(connection);
-        List<DBTableColumn> columns = schemaAccessor.listTableColumns(schemaName, tableName);
+        DBSchemaAccessor accessor = getSchemaAccessor(connection);
+        List<DBTableColumn> columns = accessor.listTableColumns(schemaName, tableName);
         // Time-consuming queries methods of DBSchemaAccessor are replaced by GetDBTableByParser
         OBOracleGetDBTableByParser parser = new OBOracleGetDBTableByParser(connection, schemaName, tableName);
-
         DBTable table = new DBTable();
         table.setSchemaName(schemaName);
         table.setOwner(schemaName);
-        table.setName(schemaAccessor.isLowerCaseTableName() ? tableName.toLowerCase() : tableName);
+        table.setName(accessor.isLowerCaseTableName() ? tableName.toLowerCase() : tableName);
         table.setColumns(columns);
-        table.setConstraints(parser.listConstraints());
+        /**
+         * If the constraint name cannot be obtained through ddl of the table, then the constraint
+         * information will still be obtained through DBSchemaAccessor
+         */
+        List<DBTableConstraint> constraints = parser.listConstraints();
+        AtomicBoolean flag = new AtomicBoolean(false);
+        constraints.forEach(item -> {
+            if (Objects.isNull(item.getName())) {
+                flag.set(true);
+            }
+        });
+        if (flag.get()) {
+            table.setConstraints(accessor.listTableConstraints(schemaName, tableName));
+        } else {
+            table.setConstraints(constraints);
+        }
         table.setPartition(parser.getPartition());
         table.setIndexes(parser.listIndexes());
-        table.setDDL(getTableDDL(connection, schemaName, tableName, parser, columns));
-        table.setTableOptions(schemaAccessor.getTableOptions(schemaName, tableName));
+        DBTableOptions tableOptions = accessor.getTableOptions(schemaName, tableName);
+        table.setTableOptions(tableOptions);
+        table.setDDL(getTableDDL(connection, schemaName, tableName, parser, columns, tableOptions));
         table.setStats(getTableStats(connection, schemaName, tableName));
         return table;
     }
 
     private String getTableDDL(Connection connection, String schemaName, String tableName,
-            OBOracleGetDBTableByParser parser, List<DBTableColumn> columns) {
+            OBOracleGetDBTableByParser parser, List<DBTableColumn> columns, DBTableOptions tableOptions) {
         String getTableDDlSql =
                 "SELECT dbms_metadata.get_ddl('TABLE', '" + tableName + "', '" + schemaName + "') as DDL from dual";
         AtomicReference<String> ddlRef = new AtomicReference<>();
@@ -95,7 +112,6 @@ public class OBOracleTableExtension extends OBMySQLTableExtension {
         StringBuilder ddl = new StringBuilder(ddlRef.get());
         ddl.append(";\n");
         Map<String, String> variables = new HashMap<>();
-        DBTableOptions tableOptions = getSchemaAccessor(connection).getTableOptions(schemaName, tableName);
         variables.put("schemaName", StringUtils.quoteOracleIdentifier(schemaName));
         variables.put("tableName",
                 StringUtils.quoteOracleIdentifier(tableName));

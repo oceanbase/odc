@@ -139,10 +139,11 @@ public class OBOracleGetDBTableByParserTest {
         OBOracleGetDBTableByParser table =
                 new OBOracleGetDBTableByParser(connection, TEST_DATABASE_NAME, "TEST_INDEX_BY_PARSER");
         List<DBTableIndex> indexes = table.listIndexes();
-        Assert.assertEquals(6, indexes.size());
+        Assert.assertEquals(7, indexes.size());
         for (DBTableIndex index : indexes) {
             if ("CONSTRAINT_UNIQUE_TEST_INDEX_BY_PARSER".equals(index.getName())) {
                 Assert.assertEquals("COL5", index.getColumnNames().get(0));
+                Assert.assertEquals("COL6", index.getColumnNames().get(1));
                 Assert.assertEquals(2, index.getColumnNames().size());
                 Assert.assertTrue(index.getUnique());
                 Assert.assertEquals(DBIndexType.UNIQUE, index.getType());
@@ -162,10 +163,15 @@ public class OBOracleGetDBTableByParserTest {
                 Assert.assertFalse(index.getGlobal());
                 Assert.assertTrue(index.getAvailable());
             } else if (index.getPrimary()) {
+                Assert.assertTrue(index.getUnique());
                 Assert.assertEquals("ID", index.getColumnNames().get(0));
                 Assert.assertTrue(index.getAvailable());
+            } else if ("IND_FUNCTION_BASED2".equals(index.getName())) {
+                Assert.assertEquals(DBIndexType.FUNCTION_BASED_NORMAL, index.getType());
+                Assert.assertEquals("\"COL8\" + 1", index.getColumnNames().get(0));
             } else {
                 Assert.assertEquals("COL2", index.getColumnNames().get(0));
+                Assert.assertTrue(index.getUnique());
                 Assert.assertTrue(index.getAvailable());
             }
         }
