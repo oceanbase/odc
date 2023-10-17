@@ -201,7 +201,7 @@ public class DataSourceController {
         return Responses.success(databaseService.syncDataSourceSchemas(id));
     }
 
-    @ApiOperation(value = "listUsers", notes = "list users in datasoures")
+    @ApiOperation(value = "listUsers", notes = "list users in datasource")
     @RequestMapping(value = "/datasources/{id:[\\d]+}/users", method = RequestMethod.GET)
     public SuccessResponse<List<String>> listUsers(@PathVariable Long id) {
         return Responses.success(databaseService.listUsers(id));

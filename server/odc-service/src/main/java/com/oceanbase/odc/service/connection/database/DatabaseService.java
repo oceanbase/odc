@@ -605,16 +605,16 @@ public class DatabaseService {
 
     @SkipAuthorize("internal authorized")
     public List<String> listUsers(Long dataSourceId) {
-        ConnectionConfig connection = connectionService.getForConnectionSkipPermissionCheck(dataSourceId);
-        horizontalDataPermissionValidator.checkCurrentOrganization(connection);
-        DefaultConnectSessionFactory factory = new DefaultConnectSessionFactory(connection);
+        ConnectionConfig config = connectionService.getForConnectionSkipPermissionCheck(dataSourceId);
+        horizontalDataPermissionValidator.checkCurrentOrganization(config);
+        DefaultConnectSessionFactory factory = new DefaultConnectSessionFactory(config);
         ConnectionSession connSession = factory.generateSession();
         try {
             DBSchemaAccessor dbSchemaAccessor = DBSchemaAccessors.create(connSession);
             List<DBObjectIdentity> dbUsers = dbSchemaAccessor.listUsers();
-            List<String> whiteUsers = OscDBUserUtil.getLockUserWhiteList(connection);
+            List<String> whiteUsers = OscDBUserUtil.getLockUserWhiteList(config);
             return dbUsers.stream().map(DBObjectIdentity::getName)
-                    .filter(whiteUsers::contains).collect(Collectors.toList());
+                    .filter(u -> !whiteUsers.contains(u)).collect(Collectors.toList());
         } finally {
             connSession.expire();
         }
