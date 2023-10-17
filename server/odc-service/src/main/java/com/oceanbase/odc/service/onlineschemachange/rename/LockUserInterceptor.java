@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.onlineschemachange.rename;
 import java.util.List;
 import java.util.function.Predicate;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.JdbcOperations;
 
@@ -54,11 +55,17 @@ public class LockUserInterceptor implements RenameTableInterceptor {
 
     @Override
     public void preRename(RenameTableParameters parameters) {
+        if (CollectionUtils.isEmpty(parameters.getLockUsers())) {
+            return;
+        }
         lockUserAndKillSession(parameters.getLockTableTimeOutSeconds(), parameters.getLockUsers());
     }
 
     @Override
     public void postRenamed(RenameTableParameters parameters) {
+        if (CollectionUtils.isEmpty(parameters.getLockUsers())) {
+            return;
+        }
         batchExecuteUnlockUser(parameters.getLockUsers());
     }
 
@@ -105,8 +112,7 @@ public class LockUserInterceptor implements RenameTableInterceptor {
         String currentSessionId = connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY)
                 .execute((ConnectionCallback<? extends String>) conn -> ConnectionPluginUtil
                         .getSessionExtension(connectionSession.getDialectType()).getConnectionId(conn));
-        List<String> filterList = Lists.newArrayList();
-        filterList.add(currentSessionId);
+        List<String> filterList = Lists.newArrayList(currentSessionId);
         log.info("Kill session filter session id : {}", JsonUtils.toJson(filterList));
 
         // filter current session

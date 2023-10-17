@@ -55,7 +55,6 @@ public class SwapTableNameValve extends BaseValve {
 
         OnlineSchemaChangeScheduleTaskParameters taskParameters = context.getTaskParameter();
         PreConditions.notNull(taskParameters, "OnlineSchemaChangeScheduleTaskParameters is null");
-
         OnlineSchemaChangeParameters parameters = context.getParameter();
 
         ConnectionConfig config = context.getConnectionConfig();

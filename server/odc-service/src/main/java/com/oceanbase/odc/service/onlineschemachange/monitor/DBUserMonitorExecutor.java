@@ -23,6 +23,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.apache.commons.collections4.CollectionUtils;
+
 import com.oceanbase.odc.core.session.ConnectionSession;
 
 import lombok.extern.slf4j.Slf4j;
@@ -45,7 +47,7 @@ public class DBUserMonitorExecutor {
     }
 
     public void start(ConnectionSession connSession, Map<String, Object> logParameter) {
-        if (toMonitorUsers == null) {
+        if (CollectionUtils.isEmpty(toMonitorUsers)) {
             log.info("To monitor users is null, do not start db user status monitor.");
         }
         if (!started.compareAndSet(false, true)) {
@@ -60,7 +62,7 @@ public class DBUserMonitorExecutor {
     }
 
     public void stop() {
-        if (toMonitorUsers == null) {
+        if (CollectionUtils.isEmpty(toMonitorUsers)) {
             return;
         }
         if (!started.compareAndSet(true, false)) {
