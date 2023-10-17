@@ -83,11 +83,9 @@ import com.oceanbase.odc.metadb.flow.UserTaskInstanceRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
-import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.odc.service.config.SystemConfigService;
 import com.oceanbase.odc.service.config.model.Configuration;
-import com.oceanbase.odc.service.connection.CloudMetadataClient;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
@@ -842,9 +840,7 @@ public class FlowInstanceService {
         FlowTaskUtil.setTaskCreator(variables, authenticationFacade.currentUser());
         FlowTaskUtil.setTaskSubmitter(variables, JsonUtils.fromJson(taskEntity.getSubmitter(), ExecutorInfo.class));
         FlowTaskUtil.setRiskLevelDescriber(variables, riskLevelDescriber);
-        if (SpringContextUtil.getBean(CloudMetadataClient.class).supportsCloudMetadata()) {
-            FlowTaskUtil.setCloudMainAccountId(variables, authenticationFacade.currentUser().getUid());
-        }
+        FlowTaskUtil.setCloudMainAccountId(variables, authenticationFacade.currentUser().getUid());
     }
 
     private TemplateVariables buildTemplateVariables(CreateFlowInstanceReq flowInstanceReq, ConnectionConfig config) {
