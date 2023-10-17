@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.RuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
@@ -65,40 +66,25 @@ import lombok.NonNull;
  */
 public class MySQLDataTypeFactory extends OBParserBaseVisitor<DataType> implements StatementFactory<DataType> {
 
-    private final Data_typeContext dataTypeContext;
-    private final Cast_data_typeContext castDataTypeContext;
+    private final ParserRuleContext parserRuleContext;
 
     public MySQLDataTypeFactory(@NonNull Cast_data_typeContext castDataTypeContext) {
-        this.dataTypeContext = null;
-        this.castDataTypeContext = castDataTypeContext;
+        this.parserRuleContext = castDataTypeContext;
     }
 
     public MySQLDataTypeFactory(@NonNull Data_typeContext dataTypeContext) {
-        this.castDataTypeContext = null;
-        this.dataTypeContext = dataTypeContext;
+        this.parserRuleContext = dataTypeContext;
     }
 
     @Override
     public DataType generate() {
-        if (this.dataTypeContext != null) {
-            return visit(this.dataTypeContext);
-        }
-        return visit(this.castDataTypeContext);
+        return visit(this.parserRuleContext);
     }
 
     @Override
     public DataType visitData_type(Data_typeContext ctx) {
         if (ctx.STRING_VALUE() != null) {
             return new GeneralDataType(ctx, ctx.STRING_VALUE().getText(), null);
-        } else if (ctx.text_type_i() != null) {
-            CharacterType characterType = new CharacterType(ctx, (CharacterType) visit(ctx.text_type_i()));
-            if (ctx.charset_name() != null) {
-                characterType.setCharset(ctx.charset_name().getText());
-            }
-            if (ctx.collation() != null) {
-                characterType.setCollation(ctx.collation().collation_name().getText());
-            }
-            return characterType;
         }
         return visitChildren(ctx);
     }
@@ -142,9 +128,23 @@ public class MySQLDataTypeFactory extends OBParserBaseVisitor<DataType> implemen
         if (arg != null) {
             len = new BigDecimal(arg);
         }
-        CharacterType type = new CharacterType(ctx, ctx.CHARACTER().getText(), len);
+        List<String> names = new ArrayList<>(2);
+        for (int i = 0; i < ctx.getChildCount(); i++) {
+            ParseTree parseTree = ctx.getChild(i);
+            if (!(parseTree instanceof TerminalNode)) {
+                break;
+            }
+            names.add(parseTree.getText());
+        }
+        CharacterType type = new CharacterType(ctx, String.join(" ", names), len);
         if (ctx.BINARY() != null) {
             type.setBinary(true);
+        }
+        if (ctx.charset_name() != null) {
+            type.setCharset(ctx.charset_name().getText());
+        }
+        if (ctx.collation() != null) {
+            type.setCollation(ctx.collation().collation_name().getText());
         }
         return type;
     }
@@ -228,17 +228,28 @@ public class MySQLDataTypeFactory extends OBParserBaseVisitor<DataType> implemen
 
     @Override
     public DataType visitText_type_i(Text_type_iContext ctx) {
-        if (ctx.character_type_i() != null) {
-            return visit(ctx.character_type_i());
-        }
         BigDecimal len = null;
         String arg = getLength(ctx.string_length_i());
         if (arg != null) {
             len = new BigDecimal(arg);
         }
-        CharacterType characterType = new CharacterType(ctx, ctx.getChild(0).getText(), len);
+        List<String> names = new ArrayList<>(2);
+        for (int i = 0; i < ctx.getChildCount(); i++) {
+            ParseTree parseTree = ctx.getChild(i);
+            if (!(parseTree instanceof TerminalNode)) {
+                break;
+            }
+            names.add(parseTree.getText());
+        }
+        CharacterType characterType = new CharacterType(ctx, String.join(" ", names), len);
         if (ctx.BINARY() != null) {
             characterType.setBinary(true);
+        }
+        if (ctx.charset_name() != null) {
+            characterType.setCharset(ctx.charset_name().getText());
+        }
+        if (ctx.collation() != null) {
+            characterType.setCollation(ctx.collation().collation_name().getText());
         }
         return characterType;
     }

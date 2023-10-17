@@ -928,7 +928,7 @@ column_definition_list
 
 cast_data_type
     : binary_type_i[true]
-    | character_type_i
+    | character_type_i[true]
     | datetime_type_i[true]
     | date_year_type_i
     | float_type_i[true]
@@ -966,7 +966,8 @@ data_type
     | bool_type_i
     | datetime_type_i[false]
     | date_year_type_i
-    | text_type_i (charset_key charset_name)? collation?
+    | text_type_i
+    | character_type_i[false]
     | blob_type_i
     | binary_type_i[false]
     | bit_type_i
@@ -1014,13 +1015,21 @@ number_type_i [boolean in_cast_data_type]
     ;
 
 text_type_i
-    : (TINYTEXT | TEXT | MEDIUMTEXT | LONGTEXT) string_length_i? BINARY?
-    | character_type_i
-    | VARCHAR string_length_i BINARY?
+    : (TINYTEXT | TEXT | MEDIUMTEXT VARCHAR? | LONGTEXT) string_length_i? BINARY? (charset_key charset_name)? collation?
     ;
 
-character_type_i
-    : CHARACTER string_length_i? BINARY?
+character_type_i [boolean in_cast_data_type]
+    : {!$in_cast_data_type}? CHARACTER string_length_i? BINARY? (charset_key charset_name)? collation?
+    | {$in_cast_data_type}? CHARACTER string_length_i? BINARY?
+    | {$in_cast_data_type}? CHARACTER string_length_i? charset_key charset_name
+    | {!$in_cast_data_type}? NCHAR string_length_i? BINARY?
+    | {!$in_cast_data_type}? NATIONAL CHARACTER string_length_i? BINARY?
+    | {!$in_cast_data_type}? VARCHAR string_length_i BINARY? (charset_key charset_name)? collation?
+    | {!$in_cast_data_type}? NCHAR VARCHAR string_length_i BINARY?
+    | {!$in_cast_data_type}? NVARCHAR string_length_i BINARY?
+    | {!$in_cast_data_type}? NATIONAL VARCHAR string_length_i BINARY?
+    | {!$in_cast_data_type}? CHARACTER VARYING string_length_i BINARY? (charset_key charset_name)?
+    | {!$in_cast_data_type}? NATIONAL CHARACTER VARYING string_length_i BINARY?
     ;
 
 bool_type_i
