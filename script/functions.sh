@@ -292,7 +292,7 @@ function maven_build_jar() {
         popd
         return 2
     fi
-    func_echo "maven build jar ${maven_extra_args}[@] succeed"
+    func_echo "maven build jar ${maven_extra_args[@]} succeed"
 
     popd
     return 0
@@ -318,7 +318,7 @@ function maven_install_libs() {
         fi
     done
 
-    func_echo "maven install libs with args ${maven_extra_args}[@] succeed"
+    func_echo "maven install libs with args ${maven_extra_args[@]} succeed"
     popd
     return 0
 }

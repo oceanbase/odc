@@ -305,10 +305,10 @@ index.html 文件。 这个 `index.html`文件引用静态资源服务器资源�
 
 ![image.png](../en-US/images/concept-isolated-debug.png)
 
-静态资源 URL 地址规则 `http://static-resource-server/oceanbase/odc/{branchName}/xxx` .
+静态资源 URL 地址规则 `http://static-resource-server/{branchName}/xxx` .
 其中 `{branchName}` 表示前端分支名称。
 
-如 spring-4.2.0 分支，后端引用的 `index.html` URL 为 `http://static-resource-server/oceanbase/odc/sprint-4.2.0/index.html` 。
+如 dev-4.2.2 分支，后端引用的 `index.html` URL 为 `http://static-resource-server/dev-4.2.2/index.html` 。
 
 ### 4.1.3 设置自动更新静态资源
 
@@ -318,7 +318,7 @@ index.html 文件。 这个 `index.html`文件引用静态资源服务器资源�
 设置样例如下。
 
 ```shell
-export ODC_INDEX_PAGE_URI=http://static-resource-server/oceanbase/odc/sprint-4.2.0/index.html
+export ODC_INDEX_PAGE_URI=http://static-resource-server/dev-4.2.2/index.html
 ```
 
 ## 4.3 基于 traceId 的日志排查

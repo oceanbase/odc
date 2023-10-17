@@ -340,7 +340,7 @@ Instead, it will download the latest iteration of the `index.html` file correspo
 Static resource files URL template `http://static-resource-server/oceanbase/odc/{branchName}/xxx` .
 here `{branchName}` mean git branch name of frontend repository.
 
-e.g. version `spring-4.2.0`, The `index.html` refer URL is `http://static-resource-server/oceanbase/odc/sprint-4.2.0/index.html` 。
+e.g. branch `dev-4.2.2`, The `index.html` refer URL is `http://static-resource-server/dev-4.2.2/index.html` .
 
 ### 4.1.3 Automate refresh frontend resource
 
@@ -351,7 +351,7 @@ When starting the odc-server, you can configure the environment variable `ODC_IN
 An example configuration is shown below.
 
 ```shell
-export ODC_INDEX_PAGE_URI=http://static-resource-server/oceanbase/odc/sprint-4.2.0/index.html
+export ODC_INDEX_PAGE_URI=http://static-resource-server/dev-4.2.2/index.html
 ```
 
 ## 4.3 TraceId based log analysis
