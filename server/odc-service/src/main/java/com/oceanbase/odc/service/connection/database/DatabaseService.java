@@ -691,8 +691,8 @@ public class DatabaseService {
             }
             // connSession is null indicate this datasource is not connected
             return new Pair<>(connSession, connSession != null &&
-                OscDBUserUtil.isLockUserRequired(connSession.getDialectType(),
-                    ConnectionSessionUtil.getVersion(connSession)));
+                    OscDBUserUtil.isLockUserRequired(connSession.getDialectType(),
+                            ConnectionSessionUtil.getVersion(connSession)));
 
         });
     }

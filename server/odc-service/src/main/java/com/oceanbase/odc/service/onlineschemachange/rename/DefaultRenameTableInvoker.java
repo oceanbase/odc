@@ -134,6 +134,7 @@ public class DefaultRenameTableInvoker implements RenameTableInvoker {
                 .newTableName(taskParameters.getNewTableName())
                 .originTableCleanStrategy(parameters.getOriginTableCleanStrategy())
                 .lockTableTimeOutSeconds(lockTableTimeOutSeconds)
+                .lockUsers(parameters.getLockUsers())
                 .build();
     }
 

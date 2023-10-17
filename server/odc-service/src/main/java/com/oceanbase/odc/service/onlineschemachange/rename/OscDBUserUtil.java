@@ -20,8 +20,6 @@ import java.util.Set;
 
 import com.google.common.collect.Sets;
 import com.oceanbase.odc.common.util.VersionUtils;
-import com.oceanbase.odc.core.session.ConnectionSession;
-import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
@@ -41,11 +39,6 @@ public class OscDBUserUtil {
         } else {
             throw new UnsupportedException(String.format("Dialect '%s' not supported", dialectType));
         }
-    }
-
-    public static Set<String> getLockUserWhiteList(ConnectionSession connSession) {
-        ConnectionConfig config = (ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(connSession);
-        return getLockUserWhiteList(config);
     }
 
     public static Set<String> getLockUserWhiteList(ConnectionConfig config) {
