@@ -217,7 +217,7 @@ public class FlowTaskUtil {
 
     public static String getCloudMainAccountId(@NonNull DelegateExecution execution) {
         Object value = execution.getVariables().get(RuntimeTaskConstants.CLOUD_MAIN_ACCOUNT_ID);
-        return internalGet(value, String.class).orElseThrow(() -> new VerifyException("Cloud main account is absent"));
+        return internalGet(value, String.class).orElse(null);
     }
 
     public static void setSchemaName(@NonNull Map<String, Object> variables, @NonNull String schema) {
