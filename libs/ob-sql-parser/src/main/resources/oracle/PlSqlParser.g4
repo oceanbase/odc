@@ -481,7 +481,7 @@ subprog_decl_in_type
     ;
 
 proc_decl_in_type
-    : PROCEDURE procedure_name '(' parameter (',' parameter)* ')'
+    : PROCEDURE procedure_name ('(' parameter (',' parameter)* ')')?
       (IS | AS) (call_spec | DECLARE? seq_of_declare_specs? body ';')
     ;
 
@@ -537,7 +537,7 @@ overriding_function_spec
     ;
 
 type_procedure_spec
-    : PROCEDURE procedure_name '(' type_elements_parameter (',' type_elements_parameter)* ')' ((IS | AS) call_spec)?
+    : PROCEDURE procedure_name ('(' type_elements_parameter (',' type_elements_parameter)* ')')? ((IS | AS) call_spec)?
     ;
 
 type_function_spec
