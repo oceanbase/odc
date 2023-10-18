@@ -5,6 +5,8 @@ English | [中文](./README-zh-CN.md)
 # OceanBase Developer Center (ODC)
 
 OceanBase Developer Center, or ODC for short, is an open-source, all-encompassing tool for collaborative database development and data management across various scenarios. By streamlining collaborative efforts, ODC addresses the challenges of risk management during database changes, efficient data management, and data security concerns.
+![image](https://github.com/oceanbase/odc/assets/15030999/9a64a85e-6cfc-4d99-a72f-264c190aa39b)
+
 
 ## 🤔 What ODC Offers and Why Choose ODC?
 
@@ -12,31 +14,36 @@ OceanBase Developer Center, or ODC for short, is an open-source, all-encompassin
 
 - Utilizing modern web architecture, ODC provides unparalleled accessibility to your databases, allowing you to perform SQL development tasks on the go, right from your web browser.
 - ODC boasts a comprehensive and user-friendly SQL development environment that encompasses all the features you'd expect from desktop development tools, and even offers support for PL debugging.
+![image](https://github.com/oceanbase/odc/assets/15030999/7a90b23c-a20b-4db3-802c-56310753e188)
 
 
 ### Guard Every Change in Your SQL Development Journey 
 
 - Throughout the entire SQL development process, ODC is your steadfast companion, offering risk control at every turn. From visual object management to SQL queries, data editing, and import/export tasks, ODC comes equipped with built-in risk management tools.
 - ODC introduces project-based collaboration and change approval workflows, complemented by SQL validation rules, SQL window guidelines, and risk level identification.
+![image](https://github.com/oceanbase/odc/assets/15030999/ea186088-ae56-4b5a-9add-6491123c3544)
 
 
 ### Automated Data Lifecycle Management
 
-
 - ODC facilitates data retention policies, enabling you to effortlessly purge or archive data based on specified time frames, and build a hot-cold data separation system tailored to your needs in just 5 minutes.
 - Beyond time-based data handling, ODC supports batch processing based on partitioning, allowing you to efficiently manage large datasets.
 - With ODC's SQL scheduled tasks, completing computational tasks becomes a breeze, rendering traditional CRONTAB systems obsolete.
+  ![image](https://github.com/oceanbase/odc/assets/15030999/bd591f25-00d0-45ea-93ca-c001774adde6)
+
 
 ### Sensitive Data Protection in Every Scenario 
 
 - ODC's data desensitization capabilities extend to both static and dynamic scenarios, ensuring that sensitive information remains safeguarded during schema changes, SQL queries, result set exports, and data extractions.
 - Security administrators can configure sensitive data rules and desensitization algorithms, ensuring that both DBAs and developers are unable to access sensitive data.
+![image](https://github.com/oceanbase/odc/assets/15030999/b9c6c433-9fea-4631-8801-184775aab2bc)
 
 
 ### Seamless Integration Without Additional Code Development 
 
 - Integrate ODC seamlessly into your current database development workflow without the need for disruptive changes.
 - From Single Sign-On (SSO) to approval integration, SQL review integration, bastion host integration, and audit integration, ODC offers a comprehensive suite of features that cater to enterprise control needs.
+![image](https://github.com/oceanbase/odc/assets/15030999/403074ce-24ed-4eb3-830f-e86cddc028de)
 
 
 ## 🌟 Features at a Glance
