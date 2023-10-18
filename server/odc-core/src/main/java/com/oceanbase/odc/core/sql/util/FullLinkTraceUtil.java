@@ -70,7 +70,7 @@ public class FullLinkTraceUtil {
                     return v;
                 });
             }
-            if (traceId == null && findLogTraceId(span.getTags()) != null) {
+            if (traceId == null) {
                 traceId = findLogTraceId(span.getTags());
             }
             span.setNode(Node.from(span.getSpanName()));
