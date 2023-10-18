@@ -17,6 +17,7 @@
 package com.oceanbase.odc.service.onlineschemachange.rename;
 
 import java.util.Set;
+import java.util.function.Supplier;
 
 import com.google.common.collect.Sets;
 import com.oceanbase.odc.common.util.VersionUtils;
@@ -31,11 +32,12 @@ import com.oceanbase.odc.service.connection.model.ConnectionConfig;
  */
 public class OscDBUserUtil {
 
-    public static boolean isLockUserRequired(DialectType dialectType, String obVersion) {
+    public static boolean isLockUserRequired(DialectType dialectType, Supplier<String> obVersion) {
         if (dialectType.isOBMysql()) {
             return true;
         } else if (dialectType == DialectType.OB_ORACLE) {
-            return !VersionUtils.isGreaterThanOrEqualsTo(obVersion, "4.0.0");
+            String version = obVersion.get();
+            return version != null && !VersionUtils.isGreaterThanOrEqualsTo(obVersion.get(), "4.0.0");
         } else {
             throw new UnsupportedException(String.format("Dialect '%s' not supported", dialectType));
         }

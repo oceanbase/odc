@@ -50,12 +50,12 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.validation.annotation.Validated;
 
 import com.oceanbase.odc.common.i18n.I18n;
-import com.oceanbase.odc.common.lang.Pair;
 import com.oceanbase.odc.core.authority.util.Authenticated;
 import com.oceanbase.odc.core.authority.util.PreAuthenticate;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
+import com.oceanbase.odc.core.session.ConnectionSessionFactory;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
@@ -234,22 +234,13 @@ public class DatabaseService {
         Page<DatabaseEntity> entities = databaseRepository.findAll(specs, pageable);
         Page<Database> databases = entitiesToModels(entities);
 
-        Map<String, Pair<ConnectionSession, Boolean>> connectionId2LockUserRequired = new HashMap<>();
+        Map<String, Boolean> connectId2LockUserRequired = new HashMap<>();
         databases.forEach(d -> {
             if (Objects.equals(TaskType.ONLINE_SCHEMA_CHANGE.name(), params.getTaskType())
                     && d.getDataSource() != null) {
-                Pair<ConnectionSession, Boolean> pair =
-                        getConnectionSessionLockUserRequiredPair(connectionId2LockUserRequired, d);
-                d.setLockDatabaseUserRequired(pair.right);
-            }
-        });
-        connectionId2LockUserRequired.forEach((k, v) -> {
-            if (v != null && v.left != null) {
-                try {
-                    v.left.expire();
-                } catch (Exception ex) {
-                    // ignore exception
-                }
+                boolean locked = connectId2LockUserRequired.computeIfAbsent(
+                        d.getDataSource().getId() + "", k -> getLockUserIsRequired(d.getDataSource()));
+                d.setLockDatabaseUserRequired(locked);
             }
         });
         return databases;
@@ -681,23 +672,25 @@ public class DatabaseService {
         return "DataSource_" + connectionId;
     }
 
-    private Pair<ConnectionSession, Boolean> getConnectionSessionLockUserRequiredPair(
-            Map<String, Pair<ConnectionSession, Boolean>> connectionId2LockUserRequired, Database d) {
-        return connectionId2LockUserRequired.computeIfAbsent(d.getDataSource().getId() + "", k -> {
-            ConnectionConfig connConfig =
-                    connectionService.getForConnectionSkipPermissionCheck(d.getDataSource().getId());
-            DefaultConnectSessionFactory factory = new DefaultConnectSessionFactory(connConfig);
-            ConnectionSession connSession = null;
-            try {
-                connSession = factory.generateSession();
-            } catch (Exception ex) {
-                log.info("Get Connection occur error", ex);
-            }
-            // connSession is null indicate this datasource is not connected
-            return new Pair<>(connSession, connSession != null &&
-                    OscDBUserUtil.isLockUserRequired(connSession.getDialectType(),
-                            ConnectionSessionUtil.getVersion(connSession)));
-
-        });
+    private boolean getLockUserIsRequired(ConnectionConfig config) {
+        return OscDBUserUtil.isLockUserRequired(config.getDialectType(),
+                () -> {
+                    ConnectionConfig decryptedConnConfig =
+                            connectionService.getForConnectionSkipPermissionCheck(config.getId());
+                    ConnectionSessionFactory factory = new DefaultConnectSessionFactory(decryptedConnConfig);
+                    String version = null;
+                    ConnectionSession connSession = null;
+                    try {
+                        connSession = factory.generateSession();
+                        version = ConnectionSessionUtil.getVersion(connSession);
+                    } catch (Exception ex) {
+                        log.info("Get connection occur error", ex);
+                    } finally {
+                        if (connSession != null) {
+                            connSession.expire();
+                        }
+                    }
+                    return version;
+                });
     }
 }

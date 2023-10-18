@@ -33,6 +33,7 @@ import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.LimitMetric;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.BadArgumentException;
+import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.odc.service.connection.ConnectionService;
@@ -237,9 +238,9 @@ public class OnlineSchemaChangeValidator {
     }
 
     private void validateLockUser(DialectType dialectType, String obVersion, List<String> lockUsers) {
-        if (OscDBUserUtil.isLockUserRequired(dialectType, obVersion) && CollectionUtils.isEmpty(lockUsers)) {
-            throw new BadArgumentException(ErrorCodes.OscNotSelectLockUser,
-                    "Current db should lock user required, but not select user to lock.");
+        if (OscDBUserUtil.isLockUserRequired(dialectType, () -> obVersion) && CollectionUtils.isEmpty(lockUsers)) {
+            throw new BadRequestException(ErrorCodes.OscLockUserRequired, new Object[] {lockUsers},
+                    "Current db version should lock user required, but parameters do not contains user to lock.");
         }
     }
 

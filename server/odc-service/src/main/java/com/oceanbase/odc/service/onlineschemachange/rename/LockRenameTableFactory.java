@@ -39,7 +39,7 @@ public class LockRenameTableFactory {
         PreConditions.notNull(dialectType, "dialectType");
         String obVersion = ConnectionSessionUtil.getVersion(connectionSession);
         PreConditions.notNull(obVersion, "obVersion");
-        return OscDBUserUtil.isLockUserRequired(dialectType, obVersion)
+        return OscDBUserUtil.isLockUserRequired(dialectType, () -> obVersion)
                 ? new LockUserInterceptor(connectionSession, dbSessionManageFacade)
                 : new LockTableInterceptor();
     }
