@@ -44,7 +44,7 @@ public class OscDBUserUtil {
     }
 
     public static Set<String> getLockUserWhiteList(ConnectionConfig config) {
-        Set<String> users = Sets.newHashSet(config.getUsername());
+        Set<String> users = Sets.newHashSet(config.getUsername(), "__oceanbase_inner_drc_user");
         if (config.getDialectType().isMysql()) {
             users.add("root");
         } else {
