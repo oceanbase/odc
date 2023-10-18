@@ -90,11 +90,10 @@ public class DBUserLogStatusMonitor implements DBUserMonitor {
                 log.warn("DB user status monitor occur error: ", e);
             }
         }
-        // If stop be called, sleep a period and monitor once again
-        logAccountStatus();
-
-        // This monitor be called stop or timeout
-        stopped.set(true);
+        // If stop be called, monitor once again to show the latest user lock info
+        if (stopped.compareAndSet(false, true)) {
+            logAccountStatus();
+        }
     }
 
     @Override
