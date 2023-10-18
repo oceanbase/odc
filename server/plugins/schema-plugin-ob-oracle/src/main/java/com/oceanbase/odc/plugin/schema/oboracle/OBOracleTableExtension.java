@@ -20,7 +20,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.pf4j.Extension;
@@ -75,17 +74,9 @@ public class OBOracleTableExtension extends OBMySQLTableExtension {
          * information will still be obtained through DBSchemaAccessor
          */
         List<DBTableConstraint> constraints = parser.listConstraints();
-        AtomicBoolean flag = new AtomicBoolean(false);
-        constraints.forEach(item -> {
-            if (Objects.isNull(item.getName())) {
-                flag.set(true);
-            }
-        });
-        if (flag.get()) {
-            table.setConstraints(accessor.listTableConstraints(schemaName, tableName));
-        } else {
-            table.setConstraints(constraints);
-        }
+        table.setConstraints(constraints.stream().anyMatch(c -> Objects.isNull(c.getName()))
+                ? accessor.listTableConstraints(schemaName, tableName)
+                : constraints);
         table.setPartition(parser.getPartition());
         table.setIndexes(parser.listIndexes());
         DBTableOptions tableOptions = accessor.getTableOptions(schemaName, tableName);
