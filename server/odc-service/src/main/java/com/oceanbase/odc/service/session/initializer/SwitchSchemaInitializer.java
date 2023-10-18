@@ -17,14 +17,10 @@ package com.oceanbase.odc.service.session.initializer;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.concurrent.atomic.AtomicBoolean;
 
-import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.datasource.ConnectionInitializer;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
-import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 
 import lombok.NonNull;
@@ -42,7 +38,6 @@ import lombok.extern.slf4j.Slf4j;
 public class SwitchSchemaInitializer implements ConnectionInitializer {
 
     private final ConnectionSession connectionSession;
-    private final AtomicBoolean remove = new AtomicBoolean(false);
 
     public SwitchSchemaInitializer(@NonNull ConnectionSession connectionSession) {
         this.connectionSession = connectionSession;
@@ -56,19 +51,6 @@ public class SwitchSchemaInitializer implements ConnectionInitializer {
         String schema = ConnectionSessionUtil.getCurrentSchema(this.connectionSession);
         if (connection == null || schema == null) {
             return;
-        }
-        if (!remove.getAndSet(true) && connectionSession.getDialectType() == DialectType.OB_ORACLE) {
-            String s = StringUtils.quoteOracleIdentifier(schema);
-            try (Statement statement = connection.createStatement()) {
-                statement.execute("DROP PACKAGE " + s + ".OBODC_PL_RUN_PACKAGE");
-            } catch (Exception e) {
-                log.warn("Failed to drop OBODC_PL_RUN_PACKAGE, message={}", e.getMessage());
-            }
-            try (Statement statement = connection.createStatement()) {
-                statement.execute("DROP PACKAGE BODY " + s + ".OBODC_PL_RUN_PACKAGE");
-            } catch (Exception e) {
-                log.warn("Failed to drop OBODC_PL_RUN_PACKAGE, message={}", e.getMessage());
-            }
         }
         ConnectionPluginUtil.getSessionExtension(connectionSession.getDialectType()).switchSchema(connection, schema);
     }
