@@ -5,6 +5,9 @@
 # OceanBase 开发者中心 (ODC)
 
 OceanBase 开发者中心（以下简称 ODC）是开源的全场景数据库开发和数据管理协同工具，通过协同开发解决数据库的变更风险管控、数据管理和数据安全问题。
+![image](https://github.com/oceanbase/odc/assets/15030999/0ec084a6-25e7-4f1c-8fb8-70e9f33c730e)
+
+
 
 ## 🤔 选择 ODC 的理由
 
@@ -12,27 +15,41 @@ OceanBase 开发者中心（以下简称 ODC）是开源的全场景数据库开
 
 - ODC 基于现代 WEB 架构，随时随地，只要有浏览器就可以访问您的数据库。
 - ODC SQL 开发功能全面且易用，桌面开发工具有的功能 ODC 也有，甚至支持 PL 调试。
+  ![image](https://github.com/oceanbase/odc/assets/15030999/d0cb1106-7074-4b49-a29b-1270956ca30b)
+
 
 ### 守护 SQL 开发过程的每一次变更
 
 - 在 SQL 开发过程的全部场景，包括可视化对象管理、SQL 查询、数据编辑、数据导入和导出、... ，ODC 都内置了风险控制。
 - ODC 提供基于项目的协同和变更审批流程，并且内置了 SQL 检查规则、SQL 窗口规范、风险等级识别。
+  ![image](https://github.com/oceanbase/odc/assets/15030999/95125f1a-f132-48ed-a592-85c695883706)
+
+
 
 ### 自动数据生命周期管理
 
 - ODC 支持数据按照保留时长清理或归档，5 分钟构建你的冷热数据分离系统。
 - ODC 不仅支持按照数据的时间标记处理，也支持按照分区批量处理。
 - 还可以通过 ODC SQL 计划任务完成计算任务，为什么还要继续使用你的 CRONTAB ？
+  ![image](https://github.com/oceanbase/odc/assets/15030999/9156a9c9-1fb8-469f-a306-c60650b1dc39)
+
 
 ### 全场景敏感数据保护
 
 - ODC 数据脱敏支持静态场景也支持动态场景，结构变更、SQL 查询、结果集导出、数据导出 全部开发场景都会脱敏。
 - 安全管理员配置敏感数据规则和脱敏算法，DBA 和 开发 都无法接触敏感数据。
+  ![image](https://github.com/oceanbase/odc/assets/15030999/5b0a62d1-6495-4388-80e1-aacc85203ae9)
+
+
+
 
 ### 无需改变已有系统就可以集成 ODC 到当前工作流程
 
 - 无需改变您的系统就可以把 ODC 集成到您当前的数据库开发协同工作流程中.
 - SSO、审批集成、SQL 审核集成、堡垒机集成、审计集成，企业管控集成需要的能力全都有。
+  ![image](https://github.com/oceanbase/odc/assets/15030999/dff7b96a-4777-4eef-bcad-557e1f409a4f)
+
+
 
 ## 🌟 功能特性
 
