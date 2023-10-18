@@ -90,7 +90,10 @@ public class DBUserLogStatusMonitor implements DBUserMonitor {
                 log.warn("DB user status monitor occur error: ", e);
             }
         }
-        // This monitor be called stopped or timeout
+        // If stop be called, sleep a period and monitor once again
+        logAccountStatus();
+
+        // This monitor be called stop or timeout
         stopped.set(true);
     }
 

@@ -26,6 +26,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.commons.collections4.CollectionUtils;
 
 import com.oceanbase.odc.core.session.ConnectionSession;
+import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -41,18 +43,23 @@ public class DBUserMonitorExecutor {
     private ExecutorService executorService;
     private DBUserMonitor dbUserMonitor;
     private final List<String> toMonitorUsers;
+    private final ConnectionConfig connectConfig;
+    private ConnectionSession connSession;
 
-    public DBUserMonitorExecutor(List<String> toMonitorUsers) {
+    public DBUserMonitorExecutor(ConnectionConfig connectConfig, List<String> toMonitorUsers) {
+        this.connectConfig = connectConfig;
         this.toMonitorUsers = toMonitorUsers;
     }
 
-    public void start(ConnectionSession connSession, Map<String, Object> logParameter) {
+    public void start(Map<String, Object> logParameter) {
         if (CollectionUtils.isEmpty(toMonitorUsers)) {
             log.info("To monitor users is null, do not start db user status monitor.");
         }
         if (!started.compareAndSet(false, true)) {
             throw new IllegalStateException("DB user status monitor has been started.");
         }
+        // Generate a new ConnectionSession in monitor
+        connSession = new DefaultConnectSessionFactory(connectConfig).generateSession();
         executorService = Executors.newSingleThreadExecutor();
         DBUserMonitorFactory userLogStatusMonitorFactory = new DBUserLogStatusMonitorFactory(logParameter);
 
@@ -74,8 +81,14 @@ public class DBUserMonitorExecutor {
                 dbUserMonitor.stop();
             }
         } finally {
-            if (executorService != null) {
-                executorService.shutdownNow();
+            try {
+                if (executorService != null) {
+                    executorService.shutdownNow();
+                }
+            } finally {
+                if (connSession != null) {
+                    connSession.expire();
+                }
             }
         }
 
