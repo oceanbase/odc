@@ -178,7 +178,7 @@ public class V42013OAuth2ConfigMetaMigrate implements JdbcMigratable {
                 ssoIntegrationConfig.setMappingRule(mappingRule);
 
 
-                String selectAll = "select * from iam_organization order by id desc";
+                String selectAll = "select * from iam_organization order by id";
                 List<OrganizationEntity> organizationEntities = jdbcTemplate.query(selectAll,
                         new BeanPropertyRowMapper<>(OrganizationEntity.class));
 
@@ -188,12 +188,12 @@ public class V42013OAuth2ConfigMetaMigrate implements JdbcMigratable {
                 organizationEntities.forEach(org -> {
                     String salt = CryptoUtils.generateSalt();
                     TextEncryptor textEncryptor = Encryptors.aesBase64(org.getSecret(), salt);
-                    String registrationId = org.getId() + ":" + HashUtils.md5(oauth2Parameter.getName());
+                    String registrationId = org.getId() + "-" + HashUtils.md5(oauth2Parameter.getName());
                     oauth2Parameter.setRegistrationId(registrationId);
                     String loginRedirectUrl = getValueBySuffix(oauth2Properties, OAUTH2_LOGIN_REDIRECT_URL, 2);
                     Preconditions.checkNotNull(loginRedirectUrl, "loginRedirectUrl");
                     oauth2Parameter.setLoginRedirectUrl(replaceRegistrationId(loginRedirectUrl, registrationId));
-                    oauth2Parameter.fillParameter();
+                    oauth2Parameter.setRedirectUrl("{baseUrl}" + "/login/oauth2/code/"+registrationId);
                     ssoIntegrationConfig.setSsoParameter(oauth2Parameter);
                     // check whether it can convert to client registration
                     ssoIntegrationConfig.toClientRegistration();
@@ -291,7 +291,7 @@ public class V42013OAuth2ConfigMetaMigrate implements JdbcMigratable {
                 ssoIntegrationConfig.setMappingRule(mappingRule);
 
 
-                String findOrganization = "select * from iam_organization";
+                String findOrganization = "select * from iam_organization order by id";
                 List<OrganizationEntity> organizationEntities = jdbcTemplate.query(findOrganization,
                         new BeanPropertyRowMapper<>(OrganizationEntity.class));
                 String enabledOrgName = enabledOrgName(null, organizationEntities);
@@ -299,12 +299,12 @@ public class V42013OAuth2ConfigMetaMigrate implements JdbcMigratable {
                 organizationEntities.forEach(org -> {
                     String salt = CryptoUtils.generateSalt();
                     TextEncryptor textEncryptor = Encryptors.aesBase64(org.getSecret(), salt);
-                    String registrationId = org.getId() + ":" + HashUtils.md5(oauth2Parameter.getName());
+                    String registrationId = org.getId() + "-" + HashUtils.md5(oauth2Parameter.getName());
                     oauth2Parameter.setRegistrationId(registrationId);
                     String loginRedirectUrl = getValueBySuffix(bucProperties, OAUTH2_LOGIN_REDIRECT_URL, 3);
                     Preconditions.checkNotNull(loginRedirectUrl, "loginRedirectUrl");
                     oauth2Parameter.setLoginRedirectUrl(replaceRegistrationId(loginRedirectUrl, registrationId));
-                    oauth2Parameter.fillParameter();
+                    oauth2Parameter.setRedirectUrl("{baseUrl}" + "/login/oauth2/code/"+registrationId);
                     ssoIntegrationConfig.setSsoParameter(oauth2Parameter);
                     // check whether it can convert to client registration
                     ssoIntegrationConfig.toClientRegistration();
@@ -340,7 +340,7 @@ public class V42013OAuth2ConfigMetaMigrate implements JdbcMigratable {
             return;
         }
         String updateSupportGroupQRCodeUrl =
-                "INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.help.supportGroupQRCodeUrl',%s, '用户支持群的二维码链接') ON DUPLICATE KEY UPDATE `id`=`id`";
+                "INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.help.supportGroupQRCodeUrl','%s', '用户支持群的二维码链接') ON DUPLICATE KEY UPDATE `id`=`id`";
         String sql = String.format(updateSupportGroupQRCodeUrl, supportGroupQRCodeUrl);
         jdbcTemplate.update(sql);
     }
