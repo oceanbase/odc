@@ -82,7 +82,7 @@ public class DBSchemaAccessors {
                             connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.SYS_DS_KEY);
                     tenantName = ConnectionSessionUtil.getTenantName(connectionSession);
                 } catch (Exception e) {
-                    log.warn("Get SYS-DATASOURCE failed, may lack of sys tenant permission， ex=", e);
+                    log.warn("Get SYS-DATASOURCE failed, may lack of sys tenant permission，message={}", e.getMessage());
                 }
                 return new OBMySQLNoGreaterThan1479SchemaAccessor(syncJdbcExecutor, sysSyncJdbcExecutor, tenantName);
             }
