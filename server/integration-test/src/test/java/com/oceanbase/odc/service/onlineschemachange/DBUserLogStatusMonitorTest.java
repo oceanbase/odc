@@ -28,7 +28,9 @@ import org.junit.Test;
 
 import com.oceanbase.odc.TestConnectionUtil;
 import com.oceanbase.odc.core.session.ConnectionSession;
+import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
+import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.onlineschemachange.monitor.DBUserLogStatusMonitorFactory;
 import com.oceanbase.odc.service.onlineschemachange.monitor.DBUserMonitor;
 
@@ -70,7 +72,8 @@ public class DBUserLogStatusMonitorTest {
         Integer timeout = Integer.MAX_VALUE;
         TimeUnit timeUnit = TimeUnit.MILLISECONDS;
         DBUserLogStatusMonitorFactory monitorFactory = new DBUserLogStatusMonitorFactory(null);
-        DBUserMonitor dbUserMonitor = monitorFactory.generateDBUserMonitor(connectionSession,
+        DBUserMonitor dbUserMonitor = monitorFactory.generateDBUserMonitor(
+                (ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(connectionSession),
                 toMonitorUsers, period, timeout, timeUnit);
 
         ExecutorService executorService = Executors.newSingleThreadExecutor();
@@ -79,6 +82,7 @@ public class DBUserLogStatusMonitorTest {
             Assert.assertFalse(dbUserMonitor.isDone());
             Thread.sleep(1000);
             dbUserMonitor.stop();
+            Thread.sleep(1000);
             Assert.assertTrue(dbUserMonitor.isDone());
         } finally {
             executorService.shutdownNow();
