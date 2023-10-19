@@ -38,6 +38,7 @@ import com.oceanbase.odc.service.flow.processor.FlowTaskPreprocessor;
 import com.oceanbase.odc.service.flow.processor.Preprocessor;
 import com.oceanbase.odc.service.iam.ResourceRoleService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
+import com.oceanbase.odc.service.permissionapply.project.ApplyProjectParameter.ApplyResourceRole;
 
 /**
  * @author gaoda.xy
@@ -58,11 +59,12 @@ public class ApplyProjectPreprocessor implements Preprocessor {
     @Override
     public void process(CreateFlowInstanceReq req) {
         ApplyProjectParameter parameter = (ApplyProjectParameter) req.getParameters();
-        Verify.notNull(parameter.getProjectId(), "projectId");
-        Verify.notEmpty(parameter.getResourceRoleIds(), "resourceRoleIds");
+        Verify.notNull(parameter.getProject(), "project");
+        Verify.notEmpty(parameter.getResourceRoles(), "resourceRole");
         Verify.notBlank(parameter.getApplyReason(), "applyReason");
-        ProjectEntity projectEntity = checkProjectExistAndValid(parameter.getProjectId());
-        List<ResourceRoleEntity> resourceRoleEntities = checkResourceRoleExist(parameter.getResourceRoleIds());
+        ProjectEntity projectEntity = checkProjectExistAndValid(parameter.getProject().getId());
+        List<ResourceRoleEntity> resourceRoleEntities = checkResourceRoleExist(
+                parameter.getResourceRoles().stream().map(ApplyResourceRole::getId).collect(Collectors.toList()));
         parameter.setUserId(authenticationFacade.currentUserId());
         req.setProjectId(projectEntity.getId());
         req.setProjectName(projectEntity.getName());

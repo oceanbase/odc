@@ -16,6 +16,9 @@
 
 package com.oceanbase.odc.service.permissionapply.project;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.apache.commons.collections4.CollectionUtils;
 import org.flowable.engine.delegate.DelegateExecution;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,6 +39,7 @@ import com.oceanbase.odc.metadb.iam.resourcerole.UserResourceRoleEntity;
 import com.oceanbase.odc.metadb.iam.resourcerole.UserResourceRoleRepository;
 import com.oceanbase.odc.service.flow.task.BaseODCFlowTaskDelegate;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
+import com.oceanbase.odc.service.permissionapply.project.ApplyProjectParameter.ApplyResourceRole;
 import com.oceanbase.odc.service.task.TaskService;
 
 import lombok.extern.slf4j.Slf4j;
@@ -82,17 +86,20 @@ public class ApplyProjectFlowableTask extends BaseODCFlowTaskDelegate<ApplyProje
                                 log.warn("User not found, id={}", parameter.getUserId());
                                 return new NotFoundException(ResourceType.ODC_USER, "id", parameter.getUserId());
                             });
-                    ProjectEntity projectEntity = projectRepository.findById(parameter.getProjectId()).orElseThrow(
+                    Long projectId = parameter.getProject().getId();
+                    ProjectEntity projectEntity = projectRepository.findById(projectId).orElseThrow(
                             () -> {
-                                log.warn("Project not found, id={}", parameter.getProjectId());
-                                return new NotFoundException(ResourceType.ODC_PROJECT, "id", parameter.getProjectId());
+                                log.warn("Project not found, id={}", projectId);
+                                return new NotFoundException(ResourceType.ODC_PROJECT, "id", projectId);
                             });
-                    if (CollectionUtils.isEmpty(parameter.getResourceRoleIds())) {
+                    List<Long> resourceRoleIds = parameter.getResourceRoles().stream().map(ApplyResourceRole::getId)
+                            .collect(Collectors.toList());
+                    if (CollectionUtils.isEmpty(resourceRoleIds)) {
                         log.info("No project role to apply, skip granting");
                         success = true;
                         return;
                     }
-                    for (Long resourceRoleId : parameter.getResourceRoleIds()) {
+                    for (Long resourceRoleId : resourceRoleIds) {
                         ResourceRoleEntity resourceRoleEntity =
                                 resourceRoleRepository.findById(resourceRoleId).orElseThrow(
                                         () -> {
@@ -101,7 +108,7 @@ public class ApplyProjectFlowableTask extends BaseODCFlowTaskDelegate<ApplyProje
                                                     resourceRoleId);
                                         });
                         log.info("Start grant project role to user, userId={}, projectId={}, projectRoleId={}",
-                                parameter.getUserId(), parameter.getProjectId(), resourceRoleId);
+                                parameter.getUserId(), projectId, resourceRoleId);
                         UserResourceRoleEntity entity = new UserResourceRoleEntity();
                         entity.setUserId(userEntity.getId());
                         entity.setResourceId(projectEntity.getId());
@@ -113,7 +120,7 @@ public class ApplyProjectFlowableTask extends BaseODCFlowTaskDelegate<ApplyProje
                         }
                         userResourceRoleRepository.save(entity);
                         log.info("Grant project role to user successfully, userId={}, projectId={}, projectRoleId={}",
-                                parameter.getUserId(), parameter.getProjectId(), resourceRoleId);
+                                parameter.getUserId(), projectId, resourceRoleId);
                     }
                     success = true;
                 } catch (Exception e) {

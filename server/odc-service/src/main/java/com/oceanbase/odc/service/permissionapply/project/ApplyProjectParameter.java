@@ -19,7 +19,10 @@ package com.oceanbase.odc.service.permissionapply.project;
 import java.io.Serializable;
 import java.util.List;
 
+import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
+import com.oceanbase.odc.service.collaboration.project.model.Project;
 import com.oceanbase.odc.service.flow.model.TaskParameters;
+import com.oceanbase.odc.service.iam.model.ResourceRole;
 
 import lombok.Data;
 
@@ -31,13 +34,13 @@ import lombok.Data;
 public class ApplyProjectParameter implements Serializable, TaskParameters {
 
     /**
-     * ID of the project to be applied for
+     * Project to be applied for
      */
-    private Long projectId;
+    private ApplyProject project;
     /**
-     * IDs of the resource roles to be applied for
+     * Resource roles to be applied for
      */
-    private List<Long> resourceRoleIds;
+    private List<ApplyResourceRole> resourceRoles;
     /**
      * Reason for application
      */
@@ -46,5 +49,30 @@ public class ApplyProjectParameter implements Serializable, TaskParameters {
      * ID of the user who applied for the project, filled in by {@link ApplyProjectPreprocessor}
      */
     private Long userId;
+
+
+    @Data
+    public static class ApplyProject {
+        /**
+         * Project id, refer to {@link Project#getId()}
+         */
+        private Long id;
+        /**
+         * Project name, refer to {@link Project#getName()}
+         */
+        private String name;
+    }
+
+    @Data
+    public static class ApplyResourceRole {
+        /**
+         * Resource role id, refer to {@link ResourceRole#getId()}
+         */
+        private Long id;
+        /**
+         * Resource role name, refer to {@link ResourceRole#getRoleName()}
+         */
+        private ResourceRoleName name;
+    }
 
 }
