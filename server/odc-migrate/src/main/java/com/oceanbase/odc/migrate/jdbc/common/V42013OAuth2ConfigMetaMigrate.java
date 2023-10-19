@@ -114,9 +114,11 @@ public class V42013OAuth2ConfigMetaMigrate implements JdbcMigratable {
         boolean passwordLoginEnabled = authType.contains("local");
         if (authType != null && authType.toLowerCase().contains("oauth2")) {
             migrateOauth2PropertyToIntegration(passwordLoginEnabled);
+            throw new RuntimeException("oauth2 migrate successfully, you need restart odc!");
         }
         if (authType != null && authType.toLowerCase().contains("buc")) {
             migrateBucPropertyToIntegration(passwordLoginEnabled);
+            throw new RuntimeException("oauth2 migrate successfully, you need restart odc!");
         }
     }
 
