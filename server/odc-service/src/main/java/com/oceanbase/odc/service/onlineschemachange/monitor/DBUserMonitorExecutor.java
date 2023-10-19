@@ -43,11 +43,11 @@ public class DBUserMonitorExecutor {
     private ExecutorService executorService;
     private DBUserMonitor dbUserMonitor;
     private final List<String> toMonitorUsers;
-    private final ConnectionConfig connectConfig;
-    private ConnectionSession connSession;
+    private final ConnectionConfig connectionConfig;
+    private ConnectionSession connectionSession;
 
     public DBUserMonitorExecutor(ConnectionConfig connectConfig, List<String> toMonitorUsers) {
-        this.connectConfig = connectConfig;
+        this.connectionConfig = connectConfig;
         this.toMonitorUsers = toMonitorUsers;
     }
 
@@ -59,11 +59,11 @@ public class DBUserMonitorExecutor {
             throw new IllegalStateException("DB user status monitor has been started.");
         }
         // Generate a new ConnectionSession in monitor
-        connSession = new DefaultConnectSessionFactory(connectConfig).generateSession();
+        connectionSession = new DefaultConnectSessionFactory(connectionConfig).generateSession();
         executorService = Executors.newSingleThreadExecutor();
         DBUserMonitorFactory userLogStatusMonitorFactory = new DBUserLogStatusMonitorFactory(logParameter);
 
-        dbUserMonitor = userLogStatusMonitorFactory.generateDBUserMonitor(connSession,
+        dbUserMonitor = userLogStatusMonitorFactory.generateDBUserMonitor(connectionSession,
                 toMonitorUsers, 200, Integer.MAX_VALUE, TimeUnit.MILLISECONDS);
         executorService.execute(dbUserMonitor);
     }
@@ -86,8 +86,8 @@ public class DBUserMonitorExecutor {
                     executorService.shutdownNow();
                 }
             } finally {
-                if (connSession != null) {
-                    connSession.expire();
+                if (connectionSession != null) {
+                    connectionSession.expire();
                 }
             }
         }

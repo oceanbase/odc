@@ -26,6 +26,6 @@ import lombok.Data;
  */
 @Builder
 @Data
-public class DataBaseUser {
+public class DatabaseUser {
     private String name;
 }

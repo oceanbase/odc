@@ -21,7 +21,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -77,9 +76,9 @@ import com.oceanbase.odc.service.collaboration.project.model.Project;
 import com.oceanbase.odc.service.collaboration.project.model.QueryProjectParams;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.model.CreateDatabaseReq;
-import com.oceanbase.odc.service.connection.database.model.DataBaseUser;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.database.model.DatabaseSyncStatus;
+import com.oceanbase.odc.service.connection.database.model.DatabaseUser;
 import com.oceanbase.odc.service.connection.database.model.DeleteDatabasesReq;
 import com.oceanbase.odc.service.connection.database.model.QueryDatabaseParams;
 import com.oceanbase.odc.service.connection.database.model.TransferDatabasesReq;
@@ -165,6 +164,16 @@ public class DatabaseService {
         return database;
     }
 
+    @Transactional(rollbackFor = Exception.class)
+    @SkipAuthorize("internal authenticated")
+    public Database detail(@NonNull Long id, String taskType) {
+        Database database = detail(id);
+        if (Objects.equals(TaskType.ONLINE_SCHEMA_CHANGE.name(), taskType) && database.getDataSource() != null) {
+            database.setLockDatabaseUserRequired(getLockUserIsRequired(database.getDataSource()));
+        }
+        return database;
+    }
+
     @SkipAuthorize("odc internal usage")
     @Transactional(rollbackFor = Exception.class)
     public ConnectionConfig findDataSourceForConnectById(@NonNull Long id) {
@@ -232,18 +241,7 @@ public class DatabaseService {
             specs = specs.and(DatabaseSpecs.connectionIdEquals(params.getDataSourceId()));
         }
         Page<DatabaseEntity> entities = databaseRepository.findAll(specs, pageable);
-        Page<Database> databases = entitiesToModels(entities);
-
-        Map<String, Boolean> connectId2LockUserRequired = new HashMap<>();
-        databases.forEach(d -> {
-            if (Objects.equals(TaskType.ONLINE_SCHEMA_CHANGE.name(), params.getTaskType())
-                    && d.getDataSource() != null) {
-                boolean locked = connectId2LockUserRequired.computeIfAbsent(
-                        d.getDataSource().getId() + "", k -> getLockUserIsRequired(d.getDataSource()));
-                d.setLockDatabaseUserRequired(locked);
-            }
-        });
-        return databases;
+        return entitiesToModels(entities);
     }
 
 
@@ -597,7 +595,7 @@ public class DatabaseService {
     }
 
     @SkipAuthorize("internal authorized")
-    public Page<DataBaseUser> listUsers(Long dataSourceId) {
+    public Page<DatabaseUser> listUsers(Long dataSourceId) {
         ConnectionConfig config = connectionService.getForConnectionSkipPermissionCheck(dataSourceId);
         horizontalDataPermissionValidator.checkCurrentOrganization(config);
         DefaultConnectSessionFactory factory = new DefaultConnectSessionFactory(config);
@@ -608,7 +606,7 @@ public class DatabaseService {
             Set<String> whiteUsers = OscDBUserUtil.getLockUserWhiteList(config);
             return new PageImpl<>(dbUsers.stream()
                     .filter(u -> !whiteUsers.contains(u.getName()))
-                    .map(d -> DataBaseUser.builder().name(d.getName()).build())
+                    .map(d -> DatabaseUser.builder().name(d.getName()).build())
                     .collect(Collectors.toList()));
         } finally {
             connSession.expire();

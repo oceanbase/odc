@@ -19,16 +19,12 @@ import java.util.List;
 import java.util.function.Predicate;
 
 import org.apache.commons.collections4.CollectionUtils;
-import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.JdbcOperations;
 
-import com.google.common.collect.Lists;
-import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.shared.model.OdcDBSession;
-import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 import com.oceanbase.odc.service.session.DBSessionManageFacade;
 
 import lombok.extern.slf4j.Slf4j;
@@ -81,8 +77,7 @@ public class LockUserInterceptor implements RenameTableInterceptor {
 
     private void lockUserAndKillSession(Integer lockTableTimeOutSeconds, List<String> lockUsers) {
         batchExecuteLockUser(lockUsers);
-        dbSessionManageFacade.killAllSessions(connSession,
-                getSessionFilter(connSession, lockUsers), lockTableTimeOutSeconds);
+        dbSessionManageFacade.killAllSessions(connSession, getSessionFilter(lockUsers), lockTableTimeOutSeconds);
     }
 
     private void batchExecuteLockUser(List<String> users) {
@@ -108,18 +103,8 @@ public class LockUserInterceptor implements RenameTableInterceptor {
         log.info("Execute sql: {} ", sql);
     }
 
-    private Predicate<OdcDBSession> getSessionFilter(ConnectionSession connectionSession, List<String> lockUsers) {
-        String currentSessionId = connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY)
-                .execute((ConnectionCallback<? extends String>) conn -> ConnectionPluginUtil
-                        .getSessionExtension(connectionSession.getDialectType()).getConnectionId(conn));
-        List<String> filterList = Lists.newArrayList(currentSessionId);
-        log.info("Kill session filter session id : {}", JsonUtils.toJson(filterList));
-
-        // filter current session
-        Predicate<OdcDBSession> predicate = dbSession -> !filterList.contains(dbSession.getSessionId() + "");
-
+    private Predicate<OdcDBSession> getSessionFilter(List<String> lockUsers) {
         // kill all sessions relational lockUsers
-        return predicate.and(dbSession -> lockUsers.contains(dbSession.getDbUser()));
+        return dbSession -> lockUsers.contains(dbSession.getDbUser());
     }
-
 }
