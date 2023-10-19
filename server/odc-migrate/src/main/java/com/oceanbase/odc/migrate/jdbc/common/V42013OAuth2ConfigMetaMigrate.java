@@ -195,7 +195,7 @@ public class V42013OAuth2ConfigMetaMigrate implements JdbcMigratable {
                     String loginRedirectUrl = getValueBySuffix(oauth2Properties, OAUTH2_LOGIN_REDIRECT_URL, 2);
                     Preconditions.checkNotNull(loginRedirectUrl, "loginRedirectUrl");
                     oauth2Parameter.setLoginRedirectUrl(replaceRegistrationId(loginRedirectUrl, registrationId));
-                    oauth2Parameter.setRedirectUrl("{baseUrl}" + "/login/oauth2/code/"+registrationId);
+                    oauth2Parameter.setRedirectUrl("{baseUrl}" + "/login/oauth2/code/" + registrationId);
                     ssoIntegrationConfig.setSsoParameter(oauth2Parameter);
                     // check whether it can convert to client registration
                     ssoIntegrationConfig.toClientRegistration();
@@ -306,7 +306,7 @@ public class V42013OAuth2ConfigMetaMigrate implements JdbcMigratable {
                     String loginRedirectUrl = getValueBySuffix(bucProperties, OAUTH2_LOGIN_REDIRECT_URL, 3);
                     Preconditions.checkNotNull(loginRedirectUrl, "loginRedirectUrl");
                     oauth2Parameter.setLoginRedirectUrl(replaceRegistrationId(loginRedirectUrl, registrationId));
-                    oauth2Parameter.setRedirectUrl("{baseUrl}" + "/login/oauth2/code/"+registrationId);
+                    oauth2Parameter.setRedirectUrl("{baseUrl}" + "/login/oauth2/code/" + registrationId);
                     ssoIntegrationConfig.setSsoParameter(oauth2Parameter);
                     // check whether it can convert to client registration
                     ssoIntegrationConfig.toClientRegistration();
