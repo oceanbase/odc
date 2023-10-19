@@ -116,7 +116,7 @@ public class ExpiredDocumentProviderTest {
         Assert.assertTrue(file1.createNewFile());
         Assert.assertTrue(file1.isFile());
 
-        Thread.sleep(1000);
+        Thread.sleep(100);
 
         TestExpiredDocumentProvider provider = new TestExpiredDocumentProvider(1, TimeUnit.MILLISECONDS, rootDir);
         List<File> fileList = provider.provide();
