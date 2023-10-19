@@ -25,9 +25,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.commons.collections4.CollectionUtils;
 
-import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
-import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -41,10 +39,10 @@ public class DBUserMonitorExecutor {
 
     private final AtomicBoolean started = new AtomicBoolean(false);
     private ExecutorService executorService;
-    private DBUserMonitor dbUserMonitor;
+    private volatile DBUserMonitor dbUserMonitor;
     private final List<String> toMonitorUsers;
     private final ConnectionConfig connectionConfig;
-    private ConnectionSession connectionSession;
+    private final int period = 200;
 
     public DBUserMonitorExecutor(ConnectionConfig connectConfig, List<String> toMonitorUsers) {
         this.connectionConfig = connectConfig;
@@ -58,13 +56,11 @@ public class DBUserMonitorExecutor {
         if (!started.compareAndSet(false, true)) {
             throw new IllegalStateException("DB user status monitor has been started.");
         }
-        // Generate a new ConnectionSession in monitor
-        connectionSession = new DefaultConnectSessionFactory(connectionConfig).generateSession();
+
         executorService = Executors.newSingleThreadExecutor();
         DBUserMonitorFactory userLogStatusMonitorFactory = new DBUserLogStatusMonitorFactory(logParameter);
-
-        dbUserMonitor = userLogStatusMonitorFactory.generateDBUserMonitor(connectionSession,
-                toMonitorUsers, 200, Integer.MAX_VALUE, TimeUnit.MILLISECONDS);
+        dbUserMonitor = userLogStatusMonitorFactory.generateDBUserMonitor(connectionConfig,
+                toMonitorUsers, period, Integer.MAX_VALUE, TimeUnit.MILLISECONDS);
         executorService.execute(dbUserMonitor);
     }
 
@@ -81,14 +77,8 @@ public class DBUserMonitorExecutor {
                 dbUserMonitor.stop();
             }
         } finally {
-            try {
-                if (executorService != null) {
-                    executorService.shutdownNow();
-                }
-            } finally {
-                if (connectionSession != null) {
-                    connectionSession.expire();
-                }
+            if (executorService != null) {
+                executorService.shutdownNow();
             }
         }
 

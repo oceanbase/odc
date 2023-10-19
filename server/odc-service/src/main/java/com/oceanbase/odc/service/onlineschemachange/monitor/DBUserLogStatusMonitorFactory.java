@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import com.oceanbase.odc.core.session.ConnectionSession;
+import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 
 /**
  * @author yaobin
@@ -36,8 +36,8 @@ public class DBUserLogStatusMonitorFactory implements DBUserMonitorFactory {
     }
 
     @Override
-    public DBUserMonitor generateDBUserMonitor(ConnectionSession connSession, List<String> toMonitorUsers,
+    public DBUserMonitor generateDBUserMonitor(ConnectionConfig connConfig, List<String> toMonitorUsers,
             Integer period, Integer timeout, TimeUnit timeUnit) {
-        return new DBUserLogStatusMonitor(connSession, toMonitorUsers, logParameter, period, timeout, timeUnit);
+        return new DBUserLogStatusMonitor(connConfig, toMonitorUsers, logParameter, period, timeout, timeUnit);
     }
 }

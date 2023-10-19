@@ -33,6 +33,7 @@ import com.oceanbase.odc.common.concurrent.Await;
 import com.oceanbase.odc.common.util.tableformat.Table;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
+import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.db.browser.DBStatsAccessors;
 import com.oceanbase.odc.service.onlineschemachange.OnlineSchemaChangeContextHolder;
 import com.oceanbase.odc.service.onlineschemachange.ddl.DBUser;
@@ -40,6 +41,7 @@ import com.oceanbase.odc.service.onlineschemachange.ddl.OscDBAccessor;
 import com.oceanbase.odc.service.onlineschemachange.ddl.OscFactoryWrapper;
 import com.oceanbase.odc.service.onlineschemachange.ddl.OscFactoryWrapperGenerator;
 import com.oceanbase.odc.service.onlineschemachange.logger.DefaultTableFactory;
+import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.tools.dbbrowser.model.DBSession;
 import com.oceanbase.tools.dbbrowser.stats.DBStatsAccessor;
 
@@ -54,7 +56,10 @@ import lombok.extern.slf4j.Slf4j;
 public class DBUserLogStatusMonitor implements DBUserMonitor {
 
     private final List<String> toMonitorUsers;
+    // Indicate monitor be call stop
     private final AtomicBoolean stopped;
+    // Indicate monitor start method is done
+    private final AtomicBoolean done;
     private final OscDBAccessor dbSchemaAccessor;
     private final DBStatsAccessor dbStatsAccessor;
     private final Map<String, Object> logParameter;
@@ -62,15 +67,19 @@ public class DBUserLogStatusMonitor implements DBUserMonitor {
     private final Integer period;
     private final Integer timeout;
     private final TimeUnit timeUnit;
+    private final ConnectionSession connSession;
 
-    public DBUserLogStatusMonitor(ConnectionSession connSession, List<String> toMonitorUsers,
+    public DBUserLogStatusMonitor(ConnectionConfig connConfig, List<String> toMonitorUsers,
             Map<String, Object> logParameter, Integer period, Integer timeout, TimeUnit timeUnit) {
         this.toMonitorUsers = toMonitorUsers;
         this.logParameter = logParameter;
-        OscFactoryWrapper generate = OscFactoryWrapperGenerator.generate(connSession.getDialectType());
+        // Generate a new ConnectionSession in monitor
+        this.connSession = new DefaultConnectSessionFactory(connConfig).generateSession();
+        OscFactoryWrapper generate = OscFactoryWrapperGenerator.generate(connConfig.getDialectType());
         this.dbSchemaAccessor = generate.getOscDBAccessorFactory().generate(connSession);
         this.dbStatsAccessor = DBStatsAccessors.create(connSession);
         this.stopped = new AtomicBoolean(false);
+        this.done = new AtomicBoolean(false);
         this.period = period;
         this.timeout = timeout;
         this.timeUnit = timeUnit;
@@ -78,6 +87,7 @@ public class DBUserLogStatusMonitor implements DBUserMonitor {
 
     @Override
     public void start() {
+        log.info("DB user status monitor has started.");
         try {
             Await.await().period(period)
                     .timeout(timeout)
@@ -86,24 +96,31 @@ public class DBUserLogStatusMonitor implements DBUserMonitor {
                     .build()
                     .start();
         } catch (CompletionException e) {
-            if (!(e.getCause() instanceof InterruptedException)) {
+            if ((e.getCause() instanceof InterruptedException)) {
+                // If Await is interrupted, monitor call logAccountStatus once again to
+                // show the latest user lock info.
+                logAccountStatus();
+            } else {
                 log.warn("DB user status monitor occur error: ", e);
             }
-        }
-        // If stop be called, monitor once again to show the latest user lock info
-        if (!stopped.compareAndSet(false, true)) {
-            logAccountStatus();
+        } finally {
+            if (connSession != null) {
+                connSession.expire();
+            }
+            done.set(true);
+            log.info("DB user status monitor has done.");
         }
     }
 
     @Override
     public void stop() {
+        log.info("DB user status monitor is stopping.");
         stopped.set(true);
     }
 
     @Override
     public boolean isDone() {
-        return stopped.get();
+        return done.get();
     }
 
     @Override
@@ -138,6 +155,6 @@ public class DBUserLogStatusMonitor implements DBUserMonitor {
         List<String> headers = Lists.newArrayList("username", "status", "session");
         Table table = new DefaultTableFactory().generateTable(3, headers, tableColumns);
         log.info("\n" + table.render().toString() + "\n");
-        return isDone();
+        return stopped.get();
     }
 }
