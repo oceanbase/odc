@@ -91,8 +91,11 @@ public class DBUserLogStatusMonitor implements DBUserMonitor {
             }
         }
         // If stop be called, monitor once again to show the latest user lock info
-        if (stopped.compareAndSet(false, true)) {
+        if (stopped.get()) {
             logAccountStatus();
+        } else {
+            // Monitor timeout
+            stopped.set(true);
         }
     }
 
