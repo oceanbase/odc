@@ -194,11 +194,11 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
             dataSource.setAutoCommit(autoCommit);
         }
         if (this.initConnection) {
+            dataSource.addInitializer(new SessionCreatedInitializer(connectionConfig));
             List<ConnectionInitializer> initializers = connectionExtensionPoint.getConnectionInitializers();
             if (!CollectionUtils.isEmpty(initializers)) {
                 initializers.forEach(dataSource::addInitializer);
             }
-            dataSource.addInitializer(new SessionCreatedInitializer(connectionConfig));
         }
         return dataSource;
     }
