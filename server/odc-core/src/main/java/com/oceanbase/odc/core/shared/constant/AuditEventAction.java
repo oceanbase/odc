@@ -204,6 +204,8 @@ public enum AuditEventAction implements Translatable {
 
     STOP_ONLINE_SCHEMA_CHANGE_TASK,
 
+    STOP_PERMISSION_APPLY_PROJECT_TASK,
+
     EXECUTE_ASYNC_TASK,
 
     EXECUTE_MOCKDATA_TASK,
