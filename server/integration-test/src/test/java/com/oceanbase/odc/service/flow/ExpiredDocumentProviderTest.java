@@ -103,7 +103,7 @@ public class ExpiredDocumentProviderTest {
     }
 
     @Test
-    public void provide_BothExpired_ReturnAll() throws IOException {
+    public void provide_BothExpired_ReturnAll() throws IOException, InterruptedException {
         File rootDir = new File(ROOT_FILE_DIR);
         FileUtils.forceMkdir(rootDir);
         Assert.assertTrue(rootDir.exists());
@@ -115,6 +115,8 @@ public class ExpiredDocumentProviderTest {
         File file1 = new File(rootDir.getAbsolutePath() + "/read1.txt");
         Assert.assertTrue(file1.createNewFile());
         Assert.assertTrue(file1.isFile());
+
+        Thread.sleep(1000);
 
         TestExpiredDocumentProvider provider = new TestExpiredDocumentProvider(1, TimeUnit.MILLISECONDS, rootDir);
         List<File> fileList = provider.provide();
