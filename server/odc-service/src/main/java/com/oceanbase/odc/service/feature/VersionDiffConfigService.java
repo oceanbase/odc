@@ -100,7 +100,8 @@ public class VersionDiffConfigService {
         config.setDbMode(getDbMode(connectionSession));
         List<VersionDiffConfig> list = this.versionDiffConfigDAO.query(config);
         String currentVersion = ConnectionSessionUtil.getVersion(connectionSession);
-        boolean supportsProcedure = verifySupportsProcedure(connectionSession);
+        boolean supportsProcedure =
+                AllFeatures.getByConnectType(connectionSession.getConnectType()).supportsProcedure();
         List<Configuration> systemConfigs = systemConfigService.listAll();
         for (VersionDiffConfig diffConfig : list) {
             String configKey = diffConfig.getConfigKey().toLowerCase();
@@ -149,32 +150,6 @@ public class VersionDiffConfigService {
             log.warn("failed to query nls_date_format, reason={}", e.getMessage());
         }
         return false;
-    }
-
-    private boolean verifySupportsProcedure(ConnectionSession connectionSession) {
-        Features features = AllFeatures.getByConnectType(connectionSession.getConnectType());
-        if (!features.supportsProcedure()) {
-            return false;
-        }
-        JdbcOperations jdbcOperations =
-                connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY);
-        try {
-            try {
-                jdbcOperations.execute("call obodc_procedure_feature_test()");
-            } catch (Exception e) {
-                boolean res;
-                res = StringUtils.containsIgnoreCase(e.getMessage(), "syntax");
-                if (e.getCause() != null) {
-                    res = StringUtils.containsIgnoreCase(e.getCause().getMessage(), "syntax");
-                }
-                if (res) {
-                    return false;
-                }
-            }
-        } catch (Exception e) {
-            log.warn("failed to call obodc_procedure_feature_test(), reason={}", e.getMessage());
-        }
-        return true;
     }
 
     private boolean isPLDebugSupport(ConnectionSession connectionSession) {
