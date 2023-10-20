@@ -17,15 +17,14 @@ package com.oceanbase.odc.migrate.jdbc.common;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
 import javax.sql.DataSource;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -38,6 +37,7 @@ import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.HashUtils;
 import com.oceanbase.odc.common.util.JdbcTemplateUtils;
 import com.oceanbase.odc.common.util.ObjectUtil;
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.migrate.JdbcMigratable;
 import com.oceanbase.odc.core.migrate.Migratable;
 import com.oceanbase.odc.metadb.iam.OrganizationEntity;
@@ -97,14 +97,6 @@ public class V42013OAuth2ConfigMetaMigrate implements JdbcMigratable {
         String param = split.length > 1 ? "?" + split[1] : "";
         String regex = "/[^/]+$";
         return target.replaceAll(regex, "/" + registrationId) + param;
-    }
-
-    public static Set<String> splitByComma(String target) {
-        if (target == null) {
-            return new HashSet<>();
-        }
-        return Arrays.stream(target.split("\\,"))
-                .collect(Collectors.toSet());
     }
 
     @Override
@@ -228,13 +220,14 @@ public class V42013OAuth2ConfigMetaMigrate implements JdbcMigratable {
         });
     }
 
-    private String enabledOrgName(String organizationName, List<OrganizationEntity> organizationEntities) {
-        String enabledOrgName = organizationName;
-        if (enabledOrgName == null && organizationEntities.size() >= 2) {
-            // Previous version will create an organization when use oauth2
-            enabledOrgName = organizationEntities.get(1).getName();
+    private String enabledOrgName(String organizationName, List<OrganizationEntity> organizations) {
+        if (StringUtils.isNotBlank(organizationName)) {
+            return organizationName;
         }
-        return enabledOrgName;
+        if (CollectionUtils.isEmpty(organizations)) {
+            return "ODC-DEFAULT";
+        }
+        return organizations.iterator().next().getName();
     }
 
     private void migrateBucPropertyToIntegration(boolean passwordLoginEnabled) {
@@ -289,7 +282,6 @@ public class V42013OAuth2ConfigMetaMigrate implements JdbcMigratable {
                 organizations.forEach(org -> {
                     String loginRedirectUrl = getValueBySuffix(bucProperties, OAUTH2_LOGIN_REDIRECT_URL, 3);
                     Preconditions.checkNotNull(loginRedirectUrl, "loginRedirectUrl");
-
                     Oauth2Parameter currentOauth2Parameter =
                             ObjectUtil.deepCopy(oauth2Parameter, Oauth2Parameter.class);
                     currentOauth2Parameter.setRedirectUrl(null);
@@ -341,7 +333,8 @@ public class V42013OAuth2ConfigMetaMigrate implements JdbcMigratable {
     }
 
     private List<OrganizationEntity> getOrganizations() {
-        String sql = "select id, unique_identifier,`secret`,`name`,creator_id,is_builtin,description,type,display_name"
+        String sql = "select id, unique_identifier,`secret`,name,creator_id,"
+                + " is_builtin as builtin,description,type,display_name"
                 + " from iam_organization where is_builtin = 0 and type='TEAM'"
                 + " order by id desc";
         return jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(OrganizationEntity.class));
