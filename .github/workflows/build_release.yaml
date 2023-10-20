@@ -190,8 +190,8 @@ jobs:
       - name: Upload docker image (x86_64)
         uses: actions/upload-artifact@v3
         with:
-          name: odc-server-${{ env.odc_docker_image_tag }}.tar.gz
-          path: distribution/docker/resources/odc-server-*.tar.gz
+          name: odc-${{ env.odc_docker_image_tag }}.tar.gz
+          path: distribution/docker/resources/odc-*.tar.gz
 
   build-client:
     name: Build Client Artifact
