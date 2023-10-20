@@ -110,15 +110,16 @@ function init_jvm_options() {
     fi
     local log_options="-Dlog4j.configurationFile=${app_log_config_file} -Dodc.log.directory=${app_log_directory}"
     local work_dir_options="-Duser.dir=${ODC_WORK_DIR:-${current_work_directory}}"
-    app_options="${log_options} ${work_dir_options}"
+    local plugin_options="-Dplugin.dir=${plugin_directory}"
+    local starter_options="-Dstarter.dir=${starter_directory}"
+
+    app_options="${log_options} ${work_dir_options} ${plugin_options} ${starter_options}"
 
     local listen_port_args="--server.port=${server_port}"
     local obclient_args="--obclient.work.dir=${obclient_work_directory} --obclient.file.path=${obclient_file_path}"
-    local plugin_args="--plugin.dir=${plugin_directory}"
-    local starter_args="--starter.dir=${starter_directory}"
     local file_args="--file.storage.dir=${obclient_work_directory}"
     local extra_args="${ODC_APP_EXTRA_ARGS}"
-    app_args="${listen_port_args} ${obclient_args} ${file_args} ${extra_args} ${plugin_args} ${starter_args}"
+    app_args="${listen_port_args} ${obclient_args} ${file_args} ${extra_args}"
 
     echo "init jvm options done"
 }

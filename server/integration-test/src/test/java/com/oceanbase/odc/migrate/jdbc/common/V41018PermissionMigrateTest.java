@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.metadb.migrate;
+package com.oceanbase.odc.migrate.jdbc.common;
 
 import java.util.Collections;
 import java.util.List;
@@ -37,7 +37,6 @@ import com.oceanbase.odc.metadb.iam.UserPermissionEntity;
 import com.oceanbase.odc.metadb.iam.UserPermissionRepository;
 import com.oceanbase.odc.metadb.iam.UserRoleEntity;
 import com.oceanbase.odc.metadb.iam.UserRoleRepository;
-import com.oceanbase.odc.migrate.jdbc.common.V41018PermissionMigrate;
 import com.oceanbase.odc.test.tool.TestRandom;
 
 /**
