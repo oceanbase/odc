@@ -152,8 +152,8 @@ jobs:
       fail-fast: false
       matrix:
         lib:
-          - ob-sql-parser
           - db-browser
+          - ob-sql-parser
     steps:
       - name: Checkout workspace
         uses: actions/checkout@v3
@@ -163,13 +163,14 @@ jobs:
           java-version: "8"
           distribution: "temurin"
           cache: maven
-      - name: Build project
+      - name: Install ob-sql-parser
         run: |
-          echo "Start install ${{ matrix.lib }}"
-          pushd libs/${{ matrix.lib }}
+          echo "Start install ob-sql-parser"
+          pushd libs/ob-sql-parser
           echo "Current dir is "`pwd`
           mvn clean install -Dmaven.test.skip=true
-          echo "Install ${{ matrix.lib }} success"
+          echo "Install ob-sql-parser success"
+          popd
       - name: Run unit test
         id: unit_test
         run: |
