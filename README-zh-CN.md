@@ -5,7 +5,7 @@
 # OceanBase 开发者中心 (ODC)
 
 OceanBase 开发者中心（以下简称 ODC）是开源的全场景数据库开发和数据管理协同工具，通过协同开发解决数据库的变更风险管控、数据管理和数据安全问题。
-![image](https://github.com/oceanbase/odc/assets/15030999/0ec084a6-25e7-4f1c-8fb8-70e9f33c730e)
+![image](https://github.com/oceanbase/odc/assets/15030999/1af41ae6-8cf6-4d1e-9e36-c62ec8f76801)
 
 
 
@@ -15,14 +15,14 @@ OceanBase 开发者中心（以下简称 ODC）是开源的全场景数据库开
 
 - ODC 基于现代 WEB 架构，随时随地，只要有浏览器就可以访问您的数据库。
 - ODC SQL 开发功能全面且易用，桌面开发工具有的功能 ODC 也有，甚至支持 PL 调试。
-  ![image](https://github.com/oceanbase/odc/assets/15030999/d0cb1106-7074-4b49-a29b-1270956ca30b)
+![image](https://github.com/oceanbase/odc/assets/15030999/e261f64d-dbdf-4140-a150-3cb2bd1abce1)
 
 
 ### 守护 SQL 开发过程的每一次变更
 
 - 在 SQL 开发过程的全部场景，包括可视化对象管理、SQL 查询、数据编辑、数据导入和导出、... ，ODC 都内置了风险控制。
 - ODC 提供基于项目的协同和变更审批流程，并且内置了 SQL 检查规则、SQL 窗口规范、风险等级识别。
-  ![image](https://github.com/oceanbase/odc/assets/15030999/95125f1a-f132-48ed-a592-85c695883706)
+![image](https://github.com/oceanbase/odc/assets/15030999/cda58c5e-5327-4ea8-ac83-607f1d9d0688)
 
 
 
@@ -31,14 +31,14 @@ OceanBase 开发者中心（以下简称 ODC）是开源的全场景数据库开
 - ODC 支持数据按照保留时长清理或归档，5 分钟构建你的冷热数据分离系统。
 - ODC 不仅支持按照数据的时间标记处理，也支持按照分区批量处理。
 - 还可以通过 ODC SQL 计划任务完成计算任务，为什么还要继续使用你的 CRONTAB ？
-  ![image](https://github.com/oceanbase/odc/assets/15030999/9156a9c9-1fb8-469f-a306-c60650b1dc39)
+![image](https://github.com/oceanbase/odc/assets/15030999/95a606e8-bcd8-49b9-9667-2e72b90c3ea3)
 
 
 ### 全场景敏感数据保护
 
 - ODC 数据脱敏支持静态场景也支持动态场景，结构变更、SQL 查询、结果集导出、数据导出 全部开发场景都会脱敏。
 - 安全管理员配置敏感数据规则和脱敏算法，DBA 和 开发 都无法接触敏感数据。
-  ![image](https://github.com/oceanbase/odc/assets/15030999/5b0a62d1-6495-4388-80e1-aacc85203ae9)
+![image](https://github.com/oceanbase/odc/assets/15030999/baf76d2f-1ce9-42e8-91a3-a2f873683f62)
 
 
 
@@ -47,38 +47,9 @@ OceanBase 开发者中心（以下简称 ODC）是开源的全场景数据库开
 
 - 无需改变您的系统就可以把 ODC 集成到您当前的数据库开发协同工作流程中.
 - SSO、审批集成、SQL 审核集成、堡垒机集成、审计集成，企业管控集成需要的能力全都有。
-  ![image](https://github.com/oceanbase/odc/assets/15030999/dff7b96a-4777-4eef-bcad-557e1f409a4f)
+![image](https://github.com/oceanbase/odc/assets/15030999/79f0fd1d-f3dc-4a45-b236-ec64476df5b2)
 
 
-
-## 🌟 功能特性
-
-ODC 产品功能包括 SQL 开发和管控协同 2 个方面，核心功能列举如下。
-
-### SQL 开发
-
-- 多数据源：支持 OceanBase MySQL 模式/Oracle 模式、ODP Sharing、MySQL 等数据库（不断增加中）。
-- 数据库对象：表、视图、序列、同义词、触发器、存储过程、函数、程序包、类型 等对象的可视化管理。
-- SQL 执行：SQL 编辑和执行、命令行窗口、脚本、代码片段。
-- 数据查看与编辑：数据查看、数据编辑、结果集 Excel 互操作。
-- 监控诊断：执行计划、执行剖析、数据库全链路 TRACE。
-- 数据生成：测试数据生成，场景化数据生成。
-- 导入和导出：结构导入、结构导出、数据导入、数据导出、整库导入、整库导出。
-- PL 生命周期：PL 对象的执行、编译和调试。
-- 数据库运维：回话管理、变量管理、回收站管理、权限管理（规划中）。
-
-### 管控协同
-
-- 权限管理：用户管理、基于 RBAC 模型的自定义角色。
-- 团队协同：基于项目的管理员、DBA、开发多角色协同、库级别访问权限管理。
-- 变更管控：自定义审批流程、基于语法规则的 SQL 检查。
-- 稳定变更：无锁结构变更、无锁数据变更（规划中）。
-- 数据生命周期：数据清理、数据归档、自动分区、SQL 定时任务。
-- 数据安全：敏感列管理、数据导出脱敏、数据查询脱敏、敏感列权限。
-- 合规审计：操作审计、SQL 审计、审计集成。
-- 协同效率：批量导入配置、自动授权规则、通知中心。
-- 系统集成：OAuth2、OIDC 账号集成、堡垒机集成、审批集成、SQL 审核集成。
-- 体验学习：实验资源、教程和课程、代码库（规划中）。
 
 ## 🚀 安装部署
 
