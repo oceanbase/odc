@@ -136,15 +136,6 @@ jobs:
           echo "RPM's version is "${new_version}
           mvn versions:set -DnewVersion="${new_version}"
           mvn versions:commit
-      - name: Install db-browser
-        if: ${{ github.event.inputs.install_db_browser == 'true'}}
-        run: |
-          echo "Start install db-browser"
-          pushd libs/db-browser
-          echo "Current dir is "`pwd`
-          mvn clean install -Dmaven.test.skip=true
-          echo "Install db-browser success"
-          popd
       - name: Install ob-sql-parser
         if: ${{ github.event.inputs.install_ob_sql_parser == 'true'}}
         run: |
@@ -153,6 +144,15 @@ jobs:
           echo "Current dir is "`pwd`
           mvn clean install -Dmaven.test.skip=true
           echo "Install ob-sql-parser success"
+          popd
+      - name: Install db-browser
+        if: ${{ github.event.inputs.install_db_browser == 'true'}}
+        run: |
+          echo "Start install db-browser"
+          pushd libs/db-browser
+          echo "Current dir is "`pwd`
+          mvn clean install -Dmaven.test.skip=true
+          echo "Install db-browser success"
           popd
       - name: Build jar
         run: |
