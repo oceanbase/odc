@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.metadb.migrate;
+package com.oceanbase.odc.migrate.jdbc.web;
 
 import javax.sql.DataSource;
 
@@ -25,7 +25,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.jdbc.JdbcTestUtils;
 
 import com.oceanbase.odc.ServiceTestEnv;
-import com.oceanbase.odc.migrate.jdbc.web.V4131InitialPasswordMigrate;
+import com.oceanbase.odc.migrate.jdbc.common.MigrateTestUtils;
 
 public class V4131InitialPasswordMigrateTest extends ServiceTestEnv {
 

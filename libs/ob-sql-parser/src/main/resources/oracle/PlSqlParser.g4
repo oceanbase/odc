@@ -122,6 +122,7 @@ unit_statement
     | grant_statement
 
     | procedure_call[false]
+    | set_variable
     ;
 
 // DDL -> SQL Statements for Stored PL/SQL Units
@@ -591,6 +592,27 @@ alter_session
 
 alter_session_set_clause
     : parameter_name '=' parameter_value
+    ;
+
+set_variable
+    : SET var_and_val_list
+    ;
+
+var_and_val_list
+    : var_and_val (',' var_and_val)*
+    ;
+
+var_and_val
+    : scope_or_scope_alias? regular_id (EQUALS_OP | ASSIGN_OP | TO) (CHAR_STRING | ON | OFF | numeric | regular_id | DEFAULT)
+    ;
+
+scope_or_scope_alias
+    : AT_SIGN
+    | AT_SIGN AT_SIGN
+    | SESSION
+    | GLOBAL
+    | AT_SIGN AT_SIGN GLOBAL PERIOD
+    | AT_SIGN AT_SIGN (SESSION | LOCAL) PERIOD
     ;
 
 create_sequence
@@ -3320,6 +3342,7 @@ statement
     | function_call
     | pipe_row_statement
     | procedure_call[true]
+    | set_variable
     ;
 
 swallow_to_semi
@@ -3663,7 +3686,7 @@ pivot_clause
     ;
 
 pivot_element
-    : aggregate_function_name '(' expression ')' column_alias?
+    : aggregate_function_name '(' (ASTERISK | expression) ')' column_alias?
     ;
 
 pivot_for_clause

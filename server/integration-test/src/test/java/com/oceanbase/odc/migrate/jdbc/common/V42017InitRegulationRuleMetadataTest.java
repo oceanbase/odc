@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.metadb.migrate;
+package com.oceanbase.odc.migrate.jdbc.common;
 
 import javax.sql.DataSource;
 
@@ -24,22 +24,21 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.jdbc.JdbcTestUtils;
 
 import com.oceanbase.odc.ServiceTestEnv;
-import com.oceanbase.odc.migrate.jdbc.common.R4201AuditEventMetaMigrate;
 
-public class R4201AuditEventMetaMigrateTest extends ServiceTestEnv {
-
+public class V42017InitRegulationRuleMetadataTest extends ServiceTestEnv {
     @Autowired
     private DataSource dataSource;
+
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
     @Test
-    public void migrate() {
-        R4201AuditEventMetaMigrate migrate = new R4201AuditEventMetaMigrate();
+    public void testMigrate() {
+        R42017RuleMetadataMigrate migrate = new R42017RuleMetadataMigrate();
         migrate.migrate(dataSource);
-
-        int count = JdbcTestUtils.countRowsInTableWhere(
-                jdbcTemplate, "audit_event_meta", "`id` = 1");
-        Assert.assertEquals(1, count);
+        Assert.assertNotEquals(0, JdbcTestUtils.countRowsInTable(jdbcTemplate, "regulation_rule_metadata_label"));;
+        Assert.assertNotEquals(0,
+                JdbcTestUtils.countRowsInTable(jdbcTemplate, "regulation_rule_metadata_property_metadata"));;
+        Assert.assertNotEquals(0, JdbcTestUtils.countRowsInTable(jdbcTemplate, "regulation_rule_metadata"));;
     }
 }
