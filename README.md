@@ -5,7 +5,8 @@ English | [中文](./README-zh-CN.md)
 # OceanBase Developer Center (ODC)
 
 OceanBase Developer Center, or ODC for short, is an open-source, all-encompassing tool for collaborative database development and data management across various scenarios. By streamlining collaborative efforts, ODC addresses the challenges of risk management during database changes, efficient data management, and data security concerns.
-![image](https://github.com/oceanbase/odc/assets/15030999/cef8937e-904f-43a0-b5c6-22ebae10905a)
+![image](https://github.com/oceanbase/odc/assets/15030999/e8f1afaf-26da-4de2-b634-e2061ec565d5)
+
 
 
 ## 🤔 What ODC Offers and Why Choose ODC?
@@ -14,14 +15,15 @@ OceanBase Developer Center, or ODC for short, is an open-source, all-encompassin
 
 - Utilizing modern web architecture, ODC provides unparalleled accessibility to your databases, allowing you to perform SQL development tasks on the go, right from your web browser.
 - ODC boasts a comprehensive and user-friendly SQL development environment that encompasses all the features you'd expect from desktop development tools, and even offers support for PL debugging.
-![image](https://github.com/oceanbase/odc/assets/15030999/1d9e32a6-f359-4286-b0be-82cf514c0883)
+![image](https://github.com/oceanbase/odc/assets/15030999/a8709d8f-3d57-4cb6-91c7-2cf54f04358b)
+
 
 
 ### Guard Every Change in Your SQL Development Journey 
 
 - Throughout the entire SQL development process, ODC is your steadfast companion, offering risk control at every turn. From visual object management to SQL queries, data editing, and import/export tasks, ODC comes equipped with built-in risk management tools.
 - ODC introduces project-based collaboration and change approval workflows, complemented by SQL validation rules, SQL window guidelines, and risk level identification.
-![image](https://github.com/oceanbase/odc/assets/15030999/6d90509b-91cb-465a-ac75-1604f96c9ffd)
+![image](https://github.com/oceanbase/odc/assets/15030999/ac55b51b-28e2-42e6-977a-7eeb7c3f11fa)
 
 
 ### Automated Data Lifecycle Management
@@ -29,54 +31,21 @@ OceanBase Developer Center, or ODC for short, is an open-source, all-encompassin
 - ODC facilitates data retention policies, enabling you to effortlessly purge or archive data based on specified time frames, and build a hot-cold data separation system tailored to your needs in just 5 minutes.
 - Beyond time-based data handling, ODC supports batch processing based on partitioning, allowing you to efficiently manage large datasets.
 - With ODC's SQL scheduled tasks, completing computational tasks becomes a breeze, rendering traditional CRONTAB systems obsolete.
-![image](https://github.com/oceanbase/odc/assets/15030999/c95b57fd-3d49-4e41-96f9-32f26cb2e2d3)
+![image](https://github.com/oceanbase/odc/assets/15030999/56e40088-ab13-4acd-b9b4-21d011d9fb75)
 
 
 ### Sensitive Data Protection in Every Scenario 
 
 - ODC's data desensitization capabilities extend to both static and dynamic scenarios, ensuring that sensitive information remains safeguarded during schema changes, SQL queries, result set exports, and data extractions.
 - Security administrators can configure sensitive data rules and desensitization algorithms, ensuring that both DBAs and developers are unable to access sensitive data.
-![image](https://github.com/oceanbase/odc/assets/15030999/56606949-e198-4d80-a484-778e78454d65)
+![image](https://github.com/oceanbase/odc/assets/15030999/627f9c6d-6e1c-4c39-8a90-197d4bf842cf)
 
 
 ### Seamless Integration Without Additional Code Development 
 
 - Integrate ODC seamlessly into your current database development workflow without the need for disruptive changes.
 - From Single Sign-On (SSO) to approval integration, SQL review integration, bastion host integration, and audit integration, ODC offers a comprehensive suite of features that cater to enterprise control needs.
-![image](https://github.com/oceanbase/odc/assets/15030999/1d76fec9-1820-4526-964c-3cc8affb0215)
-
-
-## 🌟 Features at a Glance
-
-
-ODC boasts a wealth of powerful features, encompassing two core aspects: SQL development, and control management and collaboration. Let's delve into the core functionalities in detail.
-
-
-### SQL Development
-
-- Multi-Source Compatibility: Seamlessly supports OceanBase MySQL/Oracle mode, ODP Sharing, MySQL, and more.
-- Database Objects: Visually manage various database objects such as tables, views, sequences, synonyms, triggers, stored procedures, functions, packages, and types.
-- SQL Execution: Effortlessly edit and execute SQL queries, leverage command-line windows, scripts, and code snippets.
-- Data Viewing and Editing: Allows for data viewing and editing, and interoperability with Excel on result sets.
-- Monitoring and Diagnostics: Access execution plans, profiling, and database trace for comprehensive monitoring and diagnostics.
-- Data Generation: Generate test and scenario-specific data.
-- Import and Export: Manage data with features like schema import/export, data import/export, and import/export of the entire database.
-- PL Lifecycle: Execute, compile, and debug PL objects.
-- Database Administration: Manage sessions, variables, the recycle bin, and privileges (upcoming feature).
-
-
-### Control Management and Collaboration
-
-- Privilege Management: Manage users and define custom roles based on the RBAC model.
-- Team Collaboration: Facilitate multi-role collaboration among administrators, DBAs, and developers within projects, offering database-level access control.
-- Change Control: Customize approval workflows and implement SQL checks based on syntax rules.
-- Stable Changes: Execute lock-free schema and data changes (upcoming feature).
-- Data Lifecycle Management: Automate data cleansing, archiving, partitioning, and scheduling SQL tasks.
-- Data Security: Manage sensitive column data, export anonymized data, and control sensitive column access.
-- Compliance Auditing: Embrace robust auditing capabilities, including operational and SQL audit integration.
-- Collaborative Efficiency: Configure batch import settings, automate authorization rules, and stay informed with the notification center.
-- System Integration: Leverage OAuth2 and OIDC account integration, bastion host integration, approval integration, and SQL review integration.
-- Learning and Exploration: Gain access to lab resources, tutorials, courses, and code repositories (upcoming feature).
+![image](https://github.com/oceanbase/odc/assets/15030999/a741b2b8-c0a8-4026-abcf-6bd924ad8e75)
 
 
 ## 🚀 Installation and Deployment 
