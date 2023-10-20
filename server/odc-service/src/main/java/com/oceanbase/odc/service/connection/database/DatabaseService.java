@@ -155,21 +155,25 @@ public class DatabaseService {
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("internal authenticated")
     public Database detail(@NonNull Long id) {
-        Database database = entityToModel(databaseRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException(ResourceType.ODC_DATABASE, "id", id)));
-        if (!projectService.checkPermission(database.getProject().getId(),
-                Arrays.asList(ResourceRoleName.DBA, ResourceRoleName.OWNER, ResourceRoleName.DEVELOPER))) {
-            throw new AccessDeniedException();
-        }
-        return database;
+        return getDatabase(id);
     }
 
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("internal authenticated")
     public Database detail(@NonNull Long id, String taskType) {
-        Database database = detail(id);
+        Database database = getDatabase(id);
         if (Objects.equals(TaskType.ONLINE_SCHEMA_CHANGE.name(), taskType) && database.getDataSource() != null) {
             database.setLockDatabaseUserRequired(getLockUserIsRequired(database.getDataSource()));
+        }
+        return database;
+    }
+
+    private Database getDatabase(Long id) {
+        Database database = entityToModel(databaseRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException(ResourceType.ODC_DATABASE, "id", id)));
+        if (!projectService.checkPermission(database.getProject().getId(),
+                Arrays.asList(ResourceRoleName.DBA, ResourceRoleName.OWNER, ResourceRoleName.DEVELOPER))) {
+            throw new AccessDeniedException();
         }
         return database;
     }
