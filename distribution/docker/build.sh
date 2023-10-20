@@ -8,9 +8,9 @@ main() {
 
     local register="docker.io"
     local namespace="oceanbase"
-    local app_name=odc-server
+    local app_name=odc
     local image_name=${register}/${namespace}/${app_name}
-    local image_tag=${2:-"UNKNOWN"}
+    local image_tag=${2:-"latest"}
 
     case $1 in
     build-odc)
