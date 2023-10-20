@@ -22,7 +22,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import com.oceanbase.odc.common.util.JdbcOperationsUtil;
@@ -271,15 +270,12 @@ public class OBOracleGetDBTableByParser implements GetDBTableByParser {
          * The ddl of the primary key can not be obtained through dbms_metadata.get_ddl(), we get columns
          * list of primary key by parse table ddl.
          */
-        if (this.constraints.size() == 0) {
-            listConstraints();
-        }
-        List<DBTableConstraint> priConstraint = this.constraints.stream().filter(
+        List<DBTableConstraint> priConstraint = listConstraints().stream().filter(
                 constraint -> constraint.getType().equals(DBConstraintType.PRIMARY_KEY)).collect(Collectors.toList());
-        AtomicReference<String> primaryKeyName = new AtomicReference<>();
+        String primaryKeyName = null;
         if (!priConstraint.isEmpty()) {
             if (Objects.nonNull(priConstraint.get(0).getName())) {
-                primaryKeyName.set(priConstraint.get(0).getName());
+                primaryKeyName = priConstraint.get(0).getName();
             } else {
                 /**
                  * The name of the primary key may not be obtained from the ddl of the table, in this case, we get
@@ -291,17 +287,16 @@ public class OBOracleGetDBTableByParser implements GetDBTableByParser {
                         .append(" AND TABLE_NAME=")
                         .value(tableName)
                         .append(" AND CONSTRAINT_TYPE='P'");
-                primaryKeyName
-                        .set(JdbcOperationsUtil.getJdbcOperations(connection).queryForObject(
-                                getPrimaryKeyName.toString(),
-                                String.class));
+                primaryKeyName = JdbcOperationsUtil.getJdbcOperations(connection).queryForObject(
+                        getPrimaryKeyName.toString(),
+                        String.class);
             }
         }
 
         for (DBTableIndex idx : this.indexes) {
             // ob oracle only support btree algorithm.
             idx.setAlgorithm(DBIndexAlgorithm.BTREE);
-            if (Objects.nonNull(primaryKeyName.get()) && primaryKeyName.get().equals(idx.getName())) {
+            if (Objects.nonNull(primaryKeyName) && primaryKeyName.equals(idx.getName())) {
                 idx.setType(DBIndexType.UNIQUE);
                 idx.setPrimary(true);
                 idx.setUnique(true);
