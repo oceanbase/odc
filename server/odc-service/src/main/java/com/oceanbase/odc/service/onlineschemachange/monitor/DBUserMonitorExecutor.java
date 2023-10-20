@@ -39,13 +39,12 @@ public class DBUserMonitorExecutor {
 
     private final AtomicBoolean started = new AtomicBoolean(false);
     private ExecutorService executorService;
-    private volatile DBUserMonitor dbUserMonitor;
+    private DBUserMonitor dbUserMonitor;
     private final List<String> toMonitorUsers;
     private final ConnectionConfig connectionConfig;
-    private final int period = 200;
 
-    public DBUserMonitorExecutor(ConnectionConfig connectConfig, List<String> toMonitorUsers) {
-        this.connectionConfig = connectConfig;
+    public DBUserMonitorExecutor(ConnectionConfig connectionConfig, List<String> toMonitorUsers) {
+        this.connectionConfig = connectionConfig;
         this.toMonitorUsers = toMonitorUsers;
     }
 
@@ -60,7 +59,7 @@ public class DBUserMonitorExecutor {
         executorService = Executors.newSingleThreadExecutor();
         DBUserMonitorFactory userLogStatusMonitorFactory = new DBUserLogStatusMonitorFactory(logParameter);
         dbUserMonitor = userLogStatusMonitorFactory.generateDBUserMonitor(connectionConfig,
-                toMonitorUsers, period, Integer.MAX_VALUE, TimeUnit.MILLISECONDS);
+                toMonitorUsers, 200, Integer.MAX_VALUE, TimeUnit.MILLISECONDS);
         executorService.execute(dbUserMonitor);
     }
 

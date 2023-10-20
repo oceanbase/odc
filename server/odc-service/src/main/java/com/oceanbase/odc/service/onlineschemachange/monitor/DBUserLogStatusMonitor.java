@@ -75,8 +75,8 @@ public class DBUserLogStatusMonitor implements DBUserMonitor {
         this.logParameter = logParameter;
         // Generate a new ConnectionSession in monitor
         this.connSession = new DefaultConnectSessionFactory(connConfig).generateSession();
-        OscFactoryWrapper generate = OscFactoryWrapperGenerator.generate(connConfig.getDialectType());
-        this.dbSchemaAccessor = generate.getOscDBAccessorFactory().generate(connSession);
+        OscFactoryWrapper oscFactoryWrapper = OscFactoryWrapperGenerator.generate(connConfig.getDialectType());
+        this.dbSchemaAccessor = oscFactoryWrapper.getOscDBAccessorFactory().generate(connSession);
         this.dbStatsAccessor = DBStatsAccessors.create(connSession);
         this.stopped = new AtomicBoolean(false);
         this.done = new AtomicBoolean(false);
