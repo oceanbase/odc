@@ -24,25 +24,26 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.stereotype.Service;
 
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
+import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
+import com.oceanbase.odc.plugin.schema.api.ViewExtensionPoint;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.db.model.AllTablesAndViews;
 import com.oceanbase.odc.service.db.model.DBViewResponse;
 import com.oceanbase.odc.service.db.model.DatabaseAndTables;
 import com.oceanbase.odc.service.db.model.DatabaseAndViews;
+import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
 import com.oceanbase.odc.service.session.ConnectConsoleService;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBView;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
-import com.oceanbase.tools.dbbrowser.template.DBObjectTemplate;
-import com.oceanbase.tools.dbbrowser.template.mysql.MySQLViewTemplate;
-import com.oceanbase.tools.dbbrowser.template.oracle.OracleViewTemplate;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -60,29 +61,27 @@ public class DBViewService {
     }
 
     public List<DBView> list(ConnectionSession connectionSession, String dbName) {
-        DBSchemaAccessor accessor = DBSchemaAccessors.create(connectionSession);
-        List<DBObjectIdentity> dbObjectIdentities = accessor.listViews(dbName);
-        return dbObjectIdentities.stream()
-                .map(identity -> DBView.of(identity.getSchemaName(), identity.getName())).collect(Collectors.toList());
+        return connectionSession.getSyncJdbcExecutor(
+                ConnectionSessionConstants.BACKEND_DS_KEY)
+                .execute((ConnectionCallback<List<DBObjectIdentity>>) con -> getDBViewExtensionPoint(
+                        connectionSession).list(con, dbName))
+                .stream().map(identity -> DBView.of(identity.getSchemaName(), identity.getName()))
+                .collect(Collectors.toList());
     }
 
     public DBViewResponse detail(ConnectionSession connectionSession, String schemaName, String viewName) {
-        DBSchemaAccessor accessor = DBSchemaAccessors.create(connectionSession);
-        DBView dbView = accessor.getView(schemaName, viewName);
-        return new DBViewResponse(dbView);
+        return new DBViewResponse(connectionSession.getSyncJdbcExecutor(
+                ConnectionSessionConstants.BACKEND_DS_KEY)
+                .execute((ConnectionCallback<DBView>) con -> getDBViewExtensionPoint(connectionSession)
+                        .getDetail(con, schemaName, viewName)));
     }
 
     public String getCreateSql(@NonNull ConnectionSession session,
             @NonNull DBView resource) {
-        DBObjectTemplate<DBView> template;
-        if (session.getDialectType().isMysql()) {
-            template = new MySQLViewTemplate();
-        } else if (session.getDialectType().isOracle()) {
-            template = new OracleViewTemplate();
-        } else {
-            throw new UnsupportedOperationException("Unsupported dialect, " + session.getDialectType());
-        }
-        return template.generateCreateObjectTemplate(resource);
+        return session.getSyncJdbcExecutor(
+                ConnectionSessionConstants.BACKEND_DS_KEY)
+                .execute((ConnectionCallback<String>) con -> getDBViewExtensionPoint(session)
+                        .generateCreateTemplate(resource));
     }
 
     public AllTablesAndViews listAllTableAndView(ConnectionSession connectionSession,
@@ -126,6 +125,10 @@ public class DBViewService {
         allResult.setTables(tables);
         allResult.setViews(views);
         return allResult;
+    }
+
+    private ViewExtensionPoint getDBViewExtensionPoint(@NonNull ConnectionSession session) {
+        return SchemaPluginUtil.getViewExtension(session.getDialectType());
     }
 
 }
