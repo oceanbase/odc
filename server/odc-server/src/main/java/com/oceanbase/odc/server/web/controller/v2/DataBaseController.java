@@ -57,7 +57,7 @@ public class DataBaseController {
     @ApiOperation(value = "getDatabase", notes = "Detail a database")
     @RequestMapping(value = "/databases/{id:[\\d]+}", method = RequestMethod.GET)
     public SuccessResponse<Database> getDatabase(@PathVariable Long id,
-        @RequestParam(required = false, name = "taskType") String taskType) {
+            @RequestParam(required = false, name = "taskType") String taskType) {
         return Responses.success(databaseService.detail(id, taskType));
     }
 
