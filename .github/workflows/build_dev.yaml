@@ -152,8 +152,8 @@ jobs:
       fail-fast: false
       matrix:
         lib:
-          - db-browser
           - ob-sql-parser
+          - db-browser
     steps:
       - name: Checkout workspace
         uses: actions/checkout@v3
