@@ -31,7 +31,7 @@ OceanBase Developer Center, or ODC for short, is an open-source, all-encompassin
 - ODC facilitates data retention policies, enabling you to effortlessly purge or archive data based on specified time frames, and build a hot-cold data separation system tailored to your needs in just 5 minutes.
 - Beyond time-based data handling, ODC supports batch processing based on partitioning, allowing you to efficiently manage large datasets.
 - With ODC's SQL scheduled tasks, completing computational tasks becomes a breeze, rendering traditional CRONTAB systems obsolete.
-![image](https://github.com/oceanbase/odc/assets/15030999/56e40088-ab13-4acd-b9b4-21d011d9fb75)
+![image](https://github.com/oceanbase/odc/assets/15030999/d9818c44-b7dc-45ad-a1ce-0a5ce9a20026)
 
 
 ### Sensitive Data Protection in Every Scenario 
