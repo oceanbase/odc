@@ -3342,6 +3342,7 @@ statement
     | function_call
     | pipe_row_statement
     | procedure_call[true]
+    | set_variable
     ;
 
 swallow_to_semi
