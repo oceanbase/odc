@@ -164,6 +164,7 @@ jobs:
           distribution: "temurin"
           cache: maven
       - name: Install ob-sql-parser
+        if: ${{ matrix.lib == 'db-browser'}}
         run: |
           echo "Start install ob-sql-parser"
           pushd libs/ob-sql-parser
