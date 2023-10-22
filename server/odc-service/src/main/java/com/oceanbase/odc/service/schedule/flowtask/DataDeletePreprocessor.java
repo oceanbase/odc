@@ -17,16 +17,27 @@ package com.oceanbase.odc.service.schedule.flowtask;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
+import com.oceanbase.odc.common.util.VersionUtils;
+import com.oceanbase.odc.core.session.ConnectionSession;
+import com.oceanbase.odc.core.session.ConnectionSessionConstants;
+import com.oceanbase.odc.core.session.ConnectionSessionFactory;
+import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
+import com.oceanbase.odc.plugin.connect.api.InformationExtensionPoint;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
+import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.dlm.model.DataDeleteParameters;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
 import com.oceanbase.odc.service.flow.processor.ScheduleTaskPreprocessor;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
+import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 import com.oceanbase.odc.service.schedule.DlmEnvironment;
 import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.model.JobType;
+import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -61,9 +72,20 @@ public class DataDeletePreprocessor extends AbstractDlmJobPreprocessor {
             // permission to access it.
             Database sourceDb = databaseService.detail(dataDeleteParameters.getDatabaseId());
             if (dlmEnvironment.isSysTenantUserRequired()) {
-                checkDatasource(sourceDb.getDataSource());
+                PreConditions.notEmpty(sourceDb.getDataSource().getSysTenantUsername(), "SysTenantUser");
             }
-            checkTableAndCondition(sourceDb, dataDeleteParameters.getTables(), dataDeleteParameters.getVariables());
+
+            ConnectionConfig dataSource = sourceDb.getDataSource();
+            dataSource.setDefaultSchema(sourceDb.getName());
+            ConnectionSessionFactory connectionSessionFactory = new DefaultConnectSessionFactory(dataSource);
+            ConnectionSession connectionSession = connectionSessionFactory.generateSession();
+            try {
+                checkDBVersion(connectionSession);
+                checkTableAndCondition(connectionSession, sourceDb, dataDeleteParameters.getTables(),
+                        dataDeleteParameters.getVariables());
+            } finally {
+                connectionSession.expire();
+            }
             log.info("QUICK-DELETE job preprocessing has been completed.");
             // pre create
             ScheduleEntity scheduleEntity = buildScheduleEntity(req);
@@ -74,6 +96,20 @@ public class DataDeletePreprocessor extends AbstractDlmJobPreprocessor {
             parameters.setTaskId(scheduleEntity.getId());
         }
         req.setParentFlowInstanceId(parameters.getTaskId());
+    }
+
+    private void checkDBVersion(ConnectionSession sourceSession) {
+        DialectType sourceDbType = sourceSession.getDialectType();
+        InformationExtensionPoint sourceInformation = ConnectionPluginUtil.getInformationExtension(sourceDbType);
+        String sourceDbVersion = sourceSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY).execute(
+                sourceInformation::getDBVersion);
+        if (sourceDbType == DialectType.OB_MYSQL) {
+            if (VersionUtils.isGreaterThan(sourceDbVersion, "4.0.0")) {
+                throw new UnsupportedException(String.format("Unsupported OBVersion:%s", sourceDbVersion));
+            }
+            return;
+        }
+        throw new UnsupportedException(String.format("Unsupported dbType: %s.", sourceDbType));
     }
 
 }

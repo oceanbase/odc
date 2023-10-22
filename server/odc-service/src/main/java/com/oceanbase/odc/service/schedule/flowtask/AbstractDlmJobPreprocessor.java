@@ -25,20 +25,17 @@ import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
-import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.core.sql.execute.SyncJdbcExecutor;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.service.connection.database.model.Database;
-import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.dlm.model.DataArchiveTableConfig;
 import com.oceanbase.odc.service.dlm.model.OffsetConfig;
 import com.oceanbase.odc.service.dlm.utils.DataArchiveConditionUtil;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
 import com.oceanbase.odc.service.flow.processor.Preprocessor;
 import com.oceanbase.odc.service.schedule.model.ScheduleStatus;
-import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.OracleSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
@@ -75,25 +72,12 @@ public class AbstractDlmJobPreprocessor implements Preprocessor {
         return scheduleEntity;
     }
 
-    public void checkTableAndCondition(Database sourceDb, List<DataArchiveTableConfig> tables,
+    public void checkTableAndCondition(ConnectionSession connectionSession, Database sourceDb,
+            List<DataArchiveTableConfig> tables,
             List<OffsetConfig> variables) {
-        ConnectionConfig dataSource = sourceDb.getDataSource();
-        dataSource.setDefaultSchema(sourceDb.getName());
-        ConnectionSession connectionSession = new DefaultConnectSessionFactory(dataSource).generateSession();
-        try {
-            checkPrimaryKey(connectionSession, sourceDb.getName(), tables);
-            Map<DataArchiveTableConfig, String> sqlMap = getDataArchiveSqls(sourceDb, tables, variables);
-            checkDataArchiveSql(connectionSession, sqlMap);
-        } finally {
-            connectionSession.expire();
-        }
-    }
-
-    public void checkDatasource(ConnectionConfig datasource) {
-        if (datasource.getDialectType().isOracle()) {
-            throw new UnsupportedException("This function is not supported for Oracle data sources.");
-        }
-        PreConditions.notEmpty(datasource.getSysTenantUsername(), "SysTenantUser");
+        checkPrimaryKey(connectionSession, sourceDb.getName(), tables);
+        Map<DataArchiveTableConfig, String> sqlMap = getDataArchiveSqls(sourceDb, tables, variables);
+        checkDataArchiveSql(connectionSession, sqlMap);
     }
 
     private void checkPrimaryKey(ConnectionSession connectionSession, String databaseName,
