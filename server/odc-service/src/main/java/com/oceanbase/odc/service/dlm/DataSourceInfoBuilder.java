@@ -25,11 +25,14 @@ import com.oceanbase.tools.migrator.common.configure.DataSourceInfo;
 import com.oceanbase.tools.migrator.common.enums.DataBaseType;
 import com.oceanbase.tools.migrator.common.util.EncryptUtils;
 
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * @Author：tinker
  * @Date: 2023/10/17 10:32
  * @Descripition:
  */
+@Slf4j
 public class DataSourceInfoBuilder {
 
     public static DataSourceInfo build(ConnectionConfig connectionConfig) {
@@ -66,7 +69,9 @@ public class DataSourceInfoBuilder {
                 break;
             }
             default:
-                throw new UnsupportedException();
+                log.warn(String.format("Unsupported datasource type:%s", connectionConfig.getDialectType()));
+                throw new UnsupportedException(
+                        String.format("Unsupported datasource type:%s", connectionConfig.getDialectType()));
         }
         return dataSourceInfo;
     }

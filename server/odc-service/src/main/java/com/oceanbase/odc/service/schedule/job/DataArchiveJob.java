@@ -96,7 +96,7 @@ public class DataArchiveJob extends AbstractDlmJob {
             DBSchemaAccessor targetDsAccessor = DBSchemaAccessors.create(targetSession);
             List<String> tableNames = targetDsAccessor.showTables(dlmTask.getTargetDs().getDefaultSchema());
             if (tableNames.contains(dlmTask.getTableName())) {
-                log.info("Target table exist.");
+                log.info("Target table exist,tableName={}", dlmTask.getTableName());
                 return;
             }
             log.info("Begin to create target table...");
