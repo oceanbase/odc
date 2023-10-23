@@ -100,6 +100,7 @@ public class FileConvertUtils {
             Reader in = new FileReader(csvFilePath);
             Iterable<CSVRecord> records = CSVFormat.DEFAULT
                     .withSkipHeaderRecord(false)
+                    .withEscape('\\')
                     .parse(in);
 
             /**
