@@ -114,6 +114,7 @@ public class TestConnectionReq implements CloudConnectionConfig, SSLConnectionCo
     @JsonIgnore
     private SSLFileEntry sslFileEntry;
 
+    @Size(max = 8192, message = "Session init script is out of range [0,8192]")
     private String sessionInitScript;
 
     private Map<String, Object> jdbcUrlParameters;
