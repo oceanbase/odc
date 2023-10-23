@@ -1,5 +1,58 @@
 # OceanBase Developer Center (ODC) CHANGELOG
 
+## 4.2.2 (2023-10-31)
+
+### 功能变化
+
+OceanBase 兼容性
+
+- 支持 OceanBase 4.2.1
+
+基于项目的管控协同
+
+- 数据源增加初始化脚本以及自定义 JDBC 连接参数设置
+
+导入导出
+
+- 升级 ob-loader-dumper 版本到 4.2.5-RELEASE
+
+数据脱敏
+
+- 支持视图脱敏
+
+### 缺陷修复
+
+PL 调试
+
+- 调试过程中无法跳入程序包中定义的子存储过程/函数
+
+SQL 执行
+
+- 执行 SQL 过程中持续执行 "DROP PACKAGE" 语句导致大量报错
+- 连接 OceanBase MySQL 租户时自动调用 "obodc_procedure_feature_test" 存储过程导致报错或进入连接缓慢
+
+SQL-Check
+
+- OceanBase Oracle 租户下创建 type 时，如果子存储过程/函数无参数列表，SQL Check 报语法错误
+
+数据脱敏
+
+- SELECT 语句中含有多表 JOIN 的场景下脱敏失败
+- 大小写敏感的 OceanBase MySQL 模式下无法识别到敏感列导致脱敏失效 
+
+数据库对象管理
+
+- 没有 show create view 权限用户查看视图详情时报错
+- 查看表对象时所有字符类型的长度无法显示
+
+数据库变更
+
+- 数据库变更任务超时时间设置无效
+
+### 安全加固
+
+- 支持连接密码等敏感字段的非对称加密
+
 ## 4.2.1 (2023-09-25)
 
 ### 缺陷修复
