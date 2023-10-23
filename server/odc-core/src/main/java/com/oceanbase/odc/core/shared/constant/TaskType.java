@@ -27,65 +27,66 @@ import com.oceanbase.odc.common.i18n.Translatable;
  */
 public enum TaskType implements Translatable {
     /**
-     * 异步任务
+     * Database change
      */
     ASYNC,
     /**
-     * 导入任务
+     * Import
      */
     IMPORT,
     /**
-     * 导出任务
+     * Export
      */
     EXPORT,
     /**
-     * 模拟数据
+     * Mock data
      */
     MOCKDATA,
     /**
-     * 回滚任务
+     * Rollback
      */
     ROLLBACK,
     /**
-     * 权限申请
+     * Apply permission
      */
+    @Deprecated
     PERMISSION_APPLY,
     /**
-     * 影子表同步任务
+     * Shadow table sync
      */
     SHADOWTABLE_SYNC,
     /**
-     * 分区计划
+     * Database partition plan
      */
     PARTITION_PLAN,
     /**
-     * sql 检查任务
+     * SQL check
      */
     SQL_CHECK,
     /**
-     * Schedule 变更任务
+     * Database scheduled change
      */
     ALTER_SCHEDULE,
     /**
-     * 生成备份回滚方案
+     * Auto-generate rollback SQL
      */
     GENERATE_ROLLBACK,
     /**
-     * 无锁结构变更
+     * Online schema change
      */
     ONLINE_SCHEMA_CHANGE,
     /**
-     * 导出结果集
+     * Export result set
      */
     EXPORT_RESULT_SET,
     /**
-     * 预检查
+     * Pre-check
      */
     PRE_CHECK,
     /**
-     * 权限申请-项目
+     * Apply project permission
      */
-    PERMISSION_APPLY_PROJECT,
+    APPLY_PROJECT_PERMISSION,
     ;
 
     @Override

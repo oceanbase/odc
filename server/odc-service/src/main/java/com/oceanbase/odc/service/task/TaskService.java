@@ -202,7 +202,7 @@ public class TaskService {
                 filePath = String.format(EXPORT_RESULT_SET_LOG_PATH_PATTERN, logFilePrefix, taskId,
                         logLevel.name().toLowerCase());
                 break;
-            case PERMISSION_APPLY_PROJECT:
+            case APPLY_PROJECT_PERMISSION:
                 filePath = String.format(APPLY_PROJECT_LOG_PATH_PATTERN, logFilePrefix, userId, taskId,
                         logLevel.name().toLowerCase());
                 break;

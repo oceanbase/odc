@@ -82,7 +82,7 @@ public class AuditEventMetaService {
                         AuditEventType.SHADOWTABLE_SYNC,
                         AuditEventType.PARTITION_PLAN,
                         AuditEventType.ALTER_SCHEDULE,
-                        AuditEventType.PERMISSION_APPLY_PROJECT)));
+                        AuditEventType.APPLY_PROJECT_PERMISSION)));
                 continue;
             }
             if (AuditEventAction.OTHERS == entity.getAction()) {

@@ -329,7 +329,7 @@ public class FlowInstanceDetailResp {
                 case EXPORT_RESULT_SET:
                     resp.setParameters(JsonUtils.fromJson(parameterJson, ResultSetExportTaskParameter.class));
                     break;
-                case PERMISSION_APPLY_PROJECT:
+                case APPLY_PROJECT_PERMISSION:
                     resp.setParameters(JsonUtils.fromJson(parameterJson, ApplyProjectParameter.class));
                     break;
                 default:

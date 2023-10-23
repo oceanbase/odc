@@ -227,7 +227,7 @@ public class FlowTaskInstanceService {
             return getAlterScheduleResult(taskEntity);
         } else if (taskEntity.getTaskType() == TaskType.EXPORT_RESULT_SET) {
             return getResultSetExportResult(taskEntity);
-        } else if (taskEntity.getTaskType() == TaskType.PERMISSION_APPLY_PROJECT) {
+        } else if (taskEntity.getTaskType() == TaskType.APPLY_PROJECT_PERMISSION) {
             return getApplyProjectResult(taskEntity);
         } else {
             throw new UnsupportedException(ErrorCodes.Unsupported, new Object[] {ResourceType.ODC_TASK},
@@ -663,7 +663,7 @@ public class FlowTaskInstanceService {
                         && instance.getTaskType() != TaskType.SQL_CHECK
                         && instance.getTaskType() != TaskType.PRE_CHECK
                         && instance.getTaskType() != TaskType.GENERATE_ROLLBACK
-                        && instance.getTaskType() != TaskType.PERMISSION_APPLY_PROJECT;
+                        && instance.getTaskType() != TaskType.APPLY_PROJECT_PERMISSION;
             }
         });
     }

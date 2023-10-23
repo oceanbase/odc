@@ -44,7 +44,7 @@ import com.oceanbase.odc.service.permissionapply.project.ApplyProjectParameter.A
  * @author gaoda.xy
  * @date 2023/10/12 12:00
  */
-@FlowTaskPreprocessor(type = TaskType.PERMISSION_APPLY_PROJECT)
+@FlowTaskPreprocessor(type = TaskType.APPLY_PROJECT_PERMISSION)
 public class ApplyProjectPreprocessor implements Preprocessor {
 
     @Autowired

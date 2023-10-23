@@ -68,7 +68,7 @@ public class OdcRuntimeDelegateMapper implements RuntimeDelegateMapper {
                 return ResultSetExportFlowableTask.class;
             case PRE_CHECK:
                 return PreCheckRuntimeFlowableTask.class;
-            case PERMISSION_APPLY_PROJECT:
+            case APPLY_PROJECT_PERMISSION:
                 return ApplyProjectFlowableTask.class;
             default:
                 throw new UnsupportedException(ErrorCodes.Unsupported, new Object[] {ResourceType.ODC_TASK},

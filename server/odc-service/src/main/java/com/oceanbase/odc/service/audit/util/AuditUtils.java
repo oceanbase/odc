@@ -71,8 +71,8 @@ public class AuditUtils {
                 case ONLINE_SCHEMA_CHANGE:
                     type = AuditEventType.ONLINE_SCHEMA_CHANGE;
                     break;
-                case PERMISSION_APPLY_PROJECT:
-                    type = AuditEventType.PERMISSION_APPLY_PROJECT;
+                case APPLY_PROJECT_PERMISSION:
+                    type = AuditEventType.APPLY_PROJECT_PERMISSION;
                     break;
                 default:
                     type = AuditEventType.UNKNOWN_TASK_TYPE;
@@ -169,8 +169,8 @@ public class AuditUtils {
                     return AuditEventAction.CREATE_ALTER_SCHEDULE_TASK;
                 case ONLINE_SCHEMA_CHANGE:
                     return AuditEventAction.CREATE_ONLINE_SCHEMA_CHANGE_TASK;
-                case PERMISSION_APPLY_PROJECT:
-                    return AuditEventAction.CREATE_PERMISSION_APPLY_PROJECT_TASK;
+                case APPLY_PROJECT_PERMISSION:
+                    return AuditEventAction.CREATE_APPLY_PROJECT_PERMISSION_TASK;
             }
         }
         if (action == AuditEventAction.STOP_TASK) {
@@ -193,8 +193,8 @@ public class AuditUtils {
                     return AuditEventAction.STOP_ALTER_SCHEDULE_TASK;
                 case ONLINE_SCHEMA_CHANGE:
                     return AuditEventAction.STOP_ONLINE_SCHEMA_CHANGE_TASK;
-                case PERMISSION_APPLY_PROJECT:
-                    return AuditEventAction.STOP_PERMISSION_APPLY_PROJECT_TASK;
+                case APPLY_PROJECT_PERMISSION:
+                    return AuditEventAction.STOP_APPLY_PROJECT_PERMISSION_TASK;
             }
         }
         if (action == AuditEventAction.EXECUTE_TASK) {
@@ -241,8 +241,8 @@ public class AuditUtils {
                     return AuditEventAction.APPROVE_ALTER_SCHEDULE_TASK;
                 case ONLINE_SCHEMA_CHANGE:
                     return AuditEventAction.APPROVE_ONLINE_SCHEMA_CHANGE_TASK;
-                case PERMISSION_APPLY_PROJECT:
-                    return AuditEventAction.APPROVE_PERMISSION_APPLY_PROJECT_TASK;
+                case APPLY_PROJECT_PERMISSION:
+                    return AuditEventAction.APPROVE_APPLY_PROJECT_PERMISSION_TASK;
             }
         }
         if (action == AuditEventAction.REJECT) {
@@ -267,8 +267,8 @@ public class AuditUtils {
                     return AuditEventAction.REJECT_ALTER_SCHEDULE_TASK;
                 case ONLINE_SCHEMA_CHANGE:
                     return AuditEventAction.REJECT_ONLINE_SCHEMA_CHANGE_TASK;
-                case PERMISSION_APPLY_PROJECT:
-                    return AuditEventAction.REJECT_PERMISSION_APPLY_PROJECT_TASK;
+                case APPLY_PROJECT_PERMISSION:
+                    return AuditEventAction.REJECT_APPLY_PROJECT_PERMISSION_TASK;
             }
         }
         // 如果不是流程相关的 action，则返回原值

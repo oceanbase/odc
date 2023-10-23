@@ -88,7 +88,7 @@ public class CreateFlowInstanceReq {
             @JsonSubTypes.Type(value = AlterScheduleParameters.class, name = "ALTER_SCHEDULE"),
             @JsonSubTypes.Type(value = OnlineSchemaChangeParameters.class, name = "ONLINE_SCHEMA_CHANGE"),
             @JsonSubTypes.Type(value = ResultSetExportTaskParameter.class, name = "EXPORT_RESULT_SET"),
-            @JsonSubTypes.Type(value = ApplyProjectParameter.class, name = "PERMISSION_APPLY_PROJECT")
+            @JsonSubTypes.Type(value = ApplyProjectParameter.class, name = "APPLY_PROJECT_PERMISSION")
     })
     private TaskParameters parameters;
 
