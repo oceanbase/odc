@@ -404,6 +404,7 @@ public class ConnectionConfig
         return queryTimeoutSeconds;
     }
 
+    @Size(max = 8192, message = "Session init script is out of range [0,8192]")
     public String getSessionInitScript() {
         if (this.attributes == null) {
             return null;
@@ -424,7 +425,8 @@ public class ConnectionConfig
         return new HashMap<>();
     }
 
-    public void setSessionInitScript(String sessionInitScript) {
+    public void setSessionInitScript(
+            @Size(max = 8192, message = "Session init script is out of range [0,8192]") String sessionInitScript) {
         if (this.attributes == null) {
             this.attributes = new HashMap<>();
         }
