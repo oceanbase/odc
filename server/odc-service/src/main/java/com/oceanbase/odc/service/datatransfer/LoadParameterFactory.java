@@ -96,6 +96,7 @@ public class LoadParameterFactory extends BaseParameterFactory<LoadParameter> {
             parameter.setFileSuffix(DataFormat.CSV.getDefaultFileSuffix());
         } else if (config.getDataTransferFormat() == DataTransferFormat.SQL) {
             parameter.setFileSuffix(DataFormat.SQL.getDefaultFileSuffix());
+            parameter.setReplaceObjectIfExists(true);
         }
         return parameter;
     }
