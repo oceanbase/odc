@@ -4,21 +4,20 @@
 
 ### 功能变化
 
-OceanBase 兼容性
+数据源
 
-- 支持 OceanBase 4.2.1
-
-基于项目的管控协同
-
+- 支持 MySQL 数据源
+- 适配 OceanBase 4.2.0/4.2.1
 - 数据源增加初始化脚本以及自定义 JDBC 连接参数设置
-
-导入导出
-
-- 升级 ob-loader-dumper 版本到 4.2.5-RELEASE
 
 数据脱敏
 
 - 支持视图脱敏
+
+数据归档
+
+- 支持 OceanBase 4.x 版本
+- 支持 MySQL 到 OceanBase 链路
 
 ### 缺陷修复
 
@@ -49,9 +48,14 @@ SQL-Check
 
 - 数据库变更任务超时时间设置无效
 
+### 依赖库升级
+
+- 升级 ob-loader-dumper 版本到 4.2.5-RELEASE
+- 升级 oceanbase-client 版本到 2.4.5
+
 ### 安全加固
 
-- 支持连接密码等敏感字段的非对称加密
+- 前后端敏感字段传输使用非对称加密
 
 ## 4.2.1 (2023-09-25)
 
