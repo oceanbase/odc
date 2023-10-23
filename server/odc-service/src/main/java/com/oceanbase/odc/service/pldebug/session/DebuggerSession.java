@@ -28,7 +28,6 @@ import java.util.Objects;
 import java.util.Optional;
 
 import org.apache.commons.lang3.Validate;
-import org.springframework.jdbc.datasource.SingleConnectionDataSource;
 
 import com.alibaba.fastjson.JSONObject;
 import com.oceanbase.odc.common.util.StringUtils;
@@ -179,8 +178,9 @@ public class DebuggerSession extends AbstractDebugSession {
         }
     }
 
-    private SingleConnectionDataSource cloneDataSource(SingleConnectionDataSource originDataSource) {
-        SingleConnectionDataSource debuggerDataSource = new SingleConnectionDataSource();
+    private DebugDataSource cloneDataSource(DebugDataSource originDataSource) {
+        ConnectionConfig config = (ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(connectionSession);
+        DebugDataSource debuggerDataSource = new DebugDataSource(config);
         debuggerDataSource.setUrl(originDataSource.getUrl());
         debuggerDataSource.setUsername(originDataSource.getUsername());
         debuggerDataSource.setPassword(originDataSource.getPassword());
