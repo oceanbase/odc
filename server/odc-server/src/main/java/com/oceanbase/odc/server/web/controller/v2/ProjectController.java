@@ -71,7 +71,7 @@ public class ProjectController {
         return Responses.success(projectService.detail(id));
     }
 
-    @ApiOperation(value = "listProjects", notes = "List projects")
+    @ApiOperation(value = "listProjects", notes = "List all projects")
     @RequestMapping(value = "/projects", method = RequestMethod.GET)
     public PaginatedResponse<Project> listProjects(
             @RequestParam(required = false, name = "name") String name,
@@ -82,10 +82,11 @@ public class ProjectController {
         return Responses.paginated(projectService.list(params, pageable));
     }
 
-    @ApiOperation(value = "listProjects", notes = "List all projects")
-    @RequestMapping(value = "/projects/all", method = RequestMethod.GET)
-    public ListResponse<Project> listAllProjects(@RequestParam(required = false, name = "archived") Boolean archived) {
-        return Responses.list(projectService.listAll(archived));
+    @ApiOperation(value = "listBasicProjects", notes = "List all basic projects")
+    @RequestMapping(value = "/projects/basic", method = RequestMethod.GET)
+    public ListResponse<Project> listBasicProjects(
+            @RequestParam(required = false, name = "archived") Boolean archived) {
+        return Responses.list(projectService.listBasic(archived));
     }
 
     @ApiOperation(value = "updateProject", notes = "Update a project")
