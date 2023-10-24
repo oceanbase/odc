@@ -21,7 +21,7 @@ import java.util.List;
 import javax.validation.constraints.NotNull;
 
 import com.oceanbase.odc.core.shared.constant.TaskErrorStrategy;
-import com.oceanbase.odc.service.flow.model.TaskParameters;
+import com.oceanbase.odc.core.flow.model.TaskParameters;
 
 import lombok.Data;
 

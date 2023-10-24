@@ -29,6 +29,7 @@ import org.apache.commons.collections4.CollectionUtils;
 
 import com.oceanbase.odc.common.i18n.Internationalizable;
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.core.flow.model.TaskParameters;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
@@ -83,8 +84,8 @@ public class FlowInstanceDetailResp {
     private String databaseName;
     private Long databaseId;
     private InnerUser creator;
-    private Date createTime;
-    private TaskParameters parameters;
+    private Date                      createTime;
+    private TaskParameters            parameters;
     private FlowTaskExecutionStrategy executionStrategy;
     private Date executionTime;
     @Internationalizable
