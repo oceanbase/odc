@@ -19,6 +19,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.io.StringReader;
 import java.io.StringWriter;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -89,6 +90,10 @@ import com.oceanbase.tools.dbbrowser.util.DBSchemaAccessorUtil;
 import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.StringUtils;
+import com.oceanbase.tools.sqlparser.OBMySQLParser;
+import com.oceanbase.tools.sqlparser.SQLParser;
+import com.oceanbase.tools.sqlparser.statement.createtable.CreateTable;
+import com.oceanbase.tools.sqlparser.statement.createtable.TableOptions;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -1000,10 +1005,11 @@ public class MySQLNoGreaterThan5740SchemaAccessor implements DBSchemaAccessor {
     public DBTableOptions getTableOptions(String schemaName, String tableName, @lombok.NonNull String ddl) {
         DBTableOptions dbTableOptions = new DBTableOptions();
         obtainOptionsByQuery(schemaName, tableName, dbTableOptions);
+        obtainOptionsByParser(dbTableOptions, ddl);
         return dbTableOptions;
     }
 
-    protected void obtainOptionsByQuery(String schemaName, String tableName, DBTableOptions dbTableOptions) {
+    private void obtainOptionsByQuery(String schemaName, String tableName, DBTableOptions dbTableOptions) {
         String sql = this.sqlMapper.getSql(Statements.GET_TABLE_OPTION);
         jdbcOperations.query(sql, new Object[] {schemaName, tableName}, t -> {
             dbTableOptions.setCreateTime(t.getTimestamp("CREATE_TIME"));
@@ -1012,13 +1018,20 @@ public class MySQLNoGreaterThan5740SchemaAccessor implements DBSchemaAccessor {
             dbTableOptions.setCollationName(t.getString("TABLE_COLLATION"));
             dbTableOptions.setComment(t.getString("TABLE_COMMENT"));
         });
-        MySQLSqlBuilder getCharset = new MySQLSqlBuilder();
-        getCharset.append("SELECT b.character_set_name FROM `information_schema`.`TABLES` a,")
-                .append(" `information_schema`.`COLLATION_CHARACTER_SET_APPLICABILITY` b")
-                .append(" WHERE b.collation_name = a.table_collation")
-                .append(" AND a.table_schema = ")
-                .value(schemaName).append(" AND a.table_name = ").value(tableName);
-        dbTableOptions.setCharsetName(jdbcOperations.queryForObject(getCharset.toString(), String.class));
+    }
+
+    private void obtainOptionsByParser(DBTableOptions dbTableOptions, String ddl) {
+        SQLParser sqlParser = new OBMySQLParser();
+        CreateTable stmt = (CreateTable) sqlParser.parse(new StringReader(ddl));
+        TableOptions options = stmt.getTableOptions();
+        dbTableOptions.setCharsetName(options.getCharset());
+        dbTableOptions.setRowFormat(options.getRowFormat());
+        dbTableOptions.setCompressionOption(options.getCompression());
+        dbTableOptions.setReplicaNum(options.getReplicaNum());
+        dbTableOptions.setBlockSize(options.getBlockSize());
+        dbTableOptions.setUseBloomFilter(options.getUseBloomFilter());
+        dbTableOptions
+                .setTabletSize(Objects.nonNull(options.getTabletSize()) ? options.getTabletSize().longValue() : null);
     }
 
     @Override
