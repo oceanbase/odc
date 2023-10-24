@@ -74,6 +74,8 @@ public enum AuditEventType implements Translatable {
 
     PROJECT_MANAGEMENT,
 
+    SQL_SECURITY_RULES_MANAGEMENT
+
     ;
 
 
