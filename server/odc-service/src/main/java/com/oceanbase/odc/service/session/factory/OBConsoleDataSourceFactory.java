@@ -174,7 +174,7 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
         }
         connectionConfig.getJdbcUrlParameters().forEach((key, value) -> {
             if (value != null) {
-                jdbcUrlParams.putIfAbsent(key, value.toString());
+                jdbcUrlParams.put(key, value.toString());
             }
         });
         return jdbcUrlParams;
