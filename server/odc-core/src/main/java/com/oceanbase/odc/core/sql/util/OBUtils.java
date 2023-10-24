@@ -34,6 +34,8 @@ import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.core.shared.constant.ErrorCodes;
+import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.core.shared.model.SqlExecDetail;
 import com.oceanbase.odc.core.sql.execute.SyncJdbcExecutor;
@@ -271,32 +273,32 @@ public class OBUtils {
      * @return
      */
     public static String parseObVersionComment(String obVersionComment) {
-
         Validate.notBlank(obVersionComment);
         String[] obVersion = obVersionComment.split("\\s+");
-
         if (obVersion == null) {
-            throw new NullPointerException("version_comment cannot be empty");
+            String errMsg = "version comment is empty, " + obVersionComment;
+            throw new BadRequestException(ErrorCodes.DBQueryVersionFailed, new Object[] {errMsg}, errMsg);
         }
-
         if (obVersion.length < 4) {
-            throw new IllegalArgumentException("version_comment get failed");
+            String errMsg = "failed to get version comment, " + obVersionComment;
+            throw new BadRequestException(ErrorCodes.DBQueryVersionFailed, new Object[] {errMsg}, errMsg);
         }
-
         return obVersion[1];
-
     }
 
-    public static String getObVersion(Connection connection) throws SQLException {
+    public static String getObVersion(Connection connection) {
         try (Statement statement = connection.createStatement()) {
             try (ResultSet resultSet = statement.executeQuery("show variables like 'version_comment'")) {
                 if (resultSet.next()) {
                     return OBUtils.parseObVersionComment(resultSet.getString("value"));
                 }
-                return null;
+                throw new BadRequestException(ErrorCodes.DBQueryVersionFailed,
+                        new Object[] {"Result set is empty"}, "Result set is empty");
             }
+        } catch (Exception e) {
+            throw new BadRequestException(ErrorCodes.DBQueryVersionFailed,
+                    new Object[] {e.getMessage()}, e.getMessage());
         }
-
     }
 
     private static String buildSqlAudit(ConnectType connectType, String version) {
