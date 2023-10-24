@@ -22,6 +22,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
+import com.oceanbase.odc.core.shared.constant.ResourceType;
+import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.metadb.dlm.DlmLimiterConfigEntity;
 import com.oceanbase.odc.metadb.dlm.DlmLimiterConfigRepository;
 import com.oceanbase.odc.service.dlm.model.DlmLimiterConfig;
@@ -61,6 +63,22 @@ public class DlmLimiterService {
             return mapper.entityToModel(entityOptional.get());
         } else {
             return getDefaultLimiterConfig();
+        }
+    }
+
+    public DlmLimiterConfig updateByOrderId(Long orderId, DlmLimiterConfig limiterConfig) {
+        Optional<DlmLimiterConfigEntity> entityOptional = limiterConfigRepository.findByOrderId(orderId);
+        if (entityOptional.isPresent()) {
+            DlmLimiterConfigEntity entity = entityOptional.get();
+            entity.setRowLimit(
+                    limiterConfig.getRowLimit() == null ? entity.getRowLimit() : limiterConfig.getRowLimit());
+            entity.setBatchSize(
+                    limiterConfig.getBatchSize() == null ? entity.getBatchSize() : limiterConfig.getBatchSize());
+            entity.setDataSizeLimit(limiterConfig.getDataSizeLimit() == null ? entity.getDataSizeLimit()
+                    : limiterConfig.getDataSizeLimit());
+            return mapper.entityToModel(limiterConfigRepository.save(entity));
+        } else {
+            throw new NotFoundException(ResourceType.ODC_DLM_LIMITER_CONFIG, "Id", orderId);
         }
     }
 

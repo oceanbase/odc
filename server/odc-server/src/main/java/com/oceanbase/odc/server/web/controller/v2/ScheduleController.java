@@ -96,9 +96,10 @@ public class ScheduleController {
         return Responses.list(scheduleService.getAsyncDownloadUrl(id, objectId));
     }
 
-    @RequestMapping(value = "/{id:[\\d]+}/jobs/dlm/limiterConfig", method = RequestMethod.POST)
-    public SuccessResponse<DlmLimiterConfig> getLimiterConfig(@PathVariable Long id) {
-        return Responses.single(dlmLimiterService.getByOrderIdOrElseDefaultConfig(id));
+    @RequestMapping(value = "/{id:[\\d]+}/jobs/dlm/limiterConfig", method = RequestMethod.PUT)
+    public SuccessResponse<DlmLimiterConfig> updateLimiterConfig(@PathVariable Long id,
+            @RequestBody DlmLimiterConfig limiterConfig) {
+        return Responses.single(dlmLimiterService.updateByOrderId(id, limiterConfig));
     }
 
     @ApiOperation(value = "TriggerJob", notes = "立即调度")
