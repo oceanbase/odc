@@ -110,7 +110,7 @@ public class DataArchivePreprocessor extends AbstractDlmJobPreprocessor {
             if (dataArchiveParameters.getLimiterConfig().getDataSizeLimit() != null) {
                 limiterConfig.setDataSizeLimit(dataArchiveParameters.getLimiterConfig().getDataSizeLimit());
             }
-            if (dataArchiveParameters.getLimiterConfig().getRowLimit() != null) {
+            if (dataArchiveParameters.getLimiterConfig().getBatchSize() != null) {
                 limiterConfig.setBatchSize(dataArchiveParameters.getLimiterConfig().getBatchSize());
             }
             limiterService.createAndBindToOrder(scheduleEntity.getId(), limiterConfig);
