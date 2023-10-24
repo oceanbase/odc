@@ -16,8 +16,8 @@ build-resource/
 target
 _build/
 conf/
-plugins/
-starters/
+/plugins
+/starters
 server/odc-server/src/main/resources/static/
 server/odc-common/src/test/resources/generate-input.properties
 server/integration-test/oss_temp_dir/

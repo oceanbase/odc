@@ -1005,7 +1005,11 @@ public class MySQLNoGreaterThan5740SchemaAccessor implements DBSchemaAccessor {
     public DBTableOptions getTableOptions(String schemaName, String tableName, @lombok.NonNull String ddl) {
         DBTableOptions dbTableOptions = new DBTableOptions();
         obtainOptionsByQuery(schemaName, tableName, dbTableOptions);
-        obtainOptionsByParser(dbTableOptions, ddl);
+        try {
+            obtainOptionsByParser(dbTableOptions, ddl);
+        } catch (Exception e) {
+            log.warn("Failed to get table options by parse table ddl, message={}", e.getMessage());
+        }
         return dbTableOptions;
     }
 
@@ -1024,14 +1028,17 @@ public class MySQLNoGreaterThan5740SchemaAccessor implements DBSchemaAccessor {
         SQLParser sqlParser = new OBMySQLParser();
         CreateTable stmt = (CreateTable) sqlParser.parse(new StringReader(ddl));
         TableOptions options = stmt.getTableOptions();
-        dbTableOptions.setCharsetName(options.getCharset());
-        dbTableOptions.setRowFormat(options.getRowFormat());
-        dbTableOptions.setCompressionOption(options.getCompression());
-        dbTableOptions.setReplicaNum(options.getReplicaNum());
-        dbTableOptions.setBlockSize(options.getBlockSize());
-        dbTableOptions.setUseBloomFilter(options.getUseBloomFilter());
-        dbTableOptions
-                .setTabletSize(Objects.nonNull(options.getTabletSize()) ? options.getTabletSize().longValue() : null);
+        if (Objects.nonNull(options)) {
+            dbTableOptions.setCharsetName(options.getCharset());
+            dbTableOptions.setRowFormat(options.getRowFormat());
+            dbTableOptions.setCompressionOption(options.getCompression());
+            dbTableOptions.setReplicaNum(options.getReplicaNum());
+            dbTableOptions.setBlockSize(options.getBlockSize());
+            dbTableOptions.setUseBloomFilter(options.getUseBloomFilter());
+            dbTableOptions
+                    .setTabletSize(
+                            Objects.nonNull(options.getTabletSize()) ? options.getTabletSize().longValue() : null);
+        }
     }
 
     @Override
