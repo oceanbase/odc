@@ -29,6 +29,7 @@ import com.oceanbase.tools.dbbrowser.model.DBIndexAlgorithm;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBObjectWarningDescriptor;
+import com.oceanbase.tools.dbbrowser.model.DBTable.DBTableOptions;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.oceanbase.tools.dbbrowser.model.DBTableIndex;
 import com.oceanbase.tools.dbbrowser.parser.SqlParser;
@@ -133,6 +134,13 @@ public class OBMySQLSchemaAccessor extends MySQLNoGreaterThan5740SchemaAccessor 
         }
 
         return results;
+    }
+
+    @Override
+    public DBTableOptions getTableOptions(String schemaName, String tableName, @lombok.NonNull String ddl) {
+        DBTableOptions dbTableOptions = super.getTableOptions(schemaName, tableName, ddl);
+        DBSchemaAccessorUtil.obtainOptionsByParse(dbTableOptions, ddl);
+        return dbTableOptions;
     }
 
     @Override

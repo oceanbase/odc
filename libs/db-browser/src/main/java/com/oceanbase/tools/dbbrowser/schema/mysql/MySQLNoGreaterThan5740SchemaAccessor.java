@@ -1001,11 +1001,10 @@ public class MySQLNoGreaterThan5740SchemaAccessor implements DBSchemaAccessor {
     public DBTableOptions getTableOptions(String schemaName, String tableName, @lombok.NonNull String ddl) {
         DBTableOptions dbTableOptions = new DBTableOptions();
         obtainOptionsByQuery(schemaName, tableName, dbTableOptions);
-        DBSchemaAccessorUtil.obtainOptionsByParse(dbTableOptions, ddl);
         return dbTableOptions;
     }
 
-    private void obtainOptionsByQuery(String schemaName, String tableName, DBTableOptions dbTableOptions) {
+    protected void obtainOptionsByQuery(String schemaName, String tableName, DBTableOptions dbTableOptions) {
         String sql = this.sqlMapper.getSql(Statements.GET_TABLE_OPTION);
         jdbcOperations.query(sql, new Object[] {schemaName, tableName}, t -> {
             dbTableOptions.setCreateTime(t.getTimestamp("CREATE_TIME"));
@@ -1014,6 +1013,13 @@ public class MySQLNoGreaterThan5740SchemaAccessor implements DBSchemaAccessor {
             dbTableOptions.setCollationName(t.getString("TABLE_COLLATION"));
             dbTableOptions.setComment(t.getString("TABLE_COMMENT"));
         });
+        MySQLSqlBuilder getCharset = new MySQLSqlBuilder();
+        getCharset.append("SELECT b.character_set_name FROM `information_schema`.`TABLES` a,")
+                .append(" `information_schema`.`COLLATION_CHARACTER_SET_APPLICABILITY` b")
+                .append(" WHERE b.collation_name = a.table_collation")
+                .append(" AND a.table_schema = ")
+                .value(schemaName).append(" AND a.table_name = ").value(tableName);
+        dbTableOptions.setCharsetName(jdbcOperations.queryForObject(getCharset.toString(), String.class));
     }
 
     @Override
