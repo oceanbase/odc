@@ -42,6 +42,7 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -301,9 +302,8 @@ public class ConnectionService {
         if (CollectionUtils.isEmpty(ids)) {
             return Collections.emptyList();
         }
-        List<ConnectionConfig> connections = this.repository
-                .findAll(ConnectionSpecs.idIn(ids)).stream().map(connection -> entityToModel(connection, false))
-                .collect(Collectors.toList());
+        List<ConnectionConfig> connections = entitiesToModels(this.repository
+                .findAll(ConnectionSpecs.idIn(ids)), currentOrganizationId(), false);
         if (CollectionUtils.isEmpty(connections)) {
             return Collections.emptyList();
         }
@@ -345,14 +345,12 @@ public class ConnectionService {
 
     @SkipAuthorize("odc internal usage")
     public List<ConnectionConfig> listByOrganizationId(@NonNull Long organizationId) {
-        return repository.findByOrganizationId(organizationId).stream().map(ds -> entityToModel(ds, true))
-                .collect(Collectors.toList());
+        return entitiesToModels(repository.findByOrganizationId(organizationId), organizationId, true);
     }
 
     @SkipAuthorize("odc internal usage")
     public List<ConnectionConfig> listByOrganizationIdWithoutEnvironment(@NonNull Long organizationId) {
-        return repository.findByOrganizationId(organizationId).stream().map(ds -> entityToModel(ds, false))
-                .collect(Collectors.toList());
+        return entitiesToModels(repository.findByOrganizationId(organizationId), organizationId, false);
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -388,9 +386,9 @@ public class ConnectionService {
         Specification<ConnectionEntity> spec = Specification
                 .where(ConnectionSpecs.organizationIdEqual(currentOrganizationId()))
                 .and(ConnectionSpecs.idIn(connIds));
-        Map<Long, ConnectionConfig> connMap = repository.findAll(spec).stream()
-                .map(connection -> entityToModel(connection, false))
-                .collect(Collectors.toMap(ConnectionConfig::getId, c -> c));
+        Map<Long, ConnectionConfig> connMap =
+                entitiesToModels(repository.findAll(spec), currentOrganizationId(), false).stream()
+                        .collect(Collectors.toMap(ConnectionConfig::getId, c -> c));
         Map<SecurityResource, Set<String>> res2Actions = authorizationFacade.getRelatedResourcesAndActions(user)
                 .entrySet().stream().collect(Collectors.toMap(e -> {
                     SecurityResource s = e.getKey();
@@ -436,19 +434,13 @@ public class ConnectionService {
                     .collect(Collectors.joining(","));
             throw new NotFoundException(ResourceType.ODC_CONNECTION, "id", absentIds);
         }
-        return entities.stream().map(connectionEntity -> entityToModel(connectionEntity, false))
-                .collect(Collectors.toList());
+        return entitiesToModels(entities, currentOrganizationId(), false);
     }
 
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("odc internal usage")
     public Set<Long> findIdsByHost(String host) {
         return repository.findIdsByHost(host);
-    }
-
-    @SkipAuthorize("internal usage")
-    public List<ConnectionConfig> listAllConnections() {
-        return repository.findAll().stream().map(mapper::entityToModel).collect(Collectors.toList());
     }
 
     @SkipAuthorize("internal usage")
@@ -579,11 +571,6 @@ public class ConnectionService {
         return repository.findByIdIn(ids).stream().map(mapper::entityToModel).collect(Collectors.toList());
     }
 
-    @SkipAuthorize("odc internal usage")
-    public boolean existsById(@NotNull Long id) {
-        return repository.existsById(id);
-    }
-
     @SkipAuthorize("internal usage")
     public ConnectionConfig getForConnectionSkipPermissionCheck(@NotNull Long id) {
         ConnectionConfig connection = internalGetSkipUserCheck(id, false);
@@ -650,7 +637,9 @@ public class ConnectionService {
         spec = spec.and(ConnectionSpecs.sort(pageable.getSort()));
         Pageable page = pageable.equals(Pageable.unpaged()) ? pageable
                 : PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
-        return this.repository.findAll(spec, page).map(connection -> entityToModel(connection, true));
+        Page<ConnectionEntity> entities = this.repository.findAll(spec, page);
+        List<ConnectionConfig> models = entitiesToModels(entities.getContent(), currentOrganizationId(), true);
+        return new PageImpl<>(models, page, entities.getTotalElements());
     }
 
     private String[] getHostPort(String hostPort) {
@@ -738,6 +727,39 @@ public class ConnectionService {
 
     private ConnectionEntity getEntity(@NonNull Long id) {
         return repository.findById(id).orElseThrow(() -> new NotFoundException(ResourceType.ODC_CONNECTION, "id", id));
+    }
+
+    private List<ConnectionConfig> entitiesToModels(@NonNull List<ConnectionEntity> entities,
+            @NonNull Long organizationId, @NonNull Boolean withEnvironment) {
+        if (CollectionUtils.isEmpty(entities)) {
+            return Collections.EMPTY_LIST;
+        }
+        Map<Long, Environment> id2Environment;
+        if (withEnvironment) {
+            id2Environment = environmentService.list(organizationId).stream()
+                    .collect(Collectors.toMap(environment -> environment.getId(), environment -> environment));
+        } else {
+            id2Environment = new HashMap<>();
+        }
+        return entities.stream().map(entity -> {
+            ConnectionConfig connection = mapper.entityToModel(entity);
+            connection.setStatus(CheckState.of(ConnectionStatus.TESTING));
+            if (withEnvironment) {
+                Environment environment = id2Environment.getOrDefault(connection.getEnvironmentId(), null);
+                if (Objects.isNull(environment)) {
+                    return connection;
+                }
+                connection.setEnvironmentStyle(environment.getStyle());
+                String environmentName = environment.getName();
+                if (environmentName.startsWith("${") && environmentName.endsWith("}")) {
+                    connection.setEnvironmentName(I18n.translate(environmentName.substring(2,
+                            environmentName.length() - 1), null, LocaleContextHolder.getLocale()));
+                } else {
+                    connection.setEnvironmentName(environmentName);
+                }
+            }
+            return connection;
+        }).collect(Collectors.toList());
     }
 
     private ConnectionConfig entityToModel(@NonNull ConnectionEntity entity, @NonNull Boolean withEnvironment) {
