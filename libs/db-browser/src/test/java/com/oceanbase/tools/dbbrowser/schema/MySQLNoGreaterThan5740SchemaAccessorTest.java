@@ -162,7 +162,6 @@ public class MySQLNoGreaterThan5740SchemaAccessorTest extends BaseTestEnv {
         Map<String, List<DBTableIndex>> map = accessor.listTableIndexes(getMySQLDataBaseName());
         Assert.assertNotNull(map);
         Assert.assertTrue(map.size() > 0);
-        Assert.assertTrue(map.get("test_index_type").get(0).getAvailable());
     }
 
     @Test

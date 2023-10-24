@@ -594,7 +594,6 @@ public class MySQLNoGreaterThan5740SchemaAccessor implements DBSchemaAccessor {
                 columnNames.add(rs.getString("COLUMN_NAME"));
                 index.setColumnNames(columnNames);
                 index.setGlobal(true);
-                handleIndexAvailability(index, rs.getString("COMMENT"));
                 fullIndexName2Index.put(tableName + indexName, index);
             } else {
                 fullIndexName2Index.get(tableName + indexName).getColumnNames()

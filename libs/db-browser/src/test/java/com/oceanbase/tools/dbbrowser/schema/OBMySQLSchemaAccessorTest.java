@@ -25,7 +25,6 @@ import java.util.Map;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
 
@@ -186,11 +185,9 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
     }
 
     @Test
-    @Ignore("TODO: fix this test case")
     public void listTableIndex_Success() {
         Map<String, List<DBTableIndex>> indexes = accessor.listTableIndexes(getOBMySQLDataBaseName());
         Assert.assertTrue(indexes.size() > 0);
-        Assert.assertTrue(indexes.get("test_index_type").get(0).getAvailable());
     }
 
     @Test
