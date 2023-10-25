@@ -496,9 +496,9 @@ public class DatabaseService {
     }
 
     private void syncIndividualDataSources(ConnectionConfig connection) {
-        DataSource teamDataSource = new OBConsoleDataSourceFactory(
+        DataSource individualDataSource = new OBConsoleDataSourceFactory(
                 connection, ConnectionAccountType.MAIN, true, false).getDataSource();
-        try (Connection conn = teamDataSource.getConnection()) {
+        try (Connection conn = individualDataSource.getConnection()) {
             Set<String> latestDatabaseNames = dbSchemaService.showDatabases(connection.getDialectType(), conn);
             List<DatabaseEntity> existedDatabasesInDb =
                     databaseRepository.findByConnectionId(connection.getId()).stream()
@@ -537,9 +537,9 @@ public class DatabaseService {
         } catch (SQLException e) {
             throw new IllegalStateException(e);
         } finally {
-            if (teamDataSource instanceof AutoCloseable) {
+            if (individualDataSource instanceof AutoCloseable) {
                 try {
-                    ((AutoCloseable) teamDataSource).close();
+                    ((AutoCloseable) individualDataSource).close();
                 } catch (Exception e) {
                     log.warn("Failed to close datasource", e);
                 }
