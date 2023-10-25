@@ -24,9 +24,9 @@ import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import com.oceanbase.odc.service.datatransfer.dumper.AbstractOutputFile;
-import com.oceanbase.odc.service.datatransfer.dumper.DumpDBObject;
-import com.oceanbase.odc.service.datatransfer.dumper.DumperOutput;
+import com.oceanbase.odc.plugin.task.api.datatransfer.dumper.AbstractOutputFile;
+import com.oceanbase.odc.plugin.task.api.datatransfer.dumper.DumpDBObject;
+import com.oceanbase.odc.plugin.task.api.datatransfer.dumper.DumperOutput;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
 
 /**

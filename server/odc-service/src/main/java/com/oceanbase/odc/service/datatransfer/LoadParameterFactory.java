@@ -23,6 +23,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -31,14 +32,14 @@ import org.apache.commons.lang3.Validate;
 
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.plugin.task.api.datatransfer.dumper.AbstractOutputFile;
+import com.oceanbase.odc.plugin.task.api.datatransfer.dumper.BinaryFile;
+import com.oceanbase.odc.plugin.task.api.datatransfer.dumper.DumperOutput;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.CsvColumnMapping;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferFormat;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferObject;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
-import com.oceanbase.odc.service.datatransfer.dumper.AbstractOutputFile;
-import com.oceanbase.odc.service.datatransfer.dumper.BinaryFile;
-import com.oceanbase.odc.service.datatransfer.dumper.DumperOutput;
-import com.oceanbase.odc.service.datatransfer.model.CsvColumnMapping;
-import com.oceanbase.odc.service.datatransfer.model.DataTransferConfig;
-import com.oceanbase.odc.service.datatransfer.model.DataTransferFormat;
-import com.oceanbase.odc.service.datatransfer.model.DataTransferObject;
 import com.oceanbase.tools.loaddump.common.enums.DataFormat;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
 import com.oceanbase.tools.loaddump.common.model.LoadParameter;
@@ -70,7 +71,7 @@ public class LoadParameterFactory extends BaseParameterFactory<LoadParameter> {
         LoadParameter parameter = new LoadParameter();
         parameter.setMaxErrors(config.isStopWhenError() ? 0 : -1);
         setTransferFormat(parameter, config);
-        if (!config.isNotObLoaderDumperCompatible()) {
+        if (config.isCompressed()) {
             /**
              * 导入导出组件产出物导入，需要详细设置
              */
@@ -102,7 +103,7 @@ public class LoadParameterFactory extends BaseParameterFactory<LoadParameter> {
 
     private void setWhiteListForZip(LoadParameter parameter, DataTransferConfig config,
             File workingDir, ConnectionConfig target) throws IOException {
-        if (config.isNotObLoaderDumperCompatible()) {
+        if (!config.isCompressed()) {
             return;
         }
         DumperOutput dumperOutput = new DumperOutput(new File(workingDir.getAbsolutePath() + File.separator + "data"));
@@ -145,21 +146,21 @@ public class LoadParameterFactory extends BaseParameterFactory<LoadParameter> {
         }
         DataTransferFormat format = transferConfig.getDataTransferFormat();
         if (DataTransferFormat.SQL.equals(format)) {
-            if (transferConfig.isNotObLoaderDumperCompatible()) {
+            if (!transferConfig.isCompressed()) {
                 parameter.setDataFormat(DataFormat.MIX);
                 parameter.setFileSuffix(DataFormat.MIX.getDefaultFileSuffix());
             } else {
                 parameter.setDataFormat(DataFormat.SQL);
             }
-            parameter.setExternal(transferConfig.isNotObLoaderDumperCompatible());
+            parameter.setExternal(!transferConfig.isCompressed());
         } else if (DataTransferFormat.CSV.equals(format)) {
             parameter.setDataFormat(DataFormat.CSV);
-            parameter.setExternal(transferConfig.isNotObLoaderDumperCompatible());
+            parameter.setExternal(!transferConfig.isCompressed());
         }
     }
 
     private boolean isExternalCsv(DataTransferConfig config) {
-        return DataTransferFormat.CSV == config.getDataTransferFormat() && config.isNotObLoaderDumperCompatible();
+        return DataTransferFormat.CSV == config.getDataTransferFormat() && !config.isCompressed();
     }
 
     private void setCsvMappings(LoadParameter parameter, DataTransferConfig transferConfig) {
@@ -216,7 +217,8 @@ public class LoadParameterFactory extends BaseParameterFactory<LoadParameter> {
         parameter.setInputFile(csvFile);
         List<DataTransferObject> objectList = config.getExportDbObjects();
         Validate.isTrue(CollectionUtils.isNotEmpty(objectList), "Import objects is necessary");
-        parameter.getWhiteListMap().putAll(getWhiteListMap(objectList, o -> o.getDbObjectType() == ObjectType.TABLE));
+        parameter.getWhiteListMap().putAll(
+                getWhiteListMap(objectList, o -> Objects.equals(o.getDbObjectType(), ObjectType.TABLE.getName())));
         if (parameter.getWhiteListMap().size() != 0) {
             return;
         }

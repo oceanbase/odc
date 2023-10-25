@@ -35,14 +35,14 @@ import com.oceanbase.odc.TestConnectionUtil;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.plugin.task.api.datatransfer.dumper.DumperOutput;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.CsvColumnMapping;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.CsvConfig;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferFormat;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferObject;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferType;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
-import com.oceanbase.odc.service.datatransfer.dumper.DumperOutput;
-import com.oceanbase.odc.service.datatransfer.model.CsvColumnMapping;
-import com.oceanbase.odc.service.datatransfer.model.CsvConfig;
-import com.oceanbase.odc.service.datatransfer.model.DataTransferConfig;
-import com.oceanbase.odc.service.datatransfer.model.DataTransferFormat;
-import com.oceanbase.odc.service.datatransfer.model.DataTransferObject;
-import com.oceanbase.odc.service.datatransfer.model.DataTransferType;
 import com.oceanbase.tools.loaddump.common.enums.DataFormat;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
 import com.oceanbase.tools.loaddump.common.model.LoadParameter;
@@ -139,7 +139,8 @@ public class LoadParameterFactoryTest {
         Map<ObjectType, Set<String>> actual = parameter.getWhiteListMap();
         Map<ObjectType, Set<String>> expect = new HashMap<>();
         for (DataTransferObject object : config.getExportDbObjects()) {
-            Set<String> names = expect.computeIfAbsent(object.getDbObjectType(), k -> new HashSet<>());
+            Set<String> names =
+                    expect.computeIfAbsent(ObjectType.valueOfName(object.getDbObjectType()), k -> new HashSet<>());
             names.add(StringUtils.quoteMysqlIdentifier(object.getObjectName()));
         }
         Assert.assertEquals(expect, actual);
@@ -154,7 +155,8 @@ public class LoadParameterFactoryTest {
         Map<ObjectType, Set<String>> actual = parameter.getWhiteListMap();
         Map<ObjectType, Set<String>> expect = new HashMap<>();
         for (DataTransferObject object : config.getExportDbObjects()) {
-            Set<String> names = expect.computeIfAbsent(object.getDbObjectType(), k -> new HashSet<>());
+            Set<String> names =
+                    expect.computeIfAbsent(ObjectType.valueOfName(object.getDbObjectType()), k -> new HashSet<>());
             names.add(StringUtils.quoteOracleIdentifier(object.getObjectName()));
         }
         Assert.assertEquals(expect, actual);
@@ -207,7 +209,7 @@ public class LoadParameterFactoryTest {
         DataTransferConfig config = generateConfig(DataTransferFormat.CSV, true, true, false);
         DataTransferObject object = new DataTransferObject();
         object.setObjectName("TAB");
-        object.setDbObjectType(ObjectType.VIEW);
+        object.setDbObjectType(ObjectType.VIEW.getName());
         config.setExportDbObjects(Collections.singletonList(object));
 
         thrown.expect(IllegalArgumentException.class);
@@ -319,7 +321,7 @@ public class LoadParameterFactoryTest {
         config.setBatchCommitNum(100);
         DataTransferObject object = new DataTransferObject();
         object.setObjectName("TAB");
-        object.setDbObjectType(ObjectType.TABLE);
+        object.setDbObjectType(ObjectType.TABLE.getName());
         config.setExportDbObjects(Collections.singletonList(object));
         config.setReplaceSchemaWhenExists(true);
         config.setTruncateTableBeforeImport(true);

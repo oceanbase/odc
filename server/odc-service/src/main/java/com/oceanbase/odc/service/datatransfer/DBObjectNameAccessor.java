@@ -85,6 +85,8 @@ public class DBObjectNameAccessor implements AutoCloseable {
                 return getPackageNames();
             case PACKAGE_BODY:
                 return getPackageBodyNames();
+            case TYPE:
+                return getTypeNames();
             default:
                 throw new UnsupportedOperationException("Unsupported object type " + objectType);
         }

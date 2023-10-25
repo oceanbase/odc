@@ -18,7 +18,7 @@ package com.oceanbase.odc.service.datatransfer;
 import java.io.File;
 import java.io.IOException;
 
-import com.oceanbase.odc.service.datatransfer.model.DataTransferConfig;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
 import com.oceanbase.odc.service.datatransfer.task.DataTransferTaskContext;
 import com.oceanbase.odc.service.flow.task.model.DataTransferTaskResult;
 import com.oceanbase.tools.loaddump.common.model.BaseParameter;

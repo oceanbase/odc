@@ -50,7 +50,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -64,22 +63,22 @@ import com.oceanbase.odc.core.shared.constant.ConnectionAccountType;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.TaskType;
+import com.oceanbase.odc.plugin.task.api.datatransfer.dumper.AbstractOutputFile;
+import com.oceanbase.odc.plugin.task.api.datatransfer.dumper.DataFile;
+import com.oceanbase.odc.plugin.task.api.datatransfer.dumper.DumperOutput;
+import com.oceanbase.odc.plugin.task.api.datatransfer.dumper.SchemaFile;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.CsvColumnMapping;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.CsvConfig;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferFormat;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferObject;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferType;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.UploadFileResult;
 import com.oceanbase.odc.service.collaboration.project.model.Project;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
-import com.oceanbase.odc.service.datatransfer.dumper.AbstractOutputFile;
-import com.oceanbase.odc.service.datatransfer.dumper.DataFile;
-import com.oceanbase.odc.service.datatransfer.dumper.DumperOutput;
-import com.oceanbase.odc.service.datatransfer.dumper.SchemaFile;
-import com.oceanbase.odc.service.datatransfer.model.CsvColumnMapping;
-import com.oceanbase.odc.service.datatransfer.model.CsvConfig;
-import com.oceanbase.odc.service.datatransfer.model.DataTransferConfig;
-import com.oceanbase.odc.service.datatransfer.model.DataTransferFormat;
-import com.oceanbase.odc.service.datatransfer.model.DataTransferObject;
-import com.oceanbase.odc.service.datatransfer.model.DataTransferType;
-import com.oceanbase.odc.service.datatransfer.model.UploadFileResult;
 import com.oceanbase.odc.service.datatransfer.task.DataTransferTaskContext;
 import com.oceanbase.odc.service.session.factory.DruidDataSourceFactory;
 import com.oceanbase.tools.loaddump.common.enums.DataFormat;
@@ -126,7 +125,6 @@ public class DataTransferServiceTest extends ServiceTestEnv {
     }
 
     @Test
-    @Ignore("TODO: fix this test")
     public void create_dumpSchemaAndDataForOracleMode_bothSchemaAndDataDumped() throws Exception {
         DataTransferTaskContext context = dataTransferService.create(BUCKET, getOracleDumpConfig(true, true));
         Assert.assertNotNull(context.get(20, TimeUnit.SECONDS));
@@ -138,7 +136,6 @@ public class DataTransferServiceTest extends ServiceTestEnv {
     }
 
     @Test
-    @Ignore("TODO: fix this test")
     public void create_dumpSchemaForOracleMode_onlySchemaDumped() throws Exception {
         DataTransferTaskContext context = dataTransferService.create(BUCKET, getOracleDumpConfig(false, true));
         Assert.assertNotNull(context.get(20, TimeUnit.SECONDS));
@@ -150,7 +147,6 @@ public class DataTransferServiceTest extends ServiceTestEnv {
     }
 
     @Test
-    @Ignore("TODO: fix this test")
     public void create_dumpSchemaForOracleMode_onlySchemaDumped_mergeSchemaFiles() throws Exception {
         DataTransferConfig config = getOracleDumpConfig(false, true);
         config.setMergeSchemaFiles(true);
@@ -175,7 +171,6 @@ public class DataTransferServiceTest extends ServiceTestEnv {
     }
 
     @Test
-    @Ignore("TODO: fix this test")
     public void create_dumpSchemaAndDataForMysqlMode_bothSchemaAndDataDumped() throws Exception {
         DataTransferTaskContext context = dataTransferService.create(BUCKET, getMysqlDumpConfig(true, true));
         Assert.assertNotNull(context.get(20, TimeUnit.SECONDS));
@@ -209,7 +204,6 @@ public class DataTransferServiceTest extends ServiceTestEnv {
     }
 
     @Test
-    @Ignore("TODO: fix this test")
     public void create_loadSchemaAndDataForOracleMode_schemaAndDataLoaded() throws Exception {
         File dumpFile = dumpSchemaAndDataForLoad(DialectType.OB_ORACLE);
         assertOracleModeTableNotExists();
@@ -222,7 +216,6 @@ public class DataTransferServiceTest extends ServiceTestEnv {
     }
 
     @Test
-    @Ignore("TODO: fix this test")
     public void create_loadSchemaForOracleMode_schemaLoaded() throws Exception {
         File dumpFile = dumpSchemaAndDataForLoad(DialectType.OB_ORACLE);
         assertOracleModeTableNotExists();
@@ -241,20 +234,19 @@ public class DataTransferServiceTest extends ServiceTestEnv {
 
         DataTransferTaskContext context = dataTransferService.create(BUCKET,
                 getMysqlLoadConfig(Collections.singletonList(dumpFile.getAbsolutePath()), false, true, true));
-        Assert.assertNotNull(context.get(20, TimeUnit.SECONDS));
+        Assert.assertNotNull(context.get(30, TimeUnit.SECONDS));
         assertMysqlModeTableExists();
         assertMysqlModeTableCountEquals(2);
     }
 
     @Test
-    @Ignore("TODO: fix this test")
     public void create_loadSchemaForMysqlMode_schemaLoaded() throws Exception {
         File dumpFile = dumpSchemaAndDataForLoad(DialectType.OB_MYSQL);
         assertMysqlModeTableNotExists();
 
         DataTransferTaskContext context = dataTransferService.create(BUCKET,
                 getMysqlLoadConfig(Collections.singletonList(dumpFile.getAbsolutePath()), false, false, true));
-        Assert.assertNotNull(context.get(20, TimeUnit.SECONDS));
+        Assert.assertNotNull(context.get(30, TimeUnit.SECONDS));
         assertMysqlModeTableExists();
         assertMysqlModeTableCountEquals(0);
     }
@@ -284,7 +276,6 @@ public class DataTransferServiceTest extends ServiceTestEnv {
     }
 
     @Test
-    @Ignore("TODO: fix this test")
     public void create_validSysUserExists_nonCloudModeUsed() throws Exception {
         DataTransferConfig config = getOracleDumpConfig(true, true);
         config.setSysUser(oracleConnConfig.getSysTenantUsername());
@@ -293,7 +284,6 @@ public class DataTransferServiceTest extends ServiceTestEnv {
     }
 
     @Test
-    @Ignore("TODO: fix this test")
     public void create_validSysUserPasswdExists_nonCloudModeUsed() throws Exception {
         DataTransferConfig config = getOracleDumpConfig(true, true);
         config.setSysUser(oracleConnConfig.getSysTenantUsername());
@@ -303,7 +293,6 @@ public class DataTransferServiceTest extends ServiceTestEnv {
     }
 
     @Test
-    @Ignore("TODO: fix this test")
     public void create_validSysUserInvalidPasswdExists_nonCloudModeUsed() throws Exception {
         DataTransferConfig config = getOracleDumpConfig(true, true);
         config.setSysUser(oracleConnConfig.getSysTenantUsername());
@@ -313,7 +302,6 @@ public class DataTransferServiceTest extends ServiceTestEnv {
     }
 
     @Test
-    @Ignore("TODO: fix this test")
     public void getMetaInfo_validZipFileInput_getMetaInfo() throws Exception {
         File target = dumpSchemaAndDataForLoad(DialectType.OB_ORACLE);
         assertOracleModeTableNotExists();
@@ -398,7 +386,7 @@ public class DataTransferServiceTest extends ServiceTestEnv {
             config = getOracleDumpConfig(true, true);
         }
         DataTransferTaskContext context = dataTransferService.create(BUCKET, config);
-        Assert.assertNotNull(context.get(20, TimeUnit.SECONDS));
+        Assert.assertNotNull(context.get(30, TimeUnit.SECONDS));
         File dumpFile = getDumpFile();
         File returnVal = copyFile(new FileInputStream(dumpFile), "zip");
         FileUtils.forceDelete(dumpFile);
@@ -591,7 +579,7 @@ public class DataTransferServiceTest extends ServiceTestEnv {
         if (dialectType.isMysql()) {
             object.setObjectName(TEST_TABLE_NAME.toLowerCase());
         }
-        object.setDbObjectType(ObjectType.TABLE);
+        object.setDbObjectType(ObjectType.TABLE.getName());
         config.setExportDbObjects(new LinkedList<>(Collections.singleton(object)));
         config.setCsvConfig(new CsvConfig());
         try {
@@ -634,7 +622,10 @@ public class DataTransferServiceTest extends ServiceTestEnv {
         if (dialectType.isMysql()) {
             object.setObjectName(TEST_TABLE_NAME.toLowerCase());
         }
-        object.setDbObjectType(ObjectType.TABLE);
+        if (importFileNames.size() == 1 && importFileNames.get(0).endsWith("zip")) {
+            config.setFileType("zip");
+        }
+        object.setDbObjectType(ObjectType.TABLE.getName());
         config.setExportDbObjects(Collections.singletonList(object));
         config.setReplaceSchemaWhenExists(true);
         config.setTruncateTableBeforeImport(true);

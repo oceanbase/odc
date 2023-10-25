@@ -37,13 +37,13 @@ import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.ConnectionAccountType;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.sql.util.OBUtils;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.CsvConfig;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferFormat;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferObject;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferType;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.model.OBTenantEndpoint;
-import com.oceanbase.odc.service.datatransfer.model.CsvConfig;
-import com.oceanbase.odc.service.datatransfer.model.DataTransferConfig;
-import com.oceanbase.odc.service.datatransfer.model.DataTransferFormat;
-import com.oceanbase.odc.service.datatransfer.model.DataTransferObject;
-import com.oceanbase.odc.service.datatransfer.model.DataTransferType;
 import com.oceanbase.odc.service.session.factory.OBConsoleDataSourceFactory;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
 import com.oceanbase.tools.loaddump.common.model.BaseParameter;
@@ -96,7 +96,7 @@ public abstract class BaseParameterFactory<T extends BaseParameter> {
         }
         if (transferConfig.getTransferType() == DataTransferType.EXPORT) {
             setCsvInfo(parameter, transferConfig);
-        } else if (transferConfig.isNotObLoaderDumperCompatible()) {
+        } else if (!transferConfig.isCompressed()) {
             /**
              * csv 文件导入时需要手动设置 csv 文件相关解析参数
              */
@@ -230,7 +230,7 @@ public abstract class BaseParameterFactory<T extends BaseParameter> {
                 log.info("Invalid db object type found, object={}", dbObject);
                 continue;
             }
-            ObjectType objectType = dbObject.getDbObjectType();
+            ObjectType objectType = ObjectType.valueOfName(dbObject.getDbObjectType());
             String objectName = StringUtils.unquoteOracleIdentifier(dbObject.getObjectName());
             if (StringUtils.isBlank(objectName)) {
                 throw new IllegalArgumentException("Can not accept a blank object name");

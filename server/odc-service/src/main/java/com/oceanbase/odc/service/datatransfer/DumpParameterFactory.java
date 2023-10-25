@@ -15,8 +15,8 @@
  */
 package com.oceanbase.odc.service.datatransfer;
 
-import static com.oceanbase.odc.service.datatransfer.model.DataTransferConstants.MAX_BLOCK_SIZE_MEGABYTE;
-import static com.oceanbase.odc.service.datatransfer.model.DataTransferConstants.MAX_CURSOR_FETCH_SIZE;
+import static com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConstants.MAX_BLOCK_SIZE_MEGABYTE;
+import static com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConstants.MAX_CURSOR_FETCH_SIZE;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -40,15 +40,15 @@ import com.oceanbase.odc.core.datamasking.masker.DataMaskerFactory;
 import com.oceanbase.odc.core.datamasking.masker.MaskValueType;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferFormat;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferObject;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.datasecurity.DataMaskingFunction;
 import com.oceanbase.odc.service.datasecurity.DataMaskingService;
 import com.oceanbase.odc.service.datasecurity.model.MaskingAlgorithm;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveColumn;
 import com.oceanbase.odc.service.datasecurity.util.MaskingAlgorithmUtil;
-import com.oceanbase.odc.service.datatransfer.model.DataTransferConfig;
-import com.oceanbase.odc.service.datatransfer.model.DataTransferFormat;
-import com.oceanbase.odc.service.datatransfer.model.DataTransferObject;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
@@ -164,7 +164,8 @@ public class DumpParameterFactory extends BaseParameterFactory<DumpParameter> {
                 whiteListMap.putAll(getWhiteListMap(objectList, o -> true));
             }
             if (transferConfig.isTransferData()) {
-                whiteListMap.putAll(getWhiteListMap(objectList, o -> o.getDbObjectType() == ObjectType.TABLE));
+                whiteListMap.putAll(getWhiteListMap(objectList,
+                        o -> Objects.equals(o.getDbObjectType(), ObjectType.TABLE.getName())));
             }
         }
     }
@@ -235,7 +236,8 @@ public class DumpParameterFactory extends BaseParameterFactory<DumpParameter> {
                         .collect(Collectors.toList());
             } else {
                 tableNames = transferConfig.getExportDbObjects().stream()
-                        .filter(o -> ObjectType.TABLE == o.getDbObjectType()).map(DataTransferObject::getObjectName)
+                        .filter(o -> Objects.equals(ObjectType.TABLE.getName(), o.getDbObjectType()))
+                        .map(DataTransferObject::getObjectName)
                         .collect(Collectors.toList());
             }
             for (String tableName : tableNames) {
