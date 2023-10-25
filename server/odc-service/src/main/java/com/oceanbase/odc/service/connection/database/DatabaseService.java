@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.connection.database;
 
+import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -53,6 +54,7 @@ import com.oceanbase.odc.core.authority.util.PreAuthenticate;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
+import com.oceanbase.odc.core.shared.constant.ConnectionAccountType;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
@@ -85,6 +87,7 @@ import com.oceanbase.odc.service.iam.OrganizationService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.auth.AuthorizationFacade;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
+import com.oceanbase.odc.service.session.factory.OBConsoleDataSourceFactory;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.tools.dbbrowser.model.DBDatabase;
 import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
@@ -384,9 +387,9 @@ public class DatabaseService {
         if (!lock.tryLock(3, TimeUnit.SECONDS)) {
             throw new ConflictException(ErrorCodes.ResourceModifying, "Can not acquire jdbc lock");
         }
-        ConnectionConfig connection = connectionService.getForConnectionSkipPermissionCheck(dataSourceId);
-        horizontalDataPermissionValidator.checkCurrentOrganization(connection);
         try {
+            ConnectionConfig connection = connectionService.getForConnectionSkipPermissionCheck(dataSourceId);
+            horizontalDataPermissionValidator.checkCurrentOrganization(connection);
             organizationService.get(connection.getOrganizationId()).ifPresent(organization -> {
                 if (organization.getType() == OrganizationType.INDIVIDUAL) {
                     syncIndividualDataSources(connection);
@@ -396,8 +399,7 @@ public class DatabaseService {
             });
             return true;
         } catch (Exception ex) {
-            log.info("sync database failed, dataSourceId={}, error message={}", dataSourceId,
-                    ex.getLocalizedMessage());
+            log.warn("Sync database failed, dataSourceId={}, errorMessage={}", dataSourceId, ex.getLocalizedMessage());
             return false;
         } finally {
             lock.unlock();
@@ -405,12 +407,11 @@ public class DatabaseService {
     }
 
     private void syncTeamDataSources(ConnectionConfig connection) {
-        ConnectionSession connectionSession = null;
-        try {
-            DefaultConnectSessionFactory factory = new DefaultConnectSessionFactory(connection);
-            connectionSession = factory.generateSession();
-            List<DatabaseEntity> latestDatabases =
-                    dbSchemaService.listDatabases(connectionSession).stream().map(database -> {
+        DataSource dataSource = new OBConsoleDataSourceFactory(
+                connection, ConnectionAccountType.MAIN, true, false).getDataSource();
+        try (Connection conn = dataSource.getConnection()) {
+            List<DatabaseEntity> latestDatabases = dbSchemaService.listDatabases(connection.getDialectType(), conn)
+                    .stream().map(database -> {
                         DatabaseEntity entity = new DatabaseEntity();
                         entity.setDatabaseId(com.oceanbase.odc.common.util.StringUtils.uuid());
                         entity.setExisted(Boolean.TRUE);
@@ -425,14 +426,12 @@ public class DatabaseService {
                         entity.setProjectId(null);
                         return entity;
                     }).collect(Collectors.toList());
-
             Map<String, List<DatabaseEntity>> latestDatabaseName2Database =
                     latestDatabases.stream().filter(Objects::nonNull)
                             .collect(Collectors.groupingBy(DatabaseEntity::getName));
             List<DatabaseEntity> existedDatabasesInDb =
                     databaseRepository.findByConnectionId(connection.getId()).stream()
-                            .filter(database -> database.getExisted()).collect(
-                                    Collectors.toList());
+                            .filter(DatabaseEntity::getExisted).collect(Collectors.toList());
             Map<String, List<DatabaseEntity>> existedDatabaseName2Database =
                     existedDatabasesInDb.stream().collect(Collectors.groupingBy(DatabaseEntity::getName));
 
@@ -452,8 +451,7 @@ public class DatabaseService {
                             database.getCollationName(),
                             database.getTableCount(),
                             database.getExisted()
-                    })
-                    .collect(Collectors.toList());
+                    }).collect(Collectors.toList());
 
             JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
             if (org.apache.commons.collections4.CollectionUtils.isNotEmpty(toAdd)) {
@@ -489,24 +487,28 @@ public class DatabaseService {
                         "update connect_database set table_count=?, collation_name=?, charset_name=? where id = ?";
                 jdbcTemplate.batchUpdate(update, toUpdate);
             }
+        } catch (Exception e) {
+            log.warn("Failed to sync team dataSources", e);
+            throw new IllegalStateException(e);
         } finally {
-            if (Objects.nonNull(connectionSession)) {
-                connectionSession.expire();
+            if (dataSource instanceof AutoCloseable) {
+                try {
+                    ((AutoCloseable) dataSource).close();
+                } catch (Exception e) {
+                    log.warn("Failed to close datasource", e);
+                }
             }
         }
     }
 
     private void syncIndividualDataSources(ConnectionConfig connection) {
-        ConnectionSession connectionSession = null;
-        try {
-            DefaultConnectSessionFactory factory = new DefaultConnectSessionFactory(connection);
-            connectionSession = factory.generateSession();
-            Set<String> latestDatabaseNames = dbSchemaService.showDatabases(connectionSession).stream().collect(
-                    Collectors.toSet());
+        DataSource dataSource = new OBConsoleDataSourceFactory(
+                connection, ConnectionAccountType.MAIN, true, false).getDataSource();
+        try (Connection conn = dataSource.getConnection()) {
+            Set<String> latestDatabaseNames = dbSchemaService.showDatabases(connection.getDialectType(), conn);
             List<DatabaseEntity> existedDatabasesInDb =
                     databaseRepository.findByConnectionId(connection.getId()).stream()
-                            .filter(database -> database.getExisted()).collect(
-                                    Collectors.toList());
+                            .filter(DatabaseEntity::getExisted).collect(Collectors.toList());
             Map<String, List<DatabaseEntity>> existedDatabaseName2Database =
                     existedDatabasesInDb.stream().collect(Collectors.groupingBy(DatabaseEntity::getName));
             Set<String> existedDatabaseNames = existedDatabaseName2Database.keySet();
@@ -538,9 +540,16 @@ public class DatabaseService {
             if (!CollectionUtils.isEmpty(toDelete)) {
                 jdbcTemplate.batchUpdate("delete from connect_database where id = ?", toDelete);
             }
+        } catch (Exception e) {
+            log.warn("Failed to sync individual data sources", e);
+            throw new IllegalStateException(e);
         } finally {
-            if (Objects.nonNull(connectionSession)) {
-                connectionSession.expire();
+            if (dataSource instanceof AutoCloseable) {
+                try {
+                    ((AutoCloseable) dataSource).close();
+                } catch (Exception e) {
+                    log.warn("Failed to close datasource", e);
+                }
             }
         }
     }

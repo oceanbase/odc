@@ -55,8 +55,7 @@ public class OBMySQLDatabaseExtension implements DatabaseExtensionPoint {
 
     @Override
     public List<DBDatabase> listDetails(@NonNull Connection connection) {
-        DBSchemaAccessor accessor = getSchemaAccessor(connection);
-        return accessor.listDatabases();
+        return getSchemaAccessor(connection).listDatabases();
     }
 
     protected DBSchemaAccessor getSchemaAccessor(Connection connection) {

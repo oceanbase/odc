@@ -15,7 +15,10 @@
  */
 package com.oceanbase.odc.service.db;
 
+import java.sql.Connection;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.stereotype.Service;
@@ -23,11 +26,12 @@ import org.springframework.stereotype.Service;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
-import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
 import com.oceanbase.tools.dbbrowser.model.DBDatabase;
-import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
+import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 @Service
@@ -41,12 +45,18 @@ public class DBSchemaService {
                         .getDatabaseExtension(connectionSession.getDialectType()).listDetails(con));
     }
 
-    public List<String> showDatabases(ConnectionSession connectionSession) {
-        DBSchemaAccessor accessor = DBSchemaAccessors.create(connectionSession);
-        return accessor.showDatabases();
+    public List<DBDatabase> listDatabases(@NonNull DialectType dialectType, @NonNull Connection connection) {
+        return SchemaPluginUtil.getDatabaseExtension(dialectType).listDetails(connection);
     }
 
+    public Set<String> showDatabases(@NonNull DialectType dialectType, @NonNull Connection connection) {
+        return SchemaPluginUtil.getDatabaseExtension(dialectType).list(connection)
+                .stream().map(DBObjectIdentity::getName).collect(Collectors.toSet());
+    }
 
+    public DBDatabase detail(@NonNull DialectType dialectType, @NonNull Connection connection, String dbName) {
+        return SchemaPluginUtil.getDatabaseExtension(dialectType).getDetail(connection, dbName);
+    }
 
     public DBDatabase detail(ConnectionSession connectionSession, String dbName) {
         return connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY)
