@@ -177,9 +177,9 @@ public class DataSourceController {
     }
 
     @ApiOperation(value = "statusDataSources", notes = "Obtain datasource status")
-    @RequestMapping(value = "/datasources/status", method = RequestMethod.GET)
-    public SuccessResponse<Map<Long, CheckState>> status(@RequestParam(name = "id") Set<Long> datasourceIds) {
-        return Responses.success(connectionService.getStatus(datasourceIds));
+    @RequestMapping(value = "/datasources/status", method = RequestMethod.POST)
+    public SuccessResponse<Map<Long, CheckState>> status(@RequestBody Set<Long> ids) {
+        return Responses.success(connectionService.getStatus(ids));
     }
 
     @ApiOperation(value = "statsDataSource", notes = "datasource stats information")
