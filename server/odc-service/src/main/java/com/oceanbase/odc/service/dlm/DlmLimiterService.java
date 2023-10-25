@@ -40,8 +40,14 @@ public class DlmLimiterService {
     @Value("${odc.task.dlm.default-single-task-row-limit:20000}")
     private int defaultRowLimit;
 
+    @Value("${odc.task.dlm.max-single-task-row-limit:50000}")
+    private int maxRowLimit;
+
     @Value("${odc.task.dlm.default-single-task-data-size-limit:1024}")
     private long defaultDataSizeLimit;
+
+    @Value("${odc.task.dlm.max-single-task-data-size-limit:10240}")
+    private long maxDataSizeLimit;
 
     @Value("${odc.task.dlm.default-single-thread-batch-size:200}")
     private int defaultBatchSize;
@@ -52,6 +58,7 @@ public class DlmLimiterService {
     private DlmLimiterConfigRepository limiterConfigRepository;
 
     public DlmLimiterConfigEntity createAndBindToOrder(Long orderId, DlmLimiterConfig config) {
+        checkLimiterConfig(config);
         DlmLimiterConfigEntity entity = mapper.modelToEntity(config);
         entity.setOrderId(orderId);
         return limiterConfigRepository.save(entity);
@@ -67,6 +74,7 @@ public class DlmLimiterService {
     }
 
     public DlmLimiterConfig updateByOrderId(Long orderId, DlmLimiterConfig limiterConfig) {
+        checkLimiterConfig(limiterConfig);
         Optional<DlmLimiterConfigEntity> entityOptional = limiterConfigRepository.findByOrderId(orderId);
         if (entityOptional.isPresent()) {
             DlmLimiterConfigEntity entity = entityOptional.get();
@@ -88,5 +96,14 @@ public class DlmLimiterService {
         dlmLimiterConfig.setDataSizeLimit(defaultDataSizeLimit);
         dlmLimiterConfig.setBatchSize(defaultBatchSize);
         return dlmLimiterConfig;
+    }
+
+    private void checkLimiterConfig(DlmLimiterConfig limiterConfig) {
+        if (limiterConfig.getRowLimit() > maxRowLimit) {
+            throw new IllegalArgumentException(String.format("The maximum row limit is %s rows/s.", maxRowLimit));
+        }
+        if (limiterConfig.getDataSizeLimit() > maxDataSizeLimit) {
+            throw new IllegalArgumentException(String.format("The maximum data size is %s KB/s.", maxDataSizeLimit));
+        }
     }
 }
