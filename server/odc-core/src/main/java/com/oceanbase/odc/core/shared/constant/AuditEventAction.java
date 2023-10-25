@@ -305,7 +305,7 @@ public enum AuditEventAction implements Translatable {
 
     CREATE_PROJECT,
 
-    CHANGE_SQL_SECURITY_RULE;
+    UPDATE_SQL_SECURITY_RULE;
 
     @Override
     public String code() {

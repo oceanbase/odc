@@ -62,7 +62,7 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 public class SqlCheckInterceptor implements SqlExecuteInterceptor {
 
-    public final static String NEED_SQL_CHECK_KEY = "NEED_SQL_CHECK_KEY";
+    public final static String NEED_SQL_CHECK_KEY = "NEED_SQL_CHECK";
     private final static String SQL_CHECK_RESULT_KEY = "SQL_CHECK_RESULT";
     private final static String SQL_CHECK_ELAPSED_TIME_KEY = "SQL_CHECK_ELAPSED_TIME";
     @Autowired

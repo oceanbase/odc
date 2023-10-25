@@ -390,7 +390,7 @@
   enabled: 1
   id: 80
 - type: "SQL_SECURITY_RULES_MANAGEMENT"
-  action: "CHANGE_SQL_SECURITY_RULE"
+  action: "UPDATE_SQL_SECURITY_RULE"
   method_signature: "com.oceanbase.odc.server.web.controller.v2.RulesetController.updateRule"
   sid_extract_expression: ""
   in_connection: 0

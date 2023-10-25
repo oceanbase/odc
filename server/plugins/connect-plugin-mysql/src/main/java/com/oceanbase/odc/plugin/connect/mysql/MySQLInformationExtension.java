@@ -47,11 +47,11 @@ public class MySQLInformationExtension implements InformationExtensionPoint {
                 return rs.getString(2);
             });
         } catch (Exception e) {
-            throw new BadRequestException(ErrorCodes.DBQueryVersionFailed,
+            throw new BadRequestException(ErrorCodes.FailedQueryDBVersion,
                     new Object[] {e.getMessage()}, e.getMessage());
         }
         if (dbVersion == null) {
-            throw new BadRequestException(ErrorCodes.DBQueryVersionFailed,
+            throw new BadRequestException(ErrorCodes.FailedQueryDBVersion,
                     new Object[] {"Result set is empty"}, "Result set is empty");
         }
         return dbVersion;
