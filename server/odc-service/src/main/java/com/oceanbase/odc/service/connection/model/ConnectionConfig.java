@@ -33,6 +33,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonProperty.Access;
+import com.oceanbase.odc.common.i18n.Internationalizable;
 import com.oceanbase.odc.common.json.SensitiveInput;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.validate.Name;
@@ -298,6 +299,7 @@ public class ConnectionConfig
     private Long environmentId;
 
     @JsonProperty(access = Access.READ_ONLY)
+    @Internationalizable
     private String environmentName;
 
     @JsonProperty(access = Access.READ_ONLY)

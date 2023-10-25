@@ -36,7 +36,6 @@ import javax.validation.constraints.NotNull;
 
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -47,7 +46,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import org.springframework.validation.annotation.Validated;
 
-import com.oceanbase.odc.common.i18n.I18n;
 import com.oceanbase.odc.core.authority.util.Authenticated;
 import com.oceanbase.odc.core.authority.util.PreAuthenticate;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
@@ -235,21 +233,18 @@ public class DatabaseService {
         }
         Page<Database> databases = list(params, Pageable.unpaged());
         if (CollectionUtils.isEmpty(databases.getContent())) {
-            return Collections.EMPTY_LIST;
+            return Collections.emptyList();
         }
         return databases.stream().filter(database -> Objects.nonNull(database.getDataSource()))
                 .map(database -> {
                     ConnectionConfig connection = database.getDataSource();
                     Environment environment = database.getEnvironment();
-                    if (environment.getName().startsWith("${") && environment.getName().endsWith("}")) {
-                        connection
-                                .setEnvironmentName(I18n.translate(
-                                        environment.getName().substring(2, environment.getName().length() - 1), null,
-                                        LocaleContextHolder.getLocale()));
+                    if (Objects.isNull(environment)) {
+                        log.warn("database environment is null, databaseId={}", database.getId());
                     } else {
+                        connection.setEnvironmentStyle(environment.getStyle());
                         connection.setEnvironmentName(environment.getName());
                     }
-                    connection.setEnvironmentStyle(database.getEnvironment().getStyle());
                     return connection;
                 })
                 .collect(Collectors.collectingAndThen(

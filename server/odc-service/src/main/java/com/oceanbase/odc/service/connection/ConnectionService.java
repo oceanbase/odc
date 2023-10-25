@@ -39,7 +39,6 @@ import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
-import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -54,7 +53,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 import org.springframework.validation.annotation.Validated;
 
-import com.oceanbase.odc.common.i18n.I18n;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.authority.SecurityManager;
 import com.oceanbase.odc.core.authority.model.DefaultSecurityResource;
@@ -750,13 +748,7 @@ public class ConnectionService {
                     return connection;
                 }
                 connection.setEnvironmentStyle(environment.getStyle());
-                String environmentName = environment.getName();
-                if (environmentName.startsWith("${") && environmentName.endsWith("}")) {
-                    connection.setEnvironmentName(I18n.translate(environmentName.substring(2,
-                            environmentName.length() - 1), null, LocaleContextHolder.getLocale()));
-                } else {
-                    connection.setEnvironmentName(environmentName);
-                }
+                connection.setEnvironmentName(environment.getName());
             }
             return connection;
         }).collect(Collectors.toList());
@@ -768,13 +760,7 @@ public class ConnectionService {
         if (withEnvironment) {
             Environment environment = environmentService.detailSkipPermissionCheck(entity.getEnvironmentId());
             connection.setEnvironmentStyle(environment.getStyle());
-            String environmentName = environment.getName();
-            if (environmentName.startsWith("${") && environmentName.endsWith("}")) {
-                connection.setEnvironmentName(I18n.translate(environmentName.substring(2,
-                        environmentName.length() - 1), null, LocaleContextHolder.getLocale()));
-            } else {
-                connection.setEnvironmentName(environmentName);
-            }
+            connection.setEnvironmentName(environment.getName());
         }
         return connection;
     }
