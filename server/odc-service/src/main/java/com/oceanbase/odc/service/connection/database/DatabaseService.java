@@ -486,7 +486,7 @@ public class DatabaseService {
                 jdbcTemplate.batchUpdate(update, toUpdate);
             }
         } catch (Exception e) {
-            log.warn("Failed to sync team dataSources", e);
+            log.warn("Failed to sync team dataSources, errorMessage={}", e.getMessage());
             throw new IllegalStateException(e);
         } finally {
             if (dataSource instanceof AutoCloseable) {
@@ -539,7 +539,7 @@ public class DatabaseService {
                 jdbcTemplate.batchUpdate("delete from connect_database where id = ?", toDelete);
             }
         } catch (Exception e) {
-            log.warn("Failed to sync individual data sources", e);
+            log.warn("Failed to sync individual dataSources, errorMessage={}", e.getMessage());
             throw new IllegalStateException(e);
         } finally {
             if (dataSource instanceof AutoCloseable) {
