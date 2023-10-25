@@ -731,12 +731,12 @@ public class ConnectionService {
     private List<ConnectionConfig> entitiesToModels(@NonNull List<ConnectionEntity> entities,
             @NonNull Long organizationId, @NonNull Boolean withEnvironment) {
         if (CollectionUtils.isEmpty(entities)) {
-            return Collections.EMPTY_LIST;
+            return Collections.emptyList();
         }
         Map<Long, Environment> id2Environment;
         if (withEnvironment) {
             id2Environment = environmentService.list(organizationId).stream()
-                    .collect(Collectors.toMap(environment -> environment.getId(), environment -> environment));
+                    .collect(Collectors.toMap(Environment::getId, environment -> environment));
         } else {
             id2Environment = new HashMap<>();
         }
@@ -756,8 +756,8 @@ public class ConnectionService {
     }
 
     private ConnectionConfig entityToModel(@NonNull ConnectionEntity entity, @NonNull Boolean withEnvironment) {
-        return entitiesToModels(Arrays.asList(entity), entity.getOrganizationId(), withEnvironment).stream()
-                .findFirst()
+        return entitiesToModels(Collections.singletonList(entity), entity.getOrganizationId(), withEnvironment)
+                .stream().findFirst()
                 .orElseThrow(() -> new NotFoundException(ResourceType.ODC_CONNECTION, "id", entity.getId()));
     }
 
