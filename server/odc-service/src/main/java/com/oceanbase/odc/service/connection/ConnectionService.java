@@ -756,14 +756,9 @@ public class ConnectionService {
     }
 
     private ConnectionConfig entityToModel(@NonNull ConnectionEntity entity, @NonNull Boolean withEnvironment) {
-        ConnectionConfig connection = mapper.entityToModel(entity);
-        connection.setStatus(CheckState.of(ConnectionStatus.TESTING));
-        if (withEnvironment) {
-            Environment environment = environmentService.detailSkipPermissionCheck(entity.getEnvironmentId());
-            connection.setEnvironmentStyle(environment.getStyle());
-            connection.setEnvironmentName(environment.getName());
-        }
-        return connection;
+        return entitiesToModels(Arrays.asList(entity), entity.getOrganizationId(), withEnvironment).stream()
+                .findFirst()
+                .orElseThrow(() -> new NotFoundException(ResourceType.ODC_CONNECTION, "id", entity.getId()));
     }
 
     private ConnectionEntity modelToEntity(@NonNull ConnectionConfig model) {
