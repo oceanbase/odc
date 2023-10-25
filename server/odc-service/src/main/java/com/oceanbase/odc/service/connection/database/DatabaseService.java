@@ -101,7 +101,8 @@ import lombok.extern.slf4j.Slf4j;
 @Validated
 @Authenticated
 public class DatabaseService {
-    private DatabaseMapper databaseMapper = DatabaseMapper.INSTANCE;
+
+    private final DatabaseMapper databaseMapper = DatabaseMapper.INSTANCE;
 
     @Autowired
     private DatabaseRepository databaseRepository;
