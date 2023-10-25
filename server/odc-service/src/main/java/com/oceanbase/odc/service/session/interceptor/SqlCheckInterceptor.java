@@ -62,6 +62,7 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 public class SqlCheckInterceptor implements SqlExecuteInterceptor {
 
+    public final static String NEED_SQL_CHECK_KEY = "NEED_SQL_CHECK";
     private final static String SQL_CHECK_RESULT_KEY = "SQL_CHECK_RESULT";
     private final static String SQL_CHECK_ELAPSED_TIME_KEY = "SQL_CHECK_ELAPSED_TIME";
     @Autowired
@@ -76,7 +77,8 @@ public class SqlCheckInterceptor implements SqlExecuteInterceptor {
     @Override
     public boolean preHandle(@NonNull SqlAsyncExecuteReq request, @NonNull SqlAsyncExecuteResp response,
             @NonNull ConnectionSession session, @NonNull Map<String, Object> context) {
-        if (this.authenticationFacade.currentUser().getOrganizationType() != OrganizationType.TEAM) {
+        if (this.authenticationFacade.currentUser().getOrganizationType() != OrganizationType.TEAM
+                || Boolean.FALSE.equals(context.get(NEED_SQL_CHECK_KEY))) {
             // 个人组织下不检查
             return true;
         }
