@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.connection.database;
 
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -485,8 +486,7 @@ public class DatabaseService {
                         "update connect_database set table_count=?, collation_name=?, charset_name=? where id = ?";
                 jdbcTemplate.batchUpdate(update, toUpdate);
             }
-        } catch (Exception e) {
-            log.warn("Failed to sync team dataSources, errorMessage={}", e.getMessage());
+        } catch (SQLException e) {
             throw new IllegalStateException(e);
         } finally {
             if (dataSource instanceof AutoCloseable) {
@@ -538,8 +538,7 @@ public class DatabaseService {
             if (!CollectionUtils.isEmpty(toDelete)) {
                 jdbcTemplate.batchUpdate("delete from connect_database where id = ?", toDelete);
             }
-        } catch (Exception e) {
-            log.warn("Failed to sync individual dataSources, errorMessage={}", e.getMessage());
+        } catch (SQLException e) {
             throw new IllegalStateException(e);
         } finally {
             if (dataSource instanceof AutoCloseable) {
