@@ -36,7 +36,6 @@ import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.unit.BinarySizeUnit;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.TaskType;
-import com.oceanbase.odc.core.shared.exception.VerifyException;
 import com.oceanbase.odc.metadb.flow.FlowInstanceRepository;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.service.common.FileManager;
@@ -108,24 +107,20 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
             throw new ServiceTaskError(new RuntimeException("Can not find task entity by id " + preCheckTaskId));
         }
         this.creatorId = FlowTaskUtil.getTaskCreator(execution).getCreatorId();
-        try {
-            this.connectionConfig = FlowTaskUtil.getConnectionConfig(execution);
-        } catch (VerifyException e) {
-            log.info(e.getMessage());
-        }
+        this.connectionConfig = FlowTaskUtil.getConnectionConfig(execution);
+        RiskLevelDescriber riskLevelDescriber = FlowTaskUtil.getRiskLevelDescriber(execution);
         if (Objects.nonNull(this.connectionConfig)) {
             this.databaseChangeRelatedSqls = getFlowRelatedSqls(taskEntity.getTaskType(),
                     taskEntity.getParametersJson(), connectionConfig.getDialectType());
-        }
-        RiskLevelDescriber riskLevelDescriber = FlowTaskUtil.getRiskLevelDescriber(execution);
-        try {
-            preCheck(taskEntity, preCheckTaskEntity, riskLevelDescriber);
-        } catch (Exception e) {
-            log.warn("pre check failed, e");
-            throw new ServiceTaskError(e);
-        }
-        if (this.sqlCheckResult != null) {
-            riskLevelDescriber.setSqlCheckResult(sqlCheckResult.getMaxLevel() + "");
+            try {
+                preCheck(taskEntity, preCheckTaskEntity, riskLevelDescriber);
+            } catch (Exception e) {
+                log.warn("pre check failed, e");
+                throw new ServiceTaskError(e);
+            }
+            if (this.sqlCheckResult != null) {
+                riskLevelDescriber.setSqlCheckResult(sqlCheckResult.getMaxLevel() + "");
+            }
         }
         try {
             RiskLevel riskLevel = approvalFlowConfigSelector.select(riskLevelDescriber);

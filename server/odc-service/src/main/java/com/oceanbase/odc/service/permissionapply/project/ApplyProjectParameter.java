@@ -52,7 +52,7 @@ public class ApplyProjectParameter implements Serializable, TaskParameters {
 
 
     @Data
-    public static class ApplyProject {
+    public static class ApplyProject implements Serializable {
         /**
          * Project id, refer to {@link Project#getId()}
          */
@@ -64,7 +64,7 @@ public class ApplyProjectParameter implements Serializable, TaskParameters {
     }
 
     @Data
-    public static class ApplyResourceRole {
+    public static class ApplyResourceRole implements Serializable {
         /**
          * Resource role id, refer to {@link ResourceRole#getId()}
          */
