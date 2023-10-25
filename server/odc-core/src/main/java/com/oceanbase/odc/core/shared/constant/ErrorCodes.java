@@ -262,6 +262,7 @@ public enum ErrorCodes implements ErrorCode {
      * DB Object
      */
     DBObjectMetadataMayNotAccurate,
+    QueryDBVersionFailed,
 
     /**
      * Permission management

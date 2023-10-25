@@ -89,6 +89,7 @@ import com.oceanbase.odc.service.db.session.KillSessionResult;
 import com.oceanbase.odc.service.dml.ValueEncodeType;
 import com.oceanbase.odc.service.feature.AllFeatures;
 import com.oceanbase.odc.service.feature.Features;
+import com.oceanbase.odc.service.session.interceptor.SqlCheckInterceptor;
 import com.oceanbase.odc.service.session.interceptor.SqlExecuteInterceptorService;
 import com.oceanbase.odc.service.session.model.BinaryContent;
 import com.oceanbase.odc.service.session.model.QueryTableOrViewDataReq;
@@ -169,7 +170,7 @@ public class ConnectConsoleService {
         asyncExecuteReq.setAddROWID(false);
         asyncExecuteReq.setQueryLimit(queryLimit);
 
-        SqlAsyncExecuteResp resp = execute(sessionId, asyncExecuteReq);
+        SqlAsyncExecuteResp resp = execute(sessionId, asyncExecuteReq, false);
         String requestId = resp.getRequestId();
 
         ConnectionConfig connConfig = (ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(connectionSession);
@@ -185,6 +186,11 @@ public class ConnectConsoleService {
 
     public SqlAsyncExecuteResp execute(@NotNull String sessionId, @NotNull @Valid SqlAsyncExecuteReq request)
             throws Exception {
+        return execute(sessionId, request, true);
+    }
+
+    public SqlAsyncExecuteResp execute(@NotNull String sessionId,
+            @NotNull @Valid SqlAsyncExecuteReq request, boolean needSqlCheck) throws Exception {
         ConnectionSession connectionSession = sessionService.nullSafeGet(sessionId);
 
         if (request.getShowTableColumnInfo() != null) {
@@ -226,6 +232,7 @@ public class ConnectConsoleService {
         }
         SqlAsyncExecuteResp response = SqlAsyncExecuteResp.newSqlAsyncExecuteResp(sqlTuples);
         Map<String, Object> context = new HashMap<>();
+        context.put(SqlCheckInterceptor.NEED_SQL_CHECK_KEY, needSqlCheck);
         StopWatch stopWatch = StopWatch.createStarted();
         if (!sqlInterceptService.preHandle(request, response, connectionSession, context)) {
             return response;

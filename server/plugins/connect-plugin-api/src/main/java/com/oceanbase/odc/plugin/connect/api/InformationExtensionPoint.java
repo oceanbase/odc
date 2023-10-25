@@ -27,4 +27,5 @@ import org.pf4j.ExtensionPoint;
 public interface InformationExtensionPoint extends ExtensionPoint {
 
     String getDBVersion(Connection connection);
+
 }
