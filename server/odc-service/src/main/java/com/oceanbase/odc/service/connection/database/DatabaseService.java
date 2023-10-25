@@ -406,9 +406,9 @@ public class DatabaseService {
     }
 
     private void syncTeamDataSources(ConnectionConfig connection) {
-        DataSource dataSource = new OBConsoleDataSourceFactory(
+        DataSource teamDataSource = new OBConsoleDataSourceFactory(
                 connection, ConnectionAccountType.MAIN, true, false).getDataSource();
-        try (Connection conn = dataSource.getConnection()) {
+        try (Connection conn = teamDataSource.getConnection()) {
             List<DatabaseEntity> latestDatabases = dbSchemaService.listDatabases(connection.getDialectType(), conn)
                     .stream().map(database -> {
                         DatabaseEntity entity = new DatabaseEntity();
@@ -489,9 +489,9 @@ public class DatabaseService {
         } catch (SQLException e) {
             throw new IllegalStateException(e);
         } finally {
-            if (dataSource instanceof AutoCloseable) {
+            if (teamDataSource instanceof AutoCloseable) {
                 try {
-                    ((AutoCloseable) dataSource).close();
+                    ((AutoCloseable) teamDataSource).close();
                 } catch (Exception e) {
                     log.warn("Failed to close datasource", e);
                 }
@@ -500,9 +500,9 @@ public class DatabaseService {
     }
 
     private void syncIndividualDataSources(ConnectionConfig connection) {
-        DataSource dataSource = new OBConsoleDataSourceFactory(
+        DataSource teamDataSource = new OBConsoleDataSourceFactory(
                 connection, ConnectionAccountType.MAIN, true, false).getDataSource();
-        try (Connection conn = dataSource.getConnection()) {
+        try (Connection conn = teamDataSource.getConnection()) {
             Set<String> latestDatabaseNames = dbSchemaService.showDatabases(connection.getDialectType(), conn);
             List<DatabaseEntity> existedDatabasesInDb =
                     databaseRepository.findByConnectionId(connection.getId()).stream()
@@ -541,9 +541,9 @@ public class DatabaseService {
         } catch (SQLException e) {
             throw new IllegalStateException(e);
         } finally {
-            if (dataSource instanceof AutoCloseable) {
+            if (teamDataSource instanceof AutoCloseable) {
                 try {
-                    ((AutoCloseable) dataSource).close();
+                    ((AutoCloseable) teamDataSource).close();
                 } catch (Exception e) {
                     log.warn("Failed to close datasource", e);
                 }
