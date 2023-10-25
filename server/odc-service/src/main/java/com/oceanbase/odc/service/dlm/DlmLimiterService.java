@@ -99,10 +99,10 @@ public class DlmLimiterService {
     }
 
     private void checkLimiterConfig(DlmLimiterConfig limiterConfig) {
-        if (limiterConfig.getRowLimit() > maxRowLimit) {
+        if (limiterConfig.getRowLimit() != null && limiterConfig.getRowLimit() > maxRowLimit) {
             throw new IllegalArgumentException(String.format("The maximum row limit is %s rows/s.", maxRowLimit));
         }
-        if (limiterConfig.getDataSizeLimit() > maxDataSizeLimit) {
+        if (limiterConfig.getDataSizeLimit() != null && limiterConfig.getDataSizeLimit() > maxDataSizeLimit) {
             throw new IllegalArgumentException(String.format("The maximum data size is %s KB/s.", maxDataSizeLimit));
         }
     }
