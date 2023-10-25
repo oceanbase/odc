@@ -20,13 +20,18 @@ import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.metadb.dlm.DlmLimiterConfigEntity;
 import com.oceanbase.odc.metadb.dlm.DlmLimiterConfigRepository;
+import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
 import com.oceanbase.odc.service.dlm.model.DlmLimiterConfig;
+import com.oceanbase.odc.service.schedule.ScheduleService;
+import com.oceanbase.odc.service.schedule.utils.ScheduleTaskUtil;
 
 /**
  * @Author：tinker
@@ -57,6 +62,9 @@ public class DlmLimiterService {
     @Autowired
     private DlmLimiterConfigRepository limiterConfigRepository;
 
+    @Autowired
+    private ScheduleService scheduleService;
+
     public DlmLimiterConfigEntity createAndBindToOrder(Long orderId, DlmLimiterConfig config) {
         checkLimiterConfig(config);
         DlmLimiterConfigEntity entity = mapper.modelToEntity(config);
@@ -73,6 +81,7 @@ public class DlmLimiterService {
         }
     }
 
+    @Transactional(rollbackFor = Exception.class)
     public DlmLimiterConfig updateByOrderId(Long orderId, DlmLimiterConfig limiterConfig) {
         checkLimiterConfig(limiterConfig);
         Optional<DlmLimiterConfigEntity> entityOptional = limiterConfigRepository.findByOrderId(orderId);
@@ -84,6 +93,10 @@ public class DlmLimiterService {
                     limiterConfig.getBatchSize() == null ? entity.getBatchSize() : limiterConfig.getBatchSize());
             entity.setDataSizeLimit(limiterConfig.getDataSizeLimit() == null ? entity.getDataSizeLimit()
                     : limiterConfig.getDataSizeLimit());
+            DataArchiveParameters parameters =
+                    ScheduleTaskUtil.getDataArchiveParameters(scheduleService.nullSafeGetById(orderId));
+            parameters.setLimiterConfig(mapper.entityToModel(entity));
+            scheduleService.updateJobParametersById(orderId, JsonUtils.toJson(parameters));
             return mapper.entityToModel(limiterConfigRepository.save(entity));
         } else {
             throw new NotFoundException(ResourceType.ODC_DLM_LIMITER_CONFIG, "Id", orderId);
