@@ -29,7 +29,7 @@ import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
 import com.oceanbase.odc.service.datatransfer.DataTransferService;
 import com.oceanbase.odc.service.datatransfer.task.DataTransferTaskContext;
 import com.oceanbase.odc.service.flow.OdcInternalFileService;
-import com.oceanbase.odc.service.flow.task.model.DataTransferTaskResult;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferTaskResult;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;

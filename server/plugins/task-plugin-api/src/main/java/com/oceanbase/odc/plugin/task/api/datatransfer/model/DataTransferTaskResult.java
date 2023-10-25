@@ -13,13 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.flow.task.model;
+package com.oceanbase.odc.plugin.task.api.datatransfer.model;
 
 import java.util.LinkedList;
 import java.util.List;
 
-import com.oceanbase.odc.service.datatransfer.task.DataTransferTaskContext;
-import com.oceanbase.tools.loaddump.common.model.ObjectStatus;
+import com.oceanbase.odc.core.flow.model.FlowTaskResult;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -34,18 +33,9 @@ import lombok.Setter;
 @Getter
 @Setter
 public class DataTransferTaskResult implements FlowTaskResult {
+
     private String exportZipFilePath;
     private List<ObjectStatus> dataObjectsInfo = new LinkedList<>();
     private List<ObjectStatus> schemaObjectsInfo = new LinkedList<>();
-
-    public static DataTransferTaskResult of(DataTransferTaskContext context) {
-        DataTransferTaskResult result = new DataTransferTaskResult();
-        if (context == null) {
-            return result;
-        }
-        result.getSchemaObjectsInfo().addAll(context.getSchemaObjectsInfo());
-        result.getDataObjectsInfo().addAll(context.getDataObjectsInfo());
-        return result;
-    }
 
 }

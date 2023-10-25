@@ -20,7 +20,7 @@ import java.io.IOException;
 
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
 import com.oceanbase.odc.service.datatransfer.task.DataTransferTaskContext;
-import com.oceanbase.odc.service.flow.task.model.DataTransferTaskResult;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferTaskResult;
 import com.oceanbase.tools.loaddump.common.model.BaseParameter;
 
 public interface DataTransferAdapter {

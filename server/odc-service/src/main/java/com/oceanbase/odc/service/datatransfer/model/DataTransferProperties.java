@@ -29,6 +29,6 @@ public class DataTransferProperties {
 
     private int cursorFetchSize;
 
-    private String useServerPrepStmts;
+    private boolean useServerPrepStmts;
 
 }

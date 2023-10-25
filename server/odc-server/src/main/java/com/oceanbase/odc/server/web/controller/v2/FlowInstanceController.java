@@ -53,7 +53,7 @@ import com.oceanbase.odc.service.flow.model.FlowInstanceApprovalReq;
 import com.oceanbase.odc.service.flow.model.FlowInstanceDetailResp;
 import com.oceanbase.odc.service.flow.model.FlowMetaInfo;
 import com.oceanbase.odc.service.flow.model.QueryFlowInstanceParams;
-import com.oceanbase.odc.service.flow.task.model.FlowTaskResult;
+import com.oceanbase.odc.core.flow.model.FlowTaskResult;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;

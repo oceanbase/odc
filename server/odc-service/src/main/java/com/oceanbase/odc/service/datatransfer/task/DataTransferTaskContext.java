@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang.StringUtils;
 
 import com.oceanbase.odc.core.shared.Verify;
-import com.oceanbase.odc.service.flow.task.model.DataTransferTaskResult;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferTaskResult;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
 import com.oceanbase.tools.loaddump.common.model.ObjectStatus;
 import com.oceanbase.tools.loaddump.common.model.Summary;

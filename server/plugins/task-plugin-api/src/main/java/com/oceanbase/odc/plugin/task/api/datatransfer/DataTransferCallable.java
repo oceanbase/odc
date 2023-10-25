@@ -18,14 +18,14 @@ package com.oceanbase.odc.plugin.task.api.datatransfer;
 
 import java.util.concurrent.Callable;
 
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferTaskResult;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.ObjectStatus;
-import com.oceanbase.odc.plugin.task.api.datatransfer.model.TransferObjectsInfo;
 
 /**
  * @author liuyizhuo.lyz
  * @date 2023-09-15
  */
-public interface DataTransferCallable extends Callable<TransferObjectsInfo> {
+public interface DataTransferCallable extends Callable<DataTransferTaskResult> {
 
     /**
      * transfer data
@@ -35,7 +35,7 @@ public interface DataTransferCallable extends Callable<TransferObjectsInfo> {
      *         {@link ObjectStatus#getExportPaths()} of each object cannot be null.
      * @see DataTransferCallable#getStatus()
      */
-    TransferObjectsInfo call() throws Exception;
+    DataTransferTaskResult call() throws Exception;
 
     /**
      * get current task status for monitoring.
@@ -43,7 +43,7 @@ public interface DataTransferCallable extends Callable<TransferObjectsInfo> {
      * @return transfer result, including data objects and schema objects. The two are independent of
      *         each other. An object can appear in two lists at the same time.
      */
-    TransferObjectsInfo getStatus();
+    DataTransferTaskResult getStatus();
 
     /**
      * @return current progress percentage
