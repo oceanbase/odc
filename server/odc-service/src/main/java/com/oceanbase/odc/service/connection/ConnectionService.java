@@ -72,6 +72,7 @@ import com.oceanbase.odc.core.shared.constant.PermissionType;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
+import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.metadb.collaboration.EnvironmentRepository;
 import com.oceanbase.odc.metadb.connection.ConnectionAttributeEntity;
 import com.oceanbase.odc.metadb.connection.ConnectionAttributeRepository;
@@ -745,7 +746,7 @@ public class ConnectionService {
             if (withEnvironment) {
                 Environment environment = id2Environment.getOrDefault(connection.getEnvironmentId(), null);
                 if (Objects.isNull(environment)) {
-                    return connection;
+                    throw new UnexpectedException("environment not found, id=" + connection.getEnvironmentId());
                 }
                 connection.setEnvironmentStyle(environment.getStyle());
                 connection.setEnvironmentName(environment.getName());
