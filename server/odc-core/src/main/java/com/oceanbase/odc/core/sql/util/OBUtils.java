@@ -277,11 +277,11 @@ public class OBUtils {
         String[] obVersion = obVersionComment.split("\\s+");
         if (obVersion == null) {
             String errMsg = "version comment is empty, " + obVersionComment;
-            throw new BadRequestException(ErrorCodes.FailedQueryDBVersion, new Object[] {errMsg}, errMsg);
+            throw new BadRequestException(ErrorCodes.QueryDBVersionFailed, new Object[] {errMsg}, errMsg);
         }
         if (obVersion.length < 4) {
             String errMsg = "failed to get version comment, " + obVersionComment;
-            throw new BadRequestException(ErrorCodes.FailedQueryDBVersion, new Object[] {errMsg}, errMsg);
+            throw new BadRequestException(ErrorCodes.QueryDBVersionFailed, new Object[] {errMsg}, errMsg);
         }
         return obVersion[1];
     }
@@ -292,11 +292,11 @@ public class OBUtils {
                 if (resultSet.next()) {
                     return OBUtils.parseObVersionComment(resultSet.getString("value"));
                 }
-                throw new BadRequestException(ErrorCodes.FailedQueryDBVersion,
+                throw new BadRequestException(ErrorCodes.QueryDBVersionFailed,
                         new Object[] {"Result set is empty"}, "Result set is empty");
             }
         } catch (Exception e) {
-            throw new BadRequestException(ErrorCodes.FailedQueryDBVersion,
+            throw new BadRequestException(ErrorCodes.QueryDBVersionFailed,
                     new Object[] {e.getMessage()}, e.getMessage());
         }
     }
