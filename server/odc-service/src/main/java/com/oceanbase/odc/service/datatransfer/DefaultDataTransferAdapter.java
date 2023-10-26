@@ -22,8 +22,6 @@ import java.util.Arrays;
 
 import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Profile;
-import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
 import com.oceanbase.odc.service.datatransfer.task.DataTransferTaskContext;
@@ -36,8 +34,6 @@ import com.oceanbase.tools.loaddump.common.model.BaseParameter;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@Component
-@Profile("alipay")
 public class DefaultDataTransferAdapter implements DataTransferAdapter {
 
     @Autowired

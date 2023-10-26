@@ -230,12 +230,11 @@ public abstract class BaseParameterFactory<T extends BaseParameter> {
                 log.info("Invalid db object type found, object={}", dbObject);
                 continue;
             }
-            ObjectType objectType = ObjectType.valueOfName(dbObject.getDbObjectType());
             String objectName = StringUtils.unquoteOracleIdentifier(dbObject.getObjectName());
             if (StringUtils.isBlank(objectName)) {
                 throw new IllegalArgumentException("Can not accept a blank object name");
             }
-            Set<String> nameSet = whiteListMap.computeIfAbsent(objectType, k -> new HashSet<>());
+            Set<String> nameSet = whiteListMap.computeIfAbsent(dbObject.getDbObjectType(), k -> new HashSet<>());
             if (DialectType.OB_ORACLE == target.getDialectType()) {
                 nameSet.add(StringUtils.quoteOracleIdentifier(objectName));
             } else {

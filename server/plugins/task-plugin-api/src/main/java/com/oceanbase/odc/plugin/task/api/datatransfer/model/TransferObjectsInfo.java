@@ -24,7 +24,7 @@ import lombok.Data;
 @Data
 public class TransferObjectsInfo {
 
-    private List<ObjectStatus> dataObjectsInfo = new LinkedList<>();
-    private List<ObjectStatus> schemaObjectsInfo = new LinkedList<>();
+    private List<ObjectResult> dataObjectsInfo = new LinkedList<>();
+    private List<ObjectResult> schemaObjectsInfo = new LinkedList<>();
 
 }

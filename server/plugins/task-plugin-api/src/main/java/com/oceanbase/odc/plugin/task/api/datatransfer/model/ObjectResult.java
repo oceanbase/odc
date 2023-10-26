@@ -17,18 +17,15 @@
 package com.oceanbase.odc.plugin.task.api.datatransfer.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.oceanbase.tools.loaddump.common.model.ObjectStatus;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 @Data
-public class ObjectStatus {
+@EqualsAndHashCode(callSuper = true)
+public class ObjectResult extends ObjectStatus {
 
-    private String schema;
-    private String type;
-    private String name;
-    private Long total;
-    private Long count;
-    private Status status;
     /**
      * for export only, internal usage
      */
@@ -37,13 +34,7 @@ public class ObjectStatus {
 
     @JsonIgnore
     public String getSummary() {
-        return String.format("%s.%s[%s]", schema, name, type);
-    }
-
-    public enum Status {
-        INITIAL,
-        SUCCESS,
-        FAILURE
+        return String.format("%s.%s[%s]", getSchema(), getName(), getType());
     }
 
 }

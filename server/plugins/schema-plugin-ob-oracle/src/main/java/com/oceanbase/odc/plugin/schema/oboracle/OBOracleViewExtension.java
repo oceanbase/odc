@@ -21,7 +21,7 @@ import org.pf4j.Extension;
 
 import com.oceanbase.odc.common.util.JdbcOperationsUtil;
 import com.oceanbase.odc.plugin.schema.obmysql.OBMySQLViewExtension;
-import com.oceanbase.odc.plugin.schema.obmysql.utils.DBAccessorUtil;
+import com.oceanbase.odc.plugin.schema.oboracle.utils.DBAccessorUtil;
 import com.oceanbase.tools.dbbrowser.editor.DBObjectOperator;
 import com.oceanbase.tools.dbbrowser.editor.oracle.OracleObjectOperator;
 import com.oceanbase.tools.dbbrowser.model.DBView;

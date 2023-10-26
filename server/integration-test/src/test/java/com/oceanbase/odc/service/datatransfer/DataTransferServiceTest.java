@@ -310,7 +310,7 @@ public class DataTransferServiceTest extends ServiceTestEnv {
         UploadFileResult expect = new UploadFileResult();
         expect.setFormat(DataFormat.SQL);
         expect.setFileType("ZIP");
-        expect.setFileName(target.getAbsolutePath());
+        expect.setFileName(target.getName());
         expect.setContainsData(true);
         expect.setContainsSchema(true);
         Map<ObjectType, Set<String>> importFileNames = new HashMap<>();
@@ -330,7 +330,7 @@ public class DataTransferServiceTest extends ServiceTestEnv {
     }
 
     @Test
-    public void getExportObjectNames_oracleMode_getNonNull() {
+    public void getExportObjectNames_oracleMode_getNonNull() throws SQLException {
         Database database = new Database();
         database.setId(1L);
         database.setName(oracleConnConfig.defaultSchema());
@@ -345,7 +345,7 @@ public class DataTransferServiceTest extends ServiceTestEnv {
     }
 
     @Test
-    public void getExportObjectNames_mysqlMode_getNonNull() {
+    public void getExportObjectNames_mysqlMode_getNonNull() throws SQLException {
         Database database = new Database();
         database.setId(1L);
         database.setName(mysqlConnConfig.defaultSchema());
@@ -579,7 +579,7 @@ public class DataTransferServiceTest extends ServiceTestEnv {
         if (dialectType.isMysql()) {
             object.setObjectName(TEST_TABLE_NAME.toLowerCase());
         }
-        object.setDbObjectType(ObjectType.TABLE.getName());
+        object.setDbObjectType(ObjectType.TABLE);
         config.setExportDbObjects(new LinkedList<>(Collections.singleton(object)));
         config.setCsvConfig(new CsvConfig());
         try {
@@ -625,7 +625,7 @@ public class DataTransferServiceTest extends ServiceTestEnv {
         if (importFileNames.size() == 1 && importFileNames.get(0).endsWith("zip")) {
             config.setFileType("zip");
         }
-        object.setDbObjectType(ObjectType.TABLE.getName());
+        object.setDbObjectType(ObjectType.TABLE);
         config.setExportDbObjects(Collections.singletonList(object));
         config.setReplaceSchemaWhenExists(true);
         config.setTruncateTableBeforeImport(true);

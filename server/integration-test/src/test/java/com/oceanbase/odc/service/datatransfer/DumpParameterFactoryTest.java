@@ -117,7 +117,7 @@ public class DumpParameterFactoryTest extends ServiceTestEnv {
         DataTransferConfig config = generateConfig(DataTransferFormat.SQL, false, true);
         DataTransferObject object = new DataTransferObject();
         object.setObjectName("V");
-        object.setDbObjectType(ObjectType.VIEW.getName());
+        object.setDbObjectType(ObjectType.VIEW);
         config.getExportDbObjects().add(object);
         DumpParameter parameter = factory.generate(config);
         Map<ObjectType, Set<String>> actual = parameter.getWhiteListMap();
@@ -135,7 +135,7 @@ public class DumpParameterFactoryTest extends ServiceTestEnv {
         DataTransferConfig config = generateConfig(DataTransferFormat.SQL, true, false);
         DataTransferObject object = new DataTransferObject();
         object.setObjectName("V");
-        object.setDbObjectType(ObjectType.VIEW.getName());
+        object.setDbObjectType(ObjectType.VIEW);
         config.getExportDbObjects().add(object);
         DumpParameter parameter = factory.generate(config);
         Map<ObjectType, Set<String>> actual = parameter.getWhiteListMap();
@@ -164,7 +164,7 @@ public class DumpParameterFactoryTest extends ServiceTestEnv {
         config.setBatchCommitNum(100);
         DataTransferObject object = new DataTransferObject();
         object.setObjectName("TAB");
-        object.setDbObjectType(ObjectType.TABLE.getName());
+        object.setDbObjectType(ObjectType.TABLE);
         config.setExportDbObjects(new LinkedList<>(Collections.singleton(object)));
         config.setReplaceSchemaWhenExists(true);
         config.setTruncateTableBeforeImport(true);

@@ -257,11 +257,5 @@
             <groupId>com.oceanbase</groupId>
             <artifactId>task-plugin-api</artifactId>
         </dependency>
-        <dependency>
-            <groupId>com.oceanbase</groupId>
-            <artifactId>task-plugin-ob-mysql</artifactId>
-            <version>4.2.3-SNAPSHOT</version>
-            <scope>compile</scope>
-        </dependency>
     </dependencies>
 </project>

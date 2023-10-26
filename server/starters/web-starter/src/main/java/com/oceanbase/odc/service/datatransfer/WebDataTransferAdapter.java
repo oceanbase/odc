@@ -14,15 +14,12 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.plugin.task.api.datatransfer.model;
+package com.oceanbase.odc.service.datatransfer;
 
-public enum DataTransferType {
-    /**
-     * load data task
-     */
-    IMPORT,
-    /**
-     * dump data task
-     */
-    EXPORT;
+import org.springframework.context.annotation.Profile;
+import org.springframework.stereotype.Component;
+
+@Component
+@Profile("alipay")
+public class WebDataTransferAdapter extends DefaultDataTransferAdapter {
 }

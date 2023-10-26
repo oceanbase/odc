@@ -164,8 +164,7 @@ public class DumpParameterFactory extends BaseParameterFactory<DumpParameter> {
                 whiteListMap.putAll(getWhiteListMap(objectList, o -> true));
             }
             if (transferConfig.isTransferData()) {
-                whiteListMap.putAll(getWhiteListMap(objectList,
-                        o -> Objects.equals(o.getDbObjectType(), ObjectType.TABLE.getName())));
+                whiteListMap.putAll(getWhiteListMap(objectList, o -> o.getDbObjectType() == ObjectType.TABLE));
             }
         }
     }
@@ -236,7 +235,7 @@ public class DumpParameterFactory extends BaseParameterFactory<DumpParameter> {
                         .collect(Collectors.toList());
             } else {
                 tableNames = transferConfig.getExportDbObjects().stream()
-                        .filter(o -> Objects.equals(ObjectType.TABLE.getName(), o.getDbObjectType()))
+                        .filter(o -> ObjectType.TABLE == o.getDbObjectType())
                         .map(DataTransferObject::getObjectName)
                         .collect(Collectors.toList());
             }
