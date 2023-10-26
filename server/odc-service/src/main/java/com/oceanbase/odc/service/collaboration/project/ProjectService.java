@@ -194,6 +194,14 @@ public class ProjectService {
     }
 
     @Transactional(rollbackFor = Exception.class)
+    @SkipAuthorize("permission check inside")
+    public List<Project> listBasicInfoForApply(Boolean archived) {
+        Specification<ProjectEntity> specs = ProjectSpecs.organizationIdEqual(currentOrganizationId())
+                .and(ProjectSpecs.archivedEqual(archived));
+        return repository.findAll(specs).stream().map(projectMapper::entityToModel).collect(Collectors.toList());
+    }
+
+    @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("Internal usage")
     public Page<Project> list(@Valid QueryProjectParams params, @NotNull Pageable pageable) {
         params.setUserId(currentUserId());
