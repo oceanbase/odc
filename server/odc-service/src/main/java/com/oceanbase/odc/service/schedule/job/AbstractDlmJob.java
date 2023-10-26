@@ -36,8 +36,8 @@ import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.dlm.DataArchiveJobFactory;
 import com.oceanbase.odc.service.dlm.DlmLimiterService;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
-import com.oceanbase.odc.service.dlm.model.DlmLimiterConfig;
 import com.oceanbase.odc.service.dlm.model.DlmTask;
+import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
 import com.oceanbase.odc.service.dlm.utils.DataArchiveConditionUtil;
 import com.oceanbase.odc.service.dlm.utils.DlmJobIdUtil;
 import com.oceanbase.odc.service.schedule.ScheduleService;
@@ -168,7 +168,7 @@ public class AbstractDlmJob implements OdcJob {
             taskUnit.setSourceDatabaseId(parameters.getSourceDatabaseId());
             taskUnit.setTargetDatabaseId(parameters.getTargetDataBaseId());
             taskUnit.setFireTime(taskEntity.getFireTime());
-            DlmLimiterConfig limiterConfig =
+            RateLimitConfiguration limiterConfig =
                     limiterService.getByOrderIdOrElseDefaultConfig(Long.parseLong(taskEntity.getJobName()));
             LogicTableConfig logicTableConfig = new LogicTableConfig();
             logicTableConfig.setMigrateRule(condition);

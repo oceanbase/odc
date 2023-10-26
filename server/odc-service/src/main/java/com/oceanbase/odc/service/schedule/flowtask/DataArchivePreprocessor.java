@@ -28,7 +28,7 @@ import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.dlm.DlmLimiterService;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
-import com.oceanbase.odc.service.dlm.model.DlmLimiterConfig;
+import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
 import com.oceanbase.odc.service.flow.processor.ScheduleTaskPreprocessor;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
@@ -103,9 +103,16 @@ public class DataArchivePreprocessor extends AbstractDlmJobPreprocessor {
             scheduleEntity = scheduleService.create(scheduleEntity);
             parameters.setTaskId(scheduleEntity.getId());
             // create job limit config
-            DlmLimiterConfig limiterConfig =
-                    dataArchiveParameters.getLimiterConfig() == null ? limiterService.getDefaultLimiterConfig()
-                            : dataArchiveParameters.getLimiterConfig();
+            RateLimitConfiguration limiterConfig = limiterService.getDefaultLimiterConfig();
+            if (dataArchiveParameters.getRateLimit().getRowLimit() != null) {
+                limiterConfig.setRowLimit(dataArchiveParameters.getRateLimit().getRowLimit());
+            }
+            if (dataArchiveParameters.getRateLimit().getDataSizeLimit() != null) {
+                limiterConfig.setDataSizeLimit(dataArchiveParameters.getRateLimit().getDataSizeLimit());
+            }
+            if (dataArchiveParameters.getRateLimit().getBatchSize() != null) {
+                limiterConfig.setBatchSize(dataArchiveParameters.getRateLimit().getBatchSize());
+            }
             limiterService.createAndBindToOrder(scheduleEntity.getId(), limiterConfig);
         }
         req.setParentFlowInstanceId(parameters.getTaskId());
