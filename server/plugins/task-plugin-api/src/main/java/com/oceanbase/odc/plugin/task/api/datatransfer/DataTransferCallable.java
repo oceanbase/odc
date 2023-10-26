@@ -28,16 +28,6 @@ import com.oceanbase.odc.plugin.task.api.datatransfer.model.ObjectStatus;
 public interface DataTransferCallable extends Callable<DataTransferTaskResult> {
 
     /**
-     * transfer data
-     *
-     * @return transfer result, including data objects and schema objects. The two are independent of
-     *         each other. An object can appear in two lists at the same time. The
-     *         {@link ObjectStatus#getExportPaths()} of each object cannot be null.
-     * @see DataTransferCallable#getStatus()
-     */
-    DataTransferTaskResult call() throws Exception;
-
-    /**
      * get current task status for monitoring.
      * 
      * @return transfer result, including data objects and schema objects. The two are independent of

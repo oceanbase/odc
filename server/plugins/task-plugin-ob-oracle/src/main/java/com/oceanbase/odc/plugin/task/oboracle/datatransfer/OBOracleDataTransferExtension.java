@@ -16,11 +16,13 @@
 
 package com.oceanbase.odc.plugin.task.oboracle.datatransfer;
 
+import java.sql.SQLException;
 import java.util.Set;
 
 import org.apache.commons.collections4.SetUtils;
 import org.pf4j.Extension;
 
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.ConnectionInfo;
 import com.oceanbase.odc.plugin.task.obmysql.datatransfer.OBMySQLDataTransferExtension;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
 
@@ -28,7 +30,7 @@ import com.oceanbase.tools.loaddump.common.enums.ObjectType;
 public class OBOracleDataTransferExtension extends OBMySQLDataTransferExtension {
 
     @Override
-    public Set<ObjectType> getSupportedObjectTypes(String dbVersion) {
+    public Set<ObjectType> getSupportedObjectTypes(ConnectionInfo connectionInfo) throws SQLException {
         Set<ObjectType> types = SetUtils.hashSet(
                 ObjectType.SEQUENCE,
                 ObjectType.TRIGGER,
@@ -37,7 +39,7 @@ public class OBOracleDataTransferExtension extends OBMySQLDataTransferExtension 
                 ObjectType.SYNONYM,
                 ObjectType.PUBLIC_SYNONYM,
                 ObjectType.TYPE);
-        return SetUtils.union(types, super.getSupportedObjectTypes(dbVersion));
+        return SetUtils.union(types, super.getSupportedObjectTypes(connectionInfo));
     }
 
 }

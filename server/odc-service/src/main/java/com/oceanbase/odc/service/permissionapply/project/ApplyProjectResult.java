@@ -14,36 +14,26 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.plugin.task.api.datatransfer.model;
+package com.oceanbase.odc.service.permissionapply.project;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.oceanbase.odc.service.flow.task.model.FlowTaskResult;
 
 import lombok.Data;
 
+/**
+ * @author gaoda.xy
+ * @date 2023/10/13 16:12
+ */
 @Data
-public class ObjectStatus {
+public class ApplyProjectResult implements FlowTaskResult {
 
-    private String schema;
-    private String type;
-    private String name;
-    private Long total;
-    private Long count;
-    private Status status;
     /**
-     * for export only, internal usage
+     * Mark whether the task is successful
      */
-    @JsonIgnore
-    private String[] exportPaths;
-
-    @JsonIgnore
-    public String getSummary() {
-        return String.format("%s.%s[%s]", schema, name, type);
-    }
-
-    public enum Status {
-        INITIAL,
-        SUCCESS,
-        FAILURE
-    }
+    private boolean success;
+    /**
+     * Task parameters
+     */
+    private ApplyProjectParameter parameter;
 
 }

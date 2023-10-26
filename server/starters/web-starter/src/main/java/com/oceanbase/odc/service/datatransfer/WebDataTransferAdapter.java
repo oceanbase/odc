@@ -14,29 +14,12 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.plugin.task.api.datatransfer.model;
+package com.oceanbase.odc.service.datatransfer;
 
-import java.util.LinkedList;
-import java.util.List;
+import org.springframework.context.annotation.Profile;
+import org.springframework.stereotype.Component;
 
-import com.oceanbase.odc.core.flow.model.FlowTaskResult;
-
-import lombok.Getter;
-import lombok.Setter;
-
-/**
- * Task result for {@code DataTransfer}
- *
- * @author yh263208
- * @date 2022-03-07 11:10
- * @since ODC_release_3.3.0
- */
-@Getter
-@Setter
-public class DataTransferTaskResult implements FlowTaskResult {
-
-    private String exportZipFilePath;
-    private List<ObjectResult> dataObjectsInfo = new LinkedList<>();
-    private List<ObjectResult> schemaObjectsInfo = new LinkedList<>();
-
+@Component
+@Profile("alipay")
+public class WebDataTransferAdapter extends DefaultDataTransferAdapter {
 }

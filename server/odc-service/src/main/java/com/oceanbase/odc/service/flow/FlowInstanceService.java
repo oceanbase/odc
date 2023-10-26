@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.flow;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -282,7 +283,10 @@ public class FlowInstanceService {
         }
         List<RiskLevel> riskLevels = riskLevelService.list();
         Verify.notEmpty(riskLevels, "riskLevels");
-        ConnectionConfig conn = connectionService.getForConnectionSkipPermissionCheck(createReq.getConnectionId());
+        ConnectionConfig conn = null;
+        if (Objects.nonNull(createReq.getConnectionId())) {
+            conn = connectionService.getForConnectionSkipPermissionCheck(createReq.getConnectionId());
+        }
         return Collections.singletonList(buildFlowInstance(riskLevels, createReq, conn));
     }
 
@@ -348,12 +352,28 @@ public class FlowInstanceService {
         Specification<FlowInstanceViewEntity> specification = Specification
                 .where(FlowInstanceViewSpecs.creatorIdIn(creatorIds))
                 .and(FlowInstanceViewSpecs.organizationIdEquals(authenticationFacade.currentOrganizationId()))
-                .and(FlowInstanceViewSpecs.taskTypeEquals(params.getType()))
                 .and(FlowInstanceViewSpecs.projectIdEquals(params.getProjectId()))
                 .and(FlowInstanceViewSpecs.statusIn(params.getStatuses()))
                 .and(FlowInstanceViewSpecs.createTimeLate(params.getStartTime()))
                 .and(FlowInstanceViewSpecs.createTimeBefore(params.getEndTime()))
                 .and(FlowInstanceViewSpecs.idEquals(targetId));
+        if (params.getType() != null) {
+            specification = specification.and(FlowInstanceViewSpecs.taskTypeEquals(params.getType()));
+        } else {
+            // Task type which will be filtered independently
+            List<TaskType> types = Arrays.asList(
+                    TaskType.EXPORT,
+                    TaskType.IMPORT,
+                    TaskType.MOCKDATA,
+                    TaskType.ASYNC,
+                    TaskType.SHADOWTABLE_SYNC,
+                    TaskType.PARTITION_PLAN,
+                    TaskType.ONLINE_SCHEMA_CHANGE,
+                    TaskType.ALTER_SCHEDULE,
+                    TaskType.EXPORT_RESULT_SET,
+                    TaskType.APPLY_PROJECT_PERMISSION);
+            specification = specification.and(FlowInstanceViewSpecs.taskTypeIn(types));
+        }
 
         Set<String> resourceRoleIdentifiers = userService.getCurrentUserResourceRoleIdentifiers();
         if (params.getApproveByCurrentUser() && params.getCreatedByCurrentUser()) {
@@ -668,7 +688,6 @@ public class FlowInstanceService {
             CreateFlowInstanceReq flowInstanceReq, ConnectionConfig connectionConfig) {
         log.info("Start creating flow instance, flowInstanceReq={}", flowInstanceReq);
         CreateFlowInstanceReq preCheckReq = new CreateFlowInstanceReq();
-        preCheckReq.setConnectionId(flowInstanceReq.getConnectionId());
         preCheckReq.setTaskType(TaskType.PRE_CHECK);
         preCheckReq.setConnectionId(flowInstanceReq.getConnectionId());
         preCheckReq.setDatabaseId(flowInstanceReq.getDatabaseId());

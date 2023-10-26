@@ -399,7 +399,7 @@ public class ConnectionConfig
         return queryTimeoutSeconds;
     }
 
-    public ConnectionInfo simplify() {
+    public ConnectionInfo toConnectionInfo() {
         ConnectionInfo target = new ConnectionInfo();
         target.setConnectType(type);
         target.setClusterName(clusterName);

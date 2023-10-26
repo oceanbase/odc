@@ -76,11 +76,10 @@ public class CreateFlowInstanceProcessAspect implements InitializingBean {
 
     @Before("processBeforeCreateFlowInstance()")
     public void preprocess(JoinPoint point) throws Throwable {
-
         CreateFlowInstanceReq req = (CreateFlowInstanceReq) point.getArgs()[0];
-
-        adaptCreateFlowInstanceReq(req);
-
+        if (Objects.nonNull(req.getDatabaseId())) {
+            adaptCreateFlowInstanceReq(req);
+        }
         if (req.getTaskType() != TaskType.ALTER_SCHEDULE) {
             if (flowTaskPreprocessors.containsKey(req.getTaskType())) {
                 flowTaskPreprocessors.get(req.getTaskType()).process(req);

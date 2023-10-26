@@ -28,7 +28,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.net.URISyntaxException;
 import java.nio.charset.Charset;
+import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -43,6 +45,7 @@ import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.SetUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
@@ -62,22 +65,20 @@ import org.springframework.web.multipart.MultipartFile;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ConnectionAccountType;
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.core.shared.exception.AccessDeniedException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
-import com.oceanbase.odc.plugin.connect.api.ConnectionExtensionPoint;
 import com.oceanbase.odc.plugin.task.api.datatransfer.dumper.DumperOutput;
-import com.oceanbase.odc.plugin.task.api.datatransfer.model.ConnectionInfo;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.CsvColumnMapping;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.CsvConfig;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferFormat;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferType;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.UploadFileResult;
-import com.oceanbase.odc.plugin.task.obmysql.datatransfer.OBMySQLDataTransferExtension;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.ConnectionTesting;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
@@ -91,7 +92,6 @@ import com.oceanbase.odc.service.datatransfer.task.DataTransferTaskContext;
 import com.oceanbase.odc.service.flow.FlowInstanceService;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferTaskResult;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
-import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 import com.oceanbase.odc.service.plugin.TaskPluginUtil;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
@@ -191,9 +191,8 @@ public class DataTransferService {
             PreConditions.validArgumentState(connectionId != null, ErrorCodes.BadArgument,
                     new Object[] {"ConnectionId can not be null"}, "ConnectionId can not be null");
             ConnectionConfig connectionConfig = connectionService.getForConnectionSkipPermissionCheck(connectionId);
-            transferConfig.setConnectionInfo(connectionConfig.simplify());
+            transferConfig.setConnectionInfo(connectionConfig.toConnectionInfo());
             injectSysConfig(connectionConfig, transferConfig);
-            setJdbcUrl(transferConfig);
 
             boolean transferData = transferConfig.isTransferData();
             boolean transferSchema = transferConfig.isTransferDDL();
@@ -237,7 +236,7 @@ public class DataTransferService {
         }
     }
 
-    public UploadFileResult getMetaInfo(@NonNull String fileName) throws IOException {
+    public UploadFileResult getMetaInfo(@NonNull String fileName) throws IOException, URISyntaxException {
         File uploadFile = fileManager.findByName(TaskType.IMPORT, LocalFileManager.UPLOAD_BUCKET, fileName).orElseThrow(
                 () -> new FileNotFoundException("File not found"));
         if (!uploadFile.exists() || !uploadFile.isFile()) {
@@ -248,15 +247,16 @@ public class DataTransferService {
         // If the file is from third party like PL/SQL, this will convert it compatible with ob-loader.
         ThirdPartyOutputConverter.convert(uploadFile);
 
-        return new OBMySQLDataTransferExtension().getImportFileInfo(fileName, uploadFile.toURI().toURL());
+        return TaskPluginUtil.getDataTransferExtension(DialectType.OB_MYSQL)
+                .getImportFileInfo(uploadFile.toURI().toURL());
     }
 
-    public UploadFileResult upload(@NonNull MultipartFile uploadFile) throws IOException {
+    public UploadFileResult upload(@NonNull MultipartFile uploadFile) throws IOException, URISyntaxException {
         return upload(uploadFile.getInputStream(), uploadFile.getOriginalFilename());
     }
 
     public Map<ObjectType, Set<String>> getExportObjectNames(
-            @NonNull Long databaseId, Set<ObjectType> objectTypes) {
+            @NonNull Long databaseId, Set<ObjectType> objectTypes) throws SQLException {
         Database database = databaseService.detail(databaseId);
         if (Objects.isNull(database.getProject())
                 && authenticationFacade.currentUser().getOrganizationType() == OrganizationType.TEAM) {
@@ -264,13 +264,19 @@ public class DataTransferService {
         }
         ConnectionConfig connection = database.getDataSource();
 
+        /*
+         * only the intersection of two sets can be exported
+         */
+        Set<ObjectType> supportedObjectTypes = TaskPluginUtil.getDataTransferExtension(connection.getDialectType())
+                .getSupportedObjectTypes(connection.toConnectionInfo());
+        if (CollectionUtils.isEmpty(objectTypes)) {
+            objectTypes = supportedObjectTypes;
+        } else {
+            objectTypes = SetUtils.intersection(objectTypes, supportedObjectTypes);
+        }
 
         try (DBObjectNameAccessor accessor = DBObjectNameAccessor.getInstance(connection, database.getName())) {
             Map<ObjectType, Set<String>> returnVal = new HashMap<>();
-            if (CollectionUtils.isEmpty(objectTypes)) {
-                objectTypes = TaskPluginUtil.getDataTransferExtension(connection.getDialectType())
-                        .getSupportedObjectTypes(accessor.getDBVersion());
-            }
             for (ObjectType objectType : objectTypes) {
                 returnVal.putIfAbsent(objectType, accessor.getObjectNames(objectType));
             }
@@ -341,7 +347,7 @@ public class DataTransferService {
     }
 
     public UploadFileResult upload(@NonNull InputStream inputStream, @NonNull String originalFilename)
-            throws IOException {
+            throws IOException, URISyntaxException {
         String fileName = "import_upload_" + System.currentTimeMillis() + "_" + originalFilename;
         int fileSize = fileManager.copy(TaskType.IMPORT, LocalFileManager.UPLOAD_BUCKET, inputStream, () -> fileName);
         log.info("Upload file successfully, fileName={}, fileSize={} Bytes", fileName, fileSize);
@@ -357,7 +363,7 @@ public class DataTransferService {
         List<ObjectStatus> objects = config.getExportDbObjects().stream().map(obj -> {
             ObjectStatus objectStatus = new ObjectStatus();
             objectStatus.setName(obj.getObjectName());
-            objectStatus.setType(obj.getDbObjectType());
+            objectStatus.setType(obj.getDbObjectType().getName());
             objectStatus.setStatus(Status.INITIAL);
             return objectStatus;
         }).collect(Collectors.toList());
@@ -393,31 +399,6 @@ public class DataTransferService {
                 connectionConfig.getId(), sysUserInConfig);
         transferConfig.getConnectionInfo().setSysTenantUsername(null);
         transferConfig.getConnectionInfo().setSysTenantPassword(null);
-    }
-
-    private void setJdbcUrl(DataTransferConfig transferConfig) {
-        ConnectionInfo connectionInfo = transferConfig.getConnectionInfo();
-
-        Map<String, String> jdbcUrlParams = new HashMap<>();
-        jdbcUrlParams.put("maxAllowedPacket", "64000000");
-        jdbcUrlParams.put("allowMultiQueries", "true");
-        jdbcUrlParams.put("connectTimeout", "5000");
-        jdbcUrlParams.put("zeroDateTimeBehavior", DEFAULT_ZERO_DATE_TIME_BEHAVIOR);
-        jdbcUrlParams.put("noDatetimeStringSync", "true");
-        jdbcUrlParams.put("useSSL", "false");
-        jdbcUrlParams.put("allowLoadLocalInfile", "false");
-        jdbcUrlParams.put("jdbcCompliantTruncation", "false");
-        jdbcUrlParams.put("sendConnectionAttributes", "false");
-
-        if (StringUtils.isNotBlank(connectionInfo.getProxyHost())
-                && Objects.nonNull(connectionInfo.getProxyPort())) {
-            jdbcUrlParams.put("socksProxyHost", connectionInfo.getProxyHost());
-            jdbcUrlParams.put("socksProxyPort", connectionInfo.getProxyPort() + "");
-        }
-        ConnectionExtensionPoint connectionExtension = ConnectionPluginUtil.getConnectionExtension(
-                connectionInfo.getConnectType().getDialectType());
-        connectionInfo.setJdbcUrl(connectionExtension.generateJdbcUrl(connectionInfo.getHost(),
-                connectionInfo.getPort(), transferConfig.getSchemaName(), jdbcUrlParams));
     }
 
     private boolean testSysTenantAccount(ConnectionConfig connectionConfig) {

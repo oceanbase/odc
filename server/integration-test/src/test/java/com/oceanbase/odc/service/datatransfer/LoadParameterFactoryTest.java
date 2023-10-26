@@ -139,8 +139,7 @@ public class LoadParameterFactoryTest {
         Map<ObjectType, Set<String>> actual = parameter.getWhiteListMap();
         Map<ObjectType, Set<String>> expect = new HashMap<>();
         for (DataTransferObject object : config.getExportDbObjects()) {
-            Set<String> names =
-                    expect.computeIfAbsent(ObjectType.valueOfName(object.getDbObjectType()), k -> new HashSet<>());
+            Set<String> names = expect.computeIfAbsent(object.getDbObjectType(), k -> new HashSet<>());
             names.add(StringUtils.quoteMysqlIdentifier(object.getObjectName()));
         }
         Assert.assertEquals(expect, actual);
@@ -155,8 +154,7 @@ public class LoadParameterFactoryTest {
         Map<ObjectType, Set<String>> actual = parameter.getWhiteListMap();
         Map<ObjectType, Set<String>> expect = new HashMap<>();
         for (DataTransferObject object : config.getExportDbObjects()) {
-            Set<String> names =
-                    expect.computeIfAbsent(ObjectType.valueOfName(object.getDbObjectType()), k -> new HashSet<>());
+            Set<String> names = expect.computeIfAbsent(object.getDbObjectType(), k -> new HashSet<>());
             names.add(StringUtils.quoteOracleIdentifier(object.getObjectName()));
         }
         Assert.assertEquals(expect, actual);
@@ -209,7 +207,7 @@ public class LoadParameterFactoryTest {
         DataTransferConfig config = generateConfig(DataTransferFormat.CSV, true, true, false);
         DataTransferObject object = new DataTransferObject();
         object.setObjectName("TAB");
-        object.setDbObjectType(ObjectType.VIEW.getName());
+        object.setDbObjectType(ObjectType.VIEW);
         config.setExportDbObjects(Collections.singletonList(object));
 
         thrown.expect(IllegalArgumentException.class);
@@ -321,7 +319,7 @@ public class LoadParameterFactoryTest {
         config.setBatchCommitNum(100);
         DataTransferObject object = new DataTransferObject();
         object.setObjectName("TAB");
-        object.setDbObjectType(ObjectType.TABLE.getName());
+        object.setDbObjectType(ObjectType.TABLE);
         config.setExportDbObjects(Collections.singletonList(object));
         config.setReplaceSchemaWhenExists(true);
         config.setTruncateTableBeforeImport(true);
@@ -337,6 +335,8 @@ public class LoadParameterFactoryTest {
         }
         if (external) {
             config.setFileType(format.name());
+        } else {
+            config.setFileType("ZIP");
         }
         return config;
     }

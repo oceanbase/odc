@@ -16,8 +16,6 @@
 
 package com.oceanbase.odc.plugin.task.obmysql.datatransfer.util;
 
-import java.util.Objects;
-
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.plugin.connect.api.ConnectionExtensionPoint;
 import com.oceanbase.odc.plugin.connect.api.InformationExtensionPoint;
@@ -32,12 +30,11 @@ import com.oceanbase.odc.plugin.schema.mysql.MySQLTableExtension;
 import com.oceanbase.odc.plugin.schema.obmysql.OBMySQLTableExtension;
 import com.oceanbase.odc.plugin.schema.oboracle.OBOracleTableExtension;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.ConnectionInfo;
-import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
 
 public class PluginUtil {
 
-    public static InformationExtensionPoint getInformationExtension(DataTransferConfig config) {
-        DialectType dialectType = getDialectType(config);
+    public static InformationExtensionPoint getInformationExtension(ConnectionInfo connectionInfo) {
+        DialectType dialectType = connectionInfo.getConnectType().getDialectType();
         if (dialectType == DialectType.OB_MYSQL) {
             return new OBMySQLInformationExtension();
         } else if (dialectType == DialectType.OB_ORACLE) {
@@ -47,8 +44,8 @@ public class PluginUtil {
         }
     }
 
-    public static ConnectionExtensionPoint getConnectionExtension(DataTransferConfig config) {
-        DialectType dialectType = getDialectType(config);
+    public static ConnectionExtensionPoint getConnectionExtension(ConnectionInfo connectionInfo) {
+        DialectType dialectType = connectionInfo.getConnectType().getDialectType();
         if (dialectType == DialectType.OB_MYSQL) {
             return new OBMySQLConnectionExtension();
         } else if (dialectType == DialectType.OB_ORACLE) {
@@ -58,8 +55,8 @@ public class PluginUtil {
         }
     }
 
-    public static TableExtensionPoint getTableExtension(DataTransferConfig config) {
-        DialectType dialectType = getDialectType(config);
+    public static TableExtensionPoint getTableExtension(ConnectionInfo connectionInfo) {
+        DialectType dialectType = connectionInfo.getConnectType().getDialectType();
         if (dialectType == DialectType.OB_MYSQL) {
             return new OBMySQLTableExtension();
         } else if (dialectType == DialectType.OB_ORACLE) {
@@ -67,11 +64,6 @@ public class PluginUtil {
         } else {
             return new MySQLTableExtension();
         }
-    }
-
-    private static DialectType getDialectType(DataTransferConfig config) {
-        ConnectionInfo connectionInfo = Objects.requireNonNull(config.getConnectionInfo());
-        return connectionInfo.getConnectType().getDialectType();
     }
 
 }

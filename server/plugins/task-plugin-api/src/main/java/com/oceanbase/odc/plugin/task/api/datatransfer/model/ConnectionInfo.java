@@ -61,16 +61,11 @@ public class ConnectionInfo {
     @SensitiveInput
     private String sysTenantPassword;
 
-    @Size(max = 128, message = "Schema name is out of range [0, 128]")
-    private String defaultSchema;
-
     private String proxyHost;
 
     private Integer proxyPort;
 
     private String OBTenant;
-
-    private String jdbcUrl;
 
     private ConnectType connectType;
 

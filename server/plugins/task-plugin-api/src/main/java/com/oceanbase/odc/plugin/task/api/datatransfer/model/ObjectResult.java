@@ -16,27 +16,25 @@
 
 package com.oceanbase.odc.plugin.task.api.datatransfer.model;
 
-import java.util.LinkedList;
-import java.util.List;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.oceanbase.tools.loaddump.common.model.ObjectStatus;
 
-import com.oceanbase.odc.core.flow.model.FlowTaskResult;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 
-import lombok.Getter;
-import lombok.Setter;
+@Data
+@EqualsAndHashCode(callSuper = true)
+public class ObjectResult extends ObjectStatus {
 
-/**
- * Task result for {@code DataTransfer}
- *
- * @author yh263208
- * @date 2022-03-07 11:10
- * @since ODC_release_3.3.0
- */
-@Getter
-@Setter
-public class DataTransferTaskResult implements FlowTaskResult {
+    /**
+     * for export only, internal usage
+     */
+    @JsonIgnore
+    private String[] exportPaths;
 
-    private String exportZipFilePath;
-    private List<ObjectResult> dataObjectsInfo = new LinkedList<>();
-    private List<ObjectResult> schemaObjectsInfo = new LinkedList<>();
+    @JsonIgnore
+    public String getSummary() {
+        return String.format("%s.%s[%s]", getSchema(), getName(), getType());
+    }
 
 }

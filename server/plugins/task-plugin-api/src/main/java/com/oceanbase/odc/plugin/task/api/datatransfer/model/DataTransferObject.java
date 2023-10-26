@@ -16,16 +16,18 @@
 
 package com.oceanbase.odc.plugin.task.api.datatransfer.model;
 
+import com.oceanbase.tools.loaddump.common.enums.ObjectType;
+
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
 public class DataTransferObject {
-    private String dbObjectType;
+    private ObjectType dbObjectType;
     private String objectName;
 
-    public DataTransferObject(String dbObjectType, String objectName) {
+    public DataTransferObject(ObjectType dbObjectType, String objectName) {
         this.dbObjectType = dbObjectType;
         this.objectName = objectName;
     }

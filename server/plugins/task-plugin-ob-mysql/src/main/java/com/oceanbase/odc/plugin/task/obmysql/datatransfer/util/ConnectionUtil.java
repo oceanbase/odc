@@ -16,18 +16,35 @@
 
 package com.oceanbase.odc.plugin.task.obmysql.datatransfer.util;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.datasource.SingleConnectionDataSource;
-import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.ConnectionInfo;
 
 public class ConnectionUtil {
 
-    public static SingleConnectionDataSource getDataSource(DataTransferConfig config) {
+    public static SingleConnectionDataSource getDataSource(ConnectionInfo connectionInfo, String schema) {
         SingleConnectionDataSource dataSource = new SingleConnectionDataSource();
-        dataSource.setUrl(config.getConnectionInfo().getJdbcUrl());
-        dataSource.setUsername(config.getConnectionInfo().getUserNameForConnect());
-        dataSource.setPassword(config.getConnectionInfo().getPassword());
-        dataSource.setDriverClassName(PluginUtil.getConnectionExtension(config).getDriverClassName());
+        dataSource.setUsername(connectionInfo.getUserNameForConnect());
+        dataSource.setPassword(connectionInfo.getPassword());
+        dataSource.setUrl(getJdbcUrl(connectionInfo, schema));
+        dataSource.setDriverClassName(PluginUtil.getConnectionExtension(connectionInfo).getDriverClassName());
         return dataSource;
+    }
+
+    public static String getJdbcUrl(ConnectionInfo connectionInfo, String schema) {
+        Map<String, String> jdbcUrlParams = new HashMap<>();
+        jdbcUrlParams.put("connectTimeout", "5000");
+        if (StringUtils.isNotBlank(connectionInfo.getProxyHost())
+                && Objects.nonNull(connectionInfo.getProxyPort())) {
+            jdbcUrlParams.put("socksProxyHost", connectionInfo.getProxyHost());
+            jdbcUrlParams.put("socksProxyPort", connectionInfo.getProxyPort() + "");
+        }
+        return PluginUtil.getConnectionExtension(connectionInfo).generateJdbcUrl(connectionInfo.getHost(),
+                connectionInfo.getPort(), schema, jdbcUrlParams);
     }
 
 }
