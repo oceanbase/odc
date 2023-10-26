@@ -113,19 +113,20 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
         } catch (VerifyException e) {
             log.info(e.getMessage());
         }
+        RiskLevelDescriber riskLevelDescriber = FlowTaskUtil.getRiskLevelDescriber(execution);
         if (Objects.nonNull(this.connectionConfig)) {
+            // Skip SQL pre-check if connection config is null
             this.databaseChangeRelatedSqls = getFlowRelatedSqls(taskEntity.getTaskType(),
                     taskEntity.getParametersJson(), connectionConfig.getDialectType());
-        }
-        RiskLevelDescriber riskLevelDescriber = FlowTaskUtil.getRiskLevelDescriber(execution);
-        try {
-            preCheck(taskEntity, preCheckTaskEntity, riskLevelDescriber);
-        } catch (Exception e) {
-            log.warn("pre check failed, e");
-            throw new ServiceTaskError(e);
-        }
-        if (this.sqlCheckResult != null) {
-            riskLevelDescriber.setSqlCheckResult(sqlCheckResult.getMaxLevel() + "");
+            try {
+                preCheck(taskEntity, preCheckTaskEntity, riskLevelDescriber);
+            } catch (Exception e) {
+                log.warn("pre check failed, e");
+                throw new ServiceTaskError(e);
+            }
+            if (this.sqlCheckResult != null) {
+                riskLevelDescriber.setSqlCheckResult(sqlCheckResult.getMaxLevel() + "");
+            }
         }
         try {
             RiskLevel riskLevel = approvalFlowConfigSelector.select(riskLevelDescriber);

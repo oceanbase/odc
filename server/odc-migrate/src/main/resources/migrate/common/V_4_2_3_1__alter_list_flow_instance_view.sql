@@ -1,7 +1,6 @@
 --
 -- Alter view `list_flow_instance_view` to support new task types
 --
-drop view if exists list_flow_instance_view;
 create or replace view list_flow_instance_view as
 select
   flow_instance.*,
