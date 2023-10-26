@@ -36,4 +36,6 @@ public interface DatabaseExtensionPoint extends ExtensionPoint {
     DBDatabase getDetail(Connection connection, String dbName);
 
     List<DBDatabase> listDetails(Connection connection);
+
+    void create(Connection connection, DBDatabase database, String password);
 }
