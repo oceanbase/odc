@@ -86,7 +86,7 @@ public class ProjectController {
     @RequestMapping(value = "/projects/basic", method = RequestMethod.GET)
     public ListResponse<Project> listBasicProjects(
             @RequestParam(required = false, name = "archived") Boolean archived) {
-        return Responses.list(projectService.listBasic(archived));
+        return Responses.list(projectService.listBasicInfoForApply(archived));
     }
 
     @ApiOperation(value = "updateProject", notes = "Update a project")

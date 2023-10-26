@@ -153,9 +153,9 @@ public class ProjectServiceTest extends ServiceTestEnv {
     }
 
     @Test
-    public void test_listBasic() {
+    public void test_listBasicInfoForApply() {
         ProjectEntity entity = projectRepository.save(getProjectEntity());
-        List<Project> projects = projectService.listBasic(null);
+        List<Project> projects = projectService.listBasicInfoForApply(null);
         Assert.assertEquals(1, projects.size());
         Assert.assertEquals(entity.getId(), projects.get(0).getId());
     }
