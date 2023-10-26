@@ -70,6 +70,7 @@ import com.oceanbase.odc.service.datasecurity.model.SensitiveColumnStats;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveRule;
 import com.oceanbase.odc.service.datasecurity.util.SensitiveColumnMapper;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
+import com.oceanbase.odc.service.feature.VersionDiffConfigService;
 import com.oceanbase.odc.service.iam.HorizontalDataPermissionValidator;
 import com.oceanbase.odc.service.iam.UserService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
@@ -116,6 +117,9 @@ public class SensitiveColumnService {
     @Autowired
     private HorizontalDataPermissionValidator permissionValidator;
 
+    @Autowired
+    private VersionDiffConfigService versionDiffConfigService;
+
     private static final SensitiveColumnMapper mapper = SensitiveColumnMapper.INSTANCE;
 
     @Transactional(rollbackFor = Exception.class)
@@ -140,6 +144,7 @@ public class SensitiveColumnService {
                         accessor.listBasicTableColumns(database.getName()), exists));
                 databaseColumn.setView2Columns(getFilteringExistColumns(database.getId(),
                         accessor.listBasicViewColumns(database.getName()), exists));
+                databaseColumn.setDataTypeUnits(versionDiffConfigService.getDatatypeList(session));
                 if (!databaseColumn.getTable2Columns().isEmpty() || !databaseColumn.getView2Columns().isEmpty()) {
                     databaseColumns.add(databaseColumn);
                 }
