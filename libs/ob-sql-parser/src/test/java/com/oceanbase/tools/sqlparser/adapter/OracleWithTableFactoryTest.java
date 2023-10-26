@@ -28,13 +28,19 @@ import com.oceanbase.tools.sqlparser.adapter.oracle.OracleWithTableFactory;
 import com.oceanbase.tools.sqlparser.oboracle.OBLexer;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Common_table_exprContext;
+import com.oceanbase.tools.sqlparser.statement.expression.ConstExpression;
 import com.oceanbase.tools.sqlparser.statement.expression.RelationReference;
 import com.oceanbase.tools.sqlparser.statement.select.NameReference;
+import com.oceanbase.tools.sqlparser.statement.select.OrderBy;
 import com.oceanbase.tools.sqlparser.statement.select.Projection;
 import com.oceanbase.tools.sqlparser.statement.select.SelectBody;
 import com.oceanbase.tools.sqlparser.statement.select.SortDirection;
 import com.oceanbase.tools.sqlparser.statement.select.SortKey;
 import com.oceanbase.tools.sqlparser.statement.select.WithTable;
+import com.oceanbase.tools.sqlparser.statement.select.oracle.Fetch;
+import com.oceanbase.tools.sqlparser.statement.select.oracle.FetchAddition;
+import com.oceanbase.tools.sqlparser.statement.select.oracle.FetchDirection;
+import com.oceanbase.tools.sqlparser.statement.select.oracle.FetchType;
 import com.oceanbase.tools.sqlparser.statement.select.oracle.SearchMode;
 import com.oceanbase.tools.sqlparser.statement.select.oracle.SetValue;
 
@@ -50,11 +56,19 @@ public class OracleWithTableFactoryTest {
     @Test
     public void generate_withoutAliasList_generateWithTableSucceed() {
         Common_table_exprContext context =
-                getTableExprContext("WITH relation_name as (select * from dual) select 2 from dual");
+                getTableExprContext(
+                        "WITH relation_name as (select * from dual order by abc desc fetch next 12 rows only) select 2 from dual");
         StatementFactory<WithTable> factory = new OracleWithTableFactory(context);
         WithTable actual = factory.generate();
 
-        WithTable expect = new WithTable("relation_name", getDefaultSelect());
+        SelectBody selectBody = getDefaultSelect();
+        SortKey s1 = new SortKey(new RelationReference("abc", null), SortDirection.DESC, null);
+        OrderBy orderBy = new OrderBy(false, Collections.singletonList(s1));
+        selectBody.setOrderBy(orderBy);
+        Fetch fetch =
+                new Fetch(new ConstExpression("12"), FetchDirection.NEXT, FetchType.COUNT, FetchAddition.ONLY, null);
+        selectBody.setFetch(fetch);
+        WithTable expect = new WithTable("relation_name", selectBody);
         Assert.assertEquals(expect, actual);
     }
 

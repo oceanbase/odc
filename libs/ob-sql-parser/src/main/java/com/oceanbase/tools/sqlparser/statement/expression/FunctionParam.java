@@ -15,10 +15,17 @@
  */
 package com.oceanbase.tools.sqlparser.statement.expression;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.antlr.v4.runtime.ParserRuleContext;
 
 import com.oceanbase.tools.sqlparser.statement.BaseStatement;
 import com.oceanbase.tools.sqlparser.statement.Expression;
+import com.oceanbase.tools.sqlparser.statement.Statement;
+
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 
 /**
  * {@link FunctionParam}
@@ -28,14 +35,25 @@ import com.oceanbase.tools.sqlparser.statement.Expression;
  * @since ODC_release_4.1.0
  * @see Expression
  */
+@Getter
+@EqualsAndHashCode(callSuper = false)
 public class FunctionParam extends BaseStatement {
 
+    private final List<Statement> options = new ArrayList<>();
+
     protected FunctionParam() {
-        super(null, null);
+        super();
     }
 
     protected FunctionParam(ParserRuleContext ruleNode) {
-        super(ruleNode, null);
+        super(ruleNode);
+    }
+
+    public void addOption(Statement paramsOpt) {
+        if (paramsOpt == null) {
+            return;
+        }
+        this.options.add(paramsOpt);
     }
 
 }

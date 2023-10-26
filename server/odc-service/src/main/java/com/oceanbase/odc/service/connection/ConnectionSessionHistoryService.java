@@ -73,7 +73,7 @@ public class ConnectionSessionHistoryService {
     @Transactional(rollbackFor = Exception.class)
     public void updateOrInsert(Long connectionId, Long userId, Date lastAccessTime) {
         connectionHistoryDAO.updateOrInsert(ConnectionHistoryEntity.of(connectionId, userId, lastAccessTime));
-        log.info("update or insert connection history successfully, connectionId={}", connectionId);
+        log.debug("update or insert connection history successfully, connectionId={}", connectionId);
     }
 
     public List<ConnectionHistoryEntity> listAll() {

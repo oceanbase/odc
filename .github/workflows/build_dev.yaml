@@ -53,14 +53,6 @@ jobs:
           java-version: "8"
           distribution: "temurin"
           cache: maven
-      - name: Install db-browser
-        run: |
-          echo "Start install db-browser"
-          pushd libs/db-browser
-          echo "Current dir is "`pwd`
-          mvn clean install -Dmaven.test.skip=true
-          echo "Install db-browser success"
-          popd
       - name: Install ob-sql-parser
         run: |
           echo "Start install ob-sql-parser"
@@ -68,6 +60,14 @@ jobs:
           echo "Current dir is "`pwd`
           mvn clean install -Dmaven.test.skip=true
           echo "Install ob-sql-parser success"
+          popd
+      - name: Install db-browser
+        run: |
+          echo "Start install db-browser"
+          pushd libs/db-browser
+          echo "Current dir is "`pwd`
+          mvn clean install -Dmaven.test.skip=true
+          echo "Install db-browser success"
           popd
       - name: Build project
         run: mvn clean install -Dmaven.test.skip=true
@@ -97,14 +97,6 @@ jobs:
           java-version: "8"
           distribution: "temurin"
           cache: maven
-      - name: Install db-browser
-        run: |
-          echo "Start install db-browser"
-          pushd libs/db-browser
-          echo "Current dir is "`pwd`
-          mvn clean install -Dmaven.test.skip=true
-          echo "Install db-browser success"
-          popd
       - name: Install ob-sql-parser
         run: |
           echo "Start install ob-sql-parser"
@@ -112,6 +104,14 @@ jobs:
           echo "Current dir is "`pwd`
           mvn clean install -Dmaven.test.skip=true
           echo "Install ob-sql-parser success"
+          popd
+      - name: Install db-browser
+        run: |
+          echo "Start install db-browser"
+          pushd libs/db-browser
+          echo "Current dir is "`pwd`
+          mvn clean install -Dmaven.test.skip=true
+          echo "Install db-browser success"
           popd
       - name: Build project
         run: mvn clean install -Dmaven.test.skip=true
@@ -163,13 +163,15 @@ jobs:
           java-version: "8"
           distribution: "temurin"
           cache: maven
-      - name: Build project
+      - name: Install ob-sql-parser
+        if: ${{ matrix.lib == 'db-browser'}}
         run: |
-          echo "Start install ${{ matrix.lib }}"
-          pushd libs/${{ matrix.lib }}
+          echo "Start install ob-sql-parser"
+          pushd libs/ob-sql-parser
           echo "Current dir is "`pwd`
           mvn clean install -Dmaven.test.skip=true
-          echo "Install ${{ matrix.lib }} success"
+          echo "Install ob-sql-parser success"
+          popd
       - name: Run unit test
         id: unit_test
         run: |
@@ -244,14 +246,6 @@ jobs:
           echo "RPM's version is "${new_version}
           mvn versions:set -DnewVersion="${new_version}"
           mvn versions:commit
-      - name: Install db-browser
-        run: |
-          echo "Start install db-browser"
-          pushd libs/db-browser
-          echo "Current dir is "`pwd`
-          mvn clean install -Dmaven.test.skip=true
-          echo "Install db-browser success"
-          popd
       - name: Install ob-sql-parser
         run: |
           echo "Start install ob-sql-parser"
@@ -259,6 +253,14 @@ jobs:
           echo "Current dir is "`pwd`
           mvn clean install -Dmaven.test.skip=true
           echo "Install ob-sql-parser success"
+          popd
+      - name: Install db-browser
+        run: |
+          echo "Start install db-browser"
+          pushd libs/db-browser
+          echo "Current dir is "`pwd`
+          mvn clean install -Dmaven.test.skip=true
+          echo "Install db-browser success"
           popd
       - name: Build jar & rpm (x86_64)
         run: |

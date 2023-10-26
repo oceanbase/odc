@@ -90,6 +90,12 @@ public class OBMySQLGetDBTableByParser implements GetDBTableByParser {
         throw new UnsupportedOperationException("Not supported yet");
     }
 
+
+    /**
+     * The original intention of this method is to solve the time-consuming problem of obtaining
+     * constraint information by querying internal tables. But DBSchemaAccessor.listTableConstraints of
+     * OB MySQL does not have performance issues, so this method is not currently called.
+     */
     @Override
     public List<DBTableConstraint> listConstraints() {
         List<DBTableConstraint> constraints = new ArrayList<>();

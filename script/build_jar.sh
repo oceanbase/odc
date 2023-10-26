@@ -9,13 +9,22 @@ fi
 
 if ! maven_build_jar; then
     echo "maven build jar failed"
-    exit 2
+    exit 3
 fi
 
-echo "maven build jar success, copy executable jar to ${ODC_DIR}/lib ..."
+echo "maven build jar success, copy executable jar to ${ODC_DIR}/lib for use script/start-odc.sh locally."
 
-mkdir -p "${ODC_DIR}/"{lib,conf}
-rm --force --verbose "${ODC_DIR}"/lib/*.jar
-cp --force --verbose "${ODC_DIR}"/server/odc-server/target/odc-*-executable.jar "${ODC_DIR}"/lib/
-cp --force --verbose "${ODC_DIR}"/server/odc-server/target/classes/log4j2.xml "${ODC_DIR}"/conf/
+mkdir -p "${ODC_DIR}/"{lib,conf,plugins,starters}
+[[ -f "${ODC_DIR}"/lib/*.jar ]] && rm -fv "${ODC_DIR}"/lib/*.jar
+cp -fv "${ODC_DIR}"/server/odc-server/target/odc-*-executable.jar "${ODC_DIR}"/lib/
+cp -fv "${ODC_DIR}"/server/odc-server/target/classes/log4j2.xml "${ODC_DIR}"/conf/
+
+echo "copy plugin jars to ${ODC_DIR}/plugins ."
+[[ -f "${ODC_DIR}"/plugins/*.jar ]] && rm -fv "${ODC_DIR}"/plugins/*.jar
+cp -fv "${ODC_DIR}"/distribution/plugins/*.jar "${ODC_DIR}"/plugins/
+
+echo "copy starter jars to ${ODC_DIR}/starters ."
+[[ -f "${ODC_DIR}"/starters/*.jar ]] && rm -fv "${ODC_DIR}"/starters/*.jar
+cp -fv "${ODC_DIR}"/distribution/starters/*.jar "${ODC_DIR}"/starters/
+
 exit $?

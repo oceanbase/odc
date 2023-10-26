@@ -19,6 +19,7 @@ package com.oceanbase.odc.service.datasecurity.model;
 import java.util.List;
 import java.util.Map;
 
+import com.oceanbase.odc.service.feature.model.DataTypeUnit;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 
 import lombok.Data;
@@ -34,5 +35,9 @@ public class DatabaseWithAllColumns {
     private String databaseName;
     private Map<String, List<DBTableColumn>> table2Columns;
     private Map<String, List<DBTableColumn>> view2Columns;
+    /**
+     * Mapping from database type to show type, used for displaying column type icon
+     */
+    private List<DataTypeUnit> dataTypeUnits;
 
 }

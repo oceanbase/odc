@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.metadb.migrate;
+package com.oceanbase.odc.migrate.jdbc.common;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -34,7 +34,6 @@ import com.oceanbase.odc.metadb.connection.ConnectionConfigRepository;
 import com.oceanbase.odc.metadb.connection.ConnectionEntity;
 import com.oceanbase.odc.metadb.connection.ConnectionLabelRelationEntity;
 import com.oceanbase.odc.metadb.connection.ConnectionLabelRelationRepository;
-import com.oceanbase.odc.migrate.jdbc.common.V4103ConnectionLabelMigrate;
 import com.oceanbase.odc.service.connection.model.PropertiesKeys;
 import com.oceanbase.odc.test.tool.TestRandom;
 

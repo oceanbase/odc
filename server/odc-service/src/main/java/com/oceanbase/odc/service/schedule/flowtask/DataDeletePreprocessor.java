@@ -17,9 +17,12 @@ package com.oceanbase.odc.service.schedule.flowtask;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
+import com.oceanbase.odc.core.session.ConnectionSession;
+import com.oceanbase.odc.core.session.ConnectionSessionFactory;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
+import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.dlm.model.DataDeleteParameters;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
 import com.oceanbase.odc.service.flow.processor.ScheduleTaskPreprocessor;
@@ -27,6 +30,7 @@ import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.schedule.DlmEnvironment;
 import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.model.JobType;
+import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -63,7 +67,17 @@ public class DataDeletePreprocessor extends AbstractDlmJobPreprocessor {
             if (dlmEnvironment.isSysTenantUserRequired()) {
                 checkDatasource(sourceDb.getDataSource());
             }
-            checkTableAndCondition(sourceDb, dataDeleteParameters.getTables(), dataDeleteParameters.getVariables());
+
+            ConnectionConfig dataSource = sourceDb.getDataSource();
+            dataSource.setDefaultSchema(sourceDb.getName());
+            ConnectionSessionFactory connectionSessionFactory = new DefaultConnectSessionFactory(dataSource);
+            ConnectionSession connectionSession = connectionSessionFactory.generateSession();
+            try {
+                checkTableAndCondition(connectionSession, sourceDb, dataDeleteParameters.getTables(),
+                        dataDeleteParameters.getVariables());
+            } finally {
+                connectionSession.expire();
+            }
             log.info("QUICK-DELETE job preprocessing has been completed.");
             // pre create
             ScheduleEntity scheduleEntity = buildScheduleEntity(req);

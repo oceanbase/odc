@@ -39,9 +39,9 @@ import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
-import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -53,7 +53,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 import org.springframework.validation.annotation.Validated;
 
-import com.oceanbase.odc.common.i18n.I18n;
+import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.authority.SecurityManager;
 import com.oceanbase.odc.core.authority.model.DefaultSecurityResource;
 import com.oceanbase.odc.core.authority.model.SecurityResource;
@@ -64,6 +64,7 @@ import com.oceanbase.odc.core.authority.util.Authenticated;
 import com.oceanbase.odc.core.authority.util.PreAuthenticate;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.ConnectionStatus;
 import com.oceanbase.odc.core.shared.constant.ConnectionVisibleScope;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
@@ -71,7 +72,10 @@ import com.oceanbase.odc.core.shared.constant.PermissionType;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
+import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.metadb.collaboration.EnvironmentRepository;
+import com.oceanbase.odc.metadb.connection.ConnectionAttributeEntity;
+import com.oceanbase.odc.metadb.connection.ConnectionAttributeRepository;
 import com.oceanbase.odc.metadb.connection.ConnectionConfigRepository;
 import com.oceanbase.odc.metadb.connection.ConnectionEntity;
 import com.oceanbase.odc.metadb.connection.ConnectionSpecs;
@@ -114,6 +118,7 @@ import lombok.extern.slf4j.Slf4j;
 @Validated
 @Authenticated
 public class ConnectionService {
+
     @Autowired
     private ConnectionConfigRepository repository;
 
@@ -183,11 +188,12 @@ public class ConnectionService {
     @Autowired
     private PlatformTransactionManager transactionManager;
 
+    @Autowired
+    private ConnectionAttributeRepository attributeRepository;
 
     private final ConnectionMapper mapper = ConnectionMapper.INSTANCE;
 
     public static final String DEFAULT_MIN_PRIVILEGE = "read";
-
 
     @PreAuthenticate(actions = "create", resourceType = "ODC_CONNECTION", isForAll = true)
     public ConnectionConfig create(@NotNull @Valid ConnectionConfig connection) {
@@ -262,6 +268,10 @@ public class ConnectionService {
             ConnectionEntity entity = modelToEntity(connection);
             ConnectionEntity savedEntity = repository.saveAndFlush(entity);
             created = entityToModel(savedEntity, true);
+            created.setAttributes(connection.getAttributes());
+            List<ConnectionAttributeEntity> attrEntities = connToAttrEntities(created);
+            attrEntities = this.attributeRepository.saveAll(attrEntities);
+            created.setAttributes(attrEntitiesToMap(attrEntities));
         } catch (Exception ex) {
             transactionManager.rollback(transactionStatus);
             throw ex;
@@ -280,6 +290,8 @@ public class ConnectionService {
         log.info("Delete datasource-related permission entity, id={}", id);
         int affectRows = databaseService.deleteByDataSourceId(id);
         log.info("delete datasource-related databases successfully, affectRows={}, id={}", affectRows, id);
+        affectRows = this.attributeRepository.deleteByConnectionId(id);
+        log.info("delete related attributes successfully, affectRows={}, id={}", affectRows, id);
         return connection;
     }
 
@@ -289,9 +301,8 @@ public class ConnectionService {
         if (CollectionUtils.isEmpty(ids)) {
             return Collections.emptyList();
         }
-        List<ConnectionConfig> connections = this.repository
-                .findAll(ConnectionSpecs.idIn(ids)).stream().map(connection -> entityToModel(connection, false))
-                .collect(Collectors.toList());
+        List<ConnectionConfig> connections = entitiesToModels(this.repository
+                .findAll(ConnectionSpecs.idIn(ids)), currentOrganizationId(), false);
         if (CollectionUtils.isEmpty(connections)) {
             return Collections.emptyList();
         }
@@ -307,6 +318,8 @@ public class ConnectionService {
         log.info("delete datasource-related databases successfully, affectRows={}", affectRows);
         affectRows = repository.deleteByIds(ids);
         log.info("delete datasources successfully, affectRows={}", affectRows);
+        affectRows = this.attributeRepository.deleteByConnectionIds(ids);
+        log.info("delete related attributes successfully, affectRows={}", affectRows);
         return connections;
     }
 
@@ -331,14 +344,12 @@ public class ConnectionService {
 
     @SkipAuthorize("odc internal usage")
     public List<ConnectionConfig> listByOrganizationId(@NonNull Long organizationId) {
-        return repository.findByOrganizationId(organizationId).stream().map(ds -> entityToModel(ds, true))
-                .collect(Collectors.toList());
+        return entitiesToModels(repository.findByOrganizationId(organizationId), organizationId, true);
     }
 
     @SkipAuthorize("odc internal usage")
     public List<ConnectionConfig> listByOrganizationIdWithoutEnvironment(@NonNull Long organizationId) {
-        return repository.findByOrganizationId(organizationId).stream().map(ds -> entityToModel(ds, false))
-                .collect(Collectors.toList());
+        return entitiesToModels(repository.findByOrganizationId(organizationId), organizationId, false);
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -374,9 +385,9 @@ public class ConnectionService {
         Specification<ConnectionEntity> spec = Specification
                 .where(ConnectionSpecs.organizationIdEqual(currentOrganizationId()))
                 .and(ConnectionSpecs.idIn(connIds));
-        Map<Long, ConnectionConfig> connMap = repository.findAll(spec).stream()
-                .map(connection -> entityToModel(connection, false))
-                .collect(Collectors.toMap(ConnectionConfig::getId, c -> c));
+        Map<Long, ConnectionConfig> connMap =
+                entitiesToModels(repository.findAll(spec), currentOrganizationId(), false).stream()
+                        .collect(Collectors.toMap(ConnectionConfig::getId, c -> c));
         Map<SecurityResource, Set<String>> res2Actions = authorizationFacade.getRelatedResourcesAndActions(user)
                 .entrySet().stream().collect(Collectors.toMap(e -> {
                     SecurityResource s = e.getKey();
@@ -422,20 +433,13 @@ public class ConnectionService {
                     .collect(Collectors.joining(","));
             throw new NotFoundException(ResourceType.ODC_CONNECTION, "id", absentIds);
         }
-        return entities.stream().map(connectionEntity -> entityToModel(connectionEntity, false))
-                .collect(Collectors.toList());
+        return entitiesToModels(entities, currentOrganizationId(), false);
     }
 
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("odc internal usage")
     public Set<Long> findIdsByHost(String host) {
         return repository.findIdsByHost(host);
-    }
-
-
-    @SkipAuthorize("internal usage")
-    public List<ConnectionConfig> listAllConnections() {
-        return repository.findAll().stream().map(mapper::entityToModel).collect(Collectors.toList());
     }
 
     @SkipAuthorize("internal usage")
@@ -535,6 +539,12 @@ public class ConnectionService {
 
         ConnectionConfig updated = entityToModel(savedEntity, true);
         databaseSyncManager.submitSyncDataSourceTask(updated);
+
+        this.attributeRepository.deleteByConnectionId(updated.getId());
+        updated.setAttributes(connection.getAttributes());
+        List<ConnectionAttributeEntity> attrEntities = connToAttrEntities(updated);
+        attrEntities = this.attributeRepository.saveAll(attrEntities);
+        updated.setAttributes(attrEntitiesToMap(attrEntities));
         log.info("Connection updated, connection={}", updated);
         return updated;
     }
@@ -558,11 +568,6 @@ public class ConnectionService {
     @SkipAuthorize("odc internal usages")
     public List<ConnectionConfig> innerListByIds(@NotEmpty Collection<Long> ids) {
         return repository.findByIdIn(ids).stream().map(mapper::entityToModel).collect(Collectors.toList());
-    }
-
-    @SkipAuthorize("odc internal usage")
-    public boolean existsById(@NotNull Long id) {
-        return repository.existsById(id);
     }
 
     @SkipAuthorize("internal usage")
@@ -631,7 +636,9 @@ public class ConnectionService {
         spec = spec.and(ConnectionSpecs.sort(pageable.getSort()));
         Pageable page = pageable.equals(Pageable.unpaged()) ? pageable
                 : PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
-        return this.repository.findAll(spec, page).map(connection -> entityToModel(connection, true));
+        Page<ConnectionEntity> entities = this.repository.findAll(spec, page);
+        List<ConnectionConfig> models = entitiesToModels(entities.getContent(), currentOrganizationId(), true);
+        return new PageImpl<>(models, page, entities.getTotalElements());
     }
 
     private String[] getHostPort(String hostPort) {
@@ -711,34 +718,75 @@ public class ConnectionService {
     }
 
     private ConnectionConfig internalGetSkipUserCheck(Long id, boolean withEnvironment) {
-        return entityToModel(getEntity(id), withEnvironment);
+        ConnectionConfig config = entityToModel(getEntity(id), withEnvironment);
+        List<ConnectionAttributeEntity> entities = this.attributeRepository.findByConnectionId(config.getId());
+        config.setAttributes(attrEntitiesToMap(entities));
+        return config;
     }
 
     private ConnectionEntity getEntity(@NonNull Long id) {
         return repository.findById(id).orElseThrow(() -> new NotFoundException(ResourceType.ODC_CONNECTION, "id", id));
     }
 
-    private ConnectionConfig entityToModel(@NonNull ConnectionEntity entity, @NonNull Boolean withEnvironment) {
-        ConnectionConfig connection = mapper.entityToModel(entity);
-        connection.setStatus(CheckState.of(ConnectionStatus.TESTING));
-        if (withEnvironment) {
-            Environment environment = environmentService.detailSkipPermissionCheck(entity.getEnvironmentId());
-            connection.setEnvironmentStyle(environment.getStyle());
-            String environmentName = environment.getName();
-            if (environmentName.startsWith("${") && environmentName.endsWith("}")) {
-                connection
-                        .setEnvironmentName(
-                                I18n.translate(environmentName.substring(2, environmentName.length() - 1), null,
-                                        LocaleContextHolder.getLocale()));
-            } else {
-                connection.setEnvironmentName(environmentName);
-            }
+    private List<ConnectionConfig> entitiesToModels(@NonNull List<ConnectionEntity> entities,
+            @NonNull Long organizationId, @NonNull Boolean withEnvironment) {
+        if (CollectionUtils.isEmpty(entities)) {
+            return Collections.emptyList();
         }
-        return connection;
+        Map<Long, Environment> id2Environment;
+        if (withEnvironment) {
+            id2Environment = environmentService.list(organizationId).stream()
+                    .collect(Collectors.toMap(Environment::getId, environment -> environment));
+        } else {
+            id2Environment = new HashMap<>();
+        }
+        return entities.stream().map(entity -> {
+            ConnectionConfig connection = mapper.entityToModel(entity);
+            connection.setStatus(CheckState.of(ConnectionStatus.TESTING));
+            if (withEnvironment) {
+                Environment environment = id2Environment.getOrDefault(connection.getEnvironmentId(), null);
+                if (Objects.isNull(environment)) {
+                    throw new UnexpectedException("environment not found, id=" + connection.getEnvironmentId());
+                }
+                connection.setEnvironmentStyle(environment.getStyle());
+                connection.setEnvironmentName(environment.getName());
+            }
+            return connection;
+        }).collect(Collectors.toList());
+    }
+
+    private ConnectionConfig entityToModel(@NonNull ConnectionEntity entity, @NonNull Boolean withEnvironment) {
+        return entitiesToModels(Collections.singletonList(entity), entity.getOrganizationId(), withEnvironment)
+                .stream().findFirst()
+                .orElseThrow(() -> new NotFoundException(ResourceType.ODC_CONNECTION, "id", entity.getId()));
     }
 
     private ConnectionEntity modelToEntity(@NonNull ConnectionConfig model) {
         return mapper.modelToEntity(model);
+    }
+
+    private List<ConnectionAttributeEntity> connToAttrEntities(@NonNull ConnectionConfig model) {
+        Verify.notNull(model.getId(), "ConnectionId");
+        Map<String, Object> attributes = model.getAttributes();
+        if (attributes == null || attributes.size() == 0) {
+            return Collections.emptyList();
+        }
+        return attributes.entrySet().stream().map(entry -> {
+            ConnectionAttributeEntity entity = new ConnectionAttributeEntity();
+            entity.setConnectionId(model.getId());
+            entity.setName(entry.getKey());
+            entity.setContent(JsonUtils.toJson(entry.getValue()));
+            return entity;
+        }).collect(Collectors.toList());
+    }
+
+    private Map<String, Object> attrEntitiesToMap(@NonNull List<ConnectionAttributeEntity> entities) {
+        Map<Long, List<ConnectionAttributeEntity>> map = entities.stream().collect(
+                Collectors.groupingBy(ConnectionAttributeEntity::getConnectionId));
+        Verify.verify(map.size() <= 1, "Attributes's size is illegal, actual: " + map.size());
+        return entities.stream().filter(e -> JsonUtils.fromJson(e.getContent(), Object.class) != null)
+                .collect(Collectors.toMap(ConnectionAttributeEntity::getName, e -> JsonUtils.fromJson(
+                        e.getContent(), Object.class)));
     }
 
     private Long currentOrganizationId() {

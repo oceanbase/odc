@@ -15,8 +15,6 @@
  */
 package com.oceanbase.odc.plugin.schema.oboracle.parser;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.io.StringReader;
 import java.sql.Connection;
 import java.util.ArrayList;
@@ -61,7 +59,7 @@ import com.oceanbase.tools.sqlparser.statement.createtable.Partition;
 import com.oceanbase.tools.sqlparser.statement.createtable.RangePartition;
 import com.oceanbase.tools.sqlparser.statement.createtable.RangePartitionElement;
 import com.oceanbase.tools.sqlparser.statement.createtable.TableElement;
-import com.oceanbase.tools.sqlparser.statement.expression.FunctionCall;
+import com.oceanbase.tools.sqlparser.statement.expression.RelationReference;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -80,7 +78,6 @@ public class OBOracleGetDBTableByParser implements GetDBTableByParser {
     private final char ORACLE_IDENTIFIER_WRAP_CHAR = '"';
     private List<DBTableConstraint> constraints = new ArrayList<>();
     private List<DBTableIndex> indexes = new ArrayList<>();
-    private final String LIST_INDEX_SQL_PATH = "parser/getIndexInfo.sql";
 
     public OBOracleGetDBTableByParser(@NonNull Connection connection, @NonNull String schemaName,
             @NonNull String tableName) {
@@ -128,6 +125,9 @@ public class OBOracleGetDBTableByParser implements GetDBTableByParser {
                     List<InLineConstraint> cons = columnDefinition.getColumnAttributes().getConstraints();
                     cons.forEach(item -> {
                         DBTableConstraint constraint = new DBTableConstraint();
+                        if (Objects.nonNull(item.getConstraintName())) {
+                            constraint.setName(removeIdentifiers(item.getConstraintName()));
+                        }
                         constraint.setOrdinalPosition(i.get());
                         constraint.setTableName(removeIdentifiers(createTableStmt.getTableName()));
                         constraint.setColumnNames(
@@ -144,7 +144,6 @@ public class OBOracleGetDBTableByParser implements GetDBTableByParser {
                         constraint.setValidate(
                                 item.getState() == null || item.getState().getValidate() == null
                                         || item.getState().getValidate());
-                        constraint.setName(removeIdentifiers(item.getConstraintName()));
                         if (item instanceof InLineCheckConstraint) {
                             constraint.setType(DBConstraintType.CHECK);
                             constraint.setCheckClause(((InLineCheckConstraint) item).getCheckExpr().getText());
@@ -184,19 +183,22 @@ public class OBOracleGetDBTableByParser implements GetDBTableByParser {
                 constraint.setOrdinalPosition(i.get());
                 constraint.setTableName(removeIdentifiers(createTableStmt.getTableName()));
                 constraint.setDeferability(DBConstraintDeferability.NOT_DEFERRABLE);
-                OutOfLineConstraint ofLineConstraint = (OutOfLineConstraint) element;
-                constraint.setName(removeIdentifiers(ofLineConstraint.getConstraintName()));
+                OutOfLineConstraint outOfLineConstraint = (OutOfLineConstraint) element;
+                if (Objects.nonNull(outOfLineConstraint.getConstraintName())) {
+                    constraint.setName(removeIdentifiers(outOfLineConstraint.getConstraintName()));
+                }
                 constraint.setEnabled(
-                        ofLineConstraint.getState() == null || ofLineConstraint.getState().getEnable() == null
-                                || ofLineConstraint.getState().getEnable());
+                        outOfLineConstraint.getState() == null || outOfLineConstraint.getState().getEnable() == null
+                                || outOfLineConstraint.getState().getEnable());
                 constraint.setValidate(
-                        ofLineConstraint.getState() == null || ofLineConstraint.getState().getValidate() == null
-                                || ofLineConstraint.getState().getValidate());
-                if (ofLineConstraint instanceof OutOfLineCheckConstraint) {
+                        outOfLineConstraint.getState() == null || outOfLineConstraint.getState().getValidate() == null
+                                || outOfLineConstraint.getState().getValidate());
+                if (outOfLineConstraint instanceof OutOfLineCheckConstraint) {
                     constraint.setType(DBConstraintType.CHECK);
-                    constraint.setCheckClause(((OutOfLineCheckConstraint) ofLineConstraint).getCheckExpr().getText());
-                } else if (ofLineConstraint instanceof OutOfLineForeignConstraint) {
-                    OutOfLineForeignConstraint foreignConstraint = (OutOfLineForeignConstraint) ofLineConstraint;
+                    constraint
+                            .setCheckClause(((OutOfLineCheckConstraint) outOfLineConstraint).getCheckExpr().getText());
+                } else if (outOfLineConstraint instanceof OutOfLineForeignConstraint) {
+                    OutOfLineForeignConstraint foreignConstraint = (OutOfLineForeignConstraint) outOfLineConstraint;
                     constraint.setType(DBConstraintType.FOREIGN_KEY);
                     if (foreignConstraint.getReference().getSchema() != null) {
                         constraint.setReferenceSchemaName(
@@ -214,13 +216,13 @@ public class OBOracleGetDBTableByParser implements GetDBTableByParser {
                                     .fromValue(foreignConstraint.getReference().getDeleteOption().toString())
                             : DBForeignKeyModifyRule.CASCADE);
                 } else {
-                    if (ofLineConstraint.isPrimaryKey()) {
+                    if (outOfLineConstraint.isPrimaryKey()) {
                         constraint.setType(DBConstraintType.PRIMARY_KEY);
-                    } else if (ofLineConstraint.isUniqueKey()) {
+                    } else if (outOfLineConstraint.isUniqueKey()) {
                         constraint.setType(DBConstraintType.UNIQUE_KEY);
                     }
                     constraint.setColumnNames(
-                            ofLineConstraint.getColumns().stream()
+                            outOfLineConstraint.getColumns().stream()
                                     .map(item -> removeIdentifiers(item.getColumn().getText())).collect(
                                             Collectors.toList()));
                 }
@@ -232,6 +234,9 @@ public class OBOracleGetDBTableByParser implements GetDBTableByParser {
     }
 
     private String removeIdentifiers(String str) {
+        if (Objects.isNull(str)) {
+            return "";
+        }
         if (str.charAt(0) == ORACLE_IDENTIFIER_WRAP_CHAR
                 && str.charAt(str.length() - 1) == ORACLE_IDENTIFIER_WRAP_CHAR) {
             return StringUtils.unwrap(str, ORACLE_IDENTIFIER_WRAP_CHAR);
@@ -244,15 +249,13 @@ public class OBOracleGetDBTableByParser implements GetDBTableByParser {
         if (this.indexes.size() > 0) {
             return this.indexes;
         }
-        String sql;
-        try {
-            sql = readFile(LIST_INDEX_SQL_PATH);
-        } catch (Exception e) {
-            log.warn("Load get index info sql failed, error message={}", e.getMessage());
-            return this.indexes;
-        }
+        OracleSqlBuilder sb = new OracleSqlBuilder();
+        sb.append("select INDEX_NAME, VISIBILITY, STATUS from ALL_INDEXES where OWNER = ")
+                .value(schemaName)
+                .append(" AND TABLE_NAME = ")
+                .value(tableName);
         // Query all index names belonging to this table.
-        this.indexes = JdbcOperationsUtil.getJdbcOperations(connection).query(sql, new Object[] {schemaName, tableName},
+        this.indexes = JdbcOperationsUtil.getJdbcOperations(connection).query(sb.toString(),
                 (rs, num) -> {
                     DBTableIndex idx = new DBTableIndex();
                     idx.setOrdinalPosition(num);
@@ -264,56 +267,80 @@ public class OBOracleGetDBTableByParser implements GetDBTableByParser {
                     return idx;
                 });
         /**
-         * The ddl of the primary key can not be obtained through dbms_metadata.get_ddl(), we get primary
-         * key index info by constraint.
+         * The ddl of the primary key can not be obtained through dbms_metadata.get_ddl(), we get columns
+         * list of primary key by parse table ddl.
          */
-        if (this.constraints.size() == 0) {
-            listConstraints();
-        }
-        List<DBTableConstraint> priConstraint = this.constraints.stream().filter(
+        List<DBTableConstraint> priConstraint = listConstraints().stream().filter(
                 constraint -> constraint.getType().equals(DBConstraintType.PRIMARY_KEY)).collect(Collectors.toList());
-        DBTableConstraint primaryKey = priConstraint.size() > 0 ? priConstraint.get(0) : null;
+        String primaryKeyName = null;
+        if (!priConstraint.isEmpty()) {
+            if (Objects.nonNull(priConstraint.get(0).getName())) {
+                primaryKeyName = priConstraint.get(0).getName();
+            } else {
+                /**
+                 * The name of the primary key may not be obtained from the ddl of the table, in this case, we get
+                 * primary key name by querying ALL_CONSTRAINTS
+                 */
+                OracleSqlBuilder getPrimaryKeyName = new OracleSqlBuilder();
+                getPrimaryKeyName.append("SELECT CONSTRAINT_NAME FROM ALL_CONSTRAINTS WHERE OWNER=")
+                        .value(schemaName)
+                        .append(" AND TABLE_NAME=")
+                        .value(tableName)
+                        .append(" AND CONSTRAINT_TYPE='P'");
+                primaryKeyName = JdbcOperationsUtil.getJdbcOperations(connection).queryForObject(
+                        getPrimaryKeyName.toString(),
+                        String.class);
+            }
+        }
+
         for (DBTableIndex idx : this.indexes) {
             // ob oracle only support btree algorithm.
             idx.setAlgorithm(DBIndexAlgorithm.BTREE);
-            if (primaryKey != null && primaryKey.getName().equals(idx.getName())) {
+            if (Objects.nonNull(primaryKeyName) && primaryKeyName.equals(idx.getName())) {
                 idx.setType(DBIndexType.UNIQUE);
                 idx.setPrimary(true);
                 idx.setUnique(true);
                 idx.setGlobal(true);
-                idx.setColumnNames(primaryKey.getColumnNames().stream().map(item -> removeIdentifiers(item)).collect(
-                        Collectors.toList()));
-                continue;
-            }
-            String getIndexDDLSql = "SELECT dbms_metadata.get_ddl('INDEX', '" + idx.getName() + "', '" + schemaName
-                    + "') as DDL from dual";
-            // Get index type、global/local attribute and column names by parse index ddl.
-            JdbcOperationsUtil.getJdbcOperations(connection).query(getIndexDDLSql, (rs, num) -> {
-                CreateIndex createIndexStmt = parseIndexDDL(rs.getString("DDL"));
-                if (Objects.isNull(createIndexStmt)) {
-                    log.warn("Failed to get oracle index ddl statement");
-                    return null;
-                }
-                idx.setGlobal(createIndexStmt.getIndexOptions().getGlobal());
-                if (createIndexStmt.getColumns().get(0).getColumn() instanceof FunctionCall) {
-                    // ob oracle index do not hava FUNCTION-BASED BITMAP index type.
-                    idx.setType(DBIndexType.FUNCTION_BASED_NORMAL);
-                    idx.setPrimary(false);
-                    idx.setUnique(false);
-                } else if (createIndexStmt.isUnique()) {
-                    idx.setType(DBIndexType.UNIQUE);
-                    idx.setPrimary(false);
-                    idx.setUnique(true);
-                } else {
-                    idx.setType(DBIndexType.NORMAL);
-                    idx.setPrimary(false);
-                    idx.setUnique(false);
-                }
-                idx.setColumnNames(createIndexStmt.getColumns().stream()
-                        .map(item -> removeIdentifiers(item.getColumn().getText())).collect(
+                idx.setColumnNames(
+                        priConstraint.get(0).getColumnNames().stream().map(item -> removeIdentifiers(item)).collect(
                                 Collectors.toList()));
-                return null;
-            });
+            } else {
+                // Get index type、global/local attribute and column names by parse index ddl.
+                String getIndexDDLSql = "SELECT dbms_metadata.get_ddl('INDEX', '" + idx.getName() + "', '" + schemaName
+                        + "') as DDL from dual";
+                JdbcOperationsUtil.getJdbcOperations(connection).query(getIndexDDLSql, (rs) -> {
+                    CreateIndex createIndexStmt = parseIndexDDL(rs.getString("DDL"));
+                    idx.setGlobal(
+                            Objects.nonNull(createIndexStmt.getIndexOptions()) ? createIndexStmt.getIndexOptions()
+                                    .getGlobal()
+                                    : null);
+                    if (createIndexStmt.getColumns().stream().allMatch(
+                            item -> item.getColumn() instanceof RelationReference)) {
+                        if (createIndexStmt.isUnique()) {
+                            idx.setType(DBIndexType.UNIQUE);
+                            idx.setPrimary(false);
+                            idx.setUnique(true);
+                        } else {
+                            idx.setType(DBIndexType.NORMAL);
+                            idx.setPrimary(false);
+                            idx.setUnique(false);
+                        }
+                        idx.setColumnNames(createIndexStmt.getColumns().stream()
+                                .map(item -> removeIdentifiers(item.getColumn().getText())).collect(
+                                        Collectors.toList()));
+                    } else {
+                        /**
+                         * The enumeration values of the INDEX_TYPE field of the internal table ALL_INDEXES are: NORMAL,
+                         * FUNCTION-BASED NORMAL
+                         */
+                        idx.setType(DBIndexType.FUNCTION_BASED_NORMAL);
+                        idx.setPrimary(false);
+                        idx.setUnique(false);
+                        idx.setColumnNames(createIndexStmt.getColumns().stream()
+                                .map(item -> item.getColumn().getText()).collect(Collectors.toList()));
+                    }
+                });
+            }
         }
         return this.indexes;
     }
@@ -327,15 +354,6 @@ public class OBOracleGetDBTableByParser implements GetDBTableByParser {
             log.warn("Failed to parse ob oracle index ddl, error message={}", e.getMessage());
         }
         return statement;
-    }
-
-    private String readFile(String strFile) throws IOException {
-        try (InputStream input = this.getClass().getClassLoader().getResourceAsStream(strFile)) {
-            int available = input.available();
-            byte[] bytes = new byte[available];
-            input.read(bytes);
-            return new String(bytes);
-        }
     }
 
     @Override

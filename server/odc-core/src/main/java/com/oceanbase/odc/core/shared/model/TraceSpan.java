@@ -21,7 +21,6 @@ import java.time.format.DateTimeFormatterBuilder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -44,7 +43,7 @@ public class TraceSpan {
     @JsonAlias("logs")
     private String logs;
     @JsonAlias("tags")
-    private List<Map<String, Object>> tags;
+    private List<Object> tags;
     @JsonAlias("elapse")
     private Long elapseMicroSeconds;
     @JsonAlias("parent")
