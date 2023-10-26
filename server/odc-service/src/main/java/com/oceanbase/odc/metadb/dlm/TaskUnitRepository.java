@@ -30,7 +30,7 @@ import com.oceanbase.odc.config.jpa.OdcJpaRepository;
  */
 public interface TaskUnitRepository extends OdcJpaRepository<TaskUnitEntity, Long> {
 
-    List<TaskUnitEntity> findByJobId(@Param("jobId") String jobId);
+    List<TaskUnitEntity> findByGeneratorId(@Param("generatorId") String generatorId);
 
     Optional<TaskUnitEntity> findByJobIdAndGeneratorIdAndTaskIndex(String jobId, String generatorId, Long taskIndex);
 

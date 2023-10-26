@@ -62,7 +62,8 @@ public class DataArchiveJobStore implements IJobStore {
     @Override
     public TaskGenerator getTaskGenerator(String generatorId, String jobId) {
         if (supportResume) {
-            return taskGeneratorRepository.findByJobId(jobId).map(TaskGeneratorMapper::entityToModel).orElse(null);
+            return taskGeneratorRepository.findByGeneratorId(jobId).map(TaskGeneratorMapper::entityToModel)
+                    .orElse(null);
         }
         return null;
     }
@@ -105,9 +106,9 @@ public class DataArchiveJobStore implements IJobStore {
     @Override
     public List<TaskMeta> getTaskMeta(JobMeta jobMeta) {
         if (supportResume) {
-            List<TaskMeta> tasks = taskUnitRepository.findByJobId(jobMeta.getJobId()).stream().map(
-                TaskUnitMapper::entityToModel).collect(
-                Collectors.toList());
+            List<TaskMeta> tasks = taskUnitRepository.findByGeneratorId(jobMeta.getGenerator().getId()).stream().map(
+                    TaskUnitMapper::entityToModel).collect(
+                            Collectors.toList());
             tasks.forEach(o -> o.setJobMeta(jobMeta));
             return tasks;
         }
@@ -118,7 +119,7 @@ public class DataArchiveJobStore implements IJobStore {
     public void storeTaskMeta(TaskMeta taskMeta) {
         if (supportResume) {
             Optional<TaskUnitEntity> optional = taskUnitRepository.findByJobIdAndGeneratorIdAndTaskIndex(
-                taskMeta.getJobMeta().getJobId(), taskMeta.getGeneratorId(), taskMeta.getTaskIndex());
+                    taskMeta.getJobMeta().getJobId(), taskMeta.getGeneratorId(), taskMeta.getTaskIndex());
             TaskUnitEntity entity;
             if (optional.isPresent()) {
                 entity = optional.get();
@@ -161,10 +162,10 @@ public class DataArchiveJobStore implements IJobStore {
         DlmLimiterConfig limiterConfig;
         try {
             limiterConfig = limiterService
-                .getByOrderIdOrElseDefaultConfig(Long.parseLong(DlmJobIdUtil.getJobName(jobMeta.getJobId())));
+                    .getByOrderIdOrElseDefaultConfig(Long.parseLong(DlmJobIdUtil.getJobName(jobMeta.getJobId())));
         } catch (Exception e) {
             log.warn("Update limiter failed,jobId={},error={}",
-                jobMeta.getJobId(), e);
+                    jobMeta.getJobId(), e);
             return;
         }
         setClusterLimitConfig(jobMeta.getSourceCluster(), limiterConfig.getDataSizeLimit());
