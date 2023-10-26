@@ -55,14 +55,13 @@ public class SwapTableNameValve extends BaseValve {
 
         OnlineSchemaChangeScheduleTaskParameters taskParameters = context.getTaskParameter();
         PreConditions.notNull(taskParameters, "OnlineSchemaChangeScheduleTaskParameters is null");
-
         OnlineSchemaChangeParameters parameters = context.getParameter();
 
         ConnectionConfig config = context.getConnectionConfig();
-        DBUserMonitorExecutor userMonitorExecutor = new DBUserMonitorExecutor(parameters.getToMonitorUsers());
+        DBUserMonitorExecutor userMonitorExecutor = new DBUserMonitorExecutor(config, parameters.getLockUsers());
         ConnectionSession connectionSession = new DefaultConnectSessionFactory(config).generateSession();
         try {
-            userMonitorExecutor.start(connectionSession, parameters.getParameterDataMap());
+            userMonitorExecutor.start(parameters.getParameterDataMap());
             ConnectionSessionUtil.setCurrentSchema(connectionSession, taskParameters.getDatabaseName());
             DefaultRenameTableInvoker defaultRenameTableInvoker =
                     new DefaultRenameTableInvoker(connectionSession, dbSessionManageFacade);

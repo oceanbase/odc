@@ -47,6 +47,7 @@ import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.ConnectionStatusManager.CheckState;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
+import com.oceanbase.odc.service.connection.database.model.DatabaseUser;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.model.ConnectionPreviewBatchImportResp;
 import com.oceanbase.odc.service.connection.model.GenerateConnectionStringReq;
@@ -200,4 +201,11 @@ public class DataSourceController {
     public SuccessResponse<Boolean> syncDataSource(@PathVariable Long id) throws InterruptedException {
         return Responses.success(databaseService.syncDataSourceSchemas(id));
     }
+
+    @ApiOperation(value = "listUsers", notes = "list users in datasource")
+    @RequestMapping(value = "/datasources/{id:[\\d]+}/users", method = RequestMethod.GET)
+    public PaginatedResponse<DatabaseUser> listUsers(@PathVariable Long id) {
+        return Responses.paginated(databaseService.listUsers(id));
+    }
+
 }

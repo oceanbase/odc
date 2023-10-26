@@ -28,7 +28,9 @@ import org.junit.Test;
 
 import com.oceanbase.odc.TestConnectionUtil;
 import com.oceanbase.odc.core.session.ConnectionSession;
+import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
+import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.onlineschemachange.monitor.DBUserLogStatusMonitorFactory;
 import com.oceanbase.odc.service.onlineschemachange.monitor.DBUserMonitor;
 
@@ -67,18 +69,20 @@ public class DBUserLogStatusMonitorTest {
     private static void doMonitor(List<String> toMonitorUsers, ConnectionSession connectionSession)
             throws InterruptedException {
         Integer period = 200;
-        Integer timeout = 2000;
+        Integer timeout = Integer.MAX_VALUE;
         TimeUnit timeUnit = TimeUnit.MILLISECONDS;
         DBUserLogStatusMonitorFactory monitorFactory = new DBUserLogStatusMonitorFactory(null);
-        DBUserMonitor dbUserMonitor = monitorFactory.generateDBUserMonitor(connectionSession,
+        DBUserMonitor dbUserMonitor = monitorFactory.generateDBUserMonitor(
+                (ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(connectionSession),
                 toMonitorUsers, period, timeout, timeUnit);
 
         ExecutorService executorService = Executors.newSingleThreadExecutor();
         try {
             executorService.execute(dbUserMonitor);
             Assert.assertFalse(dbUserMonitor.isDone());
-            Thread.sleep(2000 - 1);
+            Thread.sleep(1000);
             dbUserMonitor.stop();
+            Thread.sleep(2000);
             Assert.assertTrue(dbUserMonitor.isDone());
         } finally {
             executorService.shutdownNow();

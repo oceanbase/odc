@@ -76,6 +76,9 @@ public class Database implements SecurityResource, OrganizationIsolated, Seriali
     @JsonProperty(access = Access.READ_ONLY)
     private Long tableCount;
 
+    @JsonProperty(access = Access.READ_ONLY)
+    private boolean lockDatabaseUserRequired;
+
     @Override
     public String resourceId() {
         return this.id == null ? null : this.id.toString();
@@ -95,4 +98,5 @@ public class Database implements SecurityResource, OrganizationIsolated, Seriali
     public Long id() {
         return this.id;
     }
+
 }
