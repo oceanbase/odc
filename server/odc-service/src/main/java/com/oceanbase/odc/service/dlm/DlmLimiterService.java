@@ -29,7 +29,7 @@ import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.metadb.dlm.DlmLimiterConfigEntity;
 import com.oceanbase.odc.metadb.dlm.DlmLimiterConfigRepository;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
-import com.oceanbase.odc.service.dlm.model.DlmLimiterConfig;
+import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
 import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.utils.ScheduleTaskUtil;
 
@@ -65,14 +65,14 @@ public class DlmLimiterService {
     @Autowired
     private ScheduleService scheduleService;
 
-    public DlmLimiterConfigEntity createAndBindToOrder(Long orderId, DlmLimiterConfig config) {
+    public DlmLimiterConfigEntity createAndBindToOrder(Long orderId, RateLimitConfiguration config) {
         checkLimiterConfig(config);
         DlmLimiterConfigEntity entity = mapper.modelToEntity(config);
         entity.setOrderId(orderId);
         return limiterConfigRepository.save(entity);
     }
 
-    public DlmLimiterConfig getByOrderIdOrElseDefaultConfig(Long orderId) {
+    public RateLimitConfiguration getByOrderIdOrElseDefaultConfig(Long orderId) {
         Optional<DlmLimiterConfigEntity> entityOptional = limiterConfigRepository.findByOrderId(orderId);
         if (entityOptional.isPresent()) {
             return mapper.entityToModel(entityOptional.get());
@@ -82,20 +82,20 @@ public class DlmLimiterService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public DlmLimiterConfig updateByOrderId(Long orderId, DlmLimiterConfig limiterConfig) {
-        checkLimiterConfig(limiterConfig);
+    public RateLimitConfiguration updateByOrderId(Long orderId, RateLimitConfiguration ratelimit) {
+        checkLimiterConfig(ratelimit);
         Optional<DlmLimiterConfigEntity> entityOptional = limiterConfigRepository.findByOrderId(orderId);
         if (entityOptional.isPresent()) {
             DlmLimiterConfigEntity entity = entityOptional.get();
             entity.setRowLimit(
-                    limiterConfig.getRowLimit() == null ? entity.getRowLimit() : limiterConfig.getRowLimit());
+                    ratelimit.getRowLimit() == null ? entity.getRowLimit() : ratelimit.getRowLimit());
             entity.setBatchSize(
-                    limiterConfig.getBatchSize() == null ? entity.getBatchSize() : limiterConfig.getBatchSize());
-            entity.setDataSizeLimit(limiterConfig.getDataSizeLimit() == null ? entity.getDataSizeLimit()
-                    : limiterConfig.getDataSizeLimit());
+                    ratelimit.getBatchSize() == null ? entity.getBatchSize() : ratelimit.getBatchSize());
+            entity.setDataSizeLimit(ratelimit.getDataSizeLimit() == null ? entity.getDataSizeLimit()
+                    : ratelimit.getDataSizeLimit());
             DataArchiveParameters parameters =
                     ScheduleTaskUtil.getDataArchiveParameters(scheduleService.nullSafeGetById(orderId));
-            parameters.setLimiterConfig(mapper.entityToModel(entity));
+            parameters.setRateLimit(mapper.entityToModel(entity));
             scheduleService.updateJobParametersById(orderId, JsonUtils.toJson(parameters));
             return mapper.entityToModel(limiterConfigRepository.save(entity));
         } else {
@@ -103,15 +103,15 @@ public class DlmLimiterService {
         }
     }
 
-    public DlmLimiterConfig getDefaultLimiterConfig() {
-        DlmLimiterConfig dlmLimiterConfig = new DlmLimiterConfig();
-        dlmLimiterConfig.setRowLimit(defaultRowLimit);
-        dlmLimiterConfig.setDataSizeLimit(defaultDataSizeLimit);
-        dlmLimiterConfig.setBatchSize(defaultBatchSize);
-        return dlmLimiterConfig;
+    public RateLimitConfiguration getDefaultLimiterConfig() {
+        RateLimitConfiguration rateLimitConfiguration = new RateLimitConfiguration();
+        rateLimitConfiguration.setRowLimit(defaultRowLimit);
+        rateLimitConfiguration.setDataSizeLimit(defaultDataSizeLimit);
+        rateLimitConfiguration.setBatchSize(defaultBatchSize);
+        return rateLimitConfiguration;
     }
 
-    private void checkLimiterConfig(DlmLimiterConfig limiterConfig) {
+    private void checkLimiterConfig(RateLimitConfiguration limiterConfig) {
         if (limiterConfig.getRowLimit() != null && limiterConfig.getRowLimit() > maxRowLimit) {
             throw new IllegalArgumentException(String.format("The maximum row limit is %s rows/s.", maxRowLimit));
         }

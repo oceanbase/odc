@@ -21,7 +21,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import com.oceanbase.odc.service.dlm.model.DlmLimiterConfig;
+import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
 import com.oceanbase.odc.service.dlm.utils.DlmJobIdUtil;
 import com.oceanbase.tools.migrator.common.dto.JobStatistic;
 import com.oceanbase.tools.migrator.common.dto.TableSizeInfo;
@@ -97,21 +97,21 @@ public class DataArchiveJobStore implements IJobStore {
 
     @Override
     public void updateLimiter(JobMeta jobMeta) {
-        DlmLimiterConfig limiterConfig;
+        RateLimitConfiguration ratelimit;
         try {
-            limiterConfig = limiterService
+            ratelimit = limiterService
                     .getByOrderIdOrElseDefaultConfig(Long.parseLong(DlmJobIdUtil.getJobName(jobMeta.getJobId())));
         } catch (Exception e) {
             log.warn("Update limiter failed,jobId={},error={}",
                     jobMeta.getJobId(), e);
             return;
         }
-        setClusterLimitConfig(jobMeta.getSourceCluster(), limiterConfig.getDataSizeLimit());
-        setClusterLimitConfig(jobMeta.getTargetCluster(), limiterConfig.getDataSizeLimit());
-        setTenantLimitConfig(jobMeta.getSourceTenant(), limiterConfig.getDataSizeLimit());
-        setTenantLimitConfig(jobMeta.getTargetTenant(), limiterConfig.getDataSizeLimit());
-        setTableLimitConfig(jobMeta.getSourceTableMeta(), limiterConfig.getRowLimit());
-        setTableLimitConfig(jobMeta.getTargetTableMeta(), limiterConfig.getRowLimit());
+        setClusterLimitConfig(jobMeta.getSourceCluster(), ratelimit.getDataSizeLimit());
+        setClusterLimitConfig(jobMeta.getTargetCluster(), ratelimit.getDataSizeLimit());
+        setTenantLimitConfig(jobMeta.getSourceTenant(), ratelimit.getDataSizeLimit());
+        setTenantLimitConfig(jobMeta.getTargetTenant(), ratelimit.getDataSizeLimit());
+        setTableLimitConfig(jobMeta.getSourceTableMeta(), ratelimit.getRowLimit());
+        setTableLimitConfig(jobMeta.getTargetTableMeta(), ratelimit.getRowLimit());
     }
 
     private void setClusterLimitConfig(ClusterMeta clusterMeta, long dataSizeLimit) {

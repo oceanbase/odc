@@ -37,6 +37,6 @@ public class DataDeleteParameters implements TaskParameters {
 
     private List<DataArchiveTableConfig> tables;
 
-    private DlmLimiterConfig limiterConfig;
+    private RateLimitConfiguration rateLimit;
 
 }

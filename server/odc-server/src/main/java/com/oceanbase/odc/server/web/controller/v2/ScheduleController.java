@@ -35,7 +35,7 @@ import com.oceanbase.odc.service.common.response.PaginatedResponse;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.dlm.DlmLimiterService;
-import com.oceanbase.odc.service.dlm.model.DlmLimiterConfig;
+import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
 import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.model.JobType;
 import com.oceanbase.odc.service.schedule.model.QueryScheduleParams;
@@ -96,9 +96,9 @@ public class ScheduleController {
         return Responses.list(scheduleService.getAsyncDownloadUrl(id, objectId));
     }
 
-    @RequestMapping(value = "/{id:[\\d]+}/jobs/dlm/limiterConfig", method = RequestMethod.PUT)
-    public SuccessResponse<DlmLimiterConfig> updateLimiterConfig(@PathVariable Long id,
-            @RequestBody DlmLimiterConfig limiterConfig) {
+    @RequestMapping(value = "/schedules/{id:[\\d]+}/dlmRateLimitConfiguration", method = RequestMethod.PUT)
+    public SuccessResponse<RateLimitConfiguration> updateLimiterConfig(@PathVariable Long id,
+            @RequestBody RateLimitConfiguration limiterConfig) {
         return Responses.single(dlmLimiterService.updateByOrderId(id, limiterConfig));
     }
 

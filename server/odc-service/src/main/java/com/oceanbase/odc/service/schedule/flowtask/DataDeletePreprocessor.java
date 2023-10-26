@@ -25,7 +25,7 @@ import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.dlm.DlmLimiterService;
 import com.oceanbase.odc.service.dlm.model.DataDeleteParameters;
-import com.oceanbase.odc.service.dlm.model.DlmLimiterConfig;
+import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
 import com.oceanbase.odc.service.flow.processor.ScheduleTaskPreprocessor;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
@@ -91,15 +91,15 @@ public class DataDeletePreprocessor extends AbstractDlmJobPreprocessor {
             scheduleEntity.setOrganizationId(authenticationFacade.currentOrganizationId());
             scheduleEntity = scheduleService.create(scheduleEntity);
             parameters.setTaskId(scheduleEntity.getId());
-            DlmLimiterConfig limiterConfig = limiterService.getDefaultLimiterConfig();
-            if (dataDeleteParameters.getLimiterConfig().getRowLimit() != null) {
-                limiterConfig.setRowLimit(dataDeleteParameters.getLimiterConfig().getRowLimit());
+            RateLimitConfiguration limiterConfig = limiterService.getDefaultLimiterConfig();
+            if (dataDeleteParameters.getRateLimit().getRowLimit() != null) {
+                limiterConfig.setRowLimit(dataDeleteParameters.getRateLimit().getRowLimit());
             }
-            if (dataDeleteParameters.getLimiterConfig().getDataSizeLimit() != null) {
-                limiterConfig.setDataSizeLimit(dataDeleteParameters.getLimiterConfig().getDataSizeLimit());
+            if (dataDeleteParameters.getRateLimit().getDataSizeLimit() != null) {
+                limiterConfig.setDataSizeLimit(dataDeleteParameters.getRateLimit().getDataSizeLimit());
             }
-            if (dataDeleteParameters.getLimiterConfig().getRowLimit() != null) {
-                limiterConfig.setBatchSize(dataDeleteParameters.getLimiterConfig().getBatchSize());
+            if (dataDeleteParameters.getRateLimit().getRowLimit() != null) {
+                limiterConfig.setBatchSize(dataDeleteParameters.getRateLimit().getBatchSize());
             }
         }
         req.setParentFlowInstanceId(parameters.getTaskId());

@@ -24,7 +24,7 @@ import lombok.Data;
  */
 
 @Data
-public class DlmLimiterConfig {
+public class RateLimitConfiguration {
 
     private Integer batchSize;
 
