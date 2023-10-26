@@ -235,7 +235,8 @@ public class FlowTaskUtil {
 
     public static ConnectionConfig getConnectionConfig(@NonNull DelegateExecution execution) {
         Object value = execution.getVariables().get(RuntimeTaskConstants.CONNECTION_CONFIG);
-        return internalGet(value, ConnectionConfig.class).orElse(null);
+        return internalGet(value, ConnectionConfig.class)
+                .orElseThrow(() -> new VerifyException("ConnectionConfig is absent"));
     }
 
     public static void setFlowInstanceId(@NonNull Map<String, Object> variables, @NonNull Long flowInstanceId) {
