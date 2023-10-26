@@ -50,6 +50,7 @@ import com.oceanbase.odc.service.iam.model.User;
 import com.oceanbase.odc.service.integration.model.TemplateVariables;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanTaskParameters;
+import com.oceanbase.odc.service.permissionapply.project.ApplyProjectParameter;
 import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevelDescriber;
 import com.oceanbase.odc.service.resultset.ResultSetExportTaskParameter;
 import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleParameters;
@@ -75,6 +76,11 @@ public class FlowTaskUtil {
 
     public static void setParameters(@NonNull Map<String, Object> variables, @NonNull String parametersJson) {
         variables.put(RuntimeTaskConstants.PARAMETERS, parametersJson);
+    }
+
+    public static ApplyProjectParameter getApplyProjectParameter(@NonNull DelegateExecution execution) {
+        return internalGetParameter(execution, ApplyProjectParameter.class).orElseThrow(
+                () -> new VerifyException("ApplyProjectParameter is absent"));
     }
 
     public static DatabaseChangeParameters getAsyncParameter(@NonNull DelegateExecution execution) {
@@ -229,8 +235,8 @@ public class FlowTaskUtil {
 
     public static ConnectionConfig getConnectionConfig(@NonNull DelegateExecution execution) {
         Object value = execution.getVariables().get(RuntimeTaskConstants.CONNECTION_CONFIG);
-        return internalGet(value, ConnectionConfig.class).orElseThrow(
-                () -> new VerifyException("ConnectionConfig is absent"));
+        return internalGet(value, ConnectionConfig.class)
+                .orElseThrow(() -> new VerifyException("ConnectionConfig is absent"));
     }
 
     public static void setFlowInstanceId(@NonNull Map<String, Object> variables, @NonNull Long flowInstanceId) {

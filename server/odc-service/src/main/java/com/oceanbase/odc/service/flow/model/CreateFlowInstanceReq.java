@@ -34,6 +34,7 @@ import com.oceanbase.odc.service.flow.task.model.MockTaskConfig;
 import com.oceanbase.odc.service.flow.task.model.ShadowTableSyncTaskParameter;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanTaskParameters;
+import com.oceanbase.odc.service.permissionapply.project.ApplyProjectParameter;
 import com.oceanbase.odc.service.resultset.ResultSetExportTaskParameter;
 import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleParameters;
 
@@ -50,7 +51,6 @@ public class CreateFlowInstanceReq {
     /**
      * Database id
      */
-    @NotNull
     private Long databaseId;
     /**
      * Task type
@@ -87,7 +87,8 @@ public class CreateFlowInstanceReq {
             @JsonSubTypes.Type(value = ShadowTableSyncTaskParameter.class, name = "SHADOWTABLE_SYNC"),
             @JsonSubTypes.Type(value = AlterScheduleParameters.class, name = "ALTER_SCHEDULE"),
             @JsonSubTypes.Type(value = OnlineSchemaChangeParameters.class, name = "ONLINE_SCHEMA_CHANGE"),
-            @JsonSubTypes.Type(value = ResultSetExportTaskParameter.class, name = "EXPORT_RESULT_SET")
+            @JsonSubTypes.Type(value = ResultSetExportTaskParameter.class, name = "EXPORT_RESULT_SET"),
+            @JsonSubTypes.Type(value = ApplyProjectParameter.class, name = "APPLY_PROJECT_PERMISSION")
     })
     private TaskParameters parameters;
 
