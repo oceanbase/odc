@@ -60,7 +60,6 @@ import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
-import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.core.shared.exception.AccessDeniedException;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.shared.exception.ConflictException;
@@ -160,9 +159,9 @@ public class DatabaseService {
 
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("internal authenticated")
-    public Database detail(@NonNull Long id, String taskType) {
+    public Database detail(@NonNull Long id, Boolean queryLockDatabaseUserRequired) {
         Database database = getDatabase(id);
-        if (Objects.equals(TaskType.ONLINE_SCHEMA_CHANGE.name(), taskType) && database.getDataSource() != null) {
+        if (Objects.equals(queryLockDatabaseUserRequired, Boolean.TRUE) && database.getDataSource() != null) {
             database.setLockDatabaseUserRequired(getLockUserIsRequired(database.getDataSource()));
         }
         return database;
