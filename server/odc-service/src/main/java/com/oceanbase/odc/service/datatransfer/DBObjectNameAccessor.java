@@ -151,7 +151,6 @@ public class DBObjectNameAccessor implements AutoCloseable {
     public Set<String> getPackageNames() {
         return queryNames(conn -> SchemaPluginUtil.getPackageExtension(dialectType)
                 .list(conn, schema)).stream()
-                        .filter(pkg -> pkg.getType().name().equals(ObjectType.PACKAGE.name()))
                         .map(DBObjectIdentity::getName)
                         .filter(name -> !StringUtils.equalsIgnoreCase(name, OdcConstants.PL_DEBUG_PACKAGE))
                         .collect(Collectors.toSet());
@@ -159,8 +158,7 @@ public class DBObjectNameAccessor implements AutoCloseable {
 
     public Set<String> getPackageBodyNames() {
         return queryNames(conn -> SchemaPluginUtil.getPackageExtension(dialectType)
-                .list(conn, schema)).stream()
-                        .filter(pkg -> pkg.getType().name().equals(ObjectType.PACKAGE_BODY.name()))
+                .listPackageBodies(conn, schema)).stream()
                         .map(DBObjectIdentity::getName)
                         .filter(name -> !StringUtils.equalsIgnoreCase(name, OdcConstants.PL_DEBUG_PACKAGE))
                         .collect(Collectors.toSet());
