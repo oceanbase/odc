@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.session.interceptor;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,10 +27,12 @@ import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import com.oceanbase.odc.common.util.TraceStage;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
+import com.oceanbase.odc.core.sql.execute.SqlExecuteStages;
 import com.oceanbase.odc.core.sql.execute.model.SqlExecuteStatus;
 import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
@@ -67,7 +70,7 @@ public class SqlConsoleInterceptor implements SqlExecuteInterceptor {
 
     @Override
     public boolean preHandle(@NonNull SqlAsyncExecuteReq request, @NonNull SqlAsyncExecuteResp response,
-            @NonNull ConnectionSession session, @NonNull Map<String, Object> context) {
+            @NonNull ConnectionSession session, @NonNull Map<String, Object> context) throws IOException {
         Long ruleSetId = ConnectionSessionUtil.getRuleSetId(session);
         if (Objects.isNull(ruleSetId) || isIndividualTeam()) {
             return true;
@@ -103,30 +106,32 @@ public class SqlConsoleInterceptor implements SqlExecuteInterceptor {
                 SqlConsoleRules.ALLOW_SQL_TYPES, session.getDialectType(), String.class);
 
         for (SqlTuplesWithViolation sqlTuplesWithViolation : response.getSqls()) {
-            List<Rule> violatedRules = sqlTuplesWithViolation.getViolatedRules();
-            BasicResult parseResult = sqlId2BasicResult.get(sqlTuplesWithViolation.getSqlTuple().getSqlId());
-            if (parseResult.isPlDdl() && forbiddenToCreatePL) {
-                ruleService.getByRulesetIdAndName(ruleSetId, SqlConsoleRules.NOT_ALLOWED_CREATE_PL.getRuleName())
-                        .ifPresent(rule -> violatedRules.add(rule));
-                allowExecute.set(false);
-            }
-            if (allowSqlTypesOpt.isPresent()) {
-                /**
-                 * skip syntax error
-                 */
-                if (Objects.nonNull(parseResult.getSyntaxError()) && parseResult.getSyntaxError()) {
-                    continue;
-                }
-                if (!allowSqlTypesOpt.get().contains(parseResult.getSqlType().name())) {
-                    ruleService.getByRulesetIdAndName(ruleSetId, SqlConsoleRules.ALLOW_SQL_TYPES.getRuleName())
+            try (TraceStage stage =
+                    sqlTuplesWithViolation.getSqlTuple().getSqlWatch().start(SqlExecuteStages.SQL_CONSOLE_RULE)) {
+                List<Rule> violatedRules = sqlTuplesWithViolation.getViolatedRules();
+                BasicResult parseResult = sqlId2BasicResult.get(sqlTuplesWithViolation.getSqlTuple().getSqlId());
+                if (parseResult.isPlDdl() && forbiddenToCreatePL) {
+                    ruleService.getByRulesetIdAndName(ruleSetId, SqlConsoleRules.NOT_ALLOWED_CREATE_PL.getRuleName())
                             .ifPresent(violatedRules::add);
                     allowExecute.set(false);
+                }
+                if (allowSqlTypesOpt.isPresent()) {
+                    /**
+                     * skip syntax error
+                     */
+                    if (Objects.nonNull(parseResult.getSyntaxError()) && parseResult.getSyntaxError()) {
+                        continue;
+                    }
+                    if (!allowSqlTypesOpt.get().contains(parseResult.getSqlType().name())) {
+                        ruleService.getByRulesetIdAndName(ruleSetId, SqlConsoleRules.ALLOW_SQL_TYPES.getRuleName())
+                                .ifPresent(violatedRules::add);
+                        allowExecute.set(false);
+                    }
                 }
             }
         }
         return allowExecute.get();
     }
-
 
     @Override
     public void afterCompletion(@NonNull SqlExecuteResult response, @NonNull ConnectionSession session,
@@ -138,24 +143,25 @@ public class SqlConsoleInterceptor implements SqlExecuteInterceptor {
             response.setAllowExport(true);
             return;
         }
-        Long ruleSetId = ConnectionSessionUtil.getRuleSetId(session);
-        if (Objects.isNull(ruleSetId) || isIndividualTeam()) {
-            return;
-        }
-        if (sqlConsoleRuleService.isForbidden(SqlConsoleRules.NOT_ALLOWED_EDIT_RESULTSET, session)) {
-            if (Objects.nonNull(response.getResultSetMetaData())) {
-                response.getResultSetMetaData().setEditable(false);
+        try (TraceStage stage = response.getTraceWatch().start(SqlExecuteStages.SQL_CONSOLE_RULE)) {
+            Long ruleSetId = ConnectionSessionUtil.getRuleSetId(session);
+            if (Objects.isNull(ruleSetId) || isIndividualTeam()) {
+                return;
             }
+            if (sqlConsoleRuleService.isForbidden(SqlConsoleRules.NOT_ALLOWED_EDIT_RESULTSET, session)) {
+                if (Objects.nonNull(response.getResultSetMetaData())) {
+                    response.getResultSetMetaData().setEditable(false);
+                }
+            }
+            response.setAllowExport(
+                    !sqlConsoleRuleService.isForbidden(SqlConsoleRules.NOT_ALLOWED_EXPORT_RESULTSET, session));
         }
-        response.setAllowExport(
-                !sqlConsoleRuleService.isForbidden(SqlConsoleRules.NOT_ALLOWED_EXPORT_RESULTSET, session));
     }
 
 
     private boolean isIndividualTeam() {
         return authenticationFacade.currentUser().getOrganizationType() == OrganizationType.INDIVIDUAL;
     }
-
 
     private BasicResult determineSqlType(@NonNull String sql, @NonNull DialectType dialectType) {
         BasicResult basicResult = new BasicResult(SqlType.OTHERS);

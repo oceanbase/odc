@@ -15,11 +15,11 @@
  */
 package com.oceanbase.odc.service.session.interceptor;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
@@ -27,12 +27,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.common.util.TraceStage;
-import com.oceanbase.odc.common.util.TraceWatch;
-import com.oceanbase.odc.common.util.TraceWatch.EditableTraceStage;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.sql.execute.SqlExecuteStages;
+import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
 import com.oceanbase.odc.service.config.UserConfigFacade;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.regulation.ruleset.RuleService;
@@ -64,7 +63,6 @@ public class SqlCheckInterceptor implements SqlExecuteInterceptor {
 
     public final static String NEED_SQL_CHECK_KEY = "NEED_SQL_CHECK";
     private final static String SQL_CHECK_RESULT_KEY = "SQL_CHECK_RESULT";
-    private final static String SQL_CHECK_ELAPSED_TIME_KEY = "SQL_CHECK_ELAPSED_TIME";
     @Autowired
     private UserConfigFacade userConfigFacade;
     @Autowired
@@ -92,19 +90,23 @@ public class SqlCheckInterceptor implements SqlExecuteInterceptor {
             return true;
         }
         DefaultSqlChecker sqlChecker = new DefaultSqlChecker(session.getDialectType(), null, sqlCheckRules);
-        try (TraceWatch watch = new TraceWatch();
-                TraceStage s = watch.start(SqlExecuteStages.INIT_SQL_CHECK_MESSAGE)) {
+        try {
             Map<String, List<CheckViolation>> sql2Violations = new HashMap<>();
             SqlCheckContext checkContext = new SqlCheckContext((long) response.getSqls().size());
             response.getSqls().forEach(v -> {
-                String sql = v.getSqlTuple().getOriginalSql();
-                List<CheckViolation> violations = sqlChecker.check(Collections.singletonList(sql), checkContext);
-                List<Rule> vRules = sqlCheckService.fullFillRiskLevel(rules, violations);
-                v.getViolatedRules().addAll(vRules.stream().filter(r -> r.getLevel() > 0).collect(Collectors.toList()));
-                sql2Violations.put(sql, violations);
+                SqlTuple sqlTuple = v.getSqlTuple();
+                try (TraceStage stage = sqlTuple.getSqlWatch().start(SqlExecuteStages.SQL_CHECK)) {
+                    String sql = sqlTuple.getOriginalSql();
+                    List<CheckViolation> violations = sqlChecker.check(Collections.singletonList(sql), checkContext);
+                    List<Rule> vRules = sqlCheckService.fullFillRiskLevel(rules, violations);
+                    v.getViolatedRules()
+                            .addAll(vRules.stream().filter(r -> r.getLevel() > 0).collect(Collectors.toList()));
+                    sql2Violations.put(sql, violations);
+                } catch (IOException e) {
+                    log.warn("Failed to close trace stage", e);
+                }
             });
             context.put(SQL_CHECK_RESULT_KEY, sql2Violations);
-            context.put(SQL_CHECK_ELAPSED_TIME_KEY, s);
             return response.getSqls().stream().noneMatch(v -> CollectionUtils.isNotEmpty(v.getViolatedRules()));
         } catch (Exception e) {
             log.warn("Failed to init sql check message", e);
@@ -116,19 +118,11 @@ public class SqlCheckInterceptor implements SqlExecuteInterceptor {
     @SuppressWarnings("all")
     public void afterCompletion(@NonNull SqlExecuteResult response, @NonNull ConnectionSession session,
             @NonNull Map<String, Object> context) throws Exception {
-        if (!context.containsKey(SQL_CHECK_ELAPSED_TIME_KEY) || !context.containsKey(SQL_CHECK_RESULT_KEY)) {
+        if (!context.containsKey(SQL_CHECK_RESULT_KEY)) {
             return;
         }
-        TraceStage s = (TraceStage) context.get(SQL_CHECK_ELAPSED_TIME_KEY);
         Map<String, List<CheckViolation>> map = (Map<String, List<CheckViolation>>) context.get(SQL_CHECK_RESULT_KEY);
         response.setCheckViolations(map.get(response.getOriginSql()));
-        if (response.getTraceWatch().isClosed()) {
-            return;
-        }
-        try (EditableTraceStage stage = response.getTraceWatch().startEditableStage(s.getMessage())) {
-            stage.setStartTime(s.getStartTime(), TimeUnit.MILLISECONDS);
-            stage.setTime(s.getTime(TimeUnit.MILLISECONDS), TimeUnit.MILLISECONDS);
-        }
     }
 
     @Override

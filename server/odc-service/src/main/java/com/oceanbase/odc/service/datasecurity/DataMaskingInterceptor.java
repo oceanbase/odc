@@ -28,10 +28,12 @@ import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import com.oceanbase.odc.common.util.TraceStage;
 import com.oceanbase.odc.core.datamasking.algorithm.Algorithm;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
+import com.oceanbase.odc.core.sql.execute.SqlExecuteStages;
 import com.oceanbase.odc.core.sql.execute.cache.table.VirtualTable;
 import com.oceanbase.odc.core.sql.execute.model.JdbcColumnMetaData;
 import com.oceanbase.odc.core.sql.execute.model.SqlExecuteStatus;
@@ -70,7 +72,7 @@ public class DataMaskingInterceptor implements SqlExecuteInterceptor {
         if (response.getStatus() != SqlExecuteStatus.SUCCESS || response.getRows().isEmpty()) {
             return;
         }
-        try {
+        try (TraceStage stage = response.getTraceWatch().start(SqlExecuteStages.DATA_MASKING)) {
             List<Set<SensitiveColumn>> resultSetSensitiveColumns =
                     maskingService.getResultSetSensitiveColumns(response.getExecuteSql(), session);
             if (!DataMaskingUtil.isSensitiveColumnExists(resultSetSensitiveColumns)) {

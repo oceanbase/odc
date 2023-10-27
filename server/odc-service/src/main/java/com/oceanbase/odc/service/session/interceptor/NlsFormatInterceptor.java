@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.session.interceptor;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -27,9 +28,11 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
+import com.oceanbase.odc.common.util.TraceStage;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.core.sql.execute.SqlExecuteStages;
 import com.oceanbase.odc.core.sql.execute.model.SqlExecuteStatus;
 import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
@@ -69,28 +72,32 @@ public class NlsFormatInterceptor implements SqlExecuteInterceptor {
         if (response.getStatus() != SqlExecuteStatus.SUCCESS || dialect != DialectType.OB_ORACLE) {
             return;
         }
-        List<String> sqls = SqlCommentProcessor.removeSqlComments(response.getOriginSql(), ";", dialect, false);
-        if (CollectionUtils.isEmpty(sqls) || sqls.size() != 1) {
-            log.warn("Sql is empty or multi sql exists, sql={}", response.getOriginSql());
-            return;
-        }
-        String sql = sqls.get(0).trim();
-        if (!StringUtils.startsWithIgnoreCase(sql, "set") && !startWithAlterSession(sql)) {
-            return;
-        }
-        getVariableAssigns(sql).stream().filter(VariableAssign::isSession).forEach(v -> {
-            String value = getNlsFormatValue(v.getValue());
-            if (value == null) {
+        try (TraceStage stage = response.getTraceWatch().start(SqlExecuteStages.SET_NLS_FORMAT)) {
+            List<String> sqls = SqlCommentProcessor.removeSqlComments(response.getOriginSql(), ";", dialect, false);
+            if (CollectionUtils.isEmpty(sqls) || sqls.size() != 1) {
+                log.warn("Sql is empty or multi sql exists, sql={}", response.getOriginSql());
                 return;
             }
-            if ("nls_timestamp_format".equalsIgnoreCase(v.getName())) {
-                ConnectionSessionUtil.setNlsTimestampFormat(session, value);
-            } else if ("nls_date_format".equalsIgnoreCase(v.getName())) {
-                ConnectionSessionUtil.setNlsDateFormat(session, value);
-            } else if ("nls_timestamp_tz_format".equalsIgnoreCase(v.getName())) {
-                ConnectionSessionUtil.setNlsTimestampTZFormat(session, value);
+            String sql = sqls.get(0).trim();
+            if (!StringUtils.startsWithIgnoreCase(sql, "set") && !startWithAlterSession(sql)) {
+                return;
             }
-        });
+            getVariableAssigns(sql).stream().filter(VariableAssign::isSession).forEach(v -> {
+                String value = getNlsFormatValue(v.getValue());
+                if (value == null) {
+                    return;
+                }
+                if ("nls_timestamp_format".equalsIgnoreCase(v.getName())) {
+                    ConnectionSessionUtil.setNlsTimestampFormat(session, value);
+                } else if ("nls_date_format".equalsIgnoreCase(v.getName())) {
+                    ConnectionSessionUtil.setNlsDateFormat(session, value);
+                } else if ("nls_timestamp_tz_format".equalsIgnoreCase(v.getName())) {
+                    ConnectionSessionUtil.setNlsTimestampTZFormat(session, value);
+                }
+            });
+        } catch (IOException e) {
+            log.warn("Failed to close trace stage", e);
+        }
     }
 
     private boolean startWithAlterSession(String sql) {
