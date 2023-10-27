@@ -21,7 +21,6 @@ import static com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferC
 import static com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConstants.MAX_CURSOR_FETCH_SIZE;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.sql.Connection;
 import java.util.Collections;
@@ -29,7 +28,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -147,8 +145,7 @@ public class DumpParameterFactory extends BaseParameterFactory<DumpParameter> {
                 whiteListMap.putAll(getWhiteListMap(objectList, o -> true));
             }
             if (transferConfig.isTransferData()) {
-                whiteListMap.putAll(getWhiteListMap(objectList, o -> Objects.equals(o.getDbObjectType(),
-                        ObjectType.TABLE.getName())));
+                whiteListMap.putAll(getWhiteListMap(objectList, o -> o.getDbObjectType() == ObjectType.TABLE));
             }
         }
     }
@@ -184,9 +181,10 @@ public class DumpParameterFactory extends BaseParameterFactory<DumpParameter> {
     }
 
     private Set<String> getTableNames(DataTransferConfig transferConfig) {
-        try (SingleConnectionDataSource dataSource = ConnectionUtil.getDataSource(transferConfig);
+        try (SingleConnectionDataSource dataSource =
+                ConnectionUtil.getDataSource(transferConfig.getConnectionInfo(), transferConfig.getSchemaName());
                 Connection connection = dataSource.getConnection()) {
-            return PluginUtil.getTableExtension(transferConfig)
+            return PluginUtil.getTableExtension(transferConfig.getConnectionInfo())
                     .showNamesLike(connection, transferConfig.getSchemaName(), "").stream()
                     .filter(table -> !StringUtils.endsWithIgnoreCase(table, VALIDATE_DDL_TABLE_POSTFIX))
                     .collect(Collectors.toSet());

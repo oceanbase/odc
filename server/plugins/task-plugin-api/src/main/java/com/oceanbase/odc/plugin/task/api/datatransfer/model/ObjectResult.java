@@ -16,6 +16,8 @@
 
 package com.oceanbase.odc.plugin.task.api.datatransfer.model;
 
+import java.util.concurrent.atomic.AtomicLong;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.oceanbase.tools.loaddump.common.model.ObjectStatus;
 
@@ -31,6 +33,17 @@ public class ObjectResult extends ObjectStatus {
      */
     @JsonIgnore
     private String[] exportPaths;
+
+    public static ObjectResult of(ObjectStatus that) {
+        ObjectResult result = new ObjectResult();
+        result.setType(that.getType());
+        result.setStatus(that.getStatus());
+        result.setName(that.getName());
+        result.setSchema(that.getSchema());
+        result.setCount(new AtomicLong(that.getCount().get()));
+        result.setTotal(new AtomicLong(that.getTotal().get()));
+        return result;
+    }
 
     @JsonIgnore
     public String getSummary() {

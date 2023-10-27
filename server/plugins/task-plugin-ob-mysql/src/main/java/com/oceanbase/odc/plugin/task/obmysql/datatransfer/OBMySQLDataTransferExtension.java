@@ -56,7 +56,7 @@ import lombok.NonNull;
 public class OBMySQLDataTransferExtension implements DataTransferExtensionPoint {
     @Override
     public DataTransferCallable generate(@NonNull DataTransferConfig config, @NonNull File workingDir,
-            @NonNull File logDir) throws Exception {
+            @NonNull File logDir, @NonNull List<URL> inputs) throws Exception {
         boolean transferData = config.isTransferData();
         boolean transferSchema = config.isTransferDDL();
 

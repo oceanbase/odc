@@ -29,16 +29,15 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.plugin.task.api.datatransfer.DataTransferCallable;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferTaskResult;
-import com.oceanbase.odc.plugin.task.api.datatransfer.model.ObjectStatus;
-import com.oceanbase.odc.plugin.task.api.datatransfer.model.ObjectStatus.Status;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.ObjectResult;
 import com.oceanbase.tools.loaddump.common.enums.DataFormat;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
 import com.oceanbase.tools.loaddump.common.model.BaseParameter;
 import com.oceanbase.tools.loaddump.common.model.DumpParameter;
+import com.oceanbase.tools.loaddump.common.model.ObjectStatus;
 import com.oceanbase.tools.loaddump.common.model.TaskDetail;
 import com.oceanbase.tools.loaddump.context.TaskContext;
 import com.oceanbase.tools.loaddump.manager.session.SessionProperties;
@@ -237,26 +236,13 @@ public abstract class BaseObLoaderDumperTransferTask<T extends BaseParameter> im
     }
 
     /**
-     * 导入导出组件在某些场景下（例如停止任务），会出现 {@link com.oceanbase.tools.loaddump.common.model.ObjectStatus#getName()}
-     * 为 {@code null} 的场景，这会造成前端显示错误。这里过滤掉这个异常值。
+     * 导入导出组件在某些场景下（例如停止任务），会出现 {@link ObjectStatus#getName()} 为 {@code null} 的场景，这会造成前端显示错误。这里过滤掉这个异常值。
      */
-    private List<ObjectStatus> transformStatus(List<com.oceanbase.tools.loaddump.common.model.ObjectStatus> origin) {
+    private List<ObjectResult> transformStatus(List<ObjectStatus> origin) {
         return origin.stream()
                 .filter(s -> s.getName() != null)
-                .peek(object -> {
-                    if (StringUtils.isNotBlank(object.getType())) {
-                        object.setType(ObjectType.valueOfName(object.getType()).name());
-                    }
-                }).map(object -> {
-                    ObjectStatus target = new ObjectStatus();
-                    target.setStatus(Status.valueOf(object.getStatus().name()));
-                    target.setType(object.getType());
-                    target.setCount(object.getCount().get());
-                    target.setTotal(object.getTotal().get());
-                    target.setSchema(object.getSchema());
-                    target.setName(object.getName());
-                    return target;
-                }).collect(Collectors.toList());
+                .map(ObjectResult::of)
+                .collect(Collectors.toList());
     }
 
 }

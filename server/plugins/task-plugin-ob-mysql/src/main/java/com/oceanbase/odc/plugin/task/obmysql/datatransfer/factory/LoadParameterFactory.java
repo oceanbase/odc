@@ -25,7 +25,6 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -215,7 +214,7 @@ public class LoadParameterFactory extends BaseParameterFactory<LoadParameter> {
         List<DataTransferObject> objectList = config.getExportDbObjects();
         Validate.isTrue(CollectionUtils.isNotEmpty(objectList), "Import objects is necessary");
         parameter.getWhiteListMap().putAll(
-                getWhiteListMap(objectList, o -> Objects.equals(o.getDbObjectType(), ObjectType.TABLE.getName())));
+                getWhiteListMap(objectList, o -> o.getDbObjectType() == ObjectType.TABLE));
         if (parameter.getWhiteListMap().size() != 0) {
             return;
         }

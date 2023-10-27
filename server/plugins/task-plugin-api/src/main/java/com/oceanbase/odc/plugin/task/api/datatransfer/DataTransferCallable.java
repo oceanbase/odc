@@ -19,7 +19,6 @@ package com.oceanbase.odc.plugin.task.api.datatransfer;
 import java.util.concurrent.Callable;
 
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferTaskResult;
-import com.oceanbase.odc.plugin.task.api.datatransfer.model.ObjectStatus;
 
 /**
  * @author liuyizhuo.lyz

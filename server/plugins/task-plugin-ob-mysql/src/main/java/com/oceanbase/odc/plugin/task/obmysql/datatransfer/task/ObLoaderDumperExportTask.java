@@ -23,7 +23,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferTaskResult;
-import com.oceanbase.odc.plugin.task.api.datatransfer.model.ObjectStatus;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.ObjectResult;
 import com.oceanbase.tools.loaddump.client.DumpClient;
 import com.oceanbase.tools.loaddump.common.model.DumpParameter;
 import com.oceanbase.tools.loaddump.context.TaskContext;
@@ -77,7 +77,7 @@ public class ObLoaderDumperExportTask extends BaseObLoaderDumperTransferTask<Dum
         }
     }
 
-    private void findExportFiles(File root, ObjectStatus object, Pattern pattern) {
+    private void findExportFiles(File root, ObjectResult object, Pattern pattern) {
         String[] exported = root.list(((dir, name) -> {
             Matcher matcher = pattern.matcher(name);
             if (!matcher.matches()) {

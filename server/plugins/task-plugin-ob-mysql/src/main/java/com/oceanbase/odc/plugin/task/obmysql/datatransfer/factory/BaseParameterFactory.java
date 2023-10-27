@@ -103,9 +103,10 @@ public abstract class BaseParameterFactory<T extends BaseParameter> {
             parameter.setConnectDatabaseName(transferConfig.getSchemaName());
         }
 
-        try (SingleConnectionDataSource dataSource = ConnectionUtil.getDataSource(transferConfig);
+        try (SingleConnectionDataSource dataSource =
+                ConnectionUtil.getDataSource(transferConfig.getConnectionInfo(), transferConfig.getSchemaName());
                 Connection conn = dataSource.getConnection()) {
-            String version = PluginUtil.getInformationExtension(transferConfig).getDBVersion(conn);
+            String version = PluginUtil.getInformationExtension(transferConfig.getConnectionInfo()).getDBVersion(conn);
             if (VersionUtils.isGreaterThanOrEqualsTo(version, "4.0")) {
                 parameter.setNoSys(false);
             } else {
@@ -195,12 +196,11 @@ public abstract class BaseParameterFactory<T extends BaseParameter> {
                 log.info("Invalid db object type found, object={}", dbObject);
                 continue;
             }
-            ObjectType objectType = ObjectType.valueOfName(dbObject.getDbObjectType());
             String objectName = StringUtils.unquoteOracleIdentifier(dbObject.getObjectName());
             if (StringUtils.isBlank(objectName)) {
                 throw new IllegalArgumentException("Can not accept a blank object name");
             }
-            Set<String> nameSet = whiteListMap.computeIfAbsent(objectType, k -> new HashSet<>());
+            Set<String> nameSet = whiteListMap.computeIfAbsent(dbObject.getDbObjectType(), k -> new HashSet<>());
             if (transferConfig.getConnectionInfo().getConnectType().getDialectType().isOracle()) {
                 nameSet.add(StringUtils.quoteOracleIdentifier(objectName));
             } else {
