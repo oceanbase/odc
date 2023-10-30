@@ -16,6 +16,8 @@
 
 package com.oceanbase.odc.plugin.task.api.datatransfer.model;
 
+import java.net.URL;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.oceanbase.tools.loaddump.common.model.ObjectStatus;
 
@@ -30,7 +32,7 @@ public class ObjectResult extends ObjectStatus {
      * for export only, internal usage
      */
     @JsonIgnore
-    private String[] exportPaths;
+    private URL[] exportPaths;
 
     @JsonIgnore
     public String getSummary() {
