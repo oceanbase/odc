@@ -24,6 +24,21 @@ on:
       - "**"
 
 jobs:
+  check-pr-title:
+    name: Check PR Title
+    if: ${{ github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check pull request title
+        run: |
+          pr_title=$(jq --raw-output .pull_request.title "$GITHUB_EVENT_PATH")
+          echo "PR title is ${pr_title}"
+          if [[ "${pr_title}" =~ ^((.+\(.+\))|(.+)):.+$ ]]; then 
+            echo "PR title is valid"; 
+          else
+            echo "PR title is invalid, please follow the specification described in https://www.conventionalcommits.org/en/v1.0.0/#summary"; 
+            exit 1; 
+          fi
   check-format:
     name: Check Code Format
     runs-on: ubuntu-latest
@@ -199,7 +214,7 @@ jobs:
 
   calculate-version:
     name: Calculate Version Number
-    needs: [ check-format, pmd-scan, unit-test-odc, unit-test-libs ]
+    needs: [ check-pr-title, check-format, pmd-scan, unit-test-odc, unit-test-libs ]
     if: ${{ github.event_name == 'pull_request' }}
     runs-on: ubuntu-latest
     outputs:
