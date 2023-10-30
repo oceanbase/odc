@@ -96,8 +96,11 @@ public class SqlCommentProcessor {
 
     public SqlCommentProcessor() {}
 
-    public SqlIterator iterator(InputStream in) {
-        return new SqlIterator(in);
+    public static SqlLine getSqlLines(InputStream in, DialectType dialectType,
+            boolean preserveFormat,
+            boolean preserveSingleComments,
+            boolean preserveMultiComments) {
+        return new SqlLine(in, dialectType, preserveFormat, preserveSingleComments, preserveMultiComments);
     }
 
     public static List<String> removeSqlComments(String originalSql,
@@ -609,14 +612,23 @@ public class SqlCommentProcessor {
         }
     }
 
-    public class SqlIterator implements Iterator<String>, AutoCloseable {
+    public static class SqlLine implements Iterator<String>, AutoCloseable {
         private final BufferedReader reader;
         private final StringBuffer buffer = new StringBuffer();
         private final LinkedList<String> holder = new LinkedList<>();
+        private final SqlCommentProcessor processor;
+        private final DialectType dialectType;
+
         private String current;
 
-        public SqlIterator(InputStream input) {
+        public SqlLine(InputStream input, DialectType dialectType,
+                boolean preserveFormat,
+                boolean preserveSingleComments,
+                boolean preserveMultiComments) {
             this.reader = new BufferedReader(new InputStreamReader(input));
+            this.dialectType = dialectType;
+            this.processor =
+                    new SqlCommentProcessor(dialectType, preserveFormat, preserveSingleComments, preserveMultiComments);
         }
 
         @Override
@@ -648,9 +660,9 @@ public class SqlCommentProcessor {
                 String line;
                 while (holder.isEmpty() && (line = reader.readLine()) != null) {
                     if (Objects.nonNull(dialectType) && dialectType.isMysql()) {
-                        addLineMysql(holder, buffer, line);
+                        processor.addLineMysql(holder, buffer, line);
                     } else if (Objects.nonNull(dialectType) && dialectType.isOracle()) {
-                        addLineOracle(holder, buffer, line);
+                        processor.addLineOracle(holder, buffer, line);
                     }
                 }
                 if (!holder.isEmpty()) {
@@ -670,9 +682,6 @@ public class SqlCommentProcessor {
         @Override
         public void close() throws Exception {
             reader.close();
-            mlComment = false;
-            inString = '\0';
-            inNormalSql = false;
         }
     }
 
