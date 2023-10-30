@@ -66,6 +66,7 @@ import com.oceanbase.odc.service.sqlcheck.factory.RestrictTableCollationFactory;
 import com.oceanbase.odc.service.sqlcheck.factory.RestrictTableNameCaseFactory;
 import com.oceanbase.odc.service.sqlcheck.factory.RestrictUniqueIndexNamingFactory;
 import com.oceanbase.odc.service.sqlcheck.factory.SelectStarExistsFactory;
+import com.oceanbase.odc.service.sqlcheck.factory.SyntaxErrorExistsFactory;
 import com.oceanbase.odc.service.sqlcheck.factory.TableNameInBlackListFactory;
 import com.oceanbase.odc.service.sqlcheck.factory.TooLongCharLengthFactory;
 import com.oceanbase.odc.service.sqlcheck.factory.TooManyAlterStatementFactory;
@@ -135,6 +136,7 @@ public class SqlCheckRules {
         rules.add(new ProhibitedDatatypeExistsFactory());
         rules.add(new RestrictIndexDataTypesFactory(jdbc));
         rules.add(new RestrictDropObjectTypesFactory());
+        rules.add(new SyntaxErrorExistsFactory());
         return rules;
     }
 
@@ -164,9 +166,6 @@ public class SqlCheckRules {
                     "Multi sql check rules are found by name, " + metadata.getName());
         }
         SqlCheckRuleType sqlCheckRuleType = types.get(0);
-        if (sqlCheckRuleType == SqlCheckRuleType.SYNTAX_ERROR) {
-            return null;
-        }
         Optional<SqlCheckRuleFactory> factory = getAllFactories(jdbc).stream()
                 .filter(s -> s.getSupportsType() == sqlCheckRuleType).findFirst();
         if (!factory.isPresent()) {
