@@ -24,6 +24,18 @@ on:
       - "**"
 
 jobs:
+  check-pr-title:
+    name: Check PR Title
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout workspace
+        uses: actions/checkout@v3
+      - name: Check title specification
+        run: |
+          echo "Current dir is "`pwd`
+          PR_TITLE=$(jq --raw-output .pull_request.title "$GITHUB_EVENT_PATH")
+          echo "PR title is ${PR_TITLE}"
+          if [[ "${PR_TITLE}" =~ ^((.+\(.+\))|(.+)): .+$ ]]; then echo "PR title is valid"; else echo "PR title is invalid, please follow the specification"; exit 1; fi
   check-format:
     name: Check Code Format
     runs-on: ubuntu-latest
