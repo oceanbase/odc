@@ -15,7 +15,6 @@
  */
 package com.oceanbase.odc.service.session.interceptor;
 
-import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -31,7 +30,6 @@ import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.sql.execute.SqlExecuteStages;
-import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
 import com.oceanbase.odc.service.config.UserConfigFacade;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.regulation.ruleset.RuleService;
@@ -94,17 +92,11 @@ public class SqlCheckInterceptor implements SqlExecuteInterceptor {
             Map<String, List<CheckViolation>> sql2Violations = new HashMap<>();
             SqlCheckContext checkContext = new SqlCheckContext((long) response.getSqls().size());
             response.getSqls().forEach(v -> {
-                SqlTuple sqlTuple = v.getSqlTuple();
-                try (TraceStage stage = sqlTuple.getSqlWatch().start(SqlExecuteStages.SQL_CHECK)) {
-                    String sql = sqlTuple.getOriginalSql();
-                    List<CheckViolation> violations = sqlChecker.check(Collections.singletonList(sql), checkContext);
-                    List<Rule> vRules = sqlCheckService.fullFillRiskLevel(rules, violations);
-                    v.getViolatedRules()
-                            .addAll(vRules.stream().filter(r -> r.getLevel() > 0).collect(Collectors.toList()));
-                    sql2Violations.put(sql, violations);
-                } catch (IOException e) {
-                    log.warn("Failed to close trace stage", e);
-                }
+                String sql = v.getSqlTuple().getOriginalSql();
+                List<CheckViolation> violations = sqlChecker.check(Collections.singletonList(sql), checkContext);
+                List<Rule> vRules = sqlCheckService.fullFillRiskLevel(rules, violations);
+                v.getViolatedRules().addAll(vRules.stream().filter(r -> r.getLevel() > 0).collect(Collectors.toList()));
+                sql2Violations.put(sql, violations);
             });
             context.put(SQL_CHECK_RESULT_KEY, sql2Violations);
             return response.getSqls().stream().noneMatch(v -> CollectionUtils.isNotEmpty(v.getViolatedRules()));

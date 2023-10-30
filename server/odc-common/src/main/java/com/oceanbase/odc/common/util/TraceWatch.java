@@ -80,11 +80,6 @@ public class TraceWatch implements Closeable {
         return startTraceStage(() -> new EditableTraceStage(that, taskName));
     }
 
-    public DryRunTraceStage startDryRunStage(String taskName) {
-        TraceWatch that = this;
-        return startTraceStage(() -> new DryRunTraceStage(that, taskName));
-    }
-
     public TraceStage stop() throws IllegalStateException {
         validClosed();
         Stack<TraceStage> stages = this.threadId2Stages.get(Thread.currentThread().getId());
@@ -336,62 +331,6 @@ public class TraceWatch implements Closeable {
         public void resume() {
             throw new UnsupportedOperationException("EditableStage can not resume");
         }
-
-    }
-
-    public static class DryRunTraceStage extends DefaultTraceStage {
-
-        private boolean stopped;
-        private long startTimeMillis = -1;
-        private long totalDurationMicroseconds = 0;
-
-        public DryRunTraceStage(@NonNull TraceWatch target) {
-            super(target);
-        }
-
-        public DryRunTraceStage(@NonNull TraceWatch target, String message) {
-            super(target, message);
-        }
-
-        @Override
-        public void stop() {
-            this.stopped = true;
-            List<TraceStage> traceStages = getSubStageList();
-            if (CollectionUtils.isNotEmpty(traceStages)) {
-                TraceStage first = traceStages.get(0);
-                this.startTimeMillis = first.getStartTime();
-                for (TraceStage stage : traceStages) {
-                    this.totalDurationMicroseconds += stage.getTime(TimeUnit.MICROSECONDS);
-                }
-            }
-        }
-
-        @Override
-        public boolean isStopped() {
-            return this.stopped;
-        }
-
-        @Override
-        public long getStartTime() {
-            return this.startTimeMillis;
-        }
-
-        @Override
-        public void suspend() {}
-
-        @Override
-        public void resume() {}
-
-        @Override
-        public void start() {
-            this.stopped = false;
-        }
-
-        @Override
-        public long getTime(TimeUnit timeUnit) {
-            return timeUnit.convert(this.totalDurationMicroseconds, TimeUnit.MICROSECONDS);
-        }
-
     }
 
 }

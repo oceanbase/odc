@@ -54,51 +54,45 @@ public class SchemaExtractor {
     public static Set<String> listSchemaNames(List<String> sqls, DialectType dialectType) {
         Set<String> databaseNames = new HashSet<>();
         for (String sql : sqls) {
-            databaseNames.addAll(listSchemaNames(sql, dialectType));
-        }
-        return databaseNames;
-    }
+            if (dialectType.isMysql()) {
+                OBMySQLParser sqlParser = new OBMySQLParser();
+                try {
+                    ParseTree root = sqlParser.buildAst(new StringReader(sql));
+                    OBMySQLRelationFactorVisitor visitor =
+                            new OBMySQLRelationFactorVisitor();
+                    visitor.visit(root);
+                    List<RelationFactor> relationFactorList = visitor.getRelationFactorList();
+                    databaseNames
+                            .addAll(relationFactorList.stream().map(
+                                    relationFactor -> StringUtils.unquoteMySqlIdentifier(relationFactor.getSchema()))
+                                    .filter(Objects::nonNull)
+                                    .collect(Collectors.toSet()));
+                } catch (Exception ex) {
+                    // just eat exception due to parse failed
+                }
 
-    public static Set<String> listSchemaNames(String sql, DialectType dialectType) {
-        Set<String> databaseNames = new HashSet<>();
-        if (dialectType.isMysql()) {
-            OBMySQLParser sqlParser = new OBMySQLParser();
-            try {
-                ParseTree root = sqlParser.buildAst(new StringReader(sql));
-                OBMySQLRelationFactorVisitor visitor =
-                        new OBMySQLRelationFactorVisitor();
-                visitor.visit(root);
-                List<RelationFactor> relationFactorList = visitor.getRelationFactorList();
-                databaseNames
-                        .addAll(relationFactorList.stream().map(
-                                relationFactor -> StringUtils.unquoteMySqlIdentifier(relationFactor.getSchema()))
-                                .filter(Objects::nonNull)
-                                .collect(Collectors.toSet()));
-            } catch (Exception ex) {
-                // just eat exception due to parse failed
-            }
-
-        } else if (dialectType.isOracle()) {
-            OBOracleSQLParser sqlParser = new OBOracleSQLParser();
-            try {
-                ParseTree root = sqlParser.buildAst(new StringReader(sql));
-                OBOracleRelationFactorVisitor visitor =
-                        new OBOracleRelationFactorVisitor();
-                visitor.visit(root);
-                List<RelationFactor> relationFactorList = visitor.getRelationFactorList();
-                databaseNames
-                        .addAll(relationFactorList.stream().map(relationFactor -> {
-                            String schema = relationFactor.getSchema();
-                            if (StringUtils.startsWith(schema, "\"") && StringUtils.endsWith(schema, "\"")) {
-                                schema = StringUtils.unquoteOracleIdentifier(schema);
-                            } else {
-                                schema = StringUtils.upperCase(schema);
-                            }
-                            return schema;
-                        }).filter(Objects::nonNull)
-                                .collect(Collectors.toSet()));
-            } catch (Exception ex) {
-                // just eat exception due to parse failed
+            } else if (dialectType.isOracle()) {
+                OBOracleSQLParser sqlParser = new OBOracleSQLParser();
+                try {
+                    ParseTree root = sqlParser.buildAst(new StringReader(sql));
+                    OBOracleRelationFactorVisitor visitor =
+                            new OBOracleRelationFactorVisitor();
+                    visitor.visit(root);
+                    List<RelationFactor> relationFactorList = visitor.getRelationFactorList();
+                    databaseNames
+                            .addAll(relationFactorList.stream().map(relationFactor -> {
+                                String schema = relationFactor.getSchema();
+                                if (StringUtils.startsWith(schema, "\"") && StringUtils.endsWith(schema, "\"")) {
+                                    schema = StringUtils.unquoteOracleIdentifier(schema);
+                                } else {
+                                    schema = StringUtils.upperCase(schema);
+                                }
+                                return schema;
+                            }).filter(Objects::nonNull)
+                                    .collect(Collectors.toSet()));
+                } catch (Exception ex) {
+                    // just eat exception due to parse failed
+                }
             }
         }
         return databaseNames;

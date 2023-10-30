@@ -104,27 +104,25 @@ public class SqlConsoleInterceptor implements SqlExecuteInterceptor {
         Optional<List<String>> allowSqlTypesOpt = sqlConsoleRuleService.getListProperties(ruleSetId,
                 SqlConsoleRules.ALLOW_SQL_TYPES, session.getDialectType(), String.class);
 
-        for (SqlTuplesWithViolation violation : response.getSqls()) {
-            try (TraceStage stage = violation.getSqlTuple().getSqlWatch().start(SqlExecuteStages.SQL_CONSOLE_RULE)) {
-                List<Rule> violatedRules = violation.getViolatedRules();
-                BasicResult parseResult = sqlId2BasicResult.get(violation.getSqlTuple().getSqlId());
-                if (parseResult.isPlDdl() && forbiddenToCreatePL) {
-                    ruleService.getByRulesetIdAndName(ruleSetId, SqlConsoleRules.NOT_ALLOWED_CREATE_PL.getRuleName())
+        for (SqlTuplesWithViolation sqlTuplesWithViolation : response.getSqls()) {
+            List<Rule> violatedRules = sqlTuplesWithViolation.getViolatedRules();
+            BasicResult parseResult = sqlId2BasicResult.get(sqlTuplesWithViolation.getSqlTuple().getSqlId());
+            if (parseResult.isPlDdl() && forbiddenToCreatePL) {
+                ruleService.getByRulesetIdAndName(ruleSetId, SqlConsoleRules.NOT_ALLOWED_CREATE_PL.getRuleName())
+                        .ifPresent(rule -> violatedRules.add(rule));
+                allowExecute.set(false);
+            }
+            if (allowSqlTypesOpt.isPresent()) {
+                /**
+                 * skip syntax error
+                 */
+                if (Objects.nonNull(parseResult.getSyntaxError()) && parseResult.getSyntaxError()) {
+                    continue;
+                }
+                if (!allowSqlTypesOpt.get().contains(parseResult.getSqlType().name())) {
+                    ruleService.getByRulesetIdAndName(ruleSetId, SqlConsoleRules.ALLOW_SQL_TYPES.getRuleName())
                             .ifPresent(violatedRules::add);
                     allowExecute.set(false);
-                }
-                if (allowSqlTypesOpt.isPresent()) {
-                    /**
-                     * skip syntax error
-                     */
-                    if (Objects.nonNull(parseResult.getSyntaxError()) && parseResult.getSyntaxError()) {
-                        continue;
-                    }
-                    if (!allowSqlTypesOpt.get().contains(parseResult.getSqlType().name())) {
-                        ruleService.getByRulesetIdAndName(ruleSetId, SqlConsoleRules.ALLOW_SQL_TYPES.getRuleName())
-                                .ifPresent(violatedRules::add);
-                        allowExecute.set(false);
-                    }
                 }
             }
         }

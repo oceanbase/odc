@@ -234,7 +234,7 @@ public class ConnectConsoleService {
         List<TraceStage> stages = null;
         try {
             stages = sqlTuples.stream()
-                    .map(s -> s.getSqlWatch().startDryRunStage(SqlExecuteStages.SQL_INTERCEPT_PRE_CHECK))
+                    .map(s -> s.getSqlWatch().start(SqlExecuteStages.SQL_INTERCEPT_PRE_CHECK))
                     .collect(Collectors.toList());
             if (!sqlInterceptService.preHandle(request, response, connectionSession, context)) {
                 return response;
