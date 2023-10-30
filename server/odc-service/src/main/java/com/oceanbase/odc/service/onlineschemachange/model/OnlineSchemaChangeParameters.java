@@ -25,13 +25,13 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.oceanbase.odc.core.flow.model.TaskParameters;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
 import com.oceanbase.odc.core.shared.constant.TaskErrorStrategy;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.core.shared.model.TableIdentity;
 import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
-import com.oceanbase.odc.service.flow.model.TaskParameters;
 import com.oceanbase.odc.service.onlineschemachange.OnlineSchemaChangeContextHolder;
 import com.oceanbase.odc.service.onlineschemachange.ddl.DdlUtils;
 import com.oceanbase.odc.service.onlineschemachange.subtask.SubTaskParameterFactory;

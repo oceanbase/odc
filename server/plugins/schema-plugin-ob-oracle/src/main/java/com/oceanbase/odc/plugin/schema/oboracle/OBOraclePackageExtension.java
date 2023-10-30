@@ -45,6 +45,11 @@ public class OBOraclePackageExtension implements PackageExtensionPoint {
     }
 
     @Override
+    public List<DBPLObjectIdentity> listPackageBodies(Connection connection, String schemaName) {
+        return DBAccessorUtil.getSchemaAccessor(connection).listPackageBodies(schemaName);
+    }
+
+    @Override
     public DBPackage getDetail(@NonNull Connection connection, @NonNull String schemaName,
             @NonNull String packageName) {
         return DBAccessorUtil.getSchemaAccessor(connection).getPackage(schemaName, packageName);

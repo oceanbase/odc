@@ -34,6 +34,8 @@ public interface PackageExtensionPoint extends ExtensionPoint {
 
     List<DBPLObjectIdentity> list(Connection connection, String schemaName);
 
+    List<DBPLObjectIdentity> listPackageBodies(Connection connection, String schemaName);
+
     DBPackage getDetail(Connection connection, String schemaName, String packageName);
 
     /**

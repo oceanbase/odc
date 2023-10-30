@@ -25,8 +25,8 @@ import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.metadb.task.TaskEntity;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
 import com.oceanbase.odc.service.datatransfer.DataTransferService;
-import com.oceanbase.odc.service.datatransfer.model.DataTransferConfig;
 import com.oceanbase.odc.service.datatransfer.task.DataTransferTaskContext;
 import com.oceanbase.odc.service.flow.OdcInternalFileService;
 import com.oceanbase.odc.service.flow.task.model.DataTransferTaskResult;
@@ -76,7 +76,6 @@ public class DataTransferRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Voi
         log.info("Data transfer task starts, taskId={}", taskId);
         DataTransferConfig config = FlowTaskUtil.getDataTransferParameter(execution);
         config.setSchemaName(FlowTaskUtil.getSchemaName(execution));
-        config.setConnectionConfig(FlowTaskUtil.getConnectionConfig(execution));
         TaskEntity taskEntity = taskService.detail(taskId);
         ExecutorInfo executor = new ExecutorInfo(hostProperties);
         ExecutorInfo submitter = FlowTaskUtil.getTaskSubmitter(execution);

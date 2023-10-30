@@ -15,7 +15,7 @@
  */
 package com.oceanbase.odc.service.datatransfer.task;
 
-import static com.oceanbase.odc.service.datatransfer.model.DataTransferConstants.LOG_PATH_NAME;
+import static com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConstants.LOG_PATH_NAME;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -28,8 +28,8 @@ import org.apache.logging.log4j.ThreadContext;
 
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
+import com.oceanbase.odc.plugin.task.api.datatransfer.dumper.DumperOutput;
 import com.oceanbase.odc.service.datatransfer.DataTransferAdapter;
-import com.oceanbase.odc.service.datatransfer.dumper.DumperOutput;
 import com.oceanbase.odc.service.datatransfer.dumper.SchemaMergeOperator;
 import com.oceanbase.odc.service.flow.task.model.DataTransferTaskResult;
 import com.oceanbase.tools.loaddump.client.DumpClient;

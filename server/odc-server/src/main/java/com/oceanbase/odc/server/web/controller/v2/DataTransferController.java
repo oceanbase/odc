@@ -16,6 +16,8 @@
 package com.oceanbase.odc.server.web.controller.v2;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -29,12 +31,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.CsvColumnMapping;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.CsvConfig;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.UploadFileResult;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.datatransfer.DataTransferService;
-import com.oceanbase.odc.service.datatransfer.model.CsvColumnMapping;
-import com.oceanbase.odc.service.datatransfer.model.CsvConfig;
-import com.oceanbase.odc.service.datatransfer.model.UploadFileResult;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
 
 import io.swagger.annotations.ApiOperation;
@@ -62,7 +64,8 @@ public class DataTransferController {
      **/
     @ApiOperation(value = "uploadFile", notes = "上传导入文件")
     @RequestMapping(value = "/upload", method = RequestMethod.POST)
-    public SuccessResponse<UploadFileResult> upload(@RequestParam MultipartFile file) throws IOException {
+    public SuccessResponse<UploadFileResult> upload(@RequestParam MultipartFile file)
+            throws IOException, URISyntaxException {
         return Responses.single(dataTransferService.upload(file));
     }
 
@@ -75,7 +78,8 @@ public class DataTransferController {
      **/
     @ApiOperation(value = "getMetaInfo", notes = "上传导入文件")
     @RequestMapping(value = "/getMetaInfo", method = RequestMethod.GET)
-    public SuccessResponse<UploadFileResult> getMetaInfo(@RequestParam String fileName) throws IOException {
+    public SuccessResponse<UploadFileResult> getMetaInfo(@RequestParam String fileName)
+            throws IOException, URISyntaxException {
         return Responses.single(dataTransferService.getMetaInfo(fileName));
     }
 
@@ -89,7 +93,7 @@ public class DataTransferController {
     @RequestMapping(value = "/getExportObjects", method = RequestMethod.GET)
     public SuccessResponse<Map<ObjectType, Set<String>>> getExportObjects(
             @RequestParam(required = false) Long connectionId, @RequestParam Long databaseId,
-            @RequestParam(required = false, name = "objectType") Set<ObjectType> objectType) {
+            @RequestParam(required = false, name = "objectType") Set<ObjectType> objectType) throws SQLException {
         return Responses.single(dataTransferService.getExportObjectNames(databaseId, objectType));
     }
 
