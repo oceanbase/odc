@@ -117,8 +117,7 @@ public class SqlCheckInterceptor extends BaseTimeConsumingInterceptor {
         if (!context.containsKey(SQL_CHECK_RESULT_KEY)) {
             return;
         }
-        Map<String, List<CheckViolation>> map =
-                (Map<String, List<CheckViolation>>) context.get(SQL_CHECK_RESULT_KEY);
+        Map<String, List<CheckViolation>> map = (Map<String, List<CheckViolation>>) context.get(SQL_CHECK_RESULT_KEY);
         response.setCheckViolations(map.get(response.getOriginSql()));
     }
 
