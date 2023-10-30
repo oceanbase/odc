@@ -235,17 +235,7 @@ public class DatabaseService {
             return Collections.emptyList();
         }
         return databases.stream().filter(database -> Objects.nonNull(database.getDataSource()))
-                .map(database -> {
-                    ConnectionConfig connection = database.getDataSource();
-                    Environment environment = database.getEnvironment();
-                    if (Objects.isNull(environment)) {
-                        log.warn("database environment is null, databaseId={}", database.getId());
-                    } else {
-                        connection.setEnvironmentStyle(environment.getStyle());
-                        connection.setEnvironmentName(environment.getName());
-                    }
-                    return connection;
-                })
+                .map(Database::getDataSource)
                 .collect(Collectors.collectingAndThen(
                         Collectors.toCollection(() -> new TreeSet<>(Comparator.comparing(ConnectionConfig::getId))),
                         ArrayList::new));
@@ -318,14 +308,6 @@ public class DatabaseService {
     public Set<Database> listDatabaseByNames(@NotEmpty Collection<String> names) {
         return databaseRepository.findByNameIn(names).stream().map(databaseMapper::entityToModel)
                 .collect(Collectors.toSet());
-    }
-
-    @SkipAuthorize("internal usage")
-    @Transactional(rollbackFor = Exception.class)
-    public void updateEnvironmentByDataSourceId(@NonNull Long dataSourceId, @NonNull Long environmentId) {
-        List<DatabaseEntity> databases = databaseRepository.findByConnectionId(dataSourceId);
-        databases.forEach(database -> database.setEnvironmentId(environmentId));
-        databaseRepository.saveAll(databases);
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -595,20 +577,17 @@ public class DatabaseService {
         }
         Map<Long, List<Project>> projectId2Projects = projectService.mapByIdIn(entities.stream()
                 .map(DatabaseEntity::getProjectId).collect(Collectors.toSet()));
-        Map<Long, List<Environment>> environmentId2Environments = environmentService.mapByIdIn(entities.stream()
-                .map(DatabaseEntity::getEnvironmentId).collect(Collectors.toSet()));
         Map<Long, List<ConnectionConfig>> connectionId2Connections = connectionService.mapByIdIn(entities.stream()
                 .map(DatabaseEntity::getConnectionId).collect(Collectors.toSet()));
-
         return entities.map(entity -> {
             Database database = databaseMapper.entityToModel(entity);
             List<Project> projects = projectId2Projects.getOrDefault(entity.getProjectId(), new ArrayList<>());
-            List<Environment> environments =
-                    environmentId2Environments.getOrDefault(entity.getEnvironmentId(), new ArrayList<>());
             List<ConnectionConfig> connections =
                     connectionId2Connections.getOrDefault(entity.getConnectionId(), new ArrayList<>());
             database.setProject(CollectionUtils.isEmpty(projects) ? null : projects.get(0));
-            database.setEnvironment(CollectionUtils.isEmpty(environments) ? null : environments.get(0));
+            database.setEnvironment(CollectionUtils.isEmpty(connections) ? null
+                    : new Environment(connections.get(0).getEnvironmentId(), connections.get(0).getEnvironmentName(),
+                            connections.get(0).getEnvironmentStyle()));
             database.setDataSource(CollectionUtils.isEmpty(connections) ? null : connections.get(0));
             return database;
         });
@@ -620,7 +599,7 @@ public class DatabaseService {
             model.setProject(projectService.detail(entity.getProjectId()));
         }
         model.setDataSource(connectionService.getForConnectionSkipPermissionCheck(entity.getConnectionId()));
-        model.setEnvironment(environmentService.detailSkipPermissionCheck(entity.getEnvironmentId()));
+        model.setEnvironment(environmentService.detailSkipPermissionCheck(model.getDataSource().getEnvironmentId()));
         return model;
     }
 
