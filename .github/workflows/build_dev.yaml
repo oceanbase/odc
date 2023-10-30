@@ -28,8 +28,6 @@ jobs:
     name: Check PR Title
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout workspace
-        uses: actions/checkout@v3
       - name: Check title specification
         run: |
           echo "Current dir is "`pwd`
