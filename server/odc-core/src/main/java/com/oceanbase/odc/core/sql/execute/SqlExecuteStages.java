@@ -39,6 +39,7 @@ public class SqlExecuteStages {
     public static final String OBSERVER_WAIT = "OBServer wait";
     public static final String SQL_CHECK = "SQL Check";
     public static final String DATA_MASKING = "Data Masking";
+    public static final String EXTERNAL_SQL_INTERCEPTION = "External SQL interception";
     public static final String DATABASE_PERMISSION_CHECK = "DB Permission Check";
     public static final String SET_NLS_FORMAT = "Set Nls Format";
     public static final String SQL_CONSOLE_RULE = "SQL Console Rule Check";
