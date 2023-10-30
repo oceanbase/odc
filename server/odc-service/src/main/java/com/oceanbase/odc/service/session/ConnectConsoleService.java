@@ -231,18 +231,19 @@ public class ConnectConsoleService {
         SqlAsyncExecuteResp response = SqlAsyncExecuteResp.newSqlAsyncExecuteResp(sqlTuples);
         Map<String, Object> context = new HashMap<>();
         context.put(SqlCheckInterceptor.NEED_SQL_CHECK_KEY, needSqlCheck);
-        List<TraceStage> stages = null;
+        List<TraceStage> stages = sqlTuples.stream()
+                .map(s -> s.getSqlWatch().start(SqlExecuteStages.SQL_INTERCEPT_PRE_CHECK))
+                .collect(Collectors.toList());
         try {
-            stages = sqlTuples.stream()
-                    .map(s -> s.getSqlWatch().start(SqlExecuteStages.SQL_INTERCEPT_PRE_CHECK))
-                    .collect(Collectors.toList());
             if (!sqlInterceptService.preHandle(request, response, connectionSession, context)) {
                 return response;
             }
         } finally {
-            if (stages != null) {
-                for (TraceStage stage : stages) {
+            for (TraceStage stage : stages) {
+                try {
                     stage.close();
+                } catch (Exception e) {
+                    // eat exception
                 }
             }
         }

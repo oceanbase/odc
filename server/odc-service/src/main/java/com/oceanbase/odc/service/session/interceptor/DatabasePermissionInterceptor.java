@@ -79,8 +79,8 @@ public class DatabasePermissionInterceptor extends BaseTimeConsumingInterceptor 
     }
 
     @Override
-    public void afterCompletion(@NonNull SqlExecuteResult response,
-            @NonNull ConnectionSession session, @NonNull Map<String, Object> context) {}
+    public void afterCompletion(@NonNull SqlExecuteResult response, @NonNull ConnectionSession session,
+            @NonNull Map<String, Object> context) {}
 
     @Override
     protected String getExecuteStageName() {
