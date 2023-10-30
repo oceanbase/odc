@@ -62,13 +62,13 @@ public class SqlCommentProcessorTest {
         List<String> sqls;
         SqlCommentProcessor processor = new SqlCommentProcessor(DialectType.OB_MYSQL, false, false, false);
         try (InputStream in =
-            this.getClass().getClassLoader().getResourceAsStream("sql/split/comment-processor-mysql-test.sql");
-            SqlCommentProcessor.SqlIterator iterator = processor.iterator(in)) {
+                this.getClass().getClassLoader().getResourceAsStream("sql/split/comment-processor-mysql-test.sql");
+                SqlCommentProcessor.SqlIterator iterator = processor.iterator(in)) {
             sqls = IteratorUtils.toList(iterator);
         }
         sqls.forEach(System.out::println);
         List<String> rawList =
-            getVerifySqlFromFile("sql/split/comment-processor-mysql-verify.sql", processor.getDelimiter());
+                getVerifySqlFromFile("sql/split/comment-processor-mysql-verify.sql", processor.getDelimiter());
         Assert.assertEquals(rawList.size(), sqls.size());
         for (int i = 0; i < sqls.size(); i++) {
             Assert.assertEquals(rawList.get(i), String.format("%s%s%s", sqls.get(i), processor.getDelimiter(), "\n"));
@@ -80,12 +80,12 @@ public class SqlCommentProcessorTest {
         List<String> sqls;
         SqlCommentProcessor processor = new SqlCommentProcessor(DialectType.OB_ORACLE, false, false, false);
         try (InputStream in =
-            this.getClass().getClassLoader().getResourceAsStream("sql/split/comment-processor-oracle-test.sql");
-            SqlCommentProcessor.SqlIterator iterator = processor.iterator(in)) {
+                this.getClass().getClassLoader().getResourceAsStream("sql/split/comment-processor-oracle-test.sql");
+                SqlCommentProcessor.SqlIterator iterator = processor.iterator(in)) {
             sqls = IteratorUtils.toList(iterator);
         }
         List<String> rawList =
-            getVerifySqlFromFile("sql/split/comment-processor-oracle-verify.sql", processor.getDelimiter());
+                getVerifySqlFromFile("sql/split/comment-processor-oracle-verify.sql", processor.getDelimiter());
         Assert.assertEquals(rawList.size(), sqls.size());
         for (int i = 0; i < sqls.size(); i++) {
             Assert.assertEquals(rawList.get(i), String.format("%s%s%s", sqls.get(i), processor.getDelimiter(), "\n"));
