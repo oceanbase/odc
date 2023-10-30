@@ -25,7 +25,6 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import com.oceanbase.odc.common.util.TraceStage;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
@@ -57,7 +56,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Component
-public class SqlCheckInterceptor implements SqlExecuteInterceptor {
+public class SqlCheckInterceptor extends BaseTimeConsumingInterceptor {
 
     public final static String NEED_SQL_CHECK_KEY = "NEED_SQL_CHECK";
     private final static String SQL_CHECK_RESULT_KEY = "SQL_CHECK_RESULT";
@@ -71,7 +70,7 @@ public class SqlCheckInterceptor implements SqlExecuteInterceptor {
     private AuthenticationFacade authenticationFacade;
 
     @Override
-    public boolean preHandle(@NonNull SqlAsyncExecuteReq request, @NonNull SqlAsyncExecuteResp response,
+    public boolean doPreHandle(@NonNull SqlAsyncExecuteReq request, @NonNull SqlAsyncExecuteResp response,
             @NonNull ConnectionSession session, @NonNull Map<String, Object> context) {
         if (this.authenticationFacade.currentUser().getOrganizationType() != OrganizationType.TEAM
                 || Boolean.FALSE.equals(context.get(NEED_SQL_CHECK_KEY))) {
@@ -107,17 +106,20 @@ public class SqlCheckInterceptor implements SqlExecuteInterceptor {
     }
 
     @Override
+    protected String getExecuteStageName() {
+        return SqlExecuteStages.SQL_CHECK;
+    }
+
+    @Override
     @SuppressWarnings("all")
-    public void afterCompletion(@NonNull SqlExecuteResult response, @NonNull ConnectionSession session,
+    public void doAfterCompletion(@NonNull SqlExecuteResult response, @NonNull ConnectionSession session,
             @NonNull Map<String, Object> context) throws Exception {
-        try (TraceStage stage = response.getTraceWatch().start(SqlExecuteStages.SQL_CHECK)) {
-            if (!context.containsKey(SQL_CHECK_RESULT_KEY)) {
-                return;
-            }
-            Map<String, List<CheckViolation>> map =
-                    (Map<String, List<CheckViolation>>) context.get(SQL_CHECK_RESULT_KEY);
-            response.setCheckViolations(map.get(response.getOriginSql()));
+        if (!context.containsKey(SQL_CHECK_RESULT_KEY)) {
+            return;
         }
+        Map<String, List<CheckViolation>> map =
+                (Map<String, List<CheckViolation>>) context.get(SQL_CHECK_RESULT_KEY);
+        response.setCheckViolations(map.get(response.getOriginSql()));
     }
 
     @Override

@@ -28,6 +28,7 @@ import org.springframework.stereotype.Component;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
+import com.oceanbase.odc.core.sql.execute.SqlExecuteStages;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
@@ -45,7 +46,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Component
-public class DatabasePermissionInterceptor implements SqlExecuteInterceptor {
+public class DatabasePermissionInterceptor extends BaseTimeConsumingInterceptor {
 
     @Autowired
     private DatabaseService databaseService;
@@ -58,7 +59,7 @@ public class DatabasePermissionInterceptor implements SqlExecuteInterceptor {
     }
 
     @Override
-    public boolean preHandle(@NonNull SqlAsyncExecuteReq request, @NonNull SqlAsyncExecuteResp response,
+    public boolean doPreHandle(@NonNull SqlAsyncExecuteReq request, @NonNull SqlAsyncExecuteResp response,
             @NonNull ConnectionSession session, @NonNull Map<String, Object> context) throws Exception {
         if (authenticationFacade.currentUser().getOrganizationType() == OrganizationType.INDIVIDUAL) {
             return true;
@@ -74,6 +75,11 @@ public class DatabasePermissionInterceptor implements SqlExecuteInterceptor {
             return false;
         }
         return true;
+    }
+
+    @Override
+    protected String getExecuteStageName() {
+        return SqlExecuteStages.DATABASE_PERMISSION_CHECK;
     }
 
 }

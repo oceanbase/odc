@@ -28,7 +28,6 @@ import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import com.oceanbase.odc.common.util.TraceStage;
 import com.oceanbase.odc.core.datamasking.algorithm.Algorithm;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
@@ -40,7 +39,7 @@ import com.oceanbase.odc.core.sql.execute.model.SqlExecuteStatus;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveColumn;
 import com.oceanbase.odc.service.datasecurity.util.DataMaskingUtil;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
-import com.oceanbase.odc.service.session.interceptor.SqlExecuteInterceptor;
+import com.oceanbase.odc.service.session.interceptor.BaseTimeConsumingInterceptor;
 import com.oceanbase.odc.service.session.model.DBResultSetMetaData;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.tools.dbbrowser.model.DBConstraintType;
@@ -56,23 +55,23 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Component
-public class DataMaskingInterceptor implements SqlExecuteInterceptor {
+public class DataMaskingInterceptor extends BaseTimeConsumingInterceptor {
 
     @Autowired
     private DataMaskingService maskingService;
 
     @Override
     @SuppressWarnings("all")
-    public void afterCompletion(@NonNull SqlExecuteResult response, @NonNull ConnectionSession session,
+    public void doAfterCompletion(@NonNull SqlExecuteResult response, @NonNull ConnectionSession session,
             @NonNull Map<String, Object> context) throws Exception {
-        try (TraceStage stage = response.getTraceWatch().start(SqlExecuteStages.DATA_MASKING)) {
-            // TODO: May intercept sensitive column operation (WHERE / ORDER BY / HAVING)
-            if (!maskingService.isMaskingEnabled()) {
-                return;
-            }
-            if (response.getStatus() != SqlExecuteStatus.SUCCESS || response.getRows().isEmpty()) {
-                return;
-            }
+        // TODO: May intercept sensitive column operation (WHERE / ORDER BY / HAVING)
+        if (!maskingService.isMaskingEnabled()) {
+            return;
+        }
+        if (response.getStatus() != SqlExecuteStatus.SUCCESS || response.getRows().isEmpty()) {
+            return;
+        }
+        try {
             List<Set<SensitiveColumn>> resultSetSensitiveColumns =
                     maskingService.getResultSetSensitiveColumns(response.getExecuteSql(), session);
             if (!DataMaskingUtil.isSensitiveColumnExists(resultSetSensitiveColumns)) {
@@ -95,6 +94,11 @@ public class DataMaskingInterceptor implements SqlExecuteInterceptor {
             // Eat exception and skip data masking
             log.warn("Failed to mask query result set in SQL console, sql={}", response.getExecuteSql(), e);
         }
+    }
+
+    @Override
+    protected String getExecuteStageName() {
+        return SqlExecuteStages.DATA_MASKING;
     }
 
     @Override

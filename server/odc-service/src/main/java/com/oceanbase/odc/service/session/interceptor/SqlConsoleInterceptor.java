@@ -15,7 +15,6 @@
  */
 package com.oceanbase.odc.service.session.interceptor;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,7 +26,6 @@ import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import com.oceanbase.odc.common.util.TraceStage;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.DialectType;
@@ -58,7 +56,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Component
-public class SqlConsoleInterceptor implements SqlExecuteInterceptor {
+public class SqlConsoleInterceptor extends BaseTimeConsumingInterceptor {
 
     @Autowired
     private AuthenticationFacade authenticationFacade;
@@ -68,8 +66,8 @@ public class SqlConsoleInterceptor implements SqlExecuteInterceptor {
     private SqlConsoleRuleService sqlConsoleRuleService;
 
     @Override
-    public boolean preHandle(@NonNull SqlAsyncExecuteReq request, @NonNull SqlAsyncExecuteResp response,
-            @NonNull ConnectionSession session, @NonNull Map<String, Object> context) throws IOException {
+    public boolean doPreHandle(@NonNull SqlAsyncExecuteReq request, @NonNull SqlAsyncExecuteResp response,
+            @NonNull ConnectionSession session, @NonNull Map<String, Object> context) {
         Long ruleSetId = ConnectionSessionUtil.getRuleSetId(session);
         if (Objects.isNull(ruleSetId) || isIndividualTeam()) {
             return true;
@@ -130,28 +128,31 @@ public class SqlConsoleInterceptor implements SqlExecuteInterceptor {
     }
 
     @Override
+    protected String getExecuteStageName() {
+        return SqlExecuteStages.SQL_CONSOLE_RULE;
+    }
+
+    @Override
     public void afterCompletion(@NonNull SqlExecuteResult response, @NonNull ConnectionSession session,
             @NonNull Map<String, Object> context) throws Exception {
-        try (TraceStage stage = response.getTraceWatch().start(SqlExecuteStages.SQL_CONSOLE_RULE)) {
-            if (response.getStatus() != SqlExecuteStatus.SUCCESS) {
-                return;
-            }
-            if (isIndividualTeam()) {
-                response.setAllowExport(true);
-                return;
-            }
-            Long ruleSetId = ConnectionSessionUtil.getRuleSetId(session);
-            if (Objects.isNull(ruleSetId) || isIndividualTeam()) {
-                return;
-            }
-            if (sqlConsoleRuleService.isForbidden(SqlConsoleRules.NOT_ALLOWED_EDIT_RESULTSET, session)) {
-                if (Objects.nonNull(response.getResultSetMetaData())) {
-                    response.getResultSetMetaData().setEditable(false);
-                }
-            }
-            response.setAllowExport(
-                    !sqlConsoleRuleService.isForbidden(SqlConsoleRules.NOT_ALLOWED_EXPORT_RESULTSET, session));
+        if (response.getStatus() != SqlExecuteStatus.SUCCESS) {
+            return;
         }
+        if (isIndividualTeam()) {
+            response.setAllowExport(true);
+            return;
+        }
+        Long ruleSetId = ConnectionSessionUtil.getRuleSetId(session);
+        if (Objects.isNull(ruleSetId) || isIndividualTeam()) {
+            return;
+        }
+        if (sqlConsoleRuleService.isForbidden(SqlConsoleRules.NOT_ALLOWED_EDIT_RESULTSET, session)) {
+            if (Objects.nonNull(response.getResultSetMetaData())) {
+                response.getResultSetMetaData().setEditable(false);
+            }
+        }
+        response.setAllowExport(
+                !sqlConsoleRuleService.isForbidden(SqlConsoleRules.NOT_ALLOWED_EXPORT_RESULTSET, session));
     }
 
     private boolean isIndividualTeam() {

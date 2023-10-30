@@ -15,7 +15,6 @@
  */
 package com.oceanbase.odc.service.session.interceptor;
 
-import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -28,7 +27,6 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
-import com.oceanbase.odc.common.util.TraceStage;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.DialectType;
@@ -63,41 +61,42 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Component
-public class NlsFormatInterceptor implements SqlExecuteInterceptor {
+public class NlsFormatInterceptor extends BaseTimeConsumingInterceptor {
 
     @Override
-    public void afterCompletion(@NonNull SqlExecuteResult response,
+    public void doAfterCompletion(@NonNull SqlExecuteResult response,
             @NonNull ConnectionSession session, @NonNull Map<String, Object> context) {
-        try (TraceStage stage = response.getTraceWatch().start(SqlExecuteStages.SET_NLS_FORMAT)) {
-            DialectType dialect = session.getDialectType();
-            if (response.getStatus() != SqlExecuteStatus.SUCCESS || dialect != DialectType.OB_ORACLE) {
-                return;
-            }
-            List<String> sqls = SqlCommentProcessor.removeSqlComments(response.getOriginSql(), ";", dialect, false);
-            if (CollectionUtils.isEmpty(sqls) || sqls.size() != 1) {
-                log.warn("Sql is empty or multi sql exists, sql={}", response.getOriginSql());
-                return;
-            }
-            String sql = sqls.get(0).trim();
-            if (!StringUtils.startsWithIgnoreCase(sql, "set") && !startWithAlterSession(sql)) {
-                return;
-            }
-            getVariableAssigns(sql).stream().filter(VariableAssign::isSession).forEach(v -> {
-                String value = getNlsFormatValue(v.getValue());
-                if (value == null) {
-                    return;
-                }
-                if ("nls_timestamp_format".equalsIgnoreCase(v.getName())) {
-                    ConnectionSessionUtil.setNlsTimestampFormat(session, value);
-                } else if ("nls_date_format".equalsIgnoreCase(v.getName())) {
-                    ConnectionSessionUtil.setNlsDateFormat(session, value);
-                } else if ("nls_timestamp_tz_format".equalsIgnoreCase(v.getName())) {
-                    ConnectionSessionUtil.setNlsTimestampTZFormat(session, value);
-                }
-            });
-        } catch (IOException e) {
-            log.warn("Failed to close trace stage", e);
+        DialectType dialect = session.getDialectType();
+        if (response.getStatus() != SqlExecuteStatus.SUCCESS || dialect != DialectType.OB_ORACLE) {
+            return;
         }
+        List<String> sqls = SqlCommentProcessor.removeSqlComments(response.getOriginSql(), ";", dialect, false);
+        if (CollectionUtils.isEmpty(sqls) || sqls.size() != 1) {
+            log.warn("Sql is empty or multi sql exists, sql={}", response.getOriginSql());
+            return;
+        }
+        String sql = sqls.get(0).trim();
+        if (!StringUtils.startsWithIgnoreCase(sql, "set") && !startWithAlterSession(sql)) {
+            return;
+        }
+        getVariableAssigns(sql).stream().filter(VariableAssign::isSession).forEach(v -> {
+            String value = getNlsFormatValue(v.getValue());
+            if (value == null) {
+                return;
+            }
+            if ("nls_timestamp_format".equalsIgnoreCase(v.getName())) {
+                ConnectionSessionUtil.setNlsTimestampFormat(session, value);
+            } else if ("nls_date_format".equalsIgnoreCase(v.getName())) {
+                ConnectionSessionUtil.setNlsDateFormat(session, value);
+            } else if ("nls_timestamp_tz_format".equalsIgnoreCase(v.getName())) {
+                ConnectionSessionUtil.setNlsTimestampTZFormat(session, value);
+            }
+        });
+    }
+
+    @Override
+    protected String getExecuteStageName() {
+        return SqlExecuteStages.SET_NLS_FORMAT;
     }
 
     private boolean startWithAlterSession(String sql) {
