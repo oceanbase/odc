@@ -26,9 +26,10 @@ on:
 jobs:
   check-pr-title:
     name: Check PR Title
+    if: ${{ github.event_name == 'pull_request' }}
     runs-on: ubuntu-latest
     steps:
-      - name: Check title specification
+      - name: Check pull request title
         run: |
           PR_TITLE=$(jq --raw-output .pull_request.title "$GITHUB_EVENT_PATH")
           echo "PR title is ${PR_TITLE}"
@@ -208,7 +209,7 @@ jobs:
 
   calculate-version:
     name: Calculate Version Number
-    needs: [ check-format, pmd-scan, unit-test-odc, unit-test-libs ]
+    needs: [ check-pr-title, check-format, pmd-scan, unit-test-odc, unit-test-libs ]
     if: ${{ github.event_name == 'pull_request' }}
     runs-on: ubuntu-latest
     outputs:
