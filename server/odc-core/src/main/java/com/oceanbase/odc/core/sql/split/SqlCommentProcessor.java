@@ -15,9 +15,15 @@
  */
 package com.oceanbase.odc.core.sql.split;
 
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 
 import com.oceanbase.odc.core.shared.constant.DialectType;
@@ -89,6 +95,10 @@ public class SqlCommentProcessor {
     }
 
     public SqlCommentProcessor() {}
+
+    public SqlIterator iterator(InputStream in) {
+        return new SqlIterator(in);
+    }
 
     public static List<String> removeSqlComments(String originalSql,
             String delimiter, DialectType dbMode, boolean preserveFormat) {
@@ -596,6 +606,73 @@ public class SqlCommentProcessor {
 
         public int getValue() {
             return value;
+        }
+    }
+
+    public class SqlIterator implements Iterator<String>, AutoCloseable {
+        private final BufferedReader reader;
+        private final StringBuffer buffer = new StringBuffer();
+        private final LinkedList<String> holder = new LinkedList<>();
+        private String current;
+
+        public SqlIterator(InputStream input) {
+            this.reader = new BufferedReader(new InputStreamReader(input));
+        }
+
+        @Override
+        public boolean hasNext() {
+            if (current == null) {
+                current = parseNext();
+            }
+            return current != null;
+        }
+
+        @Override
+        public String next() {
+            String next = current;
+            current = null;
+            if (next == null) {
+                next = parseNext();
+                if (next == null) {
+                    throw new NoSuchElementException("No more available sql.");
+                }
+            }
+            return next;
+        }
+
+        private String parseNext() {
+            try {
+                if (!holder.isEmpty()) {
+                    return holder.poll();
+                }
+                String line;
+                while (holder.isEmpty() && (line = reader.readLine()) != null) {
+                    if (Objects.nonNull(dialectType) && dialectType.isMysql()) {
+                        addLineMysql(holder, buffer, line);
+                    } else if (Objects.nonNull(dialectType) && dialectType.isOracle()) {
+                        addLineOracle(holder, buffer, line);
+                    }
+                }
+                if (!holder.isEmpty()) {
+                    return holder.poll();
+                }
+                if (buffer.toString().trim().length() == 0) {
+                    return null;
+                }
+                String sql = buffer.toString();
+                buffer.setLength(0);
+                return sql;
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to parse input. reason: " + e.getMessage(), e);
+            }
+        }
+
+        @Override
+        public void close() throws Exception {
+            reader.close();
+            mlComment = false;
+            inString = '\0';
+            inNormalSql = false;
         }
     }
 
