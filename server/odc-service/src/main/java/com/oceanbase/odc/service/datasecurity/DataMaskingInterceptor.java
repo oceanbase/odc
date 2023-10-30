@@ -65,14 +65,14 @@ public class DataMaskingInterceptor implements SqlExecuteInterceptor {
     @SuppressWarnings("all")
     public void afterCompletion(@NonNull SqlExecuteResult response, @NonNull ConnectionSession session,
             @NonNull Map<String, Object> context) throws Exception {
-        // TODO: May intercept sensitive column operation (WHERE / ORDER BY / HAVING)
-        if (!maskingService.isMaskingEnabled()) {
-            return;
-        }
-        if (response.getStatus() != SqlExecuteStatus.SUCCESS || response.getRows().isEmpty()) {
-            return;
-        }
         try (TraceStage stage = response.getTraceWatch().start(SqlExecuteStages.DATA_MASKING)) {
+            // TODO: May intercept sensitive column operation (WHERE / ORDER BY / HAVING)
+            if (!maskingService.isMaskingEnabled()) {
+                return;
+            }
+            if (response.getStatus() != SqlExecuteStatus.SUCCESS || response.getRows().isEmpty()) {
+                return;
+            }
             List<Set<SensitiveColumn>> resultSetSensitiveColumns =
                     maskingService.getResultSetSensitiveColumns(response.getExecuteSql(), session);
             if (!DataMaskingUtil.isSensitiveColumnExists(resultSetSensitiveColumns)) {

@@ -68,11 +68,11 @@ public class NlsFormatInterceptor implements SqlExecuteInterceptor {
     @Override
     public void afterCompletion(@NonNull SqlExecuteResult response,
             @NonNull ConnectionSession session, @NonNull Map<String, Object> context) {
-        DialectType dialect = session.getDialectType();
-        if (response.getStatus() != SqlExecuteStatus.SUCCESS || dialect != DialectType.OB_ORACLE) {
-            return;
-        }
         try (TraceStage stage = response.getTraceWatch().start(SqlExecuteStages.SET_NLS_FORMAT)) {
+            DialectType dialect = session.getDialectType();
+            if (response.getStatus() != SqlExecuteStatus.SUCCESS || dialect != DialectType.OB_ORACLE) {
+                return;
+            }
             List<String> sqls = SqlCommentProcessor.removeSqlComments(response.getOriginSql(), ";", dialect, false);
             if (CollectionUtils.isEmpty(sqls) || sqls.size() != 1) {
                 log.warn("Sql is empty or multi sql exists, sql={}", response.getOriginSql());

@@ -59,12 +59,11 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Component
 public class SqlConsoleInterceptor implements SqlExecuteInterceptor {
+
     @Autowired
     private AuthenticationFacade authenticationFacade;
-
     @Autowired
     private RuleService ruleService;
-
     @Autowired
     private SqlConsoleRuleService sqlConsoleRuleService;
 
@@ -105,11 +104,10 @@ public class SqlConsoleInterceptor implements SqlExecuteInterceptor {
         Optional<List<String>> allowSqlTypesOpt = sqlConsoleRuleService.getListProperties(ruleSetId,
                 SqlConsoleRules.ALLOW_SQL_TYPES, session.getDialectType(), String.class);
 
-        for (SqlTuplesWithViolation sqlTuplesWithViolation : response.getSqls()) {
-            try (TraceStage stage =
-                    sqlTuplesWithViolation.getSqlTuple().getSqlWatch().start(SqlExecuteStages.SQL_CONSOLE_RULE)) {
-                List<Rule> violatedRules = sqlTuplesWithViolation.getViolatedRules();
-                BasicResult parseResult = sqlId2BasicResult.get(sqlTuplesWithViolation.getSqlTuple().getSqlId());
+        for (SqlTuplesWithViolation violation : response.getSqls()) {
+            try (TraceStage stage = violation.getSqlTuple().getSqlWatch().start(SqlExecuteStages.SQL_CONSOLE_RULE)) {
+                List<Rule> violatedRules = violation.getViolatedRules();
+                BasicResult parseResult = sqlId2BasicResult.get(violation.getSqlTuple().getSqlId());
                 if (parseResult.isPlDdl() && forbiddenToCreatePL) {
                     ruleService.getByRulesetIdAndName(ruleSetId, SqlConsoleRules.NOT_ALLOWED_CREATE_PL.getRuleName())
                             .ifPresent(violatedRules::add);
@@ -136,14 +134,14 @@ public class SqlConsoleInterceptor implements SqlExecuteInterceptor {
     @Override
     public void afterCompletion(@NonNull SqlExecuteResult response, @NonNull ConnectionSession session,
             @NonNull Map<String, Object> context) throws Exception {
-        if (response.getStatus() != SqlExecuteStatus.SUCCESS) {
-            return;
-        }
-        if (isIndividualTeam()) {
-            response.setAllowExport(true);
-            return;
-        }
         try (TraceStage stage = response.getTraceWatch().start(SqlExecuteStages.SQL_CONSOLE_RULE)) {
+            if (response.getStatus() != SqlExecuteStatus.SUCCESS) {
+                return;
+            }
+            if (isIndividualTeam()) {
+                response.setAllowExport(true);
+                return;
+            }
             Long ruleSetId = ConnectionSessionUtil.getRuleSetId(session);
             if (Objects.isNull(ruleSetId) || isIndividualTeam()) {
                 return;
@@ -157,7 +155,6 @@ public class SqlConsoleInterceptor implements SqlExecuteInterceptor {
                     !sqlConsoleRuleService.isForbidden(SqlConsoleRules.NOT_ALLOWED_EXPORT_RESULTSET, session));
         }
     }
-
 
     private boolean isIndividualTeam() {
         return authenticationFacade.currentUser().getOrganizationType() == OrganizationType.INDIVIDUAL;
@@ -180,4 +177,5 @@ public class SqlConsoleInterceptor implements SqlExecuteInterceptor {
     public int getOrder() {
         return 2;
     }
+
 }

@@ -118,11 +118,14 @@ public class SqlCheckInterceptor implements SqlExecuteInterceptor {
     @SuppressWarnings("all")
     public void afterCompletion(@NonNull SqlExecuteResult response, @NonNull ConnectionSession session,
             @NonNull Map<String, Object> context) throws Exception {
-        if (!context.containsKey(SQL_CHECK_RESULT_KEY)) {
-            return;
+        try (TraceStage stage = response.getTraceWatch().start(SqlExecuteStages.SQL_CHECK)) {
+            if (!context.containsKey(SQL_CHECK_RESULT_KEY)) {
+                return;
+            }
+            Map<String, List<CheckViolation>> map =
+                    (Map<String, List<CheckViolation>>) context.get(SQL_CHECK_RESULT_KEY);
+            response.setCheckViolations(map.get(response.getOriginSql()));
         }
-        Map<String, List<CheckViolation>> map = (Map<String, List<CheckViolation>>) context.get(SQL_CHECK_RESULT_KEY);
-        response.setCheckViolations(map.get(response.getOriginSql()));
     }
 
     @Override
