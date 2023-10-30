@@ -112,7 +112,7 @@ public class SqlCheckInterceptor extends BaseTimeConsumingInterceptor {
 
     @Override
     @SuppressWarnings("all")
-    public void doAfterCompletion(@NonNull SqlExecuteResult response, @NonNull ConnectionSession session,
+    public void afterCompletion(@NonNull SqlExecuteResult response, @NonNull ConnectionSession session,
             @NonNull Map<String, Object> context) throws Exception {
         if (!context.containsKey(SQL_CHECK_RESULT_KEY)) {
             return;

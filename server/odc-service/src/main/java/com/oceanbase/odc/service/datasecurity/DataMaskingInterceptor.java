@@ -41,6 +41,8 @@ import com.oceanbase.odc.service.datasecurity.util.DataMaskingUtil;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.session.interceptor.BaseTimeConsumingInterceptor;
 import com.oceanbase.odc.service.session.model.DBResultSetMetaData;
+import com.oceanbase.odc.service.session.model.SqlAsyncExecuteReq;
+import com.oceanbase.odc.service.session.model.SqlAsyncExecuteResp;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.tools.dbbrowser.model.DBConstraintType;
 import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
@@ -59,6 +61,12 @@ public class DataMaskingInterceptor extends BaseTimeConsumingInterceptor {
 
     @Autowired
     private DataMaskingService maskingService;
+
+    @Override
+    public boolean preHandle(@NonNull SqlAsyncExecuteReq request, @NonNull SqlAsyncExecuteResp response,
+            @NonNull ConnectionSession session, @NonNull Map<String, Object> context) {
+        return true;
+    }
 
     @Override
     @SuppressWarnings("all")

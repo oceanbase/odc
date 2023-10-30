@@ -133,8 +133,8 @@ public class SqlConsoleInterceptor extends BaseTimeConsumingInterceptor {
     }
 
     @Override
-    public void afterCompletion(@NonNull SqlExecuteResult response, @NonNull ConnectionSession session,
-            @NonNull Map<String, Object> context) throws Exception {
+    public void doAfterCompletion(@NonNull SqlExecuteResult response, @NonNull ConnectionSession session,
+            @NonNull Map<String, Object> context) {
         if (response.getStatus() != SqlExecuteStatus.SUCCESS) {
             return;
         }
