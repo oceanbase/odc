@@ -245,7 +245,6 @@ public class DataTransferService {
         if (!uploadFile.exists() || !uploadFile.isFile()) {
             throw new IllegalArgumentException("Target is not a file or does not exist, " + fileName);
         }
-        String uploadFileName = uploadFile.getName();
 
         // If the file is from third party like PL/SQL, this will convert it compatible with ob-loader.
         ThirdPartyOutputConverter.convert(uploadFile);
