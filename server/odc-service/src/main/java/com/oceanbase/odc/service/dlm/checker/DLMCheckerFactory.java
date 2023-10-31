@@ -26,7 +26,7 @@ import com.oceanbase.odc.service.connection.database.model.Database;
  */
 public class DLMCheckerFactory {
 
-    public static DLMChecker create(Database database) {
+    public static AbstractDLMChecker create(Database database) {
         switch (database.getDataSource().getDialectType()) {
             case OB_MYSQL:
                 return new OBMySqlDLMChecker(database);

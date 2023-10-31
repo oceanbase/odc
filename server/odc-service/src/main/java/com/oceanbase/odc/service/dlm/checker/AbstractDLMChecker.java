@@ -32,7 +32,7 @@ import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
  * @Date: 2023/10/30 16:09
  * @Descripition:
  */
-public class AbstractDLMChecker implements DLMChecker {
+public abstract class AbstractDLMChecker implements DLMChecker {
 
     public Database database;
 
@@ -43,7 +43,7 @@ public class AbstractDLMChecker implements DLMChecker {
     }
 
     public ConnectionSession getConnectionSession() {
-        if (session != null && session.isExpired()) {
+        if (session == null || session.isExpired()) {
             ConnectionConfig dataSource = database.getDataSource();
             dataSource.setDefaultSchema(database.getName());
             ConnectionSessionFactory sourceSessionFactory = new DefaultConnectSessionFactory(dataSource);
@@ -52,10 +52,11 @@ public class AbstractDLMChecker implements DLMChecker {
         return session;
     }
 
-    public void destroy() {
-        session.expire();
+    public void dealloc() {
+        if (session != null && !session.isExpired()) {
+            session.expire();
+        }
     }
-
 
     @Override
     public void checkSysTenantUser() {

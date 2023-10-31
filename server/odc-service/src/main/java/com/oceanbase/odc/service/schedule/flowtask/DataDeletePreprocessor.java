@@ -21,7 +21,7 @@ import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.dlm.DlmLimiterService;
-import com.oceanbase.odc.service.dlm.checker.DLMChecker;
+import com.oceanbase.odc.service.dlm.checker.AbstractDLMChecker;
 import com.oceanbase.odc.service.dlm.checker.DLMCheckerFactory;
 import com.oceanbase.odc.service.dlm.model.DataDeleteParameters;
 import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
@@ -63,11 +63,12 @@ public class DataDeletePreprocessor extends AbstractDlmJobPreprocessor {
             // Throw exception when the specified database does not exist or the current user does not have
             // permission to access it.
             Database sourceDb = databaseService.detail(dataDeleteParameters.getDatabaseId());
-            DLMChecker sourceDbChecker = DLMCheckerFactory.create(sourceDb);
+            AbstractDLMChecker sourceDbChecker = DLMCheckerFactory.create(sourceDb);
             sourceDbChecker.checkSysTenantUser();
             sourceDbChecker.checkTablesPrimaryKey(dataDeleteParameters.getTables());
             sourceDbChecker.checkDLMTableCondition(dataDeleteParameters.getTables(),
                     dataDeleteParameters.getVariables());
+            sourceDbChecker.dealloc();
             log.info("QUICK-DELETE job preprocessing has been completed.");
             // pre create
             ScheduleEntity scheduleEntity = scheduleService.create(buildScheduleEntity(req, authenticationFacade));

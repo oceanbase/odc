@@ -48,6 +48,13 @@ public class MySqlDLMChecker extends AbstractDLMChecker {
     }
 
     @Override
+    public void dealloc() {
+        if (getConnectionSession() != null && !getConnectionSession().isExpired()) {
+            getConnectionSession().expire();
+        }
+    }
+
+    @Override
     public void checkTargetDbType(DialectType dbType) {
         if (dbType != DialectType.MYSQL && dbType != DialectType.OB_MYSQL) {
             log.warn("Unsupported data archiving link:{} to {}", database.getDataSource().getDialectType(), dbType);

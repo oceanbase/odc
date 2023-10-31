@@ -21,7 +21,7 @@ import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.dlm.DlmLimiterService;
-import com.oceanbase.odc.service.dlm.checker.DLMChecker;
+import com.oceanbase.odc.service.dlm.checker.AbstractDLMChecker;
 import com.oceanbase.odc.service.dlm.checker.DLMCheckerFactory;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
 import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
@@ -68,14 +68,16 @@ public class DataArchivePreprocessor extends AbstractDlmJobPreprocessor {
             dataArchiveParameters.setTargetDatabaseName(targetDb.getName());
             dataArchiveParameters.setSourceDataSourceName(sourceDb.getDataSource().getName());
             dataArchiveParameters.setTargetDataSourceName(targetDb.getDataSource().getName());
-            DLMChecker sourceDbChecker = DLMCheckerFactory.create(sourceDb);
+            AbstractDLMChecker sourceDbChecker = DLMCheckerFactory.create(sourceDb);
             sourceDbChecker.checkTargetDbType(targetDb.getDataSource().getDialectType());
             sourceDbChecker.checkSysTenantUser();
             sourceDbChecker.checkTablesPrimaryKey(dataArchiveParameters.getTables());
             sourceDbChecker.checkDLMTableCondition(dataArchiveParameters.getTables(),
                     dataArchiveParameters.getVariables());
-            DLMChecker targetDbChecker = DLMCheckerFactory.create(targetDb);
+            AbstractDLMChecker targetDbChecker = DLMCheckerFactory.create(targetDb);
             targetDbChecker.checkSysTenantUser();
+            sourceDbChecker.dealloc();
+            targetDbChecker.dealloc();
             log.info("Data archive preprocessing has been completed.");
             // pre create
             ScheduleEntity scheduleEntity = scheduleService.create(buildScheduleEntity(req, authenticationFacade));
