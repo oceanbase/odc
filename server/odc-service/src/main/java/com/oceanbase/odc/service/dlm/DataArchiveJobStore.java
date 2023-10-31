@@ -29,6 +29,7 @@ import com.oceanbase.odc.metadb.dlm.TaskUnitEntity;
 import com.oceanbase.odc.metadb.dlm.TaskUnitRepository;
 import com.oceanbase.odc.service.dlm.model.DlmLimiterConfig;
 import com.oceanbase.odc.service.dlm.utils.DlmJobIdUtil;
+import com.oceanbase.odc.service.dlm.utils.TaskGeneratorMapper;
 import com.oceanbase.tools.migrator.common.dto.JobStatistic;
 import com.oceanbase.tools.migrator.common.dto.TableSizeInfo;
 import com.oceanbase.tools.migrator.common.dto.TaskGenerator;
@@ -59,10 +60,12 @@ public class DataArchiveJobStore implements IJobStore {
     @Autowired
     private TaskUnitRepository taskUnitRepository;
 
+    private final TaskGeneratorMapper taskGeneratorMapper = TaskGeneratorMapper.INSTANCE;
+
     @Override
     public TaskGenerator getTaskGenerator(String generatorId, String jobId) {
         if (supportResume) {
-            return taskGeneratorRepository.findByGeneratorId(jobId).map(TaskGeneratorMapper::entityToModel)
+            return taskGeneratorRepository.findByGeneratorId(jobId).map(taskGeneratorMapper::entityToModel)
                     .orElse(null);
         }
         return null;
@@ -84,7 +87,7 @@ public class DataArchiveJobStore implements IJobStore {
                     entity.setPrimaryKeySavePoint(taskGenerator.getGeneratorSavePoint().toSqlString());
                 }
             } else {
-                entity = TaskGeneratorMapper.modelToEntity(taskGenerator);
+                entity = taskGeneratorMapper.modelToEntity(taskGenerator);
             }
             taskGeneratorRepository.save(entity);
         }
