@@ -360,14 +360,17 @@ public class DataTransferTask implements Callable<DataTransferTaskResult> {
             return;
         }
         for (ObjectResult object : objects) {
+            if (CollectionUtils.isEmpty(object.getExportPaths())) {
+                continue;
+            }
             String objectType = object.getType();
             File objectDir = Paths.get(exportPath, objectType).toFile();
             try {
                 if (!objectDir.exists()) {
                     FileUtils.forceMkdir(objectDir);
                 }
-                for (String source : object.getExportPaths()) {
-                    File file = new File(source);
+                for (URL source : object.getExportPaths()) {
+                    File file = new File(source.getFile());
                     if (!file.exists() || Objects.equals(file.getParentFile(), objectDir)) {
                         continue;
                     }

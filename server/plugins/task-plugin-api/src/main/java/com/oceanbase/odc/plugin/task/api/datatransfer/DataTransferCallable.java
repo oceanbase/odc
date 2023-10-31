@@ -39,4 +39,9 @@ public interface DataTransferCallable extends Callable<DataTransferTaskResult> {
      */
     double getProgress();
 
+    /**
+     * cancel task
+     */
+    void cancel(boolean mayInterruptIfRunning);
+
 }

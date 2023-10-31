@@ -16,14 +16,8 @@
 
 package com.oceanbase.odc.plugin.task.obmysql.datatransfer.task;
 
-import java.io.File;
-import java.nio.file.Paths;
-import java.util.Objects;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferTaskResult;
-import com.oceanbase.odc.plugin.task.api.datatransfer.model.ObjectResult;
 import com.oceanbase.tools.loaddump.client.DumpClient;
 import com.oceanbase.tools.loaddump.common.model.DumpParameter;
 import com.oceanbase.tools.loaddump.context.TaskContext;
@@ -60,32 +54,4 @@ public class ObLoaderDumperExportTask extends BaseObLoaderDumperTransferTask<Dum
     protected TaskContext startTransferSchema() throws Exception {
         return dumpClient.dumpSchema();
     }
-
-    /**
-     * Set exported paths for each object.
-     * 
-     * @param result
-     */
-    @Override
-    protected void postHandle(DataTransferTaskResult result) {
-        File dataDir = Paths.get(parameter.getFilePath(), "data").toFile();
-        if (transferSchema) {
-            result.getSchemaObjectsInfo().forEach(object -> findExportFiles(dataDir, object, SCHEMA_FILE_PATTERN));
-        }
-        if (transferData) {
-            result.getDataObjectsInfo().forEach(object -> findExportFiles(dataDir, object, DATA_FILE_PATTERN));
-        }
-    }
-
-    private void findExportFiles(File root, ObjectResult object, Pattern pattern) {
-        String[] exported = root.list(((dir, name) -> {
-            Matcher matcher = pattern.matcher(name);
-            if (!matcher.matches()) {
-                return false;
-            }
-            return Objects.equals(matcher.group(1), object.getName());
-        }));
-        object.setExportPaths(exported);
-    }
-
 }

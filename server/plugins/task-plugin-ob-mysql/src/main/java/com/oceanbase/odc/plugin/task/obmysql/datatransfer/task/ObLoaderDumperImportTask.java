@@ -18,7 +18,6 @@ package com.oceanbase.odc.plugin.task.obmysql.datatransfer.task;
 
 import org.jetbrains.annotations.NotNull;
 
-import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferTaskResult;
 import com.oceanbase.tools.loaddump.client.LoadClient;
 import com.oceanbase.tools.loaddump.common.enums.DataFormat;
 import com.oceanbase.tools.loaddump.common.model.LoadParameter;
@@ -55,11 +54,6 @@ public class ObLoaderDumperImportTask extends BaseObLoaderDumperTransferTask<Loa
             throw new IllegalArgumentException("Can not load schema when external sql");
         }
         return loadClient.loadSchema();
-    }
-
-    @Override
-    protected void postHandle(DataTransferTaskResult result) {
-        // nothing to do
     }
 
     private boolean isExternalSql() {

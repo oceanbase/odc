@@ -59,6 +59,7 @@ public abstract class BaseObLoaderDumperTransferTask<T extends BaseParameter> im
     protected final boolean transferSchema;
     private final long sleepInterval;
     private final boolean usePrepStmts;
+    private volatile boolean stop;
     private TaskContext schemaContext;
     private TaskContext dataContext;
     private int totalTaskCount = 0;
@@ -84,8 +85,6 @@ public abstract class BaseObLoaderDumperTransferTask<T extends BaseParameter> im
     protected abstract TaskContext startTransferData() throws Exception;
 
     protected abstract TaskContext startTransferSchema() throws Exception;
-
-    protected abstract void postHandle(DataTransferTaskResult result);
 
     @Override
     public DataTransferTaskResult getStatus() {
@@ -120,6 +119,23 @@ public abstract class BaseObLoaderDumperTransferTask<T extends BaseParameter> im
             return 0.0;
         }
         return returnVal / totalTaskCount;
+    }
+
+    @Override
+    public void cancel(boolean mayInterruptIfRunning) {
+        stop = true;
+        if (mayInterruptIfRunning) {
+            try {
+                if (schemaContext != null) {
+                    schemaContext.shutdownNow();
+                }
+                if (dataContext != null) {
+                    dataContext.shutdownNow();
+                }
+            } catch (Exception ignore) {
+                // eat exception
+            }
+        }
     }
 
     @Override
@@ -160,15 +176,12 @@ public abstract class BaseObLoaderDumperTransferTask<T extends BaseParameter> im
         }
 
         validAllTasksSuccessed();
-
-        DataTransferTaskResult status = getStatus();
-        postHandle(status);
-        return status;
+        return getStatus();
     }
 
     @SuppressWarnings("all")
     private void syncWaitFinished(@NonNull TaskContext context) throws InterruptedException {
-        while (!Thread.currentThread().isInterrupted()) {
+        while (!Thread.currentThread().isInterrupted() && !stop) {
             if (context.isAllTasksSuccessed()) {
                 shutdownContext(context);
                 return;

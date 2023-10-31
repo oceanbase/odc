@@ -15,19 +15,20 @@
  */
 package com.oceanbase.odc.service.datatransfer;
 
+import static com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConstants.LOG_PATH_NAME;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
-import java.util.Arrays;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -44,7 +45,6 @@ import javax.annotation.PostConstruct;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.SetUtils;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -74,7 +74,6 @@ import com.oceanbase.odc.plugin.task.api.datatransfer.DataTransferCallable;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.CsvColumnMapping;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.CsvConfig;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
-import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConstants;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferTaskResult;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.ObjectResult;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.UploadFileResult;
@@ -159,30 +158,10 @@ public class DataTransferService {
      */
     public DataTransferTaskContext create(@NonNull String bucket,
             @NonNull DataTransferConfig transferConfig) throws Exception {
-        File workingDir = fileManager.getWorkingDir(TaskType.EXPORT, bucket);
-        DataTransferType transferType = transferConfig.getTransferType();
-        workingDir = this.dataTransferAdapter.preHandleWorkDir(transferConfig, bucket, workingDir);
-        // 目标目录可能已经存在且其中可能存留有导入导出历史脏数据，这里需要清理避免潜在问题，且为了影响最小化，只清理导入导出相关的目录
-        String parent = new File(workingDir, "data").getAbsolutePath();
-        Arrays.stream(ObjectType.values()).map(ObjectType::getName).forEach(objectName -> {
-            File target = new File(parent, objectName);
-            if (target.exists() && target.isDirectory()) {
-                boolean deleteRes = FileUtils.deleteQuietly(target);
-                log.info("Delete object directory, dir={}, result={}", target.getAbsolutePath(), deleteRes);
-            }
-        });
-        File logDir = new File(taskLogDir + "/data-transfer/" + bucket);
-        if (!logDir.exists()) {
-            FileUtils.forceMkdir(logDir);
-        }
-
-        ThreadContext.put(LOG_PATH_NAME, logDir.toString());
-        setSessionProperties();
-
         try {
             // set log path
             Path logPath = Paths.get(taskLogDir, "data-transfer", bucket);
-            TraceContextHolder.span(ImmutableMap.of(DataTransferConstants.LOG_PATH_NAME, logPath.toString()));
+            TraceContextHolder.span(ImmutableMap.of(LOG_PATH_NAME, logPath.toString()));
 
             // clear working directory and create bucket for client mode
             File workingDir = dataTransferAdapter.preHandleWorkDir(transferConfig, bucket,
@@ -406,50 +385,7 @@ public class DataTransferService {
         }
     }
 
-    private void copyImportScripts(List<String> fileNames, DataTransferFormat format, File destDir)
-            throws IOException {
-        Validate.isTrue(CollectionUtils.isNotEmpty(fileNames), "No script found");
-        Validate.notNull(format, "DataTransferFormat can not be null");
-        if (DataTransferFormat.CSV.equals(format) && fileNames.size() > 1) {
-            log.warn("Multiple files for CSV format is invalid, importFileNames={}", fileNames);
-            logger.warn("Multiple files for CSV format is invalid, importFileNames={}", fileNames);
-            throw new IllegalArgumentException("Multiple files isn't accepted for CSV format");
-        }
-        for (String fileName : fileNames) {
-            Optional<File> importFile =
-                    fileManager.findByName(TaskType.IMPORT, LocalFileManager.UPLOAD_BUCKET, fileName);
-            File from = importFile.orElseThrow(() -> new FileNotFoundException("File not found, " + fileName));
-            File dest = new File(destDir.getAbsolutePath() + File.separator + from.getName());
-            try (InputStream inputStream = from.toURI().toURL().openStream();
-                    OutputStream outputStream = new FileOutputStream(dest)) {
-                IOUtils.copy(inputStream, outputStream);
-            }
-            log.info("Copy script to working dir, from={}, dest={}", from.getAbsolutePath(), dest.getAbsolutePath());
-        }
-    }
-
-    private void copyImportZip(List<String> fileNames, File destDir) throws IOException {
-        if (fileNames == null || fileNames.size() != 1) {
-            log.warn("Single zip file is available, importFileNames={}", fileNames);
-            logger.warn("Single zip file is available, importFileNames={}", fileNames);
-            throw new IllegalArgumentException("Single zip file is available");
-        }
-        String fileName = fileNames.get(0);
-        Optional<File> uploadFile = fileManager.findByName(TaskType.IMPORT, LocalFileManager.UPLOAD_BUCKET, fileName);
-        File from = uploadFile.orElseThrow(() -> new FileNotFoundException("File not found, " + fileName));
-        File dest = new File(destDir.getAbsolutePath() + File.separator + "data");
-        FileUtils.forceMkdir(dest);
-        DumperOutput dumperOutput = new DumperOutput(from);
-        dumperOutput.toFolder(dest);
-        log.info("Unzip file to working dir, from={}, dest={}", from.getAbsolutePath(), dest.getAbsolutePath());
-    }
-
     private String truncateValue(String val) {
         return val.substring(0, Math.min(val.length(), PREVIEW_PRESERVE_LENGTH));
-    }
-
-    private void setSessionProperties() {
-        SessionProperties.setString(JDBC_URL_USE_SERVER_PREP_STMTS, dataTransferProperties.getUseServerPrepStmts());
-        SessionProperties.setString(JDBC_URL_ZERO_DATETIME_BEHAVIOR, DEFAULT_ZERO_DATE_TIME_BEHAVIOR);
     }
 }

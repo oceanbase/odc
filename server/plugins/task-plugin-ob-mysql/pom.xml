@@ -26,11 +26,14 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>task-plugin-ob-mysql</artifactId>
-
     <dependencies>
         <dependency>
             <groupId>com.oceanbase</groupId>
             <artifactId>task-plugin-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.oceanbase</groupId>
+            <artifactId>ob-loader-dumper</artifactId>
         </dependency>
         <dependency>
             <groupId>com.oceanbase</groupId>
@@ -42,8 +45,11 @@
         </dependency>
         <dependency>
             <groupId>com.oceanbase</groupId>
+            <artifactId>schema-plugin-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.oceanbase</groupId>
             <artifactId>schema-plugin-ob-mysql</artifactId>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.oceanbase</groupId>
@@ -61,13 +67,21 @@
             <groupId>com.oceanbase</groupId>
             <artifactId>schema-plugin-mysql</artifactId>
         </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.oceanbase</groupId>
+            <artifactId>odc-test</artifactId>
+        </dependency>
     </dependencies>
 
     <properties>
         <root-project.basedir>${project.parent.parent.basedir}</root-project.basedir>
         <plugin.class>com.oceanbase.odc.plugin.task.obmysql.OBMySQLTaskPlugin</plugin.class>
         <plugin.dependencies>schema-plugin-ob-oracle, schema-plugin-mysql,
-            connect-plugin-ob-oracle,connect-plugin-ob-mysql,schema-plugin-ob-mysql
+            connect-plugin-ob-oracle,connect-plugin-ob-mysql
         </plugin.dependencies>
     </properties>
 
