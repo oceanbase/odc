@@ -161,9 +161,9 @@ public class DBObjectNameAccessor implements AutoCloseable {
         if (session.getDialectType().isMysql()) {
             return Collections.emptySet();
         }
-        return accessor.listPackages(schema).stream()
-                .filter(i -> !StringUtils.equalsIgnoreCase(i.getName(), OdcConstants.PL_DEBUG_PACKAGE))
-                .filter(e -> e.getType().name().equals(ObjectType.PACKAGE_BODY.name())).map(DBObjectIdentity::getName)
+        return accessor.listPackageBodies(schema).stream()
+                .map(DBObjectIdentity::getName)
+                .filter(name -> !StringUtils.equalsIgnoreCase(name, OdcConstants.PL_DEBUG_PACKAGE))
                 .collect(Collectors.toSet());
     }
 
