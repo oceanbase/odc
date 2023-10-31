@@ -44,7 +44,8 @@ public interface TaskGeneratorMapper {
 
     @InheritInverseConfiguration
     @Mapping(target = "type", constant = "AUTO")
-    @Mapping(target = "primaryKeySavePoint", expression = "java(model.getGeneratorSavePoint().toSqlString())")
+    @Mapping(target = "primaryKeySavePoint",
+            expression = "java(model.getGeneratorSavePoint() != null ?model.getGeneratorSavePoint().toSqlString():null)")
     @Mapping(target = "id", ignore = true)
     TaskGeneratorEntity modelToEntity(TaskGenerator model);
 

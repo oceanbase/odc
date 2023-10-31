@@ -34,11 +34,11 @@ public interface TaskUnitMapper {
     TaskUnitMapper INSTANCE = Mappers.getMapper(TaskUnitMapper.class);
 
     @Mapping(target = "lowerBoundPrimaryKey",
-            expression = "java(model.getMinPrimaryKey().toSqlString())")
+            expression = "java(model.getMinPrimaryKey() != null ?model.getMinPrimaryKey().toSqlString() : null)")
     @Mapping(target = "upperBoundPrimaryKey",
-            expression = "java(model.getMaxPrimaryKey().toSqlString())")
+            expression = "java(model.getMaxPrimaryKey() != null ?model.getMaxPrimaryKey().toSqlString() : null)")
     @Mapping(target = "primaryKeyCursor",
-            expression = "java(model.getCursorPrimaryKey().toSqlString())")
+            expression = "java(model.getCursorPrimaryKey() != null ? model.getMaxPrimaryKey().toSqlString() : null)")
     @Mapping(source = "taskStatus", target = "status")
     @Mapping(source = "jobMeta.jobId", target = "jobId")
     TaskUnitEntity modelToEntity(TaskMeta model);
