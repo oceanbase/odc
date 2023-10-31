@@ -96,11 +96,11 @@ public class SqlCommentProcessor {
 
     public SqlCommentProcessor() {}
 
-    public static SqlLine getSqlLines(InputStream in, DialectType dialectType,
+    public static SqlStatementIterator iterator(InputStream in, DialectType dialectType,
             boolean preserveFormat,
             boolean preserveSingleComments,
             boolean preserveMultiComments) {
-        return new SqlLine(in, dialectType, preserveFormat, preserveSingleComments, preserveMultiComments);
+        return new SqlStatementIterator(in, dialectType, preserveFormat, preserveSingleComments, preserveMultiComments);
     }
 
     public static List<String> removeSqlComments(String originalSql,
@@ -612,7 +612,7 @@ public class SqlCommentProcessor {
         }
     }
 
-    public static class SqlLine implements Iterator<String>, AutoCloseable {
+    public static class SqlStatementIterator implements Iterator<String>, AutoCloseable {
         private final BufferedReader reader;
         private final StringBuffer buffer = new StringBuffer();
         private final LinkedList<String> holder = new LinkedList<>();
@@ -621,7 +621,7 @@ public class SqlCommentProcessor {
 
         private String current;
 
-        public SqlLine(InputStream input, DialectType dialectType,
+        public SqlStatementIterator(InputStream input, DialectType dialectType,
                 boolean preserveFormat,
                 boolean preserveSingleComments,
                 boolean preserveMultiComments) {
