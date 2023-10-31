@@ -13,10 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.datatransfer;
+package com.oceanbase.odc.plugin.task.obmysql.datatransfer;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Collections;
@@ -30,7 +29,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-import com.oceanbase.odc.ServiceTestEnv;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.ConnectionInfo;
@@ -53,21 +51,21 @@ import com.oceanbase.tools.loaddump.common.model.DumpParameter;
  * @date 2022-07-27 16:06
  * @since ODC_release_3.4.0
  */
-public class DumpParameterFactoryTest extends ServiceTestEnv {
+public class DumpParameterFactoryTest {
 
     @Rule
     public ExpectedException thrown = ExpectedException.none();
 
     @Test
-    public void dumpParameterFactory_negativeDumpSize_expThrown() throws FileNotFoundException {
+    public void dumpParameterFactory_negativeDumpSize_expThrown() throws Exception {
         thrown.expect(IllegalArgumentException.class);
         thrown.expectMessage("Max dump size can not be negative");
         DataTransferConfig config = generateConfig(DataTransferFormat.SQL, true, true, DialectType.OB_ORACLE);
         config.setMaxDumpSizeBytes(-100L);
 
-        DumpParameterFactory factory =
-            new DumpParameterFactory(generateConfig(DataTransferFormat.SQL, false, true, DialectType.OB_ORACLE),
-                getWorkingDir(), getWorkingDir());    }
+        DumpParameterFactory factory = new DumpParameterFactory(config, getWorkingDir(), getWorkingDir());
+        factory.generate();
+    }
 
     @Test
     public void generate_positiveDumpSize_returnSettings() throws IOException {
@@ -75,42 +73,35 @@ public class DumpParameterFactoryTest extends ServiceTestEnv {
         DataTransferConfig config = generateConfig(DataTransferFormat.CSV, true, true, DialectType.OB_ORACLE);
         config.setMaxDumpSizeBytes(maxDumpSize);
 
-        DumpParameterFactory factory =
-            new DumpParameterFactory(generateConfig(DataTransferFormat.SQL, false, true, DialectType.OB_ORACLE),
-                getWorkingDir(), getWorkingDir());        DumpParameter parameter = factory.generate();
+        DumpParameterFactory factory = new DumpParameterFactory(config, getWorkingDir(), getWorkingDir());
+        DumpParameter parameter = factory.generate();
         Assert.assertEquals(maxDumpSize, parameter.getMaxFileSize());
     }
 
     @Test
     public void generate_setTransferFormat_returnCsvFormat() throws IOException {
-        DataTransferConfig config = generateConfig(DataTransferFormat.CSV, true, true,
-                DialectType.OB_ORACLE);
-
         DumpParameterFactory factory =
-            new DumpParameterFactory(generateConfig(DataTransferFormat.SQL, false, true, DialectType.OB_ORACLE),
-                getWorkingDir(), getWorkingDir());        DumpParameter parameter = factory.generate();
+                new DumpParameterFactory(generateConfig(DataTransferFormat.CSV, true, true, DialectType.OB_ORACLE),
+                        getWorkingDir(), getWorkingDir());
+        DumpParameter parameter = factory.generate();
         Assert.assertEquals(DataFormat.CSV, parameter.getDataFormat());
     }
 
     @Test
     public void generate_setTransferFormat_returnSqlFormat() throws IOException {
-        DataTransferConfig config = generateConfig(DataTransferFormat.SQL, true, true,
-                DialectType.OB_ORACLE);
-
         DumpParameterFactory factory =
-            new DumpParameterFactory(generateConfig(DataTransferFormat.SQL, false, true, DialectType.OB_ORACLE),
-                getWorkingDir(), getWorkingDir());        DumpParameter parameter = factory.generate();
+                new DumpParameterFactory(generateConfig(DataTransferFormat.SQL, true, true, DialectType.OB_ORACLE),
+                        getWorkingDir(), getWorkingDir());
+        DumpParameter parameter = factory.generate();
         Assert.assertEquals(DataFormat.SQL, parameter.getDataFormat());
     }
 
     @Test
     public void generate_onlyIncludDdl_tabTableInWhiteMap() throws IOException {
-        DataTransferConfig config = generateConfig(DataTransferFormat.SQL, false, true,
-                DialectType.OB_MYSQL);
-
         DumpParameterFactory factory =
-            new DumpParameterFactory(generateConfig(DataTransferFormat.SQL, false, true, DialectType.OB_ORACLE),
-                getWorkingDir(), getWorkingDir());        DumpParameter parameter = factory.generate();
+                new DumpParameterFactory(generateConfig(DataTransferFormat.SQL, false, true, DialectType.OB_MYSQL),
+                        getWorkingDir(), getWorkingDir());
+        DumpParameter parameter = factory.generate();
         Map<ObjectType, Set<String>> actual = parameter.getWhiteListMap();
         Map<ObjectType, Set<String>> expect = new HashMap<>();
         expect.putIfAbsent(ObjectType.TABLE, Collections.singleton("`TAB`"));
@@ -125,9 +116,8 @@ public class DumpParameterFactoryTest extends ServiceTestEnv {
         object.setDbObjectType(ObjectType.VIEW);
         config.getExportDbObjects().add(object);
 
-        DumpParameterFactory factory =
-            new DumpParameterFactory(generateConfig(DataTransferFormat.SQL, false, true, DialectType.OB_ORACLE),
-                getWorkingDir(), getWorkingDir());        DumpParameter parameter = factory.generate();
+        DumpParameterFactory factory = new DumpParameterFactory(config, getWorkingDir(), getWorkingDir());
+        DumpParameter parameter = factory.generate();
         Map<ObjectType, Set<String>> actual = parameter.getWhiteListMap();
         Map<ObjectType, Set<String>> expect = new HashMap<>();
         expect.putIfAbsent(ObjectType.TABLE, Collections.singleton("\"TAB\""));
@@ -145,8 +135,9 @@ public class DumpParameterFactoryTest extends ServiceTestEnv {
         config.getExportDbObjects().add(object);
 
         DumpParameterFactory factory =
-            new DumpParameterFactory(generateConfig(DataTransferFormat.SQL, false, true, DialectType.OB_ORACLE),
-                getWorkingDir(), getWorkingDir());        DumpParameter parameter = factory.generate();
+                new DumpParameterFactory(generateConfig(DataTransferFormat.SQL, true, false, DialectType.OB_MYSQL),
+                        getWorkingDir(), getWorkingDir());
+        DumpParameter parameter = factory.generate();
         Map<ObjectType, Set<String>> actual = parameter.getWhiteListMap();
         Map<ObjectType, Set<String>> expect = new HashMap<>();
         expect.putIfAbsent(ObjectType.TABLE, Collections.singleton("`TAB`"));

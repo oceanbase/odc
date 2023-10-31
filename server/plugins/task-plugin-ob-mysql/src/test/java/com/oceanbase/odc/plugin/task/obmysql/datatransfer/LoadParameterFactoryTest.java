@@ -13,10 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.datatransfer;
+package com.oceanbase.odc.plugin.task.obmysql.datatransfer;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Collections;
@@ -26,16 +25,13 @@ import java.util.Map;
 import java.util.Set;
 
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-import com.oceanbase.odc.TestConnectionUtil;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.DialectType;
-import com.oceanbase.odc.plugin.task.api.datatransfer.dumper.DumperOutput;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.ConnectionInfo;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.CsvColumnMapping;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.CsvConfig;
@@ -44,7 +40,6 @@ import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferFormat;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferObject;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferType;
 import com.oceanbase.odc.plugin.task.obmysql.datatransfer.factory.LoadParameterFactory;
-import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.test.database.TestDBConfiguration;
 import com.oceanbase.odc.test.database.TestDBConfigurations;
 import com.oceanbase.tools.loaddump.common.enums.DataFormat;
@@ -93,7 +88,7 @@ public class LoadParameterFactoryTest {
     @Test
     public void generate_sqlFormat_returnSql() throws IOException {
         DataTransferConfig config = generateConfig(DataTransferFormat.SQL, false, true, false,
-            DialectType.OB_ORACLE);
+                DialectType.OB_ORACLE);
         LoadParameterFactory factory = new LoadParameterFactory(config, getWorkingDir(), getWorkingDir());
         LoadParameter parameter = factory.generate();
         Assert.assertEquals(DataFormat.SQL, parameter.getDataFormat());
@@ -102,7 +97,7 @@ public class LoadParameterFactoryTest {
     @Test
     public void generate_csvFormat_returnCsv() throws IOException {
         DataTransferConfig config =
-            generateConfig(DataTransferFormat.CSV, false, true, false, DialectType.OB_ORACLE);
+                generateConfig(DataTransferFormat.CSV, false, true, false, DialectType.OB_ORACLE);
         LoadParameterFactory factory = new LoadParameterFactory(config, getWorkingDir(), getWorkingDir());
         LoadParameter parameter = factory.generate();
         Assert.assertEquals(DataFormat.CSV, parameter.getDataFormat());
@@ -111,14 +106,14 @@ public class LoadParameterFactoryTest {
     @Test
     public void generate_nonExternalMysqlWhiteListMap_returnTESTTable() throws IOException {
         DataTransferConfig config =
-            generateConfig(DataTransferFormat.CSV, false, false, true, DialectType.OB_MYSQL);
+                generateConfig(DataTransferFormat.CSV, false, false, true, DialectType.OB_MYSQL);
         LoadParameterFactory factory = new LoadParameterFactory(config, getWorkingDir(), getWorkingDir());
         LoadParameter parameter = factory.generate();
         Map<ObjectType, Set<String>> actual = parameter.getWhiteListMap();
         Map<ObjectType, Set<String>> expect = new HashMap<>();
         for (DataTransferObject object : config.getExportDbObjects()) {
             Set<String> names =
-                expect.computeIfAbsent(object.getDbObjectType(), k -> new HashSet<>());
+                    expect.computeIfAbsent(object.getDbObjectType(), k -> new HashSet<>());
             names.add(StringUtils.quoteMysqlIdentifier(object.getObjectName()));
         }
         Assert.assertEquals(expect, actual);
@@ -127,14 +122,14 @@ public class LoadParameterFactoryTest {
     @Test
     public void generate_nonExternalOracleWhiteListMap_returnTESTTable() throws IOException {
         DataTransferConfig config =
-            generateConfig(DataTransferFormat.CSV, false, false, true, DialectType.OB_ORACLE);
+                generateConfig(DataTransferFormat.CSV, false, false, true, DialectType.OB_ORACLE);
         LoadParameterFactory factory = new LoadParameterFactory(config, getWorkingDir(), getWorkingDir());
         LoadParameter parameter = factory.generate();
         Map<ObjectType, Set<String>> actual = parameter.getWhiteListMap();
         Map<ObjectType, Set<String>> expect = new HashMap<>();
         for (DataTransferObject object : config.getExportDbObjects()) {
             Set<String> names =
-                expect.computeIfAbsent(object.getDbObjectType(), k -> new HashSet<>());
+                    expect.computeIfAbsent(object.getDbObjectType(), k -> new HashSet<>());
             names.add(StringUtils.quoteOracleIdentifier(object.getObjectName()));
         }
         Assert.assertEquals(expect, actual);
@@ -143,7 +138,7 @@ public class LoadParameterFactoryTest {
     @Test
     public void generate_nonExternalIncludeDdl_returnTrue() throws IOException {
         DataTransferConfig config =
-            generateConfig(DataTransferFormat.SQL, false, false, true, DialectType.OB_ORACLE);
+                generateConfig(DataTransferFormat.SQL, false, false, true, DialectType.OB_ORACLE);
         LoadParameterFactory factory = new LoadParameterFactory(config, getWorkingDir(), getWorkingDir());
         LoadParameter parameter = factory.generate();
         Assert.assertTrue(parameter.isIncludeDdl());
@@ -195,7 +190,6 @@ public class LoadParameterFactoryTest {
     }
 
     @Test
-    @Ignore("TODO: fix this test")
     public void generate_isNoSys_returnTrue() throws IOException {
         DataTransferConfig config = generateConfig(DataTransferFormat.CSV, true, true, false, DialectType.OB_ORACLE);
         config.setSysUser(null);
@@ -265,7 +259,7 @@ public class LoadParameterFactoryTest {
     }
 
     private DataTransferConfig generateConfig(DataTransferFormat format, boolean external,
-        boolean transferData, boolean transferDdl, DialectType dialectType) {
+            boolean transferData, boolean transferDdl, DialectType dialectType) {
         DataTransferConfig config = new DataTransferConfig();
         config.setSchemaName("test");
         config.setTransferType(DataTransferType.IMPORT);
