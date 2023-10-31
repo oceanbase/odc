@@ -1,5 +1,84 @@
 # OceanBase Developer Center (ODC) CHANGELOG
 
+## 4.2.2 (2023-11-02)
+
+### Feature
+
+Data Source
+
+- Support MySQL data source
+- Adapted to OceanBase 4.2.0/4.2.1
+- Data sources add initialization scripts and customized JDBC connection parameter settings
+
+Data Desensitization
+
+- Support view desensitization
+
+DLM
+
+- Support OceanBase 4.x version
+- Support MySQL to OceanBase link
+- Support white screen current limiting configuration
+
+### Improve
+
+- Optimized object management performance in large-scale table scenarios, and used ob-sql-parser to parse index/constraint metadata
+- Optimized database object tree interaction, the project and data source selection interaction area is folded to the top, and the database list is displayed more clearly
+- Optimized the interaction between creating a new SQL window and switching databases in the SQL window. Switching databases is faster, and the SQL window adds a copy operation.
+- Optimized the data desensitization configuration interaction, making it more convenient to select sensitive columns
+- Optimized the problem of slow retrieval of data source list and slow retrieval of data source status in scenarios where there are a large number of data sources.
+- Optimize the error text when running PL with wrong parameters
+
+### Fix
+
+PL Debugging
+
+- Unable to jump into sub-stored procedures/functions defined in the package during debugging
+
+SQL Execution
+
+- Continuous execution of "DROP PACKAGE" statements during SQL execution resulted in a large number of error reports
+- When connecting to the OceanBase MySQL tenant, the "obodc_procedure_feature_test" stored procedure is automatically called, resulting in an error or slow connection.
+- The sum of the time consumption of each sub-item in SQL execution time-consuming statistics is not equal to the parent item
+- In the SQL execution time-consuming statistics, "SQL pre-check" and "SQL post-check" lack detailed sub-item time-consuming statistics
+
+SQL-Check
+
+- When creating type under the OceanBase Oracle tenant, if the sub-stored procedure/function has no parameter list, SQL Check will report a syntax error.
+- Unable to turn off "Syntax Error" rule
+
+Data Desensitization
+
+- Desensitization fails when the SELECT statement contains multiple table JOINs
+- Sensitive columns cannot be recognized in the case-sensitive OceanBase MySQL mode, causing desensitization to fail.
+
+Database Object Management
+
+- Users without the show create view permission will receive an error when viewing view details.
+- The length of all character types cannot be displayed when viewing table objects
+
+Database Changes
+
+- The database change task timeout setting is invalid
+
+Import and Export
+
+- The exported package in Oracle mode does not contain the package body
+- Unable to export result set containing tab characters to Excel
+
+Operational audit
+
+- Changes to "SQL Check Specification" and "SQL Window Specification" are not included in the operational audit scope
+
+### Dependency library upgrade
+
+- Upgrade ob-loader-dumper version to 4.2.5-RELEASE
+- Upgrade oceanbase-client version to 2.4.5
+
+### Security reinforcement
+
+- Transmission of sensitive fields on the front and back ends uses asymmetric encryption
+
 ## 4.2.1 (2023-09-25)
 
 ### Fix

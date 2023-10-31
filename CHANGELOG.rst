@@ -3,6 +3,11 @@
 
 New
 ~~~
+- Feat(dlm):support configuring limiter (#626) [guowl3]
+- Feat(data-security): add data type unit into response (#629)
+  [XiaoYang]
+- Feat(dlm): data archive supports MySQL to OB (#544) [guowl3]
+- Feat: add timeout settings for pl-debug (#576) [IL MARE]
 - Feat: make odc adapt to OceanBase 4.2 (#541) [IL MARE]
 - Feat(ob-sql-parser): make ob-sql-parser adapt to OceanBase 4.2 (#441)
   [IL MARE]
@@ -30,6 +35,31 @@ Changes
 
 Fix
 ~~~
+- Fix: dirty meta data (#663) [XiaoYang]
+- Fix(sql-execute): fix failed to get time consuming (#658) [IL MARE]
+- Fix(migration): rule metadata migration will be triggered every time
+  the ODC server starts up (#649) [pynzzZ]
+- Fix(sql-check): fix syntax error check rule can not be disabled (#652)
+  [IL MARE]
+- Fix: fix can not get plan (#660) [IL MARE]
+- Fix(data-transfer): no package body (#653) [LuckyLeo]
+- Fix(web): editor.worker.js static resource 404 not found (#656)
+  [pynzzZ]
+- Fix(data-transfer): fix wrong data objects and schema objects (#620)
+  [LuckyLeo]
+- Fix(datasource): the data source list refreshes very slowly and cannot
+  obtain the connect status while there are a huge amount of data
+  sources (#599) [pynzzZ, yh263208]
+- Fix: fix failed to query data and sql rules changing is not recorded
+  by audit event (#608) [IL MARE]
+- Fix(connection): fix failed to set setConnectionAttrs (#601) [IL MARE]
+- Fix(db-browser): cannot get table charset in native mysql mode (#592)
+  [zhangxiao]
+- Fix(result-export): failed to convert CSV file into Excel file (#586)
+  [LuckyLeo]
+- Fix(diagnose): optimize log information when explain failed (#589)
+  [LuckyLeo]
+- Fix(pl): fix wrong parameter check error message (#583) [IL MARE]
 - Fix(schema-plugin): cannot display constraint name for ob oralce 4.2.1
   (#533) [zhangxiao]
 - Fix(pl-debug): fix failed to step in a subprocedure or subfunction
