@@ -30,6 +30,7 @@ import com.oceanbase.odc.metadb.dlm.TaskUnitRepository;
 import com.oceanbase.odc.service.dlm.model.DlmLimiterConfig;
 import com.oceanbase.odc.service.dlm.utils.DlmJobIdUtil;
 import com.oceanbase.odc.service.dlm.utils.TaskGeneratorMapper;
+import com.oceanbase.odc.service.dlm.utils.TaskUnitMapper;
 import com.oceanbase.tools.migrator.common.dto.JobStatistic;
 import com.oceanbase.tools.migrator.common.dto.TableSizeInfo;
 import com.oceanbase.tools.migrator.common.dto.TaskGenerator;
@@ -61,6 +62,7 @@ public class DataArchiveJobStore implements IJobStore {
     private TaskUnitRepository taskUnitRepository;
 
     private final TaskGeneratorMapper taskGeneratorMapper = TaskGeneratorMapper.INSTANCE;
+    private final TaskUnitMapper taskUnitMapper = TaskUnitMapper.INSTANCE;
 
     @Override
     public TaskGenerator getTaskGenerator(String generatorId, String jobId) {
@@ -110,7 +112,7 @@ public class DataArchiveJobStore implements IJobStore {
     public List<TaskMeta> getTaskMeta(JobMeta jobMeta) {
         if (supportResume) {
             List<TaskMeta> tasks = taskUnitRepository.findByGeneratorId(jobMeta.getGenerator().getId()).stream().map(
-                    TaskUnitMapper::entityToModel).collect(
+                    taskUnitMapper::entityToModel).collect(
                             Collectors.toList());
             tasks.forEach(o -> o.setJobMeta(jobMeta));
             return tasks;
@@ -138,7 +140,7 @@ public class DataArchiveJobStore implements IJobStore {
                     entity.setPrimaryKeyCursor(taskMeta.getCursorPrimaryKey().toSqlString());
                 }
             } else {
-                entity = TaskUnitMapper.modelToEntity(taskMeta);
+                entity = taskUnitMapper.modelToEntity(taskMeta);
             }
             taskUnitRepository.save(entity);
         }
