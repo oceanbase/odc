@@ -14,10 +14,23 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.schedule;
+package com.oceanbase.odc.service.dlm.checker;
 
-public interface DlmEnvironment {
+import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.service.connection.database.model.Database;
 
-    boolean isSysTenantUserRequired();
+/**
+ * @Author：tinker
+ * @Date: 2023/10/30 16:16
+ * @Descripition:
+ */
+public class OBMySqlDLMChecker extends MySqlDLMChecker {
+    public OBMySqlDLMChecker(Database database) {
+        super(database);
+    }
 
+    @Override
+    public void checkSysTenantUser() {
+        PreConditions.notEmpty(database.getDataSource().getSysTenantUsername(), "SysTenantUser");
+    }
 }

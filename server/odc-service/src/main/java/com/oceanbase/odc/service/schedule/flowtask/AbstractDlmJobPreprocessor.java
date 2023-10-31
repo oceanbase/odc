@@ -15,32 +15,12 @@
  */
 package com.oceanbase.odc.service.schedule.flowtask;
 
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-
 import com.oceanbase.odc.common.json.JsonUtils;
-import com.oceanbase.odc.common.util.StringUtils;
-import com.oceanbase.odc.core.session.ConnectionSession;
-import com.oceanbase.odc.core.session.ConnectionSessionConstants;
-import com.oceanbase.odc.core.shared.PreConditions;
-import com.oceanbase.odc.core.shared.constant.DialectType;
-import com.oceanbase.odc.core.shared.exception.UnsupportedException;
-import com.oceanbase.odc.core.sql.execute.SyncJdbcExecutor;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
-import com.oceanbase.odc.service.connection.database.model.Database;
-import com.oceanbase.odc.service.connection.model.ConnectionConfig;
-import com.oceanbase.odc.service.dlm.model.DataArchiveTableConfig;
-import com.oceanbase.odc.service.dlm.model.OffsetConfig;
-import com.oceanbase.odc.service.dlm.utils.DataArchiveConditionUtil;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
 import com.oceanbase.odc.service.flow.processor.Preprocessor;
+import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.schedule.model.ScheduleStatus;
-import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
-import com.oceanbase.tools.dbbrowser.util.OracleSqlBuilder;
-import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -56,7 +36,7 @@ public class AbstractDlmJobPreprocessor implements Preprocessor {
     @Override
     public void process(CreateFlowInstanceReq req) {}
 
-    public ScheduleEntity buildScheduleEntity(CreateFlowInstanceReq req) {
+    public ScheduleEntity buildScheduleEntity(CreateFlowInstanceReq req, AuthenticationFacade authenticationFacade) {
         AlterScheduleParameters parameters = (AlterScheduleParameters) req.getParameters();
         ScheduleEntity scheduleEntity = new ScheduleEntity();
         scheduleEntity.setConnectionId(req.getConnectionId());
@@ -71,86 +51,11 @@ public class AbstractDlmJobPreprocessor implements Preprocessor {
         scheduleEntity.setTriggerConfigJson(JsonUtils.toJson(parameters.getTriggerConfig()));
         scheduleEntity.setModifierId(scheduleEntity.getCreatorId());
         scheduleEntity.setDescription(req.getDescription());
+        scheduleEntity.setCreatorId(authenticationFacade.currentUser().id());
+        scheduleEntity.setModifierId(scheduleEntity.getCreatorId());
+        scheduleEntity.setOrganizationId(authenticationFacade.currentOrganizationId());
         return scheduleEntity;
     }
 
-    public void checkTableAndCondition(ConnectionSession connectionSession, Database sourceDb,
-            List<DataArchiveTableConfig> tables,
-            List<OffsetConfig> variables) {
-        checkPrimaryKey(connectionSession, sourceDb.getName(), tables);
-        Map<DataArchiveTableConfig, String> sqlMap = getDataArchiveSqls(sourceDb, tables, variables);
-        checkDataArchiveSql(connectionSession, sqlMap);
-    }
-
-    public void checkDatasource(ConnectionConfig datasource) {
-        if (datasource.getDialectType().isOracle()) {
-            throw new UnsupportedException("This function is not supported for Oracle data sources.");
-        }
-        if (datasource.getDialectType().isOBMysql()) {
-            PreConditions.notEmpty(datasource.getSysTenantUsername(), "SysTenantUser");
-        }
-    }
-
-    private void checkPrimaryKey(ConnectionSession connectionSession, String databaseName,
-            List<DataArchiveTableConfig> tables) {
-        SyncJdbcExecutor syncJdbcExecutor = connectionSession.getSyncJdbcExecutor(
-                ConnectionSessionConstants.CONSOLE_DS_KEY);
-        SqlBuilder sqlBuilder = new MySQLSqlBuilder();
-        sqlBuilder.append("select table_name from information_schema.COLUMNS where ");
-        sqlBuilder.append(String.format("table_schema='%s' ", databaseName));
-        sqlBuilder.append("and column_key = 'PRI' group by table_name;");
-        HashSet<String> tableNames =
-                new HashSet<>(syncJdbcExecutor.query(sqlBuilder.toString(), (rs, num) -> rs.getString(1)));
-        tables.forEach(tableConfig -> {
-            if (!tableNames.contains(tableConfig.getTableName())) {
-                throw new IllegalArgumentException(
-                        String.format("The table need to contain a primary key!tableName=%s",
-                                tableConfig.getTableName()));
-            }
-        });
-    }
-
-    private void checkDataArchiveSql(ConnectionSession connectionSession, Map<DataArchiveTableConfig, String> sqlMap) {
-        SyncJdbcExecutor syncJdbcExecutor = connectionSession.getSyncJdbcExecutor(
-                ConnectionSessionConstants.CONSOLE_DS_KEY);
-        // Ensure the conditions are valid when executing.
-        sqlMap.forEach((key, value) -> {
-            try {
-                syncJdbcExecutor.execute("explain " + value);
-            } catch (Exception e) {
-                log.warn("Test condition failed,sql={}", value, e);
-                throw new IllegalArgumentException(String.format("Condition is not supported!TableName=%s,Condition=%s",
-                        key.getTableName(), key.getConditionExpression()));
-            }
-        });
-    }
-
-    public Map<DataArchiveTableConfig, String> getDataArchiveSqls(Database database,
-            List<DataArchiveTableConfig> tables,
-            List<OffsetConfig> variables) {
-        Map<DataArchiveTableConfig, String> sqlMap = new HashMap<>();
-        tables.forEach(table -> sqlMap.put(table, generateTestSql(database, table, variables)));
-        return sqlMap;
-    }
-
-    private String generateTestSql(Database database, DataArchiveTableConfig table, List<OffsetConfig> variables) {
-        try {
-            DialectType dbType = database.getDataSource().getDialectType();
-            if (!dbType.isOracle() && !dbType.isMysql()) {
-                throw new UnsupportedException();
-            }
-            SqlBuilder sqlBuilder = dbType.isMysql() ? new MySQLSqlBuilder() : new OracleSqlBuilder();
-            sqlBuilder.append("SELECT 1 FROM").identifier(database.getName(), table.getTableName());
-            if (StringUtils.isNotEmpty(table.getConditionExpression())) {
-                sqlBuilder.append(" WHERE ")
-                        .append(DataArchiveConditionUtil.parseCondition(table.getConditionExpression(),
-                                variables, new Date()));
-            }
-            sqlBuilder.append(" LIMIT 1;");
-            return sqlBuilder.toString();
-        } catch (Exception e) {
-            throw new IllegalArgumentException(String.format("Parse condition error,message=%s", e.getMessage()));
-        }
-    }
 
 }

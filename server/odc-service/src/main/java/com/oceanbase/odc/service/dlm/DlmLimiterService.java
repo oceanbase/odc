@@ -66,6 +66,15 @@ public class DlmLimiterService {
     private ScheduleService scheduleService;
 
     public DlmLimiterConfigEntity createAndBindToOrder(Long orderId, RateLimitConfiguration config) {
+        if (config.getRowLimit() == null) {
+            config.setRowLimit(defaultRowLimit);
+        }
+        if (config.getBatchSize() == null) {
+            config.setBatchSize(defaultBatchSize);
+        }
+        if (config.getDataSizeLimit() == null) {
+            config.setDataSizeLimit(defaultDataSizeLimit);
+        }
         checkLimiterConfig(config);
         DlmLimiterConfigEntity entity = mapper.modelToEntity(config);
         entity.setOrderId(orderId);
