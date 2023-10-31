@@ -67,7 +67,7 @@ public class DataArchiveJobStore implements IJobStore {
     @Override
     public TaskGenerator getTaskGenerator(String generatorId, String jobId) {
         if (supportBreakpointRecovery) {
-            return taskGeneratorRepository.findByGeneratorId(jobId).map(taskGeneratorMapper::entityToModel)
+            return taskGeneratorRepository.findByJobId(jobId).map(taskGeneratorMapper::entityToModel)
                     .orElse(null);
         }
         return null;
