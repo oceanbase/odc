@@ -28,6 +28,7 @@ import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
 import com.oceanbase.odc.service.flow.processor.ScheduleTaskPreprocessor;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
+import com.oceanbase.odc.service.schedule.DlmEnvironment;
 import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.model.JobType;
 
@@ -41,6 +42,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @ScheduleTaskPreprocessor(type = JobType.DATA_ARCHIVE)
 public class DataArchivePreprocessor extends AbstractDlmJobPreprocessor {
+
+    @Autowired
+    private DlmEnvironment dlmEnvironment;
 
     @Autowired
     private AuthenticationFacade authenticationFacade;
@@ -69,13 +73,16 @@ public class DataArchivePreprocessor extends AbstractDlmJobPreprocessor {
             dataArchiveParameters.setSourceDataSourceName(sourceDb.getDataSource().getName());
             dataArchiveParameters.setTargetDataSourceName(targetDb.getDataSource().getName());
             AbstractDLMChecker sourceDbChecker = DLMCheckerFactory.create(sourceDb);
+            AbstractDLMChecker targetDbChecker = DLMCheckerFactory.create(targetDb);
             sourceDbChecker.checkTargetDbType(targetDb.getDataSource().getDialectType());
+            if (dlmEnvironment.isSysTenantUserRequired()) {
+                sourceDbChecker.checkSysTenantUser();
+                targetDbChecker.checkSysTenantUser();
+            }
             sourceDbChecker.checkSysTenantUser();
             sourceDbChecker.checkTablesPrimaryKey(dataArchiveParameters.getTables());
             sourceDbChecker.checkDLMTableCondition(dataArchiveParameters.getTables(),
                     dataArchiveParameters.getVariables());
-            AbstractDLMChecker targetDbChecker = DLMCheckerFactory.create(targetDb);
-            targetDbChecker.checkSysTenantUser();
             sourceDbChecker.dealloc();
             targetDbChecker.dealloc();
             log.info("Data archive preprocessing has been completed.");

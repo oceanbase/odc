@@ -28,6 +28,7 @@ import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
 import com.oceanbase.odc.service.flow.processor.ScheduleTaskPreprocessor;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
+import com.oceanbase.odc.service.schedule.DlmEnvironment;
 import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.model.JobType;
 
@@ -41,6 +42,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @ScheduleTaskPreprocessor(type = JobType.DATA_DELETE)
 public class DataDeletePreprocessor extends AbstractDlmJobPreprocessor {
+
+    @Autowired
+    private DlmEnvironment dlmEnvironment;
 
     @Autowired
     private AuthenticationFacade authenticationFacade;
@@ -64,7 +68,9 @@ public class DataDeletePreprocessor extends AbstractDlmJobPreprocessor {
             // permission to access it.
             Database sourceDb = databaseService.detail(dataDeleteParameters.getDatabaseId());
             AbstractDLMChecker sourceDbChecker = DLMCheckerFactory.create(sourceDb);
-            sourceDbChecker.checkSysTenantUser();
+            if (dlmEnvironment.isSysTenantUserRequired()) {
+                sourceDbChecker.checkSysTenantUser();
+            }
             sourceDbChecker.checkTablesPrimaryKey(dataDeleteParameters.getTables());
             sourceDbChecker.checkDLMTableCondition(dataDeleteParameters.getTables(),
                     dataDeleteParameters.getVariables());
