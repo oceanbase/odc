@@ -626,23 +626,19 @@ public class FlowInstanceService {
         try {
             TaskParameters parameters = flowInstanceReq.getParameters();
             FlowInstanceConfigurer taskConfigurer;
-            if (taskType == TaskType.ASYNC
-                    && Boolean.TRUE.equals(((DatabaseChangeParameters) parameters).getGenerateRollbackPlan())) {
-                FlowTaskInstance taskInstance =
-                        flowFactory.generateFlowTaskInstance(flowInstance.getId(), false, true, taskType,
-                                strategyConfig);
-                taskInstance.setTargetTaskId(taskEntity.getId());
-                taskInstance.update();
+            boolean addRollbackPlanNode = (taskType == TaskType.ASYNC
+                    && Boolean.TRUE.equals(((DatabaseChangeParameters) parameters).getGenerateRollbackPlan()));
+            FlowTaskInstance taskInstance =
+                    flowFactory.generateFlowTaskInstance(flowInstance.getId(), !addRollbackPlanNode, true, taskType,
+                            strategyConfig);
+            taskInstance.setTargetTaskId(taskEntity.getId());
+            taskInstance.update();
+            if (addRollbackPlanNode) {
                 FlowTaskInstance rollbackPlanInstance =
                         flowFactory.generateFlowTaskInstance(flowInstance.getId(), true, false,
                                 TaskType.GENERATE_ROLLBACK, ExecutionStrategyConfig.autoStrategy());
                 taskConfigurer = flowInstance.newFlowInstance().next(rollbackPlanInstance).next(taskInstance);
             } else {
-                FlowTaskInstance taskInstance =
-                        flowFactory.generateFlowTaskInstance(flowInstance.getId(), true, true, taskType,
-                                strategyConfig);
-                taskInstance.setTargetTaskId(taskEntity.getId());
-                taskInstance.update();
                 taskConfigurer = flowInstance.newFlowInstance().next(taskInstance);
             }
             taskConfigurer.endFlowInstance();
