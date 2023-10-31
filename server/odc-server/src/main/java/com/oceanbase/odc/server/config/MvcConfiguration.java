@@ -177,6 +177,7 @@ public class MvcConfiguration implements WebMvcConfigurer {
                 "/404.html",
                 "/umi.**.js",
                 "/**.async.js",
+                "/editor.worker.js",
                 "/**.chunk.css",
                 "/umi.**.css",
                 "/bigfish.json",

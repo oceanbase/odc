@@ -388,6 +388,11 @@ public class MySQLNoGreaterThan5740SchemaAccessor implements DBSchemaAccessor {
     }
 
     @Override
+    public List<DBPLObjectIdentity> listPackageBodies(String schemaName) {
+        throw new UnsupportedOperationException("Not supported yet");
+    }
+
+    @Override
     public List<DBPLObjectIdentity> listTriggers(String schemaName) {
         throw new UnsupportedOperationException("Not supported yet");
     }
