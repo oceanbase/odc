@@ -13,35 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.onlineschemachange.rename;
 
+package com.oceanbase.odc.plugin.task.api.datatransfer.model;
+
+import java.util.LinkedList;
 import java.util.List;
 
-import com.oceanbase.odc.service.onlineschemachange.model.OriginTableCleanStrategy;
-
-import lombok.Builder;
 import lombok.Data;
 
-/**
- * @author yaobin
- * @date 2023-08-03
- * @since 4.2.0
- */
 @Data
-@Builder
-public class RenameTableParameters {
+public class TransferObjectsInfo {
 
-    private String schemaName;
+    private List<ObjectResult> dataObjectsInfo = new LinkedList<>();
+    private List<ObjectResult> schemaObjectsInfo = new LinkedList<>();
 
-    private String originTableName;
-
-    private String renamedTableName;
-
-    private String newTableName;
-
-    private Integer lockTableTimeOutSeconds;
-
-    private OriginTableCleanStrategy originTableCleanStrategy;
-
-    private List<String> lockUsers;
 }

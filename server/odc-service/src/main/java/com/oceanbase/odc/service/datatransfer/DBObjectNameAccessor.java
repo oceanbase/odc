@@ -15,12 +15,13 @@
  */
 package com.oceanbase.odc.service.datatransfer;
 
+import java.util.List;
 import java.sql.Connection;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.jdbc.core.ConnectionCallback;
 
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
@@ -93,89 +94,87 @@ public class DBObjectNameAccessor implements AutoCloseable {
 
     public Set<String> getTableNames() {
         return queryNames(conn -> SchemaPluginUtil.getTableExtension(dialectType)
-                .list(conn, schema).stream()
-                .map(DBObjectIdentity::getName)
-                .filter(name -> !StringUtils.endsWithIgnoreCase(name, OdcConstants.VALIDATE_DDL_TABLE_POSTFIX))
-                .collect(Collectors.toSet()));
+                .list(conn, schema)).stream()
+                        .map(DBObjectIdentity::getName)
+                        .filter(name -> !StringUtils.endsWithIgnoreCase(name, OdcConstants.VALIDATE_DDL_TABLE_POSTFIX))
+                        .collect(Collectors.toSet());
     }
 
     public Set<String> getViewNames() {
         return queryNames(conn -> SchemaPluginUtil.getViewExtension(dialectType)
-                .list(conn, schema).stream()
-                .map(DBObjectIdentity::getName)
-                .collect(Collectors.toSet()));
+                .list(conn, schema)).stream()
+                        .map(DBObjectIdentity::getName)
+                        .collect(Collectors.toSet());
     }
 
     public Set<String> getTriggerNames() {
         return queryNames(conn -> SchemaPluginUtil.getTriggerExtension(dialectType)
-                .list(conn, schema).stream()
-                .map(DBObjectIdentity::getName)
-                .collect(Collectors.toSet()));
+                .list(conn, schema)).stream()
+                        .map(DBObjectIdentity::getName)
+                        .collect(Collectors.toSet());
     }
 
     public Set<String> getFunctionNames() {
         return queryNames(conn -> SchemaPluginUtil.getFunctionExtension(dialectType)
-                .list(conn, schema).stream()
-                .map(DBObjectIdentity::getName)
-                .collect(Collectors.toSet()));
+                .list(conn, schema)).stream()
+                        .map(DBObjectIdentity::getName)
+                        .collect(Collectors.toSet());
     }
 
     public Set<String> getProcedureNames() {
         return queryNames(conn -> SchemaPluginUtil.getProcedureExtension(dialectType)
-                .list(conn, schema).stream()
-                .map(DBObjectIdentity::getName)
-                .collect(Collectors.toSet()));
+                .list(conn, schema)).stream()
+                        .map(DBObjectIdentity::getName)
+                        .collect(Collectors.toSet());
     }
 
     public Set<String> getSequenceNames() {
         return queryNames(conn -> SchemaPluginUtil.getSequenceExtension(dialectType)
-                .list(conn, schema).stream()
-                .map(DBObjectIdentity::getName)
-                .collect(Collectors.toSet()));
+                .list(conn, schema)).stream()
+                        .map(DBObjectIdentity::getName)
+                        .collect(Collectors.toSet());
     }
 
     public Set<String> getSynonymNames() {
         return queryNames(conn -> SchemaPluginUtil.getSynonymExtension(dialectType)
-                .list(conn, schema, DBSynonymType.COMMON).stream()
-                .map(DBObjectIdentity::getName)
-                .collect(Collectors.toSet()));
+                .list(conn, schema, DBSynonymType.COMMON)).stream()
+                        .map(DBObjectIdentity::getName)
+                        .collect(Collectors.toSet());
     }
 
     public Set<String> getPublicSynonymNames() {
         return queryNames(conn -> SchemaPluginUtil.getSynonymExtension(dialectType)
-                .list(conn, schema, DBSynonymType.PUBLIC).stream()
-                .map(DBObjectIdentity::getName)
-                .collect(Collectors.toSet()));
+                .list(conn, schema, DBSynonymType.PUBLIC)).stream()
+                        .map(DBObjectIdentity::getName)
+                        .collect(Collectors.toSet());
     }
 
     public Set<String> getPackageNames() {
         return queryNames(conn -> SchemaPluginUtil.getPackageExtension(dialectType)
-                .list(conn, schema).stream()
-                .filter(pkg -> pkg.getType().name().equals(ObjectType.PACKAGE.name()))
-                .map(DBObjectIdentity::getName)
-                .filter(name -> !StringUtils.equalsIgnoreCase(name, OdcConstants.PL_DEBUG_PACKAGE))
-                .collect(Collectors.toSet()));
+                .list(conn, schema)).stream()
+                        .map(DBObjectIdentity::getName)
+                        .filter(name -> !StringUtils.equalsIgnoreCase(name, OdcConstants.PL_DEBUG_PACKAGE))
+                        .collect(Collectors.toSet());
     }
 
     public Set<String> getPackageBodyNames() {
         return queryNames(conn -> SchemaPluginUtil.getPackageExtension(dialectType)
-                .list(conn, schema).stream()
-                .filter(pkg -> pkg.getType().name().equals(ObjectType.PACKAGE_BODY.name()))
-                .map(DBObjectIdentity::getName)
-                .filter(name -> !StringUtils.equalsIgnoreCase(name, OdcConstants.PL_DEBUG_PACKAGE))
-                .collect(Collectors.toSet()));
+                .listPackageBodies(conn, schema)).stream()
+                        .map(DBObjectIdentity::getName)
+                        .filter(name -> !StringUtils.equalsIgnoreCase(name, OdcConstants.PL_DEBUG_PACKAGE))
+                        .collect(Collectors.toSet());
     }
 
     public Set<String> getTypeNames() {
         return queryNames(conn -> SchemaPluginUtil.getTypeExtension(dialectType)
-                .list(conn, schema).stream()
-                .map(DBObjectIdentity::getName)
-                .collect(Collectors.toSet()));
+                .list(conn, schema)).stream()
+                        .map(DBObjectIdentity::getName)
+                        .collect(Collectors.toSet());
     }
 
-    private Set<String> queryNames(Function<Connection, Set<String>> consumer) {
+    private <T extends DBObjectIdentity> List<T> queryNames(ConnectionCallback<List<T>> consumer) {
         return session.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY)
-                .execute(consumer::apply);
+                .execute(consumer);
     }
 
     @Override

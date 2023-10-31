@@ -77,7 +77,6 @@ import com.oceanbase.odc.plugin.task.api.datatransfer.model.UploadFileResult;
 import com.oceanbase.odc.service.collaboration.project.model.Project;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
-import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.datatransfer.task.DataTransferTaskContext;
 import com.oceanbase.odc.service.session.factory.DruidDataSourceFactory;
@@ -234,7 +233,7 @@ public class DataTransferServiceTest extends ServiceTestEnv {
 
         DataTransferTaskContext context = dataTransferService.create(BUCKET,
                 getMysqlLoadConfig(Collections.singletonList(dumpFile.getAbsolutePath()), false, true, true));
-        Assert.assertNotNull(context.get(30, TimeUnit.SECONDS));
+        Assert.assertNotNull(context.get(20, TimeUnit.SECONDS));
         assertMysqlModeTableExists();
         assertMysqlModeTableCountEquals(2);
     }
@@ -246,7 +245,7 @@ public class DataTransferServiceTest extends ServiceTestEnv {
 
         DataTransferTaskContext context = dataTransferService.create(BUCKET,
                 getMysqlLoadConfig(Collections.singletonList(dumpFile.getAbsolutePath()), false, false, true));
-        Assert.assertNotNull(context.get(30, TimeUnit.SECONDS));
+        Assert.assertNotNull(context.get(20, TimeUnit.SECONDS));
         assertMysqlModeTableExists();
         assertMysqlModeTableCountEquals(0);
     }
@@ -310,7 +309,7 @@ public class DataTransferServiceTest extends ServiceTestEnv {
         UploadFileResult expect = new UploadFileResult();
         expect.setFormat(DataFormat.SQL);
         expect.setFileType("ZIP");
-        expect.setFileName(target.getName());
+        expect.setFileName(target.getAbsolutePath());
         expect.setContainsData(true);
         expect.setContainsSchema(true);
         Map<ObjectType, Set<String>> importFileNames = new HashMap<>();
@@ -327,36 +326,6 @@ public class DataTransferServiceTest extends ServiceTestEnv {
 
         UploadFileResult actual = dataTransferService.getMetaInfo(target.getAbsolutePath());
         Assert.assertEquals(ErrorCodes.ImportInvalidFileType, actual.getErrorCode());
-    }
-
-    @Test
-    public void getExportObjectNames_oracleMode_getNonNull() throws SQLException {
-        Database database = new Database();
-        database.setId(1L);
-        database.setName(oracleConnConfig.defaultSchema());
-        Project project = new Project();
-        project.setId(1L);
-        database.setProject(project);
-        database.setDataSource(oracleConnConfig);
-        Mockito.when(databaseService.detail(1L)).thenReturn(database);
-        Map<ObjectType, Set<String>> actual =
-                dataTransferService.getExportObjectNames(1L, null);
-        Assert.assertTrue(actual.get(ObjectType.TABLE).contains(TEST_TABLE_NAME));
-    }
-
-    @Test
-    public void getExportObjectNames_mysqlMode_getNonNull() throws SQLException {
-        Database database = new Database();
-        database.setId(1L);
-        database.setName(mysqlConnConfig.defaultSchema());
-        Project project = new Project();
-        project.setId(1L);
-        database.setProject(project);
-        database.setDataSource(mysqlConnConfig);
-        Mockito.when(databaseService.detail(1L)).thenReturn(database);
-        Map<ObjectType, Set<String>> actual =
-                dataTransferService.getExportObjectNames(1L, null);
-        Assert.assertTrue(actual.get(ObjectType.TABLE).contains(TEST_TABLE_NAME.toLowerCase()));
     }
 
     @Test
@@ -386,7 +355,7 @@ public class DataTransferServiceTest extends ServiceTestEnv {
             config = getOracleDumpConfig(true, true);
         }
         DataTransferTaskContext context = dataTransferService.create(BUCKET, config);
-        Assert.assertNotNull(context.get(30, TimeUnit.SECONDS));
+        Assert.assertNotNull(context.get(20, TimeUnit.SECONDS));
         File dumpFile = getDumpFile();
         File returnVal = copyFile(new FileInputStream(dumpFile), "zip");
         FileUtils.forceDelete(dumpFile);

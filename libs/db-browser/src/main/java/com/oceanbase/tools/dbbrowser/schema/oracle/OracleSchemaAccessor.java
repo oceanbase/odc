@@ -326,6 +326,26 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
     }
 
     @Override
+    public List<DBPLObjectIdentity> listPackageBodies(String schemaName) {
+        OracleSqlBuilder sb = new OracleSqlBuilder();
+
+        sb.append("select object_name as name, object_type as type, owner, status from ");
+        sb.append(dataDictTableNames.OBJECTS());
+        sb.append(" where object_type = 'PACKAGE BODY' and owner=");
+        sb.value(schemaName);
+        sb.append(" order by name asc");
+
+        return jdbcOperations.query(sb.toString(), (rs, rowNum) -> {
+            DBPLObjectIdentity dbPackage = new DBPLObjectIdentity();
+            dbPackage.setName(rs.getString("name"));
+            dbPackage.setStatus(rs.getString("status"));
+            dbPackage.setSchemaName(rs.getString("owner"));
+            dbPackage.setType(DBObjectType.getEnumByName(rs.getString("type")));
+            return dbPackage;
+        });
+    }
+
+    @Override
     public List<DBPLObjectIdentity> listTriggers(String schemaName) {
         OracleSqlBuilder sb = new OracleSqlBuilder();
 

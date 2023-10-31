@@ -25,7 +25,8 @@ public interface DataTransferAdapter {
 
     Long getMaxDumpSizeBytes();
 
-    File preHandleWorkDir(DataTransferConfig config, String bucket, File workDir) throws IOException;
+    File preHandleWorkDir(DataTransferConfig transferConfig,
+            String bucket, File workDir) throws IOException;
 
     void afterHandle(DataTransferConfig config, DataTransferTaskResult result, File exportFile)
             throws IOException;

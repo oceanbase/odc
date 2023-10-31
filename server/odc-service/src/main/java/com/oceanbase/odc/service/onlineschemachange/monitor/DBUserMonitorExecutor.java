@@ -23,7 +23,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import com.oceanbase.odc.core.session.ConnectionSession;
+import org.apache.commons.collections4.CollectionUtils;
+
+import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -39,28 +41,30 @@ public class DBUserMonitorExecutor {
     private ExecutorService executorService;
     private DBUserMonitor dbUserMonitor;
     private final List<String> toMonitorUsers;
+    private final ConnectionConfig connectionConfig;
 
-    public DBUserMonitorExecutor(List<String> toMonitorUsers) {
+    public DBUserMonitorExecutor(ConnectionConfig connectionConfig, List<String> toMonitorUsers) {
+        this.connectionConfig = connectionConfig;
         this.toMonitorUsers = toMonitorUsers;
     }
 
-    public void start(ConnectionSession connSession, Map<String, Object> logParameter) {
-        if (toMonitorUsers == null) {
+    public void start(Map<String, Object> logParameter) {
+        if (CollectionUtils.isEmpty(toMonitorUsers)) {
             log.info("To monitor users is null, do not start db user status monitor.");
         }
         if (!started.compareAndSet(false, true)) {
             throw new IllegalStateException("DB user status monitor has been started.");
         }
+
         executorService = Executors.newSingleThreadExecutor();
         DBUserMonitorFactory userLogStatusMonitorFactory = new DBUserLogStatusMonitorFactory(logParameter);
-
-        dbUserMonitor = userLogStatusMonitorFactory.generateDBUserMonitor(connSession,
+        dbUserMonitor = userLogStatusMonitorFactory.generateDBUserMonitor(connectionConfig,
                 toMonitorUsers, 200, Integer.MAX_VALUE, TimeUnit.MILLISECONDS);
         executorService.execute(dbUserMonitor);
     }
 
     public void stop() {
-        if (toMonitorUsers == null) {
+        if (CollectionUtils.isEmpty(toMonitorUsers)) {
             return;
         }
         if (!started.compareAndSet(true, false)) {

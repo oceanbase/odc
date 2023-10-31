@@ -37,6 +37,7 @@ import javax.validation.constraints.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.integration.jdbc.lock.JdbcLockRegistry;
@@ -53,10 +54,13 @@ import com.oceanbase.odc.core.authority.util.PreAuthenticate;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
+import com.oceanbase.odc.core.session.ConnectionSessionFactory;
+import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
+import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.core.shared.exception.AccessDeniedException;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.shared.exception.ConflictException;
@@ -74,20 +78,25 @@ import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.model.CreateDatabaseReq;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.database.model.DatabaseSyncStatus;
+import com.oceanbase.odc.service.connection.database.model.DatabaseUser;
 import com.oceanbase.odc.service.connection.database.model.DeleteDatabasesReq;
 import com.oceanbase.odc.service.connection.database.model.QueryDatabaseParams;
 import com.oceanbase.odc.service.connection.database.model.TransferDatabasesReq;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.db.DBIdentitiesService;
 import com.oceanbase.odc.service.db.DBSchemaService;
+import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.iam.HorizontalDataPermissionValidator;
 import com.oceanbase.odc.service.iam.OrganizationService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.auth.AuthorizationFacade;
+import com.oceanbase.odc.service.onlineschemachange.rename.OscDBUserUtil;
 import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.tools.dbbrowser.model.DBDatabase;
+import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
+import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -146,6 +155,20 @@ public class DatabaseService {
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("internal authenticated")
     public Database detail(@NonNull Long id) {
+        return getDatabase(id);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    @SkipAuthorize("internal authenticated")
+    public Database detail(@NonNull Long id, String taskType) {
+        Database database = getDatabase(id);
+        if (Objects.equals(TaskType.ONLINE_SCHEMA_CHANGE.name(), taskType) && database.getDataSource() != null) {
+            database.setLockDatabaseUserRequired(getLockUserIsRequired(database.getDataSource()));
+        }
+        return database;
+    }
+
+    private Database getDatabase(Long id) {
         Database database = entityToModel(databaseRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException(ResourceType.ODC_DATABASE, "id", id)));
         if (!projectService.checkPermission(database.getProject().getId(),
@@ -224,6 +247,7 @@ public class DatabaseService {
         Page<DatabaseEntity> entities = databaseRepository.findAll(specs, pageable);
         return entitiesToModels(entities);
     }
+
 
     @SkipAuthorize("internal authenticated")
     public List<ConnectionConfig> statsConnectionConfig() {
@@ -574,6 +598,25 @@ public class DatabaseService {
                 .collect(Collectors.toSet());
     }
 
+    @SkipAuthorize("internal authorized")
+    public Page<DatabaseUser> listUsers(Long dataSourceId) {
+        ConnectionConfig config = connectionService.getForConnectionSkipPermissionCheck(dataSourceId);
+        horizontalDataPermissionValidator.checkCurrentOrganization(config);
+        DefaultConnectSessionFactory factory = new DefaultConnectSessionFactory(config);
+        ConnectionSession connSession = factory.generateSession();
+        try {
+            DBSchemaAccessor dbSchemaAccessor = DBSchemaAccessors.create(connSession);
+            List<DBObjectIdentity> dbUsers = dbSchemaAccessor.listUsers();
+            Set<String> whiteUsers = OscDBUserUtil.getLockUserWhiteList(config);
+            return new PageImpl<>(dbUsers.stream()
+                    .filter(u -> !whiteUsers.contains(u.getName()))
+                    .map(d -> DatabaseUser.builder().name(d.getName()).build())
+                    .collect(Collectors.toList()));
+        } finally {
+            connSession.expire();
+        }
+    }
+
     private void checkPermission(Long projectId, Long dataSourceId) {
         if (Objects.isNull(projectId) && Objects.isNull(dataSourceId)) {
             throw new AccessDeniedException("invalid projectId or dataSourceId");
@@ -631,4 +674,25 @@ public class DatabaseService {
         return "DataSource_" + connectionId;
     }
 
+    private boolean getLockUserIsRequired(ConnectionConfig config) {
+        return OscDBUserUtil.isLockUserRequired(config.getDialectType(),
+                () -> {
+                    ConnectionConfig decryptedConnConfig =
+                            connectionService.getForConnectionSkipPermissionCheck(config.getId());
+                    ConnectionSessionFactory factory = new DefaultConnectSessionFactory(decryptedConnConfig);
+                    String version = null;
+                    ConnectionSession connSession = null;
+                    try {
+                        connSession = factory.generateSession();
+                        version = ConnectionSessionUtil.getVersion(connSession);
+                    } catch (Exception ex) {
+                        log.info("Get connection occur error", ex);
+                    } finally {
+                        if (connSession != null) {
+                            connSession.expire();
+                        }
+                    }
+                    return version;
+                });
+    }
 }

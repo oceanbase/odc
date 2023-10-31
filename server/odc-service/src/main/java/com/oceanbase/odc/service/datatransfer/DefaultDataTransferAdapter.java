@@ -24,6 +24,7 @@ import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
+import com.oceanbase.odc.service.datatransfer.task.DataTransferTaskContext;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferTaskResult;
 import com.oceanbase.odc.service.flow.task.OssTaskReferManager;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
@@ -46,15 +47,6 @@ public class DefaultDataTransferAdapter implements DataTransferAdapter {
 
     @Override
     public File preHandleWorkDir(DataTransferConfig config, String bucket, File workDir) throws IOException {
-        // 目标目录可能已经存在且其中可能存留有导入导出历史脏数据，这里需要清理避免潜在问题，且为了影响最小化，只清理导入导出相关的目录
-        String parent = new File(workDir, "data").getAbsolutePath();
-        Arrays.stream(ObjectType.values()).map(ObjectType::getName).forEach(objectName -> {
-            File target = new File(parent, objectName);
-            if (target.exists() && target.isDirectory()) {
-                boolean deleteRes = FileUtils.deleteQuietly(target);
-                log.info("Delete object directory, dir={}, result={}", target.getAbsolutePath(), deleteRes);
-            }
-        });
         return workDir;
     }
 

@@ -29,7 +29,7 @@ import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferType;
 
 @Component
 @Profile("clientMode")
-public class DesktopDataTransferAdapter extends DefaultDataTransferAdapter {
+public class DesktopDataTransferAdapter implements DataTransferAdapter {
 
     @Override
     public Long getMaxDumpSizeBytes() {

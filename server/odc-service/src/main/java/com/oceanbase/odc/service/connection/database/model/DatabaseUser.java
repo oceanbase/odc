@@ -13,35 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.onlineschemachange.rename;
 
-import java.util.List;
-
-import com.oceanbase.odc.service.onlineschemachange.model.OriginTableCleanStrategy;
+package com.oceanbase.odc.service.connection.database.model;
 
 import lombok.Builder;
 import lombok.Data;
 
 /**
  * @author yaobin
- * @date 2023-08-03
- * @since 4.2.0
+ * @date 2023-10-17
+ * @since 4.2.3
  */
-@Data
 @Builder
-public class RenameTableParameters {
-
-    private String schemaName;
-
-    private String originTableName;
-
-    private String renamedTableName;
-
-    private String newTableName;
-
-    private Integer lockTableTimeOutSeconds;
-
-    private OriginTableCleanStrategy originTableCleanStrategy;
-
-    private List<String> lockUsers;
+@Data
+public class DatabaseUser {
+    private String name;
 }

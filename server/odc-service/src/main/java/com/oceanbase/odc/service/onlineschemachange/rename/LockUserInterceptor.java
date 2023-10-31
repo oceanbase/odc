@@ -17,25 +17,15 @@ package com.oceanbase.odc.service.onlineschemachange.rename;
 
 import java.util.List;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
-import org.springframework.jdbc.core.ConnectionCallback;
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.jdbc.core.JdbcOperations;
-import org.springframework.util.CollectionUtils;
 
-import com.google.common.collect.Lists;
-import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
-import com.oceanbase.odc.core.session.ConnectionSessionUtil;
-import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.model.OdcDBSession;
-import com.oceanbase.odc.service.connection.model.ConnectionConfig;
-import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
-import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 import com.oceanbase.odc.service.session.DBSessionManageFacade;
-import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -61,14 +51,18 @@ public class LockUserInterceptor implements RenameTableInterceptor {
 
     @Override
     public void preRename(RenameTableParameters parameters) {
-        lockUserAndKillSession(parameters.getLockTableTimeOutSeconds());
+        if (CollectionUtils.isEmpty(parameters.getLockUsers())) {
+            return;
+        }
+        lockUserAndKillSession(parameters.getLockTableTimeOutSeconds(), parameters.getLockUsers());
     }
 
     @Override
     public void postRenamed(RenameTableParameters parameters) {
-        List<String> users = getUserIds();
-        users.removeAll(getWhiteUserList(connSession));
-        batchExecuteUnlockUser(users);
+        if (CollectionUtils.isEmpty(parameters.getLockUsers())) {
+            return;
+        }
+        batchExecuteUnlockUser(parameters.getLockUsers());
     }
 
     @Override
@@ -81,32 +75,16 @@ public class LockUserInterceptor implements RenameTableInterceptor {
 
     }
 
-    private void lockUserAndKillSession(Integer lockTableTimeOutSeconds) {
-        List<String> users = getUserIds();
-        users.removeAll(getWhiteUserList(connSession));
-        batchExecuteLockUser(users);
-        dbSessionManageFacade.killAllSessions(connSession,
-                getSessionFilter(connSession.getDialectType(), connSession), lockTableTimeOutSeconds);
-
-    }
-
-    private List<String> getUserIds() {
-        return DBSchemaAccessors.create(connSession)
-                .listUsers().stream().map(DBObjectIdentity::getName)
-                .collect(Collectors.toList());
+    private void lockUserAndKillSession(Integer lockTableTimeOutSeconds, List<String> lockUsers) {
+        batchExecuteLockUser(lockUsers);
+        dbSessionManageFacade.killAllSessions(connSession, getSessionFilter(lockUsers), lockTableTimeOutSeconds);
     }
 
     private void batchExecuteLockUser(List<String> users) {
-        if (CollectionUtils.isEmpty(users)) {
-            return;
-        }
         users.forEach(u -> executeAlterLock(u, " account lock"));
     }
 
     private void batchExecuteUnlockUser(List<String> users) {
-        if (CollectionUtils.isEmpty(users)) {
-            return;
-        }
         users.forEach(u -> {
             try {
                 executeAlterLock(u, " account unlock");
@@ -125,42 +103,8 @@ public class LockUserInterceptor implements RenameTableInterceptor {
         log.info("Execute sql: {} ", sql);
     }
 
-    private List<String> getWhiteUserList(ConnectionSession connectionSession) {
-        ConnectionConfig config = (ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(connectionSession);
-        List<String> users = Lists.newArrayList(config.getUsername());
-        if (config.getDialectType().isMysql()) {
-            users.add("root");
-        } else {
-            users.add("SYS");
-            users.add("SYSTEM");
-            users.add("PUBLIC");
-            users.add("LBACSYS");
-            users.add("ORAAUDITOR");
-            users.add("ROOT");
-
-            users.add(config.getUsername().toUpperCase());
-        }
-        return users;
+    private Predicate<OdcDBSession> getSessionFilter(List<String> lockUsers) {
+        // kill all sessions relational lockUsers
+        return dbSession -> lockUsers.contains(dbSession.getDbUser());
     }
-
-    private Predicate<OdcDBSession> getSessionFilter(DialectType dialectType, ConnectionSession connectionSession) {
-        String currentSessionId = connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY)
-                .execute((ConnectionCallback<? extends String>) conn -> ConnectionPluginUtil
-                        .getSessionExtension(dialectType).getConnectionId(conn));
-        List<String> filterList = Lists.newArrayList();
-        filterList.add(currentSessionId);
-        log.info("Kill session filter session id : {}", JsonUtils.toJson(filterList));
-
-        List<String> whiteUserList = getWhiteUserList(connectionSession);
-        log.info("Kill session filter user: {}", JsonUtils.toJson(whiteUserList));
-
-        // filter current session
-        Predicate<OdcDBSession> predicate =
-                dbSession -> !filterList.contains(dbSession.getSessionId() + "");
-
-        // filter white users and sleep session
-        return predicate.and(dbSession -> !whiteUserList.contains(dbSession.getDbUser()))
-                .and(dbSession -> !"SLEEP".equalsIgnoreCase(dbSession.getStatus()));
-    }
-
 }

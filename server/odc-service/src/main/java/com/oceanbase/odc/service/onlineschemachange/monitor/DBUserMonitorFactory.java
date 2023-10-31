@@ -19,7 +19,7 @@ package com.oceanbase.odc.service.onlineschemachange.monitor;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import com.oceanbase.odc.core.session.ConnectionSession;
+import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 
 /**
  * @author yaobin
@@ -28,6 +28,6 @@ import com.oceanbase.odc.core.session.ConnectionSession;
  */
 public interface DBUserMonitorFactory {
 
-    DBUserMonitor generateDBUserMonitor(ConnectionSession connSession, List<String> toMonitorUsers,
+    DBUserMonitor generateDBUserMonitor(ConnectionConfig connConfig, List<String> toMonitorUsers,
             Integer period, Integer timeout, TimeUnit timeUnit);
 }
