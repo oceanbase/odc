@@ -26,6 +26,7 @@ import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.plugin.connect.api.InformationExtensionPoint;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
+import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.dlm.DlmLimiterService;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
 import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
@@ -82,7 +83,9 @@ public class DataArchivePreprocessor extends AbstractDlmJobPreprocessor {
             dataArchiveParameters.setTargetDatabaseName(targetDb.getName());
             dataArchiveParameters.setSourceDataSourceName(sourceDb.getDataSource().getName());
             dataArchiveParameters.setTargetDataSourceName(targetDb.getDataSource().getName());
-            ConnectionSessionFactory sourceSessionFactory = new DefaultConnectSessionFactory(sourceDb.getDataSource());
+            ConnectionConfig sourceDs = sourceDb.getDataSource();
+            sourceDs.setDefaultSchema(sourceDb.getName());
+            ConnectionSessionFactory sourceSessionFactory = new DefaultConnectSessionFactory(sourceDs);
             ConnectionSessionFactory targetSessionFactory = new DefaultConnectSessionFactory(targetDb.getDataSource());
             ConnectionSession sourceSession = sourceSessionFactory.generateSession();
             ConnectionSession targetSession = targetSessionFactory.generateSession();
