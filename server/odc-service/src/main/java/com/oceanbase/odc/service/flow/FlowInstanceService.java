@@ -624,20 +624,25 @@ public class FlowInstanceService {
         ExecutionStrategyConfig strategyConfig = ExecutionStrategyConfig.from(flowInstanceReq,
                 ExecutionStrategyConfig.INVALID_EXPIRE_INTERVAL_SECOND);
         try {
-            FlowTaskInstance taskInstance =
-                    flowFactory.generateFlowTaskInstance(flowInstance.getId(), true, true, taskType,
-                            strategyConfig);
-            taskInstance.setTargetTaskId(taskEntity.getId());
-            taskInstance.update();
             TaskParameters parameters = flowInstanceReq.getParameters();
             FlowInstanceConfigurer taskConfigurer;
             if (taskType == TaskType.ASYNC
                     && Boolean.TRUE.equals(((DatabaseChangeParameters) parameters).getGenerateRollbackPlan())) {
+                FlowTaskInstance taskInstance =
+                        flowFactory.generateFlowTaskInstance(flowInstance.getId(), false, true, taskType,
+                                strategyConfig);
+                taskInstance.setTargetTaskId(taskEntity.getId());
+                taskInstance.update();
                 FlowTaskInstance rollbackPlanInstance =
-                        flowFactory.generateFlowTaskInstance(flowInstance.getId(), false, false,
+                        flowFactory.generateFlowTaskInstance(flowInstance.getId(), true, false,
                                 TaskType.GENERATE_ROLLBACK, ExecutionStrategyConfig.autoStrategy());
                 taskConfigurer = flowInstance.newFlowInstance().next(rollbackPlanInstance).next(taskInstance);
             } else {
+                FlowTaskInstance taskInstance =
+                        flowFactory.generateFlowTaskInstance(flowInstance.getId(), true, true, taskType,
+                                strategyConfig);
+                taskInstance.setTargetTaskId(taskEntity.getId());
+                taskInstance.update();
                 taskConfigurer = flowInstance.newFlowInstance().next(taskInstance);
             }
             taskConfigurer.endFlowInstance();
