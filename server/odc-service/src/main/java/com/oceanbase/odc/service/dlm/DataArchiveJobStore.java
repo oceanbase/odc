@@ -52,8 +52,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class DataArchiveJobStore implements IJobStore {
 
-    @Value("${odc.task.dlm.support-resume:false}")
-    private boolean supportResume;
+    @Value("${odc.task.dlm.support-breakpoint-recovery:false}")
+    private boolean supportBreakpointRecovery;
     @Autowired
     private DlmLimiterService limiterService;
     @Autowired
@@ -66,7 +66,7 @@ public class DataArchiveJobStore implements IJobStore {
 
     @Override
     public TaskGenerator getTaskGenerator(String generatorId, String jobId) {
-        if (supportResume) {
+        if (supportBreakpointRecovery) {
             return taskGeneratorRepository.findByGeneratorId(jobId).map(taskGeneratorMapper::entityToModel)
                     .orElse(null);
         }
@@ -75,7 +75,7 @@ public class DataArchiveJobStore implements IJobStore {
 
     @Override
     public void storeTaskGenerator(TaskGenerator taskGenerator) {
-        if (supportResume) {
+        if (supportBreakpointRecovery) {
             Optional<TaskGeneratorEntity> optional = taskGeneratorRepository.findByGeneratorId(taskGenerator.getId());
             TaskGeneratorEntity entity;
             if (optional.isPresent()) {
@@ -110,7 +110,7 @@ public class DataArchiveJobStore implements IJobStore {
 
     @Override
     public List<TaskMeta> getTaskMeta(JobMeta jobMeta) {
-        if (supportResume) {
+        if (supportBreakpointRecovery) {
             List<TaskMeta> tasks = taskUnitRepository.findByGeneratorId(jobMeta.getGenerator().getId()).stream().map(
                     taskUnitMapper::entityToModel).collect(
                             Collectors.toList());
@@ -122,7 +122,7 @@ public class DataArchiveJobStore implements IJobStore {
 
     @Override
     public void storeTaskMeta(TaskMeta taskMeta) {
-        if (supportResume) {
+        if (supportBreakpointRecovery) {
             Optional<TaskUnitEntity> optional = taskUnitRepository.findByJobIdAndGeneratorIdAndTaskIndex(
                     taskMeta.getJobMeta().getJobId(), taskMeta.getGeneratorId(), taskMeta.getTaskIndex());
             TaskUnitEntity entity;
@@ -148,7 +148,7 @@ public class DataArchiveJobStore implements IJobStore {
 
     @Override
     public Long getAbnormalTaskIndex(String jobId) {
-        if (supportResume) {
+        if (supportBreakpointRecovery) {
             Long abnormalTaskCount = taskUnitRepository.findAbnormalTaskByJobId(jobId);
             if (abnormalTaskCount != 0) {
                 return abnormalTaskCount;
