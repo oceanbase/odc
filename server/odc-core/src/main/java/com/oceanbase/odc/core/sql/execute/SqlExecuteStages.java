@@ -37,7 +37,12 @@ public class SqlExecuteStages {
     public static final String JDBC_PREPARE = "Jdbc prepare";
     public static final String NETWORK_CONSUMPTION = "Network consumption";
     public static final String OBSERVER_WAIT = "OBServer wait";
-    public static final String INIT_SQL_CHECK_MESSAGE = "Init sql check message";
+    public static final String SQL_CHECK = "SQL Check";
+    public static final String DATA_MASKING = "Data Masking";
+    public static final String EXTERNAL_SQL_INTERCEPTION = "External SQL interception";
+    public static final String DATABASE_PERMISSION_CHECK = "DB Permission Check";
+    public static final String SET_NLS_FORMAT = "Set Nls Format";
+    public static final String SQL_CONSOLE_RULE = "SQL Console Rule Check";
     public static final String DB_SERVER_EXECUTE_SQL = "DB Server Execute SQL";
     public static final String SQL_INTERCEPT_PRE_CHECK = "Sql intercept pre-check";
     public static final String SQL_INTERCEPT_AFTER_CHECK = "Sql intercept after-check";
