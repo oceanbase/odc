@@ -99,20 +99,24 @@ public class MetadataEntity {
             return false;
         }
         MetadataEntity that = (MetadataEntity) obj;
-        return Objects.equals(this.getId(), that.getId()) && Objects.equals(this.getBuiltIn(), that.getBuiltIn())
+        return Objects.equals(this.getBuiltIn(), that.getBuiltIn())
                 && Objects.equals(this.getName(), that.getName())
                 && Objects.equals(this.getDescription(), that.getDescription())
                 && Objects.equals(this.getType(), that.getType())
-                && ((this.getLabels() != null && that.getLabels() != null
-                        && CollectionUtils.isEqualCollection(this.getLabels(), that.getLabels()))
+                && ((CollectionUtils.isEmpty(this.getLabels()) && CollectionUtils.isEmpty(that.getLabels())) ||
+                        (this.getLabels() != null && that.getLabels() != null
+                                && CollectionUtils.isEqualCollection(this.getLabels(), that.getLabels()))
                         || (this.getLabels() == null && that.getLabels() == null))
-                && ((this.getPropertyMetadatas() != null && that.getPropertyMetadatas() != null
-                        && CollectionUtils.isEqualCollection(this.getPropertyMetadatas(), that.getPropertyMetadatas()))
+                && ((CollectionUtils.isEmpty(this.getPropertyMetadatas())
+                        && CollectionUtils.isEmpty(that.getPropertyMetadatas())) ||
+                        (this.getPropertyMetadatas() != null && that.getPropertyMetadatas() != null
+                                && CollectionUtils.isEqualCollection(this.getPropertyMetadatas(),
+                                        that.getPropertyMetadatas()))
                         || (this.getPropertyMetadatas() == null && that.getPropertyMetadatas() == null));
     }
 
     @Override
     public int hashCode() {
-        return HashCodeBuilder.reflectionHashCode(this, "createTime", "updateTime");
+        return HashCodeBuilder.reflectionHashCode(this, "id", "createTime", "updateTime");
     }
 }
