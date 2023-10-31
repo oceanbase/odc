@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS `dlm_task_generator` (
 `task_count` bigint(20) NOT NULL DEFAULT '0' COMMENT 'number of tasks',
 CONSTRAINT pk_dlm_task_generator_id PRIMARY KEY (id),
 UNIQUE KEY `pk_dlm_task_generator_generatora_id` (`generator_id`),
-UNIQUE KEY `pk_dlm_task_generator_job_id` (`job_id`),
+UNIQUE KEY `pk_dlm_task_generator_job_id` (`job_id`)
 );
 
 CREATE TABLE IF NOT EXISTS `dlm_task_unit` (
