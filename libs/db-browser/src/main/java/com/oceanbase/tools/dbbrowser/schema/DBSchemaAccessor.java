@@ -140,6 +140,11 @@ public interface DBSchemaAccessor {
     List<DBPLObjectIdentity> listPackages(String schemaName);
 
     /**
+     * Show all package body list in the specified schema
+     */
+    List<DBPLObjectIdentity> listPackageBodies(String schemaName);
+
+    /**
      * Show all trigger list in the specified schema
      */
     List<DBPLObjectIdentity> listTriggers(String schemaName);

@@ -485,7 +485,7 @@
       - 'OB_MYSQL'
       - 'OB_ORACLE'
       - 'MYSQL'
-  propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-pk-datatypes.allowed-datatypes}":["int", "varchar2", "number", "float", "bigint"]}'
+  propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-pk-datatypes.allowed-datatypes}":["int", "varchar2", "varchar", "number", "float", "bigint"]}'
 - enabled: 1
   level: 0
   environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.sit.name}
@@ -879,7 +879,7 @@
       - 'OB_MYSQL'
       - 'OB_ORACLE'
       - 'MYSQL'
-  propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-pk-datatypes.allowed-datatypes}":["int", "varchar2", "number", "float", "bigint"]}'
+  propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-pk-datatypes.allowed-datatypes}":["int", "varchar2", "varchar", "number", "float", "bigint"]}'
 - enabled: 1
   level: 0
   environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.dev.name}
@@ -1273,7 +1273,7 @@
       - 'OB_MYSQL'
       - 'OB_ORACLE'
       - 'MYSQL'
-  propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-pk-datatypes.allowed-datatypes}":["int", "varchar2", "number", "float", "bigint"]}'
+  propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-pk-datatypes.allowed-datatypes}":["int", "varchar2", "varchar", "number", "float", "bigint"]}'
 - enabled: 1
   level: 0
   environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.prod.name}
@@ -1658,7 +1658,7 @@
       - 'OB_MYSQL'
       - 'OB_ORACLE'
       - 'MYSQL'
-  propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-pk-datatypes.allowed-datatypes}":["int", "varchar2", "number", "float", "bigint"]}'
+  propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-pk-datatypes.allowed-datatypes}":["int", "varchar2", "varchar", "number", "float", "bigint"]}'
 - enabled: 1
   level: 0
   environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.default.name}
