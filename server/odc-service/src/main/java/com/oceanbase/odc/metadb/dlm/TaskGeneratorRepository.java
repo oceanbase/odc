@@ -25,8 +25,5 @@ import com.oceanbase.odc.config.jpa.OdcJpaRepository;
  * @Descripition:
  */
 public interface TaskGeneratorRepository extends OdcJpaRepository<TaskGeneratorEntity, Long> {
-
-    Optional<TaskGeneratorEntity> findByJobId(String jobId);
-
     Optional<TaskGeneratorEntity> findByGeneratorId(String generatorId);
 }
