@@ -56,6 +56,7 @@ Database Object Management
 
 - Users without the show create view permission will receive an error when viewing view details.
 - The length of all character types cannot be displayed when viewing table objects
+- Failed to view details of scheduled database change tasks with automatic rollback nodes in personal space
 
 Database Changes
 
