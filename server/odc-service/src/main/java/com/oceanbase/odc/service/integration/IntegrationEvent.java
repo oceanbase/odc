@@ -36,24 +36,29 @@ public class IntegrationEvent extends ApplicationEvent {
     @Getter
     private final IntegrationConfig currentConfig;
 
+    @Getter
+    private String salt;
+
     private IntegrationEvent(String type, IntegrationConfig currentConfig,
-            IntegrationConfig preConfig) {
+            IntegrationConfig preConfig, String salt) {
         super(currentConfig);
         this.type = type;
         this.currentConfig = currentConfig;
         this.preConfig = preConfig;
+        this.salt = salt;
     }
 
     public static IntegrationEvent createPreCreate(IntegrationConfig currentConfig) {
-        return new IntegrationEvent(PRE_CREATE, currentConfig, null);
+        return new IntegrationEvent(PRE_CREATE, currentConfig, null, null);
     }
 
     public static IntegrationEvent createPreDelete(IntegrationConfig currentConfig) {
-        return new IntegrationEvent(PRE_DELETE, currentConfig, null);
+        return new IntegrationEvent(PRE_DELETE, currentConfig, null, null);
     }
 
-    public static IntegrationEvent createPreUpdate(IntegrationConfig currentConfig, IntegrationConfig oldConfig) {
-        return new IntegrationEvent(PRE_UPDATE, currentConfig, oldConfig);
+    public static IntegrationEvent createPreUpdate(IntegrationConfig currentConfig, IntegrationConfig oldConfig,
+            String salt) {
+        return new IntegrationEvent(PRE_UPDATE, currentConfig, oldConfig, salt);
     }
 
     public IntegrationType getCurrentIntegrationType() {
