@@ -176,6 +176,9 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
                 if (thrown.get() == null || !stopWhenError) {
                     try {
                         executeResults = doExecuteSql(statement, sqlTuple);
+                        if (executeResults.size() == 1 && executeResults.get(0).getThrown() != null) {
+                            thrown.set(executeResults.get(0).getThrown());
+                        }
                     } catch (Exception exception) {
                         if (exception instanceof SQLTransientConnectionException
                                 && ((SQLTransientConnectionException) exception).getErrorCode() == 1094) {
@@ -301,7 +304,14 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
         if (!ifFunctionCallExists(sql)) {
             // use text protocal
             try (TraceStage stage = sqlTuple.getSqlWatch().start(SqlExecuteStages.EXECUTE)) {
-                boolean isResultSet = statement.execute(sql);
+                boolean isResultSet;
+                try {
+                    isResultSet = statement.execute(sql);
+                } catch (Exception e) {
+                    JdbcGeneralResult failedResult = JdbcGeneralResult.failedResult(sqlTuple, e);
+                    failedResult.setTraceId(getTraceIdAndAndSetStage(statement, sqlTuple.getSqlWatch()));
+                    return Collections.singletonList(failedResult);
+                }
                 return consumeStatement(statement, sqlTuple, isResultSet);
             }
         }
@@ -331,7 +341,14 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
                     throw new NotImplementedException("Unsupport function call " + definition.getFunctionName());
                 }
             }
-            boolean isResult = preparedStatement.execute();
+            boolean isResult;
+            try {
+                isResult = preparedStatement.execute();
+            } catch (Exception e) {
+                JdbcGeneralResult failedResult = JdbcGeneralResult.failedResult(sqlTuple, e);
+                failedResult.setTraceId(getTraceIdAndAndSetStage(statement, sqlTuple.getSqlWatch()));
+                return Collections.singletonList(failedResult);
+            }
             return consumeStatement(preparedStatement, sqlTuple, isResult);
         }
     }
@@ -390,7 +407,7 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
             setExecuteTraceStage(traceWatch, executeDetails, stopWatch);
             return executeDetails.getTraceId();
         } catch (Exception ex) {
-            log.warn("Query sql execute details failed, reason={}", ex.getMessage());
+            log.warn("Query sql execute details failed.", ex);
         }
         return null;
     }
