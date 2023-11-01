@@ -27,6 +27,7 @@ import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.session.ConnectionSession;
+import com.oceanbase.odc.service.datatransfer.model.DataTransferFormat;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
 import com.oceanbase.odc.service.session.util.SqlRewriteUtil;
 
@@ -67,7 +68,7 @@ public class DumperResultSetExportTaskManager implements ResultSetExportTaskMana
     @Override
     public ResultSetExportTaskContext start(ConnectionSession session, ResultSetExportTaskParameter parameter,
             String userId, String taskId) {
-        if (parameter.getTableName() == null) {
+        if (parameter.getFileFormat() != DataTransferFormat.SQL || parameter.getTableName() == null) {
             parameter.setTableName(DEFAULT_FILE_PREFIX);
         }
         String fileName = StringUtils.isBlank(parameter.getFileName()) ? "result_set" : parameter.getFileName().trim();
