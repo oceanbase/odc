@@ -15,20 +15,25 @@
  */
 package com.oceanbase.odc.service.dlm;
 
-import java.sql.SQLException;
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import com.oceanbase.odc.metadb.dlm.TaskGeneratorEntity;
+import com.oceanbase.odc.metadb.dlm.TaskGeneratorRepository;
+import com.oceanbase.odc.metadb.dlm.TaskUnitEntity;
+import com.oceanbase.odc.metadb.dlm.TaskUnitRepository;
 import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
 import com.oceanbase.odc.service.dlm.utils.DlmJobIdUtil;
+import com.oceanbase.odc.service.dlm.utils.TaskGeneratorMapper;
+import com.oceanbase.odc.service.dlm.utils.TaskUnitMapper;
 import com.oceanbase.tools.migrator.common.dto.JobStatistic;
 import com.oceanbase.tools.migrator.common.dto.TableSizeInfo;
 import com.oceanbase.tools.migrator.common.dto.TaskGenerator;
-import com.oceanbase.tools.migrator.common.exception.JobException;
-import com.oceanbase.tools.migrator.common.exception.JobSqlException;
-import com.oceanbase.tools.migrator.common.exception.TaskGeneratorNotFoundException;
 import com.oceanbase.tools.migrator.common.meta.TableMeta;
 import com.oceanbase.tools.migrator.core.IJobStore;
 import com.oceanbase.tools.migrator.core.meta.ClusterMeta;
@@ -46,47 +51,109 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 @Slf4j
 public class DataArchiveJobStore implements IJobStore {
+
+    @Value("${odc.task.dlm.support-breakpoint-recovery:false}")
+    private boolean supportBreakpointRecovery;
     @Autowired
     private DlmLimiterService limiterService;
+    @Autowired
+    private TaskGeneratorRepository taskGeneratorRepository;
+    @Autowired
+    private TaskUnitRepository taskUnitRepository;
+
+    private final TaskGeneratorMapper taskGeneratorMapper = TaskGeneratorMapper.INSTANCE;
+    private final TaskUnitMapper taskUnitMapper = TaskUnitMapper.INSTANCE;
 
     @Override
-    public TaskGenerator getTaskGenerator(String generatorId, String jobId)
-            throws TaskGeneratorNotFoundException, SQLException {
+    public TaskGenerator getTaskGenerator(String generatorId, String jobId) {
+        if (supportBreakpointRecovery) {
+            return taskGeneratorRepository.findByJobId(jobId).map(taskGeneratorMapper::entityToModel)
+                    .orElse(null);
+        }
         return null;
     }
 
     @Override
-    public void storeTaskGenerator(TaskGenerator taskGenerator) throws SQLException {
-
+    public void storeTaskGenerator(TaskGenerator taskGenerator) {
+        if (supportBreakpointRecovery) {
+            Optional<TaskGeneratorEntity> optional = taskGeneratorRepository.findByGeneratorId(taskGenerator.getId());
+            TaskGeneratorEntity entity;
+            if (optional.isPresent()) {
+                entity = optional.get();
+                entity.setStatus(taskGenerator.getGeneratorStatus().name());
+                entity.setTaskCount(taskGenerator.getTaskCount());
+                entity.setPartitionSavePoint(taskGenerator.getGeneratorPartitionSavepoint());
+                entity.setProcessedRowCount(taskGenerator.getProcessedRowCount());
+                entity.setProcessedDataSize(taskGenerator.getProcessedDataSize());
+                if (taskGenerator.getGeneratorSavePoint() != null) {
+                    entity.setPrimaryKeySavePoint(taskGenerator.getGeneratorSavePoint().toSqlString());
+                }
+            } else {
+                entity = taskGeneratorMapper.modelToEntity(taskGenerator);
+            }
+            taskGeneratorRepository.save(entity);
+        }
     }
 
     @Override
-    public void bindGeneratorToJob(String s, TaskGenerator taskGenerator) throws SQLException {
-        // TODO bind TaskGenerator to DataArchiveTaskUnit.
-    }
+    public void bindGeneratorToJob(String jobId, TaskGenerator taskGenerator) {}
 
     @Override
-    public JobStatistic getJobStatistic(String s) throws JobException {
+    public JobStatistic getJobStatistic(String s) {
         return new JobStatistic();
     }
 
     @Override
-    public void storeJobStatistic(JobMeta jobMeta) throws JobSqlException {
+    public void storeJobStatistic(JobMeta jobMeta) {
         jobMeta.getJobStat().buildReportData();
     }
 
     @Override
-    public List<TaskMeta> getTaskMeta(JobMeta jobMeta) throws SQLException {
+    public List<TaskMeta> getTaskMeta(JobMeta jobMeta) {
+        if (supportBreakpointRecovery) {
+            List<TaskMeta> tasks = taskUnitRepository.findByGeneratorId(jobMeta.getGenerator().getId()).stream().map(
+                    taskUnitMapper::entityToModel).collect(
+                            Collectors.toList());
+            tasks.forEach(o -> o.setJobMeta(jobMeta));
+            return tasks;
+        }
         return null;
     }
 
     @Override
-    public void storeTaskMeta(TaskMeta taskMeta) throws SQLException {
-
+    public void storeTaskMeta(TaskMeta taskMeta) {
+        if (supportBreakpointRecovery) {
+            Optional<TaskUnitEntity> optional = taskUnitRepository.findByJobIdAndGeneratorIdAndTaskIndex(
+                    taskMeta.getJobMeta().getJobId(), taskMeta.getGeneratorId(), taskMeta.getTaskIndex());
+            TaskUnitEntity entity;
+            if (optional.isPresent()) {
+                entity = optional.get();
+                entity.setStatus(taskMeta.getTaskStatus().name());
+                entity.setPartitionName(taskMeta.getPartitionName());
+                if (taskMeta.getMinPrimaryKey() != null) {
+                    entity.setLowerBoundPrimaryKey(taskMeta.getMinPrimaryKey().toSqlString());
+                }
+                if (taskMeta.getMaxPrimaryKey() != null) {
+                    entity.setUpperBoundPrimaryKey(taskMeta.getMaxPrimaryKey().toSqlString());
+                }
+                if (taskMeta.getCursorPrimaryKey() != null) {
+                    entity.setPrimaryKeyCursor(taskMeta.getCursorPrimaryKey().toSqlString());
+                }
+            } else {
+                entity = taskUnitMapper.modelToEntity(taskMeta);
+            }
+            taskUnitRepository.save(entity);
+        }
     }
 
     @Override
-    public Long getAbnormalTaskIndex(String s) throws JobSqlException {
+    public Long getAbnormalTaskIndex(String jobId) {
+        if (supportBreakpointRecovery) {
+            Long abnormalTaskCount = taskUnitRepository.findAbnormalTaskByJobId(jobId);
+            if (abnormalTaskCount != 0) {
+                return abnormalTaskCount;
+            }
+        }
         return null;
     }
 
@@ -97,21 +164,21 @@ public class DataArchiveJobStore implements IJobStore {
 
     @Override
     public void updateLimiter(JobMeta jobMeta) {
-        RateLimitConfiguration ratelimit;
+        RateLimitConfiguration rateLimit;
         try {
-            ratelimit = limiterService
+            rateLimit = limiterService
                     .getByOrderIdOrElseDefaultConfig(Long.parseLong(DlmJobIdUtil.getJobName(jobMeta.getJobId())));
         } catch (Exception e) {
             log.warn("Update limiter failed,jobId={},error={}",
                     jobMeta.getJobId(), e);
             return;
         }
-        setClusterLimitConfig(jobMeta.getSourceCluster(), ratelimit.getDataSizeLimit());
-        setClusterLimitConfig(jobMeta.getTargetCluster(), ratelimit.getDataSizeLimit());
-        setTenantLimitConfig(jobMeta.getSourceTenant(), ratelimit.getDataSizeLimit());
-        setTenantLimitConfig(jobMeta.getTargetTenant(), ratelimit.getDataSizeLimit());
-        setTableLimitConfig(jobMeta.getSourceTableMeta(), ratelimit.getRowLimit());
-        setTableLimitConfig(jobMeta.getTargetTableMeta(), ratelimit.getRowLimit());
+        setClusterLimitConfig(jobMeta.getSourceCluster(), rateLimit.getDataSizeLimit());
+        setClusterLimitConfig(jobMeta.getTargetCluster(), rateLimit.getDataSizeLimit());
+        setTenantLimitConfig(jobMeta.getSourceTenant(), rateLimit.getDataSizeLimit());
+        setTenantLimitConfig(jobMeta.getTargetTenant(), rateLimit.getDataSizeLimit());
+        setTableLimitConfig(jobMeta.getSourceTableMeta(), rateLimit.getRowLimit());
+        setTableLimitConfig(jobMeta.getTargetTableMeta(), rateLimit.getRowLimit());
     }
 
     private void setClusterLimitConfig(ClusterMeta clusterMeta, long dataSizeLimit) {
