@@ -426,7 +426,7 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
         try {
             if (cloudObjectStorageService.supported()) {
                 try {
-                    String objectName = cloudObjectStorageService.uploadTemp(origin.getName(), origin);
+                    String objectName = cloudObjectStorageService.uploadTemp(fileName, origin);
                     ((OssTaskReferManager) SpringContextUtil.getBean("ossTaskReferManager")).put(fileName, objectName);
                 } catch (Exception exception) {
                     throw new UnexpectedException(String
