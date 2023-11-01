@@ -70,6 +70,7 @@ class OssProxy:
             return result
         return ""
 
+
     def get_object_meta(self, key):
         url = "{}/{}".format(self.endpoint, key)
         headers = {}
