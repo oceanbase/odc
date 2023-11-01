@@ -23,7 +23,9 @@ import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.dlm.DlmLimiterService;
 import com.oceanbase.odc.service.dlm.model.DataDeleteParameters;
+import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
 import com.oceanbase.odc.service.flow.processor.ScheduleTaskPreprocessor;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
@@ -54,6 +56,9 @@ public class DataDeletePreprocessor extends AbstractDlmJobPreprocessor {
 
     @Autowired
     private DatabaseService databaseService;
+
+    @Autowired
+    private DlmLimiterService limiterService;
 
     @Override
     public void process(CreateFlowInstanceReq req) {
@@ -86,6 +91,16 @@ public class DataDeletePreprocessor extends AbstractDlmJobPreprocessor {
             scheduleEntity.setOrganizationId(authenticationFacade.currentOrganizationId());
             scheduleEntity = scheduleService.create(scheduleEntity);
             parameters.setTaskId(scheduleEntity.getId());
+            RateLimitConfiguration limiterConfig = limiterService.getDefaultLimiterConfig();
+            if (dataDeleteParameters.getRateLimit().getRowLimit() != null) {
+                limiterConfig.setRowLimit(dataDeleteParameters.getRateLimit().getRowLimit());
+            }
+            if (dataDeleteParameters.getRateLimit().getDataSizeLimit() != null) {
+                limiterConfig.setDataSizeLimit(dataDeleteParameters.getRateLimit().getDataSizeLimit());
+            }
+            if (dataDeleteParameters.getRateLimit().getRowLimit() != null) {
+                limiterConfig.setBatchSize(dataDeleteParameters.getRateLimit().getBatchSize());
+            }
         }
         req.setParentFlowInstanceId(parameters.getTaskId());
     }

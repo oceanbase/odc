@@ -85,10 +85,10 @@ public class DebuggeeSession extends AbstractDebugSession {
                     debugId = resultSet.getString(1);
                 }
             }
-            // 打开调试开关
-            stmt.execute("call dbms_debug.debug_on();");
             // 打开pl的日志输出
             enableDbmsOutput(stmt);
+            // 打开调试开关
+            stmt.execute("call dbms_debug.debug_on();");
         } catch (SQLSyntaxErrorException e) {
             if (Objects.equals(e.getErrorCode(), ERROR_CODE)
                     && StringUtils.contains(e.getMessage(), PL_DEBUGGING_ERROR_CODE)) {

@@ -19,16 +19,12 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import com.oceanbase.odc.common.util.TraceStage;
-import com.oceanbase.odc.common.util.TraceWatch;
-import com.oceanbase.odc.common.util.TraceWatch.EditableTraceStage;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
@@ -60,11 +56,10 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Component
-public class SqlCheckInterceptor implements SqlExecuteInterceptor {
+public class SqlCheckInterceptor extends BaseTimeConsumingInterceptor {
 
     public final static String NEED_SQL_CHECK_KEY = "NEED_SQL_CHECK";
     private final static String SQL_CHECK_RESULT_KEY = "SQL_CHECK_RESULT";
-    private final static String SQL_CHECK_ELAPSED_TIME_KEY = "SQL_CHECK_ELAPSED_TIME";
     @Autowired
     private UserConfigFacade userConfigFacade;
     @Autowired
@@ -75,7 +70,7 @@ public class SqlCheckInterceptor implements SqlExecuteInterceptor {
     private AuthenticationFacade authenticationFacade;
 
     @Override
-    public boolean preHandle(@NonNull SqlAsyncExecuteReq request, @NonNull SqlAsyncExecuteResp response,
+    public boolean doPreHandle(@NonNull SqlAsyncExecuteReq request, @NonNull SqlAsyncExecuteResp response,
             @NonNull ConnectionSession session, @NonNull Map<String, Object> context) {
         if (this.authenticationFacade.currentUser().getOrganizationType() != OrganizationType.TEAM
                 || Boolean.FALSE.equals(context.get(NEED_SQL_CHECK_KEY))) {
@@ -92,8 +87,7 @@ public class SqlCheckInterceptor implements SqlExecuteInterceptor {
             return true;
         }
         DefaultSqlChecker sqlChecker = new DefaultSqlChecker(session.getDialectType(), null, sqlCheckRules);
-        try (TraceWatch watch = new TraceWatch();
-                TraceStage s = watch.start(SqlExecuteStages.INIT_SQL_CHECK_MESSAGE)) {
+        try {
             Map<String, List<CheckViolation>> sql2Violations = new HashMap<>();
             SqlCheckContext checkContext = new SqlCheckContext((long) response.getSqls().size());
             response.getSqls().forEach(v -> {
@@ -104,7 +98,6 @@ public class SqlCheckInterceptor implements SqlExecuteInterceptor {
                 sql2Violations.put(sql, violations);
             });
             context.put(SQL_CHECK_RESULT_KEY, sql2Violations);
-            context.put(SQL_CHECK_ELAPSED_TIME_KEY, s);
             return response.getSqls().stream().noneMatch(v -> CollectionUtils.isNotEmpty(v.getViolatedRules()));
         } catch (Exception e) {
             log.warn("Failed to init sql check message", e);
@@ -113,22 +106,19 @@ public class SqlCheckInterceptor implements SqlExecuteInterceptor {
     }
 
     @Override
+    protected String getExecuteStageName() {
+        return SqlExecuteStages.SQL_CHECK;
+    }
+
+    @Override
     @SuppressWarnings("all")
     public void afterCompletion(@NonNull SqlExecuteResult response, @NonNull ConnectionSession session,
             @NonNull Map<String, Object> context) throws Exception {
-        if (!context.containsKey(SQL_CHECK_ELAPSED_TIME_KEY) || !context.containsKey(SQL_CHECK_RESULT_KEY)) {
+        if (!context.containsKey(SQL_CHECK_RESULT_KEY)) {
             return;
         }
-        TraceStage s = (TraceStage) context.get(SQL_CHECK_ELAPSED_TIME_KEY);
         Map<String, List<CheckViolation>> map = (Map<String, List<CheckViolation>>) context.get(SQL_CHECK_RESULT_KEY);
         response.setCheckViolations(map.get(response.getOriginSql()));
-        if (response.getTraceWatch().isClosed()) {
-            return;
-        }
-        try (EditableTraceStage stage = response.getTraceWatch().startEditableStage(s.getMessage())) {
-            stage.setStartTime(s.getStartTime(), TimeUnit.MILLISECONDS);
-            stage.setTime(s.getTime(TimeUnit.MILLISECONDS), TimeUnit.MILLISECONDS);
-        }
     }
 
     @Override

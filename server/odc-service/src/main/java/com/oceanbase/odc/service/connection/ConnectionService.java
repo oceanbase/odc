@@ -35,7 +35,6 @@ import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
@@ -529,10 +528,6 @@ public class ConnectionService {
         ConnectionEntity entity = modelToEntity(connection);
         ConnectionEntity savedEntity = repository.saveAndFlush(entity);
 
-        if (ObjectUtils.notEqual(connection.getEnvironmentId(), savedConnectionConfig.getEnvironmentId())) {
-            databaseService.updateEnvironmentByDataSourceId(savedEntity.getId(), savedEntity.getEnvironmentId());
-        }
-
         // for workaround createTime/updateTime not refresh in server mode,
         // seems JPA bug, it works while UT
         entityManager.refresh(savedEntity);
@@ -554,7 +549,8 @@ public class ConnectionService {
         if (org.springframework.util.CollectionUtils.isEmpty(ids)) {
             return Collections.emptyMap();
         }
-        return repository.findAllById(ids).stream().map(mapper::entityToModel)
+        return entitiesToModels(repository.findAllById(ids), authenticationFacade.currentOrganizationId(), true)
+                .stream()
                 .collect(Collectors.groupingBy(ConnectionConfig::getId));
     }
 

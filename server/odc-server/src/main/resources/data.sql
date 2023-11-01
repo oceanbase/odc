@@ -672,7 +672,11 @@ INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('o
 
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.connect.database.sync-databases-interval-millis', '180000', '同步数据源下所有数据库到 metadb 的间隔时间，默认 3 分钟，单位毫秒' ) ON DUPLICATE KEY UPDATE `id` = `id`;
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task.dlm.default-single-task-row-limit', '20000', 'DLM 单个任务默认每秒行限制' ) ON DUPLICATE KEY UPDATE `id` = `id`;
+INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task.dlm.max-single-task-row-limit', '50000', 'DLM 单个任务最大每秒行限制' ) ON DUPLICATE KEY UPDATE `id` = `id`;
+
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task.dlm.default-single-task-data-size-limit', '1024', 'DLM 单个任务默认每秒数据量限制，单位：KB' ) ON DUPLICATE KEY UPDATE `id` = `id`;
+INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task.dlm.max-single-task-data-size-limit', '10240', 'DLM 单个任务最大每秒数据量限制，单位：KB' ) ON DUPLICATE KEY UPDATE `id` = `id`;
+
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task.dlm.default-single-thread-batch-size', '200', 'DLM 单条 SQL 处理数据行数' ) ON DUPLICATE KEY UPDATE `id` = `id`;
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task.dlm.single-task-read-write-ratio', '0.5', 'DLM 单个任务读写线程比值，默认 0.5 即读写线程个数为 1:2' ) ON DUPLICATE KEY UPDATE `id` = `id`;
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task.dlm.single-task-thread-pool-size', '12', 'DLM 单个任务可用线程数' ) ON DUPLICATE KEY UPDATE `id` = `id`;
