@@ -134,9 +134,7 @@ public class DumpParameterFactoryTest {
         object.setDbObjectType(ObjectType.VIEW);
         config.getExportDbObjects().add(object);
 
-        DumpParameterFactory factory =
-                new DumpParameterFactory(generateConfig(DataTransferFormat.SQL, true, false, DialectType.OB_MYSQL),
-                        getWorkingDir(), getWorkingDir());
+        DumpParameterFactory factory = new DumpParameterFactory(config, getWorkingDir(), getWorkingDir());
         DumpParameter parameter = factory.generate();
         Map<ObjectType, Set<String>> actual = parameter.getWhiteListMap();
         Map<ObjectType, Set<String>> expect = new HashMap<>();

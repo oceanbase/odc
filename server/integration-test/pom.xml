@@ -80,12 +80,6 @@
             <groupId>io.github.benas</groupId>
             <artifactId>random-beans</artifactId>
         </dependency>
-        <dependency>
-            <groupId>com.oceanbase</groupId>
-            <artifactId>task-plugin-ob-mysql</artifactId>
-            <version>4.2.3-SNAPSHOT</version>
-            <scope>test</scope>
-        </dependency>
     </dependencies>
 
     <build>

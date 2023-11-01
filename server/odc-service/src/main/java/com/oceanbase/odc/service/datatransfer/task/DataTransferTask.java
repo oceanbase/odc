@@ -282,7 +282,7 @@ public class DataTransferTask implements Callable<DataTransferTaskResult> {
         }
 
         File exportPath = Paths.get(workingDir.getPath(), "data").toFile();
-        moveExportedFiles(result, exportPath.getPath());
+        copyExportedFiles(result, exportPath.getPath());
         File dest = new File(workingDir.getPath() + File.separator + workingDir.getName() + "_export_file.zip");
         try {
             DumperOutput output = new DumperOutput(exportPath);
@@ -350,7 +350,7 @@ public class DataTransferTask implements Callable<DataTransferTaskResult> {
         return dumperOutput;
     }
 
-    private void moveExportedFiles(DataTransferTaskResult result, String exportPath) {
+    private void copyExportedFiles(DataTransferTaskResult result, String exportPath) {
         doMove(result.getSchemaObjectsInfo(), exportPath);
         doMove(result.getDataObjectsInfo(), exportPath);
     }

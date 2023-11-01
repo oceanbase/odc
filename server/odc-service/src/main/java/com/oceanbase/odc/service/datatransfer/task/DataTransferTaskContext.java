@@ -50,6 +50,9 @@ public class DataTransferTaskContext implements Future<DataTransferTaskResult> {
 
     @Override
     public boolean cancel(boolean mayInterruptIfRunning) {
+        if (job.getValue() != null) {
+            job.getValue().cancel(mayInterruptIfRunning);
+        }
         return controlFuture.cancel(mayInterruptIfRunning);
     }
 
