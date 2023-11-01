@@ -19,6 +19,11 @@ DLM
 - Support OceanBase 4.x version
 - Support MySQL to OceanBase link
 - Support white screen current limiting configuration
+- Support breakpoint recovery
+
+Import and Export
+
+- Supports import and export of type objects
 
 ### Improve
 

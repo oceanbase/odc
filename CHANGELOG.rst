@@ -3,6 +3,7 @@
 
 New
 ~~~
+- Feat(dlm):support breakpoint recovery (#635) [guowl3]
 - Feat(dlm):support configuring limiter (#626) [guowl3]
 - Feat(data-security): add data type unit into response (#629)
   [XiaoYang]
@@ -35,6 +36,13 @@ Changes
 
 Fix
 ~~~
+- Fix(dlm): submit task got condition not supported error while
+  condition contains subquery (#668) [guowl3]
+- Fix(database-change): failed to view a scheduled database change task
+  with rollback plan in personal space (#669) [zhangxiao]
+- Fix(pl-debug): enable dbms_output first (#677) [IL MARE]
+- Fix(database): use datasource's environment as database's environment
+  to prevent data inconsistency  (#659) [pynzzZ]
 - Fix: dirty meta data (#663) [XiaoYang]
 - Fix(sql-execute): fix failed to get time consuming (#658) [IL MARE]
 - Fix(migration): rule metadata migration will be triggered every time
