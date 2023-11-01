@@ -232,7 +232,6 @@ public class ConnectSessionService {
         long timeoutMillis = TimeUnit.MILLISECONDS.convert(sessionProperties.getTimeoutMins(), TimeUnit.MINUTES);
         timeoutMillis = timeoutMillis + this.connectionSessionManager.getScanIntervalMillis();
         sessionFactory.setSessionTimeoutMillis(timeoutMillis);
-        sessionFactory.setBackendQueryTimeoutMicros(sessionProperties.getBackendQueryTimeoutMicros());
         ConnectionSession session = connectionSessionManager.start(sessionFactory);
         try {
             initSession(session, connection, userConfig);
