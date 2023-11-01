@@ -25,7 +25,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
-import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.integration.model.IntegrationConfig;
 import com.oceanbase.odc.service.integration.oauth2.SSOTestInfo;
 import com.oceanbase.odc.service.integration.oauth2.TestLoginManager;
