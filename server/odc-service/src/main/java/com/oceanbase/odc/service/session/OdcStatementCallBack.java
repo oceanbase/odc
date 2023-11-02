@@ -114,6 +114,8 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
     @Setter
     private boolean useFullLinkTrace = false;
     @Setter
+    private int fullLinkTraceTimeout = 60;
+    @Setter
     private int maxCachedLines = 10000;
     @Setter
     private BiPredicate<Integer, ResultSetMetaData> cachePredicate = new CacheColumnPredicate();
@@ -173,7 +175,7 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
                     log.warn("Init driver statistic collect failed, reason={}", e.getMessage());
                 }
                 List<JdbcGeneralResult> executeResults;
-                if (returnVal.stream().anyMatch(r -> r.getStatus() == SqlExecuteStatus.FAILED) || !stopWhenError) {
+                if (returnVal.stream().noneMatch(r -> r.getStatus() == SqlExecuteStatus.FAILED) || !stopWhenError) {
                     try {
                         executeResults = doExecuteSql(statement, sqlTuple);
                     } catch (Exception exception) {
@@ -394,7 +396,7 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
             SqlExecTime executeDetails;
             if (useFullLinkTrace && VersionUtils.isGreaterThanOrEqualsTo(version, "4.1") &&
                     connectionSession.getDialectType().isOceanbase()) {
-                executeDetails = FullLinkTraceUtil.getFullLinkTraceDetail(statement);
+                executeDetails = FullLinkTraceUtil.getFullLinkTraceDetail(statement, fullLinkTraceTimeout);
             } else {
                 executeDetails = ConnectionPluginUtil.getTraceExtension(connectionSession.getDialectType())
                         .getExecuteDetail(statement, version);
