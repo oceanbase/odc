@@ -35,14 +35,15 @@ public class FullLinkTraceUtil {
 
     private final static String TRACE_ID_KEY = "log_trace_id";
 
-    public static SqlExecTime getFullLinkTraceDetail(Statement statement) throws SQLException {
+    public static SqlExecTime getFullLinkTraceDetail(Statement statement, int queryTimeout) throws SQLException {
         OceanBaseConnection connection = (OceanBaseConnection) statement.getConnection();
         long lastPacketResponseTimestamp =
                 TimeUnit.MICROSECONDS.convert(connection.getLastPacketResponseTimestamp(),
                         TimeUnit.MILLISECONDS);
         long lastPacketSendTimestamp = TimeUnit.MICROSECONDS.convert(connection.getLastPacketSendTimestamp(),
                 TimeUnit.MILLISECONDS);
-
+        int originQueryTimeout = statement.getQueryTimeout();
+        statement.setQueryTimeout(queryTimeout);
         try (ResultSet resultSet = statement.executeQuery("show trace format='json'")) {
             if (!resultSet.next()) {
                 throw new UnexpectedException("No trace info, maybe value of ob_enable_show_trace is 0.");
@@ -53,6 +54,8 @@ public class FullLinkTraceUtil {
             execDetail.setLastPacketSendTimestamp(lastPacketSendTimestamp);
             execDetail.setLastPacketResponseTimestamp(lastPacketResponseTimestamp);
             return execDetail;
+        } finally {
+            statement.setQueryTimeout(originQueryTimeout);
         }
     }
 

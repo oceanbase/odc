@@ -252,6 +252,7 @@ public class ConnectConsoleService {
                 new OdcStatementCallBack(sqlTuples, connectionSession, request.getAutoCommit(), queryLimit);
         statementCallBack.setDbmsoutputMaxRows(sessionProperties.getDbmsOutputMaxRows());
         statementCallBack.setUseFullLinkTrace(sessionProperties.isEnableFullLinkTrace());
+        statementCallBack.setFullLinkTraceTimeout(sessionProperties.getFullLinkTraceTimeoutSeconds());
         statementCallBack.setMaxCachedSize(sessionProperties.getResultSetMaxCachedSize());
         statementCallBack.setMaxCachedLines(sessionProperties.getResultSetMaxCachedLines());
 

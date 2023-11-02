@@ -517,6 +517,8 @@ INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('o
    '-1', '当前 database 最大 MemStore 空间占用，单位字节，默认值 -1， <=0 表示不限制') ON DUPLICATE KEY UPDATE `id`=`id`;
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.session.full-link-trace.enabled',
    'true', '是否开启全链路诊断的功能，默认为开启') ON DUPLICATE KEY UPDATE `id`=`id`;
+INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.session.full-link-trace-timeout-seconds',
+   '60', '查询全链路追踪的超时时间，单位为秒，默认 60 秒') ON DUPLICATE KEY UPDATE `id`=`id`;
 
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.security.file.upload.safe-suffix-list',
    '*', '允许上传的文件名扩展名，默认 *，表示允许所有文件扩展名') ON DUPLICATE KEY UPDATE `id`=`id`;
