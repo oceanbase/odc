@@ -308,9 +308,7 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
                 try {
                     isResultSet = statement.execute(sql);
                 } catch (Exception e) {
-                    JdbcGeneralResult failedResult = JdbcGeneralResult.failedResult(sqlTuple, e);
-                    failedResult.setTraceId(getTraceIdAndAndSetStage(statement, sqlTuple.getSqlWatch()));
-                    return Collections.singletonList(failedResult);
+                    return handleException(e, statement, sqlTuple);
                 }
                 return consumeStatement(statement, sqlTuple, isResultSet);
             }
@@ -345,12 +343,16 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
             try {
                 isResult = preparedStatement.execute();
             } catch (Exception e) {
-                JdbcGeneralResult failedResult = JdbcGeneralResult.failedResult(sqlTuple, e);
-                failedResult.setTraceId(getTraceIdAndAndSetStage(statement, sqlTuple.getSqlWatch()));
-                return Collections.singletonList(failedResult);
+                return handleException(e, statement, sqlTuple);
             }
             return consumeStatement(preparedStatement, sqlTuple, isResult);
         }
+    }
+
+    private List<JdbcGeneralResult> handleException(Exception e, Statement statement, SqlTuple sqlTuple) {
+        JdbcGeneralResult failedResult = JdbcGeneralResult.failedResult(sqlTuple, e);
+        failedResult.setTraceId(getTraceIdAndAndSetStage(statement, sqlTuple.getSqlWatch()));
+        return Collections.singletonList(failedResult);
     }
 
     private String retrieveFileNameFromParameters(@NonNull FunctionDefinition definition) {
@@ -407,7 +409,7 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
             setExecuteTraceStage(traceWatch, executeDetails, stopWatch);
             return executeDetails.getTraceId();
         } catch (Exception ex) {
-            log.warn("Query sql execute details failed.", ex);
+            log.warn("Query sql execute details failed, reason={}", ex.getMessage());
         }
         return null;
     }

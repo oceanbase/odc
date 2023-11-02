@@ -48,12 +48,7 @@ public class FullLinkTraceUtil {
                 throw new UnexpectedException("No trace info, maybe value of ob_enable_show_trace is 0.");
             }
             String showTraceJson = resultSet.getString(1);
-            SqlExecTime execDetail;
-            try {
-                execDetail = parseSpanList(JsonUtils.fromJsonList(showTraceJson, TraceSpan.class));
-            } catch (Exception e) {
-                throw new UnexpectedException("Parse trace failed, original text: " + showTraceJson, e);
-            }
+            SqlExecTime execDetail = parseSpanList(JsonUtils.fromJsonList(showTraceJson, TraceSpan.class));
 
             execDetail.setLastPacketSendTimestamp(lastPacketSendTimestamp);
             execDetail.setLastPacketResponseTimestamp(lastPacketResponseTimestamp);
