@@ -33,8 +33,8 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiPredicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -70,6 +70,7 @@ import com.oceanbase.odc.core.sql.execute.mapper.JdbcRowMapper;
 import com.oceanbase.odc.core.sql.execute.model.JdbcGeneralResult;
 import com.oceanbase.odc.core.sql.execute.model.JdbcQueryResult;
 import com.oceanbase.odc.core.sql.execute.model.SqlExecTime;
+import com.oceanbase.odc.core.sql.execute.model.SqlExecuteStatus;
 import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
 import com.oceanbase.odc.core.sql.util.FullLinkTraceUtil;
 import com.oceanbase.odc.core.sql.util.OBUtils;
@@ -165,7 +166,6 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
             if (this.autoCommit ^ currentAutoCommit) {
                 statement.getConnection().setAutoCommit(this.autoCommit);
             }
-            AtomicReference<Exception> thrown = new AtomicReference<>();
             for (SqlTuple sqlTuple : this.sqls) {
                 try {
                     applyConnectionSettings(statement);
@@ -173,22 +173,10 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
                     log.warn("Init driver statistic collect failed, reason={}", e.getMessage());
                 }
                 List<JdbcGeneralResult> executeResults;
-                if (thrown.get() == null || !stopWhenError) {
+                if (returnVal.stream().anyMatch(r -> r.getStatus() == SqlExecuteStatus.FAILED) || !stopWhenError) {
                     try {
                         executeResults = doExecuteSql(statement, sqlTuple);
-                        if (executeResults.size() == 1 && executeResults.get(0).getThrown() != null) {
-                            thrown.set(executeResults.get(0).getThrown());
-                        }
                     } catch (Exception exception) {
-                        if (exception instanceof SQLTransientConnectionException
-                                && ((SQLTransientConnectionException) exception).getErrorCode() == 1094) {
-                            // ERROR 1094 (HY000) : Unknown thread id: %lu when kill a not exists session
-                            log.warn("Error executing SQL statement, sql={}, message ={}",
-                                    sqlTuple.getExecutedSql(), exception.getMessage());
-                        } else {
-                            log.warn("Error executing SQL statement, sql={}", sqlTuple.getExecutedSql(), exception);
-                        }
-                        thrown.set(exception);
                         executeResults = Collections.singletonList(JdbcGeneralResult.failedResult(sqlTuple, exception));
                     }
                 } else {
@@ -196,9 +184,12 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
                 }
                 returnVal.addAll(executeResults);
             }
-            if (thrown.get() != null) {
-                throw thrown.get();
+            Optional<JdbcGeneralResult> failed = returnVal
+                    .stream().filter(r -> r.getStatus() == SqlExecuteStatus.FAILED).findFirst();
+            if (failed.isPresent()) {
+                throw failed.get().getThrown();
             }
+
         } catch (Exception e) {
             try {
                 if (!statement.getConnection().getAutoCommit()) {
@@ -339,18 +330,21 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
                     throw new NotImplementedException("Unsupport function call " + definition.getFunctionName());
                 }
             }
-            boolean isResult;
-            try {
-                isResult = preparedStatement.execute();
-            } catch (Exception e) {
-                return handleException(e, statement, sqlTuple);
-            }
+            boolean isResult = preparedStatement.execute();
             return consumeStatement(preparedStatement, sqlTuple, isResult);
         }
     }
 
-    private List<JdbcGeneralResult> handleException(Exception e, Statement statement, SqlTuple sqlTuple) {
-        JdbcGeneralResult failedResult = JdbcGeneralResult.failedResult(sqlTuple, e);
+    private List<JdbcGeneralResult> handleException(Exception exception, Statement statement, SqlTuple sqlTuple) {
+        if (exception instanceof SQLTransientConnectionException
+                && ((SQLTransientConnectionException) exception).getErrorCode() == 1094) {
+            // ERROR 1094 (HY000) : Unknown thread id: %lu when kill a not exists session
+            log.warn("Error executing SQL statement, sql={}, message ={}",
+                    sqlTuple.getExecutedSql(), exception.getMessage());
+        } else {
+            log.warn("Error executing SQL statement, sql={}", sqlTuple.getExecutedSql(), exception);
+        }
+        JdbcGeneralResult failedResult = JdbcGeneralResult.failedResult(sqlTuple, exception);
         failedResult.setTraceId(getTraceIdAndAndSetStage(statement, sqlTuple.getSqlWatch()));
         return Collections.singletonList(failedResult);
     }
