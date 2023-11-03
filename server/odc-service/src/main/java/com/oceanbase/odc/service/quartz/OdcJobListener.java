@@ -30,6 +30,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
@@ -137,19 +138,24 @@ public class OdcJobListener implements JobListener {
     @Override
     public void jobWasExecuted(JobExecutionContext context, JobExecutionException jobException) {
         if (jobException != null) {
-            JobDataMap dataMap = context.getMergedJobDataMap();
-            EventLabels labels = new EventLabels();
-            labels.put(EventLabelKeys.IDENTIFIER_KEY_TASK_TYPE, context.getJobInstance().getClass().getName());
-            labels.put(EventLabelKeys.IDENTIFIER_KEY_ACTION, "failed");
-            labels.put("taskInfo", JsonUtils.toJson(context.getMergedJobDataMap()));
-            labels.put("errorMessage", jobException.getMessage());
-            broker.enqueueEvent(Event.builder()
-                    .status(EventStatus.CREATED)
-                    .creatorId(dataMap.getLongFromString("creatorId"))
-                    .organizationId(dataMap.getLongFromString("organizationId"))
-                    .triggerTime(new Date(System.currentTimeMillis()))
-                    .labels(labels)
-                    .build());
+            try {
+                JobDataMap dataMap = context.getMergedJobDataMap();
+                EventLabels labels = new EventLabels();
+                labels.put(EventLabelKeys.IDENTIFIER_KEY_TASK_TYPE, context.getJobInstance().getClass().getName());
+                labels.put(EventLabelKeys.IDENTIFIER_KEY_ACTION, "failed");
+                labels.put("taskInfo", JsonUtils.toJson(context.getMergedJobDataMap()));
+                labels.put("errorMessage", jobException.getMessage());
+                labels.put("region", SystemUtils.getEnvOrProperty("OB_ARN_PARTITION"));
+                broker.enqueueEvent(Event.builder()
+                        .status(EventStatus.CREATED)
+                        .creatorId(dataMap.getLongFromString("creatorId"))
+                        .organizationId(dataMap.getLongFromString("organizationId"))
+                        .triggerTime(new Date(System.currentTimeMillis()))
+                        .labels(labels)
+                        .build());
+            } catch (Exception e) {
+                log.warn("Enqueue event failed, jobException:{}", jobException, e);
+            }
         }
         JobKey key = context.getJobDetail().getKey();
         List<? extends Trigger> jobTriggers;

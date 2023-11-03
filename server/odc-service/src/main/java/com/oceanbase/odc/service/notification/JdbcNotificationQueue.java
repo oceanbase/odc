@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.collections.ListUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
@@ -67,6 +68,7 @@ public class JdbcNotificationQueue implements NotificationQueue {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public List<Notification> peek(int batchSize, MessageSendingStatus status) {
         List<Notification> notifications = new ArrayList<>();
         try {
