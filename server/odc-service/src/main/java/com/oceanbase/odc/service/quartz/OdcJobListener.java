@@ -136,13 +136,13 @@ public class OdcJobListener implements JobListener {
 
     @Override
     public void jobWasExecuted(JobExecutionContext context, JobExecutionException jobException) {
-        if (jobException != null) {
+        //if (jobException != null) {
             JobDataMap dataMap = context.getMergedJobDataMap();
             EventLabels labels = new EventLabels();
             labels.put(EventLabelKeys.IDENTIFIER_KEY_TASK_TYPE, context.getJobInstance().getClass().getName());
             labels.put(EventLabelKeys.IDENTIFIER_KEY_ACTION, "failed");
             labels.put("taskInfo", JsonUtils.toJson(context.getMergedJobDataMap()));
-            labels.put("errorMessage", jobException.getMessage());
+            //labels.put("errorMessage", jobException.getMessage());
             broker.enqueueEvent(Event.builder()
                     .status(EventStatus.CREATED)
                     .creatorId(dataMap.getLongFromString("creatorId"))
@@ -150,7 +150,7 @@ public class OdcJobListener implements JobListener {
                     .triggerTime(new Date(System.currentTimeMillis()))
                     .labels(labels)
                     .build());
-        }
+        //}
         JobKey key = context.getJobDetail().getKey();
         List<? extends Trigger> jobTriggers;
         try {
