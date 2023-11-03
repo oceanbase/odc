@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.quartz;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
@@ -129,6 +130,12 @@ public class OdcJobListener implements JobListener {
     public void jobWasExecuted(JobExecutionContext context, JobExecutionException jobException) {
         JobKey key = context.getJobDetail().getKey();
         List<? extends Trigger> jobTriggers;
+        Optional<ScheduleEntity> scheduleEntityOptional =
+                scheduleRepository.findById(ScheduleTaskUtils.getScheduleId(context));
+        if (!scheduleEntityOptional.isPresent()
+                || !key.getGroup().equals(scheduleEntityOptional.get().getJobType().name())) {
+            return;
+        }
         try {
             jobTriggers = context.getScheduler().getTriggersOfJob(key);
         } catch (SchedulerException e) {
