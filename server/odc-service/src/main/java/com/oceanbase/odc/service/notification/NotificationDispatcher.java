@@ -44,17 +44,15 @@ public class NotificationDispatcher {
     private ChannelFactory channelFactory;
 
     @Transactional(rollbackFor = Exception.class)
-    public void dispatch(@NonNull List<Notification> notifications) {
-        notifications.stream().forEach(notification -> {
-            ChannelConfig channelConfig = notification.getChannel();
-            Channel channel = channelFactory.generate(channelConfig);
-            if (channel.send(notification.getMessage())) {
-                messageRepository.updateStatusById(notification.getMessage().getId(),
-                        MessageSendingStatus.SENT_SUCCESSFULLY);
-            } else {
-                messageRepository.updateStatusAndRetryTimesById(notification.getMessage().getId(),
-                        MessageSendingStatus.SENT_FAILED);
-            }
-        });
+    public void dispatch(Notification notification) {
+        ChannelConfig channelConfig = notification.getChannel();
+        Channel channel = channelFactory.generate(channelConfig);
+        if (channel.send(notification.getMessage())) {
+            messageRepository.updateStatusById(notification.getMessage().getId(),
+                MessageSendingStatus.SENT_SUCCESSFULLY);
+        } else {
+            messageRepository.updateStatusAndRetryTimesById(notification.getMessage().getId(),
+                MessageSendingStatus.SENT_FAILED);
+        }
     }
 }

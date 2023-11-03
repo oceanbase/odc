@@ -71,10 +71,11 @@ public class Broker {
     }
 
 
-    @Transactional(rollbackFor = Exception.class)
     public void dequeueNotification(MessageSendingStatus status) {
         List<Notification> notifications =
                 notificationQueue.peek(notificationProperties.getNotificationDequeueBatchSize(), status);
-        notificationDispatcher.dispatch(notifications);
+        for (Notification notification : notifications) {
+            notificationDispatcher.dispatch(notification);
+        }
     }
 }
