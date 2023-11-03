@@ -16,11 +16,10 @@
 package com.oceanbase.odc.service.notification;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
-import org.apache.commons.collections.ListUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
@@ -32,8 +31,8 @@ import com.oceanbase.odc.metadb.notification.NotificationPolicyChannelRelationRe
 import com.oceanbase.odc.metadb.notification.NotificationPolicyEntity;
 import com.oceanbase.odc.metadb.notification.NotificationPolicyRepository;
 import com.oceanbase.odc.service.notification.helper.ChannelMapper;
-import com.oceanbase.odc.service.notification.helper.EventUtils;
 import com.oceanbase.odc.service.notification.helper.MessageTemplateProcessor;
+import com.oceanbase.odc.service.notification.helper.NotificationPolicyFilter;
 import com.oceanbase.odc.service.notification.model.ChannelConfig;
 import com.oceanbase.odc.service.notification.model.Event;
 import com.oceanbase.odc.service.notification.model.Message;
@@ -65,49 +64,49 @@ public class Converter {
 
     public List<Notification> convert(List<Event> events) {
         if (CollectionUtils.isEmpty(events)) {
-            return ListUtils.EMPTY_LIST;
+            return Collections.emptyList();
         }
         List<Notification> notifications = new ArrayList<>();
         for (Event event : events) {
-            Optional<NotificationPolicyEntity> policyOpt =
-                    notificationPolicyRepository.findByOrganizationIdAndMatchExpression(event.getOrganizationId(),
-                            EventUtils.generateMatchExpression(event.getLabels()));
-            if (!policyOpt.isPresent()) {
-                return null;
+            List<NotificationPolicyEntity> policies = NotificationPolicyFilter.filter(event.getLabels(),
+                    notificationPolicyRepository.findByOrganizationId(event.getOrganizationId()));
+            if (policies.isEmpty()) {
+                continue;
             }
-            NotificationPolicyEntity policy = policyOpt.get();
-            List<NotificationChannelRelationEntity> policyChannelEntity =
-                    policyChannelRepository.findByOrganizationIdAndNotificationPolicyId(event.getOrganizationId(),
-                            policy.getId());
-            List<ChannelConfig> channels = channelRepository.findAllById(
-                    policyChannelEntity.stream()
-                            .map(NotificationChannelRelationEntity::getChannelId)
-                            .collect(Collectors.toSet()))
-                    .stream().map(entity -> channelMapper.fromEntity(entity)).collect(Collectors.toList());
+            for (NotificationPolicyEntity policy : policies) {
+                List<NotificationChannelRelationEntity> policyChannelEntity =
+                        policyChannelRepository.findByOrganizationIdAndNotificationPolicyId(event.getOrganizationId(),
+                                policy.getId());
+                List<ChannelConfig> channels = channelRepository.findAllById(
+                        policyChannelEntity.stream()
+                                .map(NotificationChannelRelationEntity::getChannelId)
+                                .collect(Collectors.toSet()))
+                        .stream().map(entity -> channelMapper.fromEntity(entity)).collect(Collectors.toList());
 
-            if (CollectionUtils.isEmpty(channels)) {
-                return null;
+                if (CollectionUtils.isEmpty(channels)) {
+                    return null;
+                }
+                channels.forEach(channel -> {
+                    Notification notification = new Notification();
+
+                    Message message = new Message();
+                    message.setTitle(
+                            MessageTemplateProcessor.replaceVariables(policy.getTitleTemplate(), event.getLabels()));
+                    message.setContent(
+                            MessageTemplateProcessor.replaceVariables(policy.getContentTemplate(), event.getLabels()));
+                    message.setOrganizationId(policy.getOrganizationId());
+                    message.setCreatorId(event.getCreatorId());
+                    message.setEventId(event.getId());
+                    message.setChannelId(channel.getId());
+                    message.setStatus(MessageSendingStatus.CREATED);
+                    message.setRetryTimes(0);
+                    message.setMaxRetryTimes(notificationProperties.getMaxResendTimes());
+                    message.setToRecipients(policy.getToRecipients());
+                    message.setCcRecipients(policy.getCcRecipients());
+                    notification.setMessage(message);
+                    notifications.add(notification);
+                });
             }
-            channels.stream().forEach(channel -> {
-                Notification notification = new Notification();
-
-                Message message = new Message();
-                message.setTitle(
-                        MessageTemplateProcessor.replaceVariables(policy.getTitleTemplate(), event.getLabels()));
-                message.setContent(
-                        MessageTemplateProcessor.replaceVariables(policy.getContentTemplate(), event.getLabels()));
-                message.setOrganizationId(policy.getOrganizationId());
-                message.setCreatorId(event.getCreatorId());
-                message.setEventId(event.getId());
-                message.setChannelId(channel.getId());
-                message.setStatus(MessageSendingStatus.CREATED);
-                message.setRetryTimes(0);
-                message.setMaxRetryTimes(notificationProperties.getMaxResendTimes());
-                message.setToRecipients(policy.getToRecipients());
-                message.setCcRecipients(policy.getCcRecipients());
-                notification.setMessage(message);
-                notifications.add(notification);
-            });
         }
         return notifications;
     }

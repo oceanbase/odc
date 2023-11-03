@@ -16,9 +16,9 @@
 package com.oceanbase.odc.service.notification;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
-import org.apache.commons.collections.ListUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,7 +28,7 @@ import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.metadb.notification.EventRepository;
 import com.oceanbase.odc.metadb.notification.NotificationPolicyRepository;
 import com.oceanbase.odc.service.notification.helper.EventMapper;
-import com.oceanbase.odc.service.notification.helper.EventUtils;
+import com.oceanbase.odc.service.notification.helper.NotificationPolicyFilter;
 import com.oceanbase.odc.service.notification.model.Event;
 import com.oceanbase.odc.service.notification.model.EventStatus;
 
@@ -53,17 +53,16 @@ public class EventFilter {
     public List<Event> filter(List<Event> events) {
         List<Event> filtered = new ArrayList<>();
         if (CollectionUtils.isEmpty(events)) {
-            return ListUtils.EMPTY_LIST;
+            return Collections.emptyList();
         }
         for (Event event : events) {
-            String matchExpression = EventUtils.generateMatchExpression(event.getLabels());
             EventStatus status;
-            if (notificationPolicyRepository.existsByOrganizationIdAndMatchExpression(event.getOrganizationId(),
-                    matchExpression)) {
+            if (NotificationPolicyFilter.filter(event.getLabels(),
+                    notificationPolicyRepository.findByOrganizationId(event.getOrganizationId())).isEmpty()) {
+                status = EventStatus.THROWN;
+            } else {
                 status = EventStatus.CONVERTED;
                 filtered.add(event);
-            } else {
-                status = EventStatus.THROWN;
             }
             event.setStatus(status);
             eventRepository.updateStatusById(event.getId(), status);

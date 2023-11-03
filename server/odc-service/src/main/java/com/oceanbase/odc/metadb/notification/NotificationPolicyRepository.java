@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.metadb.notification;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -24,6 +25,8 @@ public interface NotificationPolicyRepository extends JpaRepository<Notification
         JpaSpecificationExecutor<NotificationPolicyEntity> {
     Optional<NotificationPolicyEntity> findByOrganizationIdAndMatchExpression(Long organizationId,
             String matchExpression);
+
+    List<NotificationPolicyEntity> findByOrganizationId(Long organizationId);
 
     boolean existsByOrganizationIdAndMatchExpression(Long organizationId, String matchExpression);
 }
