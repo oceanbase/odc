@@ -21,6 +21,7 @@ import static com.oceanbase.tools.loaddump.common.constants.Constants.JdbcConsts
 import static com.oceanbase.tools.loaddump.common.constants.Constants.JdbcConsts.JDBC_URL_ZERO_DATETIME_BEHAVIOR;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -30,7 +31,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.oceanbase.odc.core.shared.Verify;
-import com.oceanbase.odc.plugin.task.api.datatransfer.DataTransferCallable;
+import com.oceanbase.odc.core.shared.constant.TaskStatus;
+import com.oceanbase.odc.plugin.task.api.datatransfer.DataTransferJob;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferTaskResult;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.ObjectResult;
 import com.oceanbase.tools.loaddump.common.enums.DataFormat;
@@ -45,13 +47,13 @@ import com.oceanbase.tools.loaddump.manager.session.SessionProperties;
 import lombok.NonNull;
 
 /**
- * {@link BaseObLoaderDumperTransferTask}
+ * {@link BaseOceanBaseTransferJob}
  *
  * @author yh263208
  * @date 2022-07-25 14:41
  * @since ODC_release_3.4.0
  */
-public abstract class BaseObLoaderDumperTransferTask<T extends BaseParameter> implements DataTransferCallable {
+public abstract class BaseOceanBaseTransferJob<T extends BaseParameter> implements DataTransferJob {
     private static final Logger LOGGER = LoggerFactory.getLogger("DataTransferLogger");
 
     protected final T parameter;
@@ -59,12 +61,12 @@ public abstract class BaseObLoaderDumperTransferTask<T extends BaseParameter> im
     protected final boolean transferSchema;
     private final long sleepInterval;
     private final boolean usePrepStmts;
-    private volatile boolean stop;
+    private volatile TaskStatus status = TaskStatus.PREPARING;
     private TaskContext schemaContext;
     private TaskContext dataContext;
     private int totalTaskCount = 0;
 
-    public BaseObLoaderDumperTransferTask(@NonNull T parameter, boolean transferData, boolean transferSchema,
+    public BaseOceanBaseTransferJob(@NonNull T parameter, boolean transferData, boolean transferSchema,
             boolean usePrepStmts) {
         this.parameter = parameter;
         this.transferSchema = transferSchema;
@@ -87,15 +89,15 @@ public abstract class BaseObLoaderDumperTransferTask<T extends BaseParameter> im
     protected abstract TaskContext startTransferSchema() throws Exception;
 
     @Override
-    public DataTransferTaskResult getStatus() {
-        DataTransferTaskResult status = new DataTransferTaskResult();
-        if (schemaContext != null) {
-            status.setSchemaObjectsInfo(transformStatus(schemaContext.getSummary().getObjectStatusList()));
-        }
-        if (dataContext != null) {
-            status.setDataObjectsInfo(transformStatus(dataContext.getSummary().getObjectStatusList()));
-        }
-        return status;
+    public List<ObjectResult> getDataObjectsStatus() {
+        return dataContext == null ? Collections.emptyList()
+                : transformStatus(dataContext.getSummary().getObjectStatusList());
+    }
+
+    @Override
+    public List<ObjectResult> getSchemaObjectsStatus() {
+        return schemaContext == null ? Collections.emptyList()
+                : transformStatus(schemaContext.getSummary().getObjectStatusList());
     }
 
     @Override
@@ -122,8 +124,7 @@ public abstract class BaseObLoaderDumperTransferTask<T extends BaseParameter> im
     }
 
     @Override
-    public void cancel(boolean mayInterruptIfRunning) {
-        stop = true;
+    public boolean cancel(boolean mayInterruptIfRunning) {
         if (mayInterruptIfRunning) {
             try {
                 if (schemaContext != null) {
@@ -134,13 +135,22 @@ public abstract class BaseObLoaderDumperTransferTask<T extends BaseParameter> im
                 }
             } catch (Exception ignore) {
                 // eat exception
+                return false;
             }
         }
+        status = TaskStatus.CANCELED;
+        return true;
+    }
+
+    @Override
+    public boolean isCanceled() {
+        return status == TaskStatus.CANCELED;
     }
 
     @Override
     public DataTransferTaskResult call() throws Exception {
         try {
+            status = TaskStatus.RUNNING;
             setSessionProperties();
 
             String fileSuffix = parameter.getFileSuffix();
@@ -176,12 +186,13 @@ public abstract class BaseObLoaderDumperTransferTask<T extends BaseParameter> im
         }
 
         validAllTasksSuccessed();
-        return getStatus();
+        status = TaskStatus.DONE;
+        return new DataTransferTaskResult(getDataObjectsStatus(), getSchemaObjectsStatus());
     }
 
     @SuppressWarnings("all")
     private void syncWaitFinished(@NonNull TaskContext context) throws InterruptedException {
-        while (!Thread.currentThread().isInterrupted() && !stop) {
+        while (!Thread.currentThread().isInterrupted() && !status.isTerminated()) {
             if (context.isAllTasksSuccessed()) {
                 shutdownContext(context);
                 return;

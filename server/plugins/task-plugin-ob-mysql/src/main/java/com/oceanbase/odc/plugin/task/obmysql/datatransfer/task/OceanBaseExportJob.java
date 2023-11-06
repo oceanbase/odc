@@ -25,13 +25,13 @@ import com.oceanbase.tools.loaddump.context.TaskContext;
 import lombok.NonNull;
 
 /**
- * {@link ObLoaderDumperExportTask}
+ * {@link OceanBaseExportJob}
  *
  * @author yh263208
  * @date 2022-07-25 20:25
  * @since ODC_release_3.4.0
  */
-public class ObLoaderDumperExportTask extends BaseObLoaderDumperTransferTask<DumpParameter> {
+public class OceanBaseExportJob extends BaseOceanBaseTransferJob<DumpParameter> {
     private static final Pattern SCHEMA_FILE_PATTERN =
             Pattern.compile("^\"?(.+)\"?-schema\\.(sql)$", Pattern.CASE_INSENSITIVE);
     private static final Pattern DATA_FILE_PATTERN =
@@ -39,7 +39,7 @@ public class ObLoaderDumperExportTask extends BaseObLoaderDumperTransferTask<Dum
 
     private final DumpClient dumpClient;
 
-    public ObLoaderDumperExportTask(@NonNull DumpParameter parameter, boolean transferData, boolean transferSchema,
+    public OceanBaseExportJob(@NonNull DumpParameter parameter, boolean transferData, boolean transferSchema,
             boolean usePrepStmts) throws Exception {
         super(parameter, transferData, transferSchema, usePrepStmts);
         this.dumpClient = new DumpClient.Builder(parameter).build();

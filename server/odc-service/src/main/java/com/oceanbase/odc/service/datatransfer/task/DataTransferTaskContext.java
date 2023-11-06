@@ -21,44 +21,48 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import com.oceanbase.odc.common.lang.Holder;
-import com.oceanbase.odc.plugin.task.api.datatransfer.DataTransferCallable;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferTaskResult;
 
 public class DataTransferTaskContext implements Future<DataTransferTaskResult> {
     private final Future<DataTransferTaskResult> controlFuture;
-    private final Holder<DataTransferCallable> job;
+    private final DataTransferTask task;
 
-    public DataTransferTaskContext(Future<DataTransferTaskResult> controlFuture, Holder<DataTransferCallable> job) {
+    public DataTransferTaskContext(Future<DataTransferTaskResult> controlFuture, DataTransferTask task) {
         this.controlFuture = controlFuture;
-        this.job = job;
+        this.task = task;
     }
 
     public DataTransferTaskResult getStatus() {
-        if (job.getValue() == null) {
+        if (task.getJob() == null) {
             return null;
         }
-        return job.getValue().getStatus();
+        return new DataTransferTaskResult(task.getJob().getDataObjectsStatus(),
+                task.getJob().getSchemaObjectsStatus());
     }
 
     public double getProgress() {
-        if (job.getValue() == null) {
+        if (task.getJob() == null) {
             return 0.0;
         }
-        return job.getValue().getProgress();
+        return task.getJob().getProgress();
     }
 
     @Override
     public boolean cancel(boolean mayInterruptIfRunning) {
-        if (job.getValue() != null) {
-            job.getValue().cancel(mayInterruptIfRunning);
+        boolean canceled = true;
+        if (task.getJob() != null) {
+            canceled = task.getJob().cancel(mayInterruptIfRunning);
         }
-        return controlFuture.cancel(mayInterruptIfRunning);
+        return canceled && controlFuture.cancel(mayInterruptIfRunning);
     }
 
     @Override
     public boolean isCancelled() {
-        return controlFuture.isCancelled();
+        boolean isCanceled = true;
+        if (task.getJob() != null) {
+            isCanceled = task.getJob().isCanceled();
+        }
+        return isCanceled && controlFuture.isCancelled();
     }
 
     @Override

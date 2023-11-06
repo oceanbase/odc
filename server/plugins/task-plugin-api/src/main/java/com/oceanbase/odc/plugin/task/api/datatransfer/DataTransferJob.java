@@ -16,23 +16,21 @@
 
 package com.oceanbase.odc.plugin.task.api.datatransfer;
 
+import java.util.List;
 import java.util.concurrent.Callable;
 
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferTaskResult;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.ObjectResult;
 
 /**
  * @author liuyizhuo.lyz
  * @date 2023-09-15
  */
-public interface DataTransferCallable extends Callable<DataTransferTaskResult> {
+public interface DataTransferJob extends Callable<DataTransferTaskResult> {
 
-    /**
-     * get current task status for monitoring.
-     * 
-     * @return transfer result, including data objects and schema objects. The two are independent of
-     *         each other. An object can appear in two lists at the same time.
-     */
-    DataTransferTaskResult getStatus();
+    List<ObjectResult> getDataObjectsStatus();
+
+    List<ObjectResult> getSchemaObjectsStatus();
 
     /**
      * @return current progress percentage
@@ -42,6 +40,11 @@ public interface DataTransferCallable extends Callable<DataTransferTaskResult> {
     /**
      * cancel task
      */
-    void cancel(boolean mayInterruptIfRunning);
+    boolean cancel(boolean mayInterruptIfRunning);
+
+    /**
+     * Returns true if this task was cancelled before it completed normally.
+     */
+    boolean isCanceled();
 
 }

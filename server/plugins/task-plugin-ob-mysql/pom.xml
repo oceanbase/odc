@@ -74,6 +74,7 @@
         <dependency>
             <groupId>com.oceanbase</groupId>
             <artifactId>odc-test</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 

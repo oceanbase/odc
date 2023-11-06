@@ -15,8 +15,6 @@
  */
 package com.oceanbase.odc.service.datatransfer;
 
-import static com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConstants.LOG_PATH_NAME;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -57,9 +55,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.google.common.collect.ImmutableMap;
-import com.oceanbase.odc.common.lang.Holder;
-import com.oceanbase.odc.common.trace.TraceContextHolder;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ConnectionAccountType;
@@ -70,7 +65,6 @@ import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.core.shared.exception.AccessDeniedException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
-import com.oceanbase.odc.plugin.task.api.datatransfer.DataTransferCallable;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.CsvColumnMapping;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.CsvConfig;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
@@ -161,7 +155,6 @@ public class DataTransferService {
         try {
             // set log path
             Path logPath = Paths.get(taskLogDir, "data-transfer", bucket);
-            TraceContextHolder.span(ImmutableMap.of(LOG_PATH_NAME, logPath.toString()));
 
             // clear working directory and create bucket for client mode
             File workingDir = dataTransferAdapter.preHandleWorkDir(transferConfig, bucket,
@@ -186,8 +179,14 @@ public class DataTransferService {
             transferConfig.setConnectionInfo(connectionConfig.toConnectionInfo());
             injectSysConfig(connectionConfig, transferConfig);
 
+            // set config properties
+            transferConfig.setCursorFetchSize(dataTransferProperties.getCursorFetchSize());
+            transferConfig.setUsePrepStmts(dataTransferProperties.isUseServerPrepStmts());
+            if (dataTransferAdapter.getMaxDumpSizeBytes() != null) {
+                transferConfig.setMaxDumpSizeBytes(dataTransferAdapter.getMaxDumpSizeBytes());
+            }
+
             // task placeholder
-            Holder<DataTransferCallable> jobHolder = new Holder<>();
             DataTransferTask task = DataTransferTask.builder()
                     .adapter(dataTransferAdapter)
                     .creator(authenticationFacade.currentUser())
@@ -195,19 +194,15 @@ public class DataTransferService {
                     .workingDir(workingDir)
                     .logDir(logPath.toFile())
                     .connectionConfig(connectionConfig)
-                    .jobHolder(jobHolder)
                     .maskingService(maskingService)
-                    .properties(dataTransferProperties)
                     .build();
             Future<DataTransferTaskResult> future = executor.submit(task);
 
-            return new DataTransferTaskContext(future, jobHolder);
+            return new DataTransferTaskContext(future, task);
 
         } catch (Exception e) {
             LOGGER.warn("Failed to init data transfer task.", e);
             throw e;
-        } finally {
-            TraceContextHolder.clear();
         }
     }
 

@@ -22,6 +22,7 @@ import java.util.List;
 import com.oceanbase.odc.core.flow.model.FlowTaskResult;
 
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
@@ -33,10 +34,15 @@ import lombok.Setter;
  */
 @Getter
 @Setter
+@NoArgsConstructor
 public class DataTransferTaskResult implements FlowTaskResult {
 
     private String exportZipFilePath;
     private List<ObjectResult> dataObjectsInfo = new LinkedList<>();
     private List<ObjectResult> schemaObjectsInfo = new LinkedList<>();
 
+    public DataTransferTaskResult(List<ObjectResult> dataObjectsInfo, List<ObjectResult> schemaObjectsInfo) {
+        this.dataObjectsInfo = dataObjectsInfo;
+        this.schemaObjectsInfo = schemaObjectsInfo;
+    }
 }

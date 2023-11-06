@@ -25,6 +25,7 @@ import java.io.OutputStream;
 import java.net.URL;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -41,9 +42,11 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Verify;
-import com.oceanbase.odc.common.lang.Holder;
+import com.oceanbase.odc.common.trace.TraceContextHolder;
 import com.oceanbase.odc.core.datamasking.config.MaskConfig;
 import com.oceanbase.odc.core.datamasking.masker.AbstractDataMasker;
 import com.oceanbase.odc.core.datamasking.masker.DataMaskerFactory;
@@ -53,10 +56,11 @@ import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.core.shared.model.TableIdentity;
-import com.oceanbase.odc.plugin.task.api.datatransfer.DataTransferCallable;
+import com.oceanbase.odc.plugin.task.api.datatransfer.DataTransferJob;
 import com.oceanbase.odc.plugin.task.api.datatransfer.dumper.DumpDBObject;
 import com.oceanbase.odc.plugin.task.api.datatransfer.dumper.DumperOutput;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConstants;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferFormat;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferObject;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferTaskResult;
@@ -71,7 +75,6 @@ import com.oceanbase.odc.service.datasecurity.util.MaskingAlgorithmUtil;
 import com.oceanbase.odc.service.datatransfer.DataTransferAdapter;
 import com.oceanbase.odc.service.datatransfer.LocalFileManager;
 import com.oceanbase.odc.service.datatransfer.dumper.SchemaMergeOperator;
-import com.oceanbase.odc.service.datatransfer.model.DataTransferProperties;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.iam.model.User;
 import com.oceanbase.odc.service.iam.util.SecurityContextUtils;
@@ -85,81 +88,67 @@ import com.oceanbase.tools.loaddump.common.model.ObjectStatus.Status;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 @Builder
 @Slf4j
 public class DataTransferTask implements Callable<DataTransferTaskResult> {
     private static final Set<String> OUTPUT_FILTER_FILES = new HashSet<>();
+    private static final Logger LOGGER = LoggerFactory.getLogger("DataTransferLogger");
 
     private final DataMaskingService maskingService;
-    private final Holder<DataTransferCallable> jobHolder;
     private final User creator;
     private final DataTransferConfig config;
     private final DataTransferAdapter adapter;
-    private final DataTransferProperties properties;
     private final File workingDir;
     private final File logDir;
     private final ConnectionConfig connectionConfig;
 
+    @Getter
+    private DataTransferJob job;
+
     @Override
     public DataTransferTaskResult call() throws Exception {
         try {
+            TraceContextHolder.put(DataTransferConstants.LOG_PATH_NAME, logDir.getPath());
             SecurityContextUtils.setCurrentUser(creator);
 
-            List<URL> inputs = new ArrayList<>();
-            preHandle(inputs);
+            List<URL> inputs = Collections.emptyList();
+            if (config.getTransferType() == DataTransferType.IMPORT) {
+                inputs = copyInputFiles();
+            } else {
+                setMaskConfig();
+            }
 
-            DataTransferCallable job = TaskPluginUtil
+            job = TaskPluginUtil
                     .getDataTransferExtension(config.getConnectionInfo().getConnectType().getDialectType())
                     .generate(config, workingDir, logDir, inputs);
-            jobHolder.setValue(job);
 
             DataTransferTaskResult result = job.call();
 
             validateSuccessful(result);
 
-            postHandle(result);
+            if (config.getTransferType() == DataTransferType.IMPORT) {
+                clearWorkingDir();
+            } else {
+                handleOutput(result);
+            }
 
             return result;
 
         } catch (Exception e) {
             log.warn("Failed to run data transfer task.", e);
+            LOGGER.warn("Failed to run data transfer task.", e);
             throw e;
 
         } finally {
+            TraceContextHolder.clear();
             SecurityContextUtils.clear();
         }
     }
 
-    private void preHandle(List<URL> inputs) throws Exception {
-        config.setUsePrepStmts(properties.isUseServerPrepStmts());
-        if (config.getTransferType() == DataTransferType.IMPORT) {
-            preHandleForImport(inputs);
-        } else {
-            preHandleForExport();
-        }
-    }
-
-    private void postHandle(DataTransferTaskResult result) throws Exception {
-        if (config.getTransferType() == DataTransferType.IMPORT) {
-            postHandleForImport();
-        } else {
-            postHandleForExport(result);
-        }
-    }
-
-    private void validateSuccessful(DataTransferTaskResult result) {
-        List<String> failedObjects = ListUtils.union(result.getDataObjectsInfo(), result.getSchemaObjectsInfo())
-                .stream()
-                .filter(objectStatus -> objectStatus.getStatus() != Status.SUCCESS)
-                .map(ObjectResult::getSummary)
-                .collect(Collectors.toList());
-        Verify.verify(CollectionUtils.isEmpty(failedObjects),
-                "Data transfer task completed with unfinished objects! Details : " + failedObjects);
-    }
-
-    private void preHandleForImport(List<URL> inputs) throws IOException {
+    private List<URL> copyInputFiles() throws Exception {
         /*
          * move import files
          */
@@ -180,35 +169,13 @@ public class DataTransferTask implements Callable<DataTransferTaskResult> {
                 }).collect(Collectors.toList()));
             }
             config.setExportDbObjects(objects);
-
+            return Collections.emptyList();
         } else {
-            copyImportScripts(importFileNames, config.getDataTransferFormat(), workingDir, inputs);
+            return copyImportScripts(importFileNames, config.getDataTransferFormat(), workingDir);
         }
     }
 
-    private void postHandleForImport() throws FileNotFoundException {
-        if (workingDir == null || !workingDir.exists()) {
-            throw new FileNotFoundException("Working dir does not exist");
-        }
-        File importPath = Paths.get(workingDir.getPath(), "data").toFile();
-
-        if (importPath.exists()) {
-            boolean deleteRes = FileUtils.deleteQuietly(importPath);
-            log.info("Delete import directory, dir={}, result={}", importPath.getAbsolutePath(), deleteRes);
-        }
-        for (File subFile : workingDir.listFiles()) {
-            if (subFile.isDirectory()) {
-                continue;
-            }
-            boolean deleteRes = FileUtils.deleteQuietly(subFile);
-            log.info("Delete import file, fileName={}, result={}", subFile.getName(), deleteRes);
-        }
-    }
-
-    private void preHandleForExport() {
-        /*
-         * get mask config
-         */
+    private void setMaskConfig() throws Exception {
         String schemaName = config.getSchemaName();
         Map<String, List<String>> tableName2ColumnNames = new HashMap<>();
         ConnectionSession connectionSession = new DefaultConnectSessionFactory(connectionConfig).generateSession();
@@ -263,24 +230,31 @@ public class DataTransferTask implements Callable<DataTransferTaskResult> {
             maskConfigMap.put(TableIdentity.of(schemaName, tableName), column2Masker);
         }
         config.setMaskConfig(maskConfigMap);
-        /*
-         * set max dump size
-         */
-        if (adapter.getMaxDumpSizeBytes() != null) {
-            config.setMaxDumpSizeBytes(adapter.getMaxDumpSizeBytes());
-        }
-        /*
-         * set cursor fetch size
-         */
-        config.setCursorFetchSize(properties.getCursorFetchSize());
-
     }
 
-    private void postHandleForExport(DataTransferTaskResult result) throws IOException {
+    private void clearWorkingDir() throws Exception {
+        if (workingDir == null || !workingDir.exists()) {
+            throw new FileNotFoundException("Working dir does not exist");
+        }
+        File importPath = Paths.get(workingDir.getPath(), "data").toFile();
+
+        if (importPath.exists()) {
+            boolean deleteRes = FileUtils.deleteQuietly(importPath);
+            log.info("Delete import directory, dir={}, result={}", importPath.getAbsolutePath(), deleteRes);
+        }
+        for (File subFile : workingDir.listFiles()) {
+            if (subFile.isDirectory()) {
+                continue;
+            }
+            boolean deleteRes = FileUtils.deleteQuietly(subFile);
+            log.info("Delete import file, fileName={}, result={}", subFile.getName(), deleteRes);
+        }
+    }
+
+    private void handleOutput(DataTransferTaskResult result) throws Exception {
         if (!workingDir.exists()) {
             throw new FileNotFoundException(workingDir + " is not found");
         }
-
         File exportPath = Paths.get(workingDir.getPath(), "data").toFile();
         copyExportedFiles(result, exportPath.getPath());
         File dest = new File(workingDir.getPath() + File.separator + workingDir.getName() + "_export_file.zip");
@@ -310,7 +284,17 @@ public class DataTransferTask implements Callable<DataTransferTaskResult> {
         adapter.afterHandle(config, result, dest);
     }
 
-    private void copyImportScripts(List<String> fileNames, DataTransferFormat format, File destDir, List<URL> inputs)
+    private void validateSuccessful(DataTransferTaskResult result) {
+        List<String> failedObjects = ListUtils.union(result.getDataObjectsInfo(), result.getSchemaObjectsInfo())
+                .stream()
+                .filter(objectStatus -> objectStatus.getStatus() != Status.SUCCESS)
+                .map(ObjectResult::getSummary)
+                .collect(Collectors.toList());
+        Verify.verify(CollectionUtils.isEmpty(failedObjects),
+                "Data transfer task completed with unfinished objects! Details : " + failedObjects);
+    }
+
+    private List<URL> copyImportScripts(List<String> fileNames, DataTransferFormat format, File destDir)
             throws IOException {
         Validate.isTrue(CollectionUtils.isNotEmpty(fileNames), "No script found");
         Validate.notNull(format, "DataTransferFormat can not be null");
@@ -319,6 +303,7 @@ public class DataTransferTask implements Callable<DataTransferTaskResult> {
             throw new IllegalArgumentException("Multiple files isn't accepted for CSV format");
         }
         LocalFileManager fileManager = SpringContextUtil.getBean(LocalFileManager.class);
+        List<URL> inputs = new ArrayList<>();
         for (String fileName : fileNames) {
             Optional<File> importFile =
                     fileManager.findByName(TaskType.IMPORT, LocalFileManager.UPLOAD_BUCKET, fileName);
@@ -331,6 +316,7 @@ public class DataTransferTask implements Callable<DataTransferTaskResult> {
             log.info("Copy script to working dir, from={}, dest={}", from.getAbsolutePath(), dest.getAbsolutePath());
             inputs.add(dest.toURI().toURL());
         }
+        return inputs;
     }
 
     private DumperOutput copyImportZip(List<String> fileNames, File destDir) throws IOException {

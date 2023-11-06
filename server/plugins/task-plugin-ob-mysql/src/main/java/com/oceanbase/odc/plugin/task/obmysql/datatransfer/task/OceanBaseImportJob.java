@@ -24,17 +24,17 @@ import com.oceanbase.tools.loaddump.common.model.LoadParameter;
 import com.oceanbase.tools.loaddump.context.TaskContext;
 
 /**
- * {@link ObLoaderDumperImportTask}
+ * {@link OceanBaseImportJob}
  *
  * @author yh263208
  * @date 2022-07-25 20:29
  * @since ODC_release_3.4.0
  */
-public class ObLoaderDumperImportTask extends BaseObLoaderDumperTransferTask<LoadParameter> {
+public class OceanBaseImportJob extends BaseOceanBaseTransferJob<LoadParameter> {
 
     private final LoadClient loadClient;
 
-    public ObLoaderDumperImportTask(@NotNull LoadParameter parameter, boolean transferData, boolean transferSchema,
+    public OceanBaseImportJob(@NotNull LoadParameter parameter, boolean transferData, boolean transferSchema,
             boolean usePrepStmts) throws Exception {
         super(parameter, transferData, transferSchema, usePrepStmts);
         loadClient = new LoadClient.Builder(parameter).build();
