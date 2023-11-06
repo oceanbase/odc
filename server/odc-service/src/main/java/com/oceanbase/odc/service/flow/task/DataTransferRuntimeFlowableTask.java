@@ -76,6 +76,9 @@ public class DataTransferRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Voi
         log.info("Data transfer task starts, taskId={}", taskId);
         DataTransferConfig config = FlowTaskUtil.getDataTransferParameter(execution);
         config.setSchemaName(FlowTaskUtil.getSchemaName(execution));
+        if (config.getConnectionId() == null) {
+            config.setConnectionId(FlowTaskUtil.getConnectionConfig(execution).id());
+        }
         TaskEntity taskEntity = taskService.detail(taskId);
         ExecutorInfo executor = new ExecutorInfo(hostProperties);
         ExecutorInfo submitter = FlowTaskUtil.getTaskSubmitter(execution);
