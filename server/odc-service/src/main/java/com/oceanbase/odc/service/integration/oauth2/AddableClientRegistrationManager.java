@@ -30,6 +30,8 @@ import org.springframework.util.Assert;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.oceanbase.odc.service.config.SystemConfigService;
+import com.oceanbase.odc.service.config.model.SystemConfigKey;
 import com.oceanbase.odc.service.integration.IntegrationService;
 import com.oceanbase.odc.service.integration.model.SSOIntegrationConfig;
 
@@ -48,13 +50,16 @@ public class AddableClientRegistrationManager implements ClientRegistrationRepos
     @Autowired
     private IntegrationService integrationService;
 
+    @Autowired
+    private SystemConfigService systemConfigService;
+
     @Override
     public void afterPropertiesSet() {
         SSOIntegrationConfig sSoClientRegistration = integrationService.getSSoIntegrationConfig();
         if (sSoClientRegistration != null) {
             configRegistrations.put(sSoClientRegistration.resolveRegistrationId(), sSoClientRegistration);
             clientRegistrations.put(sSoClientRegistration.resolveRegistrationId(),
-                    sSoClientRegistration.toClientRegistration());
+                    sSoClientRegistration.toClientRegistration(getAssignedOdcSiteHost()));
         }
     }
 
@@ -74,13 +79,13 @@ public class AddableClientRegistrationManager implements ClientRegistrationRepos
     }
 
     public void addToRegister(SSOIntegrationConfig config) {
-        ClientRegistration clientRegistration = config.toClientRegistration();
+        ClientRegistration clientRegistration = config.toClientRegistration(getAssignedOdcSiteHost());
         clientRegistrations.put(clientRegistration.getRegistrationId(), clientRegistration);
         configRegistrations.put(clientRegistration.getRegistrationId(), config);
     }
 
     public void addTestToRegister(SSOIntegrationConfig config, String type) {
-        ClientRegistration clientRegistration = config.toTestClientRegistration(type);
+        ClientRegistration clientRegistration = config.toTestClientRegistration(type, getAssignedOdcSiteHost());
         testConfigRegistrations.put(clientRegistration.getRegistrationId(), config);
         testClientRegistrations.put(clientRegistration.getRegistrationId(), clientRegistration);
     }
@@ -88,6 +93,11 @@ public class AddableClientRegistrationManager implements ClientRegistrationRepos
     public void removeRegister(String registrationId) {
         clientRegistrations.remove(registrationId);
         configRegistrations.remove(registrationId);
+    }
+
+    public String getAssignedOdcSiteHost() {
+        String odcSiteUrl = systemConfigService.queryValueByKey(SystemConfigKey.ODC_SITE_URL);
+        return odcSiteUrl != null && !odcSiteUrl.contains("localhost") ? odcSiteUrl : null;
     }
 
 }

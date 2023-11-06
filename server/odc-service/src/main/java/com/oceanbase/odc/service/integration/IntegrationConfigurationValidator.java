@@ -28,6 +28,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.annotation.Validated;
 
+import com.google.common.base.Preconditions;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.metadb.integration.IntegrationEntity;
@@ -36,6 +37,7 @@ import com.oceanbase.odc.service.integration.model.ApprovalProperties;
 import com.oceanbase.odc.service.integration.model.IntegrationConfig;
 import com.oceanbase.odc.service.integration.model.SSOIntegrationConfig;
 import com.oceanbase.odc.service.integration.model.SqlInterceptorProperties;
+import com.oceanbase.odc.service.integration.oauth2.AddableClientRegistrationManager;
 
 /**
  * @author gaoda.xy
@@ -48,13 +50,18 @@ public class IntegrationConfigurationValidator {
     @Autowired
     private IntegrationRepository integrationRepository;
 
+    @Autowired(required = false)
+    private AddableClientRegistrationManager addableClientRegistrationManager;
+
     public void check(@NotNull @Valid ApprovalProperties properties) {}
 
     public void check(@NotNull @Valid SqlInterceptorProperties properties) {}
 
     public void checkAndFillConfig(@NotNull @Valid IntegrationConfig config, Long organizationId, Boolean enabled,
             @Nullable Long integrationId) {
-        SSOIntegrationConfig ssoIntegrationConfig = SSOIntegrationConfig.of(config, organizationId);
+        Preconditions.checkNotNull(addableClientRegistrationManager, "addableClientRegistrationManager");
+        SSOIntegrationConfig ssoIntegrationConfig = SSOIntegrationConfig.of(config, organizationId,
+                addableClientRegistrationManager.getAssignedOdcSiteHost());
         config.setConfiguration(JsonUtils.toJson(ssoIntegrationConfig));
         checkNotEnabledInDbBeforeSave(enabled, organizationId, integrationId);
     }

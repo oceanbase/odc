@@ -22,6 +22,7 @@ import java.util.Set;
 
 import javax.validation.constraints.NotBlank;
 
+import org.springframework.lang.Nullable;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
@@ -68,8 +69,8 @@ public class SSOIntegrationConfig implements Serializable {
         return ImmutableSet.of("OAUTH2", "OIDC").contains(type);
     }
 
-
-    public static SSOIntegrationConfig of(IntegrationConfig integrationConfig, Long organizationId) {
+    public static SSOIntegrationConfig of(IntegrationConfig integrationConfig, Long organizationId,
+            @Nullable String odcSiteUrl) {
         SSOIntegrationConfig ssoIntegrationConfig =
                 JsonUtils.fromJson(integrationConfig.getConfiguration(), SSOIntegrationConfig.class);
         checkOrganizationId(ssoIntegrationConfig.resolveRegistrationId(), organizationId);
@@ -77,10 +78,11 @@ public class SSOIntegrationConfig implements Serializable {
             case "OAUTH2":
             case "OIDC":
                 Preconditions.checkArgument(integrationConfig.getEncryption().getEnabled()
-                        && integrationConfig.getEncryption().getAlgorithm().equals(EncryptionAlgorithm.RAW));
+                        && integrationConfig.getEncryption().getAlgorithm()
+                                .equals(EncryptionAlgorithm.RAW));
                 Oauth2Parameter parameter = (Oauth2Parameter) ssoIntegrationConfig.getSsoParameter();
                 parameter.setName(integrationConfig.getName());
-                parameter.fillParameter();
+                parameter.fillParameter(odcSiteUrl);
                 parameter.setSecret(integrationConfig.getEncryption().getSecret());
                 break;
             default:
@@ -141,7 +143,6 @@ public class SSOIntegrationConfig implements Serializable {
         }
     }
 
-
     public String resolveLoginRedirectUrl() {
         switch (type) {
             case "OAUTH2":
@@ -168,30 +169,30 @@ public class SSOIntegrationConfig implements Serializable {
         }
     }
 
-    public ClientRegistration toClientRegistration() {
+    public ClientRegistration toClientRegistration(@Nullable String odcSiteUrl) {
         switch (type) {
             case "OAUTH2":
                 Oauth2Parameter oauth2 = (Oauth2Parameter) ssoParameter;
-                oauth2.fillParameter();
+                oauth2.fillParameter(odcSiteUrl);
                 return ((Oauth2Parameter) ssoParameter).toClientRegistration();
             case "OIDC":
                 OidcParameter oidc = (OidcParameter) ssoParameter;
-                oidc.fillParameter();
+                oidc.fillParameter(odcSiteUrl);
                 return ((OidcParameter) ssoParameter).toClientRegistration();
             default:
                 throw new UnsupportedOperationException("unknown type=" + type);
         }
     }
 
-    public ClientRegistration toTestClientRegistration(String testType) {
+    public ClientRegistration toTestClientRegistration(String testType, @Nullable String odcSiteUrl) {
         switch (type) {
             case "OAUTH2":
                 Oauth2Parameter oauth2 = (Oauth2Parameter) ssoParameter;
-                oauth2.amendTestParameter(testType);
+                oauth2.amendTestParameter(testType, odcSiteUrl);
                 return ((Oauth2Parameter) ssoParameter).toClientRegistration();
             case "OIDC":
                 OidcParameter oidc = (OidcParameter) ssoParameter;
-                oidc.amendTestParameter(testType);
+                oidc.amendTestParameter(testType, odcSiteUrl);
                 return ((OidcParameter) ssoParameter).toClientRegistration();
             default:
                 throw new UnsupportedOperationException("unknown type=" + type);

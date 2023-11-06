@@ -22,6 +22,7 @@ import java.util.Set;
 
 import org.springframework.boot.autoconfigure.security.oauth2.client.OAuth2ClientProperties.Provider;
 import org.springframework.boot.context.properties.PropertyMapper;
+import org.springframework.lang.Nullable;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.client.registration.ClientRegistration.Builder;
 import org.springframework.security.oauth2.client.registration.ClientRegistrations;
@@ -31,6 +32,7 @@ import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonProperty.Access;
+import com.google.common.base.MoreObjects;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
 import com.oceanbase.odc.service.common.util.UrlUtils;
 
@@ -66,19 +68,21 @@ public class Oauth2Parameter implements SSOParameter {
 
     public Oauth2Parameter() {}
 
-    public void fillParameter() {
+    public void fillParameter(@Nullable String odcSiteUrl) {
         if (redirectUrl == null) {
-            redirectUrl = "{baseUrl}" + "/login/oauth2/code/" + registrationId;
+            String host = MoreObjects.firstNonNull(odcSiteUrl, "{baseUrl}");
+            redirectUrl = host + "/login/oauth2/code/" + registrationId;
         }
         if (loginRedirectUrl == null) {
             loginRedirectUrl = "/oauth2/authorization/" + registrationId;
         }
     }
 
-    public void amendTestParameter(String testType) {
+    public void amendTestParameter(String testType, @Nullable String odcSiteUrl) {
         registrationId = parseOrganizationId(registrationId) + "-" + "test";
         String odcBackUrl = UrlUtils.getQueryParameterFirst(redirectUrl, ODC_BACK_URL_PARAM);
-        redirectUrl = "{baseUrl}" + "/login/oauth2/code/" + registrationId;
+        String host = MoreObjects.firstNonNull(odcSiteUrl, "{baseUrl}");
+        redirectUrl = host + "/login/oauth2/code/" + registrationId;
         loginRedirectUrl = "/oauth2/authorization/" + registrationId;
         redirectUrl = UrlUtils.appendQueryParameter(redirectUrl, OdcConstants.TEST_LOGIN_TYPE, testType);
         redirectUrl = UrlUtils.appendQueryParameter(redirectUrl, ODC_BACK_URL_PARAM, odcBackUrl);
@@ -99,8 +103,6 @@ public class Oauth2Parameter implements SSOParameter {
         provider.setIssuerUri(issueUrl);
         return provider;
     }
-
-
 
     protected ClientRegistration toClientRegistration(String issueUrl) {
         Builder builder = getBuilderFromIssuerIfPossible(toProvider(issueUrl));
@@ -129,7 +131,6 @@ public class Oauth2Parameter implements SSOParameter {
         }
         return null;
     }
-
 
     private static Builder getBuilder(Builder builder, Provider provider) {
         PropertyMapper map = PropertyMapper.get().alwaysApplyingWhenNonNull();

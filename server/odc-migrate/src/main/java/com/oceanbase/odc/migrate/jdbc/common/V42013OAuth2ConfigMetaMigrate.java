@@ -179,7 +179,7 @@ public class V42013OAuth2ConfigMetaMigrate implements JdbcMigratable {
                     String registrationId = org.getId() + "-" + HashUtils.md5(currentOauth2Parameter.getName());
                     currentOauth2Parameter.setRegistrationId(registrationId);
                     currentOauth2Parameter.setLoginRedirectUrl(replaceRegistrationId(loginRedirectUrl, registrationId));
-                    currentOauth2Parameter.fillParameter();
+                    currentOauth2Parameter.fillParameter(null);
 
                     SSOIntegrationConfig ssoIntegrationConfig = new SSOIntegrationConfig();
                     ssoIntegrationConfig.setType("OAUTH2");
@@ -187,7 +187,7 @@ public class V42013OAuth2ConfigMetaMigrate implements JdbcMigratable {
                     ssoIntegrationConfig.setMappingRule(mappingRule);
                     ssoIntegrationConfig.setSsoParameter(currentOauth2Parameter);
                     // check whether it can convert to client registration
-                    ssoIntegrationConfig.toClientRegistration();
+                    ssoIntegrationConfig.toClientRegistration(null);
 
                     // creator_id may be 0, means create by system
                     String insertIntegration = "insert into `integration_integration` ("
@@ -290,7 +290,7 @@ public class V42013OAuth2ConfigMetaMigrate implements JdbcMigratable {
                     String registrationId = org.getId() + "-" + HashUtils.md5(currentOauth2Parameter.getName());
                     currentOauth2Parameter.setRegistrationId(registrationId);
                     currentOauth2Parameter.setLoginRedirectUrl(replaceRegistrationId(loginRedirectUrl, registrationId));
-                    currentOauth2Parameter.fillParameter();
+                    currentOauth2Parameter.fillParameter(null);
 
                     // 官网推荐配置方式为odc，这里迁移的时候只迁移odc的oauth2配置
                     SSOIntegrationConfig ssoIntegrationConfig = new SSOIntegrationConfig();
@@ -300,7 +300,7 @@ public class V42013OAuth2ConfigMetaMigrate implements JdbcMigratable {
                     ssoIntegrationConfig.setSsoParameter(currentOauth2Parameter);
 
                     // check whether it can convert to client registration
-                    ssoIntegrationConfig.toClientRegistration();
+                    ssoIntegrationConfig.toClientRegistration(null);
 
                     String insertIntegration = "insert into `integration_integration` ("
                             + " `type`,`name`,`creator_id`,`organization_id`,`is_enabled`,`is_builtin`, "

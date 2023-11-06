@@ -23,12 +23,15 @@ import org.apache.commons.compress.utils.Lists;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.context.refresh.ContextRefresher;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
+import com.google.common.base.Preconditions;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.metadb.config.SystemConfigDAO;
 import com.oceanbase.odc.metadb.config.SystemConfigEntity;
 import com.oceanbase.odc.service.config.model.Configuration;
+import com.oceanbase.odc.service.config.model.SystemConfigKey;
 import com.oceanbase.odc.service.config.util.OrganizationConfigUtil;
 import com.oceanbase.odc.service.systemconfig.SystemConfigRefreshMatcher;
 
@@ -109,6 +112,16 @@ public class SystemConfigService {
     public List<Configuration> queryByKeyPrefix(String keyPrefix) {
         List<SystemConfigEntity> configEntities = systemConfigDAO.queryByKeyPrefix(keyPrefix);
         return OrganizationConfigUtil.convertDO2DTO(configEntities);
+    }
+
+    @SkipAuthorize("odc internal usage")
+    public String queryValueByKey(SystemConfigKey systemConfigKey) {
+        List<SystemConfigEntity> configEntities = systemConfigDAO.queryByKeyPrefix(systemConfigKey.getValue());
+        if (CollectionUtils.isEmpty(configEntities)) {
+            return null;
+        }
+        Preconditions.checkArgument(configEntities.size() == 1, "system config key is not unique");
+        return configEntities.get(0).getValue();
     }
 
     @SkipAuthorize("odc internal usage")

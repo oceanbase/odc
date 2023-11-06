@@ -78,7 +78,8 @@ public class TestLoginManager {
 
     @PreAuthenticate(actions = "create", resourceType = "ODC_INTEGRATION", isForAll = true)
     public SSOTestInfo getTestLoginUrl(IntegrationConfig config, String type) {
-        SSOIntegrationConfig ssoConfig = SSOIntegrationConfig.of(config, authenticationFacade.currentOrganizationId());
+        SSOIntegrationConfig ssoConfig = SSOIntegrationConfig.of(config, authenticationFacade.currentOrganizationId(),
+                addableClientRegistrationManager.getAssignedOdcSiteHost());
         if (config.getEncryption().getSecret() == null) {
             Optional<IntegrationEntity> integration = integrationService.findByTypeAndOrganizationIdAndName(
                     IntegrationType.SSO, authenticationFacade.currentOrganizationId(), config.getName());
