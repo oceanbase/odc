@@ -16,10 +16,10 @@
 package com.oceanbase.odc.service.notification;
 
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
@@ -33,9 +33,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 
 import com.oceanbase.odc.ServiceTestEnv;
+import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.metadb.notification.EventEntity;
 import com.oceanbase.odc.metadb.notification.EventRepository;
+import com.oceanbase.odc.metadb.notification.NotificationPolicyEntity;
 import com.oceanbase.odc.metadb.notification.NotificationPolicyRepository;
 import com.oceanbase.odc.service.notification.helper.EventMapper;
 import com.oceanbase.odc.service.notification.helper.EventUtils;
@@ -79,8 +81,8 @@ public class EventFilterTest extends ServiceTestEnv {
         }
         List<EventEntity> entities = eventRepository.saveAll(events);
 
-        when(policyRepository.existsByOrganizationIdAndMatchExpression(anyLong(), anyString()))
-                .thenReturn(Boolean.TRUE);
+        when(policyRepository.findByOrganizationId(anyLong()))
+                .thenReturn(Collections.singletonList(getNotificationPolicy()));
         List<Event> filtered =
                 filter.filter(entities.stream().map(entity -> mapper.fromEntity(entity)).collect(Collectors.toList()));
         Assert.assertEquals(eventCount, filtered.size());
@@ -96,6 +98,12 @@ public class EventFilterTest extends ServiceTestEnv {
         event.setCreatorId(USER_ID);
         event.setLabels(getLabels());
         return event;
+    }
+
+    private NotificationPolicyEntity getNotificationPolicy() {
+        NotificationPolicyEntity policy = new NotificationPolicyEntity();
+        policy.setMatchExpression(JsonUtils.toJson(getLabels()));
+        return policy;
     }
 
     private EventLabels getLabels() {

@@ -44,6 +44,7 @@ import com.oceanbase.odc.service.iam.UserService;
 import com.oceanbase.odc.service.iam.model.User;
 import com.oceanbase.odc.service.iam.util.SecurityContextUtils;
 import com.oceanbase.odc.service.notification.Broker;
+import com.oceanbase.odc.service.notification.NotificationProperties;
 import com.oceanbase.odc.service.notification.constant.EventLabelKeys;
 import com.oceanbase.odc.service.notification.model.Event;
 import com.oceanbase.odc.service.notification.model.EventLabels;
@@ -75,6 +76,8 @@ public class OdcJobListener implements JobListener {
     private HostProperties hostProperties;
     @Autowired
     private Broker broker;
+    @Autowired
+    private NotificationProperties notificationProperties;
     private static final String ODC_JOB_LISTENER = "ODC_JOB_LISTENER";
 
     @Override
@@ -137,7 +140,7 @@ public class OdcJobListener implements JobListener {
 
     @Override
     public void jobWasExecuted(JobExecutionContext context, JobExecutionException jobException) {
-        if (jobException != null) {
+        if (jobException != null && notificationProperties.isEnabled()) {
             try {
                 JobDataMap dataMap = context.getMergedJobDataMap();
                 EventLabels labels = new EventLabels();
