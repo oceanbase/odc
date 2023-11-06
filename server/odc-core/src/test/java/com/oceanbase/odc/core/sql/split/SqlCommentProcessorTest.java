@@ -23,10 +23,12 @@ import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.collections4.IteratorUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
 import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.core.sql.split.SqlCommentProcessor.SqlStatementIterator;
 
 public class SqlCommentProcessorTest {
 
@@ -48,6 +50,42 @@ public class SqlCommentProcessorTest {
         String line = getSqlFromFile("sql/split/comment-processor-oracle-test.sql");
         SqlCommentProcessor processor = new SqlCommentProcessor(DialectType.OB_ORACLE, false, false, false);
         List<String> sqls = getSqlWithoutComment(processor, line);
+        List<String> rawList =
+                getVerifySqlFromFile("sql/split/comment-processor-oracle-verify.sql", processor.getDelimiter());
+        Assert.assertEquals(rawList.size(), sqls.size());
+        for (int i = 0; i < sqls.size(); i++) {
+            Assert.assertEquals(rawList.get(i), String.format("%s%s%s", sqls.get(i), processor.getDelimiter(), "\n"));
+        }
+    }
+
+    @Test
+    public void testIterator_MysqlMode() throws Exception {
+        List<String> sqls;
+        try (InputStream in =
+                this.getClass().getClassLoader().getResourceAsStream("sql/split/comment-processor-mysql-test.sql");
+                SqlStatementIterator iterator =
+                        SqlCommentProcessor.iterator(in, DialectType.OB_MYSQL, false, false, false)) {
+            sqls = IteratorUtils.toList(iterator);
+        }
+        SqlCommentProcessor processor = new SqlCommentProcessor(DialectType.OB_MYSQL, false, false, false);
+        List<String> rawList =
+                getVerifySqlFromFile("sql/split/comment-processor-mysql-verify.sql", processor.getDelimiter());
+        Assert.assertEquals(rawList.size(), sqls.size());
+        for (int i = 0; i < sqls.size(); i++) {
+            Assert.assertEquals(rawList.get(i), String.format("%s%s%s", sqls.get(i), processor.getDelimiter(), "\n"));
+        }
+    }
+
+    @Test
+    public void testIterator_OracleMode() throws Exception {
+        List<String> sqls;
+        try (InputStream in =
+                this.getClass().getClassLoader().getResourceAsStream("sql/split/comment-processor-oracle-test.sql");
+                SqlStatementIterator iterator =
+                        SqlCommentProcessor.iterator(in, DialectType.OB_ORACLE, false, false, false)) {
+            sqls = IteratorUtils.toList(iterator);
+        }
+        SqlCommentProcessor processor = new SqlCommentProcessor(DialectType.OB_ORACLE, false, false, false);
         List<String> rawList =
                 getVerifySqlFromFile("sql/split/comment-processor-oracle-verify.sql", processor.getDelimiter());
         Assert.assertEquals(rawList.size(), sqls.size());
