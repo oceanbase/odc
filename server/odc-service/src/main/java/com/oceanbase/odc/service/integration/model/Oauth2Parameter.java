@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.integration.model;
 import static com.oceanbase.odc.core.shared.constant.OdcConstants.ODC_BACK_URL_PARAM;
 import static com.oceanbase.odc.service.integration.model.SSOIntegrationConfig.parseOrganizationId;
 
+import java.net.URL;
 import java.util.Set;
 
 import org.springframework.boot.autoconfigure.security.oauth2.client.OAuth2ClientProperties.Provider;
@@ -36,6 +37,7 @@ import com.oceanbase.odc.service.common.util.UrlUtils;
 
 import lombok.Data;
 import lombok.NonNull;
+import lombok.SneakyThrows;
 
 @Data
 public class Oauth2Parameter implements SSOParameter {
@@ -67,9 +69,6 @@ public class Oauth2Parameter implements SSOParameter {
     public Oauth2Parameter() {}
 
     public void fillParameter() {
-        if (redirectUrl == null) {
-            redirectUrl = "{baseUrl}" + "/login/oauth2/code/" + registrationId;
-        }
         if (loginRedirectUrl == null) {
             loginRedirectUrl = "/oauth2/authorization/" + registrationId;
         }
@@ -78,7 +77,7 @@ public class Oauth2Parameter implements SSOParameter {
     public void amendTestParameter(String testType) {
         registrationId = parseOrganizationId(registrationId) + "-" + "test";
         String odcBackUrl = UrlUtils.getQueryParameterFirst(redirectUrl, ODC_BACK_URL_PARAM);
-        redirectUrl = "{baseUrl}" + "/login/oauth2/code/" + registrationId;
+        redirectUrl = getRedirectHost(redirectUrl) + "/login/oauth2/code/" + registrationId;
         loginRedirectUrl = "/oauth2/authorization/" + registrationId;
         redirectUrl = UrlUtils.appendQueryParameter(redirectUrl, OdcConstants.TEST_LOGIN_TYPE, testType);
         redirectUrl = UrlUtils.appendQueryParameter(redirectUrl, ODC_BACK_URL_PARAM, odcBackUrl);
@@ -100,6 +99,11 @@ public class Oauth2Parameter implements SSOParameter {
         return provider;
     }
 
+    @SneakyThrows
+    private String getRedirectHost(String redirectUrl) {
+        URL url = new URL(redirectUrl);
+        return url.getProtocol() + "://" + url.getHost() + (url.getPort() > 0 ? ":" + url.getPort() : "");
+    }
 
 
     protected ClientRegistration toClientRegistration(String issueUrl) {
@@ -129,7 +133,6 @@ public class Oauth2Parameter implements SSOParameter {
         }
         return null;
     }
-
 
     private static Builder getBuilder(Builder builder, Provider provider) {
         PropertyMapper map = PropertyMapper.get().alwaysApplyingWhenNonNull();
