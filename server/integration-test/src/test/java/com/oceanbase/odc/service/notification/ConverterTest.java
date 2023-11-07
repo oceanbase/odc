@@ -22,6 +22,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -36,6 +37,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 
 import com.oceanbase.odc.ServiceTestEnv;
+import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.metadb.notification.ChannelEntity;
 import com.oceanbase.odc.metadb.notification.ChannelRepository;
@@ -95,8 +97,8 @@ public class ConverterTest extends ServiceTestEnv {
         }
         eventRepository.saveAll(events);
 
-        when(policyRepository.findByOrganizationIdAndMatchExpression(anyLong(), anyString()))
-                .thenReturn(Optional.of(getPolicyEntity()));
+        when(policyRepository.findByOrganizationId(anyLong()))
+            .thenReturn(Collections.singletonList(getNotificationPolicy()));
         when(policyChannelRepository.findByOrganizationIdAndNotificationPolicyId(anyLong(), anyLong()))
                 .thenReturn(Lists.newArrayList());
         when(channelRepository.findAllById(any()))
@@ -141,6 +143,12 @@ public class ConverterTest extends ServiceTestEnv {
         entity.setCreatorId(USER_ID);
         entity.setOrganizationId(ORGANIZATION_ID);
         return entity;
+    }
+
+    private NotificationPolicyEntity getNotificationPolicy() {
+        NotificationPolicyEntity policy = new NotificationPolicyEntity();
+        policy.setMatchExpression(JsonUtils.toJson(getLabels()));
+        return policy;
     }
 
 }
