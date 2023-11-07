@@ -37,6 +37,7 @@ import com.oceanbase.odc.core.shared.model.SqlExplain;
 import com.oceanbase.odc.core.shared.model.TraceSpan;
 import com.oceanbase.odc.core.sql.execute.cache.model.BinaryContentMetaData;
 import com.oceanbase.odc.service.common.model.ResourceSql;
+import com.oceanbase.odc.service.diagnose.fulllinktrace.JaegerAdaptor;
 import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 
 @Service
@@ -82,6 +83,11 @@ public class SqlDiagnoseService {
         }
         InputStream stream = ConnectionSessionUtil.getBinaryDataManager(session).read(metaData);
         return JsonUtils.fromJson(StreamUtils.copyToString(stream, StandardCharsets.UTF_8), TraceSpan.class);
+    }
+
+    public String getFullLinkTraceJson(ConnectionSession session, ResourceSql odcSql) throws IOException {
+        TraceSpan traceSpan = getFullLinkTrace(session, odcSql);
+        return new JaegerAdaptor().adapt(traceSpan);
     }
 
 }
