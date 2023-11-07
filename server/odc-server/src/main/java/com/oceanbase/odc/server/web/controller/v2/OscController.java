@@ -36,11 +36,12 @@ import io.swagger.annotations.ApiOperation;
 @RestController
 @RequestMapping("/api/v2/osc")
 public class OscController {
+
     @Autowired
     private OscService oscService;
 
-    @ApiOperation(value = "lockDatabaseUserRequired", notes = "show database should lock user or not")
-    @RequestMapping(value = "/lockDatabaseUserRequired/{databaseId:[\\d]+}", method = RequestMethod.GET)
+    @ApiOperation(value = "databaseInfo", notes = "show osc database info")
+    @RequestMapping(value = "/databaseInfo/{databaseId:[\\d]+}", method = RequestMethod.GET)
     public SuccessResponse<OscDatabaseInfo> getDatabase(@PathVariable Long databaseId) {
         return Responses.success(oscService.getOscDatabaseInfo(databaseId));
     }
