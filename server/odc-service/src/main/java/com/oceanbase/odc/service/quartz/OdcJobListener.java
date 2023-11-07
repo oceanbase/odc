@@ -162,7 +162,6 @@ public class OdcJobListener implements JobListener {
                 log.warn("Enqueue event failed, jobException:{}", jobException, e);
             }
         }
-        JobKey key = context.getJobDetail().getKey();
         List<? extends Trigger> jobTriggers;
         Optional<ScheduleEntity> scheduleEntityOptional =
                 scheduleRepository.findById(ScheduleTaskUtils.getScheduleId(context));
