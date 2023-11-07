@@ -157,16 +157,6 @@ public class DatabaseService {
         return getDatabase(id);
     }
 
-    @Transactional(rollbackFor = Exception.class)
-    @SkipAuthorize("internal authenticated")
-    public Database detail(@NonNull Long id, Boolean queryLockDatabaseUserRequired) {
-        Database database = getDatabase(id);
-        if (Objects.equals(queryLockDatabaseUserRequired, Boolean.TRUE) && database.getDataSource() != null) {
-            database.setLockDatabaseUserRequired(getLockUserIsRequired(database.getDataSource()));
-        }
-        return database;
-    }
-
     private Database getDatabase(Long id) {
         Database database = entityToModel(databaseRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException(ResourceType.ODC_DATABASE, "id", id)));
@@ -673,25 +663,4 @@ public class DatabaseService {
         return "DataSource_" + connectionId;
     }
 
-    private boolean getLockUserIsRequired(ConnectionConfig config) {
-        return OscDBUserUtil.isLockUserRequired(config.getDialectType(),
-                () -> {
-                    ConnectionConfig decryptedConnConfig =
-                            connectionService.getForConnectionSkipPermissionCheck(config.getId());
-                    ConnectionSessionFactory factory = new DefaultConnectSessionFactory(decryptedConnConfig);
-                    String version = null;
-                    ConnectionSession connSession = null;
-                    try {
-                        connSession = factory.generateSession();
-                        version = ConnectionSessionUtil.getVersion(connSession);
-                    } catch (Exception ex) {
-                        log.info("Get connection occur error", ex);
-                    } finally {
-                        if (connSession != null) {
-                            connSession.expire();
-                        }
-                    }
-                    return version;
-                });
-    }
 }

@@ -56,10 +56,8 @@ public class DataBaseController {
 
     @ApiOperation(value = "getDatabase", notes = "Detail a database")
     @RequestMapping(value = "/databases/{id:[\\d]+}", method = RequestMethod.GET)
-    public SuccessResponse<Database> getDatabase(@PathVariable Long id,
-            @RequestParam(required = false,
-                    name = "queryLockDatabaseUserRequired") Boolean queryLockDatabaseUserRequired) {
-        return Responses.success(databaseService.detail(id, queryLockDatabaseUserRequired));
+    public SuccessResponse<Database> getDatabase(@PathVariable Long id) {
+        return Responses.success(databaseService.detail(id));
     }
 
     @ApiOperation(value = "listDatabases", notes = "List all databases")
@@ -72,7 +70,6 @@ public class DataBaseController {
             @RequestParam(required = false, name = "environmentId") Long environmentId,
             @RequestParam(required = false, name = "projectName") String projectName,
             @RequestParam(required = false, name = "projectId") Long projectId,
-            @RequestParam(required = false, name = "taskType") String taskType,
             @RequestParam(required = false, defaultValue = "false",
                     name = "containsUnassigned") Boolean containsUnassigned,
             @PageableDefault(size = Integer.MAX_VALUE, sort = {"id"}, direction = Direction.DESC) Pageable pageable) {
@@ -82,7 +79,6 @@ public class DataBaseController {
                 .environmentId(environmentId)
                 .schemaName(name)
                 .containsUnassigned(containsUnassigned)
-                .taskType(taskType)
                 .projectId(projectId).build();
         return Responses.paginated(databaseService.list(params, pageable));
     }
