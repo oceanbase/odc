@@ -223,6 +223,8 @@ public enum ErrorCodes implements ErrorCode {
     ObGetExecuteDetailFailed,
     ObGetPlanExplainFailed,
     ObGetPlanExplainEmpty,
+    ObGetFullLinkTraceFailed,
+    FullLinkTraceNotAvailable,
 
     ObPreCheckDdlFailed,
     ObCopySchemaFailed,

@@ -49,6 +49,12 @@ public class JdbcGeneralResult {
     @Getter
     @Setter
     private boolean existWarnings = false;
+    @Getter
+    @Setter
+    private boolean withFullLinkTrace = false;
+    @Getter
+    @Setter
+    private String traceEmptyReason;
 
     public static JdbcGeneralResult successResult(@NonNull SqlTuple sqlTuple) {
         JdbcGeneralResult executeResult = new JdbcGeneralResult(sqlTuple);
