@@ -19,6 +19,7 @@ package com.oceanbase.odc.service.onlineschemachange;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
@@ -41,6 +42,7 @@ import lombok.extern.slf4j.Slf4j;
  * @date 2023-11-06
  * @since 4.2.3
  */
+@Service
 @Slf4j
 public class OscService {
 
