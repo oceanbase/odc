@@ -17,7 +17,6 @@ package com.oceanbase.odc.service.notification;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
@@ -25,7 +24,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.apache.commons.compress.utils.Lists;
@@ -98,7 +96,7 @@ public class ConverterTest extends ServiceTestEnv {
         eventRepository.saveAll(events);
 
         when(policyRepository.findByOrganizationId(anyLong()))
-            .thenReturn(Collections.singletonList(getNotificationPolicy()));
+                .thenReturn(Collections.singletonList(getNotificationPolicy()));
         when(policyChannelRepository.findByOrganizationIdAndNotificationPolicyId(anyLong(), anyLong()))
                 .thenReturn(Lists.newArrayList());
         when(channelRepository.findAllById(any()))
