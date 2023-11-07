@@ -65,8 +65,8 @@ public class JaegerAdaptor implements ThirdPartyTraceAdaptor {
         processes.putIfAbsent(processId,
                 new Process(spanNode.getNode().name(),
                         Arrays.asList(new Tag("rec_svr_ip", spanNode.getHost()),
-                                new Tag("rec_svr_port", spanNode.getPort().toString()),
-                                new Tag("tenant_id", spanNode.getTenantId().toString()))));
+                                new Tag("rec_svr_port", spanNode.getPort() + ""),
+                                new Tag("tenant_id", spanNode.getTenantId() + ""))));
 
         spans.add(Span.builder()
                 .traceID(spanNode.getTraceId())
@@ -76,10 +76,12 @@ public class JaegerAdaptor implements ThirdPartyTraceAdaptor {
                 .duration(spanNode.getElapseMicroSeconds())
                 .references(parent == null ? null
                         : Collections.singletonList(new Reference(parent.getTraceId(), parent.getSpanId())))
-                .tags(spanNode.getTags().stream().map(map -> {
-                    Entry<String, Object> entry = map.entrySet().iterator().next();
-                    return new Tag(entry.getKey(), entry.getValue().toString());
-                }).collect(Collectors.toList()))
+                .tags(CollectionUtils.isEmpty(spanNode.getTags()) ? null
+                        : spanNode.getTags()
+                                .stream().map(map -> {
+                                    Entry<String, Object> entry = map.entrySet().iterator().next();
+                                    return new Tag(entry.getKey(), entry.getValue().toString());
+                                }).collect(Collectors.toList()))
                 .processID(processId)
                 .build());
         if (CollectionUtils.isEmpty(spanNode.getSubSpans())) {
@@ -103,8 +105,8 @@ public class JaegerAdaptor implements ThirdPartyTraceAdaptor {
         private String spanID;
         private String operationName;
         private List<Reference> references;
-        private long startTime;
-        private long duration;
+        private Long startTime;
+        private Long duration;
         private List<Tag> tags;
         private String processID;
         @Builder.Default
