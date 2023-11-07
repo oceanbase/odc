@@ -24,7 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.onlineschemachange.OscService;
-import com.oceanbase.odc.service.onlineschemachange.model.OscDatabaseInfo;
+import com.oceanbase.odc.service.onlineschemachange.model.OscLockDatabaseUserInfo;
 
 import io.swagger.annotations.ApiOperation;
 
@@ -40,9 +40,9 @@ public class OscController {
     @Autowired
     private OscService oscService;
 
-    @ApiOperation(value = "databaseInfo", notes = "show osc database info")
-    @RequestMapping(value = "/databaseInfo/{databaseId:[\\d]+}", method = RequestMethod.GET)
-    public SuccessResponse<OscDatabaseInfo> getDatabase(@PathVariable Long databaseId) {
+    @ApiOperation(value = "lockDatabaseUserRequired", notes = "show osc lock database user info")
+    @RequestMapping(value = "/lockDatabaseUserRequired/{databaseId:[\\d]+}", method = RequestMethod.GET)
+    public SuccessResponse<OscLockDatabaseUserInfo> getDatabase(@PathVariable Long databaseId) {
         return Responses.success(oscService.getOscDatabaseInfo(databaseId));
     }
 

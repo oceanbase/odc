@@ -28,7 +28,7 @@ import lombok.Data;
  * @since 4.2.3
  */
 @Data
-public class OscDatabaseInfo implements Serializable {
+public class OscLockDatabaseUserInfo implements Serializable {
 
     @JsonProperty(access = Access.READ_ONLY)
     private String databaseId;

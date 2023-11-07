@@ -30,7 +30,7 @@ import com.oceanbase.odc.metadb.connection.DatabaseEntity;
 import com.oceanbase.odc.metadb.connection.DatabaseRepository;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
-import com.oceanbase.odc.service.onlineschemachange.model.OscDatabaseInfo;
+import com.oceanbase.odc.service.onlineschemachange.model.OscLockDatabaseUserInfo;
 import com.oceanbase.odc.service.onlineschemachange.rename.OscDBUserUtil;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 
@@ -53,22 +53,22 @@ public class OscService {
 
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("internal authenticated")
-    public OscDatabaseInfo getOscDatabaseInfo(@NonNull Long id) {
+    public OscLockDatabaseUserInfo getOscDatabaseInfo(@NonNull Long id) {
         Optional<DatabaseEntity> database = databaseRepository.findById(id);
-        OscDatabaseInfo oscDatabase = new OscDatabaseInfo();
+        OscLockDatabaseUserInfo oscDatabase = new OscLockDatabaseUserInfo();
         if (!database.isPresent()) {
             return oscDatabase;
         }
         DatabaseEntity databaseEntity = database.get();
         oscDatabase.setDatabaseId(databaseEntity.getDatabaseId());
-        oscDatabase.setLockDatabaseUserRequired(getLockUserIsRequired(databaseEntity.getId()));
+        oscDatabase.setLockDatabaseUserRequired(getLockUserIsRequired(databaseEntity.getConnectionId()));
         return oscDatabase;
     }
 
 
-    private boolean getLockUserIsRequired(Long configId) {
+    private boolean getLockUserIsRequired(Long connectionId) {
         ConnectionConfig decryptedConnConfig =
-                connectionService.getForConnectionSkipPermissionCheck(configId);
+                connectionService.getForConnectionSkipPermissionCheck(connectionId);
         return OscDBUserUtil.isLockUserRequired(decryptedConnConfig.getDialectType(),
                 () -> {
                     ConnectionSessionFactory factory = new DefaultConnectSessionFactory(decryptedConnConfig);
