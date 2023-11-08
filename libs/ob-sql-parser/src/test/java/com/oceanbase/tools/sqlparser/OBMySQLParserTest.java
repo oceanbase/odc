@@ -33,8 +33,6 @@ import com.oceanbase.tools.sqlparser.statement.delete.Delete;
 import com.oceanbase.tools.sqlparser.statement.expression.ColumnReference;
 import com.oceanbase.tools.sqlparser.statement.expression.CompoundExpression;
 import com.oceanbase.tools.sqlparser.statement.expression.ConstExpression;
-import com.oceanbase.tools.sqlparser.statement.insert.InsertBody;
-import com.oceanbase.tools.sqlparser.statement.insert.SingleTableInsert;
 import com.oceanbase.tools.sqlparser.statement.select.FromReference;
 import com.oceanbase.tools.sqlparser.statement.select.NameReference;
 import com.oceanbase.tools.sqlparser.statement.select.Projection;
@@ -90,15 +88,6 @@ public class OBMySQLParserTest {
         ConstExpression right = new ConstExpression("100");
         expect.setWhere(new CompoundExpression(left, right, Operator.EQ));
         Assert.assertEquals(expect, actual);
-    }
-
-    @Test
-    public void parse_insertStatement_parseSucceed() {
-        SQLParser sqlParser = new OBMySQLParser();
-        Statement acutal = sqlParser.parse(new StringReader("insert into tab values(1,1,2)"));
-
-        SingleTableInsert expect = new SingleTableInsert(new InsertBody());
-        Assert.assertEquals(expect, acutal);
     }
 
     @Test

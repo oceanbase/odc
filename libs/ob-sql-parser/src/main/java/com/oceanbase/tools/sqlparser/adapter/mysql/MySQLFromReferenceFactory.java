@@ -285,13 +285,13 @@ public class MySQLFromReferenceFactory extends OBParserBaseVisitor<FromReference
         return new FlashbackUsage(ctx, FlashBackType.AS_OF_SNAPSHOT, factory.generate());
     }
 
-    private PartitionUsage visitPartitonUsage(Use_partitionContext usePartition) {
+    public static PartitionUsage visitPartitonUsage(Use_partitionContext usePartition) {
         List<String> nameList = new ArrayList<>();
         visitNameList(usePartition.name_list(), nameList);
         return new PartitionUsage(usePartition, PartitionType.PARTITION, nameList);
     }
 
-    private void visitNameList(Name_listContext ctx, List<String> nameList) {
+    private static void visitNameList(Name_listContext ctx, List<String> nameList) {
         if (ctx.NAME_OB() != null && ctx.name_list() == null) {
             nameList.add(ctx.NAME_OB().getText());
             return;
