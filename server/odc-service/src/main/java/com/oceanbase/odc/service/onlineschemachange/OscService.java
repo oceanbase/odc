@@ -122,7 +122,6 @@ public class OscService {
         }
         scheduleTaskRepository.updateTaskResult(scheduleTaskId, JsonUtils.toJson(result));
         OscSwapTableVO oscSwapTable = new OscSwapTableVO();
-        oscSwapTable.setSucceed(true);
         oscSwapTable.setScheduleTaskId(scheduleTaskId);
         return oscSwapTable;
     }

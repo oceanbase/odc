@@ -29,6 +29,4 @@ import lombok.Data;
 public class OscSwapTableVO implements Serializable {
 
     private Long scheduleTaskId;
-
-    private Boolean succeed;
 }
