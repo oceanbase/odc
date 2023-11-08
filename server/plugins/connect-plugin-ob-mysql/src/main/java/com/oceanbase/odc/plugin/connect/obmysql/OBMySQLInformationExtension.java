@@ -19,10 +19,8 @@ import java.sql.Connection;
 
 import org.pf4j.Extension;
 
-import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.sql.util.OBUtils;
 import com.oceanbase.odc.plugin.connect.api.InformationExtensionPoint;
-import com.oceanbase.odc.plugin.connect.obmysql.util.JdbcOperationsUtil;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -37,21 +35,7 @@ public class OBMySQLInformationExtension implements InformationExtensionPoint {
 
     @Override
     public String getDBVersion(Connection connection) {
-        String querySql = "show variables like 'version_comment'";
-        String v = null;
-        try {
-            v = JdbcOperationsUtil.getJdbcOperations(connection).query(querySql, rs -> {
-                if (!rs.next()) {
-                    return null;
-                }
-                return rs.getString(2);
-            });
-            Verify.notNull(v, "VersionComment");
-
-        } catch (Exception exception) {
-            log.warn("Failed to get ob version", exception);
-        }
-        return OBUtils.parseObVersionComment(v);
+        return OBUtils.getObVersion(connection);
     }
 
 }

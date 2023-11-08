@@ -22,9 +22,7 @@ import org.mockito.InjectMocks;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 
-import com.oceanbase.odc.service.connection.model.ConnectionStringParseResult;
 import com.oceanbase.odc.service.connection.model.GenerateConnectionStringReq;
-import com.oceanbase.odc.service.connection.model.ParseConnectionStringReq;
 import com.oceanbase.odc.service.encryption.SensitivePropertyHandler;
 
 public class ConnectionHelperTest {
@@ -46,7 +44,7 @@ public class ConnectionHelperTest {
 
         String connectionStr = helper.generateConnectionStr(req);
 
-        Assert.assertEquals("obclient -h127.0.0.1 -P46774 -uroot@sys#C1 -Doceanbase -p'pwd'", connectionStr);
+        Assert.assertEquals("obclient -h127.0.0.1 -P46774 -uroot@sys#C1 -Doceanbase -p", connectionStr);
     }
 
     @Test
@@ -57,27 +55,7 @@ public class ConnectionHelperTest {
 
         String connectionStr = helper.generateConnectionStr(req);
 
-        Assert.assertEquals("obclient -h127.0.0.1 -P46774 -uroot -Doceanbase -p'pwd'", connectionStr);
-    }
-
-    @Test
-    public void parseConnectionStr() {
-        String connStr = "obclient -h127.0.0.1  -P2883   -uroot@tenant1#C1 -Doceanbase -ppwd";
-        ParseConnectionStringReq req = new ParseConnectionStringReq();
-        req.setConnStr(connStr);
-
-        ConnectionStringParseResult session = helper.parseConnectionStr(req);
-
-        ConnectionStringParseResult expected = new ConnectionStringParseResult();
-        expected.setHost("127.0.0.1");
-        expected.setPort(2883);
-        expected.setClusterName("C1");
-        expected.setTenantName("tenant1");
-        expected.setUsername("root");
-        expected.setDefaultSchema("oceanbase");
-        expected.setPassword("pwd");
-
-        Assert.assertEquals(expected, session);
+        Assert.assertEquals("obclient -h127.0.0.1 -P46774 -uroot -Doceanbase -p", connectionStr);
     }
 
     private GenerateConnectionStringReq buildGenerateConnectionStringReq() {
@@ -94,13 +72,8 @@ public class ConnectionHelperTest {
 
     private static class EmptySensitivePropertyHandler implements SensitivePropertyHandler {
         @Override
-        public String encryptionSecret() {
+        public String publicKey() {
             return null;
-        }
-
-        @Override
-        public String encrypt(String plainText) {
-            return plainText;
         }
 
         @Override

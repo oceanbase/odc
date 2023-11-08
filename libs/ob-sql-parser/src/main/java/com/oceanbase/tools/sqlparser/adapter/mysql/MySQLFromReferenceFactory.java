@@ -42,6 +42,7 @@ import com.oceanbase.tools.sqlparser.obmysql.OBParser.Use_partitionContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParserBaseVisitor;
 import com.oceanbase.tools.sqlparser.statement.Expression;
 import com.oceanbase.tools.sqlparser.statement.JoinType;
+import com.oceanbase.tools.sqlparser.statement.common.BraceBlock;
 import com.oceanbase.tools.sqlparser.statement.common.RelationFactor;
 import com.oceanbase.tools.sqlparser.statement.expression.ColumnReference;
 import com.oceanbase.tools.sqlparser.statement.select.ExpressionReference;
@@ -103,7 +104,18 @@ public class MySQLFromReferenceFactory extends OBParserBaseVisitor<FromReference
         } else if (ctx.table_subquery() != null) {
             return visit(ctx.table_subquery());
         } else if (ctx.table_reference() != null) {
-            return visit(ctx.table_reference());
+            FromReference from = visit(ctx.table_reference());
+            if (ctx.LeftBrace() == null || ctx.OJ() == null || ctx.RightBrace() == null) {
+                return from;
+            }
+            return new BraceBlock(ctx, ctx.OJ().getText(), from);
+        } else if (ctx.json_table_expr() != null) {
+            String alias = null;
+            if (ctx.relation_name() != null) {
+                alias = ctx.relation_name().getText();
+            }
+            MySQLExpressionFactory factory = new MySQLExpressionFactory();
+            return new ExpressionReference(ctx, factory.visitJson_table_expr(ctx.json_table_expr()), alias);
         }
         StatementFactory<SelectBody> factory = new MySQLSelectBodyFactory(ctx.select_with_parens());
         ExpressionReference reference = new ExpressionReference(ctx, factory.generate(), null);
@@ -121,6 +133,8 @@ public class MySQLFromReferenceFactory extends OBParserBaseVisitor<FromReference
                 joinType = JoinType.CROSS_JOIN;
             } else if (ctx.inner_join_type().INNER() != null) {
                 joinType = JoinType.INNER_JOIN;
+            } else if (ctx.inner_join_type().STRAIGHT_JOIN() != null) {
+                joinType = JoinType.STRAIGHT_JOIN;
             } else {
                 joinType = JoinType.JOIN;
             }
@@ -168,31 +182,70 @@ public class MySQLFromReferenceFactory extends OBParserBaseVisitor<FromReference
 
     @Override
     public FromReference visitTbl_name(Tbl_nameContext ctx) {
-        Relation_factorContext relationFactor = ctx.relation_factor();
-        String schema = getSchemaName(relationFactor);
-        String relationName = getRelation(relationFactor);
+        RelationFactor factor = getRelationFactor(ctx.relation_factor());
         String alias = null;
         if (ctx.relation_name() != null) {
             alias = ctx.relation_name().getText();
         }
-        NameReference nameReference = new NameReference(ctx, schema, relationName, alias);
+        NameReference nameReference = new NameReference(ctx, factor.getSchema(), factor.getRelation(), alias);
         if (ctx.use_partition() != null) {
             nameReference.setPartitionUsage(visitPartitonUsage(ctx.use_partition()));
         }
         if (ctx.use_flashback() != null) {
             nameReference.setFlashbackUsage(visitFlashbackUsage(ctx.use_flashback()));
         }
+        nameReference.setUserVariable(factor.getUserVariable());
         return nameReference;
     }
 
-    public static String getSchemaName(Relation_factorContext context) {
-        if (context == null || context.normal_relation_factor() == null) {
-            return null;
+    public static RelationFactor getRelationFactor(Normal_relation_factorContext ctx) {
+        RelationFactor relationFactor = new RelationFactor(ctx, getRelation(ctx));
+        relationFactor.setSchema(getSchemaName(ctx));
+        if (ctx.USER_VARIABLE() != null) {
+            relationFactor.setUserVariable(ctx.USER_VARIABLE().getText());
         }
-        return getSchemaName(context.normal_relation_factor());
+        return relationFactor;
     }
 
-    public static String getRelation(Relation_factorContext context) {
+    public static RelationFactor getRelationFactor(Relation_factorContext ctx) {
+        RelationFactor relationFactor = new RelationFactor(ctx, getRelation(ctx));
+        relationFactor.setSchema(getSchemaName(ctx));
+        if (ctx.normal_relation_factor() != null && ctx.normal_relation_factor().USER_VARIABLE() != null) {
+            relationFactor.setUserVariable(ctx.normal_relation_factor().USER_VARIABLE().getText());
+        }
+        return relationFactor;
+    }
+
+    @Override
+    public FromReference visitTable_subquery(Table_subqueryContext ctx) {
+        StatementFactory<SelectBody> factory = new MySQLSelectBodyFactory(ctx.select_with_parens());
+        String alias = ctx.table_subquery_alias().relation_name().getText();
+        ExpressionReference reference = new ExpressionReference(ctx, factory.generate(), alias);
+        if (ctx.use_flashback() != null) {
+            reference.setFlashbackUsage(visitFlashbackUsage(ctx.use_flashback()));
+        }
+        if (ctx.table_subquery_alias().alias_name_list() != null) {
+            reference.setAliasColumns(ctx.table_subquery_alias().alias_name_list()
+                    .column_alias_name().stream().map(c -> c.column_name().getText())
+                    .collect(Collectors.toList()));
+        }
+        return reference;
+    }
+
+    private static String getRelation(Normal_relation_factorContext c) {
+        List<String> names = c.relation_name().stream()
+                .map(RuleContext::getText).collect(Collectors.toList());
+        if (c.mysql_reserved_keyword() != null) {
+            return c.mysql_reserved_keyword().getText();
+        } else if (names.size() == 2) {
+            return names.get(1);
+        } else if (names.size() == 1) {
+            return names.get(0);
+        }
+        return null;
+    }
+
+    private static String getRelation(Relation_factorContext context) {
         if (context == null) {
             return null;
         }
@@ -208,7 +261,14 @@ public class MySQLFromReferenceFactory extends OBParserBaseVisitor<FromReference
         return null;
     }
 
-    public static String getSchemaName(Normal_relation_factorContext c) {
+    private static String getSchemaName(Relation_factorContext context) {
+        if (context == null || context.normal_relation_factor() == null) {
+            return null;
+        }
+        return getSchemaName(context.normal_relation_factor());
+    }
+
+    private static String getSchemaName(Normal_relation_factorContext c) {
         List<String> names = c.relation_name().stream()
                 .map(RuleContext::getText).collect(Collectors.toList());
         if (c.mysql_reserved_keyword() != null) {
@@ -218,42 +278,6 @@ public class MySQLFromReferenceFactory extends OBParserBaseVisitor<FromReference
             return names.get(0);
         }
         return null;
-    }
-
-    public static RelationFactor getRelationFactor(Normal_relation_factorContext ctx) {
-        RelationFactor relationFactor = new RelationFactor(ctx, getRelation(ctx));
-        relationFactor.setSchema(getSchemaName(ctx));
-        return relationFactor;
-    }
-
-    public static RelationFactor getRelationFactor(Relation_factorContext ctx) {
-        RelationFactor relationFactor = new RelationFactor(ctx, getRelation(ctx));
-        relationFactor.setSchema(getSchemaName(ctx));
-        return relationFactor;
-    }
-
-    public static String getRelation(Normal_relation_factorContext c) {
-        List<String> names = c.relation_name().stream()
-                .map(RuleContext::getText).collect(Collectors.toList());
-        if (c.mysql_reserved_keyword() != null) {
-            return c.mysql_reserved_keyword().getText();
-        } else if (names.size() == 2) {
-            return names.get(1);
-        } else if (names.size() == 1) {
-            return names.get(0);
-        }
-        return null;
-    }
-
-    @Override
-    public FromReference visitTable_subquery(Table_subqueryContext ctx) {
-        StatementFactory<SelectBody> factory = new MySQLSelectBodyFactory(ctx.select_with_parens());
-        String alias = ctx.relation_name().getText();
-        ExpressionReference reference = new ExpressionReference(ctx, factory.generate(), alias);
-        if (ctx.use_flashback() != null) {
-            reference.setFlashbackUsage(visitFlashbackUsage(ctx.use_flashback()));
-        }
-        return reference;
     }
 
     private FlashbackUsage visitFlashbackUsage(Use_flashbackContext ctx) {

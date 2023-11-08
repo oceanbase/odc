@@ -18,6 +18,8 @@ package com.oceanbase.tools.dbbrowser.schema.mysql;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.lang.NonNull;
@@ -217,4 +219,54 @@ public class OBMySQLBetween2277And3XSchemaAccessor extends OBMySQLSchemaAccessor
         }
         return super.listTableColumns(schemaName, tableName);
     }
+
+    @Override
+    public Map<String, List<DBTableColumn>> listBasicTableColumns(String schemaName) {
+        String sql = sqlMapper.getSql(Statements.LIST_BASIC_SCHEMA_TABLE_COLUMNS);
+        List<DBTableColumn> tableColumns = jdbcOperations.query(sql, new Object[] {schemaName},
+                listBasicTableColumnRowMapper());
+        return tableColumns.stream().collect(Collectors.groupingBy(DBTableColumn::getTableName));
+    }
+
+    @Override
+    public Map<String, List<DBTableColumn>> listBasicViewColumns(String schemaName) {
+        MySQLSqlBuilder sb = new MySQLSqlBuilder();
+        sb.append("select table_name from information_schema.views where table_schema=");
+        sb.value(schemaName);
+        List<String> viewNames = jdbcOperations.query(sb.toString(), (rs, rowNum) -> rs.getString("table_name"));
+        List<DBTableColumn> columns = new ArrayList<>();
+        for (String viewName : viewNames) {
+            columns.addAll(fillViewColumnInfoByDesc(schemaName, viewName));
+        }
+        return columns.stream().collect(Collectors.groupingBy(DBTableColumn::getTableName));
+    }
+
+    @Override
+    public List<DBTableColumn> listBasicViewColumns(String schemaName, String viewName) {
+        return fillViewColumnInfoByDesc(schemaName, viewName);
+    }
+
+    protected List<DBTableColumn> fillViewColumnInfoByDesc(String schemaName, String viewName) {
+        List<DBTableColumn> columns = new ArrayList<>();
+        try {
+            MySQLSqlBuilder sb = new MySQLSqlBuilder();
+            sb.append("desc ");
+            if (StringUtils.isNotBlank(schemaName)) {
+                sb.identifier(schemaName).append(".");
+            }
+            sb.identifier(viewName);
+            columns = jdbcOperations.query(sb.toString(), (rs, rowNum) -> {
+                DBTableColumn column = new DBTableColumn();
+                column.setSchemaName(schemaName);
+                column.setTableName(viewName);
+                column.setName(rs.getString(1));
+                column.setTypeName(rs.getString(2).split("\\(")[0]);
+                return column;
+            });
+        } catch (Exception e) {
+            log.warn("fail to get view column info, message={}", e.getMessage());
+        }
+        return columns;
+    }
+
 }

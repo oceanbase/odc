@@ -1,18 +1,4 @@
 sqls:
-  list-basic-schema-columns: |-
-    SELECT
-      TABLE_SCHEMA,
-      TABLE_NAME,
-      COLUMN_NAME,
-      DATA_TYPE,
-      COLUMN_COMMENT
-    FROM
-      information_schema.columns
-    WHERE
-      TABLE_SCHEMA = ?
-    ORDER BY
-      TABLE_NAME ASC,
-      ORDINAL_POSITION ASC
   list-basic-table-columns: |-
     SELECT
       TABLE_SCHEMA,
@@ -25,6 +11,20 @@ sqls:
     WHERE
       TABLE_SCHEMA = ? AND TABLE_NAME = ?
     ORDER BY
+      ORDINAL_POSITION ASC
+  list-basic-schema-table-columns: |-
+    SELECT
+      TABLE_SCHEMA,
+      TABLE_NAME,
+      COLUMN_NAME,
+      DATA_TYPE,
+      COLUMN_COMMENT
+    FROM
+      information_schema.columns
+    WHERE
+      TABLE_SCHEMA = ?
+    ORDER BY
+      TABLE_NAME ASC,
       ORDINAL_POSITION ASC
   list-table-columns: |-
     SELECT

@@ -19,7 +19,7 @@ import org.mapstruct.Mapper;
 import org.mapstruct.factory.Mappers;
 
 import com.oceanbase.odc.metadb.dlm.DlmLimiterConfigEntity;
-import com.oceanbase.odc.service.dlm.model.DlmLimiterConfig;
+import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
 
 /**
  * @Author：tinker
@@ -32,7 +32,7 @@ public interface DlmLimiterConfigMapper {
 
     DlmLimiterConfigMapper INSTANCE = Mappers.getMapper(DlmLimiterConfigMapper.class);
 
-    DlmLimiterConfig entityToModel(DlmLimiterConfigEntity entity);
+    RateLimitConfiguration entityToModel(DlmLimiterConfigEntity entity);
 
-    DlmLimiterConfigEntity modelToEntity(DlmLimiterConfig model);
+    DlmLimiterConfigEntity modelToEntity(RateLimitConfiguration model);
 }

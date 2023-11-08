@@ -184,10 +184,11 @@ public class MySQLDataTypeFactoryTest {
 
     @Test
     public void generate_longText_generateSucceed() {
-        StatementFactory<DataType> factory = new MySQLDataTypeFactory(getDataTypeContext("longtext(12) binary"));
+        StatementFactory<DataType> factory =
+                new MySQLDataTypeFactory(getDataTypeContext("mediumtext varchar(12) binary"));
         DataType actual = factory.generate();
 
-        CharacterType expect = new CharacterType("longtext", new BigDecimal("12"));
+        CharacterType expect = new CharacterType("mediumtext varchar", new BigDecimal("12"));
         expect.setBinary(true);
         Assert.assertEquals(expect, actual);
     }
@@ -228,6 +229,28 @@ public class MySQLDataTypeFactoryTest {
         expect.setBinary(true);
         expect.setCollation("utf8mb4");
         expect.setCharset("utf8");
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_nchar_generateSucceed() {
+        StatementFactory<DataType> factory =
+                new MySQLDataTypeFactory(getDataTypeContext("nchar(12) binary"));
+        DataType actual = factory.generate();
+
+        CharacterType expect = new CharacterType("nchar", new BigDecimal("12"));
+        expect.setBinary(true);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_nationalChar_generateSucceed() {
+        StatementFactory<DataType> factory =
+                new MySQLDataTypeFactory(getDataTypeContext("national char varying(12) binary"));
+        DataType actual = factory.generate();
+
+        CharacterType expect = new CharacterType("national char varying", new BigDecimal("12"));
+        expect.setBinary(true);
         Assert.assertEquals(expect, actual);
     }
 

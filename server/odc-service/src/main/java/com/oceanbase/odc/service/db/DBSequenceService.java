@@ -19,17 +19,18 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.stereotype.Service;
 
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
-import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.core.session.ConnectionSessionConstants;
+import com.oceanbase.odc.plugin.schema.api.SequenceExtensionPoint;
 import com.oceanbase.odc.service.common.model.ResourceSql;
-import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
+import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
 import com.oceanbase.odc.service.session.ConnectConsoleService;
-import com.oceanbase.tools.dbbrowser.editor.oracle.OracleSequenceEditor;
+import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBSequence;
-import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 
 import lombok.NonNull;
 
@@ -40,41 +41,45 @@ public class DBSequenceService {
     private ConnectConsoleService consoleService;
 
     public List<DBSequence> list(ConnectionSession connectionSession, String dbName) {
-        DBSchemaAccessor accessor = DBSchemaAccessors.create(connectionSession);
-        return accessor.listSequences(dbName).stream().map(item -> {
-            DBSequence sequence = new DBSequence();
-            sequence.setName(item.getName());
-            return sequence;
-        }).collect(Collectors.toList());
+        return connectionSession.getSyncJdbcExecutor(
+                ConnectionSessionConstants.BACKEND_DS_KEY)
+                .execute(
+                        (ConnectionCallback<List<DBObjectIdentity>>) con -> getSequenceExtensionPoint(connectionSession)
+                                .list(con, dbName))
+                .stream().map(item -> {
+                    DBSequence sequence = new DBSequence();
+                    sequence.setName(item.getName());
+                    return sequence;
+                }).collect(Collectors.toList());
     }
 
     public DBSequence detail(ConnectionSession connectionSession, String schemaName, String sequenceName) {
-        DBSchemaAccessor accessor = DBSchemaAccessors.create(connectionSession);
-        return accessor.getSequence(schemaName, sequenceName);
+        return connectionSession.getSyncJdbcExecutor(
+                ConnectionSessionConstants.BACKEND_DS_KEY)
+                .execute((ConnectionCallback<DBSequence>) con -> getSequenceExtensionPoint(connectionSession)
+                        .getDetail(con, schemaName, sequenceName));
     }
 
     public ResourceSql getCreateSql(@NonNull ConnectionSession session,
             @NonNull DBSequence sequence) {
-        dialectCheck(session);
-        OracleSequenceEditor editor = new OracleSequenceEditor();
-        String ddl = editor.generateCreateDefinitionDDL(sequence);
-        return ResourceSql.ofSql(ddl);
+        return ResourceSql.ofSql(session.getSyncJdbcExecutor(
+                ConnectionSessionConstants.BACKEND_DS_KEY)
+                .execute((ConnectionCallback<String>) con -> getSequenceExtensionPoint(session)
+                        .generateCreateDDL(sequence)));
     }
 
     public ResourceSql getUpdateSql(@NonNull ConnectionSession session,
             @NonNull DBSequence sequence) {
-        dialectCheck(session);
-        OracleSequenceEditor editor = new OracleSequenceEditor();
         DBSequence oldOne = new DBSequence();
         oldOne.setName(sequence.getName());
-        String sql = editor.generateUpdateObjectDDL(oldOne, sequence);
-        return ResourceSql.ofSql(sql);
+        return ResourceSql.ofSql(session.getSyncJdbcExecutor(
+                ConnectionSessionConstants.BACKEND_DS_KEY)
+                .execute((ConnectionCallback<String>) con -> getSequenceExtensionPoint(session)
+                        .generateUpdateDDL(oldOne, sequence)));
     }
 
-    private void dialectCheck(@NonNull ConnectionSession session) {
-        if (session.getDialectType() != DialectType.OB_ORACLE) {
-            throw new UnsupportedOperationException("Sequence is not supported for " + session.getDialectType());
-        }
+    private SequenceExtensionPoint getSequenceExtensionPoint(@NonNull ConnectionSession session) {
+        return SchemaPluginUtil.getSequenceExtension(session.getDialectType());
     }
 
 }

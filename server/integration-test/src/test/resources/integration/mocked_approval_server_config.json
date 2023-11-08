@@ -6,12 +6,10 @@
       "uri": "/start"
     },
     "response": {
-      "json": {
-        "success": true,
-        "content": {
-          "processInstanceId": "test_process_instance_id"
-        }
-      }
+      "headers": {
+        "content-type": "application/xml"
+      },
+      "text": "<queryResult>\n\t<success>true</success>\n\t<content>\n\t\t<processInstanceId>test_process_instance_id</processInstanceId>\n\t</content>\n</queryResult>"
     }
   },
   {

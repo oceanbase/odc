@@ -49,7 +49,7 @@ public class ConnectTypeUtil {
      * {@code oceanbase.cloud} 结尾，以此为标志判断是否处于多云环境
      */
     public static final String[] CLOUD_SUFFIX = new String[] {"oceanbase.aliyuncs.com", "oceanbase.cloud"};
-    private static final Integer REACHABLE_TIMEOUT_MILLIS = 10000;
+    public static final Integer REACHABLE_TIMEOUT_MILLIS = 10000;
 
     public static ConnectType getConnectType(@NonNull String jdbcUrl, @NonNull String username,
             String password, int queryTimeout) throws SQLException {

@@ -34,4 +34,5 @@ public class DBTableStats {
     private Long rowCount;
     @JsonIgnore
     private Long dataSizeInBytes;
+    private String tableSize;
 }

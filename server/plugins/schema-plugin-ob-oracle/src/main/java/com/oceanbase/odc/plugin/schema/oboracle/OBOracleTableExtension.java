@@ -24,20 +24,21 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.pf4j.Extension;
 
-import com.oceanbase.odc.plugin.connect.obmysql.util.JdbcOperationsUtil;
+import com.oceanbase.odc.common.util.JdbcOperationsUtil;
 import com.oceanbase.odc.plugin.schema.obmysql.OBMySQLTableExtension;
 import com.oceanbase.odc.plugin.schema.oboracle.parser.OBOracleGetDBTableByParser;
 import com.oceanbase.odc.plugin.schema.oboracle.utils.DBAccessorUtil;
 import com.oceanbase.tools.dbbrowser.editor.DBTableEditor;
+import com.oceanbase.tools.dbbrowser.editor.oracle.OBOracleIndexEditor;
 import com.oceanbase.tools.dbbrowser.editor.oracle.OracleColumnEditor;
 import com.oceanbase.tools.dbbrowser.editor.oracle.OracleConstraintEditor;
 import com.oceanbase.tools.dbbrowser.editor.oracle.OracleDBTablePartitionEditor;
-import com.oceanbase.tools.dbbrowser.editor.oracle.OracleIndexEditor;
 import com.oceanbase.tools.dbbrowser.editor.oracle.OracleTableEditor;
 import com.oceanbase.tools.dbbrowser.model.DBIndexType;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.model.DBTable.DBTableOptions;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
+import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
 import com.oceanbase.tools.dbbrowser.model.DBTableIndex;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 import com.oceanbase.tools.dbbrowser.stats.DBStatsAccessor;
@@ -59,32 +60,40 @@ public class OBOracleTableExtension extends OBMySQLTableExtension {
 
     @Override
     public DBTable getDetail(@NonNull Connection connection, @NonNull String schemaName, @NonNull String tableName) {
-        DBSchemaAccessor schemaAccessor = getSchemaAccessor(connection);
-        DBStatsAccessor statsAccessor = getStatsAccessor(connection);
+        DBSchemaAccessor accessor = getSchemaAccessor(connection);
+        List<DBTableColumn> columns = accessor.listTableColumns(schemaName, tableName);
+        // Time-consuming queries methods of DBSchemaAccessor are replaced by GetDBTableByParser
         OBOracleGetDBTableByParser parser = new OBOracleGetDBTableByParser(connection, schemaName, tableName);
-
         DBTable table = new DBTable();
         table.setSchemaName(schemaName);
         table.setOwner(schemaName);
-        table.setName(schemaAccessor.isLowerCaseTableName() ? tableName.toLowerCase() : tableName);
-        table.setColumns(schemaAccessor.listTableColumns(schemaName, tableName));
-        table.setConstraints(parser.listConstraints());
+        table.setName(accessor.isLowerCaseTableName() ? tableName.toLowerCase() : tableName);
+        table.setColumns(columns);
+        /**
+         * If the constraint name cannot be obtained through ddl of the table, then the constraint
+         * information will still be obtained through DBSchemaAccessor
+         */
+        List<DBTableConstraint> constraints = parser.listConstraints();
+        table.setConstraints(constraints.stream().anyMatch(c -> Objects.isNull(c.getName()))
+                ? accessor.listTableConstraints(schemaName, tableName)
+                : constraints);
         table.setPartition(parser.getPartition());
         table.setIndexes(parser.listIndexes());
-        table.setDDL(getTableDDL(connection, schemaName, tableName, parser));
-        table.setTableOptions(schemaAccessor.getTableOptions(schemaName, tableName));
-        table.setStats(statsAccessor.getTableStats(schemaName, tableName));
+        DBTableOptions tableOptions = accessor.getTableOptions(schemaName, tableName);
+        table.setTableOptions(tableOptions);
+        table.setDDL(getTableDDL(connection, schemaName, tableName, parser, columns, tableOptions));
+        table.setStats(getTableStats(connection, schemaName, tableName));
         return table;
     }
 
     private String getTableDDL(Connection connection, String schemaName, String tableName,
-            OBOracleGetDBTableByParser parser) {
+            OBOracleGetDBTableByParser parser, List<DBTableColumn> columns, DBTableOptions tableOptions) {
         String getTableDDlSql =
                 "SELECT dbms_metadata.get_ddl('TABLE', '" + tableName + "', '" + schemaName + "') as DDL from dual";
         AtomicReference<String> ddlRef = new AtomicReference<>();
         JdbcOperationsUtil.getJdbcOperations(connection).query(getTableDDlSql, t -> {
             // Create table ddl like this: CREATE [GLOBAL TEMPORARY|SHARDED|DUPLICATED] TABLE T...
-            String ddl = t.getString(2);
+            String ddl = t.getString(1);
             if (Objects.nonNull(ddl)) {
                 // fix: Replace " TABLE " to " TABLE schemaName."
                 ddlRef.set(StringUtils.replace(ddl, " TABLE ",
@@ -94,7 +103,6 @@ public class OBOracleTableExtension extends OBMySQLTableExtension {
         StringBuilder ddl = new StringBuilder(ddlRef.get());
         ddl.append(";\n");
         Map<String, String> variables = new HashMap<>();
-        DBTableOptions tableOptions = getSchemaAccessor(connection).getTableOptions(schemaName, tableName);
         variables.put("schemaName", StringUtils.quoteOracleIdentifier(schemaName));
         variables.put("tableName",
                 StringUtils.quoteOracleIdentifier(tableName));
@@ -103,7 +111,6 @@ public class OBOracleTableExtension extends OBMySQLTableExtension {
             String tableCommentDdl = StringUtils.replaceVariables(ORACLE_TABLE_COMMENT_DDL_TEMPLATE, variables);
             ddl.append(tableCommentDdl).append(";\n");
         }
-        List<DBTableColumn> columns = getSchemaAccessor(connection).listTableColumns(schemaName, tableName);
         for (DBTableColumn column : columns) {
             if (StringUtils.isNotEmpty(column.getComment())) {
                 variables.put("columnName", StringUtils.quoteOracleIdentifier(column.getName()));
@@ -145,7 +152,7 @@ public class OBOracleTableExtension extends OBMySQLTableExtension {
 
     @Override
     protected DBTableEditor getTableEditor(Connection connection) {
-        return new OracleTableEditor(new OracleIndexEditor(), new OracleColumnEditor(),
+        return new OracleTableEditor(new OBOracleIndexEditor(), new OracleColumnEditor(),
                 new OracleConstraintEditor(), new OracleDBTablePartitionEditor());
     }
 }

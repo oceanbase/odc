@@ -58,7 +58,6 @@ import com.oceanbase.tools.sqlparser.oboracle.OBParser.Table_elementContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Visibility_optionContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParserBaseVisitor;
 import com.oceanbase.tools.sqlparser.statement.Expression;
-import com.oceanbase.tools.sqlparser.statement.Operator;
 import com.oceanbase.tools.sqlparser.statement.common.DataType;
 import com.oceanbase.tools.sqlparser.statement.createtable.ColumnAttributes;
 import com.oceanbase.tools.sqlparser.statement.createtable.ColumnDefinition;
@@ -78,7 +77,6 @@ import com.oceanbase.tools.sqlparser.statement.createtable.OutOfLineIndex;
 import com.oceanbase.tools.sqlparser.statement.createtable.SortColumn;
 import com.oceanbase.tools.sqlparser.statement.createtable.TableElement;
 import com.oceanbase.tools.sqlparser.statement.expression.ColumnReference;
-import com.oceanbase.tools.sqlparser.statement.expression.CompoundExpression;
 import com.oceanbase.tools.sqlparser.statement.expression.ConstExpression;
 import com.oceanbase.tools.sqlparser.statement.expression.ExpressionParam;
 import com.oceanbase.tools.sqlparser.statement.expression.FunctionCall;
@@ -458,6 +456,10 @@ public class OracleTableElementFactory extends OBParserBaseVisitor<TableElement>
             }
             ConstraintState state = visitConstraintState(ctx.constraint_state());
             InLineConstraint attribute = new InLineConstraint(ctx, name, state);
+            if (ctx.CHECK() != null) {
+                attribute = new InLineCheckConstraint(ctx, name, state,
+                        new OracleExpressionFactory(ctx.expr()).generate());
+            }
             if (ctx.NULLX() != null) {
                 attribute.setNullable(ctx.NOT() == null);
             }
@@ -572,20 +574,7 @@ public class OracleTableElementFactory extends OBParserBaseVisitor<TableElement>
         if (context.signed_literal_params() != null) {
             return visitSignedLiteralParams(context.signed_literal_params());
         }
-        ConstExpression constExpr;
-        if (context.signed_literal().literal() != null) {
-            constExpr = new ConstExpression(context.signed_literal().literal());
-        } else {
-            constExpr = new ConstExpression(context.signed_literal().number_literal());
-        }
-        Operator operator = null;
-        if (context.signed_literal().Minus() != null) {
-            operator = Operator.SUB;
-        } else if (context.signed_literal().Plus() != null) {
-            operator = Operator.ADD;
-        }
-        return operator == null ? constExpr
-                : new CompoundExpression(context.signed_literal(), constExpr, null, operator);
+        return OracleExpressionFactory.getExpression(context.signed_literal());
     }
 
     private interface ColumnContextProvider {

@@ -211,7 +211,7 @@ public class FlowTaskUtil {
 
     public static String getCloudMainAccountId(@NonNull DelegateExecution execution) {
         Object value = execution.getVariables().get(RuntimeTaskConstants.CLOUD_MAIN_ACCOUNT_ID);
-        return internalGet(value, String.class).orElseThrow(() -> new VerifyException("Cloud main account is absent"));
+        return internalGet(value, String.class).orElse(null);
     }
 
     public static void setSchemaName(@NonNull Map<String, Object> variables, @NonNull String schema) {
@@ -320,7 +320,7 @@ public class FlowTaskUtil {
             }
             DefaultTaskConfig taskConfig = mapper.readValue(mapper.writeValueAsString(map), DefaultTaskConfig.class);
             taskConfig.setTaskName(config.getTaskName());
-            taskConfig.setDialectType(ObModeType.valueOf(session.getDialectType().name()));
+            taskConfig.setDialectType(session.getDialectType().isMysql() ? ObModeType.OB_MYSQL : ObModeType.OB_ORACLE);
             List<DefaultTableConfig> tableConfigList = taskConfig.tasks();
             PreConditions.notEmpty(tableConfigList, "tasks"); // table config list can not be null or empty
 

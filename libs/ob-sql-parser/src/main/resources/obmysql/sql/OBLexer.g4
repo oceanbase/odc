@@ -55,6 +55,10 @@ ALL
     : ( A L L )
     ;
 
+NAMESPACE
+    : N A M E S P A C E
+    ;
+
 AS
     : ( A S )
     ;
@@ -150,6 +154,10 @@ COLUMN
 
 COLUMNS
     : ( C O L U M N S )
+    ;
+
+LS
+    : L S
     ;
 
 CREATE
@@ -435,6 +443,10 @@ INT3
     : ( I N T '3')
     ;
 
+LIB
+    : L I B
+    ;
+
 INT4
     : ( I N T '4')
     ;
@@ -449,6 +461,10 @@ INTERVAL
 
 INSERT
     : ( I N S E R T )
+    ;
+
+ORDINALITY
+    : O R D I N A L I T Y
     ;
 
 INTO
@@ -535,6 +551,10 @@ LOCAL
     : ( L O C A L )
     ;
 
+OPTIMIZER_FEATURES_ENABLE
+    : O P T I M I Z E R '_' F E A T U R E S '_' E N A B L E
+    ;
+
 LOCALTIME
     : ( L O C A L T I M E )
     ;
@@ -549,6 +569,10 @@ LOCK_
 
 LONG
     : ( L O N G )
+    ;
+
+UNLIMITED
+    : U N L I M I T E D
     ;
 
 LONGBLOB
@@ -657,6 +681,10 @@ ORDER
 
 OUT
     : ( O U T )
+    ;
+
+IOPS_WEIGHT
+    : I O P S '_' W E I G H T
     ;
 
 OUTER
@@ -792,6 +820,10 @@ SET
     : ( S E T )
     ;
 
+REJECT
+    : R E J E C T
+    ;
+
 SENSITIVE
     : ( S E N S I T I V E )
     ;
@@ -852,8 +884,16 @@ STARTING
     : ( S T A R T I N G )
     ;
 
+NUMERIC
+    : N U M E R I C
+    ;
+
 STORED
     : ( S T O R E D )
+    ;
+
+PLUS
+    : P L U S
     ;
 
 STRAIGHT_JOIN
@@ -916,6 +956,10 @@ UNDO
     : ( U N D O )
     ;
 
+CALIBRATION
+    : C A L I B R A T I O N
+    ;
+
 UNION
     : ( U N I O N )
     ;
@@ -928,6 +972,10 @@ UNLOCK
     : ( U N L O C K )
     ;
 
+LINE_DELIMITER
+    : L I N E '_' D E L I M I T E R
+    ;
+
 UNSIGNED
     : ( U N S I G N E D )
     ;
@@ -938,6 +986,10 @@ UPDATE
 
 USAGE
     : ( U S A G E )
+    ;
+
+GEOMCOLLECTION
+    : G E O M C O L L E C T I O N
     ;
 
 USE
@@ -964,6 +1016,10 @@ VALUES
     : ( V A L U E S )
     ;
 
+QUERY_RESPONSE_TIME
+    : Q U E R Y '_' R E S P O N S E '_' T I M E
+    ;
+
 VARBINARY
     : ( V A R B I N A R Y )
     ;
@@ -985,12 +1041,24 @@ WHERE
     : ( W H E R E )
     ;
 
+REDUNDANCY
+    : R E D U N D A N C Y
+    ;
+
 WHEN
     : ( W H E N )
     ;
 
 WHILE
     : ( W H I L E )
+    ;
+
+CALIBRATION_INFO
+    : C A L I B R A T I O N '_' I N F O
+    ;
+
+SCN
+    : S C N
     ;
 
 WINDOW
@@ -1054,12 +1122,24 @@ UnderlineUTF16
     : ('_' U T F '1''6')
     ;
 
+UnderlineLATIN1
+    : ('_' L A T I N '1')
+    ;
+
+UnderlineGB18030_2022
+    : ('_' G B '1''8''0''3''0''_''2''0''2''2')
+    ;
+
 STRONG
     : ( S T R O N G )
     ;
 
 WEAK
     : ( W E A K )
+    ;
+
+CONNECT
+    : C O N N E C T
     ;
 
 FROZEN
@@ -1108,6 +1188,10 @@ FORMAT
 
 MINVALUE
     : M I N V A L U E
+    ;
+
+EMPTY_FIELD_AS_NULL
+    : E M P T Y '_' F I E L D '_' A S '_' N U L L
     ;
 
 UNINSTALL
@@ -1446,6 +1530,10 @@ EVERY
     : E V E R Y
     ;
 
+SHARDING
+    : S H A R D I N G
+    ;
+
 BYTE
     : B Y T E
     ;
@@ -1526,6 +1614,10 @@ SQL_TSI_MONTH
     : S Q L '_' T S I '_' M O N T H
     ;
 
+ARBITRATION
+    : A R B I T R A T I O N
+    ;
+
 IGNORE
     : I G N O R E
     ;
@@ -1566,12 +1658,20 @@ QUICK
     : Q U I C K
     ;
 
+PRETTY
+    : P R E T T Y
+    ;
+
 DUPLICATE
     : D U P L I C A T E
     ;
 
 WAIT
     : W A I T
+    ;
+
+FIELD_OPTIONALLY_ENCLOSED_BY
+    : F I E L D '_' O P T I O N A L L Y '_' E N C L O S E D '_' B Y
     ;
 
 DES_KEY_FILE
@@ -1734,6 +1834,10 @@ UNIT
     : U N I T
     ;
 
+NATIONAL_LITERAL
+    : N A T I O N A L '_' L I T E R A L
+    ;
+
 PRIVILEGES
     : P R I V I L E G E S
     ;
@@ -1802,6 +1906,10 @@ DUMP
     : D U M P
     ;
 
+EXTERNAL
+    : E X T E R N A L
+    ;
+
 APPROX_COUNT_DISTINCT_SYNOPSIS
     : A P P R O X '_' C O U N T '_' D I S T I N C T '_' S Y N O P S I S
     ;
@@ -1814,12 +1922,24 @@ OF
     : O F
     ;
 
+SLOG
+    : S L O G
+    ;
+
+OJ
+    : O J
+    ;
+
 ARCHIVELOG
     : A R C H I V E L O G
     ;
 
 MAX_CONNECTIONS_PER_HOUR
     : M A X '_' C O N N E C T I O N S '_' P E R '_' H O U R
+    ;
+
+ENCODING
+    : E N C O D I N G
     ;
 
 SECOND
@@ -2054,6 +2174,10 @@ NOARCHIVELOG
     : N O A R C H I V E L O G
     ;
 
+BEGIN_OUTLINE_DATA
+    : B E G I N '_' O U T L I N E '_' D A T A
+    ;
+
 MAX_SIZE
     : M A X '_' S I Z E
     ;
@@ -2072,6 +2196,10 @@ ROW_COUNT
 
 LAST
     : L A S T
+    ;
+
+WASH
+    : W A S H
     ;
 
 LOGONLY_REPLICA_NUM
@@ -2186,6 +2314,14 @@ DATA_TABLE_ID
     : D A T A '_' T A B L E '_' I D
     ;
 
+SEQUENCES
+    : S E Q U E N C E S
+    ;
+
+PRETTY_COLOR
+    : P R E T T Y '_' C O L O R
+    ;
+
 VALID
     : V A L I D
     ;
@@ -2282,6 +2418,10 @@ NAMES
     : N A M E S
     ;
 
+MY_NAME
+    : M Y '_' N A M E
+    ;
+
 CHAR
     : C H A R
     ;
@@ -2346,6 +2486,10 @@ NO_WAIT
     : N O '_' W A I T
     ;
 
+BACKUP_COPIES
+    : B A C K U P '_' C O P I E S
+    ;
+
 UNIT_NUM
     : U N I T '_' N U M
     ;
@@ -2394,6 +2538,10 @@ BACKED
     : B A C K E D
     ;
 
+SERVICE
+    : S E R V I C E
+    ;
+
 TEMPLATE
     : T E M P L A T E
     ;
@@ -2432,6 +2580,10 @@ REORGANIZE
 
 BLOCK_SIZE
     : B L O C K '_' S I Z E
+    ;
+
+TRIM_SPACE
+    : T R I M '_' S P A C E
     ;
 
 INNER_PARSE
@@ -2490,6 +2642,10 @@ USER
     : U S E R
     ;
 
+LEAK_RATE
+    : L E A K '_' R A T E
+    ;
+
 MEMTABLE
     : M E M T A B L E
     ;
@@ -2504,6 +2660,10 @@ MOVE
 
 XML
     : X M L
+    ;
+
+PATH
+    : P A T H
     ;
 
 IPC
@@ -2578,12 +2738,20 @@ CUBE
     : C U B E
     ;
 
+FRAGMENTATION
+    : F R A G M E N T A T I O N
+    ;
+
 BALANCE
     : B A L A N C E
     ;
 
 QUERY
     : Q U E R Y
+    ;
+
+POLICY
+    : P O L I C Y
     ;
 
 THROTTLE
@@ -2642,8 +2810,8 @@ SIMPLE
     : S I M P L E
     ;
 
-BEGI
-    : B E G I
+BEGIN
+    : B E G I N
     ;
 
 VARIABLES
@@ -2676,6 +2844,10 @@ ASCII
 
 INFO
     : I N F O
+    ;
+
+SKIP_HEADER
+    : S K I P '_' H E A D E R
     ;
 
 SQL_THREAD
@@ -2714,6 +2886,10 @@ CURRENT
     : C U R R E N T
     ;
 
+STACKED
+    : S T A C K E D
+    ;
+
 RETURNED_SQLSTATE
     : R E T U R N E D '_' S Q L S T A T E
     ;
@@ -2724,6 +2900,14 @@ END
 
 PRESERVE
     : P R E S E R V E
+    ;
+
+BADFILE
+    : B A D F I L E
+    ;
+
+LOG_DISK_SIZE
+    : L O G '_' D I S K '_' S I Z E
     ;
 
 SQL_BUFFER_RESULT
@@ -2740,6 +2924,14 @@ SOME
 
 INDEX_TABLE_ID
     : I N D E X '_' T A B L E '_' I D
+    ;
+
+PATTERN
+    : P A T T E R N
+    ;
+
+RECOVERY_WINDOW
+    : R E C O V E R Y '_' W I N D O W
     ;
 
 FREQUENCY
@@ -2816,6 +3008,10 @@ ESTIMATE
 
 SLAVE
     : S L A V E
+    ;
+
+SKIP_BLANK_LINES
+    : S K I P '_' B L A N K '_' L I N E S
     ;
 
 GTS
@@ -3110,6 +3306,10 @@ ANY
     : A N Y
     ;
 
+UNIT_GROUP
+    : U N I T '_' G R O U P
+    ;
+
 HIGHER_PARENS
     : H I G H E R '_' P A R E N S
     ;
@@ -3182,6 +3382,10 @@ MAX_MEMORY
     : M A X '_' M E M O R Y
     ;
 
+NESTED
+    : N E S T E D
+    ;
+
 CLEAN
     : C L E A N
     ;
@@ -3192,6 +3396,10 @@ MASTER_SSL
 
 CLEAR
     : C L E A R
+    ;
+
+END_OUTLINE_DATA
+    : E N D '_' O U T L I N E '_' D A T A
     ;
 
 SORTKEY
@@ -3254,6 +3462,10 @@ AUTOEXTEND_SIZE
     : A U T O E X T E N D '_' S I Z E
     ;
 
+TABLET_ID
+    : T A B L E T '_' I D
+    ;
+
 SOURCE
     : S O U R C E
     ;
@@ -3308,6 +3520,10 @@ BASELINE
 
 MEMORY
     : M E M O R Y
+    ;
+
+DESCRIPTION
+    : D E S C R I P T I O N
     ;
 
 SEED
@@ -3460,6 +3676,10 @@ KVCACHE
 
 RELAY
     : R E L A Y
+    ;
+
+MEMORY_SIZE
+    : M E M O R Y '_' S I Z E
     ;
 
 CONTRIBUTORS
@@ -3718,6 +3938,10 @@ GROUP_CONCAT
     : G R O U P '_' C O N C A T
     ;
 
+JSON_TABLE
+    : J S O N '_' T A B L E
+    ;
+
 LEAD
     : L E A D
     ;
@@ -3758,6 +3982,10 @@ NTILE
     : N T I L E
     ;
 
+NULL_IF_EXETERNAL
+    : N U L L '_' I F '_' E X E T E R N A L
+    ;
+
 BUCKETS
     : B U C K E T S
     ;
@@ -3780,6 +4008,10 @@ SCHEDULE
 
 JOB
     : J O B
+    ;
+
+SRID
+    : S R I D
     ;
 
 MASTER_LOG_POS
@@ -3830,6 +4062,10 @@ REDO_TRANSPORT_OPTIONS
     : R E D O '_' T R A N S P O R T '_' O P T I O N S
     ;
 
+FIELD_DELIMITER
+    : F I E L D '_' D E L I M I T E R
+    ;
+
 MASTER_HOST
     : M A S T E R '_' H O S T
     ;
@@ -3874,6 +4110,14 @@ WEEK
     : W E E K
     ;
 
+LINK
+    : L I N K
+    ;
+
+STATEMENT_ID
+    : S T A T E M E N T '_' I D
+    ;
+
 NULLS
     : N U L L S
     ;
@@ -3890,6 +4134,10 @@ PLUGIN
     : P L U G I N
     ;
 
+ENCRYPTED
+    : E N C R Y P T E D
+    ;
+
 TENANT
     : T E N A N T
     ;
@@ -3904,8 +4152,24 @@ BOOL_VALUE
     | F A L S E
     ;
 
+LOG_RESTORE_SOURCE
+    : L O G '_' R E S T O R E '_' S O U R C E
+    ;
+
+ENABLE_ARBITRATION_SERVICE
+    : E N A B L E '_' A R B I T R A T I O N '_' S E R V I C E
+    ;
+
 At
     : '@'
+    ;
+
+LeftBrace
+    : '{'
+    ;
+
+RightBrace
+    : '}'
     ;
 
 Quote

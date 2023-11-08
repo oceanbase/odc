@@ -21,11 +21,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
-import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Assert;
-import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
 
@@ -54,17 +55,18 @@ import lombok.Data;
  * @date 2023/6/8
  */
 public class MySQLNoGreaterThan5740SchemaAccessorTest extends BaseTestEnv {
-    private final String BASE_PATH = "src/test/resources/table/mysql/";
-    private String ddl;
-    private String dropTables;
-    private String testProcedureDDL;
-    private String testFunctionDDL;
-    private List<MySQLNoGreaterThan5740SchemaAccessorTest.DataType> verifyDataTypes = new ArrayList<>();
-    private List<MySQLNoGreaterThan5740SchemaAccessorTest.ColumnAttributes> columnAttributes = new ArrayList<>();
-    private JdbcTemplate jdbcTemplate = new JdbcTemplate(getMySQLDataSource());
+    private static final String BASE_PATH = "src/test/resources/table/mysql/";
+    private static String ddl;
+    private static String dropTables;
+    private static String testProcedureDDL;
+    private static String testFunctionDDL;
+    private static List<MySQLNoGreaterThan5740SchemaAccessorTest.DataType> verifyDataTypes = new ArrayList<>();
+    private static List<MySQLNoGreaterThan5740SchemaAccessorTest.ColumnAttributes> columnAttributes = new ArrayList<>();
+    private static JdbcTemplate jdbcTemplate = new JdbcTemplate(getMySQLDataSource());
+    private static DBSchemaAccessor accessor = new DBSchemaAccessors(getMySQLDataSource()).createMysql();
 
-    @Before
-    public void setUp() throws Exception {
+    @BeforeClass
+    public static void setUp() throws Exception {
         initVerifyDataTypes();
         initVerifyColumnAttributes();
 
@@ -82,12 +84,12 @@ public class MySQLNoGreaterThan5740SchemaAccessorTest extends BaseTestEnv {
         batchExecuteSql(testProcedureDDL, "/");
     }
 
-    @After
-    public void tearDown() {
+    @AfterClass
+    public static void tearDown() {
         batchExecuteSql(dropTables, ";");
     }
 
-    private void batchExecuteSql(String str, String delimiter) {
+    private static void batchExecuteSql(String str, String delimiter) {
         for (String ddl : Arrays.stream(str.split(delimiter)).filter(item -> StringUtils.isNotBlank(item)).collect(
                 Collectors.toList())) {
             jdbcTemplate.execute(ddl);
@@ -96,21 +98,18 @@ public class MySQLNoGreaterThan5740SchemaAccessorTest extends BaseTestEnv {
 
     @Test
     public void getDatabase_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getMySQLDataSource()).createMysql();
         DBDatabase database = accessor.getDatabase(getMySQLDataBaseName());
         Assert.assertNotNull(database);
     }
 
     @Test
     public void listDatabases_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getMySQLDataSource()).createMysql();
         List<DBDatabase> databases = accessor.listDatabases();
         Assert.assertTrue(databases.size() > 0);
     }
 
     @Test
     public void listTableColumns_TestAllColumnDataTypes_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getMySQLDataSource()).createMysql();
         List<DBTableColumn> columns =
                 accessor.listTableColumns(getMySQLDataBaseName(), "test_data_type");
         Assert.assertEquals(columns.size(), verifyDataTypes.size());
@@ -124,7 +123,6 @@ public class MySQLNoGreaterThan5740SchemaAccessorTest extends BaseTestEnv {
 
     @Test
     public void listTableColumns_TestColumnAttributesOtherThanDataType_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getMySQLDataSource()).createMysql();
         List<DBTableColumn> columns =
                 accessor.listTableColumns(getMySQLDataBaseName(), "test_other_than_data_type");
         Assert.assertEquals(columns.size(), columnAttributes.size());
@@ -140,7 +138,6 @@ public class MySQLNoGreaterThan5740SchemaAccessorTest extends BaseTestEnv {
 
     @Test
     public void listTableIndex_TestIndexType_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getMySQLDataSource()).createMysql();
         List<DBTableIndex> indexList = accessor.listTableIndexes(getMySQLDataBaseName(), "test_index_type");
         Assert.assertEquals(5, indexList.size());
         Assert.assertEquals(DBIndexAlgorithm.BTREE, indexList.get(0).getAlgorithm());
@@ -155,8 +152,13 @@ public class MySQLNoGreaterThan5740SchemaAccessorTest extends BaseTestEnv {
     }
 
     @Test
+    public void listTableIndex_TestIndexAvailable_Success() {
+        List<DBTableIndex> indexList = accessor.listTableIndexes(getMySQLDataBaseName(), "test_index_type");
+        Assert.assertTrue(indexList.get(0).getAvailable());
+    }
+
+    @Test
     public void listTableIndex_get_all_index_in_schema_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getMySQLDataSource()).createMysql();
         Map<String, List<DBTableIndex>> map = accessor.listTableIndexes(getMySQLDataBaseName());
         Assert.assertNotNull(map);
         Assert.assertTrue(map.size() > 0);
@@ -164,7 +166,6 @@ public class MySQLNoGreaterThan5740SchemaAccessorTest extends BaseTestEnv {
 
     @Test
     public void listTableConstraint_TestForeignKey_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getMySQLDataSource()).createMysql();
         List<DBTableConstraint> constraintListList =
                 accessor.listTableConstraints(getMySQLDataBaseName(), "test_fk_child");
         Assert.assertEquals(1, constraintListList.size());
@@ -174,7 +175,6 @@ public class MySQLNoGreaterThan5740SchemaAccessorTest extends BaseTestEnv {
 
     @Test
     public void listTableConstraint_TestPrimaryKey_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getMySQLDataSource()).createMysql();
         List<DBTableConstraint> constraintListList =
                 accessor.listTableConstraints(getMySQLDataBaseName(), "test_fk_parent");
         Assert.assertEquals(1, constraintListList.size());
@@ -184,28 +184,24 @@ public class MySQLNoGreaterThan5740SchemaAccessorTest extends BaseTestEnv {
 
     @Test
     public void listSystemViews_information_schema_not_empty() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getMySQLDataSource()).createMysql();
         List<String> viewNames = accessor.showSystemViews("information_schema");
         Assert.assertTrue(!viewNames.isEmpty());
     }
 
     @Test
     public void listAllSystemViews_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getMySQLDataSource()).createMysql();
         List<DBObjectIdentity> sysViews = accessor.listAllSystemViews();
         Assert.assertTrue(sysViews != null && sysViews.size() > 0);
     }
 
     @Test
     public void listSystemViews_databaseNotFound_empty() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getMySQLDataSource()).createMysql();
         List<String> viewNames = accessor.showSystemViews("databaseNotExists");
         Assert.assertTrue(viewNames.isEmpty());
     }
 
     @Test
     public void getPartition_Hash_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getMySQLDataSource()).createMysql();
         DBTablePartition partition =
                 accessor.getPartition(getMySQLDataBaseName(), "part_hash");
         Assert.assertEquals(5L, partition.getPartitionOption().getPartitionsNum().longValue());
@@ -214,7 +210,6 @@ public class MySQLNoGreaterThan5740SchemaAccessorTest extends BaseTestEnv {
 
     @Test
     public void getPartition_List_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getMySQLDataSource()).createMysql();
         DBTablePartition partition =
                 accessor.getPartition(getMySQLDataBaseName(), "part_list");
         Assert.assertEquals(5L, partition.getPartitionOption().getPartitionsNum().longValue());
@@ -224,7 +219,6 @@ public class MySQLNoGreaterThan5740SchemaAccessorTest extends BaseTestEnv {
 
     @Test
     public void getPartition_Range_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getMySQLDataSource()).createMysql();
         DBTablePartition partition =
                 accessor.getPartition(getMySQLDataBaseName(), "part_range");
         Assert.assertEquals(3L, partition.getPartitionOption().getPartitionsNum().longValue());
@@ -234,7 +228,6 @@ public class MySQLNoGreaterThan5740SchemaAccessorTest extends BaseTestEnv {
 
     @Test
     public void listTableOptions_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getMySQLDataSource()).createMysql();
         Map<String, DBTableOptions> table2Options =
                 accessor.listTableOptions(getMySQLDataBaseName());
         Assert.assertTrue(table2Options.containsKey("part_hash"));
@@ -242,28 +235,24 @@ public class MySQLNoGreaterThan5740SchemaAccessorTest extends BaseTestEnv {
 
     @Test
     public void showTablelike_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getMySQLDataSource()).createMysql();
         List<DBObjectIdentity> tables = accessor.listTables(getMySQLDataBaseName(), null);
         Assert.assertTrue(tables != null && tables.size() > 0);
     }
 
     @Test
     public void showViews_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getMySQLDataSource()).createMysql();
         List<DBObjectIdentity> views = accessor.listViews(getMySQLDataBaseName());
         Assert.assertTrue(views != null && views.size() == 2);
     }
 
     @Test
     public void getView_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getMySQLDataSource()).createMysql();
         DBView view = accessor.getView(getMySQLDataBaseName(), "view_test1");
         Assert.assertTrue(view != null && view.getColumns().size() == 2);
     }
 
     @Test
     public void showVariables_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getMySQLDataSource()).createMysql();
         List<DBVariable> variables = accessor.showVariables();
         List<DBVariable> sessionVariables = accessor.showSessionVariables();
         List<DBVariable> globalVariables = accessor.showGlobalVariables();
@@ -274,7 +263,6 @@ public class MySQLNoGreaterThan5740SchemaAccessorTest extends BaseTestEnv {
 
     @Test
     public void getFunction_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getMySQLDataSource()).createMysql();
         DBFunction function = accessor.getFunction(getMySQLDataBaseName(), "function_test");
         Assert.assertTrue(function != null
                 && function.getParams().size() == 2
@@ -283,7 +271,6 @@ public class MySQLNoGreaterThan5740SchemaAccessorTest extends BaseTestEnv {
 
     @Test
     public void getProcedure_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getMySQLDataSource()).createMysql();
         DBProcedure procedure = accessor.getProcedure(getMySQLDataBaseName(), "procedure_detail_test");
         Assert.assertTrue(procedure != null
                 && procedure.getParams().size() == 2
@@ -292,19 +279,26 @@ public class MySQLNoGreaterThan5740SchemaAccessorTest extends BaseTestEnv {
 
     @Test
     public void showTables_unknowDatabase_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getMySQLDataSource()).createMysql();
         List<String> tables = accessor.showTables("abc");
         Assert.assertTrue(tables.size() == 0);
     }
 
-    private void initVerifyColumnAttributes() {
+    @Test
+    public void getTableOptions_Success() {
+        DBTableOptions options =
+                accessor.getTableOptions(getMySQLDataBaseName(), "test_data_type");
+        Assert.assertTrue(Objects.nonNull(options.getCharsetName()));
+        Assert.assertTrue(Objects.nonNull(options.getCollationName()));
+    }
+
+    private static void initVerifyColumnAttributes() {
         columnAttributes.addAll(Arrays.asList(
                 MySQLNoGreaterThan5740SchemaAccessorTest.ColumnAttributes.of("col1", false, false, true, null,
                         "col1_comments"),
                 MySQLNoGreaterThan5740SchemaAccessorTest.ColumnAttributes.of("col2", true, false, false, null, "")));
     }
 
-    private void initVerifyDataTypes() {
+    private static void initVerifyDataTypes() {
         verifyDataTypes.addAll(Arrays.asList(
                 MySQLNoGreaterThan5740SchemaAccessorTest.DataType.of("col1", "int", 10, 10L, 0, null),
                 MySQLNoGreaterThan5740SchemaAccessorTest.DataType.of("col2", "decimal", 10, 10L, 2, 2),

@@ -226,7 +226,6 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
         return false;
     }
 
-
     private void doDatabasePermissionCheck() {
         Set<String> unauthorizedDatabaseNames =
                 databaseService.filterUnAuthorizedDatabaseNames(
@@ -322,4 +321,5 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
         result.setPermissionCheckResult(this.permissionCheckResult);
         return result;
     }
+
 }

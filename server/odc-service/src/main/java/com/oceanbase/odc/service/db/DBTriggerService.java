@@ -19,22 +19,20 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.stereotype.Service;
 
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
-import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.core.session.ConnectionSessionUtil;
+import com.oceanbase.odc.plugin.schema.api.TriggerExtensionPoint;
 import com.oceanbase.odc.service.common.model.OdcSqlExecuteResult;
-import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.db.model.DBTriggerReq;
+import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
 import com.oceanbase.odc.service.session.ConnectConsoleService;
+import com.oceanbase.tools.dbbrowser.model.DBPLObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBTrigger;
-import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
-import com.oceanbase.tools.dbbrowser.template.DBObjectTemplate;
-import com.oceanbase.tools.dbbrowser.template.oracle.OracleTriggerTemplate;
-import com.oceanbase.tools.dbbrowser.util.OracleSqlBuilder;
-import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
 
 import lombok.NonNull;
 
@@ -52,41 +50,45 @@ public class DBTriggerService {
     private ConnectConsoleService consoleService;
 
     public List<DBTrigger> list(ConnectionSession connectionSession, String dbName) {
-        DBSchemaAccessor accessor = DBSchemaAccessors.create(connectionSession);
-        return accessor.listTriggers(dbName).stream().map(item -> {
-            DBTrigger trigger = new DBTrigger();
-            trigger.setTriggerName(item.getName());
-            trigger.setErrorMessage(item.getErrorMessage());
-            trigger.setEnable(item.getEnable());
-            trigger.setStatus(item.getStatus());
-            return trigger;
-        }).collect(Collectors.toList());
+        return connectionSession.getSyncJdbcExecutor(
+                ConnectionSessionConstants.BACKEND_DS_KEY)
+                .execute((ConnectionCallback<List<DBPLObjectIdentity>>) con -> getTriggerExtensionPoint(
+                        connectionSession).list(con, dbName))
+                .stream()
+                .map(item -> {
+                    DBTrigger trigger = new DBTrigger();
+                    trigger.setTriggerName(item.getName());
+                    trigger.setErrorMessage(item.getErrorMessage());
+                    trigger.setEnable(item.getEnable());
+                    trigger.setStatus(item.getStatus());
+                    return trigger;
+                }).collect(Collectors.toList());
     }
 
     public DBTrigger detail(ConnectionSession connectionSession, String schemaName, String triggerName) {
-        DBSchemaAccessor accessor = DBSchemaAccessors.create(connectionSession);
-        return accessor.getTrigger(schemaName, triggerName);
+        return connectionSession.getSyncJdbcExecutor(
+                ConnectionSessionConstants.BACKEND_DS_KEY)
+                .execute((ConnectionCallback<DBTrigger>) con -> getTriggerExtensionPoint(connectionSession)
+                        .getDetail(con, schemaName, triggerName));
     }
 
     public DBTrigger alter(@NonNull ConnectionSession session, @NonNull DBTriggerReq unit) {
-        dialectCheck(session);
-        SqlBuilder sqlBuilder = new OracleSqlBuilder();
-        sqlBuilder.append("ALTER TRIGGER ")
-                .identifier(unit.getTriggerName());
-        if (unit.isEnable()) {
-            sqlBuilder.append(" ENABLE");
-        } else {
-            sqlBuilder.append(" DISABLE");
-        }
-        session.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY).execute(sqlBuilder.toString());
+        String schemaName = ConnectionSessionUtil.getCurrentSchema(session);
+        session.getSyncJdbcExecutor(
+                ConnectionSessionConstants.BACKEND_DS_KEY).execute((ConnectionCallback<Void>) con -> {
+                    getTriggerExtensionPoint(session).setEnable(con, schemaName, unit.getTriggerName(),
+                            unit.isEnable());
+                    return null;
+                });
         return unit;
     }
 
     public String generateCreateSql(@NonNull ConnectionSession session,
             @NonNull DBTriggerReq unit) {
-        dialectCheck(session);
-        DBObjectTemplate<DBTrigger> template = new OracleTriggerTemplate();
-        return template.generateCreateObjectTemplate(unit);
+        return session.getSyncJdbcExecutor(
+                ConnectionSessionConstants.BACKEND_DS_KEY)
+                .execute((ConnectionCallback<String>) con -> getTriggerExtensionPoint(session)
+                        .generateCreateTemplate(unit));
     }
 
     public OdcSqlExecuteResult compile(@NonNull ConnectionSession session,
@@ -94,10 +96,8 @@ public class DBTriggerService {
         throw new UnsupportedOperationException("Not supported yet");
     }
 
-    private void dialectCheck(@NonNull ConnectionSession session) {
-        if (session.getDialectType() != DialectType.OB_ORACLE) {
-            throw new UnsupportedOperationException("Trigger is not supported for " + session.getDialectType());
-        }
+    private TriggerExtensionPoint getTriggerExtensionPoint(@NonNull ConnectionSession session) {
+        return SchemaPluginUtil.getTriggerExtension(session.getDialectType());
     }
 
 }

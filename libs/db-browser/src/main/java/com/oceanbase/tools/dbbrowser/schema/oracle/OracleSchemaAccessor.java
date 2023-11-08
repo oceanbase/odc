@@ -326,6 +326,26 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
     }
 
     @Override
+    public List<DBPLObjectIdentity> listPackageBodies(String schemaName) {
+        OracleSqlBuilder sb = new OracleSqlBuilder();
+
+        sb.append("select object_name as name, object_type as type, owner, status from ");
+        sb.append(dataDictTableNames.OBJECTS());
+        sb.append(" where object_type = 'PACKAGE BODY' and owner=");
+        sb.value(schemaName);
+        sb.append(" order by name asc");
+
+        return jdbcOperations.query(sb.toString(), (rs, rowNum) -> {
+            DBPLObjectIdentity dbPackage = new DBPLObjectIdentity();
+            dbPackage.setName(rs.getString("name"));
+            dbPackage.setStatus(rs.getString("status"));
+            dbPackage.setSchemaName(rs.getString("owner"));
+            dbPackage.setType(DBObjectType.getEnumByName(rs.getString("type")));
+            return dbPackage;
+        });
+    }
+
+    @Override
     public List<DBPLObjectIdentity> listTriggers(String schemaName) {
         OracleSqlBuilder sb = new OracleSqlBuilder();
 
@@ -407,9 +427,9 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
 
     @Override
     public Map<String, List<DBTableColumn>> listBasicTableColumns(String schemaName) {
-        String sql = sqlMapper.getSql(Statements.LIST_BASIC_SCHEMA_COLUMNS);
+        String sql = sqlMapper.getSql(Statements.LIST_BASIC_SCHEMA_TABLE_COLUMNS);
         List<DBTableColumn> tableColumns =
-                jdbcOperations.query(sql, new Object[] {schemaName}, listBasicColumnsRowMapper());
+                jdbcOperations.query(sql, new Object[] {schemaName, schemaName}, listBasicColumnsRowMapper());
         return tableColumns.stream().collect(Collectors.groupingBy(DBTableColumn::getTableName));
     }
 
@@ -417,6 +437,20 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
     public List<DBTableColumn> listBasicTableColumns(String schemaName, String tableName) {
         String sql = sqlMapper.getSql(Statements.LIST_BASIC_TABLE_COLUMNS);
         return jdbcOperations.query(sql, new Object[] {schemaName, tableName}, listBasicColumnsRowMapper());
+    }
+
+    @Override
+    public Map<String, List<DBTableColumn>> listBasicViewColumns(String schemaName) {
+        String sql = sqlMapper.getSql(Statements.LIST_BASIC_SCHEMA_VIEW_COLUMNS);
+        List<DBTableColumn> tableColumns =
+                jdbcOperations.query(sql, new Object[] {schemaName, schemaName}, listBasicColumnsRowMapper());
+        return tableColumns.stream().collect(Collectors.groupingBy(DBTableColumn::getTableName));
+    }
+
+    @Override
+    public List<DBTableColumn> listBasicViewColumns(String schemaName, String viewName) {
+        String sql = sqlMapper.getSql(Statements.LIST_BASIC_VIEW_COLUMNS);
+        return jdbcOperations.query(sql, new Object[] {schemaName, viewName}, listBasicColumnsRowMapper());
     }
 
     @Override
@@ -738,6 +772,7 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
             index.setAlgorithm(DBIndexAlgorithm.fromString(rs.getString(OracleConstants.INDEX_TYPE)));
             index.setCompressInfo(rs.getString(OracleConstants.INDEX_COMPRESSION));
             index.setColumnNames(new ArrayList<>());
+            index.setAvailable("VALID".equals(rs.getString(OracleConstants.INDEX_STATUS)));
             indexName2Index.putIfAbsent(index.getName(), index);
             return index;
         });

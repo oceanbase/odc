@@ -20,20 +20,19 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.stereotype.Service;
 
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
-import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
+import com.oceanbase.odc.plugin.schema.api.PackageExtensionPoint;
 import com.oceanbase.odc.service.common.model.ResourceSql;
-import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
+import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
 import com.oceanbase.odc.service.session.ConnectConsoleService;
+import com.oceanbase.tools.dbbrowser.model.DBPLObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBPackage;
-import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
-import com.oceanbase.tools.dbbrowser.template.DBObjectTemplate;
-import com.oceanbase.tools.dbbrowser.template.oracle.OraclePackageTemplate;
 
 import lombok.NonNull;
 
@@ -44,8 +43,11 @@ public class DBPackageService {
     private ConnectConsoleService consoleService;
 
     public List<DBPackage> list(ConnectionSession connectionSession, String dbName) {
-        DBSchemaAccessor accessor = DBSchemaAccessors.create(connectionSession);
-        return accessor.listPackages(dbName).stream()
+        return connectionSession.getSyncJdbcExecutor(
+                ConnectionSessionConstants.BACKEND_DS_KEY)
+                .execute((ConnectionCallback<List<DBPLObjectIdentity>>) con -> getPackageExtensionPoint(
+                        connectionSession).list(con, dbName))
+                .stream()
                 .filter(i -> !StringUtils.equalsIgnoreCase(i.getName(), OdcConstants.PL_DEBUG_PACKAGE))
                 .map(item -> {
                     DBPackage dbPackage = new DBPackage();
@@ -57,23 +59,22 @@ public class DBPackageService {
     }
 
     public DBPackage detail(ConnectionSession connectionSession, String schemaName, String packageName) {
-        DBSchemaAccessor accessor = DBSchemaAccessors.create(connectionSession);
-        return accessor.getPackage(schemaName, packageName);
+        return connectionSession.getSyncJdbcExecutor(
+                ConnectionSessionConstants.BACKEND_DS_KEY)
+                .execute((ConnectionCallback<DBPackage>) con -> getPackageExtensionPoint(connectionSession)
+                        .getDetail(con, schemaName, packageName));
     }
 
     public ResourceSql getCreateSql(@NonNull ConnectionSession session,
             @NonNull DBPackage resource) {
-        dialectCheck(session);
-        DBObjectTemplate<DBPackage> template = new OraclePackageTemplate(
-                session.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY));
-        String ddl = template.generateCreateObjectTemplate(resource);
-        return ResourceSql.ofSql(ddl);
+        return ResourceSql.ofSql(session.getSyncJdbcExecutor(
+                ConnectionSessionConstants.BACKEND_DS_KEY)
+                .execute((ConnectionCallback<String>) con -> getPackageExtensionPoint(session)
+                        .generateCreateTemplate(con, resource)));
     }
 
-    private void dialectCheck(@NonNull ConnectionSession session) {
-        if (session.getDialectType() != DialectType.OB_ORACLE) {
-            throw new UnsupportedOperationException("Package is not supported for " + session.getDialectType());
-        }
+    private PackageExtensionPoint getPackageExtensionPoint(@NonNull ConnectionSession session) {
+        return SchemaPluginUtil.getPackageExtension(session.getDialectType());
     }
 
 }

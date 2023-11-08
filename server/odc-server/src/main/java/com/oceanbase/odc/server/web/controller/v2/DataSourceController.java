@@ -49,9 +49,7 @@ import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.model.ConnectionPreviewBatchImportResp;
-import com.oceanbase.odc.service.connection.model.ConnectionStringParseResult;
 import com.oceanbase.odc.service.connection.model.GenerateConnectionStringReq;
-import com.oceanbase.odc.service.connection.model.ParseConnectionStringReq;
 import com.oceanbase.odc.service.connection.model.QueryConnectionParams;
 
 import io.swagger.annotations.ApiOperation;
@@ -164,12 +162,6 @@ public class DataSourceController {
         return Responses.single(connectionHelper.generateConnectionStr(req));
     }
 
-    @ApiOperation(value = "parseConnectionStr", notes = " parse connection string")
-    @RequestMapping(value = "/help/parseConnectionStr", method = RequestMethod.POST)
-    public SuccessResponse<ConnectionStringParseResult> parseConnectionStr(@RequestBody ParseConnectionStringReq req) {
-        return Responses.single(connectionHelper.parseConnectionStr(req));
-    }
-
     @ApiOperation(value = "previewBatchImportDataSources", notes = "Parse imported file")
     @RequestMapping(value = "/datasources/previewBatchImport", method = RequestMethod.POST)
     public SuccessResponse<ConnectionPreviewBatchImportResp> previewBatchImportDataSources(
@@ -185,9 +177,9 @@ public class DataSourceController {
     }
 
     @ApiOperation(value = "statusDataSources", notes = "Obtain datasource status")
-    @RequestMapping(value = "/datasources/status", method = RequestMethod.GET)
-    public SuccessResponse<Map<Long, CheckState>> status(@RequestParam(name = "id") Set<Long> datasourceIds) {
-        return Responses.success(connectionService.getStatus(datasourceIds));
+    @RequestMapping(value = "/datasources/status", method = RequestMethod.POST)
+    public SuccessResponse<Map<Long, CheckState>> status(@RequestBody Set<Long> ids) {
+        return Responses.success(connectionService.getStatus(ids));
     }
 
     @ApiOperation(value = "statsDataSource", notes = "datasource stats information")

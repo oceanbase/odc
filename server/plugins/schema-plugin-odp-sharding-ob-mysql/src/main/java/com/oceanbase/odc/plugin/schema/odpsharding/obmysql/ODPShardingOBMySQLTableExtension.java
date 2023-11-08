@@ -19,7 +19,7 @@ import java.sql.Connection;
 
 import org.pf4j.Extension;
 
-import com.oceanbase.odc.plugin.connect.obmysql.util.JdbcOperationsUtil;
+import com.oceanbase.odc.common.util.JdbcOperationsUtil;
 import com.oceanbase.odc.plugin.schema.obmysql.OBMySQLTableExtension;
 import com.oceanbase.tools.dbbrowser.editor.DBTablePartitionEditor;
 import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLDBTablePartitionEditor;

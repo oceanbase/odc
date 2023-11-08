@@ -21,8 +21,9 @@ import java.util.stream.Collectors;
 
 import org.pf4j.Extension;
 
+import com.oceanbase.odc.common.unit.BinarySizeUnit;
+import com.oceanbase.odc.common.util.JdbcOperationsUtil;
 import com.oceanbase.odc.common.util.VersionUtils;
-import com.oceanbase.odc.plugin.connect.obmysql.util.JdbcOperationsUtil;
 import com.oceanbase.odc.plugin.schema.api.TableExtensionPoint;
 import com.oceanbase.odc.plugin.schema.obmysql.parser.OBMySQLGetDBTableByParser;
 import com.oceanbase.odc.plugin.schema.obmysql.utils.DBAccessorUtil;
@@ -33,12 +34,13 @@ import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLColumnEditor;
 import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLConstraintEditor;
 import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLDBTablePartitionEditor;
 import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLObjectOperator;
-import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLTableEditor;
 import com.oceanbase.tools.dbbrowser.editor.mysql.OBMySQLIndexEditor;
 import com.oceanbase.tools.dbbrowser.editor.mysql.OBMySQLLessThan2277PartitionEditor;
+import com.oceanbase.tools.dbbrowser.editor.mysql.OBMySQLTableEditor;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
+import com.oceanbase.tools.dbbrowser.model.DBTableStats;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 import com.oceanbase.tools.dbbrowser.stats.DBStatsAccessor;
 
@@ -72,7 +74,6 @@ public class OBMySQLTableExtension implements TableExtensionPoint {
     @Override
     public DBTable getDetail(@NonNull Connection connection, @NonNull String schemaName, @NonNull String tableName) {
         DBSchemaAccessor schemaAccessor = getSchemaAccessor(connection);
-        DBStatsAccessor statsAccessor = getStatsAccessor(connection);
         String ddl = schemaAccessor.getTableDDL(schemaName, tableName);
         OBMySQLGetDBTableByParser parser = new OBMySQLGetDBTableByParser(ddl);
 
@@ -81,13 +82,26 @@ public class OBMySQLTableExtension implements TableExtensionPoint {
         table.setOwner(schemaName);
         table.setName(schemaAccessor.isLowerCaseTableName() ? tableName.toLowerCase() : tableName);
         table.setColumns(schemaAccessor.listTableColumns(schemaName, tableName));
-        table.setConstraints(parser.listConstraints());
+        table.setConstraints(schemaAccessor.listTableConstraints(schemaName, tableName));
         table.setPartition(parser.getPartition());
         table.setIndexes(schemaAccessor.listTableIndexes(schemaName, tableName));
         table.setDDL(ddl);
         table.setTableOptions(schemaAccessor.getTableOptions(schemaName, tableName));
-        table.setStats(statsAccessor.getTableStats(schemaName, tableName));
+        table.setStats(getTableStats(connection, schemaName, tableName));
         return table;
+    }
+
+    protected DBTableStats getTableStats(@NonNull Connection connection, @NonNull String schemaName,
+            @NonNull String tableName) {
+        DBStatsAccessor statsAccessor = getStatsAccessor(connection);
+        DBTableStats tableStats = statsAccessor.getTableStats(schemaName, tableName);
+        Long dataSizeInBytes = tableStats.getDataSizeInBytes();
+        if (dataSizeInBytes == null || dataSizeInBytes < 0) {
+            tableStats.setTableSize(null);
+        } else {
+            tableStats.setTableSize(BinarySizeUnit.B.of(dataSizeInBytes).toString());
+        }
+        return tableStats;
     }
 
     @Override
@@ -107,7 +121,7 @@ public class OBMySQLTableExtension implements TableExtensionPoint {
     }
 
     protected DBTableEditor getTableEditor(Connection connection) {
-        return new MySQLTableEditor(new OBMySQLIndexEditor(), new MySQLColumnEditor(), new MySQLConstraintEditor(),
+        return new OBMySQLTableEditor(new OBMySQLIndexEditor(), new MySQLColumnEditor(), new MySQLConstraintEditor(),
                 getDBTablePartitionEditor(connection));
     }
 

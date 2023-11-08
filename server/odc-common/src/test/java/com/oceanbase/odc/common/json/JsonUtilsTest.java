@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.common.json;
 
+import java.io.IOException;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -175,6 +176,15 @@ public class JsonUtilsTest {
         Assert.assertEquals(foo.getFirstName(), map.get("firstName"));
         Assert.assertEquals(foo.getUsername(), map.get("username"));
 
+    }
+
+    @Test
+    public void convert_xmlToJson() throws IOException {
+        String xml =
+                "<bookstore><book><title>oceanbase</title><author>odc</author><price>99.99</price></book></bookstore>\n";
+        String excepted = "{\"book\":{\"title\":\"oceanbase\",\"author\":\"odc\",\"price\":\"99.99\"}}";
+        String json = JsonUtils.xmlToJson(xml);
+        Assert.assertEquals(excepted, json);
     }
 
     @Data

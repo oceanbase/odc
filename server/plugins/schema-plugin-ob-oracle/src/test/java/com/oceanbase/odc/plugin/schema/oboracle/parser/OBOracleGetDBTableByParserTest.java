@@ -23,9 +23,10 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import com.oceanbase.odc.plugin.connect.obmysql.util.JdbcOperationsUtil;
+import com.oceanbase.odc.common.util.JdbcOperationsUtil;
 import com.oceanbase.odc.test.database.TestDBConfiguration;
 import com.oceanbase.odc.test.database.TestDBConfigurations;
+import com.oceanbase.odc.test.util.FileUtil;
 import com.oceanbase.tools.dbbrowser.model.DBConstraintType;
 import com.oceanbase.tools.dbbrowser.model.DBForeignKeyModifyRule;
 import com.oceanbase.tools.dbbrowser.model.DBIndexType;
@@ -50,9 +51,9 @@ public class OBOracleGetDBTableByParserTest {
     @BeforeClass
     public static void setUp() throws Exception {
         connection = configuration.getDataSource().getConnection();
-        dropTables = TestDBConfigurations.loadAsString(BASE_PATH + "drop.sql");
+        dropTables = FileUtil.loadAsString(BASE_PATH + "drop.sql");
         batchExcuteSql(dropTables);
-        ddl = TestDBConfigurations.loadAsString(BASE_PATH + "testGetTableByParser.sql");
+        ddl = FileUtil.loadAsString(BASE_PATH + "testGetTableByParser.sql");
         JdbcOperationsUtil.getJdbcOperations(connection).execute(ddl);
     }
 
@@ -138,28 +139,40 @@ public class OBOracleGetDBTableByParserTest {
         OBOracleGetDBTableByParser table =
                 new OBOracleGetDBTableByParser(connection, TEST_DATABASE_NAME, "TEST_INDEX_BY_PARSER");
         List<DBTableIndex> indexes = table.listIndexes();
-        Assert.assertEquals(6, indexes.size());
+        Assert.assertEquals(7, indexes.size());
         for (DBTableIndex index : indexes) {
             if ("CONSTRAINT_UNIQUE_TEST_INDEX_BY_PARSER".equals(index.getName())) {
                 Assert.assertEquals("COL5", index.getColumnNames().get(0));
+                Assert.assertEquals("COL6", index.getColumnNames().get(1));
                 Assert.assertEquals(2, index.getColumnNames().size());
                 Assert.assertTrue(index.getUnique());
                 Assert.assertEquals(DBIndexType.UNIQUE, index.getType());
+                Assert.assertTrue(index.getAvailable());
             } else if ("IND_FUNCTION_BASED".equals(index.getName())) {
                 Assert.assertEquals("UPPER(\"COL1\")", index.getColumnNames().get(0));
                 Assert.assertEquals(DBIndexType.FUNCTION_BASED_NORMAL, index.getType());
+                Assert.assertTrue(index.getAvailable());
             } else if ("UNIQUE_IDX_TEST_INDEX_BY_PARSER".equals(index.getName())) {
                 Assert.assertEquals(DBIndexType.UNIQUE, index.getType());
                 Assert.assertEquals("COL3", index.getColumnNames().get(0));
                 Assert.assertFalse(index.getGlobal());
+                Assert.assertTrue(index.getAvailable());
             } else if ("NORMAL_IDX_TEST_INDEX_BY_PARSER".equals(index.getName())) {
                 Assert.assertEquals(DBIndexType.NORMAL, index.getType());
                 Assert.assertEquals("COL7", index.getColumnNames().get(0));
                 Assert.assertFalse(index.getGlobal());
+                Assert.assertTrue(index.getAvailable());
             } else if (index.getPrimary()) {
+                Assert.assertTrue(index.getUnique());
                 Assert.assertEquals("ID", index.getColumnNames().get(0));
+                Assert.assertTrue(index.getAvailable());
+            } else if ("IND_FUNCTION_BASED2".equals(index.getName())) {
+                Assert.assertEquals(DBIndexType.FUNCTION_BASED_NORMAL, index.getType());
+                Assert.assertEquals("\"COL8\" + 1", index.getColumnNames().get(0));
             } else {
                 Assert.assertEquals("COL2", index.getColumnNames().get(0));
+                Assert.assertTrue(index.getUnique());
+                Assert.assertTrue(index.getAvailable());
             }
         }
     }

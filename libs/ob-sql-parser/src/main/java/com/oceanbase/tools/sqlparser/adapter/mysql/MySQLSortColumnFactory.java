@@ -18,6 +18,7 @@ package com.oceanbase.tools.sqlparser.adapter.mysql;
 import com.oceanbase.tools.sqlparser.adapter.StatementFactory;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Sort_column_keyContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParserBaseVisitor;
+import com.oceanbase.tools.sqlparser.statement.Expression;
 import com.oceanbase.tools.sqlparser.statement.createtable.SortColumn;
 import com.oceanbase.tools.sqlparser.statement.expression.ColumnReference;
 import com.oceanbase.tools.sqlparser.statement.select.SortDirection;
@@ -46,11 +47,17 @@ public class MySQLSortColumnFactory extends OBParserBaseVisitor<SortColumn> impl
 
     @Override
     public SortColumn visitSort_column_key(Sort_column_keyContext ctx) {
-        ColumnReference r = new ColumnReference(ctx.column_name(), null, null,
-                ctx.column_name().getText());
-        SortColumn sortColumn = new SortColumn(ctx, r);
-        if (ctx.LeftParen() != null && ctx.RightParen() != null) {
-            sortColumn.setLength(Integer.valueOf(ctx.INTNUM(0).getText()));
+        SortColumn sortColumn;
+        if (ctx.expr() != null) {
+            Expression e = new MySQLExpressionFactory(ctx.expr()).generate();
+            sortColumn = new SortColumn(ctx, e);
+        } else {
+            ColumnReference r = new ColumnReference(ctx.column_name(), null, null,
+                    ctx.column_name().getText());
+            sortColumn = new SortColumn(ctx, r);
+            if (ctx.LeftParen() != null && ctx.RightParen() != null) {
+                sortColumn.setLength(Integer.valueOf(ctx.INTNUM(0).getText()));
+            }
         }
         SortDirection direction = null;
         if (ctx.ASC() != null) {

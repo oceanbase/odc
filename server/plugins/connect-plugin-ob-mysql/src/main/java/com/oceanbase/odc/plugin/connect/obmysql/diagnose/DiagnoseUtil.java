@@ -29,6 +29,7 @@ import com.oceanbase.odc.core.shared.model.SqlExecDetail;
  * @since ODC_release_4.2.0
  */
 public class DiagnoseUtil {
+
     public static PlanNode buildPlanTree(PlanNode planTree, PlanNode node) {
         if (planTree == null) {
             planTree = node;
@@ -52,15 +53,17 @@ public class DiagnoseUtil {
     }
 
     public static boolean recursiveBuild(PlanNode planTree, PlanNode node) {
-        PlanNode tempNode = planTree;
-        boolean flag = false;
-        if (tempNode.getDepth() + 1 == node.getDepth()) {
+        boolean flag;
+        if (planTree.getChildren() == null
+                || planTree.getChildren().size() == 0
+                || (planTree.getDepth() < node.getDepth()
+                        && planTree.getChildren().values().stream().allMatch(p -> p.getDepth() >= node.getDepth()))) {
             String key = node.getOperator();
-            key = getNonexistKey(tempNode, key);
-            tempNode.getChildren().put(key, node);
+            key = getNonexistKey(planTree, key);
+            planTree.getChildren().put(key, node);
             flag = true;
         } else {
-            LinkedHashMap<String, PlanNode> children = tempNode.getChildren();
+            LinkedHashMap<String, PlanNode> children = planTree.getChildren();
             Map.Entry<String, PlanNode> nodeEntry =
                     (Map.Entry<String, PlanNode>) children.entrySet().toArray()[children.size() - 1];
             flag = recursiveBuild(nodeEntry.getValue(), node);

@@ -390,7 +390,14 @@ public class OBColumnExtractor implements ColumnExtractor {
             // 1. 库名、表名均为空，则列名必不为空，且不为 *。此时仅查询 fromTable 的 columnList，如果不能唯一确定列名，则报错
             for (LogicalTable fromTable : fromTables) {
                 for (LogicalColumn column : fromTable.getColumnList()) {
-                    if (StringUtils.firstNonBlank(column.getAlias(), column.getName()).equals(columnName)) {
+                    /*
+                     * The sensitive column name stored in ODC metaDB is case-insensitive when executing comparison. So
+                     * we should compare the column name ignoring case. If there are two columns with the same name but
+                     * different case, then we will recognize both of them as sensitive columns even though only one of
+                     * them is marked sensitive.
+                     * 
+                     */
+                    if (StringUtils.firstNonBlank(column.getAlias(), column.getName()).equalsIgnoreCase(columnName)) {
                         return Collections.singletonList(inheritColumn(column));
                     }
                 }
@@ -398,17 +405,16 @@ public class OBColumnExtractor implements ColumnExtractor {
         } else {
             // 2. 表名不为空，从 fromTable 和 fromTable#tableList 的 columnList 进行查询
             for (LogicalTable fromTable : fromTables) {
-                List<LogicalTable> tables = new ArrayList<>(Collections.singletonList(fromTable));
-                tables.addAll(fromTable.getTableList());
+                List<LogicalTable> tables = new ArrayList<>(retrieveLogicalTable(fromTable));
                 if (COLUMN_NAME_WILDCARD.equals(columnName)) {
                     // 2.1. 列名为 *，即只要库名和表名匹配的都输出
                     // 先查 fromTable，再查 fromTable#tableList
                     for (LogicalTable table : tables) {
-                        if (tableName.equals(table.getAlias())
-                                || tableName.equals(table.getName())) {
+                        if (tableName.equalsIgnoreCase(table.getAlias())
+                                || tableName.equalsIgnoreCase(table.getName())) {
                             for (LogicalColumn column : table.getColumnList()) {
                                 if (StringUtils.isNotBlank(databaseName)
-                                        && !databaseName.equals(column.getDatabaseName())) {
+                                        && !databaseName.equalsIgnoreCase(column.getDatabaseName())) {
                                     break;
                                 }
                                 result.add(inheritColumn(column));
@@ -419,15 +425,15 @@ public class OBColumnExtractor implements ColumnExtractor {
                     // 2.2 列名不为 *，即需要唯一确定一列（这里暂且不处理列名冲突的情况，因为运行此代码的前提是 SQL 语句被成功执行）
                     // 先查 fromTable，再查 fromTable#tableList
                     for (LogicalTable table : tables) {
-                        if (tableName.equals(table.getAlias())
-                                || tableName.equals(table.getName())) {
+                        if (tableName.equalsIgnoreCase(table.getAlias())
+                                || tableName.equalsIgnoreCase(table.getName())) {
                             for (LogicalColumn column : table.getColumnList()) {
                                 if (StringUtils.isNotBlank(databaseName)
-                                        && !databaseName.equals(column.getDatabaseName())) {
+                                        && !databaseName.equalsIgnoreCase(column.getDatabaseName())) {
                                     break;
                                 }
                                 if (StringUtils.firstNonBlank(column.getAlias(), column.getName())
-                                        .equals(columnName)) {
+                                        .equalsIgnoreCase(columnName)) {
                                     return Collections.singletonList(inheritColumn(column));
                                 }
                             }
@@ -478,7 +484,6 @@ public class OBColumnExtractor implements ColumnExtractor {
         if (param instanceof ExpressionParam) {
             ExpressionParam expressionParam = (ExpressionParam) param;
             column = extractCommonExpression(expressionParam.getTarget());
-            column.setAlias(processIdentifier(expressionParam.getAlias()));
         }
         return column;
     }
@@ -569,7 +574,7 @@ public class OBColumnExtractor implements ColumnExtractor {
             for (int j = 0; j < rightColumns.size(); j++) {
                 LogicalColumn rightColumn = rightColumns.get(j);
                 String rightLabel = StringUtils.firstNonBlank(rightColumn.getAlias(), rightColumn.getName());
-                if (leftLabel.equals(rightLabel)) {
+                if (leftLabel.equalsIgnoreCase(rightLabel)) {
                     LogicalColumn c = LogicalColumn.empty();
                     c.setName(leftLabel);
                     c.setType(ColumnType.JOIN);
@@ -685,7 +690,7 @@ public class OBColumnExtractor implements ColumnExtractor {
     private List<LogicalColumn> getColumnsFromCteTable(String tableName) throws NotFoundException {
         List<LogicalColumn> result = new ArrayList<>();
         for (LogicalTable table : cteTables) {
-            if (tableName.equals(table.getName())) {
+            if (tableName.equalsIgnoreCase(table.getName())) {
                 for (LogicalColumn column : table.getColumnList()) {
                     result.add(inheritColumn(column));
                 }
@@ -709,17 +714,32 @@ public class OBColumnExtractor implements ColumnExtractor {
         throw new NotFoundException(ErrorCodes.NotFound, new Object[] {"table", "name", tableName}, null);
     }
 
+    private List<LogicalTable> retrieveLogicalTable(LogicalTable table) {
+        List<LogicalTable> returnValue = new ArrayList<>();
+        if (Objects.nonNull(table)) {
+            returnValue.add(table);
+            if (CollectionUtils.isNotEmpty(table.getTableList())) {
+                for (LogicalTable t : table.getTableList()) {
+                    returnValue.addAll(retrieveLogicalTable(t));
+                }
+            }
+        }
+        return returnValue;
+    }
+
     private String processIdentifier(String identifier) {
         if (Objects.nonNull(dialectType) && dialectType.isMysql()) {
             String unquoted = StringUtils.unquoteMySqlIdentifier(identifier);
-            return StringUtils.isBlank(unquoted) ? unquoted : unquoted.toLowerCase();
+            if (StringUtils.isBlank(unquoted)) {
+                return unquoted;
+            }
+            return StringUtils.checkMysqlIdentifierQuoted(identifier) ? unquoted : unquoted.toLowerCase();
         } else if (dialectType == DialectType.OB_ORACLE) {
             String unquoted = StringUtils.unquoteOracleIdentifier(identifier);
             if (StringUtils.isBlank(unquoted)) {
                 return unquoted;
-            } else {
-                return StringUtils.checkOracleIdentifierQuoted(identifier) ? unquoted : unquoted.toUpperCase();
             }
+            return StringUtils.checkOracleIdentifierQuoted(identifier) ? unquoted : unquoted.toUpperCase();
         } else {
             throw new IllegalStateException("Unknown dialect type: " + dialectType);
         }

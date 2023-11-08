@@ -22,9 +22,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Assert;
-import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
 
@@ -53,17 +53,18 @@ import lombok.Data;
  * @author jingtian
  */
 public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
-    private final String BASE_PATH = "src/test/resources/table/obmysql/";
-    private String ddl;
-    private String dropTables;
-    private String testProcedureDDL;
-    private String testFunctionDDL;
-    private List<DataType> verifyDataTypes = new ArrayList<>();
-    private List<ColumnAttributes> columnAttributes = new ArrayList<>();
-    private JdbcTemplate jdbcTemplate = new JdbcTemplate(getOBMySQLDataSource());
+    private static final String BASE_PATH = "src/test/resources/table/obmysql/";
+    private static String ddl;
+    private static String dropTables;
+    private static String testProcedureDDL;
+    private static String testFunctionDDL;
+    private static List<DataType> verifyDataTypes = new ArrayList<>();
+    private static List<ColumnAttributes> columnAttributes = new ArrayList<>();
+    private static final JdbcTemplate jdbcTemplate = new JdbcTemplate(getOBMySQLDataSource());
+    private static DBSchemaAccessor accessor = new DBSchemaAccessors(getOBMySQLDataSource()).createOBMysql();
 
-    @Before
-    public void setUp() throws Exception {
+    @BeforeClass
+    public static void setUp() throws Exception {
         initVerifyDataTypes();
         initVerifyColumnAttributes();
 
@@ -81,12 +82,12 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
         batchExcuteSql(testFunctionDDL);
     }
 
-    @After
-    public void tearDown() throws Exception {
+    @AfterClass
+    public static void tearDown() throws Exception {
         jdbcTemplate.execute(dropTables);
     }
 
-    private void batchExcuteSql(String str) {
+    private static void batchExcuteSql(String str) {
         for (String ddl : str.split("/")) {
             jdbcTemplate.execute(ddl);
         }
@@ -94,7 +95,6 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
 
     @Test
     public void listUsers_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBMySQLDataSource()).createOBMysql();
         List<DBObjectIdentity> dbUsers = accessor.listUsers();
         Assert.assertFalse(dbUsers.isEmpty());
         Assert.assertSame(DBObjectType.USER, dbUsers.get(0).getType());
@@ -103,7 +103,6 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
 
     @Test
     public void listBasicSchemaColumns_TestAllColumnDataTypes_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBMySQLDataSource()).createOBMysql();
         Map<String, List<DBTableColumn>> columns = accessor.listBasicTableColumns(getOBMySQLDataBaseName());
         Assert.assertTrue(columns.containsKey("test_data_type"));
         Assert.assertEquals(verifyDataTypes.size(), columns.get("test_data_type").size());
@@ -111,7 +110,6 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
 
     @Test
     public void listBasicTableColumns_TestAllColumnDataTypes_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBMySQLDataSource()).createOBMysql();
         List<DBTableColumn> columns =
                 accessor.listBasicTableColumns(getOBMySQLDataBaseName(), "test_data_type");
         Assert.assertEquals(columns.size(), verifyDataTypes.size());
@@ -122,8 +120,22 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
     }
 
     @Test
+    public void listBasicViewColumns_SchemaViewColumns_Success() {
+        Map<String, List<DBTableColumn>> columns = accessor.listBasicViewColumns(getOBMySQLDataBaseName());
+        Assert.assertTrue(columns.containsKey("view_test1"));
+        Assert.assertTrue(columns.containsKey("view_test2"));
+        Assert.assertEquals(2, columns.get("view_test1").size());
+        Assert.assertEquals(1, columns.get("view_test2").size());
+    }
+
+    @Test
+    public void listBasicViewColumns_ViewColumns_Success() {
+        List<DBTableColumn> columns = accessor.listBasicViewColumns(getOBMySQLDataBaseName(), "view_test1");
+        Assert.assertEquals(2, columns.size());
+    }
+
+    @Test
     public void listTableColumns_TestAllColumnDataTypes_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBMySQLDataSource()).createOBMysql();
         List<DBTableColumn> columns =
                 accessor.listTableColumns(getOBMySQLDataBaseName(), "test_data_type");
         Assert.assertEquals(columns.size(), verifyDataTypes.size());
@@ -137,7 +149,6 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
 
     @Test
     public void listTableColumns_TestColumnAttributesOtherThanDataType_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBMySQLDataSource()).createOBMysql();
         List<DBTableColumn> columns =
                 accessor.listTableColumns(getOBMySQLDataBaseName(), "test_other_than_data_type");
         Assert.assertEquals(columns.size(), columnAttributes.size());
@@ -153,7 +164,6 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
 
     @Test
     public void listTableIndex_TestIndexType_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBMySQLDataSource()).createOBMysql();
         List<DBTableIndex> indexList = accessor.listTableIndexes(getOBMySQLDataBaseName(), "test_index_type");
         Assert.assertEquals(2, indexList.size());
         Assert.assertEquals(DBIndexAlgorithm.BTREE, indexList.get(0).getAlgorithm());
@@ -162,7 +172,6 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
 
     @Test
     public void listTableIndex_TestIndexRange_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBMySQLDataSource()).createOBMysql();
         List<DBTableIndex> indexList = accessor.listTableIndexes(getOBMySQLDataBaseName(), "test_index_range");
         Assert.assertEquals(2, indexList.size());
         Assert.assertEquals(true, indexList.get(0).getGlobal());
@@ -170,15 +179,19 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
     }
 
     @Test
+    public void listTableIndex_TestIndexAvailable_Success() {
+        List<DBTableIndex> indexList = accessor.listTableIndexes(getOBMySQLDataBaseName(), "test_index_type");
+        Assert.assertTrue(indexList.get(0).getAvailable());
+    }
+
+    @Test
     public void listTableIndex_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBMySQLDataSource()).createOBMysql();
         Map<String, List<DBTableIndex>> indexes = accessor.listTableIndexes(getOBMySQLDataBaseName());
         Assert.assertTrue(indexes.size() > 0);
     }
 
     @Test
     public void listTableConstraint_TestForeignKey_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBMySQLDataSource()).createOBMysql();
         List<DBTableConstraint> constraintListList =
                 accessor.listTableConstraints(getOBMySQLDataBaseName(), "test_fk_child");
         Assert.assertEquals(1, constraintListList.size());
@@ -188,7 +201,6 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
 
     @Test
     public void listTableConstraint_TestPrimaryKey_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBMySQLDataSource()).createOBMysql();
         List<DBTableConstraint> constraintListList =
                 accessor.listTableConstraints(getOBMySQLDataBaseName(), "test_fk_parent");
         Assert.assertEquals(1, constraintListList.size());
@@ -217,28 +229,24 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
 
     @Test
     public void listSystemViews_information_schema_not_empty() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBMySQLDataSource()).createOBMysql();
         List<String> viewNames = accessor.showSystemViews("information_schema");
         Assert.assertTrue(!viewNames.isEmpty());
     }
 
     @Test
     public void listAllSystemViews_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBMySQLDataSource()).createOBMysql();
         List<DBObjectIdentity> sysViews = accessor.listAllSystemViews();
         Assert.assertTrue(sysViews != null && sysViews.size() > 0);
     }
 
     @Test
     public void listSystemViews_databaseNotFound_empty() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBMySQLDataSource()).createOBMysql();
         List<String> viewNames = accessor.showSystemViews("databaseNotExists");
         Assert.assertTrue(viewNames.isEmpty());
     }
 
     @Test
     public void getPartition_Hash_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBMySQLDataSource()).createOBMysql();
         DBTablePartition partition =
                 accessor.getPartition(getOBMySQLDataBaseName(), "part_hash");
         Assert.assertEquals(5L, partition.getPartitionOption().getPartitionsNum().longValue());
@@ -247,7 +255,6 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
 
     @Test
     public void getTableOptions_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBMySQLDataSource()).createOBMysql();
         DBTableOptions options =
                 accessor.getTableOptions(getOBMySQLDataBaseName(), "part_hash");
         Assert.assertEquals("utf8mb4", options.getCharsetName());
@@ -255,7 +262,6 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
 
     @Test
     public void listTableOptions_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBMySQLDataSource()).createOBMysql();
         Map<String, DBTableOptions> table2Options =
                 accessor.listTableOptions(getOBMySQLDataBaseName());
         Assert.assertTrue(table2Options.containsKey("part_hash"));
@@ -263,28 +269,24 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
 
     @Test
     public void showTablelike_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBMySQLDataSource()).createOBMysql();
         List<DBObjectIdentity> tables = accessor.listTables(getOBMySQLDataBaseName(), null);
         Assert.assertTrue(tables != null && tables.size() > 0);
     }
 
     @Test
     public void showViews_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBMySQLDataSource()).createOBMysql();
         List<DBObjectIdentity> views = accessor.listViews(getOBMySQLDataBaseName());
         Assert.assertTrue(views != null && views.size() == 2);
     }
 
     @Test
     public void getView_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBMySQLDataSource()).createOBMysql();
         DBView view = accessor.getView(getOBMySQLDataBaseName(), "view_test1");
         Assert.assertTrue(view != null && view.getColumns().size() == 2);
     }
 
     @Test
     public void showVariables_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBMySQLDataSource()).createOBMysql();
         List<DBVariable> variables = accessor.showVariables();
         List<DBVariable> sessionVariables = accessor.showSessionVariables();
         List<DBVariable> globalVariables = accessor.showGlobalVariables();
@@ -295,28 +297,24 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
 
     @Test
     public void showCharset_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBMySQLDataSource()).createOBMysql();
         List<String> charset = accessor.showCharset();
         Assert.assertTrue(charset != null && charset.size() > 0);
     }
 
     @Test
     public void showCollation_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBMySQLDataSource()).createOBMysql();
         List<String> collation = accessor.showCollation();
         Assert.assertTrue(collation != null && collation.size() > 0);
     }
 
     @Test
     public void listFunctions_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBMySQLDataSource()).createOBMysql();
         List<DBPLObjectIdentity> functions = accessor.listFunctions(getOBMySQLDataBaseName());
         Assert.assertTrue(functions != null && functions.size() == 1);
     }
 
     @Test
     public void getFunction_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBMySQLDataSource()).createOBMysql();
         DBFunction function = accessor.getFunction(getOBMySQLDataBaseName(), "function_test");
         Assert.assertTrue(function != null
                 && function.getParams().size() == 2
@@ -325,14 +323,12 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
 
     @Test
     public void listProcedures_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBMySQLDataSource()).createOBMysql();
         List<DBPLObjectIdentity> procedures = accessor.listProcedures(getOBMySQLDataBaseName());
         Assert.assertTrue(!procedures.isEmpty());
     }
 
     @Test
     public void getProcedure_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBMySQLDataSource()).createOBMysql();
         DBProcedure procedure = accessor.getProcedure(getOBMySQLDataBaseName(), "procedure_detail_test");
         Assert.assertTrue(procedure != null
                 && procedure.getParams().size() == 2
@@ -341,7 +337,6 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
 
     @Test
     public void getProcedure_without_parameters_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBMySQLDataSource()).createOBMysql();
         DBProcedure procedure = accessor.getProcedure(getOBMySQLDataBaseName(), "procedure_without_parameters");
         Assert.assertTrue(procedure != null
                 && procedure.getParams().size() == 0
@@ -350,21 +345,18 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
 
     @Test
     public void getDatabase_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBMySQLDataSource()).createOBMysql();
         DBDatabase database = accessor.getDatabase(getOBMySQLDataBaseName());
         Assert.assertNotNull(database);
     }
 
     @Test
     public void listDatabases_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBMySQLDataSource()).createOBMysql();
         List<DBDatabase> databases = accessor.listDatabases();
         Assert.assertTrue(databases.size() > 0);
     }
 
     @Test
     public void getPartition_List_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBMySQLDataSource()).createOBMysql();
         DBTablePartition partition =
                 accessor.getPartition(getOBMySQLDataBaseName(), "part_list");
         Assert.assertEquals(5L, partition.getPartitionOption().getPartitionsNum().longValue());
@@ -374,7 +366,6 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
 
     @Test
     public void getPartition_Range_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBMySQLDataSource()).createOBMysql();
         DBTablePartition partition =
                 accessor.getPartition(getOBMySQLDataBaseName(), "part_range");
         Assert.assertEquals(3L, partition.getPartitionOption().getPartitionsNum().longValue());
@@ -384,18 +375,17 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
 
     @Test
     public void listTableColumns_test_in_mysql_schema_view_as_base_table_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBMySQLDataSource()).createOBMysql();
         List<DBTableColumn> columns = accessor.listTableColumns("mysql", "time_zone_transition");
         Assert.assertEquals(3, columns.size());
     }
 
-    private void initVerifyColumnAttributes() {
+    private static void initVerifyColumnAttributes() {
         columnAttributes.addAll(Arrays.asList(
                 ColumnAttributes.of("col1", false, false, true, null, "col1_comments"),
                 ColumnAttributes.of("col2", true, false, false, null, "")));
     }
 
-    private void initVerifyDataTypes() {
+    private static void initVerifyDataTypes() {
         verifyDataTypes.addAll(Arrays.asList(
                 DataType.of("col1", "int", 11, 11L, 0, null),
                 DataType.of("col2", "decimal", 10, 10L, 2, 2),

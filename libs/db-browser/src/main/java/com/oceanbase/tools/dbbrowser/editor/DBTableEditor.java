@@ -32,7 +32,6 @@ import org.apache.logging.log4j.util.Strings;
 import com.oceanbase.tools.dbbrowser.model.DBConstraintType;
 import com.oceanbase.tools.dbbrowser.model.DBIndexType;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
-import com.oceanbase.tools.dbbrowser.model.DBTable.DBTableOptions;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
 import com.oceanbase.tools.dbbrowser.model.DBTableIndex;
@@ -125,23 +124,7 @@ public abstract class DBTableEditor implements DBObjectEditor<DBTable> {
 
     protected abstract boolean createIndexWhenCreatingTable();
 
-    protected void appendTableOptions(DBTable table, SqlBuilder sqlBuilder) {
-        if (Objects.isNull(table.getTableOptions())) {
-            return;
-        }
-        DBTableOptions options = table.getTableOptions();
-
-        if (Objects.nonNull(options.getReplicaNum())) {
-            sqlBuilder.append("REPLICA_NUM = ").append(String.valueOf(options.getReplicaNum())).space();
-        }
-
-        if (Objects.nonNull(options.getUseBloomFilter())) {
-            sqlBuilder.append("USE_BLOOM_FILTER = ").append(options.getUseBloomFilter() ? "TRUE" : "FALSE").space();
-        }
-        if (Objects.nonNull(options.getTabletSize())) {
-            sqlBuilder.append("TABLET_SIZE = ").append(String.valueOf(options.getTabletSize())).space();
-        }
-    }
+    protected abstract void appendTableOptions(DBTable table, SqlBuilder sqlBuilder);
 
     @Override
     public String generateCreateDefinitionDDL(@NotNull DBTable table) {

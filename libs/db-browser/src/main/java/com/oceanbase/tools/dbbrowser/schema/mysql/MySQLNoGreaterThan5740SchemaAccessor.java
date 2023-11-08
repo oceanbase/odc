@@ -19,6 +19,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.io.StringReader;
 import java.io.StringWriter;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -89,6 +90,10 @@ import com.oceanbase.tools.dbbrowser.util.DBSchemaAccessorUtil;
 import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.StringUtils;
+import com.oceanbase.tools.sqlparser.OBMySQLParser;
+import com.oceanbase.tools.sqlparser.SQLParser;
+import com.oceanbase.tools.sqlparser.statement.createtable.CreateTable;
+import com.oceanbase.tools.sqlparser.statement.createtable.TableOptions;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -383,6 +388,11 @@ public class MySQLNoGreaterThan5740SchemaAccessor implements DBSchemaAccessor {
     }
 
     @Override
+    public List<DBPLObjectIdentity> listPackageBodies(String schemaName) {
+        throw new UnsupportedOperationException("Not supported yet");
+    }
+
+    @Override
     public List<DBPLObjectIdentity> listTriggers(String schemaName) {
         throw new UnsupportedOperationException("Not supported yet");
     }
@@ -413,8 +423,8 @@ public class MySQLNoGreaterThan5740SchemaAccessor implements DBSchemaAccessor {
 
     @Override
     public Map<String, List<DBTableColumn>> listBasicTableColumns(String schemaName) {
-        String sql = sqlMapper.getSql(Statements.LIST_BASIC_SCHEMA_COLUMNS);
-        List<DBTableColumn> tableColumns = jdbcOperations.query(sql, new Object[] {schemaName},
+        String sql = sqlMapper.getSql(Statements.LIST_BASIC_SCHEMA_TABLE_COLUMNS);
+        List<DBTableColumn> tableColumns = jdbcOperations.query(sql, new Object[] {schemaName, schemaName},
                 listBasicTableColumnRowMapper());
         return tableColumns.stream().collect(Collectors.groupingBy(DBTableColumn::getTableName));
     }
@@ -423,6 +433,20 @@ public class MySQLNoGreaterThan5740SchemaAccessor implements DBSchemaAccessor {
     public List<DBTableColumn> listBasicTableColumns(String schemaName, String tableName) {
         String sql = sqlMapper.getSql(Statements.LIST_BASIC_TABLE_COLUMNS);
         return jdbcOperations.query(sql, new Object[] {schemaName, tableName}, listBasicTableColumnRowMapper());
+    }
+
+    @Override
+    public Map<String, List<DBTableColumn>> listBasicViewColumns(String schemaName) {
+        String sql = sqlMapper.getSql(Statements.LIST_BASIC_SCHEMA_VIEW_COLUMNS);
+        List<DBTableColumn> tableColumns = jdbcOperations.query(sql, new Object[] {schemaName, schemaName},
+                listBasicTableColumnRowMapper());
+        return tableColumns.stream().collect(Collectors.groupingBy(DBTableColumn::getTableName));
+    }
+
+    @Override
+    public List<DBTableColumn> listBasicViewColumns(String schemaName, String viewName) {
+        String sql = sqlMapper.getSql(Statements.LIST_BASIC_VIEW_COLUMNS);
+        return jdbcOperations.query(sql, new Object[] {schemaName, viewName}, listBasicTableColumnRowMapper());
     }
 
     protected String getListTableColumnsSql(String schemaName) {
@@ -944,6 +968,7 @@ public class MySQLNoGreaterThan5740SchemaAccessor implements DBSchemaAccessor {
                 columnNames.add(rs.getString(MySQLConstants.IDX_COLUMN_NAME));
                 index.setColumnNames(columnNames);
                 index.setGlobal(true);
+                handleIndexAvailability(index, rs.getString(MySQLConstants.IDX_COL_COMMENT));
                 indexName2Index.put(indexName, index);
             } else {
                 indexName2Index.get(indexName).getColumnNames().add(rs.getString(MySQLConstants.IDX_COLUMN_NAME));
@@ -951,6 +976,14 @@ public class MySQLNoGreaterThan5740SchemaAccessor implements DBSchemaAccessor {
             return null;
         });
         return new ArrayList<>(indexName2Index.values());
+    }
+
+    protected void handleIndexAvailability(DBTableIndex index, String availability) {
+        if (StringUtils.isBlank(availability)) {
+            index.setAvailable(true);
+        } else if ("disabled".equals(availability)) {
+            index.setAvailable(false);
+        }
     }
 
     @Override
@@ -977,7 +1010,11 @@ public class MySQLNoGreaterThan5740SchemaAccessor implements DBSchemaAccessor {
     public DBTableOptions getTableOptions(String schemaName, String tableName, @lombok.NonNull String ddl) {
         DBTableOptions dbTableOptions = new DBTableOptions();
         obtainOptionsByQuery(schemaName, tableName, dbTableOptions);
-        DBSchemaAccessorUtil.obtainOptionsByParse(dbTableOptions, ddl);
+        try {
+            obtainOptionsByParser(dbTableOptions, ddl);
+        } catch (Exception e) {
+            log.warn("Failed to get table options by parse table ddl, message={}", e.getMessage());
+        }
         return dbTableOptions;
     }
 
@@ -990,6 +1027,23 @@ public class MySQLNoGreaterThan5740SchemaAccessor implements DBSchemaAccessor {
             dbTableOptions.setCollationName(t.getString("TABLE_COLLATION"));
             dbTableOptions.setComment(t.getString("TABLE_COMMENT"));
         });
+    }
+
+    private void obtainOptionsByParser(DBTableOptions dbTableOptions, String ddl) {
+        SQLParser sqlParser = new OBMySQLParser();
+        CreateTable stmt = (CreateTable) sqlParser.parse(new StringReader(ddl));
+        TableOptions options = stmt.getTableOptions();
+        if (Objects.nonNull(options)) {
+            dbTableOptions.setCharsetName(options.getCharset());
+            dbTableOptions.setRowFormat(options.getRowFormat());
+            dbTableOptions.setCompressionOption(options.getCompression());
+            dbTableOptions.setReplicaNum(options.getReplicaNum());
+            dbTableOptions.setBlockSize(options.getBlockSize());
+            dbTableOptions.setUseBloomFilter(options.getUseBloomFilter());
+            dbTableOptions
+                    .setTabletSize(
+                            Objects.nonNull(options.getTabletSize()) ? options.getTabletSize().longValue() : null);
+        }
     }
 
     @Override
@@ -1009,7 +1063,7 @@ public class MySQLNoGreaterThan5740SchemaAccessor implements DBSchemaAccessor {
             view.setDefiner(rs.getString(7));
         });
         MySQLSqlBuilder getDDL = new MySQLSqlBuilder();
-        getDDL.append("show create view ");
+        getDDL.append("show create table ");
         getDDL.identifier(schemaName);
         getDDL.append(".");
         getDDL.identifier(viewName);
