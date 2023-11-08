@@ -41,6 +41,4 @@ public class QueryDatabaseParams {
     private Boolean existed;
 
     private Boolean containsUnassigned;
-
-    private String taskType;
 }
