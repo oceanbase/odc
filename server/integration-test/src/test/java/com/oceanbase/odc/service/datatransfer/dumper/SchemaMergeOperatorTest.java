@@ -25,6 +25,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.oceanbase.odc.plugin.task.api.datatransfer.dumper.DumperOutput;
 import com.oceanbase.tools.loaddump.common.enums.ServerMode;
 
 public class SchemaMergeOperatorTest {

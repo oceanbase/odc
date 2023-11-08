@@ -15,7 +15,7 @@
  */
 package com.oceanbase.odc.service.datatransfer.task;
 
-import static com.oceanbase.odc.service.datatransfer.model.DataTransferConstants.LOG_PATH_NAME;
+import static com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConstants.LOG_PATH_NAME;
 
 import java.io.File;
 import java.io.FileNotFoundException;

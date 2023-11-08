@@ -23,8 +23,8 @@ import org.apache.commons.lang3.Validate;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
-import com.oceanbase.odc.service.datatransfer.model.DataTransferConfig;
-import com.oceanbase.odc.service.datatransfer.model.DataTransferType;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferType;
 import com.oceanbase.odc.service.datatransfer.task.DataTransferTaskContext;
 import com.oceanbase.odc.service.flow.task.model.DataTransferTaskResult;
 import com.oceanbase.tools.loaddump.common.model.BaseParameter;

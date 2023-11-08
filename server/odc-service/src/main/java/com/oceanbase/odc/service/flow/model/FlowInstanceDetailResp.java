@@ -29,6 +29,7 @@ import org.apache.commons.collections4.CollectionUtils;
 
 import com.oceanbase.odc.common.i18n.Internationalizable;
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.core.flow.model.TaskParameters;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
@@ -41,8 +42,8 @@ import com.oceanbase.odc.metadb.flow.FlowInstanceEntity;
 import com.oceanbase.odc.metadb.iam.RoleEntity;
 import com.oceanbase.odc.metadb.iam.UserEntity;
 import com.oceanbase.odc.metadb.task.TaskEntity;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
 import com.oceanbase.odc.service.common.model.InnerUser;
-import com.oceanbase.odc.service.datatransfer.model.DataTransferConfig;
 import com.oceanbase.odc.service.flow.instance.BaseFlowNodeInstance;
 import com.oceanbase.odc.service.flow.instance.FlowApprovalInstance;
 import com.oceanbase.odc.service.flow.instance.FlowInstance;

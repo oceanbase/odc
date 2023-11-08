@@ -19,9 +19,9 @@ package com.oceanbase.odc.service.permissionapply.project;
 import java.io.Serializable;
 import java.util.List;
 
+import com.oceanbase.odc.core.flow.model.TaskParameters;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.service.collaboration.project.model.Project;
-import com.oceanbase.odc.service.flow.model.TaskParameters;
 import com.oceanbase.odc.service.iam.model.ResourceRole;
 
 import lombok.Data;

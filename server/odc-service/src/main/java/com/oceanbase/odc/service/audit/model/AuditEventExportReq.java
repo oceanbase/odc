@@ -23,7 +23,6 @@ import javax.validation.constraints.NotNull;
 import com.oceanbase.odc.core.shared.constant.AuditEventAction;
 import com.oceanbase.odc.core.shared.constant.AuditEventResult;
 import com.oceanbase.odc.core.shared.constant.AuditEventType;
-import com.oceanbase.odc.service.datatransfer.model.DataTransferFormat;
 
 import lombok.Data;
 
@@ -40,7 +39,7 @@ public class AuditEventExportReq {
     private List<Long> connectionIds;
     private List<AuditEventResult> results;
     @NotNull
-    private DataTransferFormat format;
+    private DownloadFormat format;
     private Date startTime;
     private Date endTime;
 }
