@@ -49,7 +49,7 @@ public class OscController {
 
 
     @ApiOperation(value = "swapTable", notes = "swap table manual")
-    @RequestMapping(value = "/swapTable/{taskId:[\\d]+}", method = RequestMethod.GET)
+    @RequestMapping(value = "/swapTable/{scheduleTaskId:[\\d]+}", method = RequestMethod.POST)
     public SuccessResponse<OscSwapTableVO> swapTable(@PathVariable Long scheduleTaskId) {
         return Responses.success(oscService.swapTable(scheduleTaskId));
     }
