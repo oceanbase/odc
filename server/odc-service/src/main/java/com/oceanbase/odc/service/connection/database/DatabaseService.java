@@ -54,13 +54,10 @@ import com.oceanbase.odc.core.authority.util.PreAuthenticate;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
-import com.oceanbase.odc.core.session.ConnectionSessionFactory;
-import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
-import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.core.shared.exception.AccessDeniedException;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.shared.exception.ConflictException;
@@ -156,16 +153,6 @@ public class DatabaseService {
     @SkipAuthorize("internal authenticated")
     public Database detail(@NonNull Long id) {
         return getDatabase(id);
-    }
-
-    @Transactional(rollbackFor = Exception.class)
-    @SkipAuthorize("internal authenticated")
-    public Database detail(@NonNull Long id, String taskType) {
-        Database database = getDatabase(id);
-        if (Objects.equals(TaskType.ONLINE_SCHEMA_CHANGE.name(), taskType) && database.getDataSource() != null) {
-            database.setLockDatabaseUserRequired(getLockUserIsRequired(database.getDataSource()));
-        }
-        return database;
     }
 
     private Database getDatabase(Long id) {
@@ -674,25 +661,4 @@ public class DatabaseService {
         return "DataSource_" + connectionId;
     }
 
-    private boolean getLockUserIsRequired(ConnectionConfig config) {
-        return OscDBUserUtil.isLockUserRequired(config.getDialectType(),
-                () -> {
-                    ConnectionConfig decryptedConnConfig =
-                            connectionService.getForConnectionSkipPermissionCheck(config.getId());
-                    ConnectionSessionFactory factory = new DefaultConnectSessionFactory(decryptedConnConfig);
-                    String version = null;
-                    ConnectionSession connSession = null;
-                    try {
-                        connSession = factory.generateSession();
-                        version = ConnectionSessionUtil.getVersion(connSession);
-                    } catch (Exception ex) {
-                        log.info("Get connection occur error", ex);
-                    } finally {
-                        if (connSession != null) {
-                            connSession.expire();
-                        }
-                    }
-                    return version;
-                });
-    }
 }
