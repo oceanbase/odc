@@ -25,6 +25,7 @@ import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.onlineschemachange.OscService;
 import com.oceanbase.odc.service.onlineschemachange.model.OscLockDatabaseUserInfo;
+import com.oceanbase.odc.service.onlineschemachange.model.OscSwapTableVO;
 
 import io.swagger.annotations.ApiOperation;
 
@@ -44,6 +45,13 @@ public class OscController {
     @RequestMapping(value = "/lockDatabaseUserRequired/{databaseId:[\\d]+}", method = RequestMethod.GET)
     public SuccessResponse<OscLockDatabaseUserInfo> getDatabase(@PathVariable Long databaseId) {
         return Responses.success(oscService.getOscDatabaseInfo(databaseId));
+    }
+
+
+    @ApiOperation(value = "swapTable", notes = "swap table manual")
+    @RequestMapping(value = "/swapTable/{taskId:[\\d]+}", method = RequestMethod.GET)
+    public SuccessResponse<OscSwapTableVO> swapTable(@PathVariable Long scheduleTaskId) {
+        return Responses.success(oscService.swapTable(scheduleTaskId));
     }
 
 }

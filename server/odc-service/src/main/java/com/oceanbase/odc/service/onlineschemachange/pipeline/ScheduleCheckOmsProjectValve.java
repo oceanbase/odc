@@ -34,6 +34,7 @@ import com.oceanbase.odc.service.onlineschemachange.model.FullVerificationResult
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeScheduleTaskParameters;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeScheduleTaskResult;
 import com.oceanbase.odc.service.onlineschemachange.model.PrecheckResult;
+import com.oceanbase.odc.service.onlineschemachange.model.SwapTableType;
 import com.oceanbase.odc.service.onlineschemachange.oms.enums.OmsStepName;
 import com.oceanbase.odc.service.onlineschemachange.oms.openapi.ProjectOpenApiService;
 import com.oceanbase.odc.service.onlineschemachange.oms.request.ListProjectFullVerifyResultRequest;
@@ -42,6 +43,7 @@ import com.oceanbase.odc.service.onlineschemachange.oms.response.ProjectFullVeri
 import com.oceanbase.odc.service.onlineschemachange.oms.response.ProjectProgressResponse;
 import com.oceanbase.odc.service.onlineschemachange.oms.response.ProjectStepVO;
 import com.oceanbase.odc.service.onlineschemachange.pipeline.ProjectStepResultChecker.ProjectStepResult;
+import com.oceanbase.odc.service.onlineschemachange.rename.SwapTableUtil;
 import com.oceanbase.odc.service.onlineschemachange.subtask.OscTaskCompleteHandler;
 
 import lombok.extern.slf4j.Slf4j;
@@ -96,15 +98,31 @@ public class ScheduleCheckOmsProjectValve extends BaseValve {
         scheduleTask.setProgressPercentage(projectStepResult.getTaskPercentage());
         scheduleTaskRepository.update(scheduleTask);
         recordCurrentProgress(taskParameter.getOmsProjectId(), result);
-        handleOmsProjectStepResult(valveContext, projectStepResult);
+        handleOmsProjectStepResult(valveContext, projectStepResult, result,
+                context.getParameter().getSwapTableType(), scheduleTask);
     }
 
-    private void handleOmsProjectStepResult(ValveContext valveContext, ProjectStepResult projectStepResult) {
+    private void handleOmsProjectStepResult(ValveContext valveContext, ProjectStepResult projectStepResult,
+            OnlineSchemaChangeScheduleTaskResult result, SwapTableType swapTableType, ScheduleTaskEntity scheduleTask) {
 
         if (projectStepResult.getTaskStatus() == TaskStatus.DONE
                 && (projectStepResult.getFullVerificationResult() == FullVerificationResult.CONSISTENT ||
                         projectStepResult.getFullVerificationResult() == FullVerificationResult.UNCHECK)) {
-            getNext().invoke(valveContext);
+
+            boolean isEnableSwapTable = SwapTableUtil.isSwapTableEnable(swapTableType,
+                    scheduleTask.getStatus(), result.getFullTransferProgressPercentage(),
+                    result.getFullVerificationResult());
+            if (isEnableSwapTable && !result.isManualSwapTableStarted()) {
+                // open manual swap table
+                result.setManualSwapTableEnabled(true);
+                scheduleTaskRepository.update(scheduleTask);
+            } else {
+                // close manual swap table
+                result.setManualSwapTableEnabled(false);
+                scheduleTaskRepository.update(scheduleTask);
+                getNext().invoke(valveContext);
+            }
+
         } else {
             continueHandleProjectStepResult(projectStepResult);
         }

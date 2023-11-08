@@ -105,6 +105,17 @@ public class OnlineSchemaChangeScheduleTaskResult {
      */
     private String newTableDdl;
 
+    /**
+     * enable open manual swap table entry point
+     */
+    private boolean isManualSwapTableEnabled;
+
+    /**
+     * manual start swap table
+     */
+    private boolean isManualSwapTableStarted;
+
+
     public OnlineSchemaChangeScheduleTaskResult(OnlineSchemaChangeScheduleTaskParameters taskParam) {
         this.originTableName = taskParam.getOriginTableName();
         this.oldTableName = taskParam.getRenamedTableName();
