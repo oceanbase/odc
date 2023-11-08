@@ -27,6 +27,8 @@ import com.oceanbase.odc.service.notification.model.EventStatus;
 import com.oceanbase.odc.service.notification.model.MessageSendingStatus;
 import com.oceanbase.odc.service.notification.model.Notification;
 
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * @Author: Lebie
  * @Date: 2023/3/20 14:45
@@ -34,6 +36,7 @@ import com.oceanbase.odc.service.notification.model.Notification;
  */
 @Service
 @SkipAuthorize("currently not in use")
+@Slf4j
 public class Broker {
     @Autowired
     private EventQueue eventQueue;
@@ -75,7 +78,11 @@ public class Broker {
         List<Notification> notifications =
                 notificationQueue.peek(notificationProperties.getNotificationDequeueBatchSize(), status);
         for (Notification notification : notifications) {
-            notificationDispatcher.dispatch(notification);
+            try {
+                notificationDispatcher.dispatch(notification);
+            } catch (Exception e) {
+                log.warn("Send notification failed.", e);
+            }
         }
     }
 }
