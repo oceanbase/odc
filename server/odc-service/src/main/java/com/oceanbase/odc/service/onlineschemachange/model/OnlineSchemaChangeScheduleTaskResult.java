@@ -108,12 +108,12 @@ public class OnlineSchemaChangeScheduleTaskResult {
     /**
      * enable open manual swap table entry point
      */
-    private boolean isManualSwapTableEnabled;
+    private boolean manualSwapTableEnabled;
 
     /**
      * manual start swap table
      */
-    private boolean isManualSwapTableStarted;
+    private boolean manualSwapTableStarted;
 
 
     public OnlineSchemaChangeScheduleTaskResult(OnlineSchemaChangeScheduleTaskParameters taskParam) {
