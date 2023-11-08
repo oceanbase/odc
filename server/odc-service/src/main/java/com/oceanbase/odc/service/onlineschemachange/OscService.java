@@ -68,6 +68,7 @@ public class OscService {
     private ConnectionService connectionService;
     @Autowired
     private ScheduleTaskRepository scheduleTaskRepository;
+    @Autowired
     private ScheduleRepository scheduleRepository;
     @Autowired
     private OnlineSchemaChangeProperties onlineSchemaChangeProperties;
