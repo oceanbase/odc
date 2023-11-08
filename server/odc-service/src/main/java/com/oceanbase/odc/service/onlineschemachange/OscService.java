@@ -40,7 +40,6 @@ import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
-import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
 import com.oceanbase.odc.service.onlineschemachange.configuration.OnlineSchemaChangeProperties;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeScheduleTaskResult;
@@ -48,6 +47,7 @@ import com.oceanbase.odc.service.onlineschemachange.model.OscLockDatabaseUserInf
 import com.oceanbase.odc.service.onlineschemachange.model.OscSwapTableVO;
 import com.oceanbase.odc.service.onlineschemachange.model.SwapTableType;
 import com.oceanbase.odc.service.onlineschemachange.rename.OscDBUserUtil;
+import com.oceanbase.odc.service.schedule.model.JobType;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 
 import lombok.NonNull;
@@ -101,17 +101,17 @@ public class OscService {
         PreConditions.validExists(ResourceType.ODC_SCHEDULE, "schedule ",
                 scheduleId, scheduleEntity::isPresent);
 
-        CreateFlowInstanceReq parameters = JsonUtils.fromJson(scheduleEntity.get().getJobParametersJson(),
-                CreateFlowInstanceReq.class);
+        OnlineSchemaChangeParameters oscParameters = JsonUtils.fromJson(scheduleEntity.get().getJobParametersJson(),
+                OnlineSchemaChangeParameters.class);
 
         OnlineSchemaChangeScheduleTaskResult result = JsonUtils.fromJson(scheduleTask.getResultJson(),
                 OnlineSchemaChangeScheduleTaskResult.class);
 
-        PreConditions.validArgumentState(parameters.getTaskType() == TaskType.ONLINE_SCHEMA_CHANGE,
-                ErrorCodes.BadArgument, new Object[] {parameters.getTaskType()},
+        PreConditions.validArgumentState(
+            scheduleEntity.get().getJobType() == JobType.ONLINE_SCHEMA_CHANGE_COMPLETE,
+                ErrorCodes.BadArgument, new Object[] {scheduleEntity.get().getJobType()},
                 "Task type is not " + TaskType.ONLINE_SCHEMA_CHANGE.name());
 
-        OnlineSchemaChangeParameters oscParameters = (OnlineSchemaChangeParameters) parameters.getParameters();
         SwapTableType swapTableType = oscParameters.getSwapTableType();
         PreConditions.validArgumentState(swapTableType == SwapTableType.MANUAL,
                 ErrorCodes.BadArgument, new Object[] {oscParameters.getSwapTableType()},
