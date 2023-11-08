@@ -733,7 +733,7 @@
                 <groupId>org.json</groupId>
                 <artifactId>json</artifactId>
                 <!-- upgrade to avoid vulnerability issues, version >= 20180130 -->
-                <version>20180813</version>
+                <version>20231013</version>
             </dependency>
 
             <dependency>
