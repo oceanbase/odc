@@ -1,0 +1,31 @@
+kind: resource
+version: v2
+templates:
+    - metadata:
+          allow_duplicate: false
+          table_name: iam_resource_role
+          unique_keys: [ "resource_type", "role_name" ]
+      specs:
+          - column_name: id
+            default_value: 4
+            data_type: java.lang.Long
+          - column_name: resource_type
+            value: "ODC_PROJECT"
+          - column_name: role_name
+            value: "SECURITY_ADMINISTRATOR"
+          - column_name: description
+            value: "built-in resource role, project security administrator"
+    - metadata:
+          allow_duplicate: false
+          table_name: iam_resource_role
+          unique_keys: [ "resource_type", "role_name" ]
+      specs:
+          - column_name: id
+            default_value: 5
+            data_type: java.lang.Long
+          - column_name: resource_type
+            value: "ODC_PROJECT"
+          - column_name: role_name
+            value: "PARTICIPANT"
+          - column_name: description
+            value: "built-in resource role, project participant"

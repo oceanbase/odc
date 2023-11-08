@@ -95,7 +95,7 @@ public class SensitiveRuleService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
+    @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA, SECURITY_ADMINISTRATOR"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
     public SensitiveRule create(@NotNull Long projectId, @NotNull @Valid SensitiveRule rule) {
         Long organizationId = authenticationFacade.currentOrganizationId();
         Long userId = authenticationFacade.currentUserId();
@@ -114,7 +114,7 @@ public class SensitiveRuleService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
+    @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA, SECURITY_ADMINISTRATOR"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
     public SensitiveRule detail(@NotNull Long projectId, @NotNull Long id) {
         SensitiveRuleEntity entity = nullSafeGet(id);
         checkCurrentProject(projectId, entity);
@@ -128,7 +128,7 @@ public class SensitiveRuleService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
+    @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA, SECURITY_ADMINISTRATOR"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
     public SensitiveRule update(@NotNull Long projectId, @NotNull Long id, @NotNull @Valid SensitiveRule rule) {
         SensitiveRuleEntity entity = nullSafeGet(id);
         checkCurrentProject(projectId, entity);
@@ -159,7 +159,7 @@ public class SensitiveRuleService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
+    @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA, SECURITY_ADMINISTRATOR"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
     public SensitiveRule delete(@NotNull Long projectId, @NotNull Long id) {
         SensitiveRuleEntity entity = nullSafeGet(id);
         checkCurrentProject(projectId, entity);
@@ -175,7 +175,7 @@ public class SensitiveRuleService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
+    @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA, SECURITY_ADMINISTRATOR"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
     public Page<SensitiveRule> list(@NotNull Long projectId, @NotNull @Valid QuerySensitiveRuleParams params,
             Pageable pageable) {
         Long organizationId = authenticationFacade.currentOrganizationId();
@@ -190,7 +190,7 @@ public class SensitiveRuleService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
+    @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA, SECURITY_ADMINISTRATOR"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
     public SensitiveRule setEnabled(@NotNull Long projectId, @NotNull Long id, @NotNull Boolean enabled) {
         SensitiveRuleEntity entity = nullSafeGet(id);
         checkCurrentProject(projectId, entity);
