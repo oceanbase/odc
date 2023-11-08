@@ -133,7 +133,9 @@ public class MvcConfiguration implements WebMvcConfigurer {
         if (jacksonConverterIndex == -1) {
             throw new RuntimeException("no jackson http message converter found!");
         }
-        if (xmlConverterIndex != -1) {
+        // swap xml converter and jackson converter if the xmlConverter exists and is before
+        // jacksonConverter
+        if (xmlConverterIndex != -1 && xmlConverterIndex < jacksonConverterIndex) {
             HttpMessageConverter<?> jacksonConverter = converters.get(jacksonConverterIndex);
             converters.set(jacksonConverterIndex, converters.get(xmlConverterIndex));
             converters.set(xmlConverterIndex, jacksonConverter);
