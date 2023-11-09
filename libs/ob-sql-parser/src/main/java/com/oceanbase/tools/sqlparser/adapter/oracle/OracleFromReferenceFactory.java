@@ -29,9 +29,11 @@ import com.oceanbase.tools.sqlparser.oboracle.OBParser.Join_outerContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Joined_tableContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Natural_join_typeContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Normal_relation_factorContext;
+import com.oceanbase.tools.sqlparser.oboracle.OBParser.Order_by_fetch_with_check_optionContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Outer_join_typeContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Pivot_aggr_clauseContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Relation_factorContext;
+import com.oceanbase.tools.sqlparser.oboracle.OBParser.Select_functionContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Table_factorContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Table_referenceContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Table_subqueryContext;
@@ -44,10 +46,12 @@ import com.oceanbase.tools.sqlparser.oboracle.OBParser.Unpivot_in_clauseContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Use_flashbackContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParserBaseVisitor;
 import com.oceanbase.tools.sqlparser.statement.Expression;
+import com.oceanbase.tools.sqlparser.statement.Expression.ReferenceOperator;
 import com.oceanbase.tools.sqlparser.statement.JoinType;
 import com.oceanbase.tools.sqlparser.statement.common.RelationFactor;
 import com.oceanbase.tools.sqlparser.statement.expression.ColumnReference;
 import com.oceanbase.tools.sqlparser.statement.expression.FunctionCall;
+import com.oceanbase.tools.sqlparser.statement.expression.RelationReference;
 import com.oceanbase.tools.sqlparser.statement.select.ExpressionReference;
 import com.oceanbase.tools.sqlparser.statement.select.FlashBackType;
 import com.oceanbase.tools.sqlparser.statement.select.FlashbackUsage;
@@ -154,29 +158,43 @@ public class OracleFromReferenceFactory extends OBParserBaseVisitor<FromReferenc
 
     @Override
     public FromReference visitTable_factor(Table_factorContext ctx) {
+        String alias = null;
+        if (ctx.relation_name() != null) {
+            alias = ctx.relation_name().getText();
+        }
         if (ctx.tbl_name() != null) {
             return visit(ctx.tbl_name());
         } else if (ctx.table_subquery() != null) {
             return visit(ctx.table_subquery());
         } else if (ctx.table_reference() != null) {
             return visit(ctx.table_reference());
+        } else if (ctx.simple_expr() != null) {
+            return new ExpressionReference(ctx,
+                    new OracleExpressionFactory(ctx.simple_expr()).generate(), alias);
+        } else if (ctx.select_function() != null) {
+            return new ExpressionReference(ctx, visitSelectFunction(ctx.select_function()), alias);
         }
-        StatementFactory<Expression> factory = new OracleExpressionFactory(ctx.simple_expr());
-        String alias = null;
-        if (ctx.relation_name() != null) {
-            alias = ctx.relation_name().getText();
+        return new ExpressionReference(ctx, new OracleExpressionFactory()
+                .visitJson_table_expr(ctx.json_table_expr()), alias);
+    }
+
+    private Expression visitSelectFunction(Select_functionContext ctx) {
+        if (ctx.access_func_expr() != null) {
+            return new OracleExpressionFactory().getFunctionCall(ctx.access_func_expr());
         }
-        return new ExpressionReference(ctx, factory.generate(), alias);
+        RelationReference ref = new RelationReference(ctx.database_factor(), ctx.database_factor().getText());
+        ref.reference(visitSelectFunction(ctx.select_function()), ReferenceOperator.DOT);
+        return ref;
     }
 
     @Override
     public FromReference visitTable_subquery(Table_subqueryContext ctx) {
+        String alias = null;
+        if (ctx.relation_name() != null) {
+            alias = ctx.relation_name().getText();
+        }
         if (ctx.select_with_parens() != null) {
             OracleSelectBodyFactory factory = new OracleSelectBodyFactory(ctx.select_with_parens());
-            String alias = null;
-            if (ctx.relation_name() != null) {
-                alias = ctx.relation_name().getText();
-            }
             ExpressionReference reference = new ExpressionReference(ctx, factory.generate(), alias);
             if (ctx.use_flashback() != null) {
                 reference.setFlashbackUsage(visitFlashbackUsage(ctx.use_flashback()));
@@ -185,29 +203,22 @@ public class OracleFromReferenceFactory extends OBParserBaseVisitor<FromReferenc
             reference.setPivot(visitPivot(ctx.transpose_clause()));
             return reference;
         }
-        if (ctx.subquery() != null) {
-            OracleSelectBodyFactory factory = new OracleSelectBodyFactory(ctx.subquery());
-            SelectBody select = factory.generate();
-            if (ctx.order_by() != null) {
-                OracleOrderByFactory orderByFactory = new OracleOrderByFactory(ctx.order_by());
-                select.setOrderBy(orderByFactory.generate());
-            }
-            if (ctx.fetch_next_clause() != null) {
-                OracleFetchFactory fetchFactory = new OracleFetchFactory(ctx.fetch_next_clause());
-                select.setFetch(fetchFactory.generate());
-            }
-            ExpressionReference reference = new ExpressionReference(ctx, select, null);
-            if (ctx.use_flashback() != null) {
-                reference.setFlashbackUsage(visitFlashbackUsage(ctx.use_flashback()));
-            }
-            reference.setUnPivot(visitUnPivot(ctx.transpose_clause()));
-            reference.setPivot(visitPivot(ctx.transpose_clause()));
-            return reference;
+        OracleSelectBodyFactory factory = new OracleSelectBodyFactory(ctx.subquery());
+        SelectBody select = factory.generate();
+        Order_by_fetch_with_check_optionContext oCtx = ctx.order_by_fetch_with_check_option();
+        if (oCtx.order_by() != null) {
+            select.getLastSelectBody().setOrderBy(new OracleOrderByFactory(oCtx.order_by()).generate());
         }
-        if (ctx.relation_name() == null) {
-            throw new IllegalStateException("Missing relation name");
+        if (oCtx.fetch_next_clause() != null) {
+            select.getLastSelectBody().setFetch(new OracleFetchFactory(oCtx.fetch_next_clause()).generate());
         }
-        NameReference reference = new NameReference(ctx, null, ctx.relation_name().getText(), null);
+        if (oCtx.with_check_option() != null) {
+            select.getLastSelectBody().setWithCheckOption(true);
+        }
+        ExpressionReference reference = new ExpressionReference(ctx, select, alias);
+        if (ctx.use_flashback() != null) {
+            reference.setFlashbackUsage(visitFlashbackUsage(ctx.use_flashback()));
+        }
         reference.setUnPivot(visitUnPivot(ctx.transpose_clause()));
         reference.setPivot(visitPivot(ctx.transpose_clause()));
         return reference;
@@ -269,6 +280,9 @@ public class OracleFromReferenceFactory extends OBParserBaseVisitor<FromReferenc
         RelationFactor relationFactor = new RelationFactor(ctx, getRelation(ctx));
         relationFactor.setSchema(getSchemaName(ctx));
         relationFactor.setUserVariable(getUserVariable(ctx));
+        if (ctx.opt_reverse_link_flag() != null && ctx.opt_reverse_link_flag().Not() != null) {
+            relationFactor.setReverseLink(true);
+        }
         return relationFactor;
     }
 
@@ -276,6 +290,11 @@ public class OracleFromReferenceFactory extends OBParserBaseVisitor<FromReferenc
         RelationFactor relationFactor = new RelationFactor(ctx, getRelation(ctx));
         relationFactor.setSchema(getSchemaName(ctx));
         relationFactor.setUserVariable(getUserVariable(ctx));
+        if (ctx.normal_relation_factor() != null
+                && ctx.normal_relation_factor().opt_reverse_link_flag() != null
+                && ctx.normal_relation_factor().opt_reverse_link_flag().Not() != null) {
+            relationFactor.setReverseLink(true);
+        }
         return relationFactor;
     }
 

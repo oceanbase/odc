@@ -91,6 +91,7 @@ public class IntegrationConfig implements SecurityResource, OrganizationIsolated
         this.builtin = entity.getBuiltin();
         this.createTime = entity.getCreateTime();
         this.updateTime = entity.getUpdateTime();
+        this.encryption = new Encryption(entity.getEncrypted(), entity.getAlgorithm(), entity.getSecret());
     }
 
     @Override

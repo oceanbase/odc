@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.integration.oauth2;
 import static com.oceanbase.odc.core.shared.constant.OdcConstants.TEST_LOGIN_ID_PARAM;
 import static com.oceanbase.odc.service.integration.oauth2.TestLoginContext.isTestLoginRequest;
 
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -34,9 +35,14 @@ import com.oceanbase.odc.core.authority.util.Authenticated;
 import com.oceanbase.odc.core.authority.util.PreAuthenticate;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.Verify;
+import com.oceanbase.odc.metadb.integration.IntegrationEntity;
 import com.oceanbase.odc.service.common.util.UrlUtils;
 import com.oceanbase.odc.service.common.util.WebRequestUtils;
+import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.auth.TestLoginTerminateException;
+import com.oceanbase.odc.service.integration.IntegrationService;
+import com.oceanbase.odc.service.integration.model.IntegrationConfig;
+import com.oceanbase.odc.service.integration.model.IntegrationType;
 import com.oceanbase.odc.service.integration.model.SSOIntegrationConfig;
 
 import lombok.extern.slf4j.Slf4j;
@@ -52,6 +58,12 @@ public class TestLoginManager {
     @Autowired(required = false)
     private AddableClientRegistrationManager addableClientRegistrationManager;
 
+    @Autowired
+    private IntegrationService integrationService;
+
+    @Autowired
+    private AuthenticationFacade authenticationFacade;
+
     @SkipAuthorize
     public void saveOauth2TestIdIfNeed(@NotBlank String loginInfo) {
         HttpServletRequest currentRequest = WebRequestUtils.getCurrentRequest();
@@ -65,13 +77,22 @@ public class TestLoginManager {
     }
 
     @PreAuthenticate(actions = "create", resourceType = "ODC_INTEGRATION", isForAll = true)
-    public SSOTestInfo getTestLoginUrl(SSOIntegrationConfig ssoIntegrationConfig, String type) {
+    public SSOTestInfo getTestLoginUrl(IntegrationConfig config, String type) {
+        SSOIntegrationConfig ssoConfig = SSOIntegrationConfig.of(config, authenticationFacade.currentOrganizationId());
+        if (config.getEncryption().getSecret() == null) {
+            Optional<IntegrationEntity> integration = integrationService.findByTypeAndOrganizationIdAndName(
+                    IntegrationType.SSO, authenticationFacade.currentOrganizationId(), config.getName());
+            Verify.verify(integration.isPresent(), "lack of secret");
+            IntegrationEntity integrationEntity = integration.get();
+            ssoConfig.fillDecryptSecret(integrationService.decodeSecret(integrationEntity.getSecret(),
+                    integrationEntity.getSalt(), integrationEntity.getOrganizationId()));
+        }
         if (addableClientRegistrationManager == null) {
             throw new UnsupportedOperationException("add test sso is not support");
         }
-        addableClientRegistrationManager.addTestToRegister(ssoIntegrationConfig, type);
+        addableClientRegistrationManager.addTestToRegister(ssoConfig, type);
         String testId = UUID.randomUUID().toString();
-        String redirectUrl = UrlUtils.appendQueryParameter(ssoIntegrationConfig.resolveLoginRedirectUrl(),
+        String redirectUrl = UrlUtils.appendQueryParameter(ssoConfig.resolveLoginRedirectUrl(),
                 TEST_LOGIN_ID_PARAM, testId);
         return new SSOTestInfo(redirectUrl, testId);
     }

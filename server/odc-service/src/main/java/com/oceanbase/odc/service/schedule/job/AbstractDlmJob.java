@@ -25,9 +25,6 @@ import org.quartz.JobExecutionContext;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
-import com.oceanbase.odc.core.session.ConnectionSession;
-import com.oceanbase.odc.core.session.ConnectionSessionConstants;
-import com.oceanbase.odc.core.shared.constant.ConnectionAccountType;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.core.shared.exception.InternalServerError;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
@@ -36,22 +33,16 @@ import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
-import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.dlm.DataArchiveJobFactory;
 import com.oceanbase.odc.service.dlm.DlmLimiterService;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
-import com.oceanbase.odc.service.dlm.model.DlmLimiterConfig;
 import com.oceanbase.odc.service.dlm.model.DlmTask;
+import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
 import com.oceanbase.odc.service.dlm.utils.DataArchiveConditionUtil;
 import com.oceanbase.odc.service.dlm.utils.DlmJobIdUtil;
 import com.oceanbase.odc.service.schedule.ScheduleService;
-import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
-import com.oceanbase.odc.service.session.factory.OBConsoleDataSourceFactory;
-import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
-import com.oceanbase.tools.migrator.common.configure.DataSourceInfo;
 import com.oceanbase.tools.migrator.common.configure.LogicTableConfig;
 import com.oceanbase.tools.migrator.common.enums.JobType;
-import com.oceanbase.tools.migrator.common.util.EncryptUtils;
 import com.oceanbase.tools.migrator.job.AbstractJob;
 import com.oceanbase.tools.migrator.task.CheckMode;
 
@@ -177,7 +168,7 @@ public class AbstractDlmJob implements OdcJob {
             taskUnit.setSourceDatabaseId(parameters.getSourceDatabaseId());
             taskUnit.setTargetDatabaseId(parameters.getTargetDataBaseId());
             taskUnit.setFireTime(taskEntity.getFireTime());
-            DlmLimiterConfig limiterConfig =
+            RateLimitConfiguration limiterConfig =
                     limiterService.getByOrderIdOrElseDefaultConfig(Long.parseLong(taskEntity.getJobName()));
             LogicTableConfig logicTableConfig = new LogicTableConfig();
             logicTableConfig.setMigrateRule(condition);
@@ -202,62 +193,11 @@ public class AbstractDlmJob implements OdcJob {
                 taskUnit.getTargetDatabaseId());
         sourceConfig.setDefaultSchema(sourceDb.getName());
         targetConfig.setDefaultSchema(targetDb.getName());
-        DefaultConnectSessionFactory sourceConnectionSessionFactory = new DefaultConnectSessionFactory(sourceConfig);
-        DefaultConnectSessionFactory targetConnectionSessionFactory = new DefaultConnectSessionFactory(targetConfig);
         // Init dataSourceInfo
-        taskUnit.setSourceInfo(getDataSourceInfo(sourceDb, sourceConfig));
-        taskUnit.setTargetInfo(getDataSourceInfo(targetDb, targetConfig));
-
-        ConnectionSession targetSession = targetConnectionSessionFactory.generateSession();
-        try {
-            // Create if target table does not exist
-            if (taskUnit.getJobType() == JobType.MIGRATE) {
-                DBSchemaAccessor targetDsAccessor = DBSchemaAccessors.create(targetSession);
-                List<String> tableNames = targetDsAccessor.showTables(targetDb.getName());
-                if (tableNames.contains(taskUnit.getTableName())) {
-                    log.info("Target table exist.");
-                    return;
-                }
-                log.info("Begin to create target table...");
-                // TODO maybe we can check table ddl.
-                ConnectionSession srcSession = sourceConnectionSessionFactory.generateSession();
-                String tableDDL;
-                try {
-                    DBSchemaAccessor sourceDsAccessor = DBSchemaAccessors.create(srcSession);
-                    tableDDL = sourceDsAccessor.getTableDDL(sourceDb.getName(), taskUnit.getTableName());
-                } finally {
-                    srcSession.expire();
-                }
-                targetSession.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY).execute(tableDDL);
-            }
-        } finally {
-            targetSession.expire();
-        }
+        taskUnit.setSourceDs(sourceConfig);
+        taskUnit.setTargetDs(targetConfig);
     }
 
-    private DataSourceInfo getDataSourceInfo(Database database, ConnectionConfig connectionConfig) {
-        DataSourceInfo dataSourceInfo = new DataSourceInfo();
-        dataSourceInfo.setDatabaseName(database.getName());
-        dataSourceInfo.setObProxy(String.format("%s:%s", connectionConfig.getHost(), connectionConfig.getPort()));
-        dataSourceInfo
-                .setFullUserName(OBConsoleDataSourceFactory.getUsername(connectionConfig, ConnectionAccountType.MAIN));
-        if (StringUtils.isNotEmpty(connectionConfig.getPassword())) {
-            dataSourceInfo.setPassword(connectionConfig.getPassword());
-        }
-        dataSourceInfo.setDbType("OCEANBASEV10");
-        dataSourceInfo.setSysUser(connectionConfig.getSysTenantUsername());
-        dataSourceInfo.setUserLocalProxy(false);
-        if (StringUtils.isNotEmpty(connectionConfig.getSysTenantPassword())) {
-            try {
-                dataSourceInfo.setSysPassword(EncryptUtils.encode(connectionConfig.getSysTenantPassword()));
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }
-        dataSourceInfo.setSysDatabaseName("oceanbase");
-
-        return dataSourceInfo;
-    }
 
     @Override
     public void execute(JobExecutionContext context) {

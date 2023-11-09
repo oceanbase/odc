@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.quartz;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
@@ -42,6 +43,7 @@ import com.oceanbase.odc.service.iam.model.User;
 import com.oceanbase.odc.service.iam.util.SecurityContextUtils;
 import com.oceanbase.odc.service.quartz.util.ScheduleTaskUtils;
 import com.oceanbase.odc.service.schedule.model.JobType;
+import com.oceanbase.odc.service.schedule.model.QuartzKeyGenerator;
 import com.oceanbase.odc.service.schedule.model.ScheduleStatus;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
 
@@ -127,21 +129,27 @@ public class OdcJobListener implements JobListener {
 
     @Override
     public void jobWasExecuted(JobExecutionContext context, JobExecutionException jobException) {
-        JobKey key = context.getJobDetail().getKey();
         List<? extends Trigger> jobTriggers;
-        try {
-            jobTriggers = context.getScheduler().getTriggersOfJob(key);
-        } catch (SchedulerException e) {
-            log.warn("Get job triggers failed and don't update order status.JobKey={}", key);
-            return;
-        }
-        for (Trigger trigger : jobTriggers) {
-            if (trigger.getFinalFireTime() == null || trigger.getFinalFireTime().compareTo(context.getFireTime()) > 0) {
+        Optional<ScheduleEntity> scheduleEntityOptional =
+                scheduleRepository.findById(ScheduleTaskUtils.getScheduleId(context));
+        if (scheduleEntityOptional.isPresent()) {
+            ScheduleEntity scheduleEntity = scheduleEntityOptional.get();
+            JobKey key = QuartzKeyGenerator.generateJobKey(scheduleEntity.getId(), scheduleEntity.getJobType());
+            try {
+                jobTriggers = context.getScheduler().getTriggersOfJob(key);
+            } catch (SchedulerException e) {
+                log.warn("Get job triggers failed and don't update order status.JobKey={}", key);
                 return;
             }
+            for (Trigger trigger : jobTriggers) {
+                if (trigger.getFinalFireTime() == null
+                        || trigger.getFinalFireTime().compareTo(context.getFireTime()) > 0) {
+                    return;
+                }
+            }
+            ScheduleStatus status = jobException == null ? ScheduleStatus.COMPLETED : ScheduleStatus.EXECUTION_FAILED;
+            log.info("The job is completed,jobKey={},status={}", key, status);
+            scheduleRepository.updateStatusById(ScheduleTaskUtils.getScheduleId(context), status);
         }
-        ScheduleStatus status = jobException == null ? ScheduleStatus.COMPLETED : ScheduleStatus.EXECUTION_FAILED;
-        log.info("The job is completed,jobKey={},status={}", key, status);
-        scheduleRepository.updateStatusById(ScheduleTaskUtils.getScheduleId(context), status);
     }
 }

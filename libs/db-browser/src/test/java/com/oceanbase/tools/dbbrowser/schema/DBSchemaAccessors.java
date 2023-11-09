@@ -17,6 +17,7 @@ package com.oceanbase.tools.dbbrowser.schema;
 
 import javax.sql.DataSource;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.springframework.jdbc.core.JdbcTemplate;
 
@@ -54,6 +55,9 @@ public class DBSchemaAccessors {
             }
             return rs.getString(2);
         });
+        if (StringUtils.isBlank(v)) {
+            throw new IllegalStateException("failed to get OB's version, reason: result set is empty");
+        }
         return parseObVersionComment(v);
     }
 

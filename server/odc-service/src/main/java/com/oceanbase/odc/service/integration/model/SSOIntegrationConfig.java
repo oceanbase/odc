@@ -47,6 +47,12 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class SSOIntegrationConfig implements Serializable {
 
+    /**
+     * orgId-name, the separator character should be '-', however some system may not follow this rule,
+     * * e.g. use ':' instead, here we support both.
+     */
+    private static final String REGISTRATION_ID_SEPARATOR = "[-:]";
+
     String name;
     String type;
     @JsonTypeInfo(use = Id.NAME, include = As.EXTERNAL_PROPERTY, property = "type")
@@ -89,13 +95,13 @@ public class SSOIntegrationConfig implements Serializable {
     }
 
     public static Long parseOrganizationId(String registrationId) {
-        String[] split = registrationId.split("\\-");
+        String[] split = registrationId.split(REGISTRATION_ID_SEPARATOR);
         Preconditions.checkArgument(split.length > 1);
         return Long.valueOf(split[0]);
     }
 
     public static String parseRegistrationName(String registrationId) {
-        String[] split = registrationId.split("\\-");
+        String[] split = registrationId.split(REGISTRATION_ID_SEPARATOR);
         Preconditions.checkArgument(split.length > 1, "invalid registrationId#" + registrationId);
         return split[1];
     }

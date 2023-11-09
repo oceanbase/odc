@@ -54,11 +54,21 @@ public class OracleRenameTableActionFactory extends OBParserBaseVisitor<RenameTa
                 OracleFromReferenceFactory.getRelation(from));
         fromFactor.setSchema(OracleFromReferenceFactory.getSchemaName(from));
         fromFactor.setUserVariable(OracleFromReferenceFactory.getUserVariable(from));
+        fullFillReverseLink(from, fromFactor);
 
         RelationFactor toFactor = new RelationFactor(to, OracleFromReferenceFactory.getRelation(to));
         toFactor.setSchema(OracleFromReferenceFactory.getSchemaName(to));
         toFactor.setUserVariable(OracleFromReferenceFactory.getUserVariable(to));
+        fullFillReverseLink(to, toFactor);
         return new RenameTableAction(ctx, fromFactor, toFactor);
+    }
+
+    private void fullFillReverseLink(Relation_factorContext ctx, RelationFactor relationFactor) {
+        if (ctx.normal_relation_factor() != null
+                && ctx.normal_relation_factor().opt_reverse_link_flag() != null
+                && ctx.normal_relation_factor().opt_reverse_link_flag().Not() != null) {
+            relationFactor.setReverseLink(true);
+        }
     }
 
 }

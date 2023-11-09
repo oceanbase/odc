@@ -62,9 +62,6 @@ public class DefaultConnectSessionFactory implements ConnectionSessionFactory {
     private final Boolean autoCommit;
     private final EventPublisher eventPublisher;
     private final ConnectionAccountType accountType;
-
-    @Setter
-    private long backendQueryTimeoutMicros;
     @Setter
     private long sessionTimeoutMillis;
 
@@ -114,7 +111,7 @@ public class DefaultConnectSessionFactory implements ConnectionSessionFactory {
 
     private void registerBackendDataSource(ConnectionSession session) {
         DruidDataSourceFactory dataSourceFactory =
-                new DruidDataSourceFactory(connectionConfig, accountType, backendQueryTimeoutMicros);
+                new DruidDataSourceFactory(connectionConfig, accountType);
         ProxyDataSourceFactory proxyFactory = new ProxyDataSourceFactory(dataSourceFactory);
         session.register(ConnectionSessionConstants.BACKEND_DS_KEY, proxyFactory);
         proxyFactory.setInitializer(new SwitchSchemaInitializer(session));

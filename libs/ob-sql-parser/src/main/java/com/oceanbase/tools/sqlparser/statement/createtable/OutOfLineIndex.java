@@ -41,6 +41,7 @@ import lombok.Setter;
 public class OutOfLineIndex extends BaseStatement implements TableElement {
 
     private IndexOptions indexOptions;
+    private Partition partition;
     private boolean fullText;
     private boolean spatial;
     private final String indexName;
@@ -77,6 +78,9 @@ public class OutOfLineIndex extends BaseStatement implements TableElement {
                 .append(")");
         if (this.indexOptions != null) {
             builder.append(" ").append(this.indexOptions.toString());
+        }
+        if (this.partition != null) {
+            builder.append(" ").append(this.partition.toString());
         }
         return builder.toString();
     }

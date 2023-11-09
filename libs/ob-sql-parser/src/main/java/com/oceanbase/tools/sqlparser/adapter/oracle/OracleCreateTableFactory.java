@@ -55,6 +55,8 @@ public class OracleCreateTableFactory extends OBParserBaseVisitor<CreateTable>
         if (ctx.temporary_option().GLOBAL() != null && ctx.temporary_option().TEMPORARY() != null) {
             createTable.setGlobal(true);
             createTable.setTemporary(true);
+        } else if (ctx.temporary_option().EXTERNAL() != null) {
+            createTable.setExternal(true);
         }
         if (ctx.table_element_list() != null) {
             createTable.setTableElements(ctx.table_element_list().table_element().stream()

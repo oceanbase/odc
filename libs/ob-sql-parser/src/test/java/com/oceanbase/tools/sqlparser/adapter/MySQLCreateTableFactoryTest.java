@@ -18,6 +18,8 @@ package com.oceanbase.tools.sqlparser.adapter;
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.antlr.v4.runtime.BailErrorStrategy;
 import org.antlr.v4.runtime.CharStreams;
@@ -29,6 +31,7 @@ import com.oceanbase.tools.sqlparser.adapter.mysql.MySQLCreateTableFactory;
 import com.oceanbase.tools.sqlparser.obmysql.OBLexer;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Create_table_stmtContext;
+import com.oceanbase.tools.sqlparser.statement.Expression;
 import com.oceanbase.tools.sqlparser.statement.common.CharacterType;
 import com.oceanbase.tools.sqlparser.statement.common.DataType;
 import com.oceanbase.tools.sqlparser.statement.createtable.ColumnDefinition;
@@ -37,6 +40,8 @@ import com.oceanbase.tools.sqlparser.statement.createtable.HashPartition;
 import com.oceanbase.tools.sqlparser.statement.createtable.HashPartitionElement;
 import com.oceanbase.tools.sqlparser.statement.createtable.PartitionOptions;
 import com.oceanbase.tools.sqlparser.statement.createtable.TableOptions;
+import com.oceanbase.tools.sqlparser.statement.expression.BoolValue;
+import com.oceanbase.tools.sqlparser.statement.expression.CollectionExpression;
 import com.oceanbase.tools.sqlparser.statement.expression.ColumnReference;
 import com.oceanbase.tools.sqlparser.statement.expression.ConstExpression;
 import com.oceanbase.tools.sqlparser.statement.select.NameReference;
@@ -60,6 +65,34 @@ public class MySQLCreateTableFactoryTest {
         CreateTable actual = factory.generate();
 
         CreateTable expect = new CreateTable("abcd");
+        DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
+        expect.setTableElements(
+                Collections.singletonList(new ColumnDefinition(new ColumnReference(null, null, "id"), dataType)));
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_temporaryTable_generateSucceed() {
+        Create_table_stmtContext context = getCreateTableContext("create temporary table abcd (id varchar(64))");
+        StatementFactory<CreateTable> factory = new MySQLCreateTableFactory(context);
+        CreateTable actual = factory.generate();
+
+        CreateTable expect = new CreateTable("abcd");
+        expect.setTemporary(true);
+        DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
+        expect.setTableElements(
+                Collections.singletonList(new ColumnDefinition(new ColumnReference(null, null, "id"), dataType)));
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_externalTable_generateSucceed() {
+        Create_table_stmtContext context = getCreateTableContext("create external table abcd (id varchar(64))");
+        StatementFactory<CreateTable> factory = new MySQLCreateTableFactory(context);
+        CreateTable actual = factory.generate();
+
+        CreateTable expect = new CreateTable("abcd");
+        expect.setExternal(true);
         DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
         expect.setTableElements(
                 Collections.singletonList(new ColumnDefinition(new ColumnReference(null, null, "id"), dataType)));
@@ -272,6 +305,33 @@ public class MySQLCreateTableFactoryTest {
         TableOptions tableOptions = new TableOptions();
         tableOptions.setPctFree(12);
         tableOptions.setTableSpace("abc");
+        expect.setTableOptions(tableOptions);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_formatTableOp_succeed() {
+        Create_table_stmtContext context = getCreateTableContext(
+                "create table abcd (id varchar(64)) format=(ENCODING='aaaa',LINE_DELIMITER=123,SKIP_HEADER=12,EMPTY_FIELD_AS_NULL=true,NULL_IF_EXETERNAL=(1,2,3))");
+        StatementFactory<CreateTable> factory = new MySQLCreateTableFactory(context);
+        CreateTable actual = factory.generate();
+
+        CreateTable expect = new CreateTable("abcd");
+        DataType dataType = new CharacterType("varchar", new BigDecimal("64"));
+        expect.setTableElements(
+                Collections.singletonList(new ColumnDefinition(new ColumnReference(null, null, "id"), dataType)));
+        TableOptions tableOptions = new TableOptions();
+        Map<String, Expression> map = new HashMap<>();
+        map.put("ENCODING", new ConstExpression("'aaaa'"));
+        map.put("EMPTY_FIELD_AS_NULL", new BoolValue(true));
+        map.put("SKIP_HEADER", new ConstExpression("12"));
+        CollectionExpression es = new CollectionExpression();
+        es.addExpression(new ConstExpression("1"));
+        es.addExpression(new ConstExpression("2"));
+        es.addExpression(new ConstExpression("3"));
+        map.put("NULL_IF_EXETERNAL", es);
+        map.put("LINE_DELIMITER", new ConstExpression("123"));
+        tableOptions.setFormat(map);
         expect.setTableOptions(tableOptions);
         Assert.assertEquals(expect, actual);
     }

@@ -32,14 +32,17 @@ import com.oceanbase.odc.core.datamasking.algorithm.Algorithm;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
+import com.oceanbase.odc.core.sql.execute.SqlExecuteStages;
 import com.oceanbase.odc.core.sql.execute.cache.table.VirtualTable;
 import com.oceanbase.odc.core.sql.execute.model.JdbcColumnMetaData;
 import com.oceanbase.odc.core.sql.execute.model.SqlExecuteStatus;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveColumn;
 import com.oceanbase.odc.service.datasecurity.util.DataMaskingUtil;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
-import com.oceanbase.odc.service.session.interceptor.SqlExecuteInterceptor;
+import com.oceanbase.odc.service.session.interceptor.BaseTimeConsumingInterceptor;
 import com.oceanbase.odc.service.session.model.DBResultSetMetaData;
+import com.oceanbase.odc.service.session.model.SqlAsyncExecuteReq;
+import com.oceanbase.odc.service.session.model.SqlAsyncExecuteResp;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.tools.dbbrowser.model.DBConstraintType;
 import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
@@ -54,14 +57,20 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Component
-public class DataMaskingInterceptor implements SqlExecuteInterceptor {
+public class DataMaskingInterceptor extends BaseTimeConsumingInterceptor {
 
     @Autowired
     private DataMaskingService maskingService;
 
     @Override
+    public boolean preHandle(@NonNull SqlAsyncExecuteReq request, @NonNull SqlAsyncExecuteResp response,
+            @NonNull ConnectionSession session, @NonNull Map<String, Object> context) {
+        return true;
+    }
+
+    @Override
     @SuppressWarnings("all")
-    public void afterCompletion(@NonNull SqlExecuteResult response, @NonNull ConnectionSession session,
+    public void doAfterCompletion(@NonNull SqlExecuteResult response, @NonNull ConnectionSession session,
             @NonNull Map<String, Object> context) throws Exception {
         // TODO: May intercept sensitive column operation (WHERE / ORDER BY / HAVING)
         if (!maskingService.isMaskingEnabled()) {
@@ -93,6 +102,11 @@ public class DataMaskingInterceptor implements SqlExecuteInterceptor {
             // Eat exception and skip data masking
             log.warn("Failed to mask query result set in SQL console, sql={}", response.getExecuteSql(), e);
         }
+    }
+
+    @Override
+    protected String getExecuteStageName() {
+        return SqlExecuteStages.DATA_MASKING;
     }
 
     @Override

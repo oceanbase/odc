@@ -20,10 +20,15 @@ import java.util.List;
 import org.quartz.JobExecutionContext;
 
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.core.session.ConnectionSession;
+import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
+import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
 import com.oceanbase.odc.service.dlm.model.DlmTask;
+import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
+import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -56,4 +61,49 @@ public class DataArchiveJob extends AbstractDlmJob {
             log.info("Clear job is created,");
         }
     }
+
+    @Override
+    public void initTask(DlmTask taskUnit) {
+        super.initTask(taskUnit);
+        createTargetTable(taskUnit);
+    }
+
+
+    /**
+     * Create the table in the target database before migrating the data.
+     */
+    private void createTargetTable(DlmTask dlmTask) {
+
+        if (dlmTask.getSourceDs().getDialectType() != dlmTask.getTargetDs().getDialectType()) {
+            log.info("Data sources of different types do not currently support automatic creation of target tables.");
+            return;
+        }
+        DefaultConnectSessionFactory sourceConnectionSessionFactory =
+                new DefaultConnectSessionFactory(dlmTask.getSourceDs());
+        ConnectionSession srcSession = sourceConnectionSessionFactory.generateSession();
+        String tableDDL;
+        try {
+            DBSchemaAccessor sourceDsAccessor = DBSchemaAccessors.create(srcSession);
+            tableDDL = sourceDsAccessor.getTableDDL(dlmTask.getSourceDs().getDefaultSchema(), dlmTask.getTableName());
+        } finally {
+            srcSession.expire();
+        }
+
+        DefaultConnectSessionFactory targetConnectionSessionFactory =
+                new DefaultConnectSessionFactory(dlmTask.getTargetDs());
+        ConnectionSession targetSession = targetConnectionSessionFactory.generateSession();
+        try {
+            DBSchemaAccessor targetDsAccessor = DBSchemaAccessors.create(targetSession);
+            List<String> tableNames = targetDsAccessor.showTables(dlmTask.getTargetDs().getDefaultSchema());
+            if (tableNames.contains(dlmTask.getTableName())) {
+                log.info("Target table exist,tableName={}", dlmTask.getTableName());
+                return;
+            }
+            log.info("Begin to create target table...");
+            targetSession.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY).execute(tableDDL);
+        } finally {
+            targetSession.expire();
+        }
+    }
+
 }

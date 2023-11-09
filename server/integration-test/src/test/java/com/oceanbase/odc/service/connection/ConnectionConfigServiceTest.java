@@ -123,6 +123,8 @@ public class ConnectionConfigServiceTest extends MockedAuthorityTestEnv {
         when(encryptionFacade.userEncryptor(eq(CREATOR_ID), eq(SALT))).thenReturn(mockEncryptor);
         when(encryptionFacade.organizationEncryptor(eq(ORGANIZATION_ID), eq(SALT))).thenReturn(mockEncryptor);
         Mockito.when(environmentService.detailSkipPermissionCheck(Mockito.anyLong())).thenReturn(getEnvironment());
+        Mockito.when(environmentService.list(Mockito.anyLong()))
+                .thenReturn(Collections.singletonList(getEnvironment()));
         doNothing().when(userPermissionService).bindUserAndDataSourcePermission(eq(CREATOR_ID), eq(ORGANIZATION_ID),
                 any(Long.class), eq(Arrays.asList("read", "update", "delete")));
 
@@ -140,7 +142,6 @@ public class ConnectionConfigServiceTest extends MockedAuthorityTestEnv {
         DefaultLoginSecurityManager.removeSecurityContext();
         DefaultLoginSecurityManager.removeContext();
     }
-
 
     @Test
     public void exists_HasConnection_MatchTrue() {
