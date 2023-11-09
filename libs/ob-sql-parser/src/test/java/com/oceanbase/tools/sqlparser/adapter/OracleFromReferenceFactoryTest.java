@@ -29,6 +29,7 @@ import com.oceanbase.tools.sqlparser.adapter.oracle.OracleFromReferenceFactory;
 import com.oceanbase.tools.sqlparser.oboracle.OBLexer;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Table_referenceContext;
+import com.oceanbase.tools.sqlparser.statement.Expression.ReferenceOperator;
 import com.oceanbase.tools.sqlparser.statement.JoinType;
 import com.oceanbase.tools.sqlparser.statement.Operator;
 import com.oceanbase.tools.sqlparser.statement.expression.ColumnReference;
@@ -36,6 +37,7 @@ import com.oceanbase.tools.sqlparser.statement.expression.CompoundExpression;
 import com.oceanbase.tools.sqlparser.statement.expression.ConstExpression;
 import com.oceanbase.tools.sqlparser.statement.expression.ExpressionParam;
 import com.oceanbase.tools.sqlparser.statement.expression.FunctionCall;
+import com.oceanbase.tools.sqlparser.statement.expression.FunctionParam;
 import com.oceanbase.tools.sqlparser.statement.expression.RelationReference;
 import com.oceanbase.tools.sqlparser.statement.select.ExpressionReference;
 import com.oceanbase.tools.sqlparser.statement.select.FlashBackType;
@@ -72,6 +74,22 @@ public class OracleFromReferenceFactoryTest {
         FromReference actual = factory.generate();
 
         NameReference expect = new NameReference(null, "tab", null);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_jsonTable_generateNameRefSucceed() {
+        Table_referenceContext context =
+                getTableReferenceContext("select a from json_table('123' columns \"abcd\" FOR ORDINALITY) ass");
+        StatementFactory<FromReference> factory = new OracleFromReferenceFactory(context);
+        FromReference actual = factory.generate();
+
+        FunctionParam p1 = new ExpressionParam(new ConstExpression("'123'"));
+        FunctionCall f = new FunctionCall("json_table", Collections.singletonList(p1));
+        FunctionParam p2 = new ExpressionParam(new ColumnReference(null, null, "\"abcd\""));
+        p2.addOption(new ConstExpression("FOR ORDINALITY"));
+        f.addOption(p2);
+        ExpressionReference expect = new ExpressionReference(f, "ass");
         Assert.assertEquals(expect, actual);
     }
 
@@ -656,13 +674,14 @@ public class OracleFromReferenceFactoryTest {
     @Test
     public void generate_subQueryWithPivotAndAlias_generatePivotSucceed() {
         Table_referenceContext context = getTableReferenceContext(
-                "select a from (select 1 from dual) tmp_select pivot(count(*) as alias_1, APPROX_COUNT_DISTINCT(1,2) for col1 in (col2 as alias_4, col2 alias_3, col3)) ooo");
+                "select a from (select 1 from dual with check option) tmp_select pivot(count(*) as alias_1, APPROX_COUNT_DISTINCT(1,2) for col1 in (col2 as alias_4, col2 alias_3, col3)) ooo");
         StatementFactory<FromReference> factory = new OracleFromReferenceFactory(context);
         FromReference actual = factory.generate();
 
         Projection projection = new Projection(new ConstExpression("1"), null);
         NameReference from = new NameReference(null, "dual", null);
         SelectBody selectBody = new SelectBody(Collections.singletonList(projection), Collections.singletonList(from));
+        selectBody.setWithCheckOption(true);
         ExpressionReference expect = new ExpressionReference(selectBody, "tmp_select");
 
         ExpressionParam p1 = new ExpressionParam(new ConstExpression("*"));
@@ -724,6 +743,40 @@ public class OracleFromReferenceFactoryTest {
         unPivot.setAlias("aaas");
         NameReference expect = new NameReference(null, "abc", "tmp");
         expect.setUnPivot(unPivot);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_selectFunction_generateSucceed() {
+        Table_referenceContext context = getTableReferenceContext("select 1 from a.c.b.f.func(1,2)");
+        StatementFactory<FromReference> factory = new OracleFromReferenceFactory(context);
+        FromReference actual = factory.generate();
+
+        RelationReference a = new RelationReference("a", null);
+        a.reference(new RelationReference("c", null), ReferenceOperator.DOT)
+                .reference(new RelationReference("b", null), ReferenceOperator.DOT)
+                .reference(new RelationReference("f", null), ReferenceOperator.DOT)
+                .reference(new FunctionCall("func", Arrays.asList(
+                        new ExpressionParam(new ConstExpression("1")),
+                        new ExpressionParam(new ConstExpression("2")))), ReferenceOperator.DOT);
+        ExpressionReference expect = new ExpressionReference(a, null);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_selectFunctionAlias_generateSucceed() {
+        Table_referenceContext context = getTableReferenceContext("select 1 from a.c.b.f.func(1,2) abcd");
+        StatementFactory<FromReference> factory = new OracleFromReferenceFactory(context);
+        FromReference actual = factory.generate();
+
+        RelationReference a = new RelationReference("a", null);
+        a.reference(new RelationReference("c", null), ReferenceOperator.DOT)
+                .reference(new RelationReference("b", null), ReferenceOperator.DOT)
+                .reference(new RelationReference("f", null), ReferenceOperator.DOT)
+                .reference(new FunctionCall("func", Arrays.asList(
+                        new ExpressionParam(new ConstExpression("1")),
+                        new ExpressionParam(new ConstExpression("2")))), ReferenceOperator.DOT);
+        ExpressionReference expect = new ExpressionReference(a, "abcd");
         Assert.assertEquals(expect, actual);
     }
 

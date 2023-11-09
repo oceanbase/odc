@@ -28,6 +28,7 @@ public enum ErrorCodes implements ErrorCode {
      */
     Success,
     IllegalArgument,
+    ArgumentValueAndTypeMismatched,
     DuplicatedExists,
     BadRequest,
     RequestFormatVersionNotMatch,
@@ -101,6 +102,7 @@ public enum ErrorCodes implements ErrorCode {
     SysTenantAccountInvalid,
     ConnectionVerifyFailed,
     ConnectionDatabaseTypeMismatched,
+    ConnectionInitScriptFailed,
     ConnectionInsufficientPermissions,
     ConnectionTooManyPermissions,
     ConnectionReadonly,
@@ -263,6 +265,7 @@ public enum ErrorCodes implements ErrorCode {
      * DB Object
      */
     DBObjectMetadataMayNotAccurate,
+    QueryDBVersionFailed,
 
     /**
      * Permission management

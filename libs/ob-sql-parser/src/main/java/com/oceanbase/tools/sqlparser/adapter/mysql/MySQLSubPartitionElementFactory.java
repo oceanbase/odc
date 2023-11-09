@@ -30,6 +30,7 @@ import com.oceanbase.tools.sqlparser.obmysql.OBParser.Range_partition_exprContex
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Range_subpartition_elementContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParserBaseVisitor;
 import com.oceanbase.tools.sqlparser.statement.Expression;
+import com.oceanbase.tools.sqlparser.statement.common.RelationFactor;
 import com.oceanbase.tools.sqlparser.statement.createtable.PartitionOptions;
 import com.oceanbase.tools.sqlparser.statement.createtable.SubHashPartitionElement;
 import com.oceanbase.tools.sqlparser.statement.createtable.SubListPartitionElement;
@@ -70,29 +71,32 @@ public class MySQLSubPartitionElementFactory extends OBParserBaseVisitor<SubPart
 
     @Override
     public SubPartitionElement visitHash_subpartition_element(Hash_subpartition_elementContext ctx) {
-        SubHashPartitionElement element = new SubHashPartitionElement(ctx,
-                MySQLFromReferenceFactory.getRelation(ctx.relation_factor()));
-        element.setSchema(MySQLFromReferenceFactory.getSchemaName(ctx.relation_factor()));
+        RelationFactor factor = MySQLFromReferenceFactory.getRelationFactor(ctx.relation_factor());
+        SubHashPartitionElement element = new SubHashPartitionElement(ctx, factor.getRelation());
+        element.setSchema(factor.getSchema());
+        element.setUserVariable(factor.getUserVariable());
         element.setPartitionOptions(getPartitionOptions(ctx.partition_attributes_option()));
         return element;
     }
 
     @Override
     public SubPartitionElement visitRange_subpartition_element(Range_subpartition_elementContext ctx) {
+        RelationFactor factor = MySQLFromReferenceFactory.getRelationFactor(ctx.relation_factor());
         List<Expression> rangeExprs = getRangePartitionExprs(ctx.range_partition_expr());
-        SubRangePartitionElement element = new SubRangePartitionElement(ctx,
-                MySQLFromReferenceFactory.getRelation(ctx.relation_factor()), rangeExprs);
-        element.setSchema(MySQLFromReferenceFactory.getSchemaName(ctx.relation_factor()));
+        SubRangePartitionElement element = new SubRangePartitionElement(ctx, factor.getRelation(), rangeExprs);
+        element.setSchema(factor.getSchema());
+        element.setUserVariable(factor.getUserVariable());
         element.setPartitionOptions(getPartitionOptions(ctx.partition_attributes_option()));
         return element;
     }
 
     @Override
     public SubPartitionElement visitList_subpartition_element(List_subpartition_elementContext ctx) {
+        RelationFactor factor = MySQLFromReferenceFactory.getRelationFactor(ctx.relation_factor());
         List<Expression> listExprs = getListPartitionExprs(ctx.list_partition_expr());
-        SubListPartitionElement element = new SubListPartitionElement(ctx,
-                MySQLFromReferenceFactory.getRelation(ctx.relation_factor()), listExprs);
-        element.setSchema(MySQLFromReferenceFactory.getSchemaName(ctx.relation_factor()));
+        SubListPartitionElement element = new SubListPartitionElement(ctx, factor.getRelation(), listExprs);
+        element.setSchema(factor.getSchema());
+        element.setUserVariable(factor.getUserVariable());
         element.setPartitionOptions(getPartitionOptions(ctx.partition_attributes_option()));
         return element;
     }

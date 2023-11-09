@@ -15,9 +15,10 @@
  */
 package com.oceanbase.odc.service.datasecurity.extractor.model;
 
+import java.util.Objects;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 /**
@@ -25,7 +26,6 @@ import lombok.NoArgsConstructor;
  * @date 2023/6/12 15:23
  */
 @Data
-@EqualsAndHashCode
 @AllArgsConstructor
 @NoArgsConstructor
 public class DBColumn {
@@ -40,4 +40,21 @@ public class DBColumn {
         column.setColumnName(logicalColumn.getName());
         return column;
     }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(databaseName.toLowerCase(), tableName.toLowerCase(), columnName.toLowerCase());
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof DBColumn) {
+            DBColumn other = (DBColumn) obj;
+            return Objects.equals(databaseName.toLowerCase(), other.databaseName.toLowerCase())
+                    && Objects.equals(tableName.toLowerCase(), other.tableName.toLowerCase())
+                    && Objects.equals(columnName.toLowerCase(), other.columnName.toLowerCase());
+        }
+        return false;
+    }
+
 }

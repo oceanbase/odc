@@ -52,7 +52,7 @@ public class OBMySQLParser extends BaseSQLParser<OBLexer, OBParser> {
 
     @Override
     protected ParseTree doParse(OBParser parser) {
-        return parser.stmt().getChild(0);
+        return parser.sql_stmt().stmt_list().stmt().getChild(0);
     }
 
 }

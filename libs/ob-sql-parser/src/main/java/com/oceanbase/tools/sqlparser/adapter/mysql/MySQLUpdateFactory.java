@@ -23,6 +23,7 @@ import com.oceanbase.tools.sqlparser.adapter.StatementFactory;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Expr_or_defaultContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Update_asgn_factorContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Update_asgn_listContext;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Update_basic_stmtContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Update_stmtContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParserBaseVisitor;
 import com.oceanbase.tools.sqlparser.statement.Expression;
@@ -56,7 +57,8 @@ public class MySQLUpdateFactory extends OBParserBaseVisitor<Update> implements S
     }
 
     @Override
-    public Update visitUpdate_stmt(Update_stmtContext ctx) {
+    public Update visitUpdate_stmt(Update_stmtContext updateCtx) {
+        Update_basic_stmtContext ctx = updateCtx.update_basic_stmt();
         Update update = new Update(ctx, MySQLSelectBodyFactory.visitFromList(ctx.table_references()),
                 visitUpdateAsgnList(ctx.update_asgn_list()));
         if (ctx.expr() != null) {

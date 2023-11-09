@@ -373,6 +373,10 @@ public class ScheduleService {
         }
     }
 
+    public void updateJobParametersById(Long id, String jobParameters) {
+        scheduleRepository.updateJobParametersById(id, jobParameters);
+    }
+
     public ScheduleDetailResp getById(Long id) {
         ScheduleEntity entity = nullSafeGetByIdWithCheckPermission(id);
         ScheduleResponseMapper mapper = scheduleResponseMapperFactory.generate(entity);

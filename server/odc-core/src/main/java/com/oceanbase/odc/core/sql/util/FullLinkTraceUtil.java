@@ -18,6 +18,7 @@ package com.oceanbase.odc.core.sql.util;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,14 +33,17 @@ import com.oceanbase.odc.core.sql.execute.model.SqlExecTime;
 
 public class FullLinkTraceUtil {
 
-    public static SqlExecTime getFullLinkTraceDetail(Statement statement) throws SQLException {
+    private final static String TRACE_ID_KEY = "log_trace_id";
+
+    public static SqlExecTime getFullLinkTraceDetail(Statement statement, int queryTimeout) throws SQLException {
         OceanBaseConnection connection = (OceanBaseConnection) statement.getConnection();
         long lastPacketResponseTimestamp =
                 TimeUnit.MICROSECONDS.convert(connection.getLastPacketResponseTimestamp(),
                         TimeUnit.MILLISECONDS);
         long lastPacketSendTimestamp = TimeUnit.MICROSECONDS.convert(connection.getLastPacketSendTimestamp(),
                 TimeUnit.MILLISECONDS);
-
+        int originQueryTimeout = statement.getQueryTimeout();
+        statement.setQueryTimeout(queryTimeout);
         try (ResultSet resultSet = statement.executeQuery("show trace format='json'")) {
             if (!resultSet.next()) {
                 throw new UnexpectedException("No trace info, maybe value of ob_enable_show_trace is 0.");
@@ -50,6 +54,8 @@ public class FullLinkTraceUtil {
             execDetail.setLastPacketSendTimestamp(lastPacketSendTimestamp);
             execDetail.setLastPacketResponseTimestamp(lastPacketResponseTimestamp);
             return execDetail;
+        } finally {
+            statement.setQueryTimeout(originQueryTimeout);
         }
     }
 
@@ -67,8 +73,8 @@ public class FullLinkTraceUtil {
                     return v;
                 });
             }
-            if (traceId == null && parseLogTraceId(span.getTags()) != null) {
-                traceId = parseLogTraceId(span.getTags());
+            if (traceId == null) {
+                traceId = findLogTraceId(span.getTags());
             }
             span.setNode(Node.from(span.getSpanName()));
             if ("com_query_process".equals(span.getSpanName())) {
@@ -89,13 +95,18 @@ public class FullLinkTraceUtil {
         return execDetail;
     }
 
-    private static String parseLogTraceId(List<Map<String, Object>> tags) {
-        if (tags == null) {
+    private static String findLogTraceId(Object tags) {
+        if (tags instanceof Map) {
+            if (((Map<?, ?>) tags).containsKey(TRACE_ID_KEY)) {
+                return ((Map<?, ?>) tags).get(TRACE_ID_KEY).toString();
+            }
             return null;
-        }
-        for (Map<String, Object> tag : tags) {
-            if (tag.containsKey("log_trace_id")) {
-                return (String) tag.get("log_trace_id");
+        } else if (tags instanceof Collection) {
+            for (Object obj : (Collection<?>) tags) {
+                String value = findLogTraceId(obj);
+                if (value != null) {
+                    return value;
+                }
             }
         }
         return null;

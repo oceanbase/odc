@@ -25,9 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
-import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.integration.model.IntegrationConfig;
-import com.oceanbase.odc.service.integration.model.SSOIntegrationConfig;
 import com.oceanbase.odc.service.integration.oauth2.SSOTestInfo;
 import com.oceanbase.odc.service.integration.oauth2.TestLoginManager;
 
@@ -38,14 +36,10 @@ public class SSOController {
     @Autowired
     private TestLoginManager testLoginManager;
 
-    @Autowired
-    private AuthenticationFacade authenticationFacade;
-
     @PostMapping(value = "/test/start")
     public SuccessResponse<SSOTestInfo> addTestClientRegistration(@RequestBody IntegrationConfig config,
             @RequestParam String type) {
-        return Responses.ok(testLoginManager
-                .getTestLoginUrl(SSOIntegrationConfig.of(config, authenticationFacade.currentOrganizationId()), type));
+        return Responses.ok(testLoginManager.getTestLoginUrl(config, type));
     }
 
     /**

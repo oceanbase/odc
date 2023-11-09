@@ -93,6 +93,7 @@ public class OBMySQLDiagnoseExtension implements SqlDiagnoseExtensionPoint {
             explain.setOriginalText(text);
             explain.setShowFormatInfo(true);
         } catch (Exception e) {
+            log.warn("Fail to parse explain result, origin plan text: {}", text, e);
             throw OBException.executeFailed(ErrorCodes.ObGetPlanExplainFailed,
                     String.format("Fail to parse explain result, reason=%s", e.getMessage()));
         }

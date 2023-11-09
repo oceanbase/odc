@@ -55,6 +55,24 @@ public class OracleDataTypeFactoryTest {
     }
 
     @Test
+    public void generate_json_generateSucceed() {
+        StatementFactory<DataType> factory = new OracleDataTypeFactory(getDataTypeContext("json"));
+        DataType actual = factory.generate();
+
+        DataType expect = new GeneralDataType("json", null);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_xmltype_generateSucceed() {
+        StatementFactory<DataType> factory = new OracleDataTypeFactory(getDataTypeContext("xmltype"));
+        DataType actual = factory.generate();
+
+        DataType expect = new GeneralDataType("xmltype", null);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
     public void generate_floatWithPrecision_generateSucceed() {
         StatementFactory<DataType> factory = new OracleDataTypeFactory(getDataTypeContext("float(12)"));
         DataType actual = factory.generate();

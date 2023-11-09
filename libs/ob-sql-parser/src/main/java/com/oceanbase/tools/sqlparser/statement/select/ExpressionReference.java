@@ -15,7 +15,10 @@
  */
 package com.oceanbase.tools.sqlparser.statement.select;
 
+import java.util.List;
+
 import org.antlr.v4.runtime.ParserRuleContext;
+import org.apache.commons.collections4.CollectionUtils;
 
 import com.oceanbase.tools.sqlparser.statement.BaseStatement;
 import com.oceanbase.tools.sqlparser.statement.Expression;
@@ -39,14 +42,16 @@ import lombok.Setter;
 @EqualsAndHashCode(callSuper = false)
 public class ExpressionReference extends BaseStatement implements FromReference {
 
-    @Setter
-    private FlashbackUsage flashbackUsage;
     private final String alias;
     private final Expression target;
     @Setter
     private Pivot pivot;
     @Setter
     private UnPivot unPivot;
+    @Setter
+    private FlashbackUsage flashbackUsage;
+    @Setter
+    private List<String> aliasColumns;
 
     public ExpressionReference(@NonNull ParserRuleContext context,
             @NonNull Expression target, String alias) {
@@ -62,8 +67,7 @@ public class ExpressionReference extends BaseStatement implements FromReference 
 
     @Override
     public String toString() {
-        StringBuilder builder = new StringBuilder("TABLE (");
-        builder.append(this.target.toString());
+        StringBuilder builder = new StringBuilder(this.target.toString());
         if (this.flashbackUsage != null) {
             builder.append(" ").append(this.flashbackUsage.toString());
         }
@@ -73,9 +77,11 @@ public class ExpressionReference extends BaseStatement implements FromReference 
         if (this.unPivot != null) {
             builder.append(" ").append(this.unPivot.toString());
         }
-        builder.append(")");
         if (this.alias != null) {
             builder.append(" ").append(this.alias);
+        }
+        if (CollectionUtils.isNotEmpty(this.aliasColumns)) {
+            builder.append(" (").append(String.join(",", this.aliasColumns)).append(")");
         }
         return builder.toString();
     }

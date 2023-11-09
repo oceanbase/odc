@@ -43,7 +43,7 @@ public class OracleFetchFactoryTest {
     @Test
     public void generate_fetchNextCountOnly_generateFetchSucceed() {
         Fetch_next_clauseContext context =
-                getFetchNextClauseContext("select 1 from dual offset 1 row fetch next 20 rows only");
+                getFetchNextClauseContext("offset 1 row fetch next 20 rows only");
         StatementFactory<Fetch> factory = new OracleFetchFactory(context.fetch_next());
         Fetch actual = factory.generate();
 
@@ -55,43 +55,43 @@ public class OracleFetchFactoryTest {
     @Test
     public void generate_fetchNextCountWithTies_generateFetchSucceed() {
         Fetch_next_clauseContext context =
-                getFetchNextClauseContext("select 1 from dual offset 1 row fetch next 20 rows with ties");
+                getFetchNextClauseContext("offset 1 row fetch next 20 rows with ties");
         StatementFactory<Fetch> factory = new OracleFetchFactory(context.fetch_next());
         Fetch actual = factory.generate();
 
-        Fetch expect = new Fetch(new ConstExpression("20"), FetchDirection.NEXT, FetchType.COUNT,
-                FetchAddition.WITH_TIES, null);
+        Fetch expect = new Fetch(new ConstExpression("20"),
+                FetchDirection.NEXT, FetchType.COUNT, FetchAddition.WITH_TIES, null);
         Assert.assertEquals(actual, expect);
     }
 
     @Test
     public void generate_fetchFirstCountOnly_generateFetchSucceed() {
         Fetch_next_clauseContext context =
-                getFetchNextClauseContext("select 1 from dual offset 1 row fetch first 20 rows only");
+                getFetchNextClauseContext("offset 1 row fetch first 20 rows only");
         StatementFactory<Fetch> factory = new OracleFetchFactory(context.fetch_next());
         Fetch actual = factory.generate();
 
-        Fetch expect =
-                new Fetch(new ConstExpression("20"), FetchDirection.FIRST, FetchType.COUNT, FetchAddition.ONLY, null);
+        Fetch expect = new Fetch(new ConstExpression("20"),
+                FetchDirection.FIRST, FetchType.COUNT, FetchAddition.ONLY, null);
         Assert.assertEquals(actual, expect);
     }
 
     @Test
     public void generate_fetchFirstCountWithTies_generateFetchSucceed() {
         Fetch_next_clauseContext context =
-                getFetchNextClauseContext("select 1 from dual offset 1 row fetch first 20 rows with ties");
+                getFetchNextClauseContext("offset 1 row fetch first 20 rows with ties");
         StatementFactory<Fetch> factory = new OracleFetchFactory(context.fetch_next());
         Fetch actual = factory.generate();
 
-        Fetch expect = new Fetch(new ConstExpression("20"), FetchDirection.FIRST, FetchType.COUNT,
-                FetchAddition.WITH_TIES, null);
+        Fetch expect = new Fetch(new ConstExpression("20"),
+                FetchDirection.FIRST, FetchType.COUNT, FetchAddition.WITH_TIES, null);
         Assert.assertEquals(actual, expect);
     }
 
     @Test
     public void generate_fetchFirstCountWithoutExpr_generateFetchSucceed() {
         Fetch_next_clauseContext context =
-                getFetchNextClauseContext("select 1 from dual offset 1 row fetch first rows with ties");
+                getFetchNextClauseContext("offset 1 row fetch first rows with ties");
         StatementFactory<Fetch> factory = new OracleFetchFactory(context.fetch_next());
         Fetch actual = factory.generate();
 
@@ -102,7 +102,7 @@ public class OracleFetchFactoryTest {
     @Test
     public void generate_fetchNextPercentOnly_generateFetchSucceed() {
         Fetch_next_clauseContext context =
-                getFetchNextClauseContext("select 1 from dual offset 1 row fetch next 20 percent rows only");
+                getFetchNextClauseContext("offset 1 row fetch next 20 percent rows only");
         StatementFactory<Fetch> factory = new OracleFetchFactory(context.fetch_next());
         Fetch actual = factory.generate();
 
@@ -114,7 +114,7 @@ public class OracleFetchFactoryTest {
     @Test
     public void generate_fetchNextPercentWithTies_generateFetchSucceed() {
         Fetch_next_clauseContext context =
-                getFetchNextClauseContext("select 1 from dual offset 1 row fetch next 20 percent rows with ties");
+                getFetchNextClauseContext("offset 1 row fetch next 20 percent rows with ties");
         StatementFactory<Fetch> factory = new OracleFetchFactory(context.fetch_next());
         Fetch actual = factory.generate();
 
@@ -126,7 +126,7 @@ public class OracleFetchFactoryTest {
     @Test
     public void generate_fetchFirstPercentOnly_generateFetchSucceed() {
         Fetch_next_clauseContext context =
-                getFetchNextClauseContext("select 1 from dual offset 1 row fetch first 20 percent rows only");
+                getFetchNextClauseContext("offset 1 row fetch first 20 percent rows only");
         StatementFactory<Fetch> factory = new OracleFetchFactory(context.fetch_next());
         Fetch actual = factory.generate();
 
@@ -138,7 +138,7 @@ public class OracleFetchFactoryTest {
     @Test
     public void generate_fetchFirstPercentWithTies_generateFetchSucceed() {
         Fetch_next_clauseContext context =
-                getFetchNextClauseContext("select 1 from dual offset 1 row fetch first 20 percent rows with ties");
+                getFetchNextClauseContext("offset 1 row fetch first 20 percent rows with ties");
         StatementFactory<Fetch> factory = new OracleFetchFactory(context.fetch_next());
         Fetch actual = factory.generate();
 
@@ -150,7 +150,7 @@ public class OracleFetchFactoryTest {
     @Test
     public void generate_fetchClauseFirstPercentWithTies_generateFetchSucceed() {
         Fetch_next_clauseContext context =
-                getFetchNextClauseContext("select 1 from dual offset 1 row fetch first 20 percent rows with ties");
+                getFetchNextClauseContext("offset 1 row fetch first 20 percent rows with ties");
         StatementFactory<Fetch> factory = new OracleFetchFactory(context);
         Fetch actual = factory.generate();
 
@@ -165,7 +165,7 @@ public class OracleFetchFactoryTest {
         CommonTokenStream tokens = new CommonTokenStream(lexer);
         OBParser parser = new OBParser(tokens);
         parser.setErrorHandler(new BailErrorStrategy());
-        return parser.select_stmt().fetch_next_clause();
+        return parser.fetch_next_clause();
     }
 
 }

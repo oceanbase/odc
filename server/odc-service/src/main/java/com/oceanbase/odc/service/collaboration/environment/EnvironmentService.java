@@ -18,7 +18,6 @@ package com.oceanbase.odc.service.collaboration.environment;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -35,7 +34,6 @@ import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.metadb.collaboration.EnvironmentEntity;
 import com.oceanbase.odc.metadb.collaboration.EnvironmentRepository;
-import com.oceanbase.odc.metadb.iam.UserEntity;
 import com.oceanbase.odc.service.collaboration.environment.model.Environment;
 import com.oceanbase.odc.service.iam.HorizontalDataPermissionValidator;
 import com.oceanbase.odc.service.iam.UserService;
@@ -143,17 +141,6 @@ public class EnvironmentService {
     }
 
     private Environment entityToModel(@NonNull EnvironmentEntity entity) {
-        Environment environment = environmentMapper.entityToModel(entity);
-        UserEntity creator = userService.nullSafeGet(entity.getCreatorId());
-        UserEntity lastModifier = userService.nullSafeGet(entity.getLastModifierId());
-        if (Objects.nonNull(environment.getCreator())) {
-            environment.getCreator().setName(creator.getName());
-            environment.getCreator().setAccountName(creator.getAccountName());
-        }
-        if (Objects.nonNull(environment.getLastModifier())) {
-            environment.getLastModifier().setName(lastModifier.getName());
-            environment.getLastModifier().setAccountName(lastModifier.getAccountName());
-        }
-        return environment;
+        return environmentMapper.entityToModel(entity);
     }
 }

@@ -234,7 +234,8 @@ public class IntegrationService {
                     authenticationFacade.currentOrganizationId(), config.getEnabled(), entity.getId());
         }
         Encryption encryption = config.getEncryption();
-        applicationContext.publishEvent(IntegrationEvent.createPreUpdate(config, new IntegrationConfig(entity)));
+        applicationContext.publishEvent(
+                IntegrationEvent.createPreUpdate(config, new IntegrationConfig(entity), entity.getSalt()));
         entity.setName(config.getName());
         entity.setConfiguration(config.getConfiguration());
         entity.setEnabled(config.getEnabled());
@@ -263,10 +264,9 @@ public class IntegrationService {
         if (!Objects.equals(entity.getEnabled(), enabled)) {
             IntegrationConfig preConfig = new IntegrationConfig(entity);
             entity.setEnabled(enabled);
-            IntegrationConfig currentConfig = new IntegrationConfig(entity);
-            currentConfig.setEncryption(new Encryption(entity.getEnabled(), entity.getAlgorithm(),
-                    decodeSecret(entity.getSecret(), entity.getSalt(), entity.getOrganizationId())));
-            applicationContext.publishEvent(IntegrationEvent.createPreUpdate(currentConfig, preConfig));
+            applicationContext
+                    .publishEvent(IntegrationEvent.createPreUpdate(new IntegrationConfig(entity), preConfig,
+                            entity.getSalt()));
             integrationRepository.saveAndFlush(entity);
             log.info("An external integration has been updated, integration: {}", entity);
         }
@@ -309,6 +309,12 @@ public class IntegrationService {
     @SkipAuthorize("odc internal usage")
     public Optional<IntegrationEntity> findIntegrationById(@NonNull Long id) {
         return integrationRepository.findById(id);
+    }
+
+    @SkipAuthorize("odc internal usage")
+    public Optional<IntegrationEntity> findByTypeAndOrganizationIdAndName(IntegrationType type, Long organizationId,
+            String name) {
+        return integrationRepository.findByTypeAndOrganizationIdAndName(type, organizationId, name);
     }
 
     @Cacheable(cacheNames = "integrationProperties", cacheManager = "defaultCacheManager")

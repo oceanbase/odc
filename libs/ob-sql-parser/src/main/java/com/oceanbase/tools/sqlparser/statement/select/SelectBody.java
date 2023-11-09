@@ -16,15 +16,16 @@
 package com.oceanbase.tools.sqlparser.statement.select;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.apache.commons.collections4.CollectionUtils;
 
-import com.oceanbase.tools.sqlparser.statement.BaseStatement;
 import com.oceanbase.tools.sqlparser.statement.Expression;
 import com.oceanbase.tools.sqlparser.statement.common.Window;
+import com.oceanbase.tools.sqlparser.statement.expression.BaseExpression;
 import com.oceanbase.tools.sqlparser.statement.select.mysql.Limit;
 import com.oceanbase.tools.sqlparser.statement.select.oracle.Fetch;
 
@@ -42,8 +43,8 @@ import lombok.Setter;
  */
 @Getter
 @Setter
-@EqualsAndHashCode(callSuper = false)
-public class SelectBody extends BaseStatement implements Expression {
+@EqualsAndHashCode(callSuper = true)
+public class SelectBody extends BaseExpression {
 
     private Expression where;
     private Expression having;
@@ -54,12 +55,15 @@ public class SelectBody extends BaseStatement implements Expression {
     private boolean recursive;
     private List<GroupBy> groupBy = new ArrayList<>();
     boolean withRollUp;
+    boolean withCheckOption;
     private List<Window> windows = new ArrayList<>();
     private Fetch fetch;
     private Limit limit;
     private ForUpdate forUpdate;
     private OrderBy orderBy;
+    private boolean lockInShareMode;
     private RelatedSelectBody relatedSelect;
+    private final List<List<Expression>> values;
     private final List<FromReference> froms;
     private final List<Projection> selectItems;
 
@@ -68,6 +72,14 @@ public class SelectBody extends BaseStatement implements Expression {
         super(context);
         this.froms = fromList;
         this.selectItems = selectItemList;
+        this.values = Collections.emptyList();
+    }
+
+    public SelectBody(@NonNull ParserRuleContext context, @NonNull List<List<Expression>> values) {
+        super(context);
+        this.froms = Collections.emptyList();
+        this.selectItems = Collections.emptyList();
+        this.values = values;
     }
 
     public SelectBody(@NonNull ParserRuleContext context, @NonNull SelectBody other) {
@@ -81,6 +93,7 @@ public class SelectBody extends BaseStatement implements Expression {
         this.recursive = other.recursive;
         this.groupBy = other.groupBy;
         this.withRollUp = other.withRollUp;
+        this.withCheckOption = other.withCheckOption;
         this.windows = other.windows;
         this.fetch = other.fetch;
         this.limit = other.limit;
@@ -89,15 +102,31 @@ public class SelectBody extends BaseStatement implements Expression {
         this.froms = other.froms;
         this.selectItems = other.selectItems;
         this.forUpdate = other.forUpdate;
+        this.values = other.values;
+    }
+
+    public SelectBody getLastSelectBody() {
+        SelectBody target = this;
+        while (target.getRelatedSelect() != null) {
+            target = target.getRelatedSelect().getSelect();
+        }
+        return target;
     }
 
     public SelectBody(@NonNull List<Projection> selectItemList, @NonNull List<FromReference> fromList) {
         this.froms = fromList;
         this.selectItems = selectItemList;
+        this.values = Collections.emptyList();
+    }
+
+    public SelectBody(@NonNull List<List<Expression>> values) {
+        this.froms = Collections.emptyList();
+        this.selectItems = Collections.emptyList();
+        this.values = values;
     }
 
     @Override
-    public String toString() {
+    public String doToString() {
         StringBuilder builder = new StringBuilder();
         if (CollectionUtils.isNotEmpty(this.with)) {
             builder.append("WITH ");
@@ -110,38 +139,45 @@ public class SelectBody extends BaseStatement implements Expression {
         if (this.orderBy != null || this.fetch != null || this.limit != null || this.forUpdate != null) {
             builder.append("(");
         }
-        builder.append("SELECT");
-        if (this.queryOptions != null) {
-            builder.append(" ").append(this.queryOptions);
-        }
-        builder.append(" ").append(this.selectItems.stream()
-                .map(Projection::toString).collect(Collectors.joining(",")));
-        if (CollectionUtils.isNotEmpty(this.froms)) {
-            builder.append(" FROM ").append(this.froms.stream()
-                    .map(Object::toString).collect(Collectors.joining(",")));
-        }
-        if (this.where != null) {
-            builder.append(" WHERE ").append(this.where.toString());
-        }
-        if (this.startWith != null) {
-            builder.append(" START WITH ").append(this.startWith.toString());
-        }
-        if (this.connectBy != null) {
-            builder.append(" CONNECT BY ").append(this.connectBy.toString());
-        }
-        if (CollectionUtils.isNotEmpty(this.groupBy)) {
-            builder.append(" GROUP BY ").append(this.groupBy.stream()
-                    .map(Object::toString).collect(Collectors.joining(",")));
-            if (this.withRollUp) {
-                builder.append(" WITH ROLLUP");
+        if (CollectionUtils.isNotEmpty(this.values)) {
+            builder.append("VALUES ").append(this.values.stream()
+                    .map(s -> "ROW (" + s.stream().map(Object::toString)
+                            .collect(Collectors.joining(",")) + ")")
+                    .collect(Collectors.joining(", ")));
+        } else {
+            builder.append("SELECT");
+            if (this.queryOptions != null) {
+                builder.append(" ").append(this.queryOptions);
             }
-        }
-        if (this.having != null) {
-            builder.append(" HAVING ").append(this.having.toString());
-        }
-        if (CollectionUtils.isNotEmpty(this.windows)) {
-            builder.append(" WINDOW ").append(this.windows.stream()
-                    .map(Window::toString).collect(Collectors.joining(",")));
+            builder.append(" ").append(this.selectItems.stream()
+                    .map(Projection::toString).collect(Collectors.joining(",")));
+            if (CollectionUtils.isNotEmpty(this.froms)) {
+                builder.append(" FROM ").append(this.froms.stream()
+                        .map(Object::toString).collect(Collectors.joining(",")));
+            }
+            if (this.where != null) {
+                builder.append(" WHERE ").append(this.where.toString());
+            }
+            if (this.startWith != null) {
+                builder.append(" START WITH ").append(this.startWith.toString());
+            }
+            if (this.connectBy != null) {
+                builder.append(" CONNECT BY ").append(this.connectBy.toString());
+            }
+            if (CollectionUtils.isNotEmpty(this.groupBy)) {
+                builder.append(" GROUP BY ").append(this.groupBy.stream()
+                        .map(Object::toString).collect(Collectors.joining(",")));
+                if (this.withRollUp) {
+                    builder.append(" WITH ROLLUP");
+                }
+            }
+            if (this.having != null) {
+                builder.append(" HAVING ").append(this.having.toString());
+            }
+            if (CollectionUtils.isNotEmpty(this.windows)) {
+                builder.append(" WINDOW ").append(this.windows.stream()
+                        .map(Window::toString).collect(Collectors.joining(",")));
+            }
         }
         if (this.orderBy != null) {
             builder.append(" ").append(this.orderBy.toString());
@@ -149,11 +185,17 @@ public class SelectBody extends BaseStatement implements Expression {
         if (this.fetch != null) {
             builder.append(" ").append(this.fetch.toString());
         }
+        if (this.withCheckOption) {
+            builder.append(" WITH CHECK OPTION");
+        }
         if (this.limit != null) {
             builder.append(" ").append(this.limit.toString());
         }
         if (this.forUpdate != null) {
             builder.append(" ").append(this.forUpdate.toString());
+        }
+        if (this.lockInShareMode) {
+            builder.append(" LOCK IN SHARE MODE");
         }
         if (this.orderBy != null || this.fetch != null || this.limit != null || this.forUpdate != null) {
             builder.append(")");
