@@ -56,6 +56,11 @@ main() {
         fi
         docker login --username=${username} ${register}
         ;;
+    save)
+        echo "save docker image to resources/odc-${image_tag}-${cpu_arch}.tar.gz"
+        docker save ${image_name}:${image_tag} |
+            gzip > resources/odc-${image_tag}-${cpu_arch}.tar.gz
+        ;;
     push)
         docker tag ${image_name}:${image_tag} ${image_name}:latest
         docker push ${image_name}:${image_tag}
