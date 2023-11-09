@@ -56,6 +56,22 @@ public class MySQLCreateIndexFactoryTest {
     }
 
     @Test
+    public void generate_createIndexWithUv_succeed() {
+        StatementFactory<CreateIndex> factory = new MySQLCreateIndexFactory(
+                getCreateIdxContext("create index abc@uv1 on tb@uv2 (col, col1)"));
+        CreateIndex actual = factory.generate();
+
+        RelationFactor r1 = new RelationFactor("abc");
+        r1.setUserVariable("@uv1");
+        RelationFactor r2 = new RelationFactor("tb");
+        r2.setUserVariable("@uv2");
+        CreateIndex expect = new CreateIndex(r1, r2, Arrays.asList(
+                new SortColumn(new ColumnReference(null, null, "col")),
+                new SortColumn(new ColumnReference(null, null, "col1"))));
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
     public void generate_createUniqueIndex_succeed() {
         StatementFactory<CreateIndex> factory = new MySQLCreateIndexFactory(
                 getCreateIdxContext("create unique index chz.abc on piaoyue.tb (col, col1)"));

@@ -21,7 +21,6 @@ import java.util.stream.Collectors;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.apache.commons.collections4.CollectionUtils;
 
-import com.oceanbase.tools.sqlparser.statement.BaseStatement;
 import com.oceanbase.tools.sqlparser.statement.Expression;
 
 import lombok.EqualsAndHashCode;
@@ -35,8 +34,8 @@ import lombok.Setter;
  */
 @Setter
 @Getter
-@EqualsAndHashCode(callSuper = false)
-public class CaseWhen extends BaseStatement implements Expression {
+@EqualsAndHashCode(callSuper = true)
+public class CaseWhen extends BaseExpression {
 
     private Expression caseValue;
     private Expression caseDefault;
@@ -52,7 +51,7 @@ public class CaseWhen extends BaseStatement implements Expression {
     }
 
     @Override
-    public String toString() {
+    public String doToString() {
         StringBuilder builder = new StringBuilder();
         builder.append("CASE");
         if (this.caseValue != null) {
@@ -65,8 +64,7 @@ public class CaseWhen extends BaseStatement implements Expression {
         if (this.caseDefault != null) {
             builder.append("\n\tELSE ").append(this.caseDefault);
         }
-        builder.append("\nEND");
-        return builder.toString();
+        return builder.append("\nEND").toString();
     }
 
 }

@@ -34,7 +34,7 @@ import com.oceanbase.odc.core.sql.execute.model.SqlExecTime;
 public class FullLinkTraceUtilTest {
     @Test
     public void test_GetFullLinkTrace() throws Exception {
-        SqlExecTime execDetail = FullLinkTraceUtil.getFullLinkTraceDetail(mockStmt());
+        SqlExecTime execDetail = FullLinkTraceUtil.getFullLinkTraceDetail(mockStmt(), 60);
         Assert.assertNotNull(execDetail.getTraceSpan());
     }
 

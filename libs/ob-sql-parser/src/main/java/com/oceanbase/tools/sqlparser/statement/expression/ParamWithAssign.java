@@ -32,27 +32,27 @@ import lombok.NonNull;
  * @see FunctionParam
  */
 @Getter
-@EqualsAndHashCode(callSuper = false)
+@EqualsAndHashCode(callSuper = true)
 public class ParamWithAssign extends FunctionParam {
 
-    private final String varName;
-    private final Expression varValue;
+    private final String name;
+    private final Expression assignValue;
 
     public ParamWithAssign(@NonNull ParserRuleContext context,
-            @NonNull String varName, @NonNull Expression varValue) {
+            @NonNull String name, @NonNull Expression assignValue) {
         super(context);
-        this.varName = varName;
-        this.varValue = varValue;
+        this.name = name;
+        this.assignValue = assignValue;
     }
 
-    public ParamWithAssign(@NonNull String varName, @NonNull Expression varValue) {
-        this.varName = varName;
-        this.varValue = varValue;
+    public ParamWithAssign(@NonNull String name, @NonNull Expression assignValue) {
+        this.name = name;
+        this.assignValue = assignValue;
     }
 
     @Override
     public String toString() {
-        return this.varName + "=" + this.varValue.toString();
+        return this.name + "=>" + this.assignValue.toString();
     }
 
 }

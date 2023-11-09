@@ -37,7 +37,6 @@ import javax.validation.constraints.NotNull;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.Validate;
-import org.apache.commons.lang3.time.StopWatch;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.ResponseEntity;
@@ -51,7 +50,6 @@ import com.oceanbase.odc.common.util.LogUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.TraceStage;
 import com.oceanbase.odc.common.util.TraceWatch;
-import com.oceanbase.odc.common.util.TraceWatch.EditableTraceStage;
 import com.oceanbase.odc.common.util.VersionUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
@@ -89,6 +87,7 @@ import com.oceanbase.odc.service.db.session.KillSessionResult;
 import com.oceanbase.odc.service.dml.ValueEncodeType;
 import com.oceanbase.odc.service.feature.AllFeatures;
 import com.oceanbase.odc.service.feature.Features;
+import com.oceanbase.odc.service.session.interceptor.SqlCheckInterceptor;
 import com.oceanbase.odc.service.session.interceptor.SqlExecuteInterceptorService;
 import com.oceanbase.odc.service.session.model.BinaryContent;
 import com.oceanbase.odc.service.session.model.QueryTableOrViewDataReq;
@@ -169,7 +168,7 @@ public class ConnectConsoleService {
         asyncExecuteReq.setAddROWID(false);
         asyncExecuteReq.setQueryLimit(queryLimit);
 
-        SqlAsyncExecuteResp resp = execute(sessionId, asyncExecuteReq);
+        SqlAsyncExecuteResp resp = execute(sessionId, asyncExecuteReq, false);
         String requestId = resp.getRequestId();
 
         ConnectionConfig connConfig = (ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(connectionSession);
@@ -185,6 +184,11 @@ public class ConnectConsoleService {
 
     public SqlAsyncExecuteResp execute(@NotNull String sessionId, @NotNull @Valid SqlAsyncExecuteReq request)
             throws Exception {
+        return execute(sessionId, request, true);
+    }
+
+    public SqlAsyncExecuteResp execute(@NotNull String sessionId,
+            @NotNull @Valid SqlAsyncExecuteReq request, boolean needSqlCheck) throws Exception {
         ConnectionSession connectionSession = sessionService.nullSafeGet(sessionId);
 
         if (request.getShowTableColumnInfo() != null) {
@@ -214,8 +218,8 @@ public class ConnectConsoleService {
 
         long maxSqlStatementCount = sessionProperties.getMaxSqlStatementCount();
         if (maxSqlStatementCount > 0) {
-            PreConditions.lessThanOrEqualTo("sqlStatementCount", LimitMetric.SQL_STATEMENT_COUNT,
-                    sqls.size(), maxSqlStatementCount);
+            PreConditions.lessThanOrEqualTo("sqlStatementCount",
+                    LimitMetric.SQL_STATEMENT_COUNT, sqls.size(), maxSqlStatementCount);
         }
 
         List<SqlTuple> sqlTuples;
@@ -226,29 +230,34 @@ public class ConnectConsoleService {
         }
         SqlAsyncExecuteResp response = SqlAsyncExecuteResp.newSqlAsyncExecuteResp(sqlTuples);
         Map<String, Object> context = new HashMap<>();
-        StopWatch stopWatch = StopWatch.createStarted();
-        if (!sqlInterceptService.preHandle(request, response, connectionSession, context)) {
-            return response;
-        }
-        stopWatch.stop();
-        sqlTuples.forEach(sql -> {
-            try (EditableTraceStage preCheck =
-                    sql.getSqlWatch().startEditableStage(SqlExecuteStages.SQL_INTERCEPT_PRE_CHECK)) {
-                preCheck.adapt(stopWatch);
+        context.put(SqlCheckInterceptor.NEED_SQL_CHECK_KEY, needSqlCheck);
+        List<TraceStage> stages = sqlTuples.stream()
+                .map(s -> s.getSqlWatch().start(SqlExecuteStages.SQL_INTERCEPT_PRE_CHECK))
+                .collect(Collectors.toList());
+        try {
+            if (!sqlInterceptService.preHandle(request, response, connectionSession, context)) {
+                return response;
             }
-        });
+        } finally {
+            for (TraceStage stage : stages) {
+                try {
+                    stage.close();
+                } catch (Exception e) {
+                    // eat exception
+                }
+            }
+        }
         Integer queryLimit = checkQueryLimit(request.getQueryLimit());
-
         OdcStatementCallBack statementCallBack =
                 new OdcStatementCallBack(sqlTuples, connectionSession, request.getAutoCommit(), queryLimit);
         statementCallBack.setDbmsoutputMaxRows(sessionProperties.getDbmsOutputMaxRows());
         statementCallBack.setUseFullLinkTrace(sessionProperties.isEnableFullLinkTrace());
+        statementCallBack.setFullLinkTraceTimeout(sessionProperties.getFullLinkTraceTimeoutSeconds());
         statementCallBack.setMaxCachedSize(sessionProperties.getResultSetMaxCachedSize());
         statementCallBack.setMaxCachedLines(sessionProperties.getResultSetMaxCachedLines());
 
-        Future<List<JdbcGeneralResult>> futureResult =
-                connectionSession.getAsyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY)
-                        .execute(statementCallBack);
+        Future<List<JdbcGeneralResult>> futureResult = connectionSession.getAsyncJdbcExecutor(
+                ConnectionSessionConstants.CONSOLE_DS_KEY).execute(statementCallBack);
         String id = ConnectionSessionUtil.setFutureJdbc(connectionSession, futureResult, context);
         response.setRequestId(id);
         return response;
@@ -273,8 +282,7 @@ public class ConnectConsoleService {
             return resultList.stream().map(jdbcGeneralResult -> {
                 SqlExecuteResult result = generateResult(connectionSession, jdbcGeneralResult);
                 Map<String, Object> cxt = context == null ? new HashMap<>() : context;
-                try (TraceStage stage =
-                        result.getTraceWatch().startResumeableStage(SqlExecuteStages.SQL_INTERCEPT_AFTER_CHECK)) {
+                try (TraceStage stage = result.getTraceWatch().start(SqlExecuteStages.SQL_INTERCEPT_AFTER_CHECK)) {
                     sqlInterceptService.afterCompletion(result, connectionSession, cxt);
                 } catch (Exception e) {
                     throw new IllegalStateException(e);

@@ -76,6 +76,7 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
     private static List<ColumnAttributes> columnAttributes = new ArrayList<>();
     private static JdbcTemplate jdbcTemplate = new JdbcTemplate(getOBOracleDataSource());
     private static final String typeName = "emp_type_" + new Random().nextInt(10000);
+    private static final DBSchemaAccessor accessor = new DBSchemaAccessors(getOBOracleDataSource()).createOBOracle();
 
 
     @BeforeClass
@@ -116,7 +117,6 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
 
     @Test
     public void listUsers_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBOracleDataSource()).createOBOracle();
         List<DBObjectIdentity> dbUsers = accessor.listUsers();
         Assert.assertFalse(dbUsers.isEmpty());
         Assert.assertSame(DBObjectType.USER, dbUsers.get(0).getType());
@@ -125,14 +125,12 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
 
     @Test
     public void listDatabases_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBOracleDataSource()).createOBOracle();
         List<DBDatabase> databases = accessor.listDatabases();
         Assert.assertTrue(databases.size() > 0);
     }
 
     @Test
     public void listBasicSchemaColumns_TestAllColumnDataTypes_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBOracleDataSource()).createOBOracle();
         Map<String, List<DBTableColumn>> columns = accessor.listBasicTableColumns(getOBOracleSchema());
         Assert.assertTrue(columns.containsKey("TEST_DATA_TYPE"));
         Assert.assertEquals(verifyDataTypes.size(), columns.get("TEST_DATA_TYPE").size());
@@ -140,7 +138,6 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
 
     @Test
     public void listBasicTableColumns_TestAllColumnDataTypes_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBOracleDataSource()).createOBOracle();
         List<DBTableColumn> columns =
                 accessor.listBasicTableColumns(getOBOracleSchema(), "TEST_DATA_TYPE");
         Assert.assertEquals(columns.size(), verifyDataTypes.size());
@@ -152,7 +149,6 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
 
     @Test
     public void listBasicViewColumns_SchemaViewColumns_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBOracleDataSource()).createOBOracle();
         Map<String, List<DBTableColumn>> columns = accessor.listBasicViewColumns(getOBOracleSchema());
         Assert.assertTrue(columns.containsKey("VIEW_TEST1"));
         Assert.assertTrue(columns.containsKey("VIEW_TEST2"));
@@ -162,7 +158,6 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
 
     @Test
     public void listBasicViewColumns_ViewColumns_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBOracleDataSource()).createOBOracle();
         List<DBTableColumn> columns = accessor.listBasicViewColumns(getOBOracleSchema(), "VIEW_TEST1");
         Assert.assertEquals(2, columns.size());
     }
@@ -170,7 +165,6 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
     @Test
     @Ignore("TODO: fix this test")
     public void listTableColumns_TestAllColumnDataTypes_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBOracleDataSource()).createOBOracle();
         List<DBTableColumn> columns =
                 accessor.listTableColumns(getOBOracleSchema(), "TEST_DATA_TYPE");
         Assert.assertEquals(columns.size(), verifyDataTypes.size());
@@ -184,7 +178,6 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
 
     @Test
     public void listTableColumns_TestColumnAttributesOtherThanDataType_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBOracleDataSource()).createOBOracle();
         List<DBTableColumn> columns =
                 accessor.listTableColumns(getOBOracleSchema(), "TEST_OTHER_THAN_DATA_TYPE");
         Assert.assertEquals(columns.size(), columnAttributes.size());
@@ -199,14 +192,12 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
 
     @Test
     public void listTableColumns_TestGetAllColumnInSchema_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBOracleDataSource()).createOBOracle();
         Map<String, List<DBTableColumn>> table2Columns = accessor.listTableColumns(getOBOracleSchema());
         Assert.assertTrue(table2Columns.size() > 0);
     }
 
     @Test
     public void listTableIndex_TestIndexType_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBOracleDataSource()).createOBOracle();
         List<DBTableIndex> indexList = accessor.listTableIndexes(getOBOracleSchema(), "TEST_INDEX_TYPE");
         Assert.assertEquals(2, indexList.size());
         Assert.assertEquals(DBIndexType.UNIQUE, indexList.get(0).getType());
@@ -217,7 +208,6 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
 
     @Test
     public void listTableIndex_TestIndexRange_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBOracleDataSource()).createOBOracle();
         List<DBTableIndex> indexList = accessor.listTableIndexes(getOBOracleSchema(), "TEST_INDEX_RANGE");
         Assert.assertEquals(2, indexList.size());
         Assert.assertEquals(true, indexList.get(0).getGlobal());
@@ -226,7 +216,6 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
 
     @Test
     public void listTableIndex_TestIndexAvailable_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBOracleDataSource()).createOBOracle();
         List<DBTableIndex> indexList = accessor.listTableIndexes(getOBOracleSchema(), "TEST_INDEX_RANGE");
         Assert.assertEquals(2, indexList.size());
         Assert.assertTrue(indexList.get(0).getAvailable());
@@ -235,7 +224,6 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
 
     @Test
     public void listTableConstraint_TestForeignKey_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBOracleDataSource()).createOBOracle();
         List<DBTableConstraint> constraintListList =
                 accessor.listTableConstraints(getOBOracleSchema(), "TEST_FK_CHILD");
         Assert.assertEquals(1, constraintListList.size());
@@ -247,7 +235,6 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
 
     @Test
     public void listTableConstraint_TestPrimaryKey_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBOracleDataSource()).createOBOracle();
         List<DBTableConstraint> constraintListList =
                 accessor.listTableConstraints(getOBOracleSchema(), "TEST_FK_PARENT");
         Assert.assertEquals(1, constraintListList.size());
@@ -259,7 +246,6 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
 
     @Test
     public void listTableConstraint_TestPrimaryKeyIndex_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBOracleDataSource()).createOBOracle();
         List<DBTableIndex> indexes =
                 accessor.listTableIndexes(getOBOracleSchema(), "TEST_PK_INDEX");
         Assert.assertEquals(1, indexes.size());
@@ -268,7 +254,6 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
 
     @Test
     public void getPartition_Hash_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBOracleDataSource()).createOBOracle();
         DBTablePartition partition =
                 accessor.getPartition(getOBOracleSchema(), "part_hash");
         Assert.assertEquals(5L, partition.getPartitionOption().getPartitionsNum().longValue());
@@ -277,7 +262,6 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
 
     @Test
     public void getTableOptions_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBOracleDataSource()).createOBOracle();
         DBTableOptions options =
                 accessor.getTableOptions(getOBOracleSchema(), "part_hash");
         Assert.assertEquals("this is a comment", options.getComment());
@@ -285,21 +269,18 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
 
     @Test
     public void listSystemViews_databaseNotSYS_empty() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBOracleDataSource()).createOBOracle();
         List<String> viewNames = accessor.showSystemViews("notsys");
         Assert.assertTrue(viewNames.isEmpty());
     }
 
     @Test
     public void listSystemViews_databaseSYS_notEmpty() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBOracleDataSource()).createOBOracle();
         List<String> viewNames = accessor.showSystemViews("SYS");
         Assert.assertTrue(!viewNames.isEmpty());
     }
 
     @Test
     public void showVariables_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBOracleDataSource()).createOBOracle();
         List<DBVariable> variables = accessor.showVariables();
         List<DBVariable> sessionVariables = accessor.showSessionVariables();
         List<DBVariable> globalVariables = accessor.showGlobalVariables();
@@ -310,42 +291,36 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
 
     @Test
     public void showCharset_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBOracleDataSource()).createOBOracle();
         List<String> charset = accessor.showCharset();
         Assert.assertTrue(charset != null && charset.size() > 0);
     }
 
     @Test
     public void showCollation_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBOracleDataSource()).createOBOracle();
         List<String> collation = accessor.showCollation();
         Assert.assertTrue(collation != null && collation.size() > 0);
     }
 
     @Test
     public void showViews_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBOracleDataSource()).createOBOracle();
         List<DBObjectIdentity> views = accessor.listViews(getOBOracleSchema());
         Assert.assertTrue(views != null && views.size() == 2);
     }
 
     @Test
     public void getView_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBOracleDataSource()).createOBOracle();
         DBView view = accessor.getView(getOBOracleSchema(), "VIEW_TEST1");
         Assert.assertTrue(view != null && view.getColumns().size() == 2);
     }
 
     @Test
     public void listFunctions_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBOracleDataSource()).createOBOracle();
         List<DBPLObjectIdentity> functions = accessor.listFunctions(getOBOracleSchema());
         Assert.assertTrue(functions != null && functions.size() == 3);
     }
 
     @Test
     public void listFunctions_invalidFunctionList() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBOracleDataSource()).createOBOracle();
         List<DBPLObjectIdentity> functions = accessor.listFunctions(getOBOracleSchema());
         functions = functions.stream().filter(function -> {
             if (StringUtils.equals(function.getName(), "INVALIDE_FUNC")) {
@@ -362,7 +337,6 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
 
     @Test
     public void getFunction_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBOracleDataSource()).createOBOracle();
         DBFunction function = accessor.getFunction(getOBOracleSchema(), "FUNC_DETAIL_TEST");
         Assert.assertTrue(function != null
                 && function.getParams().size() == 1
@@ -373,14 +347,12 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
 
     @Test
     public void showProcedures_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBOracleDataSource()).createOBOracle();
         List<DBPLObjectIdentity> procedures = accessor.listProcedures(getOBOracleSchema());
         Assert.assertTrue(procedures != null && procedures.size() >= 3);
     }
 
     @Test
     public void showProcedures_invalidProcedureList() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBOracleDataSource()).createOBOracle();
         List<DBPLObjectIdentity> procedures = accessor.listProcedures(getOBOracleSchema());
         procedures = procedures.stream().filter(procedure -> {
             if (StringUtils.equals(procedure.getName(), "INVALID_PROCEDURE_TEST")) {
@@ -397,7 +369,6 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
 
     @Test
     public void getProcedure_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBOracleDataSource()).createOBOracle();
         DBProcedure procedure = accessor.getProcedure(getOBOracleSchema(), "PROCEDURE_DETAIL_TEST");
         Assert.assertTrue(procedure != null
                 && procedure.getParams().size() == 2
@@ -406,14 +377,12 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
 
     @Test
     public void listPackages_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBOracleDataSource()).createOBOracle();
         List<DBPLObjectIdentity> packages = accessor.listPackages(getOBOracleSchema());
         Assert.assertTrue(packages != null && !packages.isEmpty());
     }
 
     @Test
     public void listPackages_invalidPackageList() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBOracleDataSource()).createOBOracle();
         List<DBPLObjectIdentity> packages = accessor.listPackages(getOBOracleSchema());
         boolean flag = false;
         for (DBPLObjectIdentity dbPackage : packages) {
@@ -426,7 +395,6 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
 
     @Test
     public void getPackage_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBOracleDataSource()).createOBOracle();
         DBPackage dbPackage = accessor.getPackage(getOBOracleSchema(), "T_PACKAGE");
         Assert.assertTrue(dbPackage != null
                 && dbPackage.getPackageHead().getVariables().size() == 1
@@ -441,7 +409,6 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
 
     @Test
     public void listriggers_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBOracleDataSource()).createOBOracle();
         List<DBPLObjectIdentity> triggers = accessor.listTriggers(getOBOracleSchema());
         Assert.assertNotEquals(null, triggers);
         boolean flag = false;
@@ -455,7 +422,6 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
 
     @Test
     public void listTriggers_InvalidTriggerList() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBOracleDataSource()).createOBOracle();
         List<DBPLObjectIdentity> triggers = accessor.listTriggers(getOBOracleSchema());
         boolean flag = false;
         for (DBPLObjectIdentity trigger : triggers) {
@@ -468,7 +434,6 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
 
     @Test
     public void getTrigger_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBOracleDataSource()).createOBOracle();
         DBTrigger trigger = accessor.getTrigger(getOBOracleSchema(), "TRIGGER_TEST");
         Assert.assertNotNull(trigger);
         Assert.assertEquals("TRIGGER_TEST", trigger.getTriggerName());
@@ -479,7 +444,6 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
         String createTypeDdl = String.format("CREATE TYPE \"%s\" AS OBJECT (name VARCHAR2(100), ssn NUMBER)", typeName);
         jdbcTemplate.execute(createTypeDdl);
 
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBOracleDataSource()).createOBOracle();
         List<DBPLObjectIdentity> types = accessor.listTypes(getOBOracleSchema());
         Assert.assertNotNull(types);
         Assert.assertEquals(1, types.size());
@@ -493,7 +457,6 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
         String createTypeDdl = String.format("CREATE TYPE \"%s\" AS OBJECT (name VARCHAR2(100), ssn NUMBER)", typeName);
         jdbcTemplate.execute(createTypeDdl);
 
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBOracleDataSource()).createOBOracle();
         DBType type = accessor.getType(getOBOracleSchema(), typeName);
         Assert.assertNotNull(type);
         Assert.assertEquals(typeName, type.getTypeName());
@@ -507,7 +470,6 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
         String createTypeDdl = String.format("CREATE TYPE \"%s\" AS VARRAY(5) OF VARCHAR2(25);", typeName);
         jdbcTemplate.execute(createTypeDdl);
 
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBOracleDataSource()).createOBOracle();
         DBType type = accessor.getType(getOBOracleSchema(), typeName);
         Assert.assertNotNull(type);
         Assert.assertEquals(typeName, type.getTypeName());
@@ -530,7 +492,6 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
         String ddl = String.format("CREATE TYPE \"%s\" AS TABLE OF \"cust_address_typ2\";", typeName);
         jdbcTemplate.execute(ddl);
 
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBOracleDataSource()).createOBOracle();
         DBType type = accessor.getType(getOBOracleSchema(), typeName);
         Assert.assertNotNull(type);
         Assert.assertEquals(typeName, type.getTypeName());
@@ -542,7 +503,6 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
 
     @Test
     public void listSynonyms_testPublicSynonymListForOracle() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBOracleDataSource()).createOBOracle();
         List<DBObjectIdentity> synonyms = accessor.listSynonyms(getOBOracleSchema(), DBSynonymType.PUBLIC);
         Assert.assertNotEquals(0, synonyms.size());
         boolean flag = false;
@@ -556,7 +516,6 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
 
     @Test
     public void listSynonyms_testCommonSynonymListForOracle() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBOracleDataSource()).createOBOracle();
         List<DBObjectIdentity> synonyms = accessor.listSynonyms(getOBOracleSchema(), DBSynonymType.COMMON);
         Assert.assertNotEquals(0, synonyms.size());
         boolean flag = false;
@@ -570,7 +529,6 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
 
     @Test
     public void getSynonym_testPublicSynonymInfoForOracle() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBOracleDataSource()).createOBOracle();
         DBSynonym synonym = accessor.getSynonym(getOBOracleSchema(), "PUBLIC_SYNONYM_TEST", DBSynonymType.PUBLIC);
         Assert.assertNotNull(synonym);
         Assert.assertEquals(DBSynonymType.PUBLIC, synonym.getSynonymType());
@@ -579,7 +537,6 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
 
     @Test
     public void getSynonym_testCommonSynonymInfoForOracle() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBOracleDataSource()).createOBOracle();
         DBSynonym synonym = accessor.getSynonym(getOBOracleSchema(), "COMMON_SYNONYM_TEST", DBSynonymType.COMMON);
         Assert.assertNotNull(synonym);
         Assert.assertEquals(DBSynonymType.COMMON, synonym.getSynonymType());
@@ -588,21 +545,18 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
 
     @Test
     public void getDatabase_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBOracleDataSource()).createOBOracle();
         DBDatabase database = accessor.getDatabase(getOBOracleSchema());
         Assert.assertNotNull(database);
     }
 
     @Test
     public void listSequences_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBOracleDataSource()).createOBOracle();
         List<DBObjectIdentity> sequences = accessor.listSequences(getOBOracleSchema());
         Assert.assertTrue(sequences != null && !sequences.isEmpty());
     }
 
     @Test
     public void getSequence_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBOracleDataSource()).createOBOracle();
         DBSequence sequence = accessor.getSequence(getOBOracleSchema(), "SEQ_TEST");
         Assert.assertTrue(sequence != null && sequence.getName().equalsIgnoreCase("SEQ_TEST"));
         Assert.assertEquals("CREATE SEQUENCE \"SEQ_TEST\" MINVALUE 1 MAXVALUE 10 INCREMENT BY 2 CACHE 5 ORDER CYCLE;",
@@ -611,7 +565,6 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
 
     @Test
     public void listTables_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBOracleDataSource()).createOBOracle();
         List<DBObjectIdentity> tables =
                 accessor.listTables(getOBOracleSchema(), null);
         Assert.assertTrue(tables.size() > 0);
@@ -620,7 +573,6 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
 
     @Test
     public void listTableColumns_test_default_null_Success() {
-        DBSchemaAccessor accessor = new DBSchemaAccessors(getOBOracleDataSource()).createOBOracle();
         List<DBTableColumn> columns =
                 accessor.listTableColumns(getOBOracleSchema(), "TEST_DEFAULT_NULL");
         Assert.assertTrue(columns.size() > 0);

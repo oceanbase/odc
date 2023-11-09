@@ -18,7 +18,7 @@ package com.oceanbase.tools.sqlparser.statement.select;
 import org.antlr.v4.runtime.ParserRuleContext;
 
 import com.oceanbase.tools.sqlparser.statement.BaseStatement;
-import com.oceanbase.tools.sqlparser.statement.Expression;
+import com.oceanbase.tools.sqlparser.statement.expression.BaseExpression;
 import com.oceanbase.tools.sqlparser.statement.select.mysql.Limit;
 import com.oceanbase.tools.sqlparser.statement.select.oracle.Fetch;
 
@@ -37,8 +37,8 @@ import lombok.Setter;
  */
 @Getter
 @Setter
-@EqualsAndHashCode(callSuper = false)
-public class Select extends BaseStatement implements Expression {
+@EqualsAndHashCode(callSuper = true)
+public class Select extends BaseExpression {
 
     private final SelectBody selectBody;
     private Fetch fetch;
@@ -56,7 +56,7 @@ public class Select extends BaseStatement implements Expression {
     }
 
     @Override
-    public String toString() {
+    public String doToString() {
         StringBuilder builder = new StringBuilder(this.selectBody.toString());
         if (this.orderBy != null) {
             builder.append(" ").append(this.orderBy.toString());

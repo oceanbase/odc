@@ -127,19 +127,11 @@ public class OracleSelectBodyFactory extends OBParserBaseVisitor<SelectBody> imp
         }
         if (ctx.order_by() != null) {
             StatementFactory<OrderBy> factory = new OracleOrderByFactory(ctx.order_by());
-            if (select.getRelatedSelect() != null) {
-                select.getRelatedSelect().setOrderBy(factory.generate());
-            } else {
-                select.setOrderBy(factory.generate());
-            }
+            select.getLastSelectBody().setOrderBy(factory.generate());
         }
         if (ctx.fetch_next_clause() != null) {
             StatementFactory<Fetch> factory = new OracleFetchFactory(ctx.fetch_next_clause());
-            if (select.getRelatedSelect() != null) {
-                select.getRelatedSelect().setFetch(factory.generate());
-            } else {
-                select.setFetch(factory.generate());
-            }
+            select.getLastSelectBody().setFetch(factory.generate());
         }
         return select;
     }
@@ -201,11 +193,7 @@ public class OracleSelectBodyFactory extends OBParserBaseVisitor<SelectBody> imp
                 relationType = RelationType.UNION_ALL;
             }
         }
-        SelectBody target = left;
-        while (target.getRelatedSelect() != null) {
-            target = target.getRelatedSelect().getSelect();
-        }
-        target.setRelatedSelect(new RelatedSelectBody(right, relationType));
+        left.getLastSelectBody().setRelatedSelect(new RelatedSelectBody(right, relationType));
         return left;
     }
 

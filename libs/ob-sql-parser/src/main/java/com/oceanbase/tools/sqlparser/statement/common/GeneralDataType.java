@@ -19,6 +19,7 @@ import java.util.Collections;
 import java.util.List;
 
 import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.commons.collections4.CollectionUtils;
 
 import com.oceanbase.tools.sqlparser.statement.BaseStatement;
@@ -43,6 +44,13 @@ public class GeneralDataType extends BaseStatement implements DataType {
     public GeneralDataType(@NonNull ParserRuleContext context,
             @NonNull String name, List<String> args) {
         super(context);
+        this.name = name;
+        this.args = args == null ? Collections.emptyList() : args;
+    }
+
+    public GeneralDataType(@NonNull TerminalNode terminalNode,
+            @NonNull String name, List<String> args) {
+        super(terminalNode);
         this.name = name;
         this.args = args == null ? Collections.emptyList() : args;
     }

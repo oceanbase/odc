@@ -128,4 +128,10 @@ public class SessionProperties {
     @Value("${odc.session.full-link-trace.enabled:true}")
     private boolean enableFullLinkTrace = true;
 
+    /**
+     * Timeout for querying full link trace
+     */
+    @Value("${odc.session.full-link-trace-timeout-seconds:60}")
+    private int fullLinkTraceTimeoutSeconds;
+
 }

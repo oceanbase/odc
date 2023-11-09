@@ -19,7 +19,7 @@ import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.oceanbase.odc.ServiceTestEnv;
-import com.oceanbase.odc.service.dlm.model.DlmLimiterConfig;
+import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
 import com.oceanbase.odc.test.tool.TestRandom;
 
 import cn.hutool.core.lang.Assert;
@@ -29,16 +29,16 @@ import cn.hutool.core.lang.Assert;
  * @Date: 2023/8/3 16:58
  * @Descripition:
  */
-public class DlmLimiterConfigServiceTest extends ServiceTestEnv {
+public class RateLimitConfigurationServiceTest extends ServiceTestEnv {
     @Autowired
     private DlmLimiterService limiterService;
 
     @Test
     public void findByOrderIdOrElseDefaultConfig() {
         Long orderId = 1L;
-        DlmLimiterConfig config = TestRandom.nextObject(DlmLimiterConfig.class);
+        RateLimitConfiguration config = TestRandom.nextObject(RateLimitConfiguration.class);
         limiterService.createAndBindToOrder(orderId, config);
-        DlmLimiterConfig result = limiterService.getByOrderIdOrElseDefaultConfig(orderId);
+        RateLimitConfiguration result = limiterService.getByOrderIdOrElseDefaultConfig(orderId);
         Assert.equals(config, result);
         result = limiterService.getByOrderIdOrElseDefaultConfig(2L);
         Assert.equals(limiterService.getDefaultLimiterConfig(), result);

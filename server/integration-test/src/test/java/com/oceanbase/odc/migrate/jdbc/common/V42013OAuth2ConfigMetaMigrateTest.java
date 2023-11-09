@@ -13,10 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.metadb.migrate;
+package com.oceanbase.odc.migrate.jdbc.common;
 
 import javax.sql.DataSource;
 
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -25,7 +26,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.oceanbase.odc.ServiceTestEnv;
 import com.oceanbase.odc.common.security.PasswordUtils;
-import com.oceanbase.odc.migrate.jdbc.common.V42013OAuth2ConfigMetaMigrate;
 import com.oceanbase.odc.service.integration.IntegrationService;
 import com.oceanbase.odc.service.integration.model.Oauth2Parameter;
 import com.oceanbase.odc.service.integration.model.SSOIntegrationConfig;
@@ -45,6 +45,17 @@ public class V42013OAuth2ConfigMetaMigrateTest extends ServiceTestEnv {
     @Before
     public void init() {
         this.jdbcTemplate = new JdbcTemplate(dataSource);
+        String addOrg = "insert into iam_organization("
+                + "`id`,`unique_identifier`,`secret`,`name`,`creator_id`,`is_builtin`,`description`,`type`) "
+                + "values(2,'a','%s','CompanyA',1,0,'D','TEAM')";
+        String secret = PasswordUtils.random(32);
+        jdbcTemplate.update(String.format(addOrg, secret));
+    }
+
+    @After
+    public void clean() {
+        jdbcTemplate.update("delete from iam_organization where type='TEAM'");
+        jdbcTemplate.update("delete from integration_integration where 1=1");
     }
 
     @Test
@@ -65,8 +76,8 @@ public class V42013OAuth2ConfigMetaMigrateTest extends ServiceTestEnv {
         migrate.migrate(dataSource);
         Assert.assertEquals("local", selectValueByKey("odc.iam.auth.type"));
         SSOIntegrationConfig sSoClientRegistration = integrationService.getSSoIntegrationConfig();
-        Assert.assertTrue(sSoClientRegistration != null);
-        Assert.assertTrue(((Oauth2Parameter) sSoClientRegistration.getSsoParameter()).getSecret().equals("secret"));
+        Assert.assertNotNull(sSoClientRegistration);
+        Assert.assertEquals("secret", ((Oauth2Parameter) sSoClientRegistration.getSsoParameter()).getSecret());
     }
 
     @Test
@@ -77,10 +88,9 @@ public class V42013OAuth2ConfigMetaMigrateTest extends ServiceTestEnv {
         migrate.migrate(dataSource);
         Assert.assertEquals("local", selectValueByKey("odc.iam.auth.type"));
         SSOIntegrationConfig sSoClientRegistration = integrationService.getSSoIntegrationConfig();
-        Assert.assertTrue(sSoClientRegistration != null);
-        Assert.assertTrue(((Oauth2Parameter) sSoClientRegistration.getSsoParameter()).getSecret().equals("secret"));
+        Assert.assertNotNull(sSoClientRegistration);
+        Assert.assertEquals("secret", ((Oauth2Parameter) sSoClientRegistration.getSsoParameter()).getSecret());
     }
-
 
     private String selectValueByKey(String key) {
         String querySql = "select `value` from `config_system_configuration` where `key` = '" + key + "'";
@@ -117,10 +127,6 @@ public class V42013OAuth2ConfigMetaMigrateTest extends ServiceTestEnv {
                 + "UPDATE config_system_configuration SET `value`='https://127.0.0.1:80/cas/oauth2.0/profile' where `key`='spring.security.oauth2.client.provider.buc.user-info-uri';\n"
                 + "UPDATE config_system_configuration SET `value`='header' where `key`='spring.security.oauth2.client.provider.buc.userInfoAuthenticationMethod';";
         jdbcTemplate.update(sql);
-        String addOrg =
-                "insert into iam_organization(`id`,`create_time`,`update_time`,`unique_identifier`,`secret`,`name`,`creator_id`,`is_builtin`,`description`) values(2,'2021-11-12 17:12:18','2021-11-12 17:12:18','a','%s','ODC_DEFAULT2',1,1,'D')";
-        String secret = PasswordUtils.random(32);
-        jdbcTemplate.update(String.format(addOrg, secret));
     }
 
     private void addOauth2Config() {
@@ -131,7 +137,7 @@ public class V42013OAuth2ConfigMetaMigrateTest extends ServiceTestEnv {
                 + "\n"
                 + "UPDATE config_system_configuration SET `value`='emp_id' where `key`='odc.oauth2.buc.userAccountNameField';\n"
                 + "UPDATE config_system_configuration SET `value`='name' where `key`='odc.oauth2.userNickNameField';\n"
-                + "UPDATE config_system_configuration SET `value`='ODC_DEFAULT' where `key`='odc.oauth2.organizationName';\n"
+                + "UPDATE config_system_configuration SET `value`='CompanyA' where `key`='odc.oauth2.organizationName';\n"
                 + "\n"
                 + "UPDATE config_system_configuration SET `value`='cas' where `key`='spring.security.oauth2.client.registration.odc.provider';\n"
                 + "UPDATE config_system_configuration SET `value`='100001' where `key`='spring.security.oauth2.client.registration.odc.client-id';\n"

@@ -50,7 +50,7 @@ public class ConnectionInfoUtil {
                 initConnectionId(stmt, connectionSession);
                 return null;
             });
-            log.info("Init connection id completed.");
+            log.debug("Init connection id completed.");
         } catch (Exception e) {
             log.warn("Failed to get database session ID, session={}", connectionSession, e);
         }
@@ -79,7 +79,7 @@ public class ConnectionInfoUtil {
             throw new IllegalStateException("DB version can not be null");
         }
         connectionSession.setAttribute(ConnectionSessionConstants.OB_VERSION, version);
-        log.info("Init DB version completed.");
+        log.debug("Init DB version completed.");
     }
 
     public static void killQuery(@NonNull String connectionId,

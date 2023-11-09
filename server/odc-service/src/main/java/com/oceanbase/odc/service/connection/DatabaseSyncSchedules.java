@@ -54,7 +54,7 @@ public class DatabaseSyncSchedules {
                 databaseSyncManager.submitSyncDataSourceTask(dataSource);
                 log.debug("submit sync datasource task successfully, connectionId={}", dataSource.getId());
             } catch (Exception ex) {
-                log.debug("submit sync datasource task failed, datasourceId={}", dataSource.getId(), ex);
+                log.warn("Submit sync datasource task failed, datasourceId={}", dataSource.getId(), ex);
             }
         }
     }

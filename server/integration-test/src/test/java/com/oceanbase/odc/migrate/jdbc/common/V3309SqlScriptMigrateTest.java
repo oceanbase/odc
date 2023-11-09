@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.metadb.migrate;
+package com.oceanbase.odc.migrate.jdbc.common;
 
 import javax.sql.DataSource;
 
@@ -26,7 +26,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.jdbc.JdbcTestUtils;
 
 import com.oceanbase.odc.ServiceTestEnv;
-import com.oceanbase.odc.migrate.jdbc.common.V3309SqlScriptMigrate;
 
 public class V3309SqlScriptMigrateTest extends ServiceTestEnv {
     @Autowired
