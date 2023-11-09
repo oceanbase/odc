@@ -108,7 +108,7 @@ public class OscService {
                 OnlineSchemaChangeScheduleTaskResult.class);
 
         PreConditions.validArgumentState(
-            scheduleEntity.get().getJobType() == JobType.ONLINE_SCHEMA_CHANGE_COMPLETE,
+                scheduleEntity.get().getJobType() == JobType.ONLINE_SCHEMA_CHANGE_COMPLETE,
                 ErrorCodes.BadArgument, new Object[] {scheduleEntity.get().getJobType()},
                 "Task type is not " + TaskType.ONLINE_SCHEMA_CHANGE.name());
 
@@ -116,6 +116,10 @@ public class OscService {
         PreConditions.validArgumentState(swapTableType == SwapTableType.MANUAL,
                 ErrorCodes.BadArgument, new Object[] {oscParameters.getSwapTableType()},
                 "Swap table type is not " + SwapTableType.MANUAL.name());
+
+        PreConditions.validArgumentState(result.isManualSwapTableEnabled(),
+                ErrorCodes.BadArgument, new Object[] {result.isManualSwapTableEnabled()},
+                "Manual Swap table type is not enable ");
 
         // open start manual swap table
         if (result.isManualSwapTableEnabled()) {

@@ -93,6 +93,10 @@ public class ScheduleCheckOmsProjectValve extends BaseValve {
                         .getCheckerResult();
 
         OnlineSchemaChangeScheduleTaskResult result = new OnlineSchemaChangeScheduleTaskResult(taskParameter);
+        OnlineSchemaChangeScheduleTaskResult lastResult = JsonUtils.fromJson(scheduleTask.getResultJson(),
+                OnlineSchemaChangeScheduleTaskResult.class);
+        result.setManualSwapTableEnabled(lastResult.isManualSwapTableEnabled());
+        result.setManualSwapTableStarted(lastResult.isManualSwapTableStarted());
         adaptResult(result, projectStepResult);
         scheduleTask.setResultJson(JsonUtils.toJson(result));
         scheduleTask.setProgressPercentage(projectStepResult.getTaskPercentage());
