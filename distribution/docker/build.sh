@@ -37,7 +37,7 @@ main() {
     echo "image_name=${image_name}, image_tag=${image_tag}, cpu_arch=${cpu_arch}"
 
     case $1 in
-    build-odc)
+    build)
         if [ ! -e resources/*.rpm ]; then
             echo "There is no rpm packages in \"resources\""
             echo "run \"../../script/build_rpm.sh\" to create rpm and copy to resources/"
@@ -67,9 +67,10 @@ main() {
         docker push ${image_name}:latest
         ;;
     *)
-        echo "Usage: build.sh build-odc [ <IMAGE_TAG> ]"
+        echo "Usage: build.sh build <IMAGE_TAG:odc_version>"
         echo "       build.sh login <USERNAME>"
-        echo "       build.sh push [ <IMAGE_TAG> ]"
+        echo "       build.sh push <IMAGE_TAG:odc_version>"
+        echo "       build.sh save <IMAGE_TAG:odc_version>"
         ;;
     esac
 }
