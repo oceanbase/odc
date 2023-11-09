@@ -4205,6 +4205,7 @@ function_name
     | unreserved_keyword_normal
     | oracle_pl_non_reserved_words
     | PRIOR
+    | RANDOM
     ;
 
 column_label
