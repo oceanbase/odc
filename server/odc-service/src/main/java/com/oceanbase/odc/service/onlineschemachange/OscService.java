@@ -122,9 +122,7 @@ public class OscService {
                 "Manual Swap table type is not enable ");
 
         // open start manual swap table
-        if (result.isManualSwapTableEnabled()) {
-            result.setManualSwapTableStarted(true);
-        }
+        result.setManualSwapTableStarted(true);
         scheduleTaskRepository.updateTaskResult(scheduleTaskId, JsonUtils.toJson(result));
         OscSwapTableVO oscSwapTable = new OscSwapTableVO();
         oscSwapTable.setScheduleTaskId(scheduleTaskId);
