@@ -359,7 +359,12 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
             log.warn("Error executing SQL statement, sql={}", sqlTuple.getExecutedSql(), exception);
         }
         JdbcGeneralResult failedResult = JdbcGeneralResult.failedResult(sqlTuple, exception);
-        failedResult.setTraceId(getTraceIdAndAndSetStage(statement, sqlTuple.getSqlWatch()));
+        SqlExecTime execDetails = getTraceIdAndAndSetStage(statement, sqlTuple.getSqlWatch());
+        if (execDetails != null) {
+            failedResult.setTraceId(execDetails.getTraceId());
+            failedResult.setWithFullLinkTrace(execDetails.isWithFullLinkTrace());
+            failedResult.setTraceEmptyReason(execDetails.getTraceEmptyReason());
+        }
         return Collections.singletonList(failedResult);
     }
 
