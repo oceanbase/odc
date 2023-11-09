@@ -84,6 +84,7 @@ public class OscService {
         return oscDatabase;
     }
 
+    @SkipAuthorize("internal authenticated")
     public OscSwapTableVO swapTable(@PathVariable Long scheduleTaskId) {
 
         Optional<ScheduleTaskEntity> scheduleTaskOptional = scheduleTaskRepository.findById(scheduleTaskId);
