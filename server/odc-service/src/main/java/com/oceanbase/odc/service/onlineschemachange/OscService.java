@@ -82,6 +82,7 @@ public class OscService {
         oscDatabase.setLockDatabaseUserRequired(getLockUserIsRequired(databaseEntity.getConnectionId()));
         return oscDatabase;
     }
+
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("internal authenticated")
     public OscSwapTableVO swapTable(@PathVariable Long scheduleTaskId) {
