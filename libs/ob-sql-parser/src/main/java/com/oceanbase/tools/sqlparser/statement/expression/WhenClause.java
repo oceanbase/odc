@@ -17,7 +17,6 @@ package com.oceanbase.tools.sqlparser.statement.expression;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 
-import com.oceanbase.tools.sqlparser.statement.BaseStatement;
 import com.oceanbase.tools.sqlparser.statement.Expression;
 
 import lombok.EqualsAndHashCode;
@@ -29,8 +28,8 @@ import lombok.NonNull;
  * @date 2023/6/26 14:49
  */
 @Getter
-@EqualsAndHashCode(callSuper = false)
-public class WhenClause extends BaseStatement implements Expression {
+@EqualsAndHashCode(callSuper = true)
+public class WhenClause extends BaseExpression {
 
     private final Expression when;
     private final Expression then;
@@ -47,7 +46,7 @@ public class WhenClause extends BaseStatement implements Expression {
     }
 
     @Override
-    public String toString() {
+    public String doToString() {
         return "WHEN " + this.when + " THEN " + this.then;
     }
 

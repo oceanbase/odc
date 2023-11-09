@@ -13,33 +13,43 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.metadb.migrate;
+package com.oceanbase.odc.migrate.jdbc.common;
 
 import javax.sql.DataSource;
 
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.jdbc.JdbcTestUtils;
 
 import com.oceanbase.odc.ServiceTestEnv;
-import com.oceanbase.odc.migrate.jdbc.common.R42017RuleMetadataMigrate;
 
-public class V42017InitRegulationRuleMetadataTest extends ServiceTestEnv {
+public class V2412UserPasswordMigrateTest extends ServiceTestEnv {
+
     @Autowired
     private DataSource dataSource;
-
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
+    @Before
+    public void setUp() throws Exception {
+        JdbcTestUtils.deleteFromTables(jdbcTemplate, "odc_user_info");
+    }
+
     @Test
-    public void testMigrate() {
-        R42017RuleMetadataMigrate migrate = new R42017RuleMetadataMigrate();
+    public void migrate() {
+        // prepare
+        jdbcTemplate.update("INSERT INTO `odc_user_info` (`id`, `name`, `email`, `password`, `cipher`) "
+                + "VALUES (1, 'test1', 'test1', '123456', 'RAW')");
+
+        // execute
+        V2412UserPasswordMigrate migrate = new V2412UserPasswordMigrate();
         migrate.migrate(dataSource);
-        Assert.assertNotEquals(0, JdbcTestUtils.countRowsInTable(jdbcTemplate, "regulation_rule_metadata_label"));;
-        Assert.assertNotEquals(0,
-                JdbcTestUtils.countRowsInTable(jdbcTemplate, "regulation_rule_metadata_property_metadata"));;
-        Assert.assertNotEquals(0, JdbcTestUtils.countRowsInTable(jdbcTemplate, "regulation_rule_metadata"));;
+
+        // verify
+        int count = JdbcTestUtils.countRowsInTableWhere(jdbcTemplate, "odc_user_info", "`password` <> '123456'");
+        Assert.assertEquals(1, count);
     }
 }

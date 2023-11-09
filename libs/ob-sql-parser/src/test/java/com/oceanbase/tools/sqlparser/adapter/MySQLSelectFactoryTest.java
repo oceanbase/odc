@@ -19,6 +19,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
 import org.antlr.v4.runtime.BailErrorStrategy;
 import org.antlr.v4.runtime.CharStreams;
@@ -169,8 +170,8 @@ public class MySQLSelectFactoryTest {
 
         RelatedSelectBody related = new RelatedSelectBody(second, RelationType.UNION);
         s = new SortKey(new ColumnReference(null, null, "col1"), SortDirection.DESC);
-        related.setOrderBy(new OrderBy(Collections.singletonList(s)));
-        related.setLimit(new Limit(new ConstExpression("5")));
+        second.setOrderBy(new OrderBy(Collections.singletonList(s)));
+        second.setLimit(new Limit(new ConstExpression("5")));
         selectBody.setRelatedSelect(related);
         second.setRelatedSelect(new RelatedSelectBody(getDefaultSelectSimple(), RelationType.UNION_UNIQUE));
         Select expect = new Select(selectBody);
@@ -401,11 +402,11 @@ public class MySQLSelectFactoryTest {
         SortKey s1 = new SortKey(new ColumnReference(null, null, "col"), SortDirection.DESC, null);
         SortKey s2 = new SortKey(new ColumnReference(null, null, "col1"), SortDirection.ASC, null);
         OrderBy orderBy = new OrderBy(false, Arrays.asList(s1, s2));
-        selectBody.setOrderBy(orderBy);
+        other.setOrderBy(orderBy);
         Limit limit = new Limit(new ConstExpression("12"));
         limit.setOffset(new ConstExpression("67"));
-        selectBody.setLimit(limit);
-        selectBody.setForUpdate(new ForUpdate(new ArrayList<>(), WaitOption.WAIT, BigDecimal.valueOf(12)));
+        other.setLimit(limit);
+        other.setForUpdate(new ForUpdate(new ArrayList<>(), WaitOption.WAIT, BigDecimal.valueOf(12)));
         body.setRelatedSelect(selectBody);
 
         Select expect = new Select(body);
@@ -414,7 +415,7 @@ public class MySQLSelectFactoryTest {
 
     @Test
     public void generate_onlyHaving_generateSelectSucceed() {
-        String sql = "select all * from dual having tab.col3=123";
+        String sql = "select all * from dual having tab.col3=123 lock in share mode";
         Select_stmtContext context = getSelectContext(sql);
         StatementFactory<Select> factory = new MySQLSelectFactory(context);
         Select actual = factory.generate();
@@ -423,10 +424,66 @@ public class MySQLSelectFactoryTest {
         NameReference from = new NameReference(null, "dual", null);
         SelectBody body = new SelectBody(Collections.singletonList(p), Collections.singletonList(from));
         body.setQueryOptions("all");
+        body.setLockInShareMode(true);
         Expression e3 = new ColumnReference(null, "tab", "col3");
         Expression e4 = new ConstExpression("123");
         CompoundExpression having = new CompoundExpression(e3, e4, Operator.EQ);
         body.setHaving(having);
+        Select expect = new Select(body);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_valuesStatement_generateSelectSucceed() {
+        String sql = "values row(1, '2'), row(2, '3')";
+        Select_stmtContext context = getSelectContext(sql);
+        StatementFactory<Select> factory = new MySQLSelectFactory(context);
+        Select actual = factory.generate();
+
+        List<List<Expression>> values = new ArrayList<>();
+        values.add(Arrays.asList(new ConstExpression("1"), new ConstExpression("'2'")));
+        values.add(Arrays.asList(new ConstExpression("2"), new ConstExpression("'3'")));
+        SelectBody body = new SelectBody(values);
+        Select expect = new Select(body);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_valuesStatementOrderByLimit_generateSelectSucceed() {
+        String sql = "values row(1, '2'), row(2, '3') order by 1 desc limit 3";
+        Select_stmtContext context = getSelectContext(sql);
+        StatementFactory<Select> factory = new MySQLSelectFactory(context);
+        Select actual = factory.generate();
+
+        List<List<Expression>> values = new ArrayList<>();
+        values.add(Arrays.asList(new ConstExpression("1"), new ConstExpression("'2'")));
+        values.add(Arrays.asList(new ConstExpression("2"), new ConstExpression("'3'")));
+        SelectBody body = new SelectBody(values);
+        SortKey s1 = new SortKey(new ConstExpression("1"), SortDirection.DESC, null);
+        OrderBy orderBy = new OrderBy(false, Collections.singletonList(s1));
+        body.setOrderBy(orderBy);
+        Limit limit = new Limit(new ConstExpression("3"));
+        body.setLimit(limit);
+        Select expect = new Select(body);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_valuesStatementUnion_generateSelectSucceed() {
+        String sql = "values row(1, '2'), row(2, '3') union values row(1, '2')";
+        Select_stmtContext context = getSelectContext(sql);
+        StatementFactory<Select> factory = new MySQLSelectFactory(context);
+        Select actual = factory.generate();
+
+        List<List<Expression>> values = new ArrayList<>();
+        values.add(Arrays.asList(new ConstExpression("1"), new ConstExpression("'2'")));
+        values.add(Arrays.asList(new ConstExpression("2"), new ConstExpression("'3'")));
+        SelectBody body = new SelectBody(values);
+
+        values = new ArrayList<>();
+        values.add(Arrays.asList(new ConstExpression("1"), new ConstExpression("'2'")));
+        SelectBody second = new SelectBody(values);
+        body.setRelatedSelect(new RelatedSelectBody(second, RelationType.UNION));
         Select expect = new Select(body);
         Assert.assertEquals(expect, actual);
     }
@@ -465,11 +522,11 @@ public class MySQLSelectFactoryTest {
         SortKey s1 = new SortKey(new ColumnReference(null, null, "col"), SortDirection.DESC, null);
         SortKey s2 = new SortKey(new ColumnReference(null, null, "col1"), SortDirection.ASC, null);
         OrderBy orderBy = new OrderBy(false, Arrays.asList(s1, s2));
-        selectBody.setOrderBy(orderBy);
+        other.setOrderBy(orderBy);
         Limit limit = new Limit(new ConstExpression("34"));
         limit.setOffset(new ConstExpression("67"));
-        selectBody.setLimit(limit);
-        selectBody.setForUpdate(new ForUpdate(new ArrayList<>(), WaitOption.WAIT, BigDecimal.valueOf(12)));
+        other.setLimit(limit);
+        other.setForUpdate(new ForUpdate(new ArrayList<>(), WaitOption.WAIT, BigDecimal.valueOf(12)));
         body.setRelatedSelect(selectBody);
 
         Select expect = new Select(body);
@@ -527,8 +584,8 @@ public class MySQLSelectFactoryTest {
         SortKey s1 = new SortKey(new ColumnReference(null, null, "col"), SortDirection.DESC, null);
         SortKey s2 = new SortKey(new ColumnReference(null, null, "col1"), SortDirection.ASC, null);
         OrderBy orderBy = new OrderBy(false, Arrays.asList(s1, s2));
-        selectBody.setOrderBy(orderBy);
-        selectBody.setForUpdate(new ForUpdate(new ArrayList<>(), WaitOption.WAIT, BigDecimal.valueOf(12)));
+        other.setOrderBy(orderBy);
+        other.setForUpdate(new ForUpdate(new ArrayList<>(), WaitOption.WAIT, BigDecimal.valueOf(12)));
         body.setRelatedSelect(selectBody);
 
         Select expect = new Select(body);
@@ -586,8 +643,8 @@ public class MySQLSelectFactoryTest {
         SortKey s1 = new SortKey(new ColumnReference(null, null, "col"), SortDirection.DESC, null);
         SortKey s2 = new SortKey(new ColumnReference(null, null, "col1"), SortDirection.ASC, null);
         OrderBy orderBy = new OrderBy(false, Arrays.asList(s1, s2));
-        selectBody.setOrderBy(orderBy);
-        selectBody.setForUpdate(new ForUpdate(new ArrayList<>(), WaitOption.WAIT, BigDecimal.valueOf(12)));
+        other.setOrderBy(orderBy);
+        other.setForUpdate(new ForUpdate(new ArrayList<>(), WaitOption.WAIT, BigDecimal.valueOf(12)));
         body.setRelatedSelect(selectBody);
 
         Select expect = new Select(body);

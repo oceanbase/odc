@@ -13,22 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.dlm.model;
+package com.oceanbase.odc.metadb.dlm;
 
-import lombok.Data;
+import java.util.Optional;
+
+import com.oceanbase.odc.config.jpa.OdcJpaRepository;
 
 /**
  * @Author：tinker
- * @Date: 2023/8/3 14:07
+ * @Date: 2023/8/10 14:48
  * @Descripition:
  */
+public interface TaskGeneratorRepository extends OdcJpaRepository<TaskGeneratorEntity, Long> {
 
-@Data
-public class DlmLimiterConfig {
+    Optional<TaskGeneratorEntity> findByJobId(String jobId);
 
-    private Integer batchSize;
-
-    private Integer rowLimit;
-
-    private Long dataSizeLimit;
+    Optional<TaskGeneratorEntity> findByGeneratorId(String generatorId);
 }

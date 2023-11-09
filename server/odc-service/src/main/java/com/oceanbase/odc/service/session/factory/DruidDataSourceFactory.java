@@ -15,16 +15,24 @@
  */
 package com.oceanbase.odc.service.session.factory;
 
-import java.util.Collections;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.Map;
 
 import javax.sql.DataSource;
 
 import com.alibaba.druid.pool.DruidDataSource;
 import com.oceanbase.odc.core.datasource.CloneableDataSourceFactory;
+import com.oceanbase.odc.core.datasource.ConnectionInitializer;
 import com.oceanbase.odc.core.datasource.DataSourceFactory;
 import com.oceanbase.odc.core.shared.constant.ConnectionAccountType;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.util.ConnectionMapper;
+import com.oceanbase.odc.service.connection.util.DefaultJdbcUrlParser;
+import com.oceanbase.odc.service.connection.util.JdbcUrlParser;
+import com.oceanbase.odc.service.session.initializer.SessionCreatedInitializer;
+
+import lombok.NonNull;
 
 /**
  * {@link DruidDataSourceFactory} used to init {@link DruidDataSource}
@@ -36,13 +44,8 @@ import com.oceanbase.odc.service.connection.util.ConnectionMapper;
  * @see OBConsoleDataSourceFactory
  */
 public class DruidDataSourceFactory extends OBConsoleDataSourceFactory {
-    private long queryTimeOut;
 
-    public DruidDataSourceFactory(ConnectionConfig connectionConfig, ConnectionAccountType accountType,
-            long queryTimeout) {
-        super(connectionConfig, accountType, null);
-        this.queryTimeOut = queryTimeout;
-    }
+    private static final int DEFAULT_TIMEOUT_MILLIS = 60000;
 
     public DruidDataSourceFactory(ConnectionConfig connectionConfig, ConnectionAccountType accountType) {
         super(connectionConfig, accountType, null);
@@ -53,13 +56,12 @@ public class DruidDataSourceFactory extends OBConsoleDataSourceFactory {
         String jdbcUrl = getJdbcUrl();
         String username = getUsername();
         String password = getPassword();
-        DruidDataSource dataSource = new DruidDataSource();
+        DruidDataSource dataSource = new InnerDataSource(new SessionCreatedInitializer(connectionConfig));
         dataSource.setUrl(jdbcUrl);
         dataSource.setUsername(username);
         dataSource.setPassword(password);
         dataSource.setDriverClassName(connectionExtensionPoint.getDriverClassName());
         init(dataSource);
-        dataSource.setSocketTimeout((int) queryTimeOut);
         return dataSource;
     }
 
@@ -71,17 +73,73 @@ public class DruidDataSourceFactory extends OBConsoleDataSourceFactory {
         dataSource.setDefaultAutoCommit(true);
         dataSource.setMaxActive(5);
         dataSource.setInitialSize(2);
-        if (queryTimeOut > 0 && getConnectType().getDialectType().isOceanbase()) {
-            dataSource.setConnectionInitSqls(Collections.singletonList("SET OB_QUERY_TIMEOUT=" + queryTimeOut));
-        }
         // wait for get available connection from connection pool
         dataSource.setMaxWait(10_000L);
+        /**
+         * {@link DruidDataSource#init()} will set these two properties to
+         * {@link com.alibaba.druid.pool.DruidAbstractDataSource#DEFAULT_TIME_SOCKET_TIMEOUT_MILLIS} if we
+         * don't set or set these two properties to zero. Further more, DruidDataSource will ignore these
+         * two properties even we define them in jdbc url.
+         *
+         * so that we should give these two properties a big default value if user don't give a specific
+         * value.
+         */
+        dataSource.setSocketTimeout(DEFAULT_TIMEOUT_MILLIS);
+        dataSource.setConnectTimeout(DEFAULT_TIMEOUT_MILLIS);
+        try {
+            setConnectAndSocketTimeoutFromJdbcUrl(dataSource);
+        } catch (Exception e) {
+            // eat exception
+        }
     }
 
     @Override
     public CloneableDataSourceFactory deepCopy() {
         ConnectionMapper mapper = ConnectionMapper.INSTANCE;
-        return new DruidDataSourceFactory(mapper.clone(connectionConfig), this.accountType, queryTimeOut);
+        return new DruidDataSourceFactory(mapper.clone(connectionConfig), this.accountType);
+    }
+
+    private void setConnectAndSocketTimeoutFromJdbcUrl(DruidDataSource dataSource) throws SQLException {
+        JdbcUrlParser jdbcUrlParser = new DefaultJdbcUrlParser(getJdbcUrl());
+        Object socketTimeout = jdbcUrlParser.getParameters().get("socketTimeout");
+        Object connectTimeout = jdbcUrlParser.getParameters().get("connectTimeout");
+        if (socketTimeout != null) {
+            try {
+                dataSource.setSocketTimeout(Integer.parseInt(socketTimeout.toString()));
+            } catch (Exception e) {
+                // eat exception
+            }
+        }
+        if (connectTimeout != null) {
+            try {
+                dataSource.setConnectTimeout(Integer.parseInt(connectTimeout.toString()));
+            } catch (Exception e) {
+                // eat exception
+            }
+        }
+    }
+
+    static class InnerDataSource extends DruidDataSource {
+
+        private final ConnectionInitializer initializer;
+
+        private InnerDataSource(@NonNull ConnectionInitializer initializer) {
+            this.initializer = initializer;
+        }
+
+        @Override
+        public void initPhysicalConnection(Connection conn, Map<String, Object> variables,
+                Map<String, Object> globalVariables) throws SQLException {
+            try {
+                super.initPhysicalConnection(conn, variables, globalVariables);
+            } finally {
+                try {
+                    this.initializer.init(conn);
+                } catch (Exception e) {
+                    // eat exception
+                }
+            }
+        }
     }
 
 }

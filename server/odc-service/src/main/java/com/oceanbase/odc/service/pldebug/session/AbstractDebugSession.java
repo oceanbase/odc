@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.pldebug.session;
 
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
 import java.util.function.Supplier;
@@ -40,6 +41,7 @@ import com.oceanbase.odc.core.sql.util.OdcDBSessionRowMapper;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.pldebug.util.CallProcedureCallBack;
 import com.oceanbase.odc.service.pldebug.util.OBOracleCallFunctionCallBack;
+import com.oceanbase.odc.service.session.initializer.SessionCreatedInitializer;
 import com.oceanbase.tools.dbbrowser.model.DBFunction;
 import com.oceanbase.tools.dbbrowser.model.DBPLParam;
 import com.oceanbase.tools.dbbrowser.model.DBProcedure;
@@ -47,6 +49,7 @@ import com.oceanbase.tools.dbbrowser.util.OracleSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
 
 import lombok.Data;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -62,7 +65,7 @@ public abstract class AbstractDebugSession implements AutoCloseable {
     protected String debugId;
     protected ConnectionSession connectionSession;
     protected Connection connection;
-    protected SingleConnectionDataSource newDataSource;
+    protected DebugDataSource newDataSource;
     protected JdbcOperations jdbcOperations;
     protected DialectType dialectType;
     private static final String OB_JDBC_PROTOCOL = "oceanbase";
@@ -96,7 +99,7 @@ public abstract class AbstractDebugSession implements AutoCloseable {
     }
 
     protected void acquireNewConnection(ConnectionSession connectionSession,
-            Supplier<SingleConnectionDataSource> dataSourceSupplier) throws Exception {
+            Supplier<DebugDataSource> dataSourceSupplier) throws Exception {
         this.connectionSession = connectionSession;
         ConnectionConfig connectionConfig =
                 (ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(connectionSession);
@@ -106,13 +109,12 @@ public abstract class AbstractDebugSession implements AutoCloseable {
         this.connection = newDataSource.getConnection();
     }
 
-
-    protected SingleConnectionDataSource acquireDataSource(ConnectionSession connectionSession) {
-        SingleConnectionDataSource dataSource = new SingleConnectionDataSource();
+    protected DebugDataSource acquireDataSource(ConnectionSession connectionSession) {
         ConnectionConfig config = (ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(connectionSession);
+        DebugDataSource dataSource = new DebugDataSource(config);
         String schema = ConnectionSessionUtil.getCurrentSchema(connectionSession);
-        String host = null;
-        Integer port = null;
+        String host;
+        Integer port;
         if (StringUtils.isBlank(config.getClusterName())) {
             host = config.getHost();
             port = config.getPort();
@@ -185,4 +187,21 @@ public abstract class AbstractDebugSession implements AutoCloseable {
                     ExceptionUtils.getRootCauseMessage(e));
         }
     }
+
+    static class DebugDataSource extends SingleConnectionDataSource {
+
+        private final SessionCreatedInitializer initializer;
+
+        public DebugDataSource(@NonNull ConnectionConfig connectionConfig) {
+            this.initializer = new SessionCreatedInitializer(connectionConfig, true);
+        }
+
+        @Override
+        protected void prepareConnection(Connection con) throws SQLException {
+            super.prepareConnection(con);
+            this.initializer.init(con);
+        }
+
+    }
+
 }

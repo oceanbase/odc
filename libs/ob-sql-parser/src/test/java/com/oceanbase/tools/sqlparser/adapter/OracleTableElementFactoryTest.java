@@ -444,6 +444,27 @@ public class OracleTableElementFactoryTest {
     }
 
     @Test
+    public void generate_generatedColumnCheck_generateSuccees() {
+        StatementFactory<TableElement> factory = new OracleTableElementFactory(
+                getTableElementContext("tb.col varchar2(64) generated always as (tb.col+1) virtual check(1)"));
+        ColumnDefinition actual = (ColumnDefinition) factory.generate();
+
+        DataType dataType = new CharacterType("varchar2", new BigDecimal("64"));
+        ColumnDefinition expect = new ColumnDefinition(new ColumnReference(null, "tb", "col"), dataType);
+        RelationReference r1 = new RelationReference("tb", new RelationReference("col", null));
+        Expression e = new CompoundExpression(r1, new ConstExpression("1"), Operator.ADD);
+        GenerateOption option = new GenerateOption(e);
+        option.setType(Type.VIRTUAL);
+        option.setGenerateOption("always");
+        expect.setGenerateOption(option);
+        ColumnAttributes attributes = new ColumnAttributes();
+        attributes.setConstraints(
+                Collections.singletonList(new InLineCheckConstraint(null, null, new ConstExpression("1"))));
+        expect.setColumnAttributes(attributes);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
     public void generate_generatedColumnDefAsExprConstraint_generateSuccees() {
         StatementFactory<TableElement> factory = new OracleTableElementFactory(
                 getTableElementContext(

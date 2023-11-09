@@ -17,28 +17,45 @@ package com.oceanbase.tools.sqlparser.adapter.mysql;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.RuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.commons.collections4.CollectionUtils;
 
 import com.oceanbase.tools.sqlparser.adapter.StatementFactory;
+import com.oceanbase.tools.sqlparser.obmysql.OBLexer;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Bit_exprContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Bool_priContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Case_exprContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Complex_func_exprContext;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Complex_string_literalContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Cur_date_funcContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Cur_time_funcContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Cur_timestamp_funcContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Date_paramsContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.ExprContext;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Expr_constContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Expr_listContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.In_exprContext;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Json_on_responseContext;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Json_table_column_defContext;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Json_table_exists_column_defContext;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Json_table_exprContext;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Json_table_nested_column_defContext;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Json_table_ordinality_column_defContext;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Json_table_value_column_defContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Json_value_exprContext;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.LiteralContext;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Mock_jt_on_error_on_emptyContext;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.On_emptyContext;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.On_errorContext;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Opt_value_on_empty_or_error_or_mismatchContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Parameterized_trimContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.PredicateContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Select_no_parensContext;
@@ -55,6 +72,7 @@ import com.oceanbase.tools.sqlparser.obmysql.OBParserBaseVisitor;
 import com.oceanbase.tools.sqlparser.statement.Expression;
 import com.oceanbase.tools.sqlparser.statement.Operator;
 import com.oceanbase.tools.sqlparser.statement.Statement;
+import com.oceanbase.tools.sqlparser.statement.common.BraceBlock;
 import com.oceanbase.tools.sqlparser.statement.common.CharacterType;
 import com.oceanbase.tools.sqlparser.statement.common.GeneralDataType;
 import com.oceanbase.tools.sqlparser.statement.common.WindowSpec;
@@ -71,11 +89,10 @@ import com.oceanbase.tools.sqlparser.statement.expression.FunctionCall;
 import com.oceanbase.tools.sqlparser.statement.expression.FunctionParam;
 import com.oceanbase.tools.sqlparser.statement.expression.GroupConcat;
 import com.oceanbase.tools.sqlparser.statement.expression.IntervalExpression;
+import com.oceanbase.tools.sqlparser.statement.expression.JsonOnOption;
 import com.oceanbase.tools.sqlparser.statement.expression.NullExpression;
 import com.oceanbase.tools.sqlparser.statement.expression.TextSearchMode;
 import com.oceanbase.tools.sqlparser.statement.expression.WhenClause;
-import com.oceanbase.tools.sqlparser.statement.expression.WindowFunction;
-import com.oceanbase.tools.sqlparser.statement.select.OrderBy;
 
 import lombok.NonNull;
 
@@ -89,25 +106,35 @@ import lombok.NonNull;
  */
 public class MySQLExpressionFactory extends OBParserBaseVisitor<Expression> implements StatementFactory<Expression> {
 
-    private final ExprContext exprContext;
-    private final Bit_exprContext bitExprContext;
+    private final ParserRuleContext parserRuleContext;
 
     public MySQLExpressionFactory(@NonNull ExprContext exprContext) {
-        this.bitExprContext = null;
-        this.exprContext = exprContext;
+        this.parserRuleContext = exprContext;
+    }
+
+    public MySQLExpressionFactory() {
+        this.parserRuleContext = null;
     }
 
     public MySQLExpressionFactory(@NonNull Bit_exprContext bitExprContext) {
-        this.exprContext = null;
-        this.bitExprContext = bitExprContext;
+        this.parserRuleContext = bitExprContext;
+    }
+
+    public MySQLExpressionFactory(@NonNull LiteralContext literalContext) {
+        this.parserRuleContext = literalContext;
     }
 
     @Override
     public Expression generate() {
-        if (this.exprContext != null) {
-            return visit(this.exprContext);
+        return visit(this.parserRuleContext);
+    }
+
+    @Override
+    public Expression visit(ParseTree tree) {
+        if (tree == null) {
+            return null;
         }
-        return visit(this.bitExprContext);
+        return super.visit(tree);
     }
 
     @Override
@@ -281,6 +308,22 @@ public class MySQLExpressionFactory extends OBParserBaseVisitor<Expression> impl
     }
 
     @Override
+    public Expression visitLiteral(LiteralContext ctx) {
+        if (ctx.complex_string_literal() != null) {
+            return visit(ctx.complex_string_literal());
+        }
+        return new ConstExpression(ctx);
+    }
+
+    @Override
+    public Expression visitExpr_const(Expr_constContext ctx) {
+        if (ctx.literal() != null) {
+            return visit(ctx.literal());
+        }
+        return new ConstExpression(ctx);
+    }
+
+    @Override
     public Expression visitSimple_expr(Simple_exprContext ctx) {
         List<Simple_exprContext> simpleExprContexts = ctx.simple_expr();
         if (CollectionUtils.isNotEmpty(simpleExprContexts)) {
@@ -310,7 +353,7 @@ public class MySQLExpressionFactory extends OBParserBaseVisitor<Expression> impl
             StatementFactory<ColumnReference> factory = new MySQLColumnRefFactory(ctx.column_ref());
             return factory.generate();
         } else if (ctx.expr_const() != null) {
-            return new ConstExpression(ctx.expr_const());
+            return visit(ctx.expr_const());
         } else if (ctx.expr_list() != null) {
             if (ctx.ROW() == null) {
                 return visit(ctx.expr_list());
@@ -343,14 +386,28 @@ public class MySQLExpressionFactory extends OBParserBaseVisitor<Expression> impl
         } else if (ctx.window_function() != null) {
             return visit(ctx.window_function());
         } else if (ctx.USER_VARIABLE() != null) {
-            return new ConstExpression(ctx.USER_VARIABLE());
+            if (CollectionUtils.isEmpty(ctx.relation_name())) {
+                return new ConstExpression(ctx.USER_VARIABLE());
+            }
+            List<String> relations = ctx.relation_name().stream()
+                    .map(RuleContext::getText).collect(Collectors.toList());
+            String column = relations.get(relations.size() - 1);
+            String relation = relations.get(relations.size() - 2);
+            String schema = null;
+            if (relations.size() >= 3) {
+                schema = relations.get(relations.size() - 3);
+            }
+            ColumnReference ref = new ColumnReference(ctx, schema, relation, column);
+            ref.setUserVariable(ctx.USER_VARIABLE().getText());
+            return ref;
         } else if (ctx.column_definition_ref() != null) {
             StatementFactory<ColumnReference> factory = new MySQLColumnRefFactory(ctx.column_definition_ref());
             Operator operator = ctx.JSON_EXTRACT() == null ? Operator.JSON_EXTRACT_UNQUOTED : Operator.JSON_EXTRACT;
-            return new CompoundExpression(ctx, factory.generate(),
-                    new ConstExpression(ctx.complex_string_literal()), operator);
+            return new CompoundExpression(ctx, factory.generate(), visit(ctx.complex_string_literal()), operator);
         } else if (ctx.case_expr() != null) {
             return visit(ctx.case_expr());
+        } else if (ctx.LeftBrace() != null && ctx.RightBrace() != null) {
+            return new BraceBlock(ctx, ctx.relation_name(0).getText(), visit(ctx.expr()));
         }
         return new DefaultExpression(ctx);
     }
@@ -387,13 +444,13 @@ public class MySQLExpressionFactory extends OBParserBaseVisitor<Expression> impl
         } else {
             if (CollectionUtils.isNotEmpty(ctx.expr())) {
                 params.addAll(ctx.expr().stream()
-                        .map(e -> wrap(e, null)).collect(Collectors.toList()));
+                        .map(this::wrap).collect(Collectors.toList()));
             } else if (ctx.expr_list() != null) {
                 params.addAll(ctx.expr_list().expr().stream()
-                        .map(e -> wrap(e, null)).collect(Collectors.toList()));
+                        .map(this::wrap).collect(Collectors.toList()));
             } else if (CollectionUtils.isNotEmpty(ctx.bit_expr())) {
                 params.addAll(ctx.bit_expr().stream()
-                        .map(e -> wrap(e, null)).collect(Collectors.toList()));
+                        .map(this::wrap).collect(Collectors.toList()));
             } else if (ctx.column_definition_ref() != null) {
                 StatementFactory<ColumnReference> factory =
                         new MySQLColumnRefFactory(ctx.column_definition_ref());
@@ -401,49 +458,62 @@ public class MySQLExpressionFactory extends OBParserBaseVisitor<Expression> impl
             } else if (ctx.expr_as_list() != null) {
                 params.addAll(ctx.expr_as_list().expr_with_opt_alias().stream().map(e -> {
                     if (e.column_label() == null && e.STRING_VALUE() == null) {
-                        return wrap(e.expr(), null);
+                        return wrap(e.expr());
                     } else if (e.column_label() != null) {
-                        return wrap(e.expr(), e.column_label().getText());
+                        ExpressionParam p = wrap(e.expr());
+                        p.addOption(new ConstExpression(e.column_label()));
+                        return p;
                     }
-                    return wrap(e.expr(), e.STRING_VALUE().getText());
+                    ExpressionParam p = wrap(e.expr());
+                    p.addOption(new ConstExpression(e.STRING_VALUE()));
+                    return p;
                 }).collect(Collectors.toList()));
             }
         }
         FunctionCall fCall = new FunctionCall(ctx, funcName, params);
-        fCall.setParamsFlag(getParamFlags(ctx));
+        fCall.addOption(getAggregator(ctx));
         return fCall;
+    }
+
+    @Override
+    public Expression visitComplex_string_literal(Complex_string_literalContext ctx) {
+        if (ctx.string_val_list() == null) {
+            return new ConstExpression(ctx);
+        }
+        List<Expression> exprs = new ArrayList<>(ctx.string_val_list().STRING_VALUE().size());
+        exprs.add(new ConstExpression(ctx.STRING_VALUE()));
+        exprs.addAll(
+                ctx.string_val_list().STRING_VALUE().stream().map(ConstExpression::new).collect(Collectors.toList()));
+        return new CollectionExpression(ctx, exprs);
     }
 
     @Override
     public Expression visitComplex_func_expr(Complex_func_exprContext ctx) {
         if (ctx.GROUP_CONCAT() != null) {
             List<FunctionParam> params = ctx.expr_list().expr().stream()
-                    .map(e -> wrap(e, null)).collect(Collectors.toList());
+                    .map(this::wrap).collect(Collectors.toList());
             GroupConcat fCall = new GroupConcat(ctx, params);
-            if (ctx.SEPARATOR() != null) {
-                fCall.setSeparator(ctx.STRING_VALUE().getText());
-            }
+            fCall.addOption(getAggregator(ctx));
             if (ctx.order_by() != null) {
-                StatementFactory<OrderBy> factory = new MySQLOrderByFactory(ctx.order_by());
-                fCall.setOrderBy(factory.generate());
+                fCall.addOption(new MySQLOrderByFactory(ctx.order_by()).generate());
             }
-            fCall.setParamsFlag(getParamFlags(ctx));
+            if (ctx.SEPARATOR() != null) {
+                fCall.addOption(new ConstExpression(ctx.SEPARATOR(), ctx.STRING_VALUE()));
+            }
             return fCall;
         } else if (ctx.CAST() != null) {
-            FunctionCall fCall = new FunctionCall(ctx, ctx.CAST().getText(),
-                    Collections.singletonList(wrap(ctx.expr(), null)));
-            fCall.addParamsOption(new MySQLDataTypeFactory(ctx.cast_data_type()).generate());
-            return fCall;
+            FunctionParam p = wrap(ctx.expr());
+            p.addOption(new MySQLDataTypeFactory(ctx.cast_data_type()).generate());
+            return new FunctionCall(ctx, ctx.CAST().getText(), Collections.singletonList(p));
         } else if (ctx.CONVERT() != null) {
-            FunctionCall fCall = new FunctionCall(ctx, ctx.CONVERT().getText(),
-                    Collections.singletonList(wrap(ctx.expr(), null)));
+            FunctionParam p = wrap(ctx.expr());
             if (ctx.cast_data_type() != null) {
-                fCall.addParamsOption(new MySQLDataTypeFactory(ctx.cast_data_type()).generate());
+                p.addOption(new MySQLDataTypeFactory(ctx.cast_data_type()).generate());
             }
             if (ctx.charset_name() != null) {
-                fCall.addParamsOption(new ConstExpression(ctx.charset_name()));
+                p.addOption(new ConstExpression(ctx.charset_name()));
             }
-            return fCall;
+            return new FunctionCall(ctx, ctx.CONVERT().getText(), Collections.singletonList(p));
         } else if (ctx.POSITION() != null) {
             List<FunctionParam> params = new ArrayList<>();
             params.add(new ExpressionParam(new CompoundExpression(ctx,
@@ -452,22 +522,23 @@ public class MySQLExpressionFactory extends OBParserBaseVisitor<Expression> impl
         } else if (ctx.substr_or_substring() != null) {
             String funcName = ctx.substr_or_substring().getText();
             List<FunctionParam> params = ctx.substr_params().expr().stream()
-                    .map(e -> wrap(e, null)).collect(Collectors.toList());
+                    .map(this::wrap).collect(Collectors.toList());
             return new FunctionCall(ctx, funcName, params);
         } else if (ctx.TRIM() != null) {
-            List<FunctionParam> params = ctx.parameterized_trim().expr().stream()
-                    .map(e -> wrap(e, null)).collect(Collectors.toList());
-            FunctionCall fCall = new FunctionCall(ctx, ctx.TRIM().getText(), params);
-            List<String> paramFlags = new ArrayList<>();
+            FunctionParam param = wrap(ctx.parameterized_trim().expr(0));
+            if (ctx.parameterized_trim().expr(1) != null) {
+                param.addOption(visit(ctx.parameterized_trim().expr(1)));
+            }
+            FunctionCall fCall = new FunctionCall(ctx, ctx.TRIM().getText(),
+                    Collections.singletonList(param));
             Parameterized_trimContext trim = ctx.parameterized_trim();
             for (int i = 0; i < trim.getChildCount(); i++) {
                 ParseTree p = trim.getChild(i);
                 if (p instanceof TerminalNode) {
-                    paramFlags.add(p.getText());
+                    fCall.addOption(new ConstExpression((TerminalNode) p));
+                } else {
+                    break;
                 }
-            }
-            if (!paramFlags.isEmpty()) {
-                fCall.setParamsFlag(String.join(" ", paramFlags));
             }
             return fCall;
         } else if (ctx.GET_FORMAT() != null) {
@@ -488,14 +559,10 @@ public class MySQLExpressionFactory extends OBParserBaseVisitor<Expression> impl
             }
             Date_paramsContext p = ctx.date_params();
             List<FunctionParam> params = new ArrayList<>();
-            params.add(wrap(p.expr(0), null));
+            params.add(wrap(p.expr(0)));
             params.add(new ExpressionParam(new IntervalExpression(p,
                     visit(p.expr(1)), p.date_unit().getText())));
-            FunctionCall fCall = new FunctionCall(ctx, funcName, params);
-            if (ctx.date_params().date_unit() != null) {
-                fCall.addParamsOption(new ConstExpression(ctx.date_params().date_unit()));
-            }
-            return fCall;
+            return new FunctionCall(ctx, funcName, params);
         } else if (ctx.TIMESTAMPDIFF() != null || ctx.TIMESTAMPADD() != null) {
             String funcName;
             if (ctx.TIMESTAMPDIFF() != null) {
@@ -506,19 +573,18 @@ public class MySQLExpressionFactory extends OBParserBaseVisitor<Expression> impl
             List<FunctionParam> params = new ArrayList<>();
             params.add(new ExpressionParam(new ConstExpression(ctx.timestamp_params().date_unit())));
             params.addAll(ctx.timestamp_params().expr().stream()
-                    .map(e -> wrap(e, null)).collect(Collectors.toList()));
+                    .map(this::wrap).collect(Collectors.toList()));
             return new FunctionCall(ctx, funcName, params);
         } else if (ctx.EXTRACT() != null) {
-            FunctionCall fCall = new FunctionCall(ctx, ctx.EXTRACT().getText(),
-                    Collections.singletonList(wrap(ctx.expr(), null)));
-            fCall.addParamsOption(new ConstExpression(ctx.date_unit()));
-            return fCall;
+            FunctionParam p = new ExpressionParam(new ConstExpression(ctx.date_unit()));
+            p.addOption(visit(ctx.expr()));
+            return new FunctionCall(ctx, ctx.EXTRACT().getText(), Collections.singletonList(p));
         } else if (ctx.CHARACTER() != null && ctx.WEIGHT_STRING() == null) {
             List<FunctionParam> params = ctx.expr_list().expr().stream()
-                    .map(e -> wrap(e, null)).collect(Collectors.toList());
-            FunctionCall fCall = new FunctionCall(ctx, ctx.CHARACTER().getText(), params);
-            fCall.addParamsOption(new ConstExpression(ctx.charset_name()));
-            return fCall;
+                    .map(this::wrap).collect(Collectors.toList());
+            FunctionCall f = new FunctionCall(ctx, ctx.CHARACTER().getText(), params);
+            f.addOption(new ConstExpression(ctx.USING(), ctx.charset_name()));
+            return f;
         } else if (ctx.WEIGHT_STRING() != null) {
             String funcName = ctx.WEIGHT_STRING().getText();
             List<FunctionParam> params = new ArrayList<>();
@@ -529,12 +595,13 @@ public class MySQLExpressionFactory extends OBParserBaseVisitor<Expression> impl
             if (ctx.ws_nweights() == null) {
                 return fCall;
             }
+            FunctionParam p1 = params.get(params.size() - 1);
             Ws_nweightsContext weights = ctx.ws_nweights();
             String arg = weights.INTNUM().getText();
             if (ctx.CHARACTER() != null) {
-                fCall.addParamsOption(new CharacterType(weights, ctx.CHARACTER().getText(), new BigDecimal(arg)));
+                p1.addOption(new CharacterType(weights, ctx.CHARACTER().getText(), new BigDecimal(arg)));
             } else if (ctx.BINARY() != null) {
-                fCall.addParamsOption(new GeneralDataType(weights, ctx.BINARY().getText(),
+                p1.addOption(new GeneralDataType(weights, ctx.BINARY().getText(),
                         Collections.singletonList(arg)));
             }
             return fCall;
@@ -542,9 +609,32 @@ public class MySQLExpressionFactory extends OBParserBaseVisitor<Expression> impl
             Json_value_exprContext jsonValue = ctx.json_value_expr();
             List<FunctionParam> params = new ArrayList<>();
             params.add(new ExpressionParam(visit(jsonValue.simple_expr())));
-            params.add(new ExpressionParam(new ConstExpression(jsonValue.complex_string_literal())));
+            params.add(new ExpressionParam(visit(jsonValue.complex_string_literal())));
             FunctionCall fCall = new FunctionCall(ctx, jsonValue.JSON_VALUE().getText(), params);
-            fCall.addParamsOption(new MySQLDataTypeFactory(jsonValue.cast_data_type()).generate());
+            if (jsonValue.cast_data_type() != null) {
+                fCall.addOption(new MySQLDataTypeFactory(jsonValue.cast_data_type()).generate());
+            }
+            if (jsonValue.TRUNCATE() != null) {
+                fCall.addOption(new ConstExpression(jsonValue.TRUNCATE()));
+            }
+            if (jsonValue.ASCII() != null) {
+                fCall.addOption(new ConstExpression(jsonValue.ASCII()));
+            }
+            JsonOnOption jsonOnOption;
+            if (jsonValue.on_empty() != null && jsonValue.on_error() != null) {
+                jsonOnOption = new JsonOnOption(jsonValue.on_empty(), jsonValue.on_error());
+                setOnError(jsonOnOption, jsonValue.on_error());
+                setOnEmpty(jsonOnOption, jsonValue.on_empty());
+                fCall.addOption(jsonOnOption);
+            } else if (jsonValue.on_error() != null) {
+                jsonOnOption = new JsonOnOption(jsonValue.on_error());
+                setOnError(jsonOnOption, jsonValue.on_error());
+                fCall.addOption(jsonOnOption);
+            } else if (jsonValue.on_empty() != null) {
+                jsonOnOption = new JsonOnOption(jsonValue.on_empty());
+                setOnEmpty(jsonOnOption, jsonValue.on_empty());
+                fCall.addOption(jsonOnOption);
+            }
             return fCall;
         }
         String funcName = null;
@@ -586,8 +676,12 @@ public class MySQLExpressionFactory extends OBParserBaseVisitor<Expression> impl
             funcName = ctx.utc_date_func().UTC_DATE().getText();
         } else if (ctx.sys_interval_func() != null) {
             params = ctx.sys_interval_func().expr()
-                    .stream().map(e -> wrap(e, null)).collect(Collectors.toList());
-            funcName = ctx.sys_interval_func().INTERVAL().getText();
+                    .stream().map(this::wrap).collect(Collectors.toList());
+            if (ctx.sys_interval_func().INTERVAL() != null) {
+                funcName = ctx.sys_interval_func().INTERVAL().getText();
+            } else if (ctx.sys_interval_func().CHECK() != null) {
+                funcName = ctx.sys_interval_func().CHECK().getText();
+            }
         }
         if (funcName == null) {
             throw new IllegalStateException("Missing function name");
@@ -601,18 +695,17 @@ public class MySQLExpressionFactory extends OBParserBaseVisitor<Expression> impl
             throw new IllegalStateException("Missing function name");
         }
         String funcName = ctx.func_name.getText();
-        String paramsFlag = null;
+        List<Statement> functionOpts = new ArrayList<>();
         StatementFactory<WindowSpec> factory = new MySQLWindowSpecFactory(ctx.new_generalized_window_clause());
         WindowSpec window = factory.generate();
         if (ctx.ALL() != null) {
-            paramsFlag = ctx.ALL().getText();
+            functionOpts.add(new ConstExpression(ctx.ALL()));
         } else if (ctx.DISTINCT() != null) {
-            paramsFlag = ctx.DISTINCT().getText();
+            functionOpts.add(new ConstExpression(ctx.DISTINCT()));
         } else if (ctx.UNIQUE() != null) {
-            paramsFlag = ctx.UNIQUE().getText();
+            functionOpts.add(new ConstExpression(ctx.UNIQUE()));
         }
         List<FunctionParam> params = new ArrayList<>();
-        List<Statement> paramsOpts = new ArrayList<>();
         if (ctx.Star() != null) {
             params.add(new ExpressionParam(new ConstExpression(ctx.Star())));
         } else if (CollectionUtils.isNotEmpty(ctx.expr())) {
@@ -626,42 +719,34 @@ public class MySQLExpressionFactory extends OBParserBaseVisitor<Expression> impl
             Win_fun_first_last_paramsContext c = ctx.win_fun_first_last_params();
             params.add(new ExpressionParam(visit(c.expr())));
             if (c.respect_or_ignore() != null) {
-                paramsOpts.add(new ConstExpression(c.respect_or_ignore()));
+                functionOpts.add(new ConstExpression(c.respect_or_ignore(), c.NULLS()));
             }
         }
         if (ctx.NTH_VALUE() != null) {
             if (ctx.first_or_last() != null) {
-                paramsOpts.add(new ConstExpression(ctx.first_or_last()));
+                functionOpts.add(new ConstExpression(ctx.FROM(), ctx.first_or_last()));
             }
             if (ctx.respect_or_ignore() != null) {
-                paramsOpts.add(new ConstExpression(ctx.respect_or_ignore()));
+                functionOpts.add(new ConstExpression(ctx.respect_or_ignore(), ctx.NULLS()));
             }
         }
         if (ctx.GROUP_CONCAT() != null || ctx.LISTAGG() != null) {
-            OrderBy orderBy = null;
             if (ctx.order_by() != null) {
-                StatementFactory<OrderBy> order = new MySQLOrderByFactory(ctx.order_by());
-                orderBy = order.generate();
-                paramsOpts.add(orderBy);
+                functionOpts.add(new MySQLOrderByFactory(ctx.order_by()).generate());
             }
-            String separator = null;
             if (ctx.SEPARATOR() != null) {
-                separator = ctx.STRING_VALUE().getText();
-                paramsOpts.add(new ConstExpression(ctx.STRING_VALUE()));
+                functionOpts.add(new ConstExpression(ctx.SEPARATOR(), ctx.STRING_VALUE()));
             }
             if (ctx.GROUP_CONCAT() != null) {
                 GroupConcat groupConcat = new GroupConcat(ctx, params);
-                groupConcat.setParamsFlag(paramsFlag);
-                groupConcat.setSeparator(separator);
-                groupConcat.setOrderBy(orderBy);
                 groupConcat.setWindow(window);
+                functionOpts.forEach(groupConcat::addOption);
                 return groupConcat;
             }
         }
-        WindowFunction fCall = new WindowFunction(ctx, funcName, params);
-        fCall.setParamsFlag(paramsFlag);
+        FunctionCall fCall = new FunctionCall(ctx, funcName, params);
         fCall.setWindow(window);
-        paramsOpts.forEach(fCall::addParamsOption);
+        functionOpts.forEach(fCall::addOption);
         return fCall;
     }
 
@@ -726,6 +811,12 @@ public class MySQLExpressionFactory extends OBParserBaseVisitor<Expression> impl
             right = visit(ctx.bit_expr(1));
         } else if (ctx.expr() != null) {
             right = new IntervalExpression(ctx, visit(ctx.expr()), ctx.date_unit().getText());
+            ParseTree firstNode = ctx.getChild(0);
+            if (firstNode instanceof TerminalNode
+                    && ((TerminalNode) firstNode).getSymbol().getType() == OBLexer.INTERVAL) {
+                return new CompoundExpression(ctx, right, left, operator);
+            }
+            return new CompoundExpression(ctx, left, right, operator);
         }
         if (right == null) {
             throw new IllegalStateException("Missing expression");
@@ -733,28 +824,132 @@ public class MySQLExpressionFactory extends OBParserBaseVisitor<Expression> impl
         return new CompoundExpression(ctx, left, right, operator);
     }
 
-    private String getParamFlags(Simple_func_exprContext ctx) {
+    @Override
+    public Expression visitJson_on_response(Json_on_responseContext ctx) {
+        if (ctx.ERROR_P() != null) {
+            return new ConstExpression(ctx.ERROR_P());
+        } else if (ctx.NULLX() != null) {
+            return new NullExpression(ctx.NULLX());
+        }
+        return MySQLTableElementFactory.getSignedLiteral(ctx.signed_literal());
+    }
+
+    @Override
+    public Expression visitJson_table_expr(Json_table_exprContext ctx) {
+        FunctionCall fCall = new FunctionCall(ctx, ctx.JSON_TABLE().getText(),
+                Arrays.asList(new ExpressionParam(visit(ctx.simple_expr())),
+                        new ExpressionParam(visit(ctx.literal()))));
+        fCall.addOption(getJsonOnOption(ctx.mock_jt_on_error_on_empty()));
+        ctx.jt_column_list().json_table_column_def().forEach(c -> fCall.addOption(visitJsonTableColumnDef(c)));
+        return fCall;
+    }
+
+    private JsonOnOption getJsonOnOption(Mock_jt_on_error_on_emptyContext ctx) {
+        return null;
+    }
+
+    private JsonOnOption getJsonOnOption(Opt_value_on_empty_or_error_or_mismatchContext ctx) {
+        if (ctx == null) {
+            return null;
+        } else if (ctx.opt_on_empty_or_error().empty() != null) {
+            return null;
+        }
+        JsonOnOption jsonOnOption = new JsonOnOption(ctx);
+        setOnEmpty(jsonOnOption, ctx.opt_on_empty_or_error().on_empty());
+        setOnError(jsonOnOption, ctx.opt_on_empty_or_error().on_error());
+        return jsonOnOption;
+    }
+
+    private void setOnEmpty(JsonOnOption jsonOnOption, On_emptyContext ctx) {
+        if (ctx == null) {
+            return;
+        }
+        jsonOnOption.setOnEmpty(visit(ctx.json_on_response()));
+    }
+
+    private void setOnError(JsonOnOption jsonOnOption, On_errorContext ctx) {
+        if (ctx == null) {
+            return;
+        }
+        jsonOnOption.setOnError(visit(ctx.json_on_response()));
+    }
+
+    private FunctionParam visitJsonTableColumnDef(Json_table_column_defContext ctx) {
+        if (ctx.json_table_ordinality_column_def() != null) {
+            return visitJsonTableOrdinalityColumnDef(ctx.json_table_ordinality_column_def());
+        } else if (ctx.json_table_exists_column_def() != null) {
+            return visitJsonTableExistsColumnDef(ctx.json_table_exists_column_def());
+        } else if (ctx.json_table_value_column_def() != null) {
+            return visitJsonTableValueColumnDef(ctx.json_table_value_column_def());
+        }
+        return visitJsonTableNestedColumnDef(ctx.json_table_nested_column_def());
+    }
+
+    private FunctionParam visitJsonTableOrdinalityColumnDef(Json_table_ordinality_column_defContext ctx) {
+        FunctionParam param = new ExpressionParam(new ColumnReference(
+                ctx.column_name(), null, null, ctx.column_name().getText()));
+        param.addOption(new ConstExpression(ctx.FOR(), ctx.ORDINALITY()));
+        return param;
+    }
+
+    private FunctionParam visitJsonTableExistsColumnDef(Json_table_exists_column_defContext ctx) {
+        FunctionParam param = new ExpressionParam(new ColumnReference(
+                ctx.column_name(), null, null, ctx.column_name().getText()));
+        param.addOption(new MySQLDataTypeFactory(ctx.data_type()).generate());
+        if (ctx.collation() != null) {
+            param.addOption(new ConstExpression(ctx.collation().collation_name()));
+        }
+        param.addOption(new ConstExpression(ctx.EXISTS()));
+        param.addOption(visit(ctx.literal()));
+        param.addOption(getJsonOnOption(ctx.mock_jt_on_error_on_empty()));
+        return param;
+    }
+
+    private FunctionParam visitJsonTableValueColumnDef(Json_table_value_column_defContext ctx) {
+        FunctionParam param = new ExpressionParam(new ColumnReference(
+                ctx.column_name(), null, null, ctx.column_name().getText()));
+        param.addOption(new MySQLDataTypeFactory(ctx.data_type()).generate());
+        if (ctx.collation() != null) {
+            param.addOption(new ConstExpression(ctx.collation().collation_name()));
+        }
+        param.addOption(visit(ctx.literal()));
+        param.addOption(getJsonOnOption(ctx.opt_value_on_empty_or_error_or_mismatch()));
+        return param;
+    }
+
+    private FunctionParam visitJsonTableNestedColumnDef(Json_table_nested_column_defContext ctx) {
+        FunctionParam param;
+        if (ctx.PATH() == null) {
+            param = new ExpressionParam(new ConstExpression(ctx.NESTED()));
+        } else {
+            param = new ExpressionParam(new ConstExpression(ctx.NESTED(), ctx.PATH()));
+        }
+        param.addOption(visit(ctx.literal()));
+        ctx.jt_column_list().json_table_column_def()
+                .forEach(c -> param.addOption(visitJsonTableColumnDef(c)));
+        return param;
+    }
+
+    private ConstExpression getAggregator(Simple_func_exprContext ctx) {
         if (ctx.ALL() != null) {
-            return ctx.ALL().getText();
+            return new ConstExpression(ctx.ALL());
         } else if (ctx.DISTINCT() != null) {
-            return ctx.DISTINCT().getText();
+            return new ConstExpression(ctx.DISTINCT());
         } else if (ctx.UNIQUE() != null) {
-            return ctx.UNIQUE().getText();
+            return new ConstExpression(ctx.UNIQUE());
         }
         return null;
     }
 
-    private ExpressionParam wrap(ParserRuleContext expr, String alias) {
-        ExpressionParam param = new ExpressionParam(visit(expr));
-        param.setAlias(alias);
-        return param;
+    private ExpressionParam wrap(ParserRuleContext expr) {
+        return new ExpressionParam(visit(expr));
     }
 
-    private String getParamFlags(Complex_func_exprContext ctx) {
+    private ConstExpression getAggregator(Complex_func_exprContext ctx) {
         if (ctx.DISTINCT() != null) {
-            return ctx.DISTINCT().getText();
+            return new ConstExpression(ctx.DISTINCT());
         } else if (ctx.UNIQUE() != null) {
-            return ctx.UNIQUE().getText();
+            return new ConstExpression(ctx.UNIQUE());
         }
         return null;
     }

@@ -138,7 +138,8 @@ public class DBRecyclebinService {
             }
             sqlBuilder.identifier(recycleObject.getObjName()).append(" to before drop");
             if (StringUtils.isNotBlank(recycleObject.getNewName())) {
-                sqlBuilder.append(" rename to ").identifier(recycleObject.getNewName());
+                sqlBuilder.append(" rename to ").identifier(recycleObject.getSchema())
+                        .append(".").identifier(recycleObject.getNewName());
             }
             sqlBuilder.append(";\r\n");
         }

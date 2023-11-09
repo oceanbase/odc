@@ -28,7 +28,6 @@ import java.util.Objects;
 import java.util.Optional;
 
 import org.apache.commons.lang3.Validate;
-import org.springframework.jdbc.datasource.SingleConnectionDataSource;
 
 import com.alibaba.fastjson.JSONObject;
 import com.oceanbase.odc.common.util.StringUtils;
@@ -179,8 +178,9 @@ public class DebuggerSession extends AbstractDebugSession {
         }
     }
 
-    private SingleConnectionDataSource cloneDataSource(SingleConnectionDataSource originDataSource) {
-        SingleConnectionDataSource debuggerDataSource = new SingleConnectionDataSource();
+    private DebugDataSource cloneDataSource(DebugDataSource originDataSource) {
+        ConnectionConfig config = (ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(connectionSession);
+        DebugDataSource debuggerDataSource = new DebugDataSource(config);
         debuggerDataSource.setUrl(originDataSource.getUrl());
         debuggerDataSource.setUsername(originDataSource.getUsername());
         debuggerDataSource.setPassword(originDataSource.getPassword());
@@ -784,6 +784,17 @@ public class DebuggerSession extends AbstractDebugSession {
     }
 
     private CurrentDebugPLObject getCurrentDebugPLObject(String objectName, String owner) {
+        if (objectName.contains(".")) {
+            // 如果包含 . 说明此时是程序包，我们需要解析得到当前程序包包体下目标对象的类型
+            DBPackageDetail packageDetail = this.debugPackageMap.computeIfAbsent(
+                    new PackageKey(currentStackInfo.owner, objectName.split("\\.")[0]),
+                    k -> getPackageBodyObject(k.getPackageName(), k.getOwner()));
+            currentStackInfo.objectType = getDbObjectType(packageDetail, objectName.split("\\.")[1], null);
+            CurrentDebugPLObject currentDebugPLObject = new CurrentDebugPLObject(new OracleModeParserListener());
+            currentDebugPLObject.setFunctionList(packageDetail.getFunctions());
+            currentDebugPLObject.setProcedureList(packageDetail.getProcedures());
+            return currentDebugPLObject;
+        }
         Object fetchResult;
         try {
             fetchResult = DBPLOperators.create(connectionSession)
@@ -805,7 +816,7 @@ public class DebuggerSession extends AbstractDebugSession {
     private CurrentDebugPLObject parserDdl(String ddl) {
         Verify.notBlank(ddl, "PLObjectDdl");
         CurrentDebugPLObject currentDebugPLObject = new CurrentDebugPLObject(new OracleModeParserListener());
-        ParseOraclePLResult result = (ParseOraclePLResult) PLParser.parseOracle(ddl);
+        ParseOraclePLResult result = PLParser.parseOracle(ddl);
         if (result.getFunctionList() != null) {
             currentDebugPLObject.setFunctionList(result.getFunctionList());
         }

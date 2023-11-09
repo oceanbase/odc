@@ -59,15 +59,17 @@ public class OracleCreateIndexFactoryTest {
     @Test
     public void generate_createUniqueIndex_succeed() {
         StatementFactory<CreateIndex> factory = new OracleCreateIndexFactory(
-                getCreateIdxContext("create unique index chz.abc@oakasda on piaoyue.tb@uasid (col, col1)"));
+                getCreateIdxContext("create unique index chz.abc@oakasda! on piaoyue.tb@uasid! (col, col1)"));
         CreateIndex actual = factory.generate();
 
         RelationFactor relation = new RelationFactor("abc");
         relation.setSchema("chz");
         relation.setUserVariable("@oakasda");
+        relation.setReverseLink(true);
         RelationFactor on = new RelationFactor("tb");
         on.setSchema("piaoyue");
         on.setUserVariable("@uasid");
+        on.setReverseLink(true);
         CreateIndex expect = new CreateIndex(relation, on, Arrays.asList(
                 new SortColumn(new RelationReference("col", null)),
                 new SortColumn(new RelationReference("col1", null))));

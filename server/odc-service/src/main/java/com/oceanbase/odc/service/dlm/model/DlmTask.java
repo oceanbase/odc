@@ -19,7 +19,7 @@ import java.util.Date;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
-import com.oceanbase.tools.migrator.common.configure.DataSourceInfo;
+import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.tools.migrator.common.configure.LogicTableConfig;
 import com.oceanbase.tools.migrator.common.enums.JobType;
 
@@ -55,9 +55,9 @@ public class DlmTask {
 
 
     @JsonIgnore
-    private DataSourceInfo sourceInfo;
+    private ConnectionConfig sourceDs;
 
     @JsonIgnore
-    private DataSourceInfo targetInfo;
+    private ConnectionConfig targetDs;
 
 }

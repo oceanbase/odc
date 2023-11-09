@@ -15,6 +15,9 @@
  */
 package com.oceanbase.tools.sqlparser.adapter.oracle;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.antlr.v4.runtime.CharStream;
@@ -29,8 +32,12 @@ import com.oceanbase.tools.sqlparser.oboracle.OBParser.Table_optionContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Table_option_listContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Table_option_list_space_seperatedContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParserBaseVisitor;
+import com.oceanbase.tools.sqlparser.statement.Expression;
 import com.oceanbase.tools.sqlparser.statement.createtable.TableOptions;
+import com.oceanbase.tools.sqlparser.statement.expression.BoolValue;
+import com.oceanbase.tools.sqlparser.statement.expression.CollectionExpression;
 import com.oceanbase.tools.sqlparser.statement.expression.ColumnReference;
+import com.oceanbase.tools.sqlparser.statement.expression.ConstExpression;
 
 import lombok.NonNull;
 
@@ -134,6 +141,31 @@ public class OracleTableOptionsFactory extends OBParserBaseVisitor<TableOptions>
             target.merge(visit(ctx.physical_attributes_option()));
         } else if (ctx.ENABLE_EXTENDED_ROWID() != null) {
             target.setEnableExtendedRowId(Boolean.valueOf(ctx.BOOL_VALUE().getText()));
+        } else if (ctx.LOCATION() != null) {
+            target.setLocation(ctx.STRING_VALUE().getText());
+        } else if (ctx.FORMAT() != null) {
+            Map<String, Expression> formatMap = new HashMap<>();
+            ctx.external_file_format_list().external_file_format().forEach(e -> {
+                Expression value = null;
+                if (e.STRING_VALUE() != null) {
+                    value = new ConstExpression(e.STRING_VALUE());
+                } else if (e.bit_expr() != null) {
+                    value = new OracleExpressionFactory(e.bit_expr()).generate();
+                } else if (e.INTNUM() != null) {
+                    value = new ConstExpression(e.INTNUM());
+                } else if (e.BOOL_VALUE() != null) {
+                    value = new BoolValue(e.BOOL_VALUE());
+                } else if (e.expr_list() != null) {
+                    List<Expression> exprs = e.expr_list().bit_expr().stream()
+                            .map(ex -> new OracleExpressionFactory(ex).generate())
+                            .collect(Collectors.toList());
+                    value = new CollectionExpression(e.expr_list(), exprs);
+                }
+                formatMap.put(e.format_key.getText().toUpperCase(), value);
+            });
+            target.setFormat(formatMap);
+        } else if (ctx.PATTERN() != null) {
+            target.setPattern(ctx.STRING_VALUE().getText());
         }
         return target;
     }

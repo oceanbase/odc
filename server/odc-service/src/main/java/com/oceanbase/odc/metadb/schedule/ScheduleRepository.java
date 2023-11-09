@@ -15,8 +15,6 @@
  */
 package com.oceanbase.odc.metadb.schedule;
 
-import java.util.Set;
-
 import javax.transaction.Transactional;
 import javax.validation.constraints.NotNull;
 
@@ -44,8 +42,11 @@ public interface ScheduleRepository extends OdcJpaRepository<ScheduleEntity, Lon
             + "where id=:id", nativeQuery = true)
     int updateStatusById(@Param("id") Long id, @Param("status") ScheduleStatus status);
 
-    @Query("select e.creatorId from ScheduleEntity e where e.id=:id")
-    Set<Long> findCreatorIdById(@Param("id") Long id);
+    @Transactional
+    @Modifying
+    @Query(value = "update schedule_schedule set job_parameters_json = :jobParametersJson "
+            + "where id=:id", nativeQuery = true)
+    int updateJobParametersById(@Param("id") Long id, @Param("jobParametersJson") String jobParametersJson);
 
 
     default Page<ScheduleEntity> find(@NotNull Pageable pageable, @NotNull QueryScheduleParams params) {

@@ -16,11 +16,9 @@
 package com.oceanbase.tools.sqlparser.adapter.mysql;
 
 import com.oceanbase.tools.sqlparser.adapter.StatementFactory;
-import com.oceanbase.tools.sqlparser.obmysql.OBParser.Relation_factorContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Rename_table_actionContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParserBaseVisitor;
 import com.oceanbase.tools.sqlparser.statement.alter.table.RenameTableAction;
-import com.oceanbase.tools.sqlparser.statement.common.RelationFactor;
 
 import lombok.NonNull;
 
@@ -47,16 +45,9 @@ public class MySQLRenameTableActionFactory extends OBParserBaseVisitor<RenameTab
 
     @Override
     public RenameTableAction visitRename_table_action(Rename_table_actionContext ctx) {
-        Relation_factorContext from = ctx.relation_factor(0);
-        Relation_factorContext to = ctx.relation_factor(1);
-
-        RelationFactor fromFactor = new RelationFactor(from,
-                MySQLFromReferenceFactory.getRelation(from));
-        fromFactor.setSchema(MySQLFromReferenceFactory.getSchemaName(from));
-
-        RelationFactor toFactor = new RelationFactor(to, MySQLFromReferenceFactory.getRelation(to));
-        toFactor.setSchema(MySQLFromReferenceFactory.getSchemaName(to));
-        return new RenameTableAction(ctx, fromFactor, toFactor);
+        return new RenameTableAction(ctx,
+                MySQLFromReferenceFactory.getRelationFactor(ctx.relation_factor(0)),
+                MySQLFromReferenceFactory.getRelationFactor(ctx.relation_factor(1)));
     }
 
 }

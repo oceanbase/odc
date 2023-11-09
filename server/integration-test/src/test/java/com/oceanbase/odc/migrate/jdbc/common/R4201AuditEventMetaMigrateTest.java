@@ -13,44 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.metadb.migrate;
+package com.oceanbase.odc.migrate.jdbc.common;
 
 import javax.sql.DataSource;
 
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.jdbc.JdbcTestUtils;
 
 import com.oceanbase.odc.ServiceTestEnv;
-import com.oceanbase.odc.migrate.jdbc.common.V2412UserPasswordMigrate;
 
-public class V2412UserPasswordMigrateTest extends ServiceTestEnv {
+public class R4201AuditEventMetaMigrateTest extends ServiceTestEnv {
 
     @Autowired
     private DataSource dataSource;
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
-    @Before
-    public void setUp() throws Exception {
-        JdbcTestUtils.deleteFromTables(jdbcTemplate, "odc_user_info");
-    }
-
     @Test
     public void migrate() {
-        // prepare
-        jdbcTemplate.update("INSERT INTO `odc_user_info` (`id`, `name`, `email`, `password`, `cipher`) "
-                + "VALUES (1, 'test1', 'test1', '123456', 'RAW')");
-
-        // execute
-        V2412UserPasswordMigrate migrate = new V2412UserPasswordMigrate();
+        R4201AuditEventMetaMigrate migrate = new R4201AuditEventMetaMigrate();
         migrate.migrate(dataSource);
 
-        // verify
-        int count = JdbcTestUtils.countRowsInTableWhere(jdbcTemplate, "odc_user_info", "`password` <> '123456'");
+        int count = JdbcTestUtils.countRowsInTableWhere(
+                jdbcTemplate, "audit_event_meta", "`id` = 1");
         Assert.assertEquals(1, count);
     }
 }
