@@ -130,8 +130,9 @@ public class MySQLInsertFactory extends OBParserBaseVisitor<Insert> implements S
         }
         if (ctx.expr_or_default().DEFAULT() != null) {
             values.add(new ConstExpression(ctx.expr_or_default().DEFAULT()));
+        } else {
+            values.add(new MySQLExpressionFactory(ctx.expr_or_default().expr()).generate());
         }
-        values.add(new MySQLExpressionFactory(ctx.expr_or_default().expr()).generate());
     }
 
 }

@@ -79,7 +79,7 @@ public class Insert extends BaseStatement {
     }
 
     public Insert(@NonNull List<InsertTable> tableInsert,
-            @NonNull ConditionalInsert conditionalInsert) {
+            ConditionalInsert conditionalInsert) {
         this.tableInsert = tableInsert;
         this.conditionalInsert = conditionalInsert;
     }

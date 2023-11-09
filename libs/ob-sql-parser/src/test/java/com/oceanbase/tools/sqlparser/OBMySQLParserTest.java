@@ -17,22 +17,28 @@ package com.oceanbase.tools.sqlparser;
 
 import java.io.StringReader;
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
 import org.junit.Assert;
 import org.junit.Test;
 
+import com.oceanbase.tools.sqlparser.statement.Expression;
 import com.oceanbase.tools.sqlparser.statement.Operator;
 import com.oceanbase.tools.sqlparser.statement.Statement;
 import com.oceanbase.tools.sqlparser.statement.common.CharacterType;
 import com.oceanbase.tools.sqlparser.statement.common.DataType;
+import com.oceanbase.tools.sqlparser.statement.common.RelationFactor;
 import com.oceanbase.tools.sqlparser.statement.createtable.ColumnDefinition;
 import com.oceanbase.tools.sqlparser.statement.createtable.CreateTable;
 import com.oceanbase.tools.sqlparser.statement.delete.Delete;
 import com.oceanbase.tools.sqlparser.statement.expression.ColumnReference;
 import com.oceanbase.tools.sqlparser.statement.expression.CompoundExpression;
 import com.oceanbase.tools.sqlparser.statement.expression.ConstExpression;
+import com.oceanbase.tools.sqlparser.statement.insert.Insert;
+import com.oceanbase.tools.sqlparser.statement.insert.InsertTable;
 import com.oceanbase.tools.sqlparser.statement.select.FromReference;
 import com.oceanbase.tools.sqlparser.statement.select.NameReference;
 import com.oceanbase.tools.sqlparser.statement.select.Projection;
@@ -88,6 +94,21 @@ public class OBMySQLParserTest {
         ConstExpression right = new ConstExpression("100");
         expect.setWhere(new CompoundExpression(left, right, Operator.EQ));
         Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void parse_insertStatement_parseSucceed() {
+        SQLParser sqlParser = new OBMySQLParser();
+        Statement acutal = sqlParser.parse(new StringReader("insert a.b values(1,default)"));
+
+        RelationFactor factor = new RelationFactor("b");
+        factor.setSchema("a");
+        InsertTable insertTable = new InsertTable(factor);
+        List<List<Expression>> values = new ArrayList<>();
+        values.add(Arrays.asList(new ConstExpression("1"), new ConstExpression("default")));
+        insertTable.setValues(values);
+        Insert expect = new Insert(Collections.singletonList(insertTable), null);
+        Assert.assertEquals(acutal, expect);
     }
 
     @Test
