@@ -40,7 +40,6 @@ import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
-import com.oceanbase.odc.service.onlineschemachange.configuration.OnlineSchemaChangeProperties;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeScheduleTaskResult;
 import com.oceanbase.odc.service.onlineschemachange.model.OscLockDatabaseUserInfo;
@@ -70,8 +69,6 @@ public class OscService {
     private ScheduleTaskRepository scheduleTaskRepository;
     @Autowired
     private ScheduleRepository scheduleRepository;
-    @Autowired
-    private OnlineSchemaChangeProperties onlineSchemaChangeProperties;
 
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("internal authenticated")
