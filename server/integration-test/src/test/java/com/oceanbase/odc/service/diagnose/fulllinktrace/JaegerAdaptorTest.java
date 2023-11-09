@@ -26,8 +26,8 @@ public class JaegerAdaptorTest {
     @Test
     public void testAdapt_Success() {
         TraceSpan root = getTraceSpan();
-        String adapt = new JaegerAdaptor().adapt(root);
-        System.out.println(adapt);
+        String trace = new JaegerConverter().convert(root);
+        System.out.println(trace);
     }
 
     private TraceSpan getTraceSpan() {

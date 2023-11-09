@@ -36,11 +36,11 @@ import com.oceanbase.odc.core.shared.model.TraceSpan;
 import lombok.Builder;
 import lombok.Getter;
 
-public class JaegerAdaptor implements ThirdPartyTraceAdaptor {
+public class JaegerConverter implements ThirdPartyTraceConverter {
     private static final String PROCESS_ID_PATTERN = "%s-%s-%s";
 
     @Override
-    public String adapt(TraceSpan span) {
+    public String convert(TraceSpan span) {
         Map<String, Object> dataMap = new HashMap<>();
         dataMap.put("traceID", span.getLogTraceId());
         List<Span> spans = new ArrayList<>();

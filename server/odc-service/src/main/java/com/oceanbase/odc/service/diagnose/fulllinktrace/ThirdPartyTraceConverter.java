@@ -18,12 +18,12 @@ package com.oceanbase.odc.service.diagnose.fulllinktrace;
 
 import com.oceanbase.odc.core.shared.model.TraceSpan;
 
-public interface ThirdPartyTraceAdaptor {
+public interface ThirdPartyTraceConverter {
 
     /**
      * transform {@link TraceSpan} into json format map that can be parsed by a 3rd party tool, like
      * Jaeger/Zipkin...
      */
-    String adapt(TraceSpan span);
+    String convert(TraceSpan span);
 
 }
