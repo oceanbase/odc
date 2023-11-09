@@ -70,7 +70,6 @@ public class OscService {
     @Autowired
     private ScheduleRepository scheduleRepository;
 
-    @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("internal authenticated")
     public OscLockDatabaseUserInfo getOscDatabaseInfo(@NonNull Long id) {
         Optional<DatabaseEntity> database = databaseRepository.findById(id);
@@ -83,7 +82,7 @@ public class OscService {
         oscDatabase.setLockDatabaseUserRequired(getLockUserIsRequired(databaseEntity.getConnectionId()));
         return oscDatabase;
     }
-
+    @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("internal authenticated")
     public OscSwapTableVO swapTable(@PathVariable Long scheduleTaskId) {
 
