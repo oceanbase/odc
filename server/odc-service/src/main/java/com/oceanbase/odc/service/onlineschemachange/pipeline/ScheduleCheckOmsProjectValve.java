@@ -115,8 +115,8 @@ public class ScheduleCheckOmsProjectValve extends BaseValve {
 
             boolean isEnableSwapTable = SwapTableUtil.isSwapTableEnable(swapTableType,
                     scheduleTask.getStatus(), result.getFullTransferProgressPercentage(),
-                    result.getFullVerificationResult());
-            if (isEnableSwapTable && !result.isManualSwapTableStarted()) {
+                    result.getFullVerificationResult(), result.isManualSwapTableStarted());
+            if (isEnableSwapTable) {
                 if (!result.isManualSwapTableEnabled()) {
                     // open manual swap table
                     result.setManualSwapTableEnabled(true);
@@ -124,8 +124,6 @@ public class ScheduleCheckOmsProjectValve extends BaseValve {
                     scheduleTaskRepository.update(scheduleTask);
                 }
             } else {
-                // close manual swap table
-                result.setManualSwapTableEnabled(false);
                 scheduleTask.setResultJson(JsonUtils.toJson(result));
                 scheduleTaskRepository.update(scheduleTask);
                 getNext().invoke(valveContext);

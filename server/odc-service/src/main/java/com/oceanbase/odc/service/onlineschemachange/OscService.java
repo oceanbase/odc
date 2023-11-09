@@ -121,6 +121,8 @@ public class OscService {
                 ErrorCodes.BadArgument, new Object[] {result.isManualSwapTableEnabled()},
                 "Manual Swap table type is not enable ");
 
+        // close manual swap table
+        result.setManualSwapTableEnabled(false);
         // open start manual swap table
         result.setManualSwapTableStarted(true);
         scheduleTaskRepository.updateTaskResult(scheduleTaskId, JsonUtils.toJson(result));
