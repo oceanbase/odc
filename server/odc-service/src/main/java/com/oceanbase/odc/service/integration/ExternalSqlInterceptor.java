@@ -30,6 +30,7 @@ import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
+import com.oceanbase.odc.core.sql.execute.SqlExecuteStages;
 import com.oceanbase.odc.metadb.integration.IntegrationEntity;
 import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.odc.service.config.SystemConfigService;
@@ -44,9 +45,10 @@ import com.oceanbase.odc.service.integration.model.TemplateVariables.Variable;
 import com.oceanbase.odc.service.regulation.ruleset.RuleService;
 import com.oceanbase.odc.service.regulation.ruleset.SqlConsoleRuleService;
 import com.oceanbase.odc.service.regulation.ruleset.model.SqlConsoleRules;
-import com.oceanbase.odc.service.session.interceptor.SqlExecuteInterceptor;
+import com.oceanbase.odc.service.session.interceptor.BaseTimeConsumingInterceptor;
 import com.oceanbase.odc.service.session.model.SqlAsyncExecuteReq;
 import com.oceanbase.odc.service.session.model.SqlAsyncExecuteResp;
+import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -57,7 +59,8 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Component
-public class ExternalSqlInterceptor implements SqlExecuteInterceptor {
+public class ExternalSqlInterceptor extends BaseTimeConsumingInterceptor {
+
     @Autowired
     private SqlInterceptorClient sqlInterceptorClient;
     @Autowired
@@ -75,7 +78,7 @@ public class ExternalSqlInterceptor implements SqlExecuteInterceptor {
     private static final String ODC_SITE_URL = "odc.site.url";
 
     @Override
-    public boolean preHandle(@NonNull SqlAsyncExecuteReq request, @NonNull SqlAsyncExecuteResp response,
+    public boolean doPreHandle(@NonNull SqlAsyncExecuteReq request, @NonNull SqlAsyncExecuteResp response,
             @NonNull ConnectionSession session, @NonNull Map<String, Object> context) {
         Long ruleSetId = ConnectionSessionUtil.getRuleSetId(session);
         if (Objects.isNull(ruleSetId) || isIndividualTeam()) {
@@ -116,6 +119,16 @@ public class ExternalSqlInterceptor implements SqlExecuteInterceptor {
             default:
                 throw new UnexpectedException("SQL intercept failed, unknown intercept status: " + result);
         }
+    }
+
+    @Override
+    public void afterCompletion(@NonNull SqlExecuteResult response,
+            @NonNull ConnectionSession session, @NonNull Map<String, Object> context) {}
+
+
+    @Override
+    protected String getExecuteStageName() {
+        return SqlExecuteStages.EXTERNAL_SQL_INTERCEPTION;
     }
 
     private TemplateVariables buildTemplateVariables(String sql, ConnectionSession session) {

@@ -17,7 +17,6 @@ package com.oceanbase.tools.sqlparser.statement.expression;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 
-import com.oceanbase.tools.sqlparser.statement.BaseStatement;
 import com.oceanbase.tools.sqlparser.statement.Expression;
 import com.oceanbase.tools.sqlparser.statement.Operator;
 
@@ -34,8 +33,8 @@ import lombok.NonNull;
  * @see Expression
  */
 @Getter
-@EqualsAndHashCode(callSuper = false)
-public class CompoundExpression extends BaseStatement implements Expression {
+@EqualsAndHashCode(callSuper = true)
+public class CompoundExpression extends BaseExpression {
 
     private final Expression left;
     private final Expression right;
@@ -57,7 +56,7 @@ public class CompoundExpression extends BaseStatement implements Expression {
     }
 
     @Override
-    public String toString() {
+    public String doToString() {
         if (this.right == null) {
             return this.operator.getText()[0] + " " + this.left.toString();
         }

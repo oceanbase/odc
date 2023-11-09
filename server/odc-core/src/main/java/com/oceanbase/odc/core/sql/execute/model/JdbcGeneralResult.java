@@ -42,6 +42,7 @@ public class JdbcGeneralResult {
     private JdbcQueryResult queryResult;
     @Setter
     private int affectRows;
+    @Getter
     private final Exception thrown;
     @Getter
     @Setter

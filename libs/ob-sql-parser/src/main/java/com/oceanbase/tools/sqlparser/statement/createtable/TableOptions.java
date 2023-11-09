@@ -17,6 +17,7 @@ package com.oceanbase.tools.sqlparser.statement.createtable;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.antlr.v4.runtime.ParserRuleContext;
@@ -87,6 +88,9 @@ public class TableOptions extends BaseOptions {
     private Integer checksum;
     private String autoIncrementMode;
     private Boolean enableExtendedRowId;
+    private String location;
+    private Map<String, Expression> format;
+    private String pattern;
 
     public TableOptions(@NonNull ParserRuleContext context) {
         super(context);
@@ -219,6 +223,19 @@ public class TableOptions extends BaseOptions {
         }
         if (this.enableExtendedRowId != null) {
             builder.append(" ENABLE_EXTENDED_ROWID=").append(this.enableExtendedRowId ? "TRUE" : "FALSE");
+        }
+        if (this.location != null) {
+            builder.append(" LOCATION=").append(this.location);
+        }
+        if (this.format != null) {
+            builder.append(" FORMAT=(")
+                    .append(this.format.entrySet().stream()
+                            .map(e -> e.getKey() + "=" + e.getValue().toString())
+                            .collect(Collectors.joining(",")))
+                    .append(")");
+        }
+        if (this.pattern != null) {
+            builder.append(" PATTERN=").append(this.pattern);
         }
         return builder.length() == 0 ? "" : builder.substring(1);
     }

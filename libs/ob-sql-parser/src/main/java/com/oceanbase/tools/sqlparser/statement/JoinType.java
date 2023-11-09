@@ -39,6 +39,8 @@ public enum JoinType {
     INNER_JOIN,
     // join
     JOIN,
+    // straight_join
+    STRAIGHT_JOIN,
     // cross join
     CROSS_JOIN,
     // natural inner join

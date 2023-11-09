@@ -26,6 +26,7 @@ import com.oceanbase.tools.sqlparser.oboracle.OBParser.Dml_table_nameContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Expr_or_defaultContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Normal_asgn_listContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Opt_where_extensionContext;
+import com.oceanbase.tools.sqlparser.oboracle.OBParser.Order_by_fetch_with_check_optionContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Relation_factorContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Update_asgn_factorContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Update_asgn_listContext;
@@ -110,13 +111,15 @@ public class OracleUpdateFactory extends OBParserBaseVisitor<Update> implements 
         } else {
             OracleSelectBodyFactory factory = new OracleSelectBodyFactory(ctx.subquery());
             SelectBody select = factory.generate();
-            if (ctx.order_by() != null) {
-                OracleOrderByFactory orderByFactory = new OracleOrderByFactory(ctx.order_by());
-                select.setOrderBy(orderByFactory.generate());
+            Order_by_fetch_with_check_optionContext oCtx = ctx.order_by_fetch_with_check_option();
+            if (oCtx.with_check_option() != null) {
+                select.setWithCheckOption(true);
             }
-            if (ctx.fetch_next_clause() != null) {
-                OracleFetchFactory fetchFactory = new OracleFetchFactory(ctx.fetch_next_clause());
-                select.setFetch(fetchFactory.generate());
+            if (oCtx.order_by() != null) {
+                select.setOrderBy(new OracleOrderByFactory(oCtx.order_by()).generate());
+            }
+            if (oCtx.fetch_next_clause() != null) {
+                select.setFetch(new OracleFetchFactory(oCtx.fetch_next_clause()).generate());
             }
             return new ExpressionReference(ctx, select, alias);
         }

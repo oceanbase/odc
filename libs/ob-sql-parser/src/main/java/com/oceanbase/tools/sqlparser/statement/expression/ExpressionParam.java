@@ -20,7 +20,6 @@ import com.oceanbase.tools.sqlparser.statement.Expression;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NonNull;
-import lombok.Setter;
 
 /**
  * {@link ExpressionParam}
@@ -31,15 +30,20 @@ import lombok.Setter;
  * @see FunctionParam
  */
 @Getter
-@EqualsAndHashCode(callSuper = false)
+@EqualsAndHashCode(callSuper = true)
 public class ExpressionParam extends FunctionParam {
 
     private final Expression target;
-    @Setter
-    private String alias;
 
     public ExpressionParam(@NonNull Expression target) {
+        this(target, null);
+    }
+
+    public ExpressionParam(@NonNull Expression target, String alias) {
         this.target = target;
+        if (alias != null) {
+            addOption(new ConstExpression(alias));
+        }
     }
 
     @Override
@@ -69,10 +73,7 @@ public class ExpressionParam extends FunctionParam {
 
     @Override
     public String toString() {
-        if (this.alias == null) {
-            return this.target.toString();
-        }
-        return this.target.toString() + " AS " + this.alias;
+        return this.target.toString();
     }
 
 }

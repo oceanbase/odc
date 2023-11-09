@@ -15,7 +15,9 @@
  */
 package com.oceanbase.odc.metadb.regulation.ruleset;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import javax.persistence.Column;
 import javax.persistence.Convert;
@@ -29,12 +31,14 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.oceanbase.odc.common.jpa.JsonListConverter;
 import com.oceanbase.odc.service.regulation.ruleset.model.PropertyInteractiveComponentType;
 import com.oceanbase.odc.service.regulation.ruleset.model.PropertyType;
 
-import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -48,7 +52,6 @@ import lombok.ToString;
 
 @Getter
 @Setter
-@EqualsAndHashCode(exclude = {"id", "ruleMetadata"})
 @Entity
 @Table(name = "regulation_rule_metadata_property_metadata")
 public class PropertyMetadataEntity {
@@ -75,14 +78,44 @@ public class PropertyMetadataEntity {
     @Column(name = "default_values", nullable = false)
     @Convert(converter = JsonListConverter.class)
     @JsonProperty("defaultValues")
-    private List<String> defaultValues;
+    private List<String> defaultValues = new ArrayList<>();
 
     @Column(name = "candidates")
     @Convert(converter = JsonListConverter.class)
-    private List<String> candidates;
+    private List<String> candidates = new ArrayList<>();
 
     @ManyToOne
     @JoinColumn(name = "rule_metadata_id", referencedColumnName = "id")
     @ToString.Exclude
     private MetadataEntity ruleMetadata;
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == this) {
+            return true;
+        }
+        if (obj == null || !(obj instanceof PropertyMetadataEntity)) {
+            return false;
+        }
+        PropertyMetadataEntity that = (PropertyMetadataEntity) obj;
+
+        return Objects.equals(this.getName(), that.getName()) && Objects.equals(this.getType(), that.getType())
+                && Objects.equals(this.getComponentType(), that.getComponentType())
+                && Objects.equals(this.getDescription(), that.getDescription())
+                && ((CollectionUtils.isEmpty(this.getCandidates()) && CollectionUtils.isEmpty(that.getCandidates())) ||
+                        (this.getCandidates() != null && that.getCandidates() != null
+                                && CollectionUtils.isEqualCollection(this.getCandidates(), that.getCandidates()))
+                        || (this.getCandidates() == null && that.getCandidates() == null))
+                && ((CollectionUtils.isEmpty(this.getDefaultValues())
+                        && CollectionUtils.isEmpty(that.getDefaultValues())) ||
+                        (this.getDefaultValues() != null && that.getDefaultValues() != null
+                                && CollectionUtils.isEqualCollection(this.getDefaultValues(), that.getDefaultValues()))
+                        || (this.getDefaultValues() == null && that.getDefaultValues() == null));
+    }
+
+    @Override
+    public int hashCode() {
+        return HashCodeBuilder.reflectionHashCode(this, "id", "ruleMetadata");
+    }
+
 }

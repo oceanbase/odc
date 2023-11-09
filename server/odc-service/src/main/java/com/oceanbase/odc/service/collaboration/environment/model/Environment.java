@@ -31,6 +31,7 @@ import com.oceanbase.odc.service.common.model.InnerUser;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.NonNull;
 
 /**
  * @Author: Lebie
@@ -77,6 +78,12 @@ public class Environment implements SecurityResource, OrganizationIsolated, Seri
 
     @JsonProperty(access = Access.READ_ONLY)
     private InnerUser lastModifier;
+
+    public Environment(@NonNull Long id, @NonNull String name, @NonNull EnvironmentStyle style) {
+        this.id = id;
+        this.name = name;
+        this.style = style;
+    }
 
     @Override
     public String resourceId() {

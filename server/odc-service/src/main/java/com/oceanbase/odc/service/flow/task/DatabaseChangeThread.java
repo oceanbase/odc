@@ -116,7 +116,7 @@ public class DatabaseChangeThread extends Thread {
     private final ObjectStorageFacade objectStorageFacade;
     private final DataMaskingService maskingService;
 
-    public DatabaseChangeThread(ConnectionSession connectionSession, DatabaseChangeParameters parameters, Long userId,
+    public DatabaseChangeThread(ConnectionSession connectionSession, DatabaseChangeParameters parameters,
             CloudObjectStorageService cloudObjectStorageService, ObjectStorageFacade objectStorageFacade,
             DataMaskingService maskingService) {
         this.connectionSession = connectionSession;
@@ -124,7 +124,6 @@ public class DatabaseChangeThread extends Thread {
         this.cloudObjectStorageService = cloudObjectStorageService;
         this.objectStorageFacade = objectStorageFacade;
         this.maskingService = maskingService;
-        init(userId);
     }
 
     private void init(Long userId) {
@@ -168,6 +167,9 @@ public class DatabaseChangeThread extends Thread {
     public void run() {
         TaskContextHolder.trace(userId, taskId);
         log.info("Async task  start to run, task id:{}", this.getTaskId());
+        log.info("Start read sql content, taskId={}", this.getTaskId());
+        init(userId);
+        log.info("Read sql content successfully, taskId={}, sqlCount={}", this.getTaskId(), this.sqls.size());
         startTimestamp = System.currentTimeMillis();
         String fileDir = FileManager.generateDir(FileBucket.ASYNC);
         for (int index = 1; index <= sqls.size(); index++) {

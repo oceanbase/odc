@@ -15,6 +15,8 @@
  */
 package com.oceanbase.tools.sqlparser.statement;
 
+import lombok.NonNull;
+
 /**
  * {@link Expression}
  *
@@ -24,4 +26,50 @@ package com.oceanbase.tools.sqlparser.statement;
  * @see Statement
  */
 public interface Expression extends Statement {
+
+    Expression getParentReference();
+
+    Expression getReference();
+
+    ReferenceOperator getReferenceOperator();
+
+    ReferenceOperator getParentReferenceOperator();
+
+    Expression reference(@NonNull Expression nextExpr, @NonNull Expression.ReferenceOperator operator);
+
+    Expression parentReference(@NonNull Expression parentExpr, @NonNull Expression.ReferenceOperator operator);
+
+    enum ReferenceOperator {
+        // .
+        DOT {
+            @Override
+            public String wrap(@NonNull String expr) {
+                return "." + expr;
+            }
+        },
+        // ()
+        PAREN {
+            @Override
+            public String wrap(@NonNull String expr) {
+                return "(" + expr + ")";
+            }
+        },
+        // []
+        BRACKET {
+            @Override
+            public String wrap(@NonNull String expr) {
+                return "[" + expr + "]";
+            }
+        },
+        // {}
+        BRACE {
+            @Override
+            public String wrap(@NonNull String expr) {
+                return "{" + expr + "}";
+            }
+        };
+
+        public abstract String wrap(@NonNull String expr);
+    }
+
 }

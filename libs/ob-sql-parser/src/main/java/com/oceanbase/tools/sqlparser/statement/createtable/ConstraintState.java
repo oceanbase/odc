@@ -43,6 +43,7 @@ public class ConstraintState extends BaseStatement {
     private Boolean rely;
     private boolean usingIndexFlag;
     private IndexOptions indexOptions;
+    private Partition partition;
     private Boolean enable;
     private Boolean validate;
     private Boolean enforced;
@@ -70,6 +71,9 @@ public class ConstraintState extends BaseStatement {
         }
         if (this.indexOptions != null) {
             builder.append(" ").append(this.indexOptions.toString());
+        }
+        if (this.partition != null) {
+            builder.append(" ").append(this.partition.toString());
         }
         if (this.enable != null) {
             if (this.enable) {

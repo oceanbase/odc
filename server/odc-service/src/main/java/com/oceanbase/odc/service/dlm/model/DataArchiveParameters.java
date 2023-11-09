@@ -52,5 +52,5 @@ public class DataArchiveParameters implements TaskParameters {
 
     private MigrationInsertAction migrationInsertAction = MigrationInsertAction.INSERT_NORMAL;
 
-    private DlmLimiterConfig limiterConfig;
+    private RateLimitConfiguration rateLimit;
 }

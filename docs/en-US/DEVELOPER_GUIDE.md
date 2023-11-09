@@ -199,6 +199,21 @@ The following is a schematic diagram of IDEA Code Style configuration.
 
 Some of ODC's unit test cases rely on real database services, and the database account and password are encrypted and stored in the configuration file.
 
+During local development, the environment configuration information required for unit testing can be maintained in the `local-unit-test.properties` file located in the root directory of the repository.
+
+> To prevent the leakage of database information in the testing environment, the `local-unit-test.properties` file in the repository has been added to the `.gitignore` file.
+
+Sample configuration
+
+```properties
+# Unit test OB cluster environment configuration.
+# Sensitive value auto encrypt by com.oceanbase.odc.test.tool.EncryptableConfigurations.
+# While change value, just input plain text and the value will be replaced to encrypted one while first time loaded
+odc.ob.default.oracle.commandline=your_ob_oracle_test_tenant_obclient_cli_commandline
+odc.ob.default.mysql.commandline=your_ob_mysql_test_tenant_obclient_cli_commandline
+odc.mysql.default.commandline=your_mysql_test_server_mysql_cli_commandline
+```
+
 Unit tests may be executed locally and on the Github CI pipeline. <br>
 The ODC unit test execution process reads the decryption key of the encrypted information through environment variables or a `.env` configuration file.
 
@@ -340,7 +355,7 @@ Instead, it will download the latest iteration of the `index.html` file correspo
 Static resource files URL template `http://static-resource-server/oceanbase/odc/{branchName}/xxx` .
 here `{branchName}` mean git branch name of frontend repository.
 
-e.g. version `spring-4.2.0`, The `index.html` refer URL is `http://static-resource-server/oceanbase/odc/sprint-4.2.0/index.html` 。
+e.g. branch `dev-4.2.2`, The `index.html` refer URL is `http://static-resource-server/dev-4.2.2/index.html` .
 
 ### 4.1.3 Automate refresh frontend resource
 
@@ -351,7 +366,7 @@ When starting the odc-server, you can configure the environment variable `ODC_IN
 An example configuration is shown below.
 
 ```shell
-export ODC_INDEX_PAGE_URI=http://static-resource-server/oceanbase/odc/sprint-4.2.0/index.html
+export ODC_INDEX_PAGE_URI=http://static-resource-server/dev-4.2.2/index.html
 ```
 
 ## 4.3 TraceId based log analysis

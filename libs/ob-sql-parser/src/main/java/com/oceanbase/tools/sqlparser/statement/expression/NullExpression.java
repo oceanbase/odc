@@ -19,7 +19,6 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
 import com.oceanbase.tools.sqlparser.statement.BaseStatement;
-import com.oceanbase.tools.sqlparser.statement.Expression;
 
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -33,19 +32,19 @@ import lombok.NoArgsConstructor;
  * @see BaseStatement
  */
 @NoArgsConstructor
-@EqualsAndHashCode(callSuper = false)
-public class NullExpression extends BaseStatement implements Expression {
+@EqualsAndHashCode(callSuper = true)
+public class NullExpression extends BaseExpression {
 
     public NullExpression(TerminalNode terminalNode) {
-        super(null, terminalNode);
+        super(terminalNode);
     }
 
     public NullExpression(ParserRuleContext ruleNode) {
-        super(ruleNode, null);
+        super(ruleNode);
     }
 
     @Override
-    public String toString() {
+    public String doToString() {
         return "NULL";
     }
 

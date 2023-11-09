@@ -184,7 +184,7 @@ public class DatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDelegate<D
         ConnectionSessionUtil.setSqlCommentProcessor(connectionSession, processor);
         ConnectionSessionUtil.setCurrentSchema(connectionSession, FlowTaskUtil.getSchemaName(execution));
         ConnectionSessionUtil.setColumnAccessor(connectionSession, new DatasourceColumnAccessor(connectionSession));
-        DatabaseChangeThread returnVal = new DatabaseChangeThread(connectionSession, parameters, creatorId,
+        DatabaseChangeThread returnVal = new DatabaseChangeThread(connectionSession, parameters,
                 cloudObjectStorageService, objectStorageFacade, maskingService);
         returnVal.setTaskId(taskId);
         returnVal.setFlowInstanceId(this.getFlowInstanceId());

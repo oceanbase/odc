@@ -18,9 +18,6 @@ package com.oceanbase.tools.sqlparser.statement.expression;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
-import com.oceanbase.tools.sqlparser.statement.BaseStatement;
-import com.oceanbase.tools.sqlparser.statement.Expression;
-
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NonNull;
@@ -33,36 +30,48 @@ import lombok.NonNull;
  * @since ODC_release_4.1.0
  */
 @Getter
-@EqualsAndHashCode(callSuper = false)
-public class ConstExpression extends BaseStatement implements Expression {
+@EqualsAndHashCode(callSuper = true)
+public class ConstExpression extends BaseExpression {
 
     private final String exprConst;
 
     public ConstExpression(TerminalNode terminalNode) {
-        this(null, terminalNode);
+        super(terminalNode);
+        this.exprConst = getText();
     }
 
     public ConstExpression(ParserRuleContext ruleNode) {
-        this(ruleNode, null);
+        super(ruleNode);
+        this.exprConst = getText();
     }
 
     public ConstExpression(@NonNull String exprConst) {
         this.exprConst = exprConst;
     }
 
-    private ConstExpression(ParserRuleContext ruleNode, TerminalNode terminalNode) {
-        super(ruleNode, terminalNode);
-        if (ruleNode != null) {
-            this.exprConst = ruleNode.getText();
-        } else if (terminalNode != null) {
-            this.exprConst = terminalNode.getText();
-        } else {
-            throw new IllegalArgumentException("Illegal arguments");
-        }
+    public ConstExpression(ParserRuleContext beginRule, TerminalNode endNode) {
+        super(beginRule, endNode);
+        this.exprConst = getText();
+    }
+
+    public ConstExpression(TerminalNode beginNode, TerminalNode endNode) {
+        super(beginNode, endNode);
+        this.exprConst = getText();
+    }
+
+    public ConstExpression(TerminalNode beginNode, ParserRuleContext endRule) {
+        super(beginNode, endRule);
+        this.exprConst = getText();
+
+    }
+
+    public ConstExpression(ParserRuleContext beginRule, ParserRuleContext endRule) {
+        super(beginRule, endRule);
+        this.exprConst = getText();
     }
 
     @Override
-    public String toString() {
+    public String doToString() {
         return this.exprConst;
     }
 

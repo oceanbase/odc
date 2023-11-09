@@ -338,13 +338,13 @@ public class DataTransferService {
         }).collect(Collectors.toList());
 
         if (config.isTransferDDL()) {
-            result.setDataObjectsInfo(objects);
+            result.setSchemaObjectsInfo(objects);
         }
         if (config.isTransferData()) {
             List<ObjectResult> tables =
                     objects.stream().filter(obj -> ObjectType.TABLE.getName().equals(obj.getType()))
                             .collect(Collectors.toList());
-            result.setSchemaObjectsInfo(tables);
+            result.setDataObjectsInfo(tables);
         }
         taskService.updateResult(taskId, result);
     }
