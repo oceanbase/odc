@@ -16,11 +16,13 @@
 
 package com.oceanbase.tools.sqlparser.statement.insert;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.Validate;
 
 import com.oceanbase.tools.sqlparser.statement.BaseStatement;
 import com.oceanbase.tools.sqlparser.statement.common.oracle.LogErrors;
@@ -57,11 +59,12 @@ public class Insert extends BaseStatement {
     private final ConditionalInsert conditionalInsert;
 
     public Insert(@NonNull ParserRuleContext context,
-            @NonNull List<InsertTable> tableInsert,
+            List<InsertTable> tableInsert,
             ConditionalInsert conditionalInsert) {
         super(context);
-        this.tableInsert = tableInsert;
+        Validate.isTrue(CollectionUtils.isNotEmpty(tableInsert) || conditionalInsert != null);
         this.conditionalInsert = conditionalInsert;
+        this.tableInsert = tableInsert == null ? Collections.emptyList() : tableInsert;
     }
 
     public Insert(@NonNull ParserRuleContext context, @NonNull Insert target) {
@@ -78,10 +81,10 @@ public class Insert extends BaseStatement {
         this.conditionalInsert = target.conditionalInsert;
     }
 
-    public Insert(@NonNull List<InsertTable> tableInsert,
-            ConditionalInsert conditionalInsert) {
-        this.tableInsert = tableInsert;
+    public Insert(List<InsertTable> tableInsert, ConditionalInsert conditionalInsert) {
+        Validate.isTrue(CollectionUtils.isNotEmpty(tableInsert) || conditionalInsert != null);
         this.conditionalInsert = conditionalInsert;
+        this.tableInsert = tableInsert == null ? Collections.emptyList() : tableInsert;
     }
 
     @Override

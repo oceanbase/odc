@@ -58,7 +58,7 @@ public class MySQLInsertFactoryTest {
     public void generate_simpleInsert_succeed() {
         StatementFactory<Insert> factory = new MySQLInsertFactory(
                 getInsertContext("insert a.b values(1,default)"));
-        Insert acutal = factory.generate();
+        Insert actual = factory.generate();
 
         RelationFactor factor = new RelationFactor("b");
         factor.setSchema("a");
@@ -67,14 +67,14 @@ public class MySQLInsertFactoryTest {
         values.add(Arrays.asList(new ConstExpression("1"), new ConstExpression("default")));
         insertTable.setValues(values);
         Insert expect = new Insert(Collections.singletonList(insertTable), null);
-        Assert.assertEquals(acutal, expect);
+        Assert.assertEquals(actual, expect);
     }
 
     @Test
     public void generate_simpleReplace_succeed() {
         StatementFactory<Insert> factory = new MySQLInsertFactory(getInsertContext(
                 "replace a.b() select col.* abc from dual"));
-        Insert acutal = factory.generate();
+        Insert actual = factory.generate();
 
         RelationFactor factor = new RelationFactor("b");
         factor.setSchema("a");
@@ -88,14 +88,14 @@ public class MySQLInsertFactoryTest {
         insertTable.setValues(values);
         Insert expect = new Insert(Collections.singletonList(insertTable), null);
         expect.setReplace(true);
-        Assert.assertEquals(acutal, expect);
+        Assert.assertEquals(actual, expect);
     }
 
     @Test
     public void generate_onDuplicateKey_succeed() {
         StatementFactory<Insert> factory = new MySQLInsertFactory(getInsertContext("insert ignore into a.b "
                 + "partition (p1,p2)(col1, col2) values(1,2),(3,5) on duplicate key update tb.col1='abcd'"));
-        Insert acutal = factory.generate();
+        Insert actual = factory.generate();
 
         RelationFactor factor = new RelationFactor("b");
         factor.setSchema("a");
@@ -111,7 +111,7 @@ public class MySQLInsertFactoryTest {
         expect.setIgnore(true);
         SetColumn setColumn = new SetColumn(new ColumnReference(null, "tb", "col1"), new ConstExpression("'abcd'"));
         expect.setOnDuplicateKeyUpdateColumns(Collections.singletonList(setColumn));
-        Assert.assertEquals(acutal, expect);
+        Assert.assertEquals(actual, expect);
     }
 
     @Test
@@ -119,7 +119,7 @@ public class MySQLInsertFactoryTest {
         StatementFactory<Insert> factory = new MySQLInsertFactory(
                 getInsertContext(
                         "insert ignore into a.b partition (p1,p2) set tb.col2=default on duplicate key update tb.col1='abcd'"));
-        Insert acutal = factory.generate();
+        Insert actual = factory.generate();
 
         RelationFactor factor = new RelationFactor("b");
         factor.setSchema("a");
@@ -131,7 +131,7 @@ public class MySQLInsertFactoryTest {
         expect.setIgnore(true);
         SetColumn setColumn = new SetColumn(new ColumnReference(null, "tb", "col1"), new ConstExpression("'abcd'"));
         expect.setOnDuplicateKeyUpdateColumns(Collections.singletonList(setColumn));
-        Assert.assertEquals(acutal, expect);
+        Assert.assertEquals(actual, expect);
     }
 
     private Insert_stmtContext getInsertContext(String expr) {

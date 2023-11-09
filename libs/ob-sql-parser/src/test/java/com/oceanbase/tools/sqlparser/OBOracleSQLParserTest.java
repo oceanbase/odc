@@ -17,16 +17,20 @@ package com.oceanbase.tools.sqlparser;
 
 import java.io.StringReader;
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
 import org.junit.Assert;
 import org.junit.Test;
 
+import com.oceanbase.tools.sqlparser.statement.Expression;
 import com.oceanbase.tools.sqlparser.statement.Operator;
 import com.oceanbase.tools.sqlparser.statement.Statement;
 import com.oceanbase.tools.sqlparser.statement.common.CharacterType;
 import com.oceanbase.tools.sqlparser.statement.common.DataType;
+import com.oceanbase.tools.sqlparser.statement.common.RelationFactor;
 import com.oceanbase.tools.sqlparser.statement.createtable.ColumnDefinition;
 import com.oceanbase.tools.sqlparser.statement.createtable.CreateTable;
 import com.oceanbase.tools.sqlparser.statement.delete.Delete;
@@ -34,8 +38,12 @@ import com.oceanbase.tools.sqlparser.statement.expression.ColumnReference;
 import com.oceanbase.tools.sqlparser.statement.expression.CompoundExpression;
 import com.oceanbase.tools.sqlparser.statement.expression.ConstExpression;
 import com.oceanbase.tools.sqlparser.statement.expression.RelationReference;
+import com.oceanbase.tools.sqlparser.statement.insert.Insert;
+import com.oceanbase.tools.sqlparser.statement.insert.InsertTable;
 import com.oceanbase.tools.sqlparser.statement.select.FromReference;
 import com.oceanbase.tools.sqlparser.statement.select.NameReference;
+import com.oceanbase.tools.sqlparser.statement.select.PartitionType;
+import com.oceanbase.tools.sqlparser.statement.select.PartitionUsage;
 import com.oceanbase.tools.sqlparser.statement.select.Projection;
 import com.oceanbase.tools.sqlparser.statement.select.Select;
 import com.oceanbase.tools.sqlparser.statement.select.SelectBody;
@@ -89,6 +97,24 @@ public class OBOracleSQLParserTest {
         ConstExpression right = new ConstExpression("100");
         expect.setWhere(new CompoundExpression(left, right, Operator.EQ));
         Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void parse_insertStatement_parseSucceed() {
+        SQLParser sqlParser = new OBOracleSQLParser();
+        Statement actual =
+                sqlParser.parse(new StringReader("insert into a.b partition(p1, p2) alias values(1,default)"));
+
+        RelationFactor factor = new RelationFactor("b");
+        factor.setSchema("a");
+        InsertTable insertTable = new InsertTable(factor);
+        insertTable.setPartitionUsage(new PartitionUsage(PartitionType.PARTITION, Arrays.asList("p1", "p2")));
+        insertTable.setAlias("alias");
+        List<List<Expression>> values = new ArrayList<>();
+        values.add(Arrays.asList(new ConstExpression("1"), new ConstExpression("default")));
+        insertTable.setValues(values);
+        Insert expect = new Insert(Collections.singletonList(insertTable), null);
+        Assert.assertEquals(actual, expect);
     }
 
     @Test

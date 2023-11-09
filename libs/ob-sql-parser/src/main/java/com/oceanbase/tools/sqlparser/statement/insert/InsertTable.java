@@ -123,7 +123,7 @@ public class InsertTable extends BaseStatement {
         if (CollectionUtils.isNotEmpty(this.values)) {
             if (this.values.size() == 1 && this.values.get(0).size() == 1) {
                 Expression value = this.values.get(0).get(0);
-                if (value instanceof Select) {
+                if ((value instanceof Select) || (value instanceof SelectBody)) {
                     builder.append(" ").append(value);
                 } else {
                     builder.append(" VALUES ").append(value);

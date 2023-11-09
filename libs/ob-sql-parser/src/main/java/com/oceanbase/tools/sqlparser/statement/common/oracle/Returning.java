@@ -55,8 +55,7 @@ public class Returning extends BaseStatement {
         this.expressionList = expressionList;
     }
 
-    public Returning(
-            @NonNull List<Expression> intoList,
+    public Returning(@NonNull List<Expression> intoList,
             @NonNull List<Projection> expressionList) {
         this.intoList = intoList;
         this.expressionList = expressionList;

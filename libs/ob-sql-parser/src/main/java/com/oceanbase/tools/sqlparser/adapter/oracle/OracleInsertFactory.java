@@ -211,6 +211,9 @@ public class OracleInsertFactory extends OBParserBaseVisitor<Insert> implements 
         Dml_table_nameContext dCtx = ctx.dml_table_name();
         InsertTable insertTable = new InsertTable(ctx, OracleFromReferenceFactory
                 .getRelationFactor(dCtx.relation_factor()));
+        if (dCtx.use_partition() != null) {
+            insertTable.setPartitionUsage(new OraclePartitionUsageFactory(dCtx.use_partition()).generate());
+        }
         if (ctx.column_list() != null) {
             insertTable.setColumns(ctx.column_list().column_definition_ref().stream()
                     .map(c -> new OracleColumnRefFactory(c).generate()).collect(Collectors.toList()));
