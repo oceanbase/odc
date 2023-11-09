@@ -26,34 +26,34 @@ import org.junit.Test;
 
 import com.oceanbase.odc.plugin.task.api.datatransfer.dumper.AbstractOutputFile;
 import com.oceanbase.odc.plugin.task.api.datatransfer.dumper.DumpDBObject;
-import com.oceanbase.odc.plugin.task.api.datatransfer.dumper.DumperOutput;
+import com.oceanbase.odc.plugin.task.api.datatransfer.dumper.ExportOutput;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
 
 /**
- * Test cases for {@link DumperOutput}
+ * Test cases for {@link ExportOutput}
  *
  * @author yh263208
  * @date 2022-07-01 10:25
  * @since ODC_release_3.4.0
  */
-public class DumperOutputTest {
+public class ExportOutputTest {
 
     @Test
     public void getManifest_fromZipFile_returnNotNull() throws IOException {
-        DumperOutput output = new DumperOutput(getDumpZip());
+        ExportOutput output = new ExportOutput(getDumpZip());
         Assert.assertNotNull(output.getManifest());
     }
 
     @Test
     public void getManifest_fromFolder_returnNotNull() throws IOException {
-        DumperOutput output = new DumperOutput(getDumpFolder());
+        ExportOutput output = new ExportOutput(getDumpFolder());
         Assert.assertNotNull(output.getManifest());
     }
 
     @Ignore
     @Test
     public void getCheckPoints_fromZipFile_returnNotNull() throws IOException {
-        DumperOutput output = new DumperOutput(getDumpZip());
+        ExportOutput output = new ExportOutput(getDumpZip());
 
         Assert.assertNotNull(output.getCheckpoints());
         Assert.assertEquals(1, output.getCheckpoints().getTarget().size());
@@ -62,7 +62,7 @@ public class DumperOutputTest {
     @Ignore
     @Test
     public void getCheckPoints_fromFolder_returnNotNull() throws IOException {
-        DumperOutput output = new DumperOutput(getDumpFolder());
+        ExportOutput output = new ExportOutput(getDumpFolder());
 
         Assert.assertNotNull(output.getCheckpoints());
         Assert.assertEquals(1, output.getCheckpoints().getTarget().size());
@@ -70,7 +70,7 @@ public class DumperOutputTest {
 
     @Test
     public void getObjectFolders_fromZipFile_tableObjectReturn() throws IOException {
-        DumperOutput output = new DumperOutput(getDumpZip());
+        ExportOutput output = new ExportOutput(getDumpZip());
         List<DumpDBObject> objectFolderList = output.getDumpDbObjects();
 
         Assert.assertEquals(1, objectFolderList.size());
@@ -80,7 +80,7 @@ public class DumperOutputTest {
 
     @Test
     public void getObjectFolders_fromFolder_tableObjectReturn() throws IOException {
-        DumperOutput output = new DumperOutput(getDumpFolder());
+        ExportOutput output = new ExportOutput(getDumpFolder());
         List<DumpDBObject> objectFolderList = output.getDumpDbObjects();
 
         Assert.assertEquals(1, objectFolderList.size());
@@ -90,7 +90,7 @@ public class DumperOutputTest {
 
     @Test
     public void getOutputFiles_fromZipFile_2OutputFileReturn() throws IOException {
-        DumperOutput output = new DumperOutput(getDumpZip());
+        ExportOutput output = new ExportOutput(getDumpZip());
         List<DumpDBObject> objectFolderList = output.getDumpDbObjects();
         DumpDBObject folder = objectFolderList.get(0);
         List<AbstractOutputFile> outputFiles = folder.getOutputFiles();
@@ -104,7 +104,7 @@ public class DumperOutputTest {
 
     @Test
     public void getOutputFiles_fromFolder_2OutputFileReturn() throws IOException {
-        DumperOutput output = new DumperOutput(getDumpFolder());
+        ExportOutput output = new ExportOutput(getDumpFolder());
         List<DumpDBObject> objectFolderList = output.getDumpDbObjects();
         DumpDBObject folder = objectFolderList.get(0);
         List<AbstractOutputFile> outputFiles = folder.getOutputFiles();
@@ -117,13 +117,13 @@ public class DumperOutputTest {
     }
 
     private File getDumpFolder() {
-        URL url = DumperOutput.class.getClassLoader().getResource("datatransfer/data");
+        URL url = ExportOutput.class.getClassLoader().getResource("datatransfer/data");
         assert url != null;
         return new File(url.getPath());
     }
 
     private File getDumpZip() {
-        URL url = DumperOutput.class.getClassLoader().getResource("datatransfer/export.zip");
+        URL url = ExportOutput.class.getClassLoader().getResource("datatransfer/export.zip");
         assert url != null;
         return new File(url.getPath());
     }

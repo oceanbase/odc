@@ -33,7 +33,7 @@ import com.oceanbase.odc.core.datasource.SingleConnectionDataSource;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.plugin.task.api.datatransfer.DataTransferExtensionPoint;
 import com.oceanbase.odc.plugin.task.api.datatransfer.DataTransferJob;
-import com.oceanbase.odc.plugin.task.api.datatransfer.dumper.DumperOutput;
+import com.oceanbase.odc.plugin.task.api.datatransfer.dumper.ExportOutput;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.ConnectionInfo;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferFormat;
@@ -98,8 +98,8 @@ public class OBMySQLDataTransferExtension implements DataTransferExtensionPoint 
         File file = new File(url.toURI());
         if (StringUtils.endsWithIgnoreCase(file.getName(), ".zip")) {
             try {
-                DumperOutput dumperOutput = new DumperOutput(file);
-                return UploadFileResult.ofDumperOutput(file.getName(), dumperOutput);
+                ExportOutput exportOutput = new ExportOutput(file);
+                return UploadFileResult.ofExportOutput(file.getName(), exportOutput);
             } catch (Exception e) {
                 return UploadFileResult.ofFail(ErrorCodes.ImportInvalidFileType, new Object[] {file.getPath()});
             }

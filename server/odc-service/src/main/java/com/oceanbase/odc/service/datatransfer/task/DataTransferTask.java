@@ -58,7 +58,7 @@ import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.core.shared.model.TableIdentity;
 import com.oceanbase.odc.plugin.task.api.datatransfer.DataTransferJob;
 import com.oceanbase.odc.plugin.task.api.datatransfer.dumper.DumpDBObject;
-import com.oceanbase.odc.plugin.task.api.datatransfer.dumper.DumperOutput;
+import com.oceanbase.odc.plugin.task.api.datatransfer.dumper.ExportOutput;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConstants;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferFormat;
@@ -154,12 +154,12 @@ public class DataTransferTask implements Callable<DataTransferTaskResult> {
          */
         List<String> importFileNames = config.getImportFileName();
         if (config.isCompressed()) {
-            DumperOutput dumperOutput = copyImportZip(importFileNames, workingDir);
+            ExportOutput exportOutput = copyImportZip(importFileNames, workingDir);
             /*
              * set whiteList for ob-loader
              */
             List<DataTransferObject> objects = new ArrayList<>();
-            List<DumpDBObject> dumpDbObjects = dumperOutput.getDumpDbObjects();
+            List<DumpDBObject> dumpDbObjects = exportOutput.getDumpDbObjects();
             for (DumpDBObject dbObject : dumpDbObjects) {
                 objects.addAll(dbObject.getOutputFiles().stream().map(abstractOutputFile -> {
                     DataTransferObject transferObject = new DataTransferObject();
@@ -259,7 +259,7 @@ public class DataTransferTask implements Callable<DataTransferTaskResult> {
         copyExportedFiles(result, exportPath.getPath());
         File dest = new File(workingDir.getPath() + File.separator + workingDir.getName() + "_export_file.zip");
         try {
-            DumperOutput output = new DumperOutput(exportPath);
+            ExportOutput output = new ExportOutput(exportPath);
             output.toZip(dest, file -> !OUTPUT_FILTER_FILES.contains(file.getFileName()));
             if (config.isMergeSchemaFiles()) {
                 File schemaFile =
@@ -319,7 +319,7 @@ public class DataTransferTask implements Callable<DataTransferTaskResult> {
         return inputs;
     }
 
-    private DumperOutput copyImportZip(List<String> fileNames, File destDir) throws IOException {
+    private ExportOutput copyImportZip(List<String> fileNames, File destDir) throws IOException {
         if (fileNames == null || fileNames.size() != 1) {
             log.warn("Single zip file is available, importFileNames={}", fileNames);
             throw new IllegalArgumentException("Single zip file is available");
@@ -330,10 +330,10 @@ public class DataTransferTask implements Callable<DataTransferTaskResult> {
         File from = uploadFile.orElseThrow(() -> new FileNotFoundException("File not found, " + fileName));
         File dest = new File(destDir.getAbsolutePath() + File.separator + "data");
         FileUtils.forceMkdir(dest);
-        DumperOutput dumperOutput = new DumperOutput(from);
-        dumperOutput.toFolder(dest);
+        ExportOutput exportOutput = new ExportOutput(from);
+        exportOutput.toFolder(dest);
         log.info("Unzip file to working dir, from={}, dest={}", from.getAbsolutePath(), dest.getAbsolutePath());
-        return dumperOutput;
+        return exportOutput;
     }
 
     private void copyExportedFiles(DataTransferTaskResult result, String exportPath) {

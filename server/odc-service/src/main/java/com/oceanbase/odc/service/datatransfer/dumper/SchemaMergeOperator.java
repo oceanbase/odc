@@ -41,7 +41,7 @@ import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.TopoOrderComparator;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.plugin.task.api.datatransfer.dumper.DumpDBObject;
-import com.oceanbase.odc.plugin.task.api.datatransfer.dumper.DumperOutput;
+import com.oceanbase.odc.plugin.task.api.datatransfer.dumper.ExportOutput;
 import com.oceanbase.odc.plugin.task.api.datatransfer.dumper.SchemaFile;
 import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
 import com.oceanbase.tools.dbbrowser.parser.SqlParser;
@@ -88,7 +88,7 @@ public class SchemaMergeOperator {
 
     private final DialectType dialectType;
     private final String schemaName;
-    private final DumperOutput dumperOutput;
+    private final ExportOutput exportOutput;
 
     private final Map<ObjectType, List<SchemaFileIdentifier>> objectMap;
 
@@ -109,9 +109,9 @@ public class SchemaMergeOperator {
         PROCESS_ORDER.add(ObjectType.PACKAGE_BODY);
     }
 
-    public SchemaMergeOperator(DumperOutput dumperOutput, String schemaName, DialectType dialectType) throws Exception {
+    public SchemaMergeOperator(ExportOutput exportOutput, String schemaName, DialectType dialectType) throws Exception {
         this.dialectType = dialectType;
-        this.dumperOutput = dumperOutput;
+        this.exportOutput = exportOutput;
         this.schemaName = dialectType.isMysql() ? StringUtils.unquoteMySqlIdentifier(schemaName)
                 : StringUtils.unquoteOracleIdentifier(schemaName);
         this.objectMap = getSchemaFileIdentifiers();
@@ -145,7 +145,7 @@ public class SchemaMergeOperator {
 
     private Map<ObjectType, List<SchemaFileIdentifier>> getSchemaFileIdentifiers() throws IOException {
         Map<ObjectType, List<SchemaFileIdentifier>> identifiers = new HashMap<>();
-        for (DumpDBObject object : dumperOutput.getDumpDbObjects()) {
+        for (DumpDBObject object : exportOutput.getDumpDbObjects()) {
             if (CollectionUtils.isEmpty(object.getOutputFiles())) {
                 continue;
             }
