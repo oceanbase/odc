@@ -4,8 +4,6 @@
 
 cd $(dirname "$0") || exit 1
 
-# get cpu architecture
-# optional return value: amd64, arm64, unknown
 function get_cpu_arch() {
     local cpu_arch=$(uname -m)
     case "$cpu_arch" in
@@ -22,14 +20,21 @@ function get_cpu_arch() {
     echo "${cpu_arch}"
 }
 
+function get_odc_version() {
+    local odc_version=$(cat "../odc-server-VER.txt" | sed 's/[ \s\t\n\r]*//g')
+    echo "${odc_version}"
+}
+
 main() {
 
     local register="docker.io"
     local namespace="oceanbase"
     local app_name=odc
     local image_name=${register}/${namespace}/${app_name}
-    local image_tag=${2:-"latest"}
+    local image_tag=${2:-$(get_odc_version)}
     local cpu_arch=$(get_cpu_arch)
+
+    echo "image_name=${image_name}, image_tag=${image_tag}, cpu_arch=${cpu_arch}"
 
     case $1 in
     build-odc)
