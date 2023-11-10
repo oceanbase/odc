@@ -25,18 +25,18 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.oceanbase.odc.plugin.task.api.datatransfer.dumper.DumperOutput;
-import com.oceanbase.tools.loaddump.common.enums.ServerMode;
+import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.plugin.task.api.datatransfer.dumper.ExportOutput;
 
 public class SchemaMergeOperatorTest {
-    private DumperOutput dumperOutput;
+    private ExportOutput exportOutput;
     private File folder;
 
     @Before
     public void setUp() throws Exception {
-        dumperOutput = new DumperOutput(getDumpZip());
+        exportOutput = new ExportOutput(getDumpZip());
         folder = new File("datatransfer/temp-export");
-        dumperOutput.toFolder(folder);
+        exportOutput.toFolder(folder);
     }
 
     @After
@@ -46,7 +46,7 @@ public class SchemaMergeOperatorTest {
 
     @Test
     public void test_MergeSchemaFiles_Success() throws Exception {
-        SchemaMergeOperator operator = new SchemaMergeOperator(dumperOutput, "SYS", ServerMode.ORACLE);
+        SchemaMergeOperator operator = new SchemaMergeOperator(exportOutput, "SYS", DialectType.OB_ORACLE);
         File dest = new File("datatransfer/temp-export/schema.sql");
         operator.mergeSchemaFiles(dest, null);
 
@@ -54,7 +54,7 @@ public class SchemaMergeOperatorTest {
     }
 
     private File getDumpZip() throws URISyntaxException {
-        URL url = DumperOutput.class.getClassLoader().getResource("datatransfer/export.zip");
+        URL url = ExportOutput.class.getClassLoader().getResource("datatransfer/export.zip");
         assert url != null;
         return new File(url.toURI());
     }

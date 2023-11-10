@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.flow.task.model;
+package com.oceanbase.odc.core.flow.model;
 
 /**
  * Methodless interface for marking process task results

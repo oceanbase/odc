@@ -39,7 +39,7 @@ import lombok.NonNull;
  */
 public interface DataTransferExtensionPoint extends ExtensionPoint {
 
-    DataTransferCallable generate(@NonNull DataTransferConfig config, @NonNull File workingDir, @NonNull File logDir,
+    DataTransferJob generate(@NonNull DataTransferConfig config, @NonNull File workingDir, @NonNull File logDir,
             @NonNull List<URL> inputs) throws Exception;
 
     Set<ObjectType> getSupportedObjectTypes(ConnectionInfo connectionInfo) throws SQLException;
