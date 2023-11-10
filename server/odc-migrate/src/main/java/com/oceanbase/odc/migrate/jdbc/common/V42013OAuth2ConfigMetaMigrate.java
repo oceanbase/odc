@@ -173,10 +173,10 @@ public class V42013OAuth2ConfigMetaMigrate implements JdbcMigratable {
 
                     Oauth2Parameter currentOauth2Parameter =
                             ObjectUtil.deepCopy(oauth2Parameter, Oauth2Parameter.class);
-                    currentOauth2Parameter.setRedirectUrl(null);
                     currentOauth2Parameter.setLoginRedirectUrl(null);
 
                     String registrationId = org.getId() + "-" + HashUtils.md5(currentOauth2Parameter.getName());
+                    currentOauth2Parameter.setRedirectUrl("{baseUrl}/login/oauth2/code/" + registrationId);
                     currentOauth2Parameter.setRegistrationId(registrationId);
                     currentOauth2Parameter.setLoginRedirectUrl(replaceRegistrationId(loginRedirectUrl, registrationId));
                     currentOauth2Parameter.fillParameter();
@@ -284,10 +284,10 @@ public class V42013OAuth2ConfigMetaMigrate implements JdbcMigratable {
                     Preconditions.checkNotNull(loginRedirectUrl, "loginRedirectUrl");
                     Oauth2Parameter currentOauth2Parameter =
                             ObjectUtil.deepCopy(oauth2Parameter, Oauth2Parameter.class);
-                    currentOauth2Parameter.setRedirectUrl(null);
                     currentOauth2Parameter.setLoginRedirectUrl(null);
 
                     String registrationId = org.getId() + "-" + HashUtils.md5(currentOauth2Parameter.getName());
+                    currentOauth2Parameter.setRedirectUrl("{baseUrl}/login/oauth2/code/" + registrationId);
                     currentOauth2Parameter.setRegistrationId(registrationId);
                     currentOauth2Parameter.setLoginRedirectUrl(replaceRegistrationId(loginRedirectUrl, registrationId));
                     currentOauth2Parameter.fillParameter();
