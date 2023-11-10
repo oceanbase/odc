@@ -700,7 +700,6 @@
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-auto-increment-datatypes.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
-      - 'MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-auto-increment-datatypes.allowed-datatypes}":["bigint"]}'
 - enabled: 1
   level: 0
@@ -1111,7 +1110,6 @@
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-auto-increment-datatypes.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
-      - 'MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-auto-increment-datatypes.allowed-datatypes}":["bigint"]}'
 - enabled: 1
   level: 0
@@ -1522,7 +1520,6 @@
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-auto-increment-datatypes.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
-      - 'MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-auto-increment-datatypes.allowed-datatypes}":["bigint"]}'
 - enabled: 1
   level: 0
@@ -1924,7 +1921,6 @@
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-auto-increment-datatypes.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
-      - 'MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-auto-increment-datatypes.allowed-datatypes}":["bigint"]}'
 - enabled: 1
   level: 0

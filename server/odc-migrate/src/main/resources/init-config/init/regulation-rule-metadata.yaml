@@ -569,6 +569,7 @@
         type: STRING_LIST
         componentType: SELECT_TAGS
         defaultValues:
+            - int
             - varchar
             - varchar2
             - number
