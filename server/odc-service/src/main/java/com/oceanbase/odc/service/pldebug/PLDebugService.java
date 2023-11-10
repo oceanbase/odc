@@ -84,8 +84,8 @@ public class PLDebugService {
     private boolean syncEnabled;
     @Autowired
     private SessionProperties sessionProperties;
-    private ThreadPoolExecutor debugThreadPoolExecutor;
-    private ScheduledExecutorService scheduleExecutor;
+    private ThreadPoolExecutor debugSessionExecutor;
+    private ScheduledExecutorService debugMonitorExecutor;
 
     @Autowired
     private AuthenticationFacade authenticationFacade;
@@ -98,18 +98,18 @@ public class PLDebugService {
         if (maxPoolSize <= 0) {
             maxPoolSize = 4 * SystemUtils.availableProcessors();
         }
-        // thread control in threadpool
-        // core pool size equals to max is for submiting new thread without blocking
-        this.debugThreadPoolExecutor = new ThreadPoolExecutor(maxPoolSize, maxPoolSize, 0, TimeUnit.MILLISECONDS,
+        // thread control in thread pool
+        // core pool size equals to max is for submitting new thread without blocking
+        this.debugSessionExecutor = new ThreadPoolExecutor(maxPoolSize, maxPoolSize, 0, TimeUnit.MILLISECONDS,
                 new LinkedBlockingQueue<>(1),
-                r -> new Thread(r, "PLDebug_Thread_" + r.hashCode()),
+                r -> new Thread(r, "pldebug-session-" + r.hashCode()),
                 new ThreadPoolExecutor.CallerRunsPolicy());
 
         ThreadFactory threadFactory = new ThreadFactoryBuilder()
-                .setNameFormat("PLDebug-schedule-clear-%d")
+                .setNameFormat("pldebug-monitor-%d")
                 .build();
-        scheduleExecutor = new ScheduledThreadPoolExecutor(1, threadFactory);
-        scheduleExecutor.scheduleWithFixedDelay(new Runnable() {
+        debugMonitorExecutor = new ScheduledThreadPoolExecutor(1, threadFactory);
+        debugMonitorExecutor.scheduleWithFixedDelay(new Runnable() {
             @Override
             public void run() {
                 log.info("Number of running pl debug session={}", debugId2Session.size());
@@ -135,7 +135,8 @@ public class PLDebugService {
     @PreDestroy
     public void destroy() {
         log.info("PLDebug Service start to destroy...");
-        ExecutorUtils.gracefulShutdown(debugThreadPoolExecutor, "debugThreadPoolExecutor", 5);
+        ExecutorUtils.gracefulShutdown(debugSessionExecutor, "debugThreadPoolExecutor", 5);
+        ExecutorUtils.gracefulShutdown(debugMonitorExecutor, "scheduleExecutor", 5);
         log.info("PLDebug Service destroyed");
     }
 
@@ -162,7 +163,7 @@ public class PLDebugService {
         }
         PLDebugSession plDebugSession = new PLDebugSession(authenticationFacade.currentUserId());
         plDebugSession.setDbmsoutputMaxRows(sessionProperties.getDbmsOutputMaxRows());
-        plDebugSession.start(connectionSession, debugThreadPoolExecutor, req, sessionTimeoutSeconds, syncEnabled);
+        plDebugSession.start(connectionSession, debugSessionExecutor, req, sessionTimeoutSeconds, syncEnabled);
         debugId2Session.put(plDebugSession.getSessionId(), plDebugSession);
         return plDebugSession.getSessionId();
     }
