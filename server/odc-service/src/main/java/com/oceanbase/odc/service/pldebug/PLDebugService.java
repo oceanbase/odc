@@ -135,8 +135,8 @@ public class PLDebugService {
     @PreDestroy
     public void destroy() {
         log.info("PLDebug Service start to destroy...");
-        ExecutorUtils.gracefulShutdown(debugSessionExecutor, "debugThreadPoolExecutor", 5);
-        ExecutorUtils.gracefulShutdown(debugMonitorExecutor, "scheduleExecutor", 5);
+        ExecutorUtils.gracefulShutdown(debugSessionExecutor, "debugSessionExecutor", 5);
+        ExecutorUtils.gracefulShutdown(debugMonitorExecutor, "debugMonitorExecutor", 5);
         log.info("PLDebug Service destroyed");
     }
 
