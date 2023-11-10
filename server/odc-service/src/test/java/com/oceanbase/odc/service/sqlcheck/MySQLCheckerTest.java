@@ -257,7 +257,8 @@ public class MySQLCheckerTest {
         String[] sqls = new String[] {
                 "insert into tab values(1,2,3)",
                 "insert into tab(col, col2) values(1,2,3)",
-                "replace into tab values(1,2,3)"
+                "replace into tab values(1,2,3)",
+                "insert into tab set col='asbcd'"
         };
         DefaultSqlChecker sqlChecker = new DefaultSqlChecker(DialectType.OB_MYSQL, "$$",
                 Collections.singletonList(new NoSpecificColumnExists()));
