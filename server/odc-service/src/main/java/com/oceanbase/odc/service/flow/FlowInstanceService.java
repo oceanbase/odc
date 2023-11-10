@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.flow;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -60,6 +61,7 @@ import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.lang.Holder;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
+import com.oceanbase.odc.core.flow.model.TaskParameters;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
@@ -82,6 +84,7 @@ import com.oceanbase.odc.metadb.flow.UserTaskInstanceEntity;
 import com.oceanbase.odc.metadb.flow.UserTaskInstanceRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.metadb.task.TaskEntity;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.odc.service.config.SystemConfigService;
@@ -89,7 +92,6 @@ import com.oceanbase.odc.service.config.model.Configuration;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
-import com.oceanbase.odc.service.datatransfer.model.DataTransferConfig;
 import com.oceanbase.odc.service.dispatch.DispatchResponse;
 import com.oceanbase.odc.service.dispatch.RequestDispatcher;
 import com.oceanbase.odc.service.dispatch.TaskDispatchChecker;
@@ -111,7 +113,6 @@ import com.oceanbase.odc.service.flow.model.FlowNodeInstanceDetailResp.FlowNodeI
 import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
 import com.oceanbase.odc.service.flow.model.FlowNodeType;
 import com.oceanbase.odc.service.flow.model.QueryFlowInstanceParams;
-import com.oceanbase.odc.service.flow.model.TaskParameters;
 import com.oceanbase.odc.service.flow.processor.EnablePreprocess;
 import com.oceanbase.odc.service.flow.task.BaseRuntimeFlowableDelegate;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
@@ -282,7 +283,10 @@ public class FlowInstanceService {
         }
         List<RiskLevel> riskLevels = riskLevelService.list();
         Verify.notEmpty(riskLevels, "riskLevels");
-        ConnectionConfig conn = connectionService.getForConnectionSkipPermissionCheck(createReq.getConnectionId());
+        ConnectionConfig conn = null;
+        if (Objects.nonNull(createReq.getConnectionId())) {
+            conn = connectionService.getForConnectionSkipPermissionCheck(createReq.getConnectionId());
+        }
         return Collections.singletonList(buildFlowInstance(riskLevels, createReq, conn));
     }
 
@@ -348,12 +352,28 @@ public class FlowInstanceService {
         Specification<FlowInstanceViewEntity> specification = Specification
                 .where(FlowInstanceViewSpecs.creatorIdIn(creatorIds))
                 .and(FlowInstanceViewSpecs.organizationIdEquals(authenticationFacade.currentOrganizationId()))
-                .and(FlowInstanceViewSpecs.taskTypeEquals(params.getType()))
                 .and(FlowInstanceViewSpecs.projectIdEquals(params.getProjectId()))
                 .and(FlowInstanceViewSpecs.statusIn(params.getStatuses()))
                 .and(FlowInstanceViewSpecs.createTimeLate(params.getStartTime()))
                 .and(FlowInstanceViewSpecs.createTimeBefore(params.getEndTime()))
                 .and(FlowInstanceViewSpecs.idEquals(targetId));
+        if (params.getType() != null) {
+            specification = specification.and(FlowInstanceViewSpecs.taskTypeEquals(params.getType()));
+        } else {
+            // Task type which will be filtered independently
+            List<TaskType> types = Arrays.asList(
+                    TaskType.EXPORT,
+                    TaskType.IMPORT,
+                    TaskType.MOCKDATA,
+                    TaskType.ASYNC,
+                    TaskType.SHADOWTABLE_SYNC,
+                    TaskType.PARTITION_PLAN,
+                    TaskType.ONLINE_SCHEMA_CHANGE,
+                    TaskType.ALTER_SCHEDULE,
+                    TaskType.EXPORT_RESULT_SET,
+                    TaskType.APPLY_PROJECT_PERMISSION);
+            specification = specification.and(FlowInstanceViewSpecs.taskTypeIn(types));
+        }
 
         Set<String> resourceRoleIdentifiers = userService.getCurrentUserResourceRoleIdentifiers();
         if (params.getApproveByCurrentUser() && params.getCreatedByCurrentUser()) {
@@ -624,17 +644,18 @@ public class FlowInstanceService {
         ExecutionStrategyConfig strategyConfig = ExecutionStrategyConfig.from(flowInstanceReq,
                 ExecutionStrategyConfig.INVALID_EXPIRE_INTERVAL_SECOND);
         try {
+            TaskParameters parameters = flowInstanceReq.getParameters();
+            FlowInstanceConfigurer taskConfigurer;
+            boolean addRollbackPlanNode = (taskType == TaskType.ASYNC
+                    && Boolean.TRUE.equals(((DatabaseChangeParameters) parameters).getGenerateRollbackPlan()));
             FlowTaskInstance taskInstance =
-                    flowFactory.generateFlowTaskInstance(flowInstance.getId(), true, true, taskType,
+                    flowFactory.generateFlowTaskInstance(flowInstance.getId(), !addRollbackPlanNode, true, taskType,
                             strategyConfig);
             taskInstance.setTargetTaskId(taskEntity.getId());
             taskInstance.update();
-            TaskParameters parameters = flowInstanceReq.getParameters();
-            FlowInstanceConfigurer taskConfigurer;
-            if (taskType == TaskType.ASYNC
-                    && Boolean.TRUE.equals(((DatabaseChangeParameters) parameters).getGenerateRollbackPlan())) {
+            if (addRollbackPlanNode) {
                 FlowTaskInstance rollbackPlanInstance =
-                        flowFactory.generateFlowTaskInstance(flowInstance.getId(), false, false,
+                        flowFactory.generateFlowTaskInstance(flowInstance.getId(), true, false,
                                 TaskType.GENERATE_ROLLBACK, ExecutionStrategyConfig.autoStrategy());
                 taskConfigurer = flowInstance.newFlowInstance().next(rollbackPlanInstance).next(taskInstance);
             } else {
@@ -668,7 +689,6 @@ public class FlowInstanceService {
             CreateFlowInstanceReq flowInstanceReq, ConnectionConfig connectionConfig) {
         log.info("Start creating flow instance, flowInstanceReq={}", flowInstanceReq);
         CreateFlowInstanceReq preCheckReq = new CreateFlowInstanceReq();
-        preCheckReq.setConnectionId(flowInstanceReq.getConnectionId());
         preCheckReq.setTaskType(TaskType.PRE_CHECK);
         preCheckReq.setConnectionId(flowInstanceReq.getConnectionId());
         preCheckReq.setDatabaseId(flowInstanceReq.getDatabaseId());

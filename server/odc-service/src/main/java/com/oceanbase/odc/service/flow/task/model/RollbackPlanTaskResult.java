@@ -17,6 +17,8 @@ package com.oceanbase.odc.service.flow.task.model;
 
 import java.io.Serializable;
 
+import com.oceanbase.odc.core.flow.model.FlowTaskResult;
+
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;

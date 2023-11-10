@@ -98,7 +98,7 @@ public class TaskEntity {
     /**
      * Connection id, references connect_connection(id)
      */
-    @Column(name = "connection_id", updatable = false, nullable = false)
+    @Column(name = "connection_id", updatable = false)
     private Long connectionId;
 
     /**

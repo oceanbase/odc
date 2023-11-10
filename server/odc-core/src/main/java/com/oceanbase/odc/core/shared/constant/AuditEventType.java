@@ -60,6 +60,8 @@ public enum AuditEventType implements Translatable {
 
     ONLINE_SCHEMA_CHANGE,
 
+    APPLY_PROJECT_PERMISSION,
+
     DATA_MASKING_RULE,
 
     DATA_MASKING_POLICY,
@@ -73,6 +75,8 @@ public enum AuditEventType implements Translatable {
     DATASOURCE_MANAGEMENT,
 
     PROJECT_MANAGEMENT,
+
+    SQL_SECURITY_RULE_MANAGEMENT
 
     ;
 

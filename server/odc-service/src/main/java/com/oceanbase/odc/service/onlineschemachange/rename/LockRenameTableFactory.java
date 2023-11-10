@@ -15,12 +15,10 @@
  */
 package com.oceanbase.odc.service.onlineschemachange.rename;
 
-import com.oceanbase.odc.common.util.VersionUtils;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.PreConditions;
-import com.oceanbase.odc.core.shared.constant.ConnectType;
-import com.oceanbase.odc.core.shared.exception.UnsupportedException;
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.service.session.DBSessionManageFacade;
 
 import lombok.extern.slf4j.Slf4j;
@@ -37,30 +35,13 @@ public class LockRenameTableFactory {
             DBSessionManageFacade dbSessionManageFacade) {
         PreConditions.notNull(connectionSession, "connectionSession");
 
-        ConnectType connectType = connectionSession.getConnectType();
-        PreConditions.notNull(connectType, "connectType");
+        DialectType dialectType = connectionSession.getDialectType();
+        PreConditions.notNull(dialectType, "dialectType");
         String obVersion = ConnectionSessionUtil.getVersion(connectionSession);
         PreConditions.notNull(obVersion, "obVersion");
-
-        if (connectType == ConnectType.OB_MYSQL || connectType == ConnectType.CLOUD_OB_MYSQL) {
-            if (VersionUtils.isGreaterThanOrEqualsTo(obVersion, "4.3.0")) {
-                // OB 版本 >= 4.2.0
-                return new LockTableInterceptor();
-            } else {
-                // OB 版本为 < 4.2.0
-                return new LockUserInterceptor(connectionSession, dbSessionManageFacade);
-            }
-        } else if (connectType == ConnectType.OB_ORACLE || connectType == ConnectType.CLOUD_OB_ORACLE) {
-            if (VersionUtils.isGreaterThanOrEqualsTo(obVersion, "4.0.0")) {
-                // OB 版本 >= 4.0.0
-                return new LockTableInterceptor();
-            } else {
-                // OB 版本为 < 4.0.0
-                return new LockUserInterceptor(connectionSession, dbSessionManageFacade);
-            }
-        } else {
-            throw new UnsupportedException(String.format("ConnectType '%s' not supported", connectType));
-        }
+        return OscDBUserUtil.isLockUserRequired(dialectType, () -> obVersion)
+                ? new LockUserInterceptor(connectionSession, dbSessionManageFacade)
+                : new LockTableInterceptor();
     }
 
 }

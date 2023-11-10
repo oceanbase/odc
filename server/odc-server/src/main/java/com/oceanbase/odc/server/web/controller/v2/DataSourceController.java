@@ -47,6 +47,7 @@ import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.ConnectionStatusManager.CheckState;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
+import com.oceanbase.odc.service.connection.database.model.DatabaseUser;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.model.ConnectionPreviewBatchImportResp;
 import com.oceanbase.odc.service.connection.model.GenerateConnectionStringReq;
@@ -177,9 +178,9 @@ public class DataSourceController {
     }
 
     @ApiOperation(value = "statusDataSources", notes = "Obtain datasource status")
-    @RequestMapping(value = "/datasources/status", method = RequestMethod.GET)
-    public SuccessResponse<Map<Long, CheckState>> status(@RequestParam(name = "id") Set<Long> datasourceIds) {
-        return Responses.success(connectionService.getStatus(datasourceIds));
+    @RequestMapping(value = "/datasources/status", method = RequestMethod.POST)
+    public SuccessResponse<Map<Long, CheckState>> status(@RequestBody Set<Long> ids) {
+        return Responses.success(connectionService.getStatus(ids));
     }
 
     @ApiOperation(value = "statsDataSource", notes = "datasource stats information")
@@ -200,4 +201,11 @@ public class DataSourceController {
     public SuccessResponse<Boolean> syncDataSource(@PathVariable Long id) throws InterruptedException {
         return Responses.success(databaseService.syncDataSourceSchemas(id));
     }
+
+    @ApiOperation(value = "listUsers", notes = "list users in datasource")
+    @RequestMapping(value = "/datasources/{id:[\\d]+}/users", method = RequestMethod.GET)
+    public PaginatedResponse<DatabaseUser> listUsers(@PathVariable Long id) {
+        return Responses.paginated(databaseService.listUsers(id));
+    }
+
 }

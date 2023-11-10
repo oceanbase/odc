@@ -85,6 +85,10 @@ public class FlowInstanceViewSpecs {
         return SpecificationUtil.columnEqual(FLOW_INSTANCE_VIEW_TASK_TYPE, taskType);
     }
 
+    public static Specification<FlowInstanceViewEntity> taskTypeIn(Collection<TaskType> taskTypes) {
+        return SpecificationUtil.columnIn(FLOW_INSTANCE_VIEW_TASK_TYPE, taskTypes);
+    }
+
     public static Specification<FlowInstanceViewEntity> leftJoinFlowInstanceApprovalView(
             @NotNull Set<String> resourceRoleIdentifiers, Long creatorId) {
         return (root, query, builder) -> {

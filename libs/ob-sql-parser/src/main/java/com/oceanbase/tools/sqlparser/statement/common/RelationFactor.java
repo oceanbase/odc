@@ -30,6 +30,7 @@ import lombok.Setter;
 public class RelationFactor extends BaseStatement {
 
     private String userVariable;
+    private boolean reverseLink;
     private String schema;
     private final String relation;
 
@@ -52,6 +53,9 @@ public class RelationFactor extends BaseStatement {
         }
         if (this.userVariable != null) {
             builder.append(this.userVariable);
+            if (this.reverseLink) {
+                builder.append("!");
+            }
         }
         return builder.length() == 0 ? null : builder.substring(1);
     }

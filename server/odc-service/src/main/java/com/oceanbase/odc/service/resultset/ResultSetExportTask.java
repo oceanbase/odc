@@ -53,6 +53,7 @@ import com.oceanbase.odc.core.shared.exception.OBException;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.core.sql.execute.SyncJdbcExecutor;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferFormat;
 import com.oceanbase.odc.service.common.FileManager;
 import com.oceanbase.odc.service.common.model.FileBucket;
 import com.oceanbase.odc.service.common.util.FileConvertUtils;
@@ -62,7 +63,6 @@ import com.oceanbase.odc.service.connection.model.OBTenantEndpoint;
 import com.oceanbase.odc.service.datasecurity.DataMaskingFunction;
 import com.oceanbase.odc.service.datasecurity.model.MaskingAlgorithm;
 import com.oceanbase.odc.service.datasecurity.util.MaskingAlgorithmUtil;
-import com.oceanbase.odc.service.datatransfer.model.DataTransferFormat;
 import com.oceanbase.odc.service.flow.task.OssTaskReferManager;
 import com.oceanbase.odc.service.flow.task.model.ResultSetExportResult;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
@@ -194,15 +194,15 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
         } else if (DataTransferFormat.EXCEL == parameter.getFileFormat()) {
             this.dumpParameter.setDataFormat(DataFormat.CSV);
             this.dumpParameter.setFileSuffix(".csv");
-            intExcelParameter(parameter);
+            initExcelParameter(parameter);
         } else {
             throw new UnsupportedException(parameter.getFileFormat() + " not supported");
         }
     }
 
-    private void intExcelParameter(ResultSetExportTaskParameter req) {
+    private void initExcelParameter(ResultSetExportTaskParameter req) {
         this.initCSVParameter(req);
-        this.dumpParameter.setEscapeCharacter('\"');
+        this.dumpParameter.setEscapeCharacter('\\');
         this.dumpParameter.setColumnSeparator(',');
         this.dumpParameter.setColumnDelimiter('\"');
         this.dumpParameter.setLineSeparator("\n");
@@ -426,7 +426,7 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
         try {
             if (cloudObjectStorageService.supported()) {
                 try {
-                    String objectName = cloudObjectStorageService.uploadTemp(origin.getName(), origin);
+                    String objectName = cloudObjectStorageService.uploadTemp(fileName, origin);
                     ((OssTaskReferManager) SpringContextUtil.getBean("ossTaskReferManager")).put(fileName, objectName);
                 } catch (Exception exception) {
                     throw new UnexpectedException(String

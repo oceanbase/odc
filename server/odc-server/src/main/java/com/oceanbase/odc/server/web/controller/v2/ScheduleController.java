@@ -34,6 +34,8 @@ import com.oceanbase.odc.service.common.response.ListResponse;
 import com.oceanbase.odc.service.common.response.PaginatedResponse;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
+import com.oceanbase.odc.service.dlm.DlmLimiterService;
+import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
 import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.model.JobType;
 import com.oceanbase.odc.service.schedule.model.QueryScheduleParams;
@@ -54,6 +56,9 @@ import io.swagger.annotations.ApiOperation;
 public class ScheduleController {
     @Autowired
     private ScheduleService scheduleService;
+
+    @Autowired
+    private DlmLimiterService dlmLimiterService;
 
     @RequestMapping("/scheduleConfigs")
     public PaginatedResponse<ScheduleDetailResp> list(
@@ -89,6 +94,12 @@ public class ScheduleController {
     @RequestMapping(value = "/{id:[\\d]+}/jobs/async/batchGetDownloadUrl", method = RequestMethod.POST)
     public ListResponse<String> getDownloadUrl(@PathVariable Long id, @RequestBody List<String> objectId) {
         return Responses.list(scheduleService.getAsyncDownloadUrl(id, objectId));
+    }
+
+    @RequestMapping(value = "/schedules/{id:[\\d]+}/dlmRateLimitConfiguration", method = RequestMethod.PUT)
+    public SuccessResponse<RateLimitConfiguration> updateLimiterConfig(@PathVariable Long id,
+            @RequestBody RateLimitConfiguration limiterConfig) {
+        return Responses.single(dlmLimiterService.updateByOrderId(id, limiterConfig));
     }
 
     @ApiOperation(value = "TriggerJob", notes = "立即调度")

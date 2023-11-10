@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
 
+import com.oceanbase.odc.core.flow.model.FlowTaskResult;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.tools.datamocker.core.task.TableTaskContext;

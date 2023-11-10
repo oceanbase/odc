@@ -30,6 +30,7 @@ import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
+import com.oceanbase.odc.core.sql.execute.SqlExecuteStages;
 import com.oceanbase.odc.core.sql.execute.model.SqlExecuteStatus;
 import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
@@ -55,18 +56,17 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Component
-public class SqlConsoleInterceptor implements SqlExecuteInterceptor {
+public class SqlConsoleInterceptor extends BaseTimeConsumingInterceptor {
+
     @Autowired
     private AuthenticationFacade authenticationFacade;
-
     @Autowired
     private RuleService ruleService;
-
     @Autowired
     private SqlConsoleRuleService sqlConsoleRuleService;
 
     @Override
-    public boolean preHandle(@NonNull SqlAsyncExecuteReq request, @NonNull SqlAsyncExecuteResp response,
+    public boolean doPreHandle(@NonNull SqlAsyncExecuteReq request, @NonNull SqlAsyncExecuteResp response,
             @NonNull ConnectionSession session, @NonNull Map<String, Object> context) {
         Long ruleSetId = ConnectionSessionUtil.getRuleSetId(session);
         if (Objects.isNull(ruleSetId) || isIndividualTeam()) {
@@ -127,10 +127,14 @@ public class SqlConsoleInterceptor implements SqlExecuteInterceptor {
         return allowExecute.get();
     }
 
+    @Override
+    protected String getExecuteStageName() {
+        return SqlExecuteStages.SQL_CONSOLE_RULE;
+    }
 
     @Override
-    public void afterCompletion(@NonNull SqlExecuteResult response, @NonNull ConnectionSession session,
-            @NonNull Map<String, Object> context) throws Exception {
+    public void doAfterCompletion(@NonNull SqlExecuteResult response, @NonNull ConnectionSession session,
+            @NonNull Map<String, Object> context) {
         if (response.getStatus() != SqlExecuteStatus.SUCCESS) {
             return;
         }
@@ -151,11 +155,9 @@ public class SqlConsoleInterceptor implements SqlExecuteInterceptor {
                 !sqlConsoleRuleService.isForbidden(SqlConsoleRules.NOT_ALLOWED_EXPORT_RESULTSET, session));
     }
 
-
     private boolean isIndividualTeam() {
         return authenticationFacade.currentUser().getOrganizationType() == OrganizationType.INDIVIDUAL;
     }
-
 
     private BasicResult determineSqlType(@NonNull String sql, @NonNull DialectType dialectType) {
         BasicResult basicResult = new BasicResult(SqlType.OTHERS);
@@ -174,4 +176,5 @@ public class SqlConsoleInterceptor implements SqlExecuteInterceptor {
     public int getOrder() {
         return 2;
     }
+
 }

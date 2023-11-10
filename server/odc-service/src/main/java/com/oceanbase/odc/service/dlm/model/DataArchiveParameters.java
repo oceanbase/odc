@@ -17,7 +17,7 @@ package com.oceanbase.odc.service.dlm.model;
 
 import java.util.List;
 
-import com.oceanbase.odc.service.flow.model.TaskParameters;
+import com.oceanbase.odc.core.flow.model.TaskParameters;
 import com.oceanbase.tools.migrator.common.enums.MigrationInsertAction;
 
 import lombok.Data;
@@ -52,5 +52,5 @@ public class DataArchiveParameters implements TaskParameters {
 
     private MigrationInsertAction migrationInsertAction = MigrationInsertAction.INSERT_NORMAL;
 
-    private DlmLimiterConfig limiterConfig;
+    private RateLimitConfiguration rateLimit;
 }

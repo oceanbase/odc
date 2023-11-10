@@ -48,6 +48,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.base.Charsets;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
+import com.oceanbase.odc.core.flow.model.FlowTaskResult;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
@@ -61,13 +62,14 @@ import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.metadb.flow.FlowInstanceRepository;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.metadb.task.TaskRepository;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferTaskResult;
 import com.oceanbase.odc.service.common.FileManager;
 import com.oceanbase.odc.service.common.model.FileBucket;
 import com.oceanbase.odc.service.common.response.ListResponse;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.common.util.OdcFileUtil;
 import com.oceanbase.odc.service.datatransfer.LocalFileManager;
-import com.oceanbase.odc.service.datatransfer.model.DataTransferConfig;
 import com.oceanbase.odc.service.dispatch.DispatchResponse;
 import com.oceanbase.odc.service.dispatch.RequestDispatcher;
 import com.oceanbase.odc.service.dispatch.TaskDispatchChecker;
@@ -80,9 +82,7 @@ import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
 import com.oceanbase.odc.service.flow.model.FlowNodeType;
 import com.oceanbase.odc.service.flow.model.PreCheckTaskResult;
 import com.oceanbase.odc.service.flow.task.OssTaskReferManager;
-import com.oceanbase.odc.service.flow.task.model.DataTransferTaskResult;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeResult;
-import com.oceanbase.odc.service.flow.task.model.FlowTaskResult;
 import com.oceanbase.odc.service.flow.task.model.MockDataTaskResult;
 import com.oceanbase.odc.service.flow.task.model.MockProperties;
 import com.oceanbase.odc.service.flow.task.model.OnlineSchemaChangeTaskResult;
@@ -95,6 +95,7 @@ import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
 import com.oceanbase.odc.service.partitionplan.PartitionPlanService;
+import com.oceanbase.odc.service.permissionapply.project.ApplyProjectResult;
 import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleResult;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.odc.service.task.TaskService;
@@ -226,6 +227,8 @@ public class FlowTaskInstanceService {
             return getAlterScheduleResult(taskEntity);
         } else if (taskEntity.getTaskType() == TaskType.EXPORT_RESULT_SET) {
             return getResultSetExportResult(taskEntity);
+        } else if (taskEntity.getTaskType() == TaskType.APPLY_PROJECT_PERMISSION) {
+            return getApplyProjectResult(taskEntity);
         } else {
             throw new UnsupportedException(ErrorCodes.Unsupported, new Object[] {ResourceType.ODC_TASK},
                     "Unsupported task type: " + taskEntity.getTaskType());
@@ -616,6 +619,10 @@ public class FlowTaskInstanceService {
         return innerGetResult(taskEntity, OnlineSchemaChangeTaskResult.class);
     }
 
+    private List<ApplyProjectResult> getApplyProjectResult(@NonNull TaskEntity taskEntity) {
+        return innerGetResult(taskEntity, ApplyProjectResult.class);
+    }
+
     private <T extends FlowTaskResult> List<T> innerGetResult(@NonNull TaskEntity taskEntity,
             @NonNull Class<T> clazz) {
         String resultJson = taskEntity.getResultJson();
@@ -655,7 +662,8 @@ public class FlowTaskInstanceService {
                         && instance.getTaskType() != TaskType.IMPORT
                         && instance.getTaskType() != TaskType.SQL_CHECK
                         && instance.getTaskType() != TaskType.PRE_CHECK
-                        && instance.getTaskType() != TaskType.GENERATE_ROLLBACK;
+                        && instance.getTaskType() != TaskType.GENERATE_ROLLBACK
+                        && instance.getTaskType() != TaskType.APPLY_PROJECT_PERMISSION;
             }
         });
     }

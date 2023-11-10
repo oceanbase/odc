@@ -17,7 +17,7 @@ package com.oceanbase.odc.service.partitionplan.model;
 
 import java.io.Serializable;
 
-import com.oceanbase.odc.service.flow.model.TaskParameters;
+import com.oceanbase.odc.core.flow.model.TaskParameters;
 
 import lombok.Data;
 

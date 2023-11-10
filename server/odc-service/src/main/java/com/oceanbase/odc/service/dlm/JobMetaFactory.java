@@ -58,8 +58,8 @@ public class JobMetaFactory extends AbstractJobMetaFactory {
         LogicTableConfig logicTableConfig = parameters.getLogicTableConfig();
         logicTableConfig.setReaderTaskCount((int) (singleTaskThreadPoolSize * readWriteRatio / (1 + readWriteRatio)));
         logicTableConfig.setWriterTaskCount(singleTaskThreadPoolSize - logicTableConfig.getReaderTaskCount());
-        DataSourceInfo sourceInfo = parameters.getSourceInfo();
-        DataSourceInfo targetInfo = parameters.getTargetInfo();
+        DataSourceInfo sourceInfo = DataSourceInfoBuilder.build(parameters.getSourceDs());
+        DataSourceInfo targetInfo = DataSourceInfoBuilder.build(parameters.getTargetDs());
         sourceInfo.setConnectionCount(logicTableConfig.getReaderTaskCount()
                 + parameters.getLogicTableConfig().getWriterTaskCount());
         targetInfo.setConnectionCount(logicTableConfig.getReaderTaskCount()

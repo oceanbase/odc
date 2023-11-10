@@ -27,4 +27,6 @@ import lombok.Data;
 public class OscFactoryWrapper {
 
     private TableNameDescriptorFactory tableNameDescriptorFactory;
+
+    private OscDBAccessorFactory oscDBAccessorFactory;
 }

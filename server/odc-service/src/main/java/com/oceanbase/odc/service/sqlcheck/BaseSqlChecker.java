@@ -15,15 +15,15 @@
  */
 package com.oceanbase.odc.service.sqlcheck;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
 import com.oceanbase.odc.core.sql.split.SqlSplitter;
 import com.oceanbase.odc.service.sqlcheck.model.CheckViolation;
-import com.oceanbase.odc.service.sqlcheck.model.SqlCheckRuleType;
+import com.oceanbase.odc.service.sqlcheck.parser.SyntaxErrorStatement;
 import com.oceanbase.tools.sqlparser.SyntaxErrorException;
 import com.oceanbase.tools.sqlparser.oracle.PlSqlLexer;
 import com.oceanbase.tools.sqlparser.statement.Statement;
@@ -78,32 +78,26 @@ abstract class BaseSqlChecker implements SqlChecker {
         } else {
             checkContext = new SqlCheckContext();
         }
-        List<SqlHolder> sqlHolders = sqls.stream().map(s -> {
+        List<Statement> sqlHolders = sqls.stream().map(s -> {
             try {
-                return new SqlHolder(s, doParse(s), null);
+                return doParse(s);
             } catch (Exception e) {
                 if (e instanceof SyntaxErrorException) {
-                    return new SqlHolder(s, null, (SyntaxErrorException) e);
+                    return new SyntaxErrorStatement(s, (SyntaxErrorException) e);
                 }
             }
-            return new SqlHolder(s, null, null);
-        }).filter(s -> s.statement != null || s.exception != null).collect(Collectors.toList());
+            return null;
+        }).filter(Objects::nonNull).collect(Collectors.toList());
         if (checkContext.currentStmtIndex == null) {
             checkContext.currentStmtIndex = 0L;
         }
         if (checkContext.totalStmtCount == null) {
-            checkContext.totalStmtCount = sqlHolders.stream().filter(s -> s.exception == null).count();
+            checkContext.totalStmtCount = (long) sqlHolders.size();
         }
         return sqlHolders.stream().flatMap(holder -> {
-            List<CheckViolation> violations = new ArrayList<>();
-            if (holder.statement != null) {
-                violations = doCheck(holder.statement, checkContext);
-                checkContext.addCheckViolation(holder.statement, violations);
-                checkContext.currentStmtIndex++;
-            } else if (holder.exception != null) {
-                violations.add(new CheckViolation(holder.sql, 1, 0, 0, holder.sql.length() - 1,
-                        SqlCheckRuleType.SYNTAX_ERROR, new Object[] {holder.exception.getMessage()}));
-            }
+            List<CheckViolation> violations = doCheck(holder, checkContext);
+            checkContext.addCheckViolation(holder, violations);
+            checkContext.currentStmtIndex++;
             return violations.stream();
         }).collect(Collectors.toList());
     }
@@ -123,18 +117,5 @@ abstract class BaseSqlChecker implements SqlChecker {
     protected abstract Statement doParse(String sql);
 
     protected abstract List<CheckViolation> doCheck(Statement statement, SqlCheckContext context);
-
-    private static class SqlHolder {
-
-        private final SyntaxErrorException exception;
-        private final String sql;
-        private final Statement statement;
-
-        public SqlHolder(@NonNull String sql, Statement statement, SyntaxErrorException exception) {
-            this.statement = statement;
-            this.sql = sql;
-            this.exception = exception;
-        }
-    }
 
 }

@@ -26,6 +26,7 @@ import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeScheduleTaskParameters;
+import com.oceanbase.odc.service.onlineschemachange.monitor.DBUserMonitorExecutor;
 import com.oceanbase.odc.service.onlineschemachange.rename.DefaultRenameTableInvoker;
 import com.oceanbase.odc.service.session.DBSessionManageFacade;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
@@ -54,19 +55,24 @@ public class SwapTableNameValve extends BaseValve {
 
         OnlineSchemaChangeScheduleTaskParameters taskParameters = context.getTaskParameter();
         PreConditions.notNull(taskParameters, "OnlineSchemaChangeScheduleTaskParameters is null");
-
         OnlineSchemaChangeParameters parameters = context.getParameter();
 
         ConnectionConfig config = context.getConnectionConfig();
+        DBUserMonitorExecutor userMonitorExecutor = new DBUserMonitorExecutor(config, parameters.getLockUsers());
         ConnectionSession connectionSession = new DefaultConnectSessionFactory(config).generateSession();
         try {
+            userMonitorExecutor.start(parameters.getParameterDataMap());
             ConnectionSessionUtil.setCurrentSchema(connectionSession, taskParameters.getDatabaseName());
             DefaultRenameTableInvoker defaultRenameTableInvoker =
                     new DefaultRenameTableInvoker(connectionSession, dbSessionManageFacade);
             defaultRenameTableInvoker.invoke(taskParameters, parameters);
             context.setSwapSucceedCallBack(true);
         } finally {
-            connectionSession.expire();
+            try {
+                userMonitorExecutor.stop();
+            } finally {
+                connectionSession.expire();
+            }
         }
     }
 }

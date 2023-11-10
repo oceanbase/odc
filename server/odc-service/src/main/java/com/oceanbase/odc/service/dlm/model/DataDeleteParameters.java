@@ -17,7 +17,7 @@ package com.oceanbase.odc.service.dlm.model;
 
 import java.util.List;
 
-import com.oceanbase.odc.service.flow.model.TaskParameters;
+import com.oceanbase.odc.core.flow.model.TaskParameters;
 
 import lombok.Data;
 
@@ -36,5 +36,7 @@ public class DataDeleteParameters implements TaskParameters {
     private List<OffsetConfig> variables;
 
     private List<DataArchiveTableConfig> tables;
+
+    private RateLimitConfiguration rateLimit;
 
 }

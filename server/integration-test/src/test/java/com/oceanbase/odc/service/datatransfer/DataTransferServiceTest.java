@@ -50,7 +50,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -64,22 +63,20 @@ import com.oceanbase.odc.core.shared.constant.ConnectionAccountType;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.TaskType;
-import com.oceanbase.odc.service.collaboration.project.model.Project;
+import com.oceanbase.odc.plugin.task.api.datatransfer.dumper.AbstractOutputFile;
+import com.oceanbase.odc.plugin.task.api.datatransfer.dumper.DataFile;
+import com.oceanbase.odc.plugin.task.api.datatransfer.dumper.ExportOutput;
+import com.oceanbase.odc.plugin.task.api.datatransfer.dumper.SchemaFile;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.CsvColumnMapping;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.CsvConfig;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferFormat;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferObject;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferType;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.UploadFileResult;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
-import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
-import com.oceanbase.odc.service.datatransfer.dumper.AbstractOutputFile;
-import com.oceanbase.odc.service.datatransfer.dumper.DataFile;
-import com.oceanbase.odc.service.datatransfer.dumper.DumperOutput;
-import com.oceanbase.odc.service.datatransfer.dumper.SchemaFile;
-import com.oceanbase.odc.service.datatransfer.model.CsvColumnMapping;
-import com.oceanbase.odc.service.datatransfer.model.CsvConfig;
-import com.oceanbase.odc.service.datatransfer.model.DataTransferConfig;
-import com.oceanbase.odc.service.datatransfer.model.DataTransferFormat;
-import com.oceanbase.odc.service.datatransfer.model.DataTransferObject;
-import com.oceanbase.odc.service.datatransfer.model.DataTransferType;
-import com.oceanbase.odc.service.datatransfer.model.UploadFileResult;
 import com.oceanbase.odc.service.datatransfer.task.DataTransferTaskContext;
 import com.oceanbase.odc.service.session.factory.DruidDataSourceFactory;
 import com.oceanbase.tools.loaddump.common.enums.DataFormat;
@@ -126,36 +123,33 @@ public class DataTransferServiceTest extends ServiceTestEnv {
     }
 
     @Test
-    @Ignore("TODO: fix this test")
     public void create_dumpSchemaAndDataForOracleMode_bothSchemaAndDataDumped() throws Exception {
         DataTransferTaskContext context = dataTransferService.create(BUCKET, getOracleDumpConfig(true, true));
-        Assert.assertNotNull(context.get(20, TimeUnit.SECONDS));
+        Assert.assertNotNull(context.get(30, TimeUnit.SECONDS));
 
-        DumperOutput dumperOutput = new DumperOutput(getDumpFile());
-        assertFileCountEquals(dumperOutput, 2);
-        assertObjectTypeIn(dumperOutput, new HashSet<>(Collections.singleton(ObjectType.TABLE)));
-        assertFileTypeMatchAll(dumperOutput, new HashSet<>(Arrays.asList(DataFile.class, SchemaFile.class)));
+        ExportOutput exportOutput = new ExportOutput(getDumpFile());
+        assertFileCountEquals(exportOutput, 2);
+        assertObjectTypeIn(exportOutput, new HashSet<>(Collections.singleton(ObjectType.TABLE)));
+        assertFileTypeMatchAll(exportOutput, new HashSet<>(Arrays.asList(DataFile.class, SchemaFile.class)));
     }
 
     @Test
-    @Ignore("TODO: fix this test")
     public void create_dumpSchemaForOracleMode_onlySchemaDumped() throws Exception {
         DataTransferTaskContext context = dataTransferService.create(BUCKET, getOracleDumpConfig(false, true));
-        Assert.assertNotNull(context.get(20, TimeUnit.SECONDS));
+        Assert.assertNotNull(context.get(30, TimeUnit.SECONDS));
 
-        DumperOutput dumperOutput = new DumperOutput(getDumpFile());
-        assertFileCountEquals(dumperOutput, 1);
-        assertObjectTypeIn(dumperOutput, new HashSet<>(Collections.singleton(ObjectType.TABLE)));
-        assertFileTypeMatchAll(dumperOutput, new HashSet<>(Collections.singletonList(SchemaFile.class)));
+        ExportOutput exportOutput = new ExportOutput(getDumpFile());
+        assertFileCountEquals(exportOutput, 1);
+        assertObjectTypeIn(exportOutput, new HashSet<>(Collections.singleton(ObjectType.TABLE)));
+        assertFileTypeMatchAll(exportOutput, new HashSet<>(Collections.singletonList(SchemaFile.class)));
     }
 
     @Test
-    @Ignore("TODO: fix this test")
     public void create_dumpSchemaForOracleMode_onlySchemaDumped_mergeSchemaFiles() throws Exception {
         DataTransferConfig config = getOracleDumpConfig(false, true);
         config.setMergeSchemaFiles(true);
         DataTransferTaskContext context = dataTransferService.create(BUCKET, config);
-        Assert.assertNotNull(context.get(20, TimeUnit.SECONDS));
+        Assert.assertNotNull(context.get(30, TimeUnit.SECONDS));
 
         File target = new File(fileManager
                 .getWorkingDir(TaskType.EXPORT, DataTransferService.CLIENT_DIR_PREFIX + BUCKET).getAbsolutePath());
@@ -166,70 +160,67 @@ public class DataTransferServiceTest extends ServiceTestEnv {
     @Test
     public void create_dumpDataForOracleMode_onlyDataDumped() throws Exception {
         DataTransferTaskContext context = dataTransferService.create(BUCKET, getOracleDumpConfig(true, false));
-        Assert.assertNotNull(context.get(20, TimeUnit.SECONDS));
+        Assert.assertNotNull(context.get(30, TimeUnit.SECONDS));
 
-        DumperOutput dumperOutput = new DumperOutput(getDumpFile());
-        assertFileCountEquals(dumperOutput, 1);
-        assertObjectTypeIn(dumperOutput, new HashSet<>(Collections.singleton(ObjectType.TABLE)));
-        assertFileTypeMatchAll(dumperOutput, new HashSet<>(Collections.singletonList(DataFile.class)));
+        ExportOutput exportOutput = new ExportOutput(getDumpFile());
+        assertFileCountEquals(exportOutput, 1);
+        assertObjectTypeIn(exportOutput, new HashSet<>(Collections.singleton(ObjectType.TABLE)));
+        assertFileTypeMatchAll(exportOutput, new HashSet<>(Collections.singletonList(DataFile.class)));
     }
 
     @Test
-    @Ignore("TODO: fix this test")
     public void create_dumpSchemaAndDataForMysqlMode_bothSchemaAndDataDumped() throws Exception {
         DataTransferTaskContext context = dataTransferService.create(BUCKET, getMysqlDumpConfig(true, true));
-        Assert.assertNotNull(context.get(20, TimeUnit.SECONDS));
+        Assert.assertNotNull(context.get(30, TimeUnit.SECONDS));
 
-        DumperOutput dumperOutput = new DumperOutput(getDumpFile());
-        assertFileCountEquals(dumperOutput, 2);
-        assertObjectTypeIn(dumperOutput, new HashSet<>(Collections.singleton(ObjectType.TABLE)));
-        assertFileTypeMatchAll(dumperOutput, new HashSet<>(Arrays.asList(DataFile.class, SchemaFile.class)));
+        ExportOutput exportOutput = new ExportOutput(getDumpFile());
+        assertFileCountEquals(exportOutput, 2);
+        assertObjectTypeIn(exportOutput, new HashSet<>(Collections.singleton(ObjectType.TABLE)));
+        assertFileTypeMatchAll(exportOutput, new HashSet<>(Arrays.asList(DataFile.class, SchemaFile.class)));
     }
 
     @Test
     public void create_dumpSchemaForMysqlMode_onlySchemaDumped() throws Exception {
         DataTransferTaskContext context = dataTransferService.create(BUCKET, getMysqlDumpConfig(false, true));
-        Assert.assertNotNull(context.get(20, TimeUnit.SECONDS));
+        Assert.assertNotNull(context.get(30, TimeUnit.SECONDS));
 
-        DumperOutput dumperOutput = new DumperOutput(getDumpFile());
-        assertFileCountEquals(dumperOutput, 1);
-        assertObjectTypeIn(dumperOutput, new HashSet<>(Collections.singleton(ObjectType.TABLE)));
-        assertFileTypeMatchAll(dumperOutput, new HashSet<>(Collections.singletonList(SchemaFile.class)));
+        ExportOutput exportOutput = new ExportOutput(getDumpFile());
+        assertFileCountEquals(exportOutput, 1);
+        assertObjectTypeIn(exportOutput, new HashSet<>(Collections.singleton(ObjectType.TABLE)));
+        assertFileTypeMatchAll(exportOutput, new HashSet<>(Collections.singletonList(SchemaFile.class)));
     }
 
     @Test
     public void create_dumpDataForMysqlMode_onlyDataDumped() throws Exception {
         DataTransferTaskContext context = dataTransferService.create(BUCKET, getMysqlDumpConfig(true, false));
-        Assert.assertNotNull(context.get(20, TimeUnit.SECONDS));
+        Assert.assertNotNull(context.get(30, TimeUnit.SECONDS));
 
-        DumperOutput dumperOutput = new DumperOutput(getDumpFile());
-        assertFileCountEquals(dumperOutput, 1);
-        assertObjectTypeIn(dumperOutput, new HashSet<>(Collections.singleton(ObjectType.TABLE)));
-        assertFileTypeMatchAll(dumperOutput, new HashSet<>(Collections.singletonList(DataFile.class)));
+        ExportOutput exportOutput = new ExportOutput(getDumpFile());
+        assertFileCountEquals(exportOutput, 1);
+        assertObjectTypeIn(exportOutput, new HashSet<>(Collections.singleton(ObjectType.TABLE)));
+        assertFileTypeMatchAll(exportOutput, new HashSet<>(Collections.singletonList(DataFile.class)));
     }
 
     @Test
-    @Ignore("TODO: fix this test")
     public void create_loadSchemaAndDataForOracleMode_schemaAndDataLoaded() throws Exception {
         File dumpFile = dumpSchemaAndDataForLoad(DialectType.OB_ORACLE);
         assertOracleModeTableNotExists();
 
         DataTransferTaskContext context = dataTransferService.create(BUCKET,
                 getOracleLoadConfig(Collections.singletonList(dumpFile.getAbsolutePath()), false, true, true));
-        Assert.assertNotNull(context.get(20, TimeUnit.SECONDS));
+        Assert.assertNotNull(context.get(30, TimeUnit.SECONDS));
         assertOracleModeTableExists();
         assertOracleModeTableCountEquals(2);
     }
 
     @Test
-    @Ignore("TODO: fix this test")
     public void create_loadSchemaForOracleMode_schemaLoaded() throws Exception {
         File dumpFile = dumpSchemaAndDataForLoad(DialectType.OB_ORACLE);
         assertOracleModeTableNotExists();
 
         DataTransferTaskContext context = dataTransferService.create(BUCKET,
                 getOracleLoadConfig(Collections.singletonList(dumpFile.getAbsolutePath()), false, false, true));
-        Assert.assertNotNull(context.get(20, TimeUnit.SECONDS));
+        Assert.assertNotNull(context.get(30, TimeUnit.SECONDS));
         assertOracleModeTableExists();
         assertOracleModeTableCountEquals(0);
     }
@@ -247,7 +238,6 @@ public class DataTransferServiceTest extends ServiceTestEnv {
     }
 
     @Test
-    @Ignore("TODO: fix this test")
     public void create_loadSchemaForMysqlMode_schemaLoaded() throws Exception {
         File dumpFile = dumpSchemaAndDataForLoad(DialectType.OB_MYSQL);
         assertMysqlModeTableNotExists();
@@ -266,7 +256,7 @@ public class DataTransferServiceTest extends ServiceTestEnv {
 
         DataTransferTaskContext context = dataTransferService.create(BUCKET,
                 getOracleLoadConfig(Collections.singletonList(target.getAbsolutePath()), true, true, false));
-        Assert.assertNotNull(context.get(20, TimeUnit.SECONDS));
+        Assert.assertNotNull(context.get(30, TimeUnit.SECONDS));
         assertOracleModeTableExists();
         assertOracleModeTableCountEquals(4);
     }
@@ -278,42 +268,38 @@ public class DataTransferServiceTest extends ServiceTestEnv {
 
         DataTransferTaskContext context = dataTransferService.create(BUCKET,
                 getMysqlLoadConfig(Collections.singletonList(target.getAbsolutePath()), true, true, false));
-        Assert.assertNotNull(context.get(20, TimeUnit.SECONDS));
+        Assert.assertNotNull(context.get(30, TimeUnit.SECONDS));
         assertMysqlModeTableExists();
         assertMysqlModeTableCountEquals(4);
     }
 
     @Test
-    @Ignore("TODO: fix this test")
     public void create_validSysUserExists_nonCloudModeUsed() throws Exception {
         DataTransferConfig config = getOracleDumpConfig(true, true);
         config.setSysUser(oracleConnConfig.getSysTenantUsername());
         DataTransferTaskContext context = dataTransferService.create(BUCKET, config);
-        Assert.assertNotNull(context.get(20, TimeUnit.SECONDS));
+        Assert.assertNotNull(context.get(30, TimeUnit.SECONDS));
     }
 
     @Test
-    @Ignore("TODO: fix this test")
     public void create_validSysUserPasswdExists_nonCloudModeUsed() throws Exception {
         DataTransferConfig config = getOracleDumpConfig(true, true);
         config.setSysUser(oracleConnConfig.getSysTenantUsername());
         config.setSysPassword(oracleConnConfig.getSysTenantPassword());
         DataTransferTaskContext context = dataTransferService.create(BUCKET, config);
-        Assert.assertNotNull(context.get(20, TimeUnit.SECONDS));
+        Assert.assertNotNull(context.get(30, TimeUnit.SECONDS));
     }
 
     @Test
-    @Ignore("TODO: fix this test")
     public void create_validSysUserInvalidPasswdExists_nonCloudModeUsed() throws Exception {
         DataTransferConfig config = getOracleDumpConfig(true, true);
         config.setSysUser(oracleConnConfig.getSysTenantUsername());
         config.setSysPassword("abcde");
         DataTransferTaskContext context = dataTransferService.create(BUCKET, config);
-        Assert.assertNotNull(context.get(20, TimeUnit.SECONDS));
+        Assert.assertNotNull(context.get(30, TimeUnit.SECONDS));
     }
 
     @Test
-    @Ignore("TODO: fix this test")
     public void getMetaInfo_validZipFileInput_getMetaInfo() throws Exception {
         File target = dumpSchemaAndDataForLoad(DialectType.OB_ORACLE);
         assertOracleModeTableNotExists();
@@ -322,7 +308,7 @@ public class DataTransferServiceTest extends ServiceTestEnv {
         UploadFileResult expect = new UploadFileResult();
         expect.setFormat(DataFormat.SQL);
         expect.setFileType("ZIP");
-        expect.setFileName(target.getAbsolutePath());
+        expect.setFileName(target.getName());
         expect.setContainsData(true);
         expect.setContainsSchema(true);
         Map<ObjectType, Set<String>> importFileNames = new HashMap<>();
@@ -339,36 +325,6 @@ public class DataTransferServiceTest extends ServiceTestEnv {
 
         UploadFileResult actual = dataTransferService.getMetaInfo(target.getAbsolutePath());
         Assert.assertEquals(ErrorCodes.ImportInvalidFileType, actual.getErrorCode());
-    }
-
-    @Test
-    public void getExportObjectNames_oracleMode_getNonNull() {
-        Database database = new Database();
-        database.setId(1L);
-        database.setName(oracleConnConfig.defaultSchema());
-        Project project = new Project();
-        project.setId(1L);
-        database.setProject(project);
-        database.setDataSource(oracleConnConfig);
-        Mockito.when(databaseService.detail(1L)).thenReturn(database);
-        Map<ObjectType, Set<String>> actual =
-                dataTransferService.getExportObjectNames(1L, null);
-        Assert.assertTrue(actual.get(ObjectType.TABLE).contains(TEST_TABLE_NAME));
-    }
-
-    @Test
-    public void getExportObjectNames_mysqlMode_getNonNull() {
-        Database database = new Database();
-        database.setId(1L);
-        database.setName(mysqlConnConfig.defaultSchema());
-        Project project = new Project();
-        project.setId(1L);
-        database.setProject(project);
-        database.setDataSource(mysqlConnConfig);
-        Mockito.when(databaseService.detail(1L)).thenReturn(database);
-        Map<ObjectType, Set<String>> actual =
-                dataTransferService.getExportObjectNames(1L, null);
-        Assert.assertTrue(actual.get(ObjectType.TABLE).contains(TEST_TABLE_NAME.toLowerCase()));
     }
 
     @Test
@@ -482,9 +438,9 @@ public class DataTransferServiceTest extends ServiceTestEnv {
         }
     }
 
-    private void assertFileTypeMatchAll(DumperOutput dumperOutput,
+    private void assertFileTypeMatchAll(ExportOutput exportOutput,
             Set<Class<? extends AbstractOutputFile>> fileClasses) {
-        List<AbstractOutputFile> outputFileList = dumperOutput.getAllDumpFiles();
+        List<AbstractOutputFile> outputFileList = exportOutput.getAllDumpFiles();
         Set<Class<? extends AbstractOutputFile>> matched = new HashSet<>();
         outputFileList.forEach(f -> {
             Assert.assertTrue(fileClasses.contains(f.getClass()));
@@ -493,13 +449,13 @@ public class DataTransferServiceTest extends ServiceTestEnv {
         Assert.assertEquals(matched, fileClasses);
     }
 
-    private void assertFileCountEquals(DumperOutput dumperOutput, int count) {
-        List<AbstractOutputFile> outputFileList = dumperOutput.getAllDumpFiles();
+    private void assertFileCountEquals(ExportOutput exportOutput, int count) {
+        List<AbstractOutputFile> outputFileList = exportOutput.getAllDumpFiles();
         Assert.assertEquals(count, outputFileList.size());
     }
 
-    private void assertObjectTypeIn(DumperOutput dumperOutput, Set<ObjectType> objectTypeSet) {
-        List<AbstractOutputFile> outputFileList = dumperOutput.getAllDumpFiles();
+    private void assertObjectTypeIn(ExportOutput exportOutput, Set<ObjectType> objectTypeSet) {
+        List<AbstractOutputFile> outputFileList = exportOutput.getAllDumpFiles();
         outputFileList.forEach(f -> Assert.assertTrue(objectTypeSet.contains(f.getObjectType())));
     }
 
@@ -633,6 +589,9 @@ public class DataTransferServiceTest extends ServiceTestEnv {
         object.setObjectName(TEST_TABLE_NAME);
         if (dialectType.isMysql()) {
             object.setObjectName(TEST_TABLE_NAME.toLowerCase());
+        }
+        if (importFileNames.size() == 1 && importFileNames.get(0).endsWith("zip")) {
+            config.setFileType("zip");
         }
         object.setDbObjectType(ObjectType.TABLE);
         config.setExportDbObjects(Collections.singletonList(object));

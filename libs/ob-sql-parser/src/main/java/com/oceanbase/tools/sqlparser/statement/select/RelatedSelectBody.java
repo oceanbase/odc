@@ -15,13 +15,9 @@
  */
 package com.oceanbase.tools.sqlparser.statement.select;
 
-import com.oceanbase.tools.sqlparser.statement.select.mysql.Limit;
-import com.oceanbase.tools.sqlparser.statement.select.oracle.Fetch;
-
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NonNull;
-import lombok.Setter;
 
 /**
  * {@link RelatedSelectBody}
@@ -31,16 +27,11 @@ import lombok.Setter;
  * @since ODC_release_4.1.0
  */
 @Getter
-@Setter
 @EqualsAndHashCode
 public class RelatedSelectBody {
 
     private final SelectBody select;
     private final RelationType relation;
-    private Fetch fetch;
-    private OrderBy orderBy;
-    private Limit limit;
-    private ForUpdate forUpdate;
 
     public RelatedSelectBody(@NonNull SelectBody selectBody, @NonNull RelationType relation) {
         this.select = selectBody;
@@ -49,22 +40,7 @@ public class RelatedSelectBody {
 
     @Override
     public String toString() {
-        StringBuilder builder = new StringBuilder();
-        builder.append(this.relation.name().replace("_", " "))
-                .append(" ").append(this.select.toString());
-        if (this.orderBy != null) {
-            builder.append(" ").append(this.orderBy.toString());
-        }
-        if (this.fetch != null) {
-            builder.append(" ").append(this.fetch.toString());
-        }
-        if (this.limit != null) {
-            builder.append(" ").append(this.limit.toString());
-        }
-        if (this.forUpdate != null) {
-            builder.append(" ").append(this.forUpdate.toString());
-        }
-        return builder.toString();
+        return this.relation.name().replace("_", " ") + " " + this.select.toString();
     }
 
 }

@@ -811,6 +811,28 @@ public class OracleAlterTableActionFactoryTest {
         Assert.assertEquals(expect, actual);
     }
 
+    @Test
+    public void generate_renamePartition_succeed() {
+        StatementFactory<AlterTableAction> factory = new OracleAlterTableActionFactory(
+                getActionContext("rename partition \"aaa\" to \"bbb\""));
+        AlterTableAction actual = factory.generate();
+
+        AlterTableAction expect = new AlterTableAction();
+        expect.renamePartition("\"aaa\"", "\"bbb\"");
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_renameSubPartition_succeed() {
+        StatementFactory<AlterTableAction> factory = new OracleAlterTableActionFactory(
+                getActionContext("rename subpartition \"aaa\" to \"bbb\""));
+        AlterTableAction actual = factory.generate();
+
+        AlterTableAction expect = new AlterTableAction();
+        expect.renameSubPartition("\"aaa\"", "\"bbb\"");
+        Assert.assertEquals(expect, actual);
+    }
+
     @Test(expected = ParseCancellationException.class)
     public void generate_modifyPKWithUsingIndex_wrong() {
         StatementFactory<AlterTableAction> factory = new OracleAlterTableActionFactory(

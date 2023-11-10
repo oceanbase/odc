@@ -38,7 +38,7 @@ import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 public class NlsFormatInterceptorTest {
 
     @Test
-    public void afterCompletion_mysql_notingSet() {
+    public void afterCompletion_mysql_notingSet() throws Exception {
         ConnectionSession session = getConnectionSession(ConnectType.OB_MYSQL);
         NlsFormatInterceptor interceptor = new NlsFormatInterceptor();
         SqlExecuteResult r = getResponse("set session nls_date_format='DD-MON-RR'", SqlExecuteStatus.SUCCESS);
@@ -47,7 +47,7 @@ public class NlsFormatInterceptorTest {
     }
 
     @Test
-    public void afterCompletion_failedSqlResult_notingSet() {
+    public void afterCompletion_failedSqlResult_notingSet() throws Exception {
         ConnectionSession session = getConnectionSession(ConnectType.OB_ORACLE);
         NlsFormatInterceptor interceptor = new NlsFormatInterceptor();
         SqlExecuteResult r = getResponse("set session nls_date_format='DD-MON-RR'", SqlExecuteStatus.FAILED);
@@ -56,7 +56,7 @@ public class NlsFormatInterceptorTest {
     }
 
     @Test
-    public void afterCompletion_multiSqls_notingSet() {
+    public void afterCompletion_multiSqls_notingSet() throws Exception {
         ConnectionSession session = getConnectionSession(ConnectType.OB_ORACLE);
         NlsFormatInterceptor interceptor = new NlsFormatInterceptor();
         SqlExecuteResult r = getResponse("create or replace procedure abcd(p in varchar) as\n"
@@ -69,7 +69,7 @@ public class NlsFormatInterceptorTest {
     }
 
     @Test
-    public void afterCompletion_noSetVarExists_notingSet() {
+    public void afterCompletion_noSetVarExists_notingSet() throws Exception {
         ConnectionSession session = getConnectionSession(ConnectType.OB_ORACLE);
         NlsFormatInterceptor interceptor = new NlsFormatInterceptor();
         SqlExecuteResult r = getResponse("-- comment\nselect 123 from dual;", SqlExecuteStatus.SUCCESS);
@@ -78,7 +78,7 @@ public class NlsFormatInterceptorTest {
     }
 
     @Test
-    public void afterCompletion_commentWithSetVar_setSucceed() {
+    public void afterCompletion_commentWithSetVar_setSucceed() throws Exception {
         ConnectionSession session = getConnectionSession(ConnectType.OB_ORACLE);
         NlsFormatInterceptor interceptor = new NlsFormatInterceptor();
         String expect = "DD-MON-RR";
@@ -89,7 +89,7 @@ public class NlsFormatInterceptorTest {
     }
 
     @Test
-    public void afterCompletion_multiCommentsWithSetVar_setSucceed() {
+    public void afterCompletion_multiCommentsWithSetVar_setSucceed() throws Exception {
         ConnectionSession session = getConnectionSession(ConnectType.OB_ORACLE);
         NlsFormatInterceptor interceptor = new NlsFormatInterceptor();
         String expect = "DD-MON-RR";
@@ -100,7 +100,7 @@ public class NlsFormatInterceptorTest {
     }
 
     @Test
-    public void afterCompletion_nlsTimestampFormat_setSucceed() {
+    public void afterCompletion_nlsTimestampFormat_setSucceed() throws Exception {
         ConnectionSession session = getConnectionSession(ConnectType.OB_ORACLE);
         NlsFormatInterceptor interceptor = new NlsFormatInterceptor();
         String expect = "DD-MON-RR";
@@ -111,7 +111,7 @@ public class NlsFormatInterceptorTest {
     }
 
     @Test
-    public void afterCompletion_nlsTimestampTZFormat_setSucceed() {
+    public void afterCompletion_nlsTimestampTZFormat_setSucceed() throws Exception {
         ConnectionSession session = getConnectionSession(ConnectType.OB_ORACLE);
         NlsFormatInterceptor interceptor = new NlsFormatInterceptor();
         String expect = "DD-MON-RR";
@@ -122,7 +122,7 @@ public class NlsFormatInterceptorTest {
     }
 
     @Test
-    public void afterCompletion_setGlobal_nothingSet() {
+    public void afterCompletion_setGlobal_nothingSet() throws Exception {
         ConnectionSession session = getConnectionSession(ConnectType.OB_ORACLE);
         NlsFormatInterceptor interceptor = new NlsFormatInterceptor();
         String expect = "DD-MON-RR";
@@ -133,7 +133,7 @@ public class NlsFormatInterceptorTest {
     }
 
     @Test
-    public void afterCompletion_alterSession_setSucceed() {
+    public void afterCompletion_alterSession_setSucceed() throws Exception {
         ConnectionSession session = getConnectionSession(ConnectType.OB_ORACLE);
         NlsFormatInterceptor interceptor = new NlsFormatInterceptor();
         String expect = "DD-MON-RR";

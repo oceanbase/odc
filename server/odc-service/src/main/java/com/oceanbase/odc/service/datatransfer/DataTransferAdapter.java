@@ -18,10 +18,8 @@ package com.oceanbase.odc.service.datatransfer;
 import java.io.File;
 import java.io.IOException;
 
-import com.oceanbase.odc.service.datatransfer.model.DataTransferConfig;
-import com.oceanbase.odc.service.datatransfer.task.DataTransferTaskContext;
-import com.oceanbase.odc.service.flow.task.model.DataTransferTaskResult;
-import com.oceanbase.tools.loaddump.common.model.BaseParameter;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferTaskResult;
 
 public interface DataTransferAdapter {
 
@@ -30,7 +28,7 @@ public interface DataTransferAdapter {
     File preHandleWorkDir(DataTransferConfig transferConfig,
             String bucket, File workDir) throws IOException;
 
-    void afterHandle(BaseParameter parameter, DataTransferTaskContext context,
-            DataTransferTaskResult result, File exportFile) throws IOException;
+    void afterHandle(DataTransferConfig config, DataTransferTaskResult result, File exportFile)
+            throws IOException;
 
 }

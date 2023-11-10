@@ -77,7 +77,7 @@ public class ConnectionSessionUtil {
 
     public static void logSocketInfo(Connection connection, String scenario) {
         if (!(connection instanceof OceanBaseConnection)) {
-            log.warn("skip log connection socket info due not an OceanBaseConnection, className={}, scenario={}",
+            log.debug("skip log connection socket info due not an OceanBaseConnection, className={}, scenario={}",
                     connection.getClass().getSimpleName(), scenario);
             return;
         }
@@ -445,7 +445,7 @@ public class ConnectionSessionUtil {
             });
             Verify.notNull(arch, "Architecture");
             connectionSession.setAttribute(ConnectionSessionConstants.OB_ARCHITECTURE, arch);
-            log.info("Init architecture completed.");
+            log.debug("Init architecture completed.");
         } catch (Exception e) {
             log.warn("Query architecture failed, errMsg={}", e.getMessage());
         }

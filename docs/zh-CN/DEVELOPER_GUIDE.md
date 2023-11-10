@@ -173,6 +173,20 @@ IDEA Code Style 配置示意图
 
 ODC 的部分单元测试用例依赖真实的数据库服务，数据库帐密是加密存储在配置文件里的。
 
+本地开发时，单元测试依赖的环境配置信息可以维护在仓库根目录的 `local-unit-test.properties` 文件。
+> 为了避免测试环境的数据库信息泄露，仓库里的 `local-unit-test.properties` 文件已经加入 `.gitignore` 。
+
+配置样例如下。
+
+```properties
+# Unit test OB cluster environment configuration.
+# Sensitive value auto encrypt by com.oceanbase.odc.test.tool.EncryptableConfigurations.
+# While change value, just input plain text and the value will be replaced to encrypted one while first time loaded
+odc.ob.default.oracle.commandline=your_ob_oracle_test_tenant_obclient_cli_commandline
+odc.ob.default.mysql.commandline=your_ob_mysql_test_tenant_obclient_cli_commandline
+odc.mysql.default.commandline=your_mysql_test_server_mysql_cli_commandline
+```
+
 单元测试可能在本地和 Github CI 流水线执行，ODC 单元测试执行过程通过环境变量或者 `.env` 配置文件读取加密信息的解密密钥。
 
 - Github CI 流水线读取的环境变量通过 GitHub Actions Variable 维护
@@ -305,10 +319,10 @@ index.html 文件。 这个 `index.html`文件引用静态资源服务器资源�
 
 ![image.png](../en-US/images/concept-isolated-debug.png)
 
-静态资源 URL 地址规则 `http://static-resource-server/oceanbase/odc/{branchName}/xxx` .
+静态资源 URL 地址规则 `http://static-resource-server/{branchName}/xxx` .
 其中 `{branchName}` 表示前端分支名称。
 
-如 spring-4.2.0 分支，后端引用的 `index.html` URL 为 `http://static-resource-server/oceanbase/odc/sprint-4.2.0/index.html` 。
+如 dev-4.2.2 分支，后端引用的 `index.html` URL 为 `http://static-resource-server/dev-4.2.2/index.html` 。
 
 ### 4.1.3 设置自动更新静态资源
 
@@ -318,7 +332,7 @@ index.html 文件。 这个 `index.html`文件引用静态资源服务器资源�
 设置样例如下。
 
 ```shell
-export ODC_INDEX_PAGE_URI=http://static-resource-server/oceanbase/odc/sprint-4.2.0/index.html
+export ODC_INDEX_PAGE_URI=http://static-resource-server/dev-4.2.2/index.html
 ```
 
 ## 4.3 基于 traceId 的日志排查

@@ -19,13 +19,12 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.antlr.v4.runtime.ParserRuleContext;
+import org.apache.commons.lang3.StringUtils;
 
 import com.oceanbase.tools.sqlparser.statement.select.OrderBy;
 
 import lombok.EqualsAndHashCode;
-import lombok.Getter;
 import lombok.NonNull;
-import lombok.Setter;
 
 /**
  * {@link GroupConcat}
@@ -35,13 +34,10 @@ import lombok.Setter;
  * @since ODC_release_4.1.0
  * @see FunctionCall
  */
-@Getter
-@Setter
 @EqualsAndHashCode(callSuper = true)
-public class GroupConcat extends WindowFunction {
+public class GroupConcat extends FunctionCall {
 
-    private OrderBy orderBy;
-    private String separator;
+    private static final String SEPARATOR_KEY = "SEPARATOR";
 
     public GroupConcat(@NonNull ParserRuleContext context,
             @NonNull List<FunctionParam> functionParams) {
@@ -52,19 +48,40 @@ public class GroupConcat extends WindowFunction {
         super("GROUP_CONCAT", functionParams);
     }
 
+    public String getSeparator() {
+        return getOptions().stream().filter(s -> {
+            if (!(s instanceof ConstExpression)) {
+                return false;
+            }
+            ConstExpression c = (ConstExpression) s;
+            return StringUtils.startsWithIgnoreCase(c.getExprConst(), SEPARATOR_KEY);
+        }).map(s -> {
+            String c = ((ConstExpression) s).getExprConst();
+            int begin = StringUtils.indexOfIgnoreCase(c, SEPARATOR_KEY) + SEPARATOR_KEY.length();
+            return c.substring(begin).trim();
+        }).findFirst().orElse(null);
+    }
+
+    public OrderBy getOrderBy() {
+        return getOptions().stream().filter(s -> s instanceof OrderBy)
+                .map(s -> (OrderBy) s).findFirst().orElse(null);
+    }
+
     @Override
-    public String toString() {
+    public String doToString() {
         StringBuilder builder = new StringBuilder(getFunctionName());
         builder.append("(");
-        if (getParamsFlag() != null) {
-            builder.append(getParamsFlag()).append(" ");
+        if (getAggregator() != null) {
+            builder.append(getAggregator()).append(" ");
         }
         builder.append(getParamList().stream().map(Object::toString).collect(Collectors.joining(",")));
-        if (this.orderBy != null) {
-            builder.append(" ").append(this.orderBy.toString());
+        if (getOrderBy() != null) {
+            builder.append(" ").append(getOrderBy().toString());
         }
-        if (this.separator != null) {
-            builder.append(" SEPARATOR ").append(this.separator);
+        if (getSeparator() != null) {
+            builder.append(" ")
+                    .append(SEPARATOR_KEY).append(" ")
+                    .append(getSeparator());
         }
         builder.append(")");
         if (getWindow() != null) {
