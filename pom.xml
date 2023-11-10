@@ -1392,7 +1392,7 @@ limitations under the License.
                 </property>
             </activation>
             <properties>
-                <oceanbase-client.version>2.4.5</oceanbase-client.version>
+                <oceanbase-client.version>2.4.7.1</oceanbase-client.version>
             </properties>
         </profile>
         <profile>
