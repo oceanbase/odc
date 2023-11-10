@@ -19,6 +19,8 @@ package com.oceanbase.odc.service.permissionapply.project;
 import java.io.Serializable;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import com.oceanbase.odc.core.flow.model.TaskParameters;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.service.collaboration.project.model.Project;
@@ -60,6 +62,7 @@ public class ApplyProjectParameter implements Serializable, TaskParameters {
         /**
          * Project name, refer to {@link Project#getName()}
          */
+        @JsonProperty(access = Access.READ_ONLY)
         private String name;
     }
 
@@ -72,6 +75,7 @@ public class ApplyProjectParameter implements Serializable, TaskParameters {
         /**
          * Resource role name, refer to {@link ResourceRole#getRoleName()}
          */
+        @JsonProperty(access = Access.READ_ONLY)
         private ResourceRoleName name;
     }
 
