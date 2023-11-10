@@ -33,6 +33,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.stream.Collectors;
 
 import javax.sql.DataSource;
+import javax.validation.Valid;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
@@ -255,11 +256,12 @@ public class DatabaseService {
 
     @SkipAuthorize("internal authenticated")
     public Database create(@NonNull CreateDatabaseReq req) {
-        if (!projectService.checkPermission(req.getProjectId(), ResourceRoleName.all())
+        ConnectionConfig connection = connectionService.getForConnectionSkipPermissionCheck(req.getDataSourceId());
+        if ((connection.getProjectId() != null && !connection.getProjectId().equals(req.getProjectId()))
+                || !projectService.checkPermission(req.getProjectId(), ResourceRoleName.all())
                 || !connectionService.checkPermission(req.getDataSourceId(), Collections.singletonList("update"))) {
             throw new AccessDeniedException();
         }
-        ConnectionConfig connection = connectionService.getForConnectionSkipPermissionCheck(req.getDataSourceId());
         DataSource dataSource = new OBConsoleDataSourceFactory(
                 connection, ConnectionAccountType.MAIN, true, false).getDataSource();
         try (Connection conn = dataSource.getConnection()) {
@@ -324,25 +326,27 @@ public class DatabaseService {
 
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("internal authenticated")
-    public boolean transfer(@NonNull TransferDatabasesReq req) {
+    public boolean transfer(@NonNull @Valid TransferDatabasesReq req) {
         if (!projectService.checkPermission(req.getProjectId(),
                 Arrays.asList(ResourceRoleName.DBA, ResourceRoleName.OWNER))) {
             throw new AccessDeniedException();
         }
         List<DatabaseEntity> entities = databaseRepository.findAllById(req.getDatabaseIds());
-        List<DatabaseEntity> transferred = entities.stream().map(database -> {
-            /**
-             * current user should be source project's OWNER/DBA, and should have update permission on this
-             * DataSource
-             */
-            if (!projectService.checkPermission(database.getProjectId(),
-                    Arrays.asList(ResourceRoleName.DBA, ResourceRoleName.OWNER))
-                    || !connectionService.checkPermission(database.getConnectionId(), Arrays.asList("update"))) {
+        List<Long> projectIds = entities.stream().map(DatabaseEntity::getProjectId).collect(Collectors.toList());
+        List<Long> connectionIds = entities.stream().map(DatabaseEntity::getConnectionId).collect(Collectors.toList());
+        if (!projectService.checkPermission(projectIds, Arrays.asList(ResourceRoleName.DBA, ResourceRoleName.OWNER)) ||
+                !connectionService.checkPermission(connectionIds, Collections.singletonList("update"))) {
+            // Current user should be source project's OWNER/DBA, and have update permission on datasources
+            throw new AccessDeniedException();
+        }
+        List<ConnectionConfig> connections = connectionService.innerListByIds(connectionIds);
+        connections.forEach(c -> {
+            if (c.getProjectId() != null) {
                 throw new AccessDeniedException();
             }
-            database.setProjectId(req.getProjectId());
-            return database;
-        }).collect(Collectors.toList());
+        });
+        List<DatabaseEntity> transferred = entities.stream().peek(database -> database.setProjectId(req.getProjectId()))
+                .collect(Collectors.toList());
         databaseRepository.saveAll(transferred);
         return true;
     }
@@ -412,7 +416,7 @@ public class DatabaseService {
                         entity.setEnvironmentId(connection.getEnvironmentId());
                         entity.setConnectionId(connection.getId());
                         entity.setSyncStatus(DatabaseSyncStatus.SUCCEEDED);
-                        entity.setProjectId(null);
+                        entity.setProjectId(connection.getProjectId());
                         return entity;
                     }).collect(Collectors.toList());
             Map<String, List<DatabaseEntity>> latestDatabaseName2Database =
@@ -465,15 +469,21 @@ public class DatabaseService {
             List<Object[]> toUpdate = existedDatabasesInDb.stream()
                     .filter(database -> latestDatabaseNames.contains(database.getName()))
                     .map(database -> {
+                        DatabaseEntity existed = existedDatabaseName2Database.get(database.getName()).get(0);
                         DatabaseEntity latest = latestDatabaseName2Database.get(database.getName()).get(0);
+                        if (latest.getProjectId() == null) {
+                            if (!connection.getMigrateDbForUpdate()) {
+                                latest.setProjectId(existed.getProjectId());
+                            }
+                        }
                         return new Object[] {latest.getTableCount(), latest.getCollationName(), latest.getCharsetName(),
-                                database.getId()};
+                                latest.getProjectId(), database.getId()};
                     })
                     .collect(Collectors.toList());
 
             if (org.apache.commons.collections4.CollectionUtils.isNotEmpty(toUpdate)) {
                 String update =
-                        "update connect_database set table_count=?, collation_name=?, charset_name=? where id = ?";
+                        "update connect_database set table_count=?, collation_name=?, charset_name=?, project_id=? where id = ?";
                 jdbcTemplate.batchUpdate(update, toUpdate);
             }
         } catch (SQLException e) {

@@ -72,7 +72,8 @@ import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
-import com.oceanbase.odc.metadb.collaboration.EnvironmentRepository;
+import com.oceanbase.odc.metadb.collaboration.ProjectEntity;
+import com.oceanbase.odc.metadb.collaboration.ProjectRepository;
 import com.oceanbase.odc.metadb.connection.ConnectionAttributeEntity;
 import com.oceanbase.odc.metadb.connection.ConnectionAttributeRepository;
 import com.oceanbase.odc.metadb.connection.ConnectionConfigRepository;
@@ -96,7 +97,6 @@ import com.oceanbase.odc.service.connection.model.QueryConnectionParams;
 import com.oceanbase.odc.service.connection.ssl.ConnectionSSLAdaptor;
 import com.oceanbase.odc.service.connection.util.ConnectionIdList;
 import com.oceanbase.odc.service.connection.util.ConnectionMapper;
-import com.oceanbase.odc.service.encryption.EncryptionFacade;
 import com.oceanbase.odc.service.iam.HorizontalDataPermissionValidator;
 import com.oceanbase.odc.service.iam.PermissionService;
 import com.oceanbase.odc.service.iam.UserPermissionService;
@@ -126,9 +126,6 @@ public class ConnectionService {
 
     @Autowired
     private AuthenticationFacade authenticationFacade;
-
-    @Autowired
-    private EncryptionFacade encryptionFacade;
 
     @Autowired
     private ConnectionEncryption connectionEncryption;
@@ -170,9 +167,6 @@ public class ConnectionService {
     private EnvironmentService environmentService;
 
     @Autowired
-    private EnvironmentRepository environmentRepository;
-
-    @Autowired
     @Lazy
     private UserPermissionService userPermissionService;
 
@@ -189,6 +183,9 @@ public class ConnectionService {
 
     @Autowired
     private ConnectionAttributeRepository attributeRepository;
+
+    @Autowired
+    private ProjectRepository projectRepository;
 
     private final ConnectionMapper mapper = ConnectionMapper.INSTANCE;
 
@@ -240,6 +237,7 @@ public class ConnectionService {
 
             connectionValidator.validateForUpsert(connection);
             connectionValidator.validatePrivateConnectionTempOnly(connection.getTemp());
+            connectionValidator.validateProjectOperable(connection.getProjectId());
 
             connection.setOrganizationId(currentOrganizationId());
             connection.setCreatorId(currentUserId());
@@ -266,7 +264,7 @@ public class ConnectionService {
 
             ConnectionEntity entity = modelToEntity(connection);
             ConnectionEntity savedEntity = repository.saveAndFlush(entity);
-            created = entityToModel(savedEntity, true);
+            created = entityToModel(savedEntity, true, true);
             created.setAttributes(connection.getAttributes());
             List<ConnectionAttributeEntity> attrEntities = connToAttrEntities(created);
             attrEntities = this.attributeRepository.saveAll(attrEntities);
@@ -301,7 +299,7 @@ public class ConnectionService {
             return Collections.emptyList();
         }
         List<ConnectionConfig> connections = entitiesToModels(this.repository
-                .findAll(ConnectionSpecs.idIn(ids)), currentOrganizationId(), false);
+                .findAll(ConnectionSpecs.idIn(ids)), currentOrganizationId(), false, false);
         if (CollectionUtils.isEmpty(connections)) {
             return Collections.emptyList();
         }
@@ -343,12 +341,12 @@ public class ConnectionService {
 
     @SkipAuthorize("odc internal usage")
     public List<ConnectionConfig> listByOrganizationId(@NonNull Long organizationId) {
-        return entitiesToModels(repository.findByOrganizationId(organizationId), organizationId, true);
+        return entitiesToModels(repository.findByOrganizationId(organizationId), organizationId, true, true);
     }
 
     @SkipAuthorize("odc internal usage")
     public List<ConnectionConfig> listByOrganizationIdWithoutEnvironment(@NonNull Long organizationId) {
-        return entitiesToModels(repository.findByOrganizationId(organizationId), organizationId, false);
+        return entitiesToModels(repository.findByOrganizationId(organizationId), organizationId, false, false);
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -385,7 +383,7 @@ public class ConnectionService {
                 .where(ConnectionSpecs.organizationIdEqual(currentOrganizationId()))
                 .and(ConnectionSpecs.idIn(connIds));
         Map<Long, ConnectionConfig> connMap =
-                entitiesToModels(repository.findAll(spec), currentOrganizationId(), false).stream()
+                entitiesToModels(repository.findAll(spec), currentOrganizationId(), false, false).stream()
                         .collect(Collectors.toMap(ConnectionConfig::getId, c -> c));
         Map<SecurityResource, Set<String>> res2Actions = authorizationFacade.getRelatedResourcesAndActions(user)
                 .entrySet().stream().collect(Collectors.toMap(e -> {
@@ -432,7 +430,7 @@ public class ConnectionService {
                     .collect(Collectors.joining(","));
             throw new NotFoundException(ResourceType.ODC_CONNECTION, "id", absentIds);
         }
-        return entitiesToModels(entities, currentOrganizationId(), false);
+        return entitiesToModels(entities, currentOrganizationId(), false, false);
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -489,13 +487,15 @@ public class ConnectionService {
 
     @Transactional(rollbackFor = Exception.class)
     @PreAuthenticate(actions = "update", resourceType = "ODC_CONNECTION", indexOfIdParam = 0)
-    public ConnectionConfig update(@NotNull Long id, @NotNull @Valid ConnectionConfig connection) {
+    public ConnectionConfig update(@NotNull Long id, @NotNull @Valid ConnectionConfig connection,
+            @NotNull Boolean migrate) {
         environmentAdapter.adaptConfig(connection);
         connectionSSLAdaptor.adapt(connection);
 
         ConnectionConfig savedConnectionConfig = internalGet(id);
 
         connectionValidator.validateForUpdate(connection, savedConnectionConfig);
+        connectionValidator.validateProjectOperable(connection.getProjectId());
 
         if (StringUtils.isBlank(connection.getSysTenantUsername())) {
             // sys 用户没有设的情况下，相应地，密码要设置为空
@@ -532,7 +532,8 @@ public class ConnectionService {
         // seems JPA bug, it works while UT
         entityManager.refresh(savedEntity);
 
-        ConnectionConfig updated = entityToModel(savedEntity, true);
+        ConnectionConfig updated = entityToModel(savedEntity, true, true);
+        updated.setMigrateDbForUpdate(migrate);
         databaseSyncManager.submitSyncDataSourceTask(updated);
 
         this.attributeRepository.deleteByConnectionId(updated.getId());
@@ -549,7 +550,7 @@ public class ConnectionService {
         if (org.springframework.util.CollectionUtils.isEmpty(ids)) {
             return Collections.emptyMap();
         }
-        return entitiesToModels(repository.findAllById(ids), authenticationFacade.currentOrganizationId(), true)
+        return entitiesToModels(repository.findAllById(ids), authenticationFacade.currentOrganizationId(), true, true)
                 .stream()
                 .collect(Collectors.groupingBy(ConnectionConfig::getId));
     }
@@ -568,7 +569,7 @@ public class ConnectionService {
 
     @SkipAuthorize("internal usage")
     public ConnectionConfig getForConnectionSkipPermissionCheck(@NotNull Long id) {
-        ConnectionConfig connection = internalGetSkipUserCheck(id, false);
+        ConnectionConfig connection = internalGetSkipUserCheck(id, false, false);
 
         int queryTimeoutSeconds = connection.queryTimeoutSeconds();
         Integer minQueryTimeoutSeconds = connectProperties.getMinQueryTimeoutSeconds();
@@ -593,12 +594,21 @@ public class ConnectionService {
 
     @SkipAuthorize("check permission inside")
     public boolean checkPermission(@NotNull Long connectionId, @NotEmpty List<String> actions) {
+        return checkPermission(Collections.singleton(connectionId), actions);
+    }
+
+    @SkipAuthorize("check permission inside")
+    public boolean checkPermission(@NotNull Collection<Long> connectionIds, @NotNull List<String> actions) {
+        if (connectionIds.isEmpty() || actions.isEmpty()) {
+            return true;
+        }
         try {
-            ConnectionConfig connection = internalGetSkipUserCheck(connectionId, false);
-            permissionValidator.checkCurrentOrganization(connection);
-            securityManager.checkPermission(
-                    securityManager.getPermissionByActions(connection, actions));
-        } catch (Exception ex) {
+            List<ConnectionConfig> connections = innerListByIds(connectionIds);
+            permissionValidator.checkCurrentOrganization(connections);
+            List<Permission> permissions = connections.stream()
+                    .map(c -> securityManager.getPermissionByActions(c, actions)).collect(Collectors.toList());
+            securityManager.checkPermission(permissions);
+        } catch (Exception e) {
             return false;
         }
         return true;
@@ -633,7 +643,7 @@ public class ConnectionService {
         Pageable page = pageable.equals(Pageable.unpaged()) ? pageable
                 : PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
         Page<ConnectionEntity> entities = this.repository.findAll(spec, page);
-        List<ConnectionConfig> models = entitiesToModels(entities.getContent(), currentOrganizationId(), true);
+        List<ConnectionConfig> models = entitiesToModels(entities.getContent(), currentOrganizationId(), true, true);
         return new PageImpl<>(models, page, entities.getTotalElements());
     }
 
@@ -708,13 +718,13 @@ public class ConnectionService {
     }
 
     private ConnectionConfig internalGet(Long id) {
-        ConnectionConfig connection = internalGetSkipUserCheck(id, true);
+        ConnectionConfig connection = internalGetSkipUserCheck(id, true, true);
         permissionValidator.checkCurrentOrganization(connection);
         return connection;
     }
 
-    private ConnectionConfig internalGetSkipUserCheck(Long id, boolean withEnvironment) {
-        ConnectionConfig config = entityToModel(getEntity(id), withEnvironment);
+    private ConnectionConfig internalGetSkipUserCheck(Long id, boolean withEnvironment, boolean withProject) {
+        ConnectionConfig config = entityToModel(getEntity(id), withEnvironment, withProject);
         List<ConnectionAttributeEntity> entities = this.attributeRepository.findByConnectionId(config.getId());
         config.setAttributes(attrEntitiesToMap(entities));
         return config;
@@ -725,7 +735,7 @@ public class ConnectionService {
     }
 
     private List<ConnectionConfig> entitiesToModels(@NonNull List<ConnectionEntity> entities,
-            @NonNull Long organizationId, @NonNull Boolean withEnvironment) {
+            @NonNull Long organizationId, @NonNull Boolean withEnvironment, @NonNull Boolean withProject) {
         if (CollectionUtils.isEmpty(entities)) {
             return Collections.emptyList();
         }
@@ -735,6 +745,15 @@ public class ConnectionService {
                     .collect(Collectors.toMap(Environment::getId, environment -> environment));
         } else {
             id2Environment = new HashMap<>();
+        }
+        Map<Long, String> id2ProjectName;
+        if (withProject) {
+            List<Long> projectIds = entities.stream().map(ConnectionEntity::getProjectId).filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+            id2ProjectName = projectRepository.findByIdIn(projectIds).stream()
+                    .collect(Collectors.toMap(ProjectEntity::getId, ProjectEntity::getName));
+        } else {
+            id2ProjectName = new HashMap<>();
         }
         return entities.stream().map(entity -> {
             ConnectionConfig connection = mapper.entityToModel(entity);
@@ -747,14 +766,22 @@ public class ConnectionService {
                 connection.setEnvironmentStyle(environment.getStyle());
                 connection.setEnvironmentName(environment.getName());
             }
+            if (withProject && connection.getProjectId() != null) {
+                String projectName = id2ProjectName.getOrDefault(connection.getProjectId(), null);
+                if (Objects.isNull(projectName)) {
+                    throw new UnexpectedException("project not found, id=" + connection.getProjectId());
+                }
+                connection.setProjectName(projectName);
+            }
             return connection;
         }).collect(Collectors.toList());
     }
 
-    private ConnectionConfig entityToModel(@NonNull ConnectionEntity entity, @NonNull Boolean withEnvironment) {
-        return entitiesToModels(Collections.singletonList(entity), entity.getOrganizationId(), withEnvironment)
-                .stream().findFirst()
-                .orElseThrow(() -> new NotFoundException(ResourceType.ODC_CONNECTION, "id", entity.getId()));
+    private ConnectionConfig entityToModel(@NonNull ConnectionEntity entity, @NonNull Boolean withEnvironment,
+            @NonNull Boolean withProject) {
+        return entitiesToModels(Collections.singletonList(entity), entity.getOrganizationId(), withEnvironment,
+                withProject).stream().findFirst()
+                        .orElseThrow(() -> new NotFoundException(ResourceType.ODC_CONNECTION, "id", entity.getId()));
     }
 
     private ConnectionEntity modelToEntity(@NonNull ConnectionConfig model) {
@@ -802,4 +829,5 @@ public class ConnectionService {
             connection.setHost("trial_connection_host");
         }
     }
+
 }

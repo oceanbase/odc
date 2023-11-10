@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.collaboration.project;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -61,7 +62,6 @@ import com.oceanbase.odc.service.collaboration.project.model.Project.ProjectMemb
 import com.oceanbase.odc.service.collaboration.project.model.QueryProjectParams;
 import com.oceanbase.odc.service.collaboration.project.model.SetArchivedReq;
 import com.oceanbase.odc.service.common.model.InnerUser;
-import com.oceanbase.odc.service.iam.HorizontalDataPermissionValidator;
 import com.oceanbase.odc.service.iam.ResourceRoleService;
 import com.oceanbase.odc.service.iam.UserOrganizationService;
 import com.oceanbase.odc.service.iam.UserPermissionService;
@@ -90,9 +90,6 @@ public class ProjectService {
 
     @Autowired
     private AuthenticationFacade authenticationFacade;
-
-    @Autowired
-    private HorizontalDataPermissionValidator permissionValidator;
 
     @Autowired
     private UserOrganizationService userOrganizationService;
@@ -337,13 +334,19 @@ public class ProjectService {
         if (CollectionUtils.isEmpty(resourceRoles)) {
             return false;
         }
-        Permission permission = new ResourceRoleBasedPermission(
-                new DefaultSecurityResource(projectId.toString(), "ODC_PROJECT"), resourceRoles);
-        if (!authorizationFacade.isImpliesPermissions(authenticationFacade.currentUser(),
-                Collections.singletonList(permission))) {
-            return false;
+        return checkPermission(Collections.singleton(projectId), resourceRoles);
+    }
+
+    @SkipAuthorize("permission check inside")
+    public boolean checkPermission(@NonNull Collection<Long> projectIds,
+            @NotNull List<ResourceRoleName> resourceRoles) {
+        if (projectIds.isEmpty() || resourceRoles.isEmpty()) {
+            return true;
         }
-        return true;
+        List<Permission> permissions = projectIds.stream().map(projectId -> new ResourceRoleBasedPermission(
+                new DefaultSecurityResource(projectId.toString(), "ODC_PROJECT"), resourceRoles))
+                .collect(Collectors.toList());
+        return authorizationFacade.isImpliesPermissions(authenticationFacade.currentUser(), permissions);
     }
 
     @SkipAuthorize("permission check inside")

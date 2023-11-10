@@ -285,7 +285,7 @@ public class ConnectionConfigServiceTest extends MockedAuthorityTestEnv {
     @Test(expected = NotFoundException.class)
     public void update_NotExists_NotFoundException() {
         ConnectionConfig connection = newConnection(ConnectionVisibleScope.PRIVATE, NAME);
-        service.update(-1L, connection);
+        service.update(-1L, connection, false);
     }
 
     @Test
@@ -299,7 +299,7 @@ public class ConnectionConfigServiceTest extends MockedAuthorityTestEnv {
         thrown.expect(BadRequestException.class);
         thrown.expectMessage("same datasource name exists");
 
-        service.update(connection2.getId(), connection2);
+        service.update(connection2.getId(), connection2, false);
     }
 
     @Test
@@ -309,7 +309,7 @@ public class ConnectionConfigServiceTest extends MockedAuthorityTestEnv {
         connection.setUpdateTime(null);
         connection.setName("othername");
 
-        ConnectionConfig updated = service.update(connection.getId(), connection);
+        ConnectionConfig updated = service.update(connection.getId(), connection, false);
 
         Assert.assertNotNull(updated.getCreateTime());
     }
@@ -321,7 +321,7 @@ public class ConnectionConfigServiceTest extends MockedAuthorityTestEnv {
         connection.setUpdateTime(null);
         connection.setEnabled(false);
 
-        ConnectionConfig updated = service.update(connection.getId(), connection);
+        ConnectionConfig updated = service.update(connection.getId(), connection, false);
 
         Assert.assertFalse(updated.getEnabled());
     }
@@ -369,6 +369,7 @@ public class ConnectionConfigServiceTest extends MockedAuthorityTestEnv {
         connection.setTenantName(TENANT_NAME);
         connection.setTemp(false);
         connection.setEnvironmentId(1L);
+        connection.setProjectId(null);
         return connection;
     }
 
