@@ -13,9 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.oceanbase.tools.sqlparser.adapter;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 import org.antlr.v4.runtime.BailErrorStrategy;
 import org.antlr.v4.runtime.CharStreams;
@@ -27,85 +31,317 @@ import com.oceanbase.tools.sqlparser.adapter.oracle.OracleInsertFactory;
 import com.oceanbase.tools.sqlparser.oboracle.OBLexer;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Insert_stmtContext;
+import com.oceanbase.tools.sqlparser.statement.Expression;
+import com.oceanbase.tools.sqlparser.statement.common.RelationFactor;
+import com.oceanbase.tools.sqlparser.statement.common.oracle.LogErrors;
+import com.oceanbase.tools.sqlparser.statement.common.oracle.Returning;
 import com.oceanbase.tools.sqlparser.statement.expression.ColumnReference;
+import com.oceanbase.tools.sqlparser.statement.expression.ConstExpression;
+import com.oceanbase.tools.sqlparser.statement.expression.RelationReference;
+import com.oceanbase.tools.sqlparser.statement.insert.ConditionalInsert;
 import com.oceanbase.tools.sqlparser.statement.insert.Insert;
-import com.oceanbase.tools.sqlparser.statement.insert.InsertBody;
-import com.oceanbase.tools.sqlparser.statement.insert.MultiTableInsert;
-import com.oceanbase.tools.sqlparser.statement.insert.SingleTableInsert;
+import com.oceanbase.tools.sqlparser.statement.insert.InsertCondition;
+import com.oceanbase.tools.sqlparser.statement.insert.InsertTable;
+import com.oceanbase.tools.sqlparser.statement.select.NameReference;
+import com.oceanbase.tools.sqlparser.statement.select.OrderBy;
+import com.oceanbase.tools.sqlparser.statement.select.PartitionType;
+import com.oceanbase.tools.sqlparser.statement.select.PartitionUsage;
+import com.oceanbase.tools.sqlparser.statement.select.Projection;
+import com.oceanbase.tools.sqlparser.statement.select.Select;
+import com.oceanbase.tools.sqlparser.statement.select.SelectBody;
+import com.oceanbase.tools.sqlparser.statement.select.SortDirection;
+import com.oceanbase.tools.sqlparser.statement.select.SortKey;
+import com.oceanbase.tools.sqlparser.statement.select.oracle.Fetch;
+import com.oceanbase.tools.sqlparser.statement.select.oracle.FetchAddition;
+import com.oceanbase.tools.sqlparser.statement.select.oracle.FetchDirection;
+import com.oceanbase.tools.sqlparser.statement.select.oracle.FetchType;
 
 /**
  * {@link OracleInsertFactoryTest}
  *
  * @author yh263208
- * @date 2022-12-20 19:43
- * @since ODC_release_4.1.0
+ * @date 2023-11-09 16:08
+ * @since ODC_release_4.2.3
  */
 public class OracleInsertFactoryTest {
 
     @Test
-    public void generate_singleInsertWithOutColumns_generateSucceed() {
-        Insert_stmtContext context = getInsertContext("insert into tab values(1,1,2)");
-        StatementFactory<Insert> factory = new OracleInsertFactory(context);
-        Insert acutal = factory.generate();
+    public void generate_simpleInsert_succeed() {
+        StatementFactory<Insert> factory = new OracleInsertFactory(
+                getInsertContext("insert into a.b partition(p1, p2) alias values(1,default)"));
+        Insert actual = factory.generate();
 
-        SingleTableInsert expect = new SingleTableInsert(new InsertBody());
-        Assert.assertEquals(expect, acutal);
+        RelationFactor factor = new RelationFactor("b");
+        factor.setSchema("a");
+        InsertTable insertTable = new InsertTable(factor);
+        insertTable.setPartitionUsage(new PartitionUsage(PartitionType.PARTITION, Arrays.asList("p1", "p2")));
+        insertTable.setAlias("alias");
+        List<List<Expression>> values = new ArrayList<>();
+        values.add(Arrays.asList(new ConstExpression("1"), new ConstExpression("default")));
+        insertTable.setValues(values);
+        Insert expect = new Insert(Collections.singletonList(insertTable), null);
+        Assert.assertEquals(actual, expect);
     }
 
     @Test
-    public void generate_singleInsertWithColumns_generateSucceed() {
-        Insert_stmtContext context = getInsertContext("insert into tab(col, col1, tab.col2) values(1,1,2)");
-        StatementFactory<Insert> factory = new OracleInsertFactory(context);
-        Insert acutal = factory.generate();
+    public void generate_insertSelect_succeed() {
+        StatementFactory<Insert> factory = new OracleInsertFactory(
+                getInsertContext("insert into (select col.* abc from dual) abcd nologging () values(1,default)"));
+        Insert actual = factory.generate();
 
-        ColumnReference c1 = new ColumnReference(null, null, "col");
-        ColumnReference c2 = new ColumnReference(null, null, "col1");
-        ColumnReference c3 = new ColumnReference(null, "tab", "col2");
-        InsertBody insertBody = new InsertBody();
-        insertBody.setColumns(Arrays.asList(c1, c2, c3));
-        SingleTableInsert expect = new SingleTableInsert(insertBody);
-        Assert.assertEquals(expect, acutal);
+        RelationReference r = new RelationReference("col", new RelationReference("*", null));
+        Projection p = new Projection(r, "abc");
+        NameReference from = new NameReference(null, "dual", null);
+        InsertTable insertTable = new InsertTable(
+                new SelectBody(Collections.singletonList(p), Collections.singletonList(from)));
+        insertTable.setAlias("abcd");
+        insertTable.setNologging(true);
+        List<List<Expression>> values = new ArrayList<>();
+        values.add(Arrays.asList(new ConstExpression("1"), new ConstExpression("default")));
+        insertTable.setValues(values);
+        Insert expect = new Insert(Collections.singletonList(insertTable), null);
+        Assert.assertEquals(actual, expect);
     }
 
     @Test
-    public void generate_multiInsertWithColumns_generateSucceed() {
-        Insert_stmtContext context = getInsertContext(
-                "insert all into tab (col, col1) values(1,2) into tab1 values(1,2) select 1 from dual");
-        StatementFactory<Insert> factory = new OracleInsertFactory(context);
-        Insert acutal = factory.generate();
+    public void generate_insertSelectColumns_succeed() {
+        StatementFactory<Insert> factory = new OracleInsertFactory(
+                getInsertContext("insert into (select col.* abc from dual order by col desc) "
+                        + "abcd nologging (col1, col2) values(1,default), (1,2) "));
+        Insert actual = factory.generate();
 
-        ColumnReference c1 = new ColumnReference(null, null, "col");
-        ColumnReference c2 = new ColumnReference(null, null, "col1");
-        InsertBody insertBody = new InsertBody();
-        insertBody.setColumns(Arrays.asList(c1, c2));
-        MultiTableInsert expect = new MultiTableInsert(Arrays.asList(insertBody, new InsertBody()));
-        Assert.assertEquals(expect, acutal);
+        RelationReference r = new RelationReference("col", new RelationReference("*", null));
+        Projection p = new Projection(r, "abc");
+        NameReference from = new NameReference(null, "dual", null);
+        SortKey s1 = new SortKey(new RelationReference("col", null), SortDirection.DESC, null);
+        OrderBy orderBy = new OrderBy(false, Collections.singletonList(s1));
+        SelectBody selectBody = new SelectBody(Collections.singletonList(p), Collections.singletonList(from));
+        selectBody.setOrderBy(orderBy);
+        InsertTable insertTable = new InsertTable(selectBody);
+        insertTable.setColumns(Arrays.asList(new ColumnReference(null, null, "col1"),
+                new ColumnReference(null, null, "col2")));
+        insertTable.setAlias("abcd");
+        insertTable.setNologging(true);
+        List<List<Expression>> values = new ArrayList<>();
+        values.add(Arrays.asList(new ConstExpression("1"), new ConstExpression("default")));
+        values.add(Arrays.asList(new ConstExpression("1"), new ConstExpression("2")));
+        insertTable.setValues(values);
+        Insert expect = new Insert(Collections.singletonList(insertTable), null);
+        Assert.assertEquals(actual, expect);
     }
 
     @Test
-    public void generate_conditionalMultiInsertWithColumns_generateSucceed() {
-        Insert_stmtContext context = getInsertContext("insert all "
-                + "when 1+3 then into tab(col, col1) values(1,2) into tab1 values(3,4) "
-                + "when 1+3 then into tab5(tab.col, col122) values(1,2) "
-                + "else into tab7(tab.col1, col12) values(1,2) select 1 from dual");
-        StatementFactory<Insert> factory = new OracleInsertFactory(context);
-        Insert acutal = factory.generate();
+    public void generate_insertSelect1_succeed() {
+        StatementFactory<Insert> factory = new OracleInsertFactory(
+                getInsertContext("insert into (select col.* abc from dual order by col desc "
+                        + "offset 12 rows fetch first 12 rows only with check option) "
+                        + "abcd nologging (col1, col2) values a.b returning a,b BULK COLLECT into @ab,a.b,:12"));
+        Insert actual = factory.generate();
 
-        ColumnReference c1 = new ColumnReference(null, null, "col");
-        ColumnReference c2 = new ColumnReference(null, null, "col1");
-        InsertBody b1 = new InsertBody();
-        b1.setColumns(Arrays.asList(c1, c2));
-        InsertBody b2 = new InsertBody();
-        ColumnReference c3 = new ColumnReference(null, "tab", "col");
-        ColumnReference c4 = new ColumnReference(null, null, "col122");
-        InsertBody b3 = new InsertBody();
-        b3.setColumns(Arrays.asList(c3, c4));
-        ColumnReference c5 = new ColumnReference(null, "tab", "col1");
-        ColumnReference c6 = new ColumnReference(null, null, "col12");
-        InsertBody b4 = new InsertBody();
-        b4.setColumns(Arrays.asList(c5, c6));
-        MultiTableInsert expect = new MultiTableInsert(Arrays.asList(b1, b2, b3, b4));
-        Assert.assertEquals(expect, acutal);
+        RelationReference r = new RelationReference("col", new RelationReference("*", null));
+        Projection p = new Projection(r, "abc");
+        NameReference from = new NameReference(null, "dual", null);
+        SortKey s1 = new SortKey(new RelationReference("col", null), SortDirection.DESC, null);
+        OrderBy orderBy = new OrderBy(false, Collections.singletonList(s1));
+        SelectBody selectBody = new SelectBody(Collections.singletonList(p), Collections.singletonList(from));
+        selectBody.setOrderBy(orderBy);
+        selectBody.setFetch(new Fetch(new ConstExpression("12"),
+                FetchDirection.FIRST, FetchType.COUNT, FetchAddition.ONLY, new ConstExpression("12")));
+        selectBody.setWithCheckOption(true);
+        InsertTable insertTable = new InsertTable(selectBody);
+        insertTable.setColumns(Arrays.asList(new ColumnReference(null, null, "col1"),
+                new ColumnReference(null, null, "col2")));
+        insertTable.setAlias("abcd");
+        insertTable.setNologging(true);
+        List<List<Expression>> values = new ArrayList<>();
+        values.add(Collections.singletonList(new RelationReference("a", new RelationReference("b", null))));
+        insertTable.setValues(values);
+        Insert expect = new Insert(Collections.singletonList(insertTable), null);
+        Returning returning = new Returning(Arrays.asList(new ConstExpression("@ab"),
+                new RelationReference("a", new RelationReference("b", null)),
+                new ConstExpression(":12")),
+                Arrays.asList(new Projection(new RelationReference("a", null), null),
+                        new Projection(new RelationReference("b", null), null)));
+        returning.setBulkCollect(true);
+        expect.setReturning(returning);
+        Assert.assertEquals(actual, expect);
+    }
+
+    @Test
+    public void generate_logErrors_succeed() {
+        StatementFactory<Insert> factory = new OracleInsertFactory(
+                getInsertContext("insert into a.b values(1,default) log errors"));
+        Insert actual = factory.generate();
+
+        RelationFactor factor = new RelationFactor("b");
+        factor.setSchema("a");
+        InsertTable insertTable = new InsertTable(factor);
+        List<List<Expression>> values = new ArrayList<>();
+        values.add(Arrays.asList(new ConstExpression("1"), new ConstExpression("default")));
+        insertTable.setValues(values);
+        Insert expect = new Insert(Collections.singletonList(insertTable), null);
+        expect.setLogErrors(new LogErrors());
+        Assert.assertEquals(actual, expect);
+    }
+
+    @Test
+    public void generate_fullLogErrors_succeed() {
+        StatementFactory<Insert> factory = new OracleInsertFactory(getInsertContext(
+                "insert into a.b select col.* abc from dual order by col desc "
+                        + "offset 12 rows fetch first 12 rows only "
+                        + "log errors into b (123) REJECT LIMIT 12"));
+        Insert actual = factory.generate();
+
+        RelationFactor factor = new RelationFactor("b");
+        factor.setSchema("a");
+        InsertTable insertTable = new InsertTable(factor);
+        List<List<Expression>> values = new ArrayList<>();
+        RelationReference r = new RelationReference("col", new RelationReference("*", null));
+        Projection p = new Projection(r, "abc");
+        NameReference from = new NameReference(null, "dual", null);
+        SortKey s1 = new SortKey(new RelationReference("col", null), SortDirection.DESC, null);
+        OrderBy orderBy = new OrderBy(false, Collections.singletonList(s1));
+        Select select = new Select(new SelectBody(Collections.singletonList(p), Collections.singletonList(from)));
+        select.setOrderBy(orderBy);
+        select.setFetch(new Fetch(new ConstExpression("12"),
+                FetchDirection.FIRST, FetchType.COUNT, FetchAddition.ONLY, new ConstExpression("12")));
+        values.add(Collections.singletonList(select));
+        insertTable.setValues(values);
+        Insert expect = new Insert(Collections.singletonList(insertTable), null);
+        LogErrors logErrors = new LogErrors();
+        logErrors.setInto(new RelationFactor("b"));
+        logErrors.setExpression(new ConstExpression("123"));
+        logErrors.setRejectLimit(12);
+        logErrors.setUnlimitedReject(false);
+        expect.setLogErrors(logErrors);
+        Assert.assertEquals(actual, expect);
+    }
+
+    @Test
+    public void generate_multiInsert_succeed() {
+        StatementFactory<Insert> factory = new OracleInsertFactory(getInsertContext(
+                "insert all into a partition(p1, p2) "
+                        + "into b (c1, c2) "
+                        + "into c values (1, default) "
+                        + "into d (c3, c4) values(1, 2) "
+                        + "select col.* abc from dual order by col desc offset 12 rows fetch first 12 rows only"));
+        Insert actual = factory.generate();
+
+        InsertTable t1 = new InsertTable(new RelationFactor("a"));
+        t1.setPartitionUsage(new PartitionUsage(PartitionType.PARTITION, Arrays.asList("p1", "p2")));
+        InsertTable t2 = new InsertTable(new RelationFactor("b"));
+        t2.setColumns(Arrays.asList(new ColumnReference(null, null, "c1"),
+                new ColumnReference(null, null, "c2")));
+        InsertTable t3 = new InsertTable(new RelationFactor("c"));
+        List<List<Expression>> values = new ArrayList<>();
+        values.add(Arrays.asList(new ConstExpression("1"), new ConstExpression("default")));
+        t3.setValues(values);
+        InsertTable t4 = new InsertTable(new RelationFactor("d"));
+        values = new ArrayList<>();
+        values.add(Arrays.asList(new ConstExpression("1"), new ConstExpression("2")));
+        t4.setValues(values);
+        t4.setColumns(Arrays.asList(new ColumnReference(null, null, "c3"),
+                new ColumnReference(null, null, "c4")));
+        RelationReference r = new RelationReference("col", new RelationReference("*", null));
+        Projection p = new Projection(r, "abc");
+        NameReference from = new NameReference(null, "dual", null);
+        SortKey s1 = new SortKey(new RelationReference("col", null), SortDirection.DESC, null);
+        OrderBy orderBy = new OrderBy(false, Collections.singletonList(s1));
+        Select select = new Select(new SelectBody(Collections.singletonList(p), Collections.singletonList(from)));
+        select.setOrderBy(orderBy);
+        select.setFetch(new Fetch(new ConstExpression("12"),
+                FetchDirection.FIRST, FetchType.COUNT, FetchAddition.ONLY, new ConstExpression("12")));
+        Insert expect = new Insert(Arrays.asList(t1, t2, t3, t4), null);
+        expect.setAll(true);
+        expect.setSelect(select);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_conditionalInsert_succeed() {
+        StatementFactory<Insert> factory = new OracleInsertFactory(getInsertContext(
+                "insert all when 1 then into a partition(p1, p2) "
+                        + "into b (c1, c2) "
+                        + "when 2 then into c values (1, default) "
+                        + "into d (c3, c4) values(1, 2) "
+                        + "select col.* abc from dual order by col desc offset 12 rows fetch first 12 rows only"));
+        Insert actual = factory.generate();
+
+        InsertTable t1 = new InsertTable(new RelationFactor("a"));
+        t1.setPartitionUsage(new PartitionUsage(PartitionType.PARTITION, Arrays.asList("p1", "p2")));
+        InsertTable t2 = new InsertTable(new RelationFactor("b"));
+        t2.setColumns(Arrays.asList(new ColumnReference(null, null, "c1"),
+                new ColumnReference(null, null, "c2")));
+        InsertCondition i1 = new InsertCondition(new ConstExpression("1"), Arrays.asList(t1, t2));
+        InsertTable t3 = new InsertTable(new RelationFactor("c"));
+        List<List<Expression>> values = new ArrayList<>();
+        values.add(Arrays.asList(new ConstExpression("1"), new ConstExpression("default")));
+        t3.setValues(values);
+        InsertTable t4 = new InsertTable(new RelationFactor("d"));
+        values = new ArrayList<>();
+        values.add(Arrays.asList(new ConstExpression("1"), new ConstExpression("2")));
+        t4.setValues(values);
+        t4.setColumns(Arrays.asList(new ColumnReference(null, null, "c3"),
+                new ColumnReference(null, null, "c4")));
+        InsertCondition i2 = new InsertCondition(new ConstExpression("2"), Arrays.asList(t3, t4));
+        ConditionalInsert conditionalInsert = new ConditionalInsert(Arrays.asList(i1, i2));
+        RelationReference r = new RelationReference("col", new RelationReference("*", null));
+        Projection p = new Projection(r, "abc");
+        NameReference from = new NameReference(null, "dual", null);
+        SortKey s1 = new SortKey(new RelationReference("col", null), SortDirection.DESC, null);
+        OrderBy orderBy = new OrderBy(false, Collections.singletonList(s1));
+        Select select = new Select(new SelectBody(Collections.singletonList(p), Collections.singletonList(from)));
+        select.setOrderBy(orderBy);
+        select.setFetch(new Fetch(new ConstExpression("12"),
+                FetchDirection.FIRST, FetchType.COUNT, FetchAddition.ONLY, new ConstExpression("12")));
+        Insert expect = new Insert(null, conditionalInsert);
+        expect.setSelect(select);
+        expect.setAll(true);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_elseConditionalInsert_succeed() {
+        StatementFactory<Insert> factory = new OracleInsertFactory(getInsertContext(
+                "insert first when 1 then into a partition(p1, p2) "
+                        + "when 2 then into b (c1, c2) "
+                        + "else into c values (1, default) "
+                        + "into d (c3, c4) values(1, 2) "
+                        + "select col.* abc from dual order by col desc offset 12 rows fetch first 12 rows only"));
+        Insert actual = factory.generate();
+
+        InsertTable t1 = new InsertTable(new RelationFactor("a"));
+        t1.setPartitionUsage(new PartitionUsage(PartitionType.PARTITION, Arrays.asList("p1", "p2")));
+        InsertCondition i1 = new InsertCondition(new ConstExpression("1"), Collections.singletonList(t1));
+        InsertTable t2 = new InsertTable(new RelationFactor("b"));
+        t2.setColumns(Arrays.asList(new ColumnReference(null, null, "c1"),
+                new ColumnReference(null, null, "c2")));
+        InsertCondition i2 = new InsertCondition(new ConstExpression("2"), Collections.singletonList(t2));
+        InsertTable t3 = new InsertTable(new RelationFactor("c"));
+        List<List<Expression>> values = new ArrayList<>();
+        values.add(Arrays.asList(new ConstExpression("1"), new ConstExpression("default")));
+        t3.setValues(values);
+        InsertTable t4 = new InsertTable(new RelationFactor("d"));
+        values = new ArrayList<>();
+        values.add(Arrays.asList(new ConstExpression("1"), new ConstExpression("2")));
+        t4.setValues(values);
+        t4.setColumns(Arrays.asList(new ColumnReference(null, null, "c3"),
+                new ColumnReference(null, null, "c4")));
+        ConditionalInsert conditionalInsert = new ConditionalInsert(Arrays.asList(i1, i2));
+        conditionalInsert.setElseClause(Arrays.asList(t3, t4));
+        RelationReference r = new RelationReference("col", new RelationReference("*", null));
+        Projection p = new Projection(r, "abc");
+        NameReference from = new NameReference(null, "dual", null);
+        SortKey s1 = new SortKey(new RelationReference("col", null), SortDirection.DESC, null);
+        OrderBy orderBy = new OrderBy(false, Collections.singletonList(s1));
+        Select select = new Select(new SelectBody(Collections.singletonList(p), Collections.singletonList(from)));
+        select.setOrderBy(orderBy);
+        select.setFetch(new Fetch(new ConstExpression("12"),
+                FetchDirection.FIRST, FetchType.COUNT, FetchAddition.ONLY, new ConstExpression("12")));
+        Insert expect = new Insert(null, conditionalInsert);
+        expect.setSelect(select);
+        expect.setFirst(true);
+        Assert.assertEquals(expect, actual);
     }
 
     private Insert_stmtContext getInsertContext(String expr) {

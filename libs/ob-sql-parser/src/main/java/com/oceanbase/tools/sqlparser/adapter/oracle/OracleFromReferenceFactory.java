@@ -238,7 +238,7 @@ public class OracleFromReferenceFactory extends OBParserBaseVisitor<FromReferenc
         NameReference nameReference =
                 new NameReference(ctx, getSchemaName(relationFactor), getRelation(relationFactor), alias);
         if (ctx.use_partition() != null) {
-            OraclePartitonUsageFactory factory = new OraclePartitonUsageFactory(ctx.use_partition());
+            OraclePartitionUsageFactory factory = new OraclePartitionUsageFactory(ctx.use_partition());
             nameReference.setPartitionUsage(factory.generate());
         }
         if (ctx.use_flashback() != null) {
