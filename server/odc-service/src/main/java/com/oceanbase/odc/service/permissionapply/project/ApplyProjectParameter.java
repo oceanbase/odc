@@ -58,7 +58,7 @@ public class ApplyProjectParameter implements Serializable, TaskParameters {
          */
         private Long id;
         /**
-         * Project name, refer to {@link Project#getName()}
+         * Project name, filled in by {@link ApplyProjectPreprocessor}
          */
         private String name;
     }
@@ -70,7 +70,7 @@ public class ApplyProjectParameter implements Serializable, TaskParameters {
          */
         private Long id;
         /**
-         * Resource role name, refer to {@link ResourceRole#getRoleName()}
+         * Resource role name, filled in by {@link ApplyProjectPreprocessor}
          */
         private ResourceRoleName name;
     }
