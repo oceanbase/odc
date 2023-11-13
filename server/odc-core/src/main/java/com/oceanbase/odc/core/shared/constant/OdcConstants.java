@@ -79,6 +79,10 @@ public class OdcConstants {
      * MySQL driver class name
      */
     public static final String MYSQL_DRIVER_CLASS_NAME = "com.mysql.cj.jdbc.Driver";
+    /**
+     * Oracle driver class name
+     */
+    public static final String ORACLE_DRIVER_CLASS_NAME = "oracle.jdbc.driver.OracleDriver";
 
     /**
      * Parameters name

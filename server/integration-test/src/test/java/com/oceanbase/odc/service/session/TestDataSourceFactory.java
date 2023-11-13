@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.session;
 
 import java.util.Map;
+import java.util.Properties;
 
 import javax.sql.DataSource;
 
@@ -25,6 +26,7 @@ import org.apache.commons.lang3.Validate;
 import com.oceanbase.odc.core.datasource.CloneableDataSourceFactory;
 import com.oceanbase.odc.core.datasource.SingleConnectionDataSource;
 import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.plugin.connect.model.ConnectionConstants;
 import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 import com.oceanbase.odc.test.database.TestDBConfiguration;
 import com.oceanbase.odc.test.database.TestDBConfigurations;
@@ -100,8 +102,12 @@ public class TestDataSourceFactory implements CloneableDataSourceFactory {
     }
 
     private String getUrl() {
+        Properties properties = new Properties();
+        properties.put(ConnectionConstants.HOST, this.host);
+        properties.put(ConnectionConstants.PORT, this.port);
+        properties.put(ConnectionConstants.DEFAULT_SCHEMA, this.defaultSchema);
         return ConnectionPluginUtil.getConnectionExtension(dialectType)
-                .generateJdbcUrl(this.host, this.port, this.defaultSchema, null);
+                .generateJdbcUrl(properties, null);
     }
 
     private static String getUsername(DialectType dialectType) {

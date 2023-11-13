@@ -22,6 +22,8 @@ import java.sql.SQLException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Properties;
 
 import org.pf4j.Extension;
 
@@ -61,12 +63,12 @@ public class MySQLConnectionExtension extends OBMySQLConnectionExtension {
     }
 
     @Override
-    public TestResult test(String jdbcUrl, String username, String password, int queryTimeout) {
-        TestResult testResult = super.test(jdbcUrl, username, password, queryTimeout);
+    public TestResult test(String jdbcUrl, Properties properties, int queryTimeout) {
+        TestResult testResult = super.test(jdbcUrl, properties, queryTimeout);
         if (testResult.getErrorCode() != null) {
             return testResult;
         }
-        try (Connection connection = DriverManager.getConnection(jdbcUrl, username, password)) {
+        try (Connection connection = DriverManager.getConnection(jdbcUrl, properties)) {
             MySQLInformationExtension informationExtension = new MySQLInformationExtension();
             String version = informationExtension.getDBVersion(connection);
             if (VersionUtils.isLessThan(version, MIN_VERSION_SUPPORTED)) {
@@ -86,7 +88,7 @@ public class MySQLConnectionExtension extends OBMySQLConnectionExtension {
 
     @Override
     protected Map<String, String> appendDefaultJdbcUrlParameters(Map<String, String> jdbcUrlParams) {
-        if (!jdbcUrlParams.containsKey("tinyInt1isBit")) {
+        if (Objects.nonNull(jdbcUrlParams) && !jdbcUrlParams.containsKey("tinyInt1isBit")) {
             jdbcUrlParams.put("tinyInt1isBit", "false");
         }
         return jdbcUrlParams;

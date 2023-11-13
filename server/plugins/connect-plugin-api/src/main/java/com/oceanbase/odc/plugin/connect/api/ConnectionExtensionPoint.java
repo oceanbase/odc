@@ -17,10 +17,12 @@ package com.oceanbase.odc.plugin.connect.api;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 import org.pf4j.ExtensionPoint;
 
 import com.oceanbase.odc.core.datasource.ConnectionInitializer;
+import com.oceanbase.odc.plugin.connect.model.ConnectionConstants;
 
 /**
  * @author yaobin
@@ -29,7 +31,14 @@ import com.oceanbase.odc.core.datasource.ConnectionInitializer;
  */
 public interface ConnectionExtensionPoint extends ExtensionPoint {
 
-    String generateJdbcUrl(String host, Integer port, String defaultSchema, Map<String, String> jdbcParameters);
+    /**
+     * @param properties Properties required by jdbcURL, such as HOST, PORT and DEFAULT_SCHEMA, see
+     *        {@link ConnectionConstants}
+     * @param jdbcParameters jdbc parameters.
+     *
+     * @return jdbcURL
+     */
+    String generateJdbcUrl(Properties properties, Map<String, String> jdbcParameters);
 
     String getDriverClassName();
 
@@ -42,5 +51,12 @@ public interface ConnectionExtensionPoint extends ExtensionPoint {
      */
     List<ConnectionInitializer> getConnectionInitializers();
 
-    TestResult test(String jdbcUrl, String username, String password, int queryTimeout);
+    /**
+     * @param properties Properties required by test connection, such as USER, PASSWORD, see
+     *        {@link ConnectionConstants}
+     * @param queryTimeout query timeout.
+     *
+     * @return test connection result
+     */
+    TestResult test(String jdbcUrl, Properties properties, int queryTimeout);
 }

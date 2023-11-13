@@ -20,6 +20,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Properties;
 import java.util.UUID;
 
 import org.junit.Assert;
@@ -38,6 +39,7 @@ import com.oceanbase.odc.plugin.connect.api.InformationExtensionPoint;
 import com.oceanbase.odc.plugin.connect.api.SessionExtensionPoint;
 import com.oceanbase.odc.plugin.connect.api.TestResult;
 import com.oceanbase.odc.plugin.connect.api.TraceExtensionPoint;
+import com.oceanbase.odc.plugin.connect.model.ConnectionConstants;
 import com.oceanbase.odc.test.database.TestDBConfiguration;
 import com.oceanbase.odc.test.database.TestDBConfigurations;
 
@@ -69,22 +71,35 @@ public class MySQLExtensionTest extends BaseExtensionPointTest {
         parameter.put("useSSL", "false");
     }
 
+    private Properties getJdbcProperties() {
+        Properties properties = new Properties();
+        properties.put(ConnectionConstants.DEFAULT_SCHEMA, configuration.getDefaultDBName());
+        properties.put(ConnectionConstants.HOST, configuration.getHost());
+        properties.put(ConnectionConstants.PORT, configuration.getPort());
+        return properties;
+    }
+
+    private Properties getTestConnectionProperties() {
+        Properties properties = new Properties();
+        properties.put(ConnectionConstants.USER, configuration.getUsername());
+        properties.put(ConnectionConstants.PASSWORD, configuration.getPassword());
+        return properties;
+    }
+
     @Test
     public void test_mysql_url_is_valid() {
-        String url = connectionExtensionPoint.generateJdbcUrl(configuration.getHost(), configuration.getPort(),
-                configuration.getDefaultDBName(), parameter);
-        TestResult result = connectionExtensionPoint.test(url, configuration.getUsername(),
-                configuration.getPassword(), 30);
+        String url = connectionExtensionPoint.generateJdbcUrl(getJdbcProperties(), parameter);
+        TestResult result = connectionExtensionPoint.test(url, getTestConnectionProperties(), 30);
         Assert.assertTrue(result.isActive());
         Assert.assertNull(result.getErrorCode());
     }
 
     @Test
     public void test_mysql_connect_invalid_password() {
-        String url = connectionExtensionPoint.generateJdbcUrl(configuration.getHost(), configuration.getPort(),
-                configuration.getDefaultDBName(), parameter);
-        TestResult result = connectionExtensionPoint.test(url, configuration.getUsername(),
-                UUID.randomUUID().toString(), 30);
+        String url = connectionExtensionPoint.generateJdbcUrl(getJdbcProperties(), parameter);
+        Properties testConnectionProperties = getTestConnectionProperties();
+        testConnectionProperties.put(ConnectionConstants.PASSWORD, UUID.randomUUID().toString());
+        TestResult result = connectionExtensionPoint.test(url, testConnectionProperties, 30);
         Assert.assertFalse(result.isActive());
         Assert.assertEquals(ErrorCodes.ObAccessDenied, result.getErrorCode());
     }
@@ -92,20 +107,20 @@ public class MySQLExtensionTest extends BaseExtensionPointTest {
     @Test
     @Ignore("TODO: fix this test")
     public void test_mysql_connect_invalid_port() {
-        String url = connectionExtensionPoint.generateJdbcUrl(configuration.getHost(), configuration.getPort() + 100,
-                configuration.getDefaultDBName(), parameter);
-        TestResult result = connectionExtensionPoint.test(url, configuration.getUsername(),
-                configuration.getPassword(), 30);
+        Properties jdbcProperties = getJdbcProperties();
+        jdbcProperties.put(ConnectionConstants.PORT, configuration.getPort() + 100);
+        String url = connectionExtensionPoint.generateJdbcUrl(jdbcProperties, parameter);
+        TestResult result = connectionExtensionPoint.test(url, getTestConnectionProperties(), 30);
         Assert.assertFalse(result.isActive());
         Assert.assertEquals(ErrorCodes.ConnectionUnknownPort, result.getErrorCode());
     }
 
     @Test
     public void test_mysql_connect_invalid_host() {
-        String url = connectionExtensionPoint.generateJdbcUrl(UUID.randomUUID().toString(),
-                configuration.getPort(), configuration.getDefaultDBName(), parameter);
-        TestResult result = connectionExtensionPoint.test(url, configuration.getUsername(),
-                configuration.getPassword(), 30);
+        Properties jdbcProperties = getJdbcProperties();
+        jdbcProperties.put(ConnectionConstants.HOST, UUID.randomUUID().toString());
+        String url = connectionExtensionPoint.generateJdbcUrl(jdbcProperties, parameter);
+        TestResult result = connectionExtensionPoint.test(url, getTestConnectionProperties(), 30);
 
         Assert.assertFalse(result.isActive());
         Assert.assertEquals(ErrorCodes.ConnectionUnknownHost, result.getErrorCode());

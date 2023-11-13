@@ -109,6 +109,21 @@ public class ConnectionConfig
     private String name;
 
     /**
+     * Oracle 连接方式特有的参数，该参数表示一个数据库
+     */
+    private String serviceName;
+
+    /**
+     * Oracle 连接方式特有的参数，该参数表示数据库的一个实例
+     */
+    private String sid;
+
+    /**
+     * Oracle 连接方式特有的参数，该参数用户角色
+     */
+    private UserRole userRole;
+
+    /**
      * 连接类型
      * 
      * @since 3.3.0

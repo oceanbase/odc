@@ -25,11 +25,12 @@ import java.sql.Statement;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.Validate;
 import org.pf4j.Extension;
-import org.springframework.util.CollectionUtils;
 
 import com.oceanbase.odc.common.util.ExceptionUtils;
 import com.oceanbase.odc.common.util.StringUtils;
@@ -37,6 +38,7 @@ import com.oceanbase.odc.core.datasource.ConnectionInitializer;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
 import com.oceanbase.odc.plugin.connect.api.ConnectionExtensionPoint;
 import com.oceanbase.odc.plugin.connect.api.TestResult;
+import com.oceanbase.odc.plugin.connect.model.ConnectionConstants;
 import com.oceanbase.odc.plugin.connect.obmysql.initializer.EnableTraceInitializer;
 import com.oceanbase.odc.plugin.connect.obmysql.model.HostAddress;
 import com.oceanbase.odc.plugin.connect.obmysql.util.DefaultJdbcUrlParser;
@@ -57,8 +59,15 @@ public class OBMySQLConnectionExtension implements ConnectionExtensionPoint {
     private static final Integer REACHABLE_TIMEOUT_MILLIS = 10000;
 
     @Override
-    public String generateJdbcUrl(@NonNull String host, @NonNull Integer port, String defaultSchema,
-            Map<String, String> jdbcParameters) {
+    public String generateJdbcUrl(@NonNull Properties properties, Map<String, String> jdbcParameters) {
+        String host = properties.getProperty(ConnectionConstants.HOST);
+        Validate.notEmpty(host, "host can not be empty");
+        Integer port = (properties.get(ConnectionConstants.PORT) instanceof Integer)
+                ? (Integer) properties.get(ConnectionConstants.PORT)
+                : null;
+        Validate.notNull(port, "port can not be null");
+        String defaultSchema = properties.getProperty(ConnectionConstants.DEFAULT_SCHEMA);
+
         StringBuilder jdbcUrl = new StringBuilder(String.format(getJdbcUrlPrefix(), host, port));
         if (StringUtils.isNotBlank(defaultSchema)) {
             jdbcUrl.append("/").append(defaultSchema);
@@ -85,14 +94,7 @@ public class OBMySQLConnectionExtension implements ConnectionExtensionPoint {
     }
 
     @Override
-    public TestResult test(String jdbcUrl, String username, String password, int queryTimeout) {
-        Properties properties = new Properties();
-        properties.setProperty("user", username);
-        if (password == null) {
-            properties.setProperty("password", "");
-        } else {
-            properties.setProperty("password", password);
-        }
+    public TestResult test(String jdbcUrl, Properties properties, int queryTimeout) {
         /**
          * 查看 driver 代码可知：driver 建立连接时使用的 socket 超时实际是 connectTimeout 的值，因此要让超时设置生效必须设置 connectTimeout，
          * 为了保险起见 socketTimeout 也一并设置。 且在 driver 的实现中，如果 properties 中设置某个参数，这个参数如果在 url 中再次出现，则会以 properties
@@ -100,26 +102,24 @@ public class OBMySQLConnectionExtension implements ConnectionExtensionPoint {
          */
         properties.setProperty("socketTimeout", REACHABLE_TIMEOUT_MILLIS + "");
         properties.setProperty("connectTimeout", REACHABLE_TIMEOUT_MILLIS + "");
-        return test(jdbcUrl, properties, queryTimeout);
+        return internalTest(jdbcUrl, properties, queryTimeout);
     }
 
     protected String getJdbcUrlParameters(Map<String, String> jdbcUrlParams) {
-        if (CollectionUtils.isEmpty(jdbcUrlParams)) {
-            return null;
-        }
         jdbcUrlParams = appendDefaultJdbcUrlParameters(jdbcUrlParams);
-        return jdbcUrlParams.entrySet().stream().map(entry -> entry.getKey() + "=" + entry.getValue())
-                .collect(Collectors.joining("&"));
+        return Objects.isNull(jdbcUrlParams) ? null
+                : jdbcUrlParams.entrySet().stream().map(entry -> entry.getKey() + "=" + entry.getValue())
+                        .collect(Collectors.joining("&"));
     }
 
     protected Map<String, String> appendDefaultJdbcUrlParameters(Map<String, String> jdbcUrlParams) {
-        if (!jdbcUrlParams.containsKey("enableFullLinkTrace")) {
+        if (Objects.nonNull(jdbcUrlParams) && !jdbcUrlParams.containsKey("enableFullLinkTrace")) {
             jdbcUrlParams.put("enableFullLinkTrace", "true");
         }
         return jdbcUrlParams;
     }
 
-    private TestResult test(String jdbcUrl, Properties properties, int queryTimeout) {
+    private TestResult internalTest(String jdbcUrl, Properties properties, int queryTimeout) {
         HostAddress hostAddress;
         try {
             hostAddress = parseJdbcUrl(jdbcUrl);

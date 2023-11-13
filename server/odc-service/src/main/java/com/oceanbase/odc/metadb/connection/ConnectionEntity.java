@@ -36,6 +36,7 @@ import com.oceanbase.odc.core.shared.constant.Cipher;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.ConnectionVisibleScope;
 import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.service.connection.model.UserRole;
 
 import lombok.Data;
 import lombok.ToString;
@@ -267,4 +268,21 @@ public class ConnectionEntity {
     @Column(name = "environment_id", nullable = false)
     private Long environmentId;
 
+    /**
+     * Oracle 连接方式特有的参数，该参数表示一个数据库
+     */
+    @Column(name = "sid")
+    private String sid;
+
+    /**
+     * Oracle 连接方式特有的参数，该参数表示数据库的一个实例
+     */
+    @Column(name = "service_name")
+    private String serviceName;
+
+    /**
+     * Oracle 连接方式特有的参数，该参数用户角色
+     */
+    @Column(name = "user_role")
+    private UserRole userRole;
 }

@@ -39,6 +39,7 @@ import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.plugin.connect.api.ConnectionExtensionPoint;
 import com.oceanbase.odc.plugin.connect.api.TestResult;
+import com.oceanbase.odc.plugin.connect.model.ConnectionConstants;
 import com.oceanbase.odc.service.connection.model.ConnectProperties;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.model.ConnectionTestResult;
@@ -139,7 +140,7 @@ public class ConnectionTesting {
             String schema;
             if (type == null) {
                 schema = OBConsoleDataSourceFactory.getDefaultSchema(config, accountType);
-            } else if (type.getDialectType() == DialectType.OB_ORACLE) {
+            } else if (type.getDialectType().isOracle()) {
                 schema = null;
             } else if (type.getDialectType().isMysql()) {
                 schema = OBConsoleDataSourceFactory.getDefaultSchema(config, accountType);
@@ -150,18 +151,20 @@ public class ConnectionTesting {
 
             ConnectionExtensionPoint connectionExtensionPoint = ConnectionPluginUtil.getConnectionExtension(
                     (type != null) ? type.getDialectType() : DialectType.OB_MYSQL);
+
+            Properties jdbcUrlProperties = getJdbcUrlProperties(config, schema);
+            Properties testConnectionProperties = getTestConnectionProperties(config, accountType);
+
             TestResult result = connectionExtensionPoint.test(
                     connectionExtensionPoint.generateJdbcUrl(
-                            config.getHost(),
-                            config.getPort(),
-                            schema,
+                            jdbcUrlProperties,
                             OBConsoleDataSourceFactory.getJdbcParams(config)),
-                    OBConsoleDataSourceFactory.getUsername(config, accountType),
-                    OBConsoleDataSourceFactory.getPassword(config, accountType),
+                    testConnectionProperties,
                     queryTimeoutSeconds);
             log.info("Test connection completed, result: {}", result);
             if (result.getErrorCode() != null) {
                 if (type != null && !type.isCloud()
+
                         && StringUtils.endsWithAny(config.getHost(), ConnectTypeUtil.CLOUD_SUFFIX)) {
                     return ConnectionTestResult.connectTypeMismatch();
                 }
@@ -171,19 +174,23 @@ public class ConnectionTesting {
                 }
                 return new ConnectionTestResult(result, null);
             }
-            ConnectType connectType = ConnectTypeUtil.getConnectType(
-                    connectionExtensionPoint.generateJdbcUrl(
-                            config.getHost(),
-                            config.getPort(),
-                            schema,
-                            OBConsoleDataSourceFactory.getJdbcParams(config)),
-                    OBConsoleDataSourceFactory.getUsername(config, accountType),
-                    OBConsoleDataSourceFactory.getPassword(config, accountType),
-                    queryTimeoutSeconds);
-            ConnectionTestResult testResult = new ConnectionTestResult(result, connectType);
-            if (type != null && connectType != null && !Objects.equals(connectType, type)) {
-                return ConnectionTestResult.connectTypeMismatch(connectType);
+            ConnectType connectType;
+            if (type.isOceanBase()) {
+                // only check connect type when connect type is oceanbase
+                connectType = ConnectTypeUtil.getConnectType(
+                        connectionExtensionPoint.generateJdbcUrl(
+                                jdbcUrlProperties,
+                                OBConsoleDataSourceFactory.getJdbcParams(config)),
+                        testConnectionProperties,
+                        queryTimeoutSeconds);
+                if (type != null && connectType != null && !Objects.equals(connectType, type)) {
+                    return ConnectionTestResult.connectTypeMismatch(connectType);
+                }
+            } else {
+                connectType = type;
             }
+
+            ConnectionTestResult testResult = new ConnectionTestResult(result, connectType);
             try {
                 testInitScript(connectionExtensionPoint, schema, config, accountType);
             } catch (Exception e) {
@@ -195,6 +202,40 @@ public class ConnectionTesting {
         } finally {
             config.setType(type);
         }
+    }
+
+    private Properties getJdbcUrlProperties(ConnectionConfig config, String schema) {
+        Properties properties = new Properties();
+        if (Objects.nonNull(config.getHost())) {
+            properties.put(ConnectionConstants.HOST, config.getHost());
+        }
+        if (Objects.nonNull(config.getPort())) {
+            properties.put(ConnectionConstants.PORT, config.getPort());
+        }
+        if (Objects.nonNull(schema)) {
+            properties.put(ConnectionConstants.DEFAULT_SCHEMA, schema);
+        }
+        if (Objects.nonNull(config.getSid())) {
+            properties.put(ConnectionConstants.SID, config.getSid());
+        }
+        if (Objects.nonNull(config.getServiceName())) {
+            properties.put(ConnectionConstants.SERVICE_NAME, config.getServiceName());
+        }
+        return properties;
+    }
+
+    private Properties getTestConnectionProperties(ConnectionConfig config, ConnectionAccountType accountType) {
+        Properties properties = new Properties();
+        String password = OBConsoleDataSourceFactory.getPassword(config, accountType);
+        String username = OBConsoleDataSourceFactory.getUsername(config, accountType);
+        if (Objects.nonNull(username)) {
+            properties.put(ConnectionConstants.USER, username);
+        }
+        properties.put(ConnectionConstants.PASSWORD, Objects.isNull(password) ? "" : password);
+        if (Objects.nonNull(config.getUserRole())) {
+            properties.put(ConnectionConstants.USER_ROLE, config.getUserRole().getValue());
+        }
+        return properties;
     }
 
     private ConnectionConfig reqToConnectionConfig(TestConnectionReq req) {
@@ -213,6 +254,9 @@ public class ConnectionTesting {
         config.setDefaultSchema(req.getDefaultSchema());
         config.setSessionInitScript(req.getSessionInitScript());
         config.setJdbcUrlParameters(req.getJdbcUrlParameters());
+        config.setSid(req.getSid());
+        config.setServiceName(req.getServiceName());
+        config.setUserRole(req.getUserRole());
 
         OBTenantEndpoint endpoint = req.getEndpoint();
         if (Objects.nonNull(endpoint) && OceanBaseAccessMode.IC_PROXY == endpoint.getAccessMode()) {
@@ -232,17 +276,11 @@ public class ConnectionTesting {
         if (StringUtils.isEmpty(config.getSessionInitScript())) {
             return;
         }
-        String jdbcUrl = extensionPoint.generateJdbcUrl(config.getHost(),
-                config.getPort(), schema, OBConsoleDataSourceFactory.getJdbcParams(config));
-        String username = OBConsoleDataSourceFactory.getUsername(config, accountType);
-        String password = OBConsoleDataSourceFactory.getPassword(config, accountType);
-        Properties properties = new Properties();
-        properties.setProperty("user", username);
-        if (password == null) {
-            properties.setProperty("password", "");
-        } else {
-            properties.setProperty("password", password);
-        }
+        String jdbcUrl =
+                extensionPoint.generateJdbcUrl(getJdbcUrlProperties(config, schema),
+                        OBConsoleDataSourceFactory.getJdbcParams(config));
+
+        Properties properties = getTestConnectionProperties(config, accountType);
         properties.setProperty("socketTimeout", ConnectTypeUtil.REACHABLE_TIMEOUT_MILLIS + "");
         properties.setProperty("connectTimeout", ConnectTypeUtil.REACHABLE_TIMEOUT_MILLIS + "");
 

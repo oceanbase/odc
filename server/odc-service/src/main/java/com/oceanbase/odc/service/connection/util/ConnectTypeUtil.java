@@ -51,15 +51,8 @@ public class ConnectTypeUtil {
     public static final String[] CLOUD_SUFFIX = new String[] {"oceanbase.aliyuncs.com", "oceanbase.cloud"};
     public static final Integer REACHABLE_TIMEOUT_MILLIS = 10000;
 
-    public static ConnectType getConnectType(@NonNull String jdbcUrl, @NonNull String username,
-            String password, int queryTimeout) throws SQLException {
-        Properties properties = new Properties();
-        properties.setProperty("user", username);
-        if (password == null) {
-            properties.setProperty("password", "");
-        } else {
-            properties.setProperty("password", password);
-        }
+    public static ConnectType getConnectType(@NonNull String jdbcUrl, @NonNull Properties properties, int queryTimeout)
+            throws SQLException {
         /**
          * 查看 driver 代码可知：driver 建立连接时使用的 socket 超时实际是 connectTimeout 的值，因此要让超时设置生效必须设置 connectTimeout，
          * 为了保险起见 socketTimeout 也一并设置。 且在 driver 的实现中，如果 properties 中设置某个参数，这个参数如果在 url 中再次出现，则会以 properties

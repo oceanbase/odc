@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Properties;
 
 import javax.sql.DataSource;
 
@@ -39,6 +40,7 @@ import com.oceanbase.odc.core.shared.constant.ConnectionAccountType;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
 import com.oceanbase.odc.plugin.connect.api.ConnectionExtensionPoint;
+import com.oceanbase.odc.plugin.connect.model.ConnectionConstants;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig.SSLConfig;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig.SSLFileEntry;
@@ -96,7 +98,21 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
     }
 
     protected String getJdbcUrl() {
-        return connectionExtensionPoint.generateJdbcUrl(this.host, this.port, this.defaultSchema, this.parameters);
+        return connectionExtensionPoint.generateJdbcUrl(getJdbcUrlProperties(), this.parameters);
+    }
+
+    private Properties getJdbcUrlProperties() {
+        Properties properties = new Properties();
+        if (Objects.nonNull(this.host)) {
+            properties.put(ConnectionConstants.HOST, this.host);
+        }
+        if (Objects.nonNull(this.port)) {
+            properties.put(ConnectionConstants.PORT, this.port);
+        }
+        if (Objects.nonNull(this.defaultSchema)) {
+            properties.put(ConnectionConstants.DEFAULT_SCHEMA, this.defaultSchema);
+        }
+        return properties;
     }
 
     public static String getUsername(@NonNull ConnectionConfig connectionConfig,

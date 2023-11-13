@@ -17,6 +17,7 @@
         <module>connect-plugin-ob-oracle</module>
         <module>connect-plugin-ob-mysql</module>
         <module>connect-plugin-mysql</module>
+        <module>connect-plugin-oracle</module>
         <module>schema-plugin-api</module>
         <module>schema-plugin-ob-mysql</module>
         <module>schema-plugin-ob-oracle</module>

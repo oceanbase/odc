@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.connection;
 
 import java.sql.SQLException;
+import java.util.Properties;
 
 import org.junit.Assert;
 import org.junit.Ignore;
@@ -26,6 +27,7 @@ import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.plugin.connect.api.TestResult;
+import com.oceanbase.odc.plugin.connect.model.ConnectionConstants;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.model.ConnectionTestResult;
 import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
@@ -133,8 +135,11 @@ public class ConnectionTestUtilTest {
 
     public ConnectionTestResult testConnectExtensionPoint(ConnectType type,
             String jdbcUrl, String username, String password) {
+        Properties properties = new Properties();
+        properties.put(ConnectionConstants.USER, username);
+        properties.put(ConnectionConstants.PASSWORD, password);
         TestResult result = ConnectionPluginUtil.getConnectionExtension(type.getDialectType())
-                .test(jdbcUrl, username, password, -1);
+                .test(jdbcUrl, properties, -1);
         if (result.isActive()) {
             return ConnectionTestResult.success(type);
         } else {
