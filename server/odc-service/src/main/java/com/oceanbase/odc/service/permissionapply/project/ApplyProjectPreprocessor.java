@@ -66,6 +66,10 @@ public class ApplyProjectPreprocessor implements Preprocessor {
         List<ResourceRoleEntity> resourceRoleEntities = checkResourceRoleExist(
                 parameter.getResourceRoles().stream().map(ApplyResourceRole::getId).collect(Collectors.toList()));
         parameter.setUserId(authenticationFacade.currentUserId());
+        parameter.getProject().setName(projectEntity.getName());
+        for (int index = 0; index < parameter.getResourceRoles().size(); index++) {
+            parameter.getResourceRoles().get(index).setName(resourceRoleEntities.get(index).getRoleName());
+        }
         req.setProjectId(projectEntity.getId());
         req.setProjectName(projectEntity.getName());
         Locale locale = LocaleContextHolder.getLocale();
