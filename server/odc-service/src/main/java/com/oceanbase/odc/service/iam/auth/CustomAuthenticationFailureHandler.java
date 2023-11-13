@@ -110,7 +110,7 @@ public class CustomAuthenticationFailureHandler implements AuthenticationFailure
             log.info("Test login success for uri#{}", httpServletRequest.getRequestURI());
             return;
         }
-        Object remainTime = failedLoginAttemptLimiter.getRemainAttempt() <= 0
+        Object remainTime = failedLoginAttemptLimiter.getRemainAttempt() < 0
                 ? "unlimited"
                 : failedLoginAttemptLimiter.getRemainAttempt();
         if (cause instanceof OverLimitException) {
