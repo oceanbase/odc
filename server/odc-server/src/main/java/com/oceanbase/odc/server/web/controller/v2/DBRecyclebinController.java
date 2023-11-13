@@ -59,21 +59,21 @@ public class DBRecyclebinController {
     }
 
     @ApiOperation(value = "purgeObject", notes = "purge a specific db object")
-    @RequestMapping(value = "/purge/{sid:.*}", method = RequestMethod.PATCH)
+    @RequestMapping(value = "/purge/{sid:.*}", method = RequestMethod.POST)
     public SuccessResponse<Boolean> purgeObject(@PathVariable String sid, @RequestBody List<DBRecycleObject> resource) {
         recyclebinService.purgeObject(sessionService.nullSafeGet(SidUtils.getSessionId(sid)), resource);
         return Responses.ok(Boolean.TRUE);
     }
 
     @ApiOperation(value = "purgeAllObjects", notes = "purge all specific db objects")
-    @RequestMapping(value = "/purgeAll/{sid:.*}", method = RequestMethod.PATCH)
+    @RequestMapping(value = "/purgeAll/{sid:.*}", method = RequestMethod.POST)
     public SuccessResponse<Boolean> purgeAllObjects(@PathVariable String sid) {
         recyclebinService.purgeAllObjects(sessionService.nullSafeGet(SidUtils.getSessionId(sid)));
         return Responses.ok(Boolean.TRUE);
     }
 
     @ApiOperation(value = "flashback", notes = "flaskback db objects")
-    @RequestMapping(value = "/flashback/{sid:.*}", method = RequestMethod.PATCH)
+    @RequestMapping(value = "/flashback/{sid:.*}", method = RequestMethod.POST)
     public SuccessResponse<Boolean> flashback(@PathVariable String sid, @RequestBody List<DBRecycleObject> resource) {
         recyclebinService.flashback(sessionService.nullSafeGet(SidUtils.getSessionId(sid)), resource);
         return Responses.ok(Boolean.TRUE);
