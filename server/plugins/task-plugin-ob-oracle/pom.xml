@@ -36,26 +36,12 @@
             <groupId>com.oceanbase</groupId>
             <artifactId>task-plugin-ob-mysql</artifactId>
         </dependency>
-        <dependency>
-            <groupId>com.oceanbase</groupId>
-            <artifactId>connect-plugin-ob-oracle</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.oceanbase</groupId>
-            <artifactId>connect-plugin-ob-mysql</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.oceanbase</groupId>
-            <artifactId>connect-plugin-api</artifactId>
-        </dependency>
     </dependencies>
 
     <properties>
         <root-project.basedir>${project.parent.parent.basedir}</root-project.basedir>
         <plugin.class>com.oceanbase.odc.plugin.task.oboracle.OBOracleTaskPlugin</plugin.class>
-        <plugin.dependencies>schema-plugin-ob-oracle, schema-plugin-mysql,
-            connect-plugin-ob-oracle,connect-plugin-ob-mysql, task-plugin-ob-mysql
-        </plugin.dependencies>
+        <plugin.dependencies>task-plugin-ob-mysql</plugin.dependencies>
     </properties>
 
     <build>

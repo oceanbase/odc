@@ -17,6 +17,8 @@ package com.oceanbase.odc.service.flow.task.model;
 
 import java.util.List;
 
+import com.oceanbase.odc.core.flow.model.FlowTaskResult;
+
 import lombok.Data;
 
 /**

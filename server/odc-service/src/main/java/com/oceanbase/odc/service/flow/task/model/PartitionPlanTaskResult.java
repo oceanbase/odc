@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.flow.task.model;
 
+import com.oceanbase.odc.core.flow.model.FlowTaskResult;
 import com.oceanbase.odc.service.partitionplan.model.DatabasePartitionPlan;
 
 import lombok.Data;

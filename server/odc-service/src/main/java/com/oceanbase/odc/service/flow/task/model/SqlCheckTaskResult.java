@@ -21,6 +21,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
+import com.oceanbase.odc.core.flow.model.FlowTaskResult;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckUtil;
 import com.oceanbase.odc.service.sqlcheck.model.CheckResult;
 import com.oceanbase.odc.service.sqlcheck.model.CheckViolation;

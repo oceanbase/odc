@@ -50,7 +50,7 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * {@link DumperOutput}
+ * {@link ExportOutput}
  *
  * @author yh263208
  * @date 2022-06-29 19:58
@@ -58,7 +58,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Getter
 @Slf4j
-public class DumperOutput {
+public class ExportOutput {
 
     public static final String MANIFEST = "MANIFEST.bin";
     public static final String CHECKPOINT = "CHECKPOINT.bin";
@@ -67,7 +67,7 @@ public class DumperOutput {
     private final BinaryFile<List<?>> checkpoints;
     private final List<DumpDBObject> dumpDbObjects;
 
-    public DumperOutput(@NonNull File file) throws IOException {
+    public ExportOutput(@NonNull File file) throws IOException {
         if (!file.exists()) {
             throw new FileNotFoundException("File not found, " + file.getAbsolutePath());
         }

@@ -31,25 +31,46 @@ import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.VersionUtils;
 import com.oceanbase.odc.core.datasource.SingleConnectionDataSource;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
-import com.oceanbase.odc.plugin.task.api.datatransfer.DataTransferCallable;
 import com.oceanbase.odc.plugin.task.api.datatransfer.DataTransferExtensionPoint;
-import com.oceanbase.odc.plugin.task.api.datatransfer.dumper.DumperOutput;
+import com.oceanbase.odc.plugin.task.api.datatransfer.DataTransferJob;
+import com.oceanbase.odc.plugin.task.api.datatransfer.dumper.ExportOutput;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.ConnectionInfo;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferFormat;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferType;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.UploadFileResult;
+import com.oceanbase.odc.plugin.task.obmysql.datatransfer.factory.BaseParameterFactory;
+import com.oceanbase.odc.plugin.task.obmysql.datatransfer.factory.DumpParameterFactory;
+import com.oceanbase.odc.plugin.task.obmysql.datatransfer.factory.LoadParameterFactory;
+import com.oceanbase.odc.plugin.task.obmysql.datatransfer.task.OceanBaseExportJob;
+import com.oceanbase.odc.plugin.task.obmysql.datatransfer.task.OceanBaseImportJob;
 import com.oceanbase.odc.plugin.task.obmysql.datatransfer.util.ConnectionUtil;
 import com.oceanbase.odc.plugin.task.obmysql.datatransfer.util.PluginUtil;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
+import com.oceanbase.tools.loaddump.common.model.DumpParameter;
+import com.oceanbase.tools.loaddump.common.model.LoadParameter;
 
 import lombok.NonNull;
 
 @Extension
 public class OBMySQLDataTransferExtension implements DataTransferExtensionPoint {
     @Override
-    public DataTransferCallable generate(@NonNull DataTransferConfig config, @NonNull File workingDir,
+    public DataTransferJob generate(@NonNull DataTransferConfig config, @NonNull File workingDir,
             @NonNull File logDir, @NonNull List<URL> inputs) throws Exception {
-        return null;
+        boolean transferData = config.isTransferData();
+        boolean transferSchema = config.isTransferDDL();
+
+        if (config.getTransferType() == DataTransferType.IMPORT) {
+            BaseParameterFactory<LoadParameter> factory = new LoadParameterFactory(config, workingDir, logDir);
+            LoadParameter parameter = factory.generate();
+            return new OceanBaseImportJob(parameter, transferData, transferSchema, config.isUsePrepStmts());
+        } else if (config.getTransferType() == DataTransferType.EXPORT) {
+            BaseParameterFactory<DumpParameter> factory = new DumpParameterFactory(config, workingDir, logDir);
+            DumpParameter parameter = factory.generate();
+            return new OceanBaseExportJob(parameter, transferData, transferSchema, config.isUsePrepStmts());
+        }
+
+        throw new IllegalArgumentException("Illegal transfer type " + config.getTransferType());
     }
 
     @Override
@@ -77,8 +98,8 @@ public class OBMySQLDataTransferExtension implements DataTransferExtensionPoint 
         File file = new File(url.toURI());
         if (StringUtils.endsWithIgnoreCase(file.getName(), ".zip")) {
             try {
-                DumperOutput dumperOutput = new DumperOutput(file);
-                return UploadFileResult.ofDumperOutput(file.getName(), dumperOutput);
+                ExportOutput exportOutput = new ExportOutput(file);
+                return UploadFileResult.ofExportOutput(file.getName(), exportOutput);
             } catch (Exception e) {
                 return UploadFileResult.ofFail(ErrorCodes.ImportInvalidFileType, new Object[] {file.getPath()});
             }

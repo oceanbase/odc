@@ -13,14 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.flow.task.model;
+
+package com.oceanbase.odc.service.onlineschemachange.model;
 
 /**
- * Methodless interface for marking process task results
- *
- * @author yh263208
- * @date 2022-03-07 21:53
- * @since ODC_release_3.3.0
+ * @author yaobin
+ * @date 2023-11-07
+ * @since 4.2.3
  */
-public interface FlowTaskResult {
+public enum SwapTableType {
+
+    AUTO,
+
+    MANUAL
 }

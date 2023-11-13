@@ -26,10 +26,10 @@ import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferTaskResult;
 import com.oceanbase.odc.service.datatransfer.DataTransferService;
 import com.oceanbase.odc.service.datatransfer.task.DataTransferTaskContext;
 import com.oceanbase.odc.service.flow.OdcInternalFileService;
-import com.oceanbase.odc.service.flow.task.model.DataTransferTaskResult;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
@@ -59,7 +59,7 @@ public class DataTransferRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Voi
         }
         boolean result = context.cancel(true);
         log.info("Data transfer task has been cancelled, taskId={}, result={}", taskId, result);
-        taskService.cancel(taskId, DataTransferTaskResult.of(context));
+        taskService.cancel(taskId, context.getStatus());
         return true;
     }
 
@@ -76,6 +76,9 @@ public class DataTransferRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Voi
         log.info("Data transfer task starts, taskId={}", taskId);
         DataTransferConfig config = FlowTaskUtil.getDataTransferParameter(execution);
         config.setSchemaName(FlowTaskUtil.getSchemaName(execution));
+        if (config.getConnectionId() == null) {
+            config.setConnectionId(FlowTaskUtil.getConnectionConfig(execution).id());
+        }
         TaskEntity taskEntity = taskService.detail(taskId);
         ExecutorInfo executor = new ExecutorInfo(hostProperties);
         ExecutorInfo submitter = FlowTaskUtil.getTaskSubmitter(execution);
@@ -114,7 +117,7 @@ public class DataTransferRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Voi
     @Override
     protected void onFailure(Long taskId, TaskService taskService) {
         log.warn("Data transfer task failed, taskId={}", taskId);
-        DataTransferTaskResult result = DataTransferTaskResult.of(context);
+        DataTransferTaskResult result = context.getStatus();
         if (context == null) {
             taskService.fail(taskId, 0, result);
         } else {
@@ -138,7 +141,7 @@ public class DataTransferRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Voi
     @Override
     protected void onTimeout(Long taskId, TaskService taskService) {
         log.warn("Data transfer task timeout, taskId={}", taskId);
-        taskService.fail(taskId, context.getProgress(), DataTransferTaskResult.of(context));
+        taskService.fail(taskId, context.getProgress(), context.getStatus());
     }
 
     @Override
@@ -148,7 +151,7 @@ public class DataTransferRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Voi
         }
         TaskEntity task = taskService.detail(taskId);
         task.setProgressPercentage(context.getProgress());
-        task.setResultJson(JsonUtils.toJson(DataTransferTaskResult.of(context)));
+        task.setResultJson(JsonUtils.toJson(context.getStatus()));
         taskService.update(task);
     }
 
