@@ -97,7 +97,7 @@ public class DataSourceController {
     @ApiOperation(value = "updateDataSource", notes = "Update a datasource")
     @RequestMapping(value = "/datasources/{id:[\\d]+}", method = RequestMethod.PUT)
     public SuccessResponse<ConnectionConfig> updateDataSource(@PathVariable Long id,
-            @RequestBody ConnectionConfig connectionConfig) {
+            @RequestBody ConnectionConfig connectionConfig) throws InterruptedException {
         return Responses.success(connectionService.update(id, connectionConfig));
     }
 

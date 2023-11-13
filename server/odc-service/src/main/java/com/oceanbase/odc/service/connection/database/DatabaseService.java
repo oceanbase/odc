@@ -33,6 +33,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.stream.Collectors;
 
 import javax.sql.DataSource;
+import javax.validation.Valid;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
@@ -61,7 +62,6 @@ import com.oceanbase.odc.core.shared.exception.AccessDeniedException;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.shared.exception.ConflictException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
-import com.oceanbase.odc.metadb.connection.ConnectionConfigRepository;
 import com.oceanbase.odc.metadb.connection.DatabaseEntity;
 import com.oceanbase.odc.metadb.connection.DatabaseRepository;
 import com.oceanbase.odc.metadb.connection.DatabaseSpecs;
@@ -79,13 +79,11 @@ import com.oceanbase.odc.service.connection.database.model.DeleteDatabasesReq;
 import com.oceanbase.odc.service.connection.database.model.QueryDatabaseParams;
 import com.oceanbase.odc.service.connection.database.model.TransferDatabasesReq;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
-import com.oceanbase.odc.service.db.DBIdentitiesService;
 import com.oceanbase.odc.service.db.DBSchemaService;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.iam.HorizontalDataPermissionValidator;
 import com.oceanbase.odc.service.iam.OrganizationService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
-import com.oceanbase.odc.service.iam.auth.AuthorizationFacade;
 import com.oceanbase.odc.service.onlineschemachange.rename.OscDBUserUtil;
 import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
@@ -124,25 +122,16 @@ public class DatabaseService {
     private ConnectionService connectionService;
 
     @Autowired
-    private AuthorizationFacade authorizationFacade;
-
-    @Autowired
     private AuthenticationFacade authenticationFacade;
 
     @Autowired
     private DBSchemaService dbSchemaService;
 
     @Autowired
-    private DBIdentitiesService dbIdentitiesService;
-
-    @Autowired
     private JdbcLockRegistry jdbcLockRegistry;
 
     @Autowired
     private HorizontalDataPermissionValidator horizontalDataPermissionValidator;
-
-    @Autowired
-    private ConnectionConfigRepository connectionConfigRepository;
 
     @Autowired
     private DataSource dataSource;
@@ -255,11 +244,12 @@ public class DatabaseService {
 
     @SkipAuthorize("internal authenticated")
     public Database create(@NonNull CreateDatabaseReq req) {
-        if (!projectService.checkPermission(req.getProjectId(), ResourceRoleName.all())
+        ConnectionConfig connection = connectionService.getForConnectionSkipPermissionCheck(req.getDataSourceId());
+        if ((connection.getProjectId() != null && !connection.getProjectId().equals(req.getProjectId()))
+                || !projectService.checkPermission(req.getProjectId(), ResourceRoleName.all())
                 || !connectionService.checkPermission(req.getDataSourceId(), Collections.singletonList("update"))) {
             throw new AccessDeniedException();
         }
-        ConnectionConfig connection = connectionService.getForConnectionSkipPermissionCheck(req.getDataSourceId());
         DataSource dataSource = new OBConsoleDataSourceFactory(
                 connection, ConnectionAccountType.MAIN, true, false).getDataSource();
         try (Connection conn = dataSource.getConnection()) {
@@ -324,25 +314,27 @@ public class DatabaseService {
 
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("internal authenticated")
-    public boolean transfer(@NonNull TransferDatabasesReq req) {
+    public boolean transfer(@NonNull @Valid TransferDatabasesReq req) {
         if (!projectService.checkPermission(req.getProjectId(),
                 Arrays.asList(ResourceRoleName.DBA, ResourceRoleName.OWNER))) {
             throw new AccessDeniedException();
         }
         List<DatabaseEntity> entities = databaseRepository.findAllById(req.getDatabaseIds());
-        List<DatabaseEntity> transferred = entities.stream().map(database -> {
-            /**
-             * current user should be source project's OWNER/DBA, and should have update permission on this
-             * DataSource
-             */
-            if (!projectService.checkPermission(database.getProjectId(),
-                    Arrays.asList(ResourceRoleName.DBA, ResourceRoleName.OWNER))
-                    || !connectionService.checkPermission(database.getConnectionId(), Arrays.asList("update"))) {
+        List<Long> projectIds = entities.stream().map(DatabaseEntity::getProjectId).collect(Collectors.toList());
+        List<Long> connectionIds = entities.stream().map(DatabaseEntity::getConnectionId).collect(Collectors.toList());
+        if (!projectService.checkPermission(projectIds, Arrays.asList(ResourceRoleName.DBA, ResourceRoleName.OWNER)) ||
+                !connectionService.checkPermission(connectionIds, Collections.singletonList("update"))) {
+            // Current user should be source project's OWNER/DBA, and have update permission on datasources
+            throw new AccessDeniedException();
+        }
+        List<ConnectionConfig> connections = connectionService.innerListByIds(connectionIds);
+        connections.forEach(c -> {
+            if (c.getProjectId() != null) {
                 throw new AccessDeniedException();
             }
-            database.setProjectId(req.getProjectId());
-            return database;
-        }).collect(Collectors.toList());
+        });
+        List<DatabaseEntity> transferred = entities.stream().peek(database -> database.setProjectId(req.getProjectId()))
+                .collect(Collectors.toList());
         databaseRepository.saveAll(transferred);
         return true;
     }
@@ -396,6 +388,7 @@ public class DatabaseService {
     }
 
     private void syncTeamDataSources(ConnectionConfig connection) {
+        Long currentProjectId = connection.getProjectId();
         DataSource teamDataSource = new OBConsoleDataSourceFactory(
                 connection, ConnectionAccountType.MAIN, true, false).getDataSource();
         try (Connection conn = teamDataSource.getConnection()) {
@@ -412,7 +405,7 @@ public class DatabaseService {
                         entity.setEnvironmentId(connection.getEnvironmentId());
                         entity.setConnectionId(connection.getId());
                         entity.setSyncStatus(DatabaseSyncStatus.SUCCEEDED);
-                        entity.setProjectId(null);
+                        entity.setProjectId(currentProjectId);
                         return entity;
                     }).collect(Collectors.toList());
             Map<String, List<DatabaseEntity>> latestDatabaseName2Database =
@@ -451,14 +444,15 @@ public class DatabaseService {
             List<Object[]> toDelete =
                     existedDatabasesInDb.stream()
                             .filter(database -> !latestDatabaseNames.contains(database.getName()))
-                            .map(database -> new Object[] {database.getId()})
+                            .map(database -> new Object[] {
+                                    currentProjectId != null ? currentProjectId : database.getProjectId(),
+                                    database.getId()})
                             .collect(Collectors.toList());
             /**
              * just set existed to false if the database has been dropped instead of deleting it directly
              */
             if (!CollectionUtils.isEmpty(toDelete)) {
-                String deleteSql =
-                        "update connect_database set is_existed = 0 where id = ?";
+                String deleteSql = "update connect_database set is_existed = 0, project_id=? where id = ?";
                 jdbcTemplate.batchUpdate(deleteSql, toDelete);
             }
 
@@ -467,13 +461,14 @@ public class DatabaseService {
                     .map(database -> {
                         DatabaseEntity latest = latestDatabaseName2Database.get(database.getName()).get(0);
                         return new Object[] {latest.getTableCount(), latest.getCollationName(), latest.getCharsetName(),
+                                currentProjectId != null ? currentProjectId : database.getProjectId(),
                                 database.getId()};
                     })
                     .collect(Collectors.toList());
 
             if (org.apache.commons.collections4.CollectionUtils.isNotEmpty(toUpdate)) {
                 String update =
-                        "update connect_database set table_count=?, collation_name=?, charset_name=? where id = ?";
+                        "update connect_database set table_count=?, collation_name=?, charset_name=?, project_id=? where id = ?";
                 jdbcTemplate.batchUpdate(update, toUpdate);
             }
         } catch (SQLException e) {
