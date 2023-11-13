@@ -100,9 +100,19 @@ public class Oauth2Parameter implements SSOParameter {
     }
 
     @SneakyThrows
-    private String getRedirectHost(String redirectUrl) {
+    private static String getRedirectHost(String redirectUrl) {
         URL url = new URL(redirectUrl);
-        return url.getProtocol() + "://" + url.getHost() + (url.getPort() > 0 ? ":" + url.getPort() : "");
+        StringBuilder host = new StringBuilder();
+        host.append(url.getProtocol()).append("://").append(url.getHost());
+        int port = url.getPort();
+        if (port <= 0) {
+            return host.toString();
+        }
+        if ("http".equals(url.getProtocol()) && port != 80 ||
+                "https".equals(url.getProtocol()) && port != 443) {
+            host.append(":").append(url.getPort());
+        }
+        return host.toString();
     }
 
 
