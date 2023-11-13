@@ -97,8 +97,8 @@ public class DataSourceController {
     @ApiOperation(value = "updateDataSource", notes = "Update a datasource")
     @RequestMapping(value = "/datasources/{id:[\\d]+}", method = RequestMethod.PUT)
     public SuccessResponse<ConnectionConfig> updateDataSource(@PathVariable Long id,
-            @RequestBody ConnectionConfig connectionConfig, @RequestParam(defaultValue = "false") Boolean migrate) {
-        return Responses.success(connectionService.update(id, connectionConfig, migrate));
+            @RequestBody ConnectionConfig connectionConfig) {
+        return Responses.success(connectionService.update(id, connectionConfig));
     }
 
     @ApiOperation(value = "getDataSource", notes = "Detail a datasource")

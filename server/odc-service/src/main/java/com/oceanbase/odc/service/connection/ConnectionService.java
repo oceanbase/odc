@@ -487,8 +487,7 @@ public class ConnectionService {
 
     @Transactional(rollbackFor = Exception.class)
     @PreAuthenticate(actions = "update", resourceType = "ODC_CONNECTION", indexOfIdParam = 0)
-    public ConnectionConfig update(@NotNull Long id, @NotNull @Valid ConnectionConfig connection,
-            @NotNull Boolean migrate) {
+    public ConnectionConfig update(@NotNull Long id, @NotNull @Valid ConnectionConfig connection) {
         environmentAdapter.adaptConfig(connection);
         connectionSSLAdaptor.adapt(connection);
 
@@ -533,7 +532,6 @@ public class ConnectionService {
         entityManager.refresh(savedEntity);
 
         ConnectionConfig updated = entityToModel(savedEntity, true, true);
-        updated.setMigrateDbForUpdate(migrate);
         databaseSyncManager.submitSyncDataSourceTask(updated);
 
         this.attributeRepository.deleteByConnectionId(updated.getId());

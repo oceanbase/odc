@@ -469,13 +469,7 @@ public class DatabaseService {
             List<Object[]> toUpdate = existedDatabasesInDb.stream()
                     .filter(database -> latestDatabaseNames.contains(database.getName()))
                     .map(database -> {
-                        DatabaseEntity existed = existedDatabaseName2Database.get(database.getName()).get(0);
                         DatabaseEntity latest = latestDatabaseName2Database.get(database.getName()).get(0);
-                        if (latest.getProjectId() == null) {
-                            if (!connection.getMigrateDbForUpdate()) {
-                                latest.setProjectId(existed.getProjectId());
-                            }
-                        }
                         return new Object[] {latest.getTableCount(), latest.getCollationName(), latest.getCharsetName(),
                                 latest.getProjectId(), database.getId()};
                     })

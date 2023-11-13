@@ -311,9 +311,6 @@ public class ConnectionConfig
     @JsonProperty(access = Access.READ_ONLY)
     private String projectName;
 
-    @JsonIgnore
-    private Boolean migrateDbForUpdate = false;
-
     /**
      * 连接类型，可选值 CONNECT_TYPE_CLOUD/CONNECT_TYPE_OB 。只读参数
      *
