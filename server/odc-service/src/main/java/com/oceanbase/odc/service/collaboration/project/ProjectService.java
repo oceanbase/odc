@@ -343,8 +343,9 @@ public class ProjectService {
         if (projectIds.isEmpty() || resourceRoles.isEmpty()) {
             return true;
         }
-        List<Permission> permissions = projectIds.stream().map(projectId -> new ResourceRoleBasedPermission(
-                new DefaultSecurityResource(projectId.toString(), "ODC_PROJECT"), resourceRoles))
+        List<Permission> permissions = projectIds.stream().filter(Objects::nonNull)
+                .map(projectId -> new ResourceRoleBasedPermission(
+                        new DefaultSecurityResource(projectId.toString(), "ODC_PROJECT"), resourceRoles))
                 .collect(Collectors.toList());
         return authorizationFacade.isImpliesPermissions(authenticationFacade.currentUser(), permissions);
     }

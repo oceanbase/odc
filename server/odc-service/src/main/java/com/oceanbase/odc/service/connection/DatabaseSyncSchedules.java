@@ -51,7 +51,7 @@ public class DatabaseSyncSchedules {
         }
         for (ConnectionConfig dataSource : orgDataSources) {
             try {
-                databaseSyncManager.submitSyncDataSourceTask(dataSource);
+                databaseSyncManager.submitSyncDataSourceTask(dataSource, false);
                 log.debug("submit sync datasource task successfully, connectionId={}", dataSource.getId());
             } catch (Exception ex) {
                 log.warn("Submit sync datasource task failed, datasourceId={}", dataSource.getId(), ex);

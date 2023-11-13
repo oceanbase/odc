@@ -206,7 +206,7 @@ public class ConnectionService {
             transactionManager.rollback(transactionStatus);
             throw e;
         }
-        databaseSyncManager.submitSyncDataSourceTask(saved);
+        databaseSyncManager.submitSyncDataSourceTask(saved, false);
         return saved;
     }
 
@@ -216,7 +216,7 @@ public class ConnectionService {
         List<ConnectionConfig> connectionConfigs = new ArrayList<>();
         for (ConnectionConfig connection : connections) {
             ConnectionConfig saved = innerCreate(connection);
-            databaseSyncManager.submitSyncDataSourceTask(saved);
+            databaseSyncManager.submitSyncDataSourceTask(saved, false);
             userPermissionService.bindUserAndDataSourcePermission(currentUserId(), currentOrganizationId(),
                     saved.getId(),
                     Arrays.asList("read", "update", "delete"));
@@ -532,7 +532,8 @@ public class ConnectionService {
         entityManager.refresh(savedEntity);
 
         ConnectionConfig updated = entityToModel(savedEntity, true, true);
-        databaseSyncManager.submitSyncDataSourceTask(updated);
+        databaseSyncManager.submitSyncDataSourceTask(updated,
+                updated.getProjectId() == null && savedConnectionConfig.getProjectId() != null);
 
         this.attributeRepository.deleteByConnectionId(updated.getId());
         updated.setAttributes(connection.getAttributes());

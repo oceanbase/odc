@@ -192,7 +192,7 @@ public class DatabaseService {
         if (Objects.nonNull(params.getDataSourceId())
                 && authenticationFacade.currentUser().getOrganizationType() == OrganizationType.INDIVIDUAL) {
             try {
-                internalSyncDataSourceSchemas(params.getDataSourceId());
+                internalSyncDataSourceSchemas(params.getDataSourceId(), false);
             } catch (Exception ex) {
                 log.warn("sync data sources in individual space failed when listing databases, errorMessage={}",
                         ex.getLocalizedMessage());
@@ -371,11 +371,12 @@ public class DatabaseService {
     @Transactional(rollbackFor = Exception.class)
     @PreAuthenticate(actions = "update", resourceType = "ODC_CONNECTION", indexOfIdParam = 0)
     public Boolean syncDataSourceSchemas(@NonNull Long dataSourceId) throws InterruptedException {
-        return internalSyncDataSourceSchemas(dataSourceId);
+        return internalSyncDataSourceSchemas(dataSourceId, false);
     }
 
     @SkipAuthorize("internal usage")
-    public Boolean internalSyncDataSourceSchemas(@NonNull Long dataSourceId) throws InterruptedException {
+    public Boolean internalSyncDataSourceSchemas(@NonNull Long dataSourceId, boolean autoMigrate)
+            throws InterruptedException {
         Lock lock = jdbcLockRegistry.obtain(getLockKey(dataSourceId));
         if (!lock.tryLock(3, TimeUnit.SECONDS)) {
             throw new ConflictException(ErrorCodes.ResourceModifying, "Can not acquire jdbc lock");
@@ -387,7 +388,7 @@ public class DatabaseService {
                 if (organization.getType() == OrganizationType.INDIVIDUAL) {
                     syncIndividualDataSources(connection);
                 } else {
-                    syncTeamDataSources(connection);
+                    syncTeamDataSources(connection, autoMigrate);
                 }
             });
             return true;
@@ -399,7 +400,8 @@ public class DatabaseService {
         }
     }
 
-    private void syncTeamDataSources(ConnectionConfig connection) {
+    private void syncTeamDataSources(@NotNull ConnectionConfig connection, @NotNull Boolean autoMigrate) {
+        Long currentProjectId = connection.getProjectId();
         DataSource teamDataSource = new OBConsoleDataSourceFactory(
                 connection, ConnectionAccountType.MAIN, true, false).getDataSource();
         try (Connection conn = teamDataSource.getConnection()) {
@@ -416,7 +418,7 @@ public class DatabaseService {
                         entity.setEnvironmentId(connection.getEnvironmentId());
                         entity.setConnectionId(connection.getId());
                         entity.setSyncStatus(DatabaseSyncStatus.SUCCEEDED);
-                        entity.setProjectId(connection.getProjectId());
+                        entity.setProjectId(currentProjectId);
                         return entity;
                     }).collect(Collectors.toList());
             Map<String, List<DatabaseEntity>> latestDatabaseName2Database =
@@ -453,16 +455,17 @@ public class DatabaseService {
                         toAdd);
             }
             List<Object[]> toDelete =
-                    existedDatabasesInDb.stream()
-                            .filter(database -> !latestDatabaseNames.contains(database.getName()))
-                            .map(database -> new Object[] {database.getId()})
+                    existedDatabasesInDb.stream().filter(database -> !latestDatabaseNames.contains(database.getName()))
+                            .map(database -> new Object[] {
+                                    determineProjectId(currentProjectId, database.getProjectId(), autoMigrate),
+                                    database.getId()})
                             .collect(Collectors.toList());
             /**
              * just set existed to false if the database has been dropped instead of deleting it directly
              */
             if (!CollectionUtils.isEmpty(toDelete)) {
                 String deleteSql =
-                        "update connect_database set is_existed = 0 where id = ?";
+                        "update connect_database set is_existed = 0, project_id = ? where id = ?";
                 jdbcTemplate.batchUpdate(deleteSql, toDelete);
             }
 
@@ -471,7 +474,8 @@ public class DatabaseService {
                     .map(database -> {
                         DatabaseEntity latest = latestDatabaseName2Database.get(database.getName()).get(0);
                         return new Object[] {latest.getTableCount(), latest.getCollationName(), latest.getCharsetName(),
-                                latest.getProjectId(), database.getId()};
+                                determineProjectId(currentProjectId, database.getProjectId(), autoMigrate),
+                                database.getId()};
                     })
                     .collect(Collectors.toList());
 
@@ -491,6 +495,16 @@ public class DatabaseService {
                 }
             }
         }
+    }
+
+    private Long determineProjectId(Long currentId, Long existId, boolean autoMigrate) {
+        if (currentId != null) {
+            return currentId;
+        }
+        if (existId != null && autoMigrate) {
+            return null;
+        }
+        return existId;
     }
 
     private void syncIndividualDataSources(ConnectionConfig connection) {

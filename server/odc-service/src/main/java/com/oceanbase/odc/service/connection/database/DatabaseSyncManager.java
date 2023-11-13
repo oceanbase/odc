@@ -47,10 +47,10 @@ public class DatabaseSyncManager {
     private ThreadPoolTaskExecutor executor;
 
     @SkipAuthorize("internal usage")
-    public Future<Boolean> submitSyncDataSourceTask(@NonNull ConnectionConfig connection) {
+    public Future<Boolean> submitSyncDataSourceTask(@NonNull ConnectionConfig connection, boolean autoMigrate) {
         return doExecute(() -> executor.submit(() -> {
             SecurityContextUtils.setCurrentUser(connection.getCreatorId(), connection.getOrganizationId(), null);
-            return databaseService.internalSyncDataSourceSchemas(connection.getId());
+            return databaseService.internalSyncDataSourceSchemas(connection.getId(), autoMigrate);
         }));
     }
 
