@@ -46,6 +46,8 @@ public class FailedLoginAttemptLimiter {
     public int getRemainAttempt() {
         if (isLocked) {
             return 0;
+        } else if (this.maxFailedAttempt == Integer.MAX_VALUE) {
+            return -1;
         }
         return Math.max(0, maxFailedAttempt - failedAttempt);
     }
