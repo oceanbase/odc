@@ -37,7 +37,7 @@ import lombok.Builder;
 import lombok.Getter;
 
 public class JaegerConverter implements ThirdPartyTraceConverter {
-    private static final String PROCESS_ID_PATTERN = "%s-%s-%s";
+    private static final String PROCESS_ID_FORMAT = "%s-%s-%s";
 
     @Override
     public String convert(TraceSpan span) {
@@ -61,7 +61,7 @@ public class JaegerConverter implements ThirdPartyTraceConverter {
         }
 
         String processId =
-                String.format(PROCESS_ID_PATTERN, spanNode.getNode(), spanNode.getHost(), spanNode.getPort());
+                String.format(PROCESS_ID_FORMAT, spanNode.getNode(), spanNode.getHost(), spanNode.getPort());
         processes.putIfAbsent(processId,
                 new Process(spanNode.getNode().name(),
                         Arrays.asList(new Tag("rec_svr_ip", spanNode.getHost()),
