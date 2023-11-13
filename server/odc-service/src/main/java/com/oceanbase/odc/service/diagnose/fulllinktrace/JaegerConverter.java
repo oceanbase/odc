@@ -30,6 +30,7 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
 
+import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.oceanbase.odc.core.shared.model.TraceSpan;
 
@@ -37,7 +38,8 @@ import lombok.Builder;
 import lombok.Getter;
 
 public class JaegerConverter implements ThirdPartyTraceConverter {
-    private static final String PROCESS_ID_FORMAT = "%s-%s-%s";
+    private static final String PROCESS_ID_FORMAT = "%s-%s:%s";
+    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().serializeNulls().create();
 
     @Override
     public String convert(TraceSpan span) {
@@ -52,7 +54,7 @@ public class JaegerConverter implements ThirdPartyTraceConverter {
 
         Map<String, Object> root = new HashMap<>();
         root.put("data", Collections.singletonList(dataMap));
-        return new GsonBuilder().setPrettyPrinting().create().toJson(root);
+        return GSON.toJson(root);
     }
 
     private void dfs(List<Span> spans, Map<String, Process> processes, TraceSpan spanNode, TraceSpan parent) {
