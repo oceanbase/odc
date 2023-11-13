@@ -59,14 +59,14 @@ public class DBRecyclebinController {
     }
 
     @ApiOperation(value = "purgeObject", notes = "purge a specific db object")
-    @RequestMapping(value = "/purge/{sid:.*}", method = RequestMethod.DELETE)
+    @RequestMapping(value = "/purge/{sid:.*}", method = RequestMethod.PATCH)
     public OdcResult<Boolean> purgeObject(@PathVariable String sid, @RequestBody List<DBRecycleObject> resource) {
         recyclebinService.purgeObject(sessionService.nullSafeGet(SidUtils.getSessionId(sid)), resource);
         return OdcResult.ok(Boolean.TRUE);
     }
 
     @ApiOperation(value = "purgeAllObjects", notes = "purge all specific db objects")
-    @RequestMapping(value = "/purgeAll/{sid:.*}", method = RequestMethod.DELETE)
+    @RequestMapping(value = "/purgeAll/{sid:.*}", method = RequestMethod.PATCH)
     public OdcResult<Boolean> purgeAllObjects(@PathVariable String sid) {
         recyclebinService.purgeAllObjects(sessionService.nullSafeGet(SidUtils.getSessionId(sid)));
         return OdcResult.ok(Boolean.TRUE);
