@@ -66,8 +66,10 @@ import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.constant.LimitMetric;
+import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.TaskType;
+import com.oceanbase.odc.core.shared.exception.AccessDeniedException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.core.shared.exception.OverLimitException;
 import com.oceanbase.odc.core.shared.exception.VerifyException;
@@ -85,6 +87,7 @@ import com.oceanbase.odc.metadb.flow.UserTaskInstanceRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
+import com.oceanbase.odc.service.collaboration.project.ProjectService;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.odc.service.config.SystemConfigService;
@@ -208,6 +211,8 @@ public class FlowInstanceService {
     private DatabaseService databaseService;
     @Autowired
     private FlowInstanceViewRepository flowInstanceViewRepository;
+    @Autowired
+    private ProjectService projectService;
 
     private final List<Consumer<DataTransferTaskInitEvent>> dataTransferTaskInitHooks = new ArrayList<>();
     private final List<Consumer<ShadowTableComparingUpdateEvent>> shadowTableComparingTaskHooks = new ArrayList<>();
@@ -306,6 +311,11 @@ public class FlowInstanceService {
     }
 
     public Page<FlowInstanceEntity> listAll(@NotNull Pageable pageable, @NotNull QueryFlowInstanceParams params) {
+        if (Objects.nonNull(params.getProjectId())) {
+            if (!projectService.checkPermission(params.getProjectId(), ResourceRoleName.all())) {
+                throw new AccessDeniedException();
+            }
+        }
         if (params.getParentInstanceId() != null) {
             // TODO 4.1.3 自动运行模块改造完成后剥离
             Set<Long> flowInstanceIds =
@@ -376,6 +386,15 @@ public class FlowInstanceService {
         }
 
         Set<String> resourceRoleIdentifiers = userService.getCurrentUserResourceRoleIdentifiers();
+        if (params.getContainsAll()) {
+            if (Objects.nonNull(params.getProjectId())) {
+                if (projectService.checkPermission(params.getProjectId(), Arrays.asList(ResourceRoleName.OWNER))) {
+                    return flowInstanceViewRepository.findAll(specification, pageable).map(FlowInstanceEntity::from);
+                } else {
+
+                }
+            }
+        }
         if (params.getApproveByCurrentUser() && params.getCreatedByCurrentUser()) {
             if (CollectionUtils.isEmpty(resourceRoleIdentifiers)) {
                 specification =
