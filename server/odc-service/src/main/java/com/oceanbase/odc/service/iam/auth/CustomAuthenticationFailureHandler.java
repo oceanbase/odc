@@ -118,19 +118,18 @@ public class CustomAuthenticationFailureHandler implements AuthenticationFailure
                     Responses.error(HttpStatus.TOO_MANY_REQUESTS, Error.of((AttemptLoginOverLimitException) cause));
         } else if (cause instanceof CredentialsExpiredException) {
             errorResponse = Responses.error(HttpStatus.UNAUTHORIZED,
-                    Error.of(ErrorCodes.UserNotActive, new Object[] {failedLoginAttemptLimiter.getRemainAttempt()}));
+                    Error.of(ErrorCodes.UserNotActive, new Object[] {}));
             // Credential expired means the user is not active, we skip failed attempt for this scenario
             failedLoginAttemptLimiter.reduceFailedAttemptCount();
         } else if (cause instanceof DisabledException) {
             errorResponse = Responses.error(HttpStatus.UNAUTHORIZED,
-                    Error.of(ErrorCodes.UserNotEnabled, new Object[] {failedLoginAttemptLimiter.getRemainAttempt()}));
+                    Error.of(ErrorCodes.UserNotEnabled, new Object[] {}));
         } else if (cause instanceof UsernameNotFoundException) {
             errorResponse = Responses.error(HttpStatus.NOT_FOUND,
-                    Error.of(ErrorCodes.UserWrongPasswordOrNotFound,
-                            new Object[] {failedLoginAttemptLimiter.getRemainAttempt()}));
+                    Error.of(ErrorCodes.UserWrongPasswordOrNotFound, new Object[] {}));
         } else if (cause instanceof BadCredentialsException) {
-            errorResponse = Responses.error(HttpStatus.UNAUTHORIZED, Error.of(ErrorCodes.UserWrongPasswordOrNotFound,
-                    new Object[] {failedLoginAttemptLimiter.getRemainAttempt()}));
+            errorResponse = Responses.error(HttpStatus.UNAUTHORIZED,
+                    Error.of(ErrorCodes.UserWrongPasswordOrNotFound, new Object[] {}));
         } else if (cause instanceof AuthenticationServiceException) {
             errorResponse = Responses.error(HttpStatus.INTERNAL_SERVER_ERROR,
                     Error.of(ErrorCodes.ExternalServiceError, new Object[] {cause.getLocalizedMessage()}));

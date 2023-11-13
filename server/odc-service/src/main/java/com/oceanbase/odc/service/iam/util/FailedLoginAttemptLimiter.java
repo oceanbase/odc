@@ -17,8 +17,6 @@ package com.oceanbase.odc.service.iam.util;
 
 import java.util.function.Supplier;
 
-import com.oceanbase.odc.core.shared.PreConditions;
-import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.AttemptLoginOverLimitException;
 
 import lombok.extern.slf4j.Slf4j;
@@ -37,12 +35,7 @@ public class FailedLoginAttemptLimiter {
     private final long lockTimeoutMillis;
 
     public FailedLoginAttemptLimiter(int maxFailedAttempt, long lockTimeoutMillis) {
-        PreConditions.validArgumentState(maxFailedAttempt > 0, ErrorCodes.BadArgument, null,
-                "maxFailedAttempt must > 0");
-        PreConditions.validArgumentState(lockTimeoutMillis > 0, ErrorCodes.BadArgument, null,
-                "lockTimeoutMillis must > 0");
-
-        this.maxFailedAttempt = maxFailedAttempt;
+        this.maxFailedAttempt = maxFailedAttempt <= 0 ? Integer.MAX_VALUE : maxFailedAttempt;
         this.lockTimeoutMillis = lockTimeoutMillis;
     }
 
@@ -54,8 +47,7 @@ public class FailedLoginAttemptLimiter {
         if (isLocked) {
             return 0;
         }
-        int remainAttempt = maxFailedAttempt - failedAttempt;
-        return Math.max(0, remainAttempt);
+        return Math.max(0, maxFailedAttempt - failedAttempt);
     }
 
     public synchronized void reduceFailedAttemptCount() {
@@ -66,7 +58,7 @@ public class FailedLoginAttemptLimiter {
 
     public synchronized Boolean attempt(Supplier<Boolean> attemptResultSupplier) {
         long currentTimeMillis = System.currentTimeMillis();
-        if (isLocked && currentTimeMillis > lastLockedMills + lockTimeoutMillis) {
+        if (isLocked && (currentTimeMillis > lastLockedMills + lockTimeoutMillis || lockTimeoutMillis <= 0)) {
             isLocked = false;
             failedAttempt = 0;
         }

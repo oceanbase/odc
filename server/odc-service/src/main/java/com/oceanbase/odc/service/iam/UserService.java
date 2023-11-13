@@ -801,7 +801,7 @@ public class UserService {
         Boolean validateResult = attemptLimiter.attempt(
                 () -> passwordEncoder.matches(changePasswordReq.getCurrentPassword(), userEntity.getPassword()));
         PreConditions.validRequestState(validateResult, ErrorCodes.UserWrongPasswordOrNotFound,
-                new Object[] {attemptLimiter.getRemainAttempt()}, "currentPassword is not correct");
+                new Object[] {}, "currentPassword is not correct");
 
         userEntity.setPassword(encodePassword(changePasswordReq.getNewPassword()));
         userEntity.setActive(true);
