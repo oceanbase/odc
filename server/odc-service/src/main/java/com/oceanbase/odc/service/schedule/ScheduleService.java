@@ -88,6 +88,7 @@ import com.oceanbase.odc.service.schedule.model.ScheduleStatus;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskMapper;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskResp;
 import com.oceanbase.odc.service.schedule.model.TriggerConfig;
+import com.oceanbase.odc.service.schedule.model.TriggerStrategy;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
 
 import lombok.extern.slf4j.Slf4j;
@@ -304,16 +305,16 @@ public class ScheduleService {
 
         // TODO throw
         try {
-            if (!quartzJobService.checkExists(jobKey)) {
-                CreateQuartzJobReq req = new CreateQuartzJobReq();
-                req.setScheduleId(scheduleId);
-                req.setType(JobType.DATA_ARCHIVE_DELETE);
-                DataArchiveClearParameters parameters = new DataArchiveClearParameters();
-                parameters.setDataArchiveTaskId(taskId);
-                req.getJobDataMap().putAll(BeanMap.create(parameters));
-                quartzJobService.createJob(req);
-            }
-            quartzJobService.triggerJob(jobKey);
+            CreateQuartzJobReq req = new CreateQuartzJobReq();
+            req.setScheduleId(scheduleId);
+            req.setType(JobType.DATA_ARCHIVE_DELETE);
+            DataArchiveClearParameters parameters = new DataArchiveClearParameters();
+            parameters.setDataArchiveTaskId(taskId);
+            req.getJobDataMap().putAll(BeanMap.create(parameters));
+            TriggerConfig triggerConfig = new TriggerConfig();
+            triggerConfig.setTriggerStrategy(TriggerStrategy.START_NOW);
+            req.setTriggerConfig(triggerConfig);
+            quartzJobService.createJob(req);
         } catch (SchedulerException e) {
             throw new RuntimeException(e);
         }
