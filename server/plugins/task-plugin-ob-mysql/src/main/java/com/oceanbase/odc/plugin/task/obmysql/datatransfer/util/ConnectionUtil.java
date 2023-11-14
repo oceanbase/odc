@@ -22,7 +22,6 @@ import java.util.Objects;
 
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.datasource.SingleConnectionDataSource;
-import com.oceanbase.odc.plugin.connect.mysql.MySQLConnectionExtension;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.ConnectionInfo;
 
 public class ConnectionUtil {
