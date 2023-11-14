@@ -16,12 +16,9 @@
 package com.oceanbase.odc.service.sqlcheck.factory;
 
 import java.util.Map;
-
-import org.springframework.jdbc.core.ConnectionCallback;
-import org.springframework.jdbc.core.JdbcOperations;
+import java.util.function.Supplier;
 
 import com.oceanbase.odc.core.shared.constant.DialectType;
-import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckRule;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckRuleFactory;
 import com.oceanbase.odc.service.sqlcheck.model.SqlCheckRuleType;
@@ -32,10 +29,10 @@ import lombok.NonNull;
 
 public class NoColumnCommentExistsFactory implements SqlCheckRuleFactory {
 
-    private final JdbcOperations jdbcOperations;
+    private final Supplier<String> schemaSupplier;
 
-    public NoColumnCommentExistsFactory(JdbcOperations jdbcOperations) {
-        this.jdbcOperations = jdbcOperations;
+    public NoColumnCommentExistsFactory(Supplier<String> schemaSupplier) {
+        this.schemaSupplier = schemaSupplier;
     }
 
     @Override
@@ -45,12 +42,8 @@ public class NoColumnCommentExistsFactory implements SqlCheckRuleFactory {
 
     @Override
     public SqlCheckRule generate(@NonNull DialectType dialectType, Map<String, Object> parameters) {
-        String schema = null;
-        if (jdbcOperations != null && dialectType == DialectType.OB_ORACLE) {
-            schema = jdbcOperations.execute((ConnectionCallback<String>) con -> ConnectionPluginUtil
-                    .getSessionExtension(dialectType).getCurrentSchema(con));
-        }
-        return dialectType.isMysql() ? new MySQLNoColumnCommentExists() : new OracleNoColumnCommentExists(schema);
+        return dialectType.isMysql() ? new MySQLNoColumnCommentExists()
+                : new OracleNoColumnCommentExists(schemaSupplier);
     }
 
 }
