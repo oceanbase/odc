@@ -80,11 +80,11 @@ public class SqlDiagnoseController {
                 .success(diagnoseService.getFullLinkTrace(sessionService.nullSafeGet(SidUtils.getSessionId(sid)), sql));
     }
 
-    @ApiOperation(value = "getFullLinkTraceJson")
-    @RequestMapping(value = "/getFullLinkTraceJson/{sid}", method = RequestMethod.POST)
+    @ApiOperation(value = "getFullLinkTraceDownloadUrl")
+    @RequestMapping(value = "/getFullLinkTraceDownloadUrl/{sid}", method = RequestMethod.POST)
     public SuccessResponse<String> getFullLinkTraceJson(@PathVariable String sid, @RequestBody ResourceSql sql)
             throws IOException {
-        return Responses.success(
-                diagnoseService.getFullLinkTraceJson(sessionService.nullSafeGet(SidUtils.getSessionId(sid)), sql));
+        return Responses.success(diagnoseService
+                .getFullLinkTraceDownloadUrl(sessionService.nullSafeGet(SidUtils.getSessionId(sid)), sql));
     }
 }

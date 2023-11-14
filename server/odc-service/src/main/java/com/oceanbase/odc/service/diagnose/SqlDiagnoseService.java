@@ -15,11 +15,14 @@
  */
 package com.oceanbase.odc.service.diagnose;
 
+import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.StatementCallback;
 import org.springframework.stereotype.Service;
@@ -38,11 +41,18 @@ import com.oceanbase.odc.core.shared.model.TraceSpan;
 import com.oceanbase.odc.core.sql.execute.cache.model.BinaryContentMetaData;
 import com.oceanbase.odc.service.common.model.ResourceSql;
 import com.oceanbase.odc.service.diagnose.fulllinktrace.JaegerConverter;
+import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
+import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
+import com.oceanbase.odc.service.objectstorage.model.ObjectMetadata;
 import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 
 @Service
 @SkipAuthorize("inside connect session")
 public class SqlDiagnoseService {
+    @Autowired
+    private ObjectStorageFacade objectStorageFacade;
+    @Autowired
+    private AuthenticationFacade authenticationFacade;
 
     public SqlExplain explain(ConnectionSession session, ResourceSql odcSql) {
         return session.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY)
@@ -85,9 +95,16 @@ public class SqlDiagnoseService {
         return JsonUtils.fromJson(StreamUtils.copyToString(stream, StandardCharsets.UTF_8), TraceSpan.class);
     }
 
-    public String getFullLinkTraceJson(ConnectionSession session, ResourceSql odcSql) throws IOException {
+    public String getFullLinkTraceDownloadUrl(ConnectionSession session, ResourceSql odcSql) throws IOException {
         TraceSpan traceSpan = getFullLinkTrace(session, odcSql);
-        return new JaegerConverter().convert(traceSpan);
+        String json = new JaegerConverter().convert(traceSpan);
+        ByteArrayInputStream inputStream = new ByteArrayInputStream(json.getBytes());
+
+        String bucketName = "trace".concat(File.separator).concat(authenticationFacade.currentUserIdStr());
+        objectStorageFacade.createBucketIfNotExists(bucketName);
+        ObjectMetadata metadata = objectStorageFacade.putTempObject(bucketName, odcSql.getTag(),
+                inputStream.available(), inputStream);
+        return objectStorageFacade.getDownloadUrl(metadata.getBucketName(), metadata.getObjectId());
     }
 
 }
