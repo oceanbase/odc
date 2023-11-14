@@ -443,10 +443,10 @@ public class FlowInstanceService {
                     .and(FlowInstanceViewSpecs.creatorIdEquals(authenticationFacade.currentUserId()));
             return flowInstanceViewRepository.findAll(specification, pageable).map(FlowInstanceEntity::from);
         } else if (params.getApproveByCurrentUser() && !params.getCreatedByCurrentUser()) {
-            // approving by current user
             if (CollectionUtils.isEmpty(resourceRoleIdentifiers)) {
                 return Page.empty();
             }
+            // approving by current user
             specification =
                     specification.and(FlowInstanceViewSpecs.leftJoinFlowInstanceApprovalView(
                             resourceRoleIdentifiers, null, FlowNodeStatus.getExecutingStatuses()));
