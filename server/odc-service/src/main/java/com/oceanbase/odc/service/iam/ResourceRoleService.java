@@ -111,7 +111,8 @@ public class ResourceRoleService {
         return userResourceRoleRepository.findByUserId(authenticationFacade.currentUserId()).stream()
                 .collect(Collectors.groupingBy(UserResourceRoleEntity::getResourceId,
                         Collectors.mapping(
-                                userResourceRoleEntity -> id2ResourceRoles.get(userResourceRoleEntity.getResourceRoleId())
+                                userResourceRoleEntity -> id2ResourceRoles
+                                        .get(userResourceRoleEntity.getResourceRoleId())
                                         .getRoleName(),
                                 Collectors.toSet())));
     }
