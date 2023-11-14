@@ -305,14 +305,17 @@ public class ScheduleService {
 
         // TODO throw
         try {
+            if (!quartzJobService.checkExists(jobKey)) {
+                quartzJobService.deleteJob(jobKey);
+            }
             CreateQuartzJobReq req = new CreateQuartzJobReq();
             req.setScheduleId(scheduleId);
             req.setType(JobType.DATA_ARCHIVE_DELETE);
             DataArchiveClearParameters parameters = new DataArchiveClearParameters();
             parameters.setDataArchiveTaskId(taskId);
-            req.getJobDataMap().putAll(BeanMap.create(parameters));
             TriggerConfig triggerConfig = new TriggerConfig();
             triggerConfig.setTriggerStrategy(TriggerStrategy.START_NOW);
+            req.getJobDataMap().putAll(BeanMap.create(parameters));
             req.setTriggerConfig(triggerConfig);
             quartzJobService.createJob(req);
         } catch (SchedulerException e) {
