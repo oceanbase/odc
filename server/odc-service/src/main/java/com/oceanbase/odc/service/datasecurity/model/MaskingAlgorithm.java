@@ -49,7 +49,7 @@ public class MaskingAlgorithm implements SecurityResource, OrganizationIsolated 
     @JsonProperty(access = Access.READ_ONLY)
     private Long id;
 
-    @Size(min = 1, max = 64, message = "Masking algorithm name is out of range [1,64]")
+    @Size(min = 1, max = 128, message = "Masking algorithm name is out of range [1,128]")
     @Name(message = "Masking algorithm name cannot start or end with whitespaces")
     @Internationalizable
     private String name;
