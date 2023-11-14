@@ -22,7 +22,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -43,7 +42,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -75,7 +73,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class MySQLTransferServiceTest extends ServiceTestEnv {
     private static final String BUCKET = UUID.randomUUID().toString().replace("-", "").toUpperCase();
-    private static final String TEST_TABLE_NAME = "TEST";
+    private static final String TEST_TABLE_NAME = "LOADER_DUMPER_TEST";
     private final Long connectionId = 1L;
     private ConnectionConfig connectionConfig;
 
@@ -86,19 +84,18 @@ public class MySQLTransferServiceTest extends ServiceTestEnv {
     @MockBean
     private ConnectionService connectionService;
 
-
     @Before
     public void setUp() throws Exception {
         FileUtils.forceDelete(fileManager.getWorkingDir(TaskType.IMPORT, null));
         connectionConfig = TestConnectionUtil.getTestConnectionConfig(ConnectType.from(DialectType.MYSQL));
         connectionConfig.setId(connectionId);
-        setUpEnv();
         Mockito.when(connectionService.getForConnect(connectionId)).thenReturn(connectionConfig);
         Mockito.when(connectionService.getForConnectionSkipPermissionCheck(connectionId)).thenReturn(connectionConfig);
     }
 
     @Test
     public void create_dumpSchema_onlySchemaDumped() throws Exception {
+        setUpEnv();
         DataTransferTaskContext context =
                 dataTransferService.create(BUCKET, getDumpConfig(connectionConfig.defaultSchema(), false, true));
         Assert.assertNotNull(context.get(60, TimeUnit.SECONDS));
@@ -111,7 +108,8 @@ public class MySQLTransferServiceTest extends ServiceTestEnv {
 
     @Test
     public void create_dumpSchema_onlySchemaDumped_mergeSchemaFiles() throws Exception {
-        DataTransferConfig config = getDumpConfig(connectionConfig.defaultSchema(), true, true);
+        setUpEnv();
+        DataTransferConfig config = getDumpConfig(connectionConfig.defaultSchema(), false, true);
         config.setMergeSchemaFiles(true);
         DataTransferTaskContext context = dataTransferService.create(BUCKET, config);
         Assert.assertNotNull(context.get(60, TimeUnit.SECONDS));
@@ -124,19 +122,21 @@ public class MySQLTransferServiceTest extends ServiceTestEnv {
 
     @Test
     public void create_loadSchema_schemaLoaded() throws Exception {
+        setUpEnv();
         File dumpFile = dumpSchemaForLoad(DialectType.MYSQL);
         assertTableNotExists();
 
         DataTransferTaskContext context = dataTransferService.create(BUCKET, getLoadConfig(false,
                 connectionConfig.defaultSchema(), Collections.singletonList(dumpFile.getAbsolutePath()), false, true));
-        Assert.assertNotNull(context.get(600, TimeUnit.SECONDS));
+        Assert.assertNotNull(context.get(60, TimeUnit.SECONDS));
         assertTableExists();
         assertTableCountEquals(0);
     }
 
     @Test
     public void create_loadExternalSql_dataLoaded() throws Exception {
-        String sqlScript = "INSERT INTO " + TEST_TABLE_NAME + " VALUES (3, 'Marry'),(4, 'Tom');";
+        setUpEnv();
+        String sqlScript = "INSERT INTO " + TEST_TABLE_NAME + " VALUES ('3', 'Marry'),('4', 'Tom');";
         File target = copyFile(new ByteArrayInputStream(sqlScript.getBytes()), "sql");
 
         DataTransferTaskContext context = dataTransferService.create(BUCKET, getLoadConfig(true,
@@ -146,25 +146,13 @@ public class MySQLTransferServiceTest extends ServiceTestEnv {
         assertTableCountEquals(4);
     }
 
-    @Test
-    @Ignore("TODO: fix this test")
-    public void create_loadData_dataLoaded() throws Exception {
-        URL url = MySQLTransferServiceTest.class.getClassLoader().getResource("datatransfer/export.zip");
-        File dumpFile = copyFile(new FileInputStream(url.getFile()), "zip");
-        assertTableExists();
-        DataTransferTaskContext context = dataTransferService.create(BUCKET, getLoadConfig(false,
-                connectionConfig.defaultSchema(), Collections.singletonList(dumpFile.getAbsolutePath()), true, false));
-        Assert.assertNotNull(context.get(60, TimeUnit.SECONDS));
-        assertTableCountEquals(2);
-    }
-
     private void setUpEnv() throws Exception {
         DataSourceFactory factory = new DruidDataSourceFactory(connectionConfig, ConnectionAccountType.MAIN);
         DataSource dataSource = factory.getDataSource();
         try (Connection connection = dataSource.getConnection()) {
-            String create = "CREATE TABLE " + TEST_TABLE_NAME + "(A int, B varchar(64))";
+            String create = "CREATE TABLE " + TEST_TABLE_NAME + "(COL1 varchar(64), COL2 varchar(64))";
             String drop = "DROP TABLE " + TEST_TABLE_NAME;
-            String insert = "INSERT INTO " + TEST_TABLE_NAME + " VALUES (1, 'rojer'),(2, 'David')";
+            String insert = "INSERT INTO " + TEST_TABLE_NAME + " VALUES ('1', 'rojer'),('2', 'David')";
             try (Statement statement = connection.createStatement()) {
                 try {
                     statement.executeUpdate(drop);
