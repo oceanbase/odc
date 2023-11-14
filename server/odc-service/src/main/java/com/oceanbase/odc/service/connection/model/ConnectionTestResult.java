@@ -68,6 +68,14 @@ public class ConnectionTestResult extends TestResult {
         return new ConnectionTestResult(TestResult.unknownError(throwable), null);
     }
 
+    public static ConnectionTestResult initScriptFailed(Throwable throwable) {
+        String message = "Unknown error";
+        if (throwable != null) {
+            message = throwable.getLocalizedMessage();
+        }
+        return fail(ErrorCodes.ConnectionInitScriptFailed, new String[] {message});
+    }
+
     public static ConnectionTestResult connectTypeMismatch() {
         String args = ConnectType.CLOUD_OB_MYSQL.name() + "/" + ConnectType.CLOUD_OB_ORACLE.name();
         return fail(ErrorCodes.ConnectionDatabaseTypeMismatched, new String[] {args});

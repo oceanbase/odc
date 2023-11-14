@@ -16,7 +16,7 @@
 
 package com.oceanbase.odc.service.permissionapply.project;
 
-import com.oceanbase.odc.service.flow.task.model.FlowTaskResult;
+import com.oceanbase.odc.core.flow.model.FlowTaskResult;
 
 import lombok.Data;
 

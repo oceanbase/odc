@@ -659,17 +659,18 @@ public class FlowInstanceService {
         ExecutionStrategyConfig strategyConfig = ExecutionStrategyConfig.from(flowInstanceReq,
                 ExecutionStrategyConfig.INVALID_EXPIRE_INTERVAL_SECOND);
         try {
+            TaskParameters parameters = flowInstanceReq.getParameters();
+            FlowInstanceConfigurer taskConfigurer;
+            boolean addRollbackPlanNode = (taskType == TaskType.ASYNC
+                    && Boolean.TRUE.equals(((DatabaseChangeParameters) parameters).getGenerateRollbackPlan()));
             FlowTaskInstance taskInstance =
-                    flowFactory.generateFlowTaskInstance(flowInstance.getId(), true, true, taskType,
+                    flowFactory.generateFlowTaskInstance(flowInstance.getId(), !addRollbackPlanNode, true, taskType,
                             strategyConfig);
             taskInstance.setTargetTaskId(taskEntity.getId());
             taskInstance.update();
-            TaskParameters parameters = flowInstanceReq.getParameters();
-            FlowInstanceConfigurer taskConfigurer;
-            if (taskType == TaskType.ASYNC
-                    && Boolean.TRUE.equals(((DatabaseChangeParameters) parameters).getGenerateRollbackPlan())) {
+            if (addRollbackPlanNode) {
                 FlowTaskInstance rollbackPlanInstance =
-                        flowFactory.generateFlowTaskInstance(flowInstance.getId(), false, false,
+                        flowFactory.generateFlowTaskInstance(flowInstance.getId(), true, false,
                                 TaskType.GENERATE_ROLLBACK, ExecutionStrategyConfig.autoStrategy());
                 taskConfigurer = flowInstance.newFlowInstance().next(rollbackPlanInstance).next(taskInstance);
             } else {

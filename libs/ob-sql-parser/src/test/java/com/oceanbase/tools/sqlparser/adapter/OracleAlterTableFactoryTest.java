@@ -48,7 +48,8 @@ public class OracleAlterTableFactoryTest {
     @Test
     public void generate_alterTable_succeed() {
         StatementFactory<AlterTable> factory = new OracleAlterTableFactory(
-                getAlterContext("alter table a.b@c table_mode='aaa' USE_BLOOM_FILTER=true, add id varchar2(64)"));
+                getAlterContext(
+                        "alter external table a.b@c refresh, table_mode='aaa' USE_BLOOM_FILTER=true, add id varchar2(64)"));
         AlterTable actual = factory.generate();
 
         TableOptions tableOptions = new TableOptions();
@@ -62,9 +63,13 @@ public class OracleAlterTableFactoryTest {
         ColumnDefinition d = new ColumnDefinition(new ColumnReference(null, null, "id"), type);
         a2.setAddColumns(Collections.singletonList(d));
 
-        AlterTable expect = new AlterTable("b", Arrays.asList(a1, a2));
+        AlterTableAction a3 = new AlterTableAction();
+        a3.setRefresh(true);
+
+        AlterTable expect = new AlterTable("b", Arrays.asList(a3, a1, a2));
         expect.setSchema("a");
         expect.setUserVariable("@c");
+        expect.setExternal(true);
         Assert.assertEquals(expect, actual);
     }
 

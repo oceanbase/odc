@@ -16,14 +16,19 @@
 package com.oceanbase.tools.sqlparser.statement.expression;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.antlr.v4.runtime.ParserRuleContext;
+import org.apache.commons.collections4.CollectionUtils;
 
 import com.oceanbase.tools.sqlparser.statement.BaseStatement;
-import com.oceanbase.tools.sqlparser.statement.Expression;
 import com.oceanbase.tools.sqlparser.statement.Statement;
+import com.oceanbase.tools.sqlparser.statement.common.WindowSpec;
+import com.oceanbase.tools.sqlparser.statement.common.oracle.KeepClause;
+import com.oceanbase.tools.sqlparser.statement.select.OrderBy;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -38,15 +43,25 @@ import lombok.Setter;
  * @since ODC_release_4.1.0
  * @see BaseStatement
  */
+@Setter
 @Getter
-@EqualsAndHashCode(callSuper = false)
-public class FunctionCall extends BaseStatement implements Expression {
+@EqualsAndHashCode(callSuper = true)
+public class FunctionCall extends BaseExpression {
+
+    private static final Set<String> AGGREGATORS = new HashSet<>();
+
+    static {
+        AGGREGATORS.add("ALL");
+        AGGREGATORS.add("DISTINCT");
+        AGGREGATORS.add("UNIQUE");
+    }
 
     private final String functionName;
-    private final List<Statement> paramsOptions = new ArrayList<>();
     private final List<FunctionParam> paramList;
-    @Setter
-    private String paramsFlag;
+    private final List<Statement> options = new ArrayList<>();
+    private KeepClause keep;
+    private WindowSpec window;
+    private OrderBy withinGroup;
 
     public FunctionCall(@NonNull ParserRuleContext context,
             @NonNull String functionName,
@@ -62,19 +77,44 @@ public class FunctionCall extends BaseStatement implements Expression {
         this.paramList = functionParams;
     }
 
-    public void addParamsOption(@NonNull Statement paramsOpt) {
-        this.paramsOptions.add(paramsOpt);
+    public void addOption(Statement statement) {
+        if (statement == null) {
+            return;
+        }
+        this.options.add(statement);
+    }
+
+    public String getAggregator() {
+        if (CollectionUtils.isEmpty(this.options)) {
+            return null;
+        }
+        return this.options.stream().filter(s -> {
+            if (!(s instanceof ConstExpression)) {
+                return false;
+            }
+            String conS = ((ConstExpression) s).getExprConst();
+            return AGGREGATORS.contains(conS.toUpperCase());
+        }).map(s -> ((ConstExpression) s).getExprConst()).findFirst().orElse(null);
     }
 
     @Override
-    public String toString() {
+    public String doToString() {
         StringBuilder builder = new StringBuilder(this.functionName);
         builder.append("(");
-        if (this.paramsFlag != null) {
-            builder.append(this.paramsFlag).append(" ");
+        if (getAggregator() != null) {
+            builder.append(getAggregator()).append(" ");
         }
-        builder.append(paramList.stream().map(Object::toString).collect(Collectors.joining(",")))
-                .append(")");
+        builder.append(paramList.stream().map(Object::toString)
+                .collect(Collectors.joining(","))).append(")");
+        if (this.keep != null) {
+            builder.append(" KEEP (").append(this.keep).append(")");
+        }
+        if (this.withinGroup != null) {
+            builder.append(" WITHIN GROUP (").append(this.withinGroup).append(")");
+        }
+        if (this.window != null) {
+            builder.append(" OVER (").append(this.window.toString()).append(")");
+        }
         return builder.toString();
     }
 

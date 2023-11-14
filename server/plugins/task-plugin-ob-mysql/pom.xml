@@ -26,11 +26,14 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>task-plugin-ob-mysql</artifactId>
-
     <dependencies>
         <dependency>
             <groupId>com.oceanbase</groupId>
             <artifactId>task-plugin-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.oceanbase</groupId>
+            <artifactId>ob-loader-dumper</artifactId>
         </dependency>
         <dependency>
             <groupId>com.oceanbase</groupId>
@@ -42,30 +45,36 @@
         </dependency>
         <dependency>
             <groupId>com.oceanbase</groupId>
+            <artifactId>schema-plugin-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.oceanbase</groupId>
             <artifactId>schema-plugin-ob-mysql</artifactId>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.oceanbase</groupId>
             <artifactId>connect-plugin-ob-oracle</artifactId>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.oceanbase</groupId>
             <artifactId>connect-plugin-mysql</artifactId>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.oceanbase</groupId>
             <artifactId>schema-plugin-ob-oracle</artifactId>
-            <version>4.2.3-SNAPSHOT</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.oceanbase</groupId>
             <artifactId>schema-plugin-mysql</artifactId>
-            <version>4.2.3-SNAPSHOT</version>
-            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.oceanbase</groupId>
+            <artifactId>odc-test</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 

@@ -25,6 +25,7 @@ import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.service.integration.IntegrationConfigurationValidator;
 import com.oceanbase.odc.service.integration.IntegrationEvent;
 import com.oceanbase.odc.service.integration.IntegrationEventHandler;
+import com.oceanbase.odc.service.integration.IntegrationService;
 import com.oceanbase.odc.service.integration.model.IntegrationConfig;
 import com.oceanbase.odc.service.integration.model.IntegrationType;
 import com.oceanbase.odc.service.integration.model.SSOIntegrationConfig;
@@ -38,6 +39,9 @@ public class SSOEventHandler implements IntegrationEventHandler {
     @Autowired
     private IntegrationConfigurationValidator configurationValidator;
 
+    @Autowired
+    private IntegrationService integrationService;
+
     @Override
     public boolean support(IntegrationEvent integrationEvent) {
         return IntegrationType.SSO.equals(integrationEvent.getCurrentIntegrationType());
@@ -47,7 +51,9 @@ public class SSOEventHandler implements IntegrationEventHandler {
     public void preCreate(IntegrationEvent integrationEvent) {
         Verify.notNull(addableClientRegistrationManager, "addableClientRegistrationManager");
         if (integrationEvent.getCurrentConfig().getEnabled()) {
-            SSOIntegrationConfig decryptConfiguration = getDecryptConfiguration(integrationEvent.getCurrentConfig());
+            IntegrationConfig currentConfig = integrationEvent.getCurrentConfig();
+            SSOIntegrationConfig decryptConfiguration =
+                    getDecryptConfiguration(currentConfig, currentConfig.getEncryption().getSecret());
             addableClientRegistrationManager.addToRegister(decryptConfiguration);
         }
     }
@@ -55,17 +61,21 @@ public class SSOEventHandler implements IntegrationEventHandler {
     @Override
     public void preDelete(IntegrationEvent integrationEvent) {
         Verify.notNull(addableClientRegistrationManager, "addableClientRegistrationManager");
-        SSOIntegrationConfig decryptConfiguration = getDecryptConfiguration(integrationEvent.getCurrentConfig());
+        SSOIntegrationConfig decryptConfiguration = getDecryptConfiguration(integrationEvent.getCurrentConfig(), null);
         addableClientRegistrationManager.removeRegister(decryptConfiguration.resolveRegistrationId());
     }
 
     @Override
     public void preUpdate(IntegrationEvent integrationEvent) {
         Verify.notNull(addableClientRegistrationManager, "addableClientRegistrationManager");
+        IntegrationConfig preConfig = integrationEvent.getPreConfig();
         IntegrationConfig currentConfig = integrationEvent.getCurrentConfig();
         configurationValidator.checkNotEnabledInDbBeforeSave(currentConfig.getEnabled(),
                 currentConfig.getOrganizationId(), currentConfig.getId());
-        SSOIntegrationConfig ssoIntegrationConfig = getDecryptConfiguration(currentConfig);
+        // current config will not have secret when it is updated, secret can't change, so use preConfig
+        String decryptSecret = integrationService.decodeSecret(preConfig.getEncryption().getSecret(),
+                integrationEvent.getSalt(), preConfig.getOrganizationId());
+        SSOIntegrationConfig ssoIntegrationConfig = getDecryptConfiguration(currentConfig, decryptSecret);
         if (Boolean.TRUE.equals(integrationEvent.getCurrentConfig().getEnabled())) {
             addableClientRegistrationManager.addToRegister(ssoIntegrationConfig);
         } else {
@@ -73,11 +83,11 @@ public class SSOEventHandler implements IntegrationEventHandler {
         }
     }
 
-    private SSOIntegrationConfig getDecryptConfiguration(IntegrationConfig config) {
+    private SSOIntegrationConfig getDecryptConfiguration(IntegrationConfig config, String decryptConfiguration) {
         Verify.verify(config.getType() == SSO, "wrong integration type");
         SSOIntegrationConfig ssoIntegrationConfig =
                 JsonUtils.fromJson(config.getConfiguration(), SSOIntegrationConfig.class);
-        ssoIntegrationConfig.fillDecryptSecret(config.getEncryption().getSecret());
+        ssoIntegrationConfig.fillDecryptSecret(decryptConfiguration);
         return ssoIntegrationConfig;
     }
 }

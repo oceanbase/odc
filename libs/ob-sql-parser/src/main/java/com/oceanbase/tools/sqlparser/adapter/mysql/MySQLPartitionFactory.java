@@ -30,6 +30,7 @@ import com.oceanbase.tools.sqlparser.obmysql.OBParser.Hash_partition_optionConte
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Key_partition_optionContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.List_partition_optionContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Opt_partition_optionContext;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Partition_optionContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Range_partition_optionContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Subpartition_optionContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Vertical_column_nameContext;
@@ -63,6 +64,14 @@ public class MySQLPartitionFactory extends OBParserBaseVisitor<Partition> implem
 
     public MySQLPartitionFactory(@NonNull Opt_partition_optionContext optPartitionOptionContext) {
         this.parserRuleContext = optPartitionOptionContext;
+    }
+
+    public MySQLPartitionFactory(@NonNull Partition_optionContext partitionOptionContext) {
+        this.parserRuleContext = partitionOptionContext;
+    }
+
+    public MySQLPartitionFactory(@NonNull Auto_partition_optionContext autoPartitionOptionContext) {
+        this.parserRuleContext = autoPartitionOptionContext;
     }
 
     public MySQLPartitionFactory(@NonNull Hash_partition_optionContext context) {

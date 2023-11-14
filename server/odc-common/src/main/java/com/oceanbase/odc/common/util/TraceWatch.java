@@ -27,6 +27,7 @@ import java.util.Stack;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
@@ -45,6 +46,7 @@ import lombok.NonNull;
  */
 @Getter
 public class TraceWatch implements Closeable {
+
     private boolean closed = false;
     private long totalTimeMillis;
     private final String id;
@@ -69,35 +71,13 @@ public class TraceWatch implements Closeable {
     }
 
     public TraceStage start(String taskName) throws IllegalStateException {
-        validClosed();
-        TraceStage stage = new DefaultTraceStage(this, taskName);
-        Stack<TraceStage> stages = this.threadId2Stages
-                .computeIfAbsent(Thread.currentThread().getId(), id -> new Stack<>());
-        stages.push(stage);
-        stage.start();
-        return stage;
+        TraceWatch that = this;
+        return startTraceStage(() -> new DefaultTraceStage(that, taskName));
     }
 
     public EditableTraceStage startEditableStage(String taskName) {
-        validClosed();
-        EditableTraceStage stage = new EditableTraceStage(this, taskName);
-        Stack<TraceStage> stages = this.threadId2Stages
-                .computeIfAbsent(Thread.currentThread().getId(), id -> new Stack<>());
-        stages.push(stage);
-        stage.start();
-        return stage;
-    }
-
-    public ResumeableStage startResumeableStage(String taskName) {
-        validClosed();
-        List<TraceStage> resumeables = getReuseableByTaskName(taskName);
-        ResumeableStage stage =
-                resumeables.isEmpty() ? new ResumeableStage(this, taskName) : (ResumeableStage) resumeables.get(0);
-        Stack<TraceStage> stages = this.threadId2Stages
-                .computeIfAbsent(Thread.currentThread().getId(), id -> new Stack<>());
-        stages.push(stage);
-        stage.start();
-        return stage;
+        TraceWatch that = this;
+        return startTraceStage(() -> new EditableTraceStage(that, taskName));
     }
 
     public TraceStage stop() throws IllegalStateException {
@@ -128,13 +108,6 @@ public class TraceWatch implements Closeable {
         stacks.forEach(stack -> stages.addAll(new ArrayList<>(stack)));
         stages.forEach(stage -> result.addAll(stage.getStageByTaskName(taskName)));
         return result;
-    }
-
-    public List<TraceStage> getReuseableByTaskName(@NonNull String taskName) {
-        return this.stageList.stream()
-                .map(stage -> stage.getStageByTaskName(taskName))
-                .flatMap(Collection::stream)
-                .collect(Collectors.toList());
     }
 
     public TraceStage suspend() throws IllegalStateException {
@@ -213,6 +186,16 @@ public class TraceWatch implements Closeable {
         return target;
     }
 
+    private <T extends TraceStage> T startTraceStage(Supplier<T> supplier) {
+        validClosed();
+        T stage = supplier.get();
+        Stack<TraceStage> stages = this.threadId2Stages
+                .computeIfAbsent(Thread.currentThread().getId(), id -> new Stack<>());
+        stages.push(stage);
+        stage.start();
+        return stage;
+    }
+
     @Override
     public void close() {
         synchronized (this.threadId2Stages) {
@@ -228,6 +211,7 @@ public class TraceWatch implements Closeable {
 
     @Getter
     public static class DefaultTraceStage extends StopWatch implements TraceStage {
+
         private final String threadName;
         protected final TraceWatch target;
         protected final List<TraceStage> subStageList = new LinkedList<>();
@@ -296,10 +280,10 @@ public class TraceWatch implements Closeable {
         }
     }
 
-    @Getter
     public static class EditableTraceStage extends DefaultTraceStage {
-        private long totalDurationMicroseconds = -1;
+
         private long startTimeMillis = -1;
+        private long totalDurationMicroseconds = -1;
 
         public EditableTraceStage(@NonNull TraceWatch target) {
             super(target, null);
@@ -346,32 +330,6 @@ public class TraceWatch implements Closeable {
         @Override
         public void resume() {
             throw new UnsupportedOperationException("EditableStage can not resume");
-        }
-
-    }
-
-    public static class ResumeableStage extends DefaultTraceStage {
-        public ResumeableStage(@NonNull TraceWatch target) {
-            super(target);
-        }
-
-        public ResumeableStage(@NonNull TraceWatch target, String message) {
-            super(target, message);
-        }
-
-        @Override
-        public void start() {
-            if (isSuspended()) {
-                resume();
-            } else {
-                super.start();
-            }
-        }
-
-        public void stop() {
-            if (isStarted()) {
-                suspend();
-            }
         }
     }
 

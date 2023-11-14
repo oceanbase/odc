@@ -42,7 +42,6 @@ import com.oceanbase.tools.sqlparser.obmysql.OBParser.Out_of_line_unique_indexCo
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Reference_actionContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Reference_optionContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.References_clauseContext;
-import com.oceanbase.tools.sqlparser.obmysql.OBParser.Relation_factorContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Signed_literalContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Sort_column_listContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Table_elementContext;
@@ -50,6 +49,7 @@ import com.oceanbase.tools.sqlparser.obmysql.OBParserBaseVisitor;
 import com.oceanbase.tools.sqlparser.statement.Expression;
 import com.oceanbase.tools.sqlparser.statement.Operator;
 import com.oceanbase.tools.sqlparser.statement.common.DataType;
+import com.oceanbase.tools.sqlparser.statement.common.RelationFactor;
 import com.oceanbase.tools.sqlparser.statement.createtable.ColumnAttributes;
 import com.oceanbase.tools.sqlparser.statement.createtable.ColumnDefinition;
 import com.oceanbase.tools.sqlparser.statement.createtable.ColumnDefinition.Location;
@@ -145,6 +145,11 @@ public class MySQLTableElementFactory extends OBParserBaseVisitor<TableElement>
         index.setIndexOptions(getIndexOptions(ctx.index_using_algorithm(), ctx.opt_index_options()));
         index.setSpatial(ctx.SPATIAL() != null);
         index.setFullText(ctx.FULLTEXT() != null);
+        if (ctx.partition_option() != null) {
+            index.setPartition(new MySQLPartitionFactory(ctx.partition_option()).generate());
+        } else if (ctx.auto_partition_option() != null) {
+            index.setPartition(new MySQLPartitionFactory(ctx.auto_partition_option()).generate());
+        }
         return index;
     }
 
@@ -163,6 +168,7 @@ public class MySQLTableElementFactory extends OBParserBaseVisitor<TableElement>
         }
         OutOfLineConstraint constraint = new OutOfLineConstraint(ctx, state, columns);
         constraint.setPrimaryKey(true);
+        constraint.setIndexName(ctx.index_name() == null ? null : ctx.index_name().getText());
         return constraint;
     }
 
@@ -176,9 +182,20 @@ public class MySQLTableElementFactory extends OBParserBaseVisitor<TableElement>
                     : new ConstraintState(ctx.index_using_algorithm());
             state.setIndexOptions(indexOptions);
         }
+        if (ctx.partition_option() != null) {
+            if (state == null) {
+                state = new ConstraintState(ctx.partition_option());
+            }
+            state.setPartition(new MySQLPartitionFactory(ctx.partition_option()).generate());
+        } else if (ctx.auto_partition_option() != null) {
+            if (state == null) {
+                state = new ConstraintState(ctx.auto_partition_option());
+            }
+            state.setPartition(new MySQLPartitionFactory(ctx.auto_partition_option()).generate());
+        }
         OutOfLineConstraint constraint = new OutOfLineConstraint(ctx, state, getSortColumns(ctx.sort_column_list()));
-        constraint.setIndexName(ctx.index_name() == null ? null : ctx.index_name().getText());
         constraint.setUniqueKey(true);
+        constraint.setIndexName(ctx.index_name() == null ? null : ctx.index_name().getText());
         return constraint;
     }
 
@@ -224,16 +241,16 @@ public class MySQLTableElementFactory extends OBParserBaseVisitor<TableElement>
     }
 
     private ForeignReference visitForeignReference(References_clauseContext context) {
-        Relation_factorContext relationFactor = context.relation_factor();
-        String schema = MySQLFromReferenceFactory.getSchemaName(relationFactor);
-        String tableName = MySQLFromReferenceFactory.getRelation(relationFactor);
+        RelationFactor factor = MySQLFromReferenceFactory.getRelationFactor(context.relation_factor());
         List<ColumnReference> columns = new ArrayList<>();
         if (context.column_name_list() != null) {
             columns = context.column_name_list().column_name().stream()
                     .map(c1 -> new ColumnReference(c1, null, null, c1.getText()))
                     .collect(Collectors.toList());
         }
-        ForeignReference foreignReference = new ForeignReference(context, schema, tableName, columns);
+        ForeignReference foreignReference = new ForeignReference(context,
+                factor.getSchema(), factor.getRelation(), columns);
+        foreignReference.setUserVariable(factor.getUserVariable());
         if (context.match_action() != null) {
             foreignReference.setMatchOption(MatchOption.valueOf(context.match_action().getText().toUpperCase()));
         }
@@ -319,6 +336,8 @@ public class MySQLTableElementFactory extends OBParserBaseVisitor<TableElement>
             attributes.setId(Integer.valueOf(ctx.INTNUM().getText()));
         } else if (ctx.COMMENT() != null) {
             attributes.setComment(ctx.STRING_VALUE().getText());
+        } else if (ctx.SRID() != null) {
+            attributes.setSrid(Integer.valueOf(ctx.INTNUM().getText()));
         } else {
             InLineConstraint attribute = new InLineConstraint(ctx, null, null);
             if (ctx.NULLX() != null) {
@@ -335,7 +354,17 @@ public class MySQLTableElementFactory extends OBParserBaseVisitor<TableElement>
                 attributes.setConstraints(Collections.singletonList(attribute));
             } else if (ctx.CHECK() != null) {
                 Expression expr = new MySQLExpressionFactory(ctx.expr()).generate();
-                attributes.setConstraints(Collections.singletonList(new InLineCheckConstraint(ctx, null, null, expr)));
+                ConstraintState state = null;
+                if (ctx.check_state() != null) {
+                    state = new ConstraintState(ctx.check_state());
+                    state.setEnforced(ctx.check_state().NOT() == null);
+                }
+                String constraintName = null;
+                if (ctx.opt_constraint_name() != null && ctx.opt_constraint_name().constraint_name() != null) {
+                    constraintName = ctx.opt_constraint_name().constraint_name().getText();
+                }
+                attributes.setConstraints(
+                        Collections.singletonList(new InLineCheckConstraint(ctx, constraintName, state, expr)));
             }
         }
         return attributes;
@@ -366,7 +395,16 @@ public class MySQLTableElementFactory extends OBParserBaseVisitor<TableElement>
             attribute.setPrimaryKey(true);
             attributes.setConstraints(Collections.singletonList(attribute));
         } else if (ctx.CHECK() != null) {
-            attribute = new InLineCheckConstraint(ctx, null, null,
+            ConstraintState state = null;
+            if (ctx.check_state() != null) {
+                state = new ConstraintState(ctx.check_state());
+                state.setEnforced(ctx.check_state().NOT() == null);
+            }
+            String constraintName = null;
+            if (ctx.opt_constraint_name() != null && ctx.opt_constraint_name().constraint_name() != null) {
+                constraintName = ctx.opt_constraint_name().constraint_name().getText();
+            }
+            attribute = new InLineCheckConstraint(ctx, constraintName, state,
                     new MySQLExpressionFactory(ctx.expr()).generate());
             attributes.setConstraints(Collections.singletonList(attribute));
         } else if (ctx.DEFAULT() != null || ctx.ORIG_DEFAULT() != null) {
@@ -384,6 +422,10 @@ public class MySQLTableElementFactory extends OBParserBaseVisitor<TableElement>
             attributes.setOnUpdate(visitCurTimestampFunc(ctx.cur_timestamp_func()));
         } else if (ctx.ID() != null) {
             attributes.setId(Integer.valueOf(ctx.INTNUM().getText()));
+        } else if (ctx.SRID() != null) {
+            attributes.setSrid(Integer.valueOf(ctx.INTNUM().getText()));
+        } else if (ctx.collation_name() != null) {
+            attributes.setCollation(ctx.collation_name().getText());
         }
         return attributes;
     }
@@ -399,9 +441,9 @@ public class MySQLTableElementFactory extends OBParserBaseVisitor<TableElement>
         if (context == null) {
             return null;
         }
-        ConstExpression constExpr;
+        Expression constExpr;
         if (context.literal() != null) {
-            constExpr = new ConstExpression(context.literal());
+            constExpr = new MySQLExpressionFactory(context.literal()).generate();
         } else {
             constExpr = new ConstExpression(context.number_literal());
         }

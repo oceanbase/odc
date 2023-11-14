@@ -49,6 +49,7 @@ public enum Operator {
     // not equals
     NE("!=", "<>", "^="),
     CNNOP("||"),
+    TO("TO"),
     // in (a,b,c)
     IN("IN"),
     // not in (a,b,c)

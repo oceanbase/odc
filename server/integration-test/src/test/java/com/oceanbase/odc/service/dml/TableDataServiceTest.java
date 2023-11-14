@@ -30,6 +30,7 @@ import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
+import com.oceanbase.odc.core.shared.exception.BadArgumentException;
 import com.oceanbase.odc.core.sql.execute.SyncJdbcExecutor;
 import com.oceanbase.odc.service.dml.model.BatchDataModifyReq;
 import com.oceanbase.odc.service.dml.model.BatchDataModifyReq.Operate;
@@ -42,28 +43,14 @@ public class TableDataServiceTest extends ServiceTestEnv {
     @Autowired
     private TableDataService tableDataService;
 
-    @Test
+    @Test(expected = BadArgumentException.class)
     public void batchGetModifySql_AllOperates() {
         ConnectionSession connectionSession = TestConnectionUtil.getTestConnectionSession(ConnectType.OB_ORACLE);
         BatchDataModifyReq req = new BatchDataModifyReq();
         req.setSchemaName("test");
         req.setTableName("t_test");
         req.setRows(Arrays.asList(row(Operate.INSERT), row(Operate.UPDATE), row(Operate.DELETE)));
-        BatchDataModifyResp resp = tableDataService.batchGetModifySql(connectionSession, req);
-
-        BatchDataModifyResp expected = new BatchDataModifyResp();
-        expected.setSchemaName("test");
-        expected.setTableName("t_test");
-        expected.setCreateRows(1);
-        expected.setUpdateRows(1);
-        expected.setDeleteRows(1);
-        expected.setUpdateAffectedMultiRows(true);
-        expected.setDeleteAffectedMultiRows(true);
-        expected.setTip("This modification will affect multiple rows");
-        expected.setSql("insert into \"test\".\"t_test\"(\"c1\") values('b2');\n"
-                + "update \"test\".\"t_test\" set \"c1\" = 'b2' where \"c1\"='a1';\n"
-                + "delete from \"test\".\"t_test\" where \"c1\"='a1';\n");
-        Assert.assertEquals(expected, resp);
+        tableDataService.batchGetModifySql(connectionSession, req);
     }
 
     @Test

@@ -24,10 +24,8 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferTaskResult;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferType;
-import com.oceanbase.odc.service.datatransfer.task.DataTransferTaskContext;
-import com.oceanbase.odc.service.flow.task.model.DataTransferTaskResult;
-import com.oceanbase.tools.loaddump.common.model.BaseParameter;
 
 @Component
 @Profile("clientMode")
@@ -54,8 +52,7 @@ public class DesktopDataTransferAdapter implements DataTransferAdapter {
     }
 
     @Override
-    public void afterHandle(BaseParameter parameter, DataTransferTaskContext context,
-            DataTransferTaskResult result, File exportFile) {
+    public void afterHandle(DataTransferConfig config, DataTransferTaskResult result, File exportFile) {
         result.setExportZipFilePath(exportFile.getAbsolutePath());
     }
 

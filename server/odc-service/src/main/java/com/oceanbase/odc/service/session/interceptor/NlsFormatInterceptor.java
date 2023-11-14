@@ -30,8 +30,11 @@ import org.springframework.stereotype.Component;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.core.sql.execute.SqlExecuteStages;
 import com.oceanbase.odc.core.sql.execute.model.SqlExecuteStatus;
 import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
+import com.oceanbase.odc.service.session.model.SqlAsyncExecuteReq;
+import com.oceanbase.odc.service.session.model.SqlAsyncExecuteResp;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.tools.sqlparser.FastFailErrorListener;
 import com.oceanbase.tools.sqlparser.FastFailErrorStrategy;
@@ -60,10 +63,16 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Component
-public class NlsFormatInterceptor implements SqlExecuteInterceptor {
+public class NlsFormatInterceptor extends BaseTimeConsumingInterceptor {
 
     @Override
-    public void afterCompletion(@NonNull SqlExecuteResult response,
+    public boolean preHandle(@NonNull SqlAsyncExecuteReq request, @NonNull SqlAsyncExecuteResp response,
+            @NonNull ConnectionSession session, @NonNull Map<String, Object> context) {
+        return true;
+    }
+
+    @Override
+    public void doAfterCompletion(@NonNull SqlExecuteResult response,
             @NonNull ConnectionSession session, @NonNull Map<String, Object> context) {
         DialectType dialect = session.getDialectType();
         if (response.getStatus() != SqlExecuteStatus.SUCCESS || dialect != DialectType.OB_ORACLE) {
@@ -91,6 +100,11 @@ public class NlsFormatInterceptor implements SqlExecuteInterceptor {
                 ConnectionSessionUtil.setNlsTimestampTZFormat(session, value);
             }
         });
+    }
+
+    @Override
+    protected String getExecuteStageName() {
+        return SqlExecuteStages.SET_NLS_FORMAT;
     }
 
     private boolean startWithAlterSession(String sql) {

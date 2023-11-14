@@ -42,7 +42,7 @@ public class OBOracleDatabaseExtension extends OBMySQLDatabaseExtension {
     @Override
     public void create(Connection connection, DBDatabase database, String password) {
         OracleSqlBuilder sqlBuilder = new OracleSqlBuilder();
-        PreConditions.notBlank(password, "password");
+        PreConditions.notNull(password, "password");
         sqlBuilder.append("CREATE USER ").identifier(database.getName()).append(" IDENTIFIED BY ")
                 .identifier(password);
         JdbcOperationsUtil.getJdbcOperations(connection).execute(sqlBuilder.toString());

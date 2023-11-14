@@ -15,7 +15,7 @@
  */
 package com.oceanbase.odc.service.schedule.flowtask;
 
-import com.oceanbase.odc.service.flow.task.model.FlowTaskResult;
+import com.oceanbase.odc.core.flow.model.FlowTaskResult;
 
 import lombok.Data;
 

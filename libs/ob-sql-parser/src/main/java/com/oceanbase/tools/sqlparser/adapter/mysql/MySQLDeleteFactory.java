@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.oceanbase.tools.sqlparser.adapter.StatementFactory;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Delete_basic_stmtContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Delete_stmtContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Multi_delete_tableContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Relation_factor_with_starContext;
@@ -56,7 +57,8 @@ public class MySQLDeleteFactory extends OBParserBaseVisitor<Delete> implements S
     }
 
     @Override
-    public Delete visitDelete_stmt(Delete_stmtContext ctx) {
+    public Delete visitDelete_stmt(Delete_stmtContext deleteCtx) {
+        Delete_basic_stmtContext ctx = deleteCtx.delete_basic_stmt();
         Delete delete = null;
         if (ctx.tbl_name() != null) {
             MySQLFromReferenceFactory factory = new MySQLFromReferenceFactory(ctx.tbl_name());

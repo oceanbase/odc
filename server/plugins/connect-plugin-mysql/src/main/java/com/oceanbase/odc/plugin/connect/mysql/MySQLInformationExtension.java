@@ -20,7 +20,8 @@ import java.sql.Connection;
 import org.pf4j.Extension;
 
 import com.oceanbase.odc.common.util.JdbcOperationsUtil;
-import com.oceanbase.odc.core.shared.Verify;
+import com.oceanbase.odc.core.shared.constant.ErrorCodes;
+import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.plugin.connect.api.InformationExtensionPoint;
 
 import lombok.extern.slf4j.Slf4j;
@@ -33,10 +34,11 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Extension
 public class MySQLInformationExtension implements InformationExtensionPoint {
+
     @Override
     public String getDBVersion(Connection connection) {
         String querySql = "show variables like 'innodb_version'";
-        String dbVersion = null;
+        String dbVersion;
         try {
             dbVersion = JdbcOperationsUtil.getJdbcOperations(connection).query(querySql, rs -> {
                 if (!rs.next()) {
@@ -44,10 +46,15 @@ public class MySQLInformationExtension implements InformationExtensionPoint {
                 }
                 return rs.getString(2);
             });
-        } catch (Exception exception) {
-            log.warn("Failed to get mysql version", exception);
+        } catch (Exception e) {
+            throw new BadRequestException(ErrorCodes.QueryDBVersionFailed,
+                    new Object[] {e.getMessage()}, e.getMessage());
         }
-        Verify.notNull(dbVersion, "MySQL DB Version");
+        if (dbVersion == null) {
+            throw new BadRequestException(ErrorCodes.QueryDBVersionFailed,
+                    new Object[] {"Result set is empty"}, "Result set is empty");
+        }
         return dbVersion;
     }
+
 }

@@ -16,6 +16,7 @@
 
 package com.oceanbase.odc.service.session.interceptor;
 
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -27,6 +28,7 @@ import org.springframework.stereotype.Component;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
+import com.oceanbase.odc.core.sql.execute.SqlExecuteStages;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
@@ -45,10 +47,10 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Component
-public class DatabasePermissionInterceptor implements SqlExecuteInterceptor {
+public class DatabasePermissionInterceptor extends BaseTimeConsumingInterceptor {
+
     @Autowired
     private DatabaseService databaseService;
-
     @Autowired
     private AuthenticationFacade authenticationFacade;
 
@@ -58,20 +60,19 @@ public class DatabasePermissionInterceptor implements SqlExecuteInterceptor {
     }
 
     @Override
-    public boolean preHandle(@NonNull SqlAsyncExecuteReq request, @NonNull SqlAsyncExecuteResp response,
+    public boolean doPreHandle(@NonNull SqlAsyncExecuteReq request, @NonNull SqlAsyncExecuteResp response,
             @NonNull ConnectionSession session, @NonNull Map<String, Object> context) throws Exception {
         if (authenticationFacade.currentUser().getOrganizationType() == OrganizationType.INDIVIDUAL) {
             return true;
         }
         ConnectionConfig connectionConfig = (ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(session);
         Set<String> allDatabaseNames = SchemaExtractor.listSchemaNames(response.getSqls().stream()
-                .map(sqlTuplesWithViolation -> sqlTuplesWithViolation.getSqlTuple().getOriginalSql()).collect(
-                        Collectors.toList()),
-                session.getDialectType());
+                .map(sqlTuplesWithViolation -> sqlTuplesWithViolation.getSqlTuple().getOriginalSql())
+                .collect(Collectors.toList()), session.getDialectType());
         Set<String> unauthorizedDatabaseNames =
                 databaseService.filterUnAuthorizedDatabaseNames(allDatabaseNames, connectionConfig.getId());
         if (CollectionUtils.isNotEmpty(unauthorizedDatabaseNames)) {
-            response.setUnauthorizedDatabaseNames(unauthorizedDatabaseNames.stream().collect(Collectors.toList()));
+            response.setUnauthorizedDatabaseNames(new ArrayList<>(unauthorizedDatabaseNames));
             return false;
         }
         return true;
@@ -79,7 +80,11 @@ public class DatabasePermissionInterceptor implements SqlExecuteInterceptor {
 
     @Override
     public void afterCompletion(@NonNull SqlExecuteResult response, @NonNull ConnectionSession session,
-            @NonNull Map<String, Object> context) throws Exception {
-        SqlExecuteInterceptor.super.afterCompletion(response, session, context);
+            @NonNull Map<String, Object> context) {}
+
+    @Override
+    protected String getExecuteStageName() {
+        return SqlExecuteStages.DATABASE_PERMISSION_CHECK;
     }
+
 }

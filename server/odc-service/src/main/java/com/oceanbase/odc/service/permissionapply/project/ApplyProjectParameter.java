@@ -20,6 +20,7 @@ import java.io.Serializable;
 import java.util.List;
 
 import com.oceanbase.odc.core.flow.model.TaskParameters;
+import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.service.collaboration.project.model.Project;
 import com.oceanbase.odc.service.iam.model.ResourceRole;
 
@@ -57,7 +58,7 @@ public class ApplyProjectParameter implements Serializable, TaskParameters {
          */
         private Long id;
         /**
-         * Project name, refer to {@link Project#getName()}
+         * Project name, filled in by {@link ApplyProjectPreprocessor}
          */
         private String name;
     }
@@ -68,6 +69,10 @@ public class ApplyProjectParameter implements Serializable, TaskParameters {
          * Resource role id, refer to {@link ResourceRole#getId()}
          */
         private Long id;
+        /**
+         * Resource role name, filled in by {@link ApplyProjectPreprocessor}
+         */
+        private ResourceRoleName name;
     }
 
 }

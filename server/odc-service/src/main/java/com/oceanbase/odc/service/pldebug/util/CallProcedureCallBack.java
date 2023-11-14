@@ -18,7 +18,6 @@ package com.oceanbase.odc.service.pldebug.util;
 import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -88,10 +87,9 @@ public class CallProcedureCallBack implements ConnectionCallback<List<DBPLParam>
                     try {
                         JdbcDataTypeUtil.setValueIntoStatement(stmt, i + 1,
                                 dataType, param.getDefaultValue());
-                    } catch (ParseException e) {
-                        throw new BadArgumentException(ErrorCodes.IllegalArgument, null,
-                                String.format("Param value={%s} and param type={%s} is not matched",
-                                        param.getDefaultValue(), dataType));
+                    } catch (Exception e) {
+                        throw new BadArgumentException(ErrorCodes.ArgumentValueAndTypeMismatched,
+                                new Object[] {param.getParamName(), param.getDefaultValue(), dataType}, null);
                     }
                 }
                 if (type == DBPLParamMode.OUT

@@ -26,7 +26,7 @@ import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.plugin.task.api.datatransfer.dumper.AbstractOutputFile;
 import com.oceanbase.odc.plugin.task.api.datatransfer.dumper.BinaryFile;
 import com.oceanbase.odc.plugin.task.api.datatransfer.dumper.DumpDBObject;
-import com.oceanbase.odc.plugin.task.api.datatransfer.dumper.DumperOutput;
+import com.oceanbase.odc.plugin.task.api.datatransfer.dumper.ExportOutput;
 import com.oceanbase.tools.loaddump.common.enums.DataFormat;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
 import com.oceanbase.tools.loaddump.common.model.Manifest;
@@ -66,8 +66,8 @@ public class UploadFileResult {
      */
     private Map<ObjectType, Set<String>> importObjects = new HashMap<>();
 
-    public static UploadFileResult ofDumperOutput(@NonNull String fileName, @NonNull DumperOutput dumperOutput) {
-        return new UploadFileResult(fileName, dumperOutput);
+    public static UploadFileResult ofExportOutput(@NonNull String fileName, @NonNull ExportOutput exportOutput) {
+        return new UploadFileResult(fileName, exportOutput);
     }
 
     public static UploadFileResult ofFail(@NonNull ErrorCode errorCode, Object[] args) {
@@ -101,25 +101,25 @@ public class UploadFileResult {
         return metaInfo;
     }
 
-    private UploadFileResult(String fileName, DumperOutput dumperOutput) {
-        if (!dumperOutput.isLegal()) {
+    private UploadFileResult(String fileName, ExportOutput exportOutput) {
+        if (!exportOutput.isLegal()) {
             this.errorCode = ErrorCodes.ImportInvalidZip;
             this.errorMessage = this.errorCode.getLocalizedMessage(new Object[] {});
             return;
         }
-        BinaryFile<Manifest> binaryFile = dumperOutput.getManifest();
+        BinaryFile<Manifest> binaryFile = exportOutput.getManifest();
         /**
          * only CSV format would save the manifest {@link com.oceanbase.tools.loaddump.client.DumpClient}
          */
         this.format = binaryFile == null ? DataFormat.SQL : binaryFile.getTarget().getDataFormat();
-        for (DumpDBObject dbObject : dumperOutput.getDumpDbObjects()) {
+        for (DumpDBObject dbObject : exportOutput.getDumpDbObjects()) {
             Set<String> names = importObjects.computeIfAbsent(dbObject.getObjectType(), t -> new HashSet<>());
             names.addAll(dbObject.getOutputFiles().stream()
                     .map(AbstractOutputFile::getObjectName).collect(Collectors.toList()));
         }
         this.fileType = "ZIP";
-        this.containsSchema = dumperOutput.isContainsSchema();
-        this.containsData = dumperOutput.isContainsData();
+        this.containsSchema = exportOutput.isContainsSchema();
+        this.containsData = exportOutput.isContainsData();
         this.fileName = fileName;
     }
 

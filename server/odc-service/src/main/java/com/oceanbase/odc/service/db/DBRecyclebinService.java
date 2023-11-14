@@ -15,10 +15,15 @@
  */
 package com.oceanbase.odc.service.db;
 
+import java.sql.Statement;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
+import java.util.stream.Collectors;
 
+import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.stereotype.Service;
 
@@ -30,8 +35,11 @@ import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
+import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
+import com.oceanbase.odc.plugin.connect.api.SessionExtensionPoint;
 import com.oceanbase.odc.service.db.model.DBRecycleObject;
+import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.OracleSqlBuilder;
@@ -44,6 +52,7 @@ import lombok.NonNull;
 public class DBRecyclebinService {
 
     private static final Set<String> SUPPORTED_TYPES = new HashSet<>();
+    private static final String EMPTY_SCHEMA = "";
 
     static {
         SUPPORTED_TYPES.add("TABLE");
@@ -115,57 +124,90 @@ public class DBRecyclebinService {
         }
     }
 
-    public String getFlashbackSql(@NonNull ConnectionSession session, List<DBRecycleObject> recycleObjects) {
+    public void flashback(@NonNull ConnectionSession session, List<DBRecycleObject> recycleObjects) {
         PreConditions.notEmpty(recycleObjects, "recycleObjectList");
         // FLASHBACK TABLE object_name TO BEFORE DROP [RENAME TO db_name.table_name];
-        SqlBuilder sqlBuilder = getBuilder(session);
-        for (DBRecycleObject recycleObject : recycleObjects) {
-            PreConditions.notBlank(recycleObject.getObjName(), "recycleObject.objName");
-            PreConditions.notBlank(recycleObject.getObjType(), "recycleObject.objType");
-            String type = recycleObject.getObjType().toLowerCase();
+        Map<String, List<String>> schema2Sqls = recycleObjects.stream().collect(Collectors.groupingBy(i -> {
+            return StringUtils.isEmpty(i.getSchema()) ? EMPTY_SCHEMA : i.getSchema();
+        })).entrySet().stream().collect(Collectors.toMap(Entry::getKey, e -> e.getValue().stream().map(i -> {
+            SqlBuilder sqlBuilder = getBuilder(session);
+            PreConditions.notBlank(i.getObjName(), "recycleObject.objName");
+            PreConditions.notBlank(i.getObjType(), "recycleObject.objType");
+            String type = i.getObjType().toLowerCase();
             if (!SUPPORTED_TYPES.contains(type.toUpperCase())) {
-                String supportedTypes = String.join(",", SUPPORTED_TYPES);
-                sqlBuilder.append("-- ").append(ErrorCodes.ObInvalidObjectTypesForRecyclebin.getLocalizedMessage(
-                        new Object[] {recycleObject.getObjName(), type.toUpperCase(), supportedTypes}));
-                continue;
+                throw new BadRequestException(ErrorCodes.ObInvalidObjectTypesForRecyclebin, new Object[] {
+                        i.getObjName(), type.toUpperCase(), String.join(",", SUPPORTED_TYPES)}, "Illegal object");
             }
             if ("view".equalsIgnoreCase(type)) {
                 type = "table";
             }
             sqlBuilder.append("flashback ").append(type).append(" ");
-            if (StringUtils.isNotBlank(recycleObject.getSchema())) {
-                sqlBuilder.identifier(recycleObject.getSchema()).append(".");
+            if (StringUtils.isNotBlank(i.getSchema())) {
+                sqlBuilder.identifier(i.getSchema()).append(".");
             }
-            sqlBuilder.identifier(recycleObject.getObjName()).append(" to before drop");
-            if (StringUtils.isNotBlank(recycleObject.getNewName())) {
-                sqlBuilder.append(" rename to ").identifier(recycleObject.getNewName());
+            sqlBuilder.identifier(i.getObjName()).append(" to before drop");
+            if (StringUtils.isNotBlank(i.getNewName())) {
+                sqlBuilder.append(" rename to ").identifier(i.getSchema()).append(".").identifier(i.getNewName());
             }
-            sqlBuilder.append(";\r\n");
-        }
-        return sqlBuilder.toString();
+            return sqlBuilder.toString();
+        }).collect(Collectors.toList())));
+        JdbcOperations jdbcOperations = session.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY);
+        jdbcOperations.execute((ConnectionCallback<Void>) con -> {
+            for (Entry<String, List<String>> entry : schema2Sqls.entrySet()) {
+                try (Statement statement = con.createStatement()) {
+                    for (String sql : entry.getValue()) {
+                        statement.execute(sql);
+                    }
+                }
+            }
+            return null;
+        });
     }
 
-    public String getPurgeSql(@NonNull ConnectionSession session, List<DBRecycleObject> recycleObjects) {
-        PreConditions.notEmpty(recycleObjects, "recycleObjectList");
-        // purge table objName;
-        SqlBuilder sqlBuilder = getBuilder(session);
-        for (DBRecycleObject recycleObject : recycleObjects) {
-            PreConditions.notBlank(recycleObject.getObjName(), "recycleObject.objName");
-            PreConditions.notBlank(recycleObject.getObjType(), "recycleObject.objType");
-            String type = recycleObject.getObjType().toLowerCase();
+    public void purgeObject(@NonNull ConnectionSession session, @NonNull List<DBRecycleObject> recycleObjects) {
+        SessionExtensionPoint extensionPoint = ConnectionPluginUtil.getSessionExtension(session.getDialectType());
+        if (extensionPoint == null) {
+            throw new IllegalStateException("failed to get plugin");
+        }
+        Map<String, List<String>> schema2Sqls = recycleObjects.stream().collect(Collectors.groupingBy(i -> {
+            return StringUtils.isEmpty(i.getSchema()) ? EMPTY_SCHEMA : i.getSchema();
+        })).entrySet().stream().collect(Collectors.toMap(Entry::getKey, e -> e.getValue().stream().map(i -> {
+            SqlBuilder sqlBuilder = getBuilder(session);
+            PreConditions.notBlank(i.getObjName(), "recycleObject.objName");
+            PreConditions.notBlank(i.getObjType(), "recycleObject.objType");
+            String type = i.getObjType().toLowerCase();
             if ("view".equalsIgnoreCase(type)) {
                 type = "table";
             } else if ("normal index".equalsIgnoreCase(type)) {
                 type = "index";
             }
-            sqlBuilder.append("purge ").append(type).append(" ")
-                    .identifier(recycleObject.getObjName()).append(";\r\n");
-        }
-        return sqlBuilder.toString();
+            return sqlBuilder.append("purge ").append(type).append(" ").identifier(i.getObjName()).toString();
+        }).collect(Collectors.toList())));
+        JdbcOperations jdbcOperations = session.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY);
+        jdbcOperations.execute((ConnectionCallback<Void>) con -> {
+            String schema = extensionPoint.getCurrentSchema(con);
+            try {
+                for (Entry<String, List<String>> entry : schema2Sqls.entrySet()) {
+                    if (!EMPTY_SCHEMA.equals(entry.getKey())) {
+                        extensionPoint.switchSchema(con, entry.getKey());
+                    }
+                    try (Statement statement = con.createStatement()) {
+                        for (String sql : entry.getValue()) {
+                            statement.execute(sql);
+                        }
+                    }
+                }
+            } finally {
+                if (StringUtils.isNotEmpty(schema)) {
+                    extensionPoint.switchSchema(con, schema);
+                }
+            }
+            return null;
+        });
     }
 
-    public String getPurgeAllSql() {
-        return "purge recyclebin;";
+    public void purgeAllObjects(@NonNull ConnectionSession session) {
+        session.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY).execute("purge recyclebin");
     }
 
     private SqlBuilder getBuilder(ConnectionSession session) {

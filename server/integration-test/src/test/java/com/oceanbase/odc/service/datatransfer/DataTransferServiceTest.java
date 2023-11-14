@@ -65,7 +65,7 @@ import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.plugin.task.api.datatransfer.dumper.AbstractOutputFile;
 import com.oceanbase.odc.plugin.task.api.datatransfer.dumper.DataFile;
-import com.oceanbase.odc.plugin.task.api.datatransfer.dumper.DumperOutput;
+import com.oceanbase.odc.plugin.task.api.datatransfer.dumper.ExportOutput;
 import com.oceanbase.odc.plugin.task.api.datatransfer.dumper.SchemaFile;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.CsvColumnMapping;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.CsvConfig;
@@ -125,23 +125,23 @@ public class DataTransferServiceTest extends ServiceTestEnv {
     @Test
     public void create_dumpSchemaAndDataForOracleMode_bothSchemaAndDataDumped() throws Exception {
         DataTransferTaskContext context = dataTransferService.create(BUCKET, getOracleDumpConfig(true, true));
-        Assert.assertNotNull(context.get(20, TimeUnit.SECONDS));
+        Assert.assertNotNull(context.get(30, TimeUnit.SECONDS));
 
-        DumperOutput dumperOutput = new DumperOutput(getDumpFile());
-        assertFileCountEquals(dumperOutput, 2);
-        assertObjectTypeIn(dumperOutput, new HashSet<>(Collections.singleton(ObjectType.TABLE)));
-        assertFileTypeMatchAll(dumperOutput, new HashSet<>(Arrays.asList(DataFile.class, SchemaFile.class)));
+        ExportOutput exportOutput = new ExportOutput(getDumpFile());
+        assertFileCountEquals(exportOutput, 2);
+        assertObjectTypeIn(exportOutput, new HashSet<>(Collections.singleton(ObjectType.TABLE)));
+        assertFileTypeMatchAll(exportOutput, new HashSet<>(Arrays.asList(DataFile.class, SchemaFile.class)));
     }
 
     @Test
     public void create_dumpSchemaForOracleMode_onlySchemaDumped() throws Exception {
         DataTransferTaskContext context = dataTransferService.create(BUCKET, getOracleDumpConfig(false, true));
-        Assert.assertNotNull(context.get(20, TimeUnit.SECONDS));
+        Assert.assertNotNull(context.get(30, TimeUnit.SECONDS));
 
-        DumperOutput dumperOutput = new DumperOutput(getDumpFile());
-        assertFileCountEquals(dumperOutput, 1);
-        assertObjectTypeIn(dumperOutput, new HashSet<>(Collections.singleton(ObjectType.TABLE)));
-        assertFileTypeMatchAll(dumperOutput, new HashSet<>(Collections.singletonList(SchemaFile.class)));
+        ExportOutput exportOutput = new ExportOutput(getDumpFile());
+        assertFileCountEquals(exportOutput, 1);
+        assertObjectTypeIn(exportOutput, new HashSet<>(Collections.singleton(ObjectType.TABLE)));
+        assertFileTypeMatchAll(exportOutput, new HashSet<>(Collections.singletonList(SchemaFile.class)));
     }
 
     @Test
@@ -149,7 +149,7 @@ public class DataTransferServiceTest extends ServiceTestEnv {
         DataTransferConfig config = getOracleDumpConfig(false, true);
         config.setMergeSchemaFiles(true);
         DataTransferTaskContext context = dataTransferService.create(BUCKET, config);
-        Assert.assertNotNull(context.get(20, TimeUnit.SECONDS));
+        Assert.assertNotNull(context.get(30, TimeUnit.SECONDS));
 
         File target = new File(fileManager
                 .getWorkingDir(TaskType.EXPORT, DataTransferService.CLIENT_DIR_PREFIX + BUCKET).getAbsolutePath());
@@ -160,45 +160,45 @@ public class DataTransferServiceTest extends ServiceTestEnv {
     @Test
     public void create_dumpDataForOracleMode_onlyDataDumped() throws Exception {
         DataTransferTaskContext context = dataTransferService.create(BUCKET, getOracleDumpConfig(true, false));
-        Assert.assertNotNull(context.get(20, TimeUnit.SECONDS));
+        Assert.assertNotNull(context.get(30, TimeUnit.SECONDS));
 
-        DumperOutput dumperOutput = new DumperOutput(getDumpFile());
-        assertFileCountEquals(dumperOutput, 1);
-        assertObjectTypeIn(dumperOutput, new HashSet<>(Collections.singleton(ObjectType.TABLE)));
-        assertFileTypeMatchAll(dumperOutput, new HashSet<>(Collections.singletonList(DataFile.class)));
+        ExportOutput exportOutput = new ExportOutput(getDumpFile());
+        assertFileCountEquals(exportOutput, 1);
+        assertObjectTypeIn(exportOutput, new HashSet<>(Collections.singleton(ObjectType.TABLE)));
+        assertFileTypeMatchAll(exportOutput, new HashSet<>(Collections.singletonList(DataFile.class)));
     }
 
     @Test
     public void create_dumpSchemaAndDataForMysqlMode_bothSchemaAndDataDumped() throws Exception {
         DataTransferTaskContext context = dataTransferService.create(BUCKET, getMysqlDumpConfig(true, true));
-        Assert.assertNotNull(context.get(20, TimeUnit.SECONDS));
+        Assert.assertNotNull(context.get(30, TimeUnit.SECONDS));
 
-        DumperOutput dumperOutput = new DumperOutput(getDumpFile());
-        assertFileCountEquals(dumperOutput, 2);
-        assertObjectTypeIn(dumperOutput, new HashSet<>(Collections.singleton(ObjectType.TABLE)));
-        assertFileTypeMatchAll(dumperOutput, new HashSet<>(Arrays.asList(DataFile.class, SchemaFile.class)));
+        ExportOutput exportOutput = new ExportOutput(getDumpFile());
+        assertFileCountEquals(exportOutput, 2);
+        assertObjectTypeIn(exportOutput, new HashSet<>(Collections.singleton(ObjectType.TABLE)));
+        assertFileTypeMatchAll(exportOutput, new HashSet<>(Arrays.asList(DataFile.class, SchemaFile.class)));
     }
 
     @Test
     public void create_dumpSchemaForMysqlMode_onlySchemaDumped() throws Exception {
         DataTransferTaskContext context = dataTransferService.create(BUCKET, getMysqlDumpConfig(false, true));
-        Assert.assertNotNull(context.get(20, TimeUnit.SECONDS));
+        Assert.assertNotNull(context.get(30, TimeUnit.SECONDS));
 
-        DumperOutput dumperOutput = new DumperOutput(getDumpFile());
-        assertFileCountEquals(dumperOutput, 1);
-        assertObjectTypeIn(dumperOutput, new HashSet<>(Collections.singleton(ObjectType.TABLE)));
-        assertFileTypeMatchAll(dumperOutput, new HashSet<>(Collections.singletonList(SchemaFile.class)));
+        ExportOutput exportOutput = new ExportOutput(getDumpFile());
+        assertFileCountEquals(exportOutput, 1);
+        assertObjectTypeIn(exportOutput, new HashSet<>(Collections.singleton(ObjectType.TABLE)));
+        assertFileTypeMatchAll(exportOutput, new HashSet<>(Collections.singletonList(SchemaFile.class)));
     }
 
     @Test
     public void create_dumpDataForMysqlMode_onlyDataDumped() throws Exception {
         DataTransferTaskContext context = dataTransferService.create(BUCKET, getMysqlDumpConfig(true, false));
-        Assert.assertNotNull(context.get(20, TimeUnit.SECONDS));
+        Assert.assertNotNull(context.get(30, TimeUnit.SECONDS));
 
-        DumperOutput dumperOutput = new DumperOutput(getDumpFile());
-        assertFileCountEquals(dumperOutput, 1);
-        assertObjectTypeIn(dumperOutput, new HashSet<>(Collections.singleton(ObjectType.TABLE)));
-        assertFileTypeMatchAll(dumperOutput, new HashSet<>(Collections.singletonList(DataFile.class)));
+        ExportOutput exportOutput = new ExportOutput(getDumpFile());
+        assertFileCountEquals(exportOutput, 1);
+        assertObjectTypeIn(exportOutput, new HashSet<>(Collections.singleton(ObjectType.TABLE)));
+        assertFileTypeMatchAll(exportOutput, new HashSet<>(Collections.singletonList(DataFile.class)));
     }
 
     @Test
@@ -208,7 +208,7 @@ public class DataTransferServiceTest extends ServiceTestEnv {
 
         DataTransferTaskContext context = dataTransferService.create(BUCKET,
                 getOracleLoadConfig(Collections.singletonList(dumpFile.getAbsolutePath()), false, true, true));
-        Assert.assertNotNull(context.get(20, TimeUnit.SECONDS));
+        Assert.assertNotNull(context.get(30, TimeUnit.SECONDS));
         assertOracleModeTableExists();
         assertOracleModeTableCountEquals(2);
     }
@@ -220,7 +220,7 @@ public class DataTransferServiceTest extends ServiceTestEnv {
 
         DataTransferTaskContext context = dataTransferService.create(BUCKET,
                 getOracleLoadConfig(Collections.singletonList(dumpFile.getAbsolutePath()), false, false, true));
-        Assert.assertNotNull(context.get(20, TimeUnit.SECONDS));
+        Assert.assertNotNull(context.get(30, TimeUnit.SECONDS));
         assertOracleModeTableExists();
         assertOracleModeTableCountEquals(0);
     }
@@ -232,7 +232,7 @@ public class DataTransferServiceTest extends ServiceTestEnv {
 
         DataTransferTaskContext context = dataTransferService.create(BUCKET,
                 getMysqlLoadConfig(Collections.singletonList(dumpFile.getAbsolutePath()), false, true, true));
-        Assert.assertNotNull(context.get(30, TimeUnit.SECONDS));
+        Assert.assertNotNull(context.get(20, TimeUnit.SECONDS));
         assertMysqlModeTableExists();
         assertMysqlModeTableCountEquals(2);
     }
@@ -244,7 +244,7 @@ public class DataTransferServiceTest extends ServiceTestEnv {
 
         DataTransferTaskContext context = dataTransferService.create(BUCKET,
                 getMysqlLoadConfig(Collections.singletonList(dumpFile.getAbsolutePath()), false, false, true));
-        Assert.assertNotNull(context.get(30, TimeUnit.SECONDS));
+        Assert.assertNotNull(context.get(20, TimeUnit.SECONDS));
         assertMysqlModeTableExists();
         assertMysqlModeTableCountEquals(0);
     }
@@ -256,7 +256,7 @@ public class DataTransferServiceTest extends ServiceTestEnv {
 
         DataTransferTaskContext context = dataTransferService.create(BUCKET,
                 getOracleLoadConfig(Collections.singletonList(target.getAbsolutePath()), true, true, false));
-        Assert.assertNotNull(context.get(20, TimeUnit.SECONDS));
+        Assert.assertNotNull(context.get(30, TimeUnit.SECONDS));
         assertOracleModeTableExists();
         assertOracleModeTableCountEquals(4);
     }
@@ -268,7 +268,7 @@ public class DataTransferServiceTest extends ServiceTestEnv {
 
         DataTransferTaskContext context = dataTransferService.create(BUCKET,
                 getMysqlLoadConfig(Collections.singletonList(target.getAbsolutePath()), true, true, false));
-        Assert.assertNotNull(context.get(20, TimeUnit.SECONDS));
+        Assert.assertNotNull(context.get(30, TimeUnit.SECONDS));
         assertMysqlModeTableExists();
         assertMysqlModeTableCountEquals(4);
     }
@@ -278,7 +278,7 @@ public class DataTransferServiceTest extends ServiceTestEnv {
         DataTransferConfig config = getOracleDumpConfig(true, true);
         config.setSysUser(oracleConnConfig.getSysTenantUsername());
         DataTransferTaskContext context = dataTransferService.create(BUCKET, config);
-        Assert.assertNotNull(context.get(20, TimeUnit.SECONDS));
+        Assert.assertNotNull(context.get(30, TimeUnit.SECONDS));
     }
 
     @Test
@@ -287,7 +287,7 @@ public class DataTransferServiceTest extends ServiceTestEnv {
         config.setSysUser(oracleConnConfig.getSysTenantUsername());
         config.setSysPassword(oracleConnConfig.getSysTenantPassword());
         DataTransferTaskContext context = dataTransferService.create(BUCKET, config);
-        Assert.assertNotNull(context.get(20, TimeUnit.SECONDS));
+        Assert.assertNotNull(context.get(30, TimeUnit.SECONDS));
     }
 
     @Test
@@ -296,7 +296,7 @@ public class DataTransferServiceTest extends ServiceTestEnv {
         config.setSysUser(oracleConnConfig.getSysTenantUsername());
         config.setSysPassword("abcde");
         DataTransferTaskContext context = dataTransferService.create(BUCKET, config);
-        Assert.assertNotNull(context.get(20, TimeUnit.SECONDS));
+        Assert.assertNotNull(context.get(30, TimeUnit.SECONDS));
     }
 
     @Test
@@ -354,7 +354,7 @@ public class DataTransferServiceTest extends ServiceTestEnv {
             config = getOracleDumpConfig(true, true);
         }
         DataTransferTaskContext context = dataTransferService.create(BUCKET, config);
-        Assert.assertNotNull(context.get(30, TimeUnit.SECONDS));
+        Assert.assertNotNull(context.get(20, TimeUnit.SECONDS));
         File dumpFile = getDumpFile();
         File returnVal = copyFile(new FileInputStream(dumpFile), "zip");
         FileUtils.forceDelete(dumpFile);
@@ -438,9 +438,9 @@ public class DataTransferServiceTest extends ServiceTestEnv {
         }
     }
 
-    private void assertFileTypeMatchAll(DumperOutput dumperOutput,
+    private void assertFileTypeMatchAll(ExportOutput exportOutput,
             Set<Class<? extends AbstractOutputFile>> fileClasses) {
-        List<AbstractOutputFile> outputFileList = dumperOutput.getAllDumpFiles();
+        List<AbstractOutputFile> outputFileList = exportOutput.getAllDumpFiles();
         Set<Class<? extends AbstractOutputFile>> matched = new HashSet<>();
         outputFileList.forEach(f -> {
             Assert.assertTrue(fileClasses.contains(f.getClass()));
@@ -449,13 +449,13 @@ public class DataTransferServiceTest extends ServiceTestEnv {
         Assert.assertEquals(matched, fileClasses);
     }
 
-    private void assertFileCountEquals(DumperOutput dumperOutput, int count) {
-        List<AbstractOutputFile> outputFileList = dumperOutput.getAllDumpFiles();
+    private void assertFileCountEquals(ExportOutput exportOutput, int count) {
+        List<AbstractOutputFile> outputFileList = exportOutput.getAllDumpFiles();
         Assert.assertEquals(count, outputFileList.size());
     }
 
-    private void assertObjectTypeIn(DumperOutput dumperOutput, Set<ObjectType> objectTypeSet) {
-        List<AbstractOutputFile> outputFileList = dumperOutput.getAllDumpFiles();
+    private void assertObjectTypeIn(ExportOutput exportOutput, Set<ObjectType> objectTypeSet) {
+        List<AbstractOutputFile> outputFileList = exportOutput.getAllDumpFiles();
         outputFileList.forEach(f -> Assert.assertTrue(objectTypeSet.contains(f.getObjectType())));
     }
 

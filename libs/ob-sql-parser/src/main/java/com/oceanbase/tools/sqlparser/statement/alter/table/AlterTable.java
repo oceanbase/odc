@@ -42,6 +42,7 @@ public class AlterTable extends BaseStatement {
 
     private String userVariable;
     private String schema;
+    private boolean external;
     private final String tableName;
     private final List<AlterTableAction> alterTableActions;
 
@@ -60,7 +61,11 @@ public class AlterTable extends BaseStatement {
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
-        builder.append("ALTER TABLE");
+        if (this.external) {
+            builder.append("ALTER EXTERNAL TABLE");
+        } else {
+            builder.append("ALTER TABLE");
+        }
         if (this.schema != null) {
             builder.append(" ").append(this.schema).append(".").append(this.tableName);
         } else if (this.tableName != null) {

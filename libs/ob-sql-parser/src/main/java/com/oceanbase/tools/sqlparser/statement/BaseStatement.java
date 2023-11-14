@@ -33,22 +33,48 @@ public abstract class BaseStatement implements Statement {
 
     private final ParserRuleContext ruleNode;
     private final TerminalNode terminalNode;
+    private final ParserRuleContext beginRule;
+    private final TerminalNode beginNode;
+    private final ParserRuleContext endRule;
+    private final TerminalNode endNode;
 
     protected BaseStatement() {
-        this(null, null);
+        this(null, null, null, null, null, null);
     }
 
     protected BaseStatement(TerminalNode terminalNode) {
-        this(null, terminalNode);
+        this(null, terminalNode, null, null, null, null);
     }
 
     protected BaseStatement(ParserRuleContext ruleNode) {
-        this(ruleNode, null);
+        this(ruleNode, null, null, null, null, null);
     }
 
-    protected BaseStatement(ParserRuleContext ruleNode, TerminalNode terminalNode) {
+    protected BaseStatement(ParserRuleContext beginRule, ParserRuleContext endRule) {
+        this(null, null, beginRule, endRule, null, null);
+    }
+
+    protected BaseStatement(ParserRuleContext beginRule, TerminalNode endNode) {
+        this(null, null, beginRule, null, null, endNode);
+    }
+
+    protected BaseStatement(TerminalNode beginNode, TerminalNode endNode) {
+        this(null, null, null, null, beginNode, endNode);
+    }
+
+    protected BaseStatement(TerminalNode beginNode, ParserRuleContext endRule) {
+        this(null, null, null, endRule, beginNode, null);
+    }
+
+    private BaseStatement(ParserRuleContext ruleNode, TerminalNode terminalNode,
+            ParserRuleContext beginRule, ParserRuleContext endRule,
+            TerminalNode beginNode, TerminalNode endNode) {
         this.ruleNode = ruleNode;
         this.terminalNode = terminalNode;
+        this.endNode = endNode;
+        this.endRule = endRule;
+        this.beginNode = beginNode;
+        this.beginRule = beginRule;
     }
 
     @Override
@@ -67,7 +93,21 @@ public abstract class BaseStatement implements Statement {
         } else if (this.terminalNode != null) {
             return this.terminalNode.getText();
         }
-        return null;
+        CharStream charStream = null;
+        if (this.beginNode != null) {
+            charStream = this.beginNode.getSymbol().getTokenSource().getInputStream();
+        } else if (this.beginRule != null) {
+            Token start = this.beginRule.getStart();
+            if (start != null) {
+                charStream = start.getTokenSource().getInputStream();
+            }
+        }
+        int startIndex = getStart();
+        int endIndex = getStop();
+        if (startIndex == -1 || endIndex == -1 || charStream == null) {
+            return null;
+        }
+        return charStream.getText(Interval.of(startIndex, endIndex));
     }
 
     @Override
@@ -76,6 +116,13 @@ public abstract class BaseStatement implements Statement {
             return this.ruleNode.getStart().getStartIndex();
         } else if (this.terminalNode != null) {
             return this.terminalNode.getSymbol().getStartIndex();
+        } else if (this.beginNode != null) {
+            return this.beginNode.getSymbol().getStartIndex();
+        } else if (this.beginRule != null) {
+            Token start = this.beginRule.getStart();
+            if (start != null) {
+                return start.getStartIndex();
+            }
         }
         return -1;
     }
@@ -86,6 +133,13 @@ public abstract class BaseStatement implements Statement {
             return this.ruleNode.getStop().getStopIndex();
         } else if (this.terminalNode != null) {
             return this.terminalNode.getSymbol().getStopIndex();
+        } else if (this.endNode != null) {
+            return this.endNode.getSymbol().getStopIndex();
+        } else if (this.endRule != null) {
+            Token end = this.endRule.getStop();
+            if (end != null) {
+                return end.getStopIndex();
+            }
         }
         return -1;
     }
@@ -100,6 +154,13 @@ public abstract class BaseStatement implements Statement {
             return offset.getLine();
         } else if (this.terminalNode != null) {
             return this.terminalNode.getSymbol().getLine();
+        } else if (this.beginNode != null) {
+            return this.beginNode.getSymbol().getLine();
+        } else if (this.beginRule != null) {
+            Token start = this.beginRule.getStart();
+            if (start != null) {
+                return start.getLine();
+            }
         }
         return -1;
     }
@@ -114,6 +175,13 @@ public abstract class BaseStatement implements Statement {
             return offset.getCharPositionInLine();
         } else if (this.terminalNode != null) {
             return this.terminalNode.getSymbol().getCharPositionInLine();
+        } else if (this.beginNode != null) {
+            return this.beginNode.getSymbol().getCharPositionInLine();
+        } else if (this.beginRule != null) {
+            Token start = this.beginRule.getStart();
+            if (start != null) {
+                return start.getCharPositionInLine();
+            }
         }
         return -1;
     }
