@@ -42,7 +42,6 @@ public class ConnectionSessionConstants {
      * the form of attributes, this is the key
      */
     public static final String CURRENT_SCHEMA_KEY = "CURRENT_SCHEMA";
-
     /**
      * OceanBase special, tenant name
      */
@@ -123,11 +122,6 @@ public class ConnectionSessionConstants {
      * Column meta info accessor stored in connectionSession
      */
     public static final String COLUMN_ACCESSOR_KEY = "DATASOURCE_COLUMN_ACCESSOR";
-    /**
-     * Column info cache stored in connectionSession
-     */
-    public static String TABLE_COLUMN_CACHE = "TABLE_COLUMN_CACHE";
-    public static String VIEW_COLUMN_CACHE = "VIEW_COLUMN_CACHE";
     /**
      * BinaryContentMetaData cache stored in connectionSession
      */

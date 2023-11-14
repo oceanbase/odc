@@ -52,7 +52,6 @@ import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.LimitMetric;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
-import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.shared.exception.InternalServerError;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.core.shared.exception.OverLimitException;
