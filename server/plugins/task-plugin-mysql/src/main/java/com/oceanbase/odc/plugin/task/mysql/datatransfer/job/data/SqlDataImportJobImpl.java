@@ -33,6 +33,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
@@ -67,7 +68,8 @@ public class SqlDataImportJobImpl extends AbstractJob {
         List<String> preSqls = new ArrayList<>();
         preSqls.add(Constants.DISABLE_FK);
         if (transferConfig.isTruncateTableBeforeImport()) {
-            preSqls.add(String.format(Constants.TRUNCATE_PATTERN, getObject().getSchema(), getObject().getName()));
+            preSqls.add(String.format(Constants.TRUNCATE_FORMAT, getObject().getSchema(),
+                    StringUtils.quoteMysqlIdentifier(getObject().getName())));
         }
         executeWithoutResult(preSqls);
 

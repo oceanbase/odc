@@ -40,8 +40,8 @@ import com.oceanbase.odc.plugin.task.mysql.datatransfer.common.Constants;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.common.DataSourceManager;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.data.SqlDataImportJobImpl;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.data.SqlFileImportJobImpl;
-import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.schema.SqlSchemaExportJobImpl;
-import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.schema.SqlSchemaImportJobImpl;
+import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.schema.MySQLSchemaExportJobImpl;
+import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.schema.MySQLSchemaImportJobImpl;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.resource.LocalResource;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.resource.LocalResourceFinder;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.resource.Resource;
@@ -76,7 +76,7 @@ public class TransferJobFactory {
                     .forEach(r -> {
                         ObjectResult object = new ObjectResult(transferConfig.getSchemaName(), r.getObjectName(),
                                 r.getObjectType());
-                        AbstractJob job = new SqlSchemaImportJobImpl(object, transferConfig, r);
+                        AbstractJob job = new MySQLSchemaImportJobImpl(object, transferConfig, r);
                         jobs.add(job);
                     });
             return jobs;
@@ -85,7 +85,7 @@ public class TransferJobFactory {
          * export
          */
         List<DataTransferObject> objects;
-        if (!transferConfig.isExportAllObjects()) {
+        if (transferConfig.isExportAllObjects()) {
             objects = queryTransferObjects();
         } else {
             objects = new ArrayList<>(transferConfig.getExportDbObjects());
@@ -93,7 +93,7 @@ public class TransferJobFactory {
         objects.forEach(o -> {
             ObjectResult object = new ObjectResult(transferConfig.getSchemaName(), o.getObjectName(),
                     o.getDbObjectType().getName());
-            AbstractJob job = new SqlSchemaExportJobImpl(object, transferConfig, workingDir);
+            AbstractJob job = new MySQLSchemaExportJobImpl(object, transferConfig, workingDir);
             jobs.add(job);
         });
         return jobs;

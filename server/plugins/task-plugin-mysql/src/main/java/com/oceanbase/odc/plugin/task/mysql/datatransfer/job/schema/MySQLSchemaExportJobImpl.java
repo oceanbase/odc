@@ -38,12 +38,12 @@ import com.oceanbase.odc.plugin.task.mysql.datatransfer.common.DataSourceManager
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.AbstractJob;
 import com.oceanbase.tools.loaddump.common.model.ObjectStatus.Status;
 
-public class SqlSchemaExportJobImpl extends AbstractJob {
+public class MySQLSchemaExportJobImpl extends AbstractJob {
 
     private final DataTransferConfig transferConfig;
     private final File workingDir;
 
-    public SqlSchemaExportJobImpl(ObjectResult object, DataTransferConfig transferConfig, File workingDir) {
+    public MySQLSchemaExportJobImpl(ObjectResult object, DataTransferConfig transferConfig, File workingDir) {
         super(object);
         this.transferConfig = transferConfig;
         this.workingDir = workingDir;
@@ -95,7 +95,8 @@ public class SqlSchemaExportJobImpl extends AbstractJob {
     }
 
     private String assembleDropStatement() {
-        return String.format(Constants.DROP_OBJECT_PATTERN, object.getType(), object.getSchema(), object.getName());
+        return String.format(Constants.DROP_OBJECT_FORMAT, object.getType(),
+                StringUtils.quoteMysqlIdentifier(object.getName()));
     }
 
     private String queryDdlForDBObject() throws SQLException {
@@ -103,9 +104,18 @@ public class SqlSchemaExportJobImpl extends AbstractJob {
         try (Connection conn = ds.getConnection()) {
             switch (object.getType()) {
                 case "TABLE":
-                    return new MySQLTableExtension().getDetail(conn, object.getSchema(), object.getName()).getDDL();
+                    String ddl =
+                            new MySQLTableExtension().getDetail(conn, object.getSchema(), object.getName()).getDDL();
+                    if (!ddl.endsWith(";")) {
+                        ddl += ";";
+                    }
+                    return ddl;
                 case "VIEW":
-                    return new MySQLViewExtension().getDetail(conn, object.getSchema(), object.getName()).getDdl();
+                    ddl = new MySQLViewExtension().getDetail(conn, object.getSchema(), object.getName()).getDdl();
+                    if (!ddl.endsWith(";")) {
+                        ddl += ";";
+                    }
+                    return ddl;
                 case "FUNCTION":
                     return new MySQLFunctionExtension().getDetail(conn, object.getSchema(), object.getName()).getDdl();
                 case "PROCEDURE":

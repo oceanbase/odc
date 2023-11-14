@@ -46,13 +46,13 @@ import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.loaddump.common.model.ObjectStatus.Status;
 
-public class SqlSchemaImportJobImpl extends AbstractJob {
+public class MySQLSchemaImportJobImpl extends AbstractJob {
     private static final Logger LOGGER = LoggerFactory.getLogger("DataTransferLogger");
 
     private final DataTransferConfig transferConfig;
     private final Resource resource;
 
-    public SqlSchemaImportJobImpl(ObjectResult object, DataTransferConfig transferConfig, Resource resource) {
+    public MySQLSchemaImportJobImpl(ObjectResult object, DataTransferConfig transferConfig, Resource resource) {
         super(object);
         this.transferConfig = transferConfig;
         this.resource = resource;
@@ -73,8 +73,8 @@ public class SqlSchemaImportJobImpl extends AbstractJob {
             preSqls.add(Constants.DISABLE_FK);
         }
         if (transferConfig.isReplaceSchemaWhenExists()) {
-            preSqls.add(String.format(Constants.DROP_OBJECT_PATTERN, object.getType(), object.getSchema(),
-                    object.getName()));
+            preSqls.add(String.format(Constants.DROP_OBJECT_FORMAT, object.getType(),
+                    StringUtils.quoteMysqlIdentifier(object.getName())));
         }
         executeWithoutResult(preSqls);
 

@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URL;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -45,6 +46,7 @@ import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.base.MoreObjects;
 import com.google.common.base.Verify;
 import com.oceanbase.odc.common.trace.TraceContextHolder;
 import com.oceanbase.odc.core.datamasking.config.MaskConfig;
@@ -59,6 +61,7 @@ import com.oceanbase.odc.core.shared.model.TableIdentity;
 import com.oceanbase.odc.plugin.task.api.datatransfer.DataTransferJob;
 import com.oceanbase.odc.plugin.task.api.datatransfer.dumper.DumpDBObject;
 import com.oceanbase.odc.plugin.task.api.datatransfer.dumper.ExportOutput;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.CsvConfig;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConstants;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferFormat;
@@ -83,7 +86,10 @@ import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
+import com.oceanbase.tools.loaddump.common.model.DumpParameter;
+import com.oceanbase.tools.loaddump.common.model.Manifest;
 import com.oceanbase.tools.loaddump.common.model.ObjectStatus.Status;
+import com.oceanbase.tools.loaddump.utils.SerializeUtils;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -117,6 +123,7 @@ public class DataTransferTask implements Callable<DataTransferTaskResult> {
             List<URL> inputs = Collections.emptyList();
             if (config.getTransferType() == DataTransferType.IMPORT) {
                 inputs = copyInputFiles();
+                loadManifest();
             } else {
                 setMaskConfig();
             }
@@ -133,6 +140,12 @@ public class DataTransferTask implements Callable<DataTransferTaskResult> {
                 clearWorkingDir();
             } else {
                 handleOutput(result);
+                if (config.getDataTransferFormat() != DataTransferFormat.SQL) {
+                    // save csv config to MANIFEST
+                    Path manifest = Paths.get(workingDir.getPath(), "data", ExportOutput.MANIFEST);
+                    SerializeUtils.serializeObjectByKryo(new Manifest(getDumpParameterForManifest()),
+                            manifest.toString());
+                }
             }
 
             return result;
@@ -172,6 +185,22 @@ public class DataTransferTask implements Callable<DataTransferTaskResult> {
             return Collections.emptyList();
         } else {
             return copyImportScripts(importFileNames, config.getDataTransferFormat(), workingDir);
+        }
+    }
+
+    private void loadManifest() {
+        if (config.getDataTransferFormat() == DataTransferFormat.SQL || !config.isCompressed()) {
+            return;
+        }
+        // load csv config from MANIFEST
+        try {
+            Manifest manifest = SerializeUtils.deserializeObjectByKryo(
+                    Paths.get(workingDir.getPath(), "data", ExportOutput.MANIFEST).toString());
+            replaceManifestIntoParameter(manifest);
+        } catch (Exception e) {
+            LOGGER.info("Failed to deserialize MANIFEST.bin, will use default csv config. Reason: {}",
+                    e.getMessage());
+            config.setCsvConfig(new CsvConfig());
         }
     }
 
@@ -366,6 +395,37 @@ public class DataTransferTask implements Callable<DataTransferTaskResult> {
                 throw new RuntimeException(e);
             }
         }
+    }
+
+    private void replaceManifestIntoParameter(Manifest manifest) {
+        CsvConfig csvConfig = new CsvConfig();
+        config.setCsvConfig(csvConfig);
+        if (Objects.isNull(manifest)) {
+            LOGGER.warn("Transferring will continue with default csv config.");
+            return;
+        }
+        csvConfig.setSkipHeader(manifest.isSkipHeader());
+        csvConfig.setColumnSeparator(manifest.getColumnSeparator());
+        csvConfig.setColumnDelimiter(manifest.getColumnDelimiter());
+        csvConfig.setLineSeparator(manifest.getLineSeparator());
+        csvConfig.setSkipHeader(manifest.isSkipHeader());
+        csvConfig.setBlankToNull(StringUtils.equalsIgnoreCase(manifest.getNullString(), "null"));
+    }
+
+    private DumpParameter getDumpParameterForManifest() {
+        CsvConfig csvConfig = MoreObjects.firstNonNull(config.getCsvConfig(), new CsvConfig());
+        DumpParameter dumpParameter = new DumpParameter();
+        dumpParameter.setFilePath(workingDir.getPath());
+        dumpParameter.setColumnDelimiter(csvConfig.getColumnDelimiter());
+        dumpParameter.setColumnSeparator(csvConfig.getColumnSeparator());
+        dumpParameter.setLineSeparator(csvConfig.getLineSeparator());
+        dumpParameter.setIgnoreEmptyLine(true);
+        dumpParameter.setEscapeCharacter('\\');
+        dumpParameter.setEmptyString("");
+        if (csvConfig.isBlankToNull()) {
+            dumpParameter.setNullString("null");
+        }
+        return dumpParameter;
     }
 
     @AllArgsConstructor

@@ -42,11 +42,11 @@ public class Constants {
 
     public static final String ENABLE_FK = "SET FOREIGN_KEY_CHECKS=1;";
 
-    public static final String DROP_OBJECT_PATTERN = "DROP %s if exists %s.%s;\n";
+    public static final String DROP_OBJECT_FORMAT = "DROP %s if exists %s;\n";
 
-    public static final String TRUNCATE_PATTERN = "TRUNCATE TABLE %s.%s;\n";
+    public static final String TRUNCATE_FORMAT = "TRUNCATE TABLE %s.%s;\n";
 
-    public static final String DEFAULT_PL_DELIMITER = "$$\n";
+    public static final String DEFAULT_PL_DELIMITER = "\n$$\n";
 
     public static final String PL_DELIMITER_STMT = "DELIMITER " + DEFAULT_PL_DELIMITER;
 
