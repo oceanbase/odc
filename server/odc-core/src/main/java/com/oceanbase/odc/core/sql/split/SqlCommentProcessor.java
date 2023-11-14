@@ -18,7 +18,7 @@ package com.oceanbase.odc.core.sql.split;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -101,7 +101,7 @@ public class SqlCommentProcessor {
             boolean preserveFormat,
             boolean preserveSingleComments,
             boolean preserveMultiComments,
-            String charset) throws UnsupportedEncodingException {
+            Charset charset) {
         return new SqlStatementIterator(in, dialectType, preserveFormat, preserveSingleComments, preserveMultiComments,
                 charset);
     }
@@ -628,7 +628,7 @@ public class SqlCommentProcessor {
                 boolean preserveFormat,
                 boolean preserveSingleComments,
                 boolean preserveMultiComments,
-                String charset) throws UnsupportedEncodingException {
+                Charset charset) {
             this.reader = new BufferedReader(new InputStreamReader(input, charset));
             this.dialectType = dialectType;
             this.processor =

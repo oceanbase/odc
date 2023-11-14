@@ -16,6 +16,7 @@
 
 package com.oceanbase.odc.plugin.task.mysql.datatransfer.job.data;
 
+import java.nio.charset.Charset;
 import java.sql.Connection;
 import java.sql.Statement;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -52,8 +53,8 @@ public class SqlFileImportJobImpl extends AbstractJob {
         DataSource ds = DataSourceManager.getInstance().get(transferConfig.getConnectionInfo());
         String charset = transferConfig.getEncoding().getAlias();
 
-        try (SqlCommentProcessor.SqlStatementIterator iterator =
-                SqlCommentProcessor.iterator(resource.openInputStream(), dialectType, true, true, true, charset);
+        try (SqlCommentProcessor.SqlStatementIterator iterator = SqlCommentProcessor
+                .iterator(resource.openInputStream(), dialectType, true, true, true, Charset.forName(charset));
                 Connection conn = ds.getConnection();
                 Statement stmt = conn.createStatement()) {
             while (!Thread.currentThread().isInterrupted() && iterator.hasNext()) {
