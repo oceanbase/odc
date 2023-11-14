@@ -305,7 +305,7 @@ public class ScheduleService {
 
         // TODO throw
         try {
-            if (!quartzJobService.checkExists(jobKey)) {
+            if (quartzJobService.checkExists(jobKey)) {
                 quartzJobService.deleteJob(jobKey);
             }
             CreateQuartzJobReq req = new CreateQuartzJobReq();
