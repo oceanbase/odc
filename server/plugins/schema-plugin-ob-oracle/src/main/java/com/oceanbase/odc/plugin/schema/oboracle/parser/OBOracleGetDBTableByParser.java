@@ -83,7 +83,7 @@ public class OBOracleGetDBTableByParser implements GetDBTableByParser {
     private List<DBTableConstraint> constraints = new ArrayList<>();
     private List<DBTableIndex> indexes = new ArrayList<>();
     @Getter
-    private Map<String, String> indexName2DDL = new HashMap<>();
+    private Map<String, String> indexName2Ddl = new HashMap<>();
 
     public OBOracleGetDBTableByParser(@NonNull Connection connection, @NonNull String schemaName,
             @NonNull String tableName) {
@@ -316,7 +316,7 @@ public class OBOracleGetDBTableByParser implements GetDBTableByParser {
                         + "') as DDL from dual";
                 JdbcOperationsUtil.getJdbcOperations(connection).query(getIndexDDLSql, (rs) -> {
                     String idxDDL = rs.getString("DDL");
-                    this.indexName2DDL.put(idx.getName(), idxDDL);
+                    this.indexName2Ddl.put(idx.getName(), idxDDL);
                     CreateIndex createIndexStmt = parseIndexDDL(idxDDL);
                     idx.setGlobal(
                             Objects.nonNull(createIndexStmt.getIndexOptions()) ? createIndexStmt.getIndexOptions()

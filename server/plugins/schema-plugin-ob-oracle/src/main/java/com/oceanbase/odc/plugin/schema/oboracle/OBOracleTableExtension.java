@@ -124,7 +124,7 @@ public class OBOracleTableExtension extends OBMySQLTableExtension {
             if (index.getType() == DBIndexType.UNIQUE || index.getPrimary()) {
                 continue;
             }
-            String indexDdl = parser.getIndexName2DDL().get(index.getName());
+            String indexDdl = parser.getIndexName2Ddl().get(index.getName());
             if (StringUtils.isNotBlank(indexDdl)) {
                 ddl.append("\n").append(indexDdl);
             }
