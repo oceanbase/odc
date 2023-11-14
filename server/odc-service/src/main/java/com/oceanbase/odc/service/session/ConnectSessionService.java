@@ -285,7 +285,6 @@ public class ConnectSessionService {
         if (!Objects.equals(ConnectionSessionUtil.getUserId(session), authenticationFacade.currentUserId())) {
             throw new NotFoundException(ResourceType.ODC_SESSION, "ID", sessionId);
         }
-        checkPermission(session);
         connectionSessionManager.cancelExpire(session);
         return session;
     }
@@ -361,14 +360,6 @@ public class ConnectSessionService {
                 ConnectionSessionUtil.setRuleSetId(connectionSession, optional.get().getRulesetId());
             }
         }
-    }
-
-    private void checkPermission(ConnectionSession session) {
-        // Only allow access to sessions created by the user himself/herself
-        if (ConnectionSessionUtil.getUserId(session) == authenticationFacade.currentUserId()) {
-            return;
-        }
-        throw new BadRequestException(ErrorCodes.UnauthorizedSessionAccess, null, "Unauthorized");
     }
 
     private ConnectionSession getWithCreatorCheck(@NonNull String sessionId) {
