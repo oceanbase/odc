@@ -73,7 +73,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class MySQLTransferServiceTest extends ServiceTestEnv {
     private static final String BUCKET = UUID.randomUUID().toString().replace("-", "").toUpperCase();
-    private static final String TEST_TABLE_NAME = "LOADER_DUMPER_TEST";
+    private static final String TEST_TABLE_NAME = "loader_dumper_test";
     private final Long connectionId = 1L;
     private ConnectionConfig connectionConfig;
 
@@ -89,13 +89,13 @@ public class MySQLTransferServiceTest extends ServiceTestEnv {
         FileUtils.forceDelete(fileManager.getWorkingDir(TaskType.IMPORT, null));
         connectionConfig = TestConnectionUtil.getTestConnectionConfig(ConnectType.from(DialectType.MYSQL));
         connectionConfig.setId(connectionId);
+        setUpEnv();
         Mockito.when(connectionService.getForConnect(connectionId)).thenReturn(connectionConfig);
         Mockito.when(connectionService.getForConnectionSkipPermissionCheck(connectionId)).thenReturn(connectionConfig);
     }
 
     @Test
     public void create_dumpSchema_onlySchemaDumped() throws Exception {
-        setUpEnv();
         DataTransferTaskContext context =
                 dataTransferService.create(BUCKET, getDumpConfig(connectionConfig.defaultSchema(), false, true));
         Assert.assertNotNull(context.get(60, TimeUnit.SECONDS));
@@ -108,7 +108,6 @@ public class MySQLTransferServiceTest extends ServiceTestEnv {
 
     @Test
     public void create_dumpSchema_onlySchemaDumped_mergeSchemaFiles() throws Exception {
-        setUpEnv();
         DataTransferConfig config = getDumpConfig(connectionConfig.defaultSchema(), false, true);
         config.setMergeSchemaFiles(true);
         DataTransferTaskContext context = dataTransferService.create(BUCKET, config);
@@ -122,7 +121,6 @@ public class MySQLTransferServiceTest extends ServiceTestEnv {
 
     @Test
     public void create_loadSchema_schemaLoaded() throws Exception {
-        setUpEnv();
         File dumpFile = dumpSchemaForLoad(DialectType.MYSQL);
         assertTableNotExists();
 
@@ -135,7 +133,6 @@ public class MySQLTransferServiceTest extends ServiceTestEnv {
 
     @Test
     public void create_loadExternalSql_dataLoaded() throws Exception {
-        setUpEnv();
         String sqlScript = "INSERT INTO " + TEST_TABLE_NAME + " VALUES ('3', 'Marry'),('4', 'Tom');";
         File target = copyFile(new ByteArrayInputStream(sqlScript.getBytes()), "sql");
 
