@@ -47,7 +47,9 @@ import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.TransferJobFactory;
 import com.oceanbase.tools.loaddump.common.model.ObjectStatus.Status;
 
 import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class MySQLDataTransferJob implements DataTransferJob {
     private static final Logger LOGGER = LoggerFactory.getLogger("DataTransferLogger");
     private static final List<String> REPORT_HEADER = Arrays.asList("No.#", "Type", "Name", "Count", "Status");
@@ -165,6 +167,7 @@ public class MySQLDataTransferJob implements DataTransferJob {
                 LOGGER.info("Successfully finished transferring schema for {}.", job);
             } catch (Exception e) {
                 LOGGER.warn("Object {} failed.", job, e);
+                log.warn("Object {} failed.", job, e);
                 job.getObject().setStatus(Status.FAILURE);
             }
             if (job.getObject().getStatus() == Status.FAILURE && baseConfig.isStopWhenError()) {
@@ -190,6 +193,7 @@ public class MySQLDataTransferJob implements DataTransferJob {
                 LOGGER.info("Successfully finished transferring data for {} .", job);
             } catch (Exception e) {
                 LOGGER.warn("Object {} failed.", job, e);
+                log.warn("Object {} failed.", job, e);
                 job.getObject().setStatus(Status.FAILURE);
             }
             if (job.getObject().getStatus() == Status.FAILURE && baseConfig.isStopWhenError()) {
