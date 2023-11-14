@@ -65,6 +65,7 @@ import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.core.shared.exception.AccessDeniedException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.ConnectionInfo;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.CsvColumnMapping;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.CsvConfig;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
@@ -176,7 +177,9 @@ public class DataTransferService {
             PreConditions.validArgumentState(connectionId != null, ErrorCodes.BadArgument,
                     new Object[] {"ConnectionId can not be null"}, "ConnectionId can not be null");
             ConnectionConfig connectionConfig = connectionService.getForConnectionSkipPermissionCheck(connectionId);
-            transferConfig.setConnectionInfo(connectionConfig.toConnectionInfo());
+            ConnectionInfo connectionInfo = connectionConfig.toConnectionInfo();
+            connectionInfo.setSchema(transferConfig.getSchemaName());
+            transferConfig.setConnectionInfo(connectionInfo);
             injectSysConfig(connectionConfig, transferConfig);
 
             // set config properties
@@ -264,9 +267,9 @@ public class DataTransferService {
                 Charset.forName(csvConfig.getEncoding().getAlias()))) {
             CsvFormat format = CsvFormat.DEFAULT;
             format = format
-                    .withDelimiter(format.toChar(csvConfig.getColumnSeparator()))
+                    .withDelimiter(csvConfig.getColumnSeparator())
                     .withEscape(format.toChar("\\"))
-                    .withQuote(format.toChar(csvConfig.getColumnDelimiter()))
+                    .withQuote(csvConfig.getColumnDelimiter())
                     .withRecordSeparator(format.toChar(csvConfig.getLineSeparator()))
                     .withNullString("\\N")
                     .withEmptyString("")

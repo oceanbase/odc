@@ -72,9 +72,10 @@ public class SqlDataImportJobImpl extends AbstractJob {
         executeWithoutResult(preSqls);
 
         DialectType dialectType = transferConfig.getConnectionInfo().getConnectType().getDialectType();
+        String charset = transferConfig.getEncoding().getAlias();
         DataSource ds = DataSourceManager.getInstance().get(transferConfig.getConnectionInfo());
         try (SqlCommentProcessor.SqlStatementIterator iterator =
-                SqlCommentProcessor.iterator(resource.openInputStream(), dialectType, true, true, true);
+                SqlCommentProcessor.iterator(resource.openInputStream(), dialectType, true, true, true, charset);
                 Connection conn = ds.getConnection()) {
             while (!Thread.currentThread().isInterrupted() && !stop) {
                 try {

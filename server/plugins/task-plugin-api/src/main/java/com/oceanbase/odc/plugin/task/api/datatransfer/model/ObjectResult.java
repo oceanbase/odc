@@ -22,7 +22,6 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.oceanbase.tools.loaddump.common.model.ObjectStatus;
-import com.oceanbase.tools.loaddump.common.model.TaskState;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -40,7 +39,8 @@ public class ObjectResult extends ObjectStatus {
     private List<URL> exportPaths;
 
     public ObjectResult(String schema, String name, String type) {
-        super(name, type, new AtomicLong(0), new AtomicLong(0), TaskState.INITIAL);
+        super(name, new AtomicLong(0), new AtomicLong(0), Status.INITIAL);
+        setType(type);
         setSchema(schema);
     }
 

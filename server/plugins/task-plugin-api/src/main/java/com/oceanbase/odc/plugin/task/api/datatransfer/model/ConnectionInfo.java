@@ -69,6 +69,8 @@ public class ConnectionInfo {
 
     private ConnectType connectType;
 
+    private String schema;
+
     public String getUserNameForConnect() {
         String username = ConnectionSessionUtil.getUserOrSchemaString(this.username, connectType.getDialectType());
         if (DialectType.OB_ORACLE.equals(connectType.getDialectType())) {

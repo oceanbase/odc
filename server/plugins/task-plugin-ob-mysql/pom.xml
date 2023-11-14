@@ -81,7 +81,7 @@
     <properties>
         <root-project.basedir>${project.parent.parent.basedir}</root-project.basedir>
         <plugin.class>com.oceanbase.odc.plugin.task.obmysql.OBMySQLTaskPlugin</plugin.class>
-        <plugin.dependencies>schema-plugin-ob-oracle, schema-plugin-mysql,
+        <plugin.dependencies>connect-plugin-mysql,schema-plugin-ob-oracle, schema-plugin-mysql,
             connect-plugin-ob-oracle,connect-plugin-ob-mysql
         </plugin.dependencies>
     </properties>

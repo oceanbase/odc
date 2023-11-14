@@ -64,7 +64,7 @@ public class SqlCommentProcessorTest {
         try (InputStream in =
                 this.getClass().getClassLoader().getResourceAsStream("sql/split/comment-processor-mysql-test.sql");
                 SqlStatementIterator iterator =
-                        SqlCommentProcessor.iterator(in, DialectType.OB_MYSQL, false, false, false)) {
+                        SqlCommentProcessor.iterator(in, DialectType.OB_MYSQL, false, false, false, "UTF-8")) {
             sqls = IteratorUtils.toList(iterator);
         }
         SqlCommentProcessor processor = new SqlCommentProcessor(DialectType.OB_MYSQL, false, false, false);
@@ -82,7 +82,7 @@ public class SqlCommentProcessorTest {
         try (InputStream in =
                 this.getClass().getClassLoader().getResourceAsStream("sql/split/comment-processor-oracle-test.sql");
                 SqlStatementIterator iterator =
-                        SqlCommentProcessor.iterator(in, DialectType.OB_ORACLE, false, false, false)) {
+                        SqlCommentProcessor.iterator(in, DialectType.OB_ORACLE, false, false, false, "UTF-8")) {
             sqls = IteratorUtils.toList(iterator);
         }
         SqlCommentProcessor processor = new SqlCommentProcessor(DialectType.OB_ORACLE, false, false, false);

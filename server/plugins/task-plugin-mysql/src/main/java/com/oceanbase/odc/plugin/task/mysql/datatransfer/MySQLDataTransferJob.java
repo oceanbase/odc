@@ -59,8 +59,8 @@ public class MySQLDataTransferJob implements DataTransferJob {
     private final AtomicInteger finishedJobNum = new AtomicInteger(0);
     private final List<AbstractJob> schemaJobs = new LinkedList<>();
     private final List<AbstractJob> dataJobs = new LinkedList<>();
+    private final AtomicReference<TaskStatus> status = new AtomicReference<>();
 
-    private volatile AtomicReference<TaskStatus> status;
     private int transferJobNum = 0;
 
     public MySQLDataTransferJob(@NonNull DataTransferConfig config, @NonNull File workingDir, @NonNull File logDir,

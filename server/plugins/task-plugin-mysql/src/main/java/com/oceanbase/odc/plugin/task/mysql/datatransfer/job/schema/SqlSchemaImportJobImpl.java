@@ -80,9 +80,10 @@ public class SqlSchemaImportJobImpl extends AbstractJob {
 
         boolean firstLine = true;
         DialectType dialectType = transferConfig.getConnectionInfo().getConnectType().getDialectType();
+        String charset = transferConfig.getEncoding().getAlias();
         DataSource ds = DataSourceManager.getInstance().get(transferConfig.getConnectionInfo());
         try (SqlCommentProcessor.SqlStatementIterator iterator =
-                SqlCommentProcessor.iterator(resource.openInputStream(), dialectType, true, true, true);
+                SqlCommentProcessor.iterator(resource.openInputStream(), dialectType, true, true, true, charset);
                 Connection conn = ds.getConnection();
                 Statement stmt = conn.createStatement()) {
             while (!Thread.currentThread().isInterrupted() && iterator.hasNext()) {
@@ -99,9 +100,7 @@ public class SqlSchemaImportJobImpl extends AbstractJob {
                     String errMsg =
                             String.format("Error occurred when executing sql: [%s], reason: %s", sql, e.getMessage());
                     LOGGER.warn(errMsg);
-                    if (transferConfig.isStopWhenError()) {
-                        throw new RuntimeException(errMsg, e);
-                    }
+                    throw new RuntimeException(errMsg, e);
                 }
             }
         } finally {

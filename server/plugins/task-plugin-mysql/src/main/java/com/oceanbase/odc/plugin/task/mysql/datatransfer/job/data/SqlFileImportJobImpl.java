@@ -50,9 +50,10 @@ public class SqlFileImportJobImpl extends AbstractJob {
     public void run() throws Exception {
         DialectType dialectType = transferConfig.getConnectionInfo().getConnectType().getDialectType();
         DataSource ds = DataSourceManager.getInstance().get(transferConfig.getConnectionInfo());
+        String charset = transferConfig.getEncoding().getAlias();
 
         try (SqlCommentProcessor.SqlStatementIterator iterator =
-                SqlCommentProcessor.iterator(resource.openInputStream(), dialectType, true, true, true);
+                SqlCommentProcessor.iterator(resource.openInputStream(), dialectType, true, true, true, charset);
                 Connection conn = ds.getConnection();
                 Statement stmt = conn.createStatement()) {
             while (!Thread.currentThread().isInterrupted() && iterator.hasNext()) {
@@ -71,7 +72,7 @@ public class SqlFileImportJobImpl extends AbstractJob {
             if (failures.get() != 0L) {
                 setStatus(Status.FAILURE);
                 throw new RuntimeException(String.format("Sql record import task finished with some failed records. "
-                                                         + "Number of failed records: %d", failures.get()));
+                        + "Number of failed records: %d", failures.get()));
             }
             setStatus(Status.SUCCESS);
         }

@@ -17,7 +17,9 @@
 package com.oceanbase.odc.plugin.task.mysql.datatransfer.common;
 
 import java.io.Closeable;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 import javax.sql.DataSource;
@@ -25,10 +27,11 @@ import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.datasource.SingleConnectionDataSource;
+import com.oceanbase.odc.core.shared.constant.OdcConstants;
 import com.oceanbase.odc.plugin.connect.mysql.MySQLConnectionExtension;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.ConnectionInfo;
-import com.oceanbase.odc.plugin.task.obmysql.datatransfer.util.ConnectionUtil;
 
 import lombok.NonNull;
 
@@ -66,7 +69,23 @@ public class DataSourceManager {
     }
 
     private DataSource createDs(ConnectionInfo connectionInfo) {
-        return ConnectionUtil.getDataSource(connectionInfo, "");
+        SingleConnectionDataSource dataSource = new SingleConnectionDataSource();
+        dataSource.setUsername(connectionInfo.getUserNameForConnect());
+        dataSource.setPassword(connectionInfo.getPassword());
+        dataSource.setDriverClassName(OdcConstants.MYSQL_DRIVER_CLASS_NAME);
+
+        Map<String, String> jdbcUrlParams = new HashMap<>();
+        jdbcUrlParams.put("connectTimeout", "5000");
+        if (StringUtils.isNotBlank(connectionInfo.getProxyHost())
+                && Objects.nonNull(connectionInfo.getProxyPort())) {
+            jdbcUrlParams.put("socksProxyHost", connectionInfo.getProxyHost());
+            jdbcUrlParams.put("socksProxyPort", connectionInfo.getProxyPort() + "");
+        }
+        String jdbcUrl = new MySQLConnectionExtension().generateJdbcUrl(connectionInfo.getHost(),
+                connectionInfo.getPort(), connectionInfo.getSchema(), jdbcUrlParams);
+
+        dataSource.setUrl(jdbcUrl);
+        return dataSource;
     }
 
 }
