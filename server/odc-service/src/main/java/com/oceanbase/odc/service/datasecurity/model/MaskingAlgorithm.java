@@ -41,7 +41,7 @@ import lombok.Data;
 
 /**
  * @author gaoda.xy
- * @date 2023/5/9 10:56
+ * @date 2023/5/10 10:56
  */
 @Data
 public class MaskingAlgorithm implements SecurityResource, OrganizationIsolated {
