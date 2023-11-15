@@ -65,8 +65,8 @@ public class DefaultConnectSessionFactory implements ConnectionSessionFactory {
     @Setter
     private long sessionTimeoutMillis;
 
-    public DefaultConnectSessionFactory(@NonNull ConnectionConfig connectionConfig, Boolean autoCommit,
-            TaskManagerFactory<SqlExecuteTaskManager> taskManagerFactory) {
+    public DefaultConnectSessionFactory(@NonNull ConnectionConfig connectionConfig,
+            Boolean autoCommit, TaskManagerFactory<SqlExecuteTaskManager> taskManagerFactory) {
         this.sessionTimeoutMillis = TimeUnit.MILLISECONDS.convert(
                 ConnectionSessionConstants.SESSION_EXPIRATION_TIME_SECONDS, TimeUnit.SECONDS);
         this.connectionConfig = connectionConfig;
