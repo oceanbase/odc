@@ -20,13 +20,16 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.Validate;
+import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.JdbcOperations;
 
 import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 import com.oceanbase.odc.service.regulation.ruleset.model.Rule;
 import com.oceanbase.odc.service.regulation.ruleset.model.RuleMetadata;
 import com.oceanbase.odc.service.regulation.ruleset.model.RuleType;
@@ -90,7 +93,8 @@ import lombok.NonNull;
  */
 public class SqlCheckRules {
 
-    public static List<SqlCheckRuleFactory> getAllFactories(JdbcOperations jdbc) {
+    public static List<SqlCheckRuleFactory> getAllFactories(DialectType dialectType, JdbcOperations jdbc) {
+        Supplier<String> schemaSupplier = new SchemaSupplier(dialectType, jdbc);
         List<SqlCheckRuleFactory> rules = new ArrayList<>();
         rules.add(new ColumnCalculationFactory());
         rules.add(new LeftFuzzyMatchFactory());
@@ -107,7 +111,7 @@ public class SqlCheckRules {
         rules.add(new TooLongCharLengthFactory());
         rules.add(new ForeignConstraintExistsFactory());
         rules.add(new NoPrimaryKeyExistsFactory());
-        rules.add(new NoTableCommentExistsFactory(jdbc));
+        rules.add(new NoTableCommentExistsFactory(schemaSupplier));
         rules.add(new TableNameInBlackListFactory());
         rules.add(new RestrictTableCharsetFactory());
         rules.add(new RestrictTableCollationFactory());
@@ -122,7 +126,7 @@ public class SqlCheckRules {
         rules.add(new ColumnCollationExistsFactory());
         rules.add(new RestrictColumnNotNullFactory());
         rules.add(new NoDefaultValueExistsFactory());
-        rules.add(new NoColumnCommentExistsFactory(jdbc));
+        rules.add(new NoColumnCommentExistsFactory(schemaSupplier));
         rules.add(new ColumnNameInBlackListFactory());
         rules.add(new RestrictColumnNameCaseFactory());
         rules.add(new RestrictTableNameCaseFactory());
@@ -140,14 +144,17 @@ public class SqlCheckRules {
         return rules;
     }
 
-    public static List<SqlCheckRule> getAllDefaultRules(JdbcOperations jdbc,
-            @NonNull DialectType dialectType) {
-        List<SqlCheckRuleFactory> factories = SqlCheckRules.getAllFactories(jdbc);
-        return factories.stream().map(f -> f.generate(dialectType, null)).filter(Objects::nonNull)
-                .collect(Collectors.toList());
+    public static List<SqlCheckRule> getAllDefaultRules(JdbcOperations jdbc, @NonNull DialectType dialectType) {
+        return SqlCheckRules.getAllFactories(dialectType, jdbc).stream()
+                .map(f -> f.generate(dialectType, null)).filter(Objects::nonNull).collect(Collectors.toList());
     }
 
     public static SqlCheckRule createByRule(JdbcOperations jdbc,
+            @NonNull DialectType dialectType, @NonNull Rule rule) {
+        return createByRule(getAllFactories(dialectType, jdbc), dialectType, rule);
+    }
+
+    public static SqlCheckRule createByRule(@NonNull List<SqlCheckRuleFactory> candidates,
             @NonNull DialectType dialectType, @NonNull Rule rule) {
         RuleMetadata metadata = rule.getMetadata();
         Validate.notNull(metadata, "RuleMetadata can not be null");
@@ -166,7 +173,7 @@ public class SqlCheckRules {
                     "Multi sql check rules are found by name, " + metadata.getName());
         }
         SqlCheckRuleType sqlCheckRuleType = types.get(0);
-        Optional<SqlCheckRuleFactory> factory = getAllFactories(jdbc).stream()
+        Optional<SqlCheckRuleFactory> factory = candidates.stream()
                 .filter(s -> s.getSupportsType() == sqlCheckRuleType).findFirst();
         if (!factory.isPresent()) {
             throw new UnsupportedOperationException("Not support yet, " + sqlCheckRuleType.getLocalizedName());
@@ -176,6 +183,30 @@ public class SqlCheckRules {
             return target == null ? null : new SqlCheckRuleWrapper(target, rule.getAppliedDialectTypes());
         } catch (Exception e) {
             return null;
+        }
+    }
+
+    static class SchemaSupplier implements Supplier<String> {
+
+        private volatile String schema = null;
+        private final DialectType dialectType;
+        private final JdbcOperations jdbcOperations;
+
+        public SchemaSupplier(DialectType dialectType, JdbcOperations jdbcOperations) {
+            this.dialectType = dialectType;
+            this.jdbcOperations = jdbcOperations;
+        }
+
+        @Override
+        public String get() {
+            if (this.schema != null) {
+                return this.schema;
+            } else if (this.dialectType == null || this.jdbcOperations == null) {
+                return null;
+            }
+            this.schema = jdbcOperations.execute((ConnectionCallback<String>) con -> ConnectionPluginUtil
+                    .getSessionExtension(dialectType).getCurrentSchema(con));
+            return this.schema;
         }
     }
 

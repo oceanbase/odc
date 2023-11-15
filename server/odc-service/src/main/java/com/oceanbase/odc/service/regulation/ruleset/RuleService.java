@@ -160,8 +160,6 @@ public class RuleService {
         return rule;
     }
 
-
-
     private List<Rule> internalList(@NonNull Long rulesetId, @NonNull QueryRuleMetadataParams params) {
         List<RuleMetadata> ruleMetadatas = metadataService.list(params);
         if (CollectionUtils.isEmpty(ruleMetadatas)) {

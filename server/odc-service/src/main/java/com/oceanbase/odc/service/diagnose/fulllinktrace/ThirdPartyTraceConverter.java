@@ -13,27 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.core.sql.execute.model;
+
+package com.oceanbase.odc.service.diagnose.fulllinktrace;
 
 import com.oceanbase.odc.core.shared.model.TraceSpan;
 
-import lombok.Data;
+public interface ThirdPartyTraceConverter {
 
-@Data
-public class SqlExecTime {
-    // trace id
-    private String traceId;
+    /**
+     * transform {@link TraceSpan} into json format map that can be parsed by a 3rd party tool, like
+     * Jaeger/Zipkin...
+     */
+    String convert(TraceSpan span);
 
-    // 耗时统计
-    private Long elapsedMicroseconds;
-    private Long executeMicroseconds;
-
-    private Long lastPacketSendTimestamp;
-    private Long lastPacketResponseTimestamp;
-
-    // 链路信息
-    private TraceSpan traceSpan;
-    private boolean withFullLinkTrace;
-    private String traceEmptyReason;
 }
-

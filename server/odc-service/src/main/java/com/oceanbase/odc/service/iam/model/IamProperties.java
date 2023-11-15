@@ -13,27 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.core.sql.execute.model;
 
-import com.oceanbase.odc.core.shared.model.TraceSpan;
+package com.oceanbase.odc.service.iam.model;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cloud.context.config.annotation.RefreshScope;
+import org.springframework.context.annotation.Configuration;
 
 import lombok.Data;
 
 @Data
-public class SqlExecTime {
-    // trace id
-    private String traceId;
+@RefreshScope
+@Configuration
+public class IamProperties {
 
-    // 耗时统计
-    private Long elapsedMicroseconds;
-    private Long executeMicroseconds;
+    @Value("${odc.iam.auth.alipay.max-failed-login-attempt-times:5}")
+    private int maxFailedLoginAttemptTimes = 5;
 
-    private Long lastPacketSendTimestamp;
-    private Long lastPacketResponseTimestamp;
+    @Value("${odc.iam.auth.alipay.failed-login-lock-timeout-seconds:600}")
+    private long failedLoginLockTimeoutSeconds = 600;
 
-    // 链路信息
-    private TraceSpan traceSpan;
-    private boolean withFullLinkTrace;
-    private String traceEmptyReason;
 }
-

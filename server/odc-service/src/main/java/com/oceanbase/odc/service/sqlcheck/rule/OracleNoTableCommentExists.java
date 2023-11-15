@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import com.oceanbase.odc.core.shared.constant.DialectType;
@@ -43,10 +44,10 @@ import lombok.NonNull;
  */
 public class OracleNoTableCommentExists implements SqlCheckRule {
 
-    private final String currentSchema;
+    private final Supplier<String> schemaSupplier;
 
-    public OracleNoTableCommentExists(String currentSchema) {
-        this.currentSchema = currentSchema;
+    public OracleNoTableCommentExists(Supplier<String> schemaSupplier) {
+        this.schemaSupplier = schemaSupplier;
     }
 
     @Override
@@ -74,6 +75,7 @@ public class OracleNoTableCommentExists implements SqlCheckRule {
             RelationFactor t = s.getTable();
             String tableName = SqlCheckUtil.unquoteOracleIdentifier(t.getRelation());
             if (t.getSchema() == null) {
+                String currentSchema = this.schemaSupplier == null ? null : this.schemaSupplier.get();
                 tableName2Table.remove(currentSchema == null ? tableName : currentSchema + "." + tableName);
             } else {
                 tableName2Table.remove(SqlCheckUtil.unquoteOracleIdentifier(t.getSchema()) + "." + tableName);
@@ -93,6 +95,7 @@ public class OracleNoTableCommentExists implements SqlCheckRule {
     private String getKey(CreateTable c) {
         String tableName = SqlCheckUtil.unquoteOracleIdentifier(c.getTableName());
         if (c.getSchema() == null) {
+            String currentSchema = this.schemaSupplier == null ? null : this.schemaSupplier.get();
             return currentSchema == null ? tableName : currentSchema + "." + tableName;
         }
         return SqlCheckUtil.unquoteOracleIdentifier(c.getSchema()) + "." + tableName;

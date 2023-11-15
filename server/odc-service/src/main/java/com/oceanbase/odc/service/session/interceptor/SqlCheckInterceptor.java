@@ -32,7 +32,6 @@ import com.oceanbase.odc.core.sql.execute.SqlExecuteStages;
 import com.oceanbase.odc.service.config.UserConfigFacade;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.regulation.ruleset.RuleService;
-import com.oceanbase.odc.service.regulation.ruleset.model.QueryRuleMetadataParams;
 import com.oceanbase.odc.service.regulation.ruleset.model.Rule;
 import com.oceanbase.odc.service.session.model.SqlAsyncExecuteReq;
 import com.oceanbase.odc.service.session.model.SqlAsyncExecuteResp;
@@ -81,7 +80,7 @@ public class SqlCheckInterceptor extends BaseTimeConsumingInterceptor {
         if (ruleSetId == null) {
             return true;
         }
-        List<Rule> rules = this.ruleService.list(ruleSetId, QueryRuleMetadataParams.builder().build());
+        List<Rule> rules = this.ruleService.listAllFromCache(ruleSetId);
         List<SqlCheckRule> sqlCheckRules = this.sqlCheckService.getRules(rules, session);
         if (CollectionUtils.isEmpty(sqlCheckRules)) {
             return true;

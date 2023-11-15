@@ -127,6 +127,7 @@ public class SqlCheckService {
         if (CollectionUtils.isEmpty(rules)) {
             return Collections.emptyList();
         }
+        List<SqlCheckRuleFactory> candidates = SqlCheckRules.getAllFactories(dialectType, jdbc);
         return rules.stream().filter(rule -> {
             RuleMetadata metadata = rule.getMetadata();
             if (metadata == null || !Boolean.TRUE.equals(rule.getEnabled())) {
@@ -135,7 +136,7 @@ public class SqlCheckService {
             return Objects.equals(metadata.getType(), RuleType.SQL_CHECK);
         }).map(rule -> {
             try {
-                return SqlCheckRules.createByRule(jdbc, dialectType, rule);
+                return SqlCheckRules.createByRule(candidates, dialectType, rule);
             } catch (Exception e) {
                 return null;
             }
