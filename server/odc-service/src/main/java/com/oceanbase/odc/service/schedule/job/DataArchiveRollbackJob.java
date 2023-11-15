@@ -25,6 +25,7 @@ import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.service.dlm.model.DlmTask;
+import com.oceanbase.odc.service.dlm.utils.DlmJobIdUtil;
 import com.oceanbase.odc.service.schedule.model.DataArchiveRollbackParameters;
 import com.oceanbase.tools.migrator.common.enums.JobType;
 
@@ -65,6 +66,9 @@ public class DataArchiveRollbackJob extends AbstractDlmJob {
                 new TypeReference<List<DlmTask>>() {});
         taskUnits.forEach(taskUnit -> {
             Long temp = taskUnit.getSourceDatabaseId();
+            taskUnit.setId(DlmJobIdUtil.generateHistoryJobId(taskEntity.getJobName(), taskEntity.getJobGroup(),
+                    taskEntity.getId(),
+                    taskUnits.size()));
             taskUnit.setSourceDatabaseId(taskUnit.getTargetDatabaseId());
             taskUnit.setTargetDatabaseId(temp);
             taskUnit.setJobType(JobType.ROLLBACK);
