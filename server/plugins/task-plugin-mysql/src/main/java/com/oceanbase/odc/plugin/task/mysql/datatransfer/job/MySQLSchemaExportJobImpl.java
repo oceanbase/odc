@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.plugin.task.mysql.datatransfer.job.schema;
+package com.oceanbase.odc.plugin.task.mysql.datatransfer.job;
 
 import java.io.File;
 import java.nio.file.Paths;
@@ -34,19 +34,20 @@ import com.oceanbase.odc.plugin.schema.mysql.MySQLViewExtension;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.ObjectResult;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.common.Constants;
-import com.oceanbase.odc.plugin.task.mysql.datatransfer.common.DataSourceManager;
-import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.AbstractJob;
 import com.oceanbase.tools.loaddump.common.model.ObjectStatus.Status;
 
 public class MySQLSchemaExportJobImpl extends AbstractJob {
 
     private final DataTransferConfig transferConfig;
     private final File workingDir;
+    private final DataSource dataSource;
 
-    public MySQLSchemaExportJobImpl(ObjectResult object, DataTransferConfig transferConfig, File workingDir) {
+    public MySQLSchemaExportJobImpl(ObjectResult object, DataTransferConfig transferConfig, File workingDir,
+            DataSource dataSource) {
         super(object);
         this.transferConfig = transferConfig;
         this.workingDir = workingDir;
+        this.dataSource = dataSource;
     }
 
     @Override
@@ -100,8 +101,7 @@ public class MySQLSchemaExportJobImpl extends AbstractJob {
     }
 
     private String queryDdlForDBObject() throws SQLException {
-        DataSource ds = DataSourceManager.getInstance().get(transferConfig.getConnectionInfo());
-        try (Connection conn = ds.getConnection()) {
+        try (Connection conn = dataSource.getConnection()) {
             switch (object.getType()) {
                 case "TABLE":
                     String ddl =

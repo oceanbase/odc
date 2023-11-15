@@ -168,21 +168,23 @@ public class DataTransferTask implements Callable<DataTransferTaskResult> {
         List<String> importFileNames = config.getImportFileName();
         if (config.isCompressed()) {
             ExportOutput exportOutput = copyImportZip(importFileNames, workingDir);
-            /*
-             * set whiteList for ob-loader
-             */
             List<DataTransferObject> objects = new ArrayList<>();
             List<DumpDBObject> dumpDbObjects = exportOutput.getDumpDbObjects();
+            List<URL> inputs = new ArrayList<>();
             for (DumpDBObject dbObject : dumpDbObjects) {
-                objects.addAll(dbObject.getOutputFiles().stream().map(abstractOutputFile -> {
+                dbObject.getOutputFiles().forEach(abstractOutputFile -> {
                     DataTransferObject transferObject = new DataTransferObject();
                     transferObject.setDbObjectType(dbObject.getObjectType());
                     transferObject.setObjectName(abstractOutputFile.getObjectName());
-                    return transferObject;
-                }).collect(Collectors.toList()));
+                    objects.add(transferObject);
+                    inputs.add(abstractOutputFile.getUrl());
+                });
             }
+            /*
+             * set whiteList for ob-loader
+             */
             config.setExportDbObjects(objects);
-            return Collections.emptyList();
+            return inputs;
         } else {
             return copyImportScripts(importFileNames, config.getDataTransferFormat(), workingDir);
         }

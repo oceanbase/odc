@@ -18,30 +18,40 @@ package com.oceanbase.odc.plugin.task.mysql.datatransfer;
 
 import java.io.File;
 import java.net.URL;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
+
+import javax.sql.DataSource;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.alibaba.druid.pool.DruidDataSource;
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.tableformat.BorderStyle;
 import com.oceanbase.odc.common.util.tableformat.CellStyle;
 import com.oceanbase.odc.common.util.tableformat.CellStyle.AbbreviationStyle;
 import com.oceanbase.odc.common.util.tableformat.CellStyle.HorizontalAlign;
 import com.oceanbase.odc.common.util.tableformat.CellStyle.NullStyle;
 import com.oceanbase.odc.common.util.tableformat.Table;
+import com.oceanbase.odc.core.shared.constant.OdcConstants;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
+import com.oceanbase.odc.plugin.connect.mysql.MySQLConnectionExtension;
 import com.oceanbase.odc.plugin.task.api.datatransfer.DataTransferJob;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.ConnectionInfo;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferTaskResult;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.ObjectResult;
-import com.oceanbase.odc.plugin.task.mysql.datatransfer.common.DataSourceManager;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.AbstractJob;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.TransferJobFactory;
 import com.oceanbase.tools.loaddump.common.model.ObjectStatus.Status;
@@ -71,7 +81,6 @@ public class MySQLDataTransferJob implements DataTransferJob {
         this.workingDir = workingDir;
         this.logDir = logDir;
         this.inputs = inputs;
-        initTransferJobs();
     }
 
     @Override
@@ -95,6 +104,8 @@ public class MySQLDataTransferJob implements DataTransferJob {
     @Override
     public boolean cancel(boolean mayInterruptIfRunning) {
         TaskStatus newStatus = status.getAndSet(TaskStatus.CANCELED);
+        schemaJobs.forEach(AbstractJob::cancel);
+        dataJobs.forEach(AbstractJob::cancel);
         return newStatus == TaskStatus.CANCELED;
     }
 
@@ -105,33 +116,51 @@ public class MySQLDataTransferJob implements DataTransferJob {
 
     @Override
     public DataTransferTaskResult call() throws Exception {
+        try (DruidDataSource dataSource = initDataSource()) {
 
-        if (CollectionUtils.isNotEmpty(schemaJobs)) {
-            try {
+            initTransferJobs(dataSource);
+
+            if (CollectionUtils.isNotEmpty(schemaJobs)) {
                 runSchemaJobs();
-            } finally {
                 logSummary(schemaJobs, "SCHEMA");
-                DataSourceManager.getInstance().revoke(baseConfig.getConnectionInfo());
             }
-        }
-
-        if (CollectionUtils.isNotEmpty(dataJobs) && !isCanceled()) {
-            try {
+            if (CollectionUtils.isNotEmpty(dataJobs)) {
                 runDataJobs();
-            } finally {
                 logSummary(dataJobs, "DATA");
-                DataSourceManager.getInstance().revoke(baseConfig.getConnectionInfo());
             }
         }
-
         return new DataTransferTaskResult(getDataObjectsStatus(), getSchemaObjectsStatus());
     }
 
-    private void initTransferJobs() {
+    private DruidDataSource initDataSource() {
+        ConnectionInfo connectionInfo = baseConfig.getConnectionInfo();
+        DruidDataSource ds = new DruidDataSource();
+        ds.setUsername(connectionInfo.getUserNameForConnect());
+        ds.setPassword(connectionInfo.getPassword());
+        ds.setDriverClassName(OdcConstants.MYSQL_DRIVER_CLASS_NAME);
+
+        Map<String, String> jdbcUrlParams = new HashMap<>();
+        jdbcUrlParams.put("connectTimeout", "5000");
+        if (StringUtils.isNotBlank(connectionInfo.getProxyHost())
+                && Objects.nonNull(connectionInfo.getProxyPort())) {
+            jdbcUrlParams.put("socksProxyHost", connectionInfo.getProxyHost());
+            jdbcUrlParams.put("socksProxyPort", connectionInfo.getProxyPort() + "");
+        }
+        ds.setUrl(new MySQLConnectionExtension().generateJdbcUrl(connectionInfo.getHost(),
+                connectionInfo.getPort(), connectionInfo.getSchema(), jdbcUrlParams));
+        try {
+            ds.init();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return ds;
+    }
+
+    private void initTransferJobs(DataSource dataSource) {
         TransferJobFactory factory = new TransferJobFactory(baseConfig, workingDir, inputs);
         try {
             if (baseConfig.isTransferDDL()) {
-                List<AbstractJob> jobs = factory.generateSchemaTransferJobs();
+                List<AbstractJob> jobs = factory.generateSchemaTransferJobs(dataSource);
                 if (CollectionUtils.isNotEmpty(jobs)) {
                     schemaJobs.addAll(jobs);
                     transferJobNum += jobs.size();
@@ -139,7 +168,7 @@ public class MySQLDataTransferJob implements DataTransferJob {
                 LOGGER.info("Found {} schema jobs for database {}.", jobs.size(), baseConfig.getSchemaName());
             }
             if (baseConfig.isTransferData()) {
-                List<AbstractJob> jobs = factory.generateDataTransferJobs();
+                List<AbstractJob> jobs = factory.generateDataTransferJobs(dataSource);
                 if (CollectionUtils.isNotEmpty(jobs)) {
                     dataJobs.addAll(jobs);
                     transferJobNum += jobs.size();
@@ -156,8 +185,8 @@ public class MySQLDataTransferJob implements DataTransferJob {
             return;
         }
         for (AbstractJob job : schemaJobs) {
-            if (job.getObject().getStatus() == Status.SUCCESS || job.getObject().getStatus() == Status.FAILURE) {
-                continue;
+            if (isCanceled()) {
+                break;
             }
             try {
                 LOGGER.info("Begin to transfer schema for {}.", job);
@@ -182,8 +211,8 @@ public class MySQLDataTransferJob implements DataTransferJob {
             return;
         }
         for (AbstractJob job : dataJobs) {
-            if (job.getObject().getStatus() == Status.SUCCESS || job.getObject().getStatus() == Status.FAILURE) {
-                continue;
+            if (isCanceled()) {
+                break;
             }
             try {
                 LOGGER.info("Begin to transfer data for {}.", job);

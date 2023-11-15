@@ -21,7 +21,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -58,13 +57,13 @@ import org.springframework.web.multipart.MultipartFile;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ConnectionAccountType;
-import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.core.shared.exception.AccessDeniedException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
+import com.oceanbase.odc.plugin.task.api.datatransfer.dumper.ExportOutput;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.ConnectionInfo;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.CsvColumnMapping;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.CsvConfig;
@@ -209,7 +208,7 @@ public class DataTransferService {
         }
     }
 
-    public UploadFileResult getMetaInfo(@NonNull String fileName) throws IOException, URISyntaxException {
+    public UploadFileResult getMetaInfo(@NonNull String fileName) throws IOException {
         File uploadFile = fileManager.findByName(TaskType.IMPORT, LocalFileManager.UPLOAD_BUCKET, fileName).orElseThrow(
                 () -> new FileNotFoundException("File not found"));
         if (!uploadFile.exists() || !uploadFile.isFile()) {
@@ -219,11 +218,26 @@ public class DataTransferService {
         // If the file is from third party like PL/SQL, this will convert it compatible with ob-loader.
         ThirdPartyOutputConverter.convert(uploadFile);
 
-        return TaskPluginUtil.getDataTransferExtension(DialectType.OB_MYSQL)
-                .getImportFileInfo(uploadFile.toURI().toURL());
+        String uploadFileName = uploadFile.getName();
+        if (StringUtils.endsWithIgnoreCase(uploadFileName, ".zip")) {
+            // 疑似 zip 压缩文件，需要进一步确认是否合法
+            try {
+                ExportOutput dumperOutput = new ExportOutput(uploadFile);
+                return UploadFileResult.ofExportOutput(fileName, dumperOutput);
+            } catch (Exception e) {
+                log.warn("Not a valid zip file, file={}", fileName, e);
+                return UploadFileResult.ofFail(ErrorCodes.ImportInvalidFileType, new Object[] {uploadFileName});
+            }
+        } else if (StringUtils.endsWithIgnoreCase(uploadFileName, ".csv")) {
+            return UploadFileResult.ofCsv(fileName);
+        } else if (StringUtils.endsWithIgnoreCase(uploadFileName, ".sql")
+                || StringUtils.endsWithIgnoreCase(uploadFileName, ".txt")) {
+            return UploadFileResult.ofSql(fileName);
+        }
+        return UploadFileResult.ofFail(ErrorCodes.ImportInvalidFileType, new Object[] {uploadFileName});
     }
 
-    public UploadFileResult upload(@NonNull MultipartFile uploadFile) throws IOException, URISyntaxException {
+    public UploadFileResult upload(@NonNull MultipartFile uploadFile) throws IOException {
         return upload(uploadFile.getInputStream(), uploadFile.getOriginalFilename());
     }
 
@@ -319,7 +333,7 @@ public class DataTransferService {
     }
 
     public UploadFileResult upload(@NonNull InputStream inputStream, @NonNull String originalFilename)
-            throws IOException, URISyntaxException {
+            throws IOException {
         String fileName = "import_upload_" + System.currentTimeMillis() + "_" + originalFilename;
         int fileSize = fileManager.copy(TaskType.IMPORT, LocalFileManager.UPLOAD_BUCKET, inputStream, () -> fileName);
         log.info("Upload file successfully, fileName={}, fileSize={} Bytes", fileName, fileSize);

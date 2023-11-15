@@ -16,8 +16,6 @@
 
 package com.oceanbase.odc.plugin.task.mysql.datatransfer.job;
 
-import java.util.concurrent.atomic.AtomicLong;
-
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.ObjectResult;
 import com.oceanbase.tools.loaddump.common.model.ObjectStatus.Status;
 
@@ -29,16 +27,22 @@ public abstract class AbstractJob {
     protected final ObjectResult object;
 
     @Getter
-    protected AtomicLong bytes = new AtomicLong(0L);
+    protected long bytes = 0;
 
     @Getter
-    protected AtomicLong records = new AtomicLong(0L);
+    protected long records = 0;
+
+    protected volatile boolean canceled = false;
 
     public AbstractJob(ObjectResult object) {
         this.object = object;
     }
 
     public abstract void run() throws Exception;
+
+    public void cancel() {
+        this.canceled = true;
+    }
 
     @Override
     public String toString() {
