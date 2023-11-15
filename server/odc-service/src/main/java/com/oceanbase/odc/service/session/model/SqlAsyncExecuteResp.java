@@ -36,7 +36,6 @@ public class SqlAsyncExecuteResp {
     private String requestId;
     private List<Rule> violatedRules;
     private List<SqlTuplesWithViolation> sqls;
-    private List<String> unauthorizedDatabaseNames;
 
     public SqlAsyncExecuteResp(String requestId, List<SqlTuplesWithViolation> sqls) {
         this.requestId = requestId;
