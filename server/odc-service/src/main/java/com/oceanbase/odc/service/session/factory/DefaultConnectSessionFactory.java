@@ -86,12 +86,6 @@ public class DefaultConnectSessionFactory implements ConnectionSessionFactory {
         registerConsoleDataSource(session);
         registerBackendDataSource(session);
         initSession(session);
-        if (StringUtils.isNotBlank(connectionConfig.getTenantName())) {
-            ConnectionSessionUtil.setTenantName(session, connectionConfig.getTenantName());
-        }
-        if (StringUtils.isNotBlank(connectionConfig.getClusterName())) {
-            ConnectionSessionUtil.setClusterName(session, connectionConfig.getClusterName());
-        }
         return session;
     }
 
@@ -149,6 +143,9 @@ public class DefaultConnectSessionFactory implements ConnectionSessionFactory {
         ConnectionInfoUtil.initConsoleConnectionId(session);
         ConnectionSessionUtil.setConnectionConfig(session, connectionConfig);
         ConnectionSessionUtil.setColumnAccessor(session, new DatasourceColumnAccessor(session));
+        if (StringUtils.isNotBlank(connectionConfig.getTenantName())) {
+            ConnectionSessionUtil.setTenantName(session, connectionConfig.getTenantName());
+        }
         setNlsFormat(session);
     }
 

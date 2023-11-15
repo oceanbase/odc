@@ -73,7 +73,6 @@ import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.model.ConnectionTestResult;
 import com.oceanbase.odc.service.connection.model.CreateSessionResp;
 import com.oceanbase.odc.service.connection.model.DBSessionResp;
-import com.oceanbase.odc.service.datasecurity.accessor.DatasourceColumnAccessor;
 import com.oceanbase.odc.service.db.DBCharsetService;
 import com.oceanbase.odc.service.db.session.DBSessionService;
 import com.oceanbase.odc.service.feature.VersionDiffConfigService;
@@ -235,9 +234,6 @@ public class ConnectSessionService {
         ConnectionSession session = connectionSessionManager.start(sessionFactory);
         try {
             initSession(session, connection, userConfig);
-            ConnectionSessionUtil.setPermittedActions(session, actions);
-            DatasourceColumnAccessor accessor = new DatasourceColumnAccessor(session);
-            ConnectionSessionUtil.setColumnAccessor(session, accessor);
             log.info("Connect session created, connectionId={}, session={}", dataSourceId, session);
             return session;
         } catch (Exception e) {

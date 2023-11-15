@@ -47,11 +47,6 @@ public class ConnectionSessionConstants {
      * OceanBase special, tenant name
      */
     public static final String TENANT_NAME = "TENANT_NAME";
-
-    /**
-     * OceanBase special, cluster name
-     */
-    public static final String CLUSTER_NAME = "CLUSTER_NAME";
     /**
      * The query limit of the current database session needs to be stored in the database session in the
      * form of attributes, this is the key
@@ -62,16 +57,6 @@ public class ConnectionSessionConstants {
      * the form of attributes, this is the key
      */
     public static final String SQL_COMMENT_PROCESSOR_KEY = "SQL_COMMENT_PROCESSOR";
-    /**
-     * The permitted actions current database session needs to be stored in the database session in the
-     * form of attributes, this is the key
-     */
-    public static final String PERMITTED_ACTIONS_KEY = "PERMITTED_ACTIONS";
-    /**
-     * The visible scope current database session needs to be stored in the database session in the form
-     * of attributes, this is the key
-     */
-    public static final String VISIBLE_SCOPE_KEY = "VISIBLE_SCOPE";
     /**
      * The connection config current database session needs to be stored in the database session in the
      * form of attributes, this is the key

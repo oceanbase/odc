@@ -28,7 +28,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
@@ -46,7 +45,6 @@ import com.oceanbase.odc.common.lang.Pair;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.datasource.CloneableDataSourceFactory;
 import com.oceanbase.odc.core.shared.Verify;
-import com.oceanbase.odc.core.shared.constant.ConnectionVisibleScope;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
@@ -143,17 +141,6 @@ public class ConnectionSessionUtil {
         return input.substring(1, input.length() - 1);
     }
 
-    public static boolean isWriteable(@NonNull ConnectionSession connectionSession) {
-        Set<String> permittedActions = getPermittedActions(connectionSession);
-        // TODO: leverage accountType in connectSession
-        // if permittedActions is null, return true for compatible with previous behavior
-        if (Objects.isNull(permittedActions)) {
-            return true;
-        }
-        return permittedActions.contains("connect") || permittedActions.contains("use")
-                || permittedActions.contains("*");
-    }
-
     @SuppressWarnings("all")
     public static String setFutureJdbc(@NonNull ConnectionSession connectionSession,
             @NonNull Future<List<JdbcGeneralResult>> futureResult, Map<String, Object> context) {
@@ -228,14 +215,6 @@ public class ConnectionSessionUtil {
         return (String) connectionSession.getAttribute(ConnectionSessionConstants.TENANT_NAME);
     }
 
-    public static void setClusterName(@NonNull ConnectionSession connectionSession, @NonNull String tenantName) {
-        connectionSession.setAttribute(ConnectionSessionConstants.CLUSTER_NAME, tenantName);
-    }
-
-    public static String getClusterName(@NonNull ConnectionSession connectionSession) {
-        return (String) connectionSession.getAttribute(ConnectionSessionConstants.CLUSTER_NAME);
-    }
-
     public static void setConnectSchema(@NonNull ConnectionSession connectionSession, @NonNull String schema) {
         connectionSession.setAttribute(ConnectionSessionConstants.CONNECT_SCHEMA_KEY, schema);
     }
@@ -268,25 +247,6 @@ public class ConnectionSessionUtil {
     public static SqlCommentProcessor getSqlCommentProcessor(@NonNull ConnectionSession connectionSession) {
         return (SqlCommentProcessor) connectionSession
                 .getAttribute(ConnectionSessionConstants.SQL_COMMENT_PROCESSOR_KEY);
-    }
-
-    public static void setPermittedActions(@NonNull ConnectionSession connectionSession,
-            @NonNull Set<String> permittedActions) {
-        connectionSession.setAttribute(ConnectionSessionConstants.PERMITTED_ACTIONS_KEY, permittedActions);
-    }
-
-    @SuppressWarnings("all")
-    public static Set<String> getPermittedActions(@NonNull ConnectionSession connectionSession) {
-        return (Set<String>) connectionSession.getAttribute(ConnectionSessionConstants.PERMITTED_ACTIONS_KEY);
-    }
-
-    public static void setVisibleScope(@NonNull ConnectionSession connectionSession,
-            @NonNull ConnectionVisibleScope visibleScope) {
-        connectionSession.setAttribute(ConnectionSessionConstants.VISIBLE_SCOPE_KEY, visibleScope);
-    }
-
-    public static ConnectionVisibleScope getVisibleScope(@NonNull ConnectionSession connectionSession) {
-        return (ConnectionVisibleScope) connectionSession.getAttribute(ConnectionSessionConstants.VISIBLE_SCOPE_KEY);
     }
 
     public static void setConnectionConfig(@NonNull ConnectionSession connectionSession,
