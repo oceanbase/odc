@@ -42,7 +42,7 @@ public class StmtCallBackBasedTask<T> extends BaseSqlExecuteCallable<T> {
     public StmtCallBackBasedTask(@NonNull DataSource dataSource,
             @NonNull CloneableDataSourceFactory dataSourceFactory,
             @NonNull StatementCallback<T> statementCallback,
-            @NonNull ConnectionExtensionExecutor extensionExecutor) {
+            @NonNull SessionOperations extensionExecutor) {
         super(dataSource, dataSourceFactory, extensionExecutor);
         this.statementCallback = statementCallback;
     }

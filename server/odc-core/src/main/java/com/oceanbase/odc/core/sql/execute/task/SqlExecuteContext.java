@@ -25,7 +25,7 @@ import javax.sql.DataSource;
 
 import com.oceanbase.odc.core.datasource.CloneableDataSourceFactory;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
-import com.oceanbase.odc.core.sql.execute.ConnectionExtensionExecutor;
+import com.oceanbase.odc.core.sql.execute.SessionOperations;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -85,13 +85,13 @@ public class SqlExecuteContext<T> implements Future<T> {
 
     private boolean killQuery() throws Exception {
         String connectionId = callable.tryGetConnectionId();
-        ConnectionExtensionExecutor extensionExecutor = callable.getExtensionExecutor();
+        SessionOperations extensionExecutor = callable.getSessionOperations();
         DataSource dataSource = dataSourceFactory.getDataSource();
         try (Connection connection = dataSource.getConnection()) {
-            extensionExecutor.killQueryConsumer().accept(connection, connectionId);
+            extensionExecutor.killQuery(connection, connectionId);
             log.info("Kill query succeed, connectionId={}", connectionId);
         } catch (Exception e) {
-            if (extensionExecutor.getDialectType().isOceanbase()) {
+            if (callable.getDataSourceFactory().getDialectType().isOceanbase()) {
                 ConnectionSessionUtil.killQueryByDirectConnect(connectionId, dataSourceFactory);
                 log.info("Kill query by direct connect succeed, connectionId={}", connectionId);
             } else {

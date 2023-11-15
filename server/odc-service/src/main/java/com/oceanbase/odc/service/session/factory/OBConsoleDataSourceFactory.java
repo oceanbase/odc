@@ -187,6 +187,11 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
     }
 
     @Override
+    public DialectType getDialectType() {
+        return this.connectionConfig.getDialectType();
+    }
+
+    @Override
     public CloneableDataSourceFactory deepCopy() {
         ConnectionMapper mapper = ConnectionMapper.INSTANCE;
         return new OBConsoleDataSourceFactory(mapper.clone(connectionConfig), this.autoCommit);

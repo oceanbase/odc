@@ -36,10 +36,10 @@ import com.oceanbase.odc.core.sql.execute.task.SqlExecuteTaskManager;
 import com.oceanbase.odc.core.task.TaskManagerFactory;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.util.ConnectionInfoUtil;
-import com.oceanbase.odc.service.connection.util.DefaultConnectionExtensionExecutor;
 import com.oceanbase.odc.service.connection.util.DefaultJdbcUrlParser;
 import com.oceanbase.odc.service.connection.util.JdbcUrlParser;
 import com.oceanbase.odc.service.datasecurity.accessor.DatasourceColumnAccessor;
+import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 import com.oceanbase.odc.service.session.initializer.SwitchSchemaInitializer;
 
 import lombok.NonNull;
@@ -127,7 +127,7 @@ public class DefaultConnectSessionFactory implements ConnectionSessionFactory {
         try {
             return new DefaultConnectionSession(new DefaultSessionIdGenerator(connectionConfig),
                     taskManagerFactory, sessionTimeoutMillis, connectionConfig.getType(), autoCommit,
-                    new DefaultConnectionExtensionExecutor(connectionConfig.getDialectType()));
+                    ConnectionPluginUtil.getSessionExtension(connectionConfig.getDialectType()));
         } catch (Exception e) {
             log.warn("Failed to create connection session", e);
             throw new IllegalStateException(e);

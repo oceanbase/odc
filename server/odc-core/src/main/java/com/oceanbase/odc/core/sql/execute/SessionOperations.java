@@ -16,21 +16,18 @@
 package com.oceanbase.odc.core.sql.execute;
 
 import java.sql.Connection;
-import java.util.function.BiConsumer;
-import java.util.function.Function;
 
-import com.oceanbase.odc.core.shared.constant.DialectType;
+import lombok.NonNull;
 
 /**
  * @author yaobin
  * @date 2023-04-25
  * @since 4.2.0
  */
-public interface ConnectionExtensionExecutor {
+public interface SessionOperations {
 
-    Function<Connection, String> getConnectionIdFunction();
+    String getConnectionId(@NonNull Connection connection);
 
-    BiConsumer<Connection, String> killQueryConsumer();
+    void killQuery(@NonNull Connection connection, @NonNull String connectionId);
 
-    DialectType getDialectType();
 }

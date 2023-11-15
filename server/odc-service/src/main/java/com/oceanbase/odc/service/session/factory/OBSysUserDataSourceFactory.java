@@ -74,6 +74,11 @@ public class OBSysUserDataSourceFactory implements DataSourceFactory {
         return dataSource;
     }
 
+    @Override
+    public DialectType getDialectType() {
+        return DialectType.OB_MYSQL;
+    }
+
     protected String getUsernameWithTenantAndCluster() {
         String username = connectionConfig.getSysTenantUsername();
         if (StringUtils.isEmpty(username)) {
