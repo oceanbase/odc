@@ -45,8 +45,8 @@ public class PreparedStmtCallBackBasedTask<T> extends BaseSqlExecuteCallable<T> 
             @NonNull CloneableDataSourceFactory dataSourceFactory,
             @NonNull PreparedStatementCreator creator,
             @NonNull PreparedStatementCallback<T> statementCallback,
-            @NonNull SessionOperations extensionExecutor) {
-        super(dataSource, dataSourceFactory, extensionExecutor);
+            @NonNull SessionOperations sessionOperations) {
+        super(dataSource, dataSourceFactory, sessionOperations);
         this.statementCallback = statementCallback;
         this.creator = creator;
     }
