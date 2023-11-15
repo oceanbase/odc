@@ -18,7 +18,11 @@ package com.oceanbase.odc.server.web.controller.v1;
 import java.io.IOException;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RestController;
 
 import com.oceanbase.odc.core.shared.model.SqlExecDetail;
 import com.oceanbase.odc.core.shared.model.SqlExplain;
@@ -74,5 +78,13 @@ public class SqlDiagnoseController {
             throws IOException {
         return Responses
                 .success(diagnoseService.getFullLinkTrace(sessionService.nullSafeGet(SidUtils.getSessionId(sid)), sql));
+    }
+
+    @ApiOperation(value = "getFullLinkTraceDownloadUrl")
+    @RequestMapping(value = "/getFullLinkTraceDownloadUrl/{sid}", method = RequestMethod.POST)
+    public SuccessResponse<String> getFullLinkTraceJson(@PathVariable String sid, @RequestBody ResourceSql sql)
+            throws IOException {
+        return Responses.success(diagnoseService
+                .getFullLinkTraceDownloadUrl(sessionService.nullSafeGet(SidUtils.getSessionId(sid)), sql));
     }
 }
