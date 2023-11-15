@@ -95,7 +95,7 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
         this.connectionExtensionPoint = ConnectionPluginUtil.getConnectionExtension(connectionConfig.getDialectType());
     }
 
-    protected String getJdbcUrl() {
+    public String getJdbcUrl() {
         return connectionExtensionPoint.generateJdbcUrl(this.host, this.port, this.defaultSchema, this.parameters);
     }
 
@@ -274,15 +274,24 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
 
     public static String getDefaultSchema(@NonNull ConnectionConfig connectionConfig,
             @NonNull ConnectionAccountType accountType) {
-        String dbUser = getDbUser(connectionConfig, accountType);
-        String defaultSchema = connectionConfig.defaultSchema();
-        if (DialectType.OB_ORACLE.equals(connectionConfig.getDialectType())) {
-            defaultSchema = "\"" + dbUser + "\"";
-        } else if (StringUtils.isBlank(defaultSchema)
-                && connectionConfig.getDialectType().isMysql()) {
-            defaultSchema = OdcConstants.MYSQL_DEFAULT_SCHEMA;
+        String defaultSchema = connectionConfig.getDefaultSchema();
+        switch (connectionConfig.getDialectType()) {
+            case OB_ORACLE:
+            case ORACLE:
+                if (StringUtils.isNotEmpty(defaultSchema)) {
+                    return "\"" + defaultSchema + "\"";
+                }
+                return "\"" + getDbUser(connectionConfig, accountType) + "\"";
+            case OB_MYSQL:
+            case MYSQL:
+            case ODP_SHARDING_OB_MYSQL:
+                if (StringUtils.isNotEmpty(defaultSchema)) {
+                    return defaultSchema;
+                }
+                return OdcConstants.MYSQL_DEFAULT_SCHEMA;
+            default:
+                return null;
         }
-        return defaultSchema;
     }
 
 }

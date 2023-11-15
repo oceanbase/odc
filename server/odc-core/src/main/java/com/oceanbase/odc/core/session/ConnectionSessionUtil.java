@@ -237,6 +237,13 @@ public class ConnectionSessionUtil {
         return (String) connectionSession.getAttribute(ConnectionSessionConstants.CLUSTER_NAME);
     }
 
+    public static void setConnectSchema(@NonNull ConnectionSession connectionSession, @NonNull String schema) {
+        connectionSession.setAttribute(ConnectionSessionConstants.CONNECT_SCHEMA_KEY, schema);
+    }
+
+    public static String getConnectSchema(@NonNull ConnectionSession connectionSession) {
+        return (String) connectionSession.getAttribute(ConnectionSessionConstants.CONNECT_SCHEMA_KEY);
+    }
 
     public static void setCurrentSchema(@NonNull ConnectionSession connectionSession, @NonNull String schema) {
         connectionSession.setAttribute(ConnectionSessionConstants.CURRENT_SCHEMA_KEY, schema);

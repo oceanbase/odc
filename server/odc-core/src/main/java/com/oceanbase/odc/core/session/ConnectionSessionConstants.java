@@ -42,6 +42,7 @@ public class ConnectionSessionConstants {
      * the form of attributes, this is the key
      */
     public static final String CURRENT_SCHEMA_KEY = "CURRENT_SCHEMA";
+    public static final String CONNECT_SCHEMA_KEY = "CONNECT_SCHEMA";
     /**
      * OceanBase special, tenant name
      */

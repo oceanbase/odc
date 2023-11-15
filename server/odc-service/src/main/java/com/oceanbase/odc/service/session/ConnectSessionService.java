@@ -212,7 +212,6 @@ public class ConnectSessionService {
 
     private ConnectionSession create(@NotNull Long dataSourceId, String schemaName) {
         preCheckSessionLimit();
-
         ConnectionConfig connection = connectionService.getForConnectionSkipPermissionCheck(dataSourceId);
         horizontalDataPermissionValidator.checkCurrentOrganization(connection);
         log.info("Begin to create session, connection id={}, name={}", connection.id(), connection.getName());
@@ -226,6 +225,9 @@ public class ConnectSessionService {
         UserConfig userConfig = userConfigFacade.queryByCache(authenticationFacade.currentUserId());
         SqlExecuteTaskManagerFactory factory =
                 new SqlExecuteTaskManagerFactory(this.monitorTaskManager, "console", 1);
+        if (StringUtils.isNotEmpty(schemaName)) {
+            connection.setDefaultSchema(schemaName);
+        }
         DefaultConnectSessionFactory sessionFactory = new DefaultConnectSessionFactory(
                 connection, ConnectionAccountType.MAIN, getAutoCommit(connection, userConfig), factory);
         long timeoutMillis = TimeUnit.MILLISECONDS.convert(sessionProperties.getTimeoutMins(), TimeUnit.MINUTES);
@@ -238,9 +240,6 @@ public class ConnectSessionService {
             ConnectionSessionUtil.setConnectionAccountType(session, ConnectionAccountType.MAIN);
             DatasourceColumnAccessor accessor = new DatasourceColumnAccessor(session);
             ConnectionSessionUtil.setColumnAccessor(session, accessor);
-            if (StringUtils.isNotEmpty(schemaName)) {
-                ConnectionSessionUtil.setCurrentSchema(session, schemaName);
-            }
             log.info("Connect session created, connectionId={}, session={}", dataSourceId, session);
             return session;
         } catch (Exception e) {

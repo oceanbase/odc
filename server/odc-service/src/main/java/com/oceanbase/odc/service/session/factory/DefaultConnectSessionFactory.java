@@ -38,6 +38,8 @@ import com.oceanbase.odc.core.task.TaskManagerFactory;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.util.ConnectionInfoUtil;
 import com.oceanbase.odc.service.connection.util.DefaultConnectionExtensionExecutor;
+import com.oceanbase.odc.service.connection.util.DefaultJdbcUrlParser;
+import com.oceanbase.odc.service.connection.util.JdbcUrlParser;
 import com.oceanbase.odc.service.datasecurity.accessor.DatasourceColumnAccessor;
 import com.oceanbase.odc.service.session.initializer.SwitchSchemaInitializer;
 
@@ -88,9 +90,6 @@ public class DefaultConnectSessionFactory implements ConnectionSessionFactory {
         registerConsoleDataSource(session);
         registerBackendDataSource(session);
         initSession(session);
-        if (StringUtils.isNotBlank(connectionConfig.defaultSchema())) {
-            ConnectionSessionUtil.setCurrentSchema(session, connectionConfig.defaultSchema());
-        }
         if (StringUtils.isNotBlank(connectionConfig.getTenantName())) {
             ConnectionSessionUtil.setTenantName(session, connectionConfig.getTenantName());
         }
@@ -103,6 +102,20 @@ public class DefaultConnectSessionFactory implements ConnectionSessionFactory {
     private void registerConsoleDataSource(ConnectionSession session) {
         OBConsoleDataSourceFactory dataSourceFactory =
                 new OBConsoleDataSourceFactory(connectionConfig, accountType, autoCommit);
+        try {
+            JdbcUrlParser urlParser = new DefaultJdbcUrlParser(dataSourceFactory.getJdbcUrl());
+            String connectSchema = urlParser.getSchema();
+            if (StringUtils.isNotBlank(connectSchema)) {
+                connectSchema = ConnectionSessionUtil.getUserOrSchemaString(connectSchema, session.getDialectType());
+                ConnectionSessionUtil.setConnectSchema(session, connectSchema);
+                ConnectionSessionUtil.setCurrentSchema(session, connectSchema);
+            }
+        } catch (Exception e) {
+            if (StringUtils.isNotBlank(connectionConfig.getDefaultSchema())) {
+                ConnectionSessionUtil.setConnectSchema(session, connectionConfig.getDefaultSchema());
+                ConnectionSessionUtil.setCurrentSchema(session, connectionConfig.getDefaultSchema());
+            }
+        }
         dataSourceFactory.setEventPublisher(eventPublisher);
         ProxyDataSourceFactory proxyFactory = new ProxyDataSourceFactory(dataSourceFactory);
         session.register(ConnectionSessionConstants.CONSOLE_DS_KEY, proxyFactory);
