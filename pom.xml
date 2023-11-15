@@ -134,7 +134,7 @@
         <isSkipIntegrationTest>false</isSkipIntegrationTest>
 
         <mysql.jdbc.version>8.0.30</mysql.jdbc.version>
-        <oracle.jdbc.version>21.5.0.0</oracle.jdbc.version>
+        <oracle.jdbc.version>21.1.0.0</oracle.jdbc.version>
 
         <micrometer-core.version>1.8.0</micrometer-core.version>
     </properties>
