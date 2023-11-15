@@ -22,7 +22,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 
+import com.oceanbase.odc.common.concurrent.Await;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveColumn;
@@ -75,23 +77,26 @@ public class SensitiveColumnScanningTask implements Callable<Void> {
 
     private void scanColumns(Map<String, List<DBTableColumn>> object2Columns, SensitiveColumnType columnType) {
         for (String objectName : object2Columns.keySet()) {
-            List<SensitiveColumn> sensitiveColumns = new ArrayList<>();
-            for (DBTableColumn dbTableColumn : object2Columns.get(objectName)) {
-                if (recognizer.recognize(dbTableColumn) && !existsSensitiveColumns
-                        .contains(new SensitiveColumnMeta(database.getId(), objectName, dbTableColumn.getName()))) {
-                    SensitiveColumn column = new SensitiveColumn();
-                    column.setType(columnType);
-                    column.setDatabase(database);
-                    column.setTableName(objectName);
-                    column.setColumnName(dbTableColumn.getName());
-                    column.setMaskingAlgorithmId(recognizer.maskingAlgorithmId());
-                    column.setSensitiveRuleId(recognizer.sensitiveRuleId());
-                    column.setLevel(recognizer.sensitiveLevel());
-                    sensitiveColumns.add(column);
+            Await.await().timeout(500).timeUnit(TimeUnit.MILLISECONDS).until(() -> {
+                List<SensitiveColumn> sensitiveColumns = new ArrayList<>();
+                for (DBTableColumn dbTableColumn : object2Columns.get(objectName)) {
+                    if (recognizer.recognize(dbTableColumn) && !existsSensitiveColumns
+                            .contains(new SensitiveColumnMeta(database.getId(), objectName, dbTableColumn.getName()))) {
+                        SensitiveColumn column = new SensitiveColumn();
+                        column.setType(columnType);
+                        column.setDatabase(database);
+                        column.setTableName(objectName);
+                        column.setColumnName(dbTableColumn.getName());
+                        column.setMaskingAlgorithmId(recognizer.maskingAlgorithmId());
+                        column.setSensitiveRuleId(recognizer.sensitiveRuleId());
+                        column.setLevel(recognizer.sensitiveLevel());
+                        sensitiveColumns.add(column);
+                    }
                 }
-            }
-            taskInfo.addSensitiveColumns(sensitiveColumns);
-            taskInfo.addFinishedTableCount();
+                taskInfo.addSensitiveColumns(sensitiveColumns);
+                taskInfo.addFinishedTableCount();
+                return true;
+            }).build().start();
         }
     }
 
