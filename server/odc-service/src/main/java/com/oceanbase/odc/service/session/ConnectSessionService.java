@@ -340,10 +340,8 @@ public class ConnectSessionService {
 
         ConnectionSessionUtil.setQueryLimit(connectionSession, userConfig.getDefaultQueryLimit());
         ConnectionSessionUtil.setUserId(connectionSession, authenticationFacade.currentUserId());
-        ConnectionSessionUtil.setConnectionConfig(connectionSession, connectionConfig);
         if (connectionSession.getDialectType() == DialectType.OB_ORACLE) {
             ConnectionSessionUtil.initConsoleSessionTimeZone(connectionSession, connectProperties.getDefaultTimeZone());
-            log.info("Init time zone completed.");
         }
         Long envId = connectionConfig.getEnvironmentId();
         if (envId != null) {
