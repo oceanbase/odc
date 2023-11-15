@@ -449,15 +449,13 @@ public class ConnectConsoleService {
 
     @SkipAuthorize
     public boolean killCurrentQuery(@NotNull String sessionId) {
-        ConnectionSession session = sessionService.nullSafeGet(sessionId);
-        Long connectionId = ((ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(session)).id();
-        Verify.notNull(connectionId, "ConnectionId");
-        return dbSessionManageFacade.killCurrentQuery(session);
+        return dbSessionManageFacade.killCurrentQuery(sessionService.nullSafeGet(sessionId));
     }
 
     @SkipAuthorize
     public List<KillSessionResult> killSessionOrQuery(KillSessionOrQueryReq request) {
-        if (!connectionService.checkPermission(Long.valueOf(request.getDatasourceId()), Arrays.asList("update"))) {
+        if (!connectionService.checkPermission(
+                Long.valueOf(request.getDatasourceId()), Collections.singletonList("update"))) {
             throw new AccessDeniedException();
         }
         return dbSessionManageFacade.killSessionOrQuery(request);
