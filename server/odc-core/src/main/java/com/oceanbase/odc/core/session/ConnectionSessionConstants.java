@@ -86,11 +86,6 @@ public class ConnectionSessionConstants {
      * The connection account type current database session needs to be stored in the database session
      * in the form of attributes, this is the key
      */
-    public static final String CONNECTION_ACCOUNT_TYPE_KEY = "CONNECTION_ACCOUNT_TYPE";
-    /**
-     * The connection account type current database session needs to be stored in the database session
-     * in the form of attributes, this is the key
-     */
     public static final String QUERY_CACHE_KEY = "QUERY_CACHE";
     public static final String FUTURE_JDBC_RESULT_KEY = "FUTURE_JDBC_RESULT";
     /**

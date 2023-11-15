@@ -46,7 +46,6 @@ import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.session.DefaultConnectionSessionManager;
 import com.oceanbase.odc.core.session.InMemorySessionRepository;
 import com.oceanbase.odc.core.shared.PreConditions;
-import com.oceanbase.odc.core.shared.constant.ConnectionAccountType;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.LimitMetric;
@@ -218,7 +217,7 @@ public class ConnectSessionService {
         Set<String> actions = authorizationFacade.getAllPermittedActions(authenticationFacade.currentUser(),
                 ResourceType.ODC_CONNECTION, "" + dataSourceId);
         connection.setPermittedActions(actions);
-        ConnectionTestResult result = connectionTesting.test(connection, ConnectionAccountType.MAIN);
+        ConnectionTestResult result = connectionTesting.test(connection);
         if (!result.isActive() && result.getErrorCode() != ErrorCodes.ConnectionInitScriptFailed) {
             throw new VerifyException(result.getErrorMessage());
         }
@@ -229,7 +228,7 @@ public class ConnectSessionService {
             connection.setDefaultSchema(schemaName);
         }
         DefaultConnectSessionFactory sessionFactory = new DefaultConnectSessionFactory(
-                connection, ConnectionAccountType.MAIN, getAutoCommit(connection, userConfig), factory);
+                connection, getAutoCommit(connection, userConfig), factory);
         long timeoutMillis = TimeUnit.MILLISECONDS.convert(sessionProperties.getTimeoutMins(), TimeUnit.MINUTES);
         timeoutMillis = timeoutMillis + this.connectionSessionManager.getScanIntervalMillis();
         sessionFactory.setSessionTimeoutMillis(timeoutMillis);
@@ -237,7 +236,6 @@ public class ConnectSessionService {
         try {
             initSession(session, connection, userConfig);
             ConnectionSessionUtil.setPermittedActions(session, actions);
-            ConnectionSessionUtil.setConnectionAccountType(session, ConnectionAccountType.MAIN);
             DatasourceColumnAccessor accessor = new DatasourceColumnAccessor(session);
             ConnectionSessionUtil.setColumnAccessor(session, accessor);
             log.info("Connect session created, connectionId={}, session={}", dataSourceId, session);

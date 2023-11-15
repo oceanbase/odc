@@ -31,7 +31,6 @@ import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionFactory;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.session.DefaultConnectionSession;
-import com.oceanbase.odc.core.shared.constant.ConnectionAccountType;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.sql.execute.task.SqlExecuteTaskManager;
 import com.oceanbase.odc.core.task.TaskManagerFactory;
@@ -63,12 +62,10 @@ public class DefaultConnectSessionFactory implements ConnectionSessionFactory {
     private final TaskManagerFactory<SqlExecuteTaskManager> taskManagerFactory;
     private final Boolean autoCommit;
     private final EventPublisher eventPublisher;
-    private final ConnectionAccountType accountType;
     @Setter
     private long sessionTimeoutMillis;
 
-    public DefaultConnectSessionFactory(@NonNull ConnectionConfig connectionConfig,
-            ConnectionAccountType type, Boolean autoCommit,
+    public DefaultConnectSessionFactory(@NonNull ConnectionConfig connectionConfig, Boolean autoCommit,
             TaskManagerFactory<SqlExecuteTaskManager> taskManagerFactory) {
         this.sessionTimeoutMillis = TimeUnit.MILLISECONDS.convert(
                 ConnectionSessionConstants.SESSION_EXPIRATION_TIME_SECONDS, TimeUnit.SECONDS);
@@ -76,11 +73,10 @@ public class DefaultConnectSessionFactory implements ConnectionSessionFactory {
         this.taskManagerFactory = taskManagerFactory;
         this.autoCommit = autoCommit == null || autoCommit;
         this.eventPublisher = new LocalEventPublisher();
-        this.accountType = type == null ? ConnectionAccountType.MAIN : type;
     }
 
     public DefaultConnectSessionFactory(@NonNull ConnectionConfig connectionConfig) {
-        this(connectionConfig, null, null, null);
+        this(connectionConfig, null, null);
     }
 
     @Override
@@ -100,8 +96,7 @@ public class DefaultConnectSessionFactory implements ConnectionSessionFactory {
     }
 
     private void registerConsoleDataSource(ConnectionSession session) {
-        OBConsoleDataSourceFactory dataSourceFactory =
-                new OBConsoleDataSourceFactory(connectionConfig, accountType, autoCommit);
+        OBConsoleDataSourceFactory dataSourceFactory = new OBConsoleDataSourceFactory(connectionConfig, autoCommit);
         try {
             JdbcUrlParser urlParser = new DefaultJdbcUrlParser(dataSourceFactory.getJdbcUrl());
             String connectSchema = urlParser.getSchema();
@@ -123,8 +118,7 @@ public class DefaultConnectSessionFactory implements ConnectionSessionFactory {
     }
 
     private void registerBackendDataSource(ConnectionSession session) {
-        DruidDataSourceFactory dataSourceFactory =
-                new DruidDataSourceFactory(connectionConfig, accountType);
+        DruidDataSourceFactory dataSourceFactory = new DruidDataSourceFactory(connectionConfig);
         ProxyDataSourceFactory proxyFactory = new ProxyDataSourceFactory(dataSourceFactory);
         session.register(ConnectionSessionConstants.BACKEND_DS_KEY, proxyFactory);
         proxyFactory.setInitializer(new SwitchSchemaInitializer(session));
@@ -154,7 +148,6 @@ public class DefaultConnectSessionFactory implements ConnectionSessionFactory {
         ConnectionSessionUtil.setConsoleSessionResetFlag(session, false);
         ConnectionInfoUtil.initConsoleConnectionId(session);
         ConnectionSessionUtil.setConnectionConfig(session, connectionConfig);
-        ConnectionSessionUtil.setConnectionAccountType(session, accountType);
         ConnectionSessionUtil.setColumnAccessor(session, new DatasourceColumnAccessor(session));
         setNlsFormat(session);
     }

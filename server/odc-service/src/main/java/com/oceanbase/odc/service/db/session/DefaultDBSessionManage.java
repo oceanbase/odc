@@ -46,7 +46,6 @@ import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.Verify;
-import com.oceanbase.odc.core.shared.constant.ConnectionAccountType;
 import com.oceanbase.odc.core.shared.exception.InternalServerError;
 import com.oceanbase.odc.core.shared.model.OdcDBSession;
 import com.oceanbase.odc.core.sql.execute.model.JdbcGeneralResult;
@@ -112,18 +111,15 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
         }
     }
 
-
     @Override
     @SneakyThrows
     @SkipAuthorize
     public boolean killCurrentQuery(ConnectionSession session) {
         String connectionId = ConnectionSessionUtil.getConsoleConnectionId(session);
         Verify.notNull(connectionId, "ConnectionId");
-        ConnectionAccountType accountType = ConnectionSessionUtil.getConnectionAccountType(session);
         ConnectionConfig conn = (ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(session);
         Verify.notNull(conn, "ConnectionConfig");
-        Verify.notNull(accountType, "AccountType");
-        DruidDataSourceFactory factory = new DruidDataSourceFactory(conn, accountType);
+        DruidDataSourceFactory factory = new DruidDataSourceFactory(conn);
         try {
             ConnectionInfoUtil.killQuery(connectionId, factory, session.getDialectType());
         } catch (Exception e) {
@@ -243,8 +239,7 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
         directConnectConfig.setHost(serverAddress.getIpAddress());
         directConnectConfig.setPort(Integer.parseInt(serverAddress.getPort()));
         directConnectConfig.setClusterName(null);
-        OBConsoleDataSourceFactory factory = new OBConsoleDataSourceFactory(directConnectConfig,
-                ConnectionSessionUtil.getConnectionAccountType(session), null);
+        OBConsoleDataSourceFactory factory = new OBConsoleDataSourceFactory(directConnectConfig, null);
 
         try (SingleConnectionDataSource dataSource = (SingleConnectionDataSource) factory.getDataSource();
                 Connection connection = dataSource.getConnection()) {

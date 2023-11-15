@@ -46,7 +46,6 @@ import com.oceanbase.odc.common.lang.Pair;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.datasource.CloneableDataSourceFactory;
 import com.oceanbase.odc.core.shared.Verify;
-import com.oceanbase.odc.core.shared.constant.ConnectionAccountType;
 import com.oceanbase.odc.core.shared.constant.ConnectionVisibleScope;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
@@ -327,16 +326,6 @@ public class ConnectionSessionUtil {
 
     public static Object getColumnAccessor(@NonNull ConnectionSession connectionSession) {
         return connectionSession.getAttribute(ConnectionSessionConstants.COLUMN_ACCESSOR_KEY);
-    }
-
-    public static void setConnectionAccountType(@NonNull ConnectionSession connectionSession,
-            @NonNull ConnectionAccountType accountType) {
-        connectionSession.setAttribute(ConnectionSessionConstants.CONNECTION_ACCOUNT_TYPE_KEY, accountType);
-    }
-
-    public static ConnectionAccountType getConnectionAccountType(@NonNull ConnectionSession connectionSession) {
-        return (ConnectionAccountType) connectionSession
-                .getAttribute(ConnectionSessionConstants.CONNECTION_ACCOUNT_TYPE_KEY);
     }
 
     public static String getConsoleSessionTimeZone(@NonNull ConnectionSession connectionSession) {

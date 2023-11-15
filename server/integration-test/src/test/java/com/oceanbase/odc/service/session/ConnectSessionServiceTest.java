@@ -87,7 +87,7 @@ public class ConnectSessionServiceTest extends ServiceTestEnv {
         when(authenticationFacade.currentUser()).thenReturn(user);
         when(authorizationFacade.getAllPermittedActions(Mockito.any(), Mockito.any(), Mockito.anyString()))
                 .thenReturn(new HashSet<>(Collections.singletonList("*")));
-        when(connectionTesting.test(Mockito.any(), Mockito.any()))
+        when(connectionTesting.test(Mockito.any(ConnectionConfig.class)))
                 .thenReturn(ConnectionTestResult.success(ConnectType.OB_ORACLE));
     }
 
