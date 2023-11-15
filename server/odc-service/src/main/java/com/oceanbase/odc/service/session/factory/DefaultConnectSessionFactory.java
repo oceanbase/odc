@@ -136,7 +136,6 @@ public class DefaultConnectSessionFactory implements ConnectionSessionFactory {
 
     private void initSession(ConnectionSession session) {
         this.eventPublisher.addEventListener(new ConsoleConnectionResetListener(session));
-        ConnectionSessionUtil.setEventPublisher(session, eventPublisher);
         ConnectionSessionUtil.initArchitecture(session);
         ConnectionInfoUtil.initSessionVersion(session);
         ConnectionSessionUtil.setConsoleSessionResetFlag(session, false);

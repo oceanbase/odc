@@ -40,7 +40,6 @@ import org.springframework.jdbc.core.StatementCallback;
 
 import com.oceanbase.jdbc.OceanBaseConnection;
 import com.oceanbase.jdbc.internal.protocol.Protocol;
-import com.oceanbase.odc.common.event.EventPublisher;
 import com.oceanbase.odc.common.lang.Pair;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.datasource.CloneableDataSourceFactory;
@@ -256,15 +255,6 @@ public class ConnectionSessionUtil {
 
     public static Object getConnectionConfig(@NonNull ConnectionSession connectionSession) {
         return connectionSession.getAttribute(ConnectionSessionConstants.CONNECTION_CONFIG_KEY);
-    }
-
-    public static void setEventPublisher(@NonNull ConnectionSession connectionSession,
-            @NonNull EventPublisher publisher) {
-        connectionSession.setAttribute(ConnectionSessionConstants.EVENT_PUBLISHER_NAME, publisher);
-    }
-
-    public static EventPublisher getEventPublisher(@NonNull ConnectionSession connectionSession) {
-        return (EventPublisher) connectionSession.getAttribute(ConnectionSessionConstants.EVENT_PUBLISHER_NAME);
     }
 
     public static void setConsoleSessionResetFlag(@NonNull ConnectionSession connectionSession,

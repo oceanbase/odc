@@ -93,7 +93,6 @@ public class ConnectionSessionConstants {
      */
     public static final String SESSION_UPLOAD_DIR_NAME = "upload";
     public static final String SESSION_TIME_ZONE = "TIME_ZONE";
-    public static final String EVENT_PUBLISHER_NAME = "EVENT_PUBLISHER";
     public static final String OB_ARCHITECTURE = "OB_ARCHITECTURE";
     public static final String CONSOLE_DS_KEY = "CONSOLE-DATASOURCE";
     public static final String SYS_DS_KEY = "SYS-DATASOURCE";
