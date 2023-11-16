@@ -77,7 +77,7 @@ public class DefaultConnectSessionFactory implements ConnectionSessionFactory {
         this.taskManagerFactory = taskManagerFactory;
         this.autoCommit = autoCommit == null || autoCommit;
         this.eventPublisher = new LocalEventPublisher();
-        this.idGenerator = new DefaultConnectSessionIdGenerator(null);
+        this.idGenerator = new DefaultConnectSessionIdGenerator();
     }
 
     public DefaultConnectSessionFactory(@NonNull ConnectionConfig connectionConfig) {

@@ -19,6 +19,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Optional;
@@ -27,7 +28,6 @@ import java.util.concurrent.TimeUnit;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
-import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
 import org.apache.commons.io.FileExistsException;
@@ -37,9 +37,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 
+import com.oceanbase.odc.core.authority.SecurityManager;
 import com.oceanbase.odc.core.authority.exception.AccessDeniedException;
+import com.oceanbase.odc.core.authority.model.DefaultSecurityResource;
+import com.oceanbase.odc.core.authority.permission.Permission;
 import com.oceanbase.odc.core.authority.util.Authenticated;
-import com.oceanbase.odc.core.authority.util.PreAuthenticate;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionRepository;
@@ -134,6 +136,8 @@ public class ConnectSessionService {
     private EnvironmentRepository environmentRepository;
     @Autowired
     private HorizontalDataPermissionValidator horizontalDataPermissionValidator;
+    @Autowired
+    private SecurityManager securityManager;
 
     @PostConstruct
     public void init() {
@@ -177,7 +181,6 @@ public class ConnectSessionService {
         }
     }
 
-    @PreAuthenticate(actions = "update", resourceType = "ODC_CONNECTION", indexOfIdParam = 0)
     public CreateSessionResp createByDataSourceId(@NotNull Long dataSourceId) {
         ConnectionSession session = create(dataSourceId, null);
         return CreateSessionResp.builder()
@@ -191,12 +194,7 @@ public class ConnectSessionService {
 
     @SkipAuthorize("check permission internally")
     public CreateSessionResp createByDatabaseId(@NotNull Long databaseId) {
-        Database database = databaseService.detail(databaseId);
-        if (Objects.isNull(database.getProject())
-                && authenticationFacade.currentUser().getOrganizationType() == OrganizationType.TEAM) {
-            throw new AccessDeniedException();
-        }
-        ConnectionSession session = create(database.getDataSource().getId(), database.getName());
+        ConnectionSession session = create(null, databaseId);
         return CreateSessionResp.builder()
                 .sessionId(session.getId())
                 .supports(configService.getSupportFeatures(session))
@@ -207,17 +205,37 @@ public class ConnectSessionService {
     }
 
     @SkipAuthorize("only for unit test")
-    protected ConnectionSession createForTest(@NotNull Long dataSourceId, String schemaName) {
-        return create(dataSourceId, schemaName);
+    protected ConnectionSession createForTest(@NotNull Long dataSourceId) {
+        return create(dataSourceId, null);
     }
 
-    private ConnectionSession create(@NotNull Long dataSourceId, String schemaName) {
-        return create(new CreateSessionReq(dataSourceId, null, schemaName));
+    private ConnectionSession create(Long dataSourceId, Long databaseId) {
+        return create(new CreateSessionReq(dataSourceId, databaseId, null));
     }
 
-    private ConnectionSession create(@NotNull @Valid CreateSessionReq req) {
+    private ConnectionSession create(@NotNull CreateSessionReq req) {
+        Long dataSourceId;
+        String schemaName;
+        if (req.getDbId() != null) {
+            // create session by database id
+            Database database = databaseService.detail(req.getDbId());
+            if (Objects.isNull(database.getProject())
+                    && authenticationFacade.currentUser().getOrganizationType() == OrganizationType.TEAM) {
+                throw new AccessDeniedException();
+            }
+            schemaName = database.getName();
+            dataSourceId = database.getDataSource().getId();
+        } else {
+            // create session by datasource id
+            PreConditions.notNull(req.getDsId(), "DatasourceId");
+            Permission requiredPermission = securityManager.getPermissionByActions(
+                    new DefaultSecurityResource(req.getDsId().toString(), ResourceType.ODC_CONNECTION.name()),
+                    Collections.singletonList("update"));
+            securityManager.checkPermission(requiredPermission);
+            schemaName = null;
+            dataSourceId = req.getDsId();
+        }
         preCheckSessionLimit();
-        Long dataSourceId = req.getDsId();
         ConnectionConfig connection = connectionService.getForConnectionSkipPermissionCheck(dataSourceId);
         horizontalDataPermissionValidator.checkCurrentOrganization(connection);
         log.info("Begin to create session, connection id={}, name={}", connection.id(), connection.getName());
@@ -231,12 +249,15 @@ public class ConnectSessionService {
         UserConfig userConfig = userConfigFacade.queryByCache(authenticationFacade.currentUserId());
         SqlExecuteTaskManagerFactory factory =
                 new SqlExecuteTaskManagerFactory(this.monitorTaskManager, "console", 1);
-        if (StringUtils.isNotEmpty(req.getSchema())) {
-            connection.setDefaultSchema(req.getSchema());
+        if (StringUtils.isNotEmpty(schemaName)) {
+            connection.setDefaultSchema(schemaName);
         }
         DefaultConnectSessionFactory sessionFactory = new DefaultConnectSessionFactory(
                 connection, getAutoCommit(connection, userConfig), factory);
-        sessionFactory.setIdGenerator(new DefaultConnectSessionIdGenerator(req.getRealId()));
+        DefaultConnectSessionIdGenerator idGenerator = new DefaultConnectSessionIdGenerator();
+        idGenerator.setDatabaseId(req.getDbId());
+        idGenerator.setFixRealId(StringUtils.isBlank(req.getRealId()) ? null : req.getRealId());
+        sessionFactory.setIdGenerator(idGenerator);
         long timeoutMillis = TimeUnit.MILLISECONDS.convert(sessionProperties.getTimeoutMins(), TimeUnit.MINUTES);
         timeoutMillis = timeoutMillis + this.connectionSessionManager.getScanIntervalMillis();
         sessionFactory.setSessionTimeoutMillis(timeoutMillis);

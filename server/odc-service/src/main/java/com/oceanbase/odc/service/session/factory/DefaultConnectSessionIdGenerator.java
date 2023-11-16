@@ -19,27 +19,28 @@ import java.util.Base64;
 import java.util.UUID;
 
 import org.apache.commons.lang3.RandomStringUtils;
-import org.apache.commons.lang3.StringUtils;
 
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.session.ConnectionSessionIdGenerator;
 import com.oceanbase.odc.service.connection.model.CreateSessionReq;
 
 import lombok.NonNull;
+import lombok.Setter;
 
+@Setter
 public class DefaultConnectSessionIdGenerator implements ConnectionSessionIdGenerator<CreateSessionReq> {
 
-    private final String fixRealId;
-
-    public DefaultConnectSessionIdGenerator(String fixRealId) {
-        this.fixRealId = StringUtils.isBlank(fixRealId) ? null : fixRealId;
-    }
+    private Long databaseId;
+    private String fixRealId;
 
     @Override
     public String generateId(CreateSessionReq key) {
         key.setRealId(RandomStringUtils.random(10, UUID.randomUUID().toString().replace("-", "")));
         if (fixRealId != null) {
             key.setRealId(fixRealId);
+        }
+        if (this.databaseId != null) {
+            key.setDbId(databaseId);
         }
         return Base64.getEncoder().encodeToString(JsonUtils.toJson(key).getBytes());
     }

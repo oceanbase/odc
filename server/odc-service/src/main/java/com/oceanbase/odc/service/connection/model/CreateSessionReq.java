@@ -18,8 +18,6 @@ package com.oceanbase.odc.service.connection.model;
 
 import java.io.Serializable;
 
-import javax.validation.constraints.NotNull;
-
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
@@ -40,17 +38,16 @@ import lombok.ToString;
 @NoArgsConstructor
 public class CreateSessionReq implements Serializable {
 
-    private String schema;
-    @NotNull
+    private Long dbId;
     private Long dsId;
     private String realId;
 
     public static CreateSessionReq from(@NonNull ConnectionConfig connectionConfig) {
-        return new CreateSessionReq(connectionConfig.getId(), null, connectionConfig.getDefaultSchema());
+        return new CreateSessionReq(connectionConfig.getId(), null, null);
     }
 
-    public CreateSessionReq(@NonNull Long dsId, String realId, String schema) {
-        this.schema = schema;
+    public CreateSessionReq(Long dsId, Long dbId, String realId) {
+        this.dbId = dbId;
         this.dsId = dsId;
         this.realId = realId;
     }
