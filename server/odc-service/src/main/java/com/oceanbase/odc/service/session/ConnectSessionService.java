@@ -45,7 +45,7 @@ import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionRepository;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.session.DefaultConnectionSessionManager;
-import com.oceanbase.odc.core.session.InMemorySessionRepository;
+import com.oceanbase.odc.core.session.InMemoryConnectionSessionRepository;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
@@ -139,7 +139,7 @@ public class ConnectSessionService {
     public void init() {
         log.info("Start to initialize the connection session module");
         this.monitorTaskManager = new ExecuteMonitorTaskManager();
-        ConnectionSessionRepository repository = new InMemorySessionRepository();
+        ConnectionSessionRepository repository = new InMemoryConnectionSessionRepository();
         this.connectionSessionManager = new DefaultConnectionSessionManager(
                 new DefaultTaskManager("connection-session-management"), repository);
         this.connectionSessionManager.addListener(new SessionLimitListener(limitService));
