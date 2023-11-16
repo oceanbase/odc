@@ -16,30 +16,24 @@
 
 package com.oceanbase.odc.service.task.caller;
 
-import com.oceanbase.odc.core.task.context.JobContext;
+import java.util.List;
+
+import lombok.Data;
 
 /**
  * @author yaobin
- * @date 2023-11-15
+ * @date 2023-11-16
  * @since 4.2.4
  */
-public class K8sJobCaller implements JobCaller {
+@Data
+public class PodTemplateConfig {
 
-    private final K8sClient client;
+    private String namespace;
 
-    public K8sJobCaller(K8sClient client) {
-        this.client = client;
-    }
+    private String image;
 
-    @Override
-    public void start(JobContext context) throws JobException {
-        // start a new k8s job
-       // client.createNamespaceJob()
+    private List<String> command;
 
-    }
+    private PodParam podParam;
 
-    @Override
-    public void stop(JobContext context) throws JobException {
-
-    }
 }
