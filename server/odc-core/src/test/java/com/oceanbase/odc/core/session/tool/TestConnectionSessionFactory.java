@@ -56,7 +56,7 @@ public class TestConnectionSessionFactory implements ConnectionSessionFactory {
         try {
             DataSourceFactory dataSourceFactory = new TestDataSourceFactory(connectType.getDialectType());
             ConnectionSession session = new DefaultConnectionSession(
-                    () -> sessionIdCounter.incrementAndGet() + "",
+                    sessionIdCounter.incrementAndGet() + "",
                     () -> new DefaultSqlExecuteTaskManager(3, "sqlexecutor"),
                     timeoutMillis, connectType, autoCommit, new TestSessionOperations());
             session.register(ConnectionSessionConstants.CONSOLE_DS_KEY,

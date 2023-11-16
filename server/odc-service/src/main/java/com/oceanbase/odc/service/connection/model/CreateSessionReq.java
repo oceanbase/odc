@@ -13,35 +13,46 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.oceanbase.odc.service.connection.model;
+
+import java.io.Serializable;
 
 import javax.validation.constraints.NotNull;
 
-import com.oceanbase.odc.common.json.SensitiveInput;
-
-import lombok.Data;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.NonNull;
+import lombok.Setter;
 import lombok.ToString;
 
 /**
- * @author yizhou.xw
- * @version : CreateSessionReq.java, v 0.1 2021-07-21 5:47 PM
+ * {@link CreateSessionReq}
+ *
+ * @author yh263208
+ * @date 2023-11-15 21:06
+ * @since ODC_release_4.2.3
+ * @see java.io.Serializable
  */
-@Data
-@ToString(exclude = {"password"})
-public class CreateSessionReq {
-    /**
-     * 连接ID，对应 /api/v1 的 sid，注意之前是 String 类型，现在统一为 Long
-     */
+@Getter
+@Setter
+@ToString
+@NoArgsConstructor
+public class CreateSessionReq implements Serializable {
+
+    private String schema;
     @NotNull
-    private Long connectionId;
-    /**
-     * 连接密码，对于公共连接无需提供，对于个人连接如果未保存密码则需要提供
-     */
-    @SensitiveInput
-    private String password;
-    /**
-     * 可以根据已有session创建一个会话，主要的应用场景是不保存连接密码的连接 当该字段不为null时将忽略{@code connectionId}和{@code password}，完全
-     * 以该字段为准
-     */
-    private String copiedFromSessionId;
+    private Long dsId;
+    private String realId;
+
+    public static CreateSessionReq from(@NonNull ConnectionConfig connectionConfig) {
+        return new CreateSessionReq(connectionConfig.getId(), null, connectionConfig.getDefaultSchema());
+    }
+
+    public CreateSessionReq(@NonNull Long dsId, String realId, String schema) {
+        this.schema = schema;
+        this.dsId = dsId;
+        this.realId = realId;
+    }
+
 }

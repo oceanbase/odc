@@ -77,11 +77,11 @@ public class DefaultConnectionSession implements ConnectionSession {
     private Date expiredTime;
     private BinaryDataManager dataManager;
 
-    public DefaultConnectionSession(@NonNull ConnectionSessionIdGenerator idGenerator,
+    public DefaultConnectionSession(@NonNull String id,
             TaskManagerFactory<SqlExecuteTaskManager> taskManagerFactory, long sessionTimeoutMillis,
             @NonNull ConnectType connectType, boolean defaultAutoCommit,
             @NonNull SessionOperations sessionOperations) throws IOException {
-        this.id = idGenerator.generateId();
+        this.id = id;
         this.connectType = connectType;
         this.defaultAutoCommit = defaultAutoCommit;
         long timestamp = System.currentTimeMillis();

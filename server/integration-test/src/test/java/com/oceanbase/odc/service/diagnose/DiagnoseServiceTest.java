@@ -51,7 +51,7 @@ public class DiagnoseServiceTest {
     }
 
     private ConnectionSession getConnectionSession() throws Exception {
-        return new DefaultConnectionSession(() -> "", null, 10000, ConnectType.OB_MYSQL, true,
+        return new DefaultConnectionSession("", null, 10000, ConnectType.OB_MYSQL, true,
                 Mockito.mock(SessionOperations.class));
     }
 

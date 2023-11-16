@@ -29,12 +29,14 @@ import com.oceanbase.odc.core.datasource.ConnectionResetEvent;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionFactory;
+import com.oceanbase.odc.core.session.ConnectionSessionIdGenerator;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.session.DefaultConnectionSession;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.sql.execute.task.SqlExecuteTaskManager;
 import com.oceanbase.odc.core.task.TaskManagerFactory;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.connection.model.CreateSessionReq;
 import com.oceanbase.odc.service.connection.util.ConnectionInfoUtil;
 import com.oceanbase.odc.service.connection.util.DefaultJdbcUrlParser;
 import com.oceanbase.odc.service.connection.util.JdbcUrlParser;
@@ -64,6 +66,8 @@ public class DefaultConnectSessionFactory implements ConnectionSessionFactory {
     private final EventPublisher eventPublisher;
     @Setter
     private long sessionTimeoutMillis;
+    @Setter
+    private ConnectionSessionIdGenerator<CreateSessionReq> idGenerator;
 
     public DefaultConnectSessionFactory(@NonNull ConnectionConfig connectionConfig,
             Boolean autoCommit, TaskManagerFactory<SqlExecuteTaskManager> taskManagerFactory) {
@@ -73,6 +77,7 @@ public class DefaultConnectSessionFactory implements ConnectionSessionFactory {
         this.taskManagerFactory = taskManagerFactory;
         this.autoCommit = autoCommit == null || autoCommit;
         this.eventPublisher = new LocalEventPublisher();
+        this.idGenerator = new DefaultConnectSessionIdGenerator(null);
     }
 
     public DefaultConnectSessionFactory(@NonNull ConnectionConfig connectionConfig) {
@@ -125,7 +130,7 @@ public class DefaultConnectSessionFactory implements ConnectionSessionFactory {
 
     private ConnectionSession createSession() {
         try {
-            return new DefaultConnectionSession(new DefaultSessionIdGenerator(connectionConfig),
+            return new DefaultConnectionSession(idGenerator.generateId(CreateSessionReq.from(connectionConfig)),
                     taskManagerFactory, sessionTimeoutMillis, connectionConfig.getType(), autoCommit,
                     ConnectionPluginUtil.getSessionExtension(connectionConfig.getDialectType()));
         } catch (Exception e) {
