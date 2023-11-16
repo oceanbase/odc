@@ -33,7 +33,7 @@ public class RegexColumnRecognizer implements ColumnRecognizer {
     private final Pattern columnPattern;
     private final Pattern columnCommentPattern;
 
-    private static final long MATCH_TIMEOUT_MILLIS = 500L;
+    private static final long MATCH_TIMEOUT_MILLIS = 100L;
 
     public RegexColumnRecognizer(String databaseRegex, String tableRegex, String columnRegex, String commentRegex) {
         databasePattern = StringUtils.isNotBlank(databaseRegex) ? Pattern.compile(databaseRegex) : null;
