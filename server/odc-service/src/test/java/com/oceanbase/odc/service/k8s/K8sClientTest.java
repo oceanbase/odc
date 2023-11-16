@@ -60,7 +60,7 @@ public class K8sClientTest {
         String generateJobOfName = k8sClient.createNamespaceJob("default", exceptedJobName, imageName, cmd, podParam);
         Assert.assertEquals(exceptedJobName, generateJobOfName);
 
-        Optional<String> queryJobName = k8sClient.getJob("default", exceptedJobName);
+        Optional<String> queryJobName = k8sClient.getNamespaceJob("default", exceptedJobName);
         Assert.assertTrue(queryJobName.isPresent());
         Assert.assertEquals(exceptedJobName, queryJobName.get());
     }

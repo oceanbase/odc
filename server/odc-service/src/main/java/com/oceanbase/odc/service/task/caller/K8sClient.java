@@ -29,5 +29,5 @@ public interface K8sClient {
     String createNamespaceJob(String namespace, String jobName, String image, List<String> command,
             PodParam podParam) throws JobException;
 
-    Optional<String> getJob(String namespace, String jobName) throws JobException;
+    Optional<String> getNamespaceJob(String namespace, String jobName) throws JobException;
 }
