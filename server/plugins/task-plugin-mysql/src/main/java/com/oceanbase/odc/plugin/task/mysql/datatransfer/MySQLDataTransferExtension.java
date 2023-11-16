@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.plugin.task.api.datatransfer;
+package com.oceanbase.odc.plugin.task.mysql.datatransfer;
 
 import java.io.File;
 import java.net.URL;
@@ -22,26 +22,28 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Set;
 
-import org.pf4j.ExtensionPoint;
+import org.apache.commons.collections4.SetUtils;
+import org.pf4j.Extension;
 
+import com.oceanbase.odc.plugin.task.api.datatransfer.DataTransferJob;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.ConnectionInfo;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
-import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferFormat;
+import com.oceanbase.odc.plugin.task.obmysql.datatransfer.OBMySQLDataTransferExtension;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
 
 import lombok.NonNull;
 
-/**
- * @author liuyizhuo.lyz
- * @date 2023-09-15
- */
-public interface DataTransferExtensionPoint extends ExtensionPoint {
+@Extension
+public class MySQLDataTransferExtension extends OBMySQLDataTransferExtension {
 
-    DataTransferJob generate(@NonNull DataTransferConfig config, @NonNull File workingDir, @NonNull File logDir,
-            @NonNull List<URL> inputs) throws Exception;
+    @Override
+    public DataTransferJob generate(@NonNull DataTransferConfig config, @NonNull File workingDir, @NonNull File logDir,
+            @NonNull List<URL> inputs) throws Exception {
+        return new MySQLDataTransferJob(config, workingDir, logDir, inputs);
+    }
 
-    Set<ObjectType> getSupportedObjectTypes(ConnectionInfo connectionInfo) throws SQLException;
-
-    Set<DataTransferFormat> getSupportedTransferFormats();
-
+    @Override
+    public Set<ObjectType> getSupportedObjectTypes(ConnectionInfo connectionInfo) throws SQLException {
+        return SetUtils.hashSet(ObjectType.TABLE, ObjectType.VIEW, ObjectType.FUNCTION, ObjectType.PROCEDURE);
+    }
 }

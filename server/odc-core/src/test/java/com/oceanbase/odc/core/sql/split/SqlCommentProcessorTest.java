@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.StringWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -63,8 +64,8 @@ public class SqlCommentProcessorTest {
         List<String> sqls;
         try (InputStream in =
                 this.getClass().getClassLoader().getResourceAsStream("sql/split/comment-processor-mysql-test.sql");
-                SqlStatementIterator iterator =
-                        SqlCommentProcessor.iterator(in, DialectType.OB_MYSQL, false, false, false)) {
+                SqlStatementIterator iterator = SqlCommentProcessor.iterator(in, DialectType.OB_MYSQL, false, false,
+                        false, StandardCharsets.UTF_8)) {
             sqls = IteratorUtils.toList(iterator);
         }
         SqlCommentProcessor processor = new SqlCommentProcessor(DialectType.OB_MYSQL, false, false, false);
@@ -81,8 +82,8 @@ public class SqlCommentProcessorTest {
         List<String> sqls;
         try (InputStream in =
                 this.getClass().getClassLoader().getResourceAsStream("sql/split/comment-processor-oracle-test.sql");
-                SqlStatementIterator iterator =
-                        SqlCommentProcessor.iterator(in, DialectType.OB_ORACLE, false, false, false)) {
+                SqlStatementIterator iterator = SqlCommentProcessor.iterator(in, DialectType.OB_ORACLE, false, false,
+                        false, StandardCharsets.UTF_8)) {
             sqls = IteratorUtils.toList(iterator);
         }
         SqlCommentProcessor processor = new SqlCommentProcessor(DialectType.OB_ORACLE, false, false, false);

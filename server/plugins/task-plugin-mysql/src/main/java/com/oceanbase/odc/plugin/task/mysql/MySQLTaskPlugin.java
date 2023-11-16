@@ -14,23 +14,16 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.plugin.task.api.datatransfer.model;
+package com.oceanbase.odc.plugin.task.mysql;
 
-import lombok.Data;
+import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.plugin.task.api.BaseTaskPlugin;
 
-@Data
-public class CsvConfig {
-    private EncodingType encoding = EncodingType.UTF_8;
-    private String fileName;
-    /**
-     * flag to illustrate whether convert empty string to null
-     */
-    private boolean blankToNull;
-    /**
-     * flag to illustrate whether skip csv's header
-     */
-    private boolean skipHeader = true;
-    private char columnSeparator = ',';
-    private String lineSeparator = "\n";
-    private char columnDelimiter = '\'';
+public class MySQLTaskPlugin extends BaseTaskPlugin {
+
+    @Override
+    public DialectType getDialectType() {
+        return DialectType.MYSQL;
+    }
+
 }

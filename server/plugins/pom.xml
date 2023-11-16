@@ -23,6 +23,7 @@
         <module>schema-plugin-mysql</module>
         <module>schema-plugin-odp-sharding-ob-mysql</module>
         <module>task-plugin-api</module>
+        <module>task-plugin-mysql</module>
         <module>task-plugin-ob-mysql</module>
         <module>task-plugin-ob-oracle</module>
     </modules>
