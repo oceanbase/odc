@@ -57,6 +57,10 @@ import com.oceanbase.odc.metadb.collaboration.ProjectSpecs;
 import com.oceanbase.odc.metadb.connection.DatabaseRepository;
 import com.oceanbase.odc.metadb.iam.UserEntity;
 import com.oceanbase.odc.metadb.iam.UserRepository;
+import com.oceanbase.odc.metadb.iam.resourcerole.ResourceRoleEntity;
+import com.oceanbase.odc.metadb.iam.resourcerole.ResourceRoleRepository;
+import com.oceanbase.odc.metadb.iam.resourcerole.UserResourceRoleEntity;
+import com.oceanbase.odc.metadb.iam.resourcerole.UserResourceRoleRepository;
 import com.oceanbase.odc.service.collaboration.project.model.Project;
 import com.oceanbase.odc.service.collaboration.project.model.Project.ProjectMember;
 import com.oceanbase.odc.service.collaboration.project.model.QueryProjectParams;
@@ -67,6 +71,7 @@ import com.oceanbase.odc.service.iam.UserOrganizationService;
 import com.oceanbase.odc.service.iam.UserPermissionService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.auth.AuthorizationFacade;
+import com.oceanbase.odc.service.iam.model.User;
 import com.oceanbase.odc.service.iam.model.UserResourceRole;
 
 import lombok.NonNull;
@@ -106,8 +111,44 @@ public class ProjectService {
     @Autowired
     private DatabaseRepository databaseRepository;
 
+    @Autowired
+    private ResourceRoleRepository resourceRoleRepository;
 
-    private ProjectMapper projectMapper = ProjectMapper.INSTANCE;
+    @Autowired
+    private UserResourceRoleRepository userResourceRoleRepository;
+
+    private final ProjectMapper projectMapper = ProjectMapper.INSTANCE;
+
+    @SkipAuthorize("odc internal usage")
+    @Transactional(rollbackFor = Exception.class)
+    public void createProjectIfNotExists(@NotNull User user) {
+        String projectName = user.getAccountName();
+        if (repository.findByNameAndOrganizationId(projectName, user.getOrganizationId()).isPresent()) {
+            return;
+        }
+        ProjectEntity projectEntity = new ProjectEntity();
+        projectEntity.setBuiltin(true);
+        projectEntity.setArchived(false);
+        projectEntity.setName(projectName);
+        projectEntity.setCreatorId(user.getCreatorId());
+        projectEntity.setLastModifierId(user.getCreatorId());
+        projectEntity.setOrganizationId(user.getOrganizationId());
+        projectEntity.setDescription("Built-in project for bastion user " + user.getAccountName());
+        ProjectEntity saved = repository.saveAndFlush(projectEntity);
+        // Grant DEVELOPER role to bastion user, and all other roles to user creator(admin)
+        List<UserResourceRoleEntity> userResourceRoleEntities = ResourceRoleName.all().stream().map(name -> {
+            ResourceRoleEntity resourceRoleEntity =
+                    resourceRoleRepository.findByResourceTypeAndRoleName(ResourceType.ODC_PROJECT, name)
+                            .orElseThrow(() -> new NotFoundException(ResourceType.ODC_RESOURCE_ROLE, "name", name));
+            UserResourceRoleEntity entity = new UserResourceRoleEntity();
+            entity.setUserId(name == ResourceRoleName.DEVELOPER ? user.getId() : user.getCreatorId());
+            entity.setResourceId(saved.getId());
+            entity.setResourceRoleId(resourceRoleEntity.getId());
+            entity.setOrganizationId(user.getOrganizationId());
+            return entity;
+        }).collect(Collectors.toList());
+        userResourceRoleRepository.saveAll(userResourceRoleEntities);
+    }
 
     @PreAuthenticate(actions = "create", resourceType = "ODC_PROJECT", isForAll = true)
     @Transactional(rollbackFor = Exception.class)

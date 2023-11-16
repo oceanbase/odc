@@ -25,6 +25,8 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 public interface ProjectRepository extends JpaRepository<ProjectEntity, Long>, JpaSpecificationExecutor<ProjectEntity> {
     Optional<ProjectEntity> findByIdAndOrganizationId(Long id, Long organizationId);
 
+    Optional<ProjectEntity> findByNameAndOrganizationId(String name, Long organizationId);
+
     List<ProjectEntity> findByIdIn(Collection<Long> ids);
 
 }
