@@ -304,7 +304,7 @@ public class DBPLService {
         SqlBuilder sqlBuilder = new OracleSqlBuilder();
         OracleDataDictTableNames tableNames = new ALLDataDictTableNames();
         sqlBuilder.append("SELECT OBJECT_NAME,STATUS,OBJECT_TYPE,OWNER FROM").space()
-                .identifier(tableNames.OBJECTS()).space()
+                .append(tableNames.OBJECTS()).space()
                 .append("WHERE").space();
         if (Objects.nonNull(objectType)) {
             if (DBObjectType.PACKAGE == objectType || DBObjectType.PACKAGE_BODY == objectType) {
