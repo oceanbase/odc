@@ -223,8 +223,11 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
         if (!StringUtils.equalsIgnoreCase("SYS", schemaName)) {
             return Collections.emptyList();
         }
-        String sql = "select VIEW_NAME from SYS.ALL_VIEWS where OWNER='SYS' ORDER BY VIEW_NAME";
-        return jdbcOperations.queryForList(sql, String.class);
+        OracleSqlBuilder sb = new OracleSqlBuilder();
+        sb.append("select VIEW_NAME from ")
+                .append(dataDictTableNames.VIEWS())
+                .append(" where OWNER='SYS' ORDER BY VIEW_NAME");
+        return jdbcOperations.queryForList(sb.toString(), String.class);
     }
 
     @Override

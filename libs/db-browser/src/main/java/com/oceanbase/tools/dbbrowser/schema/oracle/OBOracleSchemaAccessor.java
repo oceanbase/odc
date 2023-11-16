@@ -113,7 +113,7 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
     @Override
     public List<DBDatabase> listDatabases() {
         List<DBDatabase> databases = new ArrayList<>();
-        String sql = "SELECT USERNAME from SYS.ALL_USERS;";
+        String sql = "SELECT USERNAME from " + dataDictTableNames.USERS();
         jdbcOperations.query(sql, rs -> {
             DBDatabase database = new DBDatabase();
             String userName = rs.getString("USERNAME");
