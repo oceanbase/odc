@@ -16,8 +16,9 @@
 package com.oceanbase.odc.service.session.factory;
 
 import java.util.Base64;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.UUID;
 
+import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import com.oceanbase.odc.common.json.JsonUtils;
@@ -28,7 +29,6 @@ import lombok.NonNull;
 
 public class DefaultConnectSessionIdGenerator implements ConnectionSessionIdGenerator<CreateSessionReq> {
 
-    private static final AtomicLong SESSION_ID_COUNTER = new AtomicLong(10000);
     private final String fixRealId;
 
     public DefaultConnectSessionIdGenerator(String fixRealId) {
@@ -37,7 +37,10 @@ public class DefaultConnectSessionIdGenerator implements ConnectionSessionIdGene
 
     @Override
     public String generateId(CreateSessionReq key) {
-        key.setRealId(SESSION_ID_COUNTER.incrementAndGet() + "");
+        key.setRealId(RandomStringUtils.random(10, UUID.randomUUID().toString().replace("-", "")));
+        if (fixRealId != null) {
+            key.setRealId(fixRealId);
+        }
         return Base64.getEncoder().encodeToString(JsonUtils.toJson(key).getBytes());
     }
 
