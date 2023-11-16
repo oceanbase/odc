@@ -15,16 +15,6 @@
  */
 package com.oceanbase.tools.dbbrowser.util;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.io.StringWriter;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.nio.charset.UnsupportedCharsetException;
-import java.sql.Blob;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -227,27 +217,6 @@ public class DBSchemaAccessorUtil {
             String reason) {
         Validate.notNull(dbObjectWarningDescriptor, "dbObjectWarningDescriptor");
         dbObjectWarningDescriptor.setWarning(String.format("%s maybe not accurate due to %s", type.name(), reason));
-    }
-
-    protected String convertBlobToString(Blob data, String collation) {
-        Charset charset = null;
-        try {
-            charset = Charset.forName(collation.split("_")[0]);
-        } catch (UnsupportedCharsetException exception) {
-            log.warn("Unsupported Charset, message={}", exception.getMessage());
-        }
-        final StringWriter writer = new StringWriter();
-        try (Reader reader = new InputStreamReader(data.getBinaryStream(),
-                (charset == null ? StandardCharsets.UTF_8 : charset));
-                BufferedReader br = new BufferedReader(reader)) {
-            String content;
-            while ((content = br.readLine()) != null) {
-                writer.write(content + "\n");
-            }
-        } catch (SQLException | IOException e) {
-            throw new RuntimeException("Could not convert BLOB to string, message={}", e);
-        }
-        return writer.toString().substring(0, writer.toString().length() - 1);
     }
 
 }

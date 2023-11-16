@@ -165,7 +165,7 @@ sqls:
     select 
       USERNAME, 
       USERID 
-   from 
+    from 
       ALL_USERS
   get-database: |-
     SELECT 
