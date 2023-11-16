@@ -105,6 +105,7 @@ public class FlowInstanceController {
             @RequestParam(required = false, name = "endTime") Date endTime,
             @RequestParam(name = "createdByCurrentUser") Boolean createdByCurrentUser,
             @RequestParam(name = "approveByCurrentUser") Boolean approveByCurrentUser,
+            @RequestParam(required = false, name = "containsAll", defaultValue = "false") Boolean containsAll,
             @RequestParam(required = false, name = "parentInstanceId") Long parentInstanceId,
             @RequestParam(required = false, name = "projectId") Long projectId) {
         QueryFlowInstanceParams params = QueryFlowInstanceParams.builder()
@@ -118,6 +119,7 @@ public class FlowInstanceController {
                 .endTime(endTime)
                 .createdByCurrentUser(createdByCurrentUser)
                 .approveByCurrentUser(approveByCurrentUser)
+                .containsAll(containsAll)
                 .parentInstanceId(parentInstanceId)
                 .projectId(projectId)
                 .build();

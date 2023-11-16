@@ -17,7 +17,6 @@
 package com.oceanbase.odc.plugin.task.obmysql.datatransfer;
 
 import java.io.File;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -27,18 +26,14 @@ import java.util.Set;
 import org.apache.commons.collections4.SetUtils;
 import org.pf4j.Extension;
 
-import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.VersionUtils;
 import com.oceanbase.odc.core.datasource.SingleConnectionDataSource;
-import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.plugin.task.api.datatransfer.DataTransferExtensionPoint;
 import com.oceanbase.odc.plugin.task.api.datatransfer.DataTransferJob;
-import com.oceanbase.odc.plugin.task.api.datatransfer.dumper.ExportOutput;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.ConnectionInfo;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferFormat;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferType;
-import com.oceanbase.odc.plugin.task.api.datatransfer.model.UploadFileResult;
 import com.oceanbase.odc.plugin.task.obmysql.datatransfer.factory.BaseParameterFactory;
 import com.oceanbase.odc.plugin.task.obmysql.datatransfer.factory.DumpParameterFactory;
 import com.oceanbase.odc.plugin.task.obmysql.datatransfer.factory.LoadParameterFactory;
@@ -93,22 +88,4 @@ public class OBMySQLDataTransferExtension implements DataTransferExtensionPoint 
         return SetUtils.hashSet(DataTransferFormat.SQL, DataTransferFormat.CSV, DataTransferFormat.EXCEL);
     }
 
-    @Override
-    public UploadFileResult getImportFileInfo(@NonNull URL url) throws URISyntaxException {
-        File file = new File(url.toURI());
-        if (StringUtils.endsWithIgnoreCase(file.getName(), ".zip")) {
-            try {
-                ExportOutput exportOutput = new ExportOutput(file);
-                return UploadFileResult.ofExportOutput(file.getName(), exportOutput);
-            } catch (Exception e) {
-                return UploadFileResult.ofFail(ErrorCodes.ImportInvalidFileType, new Object[] {file.getPath()});
-            }
-        } else if (StringUtils.endsWithIgnoreCase(file.getName(), ".csv")) {
-            return UploadFileResult.ofCsv(file.getName());
-        } else if (StringUtils.endsWithIgnoreCase(file.getName(), ".sql")
-                || StringUtils.endsWithIgnoreCase(file.getName(), ".txt")) {
-            return UploadFileResult.ofSql(file.getName());
-        }
-        return UploadFileResult.ofFail(ErrorCodes.ImportInvalidFileType, new Object[] {file.getPath()});
-    }
 }

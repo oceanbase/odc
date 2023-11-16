@@ -30,7 +30,7 @@ public class CsvConfig {
      * flag to illustrate whether skip csv's header
      */
     private boolean skipHeader = true;
-    private String columnSeparator = ",";
+    private char columnSeparator = ',';
     private String lineSeparator = "\n";
-    private String columnDelimiter = "'";
+    private char columnDelimiter = '\'';
 }

@@ -17,7 +17,6 @@
 package com.oceanbase.odc.plugin.task.api.datatransfer;
 
 import java.io.File;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.sql.SQLException;
 import java.util.List;
@@ -28,7 +27,6 @@ import org.pf4j.ExtensionPoint;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.ConnectionInfo;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferFormat;
-import com.oceanbase.odc.plugin.task.api.datatransfer.model.UploadFileResult;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
 
 import lombok.NonNull;
@@ -45,7 +43,5 @@ public interface DataTransferExtensionPoint extends ExtensionPoint {
     Set<ObjectType> getSupportedObjectTypes(ConnectionInfo connectionInfo) throws SQLException;
 
     Set<DataTransferFormat> getSupportedTransferFormats();
-
-    UploadFileResult getImportFileInfo(@NonNull URL url) throws URISyntaxException;
 
 }

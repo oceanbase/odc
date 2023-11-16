@@ -27,6 +27,7 @@ import org.springframework.data.jpa.domain.Specification;
 
 import com.oceanbase.odc.ServiceTestEnv;
 import com.oceanbase.odc.core.shared.constant.TaskType;
+import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
 
 /**
  * @author jingtian
@@ -43,7 +44,8 @@ public class FlowInstanceViewRepositoryTest extends ServiceTestEnv {
         resourceRoleIdentifiers.add("1:2");
         resourceRoleIdentifiers.add("2:2");
         Specification<FlowInstanceViewEntity> specification = Specification
-                .where(FlowInstanceViewSpecs.leftJoinFlowInstanceApprovalView(resourceRoleIdentifiers, 1L))
+                .where(FlowInstanceViewSpecs.leftJoinFlowInstanceApprovalView(resourceRoleIdentifiers, 1L,
+                        FlowNodeStatus.getExecutingStatuses()))
                 .and(FlowInstanceViewSpecs.creatorIdIn(new LinkedList<>()))
                 .and(FlowInstanceViewSpecs.organizationIdEquals(1L))
                 .and(FlowInstanceViewSpecs.projectIdEquals(null))
@@ -59,7 +61,8 @@ public class FlowInstanceViewRepositoryTest extends ServiceTestEnv {
         resourceRoleIdentifiers.add("1:2");
         resourceRoleIdentifiers.add("2:2");
         Specification<FlowInstanceViewEntity> specification = Specification
-                .where(FlowInstanceViewSpecs.leftJoinFlowInstanceApprovalView(resourceRoleIdentifiers, null))
+                .where(FlowInstanceViewSpecs.leftJoinFlowInstanceApprovalView(resourceRoleIdentifiers, null,
+                        FlowNodeStatus.getExecutingStatuses()))
                 .and(FlowInstanceViewSpecs.creatorIdIn(new LinkedList<>()))
                 .and(FlowInstanceViewSpecs.organizationIdEquals(1L))
                 .and(FlowInstanceViewSpecs.projectIdEquals(null))
