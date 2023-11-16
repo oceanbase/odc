@@ -202,10 +202,12 @@ public class ConnectSessionService {
                 .build();
     }
 
+    @SkipAuthorize("check permission internally")
     public ConnectionSession create(Long dataSourceId, Long databaseId) {
         return create(new CreateSessionReq(dataSourceId, databaseId, null));
     }
 
+    @SkipAuthorize("check permission internally")
     public ConnectionSession create(@NotNull CreateSessionReq req) {
         Long dataSourceId;
         String schemaName;
