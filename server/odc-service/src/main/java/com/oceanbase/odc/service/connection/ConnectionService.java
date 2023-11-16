@@ -64,8 +64,10 @@ import com.oceanbase.odc.core.authority.util.PreAuthenticate;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.Verify;
+import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.ConnectionStatus;
 import com.oceanbase.odc.core.shared.constant.ConnectionVisibleScope;
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.PermissionType;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
@@ -485,6 +487,11 @@ public class ConnectionService {
         Stats stats = new Stats()
                 .andDistinct("tenantName", tenantNames)
                 .andDistinct("clusterName", clusterNames);
+        connections.stream().forEach(con -> {
+            if (con.getDialectType().equals(DialectType.ORACLE)) {
+                con.setType(ConnectType.OB_ORACLE);
+            }
+        });
         return PageAndStats.of(connections, stats);
     }
 

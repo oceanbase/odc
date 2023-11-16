@@ -22,6 +22,7 @@
         <module>schema-plugin-ob-mysql</module>
         <module>schema-plugin-ob-oracle</module>
         <module>schema-plugin-mysql</module>
+        <module>schema-plugin-oracle</module>
         <module>schema-plugin-odp-sharding-ob-mysql</module>
         <module>task-plugin-api</module>
         <module>task-plugin-mysql</module>
@@ -67,6 +68,12 @@
             <dependency>
                 <groupId>com.oceanbase</groupId>
                 <artifactId>connect-plugin-mysql</artifactId>
+                <version>${project.version}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.oceanbase</groupId>
+                <artifactId>connect-plugin-oracle</artifactId>
                 <version>${project.version}</version>
                 <scope>provided</scope>
             </dependency>

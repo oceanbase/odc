@@ -18,51 +18,39 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
     <parent>
-        <artifactId>plugin-parent</artifactId>
         <groupId>com.oceanbase</groupId>
+        <artifactId>plugin-parent</artifactId>
         <version>4.2.3-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
-    <modelVersion>4.0.0</modelVersion>
-    <artifactId>connect-plugin-oracle</artifactId>
+
+    <artifactId>schema-plugin-oracle</artifactId>
+
     <properties>
         <root-project.basedir>${project.parent.parent.basedir}</root-project.basedir>
-        <plugin.class>com.oceanbase.odc.plugin.connect.oracle.OracleConnectionPlugin</plugin.class>
-        <plugin.dependencies>connect-plugin-ob-oracle, connect-plugin-ob-mysql</plugin.dependencies>
+        <plugin.class>com.oceanbase.odc.plugin.schema.oracle.OracleSchemaPlugin</plugin.class>
+        <plugin.dependencies>connect-plugin-oracle, schema-plugin-ob-oracle, schema-plugin-ob-mysql</plugin.dependencies>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>com.oceanbase</groupId>
-            <artifactId>connect-plugin-api</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.oracle.database.jdbc</groupId>
-            <artifactId>ojdbc8</artifactId>
-            <scope>provided</scope>
+            <artifactId>schema-plugin-api</artifactId>
         </dependency>
         <dependency>
             <groupId>com.oceanbase</groupId>
-            <artifactId>connect-plugin-ob-oracle</artifactId>
+            <artifactId>connect-plugin-oracle</artifactId>
         </dependency>
         <dependency>
             <groupId>com.oceanbase</groupId>
-            <artifactId>connect-plugin-ob-mysql</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
+            <artifactId>schema-plugin-ob-oracle</artifactId>
         </dependency>
         <dependency>
             <groupId>com.oceanbase</groupId>
-            <artifactId>odc-test</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <scope>provided</scope>
+            <artifactId>schema-plugin-ob-mysql</artifactId>
         </dependency>
     </dependencies>
 
@@ -74,6 +62,4 @@
             </plugin>
         </plugins>
     </build>
-
-
 </project>

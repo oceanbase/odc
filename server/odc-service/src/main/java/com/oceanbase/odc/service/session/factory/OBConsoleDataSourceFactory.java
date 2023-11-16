@@ -45,6 +45,7 @@ import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig.SSLConfig;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig.SSLFileEntry;
 import com.oceanbase.odc.service.connection.model.OBTenantEndpoint;
+import com.oceanbase.odc.service.connection.model.UserRole;
 import com.oceanbase.odc.service.connection.util.ConnectionMapper;
 import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 import com.oceanbase.odc.service.session.initializer.SessionCreatedInitializer;
@@ -68,6 +69,9 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
     private String host;
     private Integer port;
     private String defaultSchema;
+    private String sid;
+    private String serviceName;
+    private UserRole userRole;
     private Map<String, String> parameters;
     protected final ConnectionConfig connectionConfig;
     protected final ConnectionAccountType accountType;
@@ -93,6 +97,9 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
         this.host = connectionConfig.getHost();
         this.port = connectionConfig.getPort();
         this.defaultSchema = getDefaultSchema(connectionConfig, accountType);
+        this.sid = connectionConfig.getSid();
+        this.serviceName = connectionConfig.getServiceName();
+        this.userRole = connectionConfig.getUserRole();
         this.parameters = getJdbcParams(connectionConfig);
         this.connectionExtensionPoint = ConnectionPluginUtil.getConnectionExtension(connectionConfig.getDialectType());
     }
@@ -111,6 +118,12 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
         }
         if (Objects.nonNull(this.defaultSchema)) {
             properties.put(ConnectionConstants.DEFAULT_SCHEMA, this.defaultSchema);
+        }
+        if (Objects.nonNull(this.sid)) {
+            properties.put(ConnectionConstants.SID, this.sid);
+        }
+        if (Objects.nonNull(this.serviceName)) {
+            properties.put(ConnectionConstants.SERVICE_NAME, this.serviceName);
         }
         return properties;
     }
@@ -204,6 +217,12 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
         dataSource.setUrl(jdbcUrl);
         dataSource.setUsername(username);
         dataSource.setPassword(password);
+
+        if (Objects.nonNull(this.userRole)) {
+            Properties properties = new Properties();
+            properties.put(ConnectionConstants.USER_ROLE, this.userRole.name());
+            dataSource.setConnectionProperties(properties);
+        }
         // Set datasource driver class
         dataSource.setDriverClassName(connectionExtensionPoint.getDriverClassName());
         if (autoCommit != null) {
