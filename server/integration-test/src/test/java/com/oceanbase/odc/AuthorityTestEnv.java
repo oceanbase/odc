@@ -66,15 +66,14 @@ public abstract class AuthorityTestEnv extends ServiceTestEnv {
     @Autowired
     protected UserPermissionRepository userPermissionRepository;
 
-
     protected UserEntity grantAllPermissions(ResourceType... resourceTypes) {
         deleteAll();
         UserEntity userEntity = createUser("currentUser", "currentUser");
         RoleEntity roleEntity = createRole();
-        UserRoleEntity userRoleEntity = bindUserRole(userEntity.getId(), roleEntity.getId());
+        bindUserRole(userEntity.getId(), roleEntity.getId());
         User user = new User(userEntity);
-        Subject subject = new Subject(true, new HashSet<>(Collections.singletonList(user)), Collections.emptySet(),
-                Collections.emptySet());
+        Subject subject = new Subject(true, new HashSet<>(Collections.singletonList(user)),
+                Collections.emptySet(), Collections.emptySet());
         DefaultLoginSecurityManager.setContext(subject);
         SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(user, ""));
         for (ResourceType resourceType : resourceTypes) {

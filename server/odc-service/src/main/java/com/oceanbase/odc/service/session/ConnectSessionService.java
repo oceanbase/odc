@@ -41,7 +41,6 @@ import com.oceanbase.odc.core.authority.SecurityManager;
 import com.oceanbase.odc.core.authority.exception.AccessDeniedException;
 import com.oceanbase.odc.core.authority.model.DefaultSecurityResource;
 import com.oceanbase.odc.core.authority.permission.Permission;
-import com.oceanbase.odc.core.authority.util.Authenticated;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionRepository;
@@ -99,7 +98,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Validated
 @SkipAuthorize("personal resource")
-@Authenticated
 public class ConnectSessionService {
 
     @Autowired
@@ -204,16 +202,11 @@ public class ConnectSessionService {
                 .build();
     }
 
-    @SkipAuthorize("only for unit test")
-    protected ConnectionSession createForTest(@NotNull Long dataSourceId) {
-        return create(dataSourceId, null);
-    }
-
-    private ConnectionSession create(Long dataSourceId, Long databaseId) {
+    public ConnectionSession create(Long dataSourceId, Long databaseId) {
         return create(new CreateSessionReq(dataSourceId, databaseId, null));
     }
 
-    private ConnectionSession create(@NotNull CreateSessionReq req) {
+    public ConnectionSession create(@NotNull CreateSessionReq req) {
         Long dataSourceId;
         String schemaName;
         if (req.getDbId() != null) {
@@ -228,10 +221,10 @@ public class ConnectSessionService {
         } else {
             // create session by datasource id
             PreConditions.notNull(req.getDsId(), "DatasourceId");
-            Permission requiredPermission = securityManager.getPermissionByActions(
+            Permission requiredPermission = this.securityManager.getPermissionByActions(
                     new DefaultSecurityResource(req.getDsId().toString(), ResourceType.ODC_CONNECTION.name()),
                     Collections.singletonList("update"));
-            securityManager.checkPermission(requiredPermission);
+            this.securityManager.checkPermission(requiredPermission);
             schemaName = null;
             dataSourceId = req.getDsId();
         }

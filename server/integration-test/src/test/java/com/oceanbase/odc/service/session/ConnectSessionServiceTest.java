@@ -30,14 +30,16 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 
-import com.oceanbase.odc.ServiceTestEnv;
+import com.oceanbase.odc.AuthorityTestEnv;
 import com.oceanbase.odc.TestConnectionUtil;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.ConnectionVisibleScope;
 import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
+import com.oceanbase.odc.metadb.iam.UserEntity;
 import com.oceanbase.odc.service.config.UserConfigFacade;
 import com.oceanbase.odc.service.config.model.UserConfig;
 import com.oceanbase.odc.service.connection.ConnectionService;
@@ -55,11 +57,11 @@ import com.oceanbase.odc.service.iam.model.User;
  * @date 2021-11-20 22:24
  * @since ODC_release_3.2.2
  */
-public class ConnectSessionServiceTest extends ServiceTestEnv {
+public class ConnectSessionServiceTest extends AuthorityTestEnv {
 
     private final Long connectionId = 1L;
-    private final long userId = 1L;
-    private final Long organizationId = 1L;
+    private long userId;
+    private Long organizationId;
     @Rule
     public ExpectedException thrown = ExpectedException.none();
     @MockBean
@@ -77,6 +79,9 @@ public class ConnectSessionServiceTest extends ServiceTestEnv {
 
     @Before
     public void setUp() throws Exception {
+        UserEntity currentUserEntity = grantAllPermissions(ResourceType.ODC_CONNECTION);
+        this.userId = currentUserEntity.getId();
+        this.organizationId = currentUserEntity.getOrganizationId();
         UserConfig userConfig = new UserConfig();
         when(userConfigFacade.queryByCache(eq(userId))).thenReturn(userConfig);
         when(authenticationFacade.currentUserId()).thenReturn(userId);
@@ -95,7 +100,7 @@ public class ConnectSessionServiceTest extends ServiceTestEnv {
     public void testCreateSession_sessionCreated() {
         Mockito.when(connectionService.getForConnectionSkipPermissionCheck(connectionId))
                 .thenReturn(buildTestConnection(DialectType.OB_ORACLE));
-        ConnectionSession connectionSession = sessionService.createForTest(connectionId);
+        ConnectionSession connectionSession = sessionService.create(connectionId, null);
 
         Assert.assertNotNull(connectionSession.getId());
     }
@@ -107,7 +112,7 @@ public class ConnectSessionServiceTest extends ServiceTestEnv {
         connectionConfig.setVisibleScope(ConnectionVisibleScope.ORGANIZATION);
 
         Mockito.when(connectionService.getForConnectionSkipPermissionCheck(connectionId)).thenReturn(connectionConfig);
-        ConnectionSession connectionSession = sessionService.createForTest(connectionId);
+        ConnectionSession connectionSession = sessionService.create(connectionId, null);
 
         Assert.assertNotNull(connectionSession.getId());
     }
@@ -123,7 +128,7 @@ public class ConnectSessionServiceTest extends ServiceTestEnv {
         when(authorizationFacade.getAllPermittedActions(Mockito.any(), Mockito.any(), Mockito.anyString()))
                 .thenReturn(new HashSet<>(
                         Collections.singletonList("readonlyconnect")));
-        ConnectionSession connectionSession = sessionService.createForTest(connectionId);
+        ConnectionSession connectionSession = sessionService.create(connectionId, null);
 
         Assert.assertNotNull(connectionSession.getId());
     }
@@ -133,7 +138,7 @@ public class ConnectSessionServiceTest extends ServiceTestEnv {
         ConnectionConfig connectionConfig = buildTestConnection(DialectType.OB_ORACLE);
         connectionConfig.setSysTenantUsername(null);
         Mockito.when(connectionService.getForConnectionSkipPermissionCheck(connectionId)).thenReturn(connectionConfig);
-        ConnectionSession connectionSession = sessionService.createForTest(connectionId);
+        ConnectionSession connectionSession = sessionService.create(connectionId, null);
 
         thrown.expectMessage("Sys username can not be null");
         thrown.expect(NullPointerException.class);
@@ -183,7 +188,7 @@ public class ConnectSessionServiceTest extends ServiceTestEnv {
     private ConnectionSession createSession() {
         ConnectionConfig connectionConfig = buildTestConnection(DialectType.OB_ORACLE);
         Mockito.when(connectionService.getForConnectionSkipPermissionCheck(connectionId)).thenReturn(connectionConfig);
-        return sessionService.createForTest(connectionId);
+        return sessionService.create(connectionId, null);
     }
 
 
