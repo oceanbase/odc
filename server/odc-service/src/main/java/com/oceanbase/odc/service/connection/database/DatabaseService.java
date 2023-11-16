@@ -364,7 +364,7 @@ public class DatabaseService {
 
     @SkipAuthorize("internal usage")
     public Boolean internalSyncDataSourceSchemas(@NonNull Long dataSourceId) throws InterruptedException {
-        Lock lock = jdbcLockRegistry.obtain(getLockKey(dataSourceId));
+        Lock lock = jdbcLockRegistry.obtain(connectionService.getUpdateDsSchemaLockKey(dataSourceId));
         if (!lock.tryLock(3, TimeUnit.SECONDS)) {
             throw new ConflictException(ErrorCodes.ResourceModifying, "Can not acquire jdbc lock");
         }
@@ -627,10 +627,6 @@ public class DatabaseService {
         model.setDataSource(connectionService.getForConnectionSkipPermissionCheck(entity.getConnectionId()));
         model.setEnvironment(environmentService.detailSkipPermissionCheck(model.getDataSource().getEnvironmentId()));
         return model;
-    }
-
-    private String getLockKey(@NonNull Long connectionId) {
-        return "DataSource_" + connectionId;
     }
 
     private void createDatabase(CreateDatabaseReq req, Connection conn, ConnectionConfig connection) {

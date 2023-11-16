@@ -125,7 +125,7 @@ public class ProjectController {
     @ApiOperation(value = "archiveProject", notes = "Archive a project")
     @RequestMapping(value = "/projects/{id:[\\d]+}/setArchived", method = RequestMethod.POST)
     public SuccessResponse<Project> setArchived(@PathVariable Long id,
-            @RequestBody @Valid SetArchivedReq setArchivedReq) {
+            @RequestBody @Valid SetArchivedReq setArchivedReq) throws InterruptedException {
         return Responses.success(projectService.setArchived(id, setArchivedReq));
     }
 

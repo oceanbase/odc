@@ -203,6 +203,8 @@ public class ConnectionService {
 
     public static final String DEFAULT_MIN_PRIVILEGE = "read";
 
+    private static final String UPDATE_DS_SCHEMA_LOCK_KEY_PREFIX = "update-ds-schema-lock-";
+
     @PreAuthenticate(actions = "create", resourceType = "ODC_CONNECTION", isForAll = true)
     public ConnectionConfig create(@NotNull @Valid ConnectionConfig connection) {
         TransactionDefinition transactionDefinition = new DefaultTransactionDefinition();
@@ -367,14 +369,14 @@ public class ConnectionService {
     public PaginatedData<ConnectionConfig> listByProjectId(@NotNull Long projectId, @NotNull Boolean basic) {
         List<ConnectionConfig> connections;
         if (basic) {
-            connections = repository.findByProjectId(projectId).stream().map(e -> {
+            connections = repository.findByDatabaseProjectId(projectId).stream().map(e -> {
                 ConnectionConfig c = new ConnectionConfig();
                 c.setId(e.getId());
                 c.setName(e.getName());
                 return c;
             }).collect(Collectors.toList());
         } else {
-            connections = repository.findByProjectId(projectId).stream().map(mapper::entityToModel)
+            connections = repository.findByDatabaseProjectId(projectId).stream().map(mapper::entityToModel)
                     .collect(Collectors.toList());
         }
         return new PaginatedData<>(connections, CustomPage.empty());
@@ -498,7 +500,6 @@ public class ConnectionService {
         return PageAndStats.of(connections, stats);
     }
 
-    @Transactional(rollbackFor = Exception.class)
     @PreAuthenticate(actions = "update", resourceType = "ODC_CONNECTION", indexOfIdParam = 0)
     public ConnectionConfig update(@NotNull Long id, @NotNull @Valid ConnectionConfig connection)
             throws InterruptedException {
@@ -550,7 +551,10 @@ public class ConnectionService {
             attrEntities = this.attributeRepository.saveAll(attrEntities);
             updated.setAttributes(attrEntitiesToMap(attrEntities));
             log.info("Connection updated, connection={}", updated);
-            syncDatabases(updated);
+            if (saved.getProjectId() != null && updated.getProjectId() == null) {
+                // Remove databases from project when unbind project from connection
+                updateDatabaseProjectId(id, null);
+            }
             transactionManager.commit(transactionStatus);
         } catch (Exception e) {
             transactionManager.rollback(transactionStatus);
@@ -560,18 +564,24 @@ public class ConnectionService {
         return updated;
     }
 
-    private void syncDatabases(ConnectionConfig connection) throws InterruptedException {
-        Lock lock = jdbcLockRegistry.obtain("DataSource_" + connection.getId());
+    @SkipAuthorize("odc internal usage")
+    public void updateDatabaseProjectId(Long connectionId, Long projectId) throws InterruptedException {
+        Lock lock = jdbcLockRegistry.obtain(getUpdateDsSchemaLockKey(connectionId));
         if (!lock.tryLock(3, TimeUnit.SECONDS)) {
             throw new ConflictException(ErrorCodes.ResourceModifying, "Can not acquire jdbc lock");
         }
         try {
-            List<DatabaseEntity> entities = databaseRepository.findByConnectionId(connection.getId());
-            entities.forEach(e -> e.setProjectId(connection.getProjectId()));
+            List<DatabaseEntity> entities = databaseRepository.findByConnectionId(connectionId);
+            entities.forEach(e -> e.setProjectId(projectId));
             databaseRepository.saveAll(entities);
         } finally {
             lock.unlock();
         }
+    }
+
+    @SkipAuthorize("odc internal usage")
+    public String getUpdateDsSchemaLockKey(@NonNull Long datasourceId) {
+        return UPDATE_DS_SCHEMA_LOCK_KEY_PREFIX + datasourceId;
     }
 
     @SkipAuthorize("internal usage")
@@ -811,7 +821,7 @@ public class ConnectionService {
             @NonNull Boolean withProject) {
         return entitiesToModels(Collections.singletonList(entity), entity.getOrganizationId(), withEnvironment,
                 withProject).stream().findFirst()
-                        .orElseThrow(() -> new NotFoundException(ResourceType.ODC_CONNECTION, "id", entity.getId()));
+                .orElseThrow(() -> new NotFoundException(ResourceType.ODC_CONNECTION, "id", entity.getId()));
     }
 
     private ConnectionEntity modelToEntity(@NonNull ConnectionConfig model) {

@@ -54,6 +54,8 @@ import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.metadb.collaboration.ProjectEntity;
 import com.oceanbase.odc.metadb.collaboration.ProjectRepository;
 import com.oceanbase.odc.metadb.collaboration.ProjectSpecs;
+import com.oceanbase.odc.metadb.connection.ConnectionConfigRepository;
+import com.oceanbase.odc.metadb.connection.ConnectionEntity;
 import com.oceanbase.odc.metadb.connection.DatabaseRepository;
 import com.oceanbase.odc.metadb.iam.UserEntity;
 import com.oceanbase.odc.metadb.iam.UserRepository;
@@ -66,6 +68,7 @@ import com.oceanbase.odc.service.collaboration.project.model.Project.ProjectMemb
 import com.oceanbase.odc.service.collaboration.project.model.QueryProjectParams;
 import com.oceanbase.odc.service.collaboration.project.model.SetArchivedReq;
 import com.oceanbase.odc.service.common.model.InnerUser;
+import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.iam.ResourceRoleService;
 import com.oceanbase.odc.service.iam.UserOrganizationService;
 import com.oceanbase.odc.service.iam.UserPermissionService;
@@ -116,6 +119,12 @@ public class ProjectService {
 
     @Autowired
     private UserResourceRoleRepository userResourceRoleRepository;
+
+    @Autowired
+    private ConnectionConfigRepository connectionConfigRepository;
+
+    @Autowired
+    private ConnectionService connectionService;
 
     private final ProjectMapper projectMapper = ProjectMapper.INSTANCE;
 
@@ -220,14 +229,20 @@ public class ProjectService {
 
     @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
     @Transactional(rollbackFor = Exception.class)
-    public Project setArchived(Long id, @NotNull SetArchivedReq req) {
+    public Project setArchived(Long id, @NotNull SetArchivedReq req) throws InterruptedException {
         ProjectEntity previous = repository.findByIdAndOrganizationId(id, currentOrganizationId())
                 .orElseThrow(() -> new NotFoundException(ResourceType.ODC_PROJECT, "id", id));
         if (!req.getArchived()) {
             throw new BadRequestException("currently not allowed to recover projects");
         }
-        previous.setArchived(req.getArchived());
+        previous.setArchived(true);
         ProjectEntity saved = repository.save(previous);
+        List<ConnectionEntity> connectionEntities = connectionConfigRepository.findByProjectId(id);
+        for (ConnectionEntity entity : connectionEntities) {
+            entity.setProjectId(null);
+            connectionConfigRepository.save(entity);
+            connectionService.updateDatabaseProjectId(entity.getId(), null);
+        }
         databaseRepository.setProjectIdToNull(id);
         return entityToModel(saved);
     }
