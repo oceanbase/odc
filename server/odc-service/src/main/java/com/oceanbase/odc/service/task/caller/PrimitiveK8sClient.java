@@ -16,10 +16,10 @@
 
 package com.oceanbase.odc.service.task.caller;
 
-import static com.oceanbase.odc.service.task.caller.JobTemplateConstants.FIELD_SELECTOR_METADATA_NAME;
-import static com.oceanbase.odc.service.task.caller.JobTemplateConstants.TEMPLATE_KIND_JOB;
-import static com.oceanbase.odc.service.task.caller.JobTemplateConstants.TEMPLATE_RESTART_POLICY;
-import static com.oceanbase.odc.service.task.caller.JobTemplateConstants.TEMPLATE_VERSION;
+import static com.oceanbase.odc.service.task.caller.JobConstants.FIELD_SELECTOR_METADATA_NAME;
+import static com.oceanbase.odc.service.task.caller.JobConstants.TEMPLATE_API_VERSION;
+import static com.oceanbase.odc.service.task.caller.JobConstants.TEMPLATE_JOB_KIND;
+import static com.oceanbase.odc.service.task.caller.JobConstants.TEMPLATE_RESTART_POLICY;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -119,7 +119,7 @@ public class PrimitiveK8sClient implements K8sClient {
                 .template(new V1PodTemplateSpec().spec(v1PodSpec));
 
         return new V1Job()
-                .apiVersion(TEMPLATE_VERSION).kind(TEMPLATE_KIND_JOB)
+                .apiVersion(TEMPLATE_API_VERSION).kind(TEMPLATE_JOB_KIND)
                 .metadata(new V1ObjectMeta().name(jobName))
                 .spec(jobSpec);
     }
