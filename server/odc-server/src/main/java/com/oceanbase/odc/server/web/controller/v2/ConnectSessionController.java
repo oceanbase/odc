@@ -130,7 +130,7 @@ public class ConnectSessionController {
     @ApiOperation(value = "sqlCheck", notes = "连接内对 sql 脚本的内容进行静态检查")
     @RequestMapping(value = "/sessions/{sessionId}/sqlCheck", method = RequestMethod.POST)
     public ListResponse<CheckResult> check(@PathVariable String sessionId, @RequestBody SqlCheckReq req) {
-        ConnectionSession connectionSession = sessionService.nullSafeGet(SidUtils.getSessionId(sessionId));
+        ConnectionSession connectionSession = sessionService.nullSafeGet(SidUtils.getSessionId(sessionId), true);
         return Responses.list(this.sqlCheckService.check(connectionSession, req));
     }
 

@@ -48,22 +48,22 @@ public class DBProcedureController {
     public OdcResult<List<DBProcedure>> list(@PathVariable String sid) {
         // sid:1-1:d:database
         ResourceIdentifier i = ResourceIDParser.parse(sid);
-        return OdcResult.ok(procedureService.list(sessionService.nullSafeGet(i.getSid()), i.getDatabase()));
+        return OdcResult.ok(procedureService.list(sessionService.nullSafeGet(i.getSid(), true), i.getDatabase()));
     }
 
     @ApiOperation(value = "detail", notes = "查看存储过程的详细信息，sid示例：sid:1000-1:d:db1:p:p1")
     @RequestMapping(value = "/{sid:.*}", method = RequestMethod.GET)
     public OdcResult<DBProcedure> detail(@PathVariable String sid) {
         ResourceIdentifier i = ResourceIDParser.parse(sid);
-        return OdcResult.ok(procedureService.detail(sessionService.nullSafeGet(i.getSid()),
-                i.getDatabase(), i.getProcedure()));
+        return OdcResult.ok(procedureService.detail(
+                sessionService.nullSafeGet(i.getSid(), true), i.getDatabase(), i.getProcedure()));
     }
 
     @ApiOperation(value = "getCreateSql", notes = "获取创建存储过程的sql，sid示例：sid:1000-1:d:db1:p:p1")
     @RequestMapping(value = "/getCreateSql/{sid:.*}", method = RequestMethod.PATCH)
     public OdcResult<ResourceSql> getCreateSql(@PathVariable String sid, @RequestBody DBProcedure resource) {
-        return OdcResult
-                .ok(procedureService.getCreateSql(sessionService.nullSafeGet(SidUtils.getSessionId(sid)), resource));
+        return OdcResult.ok(procedureService.getCreateSql(
+                sessionService.nullSafeGet(SidUtils.getSessionId(sid), true), resource));
     }
 
 }

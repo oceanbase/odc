@@ -133,7 +133,7 @@ public class ConnectConsoleService {
 
     public SqlExecuteResult queryTableOrViewData(@NotNull String sessionId,
             @NotNull @Valid QueryTableOrViewDataReq req) throws Exception {
-        ConnectionSession connectionSession = sessionService.nullSafeGet(sessionId);
+        ConnectionSession connectionSession = sessionService.nullSafeGet(sessionId, true);
         SqlBuilder sqlBuilder;
         DialectType dialectType = connectionSession.getConnectType().getDialectType();
         if (dialectType.isMysql()) {
@@ -189,7 +189,7 @@ public class ConnectConsoleService {
 
     public SqlAsyncExecuteResp execute(@NotNull String sessionId,
             @NotNull @Valid SqlAsyncExecuteReq request, boolean needSqlCheck) throws Exception {
-        ConnectionSession connectionSession = sessionService.nullSafeGet(sessionId);
+        ConnectionSession connectionSession = sessionService.nullSafeGet(sessionId, true);
 
         if (request.getShowTableColumnInfo() != null) {
             ConnectionSessionUtil.setShowTableColumnInfo(connectionSession, request.getShowTableColumnInfo());

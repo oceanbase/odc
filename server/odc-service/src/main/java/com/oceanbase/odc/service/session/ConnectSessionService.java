@@ -295,9 +295,16 @@ public class ConnectSessionService {
     }
 
     public ConnectionSession nullSafeGet(@NotNull String sessionId) {
+        return nullSafeGet(sessionId, false);
+    }
+
+    public ConnectionSession nullSafeGet(@NotNull String sessionId, boolean autoCreate) {
         ConnectionSession session = connectionSessionManager.getSession(sessionId);
         if (session == null) {
-            throw new NotFoundException(ResourceType.ODC_SESSION, "ID", sessionId);
+            if (!autoCreate) {
+                throw new NotFoundException(ResourceType.ODC_SESSION, "ID", sessionId);
+            }
+            return create(new DefaultConnectSessionIdGenerator().getKeyFromId(sessionId));
         }
         if (!Objects.equals(ConnectionSessionUtil.getUserId(session), authenticationFacade.currentUserId())) {
             throw new NotFoundException(ResourceType.ODC_SESSION, "ID", sessionId);
@@ -343,7 +350,7 @@ public class ConnectSessionService {
     }
 
     public DBSessionResp currentDBSession(@NotNull String sessionId) {
-        ConnectionSession connectionSession = nullSafeGet(SidUtils.getSessionId(sessionId));
+        ConnectionSession connectionSession = nullSafeGet(SidUtils.getSessionId(sessionId), true);
         return DBSessionResp.builder()
                 .settings(settingsService.getSessionSettings(connectionSession))
                 .session(dbSessionService.currentSession(connectionSession))

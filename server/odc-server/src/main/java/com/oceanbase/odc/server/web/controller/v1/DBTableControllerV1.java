@@ -56,7 +56,7 @@ public class DBTableControllerV1 {
         // sid:1-1:d:database
         ResourceIdentifier i = ResourceIDParser.parse(sid);
         String dbName = i.getDatabase();
-        List<DBTable> tables = tableService.listTables(sessionService.nullSafeGet(i.getSid()), dbName);
+        List<DBTable> tables = tableService.listTables(sessionService.nullSafeGet(i.getSid(), true), dbName);
         return OdcResult.ok(tables.stream().map(OdcDBTable::new).collect(Collectors.toList()));
     }
 
@@ -65,8 +65,8 @@ public class DBTableControllerV1 {
     public OdcResult<OdcDBTable> detail(@PathVariable String sid) {
         // parse sid and database name, sid:1-1:d:database:t:tb1
         ResourceIdentifier i = ResourceIDParser.parse(sid);
-        DBTable table = tableService.getTable(sessionService.nullSafeGet(i.getSid()), i.getDatabase(), i.getTable());
-        return OdcResult.ok(new OdcDBTable(table));
+        return OdcResult.ok(new OdcDBTable(tableService.getTable(
+                sessionService.nullSafeGet(i.getSid(), true), i.getDatabase(), i.getTable())));
     }
 
     @ApiOperation(value = "getUpdateSql", notes = "获取修改表名的sql")
@@ -82,7 +82,7 @@ public class DBTableControllerV1 {
             previous.setName(i.getTable());
             req.setPrevious(previous);
         }
-        ConnectionSession session = sessionService.nullSafeGet(i.getSid());
+        ConnectionSession session = sessionService.nullSafeGet(i.getSid(), true);
         String schema = ConnectionSessionUtil.getCurrentSchema(session);
         if (req.getCurrent().getSchemaName() == null) {
             req.getCurrent().setSchemaName(schema);
