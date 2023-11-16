@@ -140,7 +140,8 @@ public class ProjectService {
         return entityToModel(saved, userResourceRoles);
     }
 
-    @PreAuthenticate(hasAnyResourceRole = {"OWNER", "DBA", "DEVELOPER"}, resourceType = "ODC_PROJECT",
+    @PreAuthenticate(hasAnyResourceRole = {"OWNER", "DBA", "DEVELOPER", "SECURITY_ADMINISTRATOR", "PARTICIPANT"},
+            resourceType = "ODC_PROJECT",
             indexOfIdParam = 0)
     @Transactional(rollbackFor = Exception.class)
     public Project detail(@NotNull Long id) {

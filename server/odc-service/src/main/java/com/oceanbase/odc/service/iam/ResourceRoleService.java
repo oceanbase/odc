@@ -32,6 +32,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
+import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.metadb.iam.resourcerole.ResourceRoleEntity;
 import com.oceanbase.odc.metadb.iam.resourcerole.ResourceRoleRepository;
@@ -101,6 +102,19 @@ public class ResourceRoleService {
                 .map(userResourceRoleEntity -> StringUtils.join(userResourceRoleEntity.getResourceId(), ":",
                         userResourceRoleEntity.getResourceRoleId()))
                 .collect(Collectors.toSet());
+    }
+
+    @SkipAuthorize
+    public Map<Long, Set<ResourceRoleName>> getProjectId2ResourceRoleNames() {
+        Map<Long, ResourceRole> id2ResourceRoles = listResourceRoles().stream().collect(Collectors
+                .toMap(ResourceRole::getId, resourceRole -> resourceRole, (existingValue, newValue) -> newValue));
+        return userResourceRoleRepository.findByUserId(authenticationFacade.currentUserId()).stream()
+                .collect(Collectors.groupingBy(UserResourceRoleEntity::getResourceId,
+                        Collectors.mapping(
+                                userResourceRoleEntity -> id2ResourceRoles
+                                        .get(userResourceRoleEntity.getResourceRoleId())
+                                        .getRoleName(),
+                                Collectors.toSet())));
     }
 
     @SkipAuthorize("internal usage")
