@@ -25,10 +25,16 @@ import com.oceanbase.odc.core.task.context.JobContext;
  */
 public class K8sJobCaller implements JobCaller {
 
+    private final K8sClient client;
+
+    public K8sJobCaller(K8sClient client) {
+        this.client = client;
+    }
 
     @Override
     public void start(JobContext context) throws JobException {
-
+        // start a new k8s job
+       // client.createNamespaceJob()
     }
 
     @Override
