@@ -65,12 +65,8 @@ public class PrimitiveK8sClient implements K8sClient {
 
 
     @Override
-    public String createNamespaceJob(String namespace, @NonNull String jobName, @NonNull String image,
+    public String createNamespaceJob(@NonNull String namespace, @NonNull String jobName, @NonNull String image,
             @NonNull List<String> command, @NonNull PodParam podParam) throws JobException {
-        if (namespace == null) {
-            namespace = "default";
-        }
-
         V1Job job = getV1Job(jobName, image, command, podParam);
         BatchV1Api api = new BatchV1Api();
         try {
@@ -83,7 +79,7 @@ public class PrimitiveK8sClient implements K8sClient {
     }
 
     @Override
-    public Optional<String> getJob(String namespace, String jobName) throws JobException {
+    public Optional<String> getNamespaceJob(@NonNull String namespace, @NonNull String jobName) throws JobException {
         BatchV1Api api = new BatchV1Api();
         V1JobList job = null;
         try {
