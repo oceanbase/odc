@@ -16,104 +16,54 @@
 
 package com.oceanbase.odc.service.k8s;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.util.concurrent.TimeUnit;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
 
+import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
-import com.google.gson.reflect.TypeToken;
-
-import io.kubernetes.client.openapi.ApiClient;
-import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.Configuration;
-import io.kubernetes.client.openapi.apis.BatchV1Api;
-import io.kubernetes.client.openapi.apis.CoreV1Api;
-import io.kubernetes.client.openapi.models.V1Job;
-import io.kubernetes.client.openapi.models.V1Pod;
-import io.kubernetes.client.openapi.models.V1PodList;
-import io.kubernetes.client.util.Config;
-import io.kubernetes.client.util.Watch;
-import io.kubernetes.client.util.Watch.Response;
-import io.kubernetes.client.util.Yaml;
+import com.oceanbase.odc.service.task.caller.JobException;
+import com.oceanbase.odc.service.task.caller.JobUtils;
+import com.oceanbase.odc.service.task.caller.K8sClient;
+import com.oceanbase.odc.service.task.caller.PodParam;
+import com.oceanbase.odc.service.task.caller.PrimitiveK8sClient;
+import com.oceanbase.odc.test.database.TestProperties;
 
 /**
  * @author yaobin
- * @date 2023-11-13
+ * @date 2023-11-15
  * @since 4.2.4
  */
+@Ignore("manual test this case because k8s cluster is not public environment")
 public class K8sClientTest {
 
+    private static K8sClient k8sClient;
+
     @BeforeClass
-    public static void initClient() throws IOException {
-        ApiClient client = Config.defaultClient();
-        client.setBasePath("http://11.124.9.79:8981");
-        Configuration.setDefaultApiClient(client);
+    public static void init() throws IOException {
+        k8sClient = new PrimitiveK8sClient(TestProperties.getProperty("odc.k8s.cluster.url"));
     }
 
     @Test
-    public void test_get_pods() throws ApiException {
-        CoreV1Api api = new CoreV1Api();
-        V1PodList list = api.listPodForAllNamespaces(
-                null, null, null, null, null,
-                null, null, null, null, null);
-        for (V1Pod item : list.getItems()) {
-            System.out.println(item.getMetadata().getName());
-        }
+    public void test_createJob() throws JobException {
+
+        long taskId = 1L;
+        String imageName = "perl:5.34.0";
+        String exceptedJobName = JobUtils.generateJobName(taskId);
+        List<String> cmd = Arrays.asList("perl", "-Mbignum=bpi", "-wle", "print bpi(2000)");
+        PodParam podParam = new PodParam();
+        podParam.setTtlSecondsAfterFinished(3);
+        String generateJobOfName = k8sClient.createNamespaceJob("default", exceptedJobName, imageName, cmd, podParam);
+        Assert.assertEquals(exceptedJobName, generateJobOfName);
+
+        Optional<String> queryJobName = k8sClient.getJob("default", exceptedJobName);
+        Assert.assertTrue(queryJobName.isPresent());
+        Assert.assertEquals(exceptedJobName, queryJobName.get());
     }
 
-    @Test
-    public void test_create_job() throws ApiException {
-        BatchV1Api api = new BatchV1Api();
-
-        V1Job job = null;
-        try (InputStream is = getClass().getClassLoader().getResourceAsStream("k8s/pi-job.yaml");
-                BufferedReader reader = new BufferedReader(new InputStreamReader(is))) {
-            job = (V1Job) Yaml.load(reader);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        V1Job createdJob =
-                api.createNamespacedJob("default", job, null, null, null, null);
-        System.out.println("job created: " + createdJob.getMetadata().getName());
-    }
-
-
-    @Test
-    public void test_Watch() throws ApiException, IOException, InterruptedException {
-        CoreV1Api api = new CoreV1Api();
-
-        Watch<V1Pod> watch = Watch.createWatch(
-                Configuration.getDefaultApiClient(),
-                api.listPodForAllNamespacesCall(null, null, null, null,
-                        null, null, null, null, 60, null, null),
-                new TypeToken<Response<V1Pod>>() {}.getType());
-
-        // Start the watch and process the events
-        for (Watch.Response<V1Pod> response : watch) {
-            if (response.type == null) {
-                return;
-            }
-            if (response.type.equals("ADDED")) {
-                V1Pod pod = response.object;
-                System.out.println("New Pod added: " + pod.getMetadata().getName());
-            } else if (response.type.equals("MODIFIED")) {
-                V1Pod pod = response.object;
-                System.out.println("Pod modified: " + pod.getMetadata().getName());
-            } else if (response.type.equals("DELETED")) {
-                V1Pod pod = response.object;
-                System.out.println("Pod deleted: " + pod.getMetadata().getName());
-            }
-        }
-
-        // Close the watch
-        watch.close();
-
-        // Wait for a certain period of time to keep the program running
-        TimeUnit.SECONDS.sleep(10);
-    }
 
 }
