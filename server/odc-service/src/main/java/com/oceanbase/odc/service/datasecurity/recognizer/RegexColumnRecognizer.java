@@ -20,6 +20,8 @@ import java.util.regex.Pattern;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 
+import lombok.NonNull;
+
 /**
  * @author gaoda.xy
  * @date 2023/5/30 11:02
@@ -41,16 +43,20 @@ public class RegexColumnRecognizer implements ColumnRecognizer {
     @Override
     public boolean recognize(DBTableColumn column) {
         try {
-            if (databasePattern != null && !databasePattern.matcher(column.getSchemaName()).matches()) {
+            if (databasePattern != null
+                    && !databasePattern.matcher(new TimeoutCharSequence(column.getSchemaName())).matches()) {
                 return false;
             }
-            if (tablePattern != null && !tablePattern.matcher(column.getTableName()).matches()) {
+            if (tablePattern != null
+                    && !tablePattern.matcher(new TimeoutCharSequence(column.getTableName())).matches()) {
                 return false;
             }
-            if (columnPattern != null && !columnPattern.matcher(column.getName()).matches()) {
+            if (columnPattern != null
+                    && !columnPattern.matcher(new TimeoutCharSequence(column.getName())).matches()) {
                 return false;
             }
-            if (columnCommentPattern != null && !columnCommentPattern.matcher(column.getComment()).matches()) {
+            if (columnCommentPattern != null
+                    && !columnCommentPattern.matcher(new TimeoutCharSequence(column.getComment())).matches()) {
                 return false;
             }
             return true;
@@ -58,5 +64,46 @@ public class RegexColumnRecognizer implements ColumnRecognizer {
             return false;
         }
     }
+
+    /**
+     * An implementation of CharSequence that can be interrupted during Regex matching if timeout.
+     */
+    private static class TimeoutCharSequence implements CharSequence {
+
+        private final CharSequence inner;
+
+        private final long timeoutTimeMillis;
+
+        public TimeoutCharSequence(CharSequence inner) {
+            super();
+            this.inner = inner;
+            this.timeoutTimeMillis = System.currentTimeMillis() + 500;
+        }
+
+        @Override
+        public char charAt(int index) {
+            if (System.currentTimeMillis() <= timeoutTimeMillis) {
+                return inner.charAt(index);
+            }
+            throw new RuntimeException("Regex matching timeout");
+        }
+
+        @Override
+        public int length() {
+            return inner.length();
+        }
+
+        @Override
+        public @NonNull CharSequence subSequence(int start, int end) {
+            return new TimeoutCharSequence(inner.subSequence(start, end));
+        }
+
+        @Override
+        public @NonNull String toString() {
+            return inner.toString();
+        }
+
+    }
+
 
 }
