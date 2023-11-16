@@ -18,7 +18,7 @@ package com.oceanbase.tools.dbbrowser.util;
 public class ALLDataDictTableNames extends AbstractOracleDataDictTableNames {
     @Override
     public String prefix() {
-        return "ALL_";
+        return SCHEMA_NAME + ".ALL_";
     }
 
     @Override
