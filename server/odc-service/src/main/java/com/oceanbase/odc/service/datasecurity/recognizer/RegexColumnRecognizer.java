@@ -33,6 +33,8 @@ public class RegexColumnRecognizer implements ColumnRecognizer {
     private final Pattern columnPattern;
     private final Pattern columnCommentPattern;
 
+    private static final long MATCH_TIMEOUT_MILLIS = 500L;
+
     public RegexColumnRecognizer(String databaseRegex, String tableRegex, String columnRegex, String commentRegex) {
         databasePattern = StringUtils.isNotBlank(databaseRegex) ? Pattern.compile(databaseRegex) : null;
         tablePattern = StringUtils.isNotBlank(tableRegex) ? Pattern.compile(tableRegex) : null;
@@ -43,26 +45,30 @@ public class RegexColumnRecognizer implements ColumnRecognizer {
     @Override
     public boolean recognize(DBTableColumn column) {
         try {
-            if (databasePattern != null
-                    && !databasePattern.matcher(new TimeoutCharSequence(column.getSchemaName())).matches()) {
+            if (databasePattern != null && !databasePattern
+                    .matcher(new TimeoutCharSequence(column.getSchemaName(), getTimeoutMillis())).matches()) {
                 return false;
             }
-            if (tablePattern != null
-                    && !tablePattern.matcher(new TimeoutCharSequence(column.getTableName())).matches()) {
+            if (tablePattern != null && !tablePattern
+                    .matcher(new TimeoutCharSequence(column.getTableName(), getTimeoutMillis())).matches()) {
                 return false;
             }
-            if (columnPattern != null
-                    && !columnPattern.matcher(new TimeoutCharSequence(column.getName())).matches()) {
+            if (columnPattern != null && !columnPattern
+                    .matcher(new TimeoutCharSequence(column.getName(), getTimeoutMillis())).matches()) {
                 return false;
             }
-            if (columnCommentPattern != null
-                    && !columnCommentPattern.matcher(new TimeoutCharSequence(column.getComment())).matches()) {
+            if (columnCommentPattern != null && !columnCommentPattern
+                    .matcher(new TimeoutCharSequence(column.getComment(), getTimeoutMillis())).matches()) {
                 return false;
             }
             return true;
         } catch (Exception e) {
             return false;
         }
+    }
+
+    private long getTimeoutMillis() {
+        return System.currentTimeMillis() + MATCH_TIMEOUT_MILLIS;
     }
 
     /**
@@ -74,10 +80,10 @@ public class RegexColumnRecognizer implements ColumnRecognizer {
 
         private final long timeoutTimeMillis;
 
-        public TimeoutCharSequence(CharSequence inner) {
+        public TimeoutCharSequence(CharSequence inner, long timeoutTimeMillis) {
             super();
             this.inner = inner;
-            this.timeoutTimeMillis = System.currentTimeMillis() + 500;
+            this.timeoutTimeMillis = timeoutTimeMillis;
         }
 
         @Override
@@ -95,7 +101,7 @@ public class RegexColumnRecognizer implements ColumnRecognizer {
 
         @Override
         public @NonNull CharSequence subSequence(int start, int end) {
-            return new TimeoutCharSequence(inner.subSequence(start, end));
+            return new TimeoutCharSequence(inner.subSequence(start, end), timeoutTimeMillis);
         }
 
         @Override
