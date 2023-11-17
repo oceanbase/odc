@@ -16,12 +16,14 @@
 package com.oceanbase.odc.service.notification;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
+import com.oceanbase.odc.metadb.notification.MessageRepository;
 import com.oceanbase.odc.service.notification.model.Event;
 import com.oceanbase.odc.service.notification.model.EventStatus;
 import com.oceanbase.odc.service.notification.model.MessageSendingStatus;
@@ -56,6 +58,9 @@ public class Broker {
     @Autowired
     private NotificationProperties notificationProperties;
 
+    @Autowired
+    private MessageRepository messageRepository;
+
     @Transactional(rollbackFor = Exception.class)
     public void dequeueEvent(EventStatus eventStatus) {
         // 从事件队列中拉取事件
@@ -73,14 +78,19 @@ public class Broker {
         eventQueue.offer(event);
     }
 
-
+    @Transactional
     public void dequeueNotification(MessageSendingStatus status) {
         List<Notification> notifications =
                 notificationQueue.peek(notificationProperties.getNotificationDequeueBatchSize(), status);
+        messageRepository.updateStatusByIds(MessageSendingStatus.PROCESSING,
+                notifications.stream()
+                        .map(notification -> notification.getMessage().getId()).collect(Collectors.toSet()));
         for (Notification notification : notifications) {
             try {
                 notificationDispatcher.dispatch(notification);
             } catch (Exception e) {
+                messageRepository.updateStatusAndRetryTimesById(notification.getMessage().getId(),
+                        MessageSendingStatus.SENT_FAILED);
                 log.warn("Send notification failed.", e);
             }
         }

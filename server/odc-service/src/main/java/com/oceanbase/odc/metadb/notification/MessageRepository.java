@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.metadb.notification;
 
+import java.util.Collection;
 import java.util.List;
 
 import javax.transaction.Transactional;
@@ -46,4 +47,9 @@ public interface MessageRepository extends JpaRepository<MessageEntity, Long>,
             nativeQuery = true)
     List<MessageEntity> findNByStatusForUpdate(@Param("status") MessageSendingStatus status,
             @Param("limit") Integer limit);
+
+    @Modifying
+    @Transactional
+    @Query("update notification_message set `status`=:#{#status.name()} where id in (:ids)")
+    int updateStatusByIds (@Param("status") MessageSendingStatus status, @Param("ids")Collection<Long> ids);
 }

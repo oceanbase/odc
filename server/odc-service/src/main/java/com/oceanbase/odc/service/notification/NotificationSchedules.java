@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.notification;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 
 import com.oceanbase.odc.service.notification.model.EventStatus;
@@ -40,6 +41,7 @@ public class NotificationSchedules {
     @Autowired
     private NotificationProperties notificationProperties;
 
+    @Async
     @Scheduled(fixedDelayString = "${odc.notification.dequeue-event-fixed-delay-millis:30000}")
     public void convertEventToNotification() {
         broker.dequeueEvent(EventStatus.CREATED);

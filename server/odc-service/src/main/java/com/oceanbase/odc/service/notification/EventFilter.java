@@ -16,8 +16,10 @@
 package com.oceanbase.odc.service.notification;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -26,6 +28,7 @@ import org.springframework.util.CollectionUtils;
 
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.metadb.notification.EventRepository;
+import com.oceanbase.odc.metadb.notification.NotificationPolicyEntity;
 import com.oceanbase.odc.metadb.notification.NotificationPolicyRepository;
 import com.oceanbase.odc.service.notification.helper.EventMapper;
 import com.oceanbase.odc.service.notification.helper.NotificationPolicyFilter;
@@ -53,12 +56,17 @@ public class EventFilter {
     public List<Event> filter(List<Event> events) {
         List<Event> filtered = new ArrayList<>();
         if (CollectionUtils.isEmpty(events)) {
-            return Collections.emptyList();
+            return filtered;
         }
+        Set<Long> organizationIds = events.stream().map(Event::getOrganizationId).collect(Collectors.toSet());
+        Map<Long, List<NotificationPolicyEntity>> policies = notificationPolicyRepository
+                .findByOrganizationIds(organizationIds).stream()
+                .collect(Collectors.groupingBy(NotificationPolicyEntity::getOrganizationId));
         for (Event event : events) {
             EventStatus status;
-            if (NotificationPolicyFilter.filter(event.getLabels(),
-                    notificationPolicyRepository.findByOrganizationId(event.getOrganizationId())).isEmpty()) {
+            List<NotificationPolicyEntity> matched = NotificationPolicyFilter.filter(event.getLabels(),
+                    policies.get(event.getOrganizationId()));
+            if (matched.isEmpty()) {
                 status = EventStatus.THROWN;
             } else {
                 status = EventStatus.CONVERTED;

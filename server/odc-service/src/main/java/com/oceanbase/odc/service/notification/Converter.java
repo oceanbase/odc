@@ -16,8 +16,9 @@
 package com.oceanbase.odc.service.notification;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -63,25 +64,47 @@ public class Converter {
     private NotificationProperties notificationProperties;
 
     public List<Notification> convert(List<Event> events) {
-        if (CollectionUtils.isEmpty(events)) {
-            return Collections.emptyList();
-        }
         List<Notification> notifications = new ArrayList<>();
+        if (CollectionUtils.isEmpty(events)) {
+            return notifications;
+        }
+
+        List<NotificationPolicyEntity> policies = notificationPolicyRepository.findByOrganizationIds(
+                events.stream().map(Event::getOrganizationId).collect(Collectors.toSet()));
+        if (CollectionUtils.isEmpty(policies)) {
+            return notifications;
+        }
+        Map<Long, List<NotificationPolicyEntity>> mappedPolicies = policies.stream()
+                .collect(Collectors.groupingBy(NotificationPolicyEntity::getOrganizationId));
+
+        List<NotificationChannelRelationEntity> policyChannelEntities =
+                policyChannelRepository.findByNotificationPolicyIds(
+                        policies.stream().map(NotificationPolicyEntity::getId).collect(Collectors.toSet()));
+        if (CollectionUtils.isEmpty(policyChannelEntities)) {
+            return notifications;
+        }
+
+        Map<Long, List<ChannelConfig>> mappedChannels = channelRepository.findByIdIn(
+                policyChannelEntities.stream()
+                        .map(NotificationChannelRelationEntity::getChannelId).collect(Collectors.toSet()))
+                .stream().map(entity -> channelMapper.fromEntity(entity))
+                .collect(Collectors.groupingBy(channel -> {
+                    for (NotificationChannelRelationEntity entity : policyChannelEntities) {
+                        if (Objects.equals(entity.getChannelId(), channel.getId())) {
+                            return entity.getNotificationPolicyId();
+                        }
+                    }
+                    return null;
+                }));
+
         for (Event event : events) {
-            List<NotificationPolicyEntity> policies = NotificationPolicyFilter.filter(event.getLabels(),
-                    notificationPolicyRepository.findByOrganizationId(event.getOrganizationId()));
-            if (policies.isEmpty()) {
+            List<NotificationPolicyEntity> matched = NotificationPolicyFilter.filter(event.getLabels(),
+                    mappedPolicies.get(event.getOrganizationId()));
+            if (matched.isEmpty()) {
                 continue;
             }
-            for (NotificationPolicyEntity policy : policies) {
-                List<NotificationChannelRelationEntity> policyChannelEntity =
-                        policyChannelRepository.findByOrganizationIdAndNotificationPolicyId(event.getOrganizationId(),
-                                policy.getId());
-                List<ChannelConfig> channels = channelRepository.findAllById(
-                        policyChannelEntity.stream()
-                                .map(NotificationChannelRelationEntity::getChannelId)
-                                .collect(Collectors.toSet()))
-                        .stream().map(entity -> channelMapper.fromEntity(entity)).collect(Collectors.toList());
+            for (NotificationPolicyEntity policy : matched) {
+                List<ChannelConfig> channels = mappedChannels.get(policy.getId());
 
                 if (CollectionUtils.isEmpty(channels)) {
                     return null;
