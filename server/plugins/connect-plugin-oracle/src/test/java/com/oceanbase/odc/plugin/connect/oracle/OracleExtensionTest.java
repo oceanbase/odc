@@ -171,6 +171,14 @@ public class OracleExtensionTest extends BaseExtensionPointTest {
     }
 
     @Test
+    public void test_ob_oracle_getVariable() throws SQLException {
+        try (Connection connection = getConnection()) {
+            String waitTimeout = sessionExtensionPoint.getVariable(connection, "nls_timestamp_tz_format");
+            Assert.assertNotNull(waitTimeout);
+        }
+    }
+
+    @Test
     public void test_oracle_session_get_connect_id() throws SQLException {
         try (Connection connection = getConnection()) {
             String connectId = sessionExtensionPoint.getConnectionId(connection);

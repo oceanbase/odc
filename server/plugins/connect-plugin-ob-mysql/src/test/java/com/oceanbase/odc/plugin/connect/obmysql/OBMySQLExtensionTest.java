@@ -236,6 +236,14 @@ public class OBMySQLExtensionTest extends BaseExtensionPointTest {
         }
     }
 
+    @Test
+    public void test_ob_mysql_getVariable() throws SQLException {
+        try (Connection connection = getConnection()) {
+            String waitTimeout = sessionExtensionPoint.getVariable(connection, "wait_timeout");
+            Assert.assertNotNull(waitTimeout);
+        }
+    }
+
     private static String getUsername(TestDBConfiguration configuration) {
         String username = configuration.getUsername();
         if (StringUtils.isNotBlank(configuration.getTenant())) {

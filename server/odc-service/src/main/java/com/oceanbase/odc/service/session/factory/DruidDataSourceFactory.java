@@ -18,6 +18,8 @@ package com.oceanbase.odc.service.session.factory;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Properties;
 
 import javax.sql.DataSource;
 
@@ -26,6 +28,7 @@ import com.oceanbase.odc.core.datasource.CloneableDataSourceFactory;
 import com.oceanbase.odc.core.datasource.ConnectionInitializer;
 import com.oceanbase.odc.core.datasource.DataSourceFactory;
 import com.oceanbase.odc.core.shared.constant.ConnectionAccountType;
+import com.oceanbase.odc.plugin.connect.model.ConnectionConstants;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.util.ConnectionMapper;
 import com.oceanbase.odc.service.connection.util.DefaultJdbcUrlParser;
@@ -60,6 +63,11 @@ public class DruidDataSourceFactory extends OBConsoleDataSourceFactory {
         dataSource.setUrl(jdbcUrl);
         dataSource.setUsername(username);
         dataSource.setPassword(password);
+        if (Objects.nonNull(this.userRole)) {
+            Properties properties = new Properties();
+            properties.put(ConnectionConstants.USER_ROLE, this.userRole.name());
+            dataSource.setConnectProperties(properties);
+        }
         dataSource.setDriverClassName(connectionExtensionPoint.getDriverClassName());
         init(dataSource);
         return dataSource;

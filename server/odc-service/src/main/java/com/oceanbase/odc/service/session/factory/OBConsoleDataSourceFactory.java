@@ -71,7 +71,7 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
     private String defaultSchema;
     private String sid;
     private String serviceName;
-    private UserRole userRole;
+    protected UserRole userRole;
     private Map<String, String> parameters;
     protected final ConnectionConfig connectionConfig;
     protected final ConnectionAccountType accountType;

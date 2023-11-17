@@ -270,6 +270,14 @@ public class OBOracleExtensionTest extends BaseExtensionPointTest {
         }
     }
 
+    @Test
+    public void test_ob_oracle_getVariable() throws SQLException {
+        try (Connection connection = getConnection()) {
+            String waitTimeout = sessionExtensionPoint.getVariable(connection, "nls_date_format");
+            Assert.assertNotNull(waitTimeout);
+        }
+    }
+
     private static String getUsername(TestDBConfiguration configuration) {
         String username = ConnectionSessionUtil.getUserOrSchemaString(
                 configuration.getUsername(), DialectType.OB_ORACLE);
