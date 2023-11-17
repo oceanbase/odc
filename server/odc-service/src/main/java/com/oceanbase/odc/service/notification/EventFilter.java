@@ -62,18 +62,22 @@ public class EventFilter {
         Map<Long, List<NotificationPolicyEntity>> policies = notificationPolicyRepository
                 .findByOrganizationIds(organizationIds).stream()
                 .collect(Collectors.groupingBy(NotificationPolicyEntity::getOrganizationId));
+        List<Long> thrown = new ArrayList<>();
         for (Event event : events) {
-            EventStatus status;
             List<NotificationPolicyEntity> matched = NotificationPolicyFilter.filter(event.getLabels(),
                     policies.get(event.getOrganizationId()));
             if (matched.isEmpty()) {
-                status = EventStatus.THROWN;
+                thrown.add(event.getId());
             } else {
-                status = EventStatus.CONVERTED;
                 filtered.add(event);
             }
-            event.setStatus(status);
-            eventRepository.updateStatusById(event.getId(), status);
+        }
+        if (!CollectionUtils.isEmpty(thrown)) {
+            eventRepository.updateStatusByIds(EventStatus.THROWN, thrown);
+        }
+        if (!CollectionUtils.isEmpty(filtered)) {
+            eventRepository.updateStatusByIds(EventStatus.CONVERTED, filtered.stream().map(Event::getId).collect(
+                Collectors.toSet()));
         }
         return filtered;
     }

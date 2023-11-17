@@ -39,7 +39,6 @@ public class NotificationDispatcher {
     @Autowired
     private ChannelFactory channelFactory;
 
-    @Transactional(rollbackFor = Exception.class)
     public void dispatch(Notification notification) {
         ChannelConfig channelConfig = notification.getChannel();
         Channel channel = channelFactory.generate(channelConfig);

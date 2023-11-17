@@ -41,7 +41,6 @@ public class NotificationSchedules {
     @Autowired
     private NotificationProperties notificationProperties;
 
-    @Async
     @Scheduled(fixedDelayString = "${odc.notification.dequeue-event-fixed-delay-millis:30000}")
     public void convertEventToNotification() {
         broker.dequeueEvent(EventStatus.CREATED);

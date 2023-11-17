@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.metadb.notification;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -49,6 +50,11 @@ public interface EventRepository extends JpaRepository<EventEntity, Long>,
     @Query(value = "select * from notification_event where `status`=:#{#status.name()} order by trigger_time limit :limit for update nowait",
             nativeQuery = true)
     List<EventEntity> findNByStatusForUpdate(@Param("status") EventStatus status, @Param("limit") Integer limit);
+
+    @Transactional
+    @Modifying
+    @Query(value = "update notification_event set `status`=#{#:status.name()} where `id` in (:ids)", nativeQuery = true)
+    int updateStatusByIds(@Param("status") EventStatus status, @Param("ids")Collection<Long> ids);
 
 
 }
