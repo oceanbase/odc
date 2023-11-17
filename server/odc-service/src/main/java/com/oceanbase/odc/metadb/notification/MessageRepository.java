@@ -15,7 +15,6 @@
  */
 package com.oceanbase.odc.metadb.notification;
 
-import java.util.Collection;
 import java.util.List;
 
 import javax.transaction.Transactional;

@@ -31,10 +31,10 @@ import com.oceanbase.odc.service.notification.model.EventLabels;
 public class NotificationPolicyFilter {
 
     public static List<NotificationPolicyEntity> filter(EventLabels labels, List<NotificationPolicyEntity> policies) {
-        if (CollectionUtils.isEmpty(policies) || MapUtils.isEmpty(labels)) {
-            return policies;
-        }
         List<NotificationPolicyEntity> filtered = new ArrayList<>();
+        if (CollectionUtils.isEmpty(policies) || MapUtils.isEmpty(labels)) {
+            return filtered;
+        }
         for (NotificationPolicyEntity policy : policies) {
             Map<String, String> conditions =
                     JsonUtils.fromJsonMap(policy.getMatchExpression(), String.class, String.class);

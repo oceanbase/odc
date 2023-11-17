@@ -53,8 +53,8 @@ public interface EventRepository extends JpaRepository<EventEntity, Long>,
 
     @Transactional
     @Modifying
-    @Query(value = "update notification_event set `status`=#{#:status.name()} where `id` in (:ids)", nativeQuery = true)
-    int updateStatusByIds(@Param("status") EventStatus status, @Param("ids")Collection<Long> ids);
+    @Query(value = "update notification_event set `status`=:#{#status.name()} where `id` in (:ids)", nativeQuery = true)
+    int updateStatusByIds(@Param("status") EventStatus status, @Param("ids") Collection<Long> ids);
 
 
 }

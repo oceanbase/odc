@@ -77,7 +77,7 @@ public class EventFilter {
         }
         if (!CollectionUtils.isEmpty(filtered)) {
             eventRepository.updateStatusByIds(EventStatus.CONVERTED, filtered.stream().map(Event::getId).collect(
-                Collectors.toSet()));
+                    Collectors.toSet()));
         }
         return filtered;
     }
