@@ -205,16 +205,10 @@ odc.mysql.default.commandline=your_mysql_test_server_mysql_cli_commandline
 
 ### 3.1.1 依赖组件安装
 
-ODC 依赖 2 个自研组件，您可以分别在`lib/ob-sql-parser`以及`lib/db-browser`中看到它们。在正式的发布中，如果对这 2 个组件进行了修改，我们会提前将其上传至 maven 中央仓库以供引用，但是在开发过程中我们是通过本地安装的方式进行引用的。您在构建之前需要手动将这 2 个组件安装到本地，否则可能会导致构建不成功。您可以通过以下 shell 脚本完成依赖组件的安装：
+ODC 依赖 2 个自研组件，您可以分别在`lib`目录下看到它们。在正式的发布中，如果对这 2 个组件进行了修改，我们会提前将其上传至 maven 中央仓库以供引用，但是在开发过程中我们是通过本地安装的方式进行引用的。您在构建之前需要手动将这 2 个组件安装到本地，否则可能会导致构建不成功。您可以通过以下 shell 脚本完成依赖组件的安装：
 
 ```shell
-# install ob-sql-parser
-cd lib/ob-sql-parser
-mvn clean install -Dmaven.test.skip=true
-
-# install db-browser
-cd ../db-browser
-mvn clean package -Dmaven.test.skip=true
+script/build_libs.sh
 ```
 
 ### 3.1.2 构建和启动
