@@ -25,7 +25,7 @@ import lombok.Data;
 
 @Data
 public class CreateRuleReq {
-    @Size(min = 1, max = 128, message = "Automation rule name is out of range [1,128]")
+    @Size(min = 1, max = 64, message = "Automation rule name is out of range [1,64]")
     @Name(message = "Automation rule name cannot start or end with whitespaces")
     private String name;
     private Long eventId;

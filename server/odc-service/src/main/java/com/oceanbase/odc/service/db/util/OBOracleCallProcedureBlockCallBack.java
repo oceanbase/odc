@@ -183,10 +183,10 @@ public class OBOracleCallProcedureBlockCallBack implements ConnectionCallback<Ca
             CursorResultSet cursorResultSet = new CursorResultSet();
             DBResultSetMetaData dbResultSetMetaData = new DBResultSetMetaData();
             List<DBTableColumn> columnList = new ArrayList<>();
+            OdcDBTableColumn odcdbTableColumn = new OdcDBTableColumn();
             ResultSet resultSet = (ResultSet) value;
             ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
             for (int j = 1; j <= resultSetMetaData.getColumnCount(); j++) {
-                OdcDBTableColumn odcdbTableColumn = new OdcDBTableColumn();
                 odcdbTableColumn.setColumnName(resultSetMetaData.getColumnName(j));
                 odcdbTableColumn.setTypeName(resultSetMetaData.getColumnTypeName(j));
                 columnList.add(odcdbTableColumn);

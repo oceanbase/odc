@@ -34,7 +34,7 @@ import lombok.Data;
 
 @Data
 public class CreateRoleReq {
-    @Size(min = 1, max = 128, message = "Role name is out of range [1,128]")
+    @Size(min = 1, max = 64, message = "Role name is out of range [1,64]")
     @Name(message = "Role name cannot start or end with whitespaces")
     private String name;
     private boolean enabled;

@@ -93,8 +93,8 @@ public class OracleUpdateFactory extends OBParserBaseVisitor<Update> implements 
             Relation_factorContext r = dmlTableName.relation_factor();
             PartitionUsage partitionUsage = null;
             if (dmlTableName.use_partition() != null) {
-                OraclePartitionUsageFactory factory =
-                        new OraclePartitionUsageFactory(dmlTableName.use_partition());
+                OraclePartitonUsageFactory factory =
+                        new OraclePartitonUsageFactory(dmlTableName.use_partition());
                 partitionUsage = factory.generate();
             }
             NameReference nameReference = new NameReference(ctx, OracleFromReferenceFactory.getSchemaName(r),

@@ -43,7 +43,7 @@ public class ModifyResourceGroupReq {
     /**
      * Name for a resource group
      */
-    @Size(min = 1, max = 128, message = "Resource group name is out of range [1,128]")
+    @Size(min = 1, max = 64, message = "Resource group name is out of range [1,64]")
     @Name(message = "Resource group name cannot start or end with whitespaces")
     private String name;
     /**

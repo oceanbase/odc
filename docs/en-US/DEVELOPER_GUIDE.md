@@ -231,16 +231,6 @@ When plaintext configuration is identified, EncryptableConfiguration will automa
 
 ## 3.1 jar build and run
 
-### 3.1.1 Dependent component installation
-
-ODC relies on 2 self-developed components, which you can see in `lib` respectively. In the official release, if these two components are modified, we will upload them to the maven central warehouse for reference in advance, but during the development process, we will reference them through local installation. You need to manually install these two components locally before building, otherwise the build may not be successful. You can complete the installation of dependent components through the following shell script:
-
-```shell
-script/build_libs.sh
-```
-
-### 3.1.2 Build and start
-
 Build or run scripts locate at `script` directory.
 
 Build
@@ -326,7 +316,7 @@ The first run will fail because there are no startup parameters configured, and 
 When starting ODC Server, add the following configuration to the startup options, which will automatically pull in the front-end resources.
 
 ```shell
---ODC_INDEX_PAGE_URI=http://static-resource-server/dev-4.2.2/index.html
+--ODC_INDEX_PAGE_URI=http://alipay-rmsdeploy-image.cn-hangzhou.alipay.aliyun-inc.com/oceanbase/odc/release-4.2.0/index.html
 ```
 
 ### 3.3.1 Run arguments
@@ -339,21 +329,7 @@ Notice here we use Spring environment variables arguments `--`, not VM optionsï¼
 --ODC_DATABASE_PASSWORD=your_metadb_password --server.port=8989
 ```
 
-### 3.3.2 Build support components
-
-First, you need to complete the installation of dependent components according to the instructions in Chapter 3.1.1. If you have already completed this step, please ignore it.
-
-Next, you need to complete the build of the ODC plugin. You can see them in the `server/plugins` and `server/starters` directories. You can complete the build through the following shell command:
-
-```shell
-mvn clean package -Dmaven.test.skip=true
-```
-
-The building of the plugin is integrated into the ODC building process. By default, you can see these built plugins in the `distribution/plugins` and `distribution/starters` directories:
-
-![image.png](./images/odc-plugins-starters.png)
-
-### 3.3.3 Configuration
+### 3.3.2 Configuration
 
 Run OdcServer
 ![image.png](../en-US/images/idea-run-configuration-start-odc-server.png)

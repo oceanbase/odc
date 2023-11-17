@@ -16,7 +16,6 @@
 package com.oceanbase.odc.core.sql.execute.tool;
 
 import java.sql.Date;
-import java.sql.Timestamp;
 import java.util.Calendar;
 
 import com.oceanbase.tools.dbbrowser.model.datatype.DataType;
@@ -40,10 +39,6 @@ public class DateCellData extends TestCellData {
 
     public Date getDate() {
         return date;
-    }
-
-    public Timestamp getTimestamp() {
-        return date == null ? null : new Timestamp(date.getTime());
     }
 
 }

@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.oceanbase.tools.sqlparser.statement.insert;
 
-package com.oceanbase.tools.sqlparser.statement.insert.mysql;
+import java.util.Collections;
+import java.util.List;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 
 import com.oceanbase.tools.sqlparser.statement.BaseStatement;
-import com.oceanbase.tools.sqlparser.statement.Expression;
-import com.oceanbase.tools.sqlparser.statement.expression.ColumnReference;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -28,35 +28,48 @@ import lombok.NonNull;
 import lombok.Setter;
 
 /**
- * {@link SetColumn}
+ * {@link SingleTableInsert}
  *
  * @author yh263208
- * @date 2023-11-08 20:28
- * @since ODC_release_4.2.3
+ * @date 2022-12-20 19:15
+ * @since ODC_release_4.1.0
+ * @see Insert
  */
 @Getter
 @Setter
 @EqualsAndHashCode(callSuper = false)
-public class SetColumn extends BaseStatement {
+public class SingleTableInsert extends BaseStatement implements Insert {
 
-    private final Expression value;
-    private final ColumnReference column;
+    private boolean replace;
+    private final InsertBody insertBody;
 
-    public SetColumn(@NonNull ParserRuleContext context,
-            @NonNull ColumnReference column, @NonNull Expression value) {
+    public SingleTableInsert(@NonNull ParserRuleContext context, @NonNull InsertBody insertBody) {
         super(context);
-        this.value = value;
-        this.column = column;
+        this.insertBody = insertBody;
     }
 
-    public SetColumn(@NonNull ColumnReference column, @NonNull Expression value) {
-        this.value = value;
-        this.column = column;
+    public SingleTableInsert(@NonNull InsertBody insertBody) {
+        this.insertBody = insertBody;
+    }
+
+    @Override
+    public int getType() {
+        return Insert.SINGLE_INSERT;
+    }
+
+    @Override
+    public List<InsertBody> getInsertBodies() {
+        return Collections.singletonList(insertBody);
+    }
+
+    @Override
+    public boolean replace() {
+        return this.replace;
     }
 
     @Override
     public String toString() {
-        return this.column + "=" + this.value;
+        return this.getText();
     }
 
 }

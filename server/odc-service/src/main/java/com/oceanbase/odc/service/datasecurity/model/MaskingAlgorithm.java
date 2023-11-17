@@ -41,7 +41,7 @@ import lombok.Data;
 
 /**
  * @author gaoda.xy
- * @date 2023/5/10 10:56
+ * @date 2023/5/9 10:56
  */
 @Data
 public class MaskingAlgorithm implements SecurityResource, OrganizationIsolated {
@@ -49,7 +49,7 @@ public class MaskingAlgorithm implements SecurityResource, OrganizationIsolated 
     @JsonProperty(access = Access.READ_ONLY)
     private Long id;
 
-    @Size(min = 1, max = 128, message = "Masking algorithm name is out of range [1,128]")
+    @Size(min = 1, max = 64, message = "Masking algorithm name is out of range [1,64]")
     @Name(message = "Masking algorithm name cannot start or end with whitespaces")
     @Internationalizable
     private String name;

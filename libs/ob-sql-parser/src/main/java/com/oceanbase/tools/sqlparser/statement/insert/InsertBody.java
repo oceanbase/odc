@@ -13,51 +13,45 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.tools.sqlparser.statement.insert;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 
 import com.oceanbase.tools.sqlparser.statement.BaseStatement;
-import com.oceanbase.tools.sqlparser.statement.Expression;
+import com.oceanbase.tools.sqlparser.statement.expression.ColumnReference;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.NonNull;
+import lombok.Setter;
 
 /**
- * {@link InsertCondition}
+ * {@link InsertBody}
  *
  * @author yh263208
- * @date 2023-11-08 18:01
- * @since ODC_release_4.2.3
+ * @date 2022-12-20 19:07
+ * @since ODC_release_4.1.0
+ * @see BaseStatement
  */
 @Getter
+@Setter
+@NoArgsConstructor
 @EqualsAndHashCode(callSuper = false)
-public class InsertCondition extends BaseStatement {
+public class InsertBody extends BaseStatement {
 
-    private final Expression when;
-    private final List<InsertTable> then;
+    private List<ColumnReference> columns = new ArrayList<>();
 
-    public InsertCondition(@NonNull ParserRuleContext context,
-            @NonNull Expression when, @NonNull List<InsertTable> then) {
+    public InsertBody(@NonNull ParserRuleContext context) {
         super(context);
-        this.when = when;
-        this.then = then;
-    }
-
-    public InsertCondition(@NonNull Expression when, @NonNull List<InsertTable> then) {
-        this.when = when;
-        this.then = then;
     }
 
     @Override
     public String toString() {
-        return "WHEH " + this.when + " THEN" + "\n\t" + this.then.stream()
-                .map(InsertTable::toString).collect(Collectors.joining("\n\t"));
+        return this.getText();
     }
 
 }

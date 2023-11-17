@@ -4,11 +4,7 @@
 #            the jdk version used in docker is java-1.8.0-openjdk-1.8.0.262
 # 2021-7-15：sync centos7 base image to aliyun docker reg for build stablility
 # 2022-05-10：base image change to anolisos8 for avoid system vulnerabilities
-# 2023-11-09: one Dockerfile for different cpu architectures, amd64 and arm64
-ARG ARCH=amd64
-FROM docker.io/openanolis/anolisos:8.6-x86_64 AS amd64-base
-FROM docker.io/openanolis/anolisos:8.6-aarch64 AS arm64-base
-FROM ${ARCH}-base AS base
+FROM docker.io/openanolis/anolisos:8.6-x86_64
 
 # set labels
 LABEL maintainer="ODC <odc@oceanbase.com>"
