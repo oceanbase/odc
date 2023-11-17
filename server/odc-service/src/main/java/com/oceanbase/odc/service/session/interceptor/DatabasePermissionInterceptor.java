@@ -16,7 +16,6 @@
 
 package com.oceanbase.odc.service.session.interceptor;
 
-import java.util.ArrayList;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -72,7 +71,7 @@ public class DatabasePermissionInterceptor extends BaseTimeConsumingInterceptor 
         Set<String> unauthorizedDatabaseNames =
                 databaseService.filterUnAuthorizedDatabaseNames(allDatabaseNames, connectionConfig.getId());
         if (CollectionUtils.isNotEmpty(unauthorizedDatabaseNames)) {
-            response.setUnauthorizedDatabaseNames(new ArrayList<>(unauthorizedDatabaseNames));
+            // response.setUnauthorizedDatabaseNames(new ArrayList<>(unauthorizedDatabaseNames));
             return false;
         }
         return true;

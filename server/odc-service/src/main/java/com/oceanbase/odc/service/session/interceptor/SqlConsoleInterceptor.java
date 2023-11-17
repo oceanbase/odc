@@ -36,12 +36,12 @@ import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.regulation.ruleset.RuleService;
 import com.oceanbase.odc.service.regulation.ruleset.SqlConsoleRuleService;
-import com.oceanbase.odc.service.regulation.ruleset.model.Rule;
 import com.oceanbase.odc.service.regulation.ruleset.model.SqlConsoleRules;
 import com.oceanbase.odc.service.session.model.SqlAsyncExecuteReq;
 import com.oceanbase.odc.service.session.model.SqlAsyncExecuteResp;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.odc.service.session.model.SqlTuplesWithViolation;
+import com.oceanbase.odc.service.sqlcheck.model.CheckViolation;
 import com.oceanbase.tools.dbbrowser.parser.ParserUtil;
 import com.oceanbase.tools.dbbrowser.parser.constant.SqlType;
 import com.oceanbase.tools.dbbrowser.parser.result.BasicResult;
@@ -103,11 +103,11 @@ public class SqlConsoleInterceptor extends BaseTimeConsumingInterceptor {
                 SqlConsoleRules.ALLOW_SQL_TYPES, session.getDialectType(), String.class);
 
         for (SqlTuplesWithViolation sqlTuplesWithViolation : response.getSqls()) {
-            List<Rule> violatedRules = sqlTuplesWithViolation.getViolatedRules();
+            List<CheckViolation> violatedRules = sqlTuplesWithViolation.getViolatedRules();
             BasicResult parseResult = sqlId2BasicResult.get(sqlTuplesWithViolation.getSqlTuple().getSqlId());
             if (parseResult.isPlDdl() && forbiddenToCreatePL) {
-                ruleService.getByRulesetIdAndName(ruleSetId, SqlConsoleRules.NOT_ALLOWED_CREATE_PL.getRuleName())
-                        .ifPresent(rule -> violatedRules.add(rule));
+                // ruleService.getByRulesetIdAndName(ruleSetId, SqlConsoleRules.NOT_ALLOWED_CREATE_PL.getRuleName())
+                // .ifPresent(rule -> violatedRules.add(rule));
                 allowExecute.set(false);
             }
             if (allowSqlTypesOpt.isPresent()) {
@@ -118,8 +118,8 @@ public class SqlConsoleInterceptor extends BaseTimeConsumingInterceptor {
                     continue;
                 }
                 if (!allowSqlTypesOpt.get().contains(parseResult.getSqlType().name())) {
-                    ruleService.getByRulesetIdAndName(ruleSetId, SqlConsoleRules.ALLOW_SQL_TYPES.getRuleName())
-                            .ifPresent(violatedRules::add);
+                    // ruleService.getByRulesetIdAndName(ruleSetId, SqlConsoleRules.ALLOW_SQL_TYPES.getRuleName())
+                    // .ifPresent(violatedRules::add);
                     allowExecute.set(false);
                 }
             }

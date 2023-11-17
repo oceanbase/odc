@@ -20,7 +20,6 @@ import java.util.List;
 
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
-import com.oceanbase.odc.service.regulation.ruleset.model.Rule;
 import com.oceanbase.odc.service.sqlcheck.model.CheckViolation;
 
 import lombok.Data;
@@ -32,7 +31,7 @@ import lombok.Data;
  */
 @Data
 public class SqlTuplesWithViolation {
-    private int startRow;
+    private int offset;
 
     private SqlTuple sqlTuple;
 
@@ -40,7 +39,7 @@ public class SqlTuplesWithViolation {
 
     private List<String> unauthorizedDatabaseNames;
 
-    public SqlTuplesWithViolation(SqlTuple sqls, List<Rule> violatedRules) {
+    public SqlTuplesWithViolation(SqlTuple sqls, List<CheckViolation> violatedRules) {
         PreConditions.notNull(sqls, "sqls");
         PreConditions.notNull(violatedRules, "violatedRules");
         this.sqlTuple = sqls;

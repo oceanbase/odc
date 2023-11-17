@@ -144,7 +144,8 @@ public class SqlCheckUtil {
     public static List<CheckResult> buildCheckResults(@NonNull List<CheckViolation> violations) {
         return violations.stream().collect(Collectors
                 .groupingBy(CheckViolation::getText, LinkedHashMap::new, Collectors.toList()))
-                .entrySet().stream().map(e -> new CheckResult(e.getKey(), e.getValue())).collect(Collectors.toList());
+                .entrySet().stream().map(e -> new CheckResult(0, e.getKey(), e.getValue()))
+                .collect(Collectors.toList());
     }
 
     public static Stream<ColumnDefinition> fromAlterTable(@NonNull AlterTable alterTable) {

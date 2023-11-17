@@ -93,7 +93,8 @@ public class SqlCheckInterceptor extends BaseTimeConsumingInterceptor {
                 String sql = v.getSqlTuple().getOriginalSql();
                 List<CheckViolation> violations = sqlChecker.check(Collections.singletonList(sql), checkContext);
                 List<Rule> vRules = sqlCheckService.fullFillRiskLevel(rules, violations);
-                v.getViolatedRules().addAll(vRules.stream().filter(r -> r.getLevel() > 0).collect(Collectors.toList()));
+                v.getViolatedRules()
+                        .addAll(violations.stream().filter(r -> r.getLevel() > 0).collect(Collectors.toList()));
                 sql2Violations.put(sql, violations);
             });
             context.put(SQL_CHECK_RESULT_KEY, sql2Violations);

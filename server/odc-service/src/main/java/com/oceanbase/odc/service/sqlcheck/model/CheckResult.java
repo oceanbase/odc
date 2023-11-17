@@ -39,7 +39,7 @@ import lombok.ToString;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CheckResult implements Serializable {
-    private int startRow;
+    private int    offset;
     private String sql;
     private List<CheckViolation> violations;
 }
