@@ -16,7 +16,6 @@
 package com.oceanbase.odc.service.notification;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -78,13 +77,9 @@ public class Broker {
         eventQueue.offer(event);
     }
 
-    @Transactional
     public void dequeueNotification(MessageSendingStatus status) {
         List<Notification> notifications =
                 notificationQueue.peek(notificationProperties.getNotificationDequeueBatchSize(), status);
-        messageRepository.updateStatusByIds(MessageSendingStatus.PROCESSING,
-                notifications.stream()
-                        .map(notification -> notification.getMessage().getId()).collect(Collectors.toSet()));
         for (Notification notification : notifications) {
             try {
                 notificationDispatcher.dispatch(notification);

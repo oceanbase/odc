@@ -51,5 +51,5 @@ public interface MessageRepository extends JpaRepository<MessageEntity, Long>,
     @Modifying
     @Transactional
     @Query("update notification_message set `status`=:#{#status.name()} where id in (:ids)")
-    int updateStatusByIds (@Param("status") MessageSendingStatus status, @Param("ids")Collection<Long> ids);
+    int updateStatusByIds(@Param("status") MessageSendingStatus status, @Param("ids") Collection<Long> ids);
 }
