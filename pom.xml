@@ -93,7 +93,7 @@
         <bucket4j-core.version>4.10.0</bucket4j-core.version>
         <springfox-swagger-ui.version>2.10.0</springfox-swagger-ui.version>
         <db-browser.version>1.0.3</db-browser.version>
-        <ob-sql-parser.version>1.1.3</ob-sql-parser.version>
+        <ob-sql-parser.version>1.2.0</ob-sql-parser.version>
         <pf4j.version>3.9.0</pf4j.version>
         <bcpkix-jdk15on.version>1.64</bcpkix-jdk15on.version>
         <alibaba-dingtalk-service-sdk.version>2.0.0</alibaba-dingtalk-service-sdk.version>
@@ -1397,7 +1397,7 @@ limitations under the License.
                 </property>
             </activation>
             <properties>
-                <oceanbase-client.version>2.4.5</oceanbase-client.version>
+                <oceanbase-client.version>2.4.7.1</oceanbase-client.version>
             </properties>
         </profile>
         <profile>

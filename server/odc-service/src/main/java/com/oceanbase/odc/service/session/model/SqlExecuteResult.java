@@ -96,6 +96,7 @@ public class SqlExecuteResult {
     private Integer total;
     private String traceId;
     private String track;
+    private int errorCode = -1;
     private Map<String, Object> types;
     private Map<String, String> typeNames;
     private String dbObjectType;
@@ -388,6 +389,14 @@ public class SqlExecuteResult {
             // query error
             this.status = SqlExecuteStatus.FAILED;
             this.track = getTrackMessage(exception);
+            if (exception instanceof SQLException) {
+                this.errorCode = ((SQLException) exception).getErrorCode();
+            } else {
+                Throwable rootCause = ExceptionUtils.getRootCause(exception);
+                if (rootCause instanceof SQLException) {
+                    this.errorCode = ((SQLException) rootCause).getErrorCode();
+                }
+            }
         }
         try {
             if (this.rows.size() == 0) {
