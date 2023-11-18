@@ -44,6 +44,10 @@ public abstract class AbstractJob {
         this.canceled = true;
     }
 
+    public boolean isCanceled() {
+        return canceled;
+    }
+
     @Override
     public String toString() {
         return object.getSummary();

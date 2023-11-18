@@ -18,6 +18,7 @@ package com.oceanbase.odc.plugin.task.mysql.datatransfer.job;
 
 import java.io.File;
 import java.net.URL;
+import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -30,12 +31,16 @@ import javax.sql.DataSource;
 import org.apache.commons.lang3.ArrayUtils;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+import com.oceanbase.odc.plugin.schema.mysql.MySQLTableExtension;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferFormat;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferObject;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferType;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.ObjectResult;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.common.Constants;
+import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.ConfigurationResolver;
+import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.DataXTransferJob;
+import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.oceanbase.tools.dbbrowser.schema.mysql.MySQLNoGreaterThan5740SchemaAccessor;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
 
@@ -46,11 +51,13 @@ public class TransferJobFactory {
     private final DataTransferConfig transferConfig;
     private final File workingDir;
     private final List<URL> inputs;
+    private final String jdbcUrl;
 
-    public TransferJobFactory(DataTransferConfig transferConfig, File workingDir, List<URL> inputs) {
+    public TransferJobFactory(DataTransferConfig transferConfig, File workingDir, List<URL> inputs, String jdbcUrl) {
         this.transferConfig = transferConfig;
         this.workingDir = workingDir;
         this.inputs = inputs;
+        this.jdbcUrl = jdbcUrl;
     }
 
     public List<AbstractJob> generateSchemaTransferJobs(DataSource dataSource) throws Exception {
@@ -78,14 +85,14 @@ public class TransferJobFactory {
          */
         List<DataTransferObject> objects;
         if (transferConfig.isExportAllObjects()) {
-            objects = queryTransferObjects(dataSource);
+            objects = queryTransferObjects(dataSource, true);
         } else {
             objects = new ArrayList<>(transferConfig.getExportDbObjects());
         }
         objects.forEach(o -> {
             ObjectResult object = new ObjectResult(transferConfig.getSchemaName(), o.getObjectName(),
                     o.getDbObjectType().getName());
-            AbstractJob job = new MySQLSchemaExportJobImpl(object, transferConfig, workingDir, dataSource);
+            AbstractJob job = new MySQLSchemaExportJob(object, transferConfig, workingDir, dataSource);
             jobs.add(job);
         });
         return jobs;
@@ -111,7 +118,8 @@ public class TransferJobFactory {
                 }
 
                 if (transferConfig.getDataTransferFormat() == DataTransferFormat.CSV) {
-                    // TODO use DataX
+                    jobs.add(new DataXTransferJob(object, ConfigurationResolver
+                            .buildJobConfigurationForImport(transferConfig, jdbcUrl, object, url)));
                 } else {
                     jobs.add(new SqlScriptImportJob(object, transferConfig, url, dataSource));
                 }
@@ -121,17 +129,38 @@ public class TransferJobFactory {
         /*
          * export
          */
-        // TODO use DataX
+        List<DataTransferObject> objects;
+        if (transferConfig.isExportAllObjects()) {
+            objects = queryTransferObjects(dataSource, false);
+        } else {
+            objects = new ArrayList<>(transferConfig.getExportDbObjects());
+        }
+        try (Connection conn = dataSource.getConnection()) {
+            for (DataTransferObject object : objects) {
+                ObjectResult table = new ObjectResult(transferConfig.getSchemaName(), object.getObjectName(),
+                        object.getDbObjectType().getName());
+                /*
+                 * when exporting data, table column names are needed for csv headers and insertion building
+                 */
+                List<String> columns =
+                        new MySQLTableExtension().getDetail(conn, table.getSchema(), table.getName()).getColumns()
+                                .stream().map(DBTableColumn::getName).collect(Collectors.toList());
+
+                AbstractJob job = new DataXTransferJob(table, ConfigurationResolver
+                        .buildJobConfigurationForExport(workingDir, transferConfig, jdbcUrl, table.getName(), columns));
+                jobs.add(job);
+            }
+        }
         return jobs;
     }
 
-    private List<DataTransferObject> queryTransferObjects(DataSource dataSource) {
+    private List<DataTransferObject> queryTransferObjects(DataSource dataSource, boolean transferDDL) {
         List<DataTransferObject> objects = new ArrayList<>();
         MySQLNoGreaterThan5740SchemaAccessor accessor =
                 new MySQLNoGreaterThan5740SchemaAccessor(new JdbcTemplate(dataSource));
         accessor.listTables(transferConfig.getSchemaName(), "")
                 .forEach(table -> objects.add(new DataTransferObject(ObjectType.TABLE, table.getName())));
-        if (transferConfig.isTransferDDL()) {
+        if (transferDDL) {
             accessor.listViews(transferConfig.getSchemaName())
                     .forEach(view -> objects.add(new DataTransferObject(ObjectType.VIEW, view.getName())));
             accessor.listFunctions(transferConfig.getSchemaName())

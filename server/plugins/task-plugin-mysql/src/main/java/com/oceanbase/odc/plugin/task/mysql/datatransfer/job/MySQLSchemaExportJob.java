@@ -36,13 +36,13 @@ import com.oceanbase.odc.plugin.task.api.datatransfer.model.ObjectResult;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.common.Constants;
 import com.oceanbase.tools.loaddump.common.model.ObjectStatus.Status;
 
-public class MySQLSchemaExportJobImpl extends AbstractJob {
+public class MySQLSchemaExportJob extends AbstractJob {
 
     private final DataTransferConfig transferConfig;
     private final File workingDir;
     private final DataSource dataSource;
 
-    public MySQLSchemaExportJobImpl(ObjectResult object, DataTransferConfig transferConfig, File workingDir,
+    public MySQLSchemaExportJob(ObjectResult object, DataTransferConfig transferConfig, File workingDir,
             DataSource dataSource) {
         super(object);
         this.transferConfig = transferConfig;

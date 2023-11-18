@@ -118,7 +118,7 @@ public class MySQLDataTransferJob implements DataTransferJob {
     public DataTransferTaskResult call() throws Exception {
         try (DruidDataSource dataSource = initDataSource()) {
 
-            initTransferJobs(dataSource);
+            initTransferJobs(dataSource, dataSource.getUrl());
 
             if (CollectionUtils.isNotEmpty(schemaJobs)) {
                 runSchemaJobs();
@@ -156,8 +156,8 @@ public class MySQLDataTransferJob implements DataTransferJob {
         return ds;
     }
 
-    private void initTransferJobs(DataSource dataSource) {
-        TransferJobFactory factory = new TransferJobFactory(baseConfig, workingDir, inputs);
+    private void initTransferJobs(DataSource dataSource, String jdbcUrl) {
+        TransferJobFactory factory = new TransferJobFactory(baseConfig, workingDir, inputs, jdbcUrl);
         try {
             if (baseConfig.isTransferDDL()) {
                 List<AbstractJob> jobs = factory.generateSchemaTransferJobs(dataSource);

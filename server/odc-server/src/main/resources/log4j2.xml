@@ -106,6 +106,28 @@
             </Routes>
         </Routing>
 
+        <Routing name="DataXInfoRoutingAppender">
+            <Routes pattern="$${ctx:task.workspace}">
+                <Route>
+                    <RollingFile name="InfoRolling-${ctx:task.workspace}"
+                                 fileName="${ctx:task.workspace}/datax.all"
+                                 filePattern="${ctx:task.workspace}/${date:yyyy-MM}/datax-%d{yyyy-MM-dd}-%i.info.gz">
+                        <PatternLayout>
+                            <pattern>%d{yyyy-MM-dd HH:mm:ss} [%p] %m%n</pattern>
+                        </PatternLayout>
+                        <Filters>
+                            <!-- TRACE < DEBUG < INFO < WARN < ERROR < FATAL -->
+                            <ThresholdFilter level="INFO" onMatch="ACCEPT" onMismatch="DENY"/>
+                        </Filters>
+                        <Policies>
+                            <TimeBasedTriggeringPolicy interval="6" modulate="true"/>
+                            <SizeBasedTriggeringPolicy size="20 MB"/>
+                        </Policies>
+                    </RollingFile>
+                </Route>
+            </Routes>
+        </Routing>
+
         <!-- 以下为模拟数据任务日志配置 -->
         <Routing name="InfoRoutingMockAppender">
             <Routes pattern="${ctx:mocktask.workspace}">
@@ -455,6 +477,10 @@
         <Logger name="DataTransferLogger" additivity="false" level="INFO">
             <AppenderRef ref="LoadDumpInfoRoutingAppender"/>
             <AppenderRef ref="LoadDumpWarnRoutingAppender"/>
+        </Logger>
+
+        <Logger name="com.alibaba.datax" additivity="false" level="INFO">
+            <AppenderRef ref="DataXInfoRoutingAppender"/>
         </Logger>
 
         <Logger name="com.oceanbase.tools.loaddump" additivity="false" level="INFO">

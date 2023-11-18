@@ -10,7 +10,26 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>task-plugin-mysql</artifactId>
+
+
+    <dependencyManagement>
+        <dependencies>
+            <!-- dataX -->
+            <dependency>
+                <groupId>com.alibaba.datax</groupId>
+                <artifactId>datax-core</artifactId>
+                <version>0.0.1</version>
+                <scope>system</scope>
+                <systemPath>${project.basedir}/../../../import/datax-core-0.0.1-SNAPSHOT.jar</systemPath>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <dependencies>
+        <dependency>
+            <groupId>com.alibaba.datax</groupId>
+            <artifactId>datax-core</artifactId>
+        </dependency>
         <dependency>
             <groupId>com.oceanbase</groupId>
             <artifactId>task-plugin-api</artifactId>
