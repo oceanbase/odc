@@ -24,7 +24,6 @@ import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import com.oceanbase.odc.service.flow.provider.BaseExpiredDocumentProvider;
@@ -104,8 +103,7 @@ public class ExpiredDocumentProviderTest {
     }
 
     @Test
-    @Ignore("TODO: fix this test")
-    public void provide_BothExpired_ReturnAll() throws IOException {
+    public void provide_BothExpired_ReturnAll() throws IOException, InterruptedException {
         File rootDir = new File(ROOT_FILE_DIR);
         FileUtils.forceMkdir(rootDir);
         Assert.assertTrue(rootDir.exists());
@@ -117,6 +115,8 @@ public class ExpiredDocumentProviderTest {
         File file1 = new File(rootDir.getAbsolutePath() + "/read1.txt");
         Assert.assertTrue(file1.createNewFile());
         Assert.assertTrue(file1.isFile());
+
+        Thread.sleep(100);
 
         TestExpiredDocumentProvider provider = new TestExpiredDocumentProvider(1, TimeUnit.MILLISECONDS, rootDir);
         List<File> fileList = provider.provide();

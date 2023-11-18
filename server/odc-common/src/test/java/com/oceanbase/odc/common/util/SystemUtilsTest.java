@@ -21,38 +21,29 @@ import java.util.Properties;
 import org.junit.Assert;
 import org.junit.Test;
 
-import com.oceanbase.odc.common.json.JsonUtils;
-
-import lombok.extern.slf4j.Slf4j;
-
-@Slf4j
 public class SystemUtilsTest {
 
     @Test
     public void getHostName_NotEmpty() {
         String hostName = SystemUtils.getHostName();
-        log.info("hostName={}", hostName);
         Assert.assertTrue(hostName.length() > 0);
     }
 
     @Test
     public void getLocalIpAddress_NotEmpty() {
         String localIpAddress = SystemUtils.getLocalIpAddress();
-        log.info("localIpAddress={}", localIpAddress);
         Assert.assertTrue(localIpAddress.length() > 0);
     }
 
     @Test
     public void getSystemEnv() {
         Map<String, String> systemEnv = SystemUtils.getSystemEnv();
-        log.info("systemEnv:\n{}", JsonUtils.prettyToJson(systemEnv));
         Assert.assertFalse(systemEnv.isEmpty());
     }
 
     @Test
     public void getSystemProperties() {
         Properties systemProperties = SystemUtils.getSystemProperties();
-        log.info("systemProperties:\n{}", JsonUtils.prettyToJson(systemProperties));
         Assert.assertFalse(systemProperties.isEmpty());
     }
 

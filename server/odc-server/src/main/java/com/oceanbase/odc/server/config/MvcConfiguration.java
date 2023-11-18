@@ -33,6 +33,7 @@ import org.springframework.format.datetime.standard.DateTimeFormatterRegistrar;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.http.converter.xml.MappingJackson2XmlHttpMessageConverter;
 import org.springframework.web.context.request.RequestContextListener;
 import org.springframework.web.filter.RequestContextFilter;
 import org.springframework.web.filter.ShallowEtagHeaderFilter;
@@ -115,15 +116,33 @@ public class MvcConfiguration implements WebMvcConfigurer {
 
     @Override
     public void extendMessageConverters(List<HttpMessageConverter<?>> converters) {
-        for (HttpMessageConverter converter : converters) {
+        int xmlConverterIndex = -1;
+        int jacksonConverterIndex = -1;
+        for (int i = 0; i < converters.size(); i++) {
+            HttpMessageConverter<?> converter = converters.get(i);
+            if (converter instanceof MappingJackson2XmlHttpMessageConverter) {
+                xmlConverterIndex = i;
+            }
             if (converter instanceof MappingJackson2HttpMessageConverter) {
+                jacksonConverterIndex = i;
                 MappingJackson2HttpMessageConverter jacksonConverter = (MappingJackson2HttpMessageConverter) converter;
                 jacksonConverter.setObjectMapper(objectMapper);
                 log.info("update objectMapper for jackson http message converter");
-                return;
             }
         }
-        throw new RuntimeException("no jackson http message converter found!");
+        if (jacksonConverterIndex == -1) {
+            throw new RuntimeException("no jackson http message converter found!");
+        }
+        /**
+         * swap xml converter and jackson converter if the xmlConverter exists and is before
+         * jacksonConverter
+         */
+
+        if (xmlConverterIndex != -1 && xmlConverterIndex < jacksonConverterIndex) {
+            HttpMessageConverter<?> jacksonConverter = converters.get(jacksonConverterIndex);
+            converters.set(jacksonConverterIndex, converters.get(xmlConverterIndex));
+            converters.set(xmlConverterIndex, jacksonConverter);
+        }
     }
 
 

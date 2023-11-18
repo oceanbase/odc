@@ -203,6 +203,16 @@ odc.mysql.default.commandline=your_mysql_test_server_mysql_cli_commandline
 
 ## 3.1 jar 构建和启动
 
+### 3.1.1 依赖组件安装
+
+ODC 依赖 2 个自研组件，您可以分别在`lib`目录下看到它们。在正式的发布中，如果对这 2 个组件进行了修改，我们会提前将其上传至 maven 中央仓库以供引用，但是在开发过程中我们是通过本地安装的方式进行引用的。您在构建之前需要手动将这 2 个组件安装到本地，否则可能会导致构建不成功。您可以通过以下 shell 脚本完成依赖组件的安装：
+
+```shell
+script/build_libs.sh
+```
+
+### 3.1.2 构建和启动
+
 构建和启动可以使用 `script` 目录的脚本实现，过程如下
 
 构建
@@ -288,7 +298,7 @@ OdcServer 类是 odc-server 程序入口，可直接运行。
 启动 ODC Server 时在启动项中添加如下配置，会自动拉取前端资源。
 
 ```shell
---ODC_INDEX_PAGE_URI=http://alipay-rmsdeploy-image.cn-hangzhou.alipay.aliyun-inc.com/oceanbase/odc/release-4.2.0/index.html
+--ODC_INDEX_PAGE_URI=http://static-resource-server/dev-4.2.2/index.html
 ```
 
 ### 3.3.1 启动参数
@@ -299,7 +309,21 @@ OdcServer 类是 odc-server 程序入口，可直接运行。
 --ODC_DATABASE_HOST=your_metadb_host --ODC_DATABASE_PORT=your_metadb_port --ODC_DATABASE_NAME=your_metadb_database --ODC_DATABASE_USERNAME=your_metadb_user --ODC_DATABASE_PASSWORD=your_metadb_password --server.port=8989
 ```
 
-### 3.3.2 配置过程
+### 3.3.2 构建支持组件
+
+首先您需要按照 3.1.1 章节的指引完成依赖组件的安装，如果您已经完成了这一步，请忽略。
+
+接下来，您需要完成 ODC 插件的构建，您可以在`server/plugins`以及`server/starters`目录中看到它们，您可以通过以下 shell 命令完成构建：
+
+```shell
+mvn clean package -Dmaven.test.skip=true
+```
+
+插件的构建是集成在 ODC 的构建过程中的。默认情况下，您可以在`distribution/plugins`以及`distribution/starters`目录中看到这些构建完成的插件：
+
+![image.png](../en-US/images/odc-plugins-starters.png)
+
+### 3.3.3 配置过程
 
 运行 OdcServer
 ![image.png](../en-US/images/idea-run-configuration-start-odc-server.png)

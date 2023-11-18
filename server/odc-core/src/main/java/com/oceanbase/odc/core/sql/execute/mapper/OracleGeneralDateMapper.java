@@ -15,8 +15,8 @@
  */
 package com.oceanbase.odc.core.sql.execute.mapper;
 
-import java.sql.Date;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -38,7 +38,7 @@ public class OracleGeneralDateMapper implements JdbcColumnMapper {
 
     @Override
     public Object mapCell(@NonNull CellData data) throws SQLException {
-        Date date = data.getDate();
+        Timestamp date = data.getTimestamp();
         if (date == null) {
             return null;
         }

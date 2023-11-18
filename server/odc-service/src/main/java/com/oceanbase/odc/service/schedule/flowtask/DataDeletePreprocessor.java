@@ -101,6 +101,7 @@ public class DataDeletePreprocessor extends AbstractDlmJobPreprocessor {
             if (dataDeleteParameters.getRateLimit().getRowLimit() != null) {
                 limiterConfig.setBatchSize(dataDeleteParameters.getRateLimit().getBatchSize());
             }
+            limiterService.createAndBindToOrder(scheduleEntity.getId(), limiterConfig);
         }
         req.setParentFlowInstanceId(parameters.getTaskId());
     }

@@ -56,7 +56,7 @@ $ cd ob-odc/libs/ob-sql-parser
 <dependency>
     <groupId>com.oceanbase</groupId>
     <artifactId>ob-sql-parser</artifactId>
-    <version>1.1.2</version>
+    <version>1.2.0</version>
 </dependency>
 ```
 
@@ -156,7 +156,7 @@ Assert.assertEquals("p1_1", subPartitionElement.getRelation());
 |`SELECT`|95%|`SELECT...INTO...`句型不支持|
 |`DELETE`|50%|-|
 |`UPDATE`|50%|-|
-|`INSERT`|20%|-|
+|`INSERT`|100%|语法文件上的所有分支全部支持|
 |`CREATE_TABLE`|100%|语法文件上的所有分支全部支持|
 |`CREATE_INDEX`|100%|语法文件上的所有分支全部支持|
 |`ALTER_TABLE`|100%|语法文件上的所有分支全部支持|
