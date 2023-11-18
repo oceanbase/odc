@@ -142,14 +142,14 @@ public class OdcJobListener implements JobListener {
 
     @Override
     public void jobWasExecuted(JobExecutionContext context, JobExecutionException jobException) {
-        if (notificationProperties.isEnabled()) {
+        if (notificationProperties.isEnabled() && jobException != null) {
             try {
                 JobDataMap dataMap = context.getMergedJobDataMap();
                 EventLabels labels = new EventLabels();
                 labels.put(EventLabelKeys.IDENTIFIER_KEY_TASK_TYPE, context.getJobInstance().getClass().getName());
                 labels.put(EventLabelKeys.IDENTIFIER_KEY_ACTION, "failed");
                 labels.put("taskInfo", JsonUtils.toJson(context.getMergedJobDataMap()));
-                // labels.put("errorMessage", jobException.getMessage());
+                labels.put("errorMessage", jobException.getMessage());
                 labels.put("region", SystemUtils.getEnvOrProperty("OB_ARN_PARTITION"));
                 broker.enqueueEvent(Event.builder()
                         .status(EventStatus.CREATED)
