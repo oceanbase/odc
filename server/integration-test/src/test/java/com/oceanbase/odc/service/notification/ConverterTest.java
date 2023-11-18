@@ -16,7 +16,6 @@
 package com.oceanbase.odc.service.notification;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
@@ -26,7 +25,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.apache.commons.compress.utils.Lists;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -41,6 +39,7 @@ import com.oceanbase.odc.metadb.notification.ChannelEntity;
 import com.oceanbase.odc.metadb.notification.ChannelRepository;
 import com.oceanbase.odc.metadb.notification.EventEntity;
 import com.oceanbase.odc.metadb.notification.EventRepository;
+import com.oceanbase.odc.metadb.notification.NotificationChannelRelationEntity;
 import com.oceanbase.odc.metadb.notification.NotificationPolicyChannelRelationRepository;
 import com.oceanbase.odc.metadb.notification.NotificationPolicyEntity;
 import com.oceanbase.odc.metadb.notification.NotificationPolicyRepository;
@@ -95,11 +94,11 @@ public class ConverterTest extends ServiceTestEnv {
         }
         eventRepository.saveAll(events);
 
-        when(policyRepository.findByOrganizationId(anyLong()))
+        when(policyRepository.findByOrganizationIds(any()))
                 .thenReturn(Collections.singletonList(getNotificationPolicy()));
-        when(policyChannelRepository.findByOrganizationIdAndNotificationPolicyId(anyLong(), anyLong()))
-                .thenReturn(Lists.newArrayList());
-        when(channelRepository.findAllById(any()))
+        when(policyChannelRepository.findByNotificationPolicyIds(any()))
+                .thenReturn(Collections.singletonList(getNotificationChannelRelationEntity()));
+        when(channelRepository.findByIdIn(any()))
                 .thenReturn(Arrays.asList(getChannelEntity()));
 
         List<Notification> notifications =
@@ -145,8 +144,18 @@ public class ConverterTest extends ServiceTestEnv {
 
     private NotificationPolicyEntity getNotificationPolicy() {
         NotificationPolicyEntity policy = new NotificationPolicyEntity();
+        policy.setId(1L);
         policy.setMatchExpression(JsonUtils.toJson(getLabels()));
+        policy.setOrganizationId(ORGANIZATION_ID);
         return policy;
+    }
+
+    private NotificationChannelRelationEntity getNotificationChannelRelationEntity() {
+        NotificationChannelRelationEntity entity = new NotificationChannelRelationEntity();
+        entity.setOrganizationId(ORGANIZATION_ID);
+        entity.setChannelId(1L);
+        entity.setNotificationPolicyId(1L);
+        return entity;
     }
 
 }

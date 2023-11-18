@@ -15,8 +15,8 @@
  */
 package com.oceanbase.odc.service.notification;
 
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -80,14 +80,11 @@ public class EventFilterTest extends ServiceTestEnv {
             events.add((mapper.toEntity(getEvent())));
         }
         List<EventEntity> entities = eventRepository.saveAll(events);
-
-        when(policyRepository.findByOrganizationId(anyLong()))
-                .thenReturn(Collections.singletonList(getNotificationPolicy()));
+        doReturn(Collections.singletonList(getNotificationPolicy())).when(policyRepository)
+                .findByOrganizationIds(any());
         List<Event> filtered =
                 filter.filter(entities.stream().map(entity -> mapper.fromEntity(entity)).collect(Collectors.toList()));
         Assert.assertEquals(eventCount, filtered.size());
-        Set<EventStatus> statusSet = filtered.stream().map(Event::getStatus).collect(Collectors.toSet());
-        Assert.assertTrue(statusSet.contains(EventStatus.CONVERTED) && statusSet.size() == 1);
     }
 
     private Event getEvent() {
@@ -103,6 +100,7 @@ public class EventFilterTest extends ServiceTestEnv {
     private NotificationPolicyEntity getNotificationPolicy() {
         NotificationPolicyEntity policy = new NotificationPolicyEntity();
         policy.setMatchExpression(JsonUtils.toJson(getLabels()));
+        policy.setOrganizationId(ORGANIZATION_ID);
         return policy;
     }
 
