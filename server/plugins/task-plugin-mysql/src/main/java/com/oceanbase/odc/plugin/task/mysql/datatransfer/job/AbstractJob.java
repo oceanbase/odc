@@ -32,7 +32,7 @@ public abstract class AbstractJob {
     @Getter
     protected long records = 0;
 
-    protected volatile boolean canceled = false;
+    private volatile boolean canceled = false;
 
     public AbstractJob(ObjectResult object) {
         this.object = object;
@@ -46,6 +46,10 @@ public abstract class AbstractJob {
 
     public boolean isCanceled() {
         return canceled;
+    }
+
+    public boolean isDone() {
+        return object.getStatus() == Status.FAILURE || object.getStatus() == Status.SUCCESS;
     }
 
     @Override

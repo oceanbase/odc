@@ -60,6 +60,7 @@ public class DataXTransferJob extends AbstractJob {
      * own a unique ID.
      */
     private final Long jobId;
+    private JobContainer jobContainer;
     private StandAloneJobContainerCommunicator containerCommunicator;
 
     public DataXTransferJob(ObjectResult object, JobConfiguration jobConfig) {
@@ -71,15 +72,14 @@ public class DataXTransferJob extends AbstractJob {
     @Override
     public void run() throws Exception {
 
-        AtomicBoolean monitorStopControl = new AtomicBoolean(false);
-        DataXJobMonitorThread monitorThread = new DataXJobMonitorThread(monitorStopControl);
+        DataXJobMonitor monitor = new DataXJobMonitor();
 
         try {
             Configuration configuration = ConfigurationResolver.resolve(jobConfig);
             configuration.set(CoreConstant.DATAX_CORE_CONTAINER_JOB_ID, jobId);
             this.containerCommunicator = new StandAloneJobContainerCommunicator(configuration);
 
-            monitorThread.start();
+            new Thread(monitor, "DataX-Monitor-" + Thread.currentThread().getName()).start();
 
             // bind column cast strategies
             ColumnCast.bind(configuration);
@@ -89,7 +89,8 @@ public class DataXTransferJob extends AbstractJob {
             MessageSource.init(
                     Configuration.from(DataXTransferJob.class.getResourceAsStream("/datax/conf/core.json")));
 
-            new JobContainer(configuration).start();
+            this.jobContainer = new JobContainer(configuration);
+            jobContainer.start();
 
             setTaskStatus();
 
@@ -103,8 +104,16 @@ public class DataXTransferJob extends AbstractJob {
             throw e;
 
         } finally {
-            monitorStopControl.getAndSet(true);
+            monitor.stop();
         }
+    }
+
+    @Override
+    public void cancel() {
+        if (jobContainer != null) {
+            jobContainer.cancel();
+        }
+        super.cancel();
     }
 
     private void setTaskStatus() {
@@ -161,16 +170,12 @@ public class DataXTransferJob extends AbstractJob {
         }
     }
 
-    private class DataXJobMonitorThread extends Thread {
-        private final AtomicBoolean stop;
-
-        private DataXJobMonitorThread(AtomicBoolean stop) {
-            this.stop = stop;
-        }
+    private class DataXJobMonitor implements Runnable {
+        private final AtomicBoolean stop = new AtomicBoolean();
 
         @Override
         public void run() {
-            while (!stop.get() && !Thread.currentThread().isInterrupted()) {
+            while (!(isCanceled() || stop.get() || Thread.currentThread().isInterrupted())) {
                 try {
                     Communication communication = getCommunicationAndRecord();
                     bytes += communication.getLongCounter(CommunicationTool.REAL_WRITE_BYTES);
@@ -195,6 +200,10 @@ public class DataXTransferJob extends AbstractJob {
              * reduced.
              */
             increaseCount(-1);
+        }
+
+        public void stop() {
+            stop.getAndSet(true);
         }
 
     }

@@ -51,6 +51,7 @@ import com.oceanbase.odc.plugin.task.api.datatransfer.DataTransferJob;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.ConnectionInfo;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferTaskResult;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferType;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.ObjectResult;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.AbstractJob;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.TransferJobFactory;
@@ -132,6 +133,25 @@ public class MySQLDataTransferJob implements DataTransferJob {
         return new DataTransferTaskResult(getDataObjectsStatus(), getSchemaObjectsStatus());
     }
 
+    public void mark(TaskStatus status) {
+        switch (status) {
+            case FAILED:
+                dataJobs.forEach(job -> {
+                    if (!job.isDone()) {
+                        job.setStatus(Status.FAILURE);
+                    }
+                });
+            case DONE:
+                dataJobs.forEach(job -> {
+                    if (!job.isDone()) {
+                        job.setStatus(Status.SUCCESS);
+                    }
+                });
+            default:
+                this.status.getAndSet(status);
+        }
+    }
+
     private DruidDataSource initDataSource() {
         ConnectionInfo connectionInfo = baseConfig.getConnectionInfo();
         DruidDataSource ds = new DruidDataSource();
@@ -188,6 +208,9 @@ public class MySQLDataTransferJob implements DataTransferJob {
             if (isCanceled()) {
                 break;
             }
+            if (job.isDone()) {
+                continue;
+            }
             try {
                 LOGGER.info("Begin to transfer schema for {}.", job);
                 job.run();
@@ -210,25 +233,38 @@ public class MySQLDataTransferJob implements DataTransferJob {
         if (CollectionUtils.isEmpty(dataJobs)) {
             return;
         }
-        for (AbstractJob job : dataJobs) {
-            if (isCanceled()) {
-                break;
-            }
-            try {
-                LOGGER.info("Begin to transfer data for {}.", job);
-                job.run();
 
-                finishedJobNum.getAndIncrement();
-                LOGGER.info("Successfully finished transferring data for {} .", job);
-            } catch (Exception e) {
-                LOGGER.warn("Object {} failed.", job, e);
-                log.warn("Object {} failed.", job, e);
-                job.getObject().setStatus(Status.FAILURE);
+        ThroughputMonitor monitor = new ThroughputMonitor(this, baseConfig.getMaxDumpSizeBytes());
+        try {
+            if (baseConfig.getTransferType() == DataTransferType.EXPORT) {
+                new Thread(monitor, "Throughput-Monitor-" + Thread.currentThread().getName()).start();
             }
-            if (job.getObject().getStatus() == Status.FAILURE && baseConfig.isStopWhenError()) {
-                throw new RuntimeException(
-                        String.format("Object %s failed, transferring will stop.", job));
+            for (AbstractJob job : dataJobs) {
+                if (isCanceled()) {
+                    break;
+                }
+                if (job.isDone()) {
+                    continue;
+                }
+                try {
+                    LOGGER.info("Begin to transfer data for {}.", job);
+                    monitor.collect(job);
+                    job.run();
+
+                    finishedJobNum.getAndIncrement();
+                    LOGGER.info("Successfully finished transferring data for {} .", job);
+                } catch (Exception e) {
+                    LOGGER.warn("Object {} failed.", job, e);
+                    log.warn("Object {} failed.", job, e);
+                    job.getObject().setStatus(Status.FAILURE);
+                }
+                if (job.getObject().getStatus() == Status.FAILURE && baseConfig.isStopWhenError()) {
+                    throw new RuntimeException(
+                            String.format("Object %s failed, transferring will stop.", job));
+                }
             }
+        } finally {
+            monitor.stop();
         }
     }
 
