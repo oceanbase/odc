@@ -245,35 +245,12 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
      * The callback method when the task fails, which is used to update the status and other operations
      */
     protected void onFailure(Long taskId, TaskService taskService) {
-        // if (notificationProperties.isEnabled()) {
-        // TaskEntity taskEntity = taskService.detail(taskId);
-        // ConnectionConfig connection =
-        // connectionService.getWithoutPermissionCheck(taskEntity.getConnectionId());
-        // EventLabels labels = EventUtils.buildEventLabels(taskEntity.getTaskType(), "failed",
-        // taskEntity.getConnectionId());
-        // Map<String, String> extend = new HashMap<>();
-        // extend.put(EventLabelKeys.VARIABLE_KEY_CLUSTER_NAME, connection.getClusterName());
-        // extend.put(EventLabelKeys.VARIABLE_KEY_TENANT_NAME, connection.getTenantName());
-        // labels.addLabels(extend);
-        // broker.enqueueEvent(Event.builder()
-        // .status(EventStatus.CREATED)
-        // .creatorId(taskEntity.getCreatorId())
-        // .organizationId(taskEntity.getOrganizationId())
-        // .triggerTime(new Date(System.currentTimeMillis()))
-        // .labels(labels)
-        // .build());
-        // }
-    }
-
-    /**
-     * The callback method when the task is successful, used to update the status and other operations
-     */
-    protected void onSuccessful(Long taskId, TaskService taskService) {
         if (notificationProperties.isEnabled()) {
             new Thread(() -> {
                 TaskEntity taskEntity = taskService.detail(taskId);
-                ConnectionConfig connection = connectionService.getWithoutPermissionCheck(taskEntity.getConnectionId());
-                EventLabels labels = EventUtils.buildEventLabels(taskEntity.getTaskType(), "succeed",
+                ConnectionConfig connection =
+                        connectionService.getWithoutPermissionCheck(taskEntity.getConnectionId());
+                EventLabels labels = EventUtils.buildEventLabels(taskEntity.getTaskType(), "failed",
                         taskEntity.getConnectionId());
                 Map<String, String> extend = new HashMap<>();
                 extend.put(EventLabelKeys.VARIABLE_KEY_CLUSTER_NAME, connection.getClusterName());
@@ -288,6 +265,33 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
                         .build());
             }).start();
         }
+
+    }
+
+    /**
+     * The callback method when the task is successful, used to update the status and other operations
+     */
+    protected void onSuccessful(Long taskId, TaskService taskService) {
+        // if (notificationProperties.isEnabled()) {
+        // new Thread(() -> {
+        // TaskEntity taskEntity = taskService.detail(taskId);
+        // ConnectionConfig connection =
+        // connectionService.getWithoutPermissionCheck(taskEntity.getConnectionId());
+        // EventLabels labels = EventUtils.buildEventLabels(taskEntity.getTaskType(), "succeed",
+        // taskEntity.getConnectionId());
+        // Map<String, String> extend = new HashMap<>();
+        // extend.put(EventLabelKeys.VARIABLE_KEY_CLUSTER_NAME, connection.getClusterName());
+        // extend.put(EventLabelKeys.VARIABLE_KEY_TENANT_NAME, connection.getTenantName());
+        // labels.addLabels(extend);
+        // broker.enqueueEvent(Event.builder()
+        // .status(EventStatus.CREATED)
+        // .creatorId(taskEntity.getCreatorId())
+        // .organizationId(taskEntity.getOrganizationId())
+        // .triggerTime(new Date(System.currentTimeMillis()))
+        // .labels(labels)
+        // .build());
+        // }).start();
+        // }
     }
 
     /**
