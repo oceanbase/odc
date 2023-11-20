@@ -30,7 +30,7 @@ import com.oceanbase.odc.service.task.caller.JobException;
 import com.oceanbase.odc.service.task.caller.JobUtils;
 import com.oceanbase.odc.service.task.caller.K8sClient;
 import com.oceanbase.odc.service.task.caller.PodParam;
-import com.oceanbase.odc.service.task.caller.PrimitiveK8sClient;
+import com.oceanbase.odc.service.task.caller.PrimitiveJobBasedK8sClient;
 import com.oceanbase.odc.test.database.TestProperties;
 
 /**
@@ -39,13 +39,13 @@ import com.oceanbase.odc.test.database.TestProperties;
  * @since 4.2.4
  */
 @Ignore("manual test this case because k8s cluster is not public environment")
-public class K8sClientTest {
+public class PrimitiveJobBasedK8sClientTest {
 
     private static K8sClient k8sClient;
 
     @BeforeClass
     public static void init() throws IOException {
-        k8sClient = new PrimitiveK8sClient(TestProperties.getProperty("odc.k8s.cluster.url"));
+        k8sClient = new PrimitiveJobBasedK8sClient(TestProperties.getProperty("odc.k8s.cluster.url"));
     }
 
     @Test
