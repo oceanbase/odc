@@ -54,6 +54,8 @@ import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.model.ConnectionPreviewBatchImportResp;
 import com.oceanbase.odc.service.connection.model.GenerateConnectionStringReq;
 import com.oceanbase.odc.service.connection.model.QueryConnectionParams;
+import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
+import com.oceanbase.odc.service.iam.model.User;
 import com.oceanbase.odc.service.iam.util.SecurityContextUtils;
 
 import io.swagger.annotations.ApiOperation;
@@ -78,6 +80,9 @@ public class DataSourceController {
     @Autowired
     private ConnectionBatchImportPreviewer connectionBatchImportPreviewer;
 
+    @Autowired
+    private AuthenticationFacade authenticationFacade;
+
     @Value("${odc.integration.bastion.enabled:false}")
     private boolean bastionEnabled;
 
@@ -85,10 +90,11 @@ public class DataSourceController {
     @RequestMapping(value = "/datasources", method = RequestMethod.POST)
     public SuccessResponse<ConnectionConfig> createDataSource(@RequestBody ConnectionConfig connectionConfig) {
         if (bastionEnabled) {
+            User user = authenticationFacade.currentUser();
             SecurityContextUtils.setCurrentUser(OdcConstants.DEFAULT_ADMIN_USER_ID,
                     OdcConstants.DEFAULT_ORGANIZATION_ID, null);
             ConnectionConfig config = connectionService.create(connectionConfig);
-            SecurityContextUtils.clear();
+            SecurityContextUtils.setCurrentUser(user);
             return Responses.success(config);
         }
         return Responses.success(connectionService.create(connectionConfig));
