@@ -20,6 +20,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 import javax.sql.DataSource;
 
@@ -123,8 +124,11 @@ public class ResourceMigrator implements Migrator {
 
     @Override
     public boolean doMigrate() {
-        DataSource dataSource = migrateMetas.stream().filter(Objects::nonNull).findFirst()
-                .orElseThrow(() -> new NullPointerException("DS not found")).getConfig().getDataSource();
+        Optional<ResourceMigrateMetaInfo> optional = migrateMetas.stream().filter(Objects::nonNull).findFirst();
+        if (!optional.isPresent()) {
+            return true;
+        }
+        DataSource dataSource = optional.get().getConfig().getDataSource();
         TransactionTemplate txTemplate = new TransactionTemplate(new DataSourceTransactionManager(dataSource));
         txTemplate.execute(status -> {
             try {
