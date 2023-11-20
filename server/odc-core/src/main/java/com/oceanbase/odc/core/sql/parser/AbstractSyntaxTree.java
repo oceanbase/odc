@@ -13,27 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.sqlcheck.parser;
 
-import org.antlr.v4.runtime.ParserRuleContext;
+package com.oceanbase.odc.core.sql.parser;
 
-import com.oceanbase.tools.sqlparser.statement.BaseStatement;
+import org.antlr.v4.runtime.tree.ParseTree;
 
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NonNull;
-import lombok.Setter;
+import com.oceanbase.tools.dbbrowser.parser.result.BasicResult;
+import com.oceanbase.tools.sqlparser.statement.Statement;
 
-@Getter
-@Setter
-@EqualsAndHashCode(callSuper = false)
-public class DropStatement extends BaseStatement {
+/**
+ * {@link AbstractSyntaxTree}
+ *
+ * @author yh263208
+ * @date 2023-11-17 15:29
+ * @since ODC_release_4.2.3
+ */
+public interface AbstractSyntaxTree {
 
-    private final String objectType;
+    ParseTree getRoot();
 
-    public DropStatement(@NonNull ParserRuleContext ruleNode, @NonNull String objectType) {
-        super(ruleNode);
-        this.objectType = objectType;
-    }
+    BasicResult getParseResult();
+
+    Statement getStatement();
 
 }

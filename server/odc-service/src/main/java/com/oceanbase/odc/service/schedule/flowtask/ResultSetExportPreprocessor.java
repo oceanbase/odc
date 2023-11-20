@@ -37,7 +37,8 @@ import com.oceanbase.tools.dbbrowser.parser.constant.GeneralSqlType;
 import com.oceanbase.tools.dbbrowser.parser.result.BasicResult;
 
 @FlowTaskPreprocessor(type = TaskType.EXPORT_RESULT_SET)
-public class ResuleSetExportPreprocessor implements Preprocessor {
+public class ResultSetExportPreprocessor implements Preprocessor {
+
     private final static Pattern FILE_NAME_PATTERN = Pattern.compile("^[\\u4e00-\\u9fa5_a-zA-Z0-9._ -]+$");
     public static final String DEFAULT_DELIMITER = ";";
 

@@ -20,7 +20,6 @@ import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -28,8 +27,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.function.BooleanSupplier;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import javax.validation.Valid;
@@ -75,6 +72,9 @@ import com.oceanbase.odc.core.sql.execute.cache.table.VirtualElement;
 import com.oceanbase.odc.core.sql.execute.cache.table.VirtualTable;
 import com.oceanbase.odc.core.sql.execute.model.JdbcGeneralResult;
 import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
+import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTree;
+import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTreeFactories;
+import com.oceanbase.odc.core.sql.parser.EmptyAstFactory;
 import com.oceanbase.odc.service.common.model.OdcResultSetMetaData.OdcTable;
 import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.odc.service.common.util.WebResponseUtils;
@@ -86,7 +86,6 @@ import com.oceanbase.odc.service.db.session.KillSessionOrQueryReq;
 import com.oceanbase.odc.service.db.session.KillSessionResult;
 import com.oceanbase.odc.service.dml.ValueEncodeType;
 import com.oceanbase.odc.service.feature.AllFeatures;
-import com.oceanbase.odc.service.feature.Features;
 import com.oceanbase.odc.service.session.interceptor.SqlCheckInterceptor;
 import com.oceanbase.odc.service.session.interceptor.SqlExecuteInterceptorService;
 import com.oceanbase.odc.service.session.model.BinaryContent;
@@ -95,6 +94,7 @@ import com.oceanbase.odc.service.session.model.SqlAsyncExecuteReq;
 import com.oceanbase.odc.service.session.model.SqlAsyncExecuteResp;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.odc.service.session.util.SqlRewriteUtil;
+import com.oceanbase.tools.dbbrowser.parser.result.BasicResult;
 import com.oceanbase.tools.dbbrowser.parser.result.ParseSqlResult;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
@@ -224,7 +224,7 @@ public class ConnectConsoleService {
 
         List<SqlTuple> sqlTuples;
         if (sessionProperties.isAddInternalRowId()) {
-            sqlTuples = addInternalRowId(sqls, connectionSession, request);
+            sqlTuples = generateSqlTuple(sqls, connectionSession, request);
         } else {
             sqlTuples = sqls.stream().map(SqlTuple::newTuple).collect(Collectors.toList());
         }
@@ -282,7 +282,8 @@ public class ConnectConsoleService {
             return resultList.stream().map(jdbcGeneralResult -> {
                 SqlExecuteResult result = generateResult(connectionSession, jdbcGeneralResult);
                 Map<String, Object> cxt = context == null ? new HashMap<>() : context;
-                try (TraceStage stage = result.getTraceWatch().start(SqlExecuteStages.SQL_INTERCEPT_AFTER_CHECK)) {
+                try (TraceStage stage = result.getSqlTuple().getSqlWatch()
+                        .start(SqlExecuteStages.SQL_INTERCEPT_AFTER_CHECK)) {
                     sqlInterceptService.afterCompletion(result, connectionSession, cxt);
                 } catch (Exception e) {
                     throw new IllegalStateException(e);
@@ -394,57 +395,32 @@ public class ConnectConsoleService {
      * Rewrite sqls, will do <br>
      * 1. add ODC_INTERNAL_ROWID query column
      */
-    private List<SqlTuple> addInternalRowId(List<String> sqls, ConnectionSession session,
-            SqlAsyncExecuteReq request) throws IOException {
-        Integer queryLimit = request.getQueryLimit();
-        if (Objects.isNull(queryLimit)) {
-            return sqls.stream().map(SqlTuple::newTuple).collect(Collectors.toList());
-        }
-        List<SqlTuple> result = new LinkedList<>();
-        for (String sql : sqls) {
-            String newSql = sql;
-            if (StringUtils.isBlank(sql)) {
-                continue;
-            }
+    private List<SqlTuple> generateSqlTuple(List<String> sqls, ConnectionSession session, SqlAsyncExecuteReq request) {
+        return sqls.stream().filter(StringUtils::isNotBlank).map(sql -> {
             TraceWatch traceWatch = new TraceWatch("SQL-EXEC");
-            if (session.getDialectType() == DialectType.OB_ORACLE) {
-                ParseSqlResult parseResult;
-                try (TraceStage parseSql = traceWatch.start(SqlExecuteStages.PARSE_SQL)) {
-                    parseResult = SqlUtils.parseOracle(sql);
-                }
-                if (Objects.nonNull(parseResult) && request.ifAddROWID()) {
-                    try (TraceStage rewriteSql = traceWatch.start(SqlExecuteStages.REWRITE_SQL)) {
-                        try {
-                            newSql = rewriteSql(sql, session, traceWatch, parseResult::isSupportAddROWID,
-                                    SqlRewriteUtil::addInternalROWIDColumn);
-                        } catch (Exception ex) {
-                            log.warn("encountered unexpected exception when rewriting sql, cause={}", ex.getMessage(),
-                                    ex);
-                        }
-                    }
-                }
+            SqlTuple target = SqlTuple.newTuple(sql, sql, traceWatch);
+            try (TraceStage parseSql = traceWatch.start(SqlExecuteStages.PARSE_SQL)) {
+                target.initAst(AbstractSyntaxTreeFactories.getAstFactory(session.getDialectType(), 0));
+            } catch (IOException e) {
+                throw new IllegalStateException(e);
             }
-            result.add(SqlTuple.newTuple(sql, newSql, traceWatch));
-        }
-        return result;
-    }
-
-    private String rewriteSql(String sql, ConnectionSession session, TraceWatch watch,
-            BooleanSupplier shouldRewriteChecker, Function<String, String> rewriter) throws IOException {
-        if (!shouldRewriteChecker.getAsBoolean()) {
-            return sql;
-        }
-        String newSql;
-        try (TraceStage applyNewSql = watch.start(SqlExecuteStages.APPLY_SQL)) {
-            newSql = rewriter.apply(sql);
-        }
-        if (StringUtils.equals(sql, newSql)) {
-            return sql;
-        }
-        try (TraceStage stage = watch.start(SqlExecuteStages.VALIDATE_SEMANTICS)) {
-            boolean valid = validateSqlSemantics(newSql, session);
-            return valid ? newSql : sql;
-        }
+            if (Objects.isNull(request.getQueryLimit())
+                    || !request.ifAddROWID()
+                    || session.getDialectType() != DialectType.OB_ORACLE) {
+                return target;
+            }
+            try {
+                AbstractSyntaxTree ast = target.getAst();
+                BasicResult result = ast.getParseResult();
+                if (result instanceof ParseSqlResult && ((ParseSqlResult) result).isSupportAddROWID()) {
+                    target = SqlTuple.newTuple(sql, rewriteSql(sql, session, traceWatch, ast), traceWatch);
+                    target.initAst(new EmptyAstFactory(ast));
+                }
+            } catch (Exception e) {
+                // eat exception
+            }
+            return target;
+        }).collect(Collectors.toList());
     }
 
     @SkipAuthorize
@@ -463,18 +439,33 @@ public class ConnectConsoleService {
         return dbSessionManageFacade.killSessionOrQuery(request);
     }
 
-    private static boolean validateSqlSemantics(String sql, ConnectionSession session) {
-        PreConditions.notNull(session, "session");
-        Features features = AllFeatures.getByConnectType(session.getConnectType());
-        if (!features.supportsExplain()) {
+    private String rewriteSql(String sql, ConnectionSession session, TraceWatch watch, AbstractSyntaxTree ast) {
+        try (TraceStage rewriteSql = watch.start(SqlExecuteStages.REWRITE_SQL)) {
+            String newSql;
+            try (TraceStage applyNewSql = watch.start(SqlExecuteStages.DO_REWRITE_SQL)) {
+                newSql = SqlRewriteUtil.addInternalRowIdColumn(sql, ast);
+            }
+            if (StringUtils.equals(sql, newSql)) {
+                return sql;
+            }
+            try (TraceStage stage = watch.start(SqlExecuteStages.VALIDATE_SEMANTICS)) {
+                return validateSqlSemantics(newSql, session) ? newSql : sql;
+            }
+        } catch (Exception e) {
+            log.warn("Failed to rewrite sql, errMessage={}", e.getMessage());
+        }
+        return sql;
+    }
+
+    private boolean validateSqlSemantics(String sql, ConnectionSession session) {
+        if (!AllFeatures.getByConnectType(session.getConnectType()).supportsExplain()) {
             return false;
         }
         try {
             session.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY).execute("explain " + sql);
             return true;
         } catch (Exception e) {
-            log.warn("Failed to validate sql semantics due parse failed, assume not valid, sql={}, errorMessage={}",
-                    sql, LogUtils.prefix(e.getMessage()));
+            log.warn("Failed to validate sql semantics, sql={}, errorMessage={}", sql, LogUtils.prefix(e.getMessage()));
         }
         return false;
     }

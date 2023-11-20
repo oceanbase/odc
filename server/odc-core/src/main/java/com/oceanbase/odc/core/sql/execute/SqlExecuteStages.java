@@ -25,7 +25,7 @@ package com.oceanbase.odc.core.sql.execute;
 public class SqlExecuteStages {
     public static final String PARSE_SQL = "ODC Parse SQL";
     public static final String REWRITE_SQL = "ODC Rewrite SQL";
-    public static final String APPLY_SQL = "Apply SQL";
+    public static final String DO_REWRITE_SQL = "Do rewrite SQL";
     public static final String VALIDATE_SEMANTICS = "Validate SQL semantics";
     public static final String EXECUTE = "Execute";
     public static final String GET_RESULT_SET = "Get result-set";
