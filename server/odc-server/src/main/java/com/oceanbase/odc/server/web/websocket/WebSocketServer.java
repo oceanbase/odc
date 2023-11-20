@@ -280,7 +280,7 @@ public class WebSocketServer {
             obclientCmd.add("set names gbk");
         }
         if (CollectionUtils.isNotEmpty(obclientCommandBlackList)) {
-            obclientCmd.add("----ob-disable_commands");
+            obclientCmd.add("--ob-disable_commands");
             obclientCmd.add(String.join(",", obclientCommandBlackList));
         }
         String password = connectionConfig.getPassword();
