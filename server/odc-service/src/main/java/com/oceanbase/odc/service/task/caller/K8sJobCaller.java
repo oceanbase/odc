@@ -16,6 +16,7 @@
 
 package com.oceanbase.odc.service.task.caller;
 
+import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.task.context.JobContext;
 
 /**
@@ -23,23 +24,29 @@ import com.oceanbase.odc.core.task.context.JobContext;
  * @date 2023-11-15
  * @since 4.2.4
  */
-public class K8sJobCaller implements JobCaller {
+public class K8sJobCaller extends BaseJobCaller {
 
     private final K8sClient client;
+    private final PodTemplateConfig podConfig;
 
-    public K8sJobCaller(K8sClient client) {
+    public K8sJobCaller(K8sClient client, PodTemplateConfig podConfig) {
         this.client = client;
+        this.podConfig = podConfig;
     }
 
     @Override
-    public void start(JobContext context) throws JobException {
-        // start a new k8s job
-       // client.createNamespaceJob()
+    public void doStart(JobContext context) throws JobException {
+        String jobName = JobUtils.generateJobName(context.getTaskId());
+        PodParam podParam = new PodParam();
+        podParam.getEnvironments().put(JobConstants.TEMPLATE_JOB_ENV_NAME, JsonUtils.toJson(context));
+        podParam.setTtlSecondsAfterFinished(podConfig.getTtlSecondsAfterFinished());
 
+        client.createNamespaceJob(podConfig.getNamespace(), jobName, podConfig.getImage(),
+                podConfig.getCommand(), podParam);
     }
 
     @Override
-    public void stop(JobContext context) throws JobException {
-
+    public void doStop(JobContext context) throws JobException {
+        // destroy job
     }
 }

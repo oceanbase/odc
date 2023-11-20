@@ -14,27 +14,16 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.task.caller;
-
-import java.util.List;
-
-import lombok.Builder;
-import lombok.Data;
+package com.oceanbase.odc.service.task.listener;
 
 /**
  * @author yaobin
  * @date 2023-11-16
  * @since 4.2.4
  */
-@Data
-public class PodTemplateConfig {
+public enum JobCallerAction {
 
-    private String namespace;
+    START,
 
-    private String image;
-
-    private List<String> command;
-
-    private Integer ttlSecondsAfterFinished = 3;
-
+    STOP;
 }

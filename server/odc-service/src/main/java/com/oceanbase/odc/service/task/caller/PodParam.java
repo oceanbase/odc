@@ -31,5 +31,5 @@ public class PodParam {
 
     private Map<String, String> environments = new HashMap<>(2);
 
-    private Integer ttlSecondsAfterFinished = 10;
+    private Integer ttlSecondsAfterFinished;
 }

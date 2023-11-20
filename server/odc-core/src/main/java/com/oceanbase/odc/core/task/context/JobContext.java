@@ -29,7 +29,6 @@ import lombok.Data;
  * @since 4.2.4
  */
 
-@Builder
 @Data
 public class JobContext {
 

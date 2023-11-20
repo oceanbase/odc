@@ -14,27 +14,31 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.task.caller;
+package com.oceanbase.odc.service.k8s;
 
-import java.util.List;
+import java.io.IOException;
 
-import lombok.Builder;
-import lombok.Data;
+import org.junit.BeforeClass;
+
+import com.oceanbase.odc.service.task.caller.K8sClient;
+import com.oceanbase.odc.service.task.caller.PrimitiveK8sClient;
+import com.oceanbase.odc.test.database.TestProperties;
 
 /**
  * @author yaobin
- * @date 2023-11-16
+ * @date 2023-11-17
  * @since 4.2.4
  */
-@Data
-public class PodTemplateConfig {
+public abstract class BaseJobTest {
 
-    private String namespace;
+    protected static K8sClient k8sClient;
 
-    private String image;
+    @BeforeClass
+    public static void init() throws IOException {
+        k8sClient = new PrimitiveK8sClient(TestProperties.getProperty("odc.k8s.cluster.url"));
+    }
 
-    private List<String> command;
-
-    private Integer ttlSecondsAfterFinished = 3;
-
+    public static K8sClient getK8sClient() {
+        return k8sClient;
+    }
 }

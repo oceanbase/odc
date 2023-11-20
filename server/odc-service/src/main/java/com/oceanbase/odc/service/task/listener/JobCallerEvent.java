@@ -13,28 +13,37 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.oceanbase.odc.service.task.listener;
 
-package com.oceanbase.odc.service.task.caller;
+import com.oceanbase.odc.common.event.AbstractEvent;
 
-import java.util.List;
-
-import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
 
 /**
  * @author yaobin
  * @date 2023-11-16
  * @since 4.2.4
  */
-@Data
-public class PodTemplateConfig {
+public class JobCallerEvent extends AbstractEvent {
 
-    private String namespace;
+    @Getter
+    private final JobCallerAction jobAction;
 
-    private String image;
+    @Getter
+    private final boolean status;
 
-    private List<String> command;
+    @Getter
+    private final Long taskId;
 
-    private Integer ttlSecondsAfterFinished = 3;
+    @Getter
+    private final Exception ex;
 
+    public JobCallerEvent(Long taskId, JobCallerAction jobAction, boolean status, Exception ex) {
+        super(taskId, jobAction.name());
+        this.status = status;
+        this.jobAction = jobAction;
+        this.taskId = taskId;
+        this.ex = ex;
+    }
 }
+

@@ -16,46 +16,50 @@
 
 package com.oceanbase.odc.service.k8s;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
 import org.junit.Assert;
-import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import com.oceanbase.odc.core.task.context.JobContext;
+import com.oceanbase.odc.service.task.caller.JobCaller;
 import com.oceanbase.odc.service.task.caller.JobException;
-import com.oceanbase.odc.service.task.caller.JobUtils;
-import com.oceanbase.odc.service.task.caller.K8sClient;
-import com.oceanbase.odc.service.task.caller.PodParam;
-import com.oceanbase.odc.service.task.caller.PrimitiveK8sClient;
-import com.oceanbase.odc.test.database.TestProperties;
+import com.oceanbase.odc.service.task.caller.K8sJobCaller;
+import com.oceanbase.odc.service.task.caller.PodTemplateConfig;
+import com.oceanbase.odc.service.task.listener.JobCallerListener;
 
 /**
  * @author yaobin
- * @date 2023-11-15
+ * @date 2023-11-17
  * @since 4.2.4
  */
 @Ignore("manual test this case because k8s cluster is not public environment")
-public class K8sClientTest extends BaseJobTest{
+public class JobCallerTest extends BaseJobTest {
 
     @Test
-    public void test_createJob() throws JobException {
-
-        long taskId = 1L;
+    public void test_startJob() throws JobException {
+        Long exceptedTaskId = 1L;
         String imageName = "perl:5.34.0";
-        String exceptedJobName = JobUtils.generateJobName(taskId);
         List<String> cmd = Arrays.asList("perl", "-Mbignum=bpi", "-wle", "print bpi(2000)");
-        PodParam podParam = new PodParam();
-        podParam.setTtlSecondsAfterFinished(3);
-        String generateJobOfName = k8sClient.createNamespaceJob("default", exceptedJobName, imageName, cmd, podParam);
-        Assert.assertEquals(exceptedJobName, generateJobOfName);
 
-        Optional<String> queryJobName = k8sClient.getNamespaceJob("default", exceptedJobName);
-        Assert.assertTrue(queryJobName.isPresent());
-        Assert.assertEquals(exceptedJobName, queryJobName.get());
+        PodTemplateConfig podConfig = new PodTemplateConfig();
+        podConfig.setImage(imageName);
+        podConfig.setCommand(cmd);
+        podConfig.setNamespace("default");
+
+        JobCaller jobCaller = new K8sJobCaller(getK8sClient(), podConfig);
+        jobCaller.getEventPublish().addEventListener(new JobCallerListener(){
+            @Override
+            protected void startSucceed(Long taskId) {
+                Assert.assertEquals(exceptedTaskId, taskId);
+            }
+        });
+
+        JobContext context = new JobContext();
+        context.setTaskId(exceptedTaskId);
+        jobCaller.start(context);
     }
-
 }
