@@ -144,7 +144,7 @@ public class DefaultConnectionSession implements ConnectionSession {
     }
 
     @Override
-    public void expire() {
+    public synchronized void expire() {
         if (log.isDebugEnabled()) {
             log.debug("Connection session started to be expired, session={}", this);
         }
