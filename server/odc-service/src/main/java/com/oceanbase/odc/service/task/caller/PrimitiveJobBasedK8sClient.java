@@ -17,21 +17,19 @@
 package com.oceanbase.odc.service.task.caller;
 
 import static com.oceanbase.odc.service.task.caller.JobConstants.FIELD_SELECTOR_METADATA_NAME;
-import static com.oceanbase.odc.service.task.caller.JobConstants.TEMPLATE_API_VERSION;
-import static com.oceanbase.odc.service.task.caller.JobConstants.TEMPLATE_JOB_KIND;
-import static com.oceanbase.odc.service.task.caller.JobConstants.TEMPLATE_RESTART_POLICY;
+import static com.oceanbase.odc.service.task.caller.JobConstants.RESTART_POLICY_NEVER;
+import static com.oceanbase.odc.service.task.caller.JobConstants.TEMPLATE_BATH_API_VERSION;
+import static com.oceanbase.odc.service.task.caller.JobConstants.TEMPLATE_KIND_JOB;
 
 import java.io.IOException;
-import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import io.kubernetes.client.openapi.ApiClient;
+import com.oceanbase.odc.core.shared.exception.UnsupportedException;
+
 import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.Configuration;
 import io.kubernetes.client.openapi.apis.BatchV1Api;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
@@ -41,7 +39,6 @@ import io.kubernetes.client.openapi.models.V1JobSpec;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
-import io.kubernetes.client.util.Config;
 import lombok.NonNull;
 
 /**
@@ -49,20 +46,11 @@ import lombok.NonNull;
  * @date 2023-11-15
  * @since 4.2.4
  */
-public class PrimitiveK8sClient implements K8sClient {
+public class PrimitiveJobBasedK8sClient extends BasePrimitiveK8sClient {
 
-    public PrimitiveK8sClient(String k8sClusterUrl) throws IOException {
-        ApiClient apiClient = Config.defaultClient();
-        apiClient.setHttpClient(apiClient
-                .getHttpClient()
-                .newBuilder()
-                .readTimeout(Duration.ZERO)
-                .pingInterval(1, TimeUnit.MINUTES)
-                .build())
-                .setBasePath(k8sClusterUrl);
-        Configuration.setDefaultApiClient(apiClient);
+    public PrimitiveJobBasedK8sClient(String k8sClusterUrl) throws IOException {
+        super(k8sClusterUrl);
     }
-
 
     @Override
     public String createNamespaceJob(@NonNull String namespace, @NonNull String jobName, @NonNull String image,
@@ -93,6 +81,11 @@ public class PrimitiveK8sClient implements K8sClient {
         return v1Job.map(value -> value.getMetadata().getName());
     }
 
+    @Override
+    public String deleteNamespaceJob(@NonNull String namespace, @NonNull String jobName) throws JobException {
+        throw new UnsupportedException();
+    }
+
     private V1Job getV1Job(String jobName, String image, List<String> command, PodParam podParam) {
         V1Container container = new V1Container()
                 .name(jobName)
@@ -108,15 +101,25 @@ public class PrimitiveK8sClient implements K8sClient {
 
         V1PodSpec v1PodSpec = new V1PodSpec()
                 .containers(Collections.singletonList(container))
-                .restartPolicy(TEMPLATE_RESTART_POLICY);
+                .restartPolicy(RESTART_POLICY_NEVER);
 
         V1JobSpec jobSpec = new V1JobSpec()
                 .ttlSecondsAfterFinished(podParam.getTtlSecondsAfterFinished())
                 .template(new V1PodTemplateSpec().spec(v1PodSpec));
 
         return new V1Job()
-                .apiVersion(TEMPLATE_API_VERSION).kind(TEMPLATE_JOB_KIND)
+                .apiVersion(getVersion()).kind(getKind())
                 .metadata(new V1ObjectMeta().name(jobName))
                 .spec(jobSpec);
+    }
+
+    @Override
+    protected String getVersion() {
+        return TEMPLATE_BATH_API_VERSION;
+    }
+
+    @Override
+    protected String getKind() {
+        return TEMPLATE_KIND_JOB;
     }
 }

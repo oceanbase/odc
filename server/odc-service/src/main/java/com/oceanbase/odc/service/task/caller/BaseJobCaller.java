@@ -45,12 +45,12 @@ public abstract class BaseJobCaller implements JobCaller {
     }
 
     @Override
-    public void stop(JobContext context) throws JobException {
+    public void stop(Long taskId) throws JobException {
         try {
-            doStop(context);
-            publisher.publishEvent(new JobCallerEvent(context.getTaskId(), JobCallerAction.STOP, true, null));
+            doStop(taskId);
+            publisher.publishEvent(new JobCallerEvent(taskId, JobCallerAction.STOP, true, null));
         } catch (JobException ex) {
-            publisher.publishEvent(new JobCallerEvent(context.getTaskId(), JobCallerAction.STOP, false, ex));
+            publisher.publishEvent(new JobCallerEvent(taskId, JobCallerAction.STOP, false, ex));
             throw ex;
         }
     }
@@ -62,6 +62,6 @@ public abstract class BaseJobCaller implements JobCaller {
 
     protected abstract void doStart(JobContext context) throws JobException;
 
-    protected abstract void doStop(JobContext context) throws JobException;
+    protected abstract void doStop(Long taskId) throws JobException;
 
 }

@@ -23,16 +23,20 @@ package com.oceanbase.odc.service.task.caller;
  */
 public class JobConstants {
 
-    public static final String TEMPLATE_JOB_KIND = "Job";
+    public static final String TEMPLATE_KIND_POD = "Pod";
 
-    public static final String TEMPLATE_API_VERSION = "batch/v1";
+    public static final String TEMPLATE_KIND_JOB = "Job";
+
+    public static final String TEMPLATE_API_VERSION = "v1";
+
+    public static final String TEMPLATE_BATH_API_VERSION = "batch/v1";
 
     public static final String TEMPLATE_JOB_NAME = "task-";
 
-    public static final String TEMPLATE_RESTART_POLICY = "Never";
-
-    public static final String TEMPLATE_JOB_ENV_NAME = "JOB_ENV";
+    public static final String RESTART_POLICY_NEVER = "Never";
 
     public static final String FIELD_SELECTOR_METADATA_NAME = "metadata.name";
+
+    public static final String TEMPLATE_ENV_NAME = "POD_ENV";
 
 }

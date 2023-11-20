@@ -36,7 +36,7 @@ public class JobCallerListener extends AbstractEventListener<JobCallerEvent> {
         } else if (event.getJobAction() == JobCallerAction.STOP) {
             if (event.isStatus()) {
                 stopSucceed(event.getTaskId());
-            }else {
+            } else {
                 stopFailed(event.getTaskId(), event.getEx());
             }
         }

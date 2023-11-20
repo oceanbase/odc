@@ -16,10 +16,6 @@
 
 package com.oceanbase.odc.service.k8s;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -28,32 +24,37 @@ import com.oceanbase.odc.core.task.context.JobContext;
 import com.oceanbase.odc.service.task.caller.JobCaller;
 import com.oceanbase.odc.service.task.caller.JobException;
 import com.oceanbase.odc.service.task.caller.K8sJobCaller;
-import com.oceanbase.odc.service.task.caller.PodTemplateConfig;
+import com.oceanbase.odc.service.task.caller.PodConfig;
 import com.oceanbase.odc.service.task.listener.JobCallerListener;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author yaobin
  * @date 2023-11-17
  * @since 4.2.4
  */
+@Slf4j
 @Ignore("manual test this case because k8s cluster is not public environment")
 public class JobCallerTest extends BaseJobTest {
 
     @Test
     public void test_startJob() throws JobException {
-        Long exceptedTaskId = 1L;
-        String imageName = "perl:5.34.0";
-        List<String> cmd = Arrays.asList("perl", "-Mbignum=bpi", "-wle", "print bpi(2000)");
-
-        PodTemplateConfig podConfig = new PodTemplateConfig();
-        podConfig.setImage(imageName);
-        podConfig.setCommand(cmd);
+        Long exceptedTaskId = System.currentTimeMillis();
+        PodConfig podConfig = new PodConfig();
+        podConfig.setImage(getImageName());
+        podConfig.setCommand(getCmd());
         podConfig.setNamespace("default");
 
         JobCaller jobCaller = new K8sJobCaller(getK8sClient(), podConfig);
-        jobCaller.getEventPublish().addEventListener(new JobCallerListener(){
+        jobCaller.getEventPublish().addEventListener(new JobCallerListener() {
             @Override
             protected void startSucceed(Long taskId) {
+                Assert.assertEquals(exceptedTaskId, taskId);
+            }
+
+            @Override
+            protected void stopSucceed(Long taskId) {
                 Assert.assertEquals(exceptedTaskId, taskId);
             }
         });
@@ -61,5 +62,37 @@ public class JobCallerTest extends BaseJobTest {
         JobContext context = new JobContext();
         context.setTaskId(exceptedTaskId);
         jobCaller.start(context);
+        jobCaller.stop(exceptedTaskId);
+    }
+
+    @Test
+    public void test_startJob_failed() throws JobException {
+        Long exceptedTaskId = System.currentTimeMillis();
+        PodConfig podConfig = new PodConfig();
+        podConfig.setImage(getImageName());
+        podConfig.setCommand(getCmd());
+        podConfig.setNamespace("default");
+
+        JobCaller jobCaller = new K8sJobCaller(getK8sClient(), podConfig);
+        jobCaller.getEventPublish().addEventListener(new JobCallerListener() {
+            @Override
+            protected void startFailed(Long taskId, Exception ex) {
+                log.info(ex.getMessage());
+                Assert.assertTrue(ex.getMessage().contains("AlreadyExists"));
+            }
+        });
+
+        JobContext context = new JobContext();
+        context.setTaskId(exceptedTaskId);
+        jobCaller.start(context);
+        // double start some task
+        try {
+            jobCaller.start(context);
+        } catch (Exception ex) {
+            // ignore
+        } finally {
+            jobCaller.stop(exceptedTaskId);
+        }
+
     }
 }

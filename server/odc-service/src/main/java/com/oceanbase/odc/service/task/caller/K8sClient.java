@@ -30,4 +30,6 @@ public interface K8sClient {
             PodParam podParam) throws JobException;
 
     Optional<String> getNamespaceJob(String namespace, String jobName) throws JobException;
+
+    String deleteNamespaceJob(String namespace, String jobName) throws JobException;
 }

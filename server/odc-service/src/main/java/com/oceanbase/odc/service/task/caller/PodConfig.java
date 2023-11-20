@@ -18,7 +18,6 @@ package com.oceanbase.odc.service.task.caller;
 
 import java.util.List;
 
-import lombok.Builder;
 import lombok.Data;
 
 /**
@@ -27,14 +26,11 @@ import lombok.Data;
  * @since 4.2.4
  */
 @Data
-public class PodTemplateConfig {
+public class PodConfig {
 
     private String namespace;
 
     private String image;
 
     private List<String> command;
-
-    private Integer ttlSecondsAfterFinished = 3;
-
 }

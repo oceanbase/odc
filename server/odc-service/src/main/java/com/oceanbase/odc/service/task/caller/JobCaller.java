@@ -28,7 +28,7 @@ public interface JobCaller {
 
     void start(JobContext context) throws JobException;
 
-    void stop(JobContext context) throws JobException;
+    void stop(Long taskId) throws JobException;
 
     EventPublisher getEventPublish();
 

@@ -20,7 +20,6 @@ import java.util.List;
 
 import com.oceanbase.odc.core.session.ConnectionConfig;
 
-import lombok.Builder;
 import lombok.Data;
 
 /**
@@ -48,4 +47,5 @@ public class JobContext {
      * odc server host properties
      */
     private List<HostProperties> hostProperties;
+
 }

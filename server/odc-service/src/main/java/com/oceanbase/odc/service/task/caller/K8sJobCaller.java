@@ -27,9 +27,9 @@ import com.oceanbase.odc.core.task.context.JobContext;
 public class K8sJobCaller extends BaseJobCaller {
 
     private final K8sClient client;
-    private final PodTemplateConfig podConfig;
+    private final PodConfig podConfig;
 
-    public K8sJobCaller(K8sClient client, PodTemplateConfig podConfig) {
+    public K8sJobCaller(K8sClient client, PodConfig podConfig) {
         this.client = client;
         this.podConfig = podConfig;
     }
@@ -38,15 +38,15 @@ public class K8sJobCaller extends BaseJobCaller {
     public void doStart(JobContext context) throws JobException {
         String jobName = JobUtils.generateJobName(context.getTaskId());
         PodParam podParam = new PodParam();
-        podParam.getEnvironments().put(JobConstants.TEMPLATE_JOB_ENV_NAME, JsonUtils.toJson(context));
-        podParam.setTtlSecondsAfterFinished(podConfig.getTtlSecondsAfterFinished());
+        podParam.getEnvironments().put(JobConstants.TEMPLATE_ENV_NAME, JsonUtils.toJson(context));
 
         client.createNamespaceJob(podConfig.getNamespace(), jobName, podConfig.getImage(),
                 podConfig.getCommand(), podParam);
     }
 
     @Override
-    public void doStop(JobContext context) throws JobException {
-        // destroy job
+    public void doStop(Long taskId) throws JobException {
+        String jobName = JobUtils.generateJobName(taskId);
+        client.deleteNamespaceJob(podConfig.getNamespace(), jobName);
     }
 }

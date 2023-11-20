@@ -16,22 +16,15 @@
 
 package com.oceanbase.odc.service.k8s;
 
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Optional;
 
 import org.junit.Assert;
-import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
 import com.oceanbase.odc.service.task.caller.JobException;
 import com.oceanbase.odc.service.task.caller.JobUtils;
-import com.oceanbase.odc.service.task.caller.K8sClient;
 import com.oceanbase.odc.service.task.caller.PodParam;
-import com.oceanbase.odc.service.task.caller.PrimitiveK8sClient;
-import com.oceanbase.odc.test.database.TestProperties;
 
 /**
  * @author yaobin
@@ -39,18 +32,17 @@ import com.oceanbase.odc.test.database.TestProperties;
  * @since 4.2.4
  */
 @Ignore("manual test this case because k8s cluster is not public environment")
-public class K8sClientTest extends BaseJobTest{
+public class PrimitiveJobBasedK8sClientTest extends BaseJobTest {
 
     @Test
     public void test_createJob() throws JobException {
 
         long taskId = 1L;
-        String imageName = "perl:5.34.0";
         String exceptedJobName = JobUtils.generateJobName(taskId);
-        List<String> cmd = Arrays.asList("perl", "-Mbignum=bpi", "-wle", "print bpi(2000)");
         PodParam podParam = new PodParam();
         podParam.setTtlSecondsAfterFinished(3);
-        String generateJobOfName = k8sClient.createNamespaceJob("default", exceptedJobName, imageName, cmd, podParam);
+        String generateJobOfName = k8sClient.createNamespaceJob("default", exceptedJobName,
+                getImageName(), getCmd(), podParam);
         Assert.assertEquals(exceptedJobName, generateJobOfName);
 
         Optional<String> queryJobName = k8sClient.getNamespaceJob("default", exceptedJobName);
