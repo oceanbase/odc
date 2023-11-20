@@ -18,7 +18,6 @@ package com.oceanbase.odc.plugin.task.mysql.datatransfer;
 
 import java.io.File;
 import java.net.URL;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -36,7 +35,6 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.alibaba.druid.pool.DruidDataSource;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.tableformat.BorderStyle;
 import com.oceanbase.odc.common.util.tableformat.CellStyle;
@@ -56,6 +54,7 @@ import com.oceanbase.odc.plugin.task.api.datatransfer.model.ObjectResult;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.AbstractJob;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.TransferJobFactory;
 import com.oceanbase.tools.loaddump.common.model.ObjectStatus.Status;
+import com.zaxxer.hikari.HikariDataSource;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -117,9 +116,9 @@ public class MySQLDataTransferJob implements DataTransferJob {
 
     @Override
     public DataTransferTaskResult call() throws Exception {
-        try (DruidDataSource dataSource = initDataSource()) {
+        try (HikariDataSource dataSource = initDataSource()) {
 
-            initTransferJobs(dataSource, dataSource.getUrl());
+            initTransferJobs(dataSource, dataSource.getJdbcUrl());
 
             if (CollectionUtils.isNotEmpty(schemaJobs)) {
                 runSchemaJobs();
@@ -152,12 +151,8 @@ public class MySQLDataTransferJob implements DataTransferJob {
         }
     }
 
-    private DruidDataSource initDataSource() {
+    private HikariDataSource initDataSource() {
         ConnectionInfo connectionInfo = baseConfig.getConnectionInfo();
-        DruidDataSource ds = new DruidDataSource();
-        ds.setUsername(connectionInfo.getUserNameForConnect());
-        ds.setPassword(connectionInfo.getPassword());
-        ds.setDriverClassName(OdcConstants.MYSQL_DRIVER_CLASS_NAME);
 
         Map<String, String> jdbcUrlParams = new HashMap<>();
         jdbcUrlParams.put("connectTimeout", "5000");
@@ -166,14 +161,14 @@ public class MySQLDataTransferJob implements DataTransferJob {
             jdbcUrlParams.put("socksProxyHost", connectionInfo.getProxyHost());
             jdbcUrlParams.put("socksProxyPort", connectionInfo.getProxyPort() + "");
         }
-        ds.setUrl(new MySQLConnectionExtension().generateJdbcUrl(connectionInfo.getHost(),
+        HikariDataSource dataSource = new HikariDataSource();
+        dataSource.setJdbcUrl(new MySQLConnectionExtension().generateJdbcUrl(connectionInfo.getHost(),
                 connectionInfo.getPort(), connectionInfo.getSchema(), jdbcUrlParams));
-        try {
-            ds.init();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-        return ds;
+        dataSource.setUsername(connectionInfo.getUserNameForConnect());
+        dataSource.setPassword(connectionInfo.getPassword());
+        dataSource.setDriverClassName(OdcConstants.MYSQL_DRIVER_CLASS_NAME);
+        dataSource.setMaximumPoolSize(3);
+        return dataSource;
     }
 
     private void initTransferJobs(DataSource dataSource, String jdbcUrl) {
