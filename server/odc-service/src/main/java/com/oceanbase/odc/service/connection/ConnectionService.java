@@ -220,6 +220,7 @@ public class ConnectionService {
             transactionManager.rollback(transactionStatus);
             throw e;
         }
+        databaseSyncManager.submitSyncDataSourceTask(saved);
         return saved;
     }
 
