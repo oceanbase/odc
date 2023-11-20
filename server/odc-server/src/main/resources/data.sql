@@ -397,6 +397,8 @@ INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('o
 
 
 -- 堡垒机集成
+INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.integration.bastion.enabled',
+ 'false', '堡垒机集成是否启用，默认值 false') ON DUPLICATE KEY UPDATE `id`=`id`;
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.integration.bastion.encryption.enabled',
  'false', '堡垒机集成参数是否加密，默认值 false') ON DUPLICATE KEY UPDATE `id`=`id`;
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.integration.bastion.encryption.algorithm',

@@ -23,6 +23,7 @@ import java.util.Set;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.web.PageableDefault;
@@ -36,6 +37,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.core.shared.constant.OdcConstants;
 import com.oceanbase.odc.service.common.model.Stats;
 import com.oceanbase.odc.service.common.response.ListResponse;
 import com.oceanbase.odc.service.common.response.PaginatedResponse;
@@ -52,6 +54,7 @@ import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.model.ConnectionPreviewBatchImportResp;
 import com.oceanbase.odc.service.connection.model.GenerateConnectionStringReq;
 import com.oceanbase.odc.service.connection.model.QueryConnectionParams;
+import com.oceanbase.odc.service.iam.util.SecurityContextUtils;
 
 import io.swagger.annotations.ApiOperation;
 
@@ -75,9 +78,19 @@ public class DataSourceController {
     @Autowired
     private ConnectionBatchImportPreviewer connectionBatchImportPreviewer;
 
+    @Value("${odc.integration.bastion.enabled:false}")
+    private boolean bastionEnabled;
+
     @ApiOperation(value = "createDataSource", notes = "Create a datasource")
     @RequestMapping(value = "/datasources", method = RequestMethod.POST)
     public SuccessResponse<ConnectionConfig> createDataSource(@RequestBody ConnectionConfig connectionConfig) {
+        if (bastionEnabled) {
+            SecurityContextUtils.setCurrentUser(OdcConstants.DEFAULT_ADMIN_USER_ID,
+                    OdcConstants.DEFAULT_ORGANIZATION_ID, null);
+            ConnectionConfig config = connectionService.create(connectionConfig);
+            SecurityContextUtils.clear();
+            return Responses.success(config);
+        }
         return Responses.success(connectionService.create(connectionConfig));
     }
 
