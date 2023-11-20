@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.task.caller;
 
 import static com.oceanbase.odc.service.task.caller.JobConstants.FIELD_SELECTOR_METADATA_NAME;
 import static com.oceanbase.odc.service.task.caller.JobConstants.RESTART_POLICY_NEVER;
+import static com.oceanbase.odc.service.task.caller.JobConstants.TEMPLATE_API_VERSION;
 import static com.oceanbase.odc.service.task.caller.JobConstants.TEMPLATE_KIND_POD;
 
 import java.io.IOException;
@@ -77,7 +78,7 @@ public class PrimitivePodBasedK8sClient extends BasePrimitiveK8sClient {
     }
 
     @Override
-    public String destroyNamespaceJob(String namespace, String jobName) throws JobException {
+    public String destroyNamespaceJob(@NonNull String namespace, @NonNull String jobName) throws JobException {
         CoreV1Api api = new CoreV1Api();
         V1Pod pod = null;
         try {
@@ -114,7 +115,7 @@ public class PrimitivePodBasedK8sClient extends BasePrimitiveK8sClient {
 
     @Override
     protected String getVersion() {
-        return JobConstants.TEMPLATE_API_VERSION;
+        return TEMPLATE_API_VERSION;
     }
 
     @Override
