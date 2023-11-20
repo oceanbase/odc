@@ -89,6 +89,8 @@ public class MySQLConnectionExtension extends OBMySQLConnectionExtension {
         if (!jdbcUrlParams.containsKey("tinyInt1isBit")) {
             jdbcUrlParams.put("tinyInt1isBit", "false");
         }
+        jdbcUrlParams.put("allowLoadLocalInfile", "false");
+        jdbcUrlParams.put("allowUrlInLocalInfile", "false");
         return jdbcUrlParams;
     }
 
