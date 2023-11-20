@@ -303,7 +303,7 @@ public class ConnectSessionService {
         ConnectionSession session = connectionSessionManager.getSession(sessionId);
         if (session == null) {
             CreateSessionReq req = new DefaultConnectSessionIdGenerator().getKeyFromId(sessionId);
-            if (!autoCreate || StringUtils.equals(req.getFrom(), SystemUtils.getHostName())) {
+            if (!autoCreate || !StringUtils.equals(req.getFrom(), SystemUtils.getHostName())) {
                 throw new NotFoundException(ResourceType.ODC_SESSION, "ID", sessionId);
             }
             session = create(req);
