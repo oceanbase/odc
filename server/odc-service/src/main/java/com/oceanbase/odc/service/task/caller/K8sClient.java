@@ -31,5 +31,5 @@ public interface K8sClient {
 
     Optional<String> getNamespaceJob(String namespace, String jobName) throws JobException;
 
-    String destroyNamespaceJob(String namespace, String jobName) throws JobException;
+    String deleteNamespaceJob(String namespace, String jobName) throws JobException;
 }

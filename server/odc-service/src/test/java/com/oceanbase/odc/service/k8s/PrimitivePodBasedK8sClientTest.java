@@ -64,7 +64,7 @@ public class PrimitivePodBasedK8sClientTest {
         Assert.assertTrue(queryJobName.isPresent());
         Assert.assertEquals(exceptedJobName, queryJobName.get());
 
-        String deleteJobOfName = k8sClient.destroyNamespaceJob("default", exceptedJobName);
+        String deleteJobOfName = k8sClient.deleteNamespaceJob("default", exceptedJobName);
         Assert.assertEquals(exceptedJobName, deleteJobOfName);
     }
 

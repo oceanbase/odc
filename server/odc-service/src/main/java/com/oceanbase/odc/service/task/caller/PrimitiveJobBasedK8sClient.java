@@ -82,7 +82,7 @@ public class PrimitiveJobBasedK8sClient extends BasePrimitiveK8sClient {
     }
 
     @Override
-    public String destroyNamespaceJob(@NonNull String namespace, @NonNull String jobName) throws JobException {
+    public String deleteNamespaceJob(@NonNull String namespace, @NonNull String jobName) throws JobException {
         throw new UnsupportedException();
     }
 
