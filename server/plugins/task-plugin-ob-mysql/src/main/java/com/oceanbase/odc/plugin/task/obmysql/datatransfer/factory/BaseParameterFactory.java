@@ -45,7 +45,6 @@ import com.oceanbase.odc.plugin.task.obmysql.datatransfer.util.ConnectionUtil;
 import com.oceanbase.odc.plugin.task.obmysql.datatransfer.util.PluginUtil;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
 import com.oceanbase.tools.loaddump.common.model.BaseParameter;
-import com.oceanbase.tools.loaddump.parser.record.csv.CsvFormat;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -145,7 +144,7 @@ public abstract class BaseParameterFactory<T extends BaseParameter> {
         if (csvConfig == null) {
             return;
         }
-        parameter.setColumnSeparator(CsvFormat.DEFAULT.toChar(csvConfig.getColumnSeparator()));
+        parameter.setColumnSeparator(csvConfig.getColumnSeparator());
         String lineSeparator = csvConfig.getLineSeparator();
         StringBuilder realLineSeparator = new StringBuilder();
         int length = lineSeparator.length();
@@ -169,7 +168,7 @@ public abstract class BaseParameterFactory<T extends BaseParameter> {
         }
         parameter.setLineSeparator(realLineSeparator.toString());
         parameter.setSkipHeader(csvConfig.isSkipHeader());
-        parameter.setColumnDelimiter(CsvFormat.DEFAULT.toChar(csvConfig.getColumnDelimiter()));
+        parameter.setColumnDelimiter(csvConfig.getColumnDelimiter());
         /*
          * oracle 模式下空字符即为 null ，因此 emptyString 参数仅对 mysql 模式生效，组件默认为 \E
          */

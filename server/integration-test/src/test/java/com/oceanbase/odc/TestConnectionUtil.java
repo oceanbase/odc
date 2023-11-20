@@ -37,6 +37,7 @@ import lombok.extern.slf4j.Slf4j;
 public class TestConnectionUtil extends PluginTestEnv {
     private static final Long CONNECTION_ID_OB_MYSQL = 1001L;
     private static final Long CONNECTION_ID_OB_ORACLE = 1002L;
+    private static final Long CONNECTION_ID_MYSQL = 1003L;
     private static final int QUERY_TIMEOUT_SECONDS = 60;
     private static final Map<ConnectType, ConnectionSession> connectionSessionMap = new HashMap<>();
 
@@ -47,6 +48,9 @@ public class TestConnectionUtil extends PluginTestEnv {
         ConnectionConfig obOracleConfig = getTestConnectionConfig(ConnectType.OB_ORACLE);
         ConnectionSession obOracleSession = new DefaultConnectSessionFactory(obOracleConfig).generateSession();
         connectionSessionMap.put(ConnectType.OB_ORACLE, obOracleSession);
+        ConnectionConfig mysqlConfig = getTestConnectionConfig(ConnectType.MYSQL);
+        ConnectionSession mysqlSession = new DefaultConnectSessionFactory(mysqlConfig).generateSession();
+        connectionSessionMap.put(ConnectType.MYSQL, mysqlSession);
 
         Thread shutdownHookThread = new Thread(TestConnectionUtil::expireConnectionSession);
         shutdownHookThread.setDaemon(true);
@@ -70,6 +74,9 @@ public class TestConnectionUtil extends PluginTestEnv {
         } else if (type == ConnectType.OB_ORACLE) {
             connection.setId(CONNECTION_ID_OB_ORACLE);
             configuration = TestDBConfigurations.getInstance().getTestOBOracleConfiguration();
+        } else if (type == ConnectType.MYSQL) {
+            connection.setId(CONNECTION_ID_MYSQL);
+            configuration = TestDBConfigurations.getInstance().getTestMysqlConfiguration();
         } else {
             throw new UnsupportedOperationException(String.format("Test DB for %s mode is not supported yet", type));
         }

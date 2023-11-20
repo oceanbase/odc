@@ -41,7 +41,8 @@ public class DataModifyUnit {
     private String columnName;
     private String columnType;
     private String oldData;
-    @Size(max = 200 * 1024) // 最大支持 200 KB 数据编辑
+    // 最大支持 200KB 数据编辑
+    @Size(max = 200 * 1024, message = "The length of the field exceeds the maximum limit: [0, 200 * 1024]")
     private String newData;
     private String newDataType = "RAW";
     private boolean queryColumn;

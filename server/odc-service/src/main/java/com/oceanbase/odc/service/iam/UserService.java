@@ -443,8 +443,6 @@ public class UserService {
         return resourceRoleService.getResourceRoleIdentifiersByUserId(currentUserId);
     }
 
-
-
     @SkipAuthorize("odc internal usage")
     public Set<Long> getUserRoleIds(Long userId) {
         List<RoleEntity> relations = roleRepository.findByUserIdAndEnabled(userId, true);

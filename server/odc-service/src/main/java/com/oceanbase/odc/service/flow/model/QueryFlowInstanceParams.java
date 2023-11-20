@@ -46,6 +46,7 @@ public class QueryFlowInstanceParams {
     private Date endTime;
     private Boolean createdByCurrentUser;
     private Boolean approveByCurrentUser;
+    private Boolean containsAll;
     private Long parentInstanceId;
 
     private Long projectId;
