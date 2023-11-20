@@ -33,6 +33,7 @@ import javax.validation.constraints.NotNull;
 import org.apache.commons.io.FileExistsException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.SystemUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
@@ -301,10 +302,13 @@ public class ConnectSessionService {
     public ConnectionSession nullSafeGet(@NotNull String sessionId, boolean autoCreate) {
         ConnectionSession session = connectionSessionManager.getSession(sessionId);
         if (session == null) {
-            if (!autoCreate) {
+            CreateSessionReq req = new DefaultConnectSessionIdGenerator().getKeyFromId(sessionId);
+            if (!autoCreate || StringUtils.equals(req.getFrom(), SystemUtils.getHostName())) {
                 throw new NotFoundException(ResourceType.ODC_SESSION, "ID", sessionId);
             }
-            return create(new DefaultConnectSessionIdGenerator().getKeyFromId(sessionId));
+            session = create(req);
+            ConnectionSessionUtil.setConsoleSessionResetFlag(session, true);
+            return session;
         }
         if (!Objects.equals(ConnectionSessionUtil.getUserId(session), authenticationFacade.currentUserId())) {
             throw new NotFoundException(ResourceType.ODC_SESSION, "ID", sessionId);

@@ -41,6 +41,7 @@ public class CreateSessionReq implements Serializable {
     private Long dbId;
     private Long dsId;
     private String realId;
+    private String from;
 
     public static CreateSessionReq from(@NonNull ConnectionConfig connectionConfig) {
         return new CreateSessionReq(connectionConfig.getId(), null, null);

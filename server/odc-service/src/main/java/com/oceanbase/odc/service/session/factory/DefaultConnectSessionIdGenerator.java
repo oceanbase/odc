@@ -19,6 +19,7 @@ import java.util.Base64;
 import java.util.UUID;
 
 import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.commons.lang3.SystemUtils;
 
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.session.ConnectionSessionIdGenerator;
@@ -42,6 +43,7 @@ public class DefaultConnectSessionIdGenerator implements ConnectionSessionIdGene
         if (this.databaseId != null) {
             key.setDbId(databaseId);
         }
+        key.setFrom(SystemUtils.getHostName());
         return Base64.getEncoder().encodeToString(JsonUtils.toJson(key).getBytes());
     }
 
