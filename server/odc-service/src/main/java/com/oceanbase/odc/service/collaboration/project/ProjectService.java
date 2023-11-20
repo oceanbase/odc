@@ -145,10 +145,14 @@ public class ProjectService {
         projectEntity.setDescription("Built-in project for bastion user " + user.getAccountName());
         ProjectEntity saved = repository.saveAndFlush(projectEntity);
         // Grant DEVELOPER role to bastion user, and all other roles to user creator(admin)
+        Map<ResourceRoleName, ResourceRoleEntity> resourceRoleName2Entity =
+                resourceRoleRepository.findByResourceType(ResourceType.ODC_PROJECT).stream()
+                        .collect(Collectors.toMap(ResourceRoleEntity::getRoleName, r -> r, (r1, r2) -> r1));
         List<UserResourceRoleEntity> userResourceRoleEntities = ResourceRoleName.all().stream().map(name -> {
-            ResourceRoleEntity resourceRoleEntity =
-                    resourceRoleRepository.findByResourceTypeAndRoleName(ResourceType.ODC_PROJECT, name)
-                            .orElseThrow(() -> new NotFoundException(ResourceType.ODC_RESOURCE_ROLE, "name", name));
+            ResourceRoleEntity resourceRoleEntity = resourceRoleName2Entity.getOrDefault(name, null);
+            if (Objects.isNull(resourceRoleEntity)) {
+                throw new NotFoundException(ResourceType.ODC_RESOURCE_ROLE, "name", name);
+            }
             UserResourceRoleEntity entity = new UserResourceRoleEntity();
             entity.setUserId(name == ResourceRoleName.DEVELOPER ? user.getId() : user.getCreatorId());
             entity.setResourceId(saved.getId());
@@ -237,12 +241,11 @@ public class ProjectService {
         }
         previous.setArchived(true);
         ProjectEntity saved = repository.save(previous);
-        List<ConnectionEntity> connectionEntities = connectionConfigRepository.findByProjectId(id);
-        for (ConnectionEntity entity : connectionEntities) {
-            entity.setProjectId(null);
-            connectionConfigRepository.save(entity);
-            connectionService.updateDatabaseProjectId(entity.getId(), null);
-        }
+        List<ConnectionEntity> connectionEntities = connectionConfigRepository.findByProjectId(id).stream()
+                .peek(e -> e.setProjectId(null)).collect(Collectors.toList());
+        connectionConfigRepository.saveAllAndFlush(connectionEntities);
+        connectionService.updateDatabaseProjectId(
+                connectionEntities.stream().map(ConnectionEntity::getId).collect(Collectors.toList()), null);
         databaseRepository.setProjectIdToNull(id);
         return entityToModel(saved);
     }

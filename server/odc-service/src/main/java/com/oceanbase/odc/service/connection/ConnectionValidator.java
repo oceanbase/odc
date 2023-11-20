@@ -95,6 +95,12 @@ public class ConnectionValidator {
         }
     }
 
+    /**
+     * Validate whether the project is existing and the current user has permission (OWNER or DBA) to
+     * operate the project.
+     * 
+     * @param projectId
+     */
     void validateProjectOperable(Long projectId) {
         if (Objects.isNull(projectId)) {
             return;

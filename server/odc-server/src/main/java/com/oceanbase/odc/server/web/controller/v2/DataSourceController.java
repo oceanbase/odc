@@ -83,7 +83,7 @@ public class DataSourceController {
     @RequestMapping(value = "/datasources", method = RequestMethod.POST)
     public SuccessResponse<ConnectionConfig> createDataSource(@RequestBody ConnectionConfig connectionConfig) {
         if (bastionEnabled) {
-            return Responses.success(connectionService.createForBastion(connectionConfig));
+            return Responses.success(connectionService.createForBastionUser(connectionConfig));
         }
         return Responses.success(connectionService.create(connectionConfig));
     }

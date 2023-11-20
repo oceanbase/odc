@@ -315,24 +315,8 @@ public class DatabaseService {
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("internal authenticated")
     public boolean transfer(@NonNull @Valid TransferDatabasesReq req) {
-        if (!projectService.checkPermission(req.getProjectId(),
-                Arrays.asList(ResourceRoleName.DBA, ResourceRoleName.OWNER))) {
-            throw new AccessDeniedException();
-        }
         List<DatabaseEntity> entities = databaseRepository.findAllById(req.getDatabaseIds());
-        List<Long> projectIds = entities.stream().map(DatabaseEntity::getProjectId).collect(Collectors.toList());
-        List<Long> connectionIds = entities.stream().map(DatabaseEntity::getConnectionId).collect(Collectors.toList());
-        if (!projectService.checkPermission(projectIds, Arrays.asList(ResourceRoleName.DBA, ResourceRoleName.OWNER)) ||
-                !connectionService.checkPermission(connectionIds, Collections.singletonList("update"))) {
-            // Current user should be source project's OWNER/DBA, and have update permission on datasources
-            throw new AccessDeniedException();
-        }
-        List<ConnectionConfig> connections = connectionService.innerListByIds(connectionIds);
-        connections.forEach(c -> {
-            if (c.getProjectId() != null) {
-                throw new AccessDeniedException();
-            }
-        });
+        checkTransferable(entities, req.getProjectId());
         List<DatabaseEntity> transferred = entities.stream().peek(database -> database.setProjectId(req.getProjectId()))
                 .collect(Collectors.toList());
         databaseRepository.saveAll(transferred);
@@ -595,6 +579,29 @@ public class DatabaseService {
         if (!isProjectMember && !canUpdateDataSource) {
             throw new AccessDeniedException("invalid projectId or dataSourceId");
         }
+    }
+
+    private void checkTransferable(@NonNull Collection<DatabaseEntity> databases, Long newProjectId) {
+        if (CollectionUtils.isEmpty(databases)) {
+            return;
+        }
+        if (!projectService.checkPermission(newProjectId,
+                Arrays.asList(ResourceRoleName.DBA, ResourceRoleName.OWNER))) {
+            throw new AccessDeniedException();
+        }
+        List<Long> projectIds = databases.stream().map(DatabaseEntity::getProjectId).collect(Collectors.toList());
+        List<Long> connectionIds = databases.stream().map(DatabaseEntity::getConnectionId).collect(Collectors.toList());
+        if (!projectService.checkPermission(projectIds, Arrays.asList(ResourceRoleName.DBA, ResourceRoleName.OWNER)) ||
+                !connectionService.checkPermission(connectionIds, Collections.singletonList("update"))) {
+            // Current user should be source project's OWNER/DBA, and have update permission on datasources
+            throw new AccessDeniedException();
+        }
+        List<ConnectionConfig> connections = connectionService.innerListByIds(connectionIds);
+        connections.forEach(c -> {
+            if (c.getProjectId() != null) {
+                throw new AccessDeniedException();
+            }
+        });
     }
 
     private Page<Database> entitiesToModels(Page<DatabaseEntity> entities) {

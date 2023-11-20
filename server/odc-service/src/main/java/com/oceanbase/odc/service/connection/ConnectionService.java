@@ -207,7 +207,7 @@ public class ConnectionService {
     private static final String UPDATE_DS_SCHEMA_LOCK_KEY_PREFIX = "update-ds-schema-lock-";
 
     @SkipAuthorize("odc internal usage")
-    public ConnectionConfig createForBastion(@NotNull @Valid ConnectionConfig connection) {
+    public ConnectionConfig createForBastionUser(@NotNull @Valid ConnectionConfig connection) {
         TransactionDefinition transactionDefinition = new DefaultTransactionDefinition();
         TransactionStatus transactionStatus = transactionManager.getTransaction(transactionDefinition);
         ConnectionConfig saved;
@@ -587,7 +587,16 @@ public class ConnectionService {
     }
 
     @SkipAuthorize("odc internal usage")
-    public void updateDatabaseProjectId(Long connectionId, Long projectId) throws InterruptedException {
+    public void updateDatabaseProjectId(Collection<Long> connectionIds, Long projectId) throws InterruptedException {
+        if (CollectionUtils.isEmpty(connectionIds)) {
+            return;
+        }
+        for (Long connectionId : connectionIds) {
+            updateDatabaseProjectId(connectionId, projectId);
+        }
+    }
+
+    private void updateDatabaseProjectId(Long connectionId, Long projectId) throws InterruptedException {
         Lock lock = jdbcLockRegistry.obtain(getUpdateDsSchemaLockKey(connectionId));
         if (!lock.tryLock(3, TimeUnit.SECONDS)) {
             throw new ConflictException(ErrorCodes.ResourceModifying, "Can not acquire jdbc lock");
