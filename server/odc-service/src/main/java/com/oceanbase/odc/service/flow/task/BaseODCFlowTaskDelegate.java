@@ -249,12 +249,13 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
             try {
                 TaskEntity taskEntity = taskService.detail(taskId);
                 ConnectionConfig connection =
-                        connectionService.getWithoutPermissionCheck(taskEntity.getConnectionId());
+                        connectionService.internalGetSkipUserCheck(taskEntity.getConnectionId(), true);
                 EventLabels labels = EventUtils.buildEventLabels(taskEntity.getTaskType(), "failed",
                         taskEntity.getConnectionId());
                 Map<String, String> extend = new HashMap<>();
                 extend.put(EventLabelKeys.VARIABLE_KEY_CLUSTER_NAME, connection.getClusterName());
                 extend.put(EventLabelKeys.VARIABLE_KEY_TENANT_NAME, connection.getTenantName());
+                extend.put(EventLabelKeys.VARIABLE_KEY_TASK_ID, taskId + "");
                 labels.addLabels(extend);
                 broker.enqueueEvent(Event.builder()
                         .status(EventStatus.CREATED)
