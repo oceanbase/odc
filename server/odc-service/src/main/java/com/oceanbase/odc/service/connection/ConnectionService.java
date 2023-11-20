@@ -70,6 +70,7 @@ import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.ConnectionStatus;
 import com.oceanbase.odc.core.shared.constant.ConnectionVisibleScope;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
+import com.oceanbase.odc.core.shared.constant.OdcConstants;
 import com.oceanbase.odc.core.shared.constant.PermissionType;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
@@ -205,13 +206,30 @@ public class ConnectionService {
 
     private static final String UPDATE_DS_SCHEMA_LOCK_KEY_PREFIX = "update-ds-schema-lock-";
 
+    @SkipAuthorize("odc internal usage")
+    public ConnectionConfig createForBastion(@NotNull @Valid ConnectionConfig connection) {
+        TransactionDefinition transactionDefinition = new DefaultTransactionDefinition();
+        TransactionStatus transactionStatus = transactionManager.getTransaction(transactionDefinition);
+        ConnectionConfig saved;
+        try {
+            saved = innerCreate(connection, true);
+            userPermissionService.bindUserAndDataSourcePermission(OdcConstants.DEFAULT_ADMIN_USER_ID,
+                    currentOrganizationId(), saved.getId(), Arrays.asList("read", "update", "delete"));
+            transactionManager.commit(transactionStatus);
+        } catch (Exception e) {
+            transactionManager.rollback(transactionStatus);
+            throw e;
+        }
+        return saved;
+    }
+
     @PreAuthenticate(actions = "create", resourceType = "ODC_CONNECTION", isForAll = true)
     public ConnectionConfig create(@NotNull @Valid ConnectionConfig connection) {
         TransactionDefinition transactionDefinition = new DefaultTransactionDefinition();
         TransactionStatus transactionStatus = transactionManager.getTransaction(transactionDefinition);
         ConnectionConfig saved;
         try {
-            saved = innerCreate(connection);
+            saved = innerCreate(connection, false);
             userPermissionService.bindUserAndDataSourcePermission(currentUserId(), currentOrganizationId(),
                     saved.getId(),
                     Arrays.asList("read", "update", "delete"));
@@ -229,7 +247,7 @@ public class ConnectionService {
     public List<ConnectionConfig> batchCreate(@NotEmpty @Valid List<ConnectionConfig> connections) {
         List<ConnectionConfig> connectionConfigs = new ArrayList<>();
         for (ConnectionConfig connection : connections) {
-            ConnectionConfig saved = innerCreate(connection);
+            ConnectionConfig saved = innerCreate(connection, false);
             databaseSyncManager.submitSyncDataSourceTask(saved);
             userPermissionService.bindUserAndDataSourcePermission(currentUserId(), currentOrganizationId(),
                     saved.getId(),
@@ -240,7 +258,7 @@ public class ConnectionService {
     }
 
     @SkipAuthorize("odc internal usage")
-    public ConnectionConfig innerCreate(@NotNull @Valid ConnectionConfig connection) {
+    public ConnectionConfig innerCreate(@NotNull @Valid ConnectionConfig connection, boolean skipPermissionCheck) {
         TransactionDefinition transactionDefinition = new DefaultTransactionDefinition();
         TransactionStatus transactionStatus = transactionManager.getTransaction(transactionDefinition);
         ConnectionConfig created;
@@ -251,7 +269,10 @@ public class ConnectionService {
 
             connectionValidator.validateForUpsert(connection);
             connectionValidator.validatePrivateConnectionTempOnly(connection.getTemp());
-            connectionValidator.validateProjectOperable(connection.getProjectId());
+
+            if (!skipPermissionCheck) {
+                connectionValidator.validateProjectOperable(connection.getProjectId());
+            }
 
             connection.setOrganizationId(currentOrganizationId());
             connection.setCreatorId(currentUserId());
