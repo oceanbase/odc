@@ -246,7 +246,7 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
      */
     protected void onFailure(Long taskId, TaskService taskService) {
         if (notificationProperties.isEnabled()) {
-            new Thread(() -> {
+            try {
                 TaskEntity taskEntity = taskService.detail(taskId);
                 ConnectionConfig connection =
                         connectionService.getWithoutPermissionCheck(taskEntity.getConnectionId());
@@ -263,7 +263,9 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
                         .triggerTime(new Date(System.currentTimeMillis()))
                         .labels(labels)
                         .build());
-            }).start();
+            } catch (Exception e) {
+                log.warn("Failed to enqueue event.", e);
+            }
         }
 
     }
