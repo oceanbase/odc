@@ -52,22 +52,22 @@ public class DBTableColumnController {
     @RequestMapping(value = "/list/{sid:.*}", method = RequestMethod.GET)
     public OdcResult<List<OdcDBTableColumn>> list(@PathVariable String sid) {
         ResourceIdentifier i = ResourceIDParser.parse(sid);
-        ConnectionSession session = sessionService.nullSafeGet(i.getSid());
+        ConnectionSession session = sessionService.nullSafeGet(i.getSid(), true);
         return OdcResult.ok(this.columnService.list(session, i.getDatabase(), i.getTable()));
     }
 
     @ApiOperation(value = "getCreateSql", notes = "获取新增列的sql，sid示例：sid:1000-1:d:db1:t:tb1")
     @RequestMapping(value = "/getCreateSql/{sid:.*}", method = RequestMethod.PATCH)
     public OdcResult<ResourceSql> getCreateSql(@PathVariable String sid, @RequestBody OdcDBTableColumn column) {
-        String sql = this.columnService.getCreateSql(sessionService.nullSafeGet(SidUtils.getSessionId(sid)), column);
-        return OdcResult.ok(ResourceSql.ofSql(sql));
+        return OdcResult.ok(ResourceSql.ofSql(this.columnService.getCreateSql(
+                sessionService.nullSafeGet(SidUtils.getSessionId(sid), true), column)));
     }
 
     @ApiOperation(value = "getDeleteSql", notes = "获取删除列的sql，sid示例：sid:1000-1:d:db1:t:tb1")
     @RequestMapping(value = "/getDeleteSql/{sid:.*}", method = RequestMethod.PATCH)
     public OdcResult<ResourceSql> getDeleteSql(@PathVariable String sid, @RequestBody OdcDBTableColumn column) {
-        String sql = this.columnService.getDeleteSql(sessionService.nullSafeGet(SidUtils.getSessionId(sid)), column);
-        return OdcResult.ok(ResourceSql.ofSql(sql));
+        return OdcResult.ok(ResourceSql.ofSql(this.columnService.getDeleteSql(
+                sessionService.nullSafeGet(SidUtils.getSessionId(sid), true), column)));
     }
 
 }

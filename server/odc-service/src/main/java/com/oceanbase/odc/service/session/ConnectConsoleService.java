@@ -134,7 +134,7 @@ public class ConnectConsoleService {
 
     public SqlExecuteResult queryTableOrViewData(@NotNull String sessionId,
             @NotNull @Valid QueryTableOrViewDataReq req) throws Exception {
-        ConnectionSession connectionSession = sessionService.nullSafeGet(sessionId);
+        ConnectionSession connectionSession = sessionService.nullSafeGet(sessionId, true);
         SqlBuilder sqlBuilder;
         DialectType dialectType = connectionSession.getConnectType().getDialectType();
         if (dialectType.isMysql()) {
@@ -190,7 +190,7 @@ public class ConnectConsoleService {
 
     public SqlAsyncExecuteResp execute(@NotNull String sessionId,
             @NotNull @Valid SqlAsyncExecuteReq request, boolean needSqlCheck) throws Exception {
-        ConnectionSession connectionSession = sessionService.nullSafeGet(sessionId);
+        ConnectionSession connectionSession = sessionService.nullSafeGet(sessionId, true);
 
         long maxSqlLength = sessionProperties.getMaxSqlLength();
         if (maxSqlLength > 0) {
@@ -417,15 +417,13 @@ public class ConnectConsoleService {
 
     @SkipAuthorize
     public boolean killCurrentQuery(@NotNull String sessionId) {
-        ConnectionSession session = sessionService.nullSafeGet(sessionId);
-        Long connectionId = ((ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(session)).id();
-        Verify.notNull(connectionId, "ConnectionId");
-        return dbSessionManageFacade.killCurrentQuery(session);
+        return dbSessionManageFacade.killCurrentQuery(sessionService.nullSafeGet(sessionId));
     }
 
     @SkipAuthorize
     public List<KillSessionResult> killSessionOrQuery(KillSessionOrQueryReq request) {
-        if (!connectionService.checkPermission(Long.valueOf(request.getDatasourceId()), Arrays.asList("update"))) {
+        if (!connectionService.checkPermission(
+                Long.valueOf(request.getDatasourceId()), Collections.singletonList("update"))) {
             throw new AccessDeniedException();
         }
         return dbSessionManageFacade.killSessionOrQuery(request);

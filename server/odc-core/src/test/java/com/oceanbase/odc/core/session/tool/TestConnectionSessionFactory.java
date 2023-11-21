@@ -27,7 +27,7 @@ import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.session.DefaultConnectionSession;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.DialectType;
-import com.oceanbase.odc.core.sql.execute.TestConnectionExtensionExecutor;
+import com.oceanbase.odc.core.sql.execute.TestSessionOperations;
 import com.oceanbase.odc.core.sql.execute.task.DefaultSqlExecuteTaskManager;
 import com.oceanbase.odc.core.sql.execute.tool.TestDataSourceFactory;
 
@@ -56,10 +56,9 @@ public class TestConnectionSessionFactory implements ConnectionSessionFactory {
         try {
             DataSourceFactory dataSourceFactory = new TestDataSourceFactory(connectType.getDialectType());
             ConnectionSession session = new DefaultConnectionSession(
-                    () -> sessionIdCounter.incrementAndGet() + "",
+                    sessionIdCounter.incrementAndGet() + "",
                     () -> new DefaultSqlExecuteTaskManager(3, "sqlexecutor"),
-                    timeoutMillis, connectType, autoCommit,
-                    new TestConnectionExtensionExecutor(connectType.getDialectType()));
+                    timeoutMillis, connectType, autoCommit, new TestSessionOperations());
             session.register(ConnectionSessionConstants.CONSOLE_DS_KEY,
                     new TestDataSourceFactory(connectType.getDialectType()));
             session.register(ConnectionSessionConstants.SYS_DS_KEY, dataSourceFactory);
