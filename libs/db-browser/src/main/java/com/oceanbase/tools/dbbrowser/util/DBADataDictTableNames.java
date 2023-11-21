@@ -18,6 +18,6 @@ package com.oceanbase.tools.dbbrowser.util;
 public class DBADataDictTableNames extends AbstractOracleDataDictTableNames {
     @Override
     public String prefix() {
-        return "DBA_";
+        return SCHEMA_NAME + ".DBA_";
     }
 }

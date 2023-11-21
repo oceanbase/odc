@@ -29,9 +29,9 @@ public class JobConstants {
 
     public static final String TEMPLATE_API_VERSION = "v1";
 
-    public static final String TEMPLATE_BATH_API_VERSION = "batch/v1";
+    public static final String TEMPLATE_BATCH_API_VERSION = "batch/v1";
 
-    public static final String TEMPLATE_JOB_NAME = "task-";
+    public static final String TEMPLATE_JOB_NAME_PREFIX = "task-";
 
     public static final String RESTART_POLICY_NEVER = "Never";
 

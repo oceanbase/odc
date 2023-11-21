@@ -27,7 +27,11 @@ public enum ResourceRoleName {
 
     DBA("DBA"),
 
-    DEVELOPER("DEVELOPER");
+    DEVELOPER("DEVELOPER"),
+
+    SECURITY_ADMINISTRATOR("SECURITY_ADMINISTRATOR"),
+
+    PARTICIPANT("PARTICIPANT");
 
     private String value;
 

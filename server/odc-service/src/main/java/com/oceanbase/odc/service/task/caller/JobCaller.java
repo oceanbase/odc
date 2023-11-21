@@ -20,16 +20,35 @@ import com.oceanbase.odc.common.event.EventPublisher;
 import com.oceanbase.odc.core.task.context.JobContext;
 
 /**
+ * operate odc job for different deployment environment, eg: k8s, master-worker or same jvm process
+ * 
  * @author yaobin
  * @date 2023-11-15
  * @since 4.2.4
  */
 public interface JobCaller {
 
+    /**
+     * start a odc job
+     * 
+     * @param context job context
+     * @throws JobException throws JobException when start job failed
+     */
     void start(JobContext context) throws JobException;
 
+    /**
+     * stop a odc job
+     * 
+     * @param taskId task id
+     * @throws JobException throws JobException when stop job failed
+     */
     void stop(Long taskId) throws JobException;
 
+    /**
+     * get job execution event publisher
+     * 
+     * @return job execution event publisher
+     */
     EventPublisher getEventPublish();
 
 }

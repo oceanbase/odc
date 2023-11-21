@@ -443,8 +443,6 @@ public class UserService {
         return resourceRoleService.getResourceRoleIdentifiersByUserId(currentUserId);
     }
 
-
-
     @SkipAuthorize("odc internal usage")
     public Set<Long> getUserRoleIds(Long userId) {
         List<RoleEntity> relations = roleRepository.findByUserIdAndEnabled(userId, true);
@@ -801,7 +799,8 @@ public class UserService {
         Boolean validateResult = attemptLimiter.attempt(
                 () -> passwordEncoder.matches(changePasswordReq.getCurrentPassword(), userEntity.getPassword()));
         PreConditions.validRequestState(validateResult, ErrorCodes.UserWrongPasswordOrNotFound,
-                new Object[] {attemptLimiter.getRemainAttempt()}, "currentPassword is not correct");
+                new Object[] {attemptLimiter.getRemainAttempt() < 0 ? "unlimited" : attemptLimiter.getRemainAttempt()},
+                "currentPassword is not correct");
 
         userEntity.setPassword(encodePassword(changePasswordReq.getNewPassword()));
         userEntity.setActive(true);

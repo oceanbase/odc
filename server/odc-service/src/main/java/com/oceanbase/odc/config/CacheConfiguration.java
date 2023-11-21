@@ -17,6 +17,7 @@ package com.oceanbase.odc.config;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.CacheManager;
@@ -29,6 +30,7 @@ import org.springframework.context.annotation.Lazy;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.oceanbase.odc.service.iam.OrganizationService;
+import com.oceanbase.odc.service.iam.model.IamProperties;
 import com.oceanbase.odc.service.iam.model.Organization;
 import com.oceanbase.odc.service.iam.util.FailedLoginAttemptLimiter;
 import com.oceanbase.odc.service.regulation.ruleset.RuleService;
@@ -38,12 +40,8 @@ import com.oceanbase.odc.service.regulation.ruleset.model.Rule;
 @EnableCaching
 public class CacheConfiguration {
 
-    private static final int FAILED_LOGIN_ATTEMPT_TIMES = 5;
-    /**
-     * 10 minutes lock if failed login attempt FAILED_LOGIN_ATTEMPT_TIMES times <br>
-     * 10 * 60 * 1000L
-     */
-    private static final long FAILED_LOGIN_ATTEMPT_LOCK_TIMEOUT = 10 * 60 * 1000L;
+    @Autowired
+    private IamProperties iamProperties;
 
     @Autowired
     private OrganizationService organizationService;
@@ -54,10 +52,15 @@ public class CacheConfiguration {
 
     @Bean("clientAddressLoginAttemptCache")
     public LoadingCache<String, FailedLoginAttemptLimiter> clientAddressLoginAttemptCache() {
-        return Caffeine
-                .newBuilder().maximumSize(1000).expireAfterWrite(Duration.ofHours(1L))
-                .build(key -> new FailedLoginAttemptLimiter(FAILED_LOGIN_ATTEMPT_TIMES,
-                        FAILED_LOGIN_ATTEMPT_LOCK_TIMEOUT));
+        final long timeoutMillis;
+        if (iamProperties.getFailedLoginLockTimeoutSeconds() > 0) {
+            timeoutMillis = TimeUnit.MILLISECONDS.convert(
+                    iamProperties.getFailedLoginLockTimeoutSeconds(), TimeUnit.SECONDS);
+        } else {
+            timeoutMillis = 0;
+        }
+        return Caffeine.newBuilder().maximumSize(1000).expireAfterWrite(Duration.ofHours(1L)).build(
+                key -> new FailedLoginAttemptLimiter(iamProperties.getMaxFailedLoginAttemptTimes(), timeoutMillis));
     }
 
     @Bean("userId2OrganizationsCache")

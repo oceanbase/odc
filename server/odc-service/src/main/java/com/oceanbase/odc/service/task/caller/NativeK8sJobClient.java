@@ -18,27 +18,28 @@ package com.oceanbase.odc.service.task.caller;
 
 import static com.oceanbase.odc.service.task.caller.JobConstants.FIELD_SELECTOR_METADATA_NAME;
 import static com.oceanbase.odc.service.task.caller.JobConstants.RESTART_POLICY_NEVER;
-import static com.oceanbase.odc.service.task.caller.JobConstants.TEMPLATE_BATH_API_VERSION;
-import static com.oceanbase.odc.service.task.caller.JobConstants.TEMPLATE_KIND_JOB;
+import static com.oceanbase.odc.service.task.caller.JobConstants.TEMPLATE_API_VERSION;
+import static com.oceanbase.odc.service.task.caller.JobConstants.TEMPLATE_KIND_POD;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import com.oceanbase.odc.core.shared.exception.UnsupportedException;
-
+import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.apis.BatchV1Api;
+import io.kubernetes.client.openapi.Configuration;
+import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
-import io.kubernetes.client.openapi.models.V1Job;
-import io.kubernetes.client.openapi.models.V1JobList;
-import io.kubernetes.client.openapi.models.V1JobSpec;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1PodSpec;
-import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
+import io.kubernetes.client.util.Config;
 import lombok.NonNull;
 
 /**
@@ -46,19 +47,27 @@ import lombok.NonNull;
  * @date 2023-11-15
  * @since 4.2.4
  */
-public class PrimitiveJobBasedK8sClient extends BasePrimitiveK8sClient {
+public class NativeK8sJobClient implements K8sJobClient {
 
-    public PrimitiveJobBasedK8sClient(String k8sClusterUrl) throws IOException {
-        super(k8sClusterUrl);
+    public NativeK8sJobClient(String k8sClusterUrl) throws IOException {
+        ApiClient apiClient = Config.defaultClient();
+        apiClient.setHttpClient(apiClient
+                .getHttpClient()
+                .newBuilder()
+                .readTimeout(Duration.ZERO)
+                .pingInterval(1, TimeUnit.MINUTES)
+                .build())
+                .setBasePath(k8sClusterUrl);
+        Configuration.setDefaultApiClient(apiClient);
     }
 
     @Override
-    public String createNamespaceJob(@NonNull String namespace, @NonNull String jobName, @NonNull String image,
+    public String create(@NonNull String namespace, @NonNull String name, @NonNull String image,
             @NonNull List<String> command, @NonNull PodParam podParam) throws JobException {
-        V1Job job = getV1Job(jobName, image, command, podParam);
-        BatchV1Api api = new BatchV1Api();
+        V1Pod job = getV1Pod(name, image, command, podParam);
+        CoreV1Api api = new CoreV1Api();
         try {
-            V1Job createdJob = api.createNamespacedJob(namespace, job, null, null,
+            V1Pod createdJob = api.createNamespacedPod(namespace, job, null, null,
                     null, null);
             return createdJob.getMetadata().getName();
         } catch (ApiException e) {
@@ -67,26 +76,34 @@ public class PrimitiveJobBasedK8sClient extends BasePrimitiveK8sClient {
     }
 
     @Override
-    public Optional<String> getNamespaceJob(@NonNull String namespace, @NonNull String jobName) throws JobException {
-        BatchV1Api api = new BatchV1Api();
-        V1JobList job = null;
+    public Optional<String> get(@NonNull String namespace, @NonNull String name) throws JobException {
+        CoreV1Api api = new CoreV1Api();
+        V1PodList job = null;
         try {
-            job = api.listNamespacedJob(namespace, null, null, null,
-                    FIELD_SELECTOR_METADATA_NAME + "=" + jobName,
+            job = api.listNamespacedPod(namespace, null, null, null,
+                    FIELD_SELECTOR_METADATA_NAME + "=" + name,
                     null, null, null, null, null, null);
         } catch (ApiException e) {
             throw new JobException(e.getResponseBody(), e);
         }
-        Optional<V1Job> v1Job = job.getItems().stream().findAny();
+        Optional<V1Pod> v1Job = job.getItems().stream().findAny();
         return v1Job.map(value -> value.getMetadata().getName());
     }
 
     @Override
-    public String deleteNamespaceJob(@NonNull String namespace, @NonNull String jobName) throws JobException {
-        throw new UnsupportedException();
+    public String delete(@NonNull String namespace, @NonNull String name) throws JobException {
+        CoreV1Api api = new CoreV1Api();
+        V1Pod pod = null;
+        try {
+            pod = api.deleteNamespacedPod(name, namespace, null, null,
+                    null, null, null, null);
+        } catch (ApiException e) {
+            throw new JobException(e.getResponseBody(), e);
+        }
+        return pod.getMetadata().getName();
     }
 
-    private V1Job getV1Job(String jobName, String image, List<String> command, PodParam podParam) {
+    private V1Pod getV1Pod(String jobName, String image, List<String> command, PodParam podParam) {
         V1Container container = new V1Container()
                 .name(jobName)
                 .image(image)
@@ -103,23 +120,17 @@ public class PrimitiveJobBasedK8sClient extends BasePrimitiveK8sClient {
                 .containers(Collections.singletonList(container))
                 .restartPolicy(RESTART_POLICY_NEVER);
 
-        V1JobSpec jobSpec = new V1JobSpec()
-                .ttlSecondsAfterFinished(podParam.getTtlSecondsAfterFinished())
-                .template(new V1PodTemplateSpec().spec(v1PodSpec));
-
-        return new V1Job()
+        return new V1Pod()
                 .apiVersion(getVersion()).kind(getKind())
                 .metadata(new V1ObjectMeta().name(jobName))
-                .spec(jobSpec);
+                .spec(v1PodSpec);
     }
 
-    @Override
-    protected String getVersion() {
-        return TEMPLATE_BATH_API_VERSION;
+    private String getVersion() {
+        return TEMPLATE_API_VERSION;
     }
 
-    @Override
-    protected String getKind() {
-        return TEMPLATE_KIND_JOB;
+    private String getKind() {
+        return TEMPLATE_KIND_POD;
     }
 }

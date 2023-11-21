@@ -108,6 +108,8 @@ public class SqlExecuteResult {
     private Boolean allowExport;
     private boolean existSensitiveData = false;
     private List<String> whereColumns;
+    private boolean withFullLinkTrace = false;
+    private String traceEmptyReason;
 
     public static SqlExecuteResult emptyResult(@NonNull SqlTuple sqlTuple, @NonNull SqlExecuteStatus status) {
         SqlExecuteResult result = new SqlExecuteResult(sqlTuple.getExecutedSql(), sqlTuple.getSqlId());
@@ -346,6 +348,8 @@ public class SqlExecuteResult {
         this.dbmsOutput = generalResult.getDbmsOutput();
         this.traceId = generalResult.getTraceId();
         this.existWarnings = generalResult.isExistWarnings();
+        this.withFullLinkTrace = generalResult.isWithFullLinkTrace();
+        this.traceEmptyReason = generalResult.getTraceEmptyReason();
         if (generalResult.getStatus() == SqlExecuteStatus.CANCELED) {
             this.status = SqlExecuteStatus.CANCELED;
             this.track = ErrorCodes.ObExecuteSqlCanceled.getLocalizedMessage(new Object[] {"Pre-sql execution error"});

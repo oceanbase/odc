@@ -14,22 +14,23 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.task.caller;
+package com.oceanbase.odc.service.iam.model;
 
-import java.util.List;
-import java.util.Optional;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cloud.context.config.annotation.RefreshScope;
+import org.springframework.context.annotation.Configuration;
 
-/**
- * @author yaobin
- * @date 2023-11-15
- * @since 4.2.4
- */
-public interface K8sClient {
+import lombok.Data;
 
-    String createNamespaceJob(String namespace, String jobName, String image, List<String> command,
-            PodParam podParam) throws JobException;
+@Data
+@RefreshScope
+@Configuration
+public class IamProperties {
 
-    Optional<String> getNamespaceJob(String namespace, String jobName) throws JobException;
+    @Value("${odc.iam.auth.alipay.max-failed-login-attempt-times:5}")
+    private int maxFailedLoginAttemptTimes = 5;
 
-    String deleteNamespaceJob(String namespace, String jobName) throws JobException;
+    @Value("${odc.iam.auth.alipay.failed-login-lock-timeout-seconds:600}")
+    private long failedLoginLockTimeoutSeconds = 600;
+
 }

@@ -162,6 +162,14 @@ public class FlowInstance extends Graph implements SecurityResource, Organizatio
                 flowableAdaptor, runtimeService, repositoryService);
     }
 
+    protected FlowInstance(@NonNull String name, @NonNull FlowableAdaptor flowableAdaptor,
+            @NonNull AuthenticationFacade authenticationFacade,
+            @NonNull FlowInstanceRepository flowInstanceRepository, @NonNull RuntimeService runtimeService,
+            @NonNull RepositoryService repositoryService, @NonNull Long projectId) {
+        this(name, null, flowableAdaptor, authenticationFacade, flowInstanceRepository, runtimeService,
+                repositoryService);
+    }
+
     private FlowInstance(Long id, @NonNull String name, @NonNull Long creatorId, @NonNull Long organizationId,
             Long projectId,
             Long parentFlowInstanceId,

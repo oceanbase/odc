@@ -23,10 +23,13 @@ import com.oceanbase.odc.common.util.JdbcOperationsUtil;
 import com.oceanbase.odc.plugin.schema.obmysql.OBMySQLTableExtension;
 import com.oceanbase.tools.dbbrowser.editor.DBTablePartitionEditor;
 import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLDBTablePartitionEditor;
+import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 import com.oceanbase.tools.dbbrowser.schema.mysql.ODPOBMySQLSchemaAccessor;
 import com.oceanbase.tools.dbbrowser.stats.DBStatsAccessor;
 import com.oceanbase.tools.dbbrowser.stats.mysql.ODPOBMySQLStatsAccessor;
+
+import lombok.NonNull;
 
 /**
  * @author jingtian
@@ -35,6 +38,17 @@ import com.oceanbase.tools.dbbrowser.stats.mysql.ODPOBMySQLStatsAccessor;
  */
 @Extension
 public class ODPShardingOBMySQLTableExtension extends OBMySQLTableExtension {
+    @Override
+    public DBTable getDetail(@NonNull Connection connection, @NonNull String schemaName, @NonNull String tableName) {
+        DBTable table = super.getDetail(connection, schemaName, tableName);
+        /**
+         * In ODP sharding mysql mode, when variable lower_case_table_names = 1 or 2, the table name will be
+         * stored in uppercase letters. There is no automatic lowercase conversion of table names here.
+         */
+        table.setName(tableName);
+        return table;
+    }
+
     @Override
     protected DBSchemaAccessor getSchemaAccessor(Connection connection) {
         return new ODPOBMySQLSchemaAccessor(JdbcOperationsUtil.getJdbcOperations(connection));

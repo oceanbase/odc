@@ -19,8 +19,12 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+
+import org.apache.commons.collections4.CollectionUtils;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -43,7 +47,7 @@ public class TraceSpan {
     @JsonAlias("logs")
     private String logs;
     @JsonAlias("tags")
-    private List<Object> tags;
+    private List<Map<String, Object>> tags;
     @JsonAlias("elapse")
     private Long elapseMicroSeconds;
     @JsonAlias("parent")
@@ -77,6 +81,27 @@ public class TraceSpan {
     public void setEndTs(String ts) {
         LocalDateTime ldt = LocalDateTime.parse(ts, TIMESTAMP_FORMATTER);
         this.endTimestamp = ldt.toString().replaceAll("T", " ");
+    }
+
+    public void setTags(List<Object> tags) {
+        if (CollectionUtils.isEmpty(tags)) {
+            return;
+        }
+        List<Map<String, Object>> retList = new ArrayList<>();
+        for (Object tag : tags) {
+            parseTags(tag, retList);
+        }
+        this.tags = retList;
+    }
+
+    private void parseTags(Object tags, List<Map<String, Object>> retList) {
+        if (tags instanceof Map) {
+            retList.add((Map<String, Object>) tags);
+        } else if (tags instanceof Collection) {
+            for (Object tag : (Collection) tags) {
+                parseTags(tag, retList);
+            }
+        }
     }
 
     public enum Node {

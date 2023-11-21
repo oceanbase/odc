@@ -30,7 +30,9 @@ import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
+import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.service.common.model.ResourceSql;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
@@ -92,6 +94,14 @@ public class TableDataService {
             } else {
                 throw new IllegalArgumentException("Illegal dialect type, " + dialectType);
             }
+
+            if (operate == Operate.DELETE || operate == Operate.UPDATE) {
+                PreConditions.validArgumentState(
+                        dmlBuilder.containsPrimaryKeyOrRowId() || dmlBuilder.containsUniqueKeys(),
+                        ErrorCodes.ObUpdateKeyRequired, null,
+                        "Primary key or unique constraint is required to generate update condition");
+            }
+
             DMLGenerator generator = getGenerator(operate, dmlBuilder, connectionSession);
             String sql = generator.generate();
 

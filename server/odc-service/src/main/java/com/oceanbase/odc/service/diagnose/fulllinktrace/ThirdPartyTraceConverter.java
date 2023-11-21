@@ -14,12 +14,16 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.core.session;
+package com.oceanbase.odc.service.diagnose.fulllinktrace;
 
-/**
- * @author yaobin
- * @date 2023-11-15
- * @since 4.2.4
- */
-public class ConnectionConfig {
+import com.oceanbase.odc.core.shared.model.TraceSpan;
+
+public interface ThirdPartyTraceConverter {
+
+    /**
+     * transform {@link TraceSpan} into json format map that can be parsed by a 3rd party tool, like
+     * Jaeger/Zipkin...
+     */
+    String convert(TraceSpan span);
+
 }
