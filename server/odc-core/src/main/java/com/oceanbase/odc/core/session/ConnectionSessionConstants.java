@@ -106,12 +106,12 @@ public class ConnectionSessionConstants {
     /**
      * Working dir name for {@link BinaryDataManager}
      */
-    public static final String SESSION_DATABINARY_DIR_NAME = "session_binary_data";
+    public static final String SESSION_DATABINARY_DIR_NAME = "SESSION_DATABINARY_DIR";
     /**
      * The database session may have a file upload requirement, and the uploaded file is placed in this
      * subdirectory
      */
-    public static final String SESSION_UPLOAD_DIR_NAME = "upload";
+    public static final String SESSION_UPLOAD_DIR_NAME = "SESSION_UPLOAD_DIR";
     public static final String SESSION_TIME_ZONE = "TIME_ZONE";
     public static final String EVENT_PUBLISHER_NAME = "EVENT_PUBLISHER";
     public static final String OB_ARCHITECTURE = "OB_ARCHITECTURE";
@@ -124,18 +124,9 @@ public class ConnectionSessionConstants {
      */
     public static final String COLUMN_ACCESSOR_KEY = "DATASOURCE_COLUMN_ACCESSOR";
     /**
-     * Column info cache stored in connectionSession
-     */
-    public static String TABLE_COLUMN_CACHE = "TABLE_COLUMN_CACHE";
-    public static String VIEW_COLUMN_CACHE = "VIEW_COLUMN_CACHE";
-    /**
      * BinaryContentMetaData cache stored in connectionSession
      */
     public static String BINARY_CONTENT_METADATA_CACHE = "BINARY_CONTENT_METADATA_CACHE";
-    /**
-     * Decide whether to execute the initColumnInfo stage
-     */
-    public static String SHOW_TABLE_COLUMN_INFO = "SHOW_TABLE_COLUMN_INFO";
     public static String RULE_SET_ID_NAME = "RULE_SET_ID";
     public static String NLS_DATE_FORMAT_NAME = "NLS_DATE_FORMAT";
     public static String NLS_TIMESTAMP_FORMAT_NAME = "NLS_TIMESTAMP_FORMAT";

@@ -118,6 +118,7 @@ import lombok.extern.slf4j.Slf4j;
 public class ConnectConsoleService {
 
     private static final int DEFAULT_GET_RESULT_TIMEOUT_SECONDS = 3;
+    private static String SHOW_TABLE_COLUMN_INFO = "SHOW_TABLE_COLUMN_INFO";
     @Autowired
     private ConnectSessionService sessionService;
     @Autowired
@@ -191,9 +192,6 @@ public class ConnectConsoleService {
             @NotNull @Valid SqlAsyncExecuteReq request, boolean needSqlCheck) throws Exception {
         ConnectionSession connectionSession = sessionService.nullSafeGet(sessionId);
 
-        if (request.getShowTableColumnInfo() != null) {
-            ConnectionSessionUtil.setShowTableColumnInfo(connectionSession, request.getShowTableColumnInfo());
-        }
         long maxSqlLength = sessionProperties.getMaxSqlLength();
         if (maxSqlLength > 0) {
             PreConditions.lessThanOrEqualTo("sqlLength", LimitMetric.SQL_LENGTH,
@@ -230,6 +228,7 @@ public class ConnectConsoleService {
         }
         SqlAsyncExecuteResp response = SqlAsyncExecuteResp.newSqlAsyncExecuteResp(sqlTuples);
         Map<String, Object> context = new HashMap<>();
+        context.put(SHOW_TABLE_COLUMN_INFO, request.getShowTableColumnInfo());
         context.put(SqlCheckInterceptor.NEED_SQL_CHECK_KEY, needSqlCheck);
         List<TraceStage> stages = sqlTuples.stream()
                 .map(s -> s.getSqlWatch().start(SqlExecuteStages.SQL_INTERCEPT_PRE_CHECK))
@@ -267,21 +266,19 @@ public class ConnectConsoleService {
         return getAsyncResult(sessionId, requestId, DEFAULT_GET_RESULT_TIMEOUT_SECONDS);
     }
 
-    public List<SqlExecuteResult> getAsyncResult(@NotNull String sessionId, String requestId,
-            Integer queryTimeoutSeconds) {
+    public List<SqlExecuteResult> getAsyncResult(@NotNull String sessionId, String requestId, Integer timeoutSeconds) {
         PreConditions.validArgumentState(Objects.nonNull(requestId), ErrorCodes.SqlRegulationRuleBlocked, null, null);
         ConnectionSession connectionSession = sessionService.nullSafeGet(sessionId);
         Future<List<JdbcGeneralResult>> listFuture =
                 ConnectionSessionUtil.getFutureJdbcResult(connectionSession, requestId);
-        int getResultTimeoutSeconds =
-                Objects.isNull(queryTimeoutSeconds) ? DEFAULT_GET_RESULT_TIMEOUT_SECONDS : queryTimeoutSeconds;
+        int timeout = Objects.isNull(timeoutSeconds) ? DEFAULT_GET_RESULT_TIMEOUT_SECONDS : timeoutSeconds;
         try {
-            List<JdbcGeneralResult> resultList = listFuture.get(getResultTimeoutSeconds, TimeUnit.SECONDS);
+            List<JdbcGeneralResult> resultList = listFuture.get(timeout, TimeUnit.SECONDS);
             Map<String, Object> context = ConnectionSessionUtil.getFutureJdbcContext(connectionSession, requestId);
             ConnectionSessionUtil.removeFutureJdbc(connectionSession, requestId);
             return resultList.stream().map(jdbcGeneralResult -> {
-                SqlExecuteResult result = generateResult(connectionSession, jdbcGeneralResult);
                 Map<String, Object> cxt = context == null ? new HashMap<>() : context;
+                SqlExecuteResult result = generateResult(connectionSession, jdbcGeneralResult, cxt);
                 try (TraceStage stage = result.getSqlTuple().getSqlWatch()
                         .start(SqlExecuteStages.SQL_INTERCEPT_AFTER_CHECK)) {
                     sqlInterceptService.afterCompletion(result, connectionSession, cxt);
@@ -492,7 +489,7 @@ public class ConnectConsoleService {
     }
 
     private SqlExecuteResult generateResult(@NonNull ConnectionSession connectionSession,
-            @NonNull JdbcGeneralResult generalResult) {
+            @NonNull JdbcGeneralResult generalResult, @NonNull Map<String, Object> cxt) {
         SqlExecuteResult result = new SqlExecuteResult(generalResult);
         TraceWatch watch = generalResult.getSqlTuple().getSqlWatch();
         OdcTable resultTable = null;
@@ -507,7 +504,7 @@ public class ConnectConsoleService {
         } catch (Exception e) {
             log.warn("Failed to init editable info", e);
         }
-        if (ConnectionSessionUtil.getShowTableColumnInfo(connectionSession)) {
+        if (Boolean.TRUE.equals(cxt.get(SHOW_TABLE_COLUMN_INFO))) {
             try (TraceStage s = watch.start(SqlExecuteStages.INIT_COLUMN_INFO)) {
                 result.initColumnInfo(connectionSession, resultTable, schemaAccessor);
             } catch (Exception e) {
