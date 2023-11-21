@@ -24,4 +24,5 @@ import java.io.Serializable;
  * @since 4.2.4
  */
 public class TaskConnectionConfig implements Serializable {
+    // todo add connection config field
 }
