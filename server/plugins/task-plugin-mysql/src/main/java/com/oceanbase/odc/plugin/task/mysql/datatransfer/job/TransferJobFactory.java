@@ -29,9 +29,11 @@ import java.util.stream.Collectors;
 import javax.sql.DataSource;
 
 import org.apache.commons.lang3.ArrayUtils;
-import org.springframework.jdbc.core.JdbcTemplate;
 
+import com.oceanbase.odc.plugin.schema.mysql.MySQLFunctionExtension;
+import com.oceanbase.odc.plugin.schema.mysql.MySQLProcedureExtension;
 import com.oceanbase.odc.plugin.schema.mysql.MySQLTableExtension;
+import com.oceanbase.odc.plugin.schema.mysql.MySQLViewExtension;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferFormat;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferObject;
@@ -41,7 +43,6 @@ import com.oceanbase.odc.plugin.task.mysql.datatransfer.common.Constants;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.ConfigurationResolver;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.DataXTransferJob;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
-import com.oceanbase.tools.dbbrowser.schema.mysql.MySQLNoGreaterThan5740SchemaAccessor;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
 
 public class TransferJobFactory {
@@ -85,7 +86,9 @@ public class TransferJobFactory {
          */
         List<DataTransferObject> objects;
         if (transferConfig.isExportAllObjects()) {
-            objects = queryTransferObjects(dataSource, true);
+            try (Connection conn = dataSource.getConnection()) {
+                objects = queryTransferObjects(conn, true);
+            }
         } else {
             objects = new ArrayList<>(transferConfig.getExportDbObjects());
         }
@@ -129,13 +132,13 @@ public class TransferJobFactory {
         /*
          * export
          */
-        List<DataTransferObject> objects;
-        if (transferConfig.isExportAllObjects()) {
-            objects = queryTransferObjects(dataSource, false);
-        } else {
-            objects = new ArrayList<>(transferConfig.getExportDbObjects());
-        }
         try (Connection conn = dataSource.getConnection()) {
+            List<DataTransferObject> objects;
+            if (transferConfig.isExportAllObjects()) {
+                objects = queryTransferObjects(conn, false);
+            } else {
+                objects = new ArrayList<>(transferConfig.getExportDbObjects());
+            }
             for (DataTransferObject object : objects) {
                 ObjectResult table = new ObjectResult(transferConfig.getSchemaName(), object.getObjectName(),
                         object.getDbObjectType().getName());
@@ -154,18 +157,16 @@ public class TransferJobFactory {
         return jobs;
     }
 
-    private List<DataTransferObject> queryTransferObjects(DataSource dataSource, boolean transferDDL) {
+    private List<DataTransferObject> queryTransferObjects(Connection connection, boolean transferDDL) {
         List<DataTransferObject> objects = new ArrayList<>();
-        MySQLNoGreaterThan5740SchemaAccessor accessor =
-                new MySQLNoGreaterThan5740SchemaAccessor(new JdbcTemplate(dataSource));
-        accessor.listTables(transferConfig.getSchemaName(), "")
+        new MySQLTableExtension().list(connection, transferConfig.getSchemaName())
                 .forEach(table -> objects.add(new DataTransferObject(ObjectType.TABLE, table.getName())));
         if (transferDDL) {
-            accessor.listViews(transferConfig.getSchemaName())
+            new MySQLViewExtension().list(connection, transferConfig.getSchemaName())
                     .forEach(view -> objects.add(new DataTransferObject(ObjectType.VIEW, view.getName())));
-            accessor.listFunctions(transferConfig.getSchemaName())
+            new MySQLFunctionExtension().list(connection, transferConfig.getSchemaName())
                     .forEach(func -> objects.add(new DataTransferObject(ObjectType.FUNCTION, func.getName())));
-            accessor.listProcedures(transferConfig.getSchemaName())
+            new MySQLProcedureExtension().list(connection, transferConfig.getSchemaName())
                     .forEach(proc -> objects.add(new DataTransferObject(ObjectType.PROCEDURE, proc.getName())));
         }
         return objects;
