@@ -122,7 +122,6 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
         jdbcUrlParams.put("connectTimeout", "5000");
         jdbcUrlParams.put("zeroDateTimeBehavior", DEFAULT_ZERO_DATE_TIME_BEHAVIOR);
         jdbcUrlParams.put("noDatetimeStringSync", "true");
-        jdbcUrlParams.put("allowLoadLocalInfile", "false");
         jdbcUrlParams.put("jdbcCompliantTruncation", "false");
 
         // TODO: set sendConnectionAttributes while upgrade oceanbase-client to v2.2.10
@@ -160,6 +159,9 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
                 jdbcUrlParams.put(key, value.toString());
             }
         });
+        // fix arbitrary file reading vulnerability
+        jdbcUrlParams.put("allowLoadLocalInfile", "false");
+        jdbcUrlParams.put("allowUrlInLocalInfile", "false");
         return jdbcUrlParams;
     }
 
