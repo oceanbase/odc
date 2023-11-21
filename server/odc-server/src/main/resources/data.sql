@@ -328,11 +328,11 @@ VALUES ('odc.rpc.connect-timeout-seconds', '10', 'rpc 调用连接超时时间�
 INSERT INTO `config_system_configuration` (`key`, `value`, `description`)
 VALUES ('odc.rpc.read-timeout-seconds', '60', 'rpc 调用超时时间，单位为秒，默认是 60 秒') ON DUPLICATE KEY UPDATE `id`=`id`;
 INSERT INTO `config_system_configuration` (`key`, `value`, `application`, `profile`, `label`, `description`)
-VALUES ('odc.flow.async.max-upload-file-count', '500', 'odc', 'default', 'master', '异步任务最大上传文件数量，默认 500 个') ON
+VALUES ('odc.flow.async.max-upload-file-count', '100', 'odc', 'default', 'master', '异步任务最大上传文件数量，默认 100 个') ON
 DUPLICATE KEY UPDATE `id`=`id`;
 
 INSERT INTO `config_system_configuration` (`key`, `value`, `application`, `profile`, `label`, `description`)
-VALUES ('odc.flow.async.max-upload-file-total-size}', '#{256*1024*1024}', 'odc', 'default', 'master', '异步任务最大上传文件总大小，单位为字节，默认 256 MB') ON
+VALUES ('odc.flow.async.max-upload-file-total-size}', '#{32*1024*1024}', 'odc', 'default', 'master', '异步任务最大上传文件总大小，单位为字节，默认 32 MB') ON
 DUPLICATE KEY UPDATE `id`=`id`;
 
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.task.file-expire-hours', '336', '流程任务附带文件最多保留小时数，默认 336 小时，即 2 星期') ON DUPLICATE KEY UPDATE `id`=`id`;
