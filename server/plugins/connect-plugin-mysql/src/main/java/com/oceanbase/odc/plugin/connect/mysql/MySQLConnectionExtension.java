@@ -22,6 +22,8 @@ import java.sql.SQLException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Properties;
 
 import org.pf4j.Extension;
 
@@ -62,11 +64,18 @@ public class MySQLConnectionExtension extends OBMySQLConnectionExtension {
 
     @Override
     public TestResult test(String jdbcUrl, String username, String password, int queryTimeout) {
-        TestResult testResult = super.test(jdbcUrl, username, password, queryTimeout);
+        Properties properties = new Properties();
+        properties.setProperty("user", username);
+        properties.setProperty("password", Objects.isNull(password) ? "" : password);
+        // fix arbitrary file reading vulnerability
+        properties.setProperty("allowLoadLocalInfile", "false");
+        properties.setProperty("allowUrlInLocalInfile", "false");
+        properties.setProperty("allowLoadLocalInfileInPath", "");
+        TestResult testResult = test(jdbcUrl, properties, queryTimeout);
         if (testResult.getErrorCode() != null) {
             return testResult;
         }
-        try (Connection connection = DriverManager.getConnection(jdbcUrl, username, password)) {
+        try (Connection connection = DriverManager.getConnection(jdbcUrl, properties)) {
             MySQLInformationExtension informationExtension = new MySQLInformationExtension();
             String version = informationExtension.getDBVersion(connection);
             if (VersionUtils.isLessThan(version, MIN_VERSION_SUPPORTED)) {
