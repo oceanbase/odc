@@ -220,12 +220,7 @@ public class ConnectConsoleService {
                     LimitMetric.SQL_STATEMENT_COUNT, sqls.size(), maxSqlStatementCount);
         }
 
-        List<SqlTuple> sqlTuples;
-        if (sessionProperties.isAddInternalRowId()) {
-            sqlTuples = generateSqlTuple(sqls, connectionSession, request);
-        } else {
-            sqlTuples = sqls.stream().map(SqlTuple::newTuple).collect(Collectors.toList());
-        }
+        List<SqlTuple> sqlTuples = generateSqlTuple(sqls, connectionSession, request);
         SqlAsyncExecuteResp response = SqlAsyncExecuteResp.newSqlAsyncExecuteResp(sqlTuples);
         Map<String, Object> context = new HashMap<>();
         context.put(SHOW_TABLE_COLUMN_INFO, request.getShowTableColumnInfo());
@@ -402,6 +397,7 @@ public class ConnectConsoleService {
             }
             if (Objects.isNull(request.getQueryLimit())
                     || !request.ifAddROWID()
+                    || !sessionProperties.isAddInternalRowId()
                     || session.getDialectType() != DialectType.OB_ORACLE) {
                 return target;
             }
