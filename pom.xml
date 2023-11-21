@@ -136,7 +136,7 @@
         <mysql.jdbc.version>8.0.30</mysql.jdbc.version>
 
         <micrometer-core.version>1.8.0</micrometer-core.version>
-        <io.kubernetes.client-java>18.0.0</io.kubernetes.client-java>
+        <kubernetes-client.version>18.0.0</kubernetes-client.version>
     </properties>
 
     <dependencyManagement>
@@ -1085,7 +1085,7 @@
             <dependency>
                 <groupId>io.kubernetes</groupId>
                 <artifactId>client-java</artifactId>
-                <version>${io.kubernetes.client-java}</version>
+                <version>${kubernetes-client.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
