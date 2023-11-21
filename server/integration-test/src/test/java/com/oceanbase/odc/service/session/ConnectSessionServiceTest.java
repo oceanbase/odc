@@ -46,9 +46,11 @@ import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.ConnectionTesting;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.model.ConnectionTestResult;
+import com.oceanbase.odc.service.connection.model.CreateSessionReq;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.auth.AuthorizationFacade;
 import com.oceanbase.odc.service.iam.model.User;
+import com.oceanbase.odc.service.session.factory.DefaultConnectSessionIdGenerator;
 
 /**
  * Test cases for {@link ConnectConsoleService}
@@ -155,10 +157,15 @@ public class ConnectSessionServiceTest extends AuthorityTestEnv {
 
     @Test
     public void testGetSession_nullGetted() {
-        String sessionId = "12223";
+        DefaultConnectSessionIdGenerator idGenerator = new DefaultConnectSessionIdGenerator();
+        CreateSessionReq req = new CreateSessionReq();
+        req.setDsId(123456L);
+        req.setDbId(654321L);
+        req.setRealId("realId");
+        String sessionId = idGenerator.generateId(req);
         thrown.expect(NotFoundException.class);
         thrown.expectMessage("ODC_SESSION not found by ID=" + sessionId);
-        sessionService.nullSafeGet(sessionId);
+        sessionService.nullSafeGet(sessionId, false);
     }
 
     @Test
