@@ -17,8 +17,8 @@
 package com.oceanbase.odc.service.task.caller;
 
 import com.oceanbase.odc.common.json.JsonUtils;
-import com.oceanbase.odc.core.task.JobEnvConstants;
 import com.oceanbase.odc.core.task.context.JobContext;
+import com.oceanbase.odc.core.task.context.JobEnvConstants;
 
 /**
  * @author yaobin

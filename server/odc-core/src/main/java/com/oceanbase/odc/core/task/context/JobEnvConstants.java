@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.core.task;
+package com.oceanbase.odc.core.task.context;
 
 /**
  * @author yaobin
