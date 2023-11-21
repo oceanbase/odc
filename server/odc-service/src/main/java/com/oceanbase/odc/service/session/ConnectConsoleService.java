@@ -231,7 +231,7 @@ public class ConnectConsoleService {
         context.put(SHOW_TABLE_COLUMN_INFO, request.getShowTableColumnInfo());
         context.put(SqlCheckInterceptor.NEED_SQL_CHECK_KEY, needSqlCheck);
         List<TraceStage> stages = sqlTuples.stream()
-                .map(s -> s.getSqlWatch().start(SqlExecuteStages.SQL_INTERCEPT_PRE_CHECK))
+                .map(s -> s.getSqlWatch().start(SqlExecuteStages.SQL_PRE_CHECK))
                 .collect(Collectors.toList());
         try {
             if (!sqlInterceptService.preHandle(request, response, connectionSession, context)) {
@@ -279,8 +279,7 @@ public class ConnectConsoleService {
             return resultList.stream().map(jdbcGeneralResult -> {
                 Map<String, Object> cxt = context == null ? new HashMap<>() : context;
                 SqlExecuteResult result = generateResult(connectionSession, jdbcGeneralResult, cxt);
-                try (TraceStage stage = result.getSqlTuple().getSqlWatch()
-                        .start(SqlExecuteStages.SQL_INTERCEPT_AFTER_CHECK)) {
+                try (TraceStage stage = result.getSqlTuple().getSqlWatch().start(SqlExecuteStages.SQL_AFTER_CHECK)) {
                     sqlInterceptService.afterCompletion(result, connectionSession, cxt);
                 } catch (Exception e) {
                     throw new IllegalStateException(e);
