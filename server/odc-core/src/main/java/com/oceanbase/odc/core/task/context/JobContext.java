@@ -18,8 +18,6 @@ package com.oceanbase.odc.core.task.context;
 
 import java.util.List;
 
-import com.oceanbase.odc.core.session.ConnectionConfig;
-
 import lombok.Data;
 
 /**
@@ -40,9 +38,9 @@ public class JobContext {
      */
     private TaskParam taskParam;
     /**
-     * connection config information
+     * task connection config
      */
-    private ConnectionConfig connectionConfig;
+    private TaskConnectionConfig connConfig;
     /**
      * odc server host properties
      */

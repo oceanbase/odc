@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.core.session;
+package com.oceanbase.odc.core.task.context;
 
 /**
  * @author yaobin
  * @date 2023-11-15
  * @since 4.2.4
  */
-public class ConnectionConfig {
+public class TaskConnectionConfig {
 }
