@@ -16,6 +16,7 @@
 
 package com.oceanbase.odc.core.task.context;
 
+import java.io.Serializable;
 import java.util.List;
 
 import lombok.Data;
@@ -27,7 +28,7 @@ import lombok.Data;
  */
 
 @Data
-public class JobContext {
+public class JobContext implements Serializable {
 
     /**
      * task id

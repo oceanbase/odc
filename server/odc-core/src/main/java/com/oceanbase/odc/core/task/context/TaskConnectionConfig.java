@@ -16,10 +16,12 @@
 
 package com.oceanbase.odc.core.task.context;
 
+import java.io.Serializable;
+
 /**
  * @author yaobin
  * @date 2023-11-15
  * @since 4.2.4
  */
-public class TaskConnectionConfig {
+public class TaskConnectionConfig implements Serializable {
 }
