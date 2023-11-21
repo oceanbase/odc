@@ -53,6 +53,7 @@ import com.oceanbase.odc.core.authority.util.Authenticated;
 import com.oceanbase.odc.core.authority.util.PreAuthenticate;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
+import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ConnectionAccountType;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
@@ -585,22 +586,22 @@ public class DatabaseService {
         if (CollectionUtils.isEmpty(databases)) {
             return;
         }
-        if (!projectService.checkPermission(newProjectId,
-                Arrays.asList(ResourceRoleName.DBA, ResourceRoleName.OWNER))) {
-            throw new AccessDeniedException();
-        }
+        PreConditions.validArgumentState(
+                projectService.checkPermission(newProjectId,
+                        Arrays.asList(ResourceRoleName.DBA, ResourceRoleName.OWNER)),
+                ErrorCodes.AccessDenied, null, "Only project's OWNER/DBA can transfer databases");
         List<Long> projectIds = databases.stream().map(DatabaseEntity::getProjectId).collect(Collectors.toList());
         List<Long> connectionIds = databases.stream().map(DatabaseEntity::getConnectionId).collect(Collectors.toList());
-        if (!projectService.checkPermission(projectIds, Arrays.asList(ResourceRoleName.DBA, ResourceRoleName.OWNER)) ||
-                !connectionService.checkPermission(connectionIds, Collections.singletonList("update"))) {
-            // Current user should be source project's OWNER/DBA, and have update permission on datasources
-            throw new AccessDeniedException();
-        }
+        PreConditions.validArgumentState(
+                projectService.checkPermission(projectIds, Arrays.asList(ResourceRoleName.DBA, ResourceRoleName.OWNER)),
+                ErrorCodes.AccessDenied, null, "Only project's OWNER/DBA can transfer databases");
+        PreConditions.validArgumentState(
+                connectionService.checkPermission(connectionIds, Collections.singletonList("update")),
+                ErrorCodes.AccessDenied, null, "Lack of update permission on current datasource");
         List<ConnectionConfig> connections = connectionService.innerListByIds(connectionIds);
         connections.forEach(c -> {
-            if (c.getProjectId() != null) {
-                throw new AccessDeniedException();
-            }
+            PreConditions.validArgumentState(c.getProjectId() == null, ErrorCodes.AccessDenied, null,
+                    "Cannot transfer databases in datasource which is bound to project");
         });
     }
 

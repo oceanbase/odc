@@ -131,7 +131,7 @@ public class ProjectService {
     @SkipAuthorize("odc internal usage")
     @Transactional(rollbackFor = Exception.class)
     public void createProjectIfNotExists(@NotNull User user) {
-        String projectName = user.getAccountName();
+        String projectName = "USER_PROJECT_" + user.getAccountName();
         if (repository.findByNameAndOrganizationId(projectName, user.getOrganizationId()).isPresent()) {
             return;
         }
