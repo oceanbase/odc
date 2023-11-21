@@ -47,7 +47,7 @@ import com.oceanbase.tools.loaddump.common.enums.ObjectType;
 
 public class TransferJobFactory {
     private static final Pattern DATA_FILE_PATTERN =
-            Pattern.compile("^\"?([^\\-\\.]+)\"?(\\.[0-9]+){0,2}\\.(sql|csv|dat|txt)$", Pattern.CASE_INSENSITIVE);
+            Pattern.compile("^\"?(.+)\"?(\\.[0-9]+){0,2}\\.(sql|csv|dat|txt)$", Pattern.CASE_INSENSITIVE);
 
     private final DataTransferConfig transferConfig;
     private final File workingDir;
