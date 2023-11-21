@@ -28,13 +28,13 @@ public class JobCallerListener extends AbstractEventListener<JobCallerEvent> {
     @Override
     public void onEvent(JobCallerEvent event) {
         if (event.getJobAction() == JobCallerAction.START) {
-            if (event.isStatus()) {
+            if (event.isSuccess()) {
                 startSucceed(event.getTaskId());
             } else {
                 startFailed(event.getTaskId(), event.getEx());
             }
         } else if (event.getJobAction() == JobCallerAction.STOP) {
-            if (event.isStatus()) {
+            if (event.isSuccess()) {
                 stopSucceed(event.getTaskId());
             } else {
                 stopFailed(event.getTaskId(), event.getEx());
