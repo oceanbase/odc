@@ -13,24 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.connection.model;
+package com.oceanbase.odc.core.sql.execute;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonProperty.Access;
+import java.sql.Connection;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.NonNull;
 
 /**
- * Request for connection verify
- *
- * @author yh263208
- * @date 2021-09-03 17:51
- * @since ODC_release_3.2.0
+ * @author yaobin
+ * @date 2023-04-25
+ * @since 4.2.0
  */
-public class VerifyConnectionConfigReq extends ConnectionConfig {
-    @Getter
-    @Setter
-    @JsonProperty(access = Access.READ_WRITE)
-    private Long id;
+public interface SessionOperations {
+
+    String getConnectionId(@NonNull Connection connection);
+
+    void killQuery(@NonNull Connection connection, @NonNull String connectionId);
+
 }

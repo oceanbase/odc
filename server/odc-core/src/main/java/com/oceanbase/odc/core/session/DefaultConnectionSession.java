@@ -34,9 +34,9 @@ import com.oceanbase.odc.core.datasource.DataSourceFactory;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.sql.execute.AsyncJdbcExecutor;
-import com.oceanbase.odc.core.sql.execute.ConnectionExtensionExecutor;
 import com.oceanbase.odc.core.sql.execute.GeneralAsyncJdbcExecutor;
 import com.oceanbase.odc.core.sql.execute.GeneralSyncJdbcExecutor;
+import com.oceanbase.odc.core.sql.execute.SessionOperations;
 import com.oceanbase.odc.core.sql.execute.SyncJdbcExecutor;
 import com.oceanbase.odc.core.sql.execute.cache.BinaryDataManager;
 import com.oceanbase.odc.core.sql.execute.cache.FileBaseBinaryDataManager;
@@ -70,18 +70,18 @@ public class DefaultConnectionSession implements ConnectionSession {
     private final long sessionTimeoutMillis;
     private final Map<Object, Object> attributes;
     private final TaskManagerWrapper taskManagerWrapper;
+    private final SessionOperations sessionOperations;
 
     private Date lastAccessTime;
     private boolean expired = false;
     private Date expiredTime;
     private BinaryDataManager dataManager;
-    private ConnectionExtensionExecutor extensionExecutor;
 
-    public DefaultConnectionSession(@NonNull ConnectionSessionIdGenerator idGenerator,
+    public DefaultConnectionSession(@NonNull String id,
             TaskManagerFactory<SqlExecuteTaskManager> taskManagerFactory, long sessionTimeoutMillis,
             @NonNull ConnectType connectType, boolean defaultAutoCommit,
-            @NonNull ConnectionExtensionExecutor extensionExecutor) throws IOException {
-        this.id = idGenerator.generateId();
+            @NonNull SessionOperations sessionOperations) throws IOException {
+        this.id = id;
         this.connectType = connectType;
         this.defaultAutoCommit = defaultAutoCommit;
         long timestamp = System.currentTimeMillis();
@@ -97,7 +97,7 @@ public class DefaultConnectionSession implements ConnectionSession {
         this.attributes = new HashMap<>();
         this.dataSourceWrapperMap = new HashMap<>();
         initBinaryDataManager();
-        this.extensionExecutor = extensionExecutor;
+        this.sessionOperations = sessionOperations;
     }
 
     @Override
@@ -222,7 +222,7 @@ public class DefaultConnectionSession implements ConnectionSession {
         SqlExecuteTaskManager taskManager = this.taskManagerWrapper.getOrCreateTaskManager();
         CloneableDataSourceFactory dataSourceFactory = (CloneableDataSourceFactory) factory;
         return new GeneralAsyncJdbcExecutor(wrapper.getOrCreateDataSource(), dataSourceFactory,
-                taskManager, extensionExecutor);
+                taskManager, sessionOperations);
     }
 
     private DataSourceWrapper getDataSourceWrapper(@NonNull String dataSourceName) {

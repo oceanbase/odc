@@ -89,8 +89,7 @@ public class GeneralAsyncJdbcExecutorTest {
         SqlExecuteTaskManager taskManager =
                 new DefaultSqlExecuteTaskManager(3,
                         "GeneralAsyncJdbcExecutor", 10, TimeUnit.SECONDS);
-        return new GeneralAsyncJdbcExecutor(dataSource, dataSourceFactory, taskManager,
-                new TestConnectionExtensionExecutor(DialectType.OB_MYSQL));
+        return new GeneralAsyncJdbcExecutor(dataSource, dataSourceFactory, taskManager, new TestSessionOperations());
     }
 
 }

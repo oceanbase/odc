@@ -62,7 +62,6 @@ public enum FlowNodeStatus {
      */
     FAILED;
 
-
     public static Set<FlowNodeStatus> getExecutingStatuses() {
         return new HashSet<>(Arrays.asList(FlowNodeStatus.EXECUTING, FlowNodeStatus.WAIT_FOR_CONFIRM));
     }

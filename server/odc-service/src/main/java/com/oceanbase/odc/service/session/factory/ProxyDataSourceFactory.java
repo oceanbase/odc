@@ -22,6 +22,7 @@ import javax.sql.DataSource;
 import com.oceanbase.odc.core.datasource.CloneableDataSourceFactory;
 import com.oceanbase.odc.core.datasource.ConnectionInitializer;
 import com.oceanbase.odc.core.datasource.ProxyDataSource;
+import com.oceanbase.odc.core.shared.constant.DialectType;
 
 import lombok.NonNull;
 import lombok.Setter;
@@ -34,6 +35,7 @@ import lombok.Setter;
  * @since ODC_release_3.3.0
  */
 public class ProxyDataSourceFactory implements CloneableDataSourceFactory {
+
     @Setter
     private ConnectionInitializer initializer;
     private final CloneableDataSourceFactory dataSourceFactory;
@@ -51,6 +53,11 @@ public class ProxyDataSourceFactory implements CloneableDataSourceFactory {
         ProxyDataSource proxyDataSource = new ProxyDataSource(target);
         proxyDataSource.setInitializer(initializer);
         return proxyDataSource;
+    }
+
+    @Override
+    public DialectType getDialectType() {
+        return this.dataSourceFactory.getDialectType();
     }
 
     @Override

@@ -17,6 +17,8 @@ package com.oceanbase.odc.core.datasource;
 
 import javax.sql.DataSource;
 
+import com.oceanbase.odc.core.shared.constant.DialectType;
+
 /**
  * Data source factory class, used to generate {@link javax.sql.DataSource} The factory class
  * initializes the data source object according to the initial configuration passed in by the user.
@@ -33,5 +35,7 @@ public interface DataSourceFactory {
      * @return {@link DataSource}
      */
     DataSource getDataSource();
+
+    DialectType getDialectType();
 
 }

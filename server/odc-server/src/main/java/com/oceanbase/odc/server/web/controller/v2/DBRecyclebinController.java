@@ -55,27 +55,27 @@ public class DBRecyclebinController {
     @ApiOperation(value = "list", notes = "查看回收站对象列表，sid示例：sid:1000-1:d:db1")
     @RequestMapping(value = "/list/{sid:.*}", method = RequestMethod.GET)
     public SuccessResponse<List<DBRecycleObject>> list(@PathVariable String sid) {
-        return Responses.ok(recyclebinService.list(sessionService.nullSafeGet(SidUtils.getSessionId(sid))));
+        return Responses.ok(recyclebinService.list(sessionService.nullSafeGet(SidUtils.getSessionId(sid), true)));
     }
 
     @ApiOperation(value = "purgeObject", notes = "purge a specific db object")
     @RequestMapping(value = "/purge/{sid:.*}", method = RequestMethod.POST)
     public SuccessResponse<Boolean> purgeObject(@PathVariable String sid, @RequestBody List<DBRecycleObject> resource) {
-        recyclebinService.purgeObject(sessionService.nullSafeGet(SidUtils.getSessionId(sid)), resource);
+        recyclebinService.purgeObject(sessionService.nullSafeGet(SidUtils.getSessionId(sid), true), resource);
         return Responses.ok(Boolean.TRUE);
     }
 
     @ApiOperation(value = "purgeAllObjects", notes = "purge all specific db objects")
     @RequestMapping(value = "/purgeAll/{sid:.*}", method = RequestMethod.POST)
     public SuccessResponse<Boolean> purgeAllObjects(@PathVariable String sid) {
-        recyclebinService.purgeAllObjects(sessionService.nullSafeGet(SidUtils.getSessionId(sid)));
+        recyclebinService.purgeAllObjects(sessionService.nullSafeGet(SidUtils.getSessionId(sid), true));
         return Responses.ok(Boolean.TRUE);
     }
 
     @ApiOperation(value = "flashback", notes = "flaskback db objects")
     @RequestMapping(value = "/flashback/{sid:.*}", method = RequestMethod.POST)
     public SuccessResponse<Boolean> flashback(@PathVariable String sid, @RequestBody List<DBRecycleObject> resource) {
-        recyclebinService.flashback(sessionService.nullSafeGet(SidUtils.getSessionId(sid)), resource);
+        recyclebinService.flashback(sessionService.nullSafeGet(SidUtils.getSessionId(sid), true), resource);
         return Responses.ok(Boolean.TRUE);
     }
 
@@ -83,20 +83,21 @@ public class DBRecyclebinController {
     @RequestMapping(value = "/getExpireTime/{sid}", method = RequestMethod.GET)
     public SuccessResponse<String> getExpireTime(@PathVariable String sid) {
         return Responses.ok(recyclebinSettingsService.getExpireTime(
-                sessionService.nullSafeGet(SidUtils.getSessionId(sid))));
+                sessionService.nullSafeGet(SidUtils.getSessionId(sid), true)));
     }
 
     @ApiOperation(value = "getRecyclebinSettings", notes = "查看回收站设置，sid示例：sid:1000-1:d:db1")
     @RequestMapping(value = "/settings/{sid}", method = RequestMethod.GET)
     public SuccessResponse<RecyclebinSettings> getRecyclebinSettings(@PathVariable String sid) {
-        return Responses.ok(recyclebinSettingsService.get(sessionService.nullSafeGet(SidUtils.getSessionId(sid))));
+        return Responses.ok(recyclebinSettingsService.get(
+                sessionService.nullSafeGet(SidUtils.getSessionId(sid), true)));
     }
 
     @ApiOperation(value = "updateRecyclebinSettings", notes = "更新回收站设置，sid示例：sid:1000-1:d:db1")
     @RequestMapping(value = "/settings", method = RequestMethod.PATCH)
     public SuccessResponse<RecyclebinSettings> updateRecyclebinSettings(@RequestBody UpdateRecyclebinSettingsReq req) {
         List<ConnectionSession> sessions = req.getSessionIds().stream().map(s -> {
-            return sessionService.nullSafeGet(s);
+            return sessionService.nullSafeGet(s, true);
         }).collect(Collectors.toList());
         return Responses.ok(recyclebinSettingsService.update(sessions, req.getSettings()));
     }

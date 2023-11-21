@@ -48,22 +48,24 @@ public class DBPackageController {
     public OdcResult<List<DBPackage>> list(@PathVariable String sid) {
         // sid:1-1:d:database
         ResourceIdentifier i = ResourceIDParser.parse(sid);
-        return OdcResult.ok(packageService.list(sessionService.nullSafeGet(i.getSid()), i.getDatabase()));
+        return OdcResult.ok(packageService.list(
+                sessionService.nullSafeGet(i.getSid(), true), i.getDatabase()));
     }
 
     @ApiOperation(value = "detail", notes = "查看package的详细信息，sid示例：sid:1000-1:d:db1:pkg:pkg_test")
     @RequestMapping(value = "/{sid:.*}", method = RequestMethod.GET)
     public OdcResult<DBPackage> detail(@PathVariable String sid) {
         ResourceIdentifier i = ResourceIDParser.parse(sid);
-        return OdcResult.ok(packageService.detail(sessionService.nullSafeGet(i.getSid()), i.getDatabase(), i.getPkg()));
+        return OdcResult.ok(packageService.detail(
+                sessionService.nullSafeGet(i.getSid(), true), i.getDatabase(), i.getPkg()));
     }
 
 
     @ApiOperation(value = "getCreateSql", notes = "获取创建package的sql，sid示例：sid:1000-1:d:db1:pkg:pkg_test")
     @RequestMapping(value = "/getCreateSql/{sid:.*}", method = RequestMethod.PATCH)
     public OdcResult<ResourceSql> getCreateSql(@PathVariable String sid, @RequestBody DBPackage resource) {
-        return OdcResult
-                .ok(packageService.getCreateSql(sessionService.nullSafeGet(SidUtils.getSessionId(sid)), resource));
+        return OdcResult.ok(packageService.getCreateSql(
+                sessionService.nullSafeGet(SidUtils.getSessionId(sid), true), resource));
     }
 
 }
