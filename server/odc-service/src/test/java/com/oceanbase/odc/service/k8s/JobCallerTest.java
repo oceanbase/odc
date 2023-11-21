@@ -46,7 +46,7 @@ public class JobCallerTest extends BaseJobTest {
         podConfig.setCommand(getCmd());
         podConfig.setNamespace("default");
 
-        JobCaller jobCaller = new K8sJobCaller(getK8sClient(), podConfig);
+        JobCaller jobCaller = new K8sJobCaller(getK8sJobClient(), podConfig);
         jobCaller.getEventPublish().addEventListener(new JobCallerListener() {
             @Override
             protected void startSucceed(Long taskId) {
@@ -73,7 +73,7 @@ public class JobCallerTest extends BaseJobTest {
         podConfig.setCommand(getCmd());
         podConfig.setNamespace("default");
 
-        JobCaller jobCaller = new K8sJobCaller(getK8sClient(), podConfig);
+        JobCaller jobCaller = new K8sJobCaller(getK8sJobClient(), podConfig);
         jobCaller.getEventPublish().addEventListener(new JobCallerListener() {
             @Override
             protected void startFailed(Long taskId, Exception ex) {
@@ -85,7 +85,7 @@ public class JobCallerTest extends BaseJobTest {
         JobContext context = new JobContext();
         context.setTaskId(exceptedTaskId);
         jobCaller.start(context);
-        // double start some task
+        // double start same task
         try {
             jobCaller.start(context);
         } catch (Exception ex) {
