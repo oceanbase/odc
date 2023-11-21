@@ -153,7 +153,7 @@ public class AuditEventService {
         if (Objects.equals(auditEvent.getUserId(), authenticationFacade.currentUserId())) {
             return auditEvent;
         }
-        if (authenticationFacade.currentOrganizationId() != auditEvent.getOrganizationId().longValue()) {
+        if (authenticationFacade.currentOrganizationId() != auditEvent.getOrganizationId()) {
             throw new NotFoundException(ResourceType.ODC_AUDIT_EVENT, "id", id);
         }
         Permission requiredPermission = securityManager.getPermissionByActions(

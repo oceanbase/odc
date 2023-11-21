@@ -47,7 +47,7 @@ public class DBSequenceController {
     @RequestMapping(value = "/list/{sid:.*}", method = RequestMethod.GET)
     public OdcResult<List<DBSequence>> list(@PathVariable String sid) {
         ResourceIdentifier i = ResourceIDParser.parse(sid);
-        return OdcResult.ok(sequenceService.list(sessionService.nullSafeGet(i.getSid()), i.getDatabase()));
+        return OdcResult.ok(sequenceService.list(sessionService.nullSafeGet(i.getSid(), true), i.getDatabase()));
     }
 
     @ApiOperation(value = "detail", notes = "查看sequence的详细信息，sid示例：sid:1000-1:d:db1:s:seq1")
@@ -55,15 +55,15 @@ public class DBSequenceController {
     public OdcResult<DBSequence> detail(@PathVariable String sid) {
         // parse sid and sequence name, sid:1-1:d:database:s:s1
         ResourceIdentifier i = ResourceIDParser.parse(sid);
-        return OdcResult.ok(sequenceService.detail(sessionService.nullSafeGet(i.getSid()),
-                i.getDatabase(), i.getSequence()));
+        return OdcResult.ok(sequenceService.detail(
+                sessionService.nullSafeGet(i.getSid(), true), i.getDatabase(), i.getSequence()));
     }
 
     @ApiOperation(value = "getCreateSql", notes = "获取创建sequence的sql，sid示例：sid:1000-1:d:db1:s:s1")
     @RequestMapping(value = "/getCreateSql/{sid:.*}", method = RequestMethod.PATCH)
     public OdcResult<ResourceSql> getCreateSql(@PathVariable String sid, @RequestBody DBSequence resource) {
-        return OdcResult
-                .ok(sequenceService.getCreateSql(sessionService.nullSafeGet(SidUtils.getSessionId(sid)), resource));
+        return OdcResult.ok(sequenceService.getCreateSql(
+                sessionService.nullSafeGet(SidUtils.getSessionId(sid), true), resource));
     }
 
     @ApiOperation(value = "getUpdateSql", notes = "获取修改sequence的sql，sid示例：sid:1000-1:d:db1:s:s1")
@@ -71,7 +71,7 @@ public class DBSequenceController {
     public OdcResult<ResourceSql> getUpdateSql(@PathVariable String sid, @RequestBody DBSequence resource) {
         ResourceIdentifier i = ResourceIDParser.parse(sid);
         resource.setName(i.getSequence());
-        return OdcResult.ok(sequenceService.getUpdateSql(sessionService.nullSafeGet(i.getSid()), resource));
+        return OdcResult.ok(sequenceService.getUpdateSql(sessionService.nullSafeGet(i.getSid(), true), resource));
     }
 
 }

@@ -218,7 +218,7 @@ public class WebSocketServer {
         ConnectionSession connectionSession = sessionService.nullSafeGet(SidUtils.getSessionId(resourceId));
         boolean supportSetGBK = isSupportSetGBK(connectionSession);
         String schema = MoreObjects.firstNonNull(ConnectionSessionUtil.getCurrentSchema(connectionSession),
-                connectionConfig.defaultSchema());
+                connectionConfig.getDefaultSchema());
 
         String[] cmds = generateCmd(connectionConfig, supportSetGBK, schema);
 

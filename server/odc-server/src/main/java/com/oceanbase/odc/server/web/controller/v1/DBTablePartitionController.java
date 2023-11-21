@@ -45,7 +45,7 @@ public class DBTablePartitionController {
     @RequestMapping(value = "/list/{sid:.*}", method = RequestMethod.GET)
     public OdcResult<List<DBTablePartitionResponse>> list(@PathVariable String sid) {
         ResourceIdentifier i = ResourceIDParser.parse(sid);
-        return OdcResult.ok(partitionService.list(sessionService.nullSafeGet(i.getSid()), i.getTable()));
+        return OdcResult.ok(partitionService.list(sessionService.nullSafeGet(i.getSid(), true), i.getTable()));
     }
 
 }

@@ -59,7 +59,6 @@ import com.oceanbase.odc.ServiceTestEnv;
 import com.oceanbase.odc.TestConnectionUtil;
 import com.oceanbase.odc.core.datasource.DataSourceFactory;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
-import com.oceanbase.odc.core.shared.constant.ConnectionAccountType;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.TaskType;
@@ -391,7 +390,7 @@ public class DataTransferServiceTest extends ServiceTestEnv {
     }
 
     private void assertTableCountEquals(ConnectionConfig connectionConfig, int count) throws SQLException {
-        DataSourceFactory factory = new DruidDataSourceFactory(connectionConfig, ConnectionAccountType.MAIN);
+        DataSourceFactory factory = new DruidDataSourceFactory(connectionConfig);
         DataSource dataSource = factory.getDataSource();
         try (Connection connection = dataSource.getConnection()) {
             String sql = "SELECT COUNT(1) FROM " + TEST_TABLE_NAME;
@@ -407,7 +406,7 @@ public class DataTransferServiceTest extends ServiceTestEnv {
     }
 
     private void assertTableExists(ConnectionConfig connectionConfig) throws SQLException {
-        DataSourceFactory factory = new DruidDataSourceFactory(connectionConfig, ConnectionAccountType.MAIN);
+        DataSourceFactory factory = new DruidDataSourceFactory(connectionConfig);
         DataSource dataSource = factory.getDataSource();
         try (Connection connection = dataSource.getConnection()) {
             String sql = "SELECT COUNT(1) FROM " + TEST_TABLE_NAME;
@@ -422,7 +421,7 @@ public class DataTransferServiceTest extends ServiceTestEnv {
     }
 
     private void assertTableNotExists(ConnectionConfig connectionConfig) throws SQLException {
-        DataSourceFactory factory = new DruidDataSourceFactory(connectionConfig, ConnectionAccountType.MAIN);
+        DataSourceFactory factory = new DruidDataSourceFactory(connectionConfig);
         DataSource dataSource = factory.getDataSource();
         try (Connection connection = dataSource.getConnection()) {
             String sql = "SELECT COUNT(1) FROM " + TEST_TABLE_NAME;
@@ -477,7 +476,7 @@ public class DataTransferServiceTest extends ServiceTestEnv {
     }
 
     private void setUpEnv(ConnectionConfig connectionConfig) throws Exception {
-        DataSourceFactory factory = new DruidDataSourceFactory(connectionConfig, ConnectionAccountType.MAIN);
+        DataSourceFactory factory = new DruidDataSourceFactory(connectionConfig);
         DataSource dataSource = factory.getDataSource();
         try (Connection connection = dataSource.getConnection()) {
             String create = "CREATE TABLE " + TEST_TABLE_NAME + "(COL1 varchar(64), COL2 varchar(64))";
@@ -496,7 +495,7 @@ public class DataTransferServiceTest extends ServiceTestEnv {
     }
 
     private void clearEnv(ConnectionConfig connectionConfig) throws Exception {
-        DataSourceFactory factory = new DruidDataSourceFactory(connectionConfig, ConnectionAccountType.MAIN);
+        DataSourceFactory factory = new DruidDataSourceFactory(connectionConfig);
         DataSource dataSource = factory.getDataSource();
         try (Connection connection = dataSource.getConnection()) {
             String drop = "DROP TABLE " + TEST_TABLE_NAME;

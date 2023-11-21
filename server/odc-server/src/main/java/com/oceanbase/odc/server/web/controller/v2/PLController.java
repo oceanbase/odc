@@ -52,7 +52,7 @@ public class PLController {
     public SuccessResponse<String> startBatchCompile(@PathVariable String sessionId,
             @PathVariable(required = false) String databaseName, @RequestBody StartBatchCompileReq req) {
         String sid = SidUtils.getSessionId(sessionId);
-        return Responses.success(plService.startBatchCompile(sessionService.nullSafeGet(sid), databaseName, req));
+        return Responses.success(plService.startBatchCompile(sessionService.nullSafeGet(sid, true), databaseName, req));
     }
 
     @ApiOperation(value = "end batchCompile", notes = "终止批量编译")

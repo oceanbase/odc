@@ -48,7 +48,7 @@ public class ConnectionConfigTest {
         connection.setType(ConnectType.OB_ORACLE);
         connection.setUsername("user1");
 
-        String defaultSchema = connection.defaultSchema();
+        String defaultSchema = connection.getDefaultSchema();
 
         Assert.assertEquals("USER1", defaultSchema);
     }
@@ -59,7 +59,7 @@ public class ConnectionConfigTest {
         connection.setType(ConnectType.OB_ORACLE);
         connection.setUsername("\"user1\"");
 
-        String defaultSchema = connection.defaultSchema();
+        String defaultSchema = connection.getDefaultSchema();
 
         Assert.assertEquals("user1", defaultSchema);
     }
@@ -71,7 +71,7 @@ public class ConnectionConfigTest {
         connection.setDefaultSchema(null);
         connection.setUsername("\"user1\"");
 
-        String defaultSchema = connection.defaultSchema();
+        String defaultSchema = connection.getDefaultSchema();
 
         Assert.assertEquals("user1", defaultSchema);
     }
@@ -82,7 +82,7 @@ public class ConnectionConfigTest {
         connection.setType(ConnectType.OB_MYSQL);
         connection.setDefaultSchema("user1");
 
-        String defaultSchema = connection.defaultSchema();
+        String defaultSchema = connection.getDefaultSchema();
 
         Assert.assertEquals("user1", defaultSchema);
     }

@@ -41,20 +41,20 @@ public abstract class BaseSqlExecuteCallable<T> implements SqlExecuteCallable<T>
     private final CloneableDataSourceFactory dataSourceFactory;
     private final DataSource dataSource;
     private final ConnectionIdSupplier connectionIdSupplier = new ConnectionIdSupplier();
-    private final ConnectionExtensionExecutor extensionExecutor;
+    private final SessionOperations sessionOperations;
 
     public BaseSqlExecuteCallable(@NonNull DataSource dataSource,
             @NonNull CloneableDataSourceFactory dataSourceFactory,
-            @NonNull ConnectionExtensionExecutor extensionExecutor) {
+            @NonNull SessionOperations sessionOperations) {
         this.dataSource = dataSource;
         this.dataSourceFactory = dataSourceFactory;
-        this.extensionExecutor = extensionExecutor;
+        this.sessionOperations = sessionOperations;
     }
 
     @Override
     public T call() throws Exception {
         try (Connection connection = this.dataSource.getConnection()) {
-            this.connectionIdSupplier.supply(() -> extensionExecutor.getConnectionIdFunction().apply(connection));
+            this.connectionIdSupplier.supply(() -> sessionOperations.getConnectionId(connection));
             Verify.notNull(this.connectionIdSupplier.get(), "ConnectionId");
             return doCall(connection);
         }
@@ -71,15 +71,14 @@ public abstract class BaseSqlExecuteCallable<T> implements SqlExecuteCallable<T>
     }
 
     @Override
-    public ConnectionExtensionExecutor getExtensionExecutor() {
-        return this.extensionExecutor;
+    public SessionOperations getSessionOperations() {
+        return this.sessionOperations;
     }
 
     @Override
     public CloneableDataSourceFactory getDataSourceFactory() {
         return this.dataSourceFactory;
     }
-
 
     /**
      * {@link ConnectionIdSupplier} to hold connection id

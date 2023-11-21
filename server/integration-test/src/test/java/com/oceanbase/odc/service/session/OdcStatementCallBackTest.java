@@ -43,7 +43,7 @@ import com.oceanbase.odc.core.sql.execute.model.SqlExecuteStatus;
 import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
 import com.oceanbase.odc.core.sql.execute.task.DefaultSqlExecuteTaskManager;
 import com.oceanbase.odc.core.sql.execute.task.SqlExecuteTaskManager;
-import com.oceanbase.odc.service.connection.util.DefaultConnectionExtensionExecutor;
+import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 
 /**
  * Test case for {@link GeneralAsyncJdbcExecutor}
@@ -121,7 +121,7 @@ public class OdcStatementCallBackTest extends PluginTestEnv {
         SqlExecuteTaskManager taskManager =
                 new DefaultSqlExecuteTaskManager(3, "GeneralAsyncJdbcExecutor", 10, TimeUnit.SECONDS);
         return new GeneralAsyncJdbcExecutor(dataSource, dataSourceFactory, taskManager,
-                new DefaultConnectionExtensionExecutor(dialectType));
+                ConnectionPluginUtil.getSessionExtension(dialectType));
     }
 
 }

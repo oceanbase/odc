@@ -54,7 +54,6 @@ import com.oceanbase.odc.core.authority.util.PreAuthenticate;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.shared.PreConditions;
-import com.oceanbase.odc.core.shared.constant.ConnectionAccountType;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
@@ -251,8 +250,7 @@ public class DatabaseService {
                 || !connectionService.checkPermission(req.getDataSourceId(), Collections.singletonList("update"))) {
             throw new AccessDeniedException();
         }
-        DataSource dataSource = new OBConsoleDataSourceFactory(
-                connection, ConnectionAccountType.MAIN, true, false).getDataSource();
+        DataSource dataSource = new OBConsoleDataSourceFactory(connection, true, false).getDataSource();
         try (Connection conn = dataSource.getConnection()) {
             createDatabase(req, conn, connection);
             DBDatabase dbDatabase = dbSchemaService.detail(connection.getDialectType(), conn, req.getName());
@@ -374,8 +372,7 @@ public class DatabaseService {
 
     private void syncTeamDataSources(ConnectionConfig connection) {
         Long currentProjectId = connection.getProjectId();
-        DataSource teamDataSource = new OBConsoleDataSourceFactory(
-                connection, ConnectionAccountType.MAIN, true, false).getDataSource();
+        DataSource teamDataSource = new OBConsoleDataSourceFactory(connection, true, false).getDataSource();
         try (Connection conn = teamDataSource.getConnection()) {
             List<DatabaseEntity> latestDatabases = dbSchemaService.listDatabases(connection.getDialectType(), conn)
                     .stream().map(database -> {
@@ -470,8 +467,7 @@ public class DatabaseService {
     }
 
     private void syncIndividualDataSources(ConnectionConfig connection) {
-        DataSource individualDataSource = new OBConsoleDataSourceFactory(
-                connection, ConnectionAccountType.MAIN, true, false).getDataSource();
+        DataSource individualDataSource = new OBConsoleDataSourceFactory(connection, true, false).getDataSource();
         try (Connection conn = individualDataSource.getConnection()) {
             Set<String> latestDatabaseNames = dbSchemaService.showDatabases(connection.getDialectType(), conn);
             List<DatabaseEntity> existedDatabasesInDb =

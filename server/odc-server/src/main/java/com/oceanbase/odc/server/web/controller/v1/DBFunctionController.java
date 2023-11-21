@@ -47,22 +47,23 @@ public class DBFunctionController {
     @RequestMapping(value = "/list/{sid:.*}", method = RequestMethod.GET)
     public OdcResult<List<DBFunction>> list(@PathVariable String sid) {
         ResourceIdentifier i = ResourceIDParser.parse(sid);
-        return OdcResult.ok(this.functionService.list(sessionService.nullSafeGet(i.getSid()), i.getDatabase()));
+        return OdcResult.ok(this.functionService.list(
+                sessionService.nullSafeGet(i.getSid(), true), i.getDatabase()));
     }
 
     @ApiOperation(value = "detail", notes = "查看函数的详细信息，sid示例：sid:1000-1:d:db1:f:f1")
     @RequestMapping(value = "/{sid:.*}", method = RequestMethod.GET)
     public OdcResult<DBFunction> detail(@PathVariable String sid) {
         ResourceIdentifier i = ResourceIDParser.parse(sid);
-        return OdcResult
-                .ok(functionService.detail(sessionService.nullSafeGet(i.getSid()), i.getDatabase(), i.getFunction()));
+        return OdcResult.ok(functionService.detail(
+                sessionService.nullSafeGet(i.getSid(), true), i.getDatabase(), i.getFunction()));
     }
 
     @ApiOperation(value = "getCreateSql", notes = "获取创建函数的sql，sid示例：sid:1000-1:d:db1:f:f1")
     @RequestMapping(value = "/getCreateSql/{sid:.*}", method = RequestMethod.PATCH)
     public OdcResult<ResourceSql> getCreateSql(@PathVariable String sid, @RequestBody DBFunction resource) {
-        return OdcResult
-                .ok(functionService.getCreateSql(sessionService.nullSafeGet(SidUtils.getSessionId(sid)), resource));
+        return OdcResult.ok(functionService.getCreateSql(
+                sessionService.nullSafeGet(SidUtils.getSessionId(sid), true), resource));
     }
 
 }
