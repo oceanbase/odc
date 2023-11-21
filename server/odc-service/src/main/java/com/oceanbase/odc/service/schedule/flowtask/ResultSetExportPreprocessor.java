@@ -25,6 +25,8 @@ import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.TaskType;
+import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTreeFactories;
+import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTreeFactory;
 import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
@@ -68,11 +70,12 @@ public class ResultSetExportPreprocessor implements Preprocessor {
         /*
          * verify sql type
          */
-        BasicResult parseResult =
-                dialectType.isMysql() ? ParserUtil.parseMysqlType(sql) : ParserUtil.parseOracleType(sql);
-        Verify.verify(ParserUtil.getGeneralSqlType(parseResult) == GeneralSqlType.DQL,
-                "Invalid sql type, query must be DQL!");
-
+        AbstractSyntaxTreeFactory factory = AbstractSyntaxTreeFactories.getAstFactory(dialectType, 0);
+        if (factory == null) {
+            throw new UnsupportedOperationException("Unsupported dialect type, " + dialectType);
+        }
+        BasicResult r = factory.buildAst(sql).getParseResult();
+        Verify.verify(ParserUtil.getGeneralSqlType(r) == GeneralSqlType.DQL, "Invalid sql type, query must be DQL!");
     }
 
 }
