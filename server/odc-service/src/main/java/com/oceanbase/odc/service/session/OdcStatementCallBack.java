@@ -56,6 +56,7 @@ import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.shared.exception.NotImplementedException;
 import com.oceanbase.odc.core.shared.model.TraceSpan;
@@ -270,17 +271,28 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
                 }
             } while (statement.getMoreResults());
             stopWatch.stop();
-            String traceId = getTraceIdAndAndSetStage(statement, traceWatch);
+            SqlExecTime execDetails = getTraceIdAndAndSetStage(statement, traceWatch);
             try (EditableTraceStage getResultSet = traceWatch.startEditableStage(SqlExecuteStages.GET_RESULT_SET)) {
                 getResultSet.adapt(stopWatch);
             }
-            executeResults.forEach(jdbcGeneralResult -> jdbcGeneralResult.setTraceId(traceId));
+            if (execDetails != null) {
+                executeResults.forEach(jdbcGeneralResult -> {
+                    jdbcGeneralResult.setTraceId(execDetails.getTraceId());
+                    jdbcGeneralResult.setWithFullLinkTrace(execDetails.isWithFullLinkTrace());
+                    jdbcGeneralResult.setTraceEmptyReason(execDetails.getTraceEmptyReason());
+                });
+            }
         } else {
             // TODO: due to client will return -1 when call procedure
             JdbcGeneralResult executeResult = JdbcGeneralResult.successResult(sqlTuple);
             executeResult.setExistWarnings(existWarnings);
             executeResult.setAffectRows(Math.max(statement.getUpdateCount(), 0));
-            executeResult.setTraceId(getTraceIdAndAndSetStage(statement, traceWatch));
+            SqlExecTime execDetails = getTraceIdAndAndSetStage(statement, traceWatch);
+            if (execDetails != null) {
+                executeResult.setTraceId(execDetails.getTraceId());
+                executeResult.setWithFullLinkTrace(execDetails.isWithFullLinkTrace());
+                executeResult.setTraceEmptyReason(execDetails.getTraceEmptyReason());
+            }
             executeResults.add(executeResult);
         }
         // get pl log，not support for mysql mode
@@ -347,7 +359,12 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
             log.warn("Error executing SQL statement, sql={}", sqlTuple.getExecutedSql(), exception);
         }
         JdbcGeneralResult failedResult = JdbcGeneralResult.failedResult(sqlTuple, exception);
-        failedResult.setTraceId(getTraceIdAndAndSetStage(statement, sqlTuple.getSqlWatch()));
+        SqlExecTime execDetails = getTraceIdAndAndSetStage(statement, sqlTuple.getSqlWatch());
+        if (execDetails != null) {
+            failedResult.setTraceId(execDetails.getTraceId());
+            failedResult.setWithFullLinkTrace(execDetails.isWithFullLinkTrace());
+            failedResult.setTraceEmptyReason(execDetails.getTraceEmptyReason());
+        }
         return Collections.singletonList(failedResult);
     }
 
@@ -389,21 +406,30 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
         throw new FileNotFoundException("File not found " + fileName);
     }
 
-    private String getTraceIdAndAndSetStage(Statement statement, TraceWatch traceWatch) {
+    private SqlExecTime getTraceIdAndAndSetStage(Statement statement, TraceWatch traceWatch) {
         try {
             StopWatch stopWatch = StopWatch.createStarted();
             String version = ConnectionSessionUtil.getVersion(connectionSession);
-            SqlExecTime executeDetails;
+            SqlExecTime executeDetails = new SqlExecTime();;
             if (useFullLinkTrace && VersionUtils.isGreaterThanOrEqualsTo(version, "4.1") &&
                     connectionSession.getDialectType().isOceanbase()) {
-                executeDetails = FullLinkTraceUtil.getFullLinkTraceDetail(statement, fullLinkTraceTimeout);
+                try {
+                    executeDetails = FullLinkTraceUtil.getFullLinkTraceDetail(statement, fullLinkTraceTimeout);
+                    executeDetails.setWithFullLinkTrace(true);
+                } catch (Exception e) {
+                    executeDetails.setWithFullLinkTrace(false);
+                    executeDetails.setTraceEmptyReason(ErrorCodes.ObGetFullLinkTraceFailed.getLocalizedMessage(null));
+                    log.warn("Query full link trace info failed, reason={}", e.getMessage());
+                }
             } else {
                 executeDetails = ConnectionPluginUtil.getTraceExtension(connectionSession.getDialectType())
                         .getExecuteDetail(statement, version);
+                executeDetails.setWithFullLinkTrace(false);
+                executeDetails.setTraceEmptyReason(ErrorCodes.ObFullLinkTraceNotSupported.getLocalizedMessage(null));
             }
             cacheTraceSpan(executeDetails.getTraceSpan());
             setExecuteTraceStage(traceWatch, executeDetails, stopWatch);
-            return executeDetails.getTraceId();
+            return executeDetails;
         } catch (Exception ex) {
             log.warn("Query sql execute details failed, reason={}", ex.getMessage());
         }

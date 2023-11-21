@@ -61,6 +61,6 @@ public class FlowInstanceApprovalViewEntity {
     private String resourceRoleIdentifier;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false)
+    @Column(name = "approval_status", nullable = false)
     private FlowNodeStatus status;
 }

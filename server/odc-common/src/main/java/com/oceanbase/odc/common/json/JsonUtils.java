@@ -46,8 +46,9 @@ import lombok.extern.slf4j.Slf4j;
 public class JsonUtils {
 
     private static final ObjectMapper OBJECT_MAPPER = JacksonFactory.jsonMapper();
-    private static final ObjectMapper OBJECT_MAPPER_PRETTY =
-            JacksonFactory.jsonMapper().enable(SerializationFeature.INDENT_OUTPUT);
+    private static final ObjectMapper OBJECT_MAPPER_PRETTY = JacksonFactory.jsonMapper()
+            .enable(SerializationFeature.INDENT_OUTPUT)
+            .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
     private static final ObjectMapper OBJECT_MAPPER_UPPER_CAMEL_CASE = JacksonFactory.jsonMapper()
             .setPropertyNamingStrategy(PropertyNamingStrategies.UPPER_CAMEL_CASE)
             .setSerializationInclusion(Include.NON_NULL);

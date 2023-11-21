@@ -213,6 +213,7 @@ public enum ErrorCodes implements ErrorCode {
     ObInvalidPartType,
     ObPartTypeNotSupported,
     ObBasicTypeColumnRequired,
+    ObUpdateKeyRequired,
     ObProcedureExecuteRequireValueForInParam,
     ObAccessDenied,
     ObMysqlAccessDenied,
@@ -225,6 +226,8 @@ public enum ErrorCodes implements ErrorCode {
     ObGetExecuteDetailFailed,
     ObGetPlanExplainFailed,
     ObGetPlanExplainEmpty,
+    ObGetFullLinkTraceFailed,
+    ObFullLinkTraceNotSupported,
 
     ObPreCheckDdlFailed,
     ObCopySchemaFailed,

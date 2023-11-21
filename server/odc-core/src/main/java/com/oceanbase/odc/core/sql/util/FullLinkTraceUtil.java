@@ -18,7 +18,6 @@ package com.oceanbase.odc.core.sql.util;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -95,18 +94,13 @@ public class FullLinkTraceUtil {
         return execDetail;
     }
 
-    private static String findLogTraceId(Object tags) {
-        if (tags instanceof Map) {
-            if (((Map<?, ?>) tags).containsKey(TRACE_ID_KEY)) {
-                return ((Map<?, ?>) tags).get(TRACE_ID_KEY).toString();
-            }
+    private static String findLogTraceId(List<Map<String, Object>> tags) {
+        if (tags == null) {
             return null;
-        } else if (tags instanceof Collection) {
-            for (Object obj : (Collection<?>) tags) {
-                String value = findLogTraceId(obj);
-                if (value != null) {
-                    return value;
-                }
+        }
+        for (Map<String, Object> tag : tags) {
+            if (tag.containsKey(TRACE_ID_KEY)) {
+                return (String) tag.get(TRACE_ID_KEY);
             }
         }
         return null;

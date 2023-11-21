@@ -308,7 +308,7 @@ public class DataTransferServiceTest extends ServiceTestEnv {
         UploadFileResult expect = new UploadFileResult();
         expect.setFormat(DataFormat.SQL);
         expect.setFileType("ZIP");
-        expect.setFileName(target.getName());
+        expect.setFileName(target.getAbsolutePath());
         expect.setContainsData(true);
         expect.setContainsSchema(true);
         Map<ObjectType, Set<String>> importFileNames = new HashMap<>();

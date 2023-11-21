@@ -33,5 +33,7 @@ public class SqlExecTime {
 
     // 链路信息
     private TraceSpan traceSpan;
+    private boolean withFullLinkTrace;
+    private String traceEmptyReason;
 }
 

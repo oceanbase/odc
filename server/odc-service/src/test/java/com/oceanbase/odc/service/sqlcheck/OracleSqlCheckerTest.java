@@ -1061,7 +1061,7 @@ public class OracleSqlCheckerTest {
                 "alter table abcd add idv clob not null default 123"
         };
         DefaultSqlChecker sqlChecker = new DefaultSqlChecker(DialectType.OB_ORACLE,
-                null, Collections.singletonList(new OracleNoTableCommentExists("test")));
+                null, Collections.singletonList(new OracleNoTableCommentExists(() -> "test")));
         List<CheckViolation> actual = sqlChecker.check(Arrays.asList(sqls), null);
 
         SqlCheckRuleType type = SqlCheckRuleType.NO_TABLE_COMMENT_EXISTS;
@@ -1083,7 +1083,7 @@ public class OracleSqlCheckerTest {
                 "alter table abcd add idv clob not null default 123"
         };
         DefaultSqlChecker sqlChecker = new DefaultSqlChecker(DialectType.OB_ORACLE,
-                null, Collections.singletonList(new OracleNoColumnCommentExists("test")));
+                null, Collections.singletonList(new OracleNoColumnCommentExists(() -> "test")));
         List<CheckViolation> actual = sqlChecker.check(Arrays.asList(sqls), null);
 
         SqlCheckRuleType type = SqlCheckRuleType.NO_COLUMN_COMMENT_EXISTS;

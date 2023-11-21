@@ -20,11 +20,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicReference;
 
+import org.apache.commons.lang3.Validate;
 import org.pf4j.Extension;
 
-import com.oceanbase.odc.common.util.JdbcOperationsUtil;
 import com.oceanbase.odc.plugin.schema.obmysql.OBMySQLTableExtension;
 import com.oceanbase.odc.plugin.schema.oboracle.parser.OBOracleGetDBTableByParser;
 import com.oceanbase.odc.plugin.schema.oboracle.utils.DBAccessorUtil;
@@ -43,6 +42,7 @@ import com.oceanbase.tools.dbbrowser.model.DBTableIndex;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 import com.oceanbase.tools.dbbrowser.stats.DBStatsAccessor;
 import com.oceanbase.tools.dbbrowser.util.StringUtils;
+import com.oceanbase.tools.sqlparser.statement.createtable.CreateTable;
 
 import lombok.NonNull;
 
@@ -88,19 +88,16 @@ public class OBOracleTableExtension extends OBMySQLTableExtension {
 
     private String getTableDDL(Connection connection, String schemaName, String tableName,
             OBOracleGetDBTableByParser parser, List<DBTableColumn> columns, DBTableOptions tableOptions) {
-        String getTableDDlSql =
-                "SELECT dbms_metadata.get_ddl('TABLE', '" + tableName + "', '" + schemaName + "') as DDL from dual";
-        AtomicReference<String> ddlRef = new AtomicReference<>();
-        JdbcOperationsUtil.getJdbcOperations(connection).query(getTableDDlSql, t -> {
-            // Create table ddl like this: CREATE [GLOBAL TEMPORARY|SHARDED|DUPLICATED] TABLE T...
-            String ddl = t.getString(1);
-            if (Objects.nonNull(ddl)) {
-                // fix: Replace " TABLE " to " TABLE schemaName."
-                ddlRef.set(StringUtils.replace(ddl, " TABLE ",
-                        " TABLE " + StringUtils.quoteOracleIdentifier(schemaName) + ".", 1));
-            }
-        });
-        StringBuilder ddl = new StringBuilder(ddlRef.get());
+        CreateTable createTableStmt = parser.getCreateTableStmt();
+        Validate.notNull(createTableStmt, "CreateTable statement can not be null");
+        StringBuilder ddl = new StringBuilder();
+        if (StringUtils.isBlank(createTableStmt.getSchema())) {
+            ddl.append(createTableStmt.getText().replaceFirst("TABLE " + StringUtils.quoteOracleIdentifier(tableName),
+                    "TABLE " + StringUtils.quoteOracleIdentifier(schemaName) + "."
+                            + StringUtils.quoteOracleIdentifier(tableName)));
+        } else {
+            ddl.append(createTableStmt.getText());
+        }
         ddl.append(";\n");
         Map<String, String> variables = new HashMap<>();
         variables.put("schemaName", StringUtils.quoteOracleIdentifier(schemaName));
@@ -127,15 +124,10 @@ public class OBOracleTableExtension extends OBMySQLTableExtension {
             if (index.getType() == DBIndexType.UNIQUE || index.getPrimary()) {
                 continue;
             }
-            String getIndexDDLSql = "SELECT dbms_metadata.get_ddl('INDEX', '" + index.getName() + "', '" + schemaName
-                    + "') as DDL from dual";
-            JdbcOperationsUtil.getJdbcOperations(connection).query(getIndexDDLSql, (rs, num) -> {
-                String indexDdl = rs.getString("DDL");
-                if (StringUtils.isNotBlank(indexDdl)) {
-                    ddl.append("\n").append(rs.getString("DDL"));
-                }
-                return ddl;
-            });
+            String indexDdl = parser.getIndexName2Ddl().get(index.getName());
+            if (StringUtils.isNotBlank(indexDdl)) {
+                ddl.append("\n").append(indexDdl);
+            }
         }
         return ddl.toString();
     }

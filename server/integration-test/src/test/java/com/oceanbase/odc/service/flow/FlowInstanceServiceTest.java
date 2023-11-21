@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -52,6 +53,7 @@ import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.ConnectionVisibleScope;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
+import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.TaskErrorStrategy;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
@@ -71,6 +73,7 @@ import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.flow.factory.FlowFactory;
 import com.oceanbase.odc.service.flow.instance.BaseFlowNodeInstance;
 import com.oceanbase.odc.service.flow.instance.FlowApprovalInstance;
 import com.oceanbase.odc.service.flow.instance.FlowGatewayInstance;
@@ -86,6 +89,7 @@ import com.oceanbase.odc.service.flow.model.QueryFlowInstanceParams;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.tool.TestFlowRuntimeTaskImpl;
 import com.oceanbase.odc.service.flow.util.FlowInstanceUtil;
+import com.oceanbase.odc.service.iam.ResourceRoleService;
 import com.oceanbase.odc.service.iam.UserService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.model.User;
@@ -119,6 +123,8 @@ public class FlowInstanceServiceTest extends ServiceTestEnv {
     private ConnectionService connectionService;
     @MockBean
     private UserService userService;
+    @MockBean
+    private ResourceRoleService resourceRoleService;
     @MockBean
     private TaskService taskService;
     @MockBean
@@ -156,8 +162,11 @@ public class FlowInstanceServiceTest extends ServiceTestEnv {
     private FormService formService;
     @Autowired
     private TaskRepository taskRepository;
+    @Autowired
+    private FlowFactory flowFactory;
     @Rule
     public ExpectedException thrown = ExpectedException.none();
+
 
     @Before
     public void setUp() {
@@ -199,6 +208,50 @@ public class FlowInstanceServiceTest extends ServiceTestEnv {
     }
 
     @Test
+    public void testList_NotJoinAnyProject_ContainsAll_ReturnAllTicketsOfTheProject() {
+        FlowInstance flowInstance = createFlowInstance("test");
+        buildFlowInstance(flowInstance);
+
+        flowInstance = createFlowInstance("test1");
+        buildFlowInstance(flowInstance);
+
+        QueryFlowInstanceParams params = QueryFlowInstanceParams.builder()
+                .approveByCurrentUser(false)
+                .createdByCurrentUser(true)
+                .containsAll(true)
+                .startTime(new Date(System.currentTimeMillis() - 10000))
+                .endTime(new Date(System.currentTimeMillis() + 10000))
+                .type(TaskType.ASYNC).build();
+        Page<FlowInstanceDetailResp> page = flowInstanceService.list(Pageable.unpaged(), params);
+        Assert.assertEquals(2, page.getTotalElements());
+    }
+
+    @Test
+    public void testList_ProjectOwner_ContainsAll_ReturnAllTicketsOfTheProject() {
+        FlowInstance flowInstance = createFlowInstance("test");
+        buildFlowInstance(flowInstance);
+
+        flowInstance = createFlowInstance("test1");
+        buildFlowInstance(flowInstance);
+
+        when(userService.getCurrentUserResourceRoleIdentifiers()).thenReturn(Collections.singleton("1:1"));
+        Map<Long, Set<ResourceRoleName>> projectId2Roles = new HashMap<>();
+        projectId2Roles.put(1L, Collections.singleton(ResourceRoleName.OWNER));
+        when(resourceRoleService.getProjectId2ResourceRoleNames()).thenReturn(projectId2Roles);
+
+
+        QueryFlowInstanceParams params = QueryFlowInstanceParams.builder()
+                .approveByCurrentUser(false)
+                .createdByCurrentUser(true)
+                .containsAll(true)
+                .startTime(new Date(System.currentTimeMillis() - 10000))
+                .endTime(new Date(System.currentTimeMillis() + 10000))
+                .type(TaskType.ASYNC).build();
+        Page<FlowInstanceDetailResp> page = flowInstanceService.list(Pageable.unpaged(), params);
+        Assert.assertEquals(2, page.getTotalElements());
+    }
+
+    @Test
     public void list_everyParamSet_getAllFlowInstances() {
         FlowInstance flowInstance = createFlowInstance("test");
         buildFlowInstance(flowInstance);
@@ -215,6 +268,7 @@ public class FlowInstanceServiceTest extends ServiceTestEnv {
         QueryFlowInstanceParams params = QueryFlowInstanceParams.builder()
                 .approveByCurrentUser(false)
                 .createdByCurrentUser(true)
+                .containsAll(false)
                 .startTime(new Date(System.currentTimeMillis() - 10000))
                 .endTime(new Date(System.currentTimeMillis() + 10000))
                 .type(TaskType.ASYNC).build();
@@ -257,6 +311,7 @@ public class FlowInstanceServiceTest extends ServiceTestEnv {
         QueryFlowInstanceParams params = QueryFlowInstanceParams.builder()
                 .approveByCurrentUser(false)
                 .createdByCurrentUser(true)
+                .containsAll(false)
                 .startTime(new Date(System.currentTimeMillis() - 10000))
                 .endTime(new Date(System.currentTimeMillis() + 10000))
                 .type(TaskType.IMPORT).build();
@@ -424,8 +479,7 @@ public class FlowInstanceServiceTest extends ServiceTestEnv {
 
 
     private FlowInstance createFlowInstance(String name) {
-        return new FlowInstance(name, flowableAdaptor, authenticationFacade, flowInstanceRepository,
-                runtimeService, repositoryService);
+        return flowFactory.generateFlowInstance(name, null, 1L, null);
     }
 
     private FlowTaskInstance createTaskInstance(Long flowInstanceId, TaskEntity taskEntity,
@@ -453,6 +507,7 @@ public class FlowInstanceServiceTest extends ServiceTestEnv {
 
     private CreateFlowInstanceReq createFlowInstanceReq() {
         CreateFlowInstanceReq req = TestRandom.nextObject(CreateFlowInstanceReq.class);
+        req.setProjectId(1L);
         req.setTaskType(TaskType.ASYNC);
         DatabaseChangeParameters asyncParam = new DatabaseChangeParameters();
         asyncParam.setErrorStrategy(TaskErrorStrategy.ABORT.name());
