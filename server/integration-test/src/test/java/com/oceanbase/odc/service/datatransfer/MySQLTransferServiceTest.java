@@ -100,7 +100,7 @@ public class MySQLTransferServiceTest extends ServiceTestEnv {
     @Test
     public void create_dumpSchemaAndData_bothSchemaAndDataDumped() throws Exception {
         DataTransferTaskContext context =
-                dataTransferService.create(BUCKET, getDumpConfig(connectionConfig.defaultSchema(), true, true));
+                dataTransferService.create(BUCKET, getDumpConfig(connectionConfig.getDefaultSchema(), true, true));
         Assert.assertNotNull(context.get(60, TimeUnit.SECONDS));
 
         ExportOutput exportOutput = new ExportOutput(getDumpFile());
@@ -137,7 +137,7 @@ public class MySQLTransferServiceTest extends ServiceTestEnv {
     @Test
     public void create_dumpData_onlyDataDumped() throws Exception {
         DataTransferTaskContext context =
-                dataTransferService.create(BUCKET, getDumpConfig(connectionConfig.defaultSchema(), true, false));
+                dataTransferService.create(BUCKET, getDumpConfig(connectionConfig.getDefaultSchema(), true, false));
         Assert.assertNotNull(context.get(60, TimeUnit.SECONDS));
 
         ExportOutput exportOutput = new ExportOutput(getDumpFile());
@@ -154,8 +154,9 @@ public class MySQLTransferServiceTest extends ServiceTestEnv {
         File dumpFile = dumpSchemaAndDataForLoad(DialectType.MYSQL);
         assertTableNotExists();
 
-        DataTransferTaskContext context = dataTransferService.create(BUCKET, getLoadConfig(false,
-                connectionConfig.defaultSchema(), Collections.singletonList(dumpFile.getAbsolutePath()), true, true));
+        DataTransferTaskContext context =
+                dataTransferService.create(BUCKET, getLoadConfig(false, connectionConfig.getDefaultSchema(),
+                        Collections.singletonList(dumpFile.getAbsolutePath()), true, true));
         Assert.assertNotNull(context.get(600, TimeUnit.SECONDS));
         assertTableExists();
         assertTableCountEquals(2);
