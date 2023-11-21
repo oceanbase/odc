@@ -93,7 +93,8 @@ public class DataXTransferJob extends AbstractJob {
 
             setTaskStatus();
 
-            if (StringUtils.equalsIgnoreCase(jobConfig.getContent()[0].getWriter().getName(), Constants.TXT_FILE_WRITER)) {
+            if (StringUtils.equalsIgnoreCase(jobConfig.getContent()[0].getWriter().getName(),
+                    Constants.TXT_FILE_WRITER)) {
                 setExportFile();
             }
 
