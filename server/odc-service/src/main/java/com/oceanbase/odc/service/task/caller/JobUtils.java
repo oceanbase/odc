@@ -24,6 +24,6 @@ package com.oceanbase.odc.service.task.caller;
 public class JobUtils {
 
     public static String generateJobName(Long taskId) {
-        return JobConstants.TEMPLATE_JOB_NAME + taskId;
+        return JobConstants.TEMPLATE_JOB_NAME_PREFIX + taskId;
     }
 }
