@@ -152,7 +152,7 @@ public class ResourceService {
         Map<String, String> properties = new HashMap<>();
         properties.put("maskHost", "true");
         connection.setProperties(properties);
-        ConnectionConfig saved = connectionService.innerCreate(connection);
+        ConnectionConfig saved = connectionService.innerCreate(connection, false);
         log.info("Connection created, connection id={}", saved.getId());
         return saved.getId();
     }

@@ -267,4 +267,7 @@ public class ConnectionEntity {
     @Column(name = "environment_id", nullable = false)
     private Long environmentId;
 
+    @Column(name = "project_id")
+    private Long projectId;
+
 }

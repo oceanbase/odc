@@ -41,7 +41,6 @@ public final class TraceContextHolder {
     public static final String CALLER_BID = "callerBid";
     public static final String ORGANIZATION_ID = "organizationId";
     public static final String RESPONSE_TIME = "rt";
-    public static final String HTTP_CODE = "httpCode";
     public static final String ODC_CODE = "odcCode";
 
     private TraceContextHolder() {}
@@ -87,6 +86,8 @@ public final class TraceContextHolder {
         MDC.remove(USER_ID);
         MDC.remove(CALLER_BID);
         MDC.remove(ORGANIZATION_ID);
+        MDC.remove(RESPONSE_TIME);
+        MDC.remove(ODC_CODE);
     }
 
     public static long getStartEpochMilli() {
@@ -110,7 +111,7 @@ public final class TraceContextHolder {
                 put(RESPONSE_TIME, "0");
                 return 0L;
             } else {
-                long rt = System.currentTimeMillis() - Long.parseLong(startEpochMilli);
+                long rt = Instant.now().toEpochMilli() - Long.parseLong(startEpochMilli);
                 put(RESPONSE_TIME, Long.toString(rt));
                 return rt;
             }

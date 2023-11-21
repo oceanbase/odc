@@ -56,8 +56,8 @@ public class PLDebugController {
     public SuccessResponse<String> start(@RequestBody StartPLDebugReq request)
             throws Exception {
         Validate.notEmpty(request.getSid(), "Sid can not be null for StartPLDebugReq");
-        return Responses.success(plDebugService.start(sessionService.nullSafeGet(
-                SidUtils.getSessionId(request.getSid())), request));
+        return Responses.success(plDebugService.start(
+                sessionService.nullSafeGet(SidUtils.getSessionId(request.getSid()), true), request));
     }
 
     @ApiOperation(value = "endDebug", notes = "结束调试")

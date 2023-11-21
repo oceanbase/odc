@@ -85,8 +85,6 @@ public class ConnectConsoleServiceTest extends ServiceTestEnv {
     @Autowired
     private DefaultDBSessionManage defaultConnectSessionManage;
 
-    @Autowired
-
     @Test
     public void getAsyncResult_killSessionSql_successResult() throws Exception {
         String sql = "kill session /*";
@@ -101,9 +99,8 @@ public class ConnectConsoleServiceTest extends ServiceTestEnv {
     public void killSession_directLink() {
         String sql = "kill session 12345";
         injectAsyncJdbcExecutor(JdbcGeneralResult.successResult(SqlTuple.newTuple(sql)));
-        List<JdbcGeneralResult> jdbcGeneralResults =
-                defaultConnectSessionManage.executeKillSession(sessionService.nullSafeGet(sessionid),
-                        Collections.singletonList(SqlTuple.newTuple(sql)), sql);
+        List<JdbcGeneralResult> jdbcGeneralResults = defaultConnectSessionManage.executeKillSession(
+                sessionService.nullSafeGet(sessionid), Collections.singletonList(SqlTuple.newTuple(sql)), sql);
         Assert.assertFalse(jdbcGeneralResults.isEmpty());
     }
 
@@ -163,8 +160,9 @@ public class ConnectConsoleServiceTest extends ServiceTestEnv {
 
     @Test
     public void getBinaryContent_skipSeveralBytes_readSucceed() throws IOException {
-        ConnectionSession session = new TestConnectionSession("12", new ByteArrayInputStream("abcd".getBytes()));
-        Mockito.when(sessionService.nullSafeGet(Mockito.anyString())).thenReturn(session);
+        ConnectionSession session = new TestConnectionSession(
+                sessionid, new ByteArrayInputStream("abcd".getBytes()));
+        Mockito.when(sessionService.nullSafeGet(sessionid)).thenReturn(session);
         CrossLinkedVirtualTable table = new CrossLinkedVirtualTable("tableId");
         long rowId = 1;
         int colId = 1;
@@ -172,8 +170,8 @@ public class ConnectConsoleServiceTest extends ServiceTestEnv {
         VirtualElement elt = new CommonVirtualElement("tableId", rowId, colId, "test_type", "test_name", metaData);
         table.put(elt);
         ConnectionSessionUtil.setQueryCache(session, table);
-        BinaryContent actual =
-                consoleService.getBinaryContent("12", "tableId", rowId, colId, 2L, 1, ValueEncodeType.TXT);
+        BinaryContent actual = consoleService.getBinaryContent(sessionid, "tableId",
+                rowId, colId, 2L, 1, ValueEncodeType.TXT);
         BinaryContent expect = new BinaryContent("c".getBytes(), 4, ValueEncodeType.TXT);
         Assert.assertEquals(expect, actual);
     }
@@ -189,8 +187,10 @@ public class ConnectConsoleServiceTest extends ServiceTestEnv {
         GeneralSyncJdbcExecutor syncJdbcExecutor = Mockito.mock(GeneralSyncJdbcExecutor.class);
         Mockito.when(syncJdbcExecutor.execute(Mockito.any(OdcStatementCallBack.class)))
                 .thenReturn(Collections.singletonList(result));
-        Mockito.when(sessionService.nullSafeGet(sessionid)).thenReturn(new TestConnectionSession(
-                sessionid, connectType, buildTestConnection(connectType), asyncJdbcExecutor, syncJdbcExecutor));
+        ConnectionSession session = new TestConnectionSession(sessionid, connectType,
+                buildTestConnection(connectType), asyncJdbcExecutor, syncJdbcExecutor);
+        Mockito.when(sessionService.nullSafeGet(sessionid, true)).thenReturn(session);
+        Mockito.when(sessionService.nullSafeGet(sessionid)).thenReturn(session);
     }
 
     private SqlAsyncExecuteReq getSqlAsyncExecuteReq(String sql) {

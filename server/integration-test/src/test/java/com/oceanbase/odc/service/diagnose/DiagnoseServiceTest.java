@@ -27,7 +27,7 @@ import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.session.DefaultConnectionSession;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.model.TraceSpan;
-import com.oceanbase.odc.core.sql.execute.ConnectionExtensionExecutor;
+import com.oceanbase.odc.core.sql.execute.SessionOperations;
 import com.oceanbase.odc.core.sql.execute.cache.model.BinaryContentMetaData;
 import com.oceanbase.odc.service.common.model.ResourceSql;
 
@@ -51,8 +51,8 @@ public class DiagnoseServiceTest {
     }
 
     private ConnectionSession getConnectionSession() throws Exception {
-        return new DefaultConnectionSession(() -> "", null, 10000, ConnectType.OB_MYSQL, true,
-                Mockito.mock(ConnectionExtensionExecutor.class));
+        return new DefaultConnectionSession("", null, 10000, ConnectType.OB_MYSQL, true,
+                Mockito.mock(SessionOperations.class));
     }
 
 }

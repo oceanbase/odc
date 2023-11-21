@@ -283,13 +283,13 @@ public class ConnectionConfigServiceTest extends MockedAuthorityTestEnv {
     }
 
     @Test(expected = NotFoundException.class)
-    public void update_NotExists_NotFoundException() {
+    public void update_NotExists_NotFoundException() throws InterruptedException {
         ConnectionConfig connection = newConnection(ConnectionVisibleScope.PRIVATE, NAME);
         service.update(-1L, connection);
     }
 
     @Test
-    public void update_SameNameExists_BadRequestException() {
+    public void update_SameNameExists_BadRequestException() throws InterruptedException {
         createConnection(ConnectionVisibleScope.ORGANIZATION, NAME);
         ConnectionConfig connection = newConnection(ConnectionVisibleScope.ORGANIZATION, NAME);
         connection.setName("TEST_C2");
@@ -303,7 +303,7 @@ public class ConnectionConfigServiceTest extends MockedAuthorityTestEnv {
     }
 
     @Test
-    public void update_Success_CreateTimeNotNull() {
+    public void update_Success_CreateTimeNotNull() throws InterruptedException {
         ConnectionConfig connection = createConnection(ConnectionVisibleScope.ORGANIZATION, NAME);
         connection.setCreateTime(null);
         connection.setUpdateTime(null);
@@ -315,7 +315,7 @@ public class ConnectionConfigServiceTest extends MockedAuthorityTestEnv {
     }
 
     @Test
-    public void update_SetEnabledFalse_EnabledFalse() {
+    public void update_SetEnabledFalse_EnabledFalse() throws InterruptedException {
         ConnectionConfig connection = createConnection(ConnectionVisibleScope.ORGANIZATION, NAME);
         connection.setCreateTime(null);
         connection.setUpdateTime(null);
@@ -369,6 +369,7 @@ public class ConnectionConfigServiceTest extends MockedAuthorityTestEnv {
         connection.setTenantName(TENANT_NAME);
         connection.setTemp(false);
         connection.setEnvironmentId(1L);
+        connection.setProjectId(null);
         return connection;
     }
 

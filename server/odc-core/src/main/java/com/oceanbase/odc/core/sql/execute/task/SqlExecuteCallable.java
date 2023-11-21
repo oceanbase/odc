@@ -18,7 +18,7 @@ package com.oceanbase.odc.core.sql.execute.task;
 import java.util.concurrent.Callable;
 
 import com.oceanbase.odc.core.datasource.CloneableDataSourceFactory;
-import com.oceanbase.odc.core.sql.execute.ConnectionExtensionExecutor;
+import com.oceanbase.odc.core.sql.execute.SessionOperations;
 
 /**
  * {@link SqlExecuteCallable}
@@ -42,6 +42,6 @@ public interface SqlExecuteCallable<T> extends Callable<T> {
      */
     CloneableDataSourceFactory getDataSourceFactory();
 
-    ConnectionExtensionExecutor getExtensionExecutor();
+    SessionOperations getSessionOperations();
 
 }

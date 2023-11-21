@@ -57,21 +57,21 @@ public class DBTriggerController {
     @RequestMapping(value = "/list/{sid:.*}", method = RequestMethod.GET)
     public OdcResult<List<DBTrigger>> list(@PathVariable String sid) {
         ResourceIdentifier i = ResourceIDParser.parse(sid);
-        return OdcResult.ok(triggerService.list(sessionService.nullSafeGet(i.getSid()), i.getDatabase()));
+        return OdcResult.ok(triggerService.list(sessionService.nullSafeGet(i.getSid(), true), i.getDatabase()));
     }
 
     @ApiOperation(value = "detail", notes = "查看某一个特定的触发器细节，sid示例：sid:1000-1:tr:tr1")
     @RequestMapping(value = "/{sid:.*}", method = RequestMethod.GET)
     public OdcResult<DBTrigger> detail(@PathVariable String sid) {
         ResourceIdentifier i = ResourceIDParser.parse(sid);
-        return OdcResult.ok(triggerService.detail(sessionService.nullSafeGet(i.getSid()),
-                i.getDatabase(), i.getTrigger()));
+        return OdcResult.ok(triggerService.detail(
+                sessionService.nullSafeGet(i.getSid(), true), i.getDatabase(), i.getTrigger()));
     }
 
     @ApiOperation(value = "update", notes = "修改触发器状态，sid示例：sid:1000-1:tr:tr1")
     @RequestMapping(value = "/{sid:.*}", method = RequestMethod.PATCH)
     public OdcResult<DBTrigger> modify(@PathVariable String sid, @RequestBody DBTriggerReq body) {
-        return OdcResult.ok(triggerService.alter(sessionService.nullSafeGet(SidUtils.getSessionId(sid)), body));
+        return OdcResult.ok(triggerService.alter(sessionService.nullSafeGet(SidUtils.getSessionId(sid), true), body));
     }
 
     @ApiOperation(value = "compile", notes = "编译一个特定的触发器，sid示例：sid:1000-1:tr:tr1")
@@ -79,14 +79,14 @@ public class DBTriggerController {
     public OdcResult<OdcSqlExecuteResult> compile(@PathVariable String sid) {
         ResourceIdentifier i = ResourceIDParser.parse(sid);
         String trigger = i.getTrigger();
-        return OdcResult.ok(triggerService.compile(sessionService.nullSafeGet(i.getSid()), trigger));
+        return OdcResult.ok(triggerService.compile(sessionService.nullSafeGet(i.getSid(), true), trigger));
     }
 
     @ApiOperation(value = "getCreateSql", notes = "获取触发器的创建sql，sid示例：sid:1000-1:tr:tr1")
     @RequestMapping(value = "/getCreateSql/{sid:.*}", method = RequestMethod.POST)
     public OdcResult<ResourceSql> getCreateSql(@PathVariable String sid, @RequestBody DBTriggerReq resource) {
-        String sql = triggerService.generateCreateSql(sessionService.nullSafeGet(SidUtils.getSessionId(sid)), resource);
-        return OdcResult.ok(ResourceSql.ofSql(sql));
+        return OdcResult.ok(ResourceSql.ofSql(triggerService.generateCreateSql(
+                sessionService.nullSafeGet(SidUtils.getSessionId(sid), true), resource)));
     }
 
 }

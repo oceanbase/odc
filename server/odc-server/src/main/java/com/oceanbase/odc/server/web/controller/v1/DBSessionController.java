@@ -46,7 +46,8 @@ public class DBSessionController {
     @ApiOperation(value = "list", notes = "查看所有数据库会话，sid示例：sid:1000-1:d:db1")
     @RequestMapping(value = "/list/{sid:.*}", method = RequestMethod.GET)
     public OdcResult<List<OdcDBSession>> list(@PathVariable String sid) {
-        return OdcResult.ok(dbSessionService.listAllSessions(sessionService.nullSafeGet(SidUtils.getSessionId(sid))));
+        return OdcResult.ok(dbSessionService.listAllSessions(
+                sessionService.nullSafeGet(SidUtils.getSessionId(sid), true)));
     }
 
 }

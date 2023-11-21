@@ -50,7 +50,7 @@ public class DBTableController {
     public ListResponse<String> listTables(@PathVariable String sessionId,
             @PathVariable(required = false) String databaseName,
             @RequestParam(required = false, name = "fuzzyTableName") String fuzzyTableName) {
-        ConnectionSession session = sessionService.nullSafeGet(sessionId);
+        ConnectionSession session = sessionService.nullSafeGet(sessionId, true);
         return Responses.list(tableService.showTablesLike(session, databaseName, fuzzyTableName));
     }
 
@@ -61,7 +61,7 @@ public class DBTableController {
             @PathVariable String tableName) {
         Base64.Decoder decoder = Base64.getDecoder();
         tableName = new String(decoder.decode(tableName));
-        ConnectionSession session = sessionService.nullSafeGet(sessionId);
+        ConnectionSession session = sessionService.nullSafeGet(sessionId, true);
         return Responses.success(tableService.getTable(session, databaseName, tableName));
     }
 
@@ -71,7 +71,7 @@ public class DBTableController {
             @PathVariable(required = false) String databaseName, @RequestBody DBTable table) {
         table.setSchema(DBSchema.of(databaseName));
         table.setSchemaName(databaseName);
-        ConnectionSession session = sessionService.nullSafeGet(sessionId);
+        ConnectionSession session = sessionService.nullSafeGet(sessionId, true);
         return Responses.success(tableService.generateCreateDDL(session, table));
     }
 
@@ -84,7 +84,7 @@ public class DBTableController {
         req.getPrevious().setSchemaName(databaseName);
         req.getCurrent().setSchema(schema);
         req.getCurrent().setSchemaName(databaseName);
-        ConnectionSession session = sessionService.nullSafeGet(sessionId);
+        ConnectionSession session = sessionService.nullSafeGet(sessionId, true);
         return Responses.success(tableService.generateUpdateDDL(session, req));
     }
 

@@ -55,21 +55,20 @@ public class DBVariablesController {
     public OdcResult<List<OdcDBVariable>> list(@PathVariable String sid) {
         ResourceIdentifier i = ResourceIDParser.parse(sid);
         String scope = i.getVariableScope();
-        return OdcResult.ok(variablesService.list(sessionService.nullSafeGet(i.getSid()), scope));
+        return OdcResult.ok(variablesService.list(sessionService.nullSafeGet(i.getSid(), true), scope));
     }
 
     @ApiOperation(value = "getUpdateSql", notes = "拼接修改session变量的sql，sid示例：sid:1000-1:d:db1:var:session")
     @RequestMapping(value = "/getUpdateSql/{sid:.*}", method = RequestMethod.PATCH)
     public OdcResult<ResourceSql> getUpdateSql(@PathVariable String sid, @RequestBody OdcDBVariable resource) {
         ResourceIdentifier i = ResourceIDParser.parse(sid);
-        String sql = this.variablesService.getUpdateDml(i.getVariableScope(), resource);
-        return OdcResult.ok(ResourceSql.ofSql(sql));
+        return OdcResult.ok(ResourceSql.ofSql(this.variablesService.getUpdateDml(i.getVariableScope(), resource)));
     }
 
     @ApiOperation(value = "doExecute", notes = "执行sql，sid示例：sid:1000-1:d:db1:var:session")
     @RequestMapping(value = "/execute/{sid}", method = RequestMethod.PATCH)
     public OdcResult<OdcSqlExecuteResult> doExecute(@PathVariable String sid, @RequestBody ResourceSql resource) {
-        ConnectionSession session = sessionService.nullSafeGet(SidUtils.getSessionId(sid));
+        ConnectionSession session = sessionService.nullSafeGet(SidUtils.getSessionId(sid), true);
         return OdcResult.ok(variablesService.doExecute(session, resource.getSql()));
     }
 
