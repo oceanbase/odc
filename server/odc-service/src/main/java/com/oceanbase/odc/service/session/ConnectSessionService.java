@@ -234,7 +234,7 @@ public class ConnectSessionService {
         preCheckSessionLimit();
         ConnectionConfig connection = connectionService.getForConnectionSkipPermissionCheck(dataSourceId);
         horizontalDataPermissionValidator.checkCurrentOrganization(connection);
-        log.info("Begin to create session, connection id={}, name={}", connection.id(), connection.getName());
+        log.info("Begin to create session, connectionId={}, name={}", connection.id(), connection.getName());
         Set<String> actions = authorizationFacade.getAllPermittedActions(authenticationFacade.currentUser(),
                 ResourceType.ODC_CONNECTION, "" + dataSourceId);
         connection.setPermittedActions(actions);
