@@ -702,6 +702,7 @@ INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('o
 ---
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.iam.auth.alipay.max-failed-login-attempt-times', '5', '登录失败情况下最大重试次数，小于等于 0 意味着次数无限制，改变此参数后需要重启生效' ) ON DUPLICATE KEY UPDATE `id` = `id`;
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.iam.auth.alipay.failed-login-lock-timeout-seconds', '600', '账户被锁定时长，默认 600 秒，如果该值小于等于 0 意味着不锁定，改变此参数后需要重启生效' ) ON DUPLICATE KEY UPDATE `id` = `id`;
+INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.integration.bastion.enabled', 'false', '堡垒机集成是否启用，默认值 false，改变此参数后需要重启生效') ON DUPLICATE KEY UPDATE `id`=`id`;
 
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.server.obclient.command-black-list',
  'connect,conn,edit,nopager,notee,pager,print,prompt,rehash,system,tee,resetconnection', 'Prohibited commands that can be executed by obclient' ) ON DUPLICATE KEY UPDATE `id` = `id`;

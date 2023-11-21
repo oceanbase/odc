@@ -28,7 +28,7 @@ public class OdcConstants {
     public static final String ADMIN_ACCOUNT_NAME = "admin";
     public static final List<String> RESERVED_ACCOUNT_NAMES = Collections.singletonList(ADMIN_ACCOUNT_NAME);
     public static final String ADMIN_ROLE_NAME = "system_admin";
-
+    public static final Long DEFAULT_ADMIN_USER_ID = 1L;
     public static final Long DEFAULT_ORGANIZATION_ID = 1L;
     /**
      * Constant Package Name for Odc Usage

@@ -23,6 +23,7 @@ import java.util.Set;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.web.PageableDefault;
@@ -75,9 +76,15 @@ public class DataSourceController {
     @Autowired
     private ConnectionBatchImportPreviewer connectionBatchImportPreviewer;
 
+    @Value("${odc.integration.bastion.enabled:false}")
+    private boolean bastionEnabled;
+
     @ApiOperation(value = "createDataSource", notes = "Create a datasource")
     @RequestMapping(value = "/datasources", method = RequestMethod.POST)
     public SuccessResponse<ConnectionConfig> createDataSource(@RequestBody ConnectionConfig connectionConfig) {
+        if (bastionEnabled) {
+            return Responses.success(connectionService.createForBastionUser(connectionConfig));
+        }
         return Responses.success(connectionService.create(connectionConfig));
     }
 
@@ -97,7 +104,7 @@ public class DataSourceController {
     @ApiOperation(value = "updateDataSource", notes = "Update a datasource")
     @RequestMapping(value = "/datasources/{id:[\\d]+}", method = RequestMethod.PUT)
     public SuccessResponse<ConnectionConfig> updateDataSource(@PathVariable Long id,
-            @RequestBody ConnectionConfig connectionConfig) {
+            @RequestBody ConnectionConfig connectionConfig) throws InterruptedException {
         return Responses.success(connectionService.update(id, connectionConfig));
     }
 
