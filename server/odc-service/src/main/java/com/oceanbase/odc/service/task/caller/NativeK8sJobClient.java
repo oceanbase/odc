@@ -62,7 +62,7 @@ public class NativeK8sJobClient implements K8sJobClient {
     }
 
     @Override
-    public String createJob(@NonNull String namespace, @NonNull String name, @NonNull String image,
+    public String create(@NonNull String namespace, @NonNull String name, @NonNull String image,
             @NonNull List<String> command, @NonNull PodParam podParam) throws JobException {
         V1Pod job = getV1Pod(name, image, command, podParam);
         CoreV1Api api = new CoreV1Api();
@@ -76,7 +76,7 @@ public class NativeK8sJobClient implements K8sJobClient {
     }
 
     @Override
-    public Optional<String> getJob(@NonNull String namespace, @NonNull String name) throws JobException {
+    public Optional<String> get(@NonNull String namespace, @NonNull String name) throws JobException {
         CoreV1Api api = new CoreV1Api();
         V1PodList job = null;
         try {
@@ -91,7 +91,7 @@ public class NativeK8sJobClient implements K8sJobClient {
     }
 
     @Override
-    public String deleteJob(@NonNull String namespace, @NonNull String name) throws JobException {
+    public String delete(@NonNull String namespace, @NonNull String name) throws JobException {
         CoreV1Api api = new CoreV1Api();
         V1Pod pod = null;
         try {

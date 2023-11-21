@@ -56,15 +56,14 @@ public class NativeK8sClientTest {
         String exceptedJobName = JobUtils.generateJobName(taskId);
         List<String> cmd = Arrays.asList("perl", "-Mbignum=bpi", "-wle", "print bpi(2000)");
         PodParam podParam = new PodParam();
-        podParam.setTtlSecondsAfterFinished(3);
-        String generateJobOfName = k8sClient.createJob("default", exceptedJobName, imageName, cmd, podParam);
+        String generateJobOfName = k8sClient.create("default", exceptedJobName, imageName, cmd, podParam);
         Assert.assertEquals(exceptedJobName, generateJobOfName);
 
-        Optional<String> queryJobName = k8sClient.getJob("default", exceptedJobName);
+        Optional<String> queryJobName = k8sClient.get("default", exceptedJobName);
         Assert.assertTrue(queryJobName.isPresent());
         Assert.assertEquals(exceptedJobName, queryJobName.get());
 
-        String deleteJobOfName = k8sClient.deleteJob("default", exceptedJobName);
+        String deleteJobOfName = k8sClient.delete("default", exceptedJobName);
         Assert.assertEquals(exceptedJobName, deleteJobOfName);
     }
 

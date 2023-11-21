@@ -39,7 +39,7 @@ public interface K8sJobClient {
      * @return job name identity
      * @throws JobException throws exception when create job failed
      */
-    String createJob(String namespace, String name, String image, List<String> command,
+    String create(String namespace, String name, String image, List<String> command,
             PodParam podParam) throws JobException;
 
     /**
@@ -50,7 +50,7 @@ public interface K8sJobClient {
      * @return job name identity
      * @throws JobException throws exception when get job failed
      */
-    Optional<String> getJob(String namespace, String name) throws JobException;
+    Optional<String> get(String namespace, String name) throws JobException;
 
     /**
      * delete job by name in k8s namespace
@@ -60,5 +60,5 @@ public interface K8sJobClient {
      * @return job name identity
      * @throws JobException throws exception when delete job failed
      */
-    String deleteJob(String namespace, String name) throws JobException;
+    String delete(String namespace, String name) throws JobException;
 }
