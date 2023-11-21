@@ -29,9 +29,9 @@ import io.kubernetes.client.util.Config;
  * @date 2023-11-15
  * @since 4.2.4
  */
-public abstract class BasePrimitiveK8SJobClient implements K8sJobClient {
+public abstract class BaseK8SJobClient implements K8sJobClient {
 
-    public BasePrimitiveK8SJobClient(String k8sClusterUrl) throws IOException {
+    public BaseK8SJobClient(String k8sClusterUrl) throws IOException {
         ApiClient apiClient = Config.defaultClient();
         apiClient.setHttpClient(apiClient
                 .getHttpClient()

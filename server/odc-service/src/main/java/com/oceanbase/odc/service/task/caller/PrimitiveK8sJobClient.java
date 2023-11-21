@@ -42,7 +42,7 @@ import lombok.NonNull;
  * @date 2023-11-15
  * @since 4.2.4
  */
-public class PrimitiveK8sJobClient extends BasePrimitiveK8SJobClient {
+public class PrimitiveK8sJobClient extends BaseK8SJobClient {
 
     public PrimitiveK8sJobClient(String k8sClusterUrl) throws IOException {
         super(k8sClusterUrl);
