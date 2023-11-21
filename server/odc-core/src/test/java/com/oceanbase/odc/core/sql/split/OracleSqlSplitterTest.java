@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.core.sql.split;
 
+import java.util.List;
+
 import org.antlr.v4.runtime.Lexer;
 import org.junit.Test;
 
@@ -33,4 +35,14 @@ public class OracleSqlSplitterTest extends AbstractSqlSplitterTest {
     public void split_StringWithBackslashInside() {
         verifyByFileName("src/test/resources/sql/split/sql-splitter-10-string-with-backslash-inside.yml");
     }
+
+    @Test
+    public void test() {
+        String sql = "insert into table_1 values ('sadasd');insert into table_1 values ('sadasd');";
+        SqlSplitter sqlSplitter = new SqlSplitter(PlSqlLexer.class, ";");
+        sqlSplitter.setRemoveCommentPrefix(false);
+        List<String> sqls = sqlSplitter.split(sql);
+        System.out.println(sqls);
+    }
+
 }
