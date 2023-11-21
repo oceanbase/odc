@@ -705,3 +705,5 @@ INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES
 
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.server.obclient.command-black-list',
  'connect,conn,edit,nopager,notee,pager,print,prompt,rehash,system,tee,resetconnection', 'Prohibited commands that can be executed by obclient' ) ON DUPLICATE KEY UPDATE `id` = `id`;
+
+INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.flow.async.max-upload-file-total-size', '#{32*1024*1024}', '异步任务最大上传文件总大小，单位为字节，默认 32 MB' ) ON DUPLICATE KEY UPDATE `id` = `id`;
