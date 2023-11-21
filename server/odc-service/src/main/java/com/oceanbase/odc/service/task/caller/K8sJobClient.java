@@ -20,16 +20,45 @@ import java.util.List;
 import java.util.Optional;
 
 /**
+ * K8sJobClient is a client to CRUD k8s job in different environment. eg: native or cloud k8s
+ *
  * @author yaobin
  * @date 2023-11-15
  * @since 4.2.4
  */
 public interface K8sJobClient {
 
-    String createNamespaceJob(String namespace, String jobName, String image, List<String> command,
+    /**
+     * create job in k8s namespace with pod name and use a specific image
+     *
+     * @param namespace namespace name
+     * @param name pod name
+     * @param image image name
+     * @param command image start command
+     * @param podParam pod param
+     * @return job name identity
+     * @throws JobException throws exception when create job failed
+     */
+    String createJob(String namespace, String name, String image, List<String> command,
             PodParam podParam) throws JobException;
 
-    Optional<String> getNamespaceJob(String namespace, String jobName) throws JobException;
+    /**
+     * get job by name in k8s namespace
+     *
+     * @param namespace namespace name
+     * @param name job name identity
+     * @return job name identity
+     * @throws JobException throws exception when get job failed
+     */
+    Optional<String> getJob(String namespace, String name) throws JobException;
 
-    String deleteNamespaceJob(String namespace, String jobName) throws JobException;
+    /**
+     * delete job by name in k8s namespace
+     *
+     * @param namespace namespace name
+     * @param name job name identity
+     * @return job name identity
+     * @throws JobException throws exception when delete job failed
+     */
+    String deleteJob(String namespace, String name) throws JobException;
 }

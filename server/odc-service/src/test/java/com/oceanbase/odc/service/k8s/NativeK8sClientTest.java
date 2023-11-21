@@ -29,8 +29,8 @@ import org.junit.Test;
 import com.oceanbase.odc.service.task.caller.JobException;
 import com.oceanbase.odc.service.task.caller.JobUtils;
 import com.oceanbase.odc.service.task.caller.K8sJobClient;
+import com.oceanbase.odc.service.task.caller.NativeK8sJobClient;
 import com.oceanbase.odc.service.task.caller.PodParam;
-import com.oceanbase.odc.service.task.caller.PrimitiveK8sJobClient;
 import com.oceanbase.odc.test.database.TestProperties;
 
 /**
@@ -39,13 +39,13 @@ import com.oceanbase.odc.test.database.TestProperties;
  * @since 4.2.4
  */
 @Ignore("manual test this case because k8s cluster is not public environment")
-public class PrimitiveK8sClientTest {
+public class NativeK8sClientTest {
 
     private static K8sJobClient k8sClient;
 
     @BeforeClass
     public static void init() throws IOException {
-        k8sClient = new PrimitiveK8sJobClient(TestProperties.getProperty("odc.k8s.cluster.url"));
+        k8sClient = new NativeK8sJobClient(TestProperties.getProperty("odc.k8s.cluster.url"));
     }
 
     @Test
@@ -57,14 +57,14 @@ public class PrimitiveK8sClientTest {
         List<String> cmd = Arrays.asList("perl", "-Mbignum=bpi", "-wle", "print bpi(2000)");
         PodParam podParam = new PodParam();
         podParam.setTtlSecondsAfterFinished(3);
-        String generateJobOfName = k8sClient.createNamespaceJob("default", exceptedJobName, imageName, cmd, podParam);
+        String generateJobOfName = k8sClient.createJob("default", exceptedJobName, imageName, cmd, podParam);
         Assert.assertEquals(exceptedJobName, generateJobOfName);
 
-        Optional<String> queryJobName = k8sClient.getNamespaceJob("default", exceptedJobName);
+        Optional<String> queryJobName = k8sClient.getJob("default", exceptedJobName);
         Assert.assertTrue(queryJobName.isPresent());
         Assert.assertEquals(exceptedJobName, queryJobName.get());
 
-        String deleteJobOfName = k8sClient.deleteNamespaceJob("default", exceptedJobName);
+        String deleteJobOfName = k8sClient.deleteJob("default", exceptedJobName);
         Assert.assertEquals(exceptedJobName, deleteJobOfName);
     }
 

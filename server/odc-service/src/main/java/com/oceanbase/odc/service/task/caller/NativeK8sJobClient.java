@@ -22,12 +22,16 @@ import static com.oceanbase.odc.service.task.caller.JobConstants.TEMPLATE_API_VE
 import static com.oceanbase.odc.service.task.caller.JobConstants.TEMPLATE_KIND_POD;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.Configuration;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
@@ -35,6 +39,7 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1PodSpec;
+import io.kubernetes.client.util.Config;
 import lombok.NonNull;
 
 /**
@@ -42,16 +47,24 @@ import lombok.NonNull;
  * @date 2023-11-15
  * @since 4.2.4
  */
-public class PrimitiveK8sJobClient extends BaseK8SJobClient {
+public class NativeK8sJobClient implements K8sJobClient {
 
-    public PrimitiveK8sJobClient(String k8sClusterUrl) throws IOException {
-        super(k8sClusterUrl);
+    public NativeK8sJobClient(String k8sClusterUrl) throws IOException {
+        ApiClient apiClient = Config.defaultClient();
+        apiClient.setHttpClient(apiClient
+                .getHttpClient()
+                .newBuilder()
+                .readTimeout(Duration.ZERO)
+                .pingInterval(1, TimeUnit.MINUTES)
+                .build())
+                .setBasePath(k8sClusterUrl);
+        Configuration.setDefaultApiClient(apiClient);
     }
 
     @Override
-    public String createNamespaceJob(@NonNull String namespace, @NonNull String jobName, @NonNull String image,
+    public String createJob(@NonNull String namespace, @NonNull String name, @NonNull String image,
             @NonNull List<String> command, @NonNull PodParam podParam) throws JobException {
-        V1Pod job = getV1Pod(jobName, image, command, podParam);
+        V1Pod job = getV1Pod(name, image, command, podParam);
         CoreV1Api api = new CoreV1Api();
         try {
             V1Pod createdJob = api.createNamespacedPod(namespace, job, null, null,
@@ -63,12 +76,12 @@ public class PrimitiveK8sJobClient extends BaseK8SJobClient {
     }
 
     @Override
-    public Optional<String> getNamespaceJob(@NonNull String namespace, @NonNull String jobName) throws JobException {
+    public Optional<String> getJob(@NonNull String namespace, @NonNull String name) throws JobException {
         CoreV1Api api = new CoreV1Api();
         V1PodList job = null;
         try {
             job = api.listNamespacedPod(namespace, null, null, null,
-                    FIELD_SELECTOR_METADATA_NAME + "=" + jobName,
+                    FIELD_SELECTOR_METADATA_NAME + "=" + name,
                     null, null, null, null, null, null);
         } catch (ApiException e) {
             throw new JobException(e.getResponseBody(), e);
@@ -78,11 +91,11 @@ public class PrimitiveK8sJobClient extends BaseK8SJobClient {
     }
 
     @Override
-    public String deleteNamespaceJob(@NonNull String namespace, @NonNull String jobName) throws JobException {
+    public String deleteJob(@NonNull String namespace, @NonNull String name) throws JobException {
         CoreV1Api api = new CoreV1Api();
         V1Pod pod = null;
         try {
-            pod = api.deleteNamespacedPod(jobName, namespace, null, null,
+            pod = api.deleteNamespacedPod(name, namespace, null, null,
                     null, null, null, null);
         } catch (ApiException e) {
             throw new JobException(e.getResponseBody(), e);
