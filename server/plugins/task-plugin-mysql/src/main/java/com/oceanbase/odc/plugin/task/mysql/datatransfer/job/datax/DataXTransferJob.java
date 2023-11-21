@@ -194,12 +194,6 @@ public class DataXTransferJob extends AbstractJob {
             Communication communication = getCommunicationAndRecord();
             bytes += communication.getLongCounter(CommunicationTool.REAL_WRITE_BYTES);
             records += CommunicationTool.getTotalReadRecords(communication);
-
-            /*
-             * When job terminated, DataX will send a {@link TerminateRecord} to channel. This count need to be
-             * reduced.
-             */
-            increaseCount(-1);
         }
 
         public void stop() {
