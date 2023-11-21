@@ -24,7 +24,7 @@ import java.util.Optional;
  * @date 2023-11-15
  * @since 4.2.4
  */
-public interface K8sClient {
+public interface K8sJobClient {
 
     String createNamespaceJob(String namespace, String jobName, String image, List<String> command,
             PodParam podParam) throws JobException;
