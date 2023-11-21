@@ -66,11 +66,11 @@ public class LocalFileTransferService {
     @Autowired
     private FileChecker fileChecker;
 
-    @Value("${odc.flow.async.max-upload-file-count:500}")
-    private int maxAsyncUploadFileCount = 500;
+    @Value("${odc.flow.async.max-upload-file-count:100}")
+    private int maxAsyncUploadFileCount;
 
-    @Value("${odc.flow.async.max-upload-file-total-size:#{256*1024*1024}}")
-    private long maxAsyncUploadFileTotalSize = 256 * 1024 * 1024L;
+    @Value("${odc.flow.async.max-upload-file-total-size:#{32*1024*1024}}")
+    private long maxAsyncUploadFileTotalSize;
 
     public ResponseEntity<InputStreamResource> download(String tempId) throws IOException {
         // 根据临时 ID 从缓存中获取 objectMetadata
