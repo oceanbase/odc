@@ -16,8 +16,6 @@
 
 package com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax;
 
-import static com.oceanbase.odc.plugin.task.mysql.datatransfer.common.Constants.TXT_FILE_WRITER;
-
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -43,6 +41,7 @@ import com.alibaba.datax.core.util.container.CoreConstant;
 import com.alibaba.datax.core.util.container.LoadUtil;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.ObjectResult;
+import com.oceanbase.odc.plugin.task.mysql.datatransfer.common.Constants;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.AbstractJob;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.JobConfiguration;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.parameter.TxtWriterPluginParameter;
@@ -94,7 +93,7 @@ public class DataXTransferJob extends AbstractJob {
 
             setTaskStatus();
 
-            if (StringUtils.equalsIgnoreCase(jobConfig.getContent()[0].getWriter().getName(), TXT_FILE_WRITER)) {
+            if (StringUtils.equalsIgnoreCase(jobConfig.getContent()[0].getWriter().getName(), Constants.TXT_FILE_WRITER)) {
                 setExportFile();
             }
 
