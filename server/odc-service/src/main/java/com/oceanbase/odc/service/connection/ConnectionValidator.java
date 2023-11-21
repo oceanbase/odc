@@ -15,27 +15,17 @@
  */
 package com.oceanbase.odc.service.connection;
 
-import java.util.Arrays;
 import java.util.Objects;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
-import com.oceanbase.odc.core.authority.SecurityManager;
-import com.oceanbase.odc.core.authority.model.DefaultSecurityResource;
-import com.oceanbase.odc.core.authority.permission.Permission;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
-import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.AccessDeniedException;
 import com.oceanbase.odc.service.collaboration.environment.EnvironmentService;
-import com.oceanbase.odc.service.collaboration.project.ProjectMapper;
-import com.oceanbase.odc.service.collaboration.project.ProjectService;
-import com.oceanbase.odc.service.collaboration.project.model.Project;
 import com.oceanbase.odc.service.connection.model.ConnectProperties;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
-import com.oceanbase.odc.service.iam.HorizontalDataPermissionValidator;
 
 /**
  * @Author: Lebie
@@ -49,16 +39,6 @@ public class ConnectionValidator {
 
     @Autowired
     private EnvironmentService environmentService;
-
-    @Autowired
-    @Lazy
-    private ProjectService projectService;
-
-    @Autowired
-    private SecurityManager securityManager;
-
-    @Autowired
-    private HorizontalDataPermissionValidator permissionValidator;
 
     void validateForUpsert(ConnectionConfig connection) {
         PreConditions.notNull(connection, "connection");
@@ -93,24 +73,6 @@ public class ConnectionValidator {
             throw new AccessDeniedException(ErrorCodes.ConnectionTempOnly,
                     "Cannot create persistent connection due temp only for private connection");
         }
-    }
-
-    /**
-     * Validate whether the project is existing and the current user has permission (OWNER or DBA) to
-     * operate the project.
-     * 
-     * @param projectId
-     */
-    void validateProjectOperable(Long projectId) {
-        if (Objects.isNull(projectId)) {
-            return;
-        }
-        Project project = ProjectMapper.INSTANCE.entityToModel(projectService.nullSafeGet(projectId));
-        permissionValidator.checkCurrentOrganization(project);
-        Permission requiredPermission = securityManager.getPermissionByResourceRoles(
-                new DefaultSecurityResource(projectId.toString(), ResourceType.ODC_PROJECT.name()),
-                Arrays.asList("OWNER", "DBA"));
-        securityManager.checkPermission(requiredPermission);
     }
 
 }

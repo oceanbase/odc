@@ -72,6 +72,7 @@ import com.oceanbase.odc.core.shared.constant.ConnectionVisibleScope;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
 import com.oceanbase.odc.core.shared.constant.PermissionType;
+import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.shared.exception.ConflictException;
@@ -91,6 +92,9 @@ import com.oceanbase.odc.metadb.iam.UserEntity;
 import com.oceanbase.odc.metadb.iam.UserRepository;
 import com.oceanbase.odc.service.collaboration.environment.EnvironmentService;
 import com.oceanbase.odc.service.collaboration.environment.model.Environment;
+import com.oceanbase.odc.service.collaboration.project.ProjectMapper;
+import com.oceanbase.odc.service.collaboration.project.ProjectService;
+import com.oceanbase.odc.service.collaboration.project.model.Project;
 import com.oceanbase.odc.service.common.model.Stats;
 import com.oceanbase.odc.service.common.response.CustomPage;
 import com.oceanbase.odc.service.common.response.PageAndStats;
@@ -186,6 +190,10 @@ public class ConnectionService {
     private DatabaseService databaseService;
 
     @Autowired
+    @Lazy
+    private ProjectService projectService;
+
+    @Autowired
     private PlatformTransactionManager transactionManager;
 
     @Autowired
@@ -272,7 +280,7 @@ public class ConnectionService {
             connectionValidator.validatePrivateConnectionTempOnly(connection.getTemp());
 
             if (!skipPermissionCheck) {
-                connectionValidator.validateProjectOperable(connection.getProjectId());
+                checkProjectOperable(connection.getProjectId());
             }
 
             connection.setOrganizationId(currentOrganizationId());
@@ -534,7 +542,7 @@ public class ConnectionService {
             connectionSSLAdaptor.adapt(connection);
             saved = internalGet(id);
             connectionValidator.validateForUpdate(connection, saved);
-            connectionValidator.validateProjectOperable(connection.getProjectId());
+            checkProjectOperable(connection.getProjectId());
             if (StringUtils.isBlank(connection.getSysTenantUsername())) {
                 // sys 用户没有设的情况下，相应地，密码要设置为空
                 connection.setSysTenantPassword("");
@@ -776,6 +784,15 @@ public class ConnectionService {
         entity.setOrganizationId(organizationId);
         entity.setName(name);
         return repository.exists(Example.of(entity));
+    }
+
+    private void checkProjectOperable(Long projectId) {
+        if (Objects.isNull(projectId)) {
+            return;
+        }
+        Project project = ProjectMapper.INSTANCE.entityToModel(projectService.nullSafeGet(projectId));
+        permissionValidator.checkCurrentOrganization(project);
+        projectService.checkPermission(projectId, Arrays.asList(ResourceRoleName.DBA, ResourceRoleName.OWNER));
     }
 
     private void attachPermittedActions(ConnectionConfig connection) {
