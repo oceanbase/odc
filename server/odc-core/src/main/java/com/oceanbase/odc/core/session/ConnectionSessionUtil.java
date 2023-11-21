@@ -41,6 +41,7 @@ import org.springframework.jdbc.core.StatementCallback;
 import com.oceanbase.jdbc.OceanBaseConnection;
 import com.oceanbase.jdbc.internal.protocol.Protocol;
 import com.oceanbase.odc.common.lang.Pair;
+import com.oceanbase.odc.common.util.HashUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.datasource.CloneableDataSourceFactory;
 import com.oceanbase.odc.core.shared.Verify;
@@ -355,7 +356,7 @@ public class ConnectionSessionUtil {
     }
 
     public static File getSessionWorkingDir(@NonNull ConnectionSession connectionSession) throws IOException {
-        return new File(getOrCreateFullPathAppendingSuffixToDataPath(connectionSession.getId()));
+        return new File(getOrCreateFullPathAppendingSuffixToDataPath(getUniqueIdentifier(connectionSession)));
     }
 
     public static File getSessionUploadDir(@NonNull ConnectionSession connectionSession) throws IOException {
@@ -528,6 +529,10 @@ public class ConnectionSessionUtil {
         return (String) connectionSession.getAttribute(ConnectionSessionConstants.OB_ARCHITECTURE);
     }
 
+    public static String getUniqueIdentifier(@NonNull ConnectionSession connectionSession) {
+        return HashUtils.md5(connectionSession.getId()).replace("-", "");
+    }
+
     private static String getOrCreateFullPathAppendingSuffixToDataPath(@NonNull String suffix) throws IOException {
         String dataDir = SystemUtils.getEnvOrProperty("file.storage.dir");
         if (dataDir == null) {
@@ -549,7 +554,8 @@ public class ConnectionSessionUtil {
     private static File getSessionWorkingDir(@NonNull ConnectionSession connectionSession, @NonNull String suffix)
             throws IOException {
         String realSuffix = suffix.startsWith("/") ? suffix.substring(1) : suffix;
-        return new File(getOrCreateFullPathAppendingSuffixToDataPath(connectionSession.getId() + "/" + realSuffix));
+        String key = getUniqueIdentifier(connectionSession);
+        return new File(getOrCreateFullPathAppendingSuffixToDataPath(key + "/" + realSuffix));
     }
 
     private static SyncJdbcExecutor getSyncJdbcExecutor(ConnectionSession session) {

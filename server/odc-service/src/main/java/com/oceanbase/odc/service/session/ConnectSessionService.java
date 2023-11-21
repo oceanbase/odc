@@ -331,8 +331,8 @@ public class ConnectSessionService {
      */
     public String uploadFile(@NotNull String sessionId, @NotNull InputStream inputStream) throws IOException {
         ConnectionSession connectionSession = nullSafeGet(sessionId);
-        String fileName =
-                String.format("%s_%d_user_defined_file.data", connectionSession.getId(), System.currentTimeMillis());
+        String key = ConnectionSessionUtil.getUniqueIdentifier(connectionSession);
+        String fileName = String.format("%s_%d_user_defined_file.data", key, System.currentTimeMillis());
         File uploadDir = ConnectionSessionUtil.getSessionUploadDir(connectionSession);
         if (!uploadDir.exists() || uploadDir.isFile()) {
             log.warn("The upload directory does not exist or the directory is a file, file={}", uploadDir);
