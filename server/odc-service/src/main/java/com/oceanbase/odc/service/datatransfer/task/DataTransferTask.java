@@ -153,6 +153,8 @@ public class DataTransferTask implements Callable<DataTransferTaskResult> {
         } catch (Exception e) {
             log.warn("Failed to run data transfer task.", e);
             LOGGER.warn("Failed to run data transfer task.", e);
+            // clean up files on exception, no matter what type the task is
+            clearWorkingDir();
             throw e;
 
         } finally {
@@ -267,18 +269,18 @@ public class DataTransferTask implements Callable<DataTransferTaskResult> {
         if (workingDir == null || !workingDir.exists()) {
             throw new FileNotFoundException("Working dir does not exist");
         }
-        File importPath = Paths.get(workingDir.getPath(), "data").toFile();
+        File dataPath = Paths.get(workingDir.getPath(), "data").toFile();
 
-        if (importPath.exists()) {
-            boolean deleteRes = FileUtils.deleteQuietly(importPath);
-            log.info("Delete import directory, dir={}, result={}", importPath.getAbsolutePath(), deleteRes);
+        if (dataPath.exists()) {
+            boolean deleteRes = FileUtils.deleteQuietly(dataPath);
+            log.info("Delete data directory, dir={}, result={}", dataPath.getAbsolutePath(), deleteRes);
         }
         for (File subFile : workingDir.listFiles()) {
             if (subFile.isDirectory()) {
                 continue;
             }
             boolean deleteRes = FileUtils.deleteQuietly(subFile);
-            log.info("Delete import file, fileName={}, result={}", subFile.getName(), deleteRes);
+            log.info("Deleted file, fileName={}, result={}", subFile.getName(), deleteRes);
         }
     }
 
