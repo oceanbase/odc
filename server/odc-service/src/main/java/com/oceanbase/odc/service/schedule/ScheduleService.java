@@ -303,9 +303,9 @@ public class ScheduleService {
             throw new IllegalStateException("Delete is not allowed because the data archive job has not succeeded.");
         }
 
-        // TODO throw
         try {
             if (quartzJobService.checkExists(jobKey)) {
+                log.info("Data archive delete job exists and start delete job,jobKey={}", jobKey);
                 quartzJobService.deleteJob(jobKey);
             }
             CreateQuartzJobReq req = new CreateQuartzJobReq();
@@ -341,16 +341,20 @@ public class ScheduleService {
         }
 
         try {
-            if (!quartzJobService.checkExists(jobKey)) {
-                CreateQuartzJobReq req = new CreateQuartzJobReq();
-                req.setScheduleId(scheduleId);
-                req.setType(JobType.DATA_ARCHIVE_ROLLBACK);
-                DataArchiveRollbackParameters parameters = new DataArchiveRollbackParameters();
-                parameters.setDataArchiveTaskId(taskId);
-                req.getJobDataMap().putAll(BeanMap.create(parameters));
-                quartzJobService.createJob(req);
+            if (quartzJobService.checkExists(jobKey)) {
+                log.info("Data archive rollback job exists and start delete job,jobKey={}", jobKey);
+                quartzJobService.deleteJob(jobKey);
             }
-            quartzJobService.triggerJob(jobKey);
+            CreateQuartzJobReq req = new CreateQuartzJobReq();
+            req.setScheduleId(scheduleId);
+            req.setType(JobType.DATA_ARCHIVE_ROLLBACK);
+            DataArchiveRollbackParameters parameters = new DataArchiveRollbackParameters();
+            parameters.setDataArchiveTaskId(taskId);
+            req.getJobDataMap().putAll(BeanMap.create(parameters));
+            TriggerConfig triggerConfig = new TriggerConfig();
+            triggerConfig.setTriggerStrategy(TriggerStrategy.START_NOW);
+            req.setTriggerConfig(triggerConfig);
+            quartzJobService.createJob(req);
         } catch (SchedulerException e) {
             throw new RuntimeException(e);
         }
