@@ -14,25 +14,17 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.task.dispatch;
+package com.oceanbase.odc.service.task.config;
 
-import com.oceanbase.odc.service.connection.ConnectionService;
-import com.oceanbase.odc.service.task.TaskService;
-import com.oceanbase.odc.service.task.caller.JobCaller;
-
-import lombok.Data;
+import com.oceanbase.odc.core.task.context.JobContext;
+import com.oceanbase.odc.service.task.caller.JobException;
 
 /**
  * @author yaobin
- * @date 2023-11-21
+ * @date 2023-11-20
  * @since 4.2.4
  */
-@Data
-public class DefaultJobConfiguration implements JobConfiguration {
+public interface JobDispatcher {
 
-    private TaskService taskService;
-
-    private ConnectionService connectionService;
-
-    private JobCaller jobCaller;
+    void dispatch(JobContext context) throws JobException;
 }

@@ -14,14 +14,22 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.task.dispatch;
+package com.oceanbase.odc.service.task.config;
+
+import com.oceanbase.odc.service.connection.ConnectionService;
+import com.oceanbase.odc.service.task.TaskService;
+import com.oceanbase.odc.service.task.caller.JobCaller;
 
 /**
  * @author yaobin
  * @date 2023-11-21
  * @since 4.2.4
  */
-public enum TaskFrameworkDeploySense {
+public interface JobConfiguration {
 
-    K8S, MASTER_WORKER, INNER_JVM
+    TaskService getTaskService();
+
+    ConnectionService getConnectionService();
+
+    JobCaller getJobCaller();
 }

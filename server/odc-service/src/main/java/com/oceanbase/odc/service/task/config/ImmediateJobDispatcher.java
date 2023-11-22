@@ -14,22 +14,29 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.task.dispatch;
+package com.oceanbase.odc.service.task.config;
 
-import com.oceanbase.odc.service.connection.ConnectionService;
-import com.oceanbase.odc.service.task.TaskService;
+import com.oceanbase.odc.core.task.context.JobContext;
 import com.oceanbase.odc.service.task.caller.JobCaller;
+import com.oceanbase.odc.service.task.caller.JobException;
 
 /**
+ * Dispatch job to JobCaller immediately
+ *
  * @author yaobin
- * @date 2023-11-21
+ * @date 2023-11-20
  * @since 4.2.4
  */
-public interface JobConfiguration {
+public class ImmediateJobDispatcher implements JobDispatcher {
 
-    TaskService getTaskService();
+    private final JobCaller jobCaller;
 
-    ConnectionService getConnectionService();
+    public ImmediateJobDispatcher(JobCaller jobCaller) {
+        this.jobCaller = jobCaller;
+    }
 
-    JobCaller getJobCaller();
+    @Override
+    public void dispatch(JobContext context) throws JobException {
+        jobCaller.start(context);
+    }
 }

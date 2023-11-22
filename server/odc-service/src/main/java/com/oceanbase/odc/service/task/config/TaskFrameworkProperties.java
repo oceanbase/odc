@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.task.dispatch;
+package com.oceanbase.odc.service.task.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
@@ -24,8 +24,8 @@ import lombok.Data;
 
 /**
  * @author yaobin
- * @date 2023-06-06
- * @since 4.2.0
+ * @date 2023-11-21
+ * @since 4.2.4
  */
 @Data
 @RefreshScope
@@ -33,7 +33,7 @@ import lombok.Data;
 @ConfigurationProperties(prefix = "odc.task-framework")
 public class TaskFrameworkProperties {
 
-    private TaskFrameworkDeploySense sense;
+    private TaskFrameworkDeploySense sense = TaskFrameworkDeploySense.STANDALONE ;
 
     @NestedConfigurationProperty
     private K8sProperties k8sProperties;

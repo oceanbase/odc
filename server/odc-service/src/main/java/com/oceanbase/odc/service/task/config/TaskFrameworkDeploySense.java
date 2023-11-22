@@ -14,17 +14,14 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.task.dispatch;
-
-import com.oceanbase.odc.core.task.context.JobContext;
-import com.oceanbase.odc.service.task.caller.JobException;
+package com.oceanbase.odc.service.task.config;
 
 /**
  * @author yaobin
- * @date 2023-11-20
+ * @date 2023-11-21
  * @since 4.2.4
  */
-public interface JobDispatcher {
+public enum TaskFrameworkDeploySense {
 
-    void dispatch(JobContext context) throws JobException;
+    K8S, MASTER_WORKER, STANDALONE
 }

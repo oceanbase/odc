@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.task.dispatch;
+package com.oceanbase.odc.service.task.config;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -24,7 +24,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import com.oceanbase.odc.service.common.util.ConditionalOnProperty;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.info.InfoAdapter;
 import com.oceanbase.odc.service.task.TaskService;
@@ -54,9 +53,8 @@ public class TaskFrameworkConfiguration {
     @Autowired
     private InfoAdapter infoAdapter;
 
-    @ConditionalOnProperty(prefix = "odc.task-framework.sense", value = "K8S")
     @Bean
-    public K8sJobClient getK8sJobClient() {
+    public K8sJobClient k8sJobClient() {
         try {
             return new NativeK8sJobClient(taskFrameworkProperties.getK8sProperties().getUrl());
         } catch (IOException e) {
@@ -66,7 +64,7 @@ public class TaskFrameworkConfiguration {
     }
 
     @Bean
-    public JobCaller getJobCaller() {
+    public JobCaller jobCaller() {
         switch (taskFrameworkProperties.getSense()) {
             case K8S:
             default:
@@ -75,12 +73,17 @@ public class TaskFrameworkConfiguration {
     }
 
     @Bean
-    public JobConfiguration getJobConfiguration() {
+    public JobConfiguration jobConfiguration() {
         DefaultJobConfiguration configuration = new DefaultJobConfiguration();
         configuration.setConnectionService(connectionService);
         configuration.setTaskService(taskService);
-        configuration.setJobCaller(getJobCaller());
+        configuration.setJobCaller(jobCaller());
         return configuration;
+    }
+
+    @Bean
+    public JobConfigurationHolder jobConfigurationHolder() {
+        return new JobConfigurationHolder();
     }
 
     private K8sJobCaller getK8sJobCaller() {
@@ -91,6 +94,6 @@ public class TaskFrameworkConfiguration {
         podConfig.setImage(imageName);
         podConfig.setCommand(cmd);
         podConfig.setNamespace("default");
-        return new K8sJobCaller(getK8sJobClient(), podConfig);
+        return new K8sJobCaller(k8sJobClient(), podConfig);
     }
 }
