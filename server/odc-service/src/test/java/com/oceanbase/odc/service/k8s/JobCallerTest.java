@@ -47,7 +47,7 @@ public class JobCallerTest extends BaseJobTest {
         podConfig.setNamespace("default");
 
         JobCaller jobCaller = new K8sJobCaller(getK8sJobClient(), podConfig);
-        jobCaller.getEventPublish().addEventListener(new JobCallerListener() {
+        jobCaller.getEventPublisher().addEventListener(new JobCallerListener() {
             @Override
             protected void startSucceed(Long taskId) {
                 Assert.assertEquals(exceptedTaskId, taskId);
@@ -74,7 +74,7 @@ public class JobCallerTest extends BaseJobTest {
         podConfig.setNamespace("default");
 
         JobCaller jobCaller = new K8sJobCaller(getK8sJobClient(), podConfig);
-        jobCaller.getEventPublish().addEventListener(new JobCallerListener() {
+        jobCaller.getEventPublisher().addEventListener(new JobCallerListener() {
             @Override
             protected void startFailed(Long taskId, Exception ex) {
                 log.info(ex.getMessage());

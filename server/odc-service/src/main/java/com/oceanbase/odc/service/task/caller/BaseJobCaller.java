@@ -56,7 +56,7 @@ public abstract class BaseJobCaller implements JobCaller {
     }
 
     @Override
-    public EventPublisher getEventPublish() {
+    public EventPublisher getEventPublisher() {
         return this.publisher;
     }
 

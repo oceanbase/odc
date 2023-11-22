@@ -49,6 +49,6 @@ public interface JobCaller {
      * 
      * @return job execution event publisher
      */
-    EventPublisher getEventPublish();
+    EventPublisher getEventPublisher();
 
 }
