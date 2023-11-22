@@ -14,16 +14,14 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.task.listener;
+package com.oceanbase.odc.service.task.enums;
 
 /**
  * @author yaobin
- * @date 2023-11-16
+ * @date 2023-11-21
  * @since 4.2.4
  */
-public enum JobCallerAction {
+public enum DeployModelEnum {
 
-    START,
-
-    STOP;
+    K8S, MASTER_WORKER, STANDALONE
 }

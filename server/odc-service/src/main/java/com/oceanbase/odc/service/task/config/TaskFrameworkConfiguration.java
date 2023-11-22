@@ -31,6 +31,7 @@ import com.oceanbase.odc.service.task.caller.K8sJobCaller;
 import com.oceanbase.odc.service.task.caller.K8sJobClient;
 import com.oceanbase.odc.service.task.caller.NativeK8sJobClient;
 import com.oceanbase.odc.service.task.caller.PodConfig;
+import com.oceanbase.odc.service.task.enums.DeployModelEnum;
 
 import lombok.extern.slf4j.Slf4j;
 

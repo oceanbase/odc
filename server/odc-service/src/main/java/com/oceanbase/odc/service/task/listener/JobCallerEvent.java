@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.task.listener;
 
 import com.oceanbase.odc.common.event.AbstractEvent;
+import com.oceanbase.odc.service.task.enums.JobCallerAction;
 
 import lombok.Getter;
 
