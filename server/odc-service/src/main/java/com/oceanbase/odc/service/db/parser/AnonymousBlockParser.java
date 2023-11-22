@@ -23,12 +23,12 @@ import org.antlr.v4.runtime.tree.ParseTreeWalker;
 
 import com.oceanbase.odc.service.db.parser.listener.OBOracleCallPLByAnonymousBlockListener;
 import com.oceanbase.odc.service.db.parser.result.ParserCallPLByAnonymousBlockResult;
-import com.oceanbase.tools.dbbrowser.parser.TimeoutTokenStream;
 import com.oceanbase.tools.sqlparser.FastFailErrorListener;
 import com.oceanbase.tools.sqlparser.FastFailErrorStrategy;
 import com.oceanbase.tools.sqlparser.oracle.PlSqlLexer;
 import com.oceanbase.tools.sqlparser.oracle.PlSqlParser;
 import com.oceanbase.tools.sqlparser.util.CaseChangingCharStream;
+import com.oceanbase.tools.sqlparser.util.TimeoutTokenStream;
 
 import lombok.extern.slf4j.Slf4j;
 

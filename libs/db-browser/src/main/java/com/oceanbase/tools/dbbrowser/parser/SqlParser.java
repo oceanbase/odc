@@ -27,6 +27,7 @@ import com.oceanbase.tools.dbbrowser.parser.listener.OracleModeSqlParserListener
 import com.oceanbase.tools.dbbrowser.parser.result.ParseSqlResult;
 import com.oceanbase.tools.sqlparser.obmysql.OBLexer;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser;
+import com.oceanbase.tools.sqlparser.util.TimeoutTokenStream;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
