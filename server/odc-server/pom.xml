@@ -291,7 +291,7 @@
                     <postinstallScriptlet>
                         <script>tar -xvzf ${rpm.rootdir}/bin/obclient.tar.gz -C ${rpm.rootdir} &amp;&amp;
                             rm -f ${rpm.rootdir}/bin/obclient.tar.gz &amp;&amp;
-                            ln -s ${rpm.rootdir}/lib/libncurses.so.5 /usr/lib64/libncurses.so.5
+                            ln -s ${rpm.rootdir}/obclient/lib/libncurses.so.5 /usr/lib64/libncurses.so.5
                         </script>
                     </postinstallScriptlet>
                 </configuration>
