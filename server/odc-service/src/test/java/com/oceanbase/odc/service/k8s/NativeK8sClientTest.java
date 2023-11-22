@@ -67,5 +67,4 @@ public class NativeK8sClientTest {
         Assert.assertEquals(exceptedJobName, deleteJobOfName);
     }
 
-
 }

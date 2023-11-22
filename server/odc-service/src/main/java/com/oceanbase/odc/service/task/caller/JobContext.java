@@ -18,7 +18,6 @@ package com.oceanbase.odc.service.task.caller;
 
 import java.util.List;
 
-import com.oceanbase.odc.core.flow.model.TaskParameters;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.service.common.model.HostProperties;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
@@ -43,7 +42,7 @@ public interface JobContext {
     /**
      * get task parameters
      */
-    TaskParameters getTaskParameters();
+    String getTaskParameters();
 
     /**
      * get task connection config

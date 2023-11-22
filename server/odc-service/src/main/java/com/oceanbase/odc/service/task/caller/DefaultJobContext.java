@@ -19,7 +19,6 @@ package com.oceanbase.odc.service.task.caller;
 import java.io.Serializable;
 import java.util.List;
 
-import com.oceanbase.odc.core.flow.model.TaskParameters;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.service.common.model.HostProperties;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
@@ -47,7 +46,7 @@ public class DefaultJobContext implements JobContext, Serializable {
     /**
      * task parameters
      */
-    private TaskParameters taskParameters;
+    private String taskParameters;
     /**
      * task connection config
      */
