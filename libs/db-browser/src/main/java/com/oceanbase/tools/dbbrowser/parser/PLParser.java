@@ -33,6 +33,7 @@ import com.oceanbase.tools.sqlparser.obmysql.PLLexer;
 import com.oceanbase.tools.sqlparser.oracle.PlSqlLexer;
 import com.oceanbase.tools.sqlparser.oracle.PlSqlParser;
 import com.oceanbase.tools.sqlparser.util.CaseChangingCharStream;
+import com.oceanbase.tools.sqlparser.util.TimeoutTokenStream;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
