@@ -13,19 +13,37 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.oceanbase.odc.service.task.listener;
 
-package com.oceanbase.odc.service.task.caller;
+import com.oceanbase.odc.common.event.AbstractEvent;
 
-import com.oceanbase.odc.service.task.constants.JobConstants;
+import lombok.Getter;
 
 /**
  * @author yaobin
- * @date 2023-11-15
+ * @date 2023-11-16
  * @since 4.2.4
  */
-public class JobUtils {
+public class JobCallerEvent extends AbstractEvent {
 
-    public static String generateJobName(Long taskId) {
-        return JobConstants.TEMPLATE_JOB_NAME_PREFIX + taskId;
+    @Getter
+    private final JobCallerAction jobAction;
+
+    @Getter
+    private final boolean success;
+
+    @Getter
+    private final Long taskId;
+
+    @Getter
+    private final Exception ex;
+
+    public JobCallerEvent(Long taskId, JobCallerAction jobAction, boolean success, Exception ex) {
+        super(taskId, jobAction.name());
+        this.success = success;
+        this.jobAction = jobAction;
+        this.taskId = taskId;
+        this.ex = ex;
     }
 }
+

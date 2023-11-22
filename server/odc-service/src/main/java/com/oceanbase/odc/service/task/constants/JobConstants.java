@@ -14,18 +14,27 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.task.caller;
-
-import com.oceanbase.odc.service.task.constants.JobConstants;
+package com.oceanbase.odc.service.task.constants;
 
 /**
  * @author yaobin
  * @date 2023-11-15
  * @since 4.2.4
  */
-public class JobUtils {
+public class JobConstants {
 
-    public static String generateJobName(Long taskId) {
-        return JobConstants.TEMPLATE_JOB_NAME_PREFIX + taskId;
-    }
+    public static final String TEMPLATE_KIND_POD = "Pod";
+
+    public static final String TEMPLATE_KIND_JOB = "Job";
+
+    public static final String TEMPLATE_API_VERSION = "v1";
+
+    public static final String TEMPLATE_BATCH_API_VERSION = "batch/v1";
+
+    public static final String TEMPLATE_JOB_NAME_PREFIX = "task-";
+
+    public static final String RESTART_POLICY_NEVER = "Never";
+
+    public static final String FIELD_SELECTOR_METADATA_NAME = "metadata.name";
+
 }

@@ -16,16 +16,19 @@
 
 package com.oceanbase.odc.service.task.caller;
 
-import com.oceanbase.odc.service.task.constants.JobConstants;
+import java.io.Serializable;
+
+import com.oceanbase.odc.metadb.task.TaskEntity;
+
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 /**
  * @author yaobin
- * @date 2023-11-15
+ * @date 2023-11-22
  * @since 4.2.4
  */
-public class JobUtils {
-
-    public static String generateJobName(Long taskId) {
-        return JobConstants.TEMPLATE_JOB_NAME_PREFIX + taskId;
-    }
+@Data
+@EqualsAndHashCode(callSuper = true)
+public class Task extends TaskEntity implements Serializable {
 }

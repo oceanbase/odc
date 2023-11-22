@@ -14,18 +14,15 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.task.caller;
-
-import com.oceanbase.odc.service.task.constants.JobConstants;
+package com.oceanbase.odc.service.task.constants;
 
 /**
  * @author yaobin
- * @date 2023-11-15
+ * @date 2023-11-21
  * @since 4.2.4
  */
-public class JobUtils {
+public class JobEnvConstants {
 
-    public static String generateJobName(Long taskId) {
-        return JobConstants.TEMPLATE_JOB_NAME_PREFIX + taskId;
-    }
+    public static final String TASK_ENV_NAME = "TASK_ENV";
+
 }

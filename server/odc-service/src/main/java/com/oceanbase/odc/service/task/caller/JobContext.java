@@ -16,16 +16,38 @@
 
 package com.oceanbase.odc.service.task.caller;
 
-import com.oceanbase.odc.service.task.constants.JobConstants;
+import java.io.Serializable;
+import java.util.List;
+
+import com.oceanbase.odc.service.common.model.HostProperties;
+import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+
+import lombok.Data;
 
 /**
  * @author yaobin
  * @date 2023-11-15
  * @since 4.2.4
  */
-public class JobUtils {
 
-    public static String generateJobName(Long taskId) {
-        return JobConstants.TEMPLATE_JOB_NAME_PREFIX + taskId;
-    }
+@Data
+public class JobContext implements Serializable {
+
+    /**
+     * task id
+     */
+    private Long taskId;
+    /**
+     * task param
+     */
+    private Task task;
+    /**
+     * task connection config
+     */
+    private ConnectionConfig connConfig;
+    /**
+     * odc server host properties
+     */
+    private List<HostProperties> hostProperties;
+
 }

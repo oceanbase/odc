@@ -16,16 +16,21 @@
 
 package com.oceanbase.odc.service.task.caller;
 
-import com.oceanbase.odc.service.task.constants.JobConstants;
+import java.util.List;
+
+import lombok.Data;
 
 /**
  * @author yaobin
- * @date 2023-11-15
+ * @date 2023-11-16
  * @since 4.2.4
  */
-public class JobUtils {
+@Data
+public class PodConfig {
 
-    public static String generateJobName(Long taskId) {
-        return JobConstants.TEMPLATE_JOB_NAME_PREFIX + taskId;
-    }
+    private String namespace;
+
+    private String image;
+
+    private List<String> command;
 }
