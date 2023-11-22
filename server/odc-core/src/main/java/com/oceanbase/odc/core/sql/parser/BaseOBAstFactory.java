@@ -40,7 +40,7 @@ public abstract class BaseOBAstFactory implements AbstractSyntaxTreeFactory {
     private long timeoutMillis;
 
     public BaseOBAstFactory(long timeoutMillis) {
-        this.timeoutMillis = timeoutMillis <= 0 ? Long.MAX_VALUE : timeoutMillis;
+        this.timeoutMillis = timeoutMillis;
     }
 
     @Override
@@ -49,16 +49,20 @@ public abstract class BaseOBAstFactory implements AbstractSyntaxTreeFactory {
         SyntaxErrorException thrown;
         BaseSQLParser<? extends Lexer, ? extends Parser> sqlParser = getSqlParser();
         try {
+            sqlParser.setTimeoutMillis(this.timeoutMillis);
             return doBuildAst(sqlParser.buildAst(new StringReader(statement)), sqlParser);
         } catch (SyntaxErrorException e) {
             thrown = e;
         }
-        this.timeoutMillis = this.timeoutMillis - (System.currentTimeMillis() - start);
-        if (this.timeoutMillis <= 0) {
-            throw new ParseCancellationException("Timeout, abort!");
+        if (this.timeoutMillis > 0) {
+            this.timeoutMillis = this.timeoutMillis - (System.currentTimeMillis() - start);
+            if (this.timeoutMillis <= 0) {
+                throw new ParseCancellationException("Timeout, abort!");
+            }
         }
         BaseSQLParser<? extends Lexer, ? extends Parser> plParser = getPlParser();
         try {
+            plParser.setTimeoutMillis(this.timeoutMillis);
             return doBuildAst(plParser.buildAst(new StringReader(statement)), plParser);
         } catch (SyntaxErrorException e) {
             throw thrown;
