@@ -56,7 +56,7 @@ public class DBViewControllerV1 {
     public OdcResult<List<DBView>> list(@PathVariable String sid) {
         // sid:1-1:d:database
         ResourceIdentifier i = ResourceIDParser.parse(sid);
-        return OdcResult.ok(viewService.list(sessionService.nullSafeGet(i.getSid()), i.getDatabase()));
+        return OdcResult.ok(viewService.list(sessionService.nullSafeGet(i.getSid(), true), i.getDatabase()));
     }
 
     @ApiOperation(value = "detail", notes = "查看视图的详细信息，sid示例：sid:1000-1:d:db1:v:v1")
@@ -64,22 +64,22 @@ public class DBViewControllerV1 {
     public OdcResult<DBViewResponse> detail(@PathVariable String sid) {
         // parse sid and view name, sid:1-1:d:database:v:v1
         ResourceIdentifier i = ResourceIDParser.parse(sid);
-        return OdcResult.ok(viewService.detail(sessionService.nullSafeGet(i.getSid()),
-                i.getDatabase(), i.getView()));
+        return OdcResult.ok(viewService.detail(
+                sessionService.nullSafeGet(i.getSid(), true), i.getDatabase(), i.getView()));
     }
 
     @ApiOperation(value = "listAll", notes = "查看视图和表列表，sid示例：sid:1000-1:d:db1:v:v1")
     @RequestMapping(value = "/listAll/{sid}", method = RequestMethod.GET)
     public OdcResult<AllTablesAndViews> listAll(@PathVariable String sid, @RequestParam String name) {
-        return OdcResult
-                .ok(viewService.listAllTableAndView(sessionService.nullSafeGet(SidUtils.getSessionId(sid)), name));
+        return OdcResult.ok(viewService.listAllTableAndView(
+                sessionService.nullSafeGet(SidUtils.getSessionId(sid), true), name));
     }
 
     @ApiOperation(value = "getCreateSql", notes = "获取创建视图的sql，sid示例：sid:1000-1:d:db1:v:v1")
     @RequestMapping(value = "/getCreateSql/{sid:.*}", method = RequestMethod.PATCH)
     public OdcResult<ResourceSql> getCreateSql(@PathVariable String sid, @RequestBody DBView resource) {
-        String sql = viewService.getCreateSql(sessionService.nullSafeGet(SidUtils.getSessionId(sid)), resource);
-        return OdcResult.ok(ResourceSql.ofSql(sql));
+        return OdcResult.ok(ResourceSql.ofSql(viewService.getCreateSql(
+                sessionService.nullSafeGet(SidUtils.getSessionId(sid), true), resource)));
     }
 
 }

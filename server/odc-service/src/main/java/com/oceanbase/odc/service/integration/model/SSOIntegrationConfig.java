@@ -77,7 +77,8 @@ public class SSOIntegrationConfig implements Serializable {
             case "OAUTH2":
             case "OIDC":
                 Preconditions.checkArgument(integrationConfig.getEncryption().getEnabled()
-                        && integrationConfig.getEncryption().getAlgorithm().equals(EncryptionAlgorithm.RAW));
+                        && integrationConfig.getEncryption().getAlgorithm()
+                                .equals(EncryptionAlgorithm.RAW));
                 Oauth2Parameter parameter = (Oauth2Parameter) ssoIntegrationConfig.getSsoParameter();
                 parameter.setName(integrationConfig.getName());
                 parameter.fillParameter();
@@ -141,7 +142,6 @@ public class SSOIntegrationConfig implements Serializable {
         }
     }
 
-
     public String resolveLoginRedirectUrl() {
         switch (type) {
             case "OAUTH2":
@@ -171,12 +171,8 @@ public class SSOIntegrationConfig implements Serializable {
     public ClientRegistration toClientRegistration() {
         switch (type) {
             case "OAUTH2":
-                Oauth2Parameter oauth2 = (Oauth2Parameter) ssoParameter;
-                oauth2.fillParameter();
                 return ((Oauth2Parameter) ssoParameter).toClientRegistration();
             case "OIDC":
-                OidcParameter oidc = (OidcParameter) ssoParameter;
-                oidc.fillParameter();
                 return ((OidcParameter) ssoParameter).toClientRegistration();
             default:
                 throw new UnsupportedOperationException("unknown type=" + type);

@@ -21,7 +21,6 @@ import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
-import com.oceanbase.odc.core.shared.constant.ConnectionAccountType;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.core.sql.execute.SyncJdbcExecutor;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
@@ -37,8 +36,6 @@ import com.oceanbase.tools.dbbrowser.schema.oracle.OBOracleLessThan400SchemaAcce
 import com.oceanbase.tools.dbbrowser.schema.oracle.OBOracleSchemaAccessor;
 import com.oceanbase.tools.dbbrowser.schema.oracle.OracleSchemaAccessor;
 import com.oceanbase.tools.dbbrowser.util.ALLDataDictTableNames;
-import com.oceanbase.tools.dbbrowser.util.DBADataDictTableNames;
-import com.oceanbase.tools.dbbrowser.util.OracleDataDictTableNames;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -89,34 +86,24 @@ public class DBSchemaAccessors {
         } else if (connectType == ConnectType.OB_ORACLE || connectType == ConnectType.CLOUD_OB_ORACLE) {
             if (VersionUtils.isGreaterThanOrEqualsTo(obVersion, "4.0.0")) {
                 // OB 版本 >= 4.0.0
-                return new OBOracleSchemaAccessor(syncJdbcExecutor, getOracleDataDictTableNames(connectionSession));
+                return new OBOracleSchemaAccessor(syncJdbcExecutor, new ALLDataDictTableNames());
             } else if (VersionUtils.isGreaterThanOrEqualsTo(obVersion, "2.2.7")) {
                 // OB 版本为 [2.2.7, 4.0.0)
-                return new OBOracleLessThan400SchemaAccessor(syncJdbcExecutor,
-                        getOracleDataDictTableNames(connectionSession));
+                return new OBOracleLessThan400SchemaAccessor(syncJdbcExecutor, new ALLDataDictTableNames());
             } else {
                 // OB 版本 < 2.2.7
-                return new OBOracleLessThan2270SchemaAccessor(syncJdbcExecutor,
-                        getOracleDataDictTableNames(connectionSession));
+                return new OBOracleLessThan2270SchemaAccessor(syncJdbcExecutor, new ALLDataDictTableNames());
             }
         } else if (connectType == ConnectType.ODP_SHARDING_OB_MYSQL) {
             return new ODPOBMySQLSchemaAccessor(syncJdbcExecutor);
         } else if (connectType == ConnectType.MYSQL) {
             return new MySQLNoGreaterThan5740SchemaAccessor(syncJdbcExecutor);
         } else if (connectType == ConnectType.ORACLE) {
-            return new OracleSchemaAccessor(syncJdbcExecutor, getOracleDataDictTableNames(connectionSession));
+            return new OracleSchemaAccessor(syncJdbcExecutor, new ALLDataDictTableNames());
         } else {
             throw new UnsupportedException(String.format("ConnectType '%s' not supported", connectType));
         }
     }
 
-    private static OracleDataDictTableNames getOracleDataDictTableNames(ConnectionSession connectionSession) {
-        ConnectionAccountType connectionAccountType = ConnectionSessionUtil.getConnectionAccountType(connectionSession);
-        if (ConnectionAccountType.SYS_READ.equals(connectionAccountType)) {
-            return new DBADataDictTableNames();
-        } else {
-            return new ALLDataDictTableNames();
-        }
-    }
 }
 

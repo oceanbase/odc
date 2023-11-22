@@ -21,8 +21,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import org.antlr.v4.runtime.CharStreams;
-import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.tree.ParseTree;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
@@ -32,19 +31,19 @@ import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.sql.execute.SqlExecuteStages;
 import com.oceanbase.odc.core.sql.execute.model.SqlExecuteStatus;
+import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
+import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTree;
+import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTreeFactories;
 import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
 import com.oceanbase.odc.service.session.model.SqlAsyncExecuteReq;
 import com.oceanbase.odc.service.session.model.SqlAsyncExecuteResp;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
-import com.oceanbase.tools.sqlparser.FastFailErrorListener;
-import com.oceanbase.tools.sqlparser.FastFailErrorStrategy;
 import com.oceanbase.tools.sqlparser.adapter.oracle.OracleExpressionFactory;
-import com.oceanbase.tools.sqlparser.oboracle.OBLexer;
-import com.oceanbase.tools.sqlparser.oboracle.OBParser;
+import com.oceanbase.tools.sqlparser.oboracle.OBParser.Alter_session_stmtContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Scope_or_scope_aliasContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Set_system_parameter_clauseContext;
-import com.oceanbase.tools.sqlparser.oboracle.OBParser.StmtContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Var_and_valContext;
+import com.oceanbase.tools.sqlparser.oboracle.OBParser.Variable_set_stmtContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParserBaseVisitor;
 import com.oceanbase.tools.sqlparser.statement.Expression;
 import com.oceanbase.tools.sqlparser.statement.expression.ConstExpression;
@@ -87,7 +86,7 @@ public class NlsFormatInterceptor extends BaseTimeConsumingInterceptor {
         if (!StringUtils.startsWithIgnoreCase(sql, "set") && !startWithAlterSession(sql)) {
             return;
         }
-        getVariableAssigns(sql).stream().filter(VariableAssign::isSession).forEach(v -> {
+        getVariableAssigns(response.getSqlTuple(), dialect).stream().filter(VariableAssign::isSession).forEach(v -> {
             String value = getNlsFormatValue(v.getValue());
             if (value == null) {
                 return;
@@ -133,23 +132,20 @@ public class NlsFormatInterceptor extends BaseTimeConsumingInterceptor {
         return StringUtils.unwrap(e.getExprConst(), "'");
     }
 
-    private List<VariableAssign> getVariableAssigns(String sql) {
+    private List<VariableAssign> getVariableAssigns(SqlTuple sqlTuple, DialectType dialect) {
         try {
-            OBLexer lexer = new OBLexer(CharStreams.fromString(sql));
-            lexer.removeErrorListeners();
-            lexer.addErrorListener(new FastFailErrorListener());
-            CommonTokenStream tokens = new CommonTokenStream(lexer);
-            OBParser parser = new OBParser(tokens);
-            parser.removeErrorListeners();
-            parser.addErrorListener(new FastFailErrorListener());
-            parser.setErrorHandler(new FastFailErrorStrategy());
-            StmtContext stmtContext = parser.stmt();
-            if (stmtContext.variable_set_stmt() != null) {
-                return stmtContext.variable_set_stmt().var_and_val_list().var_and_val().stream()
+            AbstractSyntaxTree ast = sqlTuple.getAst();
+            if (ast == null) {
+                sqlTuple.initAst(AbstractSyntaxTreeFactories.getAstFactory(dialect, 0));
+                ast = sqlTuple.getAst();
+            }
+            ParseTree parseTree = ast.getRoot();
+            if (parseTree instanceof Variable_set_stmtContext) {
+                return ((Variable_set_stmtContext) parseTree).var_and_val_list().var_and_val().stream()
                         .map(c -> new NlsFormatVariableVisitor().visit(c))
                         .filter(Objects::nonNull).collect(Collectors.toList());
-            } else if (stmtContext.alter_session_stmt() != null) {
-                return stmtContext.alter_session_stmt().alter_session_set_clause()
+            } else if (parseTree instanceof Alter_session_stmtContext) {
+                return ((Alter_session_stmtContext) parseTree).alter_session_set_clause()
                         .set_system_parameter_clause_list().set_system_parameter_clause().stream()
                         .map(c -> new NlsFormatVariableVisitor().visit(c)).collect(Collectors.toList());
             }

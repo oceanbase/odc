@@ -188,7 +188,7 @@ public class OnlineSchemaChangeValidatorOBMySqlTest extends ServiceTestEnv {
         CreateFlowInstanceReq req = new CreateFlowInstanceReq();
         req.setParameters(parameter);
         req.setConnectionId(1L);
-        req.setDatabaseName(config.defaultSchema());
+        req.setDatabaseName(config.getDefaultSchema());
         return req;
     }
 

@@ -47,15 +47,15 @@ public class DBTableIndexController {
     @RequestMapping(value = "/list/{sid:.*}", method = RequestMethod.GET)
     public OdcResult<List<OdcDBTableIndex>> list(@PathVariable String sid) {
         ResourceIdentifier i = ResourceIDParser.parse(sid);
-        return OdcResult.ok(this.indexService.list(sessionService.nullSafeGet(
-                i.getSid()), i.getDatabase(), i.getTable()));
+        return OdcResult.ok(this.indexService.list(
+                sessionService.nullSafeGet(i.getSid(), true), i.getDatabase(), i.getTable()));
     }
 
     @ApiOperation(value = "getDeleteSql", notes = "获取删除索引的sql，sid示例：sid:1000-1:d:db1:t:tb1")
     @RequestMapping(value = "/getDeleteSql/{sid:.*}", method = RequestMethod.PATCH)
     public OdcResult<ResourceSql> getDeleteSql(@PathVariable String sid, @RequestBody OdcDBTableIndex index) {
-        String sql = this.indexService.getDeleteSql(sessionService.nullSafeGet(SidUtils.getSessionId(sid)), index);
-        return OdcResult.ok(ResourceSql.ofSql(sql));
+        return OdcResult.ok(ResourceSql.ofSql(this.indexService.getDeleteSql(
+                sessionService.nullSafeGet(SidUtils.getSessionId(sid), true), index)));
     }
 
 }

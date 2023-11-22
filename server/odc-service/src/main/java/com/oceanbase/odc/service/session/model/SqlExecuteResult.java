@@ -35,13 +35,11 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonProperty.Access;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.oceanbase.odc.common.util.TraceStage;
 import com.oceanbase.odc.common.util.TraceWatch;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
-import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
@@ -51,6 +49,8 @@ import com.oceanbase.odc.core.sql.execute.model.JdbcGeneralResult;
 import com.oceanbase.odc.core.sql.execute.model.JdbcQueryResult;
 import com.oceanbase.odc.core.sql.execute.model.SqlExecuteStatus;
 import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
+import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTree;
+import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTreeFactories;
 import com.oceanbase.odc.service.common.model.OdcResultSetMetaData.OdcTable;
 import com.oceanbase.odc.service.common.util.PLObjectErrMsgUtils;
 import com.oceanbase.odc.service.feature.AllFeatures;
@@ -85,10 +85,7 @@ public class SqlExecuteResult {
     private List<String> columns;
     private SqlExecuteStatus status = SqlExecuteStatus.CREATED;
     private boolean connectionReset = false;
-    private String sqlId;
     private String dbmsOutput;
-    private String executeSql;
-    private String originSql;
     private String sqlType;
     private GeneralSqlType generalSqlType;
     private DBResultSetMetaData resultSetMetaData;
@@ -102,32 +99,25 @@ public class SqlExecuteResult {
     private String dbObjectName;
     private List<String> dbObjectNameList;
     private boolean existWarnings = false;
-    @JsonProperty(access = Access.WRITE_ONLY)
-    private TraceWatch traceWatch = new TraceWatch("Default");
     private List<CheckViolation> checkViolations = new ArrayList<>();
     private Boolean allowExport;
     private boolean existSensitiveData = false;
     private List<String> whereColumns;
+    private boolean withFullLinkTrace = false;
+    private String traceEmptyReason;
+    @JsonIgnore
+    private SqlTuple sqlTuple;
 
     public static SqlExecuteResult emptyResult(@NonNull SqlTuple sqlTuple, @NonNull SqlExecuteStatus status) {
-        SqlExecuteResult result = new SqlExecuteResult(sqlTuple.getExecutedSql(), sqlTuple.getSqlId());
+        SqlExecuteResult result = new SqlExecuteResult();
         result.status = status;
         result.total = 0;
-        result.originSql = sqlTuple.getOriginalSql();
-        result.traceWatch = sqlTuple.getSqlWatch();
+        result.sqlTuple = sqlTuple;
         return result;
     }
 
     public SqlExecuteResult(JdbcGeneralResult generalResult) {
         init(generalResult);
-    }
-
-    private SqlExecuteResult(String sql, String sqlId) {
-        PreConditions.notNull(sql, "Sql");
-        PreConditions.notNull(sqlId, "SqlId");
-        this.status = SqlExecuteStatus.RUNNING;
-        this.executeSql = sql;
-        this.sqlId = sqlId;
     }
 
     public void initWarningMessage(ConnectionSession connectionSession) {
@@ -298,12 +288,12 @@ public class SqlExecuteResult {
 
     public void initSqlType(DialectType dialectType) {
         try {
-            BasicResult basicResult = new BasicResult(SqlType.UNKNOWN);
-            if (dialectType.isMysql()) {
-                basicResult = ParserUtil.parseMysqlType(executeSql, 15000);
-            } else if (dialectType.isOracle()) {
-                basicResult = ParserUtil.parseOracleType(executeSql, 15000);
+            AbstractSyntaxTree ast = this.sqlTuple.getAst();
+            if (ast == null) {
+                this.sqlTuple.initAst(AbstractSyntaxTreeFactories.getAstFactory(dialectType, 15000));
+                ast = this.sqlTuple.getAst();
             }
+            BasicResult basicResult = ast.getParseResult();
             this.generalSqlType = ParserUtil.getGeneralSqlType(basicResult);
             if (Objects.isNull(basicResult.getSqlType()) || SqlType.UNKNOWN == basicResult.getSqlType()) {
                 this.sqlType = SqlType.UNKNOWN.name();
@@ -321,7 +311,7 @@ public class SqlExecuteResult {
                 }
             }
         } catch (Throwable e) {
-            log.warn("Failed to recognize sql type, sql={}", executeSql, e);
+            log.warn("Failed to recognize sql type, sql={}, errMessage={}", getExecuteSql(), e.getMessage());
         }
     }
 
@@ -331,21 +321,45 @@ public class SqlExecuteResult {
     }
 
     public ExecutionTimer getTimer() {
+        TraceWatch traceWatch = new TraceWatch("Default");
+        if (this.sqlTuple != null) {
+            traceWatch = this.sqlTuple.getSqlWatch();
+        }
         if (!traceWatch.isClosed()) {
             traceWatch.close();
         }
-        return new ExecutionTimer(this.traceWatch);
+        return new ExecutionTimer(traceWatch);
+    }
+
+    public String getSqlId() {
+        if (this.sqlTuple == null) {
+            return null;
+        }
+        return this.sqlTuple.getSqlId();
+    }
+
+    public String getExecuteSql() {
+        if (this.sqlTuple == null) {
+            return null;
+        }
+        return this.sqlTuple.getExecutedSql();
+    }
+
+    public String getOriginSql() {
+        if (this.sqlTuple == null) {
+            return null;
+        }
+        return this.sqlTuple.getOriginalSql();
     }
 
     private void init(@NonNull JdbcGeneralResult generalResult) {
         this.connectionReset = generalResult.isConnectionReset();
-        this.sqlId = generalResult.getSqlTuple().getSqlId();
-        this.executeSql = generalResult.getSqlTuple().getExecutedSql();
-        this.originSql = generalResult.getSqlTuple().getOriginalSql();
-        this.traceWatch = generalResult.getSqlTuple().getSqlWatch();
+        this.sqlTuple = generalResult.getSqlTuple();
         this.dbmsOutput = generalResult.getDbmsOutput();
         this.traceId = generalResult.getTraceId();
         this.existWarnings = generalResult.isExistWarnings();
+        this.withFullLinkTrace = generalResult.isWithFullLinkTrace();
+        this.traceEmptyReason = generalResult.getTraceEmptyReason();
         if (generalResult.getStatus() == SqlExecuteStatus.CANCELED) {
             this.status = SqlExecuteStatus.CANCELED;
             this.track = ErrorCodes.ObExecuteSqlCanceled.getLocalizedMessage(new Object[] {"Pre-sql execution error"});
@@ -421,8 +435,8 @@ public class SqlExecuteResult {
 
     @Override
     public String toString() {
-        return "SqlId: " + sqlId + "\nStatus: " + status + "\nOriginSql: "
-                + originSql + "\nTotal: " + total + "\nTrack: " + track;
+        return "SqlId: " + getSqlId() + "\nStatus: " + status + "\nOriginSql: "
+                + getOriginSql() + "\nTotal: " + total + "\nTrack: " + track;
     }
 
     @Getter

@@ -18,9 +18,13 @@ package com.oceanbase.odc.service.snippet;
 import java.util.List;
 import java.util.Objects;
 
+import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.validation.annotation.Validated;
 
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.PreConditions;
@@ -32,6 +36,7 @@ import lombok.extern.log4j.Log4j2;
 
 @Service
 @Log4j2
+@Validated
 @SkipAuthorize("personal resource")
 public class SnippetsService {
 
@@ -40,65 +45,39 @@ public class SnippetsService {
     @Autowired
     private AuthenticationFacade authenticationFacade;
 
-    /**
-     * 查询用户创建的snippets列表
-     *
-     * @return
-     */
     public List<Snippet> list() {
         long userId = authenticationFacade.currentUserId();
         return this.snippetsDAO.list(userId);
     }
 
-    /**
-     * 保存到元数据库
-     *
-     * @param snippet
-     * @return
-     */
     @Transactional(rollbackFor = Exception.class)
-    public Snippet create(Snippet snippet) {
+    public Snippet create(@NotNull @Valid Snippet snippet) {
         long userId = authenticationFacade.currentUserId();
         snippet.setUserId(userId);
-
-        PreConditions.validNoDuplicated(ResourceType.ODC_SNIPPET, "prefix", snippet.getPrefix(),
-                () -> snippetsDAO.queryByUserIdAndName(snippet) != null);
+        PreConditions.validNoDuplicated(ResourceType.ODC_SNIPPET, "prefix",
+                snippet.getPrefix(), () -> snippetsDAO.queryByUserIdAndName(snippet) != null);
         snippetsDAO.insert(snippet);
         Snippet created = this.snippetsDAO.queryByUserIdAndName(snippet);
-        log.info("snippets created, created={}", created);
+        log.info("snippets created, snippetId={}", created.getId());
         return created;
     }
 
-    /**
-     * 更新snippets
-     *
-     * @param snippet
-     * @return
-     */
     @Transactional(rollbackFor = Exception.class)
-    public Snippet update(Snippet snippet) {
+    public Snippet update(@NotNull @Valid Snippet snippet) {
         nullSafeGet(snippet.getId());
-
-        // 同一个用户的snippets名称不能重复
         Snippet tmpSnippet = this.snippetsDAO.queryByUserIdAndName(snippet);
-        PreConditions.validNoDuplicated(ResourceType.ODC_SNIPPET, "prefix", snippet.getPrefix(),
-                () -> null != tmpSnippet && tmpSnippet.getId() != snippet.getId());
+        PreConditions.validNoDuplicated(ResourceType.ODC_SNIPPET, "prefix",
+                snippet.getPrefix(), () -> null != tmpSnippet && tmpSnippet.getId() != snippet.getId());
         this.snippetsDAO.update(snippet);
-        log.info("snippets updated, odcSnippet = {}", snippet);
+        log.info("Snippets updated, snippetId={}", snippet.getId());
         return snippet;
     }
 
-    /**
-     * 删除用户创建的snippets
-     *
-     * @param id
-     * @return
-     */
     @Transactional(rollbackFor = Exception.class)
     public Snippet delete(long id) {
         Snippet snippet = nullSafeGet(id);
         long rows = snippetsDAO.delete(id);
-        log.info("snippets deleted, id={}, rows={}", id, rows);
+        log.info("Snippets deleted, id={}, affectRows={}", id, rows);
         return snippet;
     }
 

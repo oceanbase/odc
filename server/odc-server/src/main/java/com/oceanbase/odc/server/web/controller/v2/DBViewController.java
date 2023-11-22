@@ -39,7 +39,7 @@ public class DBViewController {
 
     @GetMapping(value = {"/{sessionId}/databases/{databaseName}/systemViews"})
     public ListResponse<String> listTables(@PathVariable String sessionId, @PathVariable String databaseName) {
-        ConnectionSession session = sessionService.nullSafeGet(SidUtils.getSessionId(sessionId));
+        ConnectionSession session = sessionService.nullSafeGet(SidUtils.getSessionId(sessionId), true);
         return Responses.list(viewService.listSystemViews(session, databaseName));
     }
 

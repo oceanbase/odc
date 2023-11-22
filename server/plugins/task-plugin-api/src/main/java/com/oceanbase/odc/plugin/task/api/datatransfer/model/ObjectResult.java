@@ -25,9 +25,11 @@ import com.oceanbase.tools.loaddump.common.model.ObjectStatus;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
+@NoArgsConstructor
 public class ObjectResult extends ObjectStatus {
 
     /**
@@ -35,6 +37,12 @@ public class ObjectResult extends ObjectStatus {
      */
     @JsonIgnore
     private List<URL> exportPaths;
+
+    public ObjectResult(String schema, String name, String type) {
+        super(name, new AtomicLong(0), new AtomicLong(0), Status.INITIAL);
+        setType(type);
+        setSchema(schema);
+    }
 
     public static ObjectResult of(ObjectStatus that) {
         ObjectResult result = new ObjectResult();

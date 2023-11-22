@@ -33,6 +33,8 @@ import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.sql.execute.SqlExecuteStages;
 import com.oceanbase.odc.core.sql.execute.model.SqlExecuteStatus;
 import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
+import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTree;
+import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTreeFactories;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.regulation.ruleset.RuleService;
 import com.oceanbase.odc.service.regulation.ruleset.SqlConsoleRuleService;
@@ -42,9 +44,9 @@ import com.oceanbase.odc.service.session.model.SqlAsyncExecuteReq;
 import com.oceanbase.odc.service.session.model.SqlAsyncExecuteResp;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.odc.service.session.model.SqlTuplesWithViolation;
-import com.oceanbase.tools.dbbrowser.parser.ParserUtil;
 import com.oceanbase.tools.dbbrowser.parser.constant.SqlType;
 import com.oceanbase.tools.dbbrowser.parser.result.BasicResult;
+import com.oceanbase.tools.sqlparser.SyntaxErrorException;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -82,8 +84,8 @@ public class SqlConsoleInterceptor extends BaseTimeConsumingInterceptor {
         });
         AtomicBoolean allowExecute = new AtomicBoolean(true);
 
-        List<SqlTuple> sqlTuples = response.getSqls().stream().map(SqlTuplesWithViolation::getSqlTuple).collect(
-                Collectors.toList());
+        List<SqlTuple> sqlTuples = response.getSqls().stream().map(SqlTuplesWithViolation::getSqlTuple)
+                .collect(Collectors.toList());
         Optional<Integer> maxSqls = sqlConsoleRuleService.getProperties(ruleSetId, SqlConsoleRules.MAX_EXECUTE_SQLS,
                 session.getDialectType(), Integer.class);
         if (maxSqls.isPresent()) {
@@ -94,20 +96,20 @@ public class SqlConsoleInterceptor extends BaseTimeConsumingInterceptor {
             }
         }
         Map<String, BasicResult> sqlId2BasicResult = new HashMap<>();
-        sqlTuples.forEach(sql -> sqlId2BasicResult.putIfAbsent(sql.getSqlId(),
-                determineSqlType(sql.getOriginalSql(), session.getDialectType())));
+        sqlTuples.forEach(sql -> sqlId2BasicResult.putIfAbsent(
+                sql.getSqlId(), determineSqlType(sql, session.getDialectType())));
 
-        boolean forbiddenToCreatePL =
+        boolean forbiddenToCreatePl =
                 sqlConsoleRuleService.isForbidden(SqlConsoleRules.NOT_ALLOWED_CREATE_PL, session);
         Optional<List<String>> allowSqlTypesOpt = sqlConsoleRuleService.getListProperties(ruleSetId,
                 SqlConsoleRules.ALLOW_SQL_TYPES, session.getDialectType(), String.class);
 
-        for (SqlTuplesWithViolation sqlTuplesWithViolation : response.getSqls()) {
-            List<Rule> violatedRules = sqlTuplesWithViolation.getViolatedRules();
-            BasicResult parseResult = sqlId2BasicResult.get(sqlTuplesWithViolation.getSqlTuple().getSqlId());
-            if (parseResult.isPlDdl() && forbiddenToCreatePL) {
+        for (SqlTuplesWithViolation item : response.getSqls()) {
+            List<Rule> violatedRules = item.getViolatedRules();
+            BasicResult parseResult = sqlId2BasicResult.get(item.getSqlTuple().getSqlId());
+            if (parseResult.isPlDdl() && forbiddenToCreatePl) {
                 ruleService.getByRulesetIdAndName(ruleSetId, SqlConsoleRules.NOT_ALLOWED_CREATE_PL.getRuleName())
-                        .ifPresent(rule -> violatedRules.add(rule));
+                        .ifPresent(violatedRules::add);
                 allowExecute.set(false);
             }
             if (allowSqlTypesOpt.isPresent()) {
@@ -159,12 +161,20 @@ public class SqlConsoleInterceptor extends BaseTimeConsumingInterceptor {
         return authenticationFacade.currentUser().getOrganizationType() == OrganizationType.INDIVIDUAL;
     }
 
-    private BasicResult determineSqlType(@NonNull String sql, @NonNull DialectType dialectType) {
-        BasicResult basicResult = new BasicResult(SqlType.OTHERS);
-        if (dialectType.isMysql()) {
-            basicResult = ParserUtil.parseMysqlType(sql);
-        } else if (dialectType.isOracle()) {
-            basicResult = ParserUtil.parseOracleType(sql);
+    private BasicResult determineSqlType(@NonNull SqlTuple sqlTuple, @NonNull DialectType dialectType) {
+        BasicResult basicResult;
+        try {
+            AbstractSyntaxTree ast = sqlTuple.getAst();
+            if (ast == null) {
+                sqlTuple.initAst(AbstractSyntaxTreeFactories.getAstFactory(dialectType, 0));
+                ast = sqlTuple.getAst();
+            }
+            basicResult = ast.getParseResult();
+        } catch (Exception e) {
+            basicResult = new BasicResult(SqlType.UNKNOWN);
+            if (e instanceof SyntaxErrorException) {
+                basicResult.setSyntaxError(true);
+            }
         }
         if (Objects.nonNull(basicResult.getSqlType()) && basicResult.getSqlType() == SqlType.UNKNOWN) {
             basicResult.setSqlType(SqlType.OTHERS);

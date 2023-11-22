@@ -32,7 +32,6 @@ import com.oceanbase.odc.core.sql.execute.SqlExecuteStages;
 import com.oceanbase.odc.service.config.UserConfigFacade;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.regulation.ruleset.RuleService;
-import com.oceanbase.odc.service.regulation.ruleset.model.QueryRuleMetadataParams;
 import com.oceanbase.odc.service.regulation.ruleset.model.Rule;
 import com.oceanbase.odc.service.session.model.SqlAsyncExecuteReq;
 import com.oceanbase.odc.service.session.model.SqlAsyncExecuteResp;
@@ -81,7 +80,7 @@ public class SqlCheckInterceptor extends BaseTimeConsumingInterceptor {
         if (ruleSetId == null) {
             return true;
         }
-        List<Rule> rules = this.ruleService.list(ruleSetId, QueryRuleMetadataParams.builder().build());
+        List<Rule> rules = this.ruleService.listAllFromCache(ruleSetId);
         List<SqlCheckRule> sqlCheckRules = this.sqlCheckService.getRules(rules, session);
         if (CollectionUtils.isEmpty(sqlCheckRules)) {
             return true;
@@ -91,11 +90,11 @@ public class SqlCheckInterceptor extends BaseTimeConsumingInterceptor {
             Map<String, List<CheckViolation>> sql2Violations = new HashMap<>();
             SqlCheckContext checkContext = new SqlCheckContext((long) response.getSqls().size());
             response.getSqls().forEach(v -> {
-                String sql = v.getSqlTuple().getOriginalSql();
-                List<CheckViolation> violations = sqlChecker.check(Collections.singletonList(sql), checkContext);
+                List<CheckViolation> violations = sqlChecker.check(checkContext,
+                        Collections.singletonList(v.getSqlTuple()));
                 List<Rule> vRules = sqlCheckService.fullFillRiskLevel(rules, violations);
                 v.getViolatedRules().addAll(vRules.stream().filter(r -> r.getLevel() > 0).collect(Collectors.toList()));
-                sql2Violations.put(sql, violations);
+                sql2Violations.put(v.getSqlTuple().getOriginalSql(), violations);
             });
             context.put(SQL_CHECK_RESULT_KEY, sql2Violations);
             return response.getSqls().stream().noneMatch(v -> CollectionUtils.isNotEmpty(v.getViolatedRules()));

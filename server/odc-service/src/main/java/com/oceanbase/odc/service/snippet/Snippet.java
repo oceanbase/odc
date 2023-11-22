@@ -17,6 +17,8 @@ package com.oceanbase.odc.service.snippet;
 
 import java.sql.Timestamp;
 
+import javax.validation.constraints.Size;
+
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
@@ -25,9 +27,11 @@ import lombok.Setter;
 @Setter
 @EqualsAndHashCode
 public class Snippet {
+
     private long id;
     private long userId;
     private String prefix;
+    @Size(max = 65535, message = "Snippet body is out of range [0, 65535]")
     private String body;
     private String description;
     // 这个是根据产品约定的DDL/DML等，后端只是透传

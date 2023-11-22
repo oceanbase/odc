@@ -58,8 +58,8 @@ public class DBSynonymController {
     public OdcResult<List<DBSynonym>> list(@PathVariable String sid,
             @RequestParam(value = "synonymType", defaultValue = "COMMON") DBSynonymType synonymType) {
         ResourceIdentifier i = ResourceIDParser.parse(sid);
-        return OdcResult.ok(synonymService.list(sessionService.nullSafeGet(i.getSid()),
-                i.getDatabase(), synonymType));
+        return OdcResult.ok(synonymService.list(
+                sessionService.nullSafeGet(i.getSid(), true), i.getDatabase(), synonymType));
     }
 
     @ApiOperation(value = "detail", notes = "查看某一个特定的同义词细节，sid示例：sid:1000-1:syn:syn1")
@@ -71,14 +71,14 @@ public class DBSynonymController {
         param.setSynonymName(i.getSynonym());
         param.setOwner(i.getDatabase());
         param.setSynonymType(synonymType);
-        return OdcResult.ok(synonymService.detail(sessionService.nullSafeGet(i.getSid()), param));
+        return OdcResult.ok(synonymService.detail(sessionService.nullSafeGet(i.getSid(), true), param));
     }
 
     @ApiOperation(value = "getCreateSql", notes = "获取同义词的创建sql，sid示例：sid:1000-1:syn:syn1")
     @RequestMapping(value = "/getCreateSql/{sid:.*}", method = RequestMethod.POST)
     public OdcResult<ResourceSql> getCreateSql(@PathVariable String sid, @RequestBody DBSynonym resource) {
         return OdcResult.ok(ResourceSql.ofSql(synonymService.generateCreateSql(
-                sessionService.nullSafeGet(SidUtils.getSessionId(sid)), resource)));
+                sessionService.nullSafeGet(SidUtils.getSessionId(sid), true), resource)));
     }
 
 }

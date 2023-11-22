@@ -42,30 +42,30 @@ public class GeneralAsyncJdbcExecutor implements AsyncJdbcExecutor {
     private final SqlExecuteTaskManager taskManager;
     private final DataSource dataSource;
     private final CloneableDataSourceFactory dataSourceFactory;
-    private final ConnectionExtensionExecutor extensionExecutor;
+    private final SessionOperations sessionOperations;
 
     public GeneralAsyncJdbcExecutor(
             @NonNull DataSource dataSource,
             @NonNull CloneableDataSourceFactory dataSourceFactory,
             @NonNull SqlExecuteTaskManager taskManager,
-            @NonNull ConnectionExtensionExecutor extensionExecutor) {
+            @NonNull SessionOperations sessionOperations) {
         this.dataSource = dataSource;
         this.taskManager = taskManager;
         this.dataSourceFactory = dataSourceFactory;
-        this.extensionExecutor = extensionExecutor;
+        this.sessionOperations = sessionOperations;
     }
 
     @Override
     public <T> Future<T> execute(StatementCallback<T> statementCallback) {
-        return taskManager.submit(new StmtCallBackBasedTask<>(this.dataSource, dataSourceFactory,
-                statementCallback, extensionExecutor));
+        return taskManager.submit(new StmtCallBackBasedTask<>(this.dataSource,
+                dataSourceFactory, statementCallback, sessionOperations));
     }
 
     @Override
-    public <T> Future<T> execute(PreparedStatementCreator creator, PreparedStatementCallback<T> statementCallback) {
-        return taskManager.submit(
-                new PreparedStmtCallBackBasedTask<>(this.dataSource, dataSourceFactory, creator,
-                        statementCallback, extensionExecutor));
+    public <T> Future<T> execute(PreparedStatementCreator creator,
+            PreparedStatementCallback<T> statementCallback) {
+        return taskManager.submit(new PreparedStmtCallBackBasedTask<>(this.dataSource,
+                dataSourceFactory, creator, statementCallback, sessionOperations));
     }
 
 }
