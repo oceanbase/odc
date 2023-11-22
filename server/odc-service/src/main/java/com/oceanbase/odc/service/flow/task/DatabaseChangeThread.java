@@ -428,7 +428,11 @@ public class DatabaseChangeThread extends Thread {
         if (factory == null) {
             return GeneralSqlType.OTHER;
         }
-        return ParserUtil.getGeneralSqlType(factory.buildAst(sql).getParseResult());
+        try {
+            return ParserUtil.getGeneralSqlType(factory.buildAst(sql).getParseResult());
+        } catch (Exception e) {
+            return GeneralSqlType.OTHER;
+        }
     }
 
     /**
