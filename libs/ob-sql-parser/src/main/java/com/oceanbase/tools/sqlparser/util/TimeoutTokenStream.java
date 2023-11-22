@@ -37,7 +37,8 @@ public class TimeoutTokenStream extends CommonTokenStream {
         if (timeoutMillis <= 0) {
             this.timeoutTimestamp = Long.MAX_VALUE;
         } else {
-            this.timeoutTimestamp = System.currentTimeMillis() + timeoutMillis;
+            long target = System.currentTimeMillis() + timeoutMillis;
+            this.timeoutTimestamp = target < 0 ? Long.MAX_VALUE : target;
         }
     }
 

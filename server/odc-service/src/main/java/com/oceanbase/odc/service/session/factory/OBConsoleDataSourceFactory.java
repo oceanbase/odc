@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Properties;
 
 import javax.sql.DataSource;
 
@@ -139,7 +140,6 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
         jdbcUrlParams.put("connectTimeout", "5000");
         jdbcUrlParams.put("zeroDateTimeBehavior", DEFAULT_ZERO_DATE_TIME_BEHAVIOR);
         jdbcUrlParams.put("noDatetimeStringSync", "true");
-        jdbcUrlParams.put("allowLoadLocalInfile", "false");
         jdbcUrlParams.put("jdbcCompliantTruncation", "false");
 
         // TODO: set sendConnectionAttributes while upgrade oceanbase-client to v2.2.10
@@ -177,6 +177,9 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
                 jdbcUrlParams.put(key, value.toString());
             }
         });
+        // fix arbitrary file reading vulnerability
+        jdbcUrlParams.put("allowLoadLocalInfile", "false");
+        jdbcUrlParams.put("allowUrlInLocalInfile", "false");
         return jdbcUrlParams;
     }
 
@@ -190,6 +193,12 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
         dataSource.setPassword(password);
         // Set datasource driver class
         dataSource.setDriverClassName(connectionExtensionPoint.getDriverClassName());
+        // fix arbitrary file reading vulnerability
+        Properties properties = new Properties();
+        properties.setProperty("allowLoadLocalInfile", "false");
+        properties.setProperty("allowUrlInLocalInfile", "false");
+        properties.setProperty("allowLoadLocalInfileInPath", "");
+        dataSource.setConnectionProperties(properties);
         if (autoCommit != null) {
             dataSource.setAutoCommit(autoCommit);
         }
