@@ -29,7 +29,6 @@ import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
 import com.oceanbase.odc.service.flow.processor.ScheduleTaskPreprocessor;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
-import com.oceanbase.odc.service.schedule.DlmEnvironment;
 import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.model.JobType;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
@@ -44,9 +43,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @ScheduleTaskPreprocessor(type = JobType.DATA_DELETE)
 public class DataDeletePreprocessor extends AbstractDlmJobPreprocessor {
-
-    @Autowired
-    private DlmEnvironment dlmEnvironment;
 
     @Autowired
     private AuthenticationFacade authenticationFacade;
@@ -69,9 +65,6 @@ public class DataDeletePreprocessor extends AbstractDlmJobPreprocessor {
             // Throw exception when the specified database does not exist or the current user does not have
             // permission to access it.
             Database sourceDb = databaseService.detail(dataDeleteParameters.getDatabaseId());
-            if (dlmEnvironment.isSysTenantUserRequired()) {
-                checkDatasource(sourceDb.getDataSource());
-            }
 
             ConnectionConfig dataSource = sourceDb.getDataSource();
             dataSource.setDefaultSchema(sourceDb.getName());
@@ -98,7 +91,7 @@ public class DataDeletePreprocessor extends AbstractDlmJobPreprocessor {
             if (dataDeleteParameters.getRateLimit().getDataSizeLimit() != null) {
                 limiterConfig.setDataSizeLimit(dataDeleteParameters.getRateLimit().getDataSizeLimit());
             }
-            if (dataDeleteParameters.getRateLimit().getRowLimit() != null) {
+            if (dataDeleteParameters.getRateLimit().getBatchSize() != null) {
                 limiterConfig.setBatchSize(dataDeleteParameters.getRateLimit().getBatchSize());
             }
             limiterService.createAndBindToOrder(scheduleEntity.getId(), limiterConfig);
