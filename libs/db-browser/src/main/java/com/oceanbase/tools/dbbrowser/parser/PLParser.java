@@ -34,6 +34,7 @@ import com.oceanbase.tools.sqlparser.oracle.PlSqlLexer;
 import com.oceanbase.tools.sqlparser.oracle.PlSqlParser;
 import com.oceanbase.tools.sqlparser.util.CaseChangingCharStream;
 
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -70,14 +71,15 @@ public class PLParser {
         parser.removeErrorListeners();
         parser.addErrorListener(new FastFailErrorListener());
         parser.setErrorHandler(new FastFailErrorStrategy());
-        // Begin parsing at "pl_entry_stmt_list" rule
-        ParseTree tree = parser.stmt_block();
+        log.info("Time cost for pl parsing is {}ms, pl={}", (System.currentTimeMillis() - startTime), pl);
+        return parseObMysql(parser.stmt_block());
+    }
+
+    public static ParseMysqlPLResult parseObMysql(@NonNull ParseTree parseTree) {
         // listener for parse target
         MysqlModePLParserListener listener = new MysqlModePLParserListener();
-
         ParseTreeWalker walker = new ParseTreeWalker();
-        walker.walk(listener, tree);
-        log.info("Time cost for pl parsing is {}ms, pl={}", (System.currentTimeMillis() - startTime), pl);
+        walker.walk(listener, parseTree);
         return new ParseMysqlPLResult(listener);
     }
 
@@ -114,17 +116,18 @@ public class PLParser {
         parser.removeErrorListeners();
         parser.addErrorListener(new FastFailErrorListener());
         parser.setErrorHandler(new FastFailErrorStrategy());
-        ParseTree tree;
         if (paserRule == com.oceanbase.tools.sqlparser.oboracle.PLParser.RULE_pl_ddl_stmt) {
-            tree = parser.pl_ddl_stmt();
-        } else {
-            // Begin parsing at "pl_entry_stmt_list" rule,
-            // if package type, use "pl_ddl_stmt"
-            tree = parser.pl_entry_stmt_list();
+            return parseObOracle(parser.pl_ddl_stmt());
         }
+        // Begin parsing at "pl_entry_stmt_list" rule,
+        // if package type, use "pl_ddl_stmt"
+        return parseObOracle(parser.pl_entry_stmt_list());
+    }
+
+    public static ParseOraclePLResult parseObOracle(@NonNull ParseTree parseTree) {
         OracleModePLParserListener listener = new OracleModePLParserListener();
         ParseTreeWalker walker = new ParseTreeWalker();
-        walker.walk(listener, tree);
+        walker.walk(listener, parseTree);
         return new ParseOraclePLResult(listener);
     }
 
@@ -144,10 +147,14 @@ public class PLParser {
         }
         PlSqlParser parser = new PlSqlParser(tokens);
         parser.addErrorListener(new LogErrorListener());
-        ParseTree tree = parser.sql_script();
+        return parseOracle(parser.sql_script());
+    }
+
+    public static ParseOraclePLResult parseOracle(@NonNull ParseTree parseTree) {
         OracleModeParserListener listener = new OracleModeParserListener();
         ParseTreeWalker walker = new ParseTreeWalker();
-        walker.walk(listener, tree);
+        walker.walk(listener, parseTree);
         return new ParseOraclePLResult(listener);
     }
+
 }

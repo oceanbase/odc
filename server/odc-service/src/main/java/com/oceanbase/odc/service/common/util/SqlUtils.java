@@ -18,9 +18,6 @@ package com.oceanbase.odc.service.common.util;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import java.util.regex.Matcher;
-
-import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import com.google.common.collect.Sets;
 import com.oceanbase.odc.common.util.StringUtils;
@@ -28,11 +25,8 @@ import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.DialectType;
-import com.oceanbase.odc.core.shared.constant.OdcConstants;
 import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
 import com.oceanbase.odc.core.sql.split.SqlSplitter;
-import com.oceanbase.tools.dbbrowser.parser.SqlParser;
-import com.oceanbase.tools.dbbrowser.parser.result.ParseSqlResult;
 import com.oceanbase.tools.sqlparser.oracle.PlSqlLexer;
 
 import lombok.extern.slf4j.Slf4j;
@@ -48,19 +42,6 @@ public class SqlUtils {
             + "LOCALTIMESTAMP,LOCALTIMESTAMP(),CURRENT_TIMESTAMP,CURRENT_TIMESTAMP()";
     private static final Set<String> ALL_CURRENT_TIMESTAMP_EXPRESSIONS =
             Sets.newHashSet(ALL_CURRENT_TIMESTAMP_EXPRESSIONS_STR.split(","));
-
-    private static final String SELECT_KEYWORD = "select";
-    private static final int SELECT_KEYWORD_LENGTH = SELECT_KEYWORD.length();
-    private static final String SELECT_ODC_INTERNAL_ROWID_STMT =
-            " ROWID AS \"" + OdcConstants.ODC_INTERNAL_ROWID + "\",";
-
-    private static final String FROM_KEYWORD = "from";
-    private static final String LITERAL_STAR = "*";
-    private static final String LITERAL_STAR_SUFFIX = ".*";
-    private static final String STAR_REGEX = "\\*";
-    private static final String DEFAULT_DELIMITER = ";";
-    private static final String MULTI_SPACE_REGEX = "\\s+";
-
 
     /**
      * quote for mysql default value <br>
@@ -135,113 +116,6 @@ public class SqlUtils {
         }
     }
 
-    // For mysql sql
-    public static String appendLimit(String originalSql, int queryLimit) {
-        try {
-            ParseSqlResult result = SqlParser.parseMysql(originalSql);
-            if (result.isSupportLimit() && !result.isLimitClause()) {
-                SqlCommentProcessor commentProcessor = new SqlCommentProcessor(DialectType.OB_MYSQL, false, false);
-                StringBuilder stringBuilder = new StringBuilder();
-                String sql = removeComments(commentProcessor, originalSql);
-                sql = StringUtils.removeEnd(sql.trim(), ";");
-                stringBuilder.append(sql).append(" limit ").append(queryLimit);
-                return stringBuilder.toString();
-            }
-        } catch (Exception e) {
-            log.warn("Failed to append limit due parse failed, will use original sentence, sql={}, errorMessage={}",
-                    originalSql, StringUtils.substring(e.getMessage(), 0, 200));
-        }
-
-        return originalSql;
-    }
-
-    /**
-     * add ROWID column for oracle mode
-     * 
-     * @param originalSql
-     * @return
-     */
-    public static String addInternalROWIDColumn(String originalSql) {
-        if (StringUtils.isBlank(originalSql)) {
-            return originalSql;
-        }
-        SqlCommentProcessor commentProcessor = new SqlCommentProcessor(DialectType.OB_ORACLE, false, false);
-        String sql = removeComments(commentProcessor, originalSql).trim();
-        if (!StringUtils.startsWithIgnoreCase(sql, SELECT_KEYWORD)) {
-            return originalSql;
-        }
-        if (!StringUtils.containsIgnoreCase(sql, FROM_KEYWORD)) {
-            return originalSql;
-        }
-        /**
-         * 只有 SELECT 语句中包含 *，且不包含 .* 的语句，才会尝试将 * 替换为 table.* 因为包含 .* 的语句，添加 ROWID 后语法是正确的，不需要改写
-         */
-        String[] fromSegs = originalSql.split("(?i)" + FROM_KEYWORD, 2);
-        String beforeFrom = fromSegs[0];
-        String afterFrom = fromSegs[1];
-        if (beforeFrom.contains(LITERAL_STAR) && !beforeFrom.contains(LITERAL_STAR_SUFFIX)) {
-            String tableName = afterFrom.trim().split(MULTI_SPACE_REGEX)[0];
-            if (tableName.contains(DEFAULT_DELIMITER)) {
-                tableName = tableName.replace(DEFAULT_DELIMITER, LITERAL_STAR_SUFFIX);
-            } else {
-                tableName = tableName + LITERAL_STAR_SUFFIX;
-            }
-            sql = originalSql.replaceFirst(STAR_REGEX, Matcher.quoteReplacement(tableName));
-        }
-
-        String select = StringUtils.substring(sql, 0, SELECT_KEYWORD_LENGTH);
-        String afterSelect = StringUtils.substring(sql, SELECT_KEYWORD_LENGTH);
-        return select + SELECT_ODC_INTERNAL_ROWID_STMT + afterSelect;
-    }
-
-    // For oracle sql on ob server > 2250
-    public static String appendFetchFirst(String originalSql, int queryLimit) {
-        try {
-            ParseSqlResult result = SqlParser.parseOracle(originalSql);
-            if (result.isSupportLimit() && !result.isFetchClause()) {
-                SqlCommentProcessor commentProcessor = new SqlCommentProcessor(DialectType.OB_ORACLE, false, false);
-                StringBuilder stringBuilder = new StringBuilder();
-                String sql = removeComments(commentProcessor, originalSql);
-                sql = StringUtils.removeEnd(sql.trim(), ";");
-                stringBuilder.append(sql).append(" fetch first ").append(queryLimit).append(" rows only");
-                return stringBuilder.toString();
-            }
-        } catch (Exception e) {
-            log.warn("Failed to parse sql={}, will use original sentence", originalSql, e);
-        }
-
-        return originalSql;
-    }
-
-    public static ParseSqlResult parseOracle(String originalSql) {
-        try {
-            return SqlParser.parseOracle(originalSql);
-        } catch (Exception e) {
-            log.warn("Failed to parse sql, will use original sentence, sql={}, exception={}",
-                    originalSql, ExceptionUtils.getRootCauseMessage(e));
-            return null;
-        }
-    }
-
-    // For oracle sql
-    public static String appendRownumCondition(String originalSql, int queryLimit) {
-        try {
-            ParseSqlResult result = SqlParser.parseOracle(originalSql);
-            if (result.isSupportLimit() && !result.isWhereClause()) {
-                SqlCommentProcessor commentProcessor = new SqlCommentProcessor(DialectType.OB_ORACLE, false, false);
-                StringBuilder stringBuilder = new StringBuilder();
-                String sql = removeComments(commentProcessor, originalSql);
-                sql = StringUtils.removeEnd(sql.trim(), ";");
-                stringBuilder.append(sql).append(" where rownum <= ").append(queryLimit);
-                return stringBuilder.toString();
-            }
-        } catch (Exception e) {
-            log.warn("Failed to parse sql={}, will use original sentence", originalSql, e);
-        }
-
-        return originalSql;
-    }
-
     /**
      * the sql need to be rewritten to pass
      * <code>OdcSqlParser.supportLimitExpr(sql, connectionEngine)</code>. When original sqls are splited
@@ -294,4 +168,5 @@ public class SqlUtils {
         }
         return "%" + StringUtils.escapeLike(fuzzyKeywords) + "%";
     }
+
 }

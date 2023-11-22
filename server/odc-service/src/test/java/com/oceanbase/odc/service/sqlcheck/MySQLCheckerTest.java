@@ -257,7 +257,8 @@ public class MySQLCheckerTest {
         String[] sqls = new String[] {
                 "insert into tab values(1,2,3)",
                 "insert into tab(col, col2) values(1,2,3)",
-                "replace into tab values(1,2,3)"
+                "replace into tab values(1,2,3)",
+                "insert into tab set col='asbcd'"
         };
         DefaultSqlChecker sqlChecker = new DefaultSqlChecker(DialectType.OB_MYSQL, "$$",
                 Collections.singletonList(new NoSpecificColumnExists()));
@@ -1249,7 +1250,7 @@ public class MySQLCheckerTest {
         SqlCheckRuleType type = SqlCheckRuleType.SYNTAX_ERROR;
         CheckViolation c1 = new CheckViolation(actual.get(0).getText(), 1, 0, 0, 119, type,
                 new Object[] {
-                        "You have an error in your SQL syntax; check the manual for the right syntax to use near 'set\\n  a = 2\\nset...' at line 3, col 0"});
+                        "You have an error in your SQL syntax; check the manual for the right syntax to use near 'create procedure...' at line 1, col 7"});
         List<CheckViolation> expect = Collections.singletonList(c1);
         Assert.assertEquals(expect, actual);
     }

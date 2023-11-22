@@ -25,7 +25,7 @@ package com.oceanbase.odc.core.sql.execute;
 public class SqlExecuteStages {
     public static final String PARSE_SQL = "ODC Parse SQL";
     public static final String REWRITE_SQL = "ODC Rewrite SQL";
-    public static final String APPLY_SQL = "Apply SQL";
+    public static final String DO_REWRITE_SQL = "Do rewrite SQL";
     public static final String VALIDATE_SEMANTICS = "Validate SQL semantics";
     public static final String EXECUTE = "Execute";
     public static final String GET_RESULT_SET = "Get result-set";
@@ -44,8 +44,8 @@ public class SqlExecuteStages {
     public static final String SET_NLS_FORMAT = "Set Nls Format";
     public static final String SQL_CONSOLE_RULE = "SQL Console Rule Check";
     public static final String DB_SERVER_EXECUTE_SQL = "DB Server Execute SQL";
-    public static final String SQL_INTERCEPT_PRE_CHECK = "Sql intercept pre-check";
-    public static final String SQL_INTERCEPT_AFTER_CHECK = "Sql intercept after-check";
+    public static final String SQL_PRE_CHECK = "Sql intercept pre-check";
+    public static final String SQL_AFTER_CHECK = "Sql intercept after-check";
     public static final String CALCULATE_DURATION = "Calculate duration";
 }
 

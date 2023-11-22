@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.sqlcheck.parser;
+package com.oceanbase.odc.core.sql.parser;
 
 import org.antlr.v4.runtime.tree.RuleNode;
 
@@ -43,7 +43,7 @@ import com.oceanbase.tools.sqlparser.oboracle.OBParserBaseVisitor;
 import lombok.Getter;
 
 @Getter
-public class OBOracleDropStatementVisitor extends OBParserBaseVisitor<DropStatement> {
+class OBOracleDropStatementVisitor extends OBParserBaseVisitor<DropStatement> {
 
     @Override
     public DropStatement visitChildren(RuleNode node) {
