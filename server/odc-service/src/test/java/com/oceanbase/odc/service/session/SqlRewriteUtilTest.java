@@ -27,13 +27,15 @@ public class SqlRewriteUtilTest {
     @Test
     public void addInternalROWIDColumn_WithAlias_AddRowId() {
         String sql = addInternalRowIdColumn("select t.ROWID, t.* from TEST t");
-        Assert.assertEquals("select  ROWID AS \"__ODC_INTERNAL_ROWID__\", t.ROWID, t.* from TEST t", sql);
+        Assert.assertEquals("select t.ROWID, t.*, ROWID AS \"__ODC_INTERNAL_ROWID__\"  from TEST t", sql);
     }
 
     @Test
     public void addInternalROWIDColumn_WithStarInSelect_AddRowId() {
         String sql = addInternalRowIdColumn("select * from TEST;");
-        Assert.assertEquals("select  ROWID AS \"__ODC_INTERNAL_ROWID__\", TEST.* from TEST;", sql);
+        Assert.assertEquals(
+                "select TEST.*, ROWID AS \"__ODC_INTERNAL_ROWID__\"  from TEST;",
+                sql);
     }
 
     @Test
@@ -61,13 +63,13 @@ public class SqlRewriteUtilTest {
     @Test
     public void addInternalROWIDColumn_WithStarInSelectForUpdate_AddRowId() {
         String sql = addInternalRowIdColumn("select * from TEST for update;");
-        Assert.assertEquals("select  ROWID AS \"__ODC_INTERNAL_ROWID__\", TEST.* from TEST for update;", sql);
+        Assert.assertEquals("select TEST.*, ROWID AS \"__ODC_INTERNAL_ROWID__\"  from TEST for update;", sql);
     }
 
     @Test
     public void addInternalROWIDColumn_WithUpperCaseFrom_AddRowIdSuccess() {
         String sql = addInternalRowIdColumn("select * FROM TEST for update;");
-        Assert.assertEquals("select  ROWID AS \"__ODC_INTERNAL_ROWID__\", TEST.* FROM TEST for update;", sql);
+        Assert.assertEquals("select TEST.*, ROWID AS \"__ODC_INTERNAL_ROWID__\"  FROM TEST for update;", sql);
     }
 
     @Test(expected = IllegalStateException.class)
@@ -78,27 +80,27 @@ public class SqlRewriteUtilTest {
     @Test
     public void addInternalROWIDColumn_WithDollarSign_AddRowIdSuccess() {
         String sql = addInternalRowIdColumn("select * FROM GV$SQL_AUDIT;");
-        Assert.assertEquals("select  ROWID AS \"__ODC_INTERNAL_ROWID__\", GV$SQL_AUDIT.* FROM GV$SQL_AUDIT;", sql);
+        Assert.assertEquals("select GV$SQL_AUDIT.*, ROWID AS \"__ODC_INTERNAL_ROWID__\"  FROM GV$SQL_AUDIT;", sql);
     }
 
     @Test
     public void addInternalROWIDColumn_WithBackSlash_AddRowIdSuccess() {
         String sql = addInternalRowIdColumn("select * FROM \"GV\\SQL_AUDIT\";");
-        Assert.assertEquals("select  ROWID AS \"__ODC_INTERNAL_ROWID__\", \"GV\\SQL_AUDIT\".* FROM \"GV\\SQL_AUDIT\";",
+        Assert.assertEquals("select \"GV\\SQL_AUDIT\".*, ROWID AS \"__ODC_INTERNAL_ROWID__\"  FROM \"GV\\SQL_AUDIT\";",
                 sql);
     }
 
     @Test
     public void addInternalROWIDColumn_WithStarInWhereClause_AddRowIdSuccess() {
         String sql = addInternalRowIdColumn("select sid FROM GV$SQL_AUDIT WHERE sid='*';");
-        Assert.assertEquals("select  ROWID AS \"__ODC_INTERNAL_ROWID__\", sid FROM GV$SQL_AUDIT WHERE sid='*';", sql);
+        Assert.assertEquals("select sid, ROWID AS \"__ODC_INTERNAL_ROWID__\"  FROM GV$SQL_AUDIT WHERE sid='*';", sql);
     }
 
     @Test
     public void addInternalROWIDColumn_StarWithinSelect_AddRowIdSuccess() {
         String sql = addInternalRowIdColumn("select* FROM GV$SQL_AUDIT WHERE sid='*';");
         Assert.assertEquals(
-                "select ROWID AS \"__ODC_INTERNAL_ROWID__\", GV$SQL_AUDIT.* FROM GV$SQL_AUDIT WHERE sid='*';", sql);
+                "selectGV$SQL_AUDIT.*, ROWID AS \"__ODC_INTERNAL_ROWID__\"  FROM GV$SQL_AUDIT WHERE sid='*';", sql);
     }
 
     @Test
@@ -110,13 +112,13 @@ public class SqlRewriteUtilTest {
     @Test
     public void addInternalROWIDColumn_WithAlias_AddRowIdSuccess() {
         String sql = addInternalRowIdColumn("select * from GV$SQL_AUDIT g");
-        Assert.assertEquals("select  ROWID AS \"__ODC_INTERNAL_ROWID__\", g.* from GV$SQL_AUDIT g", sql);
+        Assert.assertEquals("select g.*, ROWID AS \"__ODC_INTERNAL_ROWID__\"  from GV$SQL_AUDIT g", sql);
     }
 
     @Test
     public void addInternalROWIDColumn_WithSchema_AddRowIdSuccess() {
         String sql = addInternalRowIdColumn("select * from SYS.GV$SQL_AUDIT");
-        Assert.assertEquals("select  ROWID AS \"__ODC_INTERNAL_ROWID__\", SYS.GV$SQL_AUDIT.* from SYS.GV$SQL_AUDIT",
+        Assert.assertEquals("select SYS.GV$SQL_AUDIT.*, ROWID AS \"__ODC_INTERNAL_ROWID__\"  from SYS.GV$SQL_AUDIT",
                 sql);
     }
 
@@ -129,7 +131,7 @@ public class SqlRewriteUtilTest {
     @Test
     public void addInternalROWIDColumn_WithHint_AddRowIdSuccess() {
         String sql = addInternalRowIdColumn("select /*+ monitor */ id from test");
-        Assert.assertEquals("select /*+ monitor */  ROWID AS \"__ODC_INTERNAL_ROWID__\", id from test", sql);
+        Assert.assertEquals("select /*+ monitor */ id, ROWID AS \"__ODC_INTERNAL_ROWID__\"  from test", sql);
     }
 
     @Test

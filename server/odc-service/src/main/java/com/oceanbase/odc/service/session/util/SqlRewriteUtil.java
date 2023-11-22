@@ -45,7 +45,7 @@ import lombok.extern.slf4j.Slf4j;
 public class SqlRewriteUtil {
 
     private static final String SELECT_ODC_INTERNAL_ROWID_STMT =
-            " ROWID AS \"" + OdcConstants.ODC_INTERNAL_ROWID + "\", ";
+            ", ROWID AS \"" + OdcConstants.ODC_INTERNAL_ROWID + "\" ";
 
     public static String addInternalRowIdColumn(String sql, @NonNull AbstractSyntaxTree ast) {
         if (StringUtils.isBlank(sql)) {
@@ -82,6 +82,8 @@ public class SqlRewriteUtil {
         }
         StringBuilder newSql = new StringBuilder(sql);
         List<Projection> selectItems = selectBody.getSelectItems();
+        int lastSelectItemStop = selectItems.get(selectItems.size() - 1).getStop();
+        newSql.insert(lastSelectItemStop + 1, SELECT_ODC_INTERNAL_ROWID_STMT);
         Projection star = new Projection();
         if (selectItems.contains(star)) {
             if (!(from instanceof NameReference)) {
@@ -98,8 +100,6 @@ public class SqlRewriteUtil {
             int starIndex = selectItems.indexOf(star);
             newSql.insert(selectItems.get(starIndex).getStart(), tableName + ".");
         }
-        int firstSelectItemStart = selectItems.get(0).getStart();
-        newSql.insert(firstSelectItemStart, SELECT_ODC_INTERNAL_ROWID_STMT);
         return newSql.toString();
     }
 
