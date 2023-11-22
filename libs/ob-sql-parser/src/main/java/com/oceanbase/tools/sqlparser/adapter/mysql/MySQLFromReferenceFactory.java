@@ -99,10 +99,6 @@ public class MySQLFromReferenceFactory extends OBParserBaseVisitor<FromReference
 
     @Override
     public FromReference visitTable_factor(Table_factorContext ctx) {
-        String alias = null;
-        if (ctx.relation_name() != null) {
-            alias = ctx.relation_name().getText();
-        }
         if (ctx.tbl_name() != null) {
             return visit(ctx.tbl_name());
         } else if (ctx.table_subquery() != null) {
@@ -114,10 +110,12 @@ public class MySQLFromReferenceFactory extends OBParserBaseVisitor<FromReference
             }
             return new BraceBlock(ctx, ctx.OJ().getText(), from);
         } else if (ctx.json_table_expr() != null) {
-            return new ExpressionReference(ctx, new MySQLExpressionFactory()
-                    .visitJson_table_expr(ctx.json_table_expr()), alias);
-        } else if (ctx.TABLE() != null && ctx.simple_expr() != null) {
-            return new ExpressionReference(ctx, new MySQLExpressionFactory().visit(ctx.simple_expr()), alias);
+            String alias = null;
+            if (ctx.relation_name() != null) {
+                alias = ctx.relation_name().getText();
+            }
+            MySQLExpressionFactory factory = new MySQLExpressionFactory();
+            return new ExpressionReference(ctx, factory.visitJson_table_expr(ctx.json_table_expr()), alias);
         }
         StatementFactory<SelectBody> factory = new MySQLSelectBodyFactory(ctx.select_with_parens());
         ExpressionReference reference = new ExpressionReference(ctx, factory.generate(), null);
@@ -287,13 +285,13 @@ public class MySQLFromReferenceFactory extends OBParserBaseVisitor<FromReference
         return new FlashbackUsage(ctx, FlashBackType.AS_OF_SNAPSHOT, factory.generate());
     }
 
-    public static PartitionUsage visitPartitonUsage(Use_partitionContext usePartition) {
+    private PartitionUsage visitPartitonUsage(Use_partitionContext usePartition) {
         List<String> nameList = new ArrayList<>();
         visitNameList(usePartition.name_list(), nameList);
         return new PartitionUsage(usePartition, PartitionType.PARTITION, nameList);
     }
 
-    private static void visitNameList(Name_listContext ctx, List<String> nameList) {
+    private void visitNameList(Name_listContext ctx, List<String> nameList) {
         if (ctx.NAME_OB() != null && ctx.name_list() == null) {
             nameList.add(ctx.NAME_OB().getText());
             return;

@@ -48,10 +48,6 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.oceanbase.tools.sqlparser.adapter.StatementFactory;
 import com.oceanbase.tools.sqlparser.statement.Statement;
-import com.oceanbase.tools.sqlparser.util.TimeoutTokenStream;
-
-import lombok.Getter;
-import lombok.Setter;
 
 /**
  * {@link BaseSQLParser}
@@ -61,10 +57,6 @@ import lombok.Setter;
  * @since ODC_release_4.1.0
  */
 public abstract class BaseSQLParser<T extends Lexer, V extends Parser> implements SQLParser {
-
-    @Getter
-    @Setter
-    private long timeoutMillis = -1;
 
     protected abstract ParseTree doParse(V parser);
 
@@ -87,12 +79,7 @@ public abstract class BaseSQLParser<T extends Lexer, V extends Parser> implement
         }
         lexer.removeErrorListeners();
         lexer.addErrorListener(new FastFailErrorListener());
-        CommonTokenStream tokens;
-        if (this.timeoutMillis <= 0) {
-            tokens = new CommonTokenStream(lexer);
-        } else {
-            tokens = new TimeoutTokenStream(lexer, this.timeoutMillis);
-        }
+        CommonTokenStream tokens = new CommonTokenStream(lexer);
         V parser = getParser(tokens);
         if (parser == null) {
             throw new IllegalArgumentException("Parser can not be null");

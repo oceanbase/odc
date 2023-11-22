@@ -28,18 +28,18 @@ import com.oceanbase.tools.sqlparser.statement.select.PartitionUsage;
 import lombok.NonNull;
 
 /**
- * {@link OraclePartitionUsageFactory}
+ * {@link OraclePartitonUsageFactory}
  *
  * @author jingtian
  * @date 2023/4/24
  * @since ODC_4.2.0
  */
-public class OraclePartitionUsageFactory extends OBParserBaseVisitor<PartitionUsage>
+public class OraclePartitonUsageFactory extends OBParserBaseVisitor<PartitionUsage>
         implements StatementFactory<PartitionUsage> {
 
     private final Use_partitionContext usePartitionContext;
 
-    public OraclePartitionUsageFactory(@NonNull Use_partitionContext usePartitionContext) {
+    public OraclePartitonUsageFactory(@NonNull Use_partitionContext usePartitionContext) {
         this.usePartitionContext = usePartitionContext;
     }
 
