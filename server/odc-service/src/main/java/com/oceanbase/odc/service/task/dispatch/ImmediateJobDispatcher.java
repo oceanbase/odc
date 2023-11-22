@@ -16,8 +16,8 @@
 
 package com.oceanbase.odc.service.task.dispatch;
 
-import com.oceanbase.odc.core.task.context.JobContext;
 import com.oceanbase.odc.service.task.caller.JobCaller;
+import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.caller.JobException;
 
 /**

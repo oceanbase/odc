@@ -30,7 +30,7 @@ public class JobCallerEvent extends AbstractEvent {
     private final JobCallerAction jobAction;
 
     @Getter
-    private final boolean status;
+    private final boolean success;
 
     @Getter
     private final Long taskId;
@@ -38,9 +38,9 @@ public class JobCallerEvent extends AbstractEvent {
     @Getter
     private final Exception ex;
 
-    public JobCallerEvent(Long taskId, JobCallerAction jobAction, boolean status, Exception ex) {
+    public JobCallerEvent(Long taskId, JobCallerAction jobAction, boolean success, Exception ex) {
         super(taskId, jobAction.name());
-        this.status = status;
+        this.success = success;
         this.jobAction = jobAction;
         this.taskId = taskId;
         this.ex = ex;

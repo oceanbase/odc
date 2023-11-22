@@ -14,17 +14,40 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.task.dispatch;
+package com.oceanbase.odc.service.task.caller;
 
-import com.oceanbase.odc.service.task.caller.JobContext;
-import com.oceanbase.odc.service.task.caller.JobException;
+import java.io.Serializable;
+import java.util.List;
+
+import com.oceanbase.odc.service.common.model.HostProperties;
+import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+
+import lombok.Data;
 
 /**
  * @author yaobin
- * @date 2023-11-20
+ * @date 2023-11-15
  * @since 4.2.4
  */
-public interface JobDispatcher {
 
-    void dispatch(JobContext context) throws JobException;
+@Data
+public class JobContext implements Serializable {
+
+    /**
+     * task id
+     */
+    private Long taskId;
+    /**
+     * task param
+     */
+    private Task task;
+    /**
+     * task connection config
+     */
+    private ConnectionConfig connConfig;
+    /**
+     * odc server host properties
+     */
+    private List<HostProperties> hostProperties;
+
 }

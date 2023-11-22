@@ -16,6 +16,8 @@
 
 package com.oceanbase.odc.service.task.caller;
 
+import com.oceanbase.odc.service.task.constants.JobConstants;
+
 /**
  * @author yaobin
  * @date 2023-11-15

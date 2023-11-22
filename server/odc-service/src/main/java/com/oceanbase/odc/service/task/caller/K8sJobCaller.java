@@ -17,7 +17,7 @@
 package com.oceanbase.odc.service.task.caller;
 
 import com.oceanbase.odc.common.json.JsonUtils;
-import com.oceanbase.odc.core.task.context.JobContext;
+import com.oceanbase.odc.service.task.constants.JobEnvConstants;
 
 /**
  * @author yaobin
@@ -38,7 +38,7 @@ public class K8sJobCaller extends BaseJobCaller {
     public void doStart(JobContext context) throws JobException {
         String jobName = JobUtils.generateJobName(context.getTaskId());
         PodParam podParam = new PodParam();
-        podParam.getEnvironments().put(JobConstants.TEMPLATE_ENV_NAME, JsonUtils.toJson(context));
+        podParam.getEnvironments().put(JobEnvConstants.TASK_ENV_NAME, JsonUtils.toJson(context));
 
         client.create(podConfig.getNamespace(), jobName, podConfig.getImage(),
                 podConfig.getCommand(), podParam);

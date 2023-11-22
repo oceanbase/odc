@@ -16,10 +16,10 @@
 
 package com.oceanbase.odc.service.task.caller;
 
-import static com.oceanbase.odc.service.task.caller.JobConstants.FIELD_SELECTOR_METADATA_NAME;
-import static com.oceanbase.odc.service.task.caller.JobConstants.RESTART_POLICY_NEVER;
-import static com.oceanbase.odc.service.task.caller.JobConstants.TEMPLATE_API_VERSION;
-import static com.oceanbase.odc.service.task.caller.JobConstants.TEMPLATE_KIND_POD;
+import static com.oceanbase.odc.service.task.constants.JobConstants.FIELD_SELECTOR_METADATA_NAME;
+import static com.oceanbase.odc.service.task.constants.JobConstants.RESTART_POLICY_NEVER;
+import static com.oceanbase.odc.service.task.constants.JobConstants.TEMPLATE_API_VERSION;
+import static com.oceanbase.odc.service.task.constants.JobConstants.TEMPLATE_KIND_POD;
 
 import java.io.IOException;
 import java.time.Duration;

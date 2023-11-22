@@ -17,7 +17,6 @@
 package com.oceanbase.odc.service.task.caller;
 
 import com.oceanbase.odc.common.event.EventPublisher;
-import com.oceanbase.odc.core.task.context.JobContext;
 
 /**
  * operate odc job for different deployment environment, eg: k8s, master-worker or same jvm process
