@@ -1,5 +1,30 @@
 # OceanBase Developer Center (ODC) CHANGELOG
 
+## 4.2.2 bp (2023-11-23)
+
+### Bug fixes
+
+Data archiving
+
+- After the data archiving subtask starts running, updating the current limiter configuration cannot take effect.
+- Data cleaning task is not running
+
+Data desensitization
+
+- Entering malicious identification rules in the scenario of automatic scanning of sensitive columns will result in a denial of service by regular expressions
+
+SQL execution
+
+- Display NUMBER type data in scientific notation in MySQL mode
+
+PL run
+
+- Unable to view the contents of the cursor
+
+SQL-Check
+
+- When the database does not report syntax errors, SQL-Check will still prompt syntax errors.
+
 ## 4.2.2 (2023-11-07)
 
 ### Feature
