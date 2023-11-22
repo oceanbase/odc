@@ -23,6 +23,6 @@ package com.oceanbase.odc.service.task.constants;
  */
 public class JobEnvConstants {
 
-    public static final String TASK_EVN_NAME = "TASK_ENV";
+    public static final String TASK_ENV_NAME = "TASK_ENV";
 
 }
