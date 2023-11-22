@@ -21,7 +21,7 @@ package com.oceanbase.odc.service.task.config;
  * @date 2023-11-21
  * @since 4.2.4
  */
-public enum TaskFrameworkDeploySense {
+public enum DeployModelEnum {
 
     K8S, MASTER_WORKER, STANDALONE
 }

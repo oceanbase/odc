@@ -33,10 +33,10 @@ import lombok.Data;
 @ConfigurationProperties(prefix = "odc.task-framework")
 public class TaskFrameworkProperties {
 
-    private TaskFrameworkDeploySense sense = TaskFrameworkDeploySense.STANDALONE;
+    private DeployModelEnum deployModel;
 
     @NestedConfigurationProperty
-    private K8sProperties k8sProperties;
+    private K8sProperties k8s = new K8sProperties();
 
     @Data
     public static class K8sProperties {

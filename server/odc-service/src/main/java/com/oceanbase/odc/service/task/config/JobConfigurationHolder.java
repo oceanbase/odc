@@ -16,8 +16,13 @@
 
 package com.oceanbase.odc.service.task.config;
 
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
+
+import com.oceanbase.odc.service.connection.ConnectionService;
+import com.oceanbase.odc.service.task.TaskService;
+import com.oceanbase.odc.service.task.caller.JobCaller;
 
 /**
  * @author yaobin
@@ -38,6 +43,11 @@ public class JobConfigurationHolder implements ApplicationListener<ContextRefres
 
     @Override
     public void onApplicationEvent(ContextRefreshedEvent event) {
-        setJobConfiguration(event.getApplicationContext().getBean(JobConfiguration.class));
+        ApplicationContext ctx = event.getApplicationContext();
+        DefaultJobConfiguration configuration = new DefaultJobConfiguration();
+        configuration.setConnectionService(ctx.getBean(ConnectionService.class));
+        configuration.setTaskService(ctx.getBean(TaskService.class));
+        configuration.setJobCaller(ctx.getBean(JobCaller.class));
+        setJobConfiguration(configuration);
     }
 }
