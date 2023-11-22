@@ -37,6 +37,4 @@ public class JobConstants {
 
     public static final String FIELD_SELECTOR_METADATA_NAME = "metadata.name";
 
-    public static final String TEMPLATE_ENV_NAME = "POD_ENV";
-
 }
