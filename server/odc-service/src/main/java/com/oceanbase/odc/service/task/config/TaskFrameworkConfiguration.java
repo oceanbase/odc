@@ -22,6 +22,9 @@ import java.util.List;
 
 import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -45,6 +48,7 @@ import lombok.extern.slf4j.Slf4j;
 public class TaskFrameworkConfiguration {
 
     @Bean
+    @ConditionalOnMissingBean(K8sJobClient.class)
     public K8sJobClient k8sJobClient(@Autowired TaskFrameworkProperties taskFrameworkProperties) {
         if (taskFrameworkProperties.getDeployModel() == DeployModelEnum.K8S) {
             try {
@@ -85,7 +89,6 @@ public class TaskFrameworkConfiguration {
         podConfig.setImage(imageName);
         podConfig.setCommand(cmd);
         podConfig.setNamespace("default");
-
         return new K8sJobCaller(k8sJobClient, podConfig);
     }
 }
