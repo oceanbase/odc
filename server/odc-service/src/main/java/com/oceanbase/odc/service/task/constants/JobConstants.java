@@ -14,37 +14,27 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.core.task.context;
-
-import java.io.Serializable;
-import java.util.List;
-
-import lombok.Data;
+package com.oceanbase.odc.service.task.constants;
 
 /**
  * @author yaobin
  * @date 2023-11-15
  * @since 4.2.4
  */
+public class JobConstants {
 
-@Data
-public class JobContext implements Serializable {
+    public static final String TEMPLATE_KIND_POD = "Pod";
 
-    /**
-     * task id
-     */
-    private Long taskId;
-    /**
-     * task param
-     */
-    private TaskParam taskParam;
-    /**
-     * task connection config
-     */
-    private TaskConnectionConfig connConfig;
-    /**
-     * odc server host properties
-     */
-    private List<HostProperties> hostProperties;
+    public static final String TEMPLATE_KIND_JOB = "Job";
+
+    public static final String TEMPLATE_API_VERSION = "v1";
+
+    public static final String TEMPLATE_BATCH_API_VERSION = "batch/v1";
+
+    public static final String TEMPLATE_JOB_NAME_PREFIX = "task-";
+
+    public static final String RESTART_POLICY_NEVER = "Never";
+
+    public static final String FIELD_SELECTOR_METADATA_NAME = "metadata.name";
 
 }

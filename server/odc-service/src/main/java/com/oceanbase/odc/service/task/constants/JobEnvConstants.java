@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.core.task.context;
-
-import java.io.Serializable;
+package com.oceanbase.odc.service.task.constants;
 
 /**
  * @author yaobin
- * @date 2023-11-15
+ * @date 2023-11-21
  * @since 4.2.4
  */
-public class TaskParam implements Serializable {
-    // todo add task param field
+public class JobEnvConstants {
+
+    public static final String TASK_EVN_NAME = "TASK_ENV";
+
 }

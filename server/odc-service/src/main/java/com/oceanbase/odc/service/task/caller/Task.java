@@ -14,14 +14,21 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.core.task.context;
+package com.oceanbase.odc.service.task.caller;
 
 import java.io.Serializable;
 
+import com.oceanbase.odc.metadb.task.TaskEntity;
+
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+
 /**
  * @author yaobin
- * @date 2023-11-15
+ * @date 2023-11-22
  * @since 4.2.4
  */
-public class HostProperties implements Serializable {
+@Data
+@EqualsAndHashCode(callSuper = true)
+public class Task extends TaskEntity implements Serializable {
 }

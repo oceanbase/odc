@@ -20,8 +20,8 @@ import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import com.oceanbase.odc.core.task.context.JobContext;
 import com.oceanbase.odc.service.task.caller.JobCaller;
+import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.caller.JobException;
 import com.oceanbase.odc.service.task.caller.K8sJobCaller;
 import com.oceanbase.odc.service.task.caller.PodConfig;

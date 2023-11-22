@@ -18,7 +18,6 @@ package com.oceanbase.odc.service.task.caller;
 
 import com.oceanbase.odc.common.event.EventPublisher;
 import com.oceanbase.odc.common.event.LocalEventPublisher;
-import com.oceanbase.odc.core.task.context.JobContext;
 import com.oceanbase.odc.service.task.listener.JobCallerAction;
 import com.oceanbase.odc.service.task.listener.JobCallerEvent;
 
