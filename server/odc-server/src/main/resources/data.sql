@@ -332,7 +332,7 @@ VALUES ('odc.flow.async.max-upload-file-count', '500', 'odc', 'default', 'master
 DUPLICATE KEY UPDATE `id`=`id`;
 
 INSERT INTO `config_system_configuration` (`key`, `value`, `application`, `profile`, `label`, `description`)
-VALUES ('odc.flow.async.max-upload-file-total-size}', '#{256*1024*1024}', 'odc', 'default', 'master', '异步任务最大上传文件总大小，单位为字节，默认 256 MB') ON
+VALUES ('odc.flow.async.max-upload-file-total-size', '#{256*1024*1024}', 'odc', 'default', 'master', '异步任务最大上传文件总大小，单位为字节，默认 256 MB') ON
 DUPLICATE KEY UPDATE `id`=`id`;
 
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.task.file-expire-hours', '336', '流程任务附带文件最多保留小时数，默认 336 小时，即 2 星期') ON DUPLICATE KEY UPDATE `id`=`id`;
@@ -705,5 +705,3 @@ INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES
 
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.server.obclient.command-black-list',
  'connect,conn,edit,nopager,notee,pager,print,prompt,rehash,system,tee,resetconnection', 'Prohibited commands that can be executed by obclient' ) ON DUPLICATE KEY UPDATE `id` = `id`;
-
-INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.flow.async.max-upload-file-total-size', '#{32*1024*1024}', 'The maximum total size of uploaded files for database change tasks, in bytes, default 32 MB' ) ON DUPLICATE KEY UPDATE `id` = `id`;
