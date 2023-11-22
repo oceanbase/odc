@@ -20,8 +20,8 @@ import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import com.oceanbase.odc.service.task.caller.DefaultJobContext;
 import com.oceanbase.odc.service.task.caller.JobCaller;
-import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.caller.JobException;
 import com.oceanbase.odc.service.task.caller.K8sJobCaller;
 import com.oceanbase.odc.service.task.caller.PodConfig;
@@ -59,7 +59,7 @@ public class JobCallerTest extends BaseJobTest {
             }
         });
 
-        JobContext context = new JobContext();
+        DefaultJobContext context = new DefaultJobContext();
         context.setTaskId(exceptedTaskId);
         jobCaller.start(context);
         jobCaller.stop(exceptedTaskId);
@@ -82,7 +82,7 @@ public class JobCallerTest extends BaseJobTest {
             }
         });
 
-        JobContext context = new JobContext();
+        DefaultJobContext context = new DefaultJobContext();
         context.setTaskId(exceptedTaskId);
         jobCaller.start(context);
         // double start same task

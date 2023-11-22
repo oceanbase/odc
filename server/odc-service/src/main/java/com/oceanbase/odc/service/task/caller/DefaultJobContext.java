@@ -14,9 +14,15 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.core.task.context;
+package com.oceanbase.odc.service.task.caller;
 
+import java.io.Serializable;
 import java.util.List;
+
+import com.oceanbase.odc.core.flow.model.TaskParameters;
+import com.oceanbase.odc.core.shared.constant.TaskType;
+import com.oceanbase.odc.service.common.model.HostProperties;
+import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 
 import lombok.Data;
 
@@ -27,20 +33,25 @@ import lombok.Data;
  */
 
 @Data
-public class JobContext {
+public class DefaultJobContext implements JobContext, Serializable {
 
     /**
      * task id
      */
     private Long taskId;
+
     /**
-     * task param
+     * task type
      */
-    private TaskParam taskParam;
+    private TaskType taskType;
+    /**
+     * task parameters
+     */
+    private TaskParameters taskParameters;
     /**
      * task connection config
      */
-    private TaskConnectionConfig connConfig;
+    private List<ConnectionConfig> connectionConfigs;
     /**
      * odc server host properties
      */
