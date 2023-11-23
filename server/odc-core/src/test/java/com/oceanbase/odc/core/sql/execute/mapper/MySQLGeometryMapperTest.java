@@ -58,22 +58,34 @@ public class MySQLGeometryMapperTest {
             try (ResultSet rs = statement.executeQuery("select * from gis_test")) {
                 while (rs.next()) {
                     ResultSetMetaData metaData = rs.getMetaData();
-                    Assert.assertEquals("POINT (1 1)",
-                            mapper.mapCell(new CellData(rs, 1, new JdbcDataTypeFactory(metaData, 1).generate())));
-                    Assert.assertEquals("POINT (2 2)",
-                            mapper.mapCell(new CellData(rs, 2, new JdbcDataTypeFactory(metaData, 2).generate())));
-                    Assert.assertEquals("LINESTRING (0 0, 1 1, 2 2)",
-                            mapper.mapCell(new CellData(rs, 3, new JdbcDataTypeFactory(metaData, 3).generate())));
-                    Assert.assertEquals("POLYGON ((0 0, 0 1, 1 1, 1 0, 0 0))",
-                            mapper.mapCell(new CellData(rs, 4, new JdbcDataTypeFactory(metaData, 4).generate())));
-                    Assert.assertEquals("MULTIPOINT ((0 0), (1 1))",
-                            mapper.mapCell(new CellData(rs, 5, new JdbcDataTypeFactory(metaData, 5).generate())));
-                    Assert.assertEquals("MULTILINESTRING ((0 0, 1 1, 2 2), (3 3, 4 4, 5 5))",
-                            mapper.mapCell(new CellData(rs, 6, new JdbcDataTypeFactory(metaData, 6).generate())));
-                    Assert.assertEquals("MULTIPOLYGON (((0 0, 0 1, 1 1, 1 0, 0 0)), ((2 2, 2 3, 3 3, 3 2, 2 2)))",
-                            mapper.mapCell(new CellData(rs, 7, new JdbcDataTypeFactory(metaData, 7).generate())));
-                    Assert.assertEquals("GEOMETRYCOLLECTION (POINT (1 1), LINESTRING (0 0, 1 1, 2 2))",
-                            mapper.mapCell(new CellData(rs, 8, new JdbcDataTypeFactory(metaData, 8).generate())));
+                    Assert.assertArrayEquals(new String[] {
+                            "POINT (1 1)",
+                            "POINT (2 2)",
+                            "LINESTRING (0 0, 1 1, 2 2)",
+                            "POLYGON ((0 0, 0 1, 1 1, 1 0, 0 0))",
+                            "MULTIPOINT ((0 0), (1 1))",
+                            "MULTILINESTRING ((0 0, 1 1, 2 2), (3 3, 4 4, 5 5))",
+                            "MULTIPOLYGON (((0 0, 0 1, 1 1, 1 0, 0 0)), ((2 2, 2 3, 3 3, 3 2, 2 2)))",
+                            "GEOMETRYCOLLECTION (POINT (1 1), LINESTRING (0 0, 1 1, 2 2))"
+                    },
+                            new String[] {
+                                    (String) mapper.mapCell(
+                                            new CellData(rs, 1, new JdbcDataTypeFactory(metaData, 1).generate())),
+                                    (String) mapper.mapCell(
+                                            new CellData(rs, 2, new JdbcDataTypeFactory(metaData, 2).generate())),
+                                    (String) mapper.mapCell(
+                                            new CellData(rs, 3, new JdbcDataTypeFactory(metaData, 3).generate())),
+                                    (String) mapper.mapCell(
+                                            new CellData(rs, 4, new JdbcDataTypeFactory(metaData, 4).generate())),
+                                    (String) mapper.mapCell(
+                                            new CellData(rs, 5, new JdbcDataTypeFactory(metaData, 5).generate())),
+                                    (String) mapper.mapCell(
+                                            new CellData(rs, 6, new JdbcDataTypeFactory(metaData, 6).generate())),
+                                    (String) mapper.mapCell(
+                                            new CellData(rs, 7, new JdbcDataTypeFactory(metaData, 7).generate())),
+                                    (String) mapper.mapCell(
+                                            new CellData(rs, 8, new JdbcDataTypeFactory(metaData, 8).generate()))
+                            });
                 }
             }
         }
