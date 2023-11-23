@@ -17,15 +17,11 @@
 package com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax;
 
 import java.io.File;
-import java.io.IOException;
+import java.io.FileNotFoundException;
 import java.net.MalformedURLException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,8 +46,6 @@ import com.oceanbase.tools.loaddump.common.model.ObjectStatus.Status;
 
 public class DataXTransferJob extends AbstractJob {
     private static final Logger LOGGER = LoggerFactory.getLogger("DataTransferLogger");
-    private static final Pattern DATA_FILE_PATTERN =
-            Pattern.compile("(^\"?([^\\.]+)\"?.(sql|csv|dat|txt))__(.+)$", Pattern.CASE_INSENSITIVE);
 
     private final JobConfiguration jobConfig;
     /**
@@ -149,25 +143,14 @@ public class DataXTransferJob extends AbstractJob {
         return communication;
     }
 
-    private void setExportFile() throws MalformedURLException {
+    private void setExportFile() throws MalformedURLException, FileNotFoundException {
         TxtWriterPluginParameter pluginParameter =
                 (TxtWriterPluginParameter) jobConfig.getContent()[0].getWriter().getParameter();
-        File dir = new File(pluginParameter.getPath());
-        for (File file : dir.listFiles()) {
-            Matcher matcher = DATA_FILE_PATTERN.matcher(file.getName());
-            if (!file.getName().startsWith(pluginParameter.getFileName()) || !matcher.matches()) {
-                continue;
-            }
-            String originName = matcher.group(1);
-            Path exportPath = file.toPath();
-            try {
-                exportPath = Files.move(exportPath, Paths.get(pluginParameter.getPath(), originName));
-            } catch (IOException e) {
-                LOGGER.warn("Failed to rename file {} to {}, reason: {}", file.getName(), originName, e.getMessage());
-            }
-            object.setExportPaths(Collections.singletonList(exportPath.toUri().toURL()));
-            break;
+        File file = Paths.get(pluginParameter.getPath(), pluginParameter.getFileName()).toFile();
+        if (!file.exists() || !file.isFile()) {
+            throw new FileNotFoundException(file.getName());
         }
+        object.setExportPaths(Collections.singletonList(file.toURI().toURL()));
     }
 
     private class DataXJobMonitor implements Runnable {

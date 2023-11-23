@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import javax.sql.DataSource;
@@ -34,6 +33,7 @@ import com.oceanbase.odc.plugin.schema.mysql.MySQLFunctionExtension;
 import com.oceanbase.odc.plugin.schema.mysql.MySQLProcedureExtension;
 import com.oceanbase.odc.plugin.schema.mysql.MySQLTableExtension;
 import com.oceanbase.odc.plugin.schema.mysql.MySQLViewExtension;
+import com.oceanbase.odc.plugin.task.api.datatransfer.dumper.DataFile;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferFormat;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferObject;
@@ -46,8 +46,6 @@ import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
 
 public class TransferJobFactory {
-    private static final Pattern DATA_FILE_PATTERN =
-            Pattern.compile("^\"?([^\\.]+)\"?(\\.[0-9]+){0,2}(?<!-schema)\\.(sql|csv|dat|txt)$", Pattern.CASE_INSENSITIVE);
 
     private final DataTransferConfig transferConfig;
     private final File workingDir;
@@ -113,7 +111,7 @@ public class TransferJobFactory {
                 if (!transferConfig.isCompressed()) {
                     object = new ObjectResult(transferConfig.getSchemaName(), file.getName(), "FILE");
                 } else {
-                    Matcher matcher = DATA_FILE_PATTERN.matcher(file.getName());
+                    Matcher matcher = DataFile.FILE_PATTERN.matcher(file.getName());
                     if (!matcher.matches()) {
                         continue;
                     }
