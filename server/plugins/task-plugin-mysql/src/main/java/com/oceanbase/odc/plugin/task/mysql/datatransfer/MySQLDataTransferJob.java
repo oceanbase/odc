@@ -120,12 +120,18 @@ public class MySQLDataTransferJob implements DataTransferJob {
             initTransferJobs(dataSource, dataSource.getJdbcUrl());
 
             if (CollectionUtils.isNotEmpty(schemaJobs)) {
-                runSchemaJobs();
-                logSummary(schemaJobs, "SCHEMA");
+                try {
+                    runSchemaJobs();
+                } finally {
+                    logSummary(schemaJobs, "SCHEMA");
+                }
             }
             if (CollectionUtils.isNotEmpty(dataJobs)) {
-                runDataJobs();
-                logSummary(dataJobs, "DATA");
+                try {
+                    runDataJobs();
+                } finally {
+                    logSummary(dataJobs, "DATA");
+                }
             }
         }
         return new DataTransferTaskResult(getDataObjectsStatus(), getSchemaObjectsStatus());
