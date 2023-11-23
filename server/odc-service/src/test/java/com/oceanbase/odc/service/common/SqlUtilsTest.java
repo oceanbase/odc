@@ -44,92 +44,11 @@ public class SqlUtilsTest {
     }
 
     @Test
-    public void appendLimit() {
-        String sql = "select * from xx";
-        String resultSql = SqlUtils.appendLimit(sql, 157);
-        Assert.assertEquals("select * from xx limit 157", resultSql);
-
-        sql = "select * from xx limit 200";
-        resultSql = SqlUtils.appendLimit(sql, 157);
-        Assert.assertEquals(sql, resultSql);
-    }
-
-    @Test
-    public void appendFetchFirst() {
-        String sql = "select * from xx";
-        String resultSql = SqlUtils.appendFetchFirst(sql, 157);
-        Assert.assertEquals("select * from xx fetch first 157 rows only", resultSql);
-
-        sql = "select * from xx fetch first 200 rows only";
-        resultSql = SqlUtils.appendFetchFirst(sql, 157);
-        Assert.assertEquals(sql, resultSql);
-    }
-
-    @Test
-    public void appendRownumCondition() {
-        String sql = "select * from xx";
-        String resultSql = SqlUtils.appendRownumCondition(sql, 157);
-        Assert.assertEquals("select * from xx where rownum <= 157", resultSql);
-
-        sql = "select * from xx where id < 10";
-        resultSql = SqlUtils.appendRownumCondition(sql, 157);
-        Assert.assertEquals(sql, resultSql);
-    }
-
-    @Test
     public void removeComments() {
         String sql = "select xx from table -- this is comment";
         SqlCommentProcessor commentProcessor = new SqlCommentProcessor(DialectType.OB_ORACLE, false, false);
         String resultSql = SqlUtils.removeComments(commentProcessor, sql);
         Assert.assertEquals("select xx from table ", resultSql);
-    }
-
-    @Test
-    public void addInternalROWIDColumn_WithAlias_AddRowId() {
-        String sql = SqlUtils.addInternalROWIDColumn("select t.ROWID, t.* from TEST t");
-        Assert.assertEquals("select ROWID AS \"__ODC_INTERNAL_ROWID__\", t.ROWID, t.* from TEST t", sql);
-    }
-
-    @Test
-    public void addInternalROWIDColumn_WithStarInSelect_AddRowId() {
-        String sql = SqlUtils.addInternalROWIDColumn("select * from TEST;");
-        Assert.assertEquals("select ROWID AS \"__ODC_INTERNAL_ROWID__\", TEST.* from TEST;", sql);
-    }
-
-    @Test
-    public void addInternalROWIDColumn_WithStarInSelectForUpdate_AddRowId() {
-        String sql = SqlUtils.addInternalROWIDColumn("select * from TEST for update;");
-        Assert.assertEquals("select ROWID AS \"__ODC_INTERNAL_ROWID__\", TEST.* from TEST for update;", sql);
-    }
-
-    @Test
-    public void addInternalROWIDColumn_WithUpperCaseFrom_AddRowIdSuccess() {
-        String sql = SqlUtils.addInternalROWIDColumn("select * FROM TEST for update;");
-        Assert.assertEquals("select ROWID AS \"__ODC_INTERNAL_ROWID__\", TEST.* FROM TEST for update;", sql);
-    }
-
-    @Test
-    public void addInternalROWIDColumn_WithUpperCaseFromAndNullAfterFrom_AddRowIdSuccess() {
-        String sql = SqlUtils.addInternalROWIDColumn("select * FROM;");
-        Assert.assertEquals("select ROWID AS \"__ODC_INTERNAL_ROWID__\", .* FROM;", sql);
-    }
-
-    @Test
-    public void addInternalROWIDColumn_WithDollarSign_AddRowIdSuccess() {
-        String sql = SqlUtils.addInternalROWIDColumn("select * FROM GV$SQL_AUDIT;");
-        Assert.assertEquals("select ROWID AS \"__ODC_INTERNAL_ROWID__\", GV$SQL_AUDIT.* FROM GV$SQL_AUDIT;", sql);
-    }
-
-    @Test
-    public void addInternalROWIDColumn_WithBackSlash_AddRowIdSuccess() {
-        String sql = SqlUtils.addInternalROWIDColumn("select * FROM GV\\SQL_AUDIT;");
-        Assert.assertEquals("select ROWID AS \"__ODC_INTERNAL_ROWID__\", GV\\SQL_AUDIT.* FROM GV\\SQL_AUDIT;", sql);
-    }
-
-    @Test
-    public void addInternalROWIDColumn_WithStarInWhereClause_AddRowIdSuccess() {
-        String sql = SqlUtils.addInternalROWIDColumn("select sid FROM GV$SQL_AUDIT WHERE sid='*';");
-        Assert.assertEquals("select ROWID AS \"__ODC_INTERNAL_ROWID__\", sid FROM GV$SQL_AUDIT WHERE sid='*';", sql);
     }
 
     @Test

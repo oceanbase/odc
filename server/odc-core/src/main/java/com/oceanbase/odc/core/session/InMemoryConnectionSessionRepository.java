@@ -33,7 +33,7 @@ import lombok.NonNull;
  * @date 2021-11-15 17:04
  * @since ODC_release_3.2.2
  */
-public class InMemorySessionRepository implements ConnectionSessionRepository {
+public class InMemoryConnectionSessionRepository implements ConnectionSessionRepository {
     /**
      * A container for holding {@link ConnectionSession} objects, implemented as a concurrent object
      * {@link ConcurrentHashMap}
@@ -43,6 +43,9 @@ public class InMemorySessionRepository implements ConnectionSessionRepository {
     @Override
     public String store(@NonNull ConnectionSession session) {
         Validate.notNull(session.getId(), "Session.Id can not be null");
+        if (this.sessionId2SessionMap.containsKey(session.getId())) {
+            throw new IllegalStateException("Session id \"" + session.getId() + "\" already exists");
+        }
         this.sessionId2SessionMap.putIfAbsent(session.getId(), session);
         return session.getId();
     }

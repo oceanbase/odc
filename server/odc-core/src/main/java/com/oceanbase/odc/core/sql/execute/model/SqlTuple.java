@@ -20,9 +20,13 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonProperty.Access;
+import com.oceanbase.odc.common.lang.Pair;
 import com.oceanbase.odc.common.util.TraceWatch;
+import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTree;
+import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTreeFactory;
 
 import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
@@ -39,8 +43,8 @@ import lombok.ToString;
  * @since ODC_release_3.2.2
  */
 @Getter
-@EqualsAndHashCode
-@ToString
+@ToString(exclude = {"ast"})
+@EqualsAndHashCode(exclude = {"ast"})
 public class SqlTuple {
 
     @Getter(AccessLevel.NONE)
@@ -50,6 +54,9 @@ public class SqlTuple {
     private final String executedSql;
     @JsonProperty(access = Access.WRITE_ONLY)
     private final TraceWatch sqlWatch;
+    @JsonIgnore
+    @Getter(AccessLevel.NONE)
+    private Pair<AbstractSyntaxTree, Exception> ast;
 
     private SqlTuple(@NonNull String sqlId, @NonNull String originalSql, @NonNull String executedSql,
             @NonNull TraceWatch sqlWatch) {
@@ -61,7 +68,9 @@ public class SqlTuple {
 
     public SqlTuple softCopy() {
         String sqlId = this.sqlId + "-" + (++this.copiedTimes);
-        return new SqlTuple(sqlId, this.originalSql, this.executedSql, this.sqlWatch);
+        SqlTuple newOne = new SqlTuple(sqlId, this.originalSql, this.executedSql, this.sqlWatch);
+        newOne.ast = this.ast;
+        return newOne;
     }
 
     public static SqlTuple newTuple(@NonNull String originalSql, @NonNull String executedSql) {
@@ -97,6 +106,26 @@ public class SqlTuple {
 
     private static String generateSqlId() {
         return UUID.randomUUID().toString().replaceAll("-", "").toUpperCase();
+    }
+
+    public AbstractSyntaxTree getAst() throws Exception {
+        if (this.ast == null) {
+            return null;
+        } else if (this.ast.right != null) {
+            throw this.ast.right;
+        }
+        return this.ast.left;
+    }
+
+    public void initAst(AbstractSyntaxTreeFactory factory) {
+        if (factory == null) {
+            return;
+        }
+        try {
+            this.ast = new Pair<>(factory.buildAst(this.originalSql), null);
+        } catch (Exception e) {
+            this.ast = new Pair<>(null, e);
+        }
     }
 
 }

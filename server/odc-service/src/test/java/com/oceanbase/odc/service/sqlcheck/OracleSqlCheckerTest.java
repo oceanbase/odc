@@ -1119,7 +1119,7 @@ public class OracleSqlCheckerTest {
         SqlCheckRuleType type = SqlCheckRuleType.SYNTAX_ERROR;
         CheckViolation c1 = new CheckViolation(actual.get(0).getText(), 1, 0, 0, 85, type,
                 new Object[] {
-                        "You have an error in your SQL syntax; check the manual for the right syntax to use near 'egin\\n  v1 := 2\\nreturn...' at line 4, col 0"});
+                        "You have an error in your SQL syntax; check the manual for the right syntax to use near 'ATE OR REPLACE function...' at line 1, col 18"});
         List<CheckViolation> expect = Collections.singletonList(c1);
         Assert.assertEquals(expect, actual);
     }

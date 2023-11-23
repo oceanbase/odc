@@ -13,27 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.sqlcheck.parser;
 
-import org.antlr.v4.runtime.ParserRuleContext;
+package com.oceanbase.odc.core.sql.parser;
 
-import com.oceanbase.tools.sqlparser.statement.BaseStatement;
+import com.oceanbase.odc.core.shared.constant.DialectType;
 
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
 import lombok.NonNull;
-import lombok.Setter;
 
-@Getter
-@Setter
-@EqualsAndHashCode(callSuper = false)
-public class DropStatement extends BaseStatement {
+/**
+ * {@link AbstractSyntaxTreeFactories}
+ *
+ * @author yh263208
+ * @date 2023-11-17 16:00
+ * @since ODC_release_4.2.3
+ */
+public class AbstractSyntaxTreeFactories {
 
-    private final String objectType;
-
-    public DropStatement(@NonNull ParserRuleContext ruleNode, @NonNull String objectType) {
-        super(ruleNode);
-        this.objectType = objectType;
+    public static AbstractSyntaxTreeFactory getAstFactory(@NonNull DialectType dialectType, long timeoutMillis) {
+        if (dialectType.isOracle()) {
+            return new OBOracleAstFactory(timeoutMillis);
+        } else if (dialectType.isMysql()) {
+            return new OBMySQLAstFactory(timeoutMillis);
+        }
+        return null;
     }
 
 }

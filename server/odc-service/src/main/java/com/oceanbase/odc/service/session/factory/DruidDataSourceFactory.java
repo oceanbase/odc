@@ -50,8 +50,8 @@ public class DruidDataSourceFactory extends OBConsoleDataSourceFactory {
 
     private static final int DEFAULT_TIMEOUT_MILLIS = 60000;
 
-    public DruidDataSourceFactory(ConnectionConfig connectionConfig, ConnectionAccountType accountType) {
-        super(connectionConfig, accountType, null);
+    public DruidDataSourceFactory(ConnectionConfig connectionConfig) {
+        super(connectionConfig, null);
     }
 
     @Override
@@ -104,7 +104,7 @@ public class DruidDataSourceFactory extends OBConsoleDataSourceFactory {
     @Override
     public CloneableDataSourceFactory deepCopy() {
         ConnectionMapper mapper = ConnectionMapper.INSTANCE;
-        return new DruidDataSourceFactory(mapper.clone(connectionConfig), this.accountType);
+        return new DruidDataSourceFactory(mapper.clone(connectionConfig));
     }
 
     private void setConnectAndSocketTimeoutFromJdbcUrl(DruidDataSource dataSource) throws SQLException {

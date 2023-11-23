@@ -13,21 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.sqlcheck.parser;
+package com.oceanbase.odc.core.sql.parser;
 
 import org.antlr.v4.runtime.tree.ParseTree;
 
-import com.oceanbase.tools.sqlparser.OBMySQLParser;
 import com.oceanbase.tools.sqlparser.statement.Statement;
 
 /**
- * {@link SqlCheckOBMySQLParser}
+ * {@link OBOracleSQLParser}
  *
  * @author yh263208
- * @date 2023-07-25 14:39
+ * @date 2023-07-25 11:48
  * @since ODC_release_4.2.0
  */
-public class SqlCheckOBMySQLParser extends OBMySQLParser {
+class OBOracleSQLParser extends com.oceanbase.tools.sqlparser.OBOracleSQLParser {
 
     @Override
     public Statement buildStatement(ParseTree root) {
@@ -35,7 +34,7 @@ public class SqlCheckOBMySQLParser extends OBMySQLParser {
         if (statement != null) {
             return statement;
         }
-        return new OBMySQLDropStatementVisitor().visit(root);
+        return new OBOracleDropStatementVisitor().visit(root);
     }
 
 }

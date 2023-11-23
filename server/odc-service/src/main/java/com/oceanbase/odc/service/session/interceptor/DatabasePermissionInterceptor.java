@@ -35,6 +35,7 @@ import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.session.model.SqlAsyncExecuteReq;
 import com.oceanbase.odc.service.session.model.SqlAsyncExecuteResp;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
+import com.oceanbase.odc.service.session.model.SqlTuplesWithViolation;
 import com.oceanbase.odc.service.session.util.SchemaExtractor;
 
 import lombok.NonNull;
@@ -66,9 +67,8 @@ public class DatabasePermissionInterceptor extends BaseTimeConsumingInterceptor 
             return true;
         }
         ConnectionConfig connectionConfig = (ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(session);
-        Set<String> allDatabaseNames = SchemaExtractor.listSchemaNames(response.getSqls().stream()
-                .map(sqlTuplesWithViolation -> sqlTuplesWithViolation.getSqlTuple().getOriginalSql())
-                .collect(Collectors.toList()), session.getDialectType());
+        Set<String> allDatabaseNames = SchemaExtractor.listSchemaNames(session.getDialectType(), response.getSqls()
+                .stream().map(SqlTuplesWithViolation::getSqlTuple).collect(Collectors.toList()));
         Set<String> unauthorizedDatabaseNames =
                 databaseService.filterUnAuthorizedDatabaseNames(allDatabaseNames, connectionConfig.getId());
         if (CollectionUtils.isNotEmpty(unauthorizedDatabaseNames)) {

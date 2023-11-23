@@ -93,11 +93,10 @@ public class ConnectionTesting {
         if (req.getAccountType() == ConnectionAccountType.SYS_READ) {
             connectionConfig.setDefaultSchema(null);
         }
-        return test(connectionConfig, ConnectionAccountType.MAIN);
+        return test(connectionConfig);
     }
 
-    public ConnectionTestResult test(@NonNull ConnectionConfig config,
-            @NonNull ConnectionAccountType accountType) {
+    public ConnectionTestResult test(@NonNull ConnectionConfig config) {
         ConnectType type = config.getType();
         try {
             /**
@@ -116,34 +115,33 @@ public class ConnectionTesting {
              *
              * <pre>
              *     1. 用户的 username：
-             *        a. 第一种场景下使用 {@link OBConsoleDataSourceFactory#getUsername(ConnectionConfig, ConnectionAccountType)}
+             *        a. 第一种场景下使用 {@link OBConsoleDataSourceFactory#getUsername(ConnectionConfig)}
              *           获取的用户名就是 obclient 串中 {@code -u} 中填入的内容，这是符合测试语义的。
              *        b. 第二种场景下由于 {@link ConnectType} 不准，如果信任该值可能导致 {@code username} 格式错误，因此需要将其设置为
-             *           null，然后使用 {@link OBConsoleDataSourceFactory#getUsername(ConnectionConfig, ConnectionAccountType)}
+             *           null，然后使用 {@link OBConsoleDataSourceFactory#getUsername(ConnectionConfig)}
              *           此时获取到的内容是 {@link ConnectionConfig} 中 {@code user@tenant#cluster}，这是符合测试语义的。
              *     2. 要连接到的目标 schema：
-             *        a. 第一种场景下使用 {@link OBConsoleDataSourceFactory#getDefaultSchema(ConnectionConfig, ConnectionAccountType)}
+             *        a. 第一种场景下使用 {@link OBConsoleDataSourceFactory#getDefaultSchema(ConnectionConfig)}
              *           获取到的就是 obclient 串中 {@code -D} 中的内容，这同样是符合测试语义的。
              *        b. 第二种场景下需要分情况讨论：
              *           1). 如果 {@link ConnectType#getDialectType()} 为 {@link DialectType#OB_MYSQL}，此时 schema 应该使用
-             *               {@link OBConsoleDataSourceFactory#getDefaultSchema(ConnectionConfig, ConnectionAccountType)}
+             *               {@link OBConsoleDataSourceFactory#getDefaultSchema(ConnectionConfig)}
              *               获取，这是因为无论连接是否真的是 mysql 模式都不会引发更多的问题。
              *           2). 如果 {@link ConnectType#getDialectType()} 为 {@link DialectType#OB_ORACLE}，此时 schema 应该设置为 null，
              *               这么做是因为，如果连接是 mysql 模式却被错误设置为 oracle 模式，此时 schema 信息的值将会被设置成 username，如果
              *               以这个schema 去尝试连接，那么将会收到一个 unknown database 而将真实的租户选择错误的信息隐藏掉。
              * </pre>
              *
-             * 总的来说，对于 username 而言，我们调用
-             * {@link OBConsoleDataSourceFactory#getUsername(ConnectionConfig, ConnectionAccountType)}
+             * 总的来说，对于 username 而言，我们调用 {@link OBConsoleDataSourceFactory#getUsername(ConnectionConfig)}
              * 前需要将{@link ConnectType} 设置为 {@code null}，对于 defaultSchema 而言需要分情况讨论。
              */
             String schema;
             if (type == null) {
-                schema = OBConsoleDataSourceFactory.getDefaultSchema(config, accountType);
+                schema = OBConsoleDataSourceFactory.getDefaultSchema(config);
             } else if (type.getDialectType().isOracle()) {
                 schema = null;
             } else if (type.getDialectType().isMysql()) {
-                schema = OBConsoleDataSourceFactory.getDefaultSchema(config, accountType);
+                schema = OBConsoleDataSourceFactory.getDefaultSchema(config);
             } else {
                 throw new UnsupportedOperationException("Unsupported type, " + type);
             }
@@ -153,7 +151,7 @@ public class ConnectionTesting {
                     (type != null) ? type.getDialectType() : DialectType.OB_MYSQL);
 
             Properties jdbcUrlProperties = getJdbcUrlProperties(config, schema);
-            Properties testConnectionProperties = getTestConnectionProperties(config, accountType);
+            Properties testConnectionProperties = getTestConnectionProperties(config);
 
             TestResult result = connectionExtensionPoint.test(
                     connectionExtensionPoint.generateJdbcUrl(
@@ -192,7 +190,7 @@ public class ConnectionTesting {
 
             ConnectionTestResult testResult = new ConnectionTestResult(result, connectType);
             try {
-                testInitScript(connectionExtensionPoint, schema, config, accountType);
+                testInitScript(connectionExtensionPoint, schema, config);
             } catch (Exception e) {
                 return ConnectionTestResult.initScriptFailed(e);
             }
@@ -226,8 +224,8 @@ public class ConnectionTesting {
 
     private Properties getTestConnectionProperties(ConnectionConfig config, ConnectionAccountType accountType) {
         Properties properties = new Properties();
-        String password = OBConsoleDataSourceFactory.getPassword(config, accountType);
-        String username = OBConsoleDataSourceFactory.getUsername(config, accountType);
+        String password = OBConsoleDataSourceFactory.getPassword(config);
+        String username = OBConsoleDataSourceFactory.getUsername(config);
         if (Objects.nonNull(username)) {
             properties.put(ConnectionConstants.USER, username);
         }
@@ -271,8 +269,8 @@ public class ConnectionTesting {
         return config;
     }
 
-    private void testInitScript(ConnectionExtensionPoint extensionPoint, String schema,
-            ConnectionConfig config, ConnectionAccountType accountType) throws SQLException {
+    private void testInitScript(ConnectionExtensionPoint extensionPoint,
+            String schema, ConnectionConfig config) throws SQLException {
         if (StringUtils.isEmpty(config.getSessionInitScript())) {
             return;
         }
@@ -280,7 +278,7 @@ public class ConnectionTesting {
                 extensionPoint.generateJdbcUrl(getJdbcUrlProperties(config, schema),
                         OBConsoleDataSourceFactory.getJdbcParams(config));
 
-        Properties properties = getTestConnectionProperties(config, accountType);
+        Properties properties = getTestConnectionProperties(config);
         properties.setProperty("socketTimeout", ConnectTypeUtil.REACHABLE_TIMEOUT_MILLIS + "");
         properties.setProperty("connectTimeout", ConnectTypeUtil.REACHABLE_TIMEOUT_MILLIS + "");
 

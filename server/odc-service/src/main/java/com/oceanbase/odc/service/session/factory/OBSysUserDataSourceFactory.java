@@ -22,15 +22,16 @@ import java.util.Properties;
 
 import javax.sql.DataSource;
 
-import org.apache.commons.lang.Validate;
-
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.datasource.DataSourceFactory;
 import com.oceanbase.odc.core.datasource.SingleConnectionDataSource;
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.plugin.connect.api.ConnectionExtensionPoint;
 import com.oceanbase.odc.plugin.connect.model.ConnectionConstants;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
+
+import lombok.NonNull;
 
 /**
  * Used for the construction of the database connection pool corresponding to the user under the sys
@@ -42,6 +43,7 @@ import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
  * @see DataSourceFactory
  */
 public class OBSysUserDataSourceFactory implements DataSourceFactory {
+
     private static final Map<String, String> JDBC_URL_PARAMS = new HashMap<>();
     private final ConnectionExtensionPoint connectionExtensionPoint;
 
@@ -52,10 +54,9 @@ public class OBSysUserDataSourceFactory implements DataSourceFactory {
 
     private final ConnectionConfig connectionConfig;
 
-    public OBSysUserDataSourceFactory(ConnectionConfig connectionConfig) {
-        Validate.notNull(connectionConfig, "ConnectionConfig can not be null");
+    public OBSysUserDataSourceFactory(@NonNull ConnectionConfig connectionConfig) {
         this.connectionConfig = connectionConfig;
-        this.connectionExtensionPoint = ConnectionPluginUtil.getConnectionExtension(connectionConfig.getDialectType());
+        this.connectionExtensionPoint = ConnectionPluginUtil.getConnectionExtension(DialectType.OB_MYSQL);
     }
 
     @Override
@@ -74,6 +75,11 @@ public class OBSysUserDataSourceFactory implements DataSourceFactory {
         dataSource.setAutoCommit(true);
         dataSource.setDriverClassName(connectionExtensionPoint.getDriverClassName());
         return dataSource;
+    }
+
+    @Override
+    public DialectType getDialectType() {
+        return DialectType.OB_MYSQL;
     }
 
     protected String getUsernameWithTenantAndCluster() {
@@ -96,9 +102,7 @@ public class OBSysUserDataSourceFactory implements DataSourceFactory {
         Properties properties = new Properties();
         properties.put(ConnectionConstants.HOST, this.connectionConfig.getHost());
         properties.put(ConnectionConstants.PORT, this.connectionConfig.getPort());
-        if (Objects.nonNull(connectionConfig.getDefaultSchema())) {
-            properties.put(ConnectionConstants.DEFAULT_SCHEMA, connectionConfig.defaultSchema());
-        }
         return connectionExtensionPoint.generateJdbcUrl(properties, JDBC_URL_PARAMS);
     }
+
 }

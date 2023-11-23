@@ -94,13 +94,13 @@ public class ConnectionStatusManager {
         if (Objects.nonNull(connection.getEnabled()) && !connection.getEnabled()) {
             return CheckState.of(ConnectionStatus.DISABLED);
         }
-        CheckKey checkKey = new CheckKey(connection, ConnectionAccountType.MAIN);
+        CheckKey checkKey = new CheckKey(connection);
         CheckState checkState = connect2State.computeIfAbsent(checkKey, t -> new CheckState());
         long currentTimeMillis = systemTimeService.currentTimeMillis();
         synchronized (checkState) {
             if ((checkState.nextCheckTimeMillis <= currentTimeMillis)
                     && (statusCheckExecutor.getMaxPoolSize() - statusCheckExecutor.getActiveCount() > 0)) {
-                statusCheckExecutor.submit(new CheckTask(connection, checkState, checkKey.getAccountType()));
+                statusCheckExecutor.submit(new CheckTask(connection, checkState));
             }
             checkState.lastAccessTimeMillis = currentTimeMillis;
         }
@@ -139,18 +139,16 @@ public class ConnectionStatusManager {
 
     @EqualsAndHashCode
     private class CheckKey {
+
         long id;
         long updateTimeMills;
-        @Getter
-        ConnectionAccountType accountType;
 
-        private CheckKey(ConnectionConfig connection, ConnectionAccountType accountType) {
+        private CheckKey(ConnectionConfig connection) {
             Verify.notNull(connection.getCreateTime(), "connection.createTime");
-            Verify.notNull(accountType, "accountType");
             this.id = connection.getId();
-            this.updateTimeMills = (Objects.isNull(connection.getUpdateTime()) ? connection.getCreateTime()
+            this.updateTimeMills = (Objects.isNull(connection.getUpdateTime())
+                    ? connection.getCreateTime()
                     : connection.getUpdateTime()).getTime();
-            this.accountType = accountType;
         }
     }
 
@@ -199,21 +197,13 @@ public class ConnectionStatusManager {
         final CheckState checkState;
         final User user;
 
-        CheckTask(ConnectionConfig connection, CheckState checkState, ConnectionAccountType accountType) {
-            this.testConnectionReq = TestConnectionReq.fromConnection(connection, accountType);
+        CheckTask(ConnectionConfig connection, CheckState checkState) {
+            this.testConnectionReq = TestConnectionReq.fromConnection(connection, ConnectionAccountType.MAIN);
             this.user = authenticationFacade.currentUser();
             if (Objects.isNull(connection.getPassword())) {
                 try {
                     TextEncryptor encryptor = connectionEncryption.getEncryptor(connection);
-                    if (accountType == ConnectionAccountType.MAIN) {
-                        this.testConnectionReq.setPassword(encryptor.decrypt(connection.getPasswordEncrypted()));
-                    } else if (accountType == ConnectionAccountType.READONLY) {
-                        this.testConnectionReq
-                                .setPassword(encryptor.decrypt(connection.getReadonlyPasswordEncrypted()));
-                    } else {
-                        this.testConnectionReq
-                                .setPassword(encryptor.decrypt(connection.getSysTenantPasswordEncrypted()));
-                    }
+                    this.testConnectionReq.setPassword(encryptor.decrypt(connection.getPasswordEncrypted()));
                 } catch (Exception e) {
                     log.warn("Test connection decrypt password failed, connectionId={}, reason={}",
                             connection.getId(), e.getMessage());

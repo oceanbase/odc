@@ -36,7 +36,6 @@ import com.oceanbase.odc.core.datasource.DataSourceFactory;
 import com.oceanbase.odc.core.datasource.SingleConnectionDataSource;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
-import com.oceanbase.odc.core.shared.constant.ConnectionAccountType;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
 import com.oceanbase.odc.plugin.connect.api.ConnectionExtensionPoint;
@@ -74,29 +73,26 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
     protected UserRole userRole;
     private Map<String, String> parameters;
     protected final ConnectionConfig connectionConfig;
-    protected final ConnectionAccountType accountType;
     private final Boolean autoCommit;
     private final boolean initConnection;
     @Setter
     private EventPublisher eventPublisher;
     protected final ConnectionExtensionPoint connectionExtensionPoint;
 
-    public OBConsoleDataSourceFactory(@NonNull ConnectionConfig connectionConfig,
-            @NonNull ConnectionAccountType accountType, Boolean autoCommit) {
-        this(connectionConfig, accountType, autoCommit, true);
+    public OBConsoleDataSourceFactory(@NonNull ConnectionConfig connectionConfig, Boolean autoCommit) {
+        this(connectionConfig, autoCommit, true);
     }
 
     public OBConsoleDataSourceFactory(@NonNull ConnectionConfig connectionConfig,
-            @NonNull ConnectionAccountType accountType, Boolean autoCommit, boolean initConnection) {
-        this.accountType = accountType;
+            Boolean autoCommit, boolean initConnection) {
         this.autoCommit = autoCommit;
         this.connectionConfig = connectionConfig;
         this.initConnection = initConnection;
-        this.username = getUsername(connectionConfig, accountType);
-        this.password = getPassword(connectionConfig, accountType);
+        this.username = getUsername(connectionConfig);
+        this.password = getPassword(connectionConfig);
         this.host = connectionConfig.getHost();
         this.port = connectionConfig.getPort();
-        this.defaultSchema = getDefaultSchema(connectionConfig, accountType);
+        this.defaultSchema = getDefaultSchema(connectionConfig);
         this.sid = connectionConfig.getSid();
         this.serviceName = connectionConfig.getServiceName();
         this.userRole = connectionConfig.getUserRole();
@@ -104,7 +100,7 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
         this.connectionExtensionPoint = ConnectionPluginUtil.getConnectionExtension(connectionConfig.getDialectType());
     }
 
-    protected String getJdbcUrl() {
+    public String getJdbcUrl() {
         return connectionExtensionPoint.generateJdbcUrl(getJdbcUrlProperties(), this.parameters);
     }
 
@@ -128,9 +124,8 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
         return properties;
     }
 
-    public static String getUsername(@NonNull ConnectionConfig connectionConfig,
-            @NonNull ConnectionAccountType accountType) {
-        String username = getDbUser(connectionConfig, accountType);
+    public static String getUsername(@NonNull ConnectionConfig connectionConfig) {
+        String username = getDbUser(connectionConfig);
         if (DialectType.OB_ORACLE.equals(connectionConfig.getDialectType())) {
             username = "\"" + username + "\"";
         }
@@ -145,20 +140,8 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
         return username;
     }
 
-    public static String getPassword(@NonNull ConnectionConfig connectionConfig,
-            @NonNull ConnectionAccountType accountType) {
-        String password;
-        switch (accountType) {
-            case MAIN:
-                password = connectionConfig.getPassword();
-                break;
-            case READONLY:
-                password = connectionConfig.getReadonlyPassword();
-                break;
-            default:
-                throw new IllegalArgumentException("Invalid accountType, accountType=" + accountType);
-        }
-        return password;
+    public static String getPassword(@NonNull ConnectionConfig connectionConfig) {
+        return connectionConfig.getPassword();
     }
 
     public static Map<String, String> getJdbcParams(@NonNull ConnectionConfig connectionConfig) {
@@ -168,7 +151,6 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
         jdbcUrlParams.put("connectTimeout", "5000");
         jdbcUrlParams.put("zeroDateTimeBehavior", DEFAULT_ZERO_DATE_TIME_BEHAVIOR);
         jdbcUrlParams.put("noDatetimeStringSync", "true");
-        jdbcUrlParams.put("allowLoadLocalInfile", "false");
         jdbcUrlParams.put("jdbcCompliantTruncation", "false");
 
         // TODO: set sendConnectionAttributes while upgrade oceanbase-client to v2.2.10
@@ -206,6 +188,9 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
                 jdbcUrlParams.put(key, value.toString());
             }
         });
+        // fix arbitrary file reading vulnerability
+        jdbcUrlParams.put("allowLoadLocalInfile", "false");
+        jdbcUrlParams.put("allowUrlInLocalInfile", "false");
         return jdbcUrlParams;
     }
 
@@ -239,9 +224,14 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
     }
 
     @Override
+    public DialectType getDialectType() {
+        return this.connectionConfig.getDialectType();
+    }
+
+    @Override
     public CloneableDataSourceFactory deepCopy() {
         ConnectionMapper mapper = ConnectionMapper.INSTANCE;
-        return new OBConsoleDataSourceFactory(mapper.clone(connectionConfig), this.accountType, this.autoCommit);
+        return new OBConsoleDataSourceFactory(mapper.clone(connectionConfig), this.autoCommit);
     }
 
     @Override
@@ -288,36 +278,33 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
         return this.connectionConfig.getType();
     }
 
-    private static String getDbUser(@NonNull ConnectionConfig connectionConfig,
-            @NonNull ConnectionAccountType accountType) {
-        String username;
-        switch (accountType) {
-            case MAIN:
-                username = connectionConfig.getUsername();
-                break;
-            case READONLY:
-                username = connectionConfig.getReadonlyUsername();
-                break;
-            default:
-                throw new IllegalArgumentException("Invalid accountType, accountType=" + accountType);
-        }
+    private static String getDbUser(@NonNull ConnectionConfig connectionConfig) {
+        String username = connectionConfig.getUsername();
         if (DialectType.OB_ORACLE.equals(connectionConfig.getDialectType())) {
             username = ConnectionSessionUtil.getUserOrSchemaString(username, DialectType.OB_ORACLE);
         }
         return username;
     }
 
-    public static String getDefaultSchema(@NonNull ConnectionConfig connectionConfig,
-            @NonNull ConnectionAccountType accountType) {
-        String dbUser = getDbUser(connectionConfig, accountType);
-        String defaultSchema = connectionConfig.defaultSchema();
-        if (DialectType.OB_ORACLE.equals(connectionConfig.getDialectType())) {
-            defaultSchema = "\"" + dbUser + "\"";
-        } else if (StringUtils.isBlank(defaultSchema)
-                && connectionConfig.getDialectType().isMysql()) {
-            defaultSchema = OdcConstants.MYSQL_DEFAULT_SCHEMA;
+    public static String getDefaultSchema(@NonNull ConnectionConfig connectionConfig) {
+        String defaultSchema = connectionConfig.getDefaultSchema();
+        switch (connectionConfig.getDialectType()) {
+            case OB_ORACLE:
+            case ORACLE:
+                if (StringUtils.isNotEmpty(defaultSchema)) {
+                    return "\"" + defaultSchema + "\"";
+                }
+                return "\"" + getDbUser(connectionConfig) + "\"";
+            case OB_MYSQL:
+            case MYSQL:
+            case ODP_SHARDING_OB_MYSQL:
+                if (StringUtils.isNotEmpty(defaultSchema)) {
+                    return defaultSchema;
+                }
+                return OdcConstants.MYSQL_DEFAULT_SCHEMA;
+            default:
+                return null;
         }
-        return defaultSchema;
     }
 
 }

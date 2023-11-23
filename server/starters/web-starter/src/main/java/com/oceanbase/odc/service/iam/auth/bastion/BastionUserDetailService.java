@@ -27,6 +27,7 @@ import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
 import com.oceanbase.odc.service.bastion.BastionAccountService;
 import com.oceanbase.odc.service.bastion.model.BastionAccount;
+import com.oceanbase.odc.service.collaboration.project.ProjectService;
 import com.oceanbase.odc.service.iam.UserService;
 import com.oceanbase.odc.service.iam.model.User;
 
@@ -43,6 +44,9 @@ public class BastionUserDetailService implements AuthenticationUserDetailsServic
     @Autowired
     private BastionAccountService bastionAccountService;
 
+    @Autowired
+    private ProjectService projectService;
+
     @Override
     public UserDetails loadUserDetails(BastionAuthenticationToken token) throws UsernameNotFoundException {
         PreConditions.notNull(token, "token");
@@ -51,13 +55,12 @@ public class BastionUserDetailService implements AuthenticationUserDetailsServic
         BastionAccount bastionAccount = bastionAccountService.query(apiToken);
         String username = bastionAccount.getUsername();
         TraceContextHolder.setAccountName(username);
-
         User user = userService.createUserIfNotExists(OdcConstants.DEFAULT_ORGANIZATION_ID,
                 username, bastionAccount.getNickName(),
                 null);
-
         TraceContextHolder.setUserId(user.getId());
         TraceContextHolder.setOrganizationId(user.getOrganizationId());
+        projectService.createProjectIfNotExists(user);
         return user;
     }
 }

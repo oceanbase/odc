@@ -52,22 +52,22 @@ public class DBTypeController {
     @RequestMapping(value = "/list/{sid:.*}", method = RequestMethod.GET)
     public OdcResult<List<DBType>> list(@PathVariable String sid) {
         ResourceIdentifier i = ResourceIDParser.parse(sid);
-        return OdcResult.ok(service.list(sessionService.nullSafeGet(i.getSid()), i.getDatabase()));
+        return OdcResult.ok(service.list(sessionService.nullSafeGet(i.getSid(), true), i.getDatabase()));
     }
 
     @ApiOperation(value = "detail", notes = "查看某一个特定的类型细节，sid示例：sid:1000-1:ty:ty1")
     @RequestMapping(value = "/{sid:.*}", method = RequestMethod.GET)
     public OdcResult<DBType> detail(@PathVariable String sid) {
         ResourceIdentifier i = ResourceIDParser.parse(sid);
-        return OdcResult.ok(service.detail(sessionService.nullSafeGet(i.getSid()),
-                i.getDatabase(), i.getType()));
+        return OdcResult.ok(service.detail(
+                sessionService.nullSafeGet(i.getSid(), true), i.getDatabase(), i.getType()));
     }
 
     @ApiOperation(value = "getCreateSql", notes = "获取类型的创建sql，sid示例：sid:1000-1:ty:ty1")
     @RequestMapping(value = "/getCreateSql/{sid:.*}", method = RequestMethod.POST)
     public OdcResult<ResourceSql> getCreateSql(@PathVariable String sid, @RequestBody DBType resource) {
-        return OdcResult
-                .ok(service.generateCreateSql(sessionService.nullSafeGet(SidUtils.getSessionId(sid)), resource));
+        return OdcResult.ok(service.generateCreateSql(
+                sessionService.nullSafeGet(SidUtils.getSessionId(sid), true), resource));
     }
 
 }

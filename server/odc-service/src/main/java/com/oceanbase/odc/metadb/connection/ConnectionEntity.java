@@ -268,6 +268,9 @@ public class ConnectionEntity {
     @Column(name = "environment_id", nullable = false)
     private Long environmentId;
 
+    @Column(name = "project_id")
+    private Long projectId;
+
     /**
      * Oracle 连接方式特有的参数，该参数表示一个数据库
      */

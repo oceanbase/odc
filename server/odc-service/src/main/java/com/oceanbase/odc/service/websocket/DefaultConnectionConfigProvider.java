@@ -35,7 +35,7 @@ public class DefaultConnectionConfigProvider implements ConnectionConfigProvider
 
     @Override
     public ConnectionConfig getConnectionSession(String resourceId, Session session) {
-        ConnectionSession s = sessionService.nullSafeGet(SidUtils.getSessionId(resourceId));
+        ConnectionSession s = sessionService.nullSafeGet(SidUtils.getSessionId(resourceId), true);
         ConnectionConfig connectionConfig = (ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(s);
         return CONNECTION_MAPPER.clone(connectionConfig);
     }

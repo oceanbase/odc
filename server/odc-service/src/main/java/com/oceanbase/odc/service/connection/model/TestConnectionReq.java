@@ -152,7 +152,7 @@ public class TestConnectionReq implements CloudConnectionConfig, SSLConnectionCo
         req.setHost(connection.getHost());
         req.setPort(connection.getPort());
         req.setClusterName(connection.getClusterName());
-        req.setDefaultSchema(connection.defaultSchema());
+        req.setDefaultSchema(connection.getDefaultSchema());
         if (accountType == ConnectionAccountType.MAIN) {
             req.setTenantName(connection.getTenantName());
             req.setUsername(connection.getUsername());

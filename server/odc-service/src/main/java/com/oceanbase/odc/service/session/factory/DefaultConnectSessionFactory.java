@@ -30,14 +30,17 @@ import com.oceanbase.odc.core.datasource.ConnectionResetEvent;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionFactory;
+import com.oceanbase.odc.core.session.ConnectionSessionIdGenerator;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.session.DefaultConnectionSession;
-import com.oceanbase.odc.core.shared.constant.ConnectionAccountType;
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.sql.execute.task.SqlExecuteTaskManager;
 import com.oceanbase.odc.core.task.TaskManagerFactory;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.connection.model.CreateSessionReq;
 import com.oceanbase.odc.service.connection.util.ConnectionInfoUtil;
-import com.oceanbase.odc.service.connection.util.DefaultConnectionExtensionExecutor;
+import com.oceanbase.odc.service.connection.util.DefaultJdbcUrlParser;
+import com.oceanbase.odc.service.connection.util.JdbcUrlParser;
 import com.oceanbase.odc.service.datasecurity.accessor.DatasourceColumnAccessor;
 import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 import com.oceanbase.odc.service.session.initializer.SwitchSchemaInitializer;
@@ -62,24 +65,24 @@ public class DefaultConnectSessionFactory implements ConnectionSessionFactory {
     private final TaskManagerFactory<SqlExecuteTaskManager> taskManagerFactory;
     private final Boolean autoCommit;
     private final EventPublisher eventPublisher;
-    private final ConnectionAccountType accountType;
     @Setter
     private long sessionTimeoutMillis;
+    @Setter
+    private ConnectionSessionIdGenerator<CreateSessionReq> idGenerator;
 
     public DefaultConnectSessionFactory(@NonNull ConnectionConfig connectionConfig,
-            ConnectionAccountType type, Boolean autoCommit,
-            TaskManagerFactory<SqlExecuteTaskManager> taskManagerFactory) {
+            Boolean autoCommit, TaskManagerFactory<SqlExecuteTaskManager> taskManagerFactory) {
         this.sessionTimeoutMillis = TimeUnit.MILLISECONDS.convert(
                 ConnectionSessionConstants.SESSION_EXPIRATION_TIME_SECONDS, TimeUnit.SECONDS);
         this.connectionConfig = connectionConfig;
         this.taskManagerFactory = taskManagerFactory;
         this.autoCommit = autoCommit == null || autoCommit;
         this.eventPublisher = new LocalEventPublisher();
-        this.accountType = type == null ? ConnectionAccountType.MAIN : type;
+        this.idGenerator = new DefaultConnectSessionIdGenerator();
     }
 
     public DefaultConnectSessionFactory(@NonNull ConnectionConfig connectionConfig) {
-        this(connectionConfig, null, null, null);
+        this(connectionConfig, null, null);
     }
 
     @Override
@@ -89,21 +92,25 @@ public class DefaultConnectSessionFactory implements ConnectionSessionFactory {
         registerConsoleDataSource(session);
         registerBackendDataSource(session);
         initSession(session);
-        if (StringUtils.isNotBlank(connectionConfig.defaultSchema())) {
-            ConnectionSessionUtil.setCurrentSchema(session, connectionConfig.defaultSchema());
-        }
-        if (StringUtils.isNotBlank(connectionConfig.getTenantName())) {
-            ConnectionSessionUtil.setTenantName(session, connectionConfig.getTenantName());
-        }
-        if (StringUtils.isNotBlank(connectionConfig.getClusterName())) {
-            ConnectionSessionUtil.setClusterName(session, connectionConfig.getClusterName());
-        }
         return session;
     }
 
     private void registerConsoleDataSource(ConnectionSession session) {
-        OBConsoleDataSourceFactory dataSourceFactory =
-                new OBConsoleDataSourceFactory(connectionConfig, accountType, autoCommit);
+        OBConsoleDataSourceFactory dataSourceFactory = new OBConsoleDataSourceFactory(connectionConfig, autoCommit);
+        try {
+            JdbcUrlParser urlParser = new DefaultJdbcUrlParser(dataSourceFactory.getJdbcUrl());
+            String connectSchema = urlParser.getSchema();
+            if (StringUtils.isNotBlank(connectSchema)) {
+                connectSchema = ConnectionSessionUtil.getUserOrSchemaString(connectSchema, session.getDialectType());
+                ConnectionSessionUtil.setConnectSchema(session, connectSchema);
+                ConnectionSessionUtil.setCurrentSchema(session, connectSchema);
+            }
+        } catch (Exception e) {
+            if (StringUtils.isNotBlank(connectionConfig.getDefaultSchema())) {
+                ConnectionSessionUtil.setConnectSchema(session, connectionConfig.getDefaultSchema());
+                ConnectionSessionUtil.setCurrentSchema(session, connectionConfig.getDefaultSchema());
+            }
+        }
         dataSourceFactory.setEventPublisher(eventPublisher);
         ProxyDataSourceFactory proxyFactory = new ProxyDataSourceFactory(dataSourceFactory);
         session.register(ConnectionSessionConstants.CONSOLE_DS_KEY, proxyFactory);
@@ -111,8 +118,7 @@ public class DefaultConnectSessionFactory implements ConnectionSessionFactory {
     }
 
     private void registerBackendDataSource(ConnectionSession session) {
-        DruidDataSourceFactory dataSourceFactory =
-                new DruidDataSourceFactory(connectionConfig, accountType);
+        DruidDataSourceFactory dataSourceFactory = new DruidDataSourceFactory(connectionConfig);
         ProxyDataSourceFactory proxyFactory = new ProxyDataSourceFactory(dataSourceFactory);
         session.register(ConnectionSessionConstants.BACKEND_DS_KEY, proxyFactory);
         proxyFactory.setInitializer(new SwitchSchemaInitializer(session));
@@ -125,9 +131,9 @@ public class DefaultConnectSessionFactory implements ConnectionSessionFactory {
 
     private ConnectionSession createSession() {
         try {
-            return new DefaultConnectionSession(new DefaultSessionIdGenerator(connectionConfig),
+            return new DefaultConnectionSession(idGenerator.generateId(CreateSessionReq.from(connectionConfig)),
                     taskManagerFactory, sessionTimeoutMillis, connectionConfig.getType(), autoCommit,
-                    new DefaultConnectionExtensionExecutor(connectionConfig.getDialectType()));
+                    ConnectionPluginUtil.getSessionExtension(connectionConfig.getDialectType()));
         } catch (Exception e) {
             log.warn("Failed to create connection session", e);
             throw new IllegalStateException(e);
@@ -136,14 +142,15 @@ public class DefaultConnectSessionFactory implements ConnectionSessionFactory {
 
     private void initSession(ConnectionSession session) {
         this.eventPublisher.addEventListener(new ConsoleConnectionResetListener(session));
-        ConnectionSessionUtil.setEventPublisher(session, eventPublisher);
         ConnectionSessionUtil.initArchitecture(session);
         ConnectionInfoUtil.initSessionVersion(session);
         ConnectionSessionUtil.setConsoleSessionResetFlag(session, false);
         ConnectionInfoUtil.initConsoleConnectionId(session);
         ConnectionSessionUtil.setConnectionConfig(session, connectionConfig);
-        ConnectionSessionUtil.setConnectionAccountType(session, accountType);
         ConnectionSessionUtil.setColumnAccessor(session, new DatasourceColumnAccessor(session));
+        if (StringUtils.isNotBlank(connectionConfig.getTenantName())) {
+            ConnectionSessionUtil.setTenantName(session, connectionConfig.getTenantName());
+        }
         setNlsFormat(session);
     }
 

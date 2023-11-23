@@ -38,7 +38,6 @@ import com.oceanbase.odc.core.datasource.SingleConnectionDataSource;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
-import com.oceanbase.odc.core.shared.constant.ConnectionAccountType;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.service.collaboration.environment.EnvironmentService;
 import com.oceanbase.odc.service.collaboration.environment.model.Environment;
@@ -99,8 +98,7 @@ public class SqlCheckService {
         }
         Environment env = this.environmentService.detail(environmentId);
         List<Rule> rules = this.ruleService.list(env.getRulesetId(), QueryRuleMetadataParams.builder().build());
-        OBConsoleDataSourceFactory factory =
-                new OBConsoleDataSourceFactory(config, ConnectionAccountType.MAIN, true, false);
+        OBConsoleDataSourceFactory factory = new OBConsoleDataSourceFactory(config, true, false);
         factory.resetSchema(origin -> databaseName);
         SqlCheckContext checkContext = new SqlCheckContext((long) sqls.size());
         try (SingleConnectionDataSource dataSource = (SingleConnectionDataSource) factory.getDataSource()) {

@@ -65,6 +65,11 @@ public class TestDataSourceFactory implements CloneableDataSourceFactory {
     }
 
     @Override
+    public DialectType getDialectType() {
+        return this.dialectType;
+    }
+
+    @Override
     public CloneableDataSourceFactory deepCopy() {
         return new TestDataSourceFactory(dialectType);
     }
