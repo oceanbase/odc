@@ -28,12 +28,14 @@ import org.locationtech.jts.io.WKBReader;
 import com.oceanbase.tools.dbbrowser.model.datatype.DataType;
 
 import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author jingtian
  * @date 2023/11/21
  * @since ODC_release_4.2.4
  */
+@Slf4j
 public class MySQLGeometryMapper implements JdbcColumnMapper {
     @Override
     public Object mapCell(@NonNull CellData data) throws SQLException, IOException {
@@ -46,8 +48,9 @@ public class MySQLGeometryMapper implements JdbcColumnMapper {
             String text = geometry.toText();
             return geometry.getSRID() == 0 ? text : text + " | " + geometry.getSRID();
         } catch (Exception e) {
-            throw new RuntimeException("Failed to parse geometry:" + e);
+            log.warn("Failed to parse geometry:" + e);
         }
+        return null;
     }
 
     @Override
