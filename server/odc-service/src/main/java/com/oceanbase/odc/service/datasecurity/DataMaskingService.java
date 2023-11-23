@@ -15,7 +15,6 @@
  */
 package com.oceanbase.odc.service.datasecurity;
 
-import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -44,9 +43,10 @@ import com.oceanbase.odc.core.datamasking.data.metadata.MetadataFactory;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.Verify;
-import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.core.sql.execute.model.JdbcColumnMetaData;
+import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTreeFactories;
+import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTreeFactory;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.datasecurity.accessor.DatasourceColumnAccessor;
 import com.oceanbase.odc.service.datasecurity.extractor.ColumnExtractor;
@@ -58,9 +58,6 @@ import com.oceanbase.odc.service.datasecurity.model.MaskingAlgorithm;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveColumn;
 import com.oceanbase.odc.service.datasecurity.util.MaskingAlgorithmUtil;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
-import com.oceanbase.tools.sqlparser.OBMySQLParser;
-import com.oceanbase.tools.sqlparser.OBOracleSQLParser;
-import com.oceanbase.tools.sqlparser.SQLParser;
 import com.oceanbase.tools.sqlparser.statement.Statement;
 
 import lombok.NonNull;
@@ -89,7 +86,11 @@ public class DataMaskingService {
         List<Set<SensitiveColumn>> result = new ArrayList<>();
         Statement stmt;
         try {
-            stmt = getSqlParser(session.getDialectType()).parse(new StringReader(sql));
+            AbstractSyntaxTreeFactory factory = AbstractSyntaxTreeFactories.getAstFactory(session.getDialectType(), 0);
+            if (factory == null) {
+                throw new UnsupportedException("Unsupported dialect type: " + session.getDialectType());
+            }
+            stmt = factory.buildAst(sql).getStatement();
         } catch (Exception e) {
             log.warn("Parse sql failed, sql={}", sql, e);
             throw new IllegalStateException("Parse sql failed, details=" + e.getMessage());
@@ -216,16 +217,6 @@ public class DataMaskingService {
     public boolean isMaskingEnabled() {
         return maskingProperties.isMaskingEnabled()
                 && columnService.existsInCurrentOrganization();
-    }
-
-    private SQLParser getSqlParser(DialectType dialectType) {
-        if (Objects.nonNull(dialectType) && dialectType.isMysql()) {
-            return new OBMySQLParser();
-        } else if (dialectType == DialectType.OB_ORACLE) {
-            return new OBOracleSQLParser();
-        } else {
-            throw new UnsupportedException("Unsupported dialect type: " + dialectType);
-        }
     }
 
     private Map<Long, MaskingAlgorithm> getId2MaskingAlgorithm() {

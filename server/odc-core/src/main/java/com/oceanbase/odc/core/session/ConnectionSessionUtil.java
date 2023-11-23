@@ -318,19 +318,6 @@ public class ConnectionSessionUtil {
         return (BinaryDataManager) connectionSession.getAttribute(ConnectionSessionConstants.BINARY_FILE_MANAGER_KEY);
     }
 
-    public static void setShowTableColumnInfo(@NonNull ConnectionSession connectionSession,
-            Boolean getTableColumnsInfo) {
-        connectionSession.setAttribute(ConnectionSessionConstants.SHOW_TABLE_COLUMN_INFO, getTableColumnsInfo);
-    }
-
-    public static boolean getShowTableColumnInfo(@NonNull ConnectionSession connectionSession) {
-        Object result = connectionSession.getAttribute(ConnectionSessionConstants.SHOW_TABLE_COLUMN_INFO);
-        if (result == null) {
-            return true;
-        }
-        return (boolean) result;
-    }
-
     @SuppressWarnings("all")
     public static void setBinaryContentMetadata(@NonNull ConnectionSession connectionSession, String key,
             BinaryContentMetaData data) {
