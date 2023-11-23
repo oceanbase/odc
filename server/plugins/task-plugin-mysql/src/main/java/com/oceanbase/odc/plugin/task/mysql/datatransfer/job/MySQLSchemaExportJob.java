@@ -69,7 +69,7 @@ public class MySQLSchemaExportJob extends AbstractJob {
         content.append(queryDdlForDBObject());
         // 4. append '$$' if it is a PL SQL; The end of sql assembling
         if (isPlObject()) {
-            content.append(Constants.DEFAULT_PL_DELIMITER);
+            content.append(Constants.LINE_BREAKER).append(Constants.DEFAULT_PL_DELIMITER);
         }
         /*
          * touch file
