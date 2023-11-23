@@ -88,6 +88,7 @@ public class DumpParameterFactory extends BaseParameterFactory<DumpParameter> {
             parameter.setSnapshot(false);
         }
         if (transferConfig.isTransferData()) {
+            parameter.setPageSize(Integer.MAX_VALUE);
             if (transferConfig.getBatchCommitNum() != null) {
                 parameter.setCommitSize(transferConfig.getBatchCommitNum());
             }
