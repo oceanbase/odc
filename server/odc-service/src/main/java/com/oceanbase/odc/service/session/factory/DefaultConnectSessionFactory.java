@@ -33,7 +33,6 @@ import com.oceanbase.odc.core.session.ConnectionSessionFactory;
 import com.oceanbase.odc.core.session.ConnectionSessionIdGenerator;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.session.DefaultConnectionSession;
-import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.sql.execute.task.SqlExecuteTaskManager;
 import com.oceanbase.odc.core.task.TaskManagerFactory;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;

@@ -27,7 +27,6 @@ import com.alibaba.druid.pool.DruidDataSource;
 import com.oceanbase.odc.core.datasource.CloneableDataSourceFactory;
 import com.oceanbase.odc.core.datasource.ConnectionInitializer;
 import com.oceanbase.odc.core.datasource.DataSourceFactory;
-import com.oceanbase.odc.core.shared.constant.ConnectionAccountType;
 import com.oceanbase.odc.plugin.connect.model.ConnectionConstants;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.util.ConnectionMapper;

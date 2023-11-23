@@ -17,7 +17,6 @@ package com.oceanbase.odc.service.session.factory;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Properties;
 
 import javax.sql.DataSource;

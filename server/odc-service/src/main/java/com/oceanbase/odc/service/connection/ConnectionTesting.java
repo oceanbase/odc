@@ -222,7 +222,7 @@ public class ConnectionTesting {
         return properties;
     }
 
-    private Properties getTestConnectionProperties(ConnectionConfig config, ConnectionAccountType accountType) {
+    private Properties getTestConnectionProperties(ConnectionConfig config) {
         Properties properties = new Properties();
         String password = OBConsoleDataSourceFactory.getPassword(config);
         String username = OBConsoleDataSourceFactory.getUsername(config);
