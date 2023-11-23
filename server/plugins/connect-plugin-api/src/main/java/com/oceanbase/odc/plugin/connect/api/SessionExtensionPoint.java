@@ -20,18 +20,17 @@ import java.sql.SQLException;
 
 import org.pf4j.ExtensionPoint;
 
+import com.oceanbase.odc.core.sql.execute.SessionOperations;
+
 /**
  * @author yaobin
  * @date 2023-04-14
  * @since 4.2.0
  */
-public interface SessionExtensionPoint extends ExtensionPoint {
-
-    void killQuery(Connection connection, String connectionId);
+public interface SessionExtensionPoint extends ExtensionPoint, SessionOperations {
 
     void switchSchema(Connection connection, String schemaName) throws SQLException;
 
-    String getConnectionId(Connection connection);
-
     String getCurrentSchema(Connection connection);
+
 }

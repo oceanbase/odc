@@ -13,29 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.sqlcheck.parser;
 
-import org.antlr.v4.runtime.tree.ParseTree;
+package com.oceanbase.odc.core.sql.parser;
 
-import com.oceanbase.tools.sqlparser.OBOracleSQLParser;
-import com.oceanbase.tools.sqlparser.statement.Statement;
+import com.oceanbase.tools.sqlparser.SyntaxErrorException;
+
+import lombok.NonNull;
 
 /**
- * {@link SqlCheckOBOracleParser}
+ * {@link EmptyAstFactory}
  *
  * @author yh263208
- * @date 2023-07-25 11:48
- * @since ODC_release_4.2.0
+ * @date 2023-11-17 17:37
+ * @since ODC_release_4.2.3
  */
-public class SqlCheckOBOracleParser extends OBOracleSQLParser {
+public class EmptyAstFactory implements AbstractSyntaxTreeFactory {
+
+    private final AbstractSyntaxTree ast;
+
+    public EmptyAstFactory(@NonNull AbstractSyntaxTree ast) {
+        this.ast = ast;
+    }
 
     @Override
-    public Statement buildStatement(ParseTree root) {
-        Statement statement = super.buildStatement(root);
-        if (statement != null) {
-            return statement;
-        }
-        return new OBOracleDropStatementVisitor().visit(root);
+    public AbstractSyntaxTree buildAst(@NonNull String statement) throws SyntaxErrorException {
+        return ast;
     }
 
 }

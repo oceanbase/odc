@@ -19,6 +19,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.apache.commons.collections4.CollectionUtils;
 
@@ -30,6 +31,7 @@ import com.oceanbase.odc.service.sqlcheck.model.CheckViolation;
 import com.oceanbase.odc.service.sqlcheck.model.SqlCheckRuleType;
 import com.oceanbase.tools.sqlparser.statement.Statement;
 import com.oceanbase.tools.sqlparser.statement.insert.Insert;
+import com.oceanbase.tools.sqlparser.statement.insert.InsertTable;
 
 import lombok.NonNull;
 
@@ -49,10 +51,15 @@ public class NoSpecificColumnExists implements SqlCheckRule {
             return Collections.emptyList();
         }
         Insert insert = (Insert) statement;
-        return insert.getInsertBodies().stream()
-                .filter(i -> CollectionUtils.isEmpty(i.getColumns()))
-                .map(b -> SqlCheckUtil.buildViolation(statement.getText(), b, getType(), null))
-                .collect(Collectors.toList());
+        List<InsertTable> insertTables = insert.getTableInsert();
+        if (CollectionUtils.isNotEmpty(insertTables)) {
+            return build(statement.getText(), insertTables.stream());
+        }
+        List<CheckViolation> violations = build(statement.getText(),
+                insert.getConditionalInsert().getConditions().stream().flatMap(i -> i.getThen().stream()));
+        violations.addAll(build(statement.getText(),
+                insert.getConditionalInsert().getElseClause().stream()));
+        return violations;
     }
 
     @Override
@@ -64,6 +71,14 @@ public class NoSpecificColumnExists implements SqlCheckRule {
     public List<DialectType> getSupportsDialectTypes() {
         return Arrays.asList(DialectType.OB_MYSQL, DialectType.MYSQL, DialectType.OB_ORACLE,
                 DialectType.ODP_SHARDING_OB_MYSQL);
+    }
+
+    private List<CheckViolation> build(String sql, Stream<InsertTable> insertTables) {
+        return insertTables
+                .filter(i -> CollectionUtils.isEmpty(i.getSetColumns()))
+                .filter(i -> CollectionUtils.isEmpty(i.getColumns()))
+                .map(i -> SqlCheckUtil.buildViolation(sql, i, getType(), null))
+                .collect(Collectors.toList());
     }
 
 }

@@ -20,7 +20,6 @@ import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -28,8 +27,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.function.BooleanSupplier;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import javax.validation.Valid;
@@ -75,6 +72,9 @@ import com.oceanbase.odc.core.sql.execute.cache.table.VirtualElement;
 import com.oceanbase.odc.core.sql.execute.cache.table.VirtualTable;
 import com.oceanbase.odc.core.sql.execute.model.JdbcGeneralResult;
 import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
+import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTree;
+import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTreeFactories;
+import com.oceanbase.odc.core.sql.parser.EmptyAstFactory;
 import com.oceanbase.odc.service.common.model.OdcResultSetMetaData.OdcTable;
 import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.odc.service.common.util.WebResponseUtils;
@@ -86,7 +86,6 @@ import com.oceanbase.odc.service.db.session.KillSessionOrQueryReq;
 import com.oceanbase.odc.service.db.session.KillSessionResult;
 import com.oceanbase.odc.service.dml.ValueEncodeType;
 import com.oceanbase.odc.service.feature.AllFeatures;
-import com.oceanbase.odc.service.feature.Features;
 import com.oceanbase.odc.service.session.interceptor.SqlCheckInterceptor;
 import com.oceanbase.odc.service.session.interceptor.SqlExecuteInterceptorService;
 import com.oceanbase.odc.service.session.model.BinaryContent;
@@ -95,6 +94,7 @@ import com.oceanbase.odc.service.session.model.SqlAsyncExecuteReq;
 import com.oceanbase.odc.service.session.model.SqlAsyncExecuteResp;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.odc.service.session.util.SqlRewriteUtil;
+import com.oceanbase.tools.dbbrowser.parser.result.BasicResult;
 import com.oceanbase.tools.dbbrowser.parser.result.ParseSqlResult;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
@@ -118,6 +118,7 @@ import lombok.extern.slf4j.Slf4j;
 public class ConnectConsoleService {
 
     private static final int DEFAULT_GET_RESULT_TIMEOUT_SECONDS = 3;
+    private static String SHOW_TABLE_COLUMN_INFO = "SHOW_TABLE_COLUMN_INFO";
     @Autowired
     private ConnectSessionService sessionService;
     @Autowired
@@ -133,7 +134,7 @@ public class ConnectConsoleService {
 
     public SqlExecuteResult queryTableOrViewData(@NotNull String sessionId,
             @NotNull @Valid QueryTableOrViewDataReq req) throws Exception {
-        ConnectionSession connectionSession = sessionService.nullSafeGet(sessionId);
+        ConnectionSession connectionSession = sessionService.nullSafeGet(sessionId, true);
         SqlBuilder sqlBuilder;
         DialectType dialectType = connectionSession.getConnectType().getDialectType();
         if (dialectType.isMysql()) {
@@ -189,11 +190,8 @@ public class ConnectConsoleService {
 
     public SqlAsyncExecuteResp execute(@NotNull String sessionId,
             @NotNull @Valid SqlAsyncExecuteReq request, boolean needSqlCheck) throws Exception {
-        ConnectionSession connectionSession = sessionService.nullSafeGet(sessionId);
+        ConnectionSession connectionSession = sessionService.nullSafeGet(sessionId, true);
 
-        if (request.getShowTableColumnInfo() != null) {
-            ConnectionSessionUtil.setShowTableColumnInfo(connectionSession, request.getShowTableColumnInfo());
-        }
         long maxSqlLength = sessionProperties.getMaxSqlLength();
         if (maxSqlLength > 0) {
             PreConditions.lessThanOrEqualTo("sqlLength", LimitMetric.SQL_LENGTH,
@@ -222,17 +220,13 @@ public class ConnectConsoleService {
                     LimitMetric.SQL_STATEMENT_COUNT, sqls.size(), maxSqlStatementCount);
         }
 
-        List<SqlTuple> sqlTuples;
-        if (sessionProperties.isAddInternalRowId()) {
-            sqlTuples = addInternalRowId(sqls, connectionSession, request);
-        } else {
-            sqlTuples = sqls.stream().map(SqlTuple::newTuple).collect(Collectors.toList());
-        }
+        List<SqlTuple> sqlTuples = generateSqlTuple(sqls, connectionSession, request);
         SqlAsyncExecuteResp response = SqlAsyncExecuteResp.newSqlAsyncExecuteResp(sqlTuples);
         Map<String, Object> context = new HashMap<>();
+        context.put(SHOW_TABLE_COLUMN_INFO, request.getShowTableColumnInfo());
         context.put(SqlCheckInterceptor.NEED_SQL_CHECK_KEY, needSqlCheck);
         List<TraceStage> stages = sqlTuples.stream()
-                .map(s -> s.getSqlWatch().start(SqlExecuteStages.SQL_INTERCEPT_PRE_CHECK))
+                .map(s -> s.getSqlWatch().start(SqlExecuteStages.SQL_PRE_CHECK))
                 .collect(Collectors.toList());
         try {
             if (!sqlInterceptService.preHandle(request, response, connectionSession, context)) {
@@ -267,22 +261,20 @@ public class ConnectConsoleService {
         return getAsyncResult(sessionId, requestId, DEFAULT_GET_RESULT_TIMEOUT_SECONDS);
     }
 
-    public List<SqlExecuteResult> getAsyncResult(@NotNull String sessionId, String requestId,
-            Integer queryTimeoutSeconds) {
+    public List<SqlExecuteResult> getAsyncResult(@NotNull String sessionId, String requestId, Integer timeoutSeconds) {
         PreConditions.validArgumentState(Objects.nonNull(requestId), ErrorCodes.SqlRegulationRuleBlocked, null, null);
         ConnectionSession connectionSession = sessionService.nullSafeGet(sessionId);
         Future<List<JdbcGeneralResult>> listFuture =
                 ConnectionSessionUtil.getFutureJdbcResult(connectionSession, requestId);
-        int getResultTimeoutSeconds =
-                Objects.isNull(queryTimeoutSeconds) ? DEFAULT_GET_RESULT_TIMEOUT_SECONDS : queryTimeoutSeconds;
+        int timeout = Objects.isNull(timeoutSeconds) ? DEFAULT_GET_RESULT_TIMEOUT_SECONDS : timeoutSeconds;
         try {
-            List<JdbcGeneralResult> resultList = listFuture.get(getResultTimeoutSeconds, TimeUnit.SECONDS);
+            List<JdbcGeneralResult> resultList = listFuture.get(timeout, TimeUnit.SECONDS);
             Map<String, Object> context = ConnectionSessionUtil.getFutureJdbcContext(connectionSession, requestId);
             ConnectionSessionUtil.removeFutureJdbc(connectionSession, requestId);
             return resultList.stream().map(jdbcGeneralResult -> {
-                SqlExecuteResult result = generateResult(connectionSession, jdbcGeneralResult);
                 Map<String, Object> cxt = context == null ? new HashMap<>() : context;
-                try (TraceStage stage = result.getTraceWatch().start(SqlExecuteStages.SQL_INTERCEPT_AFTER_CHECK)) {
+                SqlExecuteResult result = generateResult(connectionSession, jdbcGeneralResult, cxt);
+                try (TraceStage stage = result.getSqlTuple().getSqlWatch().start(SqlExecuteStages.SQL_AFTER_CHECK)) {
                     sqlInterceptService.afterCompletion(result, connectionSession, cxt);
                 } catch (Exception e) {
                     throw new IllegalStateException(e);
@@ -394,87 +386,76 @@ public class ConnectConsoleService {
      * Rewrite sqls, will do <br>
      * 1. add ODC_INTERNAL_ROWID query column
      */
-    private List<SqlTuple> addInternalRowId(List<String> sqls, ConnectionSession session,
-            SqlAsyncExecuteReq request) throws IOException {
-        Integer queryLimit = request.getQueryLimit();
-        if (Objects.isNull(queryLimit)) {
-            return sqls.stream().map(SqlTuple::newTuple).collect(Collectors.toList());
-        }
-        List<SqlTuple> result = new LinkedList<>();
-        for (String sql : sqls) {
-            String newSql = sql;
-            if (StringUtils.isBlank(sql)) {
-                continue;
-            }
+    private List<SqlTuple> generateSqlTuple(List<String> sqls, ConnectionSession session, SqlAsyncExecuteReq request) {
+        return sqls.stream().filter(StringUtils::isNotBlank).map(sql -> {
             TraceWatch traceWatch = new TraceWatch("SQL-EXEC");
-            if (session.getDialectType() == DialectType.OB_ORACLE) {
-                ParseSqlResult parseResult;
-                try (TraceStage parseSql = traceWatch.start(SqlExecuteStages.PARSE_SQL)) {
-                    parseResult = SqlUtils.parseOracle(sql);
-                }
-                if (Objects.nonNull(parseResult) && request.ifAddROWID()) {
-                    try (TraceStage rewriteSql = traceWatch.start(SqlExecuteStages.REWRITE_SQL)) {
-                        try {
-                            newSql = rewriteSql(sql, session, traceWatch, parseResult::isSupportAddROWID,
-                                    SqlRewriteUtil::addInternalROWIDColumn);
-                        } catch (Exception ex) {
-                            log.warn("encountered unexpected exception when rewriting sql, cause={}", ex.getMessage(),
-                                    ex);
-                        }
-                    }
-                }
+            SqlTuple target = SqlTuple.newTuple(sql, sql, traceWatch);
+            try (TraceStage parseSql = traceWatch.start(SqlExecuteStages.PARSE_SQL)) {
+                target.initAst(AbstractSyntaxTreeFactories.getAstFactory(session.getDialectType(), 0));
+            } catch (IOException e) {
+                throw new IllegalStateException(e);
             }
-            result.add(SqlTuple.newTuple(sql, newSql, traceWatch));
-        }
-        return result;
-    }
-
-    private String rewriteSql(String sql, ConnectionSession session, TraceWatch watch,
-            BooleanSupplier shouldRewriteChecker, Function<String, String> rewriter) throws IOException {
-        if (!shouldRewriteChecker.getAsBoolean()) {
-            return sql;
-        }
-        String newSql;
-        try (TraceStage applyNewSql = watch.start(SqlExecuteStages.APPLY_SQL)) {
-            newSql = rewriter.apply(sql);
-        }
-        if (StringUtils.equals(sql, newSql)) {
-            return sql;
-        }
-        try (TraceStage stage = watch.start(SqlExecuteStages.VALIDATE_SEMANTICS)) {
-            boolean valid = validateSqlSemantics(newSql, session);
-            return valid ? newSql : sql;
-        }
+            if (Objects.isNull(request.getQueryLimit())
+                    || !request.ifAddROWID()
+                    || !sessionProperties.isAddInternalRowId()
+                    || session.getDialectType() != DialectType.OB_ORACLE) {
+                return target;
+            }
+            try {
+                AbstractSyntaxTree ast = target.getAst();
+                BasicResult result = ast.getParseResult();
+                if (result instanceof ParseSqlResult && ((ParseSqlResult) result).isSupportAddROWID()) {
+                    target = SqlTuple.newTuple(sql, rewriteSql(sql, session, traceWatch, ast), traceWatch);
+                    target.initAst(new EmptyAstFactory(ast));
+                }
+            } catch (Exception e) {
+                // eat exception
+            }
+            return target;
+        }).collect(Collectors.toList());
     }
 
     @SkipAuthorize
     public boolean killCurrentQuery(@NotNull String sessionId) {
-        ConnectionSession session = sessionService.nullSafeGet(sessionId);
-        Long connectionId = ((ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(session)).id();
-        Verify.notNull(connectionId, "ConnectionId");
-        return dbSessionManageFacade.killCurrentQuery(session);
+        return dbSessionManageFacade.killCurrentQuery(sessionService.nullSafeGet(sessionId));
     }
 
     @SkipAuthorize
     public List<KillSessionResult> killSessionOrQuery(KillSessionOrQueryReq request) {
-        if (!connectionService.checkPermission(Long.valueOf(request.getDatasourceId()), Arrays.asList("update"))) {
+        if (!connectionService.checkPermission(
+                Long.valueOf(request.getDatasourceId()), Collections.singletonList("update"))) {
             throw new AccessDeniedException();
         }
         return dbSessionManageFacade.killSessionOrQuery(request);
     }
 
-    private static boolean validateSqlSemantics(String sql, ConnectionSession session) {
-        PreConditions.notNull(session, "session");
-        Features features = AllFeatures.getByConnectType(session.getConnectType());
-        if (!features.supportsExplain()) {
+    private String rewriteSql(String sql, ConnectionSession session, TraceWatch watch, AbstractSyntaxTree ast) {
+        try (TraceStage rewriteSql = watch.start(SqlExecuteStages.REWRITE_SQL)) {
+            String newSql;
+            try (TraceStage applyNewSql = watch.start(SqlExecuteStages.DO_REWRITE_SQL)) {
+                newSql = SqlRewriteUtil.addInternalRowIdColumn(sql, ast);
+            }
+            if (StringUtils.equals(sql, newSql)) {
+                return sql;
+            }
+            try (TraceStage stage = watch.start(SqlExecuteStages.VALIDATE_SEMANTICS)) {
+                return validateSqlSemantics(newSql, session) ? newSql : sql;
+            }
+        } catch (Exception e) {
+            log.warn("Failed to rewrite sql, errMessage={}", e.getMessage());
+        }
+        return sql;
+    }
+
+    private boolean validateSqlSemantics(String sql, ConnectionSession session) {
+        if (!AllFeatures.getByConnectType(session.getConnectType()).supportsExplain()) {
             return false;
         }
         try {
             session.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY).execute("explain " + sql);
             return true;
         } catch (Exception e) {
-            log.warn("Failed to validate sql semantics due parse failed, assume not valid, sql={}, errorMessage={}",
-                    sql, LogUtils.prefix(e.getMessage()));
+            log.warn("Failed to validate sql semantics, sql={}, errorMessage={}", sql, LogUtils.prefix(e.getMessage()));
         }
         return false;
     }
@@ -501,7 +482,7 @@ public class ConnectConsoleService {
     }
 
     private SqlExecuteResult generateResult(@NonNull ConnectionSession connectionSession,
-            @NonNull JdbcGeneralResult generalResult) {
+            @NonNull JdbcGeneralResult generalResult, @NonNull Map<String, Object> cxt) {
         SqlExecuteResult result = new SqlExecuteResult(generalResult);
         TraceWatch watch = generalResult.getSqlTuple().getSqlWatch();
         OdcTable resultTable = null;
@@ -516,7 +497,7 @@ public class ConnectConsoleService {
         } catch (Exception e) {
             log.warn("Failed to init editable info", e);
         }
-        if (ConnectionSessionUtil.getShowTableColumnInfo(connectionSession)) {
+        if (Boolean.TRUE.equals(cxt.get(SHOW_TABLE_COLUMN_INFO))) {
             try (TraceStage s = watch.start(SqlExecuteStages.INIT_COLUMN_INFO)) {
                 result.initColumnInfo(connectionSession, resultTable, schemaAccessor);
             } catch (Exception e) {

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.sqlcheck.parser;
+package com.oceanbase.odc.core.sql.parser;
 
 import org.antlr.v4.runtime.tree.RuleNode;
 
@@ -34,7 +34,7 @@ import com.oceanbase.tools.sqlparser.obmysql.OBParser.Drop_user_stmtContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Drop_view_stmtContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParserBaseVisitor;
 
-public class OBMySQLDropStatementVisitor extends OBParserBaseVisitor<DropStatement> {
+class OBMySQLDropStatementVisitor extends OBParserBaseVisitor<DropStatement> {
 
     @Override
     public DropStatement visitChildren(RuleNode node) {

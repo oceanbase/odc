@@ -18,6 +18,8 @@ package com.oceanbase.odc.service.session.initializer;
 import java.sql.Connection;
 import java.sql.SQLException;
 
+import org.apache.commons.lang3.StringUtils;
+
 import com.oceanbase.odc.core.datasource.ConnectionInitializer;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
@@ -48,11 +50,13 @@ public class SwitchSchemaInitializer implements ConnectionInitializer {
         if (this.connectionSession.isExpired()) {
             return;
         }
-        String schema = ConnectionSessionUtil.getCurrentSchema(this.connectionSession);
-        if (connection == null || schema == null) {
+        String currentSchema = ConnectionSessionUtil.getCurrentSchema(this.connectionSession);
+        String connectSchema = ConnectionSessionUtil.getConnectSchema(this.connectionSession);
+        if (connection == null || currentSchema == null || StringUtils.equals(connectSchema, currentSchema)) {
             return;
         }
-        ConnectionPluginUtil.getSessionExtension(connectionSession.getDialectType()).switchSchema(connection, schema);
+        ConnectionPluginUtil.getSessionExtension(connectionSession.getDialectType())
+                .switchSchema(connection, currentSchema);
     }
 
 }

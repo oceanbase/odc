@@ -134,7 +134,7 @@ public class ProjectServiceTest extends ServiceTestEnv {
     }
 
     @Test
-    public void testArchiveProject_Archived() {
+    public void testArchiveProject_Archived() throws InterruptedException {
         Project saved = projectService.create(getProject());
         Mockito.when(resourceRoleService.saveAll(Mockito.any())).thenReturn(listUserResourceRole(saved.getId()));
         SetArchivedReq req = new SetArchivedReq();
@@ -144,7 +144,7 @@ public class ProjectServiceTest extends ServiceTestEnv {
     }
 
     @Test(expected = BadRequestException.class)
-    public void testArchiveProject_NotArchived() {
+    public void testArchiveProject_NotArchived() throws InterruptedException {
         Project saved = projectService.create(getProject());
         Mockito.when(resourceRoleService.saveAll(Mockito.any())).thenReturn(listUserResourceRole(saved.getId()));
         SetArchivedReq req = new SetArchivedReq();

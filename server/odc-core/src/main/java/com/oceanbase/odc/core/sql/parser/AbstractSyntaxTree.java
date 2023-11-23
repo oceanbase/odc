@@ -13,24 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.connection.model;
 
-import javax.validation.constraints.NotBlank;
+package com.oceanbase.odc.core.sql.parser;
 
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import org.antlr.v4.runtime.tree.ParseTree;
+
+import com.oceanbase.tools.dbbrowser.parser.result.BasicResult;
+import com.oceanbase.tools.sqlparser.statement.Statement;
 
 /**
- * Bulk switch schema request
+ * {@link AbstractSyntaxTree}
  *
  * @author yh263208
- * @date 2022-01-10 15:47
- * @since ODC_release_3.3.0
- * @see com.oceanbase.odc.service.connection.model.MultiSessionsReq
+ * @date 2023-11-17 15:29
+ * @since ODC_release_4.2.3
  */
-@EqualsAndHashCode(callSuper = true)
-@Data
-public class SwitchSchemaReq extends MultiSessionsReq {
-    @NotBlank
-    private String schemaName;
+public interface AbstractSyntaxTree {
+
+    ParseTree getRoot();
+
+    BasicResult getParseResult();
+
+    Statement getStatement();
+
 }

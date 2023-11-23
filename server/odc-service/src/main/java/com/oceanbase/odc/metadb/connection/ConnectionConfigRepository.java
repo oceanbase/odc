@@ -42,12 +42,13 @@ public interface ConnectionConfigRepository
 
     List<ConnectionEntity> findByOrganizationId(Long organizationId);
 
+    List<ConnectionEntity> findByProjectId(Long projectId);
 
     @Transactional
     @Query(value = "select distinct(c_c.*) from `connect_connection` as c_c inner join `connect_database` as c_d "
             + "on c_c.id = c_d.connection_id where c_d.project_id = :projectId",
             nativeQuery = true)
-    List<ConnectionEntity> findByProjectId(@Param("projectId") Long projectId);
+    List<ConnectionEntity> findByDatabaseProjectId(@Param("projectId") Long projectId);
 
     @Transactional
     @Query(value = "select `id` from `connect_connection` where `host`=:host", nativeQuery = true)

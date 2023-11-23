@@ -13,24 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.connection.model;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonProperty.Access;
+package com.oceanbase.odc.core.sql.parser;
 
-import lombok.Getter;
-import lombok.Setter;
+import com.oceanbase.tools.sqlparser.SyntaxErrorException;
+
+import lombok.NonNull;
 
 /**
- * Request for connection verify
+ * {@link AbstractSyntaxTreeFactory}
  *
  * @author yh263208
- * @date 2021-09-03 17:51
- * @since ODC_release_3.2.0
+ * @date 2023-11-17 15:32
+ * @since ODC_release_4.2.3
  */
-public class VerifyConnectionConfigReq extends ConnectionConfig {
-    @Getter
-    @Setter
-    @JsonProperty(access = Access.READ_WRITE)
-    private Long id;
+public interface AbstractSyntaxTreeFactory {
+
+    AbstractSyntaxTree buildAst(@NonNull String statement) throws SyntaxErrorException;
+
 }

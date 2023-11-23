@@ -25,6 +25,7 @@ import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.sql.execute.model.SqlExecuteStatus;
+import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
 import com.oceanbase.odc.service.session.interceptor.NlsFormatInterceptor;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 
@@ -145,7 +146,7 @@ public class NlsFormatInterceptorTest {
 
     private SqlExecuteResult getResponse(String sql, SqlExecuteStatus status) {
         SqlExecuteResult result = new SqlExecuteResult();
-        result.setOriginSql(sql);
+        result.setSqlTuple(SqlTuple.newTuple(sql));
         result.setStatus(status);
         return result;
     }

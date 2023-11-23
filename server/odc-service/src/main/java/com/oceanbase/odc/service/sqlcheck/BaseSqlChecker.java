@@ -17,9 +17,12 @@ package com.oceanbase.odc.service.sqlcheck;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
+import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTree;
 import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
 import com.oceanbase.odc.core.sql.split.SqlSplitter;
 import com.oceanbase.odc.service.sqlcheck.model.CheckViolation;
@@ -71,14 +74,7 @@ abstract class BaseSqlChecker implements SqlChecker {
     }
 
     public List<CheckViolation> check(@NonNull List<String> sqls, SqlCheckContext context) {
-        final SqlCheckContext checkContext;
-        if (context != null) {
-            checkContext = context;
-            checkContext.combine(new SqlCheckContext());
-        } else {
-            checkContext = new SqlCheckContext();
-        }
-        List<Statement> sqlHolders = sqls.stream().map(s -> {
+        return doCheck(sqls, context, s -> {
             try {
                 return doParse(s);
             } catch (Exception e) {
@@ -87,14 +83,45 @@ abstract class BaseSqlChecker implements SqlChecker {
                 }
             }
             return null;
-        }).filter(Objects::nonNull).collect(Collectors.toList());
+        });
+    }
+
+    public List<CheckViolation> check(SqlCheckContext context, @NonNull List<SqlTuple> sqls) {
+        return doCheck(sqls, context, s -> {
+            try {
+                AbstractSyntaxTree ast = s.getAst();
+                if (ast != null) {
+                    return ast.getStatement();
+                }
+                return doParse(s.getOriginalSql());
+            } catch (Exception e) {
+                if (e instanceof SyntaxErrorException) {
+                    return new SyntaxErrorStatement(s.getOriginalSql(), (SyntaxErrorException) e);
+                }
+            }
+            return null;
+        });
+    }
+
+    private <T> List<CheckViolation> doCheck(List<T> inputs, SqlCheckContext context, Function<T, Statement> function) {
+        final SqlCheckContext checkContext;
+        if (context != null) {
+            checkContext = context;
+            checkContext.combine(new SqlCheckContext());
+        } else {
+            checkContext = new SqlCheckContext();
+        }
+        List<Statement> stmts = inputs.stream()
+                .map(function)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
         if (checkContext.currentStmtIndex == null) {
             checkContext.currentStmtIndex = 0L;
         }
         if (checkContext.totalStmtCount == null) {
-            checkContext.totalStmtCount = (long) sqlHolders.size();
+            checkContext.totalStmtCount = (long) stmts.size();
         }
-        return sqlHolders.stream().flatMap(holder -> {
+        return stmts.stream().flatMap(holder -> {
             List<CheckViolation> violations = doCheck(holder, checkContext);
             checkContext.addCheckViolation(holder, violations);
             checkContext.currentStmtIndex++;

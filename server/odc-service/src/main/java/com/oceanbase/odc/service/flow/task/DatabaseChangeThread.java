@@ -48,6 +48,8 @@ import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.core.sql.execute.model.JdbcGeneralResult;
 import com.oceanbase.odc.core.sql.execute.model.SqlExecuteStatus;
 import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
+import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTreeFactories;
+import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTreeFactory;
 import com.oceanbase.odc.service.common.FileManager;
 import com.oceanbase.odc.service.common.model.FileBucket;
 import com.oceanbase.odc.service.common.model.FileMeta;
@@ -421,13 +423,16 @@ public class DatabaseChangeThread extends Thread {
     }
 
     private GeneralSqlType parseSqlType(String sql) {
-        GeneralSqlType sqlType = GeneralSqlType.OTHER;
-        if (connectionSession.getDialectType().isOracle()) {
-            sqlType = ParserUtil.getGeneralSqlType(ParserUtil.parseOracleType(sql));
-        } else if (connectionSession.getDialectType().isMysql()) {
-            sqlType = ParserUtil.getGeneralSqlType(ParserUtil.parseMysqlType(sql));
+        AbstractSyntaxTreeFactory factory = AbstractSyntaxTreeFactories
+                .getAstFactory(connectionSession.getDialectType(), 0);
+        if (factory == null) {
+            return GeneralSqlType.OTHER;
         }
-        return sqlType;
+        try {
+            return ParserUtil.getGeneralSqlType(factory.buildAst(sql).getParseResult());
+        } catch (Exception e) {
+            return GeneralSqlType.OTHER;
+        }
     }
 
     /**

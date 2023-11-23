@@ -191,7 +191,7 @@ public class ConnectionSessionTest {
     public void onCreateFailed_callWhenSessionFailed_callSucceed() {
         long timestamp = System.currentTimeMillis();
         BaseConnectionSessionManager sessionManager =
-                new DefaultConnectionSessionManager(getTaskManager(), new InMemorySessionRepository() {
+                new DefaultConnectionSessionManager(getTaskManager(), new InMemoryConnectionSessionRepository() {
                     @Override
                     public String store(@NonNull ConnectionSession session) {
                         throw new RuntimeException(timestamp + "");
@@ -252,7 +252,7 @@ public class ConnectionSessionTest {
     public void onDeleteFailed_callWhenSessionDeleteFailed_callSucceed() {
         long timestamp = System.currentTimeMillis();
         BaseConnectionSessionManager sessionManager =
-                new DefaultConnectionSessionManager(getTaskManager(), new InMemorySessionRepository() {
+                new DefaultConnectionSessionManager(getTaskManager(), new InMemoryConnectionSessionRepository() {
                     @Override
                     public void delete(@NonNull ConnectionSession session) {
                         throw new RuntimeException(timestamp + "");
@@ -318,7 +318,7 @@ public class ConnectionSessionTest {
     public void onGetFailed_callWhenSessionGetFailed_callSucceed() {
         long timestamp = System.currentTimeMillis();
         BaseConnectionSessionManager sessionManager =
-                new DefaultConnectionSessionManager(getTaskManager(), new InMemorySessionRepository() {
+                new DefaultConnectionSessionManager(getTaskManager(), new InMemoryConnectionSessionRepository() {
                     @Override
                     public ConnectionSession get(@NonNull String sessionId) {
                         throw new RuntimeException(timestamp + "");
@@ -365,7 +365,7 @@ public class ConnectionSessionTest {
         Holder<ConnectionSession> holder = new Holder<>();
         CountDownLatch latch = new CountDownLatch(1);
         BaseValidatedConnectionSessionManager sessionManager =
-                new DefaultConnectionSessionManager(getTaskManager(), new InMemorySessionRepository() {
+                new DefaultConnectionSessionManager(getTaskManager(), new InMemoryConnectionSessionRepository() {
                     @Override
                     public void delete(@NonNull ConnectionSession session) {
                         super.delete(session);
@@ -406,7 +406,7 @@ public class ConnectionSessionTest {
     }
 
     private ConnectionSessionManager getConnectionSessionManager() {
-        return new DefaultConnectionSessionManager(getTaskManager(), new InMemorySessionRepository());
+        return new DefaultConnectionSessionManager(getTaskManager(), new InMemoryConnectionSessionRepository());
     }
 
     private TaskManager getTaskManager() {
