@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.tools.sqlparser.statement.insert;
 
-import java.util.Collections;
-import java.util.List;
+package com.oceanbase.tools.sqlparser.statement.insert.mysql;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 
 import com.oceanbase.tools.sqlparser.statement.BaseStatement;
+import com.oceanbase.tools.sqlparser.statement.Expression;
+import com.oceanbase.tools.sqlparser.statement.expression.ColumnReference;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -28,48 +28,35 @@ import lombok.NonNull;
 import lombok.Setter;
 
 /**
- * {@link SingleTableInsert}
+ * {@link SetColumn}
  *
  * @author yh263208
- * @date 2022-12-20 19:15
- * @since ODC_release_4.1.0
- * @see Insert
+ * @date 2023-11-08 20:28
+ * @since ODC_release_4.2.3
  */
 @Getter
 @Setter
 @EqualsAndHashCode(callSuper = false)
-public class SingleTableInsert extends BaseStatement implements Insert {
+public class SetColumn extends BaseStatement {
 
-    private boolean replace;
-    private final InsertBody insertBody;
+    private final Expression value;
+    private final ColumnReference column;
 
-    public SingleTableInsert(@NonNull ParserRuleContext context, @NonNull InsertBody insertBody) {
+    public SetColumn(@NonNull ParserRuleContext context,
+            @NonNull ColumnReference column, @NonNull Expression value) {
         super(context);
-        this.insertBody = insertBody;
+        this.value = value;
+        this.column = column;
     }
 
-    public SingleTableInsert(@NonNull InsertBody insertBody) {
-        this.insertBody = insertBody;
-    }
-
-    @Override
-    public int getType() {
-        return Insert.SINGLE_INSERT;
-    }
-
-    @Override
-    public List<InsertBody> getInsertBodies() {
-        return Collections.singletonList(insertBody);
-    }
-
-    @Override
-    public boolean replace() {
-        return this.replace;
+    public SetColumn(@NonNull ColumnReference column, @NonNull Expression value) {
+        this.value = value;
+        this.column = column;
     }
 
     @Override
     public String toString() {
-        return this.getText();
+        return this.column + "=" + this.value;
     }
 
 }

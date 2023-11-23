@@ -29,6 +29,7 @@ import org.flowable.engine.delegate.DelegateExecution;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.flow.exception.BaseFlowException;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.metadb.flow.ServiceTaskInstanceRepository;
@@ -246,46 +247,36 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
      */
     protected void onFailure(Long taskId, TaskService taskService) {
         if (notificationProperties.isEnabled()) {
-            TaskEntity taskEntity = taskService.detail(taskId);
-            ConnectionConfig connection = connectionService.getWithoutPermissionCheck(taskEntity.getConnectionId());
-            EventLabels labels = EventUtils.buildEventLabels(taskEntity.getTaskType(), "failed",
-                    taskEntity.getConnectionId());
-            Map<String, String> extend = new HashMap<>();
-            extend.put(EventLabelKeys.VARIABLE_KEY_CLUSTER_NAME, connection.getClusterName());
-            extend.put(EventLabelKeys.VARIABLE_KEY_TENANT_NAME, connection.getTenantName());
-            labels.addLabels(extend);
-            broker.enqueueEvent(Event.builder()
-                    .status(EventStatus.CREATED)
-                    .creatorId(taskEntity.getCreatorId())
-                    .organizationId(taskEntity.getOrganizationId())
-                    .triggerTime(new Date(System.currentTimeMillis()))
-                    .labels(labels)
-                    .build());
+            try {
+                TaskEntity taskEntity = taskService.detail(taskId);
+                ConnectionConfig connection =
+                        connectionService.internalGetSkipUserCheck(taskEntity.getConnectionId(), true);
+                EventLabels labels = EventUtils.buildEventLabels(taskEntity.getTaskType(), "failed",
+                        taskEntity.getConnectionId());
+                Map<String, String> extend = new HashMap<>();
+                extend.put(EventLabelKeys.VARIABLE_KEY_CLUSTER_NAME, connection.getClusterName());
+                extend.put(EventLabelKeys.VARIABLE_KEY_TENANT_NAME, connection.getTenantName());
+                extend.put(EventLabelKeys.VARIABLE_KEY_TASK_ID, taskId + "");
+                extend.put(EventLabelKeys.VARIABLE_KEY_REGION, SystemUtils.getEnvOrProperty("OB_ARN_PARTITION"));
+                labels.addLabels(extend);
+                broker.enqueueEvent(Event.builder()
+                        .status(EventStatus.CREATED)
+                        .creatorId(taskEntity.getCreatorId())
+                        .organizationId(taskEntity.getOrganizationId())
+                        .triggerTime(new Date(System.currentTimeMillis()))
+                        .labels(labels)
+                        .build());
+            } catch (Exception e) {
+                log.warn("Failed to enqueue event.", e);
+            }
         }
+
     }
 
     /**
      * The callback method when the task is successful, used to update the status and other operations
      */
-    protected void onSuccessful(Long taskId, TaskService taskService) {
-        if (notificationProperties.isEnabled()) {
-            TaskEntity taskEntity = taskService.detail(taskId);
-            ConnectionConfig connection = connectionService.getWithoutPermissionCheck(taskEntity.getConnectionId());
-            EventLabels labels = EventUtils.buildEventLabels(taskEntity.getTaskType(), "succeed",
-                    taskEntity.getConnectionId());
-            Map<String, String> extend = new HashMap<>();
-            extend.put(EventLabelKeys.VARIABLE_KEY_CLUSTER_NAME, connection.getClusterName());
-            extend.put(EventLabelKeys.VARIABLE_KEY_TENANT_NAME, connection.getTenantName());
-            labels.addLabels(extend);
-            broker.enqueueEvent(Event.builder()
-                    .status(EventStatus.CREATED)
-                    .creatorId(taskEntity.getCreatorId())
-                    .organizationId(taskEntity.getOrganizationId())
-                    .triggerTime(new Date(System.currentTimeMillis()))
-                    .labels(labels)
-                    .build());
-        }
-    }
+    protected void onSuccessful(Long taskId, TaskService taskService) {}
 
     /**
      * The callback method of the task execution timeout, which is used to update the status and other

@@ -20,9 +20,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import org.apache.commons.collections.ListUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
@@ -67,30 +67,26 @@ public class JdbcNotificationQueue implements NotificationQueue {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public List<Notification> peek(int batchSize, MessageSendingStatus status) {
         List<Notification> notifications = new ArrayList<>();
-        try {
-            List<MessageEntity> messageEntities = messageRepository.findNByStatusForUpdate(status, batchSize);
-            if (CollectionUtils.isEmpty(messageEntities)) {
-                return notifications;
-            }
-            messageEntities.stream().forEach(messageEntity -> {
-                Optional<ChannelEntity> channelOpt = channelRepository.findById(messageEntity.getChannelId());
-                if (!channelOpt.isPresent()) {
-                    messageEntity.setStatus(MessageSendingStatus.THROWN);
-                    messageRepository.save(messageEntity);
-                } else {
-                    Notification notification = new Notification();
-                    ChannelEntity channel = channelOpt.get();
-                    notification.setMessage(Message.fromEntity(messageEntity));
-                    notification.setChannel(channelMapper.fromEntity(channel));
-                    notifications.add(notification);
-                }
-            });
-        } catch (Exception ex) {
-            log.warn("peek notifications failed, ", ex);
-            return ListUtils.EMPTY_LIST;
+        List<MessageEntity> messageEntities = messageRepository.findNByStatusForUpdate(status, batchSize);
+        if (CollectionUtils.isEmpty(messageEntities)) {
+            return notifications;
         }
+        messageEntities.forEach(messageEntity -> {
+            Optional<ChannelEntity> channelOpt = channelRepository.findById(messageEntity.getChannelId());
+            if (!channelOpt.isPresent()) {
+                messageRepository.updateStatusById(messageEntity.getId(), MessageSendingStatus.THROWN);
+            } else {
+                messageRepository.updateStatusById(messageEntity.getId(), MessageSendingStatus.CONVERTING);
+                Notification notification = new Notification();
+                ChannelEntity channel = channelOpt.get();
+                notification.setMessage(Message.fromEntity(messageEntity));
+                notification.setChannel(channelMapper.fromEntity(channel));
+                notifications.add(notification);
+            }
+        });
         return notifications;
     }
 

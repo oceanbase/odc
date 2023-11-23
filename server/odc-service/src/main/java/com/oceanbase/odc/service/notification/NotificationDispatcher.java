@@ -15,19 +15,14 @@
  */
 package com.oceanbase.odc.service.notification;
 
-import java.util.List;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.metadb.notification.MessageRepository;
 import com.oceanbase.odc.service.notification.model.ChannelConfig;
 import com.oceanbase.odc.service.notification.model.MessageSendingStatus;
 import com.oceanbase.odc.service.notification.model.Notification;
-
-import lombok.NonNull;
 
 /**
  * @Author: Lebie
@@ -43,18 +38,15 @@ public class NotificationDispatcher {
     @Autowired
     private ChannelFactory channelFactory;
 
-    @Transactional(rollbackFor = Exception.class)
-    public void dispatch(@NonNull List<Notification> notifications) {
-        notifications.stream().forEach(notification -> {
-            ChannelConfig channelConfig = notification.getChannel();
-            Channel channel = channelFactory.generate(channelConfig);
-            if (channel.send(notification.getMessage())) {
-                messageRepository.updateStatusById(notification.getMessage().getId(),
-                        MessageSendingStatus.SENT_SUCCESSFULLY);
-            } else {
-                messageRepository.updateStatusAndRetryTimesById(notification.getMessage().getId(),
-                        MessageSendingStatus.SENT_FAILED);
-            }
-        });
+    public void dispatch(Notification notification) {
+        ChannelConfig channelConfig = notification.getChannel();
+        Channel channel = channelFactory.generate(channelConfig);
+        if (channel.send(notification.getMessage())) {
+            messageRepository.updateStatusById(notification.getMessage().getId(),
+                    MessageSendingStatus.SENT_SUCCESSFULLY);
+        } else {
+            messageRepository.updateStatusAndRetryTimesById(notification.getMessage().getId(),
+                    MessageSendingStatus.SENT_FAILED);
+        }
     }
 }

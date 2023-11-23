@@ -27,10 +27,9 @@ public enum MessageSendingStatus {
 
     THROWN("THROWN"),
 
-    PROCESSING("SENDING");
+    CONVERTING("CONVERTING");
 
     private String name;
-
 
     MessageSendingStatus(String name) {
         this.name = name;
