@@ -14,21 +14,27 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.task.caller;
+package com.oceanbase.odc.service.task.config;
 
-import java.io.Serializable;
-
-import com.oceanbase.odc.metadb.task.TaskEntity;
+import com.oceanbase.odc.service.connection.ConnectionService;
+import com.oceanbase.odc.service.task.TaskService;
+import com.oceanbase.odc.service.task.caller.JobCaller;
 
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 
 /**
  * @author yaobin
- * @date 2023-11-22
+ * @date 2023-11-21
  * @since 4.2.4
  */
 @Data
-@EqualsAndHashCode(callSuper = true)
-public class Task extends TaskEntity implements Serializable {
+public class DefaultJobConfiguration implements JobConfiguration {
+
+    private TaskService taskService;
+
+    private ConnectionService connectionService;
+
+    private JobCaller jobCaller;
+
+    private static DefaultJobConfiguration instance;
 }

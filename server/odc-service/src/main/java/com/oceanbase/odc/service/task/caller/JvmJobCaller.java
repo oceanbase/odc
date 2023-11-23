@@ -16,41 +16,22 @@
 
 package com.oceanbase.odc.service.task.caller;
 
-import java.util.List;
-
-import com.oceanbase.odc.core.shared.constant.TaskType;
-import com.oceanbase.odc.service.common.model.HostProperties;
-import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 
 /**
  * @author yaobin
- * @date 2023-11-15
+ * @date 2023-11-22
  * @since 4.2.4
  */
-public interface JobContext {
+public class JvmJobCaller extends BaseJobCaller {
 
-    /**
-     * get task id
-     */
-    Long getTaskId();
+    @Override
+    protected void doStart(JobContext context) throws JobException {
+        throw new UnsupportedException();
+    }
 
-    /**
-     * get task type
-     */
-    TaskType getTaskType();
-
-    /**
-     * get task parameters
-     */
-    String getTaskParameters();
-
-    /**
-     * get task connection config
-     */
-    List<ConnectionConfig> getConnectionConfigs();
-
-    /**
-     * get odc server host properties
-     */
-    List<HostProperties> getHostProperties();
+    @Override
+    protected void doStop(Long taskId) throws JobException {
+        throw new UnsupportedException();
+    }
 }

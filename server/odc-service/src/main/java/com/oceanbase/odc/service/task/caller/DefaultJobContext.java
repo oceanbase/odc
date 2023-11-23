@@ -16,41 +16,44 @@
 
 package com.oceanbase.odc.service.task.caller;
 
+import java.io.Serializable;
 import java.util.List;
 
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.service.common.model.HostProperties;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 
+import lombok.Data;
+
 /**
  * @author yaobin
  * @date 2023-11-15
  * @since 4.2.4
  */
-public interface JobContext {
+
+@Data
+public class DefaultJobContext implements JobContext, Serializable {
 
     /**
-     * get task id
+     * task id
      */
-    Long getTaskId();
+    private Long taskId;
 
     /**
-     * get task type
+     * task type
      */
-    TaskType getTaskType();
-
+    private TaskType taskType;
     /**
-     * get task parameters
+     * task parameters
      */
-    String getTaskParameters();
-
+    private String taskParameters;
     /**
-     * get task connection config
+     * task connection config
      */
-    List<ConnectionConfig> getConnectionConfigs();
-
+    private List<ConnectionConfig> connectionConfigs;
     /**
-     * get odc server host properties
+     * odc server host properties
      */
-    List<HostProperties> getHostProperties();
+    private List<HostProperties> hostProperties;
+
 }

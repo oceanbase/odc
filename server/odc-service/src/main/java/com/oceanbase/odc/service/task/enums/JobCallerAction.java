@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.task.listener;
+package com.oceanbase.odc.service.task.enums;
 
 /**
  * @author yaobin

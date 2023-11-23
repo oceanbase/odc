@@ -702,3 +702,9 @@ INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('o
 ---
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.iam.auth.alipay.max-failed-login-attempt-times', '5', '登录失败情况下最大重试次数，小于等于 0 意味着次数无限制，改变此参数后需要重启生效' ) ON DUPLICATE KEY UPDATE `id` = `id`;
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.iam.auth.alipay.failed-login-lock-timeout-seconds', '600', '账户被锁定时长，默认 600 秒，如果该值小于等于 0 意味着不锁定，改变此参数后需要重启生效' ) ON DUPLICATE KEY UPDATE `id` = `id`;
+
+--
+-- v4.2.4
+--
+INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.deploy-model', 'STANDALONE', 'ODC deploy model contain: STANDALONE/K8S/MASTER_WORKER, default is STANDALONE' ) ON DUPLICATE KEY UPDATE `id` = `id`;
+INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.k8s.url', '', 'k8s url when deploy model is K8S' ) ON DUPLICATE KEY UPDATE `id` = `id`;

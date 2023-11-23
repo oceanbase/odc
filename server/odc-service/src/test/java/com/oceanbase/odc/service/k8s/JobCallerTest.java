@@ -20,8 +20,8 @@ import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import com.oceanbase.odc.service.task.caller.DefaultJobContext;
 import com.oceanbase.odc.service.task.caller.JobCaller;
-import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.caller.JobException;
 import com.oceanbase.odc.service.task.caller.K8sJobCaller;
 import com.oceanbase.odc.service.task.caller.PodConfig;
@@ -47,7 +47,7 @@ public class JobCallerTest extends BaseJobTest {
         podConfig.setNamespace("default");
 
         JobCaller jobCaller = new K8sJobCaller(getK8sJobClient(), podConfig);
-        jobCaller.getEventPublish().addEventListener(new JobCallerListener() {
+        jobCaller.getEventPublisher().addEventListener(new JobCallerListener() {
             @Override
             protected void startSucceed(Long taskId) {
                 Assert.assertEquals(exceptedTaskId, taskId);
@@ -59,7 +59,7 @@ public class JobCallerTest extends BaseJobTest {
             }
         });
 
-        JobContext context = new JobContext();
+        DefaultJobContext context = new DefaultJobContext();
         context.setTaskId(exceptedTaskId);
         jobCaller.start(context);
         jobCaller.stop(exceptedTaskId);
@@ -74,7 +74,7 @@ public class JobCallerTest extends BaseJobTest {
         podConfig.setNamespace("default");
 
         JobCaller jobCaller = new K8sJobCaller(getK8sJobClient(), podConfig);
-        jobCaller.getEventPublish().addEventListener(new JobCallerListener() {
+        jobCaller.getEventPublisher().addEventListener(new JobCallerListener() {
             @Override
             protected void startFailed(Long taskId, Exception ex) {
                 log.info(ex.getMessage());
@@ -82,7 +82,7 @@ public class JobCallerTest extends BaseJobTest {
             }
         });
 
-        JobContext context = new JobContext();
+        DefaultJobContext context = new DefaultJobContext();
         context.setTaskId(exceptedTaskId);
         jobCaller.start(context);
         // double start same task
