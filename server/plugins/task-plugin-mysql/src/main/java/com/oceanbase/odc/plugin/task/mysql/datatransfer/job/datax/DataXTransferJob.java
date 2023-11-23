@@ -51,7 +51,7 @@ import com.oceanbase.tools.loaddump.common.model.ObjectStatus.Status;
 public class DataXTransferJob extends AbstractJob {
     private static final Logger LOGGER = LoggerFactory.getLogger("DataTransferLogger");
     private static final Pattern DATA_FILE_PATTERN =
-            Pattern.compile("(^\"?(.+)\"?.(sql|csv|dat|txt))__(.+)$", Pattern.CASE_INSENSITIVE);
+            Pattern.compile("(^\"?([^\\.]+)\"?.(sql|csv|dat|txt))__(.+)$", Pattern.CASE_INSENSITIVE);
 
     private final JobConfiguration jobConfig;
     /**

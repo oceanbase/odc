@@ -47,7 +47,7 @@ import com.oceanbase.tools.loaddump.common.enums.ObjectType;
 
 public class TransferJobFactory {
     private static final Pattern DATA_FILE_PATTERN =
-            Pattern.compile("^\"?(.+)\"?(\\.[0-9]+){0,2}\\.(sql|csv|dat|txt)$", Pattern.CASE_INSENSITIVE);
+            Pattern.compile("^\"?([^\\.]+)\"?(\\.[0-9]+){0,2}(?<!-schema)\\.(sql|csv|dat|txt)$", Pattern.CASE_INSENSITIVE);
 
     private final DataTransferConfig transferConfig;
     private final File workingDir;
@@ -114,7 +114,7 @@ public class TransferJobFactory {
                     object = new ObjectResult(transferConfig.getSchemaName(), file.getName(), "FILE");
                 } else {
                     Matcher matcher = DATA_FILE_PATTERN.matcher(file.getName());
-                    if (file.getName().endsWith(Constants.DDL_SUFFIX) || !matcher.matches()) {
+                    if (!matcher.matches()) {
                         continue;
                     }
                     object = new ObjectResult(transferConfig.getSchemaName(), matcher.group(1), "TABLE");
