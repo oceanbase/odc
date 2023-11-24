@@ -135,7 +135,7 @@ public class FlowResponseMapperFactoryTest extends ServiceTestEnv {
         FlowInstanceMapper mapper = FlowInstanceDetailResp.mapper()
                 .withApprovable(id -> false)
                 .withGetConnectionById(id -> TestRandom.nextObject(ConnectionEntity.class))
-                .withGetTaskByFlowInstanceId(id -> Collections.singleton(TestRandom.nextObject(TaskEntity.class)))
+                .withGetTaskByFlowInstanceId(id -> Collections.singleton(getValidRandomTaskEntity()))
                 .withGetUserById(id -> TestRandom.nextObject(UserEntity.class))
                 .withGetExecutionStrategyByFlowInstanceId(
                         id -> Collections.singletonList(TestRandom.nextObject(FlowTaskExecutionStrategy.class)))
@@ -146,6 +146,14 @@ public class FlowResponseMapperFactoryTest extends ServiceTestEnv {
         FlowInstanceDetailResp detailResp = mapper.map(instanceEntity);
 
         Assert.assertEquals(instanceEntity.getId(), detailResp.getId());
+    }
+
+    private TaskEntity getValidRandomTaskEntity() {
+        TaskEntity taskEntity = TestRandom.nextObject(TaskEntity.class);
+        while (taskEntity.getTaskType() == TaskType.PRE_CHECK) {
+            taskEntity = TestRandom.nextObject(TaskEntity.class);
+        }
+        return taskEntity;
     }
 
     @Test
