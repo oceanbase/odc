@@ -136,4 +136,11 @@ public class SqlRewriteUtilTest {
         Assert.assertEquals("select distinct val from test t1", sql);
     }
 
+    @Test
+    public void addInternalROWIDColumn_WithDBlink_AddRowIdFailed() {
+        String expect = "select * from aaa@bbb;";
+        String sql = SqlRewriteUtil.addInternalROWIDColumn(expect);
+        Assert.assertEquals(expect, sql);
+    }
+
 }
