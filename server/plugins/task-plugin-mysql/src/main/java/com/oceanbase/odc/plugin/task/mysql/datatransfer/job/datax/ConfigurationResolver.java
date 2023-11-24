@@ -74,7 +74,8 @@ public class ConfigurationResolver {
 
     public static Configuration resolve(JobConfiguration jobConfig) {
         Configuration custom = Configuration.from(ImmutableMap.of("job", jobConfig));
-        mergeCoreAndPluginConfiguration(custom);
+        mergeCoreConfiguration(custom);
+        mergePluginConfiguration(custom);
         return custom;
     }
 
@@ -239,12 +240,17 @@ public class ConfigurationResolver {
     }
 
     /**
-     * load core.json from classpath:/datax/conf/ and load plugin.json from classpath:/datax/plugin/
+     * load core.json from classpath:/datax/conf/
      */
-    private static void mergeCoreAndPluginConfiguration(Configuration custom) {
-
+    private static void mergeCoreConfiguration(Configuration custom) {
         custom.merge(
                 Configuration.from(ConfigurationResolver.class.getResourceAsStream("/datax/conf/core.json")), false);
+    }
+
+    /**
+     * load plugin.json from classpath:/datax/plugin/
+     */
+    public static void mergePluginConfiguration(Configuration custom) {
 
         String readerPluginName = custom.getString(CoreConstant.DATAX_JOB_CONTENT_READER_NAME);
         String writerPluginName = custom.getString(CoreConstant.DATAX_JOB_CONTENT_WRITER_NAME);

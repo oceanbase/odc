@@ -21,7 +21,9 @@ import java.io.FileNotFoundException;
 import java.net.MalformedURLException;
 import java.nio.file.Paths;
 import java.util.Collections;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,9 +34,11 @@ import com.alibaba.datax.common.util.MessageSource;
 import com.alibaba.datax.core.job.JobContainer;
 import com.alibaba.datax.core.statistics.communication.Communication;
 import com.alibaba.datax.core.statistics.communication.CommunicationTool;
+import com.alibaba.datax.core.statistics.communication.LocalTGCommunicationManager;
 import com.alibaba.datax.core.statistics.container.communicator.job.StandAloneJobContainerCommunicator;
 import com.alibaba.datax.core.util.container.CoreConstant;
 import com.alibaba.datax.core.util.container.LoadUtil;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.ObjectResult;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.common.Constants;
@@ -46,6 +50,24 @@ import com.oceanbase.tools.loaddump.common.model.ObjectStatus.Status;
 
 public class DataXTransferJob extends AbstractJob {
     private static final Logger LOGGER = LoggerFactory.getLogger("DataTransferLogger");
+    private static final int COLLECT_INTERVAL = 1;
+
+    static {
+        Configuration core = Configuration.from(DataXTransferJob.class.getResourceAsStream("/datax/conf/core.json"));
+        // bind column cast strategies
+        ColumnCast.bind(core);
+        // bind i18n properties
+        MessageSource.init(core);
+        // initiate PluginLoader
+        Configuration plugins = Configuration.newDefault();
+        plugins.set(CoreConstant.DATAX_JOB_CONTENT_READER_NAME, Constants.MYSQL_READER);
+        plugins.set(CoreConstant.DATAX_JOB_CONTENT_WRITER_NAME, Constants.TXT_FILE_WRITER);
+        ConfigurationResolver.mergePluginConfiguration(plugins);
+        plugins.set(CoreConstant.DATAX_JOB_CONTENT_READER_NAME, Constants.TXT_FILE_READER);
+        plugins.set(CoreConstant.DATAX_JOB_CONTENT_WRITER_NAME, Constants.MYSQL_WRITER);
+        ConfigurationResolver.mergePluginConfiguration(plugins);
+        LoadUtil.bind(plugins);
+    }
 
     private final JobConfiguration jobConfig;
     /**
@@ -65,22 +87,16 @@ public class DataXTransferJob extends AbstractJob {
     @Override
     public void run() throws Exception {
 
-        DataXJobMonitor monitor = new DataXJobMonitor();
+        ScheduledExecutorService scheduledExecutor = Executors.newSingleThreadScheduledExecutor(
+                new ThreadFactoryBuilder().setNameFormat("datax-monitor-%d").build());
 
         try {
             Configuration configuration = ConfigurationResolver.resolve(jobConfig);
             configuration.set(CoreConstant.DATAX_CORE_CONTAINER_JOB_ID, jobId);
             this.containerCommunicator = new StandAloneJobContainerCommunicator(configuration);
 
-            new Thread(monitor, "DataX-Monitor-" + Thread.currentThread().getName()).start();
-
-            // bind column cast strategies
-            ColumnCast.bind(configuration);
-            // initiate PluginLoader
-            LoadUtil.bind(configuration);
-            // bind i18n properties
-            MessageSource.init(
-                    Configuration.from(DataXTransferJob.class.getResourceAsStream("/datax/conf/core.json")));
+            scheduledExecutor.scheduleAtFixedRate(this::collect, COLLECT_INTERVAL, COLLECT_INTERVAL,
+                    TimeUnit.SECONDS);
 
             this.jobContainer = new JobContainer(configuration);
             jobContainer.start();
@@ -98,7 +114,10 @@ public class DataXTransferJob extends AbstractJob {
             throw e;
 
         } finally {
-            monitor.stop();
+            scheduledExecutor.shutdown();
+            // collect for the last time and call LocalTGCommunicationManager#clear to avoid memory leak
+            collect();
+            LocalTGCommunicationManager.clear(jobId);
         }
     }
 
@@ -153,36 +172,14 @@ public class DataXTransferJob extends AbstractJob {
         object.setExportPaths(Collections.singletonList(file.toURI().toURL()));
     }
 
-    private class DataXJobMonitor implements Runnable {
-        private final AtomicBoolean stop = new AtomicBoolean();
-
-        @Override
-        public void run() {
-            while (!(isCanceled() || stop.get() || Thread.currentThread().isInterrupted())) {
-                try {
-                    Communication communication = getCommunicationAndRecord();
-                    bytes += communication.getLongCounter(CommunicationTool.REAL_WRITE_BYTES);
-                    records += CommunicationTool.getTotalReadRecords(communication);
-
-                    Thread.sleep(1000);
-                } catch (Exception e) {
-                    LOGGER.warn("Error occurred on dataX monitoring, reason:{}. Transfer will continue.",
-                            e.getMessage());
-                }
-            }
-
-            /*
-             * collect for the last time
-             */
+    private void collect() {
+        try {
             Communication communication = getCommunicationAndRecord();
             bytes += communication.getLongCounter(CommunicationTool.REAL_WRITE_BYTES);
             records += CommunicationTool.getTotalReadRecords(communication);
+        } catch (Exception e) {
+            LOGGER.warn("Error occurred on dataX monitoring, reason:{}. Transfer will continue.", e.getMessage());
         }
-
-        public void stop() {
-            stop.getAndSet(true);
-        }
-
     }
 
 }
