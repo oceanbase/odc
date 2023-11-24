@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Matcher;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
@@ -29,6 +30,7 @@ import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
+import com.oceanbase.odc.core.sql.split.OffsetString;
 import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
 import com.oceanbase.odc.core.sql.split.SqlSplitter;
 import com.oceanbase.tools.dbbrowser.parser.SqlParser;
@@ -124,7 +126,7 @@ public class SqlUtils {
             return sqls;
         } else {
             StringBuffer buffer = new StringBuffer();
-            List<String> sqls = processor.split(buffer, sql);
+            List<String> sqls = processor.split(buffer, sql).stream().map(OffsetString::getStr).collect(Collectors.toList());
             String bufferStr = buffer.toString();
             if (bufferStr.trim().length() != 0) {
                 // if buffer is not empty, there will be some errors in syntax
@@ -259,7 +261,7 @@ public class SqlUtils {
     public static String removeComments(SqlCommentProcessor processor, String sql) {
         try {
             StringBuffer buffer = new StringBuffer();
-            List<String> splitedSqls = processor.split(buffer, sql);
+            List<String> splitedSqls = processor.split(buffer, sql).stream().map(OffsetString::getStr).collect(Collectors.toList());
             String bufferStr = buffer.toString();
             /**
              * The input sql does not contain delimiters (eg. "select xxx from table -- this is a comment"),

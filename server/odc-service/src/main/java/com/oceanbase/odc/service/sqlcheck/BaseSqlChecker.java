@@ -20,6 +20,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.core.sql.split.OffsetString;
 import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
 import com.oceanbase.odc.core.sql.split.SqlSplitter;
 import com.oceanbase.odc.service.sqlcheck.model.CheckViolation;
@@ -106,7 +107,7 @@ abstract class BaseSqlChecker implements SqlChecker {
         SqlCommentProcessor processor = new SqlCommentProcessor(dialectType, true, true);
         processor.setDelimiter(delimiter);
         StringBuffer buffer = new StringBuffer();
-        List<String> sqls = processor.split(buffer, sqlScript);
+        List<String> sqls = processor.split(buffer, sqlScript).stream().map(OffsetString::getStr).collect(Collectors.toList());
         String bufferStr = buffer.toString();
         if (bufferStr.trim().length() != 0) {
             sqls.add(bufferStr);
