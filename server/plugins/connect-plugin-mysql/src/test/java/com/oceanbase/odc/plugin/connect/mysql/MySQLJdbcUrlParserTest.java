@@ -51,7 +51,7 @@ public class MySQLJdbcUrlParserTest {
 
     @Test
     public void getHostEndPoints_singleHostEndPoint_returnSingleton() throws SQLException {
-        JdbcUrlParser parser = new MySQLJdbcUrlParser("jdbc:oceanbase://0.0.0.0:1234");
+        JdbcUrlParser parser = new MySQLJdbcUrlParser("jdbc:mysql://0.0.0.0:1234");
 
         List<HostAddress> expect = new ArrayList<>();
         expect.add(new HostAddress("0.0.0.0", 1234));
@@ -61,7 +61,7 @@ public class MySQLJdbcUrlParserTest {
 
     @Test
     public void getHostEndPoints_multiHostEndPoint_returnMultiEndPoints() throws SQLException {
-        JdbcUrlParser parser = new MySQLJdbcUrlParser("jdbc:oceanbase://0.0.0.0:1234,8.8.8.8:4321");
+        JdbcUrlParser parser = new MySQLJdbcUrlParser("jdbc:mysql://0.0.0.0:1234,8.8.8.8:4321");
 
         List<HostAddress> expect = new ArrayList<>();
         expect.add(new HostAddress("0.0.0.0", 1234));
@@ -72,25 +72,25 @@ public class MySQLJdbcUrlParserTest {
 
     @Test
     public void getSchema_noSchemaExists_returnNull() throws SQLException {
-        JdbcUrlParser parser = new MySQLJdbcUrlParser("jdbc:oceanbase://0.0.0.0:1234");
+        JdbcUrlParser parser = new MySQLJdbcUrlParser("jdbc:mysql://0.0.0.0:1234");
         Assert.assertNull(parser.getSchema());
     }
 
     @Test
     public void getSchema_schemaExists_returnNotNull() throws SQLException {
-        JdbcUrlParser parser = new MySQLJdbcUrlParser("jdbc:oceanbase://0.0.0.0:1234/abcd");
+        JdbcUrlParser parser = new MySQLJdbcUrlParser("jdbc:mysql://0.0.0.0:1234/abcd");
         Assert.assertEquals("abcd", parser.getSchema());
     }
 
     @Test
     public void getParameters_noParametersExists_returnNotEmpty() throws SQLException {
-        JdbcUrlParser parser = new MySQLJdbcUrlParser("jdbc:oceanbase://0.0.0.0:1234/abcd");
+        JdbcUrlParser parser = new MySQLJdbcUrlParser("jdbc:mysql://0.0.0.0:1234/abcd");
         Assert.assertFalse(parser.getParameters().isEmpty());
     }
 
     @Test
     public void getParameters_userParametersExists_returnNotEmpty() throws SQLException {
-        JdbcUrlParser parser = new MySQLJdbcUrlParser("jdbc:oceanbase://0.0.0.0:1234/abcd?user=David");
+        JdbcUrlParser parser = new MySQLJdbcUrlParser("jdbc:mysql://0.0.0.0:1234/abcd?user=David");
         Assert.assertEquals("David", parser.getParameters().get("user"));
     }
 
