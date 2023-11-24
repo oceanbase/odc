@@ -136,6 +136,7 @@
         <mysql.jdbc.version>8.0.30</mysql.jdbc.version>
 
         <micrometer-core.version>1.8.0</micrometer-core.version>
+        <mariadb-java-client.version>2.7.11</mariadb-java-client.version>
     </properties>
 
     <dependencyManagement>
@@ -1080,6 +1081,12 @@
                 <groupId>mysql</groupId>
                 <artifactId>mysql-connector-java</artifactId>
                 <version>${mysql.jdbc.version}</version>
+            </dependency>
+            <!-- https://mvnrepository.com/artifact/org.mariadb.jdbc/mariadb-java-client -->
+            <dependency>
+                <groupId>org.mariadb.jdbc</groupId>
+                <artifactId>mariadb-java-client</artifactId>
+                <version>${mariadb-java-client.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

@@ -56,10 +56,6 @@
             <artifactId>druid</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.oceanbase</groupId>
-            <artifactId>oceanbase-client</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-configuration2</artifactId>
         </dependency>
@@ -71,10 +67,6 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>mysql</groupId>
-            <artifactId>mysql-connector-java</artifactId>
         </dependency>
     </dependencies>
 </project>
