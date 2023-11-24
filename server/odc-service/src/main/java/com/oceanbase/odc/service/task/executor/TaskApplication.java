@@ -16,9 +16,9 @@
 
 package com.oceanbase.odc.service.task.executor;
 
-import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.service.task.constants.JobEnvConstants;
 import com.oceanbase.odc.service.task.enums.DeployModelEnum;
+import com.oceanbase.odc.service.task.executor.util.SystemEnvUtil;
 
 /**
  * @author gaoda.xy
@@ -44,7 +44,7 @@ public class TaskApplication {
     }
 
     private void init(String[] args) {
-        DeployModelEnum mode = DeployModelEnum.valueOf(SystemUtils.getEnvOrProperty(JobEnvConstants.DEPLOY_MODE));
+        DeployModelEnum mode = DeployModelEnum.valueOf(SystemEnvUtil.nullSafeGet(JobEnvConstants.DEPLOY_MODE));
         jobContextProvider = JobContextProviderFactory.create(mode);
         taskExecutor = new ThreadPoolTaskExecutor(1);
     }
