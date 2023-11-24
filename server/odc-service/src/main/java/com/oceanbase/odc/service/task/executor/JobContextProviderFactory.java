@@ -14,19 +14,25 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.task.constants;
+package com.oceanbase.odc.service.task.executor;
+
+import com.oceanbase.odc.service.task.enums.DeployModelEnum;
 
 /**
- * Task framework environment constants. Using 'ODC_' prefix to avoid duplication.
- * 
- * @author yaobin
- * @date 2023-11-21
- * @since 4.2.4
+ * @author gaoda.xy
+ * @date 2023/11/23 13:55
  */
-public class JobEnvConstants {
+public class JobContextProviderFactory {
 
-    public static final String TASK_PARAMETER = "ODC_TASK_PARAMETER";
-
-    public static final String DEPLOY_MODE = "ODC_TASK_DEPLOY_MODE";
+    public static JobContextProvider create(DeployModelEnum mode) {
+        switch (mode) {
+            case K8S:
+                return new K8sJobContextProvider();
+            case MASTER_WORKER:
+            case STANDALONE:
+            default:
+                throw new UnsupportedOperationException("Not supported yet.");
+        }
+    }
 
 }

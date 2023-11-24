@@ -14,19 +14,22 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.task.constants;
+package com.oceanbase.odc.service.task.executor;
+
+import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.common.util.SystemUtils;
+import com.oceanbase.odc.service.task.caller.JobContext;
+import com.oceanbase.odc.service.task.constants.JobEnvConstants;
 
 /**
- * Task framework environment constants. Using 'ODC_' prefix to avoid duplication.
- * 
- * @author yaobin
- * @date 2023-11-21
- * @since 4.2.4
+ * @author gaoda.xy
+ * @date 2023/11/22 20:21
  */
-public class JobEnvConstants {
+public class K8sJobContextProvider implements JobContextProvider {
 
-    public static final String TASK_PARAMETER = "ODC_TASK_PARAMETER";
-
-    public static final String DEPLOY_MODE = "ODC_TASK_DEPLOY_MODE";
+    @Override
+    public JobContext provide() {
+        return JsonUtils.fromJson(SystemUtils.getEnvOrProperty(JobEnvConstants.TASK_PARAMETER), JobContext.class);
+    }
 
 }

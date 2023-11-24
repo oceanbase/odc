@@ -38,7 +38,7 @@ public class K8sJobCaller extends BaseJobCaller {
     public void doStart(JobContext context) throws JobException {
         String jobName = JobUtils.generateJobName(context.getTaskId());
         PodParam podParam = new PodParam();
-        podParam.getEnvironments().put(JobEnvConstants.TASK_ENV_NAME, JsonUtils.toJson(context));
+        podParam.getEnvironments().put(JobEnvConstants.TASK_PARAMETER, JsonUtils.toJson(context));
 
         client.create(podConfig.getNamespace(), jobName, podConfig.getImage(),
                 podConfig.getCommand(), podParam);
