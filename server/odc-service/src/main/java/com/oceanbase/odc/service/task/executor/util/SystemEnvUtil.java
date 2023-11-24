@@ -20,10 +20,13 @@ import java.util.Objects;
 
 import com.oceanbase.odc.common.util.SystemUtils;
 
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * @author gaoda.xy
  * @date 2023/11/24 14:05
  */
+@Slf4j
 public class SystemEnvUtil {
 
     public static String nullSafeGet(String key) {
@@ -31,7 +34,9 @@ public class SystemEnvUtil {
         if (Objects.nonNull(value)) {
             return value;
         }
-        throw new IllegalStateException("System env or property '" + key + "' is not set");
+        String errMsg = "System env or property '" + key + "' is not set";
+        log.error(errMsg);
+        throw new IllegalStateException(errMsg);
     }
 
 }

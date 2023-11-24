@@ -20,10 +20,13 @@ import com.oceanbase.odc.service.task.constants.JobEnvConstants;
 import com.oceanbase.odc.service.task.enums.DeployModelEnum;
 import com.oceanbase.odc.service.task.executor.util.SystemEnvUtil;
 
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * @author gaoda.xy
  * @date 2023/11/22 15:33
  */
+@Slf4j
 public class TaskApplication {
 
     private TaskExecutor taskExecutor;
@@ -33,10 +36,12 @@ public class TaskApplication {
     public void run(String[] args) {
         init(args);
         Task task = TaskFactory.create(jobContextProvider.provide());
+        log.info("Task created, taskDetails: {}", task);
         taskExecutor.execute(task);
         while (!task.isStopped() && !task.isFinished()) {
             try {
                 Thread.sleep(1000);
+                log.info("Waiting for task finished ...");
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -46,7 +51,9 @@ public class TaskApplication {
     private void init(String[] args) {
         DeployModelEnum mode = DeployModelEnum.valueOf(SystemEnvUtil.nullSafeGet(JobEnvConstants.DEPLOY_MODE));
         jobContextProvider = JobContextProviderFactory.create(mode);
+        log.info("JobContextProvider init success: {}", jobContextProvider.getClass().getName());
         taskExecutor = new ThreadPoolTaskExecutor(1);
+        log.info("Task executor init success: {}", taskExecutor.getClass().getName());
     }
 
 }

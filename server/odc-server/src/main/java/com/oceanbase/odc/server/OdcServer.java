@@ -76,6 +76,7 @@ public class OdcServer {
      */
     public static void main(String[] args) {
         if (Objects.equals(SystemEnvUtil.nullSafeGet(JobEnvConstants.BOOT_MODE), JobConstants.ODC_BOOT_MODE_EXECUTOR)) {
+            log.info("ODC start as task executor mode");
             new TaskApplication().run(args);
             return;
         }

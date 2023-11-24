@@ -124,6 +124,7 @@ public abstract class BaseTask implements Task {
                 log.warn("Task finished callback failed, id: {}", context.getTaskId(), e);
             }
         }, 1, 5, TimeUnit.SECONDS);
+        log.info("Task monitor init success");
     }
 
 }
