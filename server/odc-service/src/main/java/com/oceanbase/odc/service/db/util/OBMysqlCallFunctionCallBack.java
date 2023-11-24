@@ -65,7 +65,7 @@ public class OBMysqlCallFunctionCallBack implements ConnectionCallback<CallFunct
         String paramStr = params.stream().map(p -> {
             String value = p.getDefaultValue();
             if (StringUtils.isNotBlank(value)) {
-                return "'" + value + "'";
+                return StringUtils.quoteMysqlValue(value);
             } else if (Objects.isNull(value)) {
                 return "null";
             }
