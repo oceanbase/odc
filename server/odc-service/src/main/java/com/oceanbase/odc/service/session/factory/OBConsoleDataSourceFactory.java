@@ -180,6 +180,8 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
         // fix arbitrary file reading vulnerability
         jdbcUrlParams.put("allowLoadLocalInfile", "false");
         jdbcUrlParams.put("allowUrlInLocalInfile", "false");
+        jdbcUrlParams.put("allowLoadLocalInfileInPath", "");
+        jdbcUrlParams.put("autoDeserialize", "false");
         return jdbcUrlParams;
     }
 
@@ -198,6 +200,7 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
         properties.setProperty("allowLoadLocalInfile", "false");
         properties.setProperty("allowUrlInLocalInfile", "false");
         properties.setProperty("allowLoadLocalInfileInPath", "");
+        properties.setProperty("autoDeserialize", "false");
         dataSource.setConnectionProperties(properties);
         if (autoCommit != null) {
             dataSource.setAutoCommit(autoCommit);

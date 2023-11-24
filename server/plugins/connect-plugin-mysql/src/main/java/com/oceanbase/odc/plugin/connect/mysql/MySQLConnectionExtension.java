@@ -71,6 +71,7 @@ public class MySQLConnectionExtension extends OBMySQLConnectionExtension {
         properties.setProperty("allowLoadLocalInfile", "false");
         properties.setProperty("allowUrlInLocalInfile", "false");
         properties.setProperty("allowLoadLocalInfileInPath", "");
+        properties.setProperty("autoDeserialize", "false");
         TestResult testResult = test(jdbcUrl, properties, queryTimeout);
         if (testResult.getErrorCode() != null) {
             return testResult;
