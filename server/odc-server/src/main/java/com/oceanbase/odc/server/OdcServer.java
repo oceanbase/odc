@@ -41,6 +41,7 @@ import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.authority.interceptor.MethodAuthorizedPostProcessor;
 import com.oceanbase.odc.migrate.AbstractMetaDBMigrate;
 import com.oceanbase.odc.server.starter.StarterSpringApplication;
+import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.constants.JobEnvConstants;
 import com.oceanbase.odc.service.task.executor.TaskApplication;
 import com.oceanbase.odc.service.task.executor.util.SystemEnvUtil;
@@ -74,7 +75,7 @@ public class OdcServer {
      * @param args
      */
     public static void main(String[] args) {
-        if (Objects.equals(SystemEnvUtil.nullSafeGet(JobEnvConstants.BOOT_MODE), "TASK_EXECUTOR")) {
+        if (Objects.equals(SystemEnvUtil.nullSafeGet(JobEnvConstants.BOOT_MODE), JobConstants.ODC_BOOT_MODE_EXECUTOR)) {
             new TaskApplication().run(args);
             return;
         }
