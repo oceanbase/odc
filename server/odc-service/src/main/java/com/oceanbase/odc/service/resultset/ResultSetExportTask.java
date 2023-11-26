@@ -16,27 +16,23 @@
 package com.oceanbase.odc.service.resultset;
 
 import java.io.File;
+import java.net.URL;
 import java.nio.file.Paths;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.concurrent.Callable;
-import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.base.MoreObjects;
 import com.oceanbase.odc.common.trace.TraceContextHolder;
 import com.oceanbase.odc.common.util.ExceptionUtils;
 import com.oceanbase.odc.common.util.StringUtils;
@@ -48,41 +44,35 @@ import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.PreConditions;
-import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.exception.OBException;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
-import com.oceanbase.odc.core.shared.exception.UnsupportedException;
+import com.oceanbase.odc.core.shared.model.TableIdentity;
 import com.oceanbase.odc.core.sql.execute.SyncJdbcExecutor;
+import com.oceanbase.odc.plugin.task.api.datatransfer.DataTransferJob;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.CsvConfig;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConstants;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferFormat;
-import com.oceanbase.odc.service.common.FileManager;
-import com.oceanbase.odc.service.common.model.FileBucket;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferObject;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferTaskResult;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferType;
 import com.oceanbase.odc.service.common.util.FileConvertUtils;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
-import com.oceanbase.odc.service.connection.model.OBTenantEndpoint;
-import com.oceanbase.odc.service.datasecurity.DataMaskingFunction;
 import com.oceanbase.odc.service.datasecurity.model.MaskingAlgorithm;
 import com.oceanbase.odc.service.datasecurity.util.MaskingAlgorithmUtil;
+import com.oceanbase.odc.service.datatransfer.model.DataTransferProperties;
 import com.oceanbase.odc.service.flow.task.OssTaskReferManager;
 import com.oceanbase.odc.service.flow.task.model.ResultSetExportResult;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
-import com.oceanbase.odc.service.resultset.ResultSetExportTaskParameter.CSVFormat;
-import com.oceanbase.tools.loaddump.client.DumpClient;
-import com.oceanbase.tools.loaddump.client.DumpClient.Builder;
-import com.oceanbase.tools.loaddump.common.enums.DataFormat;
+import com.oceanbase.odc.service.plugin.TaskPluginUtil;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
-import com.oceanbase.tools.loaddump.common.model.DumpParameter;
-import com.oceanbase.tools.loaddump.common.model.TaskDetail;
-import com.oceanbase.tools.loaddump.context.TaskContext;
-import com.oceanbase.tools.loaddump.function.context.ControlContext;
-import com.oceanbase.tools.loaddump.function.context.ControlDescription;
-import com.oceanbase.tools.loaddump.manager.ControlManager;
-import com.oceanbase.tools.loaddump.parser.record.csv.CsvFormat;
+import com.oceanbase.tools.loaddump.common.model.ObjectStatus.Status;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.Getter;
-import lombok.NonNull;
 
 /**
  * @Author: Lebie
@@ -92,169 +82,128 @@ import lombok.NonNull;
 public class ResultSetExportTask implements Callable<ResultSetExportResult> {
     protected static final Logger LOGGER = LoggerFactory.getLogger("DataTransferLogger");
 
-    private DumpParameter dumpParameter;
     private final ResultSetExportTaskParameter parameter;
-    private final String taskId;
     private final String fileName;
     private final CloudObjectStorageService cloudObjectStorageService;
+    private final File logDir;
+    private final File workingDir;
+    private final DataTransferConfig transferConfig;
+    private final ConnectionSession session;
+    private final DataTransferProperties dataTransferProperties;
     @Getter
-    private TaskContext taskContext;
+    private DataTransferJob job;
 
-    public ResultSetExportTask(String taskId, ResultSetExportTaskParameter parameter,
-            ConnectionSession session, CloudObjectStorageService cloudObjectStorageService) {
+    public ResultSetExportTask(File workingDir, File logDir, ResultSetExportTaskParameter parameter,
+            ConnectionSession session, CloudObjectStorageService cloudObjectStorageService,
+            DataTransferProperties dataTransferProperties) {
         PreConditions.notBlank(parameter.getFileName(), "req.fileName");
-        this.taskId = taskId;
-        this.fileName = parameter.getFileName();
         this.parameter = parameter;
+        this.logDir = logDir;
+        this.workingDir = workingDir;
+        this.fileName = parameter.getFileName();
+        this.session = session;
         this.cloudObjectStorageService = cloudObjectStorageService;
-        initDumpParameter(session);
+        this.dataTransferProperties = dataTransferProperties;
+        this.transferConfig = convertParam2TransferConfig(parameter);
     }
 
-    private void initDumpParameter(ConnectionSession session) {
-        this.dumpParameter = new DumpParameter();
-        initBaseParameter();
-        initSessionParameter(session);
-        setMaskConfig(session);
-    }
+    @Override
+    public ResultSetExportResult call() throws Exception {
+        try {
+            TraceContextHolder.put(DataTransferConstants.LOG_PATH_NAME, logDir.getPath());
 
-    private void initCSVParameter(ResultSetExportTaskParameter parameter) {
-        if (Objects.nonNull(parameter.getCsvFormat())) {
-            CSVFormat csvFormat = parameter.getCsvFormat();
-            this.dumpParameter.setIgnoreEmptyLine(true);
-            /**
-             * column separator
+            this.job = TaskPluginUtil
+                    .getDataTransferExtension(transferConfig.getConnectionInfo().getConnectType().getDialectType())
+                    .generate(transferConfig, workingDir, logDir, Collections.emptyList());
+
+            DataTransferTaskResult result = job.call();
+            validateSuccessful(result);
+
+            String localResultSetFilePath = getDumpFilePath(result, parameter.getFileFormat().getExtension());
+            /*
+             * 对于空结果集，OBDumper 不生成文件，ODC 需要生成一个空文件以免报错
              */
-            this.dumpParameter.setColumnSeparator(CsvFormat.DEFAULT.toChar(csvFormat.getColumnSeparator()));
-            /**
-             * new line char
+            File origin = new File(localResultSetFilePath);
+            if (!origin.exists()) {
+                FileUtils.touch(origin);
+            }
+
+            /*
+             * OBDumper 不支持 excel 导出，需要先生成 csv, 然后使用工具类转换成 xlsx
              */
-            String lineSeparator = csvFormat.getLineSeparator();
-            String realLineSeparator = "";
-            int length = lineSeparator.length();
-            boolean transferFlag = false;
-            for (int i = 0; i < length; i++) {
-                char item = lineSeparator.charAt(i);
-                if (item == '\\') {
-                    transferFlag = true;
-                    continue;
+            if (DataTransferFormat.EXCEL == parameter.getFileFormat()) {
+                String excelFilePath = getDumpFileDirectory() + DataTransferFormat.EXCEL.getExtension();
+                try {
+                    FileConvertUtils.convertCsvToXls(localResultSetFilePath, excelFilePath,
+                            parameter.isSaveSql() ? Collections.singletonList(parameter.getSql()) : null);
+                } catch (Exception ex) {
+                    LOGGER.warn("CSV has been dumped successfully, but converting to Excel failed.");
+                    throw ex;
                 }
-                if (transferFlag) {
-                    if (item == 'n') {
-                        realLineSeparator += '\n';
-                    } else if (item == 'r') {
-                        realLineSeparator += '\r';
-                    }
-                    transferFlag = false;
-                } else {
-                    realLineSeparator += item;
-                }
+                origin = new File(excelFilePath);
             }
-            this.dumpParameter.setLineSeparator(realLineSeparator);
-            /**
-             * if skip csv header
-             */
-            this.dumpParameter.setSkipHeader(!csvFormat.isContainColumnHeader());
-            /**
-             * column delimiter
-             */
-            this.dumpParameter.setColumnDelimiter(CsvFormat.DEFAULT.toChar(csvFormat.getColumnDelimiter()));
-            if (csvFormat.isTransferEmptyString()) {
-                /**
-                 * if you are here, you should convert null value to "null". Otherwise, it will be converted to "\N"
-                 */
-                this.dumpParameter.setNullString("null");
+
+            try {
+                handleExportFile(origin);
+            } catch (Exception e) {
+                LOGGER.warn("Post processing export file failed.");
+                throw e;
             }
-            this.dumpParameter.setEmptyString("");
+        } catch (Exception e) {
+            LOGGER.warn("ResultSetExportTask failed.", e);
+            throw e;
         }
+        LOGGER.info("ResultSetExportTask has been executed successfully");
+        return ResultSetExportResult.succeed(fileName);
     }
 
-    private void initBaseParameter() {
-        this.dumpParameter.setLogPath(TraceContextHolder.get("task.workspace"));
-        this.dumpParameter.setFilePath(FileManager.generateDirPath(FileBucket.RESULT_SET, taskId));
-        this.dumpParameter.setQuerySql(parameter.getSql());
-        this.dumpParameter.setMaxRows(parameter.getMaxRows());
-        this.dumpParameter.setFileEncoding(parameter.getFileEncoding().getAlias());
-        this.dumpParameter.setSchemaless(true);
-        this.dumpParameter.setSkipCheckDir(true);
-        this.dumpParameter.setRetainEmptyFiles(true);
-        this.dumpParameter.setBlockSize(-1);
-        this.dumpParameter.setSnapshot(false);
-        Set<String> whiteList = new HashSet<>();
-        whiteList.add(Objects.isNull(parameter.getTableName()) ? "CUSTOM_SQL" : parameter.getTableName());
-        dumpParameter.getWhiteListMap().put(ObjectType.TABLE, whiteList);
+    private DataTransferConfig convertParam2TransferConfig(ResultSetExportTaskParameter parameter) {
+        DataTransferConfig config = new DataTransferConfig();
+        config.setSchemaName(parameter.getDatabase());
+        config.setTransferType(DataTransferType.EXPORT);
+        config.setDataTransferFormat(parameter.getFileFormat());
+        config.setTransferData(true);
+        config.setTransferDDL(false);
+        config.setExportFileMaxSize(-1);
+        config.setEncoding(parameter.getFileEncoding());
 
-        if (DataTransferFormat.SQL == parameter.getFileFormat()) {
-            this.dumpParameter.setDataFormat(DataFormat.SQL);
-            this.dumpParameter.setFileSuffix(".sql");
-            this.dumpParameter.setSkipHeader(true);
-        } else if (DataTransferFormat.CSV == parameter.getFileFormat()) {
-            this.dumpParameter.setDataFormat(DataFormat.CSV);
-            this.dumpParameter.setFileSuffix(".csv");
-            initCSVParameter(parameter);
-        } else if (DataTransferFormat.EXCEL == parameter.getFileFormat()) {
-            this.dumpParameter.setDataFormat(DataFormat.CSV);
-            this.dumpParameter.setFileSuffix(".csv");
-            initExcelParameter(parameter);
-        } else {
-            throw new UnsupportedException(parameter.getFileFormat() + " not supported");
+        String table = StringUtils.isEmpty(parameter.getTableName()) ? "CUSTOM_SQL" : parameter.getTableName();
+        config.setExportDbObjects(Collections.singletonList(new DataTransferObject(ObjectType.TABLE, table)));
+
+        CsvConfig csvConfig = new CsvConfig();
+        if (parameter.getCsvFormat() != null) {
+            csvConfig.setEncoding(parameter.getFileEncoding());
+            csvConfig.setBlankToNull(parameter.getCsvFormat().isTransferEmptyString);
+            csvConfig.setSkipHeader(!parameter.getCsvFormat().isContainColumnHeader);
+            csvConfig.setColumnSeparator(parameter.getCsvFormat().getColumnSeparator());
+            csvConfig.setColumnDelimiter(parameter.getCsvFormat().getColumnDelimiter());
+            csvConfig.setLineSeparator(parameter.getCsvFormat().getLineSeparator());
         }
+        if (parameter.getFileFormat() == DataTransferFormat.EXCEL) {
+            csvConfig.setEncoding(parameter.getFileEncoding());
+            csvConfig.setColumnSeparator(',');
+            csvConfig.setColumnDelimiter('"');
+            csvConfig.setLineSeparator("\n");
+            csvConfig.setBlankToNull(true);
+        }
+        config.setCsvConfig(csvConfig);
+
+        config.setConnectionInfo(
+                ((ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(session)).toConnectionInfo());
+
+        config.setQuerySql(parameter.getSql());
+        config.setFileType(parameter.getFileFormat().name());
+        config.setMaskConfig(getMaskConfig(parameter));
+        config.setCursorFetchSize(dataTransferProperties.getCursorFetchSize());
+        config.setUsePrepStmts(dataTransferProperties.isUseServerPrepStmts());
+        return config;
     }
 
-    private void initExcelParameter(ResultSetExportTaskParameter req) {
-        this.initCSVParameter(req);
-        this.dumpParameter.setEscapeCharacter('\\');
-        this.dumpParameter.setColumnSeparator(',');
-        this.dumpParameter.setColumnDelimiter('\"');
-        this.dumpParameter.setLineSeparator("\n");
-        this.dumpParameter.setIgnoreEmptyLine(false);
-        this.dumpParameter.setNullString("null");
-    }
-
-    private void initSessionParameter(ConnectionSession session) {
-        ConnectionConfig connectionConfig = (ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(session);
-        this.dumpParameter.setHost(connectionConfig.getHost());
-        this.dumpParameter.setPort(connectionConfig.getPort());
-        this.dumpParameter.setPassword(connectionConfig.getPassword());
-        this.dumpParameter.setCluster(connectionConfig.getClusterName());
-        this.dumpParameter.setTenant(connectionConfig.getTenantName());
-        String database =
-                MoreObjects.firstNonNull(parameter.getDatabase(), ConnectionSessionUtil.getCurrentSchema(session));
-        if (DialectType.OB_ORACLE == connectionConfig.getDialectType()) {
-            this.dumpParameter.setUser(StringUtils.quoteOracleIdentifier(ConnectionSessionUtil
-                    .getUserOrSchemaString(connectionConfig.getUsername(), connectionConfig.getDialectType())));
-            this.dumpParameter.setDatabaseName(database);
-            this.dumpParameter.setConnectDatabaseName(StringUtils.quoteOracleIdentifier(database));
-        } else {
-            this.dumpParameter.setUser(ConnectionSessionUtil.getUserOrSchemaString(connectionConfig.getUsername(),
-                    connectionConfig.getDialectType()));
-            this.dumpParameter.setDatabaseName(database);
-            this.dumpParameter.setConnectDatabaseName(database);
-        }
-        if (StringUtils.isNotBlank(connectionConfig.getSysTenantUsername())) {
-            this.dumpParameter.setSysUser(connectionConfig.getSysTenantUsername());
-            this.dumpParameter.setSysPassword(connectionConfig.getSysTenantPassword());
-        } else {
-            if (connectionConfig.getType().isCloud()) {
-                LOGGER.info("Sys user does not exist, use cloud mode");
-                this.dumpParameter.setPubCloud(true);
-            } else {
-                LOGGER.info("Sys user does not exist, use no sys mode");
-                this.dumpParameter.setNoSys(true);
-            }
-        }
-        OBTenantEndpoint endpoint = connectionConfig.getEndpoint();
-        if (Objects.nonNull(endpoint)) {
-            if (StringUtils.isNotBlank(endpoint.getProxyHost()) && Objects.nonNull(endpoint.getProxyPort())) {
-                this.dumpParameter.setSocksProxyHost(endpoint.getProxyHost());
-                this.dumpParameter.setSocksProxyPort(endpoint.getProxyPort().toString());
-            }
-        }
-    }
-
-    private void setMaskConfig(ConnectionSession session) {
+    private Map<TableIdentity, Map<String, AbstractDataMasker>> getMaskConfig(ResultSetExportTaskParameter parameter) {
+        HashMap<TableIdentity, Map<String, AbstractDataMasker>> maskConfigMap = new HashMap<>();
         List<MaskingAlgorithm> algorithms = parameter.getRowDataMaskingAlgorithms();
         if (!needDataMasking(algorithms)) {
-            return;
+            return maskConfigMap;
         }
         Map<String, Map<String, List<OrdinalColumn>>> catalog2TableColumns = new HashMap<>();
         try {
@@ -262,7 +211,7 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
             ResultSetMetaData rsMetaData =
                     syncJdbcExecutor.query(parameter.getSql(), pss -> pss.setMaxRows(10), ResultSet::getMetaData);
             if (rsMetaData == null) {
-                return;
+                return maskConfigMap;
             }
             int columnCount = rsMetaData.getColumnCount();
             for (int index = 1; index <= columnCount; index++) {
@@ -278,121 +227,41 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
             throw OBException.executeFailed(
                     "Query result metadata failed, please try again, message=" + ExceptionUtils.getRootCauseMessage(e));
         }
-        ControlManager controlManager = ControlManager.newInstance();
+
         DataMaskerFactory maskerFactory = new DataMaskerFactory();
         for (String catalogName : catalog2TableColumns.keySet()) {
             Map<String, List<OrdinalColumn>> tableName2Columns = catalog2TableColumns.get(catalogName);
             for (String tableName : tableName2Columns.keySet()) {
                 List<OrdinalColumn> ordinalColumns = tableName2Columns.get(tableName);
-                ControlContext context = new ControlContext();
+                Map<String, AbstractDataMasker> column2Masker = new HashMap<>();
                 for (OrdinalColumn column : ordinalColumns) {
                     if (Objects.isNull(algorithms.get(column.getOrdinal()))) {
                         continue;
                     }
-                    ControlDescription description = new ControlDescription(column.getColumnName());
                     MaskConfig maskConfig = MaskingAlgorithmUtil
                             .toSingleFieldMaskConfig(algorithms.get(column.getOrdinal()), column.getColumnName());
                     AbstractDataMasker masker =
                             maskerFactory.createDataMasker(MaskValueType.SINGLE_VALUE.name(), maskConfig);
-                    DataMaskingFunction function = new DataMaskingFunction(masker);
-                    description.add(function);
-                    context.add(description);
+                    column2Masker.put(column.getColumnName(), masker);
                 }
-                controlManager.register(catalogName, tableName, context);
+                maskConfigMap.put(TableIdentity.of(catalogName, tableName), column2Masker);
             }
         }
-        dumpParameter.setControlManager(controlManager);
-        dumpParameter.setUseRuntimeTableName(true);
+        return maskConfigMap;
     }
 
-    @Override
-    public ResultSetExportResult call() throws Exception {
-        try {
-            DumpClient dumpClient = new Builder(this.dumpParameter).build();
-            taskContext = dumpClient.dumpRecord();
-        } catch (Exception e) {
-            LOGGER.warn("ResultSetExportTask has been finished with some unexpected error when preparing.");
-            throw e;
-        }
-        try {
-            while (!Thread.currentThread().isInterrupted()) {
-                if (taskContext.isAllTasksFinished()) {
-                    if (taskContext.getFailureTaskDetails().size() != 0) {
-                        String errorMsg = "some errors happened when dumping result set: ";
-                        Collection<TaskDetail> failedTasks = taskContext.getFailureTaskDetails();
-                        if (CollectionUtils.isNotEmpty(failedTasks)) {
-                            errorMsg += failedTasks.stream()
-                                    .map(i -> i.getSchemaTable() + ": " + i.getError())
-                                    .collect(Collectors.joining("\n"));
-                        }
-                        throw new IllegalStateException(errorMsg);
-                    }
-
-                    String localResultSetFilePath = getDumpFilePath(this.dumpParameter.getFileSuffix());
-
-                    /**
-                     * 对于空结果集，OBDumper 不生成文件，ODC 需要生成一个空文件以免报错
-                     */
-                    File origin = new File(localResultSetFilePath);
-                    if (!origin.exists()) {
-                        FileUtils.touch(origin);
-                    }
-
-                    /**
-                     * OBDumper 不支持 excel 导出，需要先生成 csv, 然后使用工具类转换成 xlsx
-                     */
-                    if (DataTransferFormat.EXCEL == parameter.getFileFormat()) {
-                        String excelFilePath = getDumpFilePath(DataTransferFormat.EXCEL.getExtension());
-                        try {
-                            FileConvertUtils.convertCsvToXls(localResultSetFilePath, excelFilePath,
-                                    parameter.isSaveSql() ? Arrays.asList(parameter.getSql()) : null);
-                        } catch (Exception ex) {
-                            LOGGER.warn("CSV has been dumped successfully, but converting to Excel failed.");
-                            throw ex;
-                        }
-                        origin = new File(excelFilePath);
-                    }
-
-                    try {
-                        handleExportFile(origin);
-                    } catch (Exception e) {
-                        LOGGER.warn("Post processing export file failed.");
-                        throw e;
-                    }
-                    LOGGER.info("ResultSetExportTask has been executed successfully");
-                    break;
-                }
-            }
-            if (Thread.currentThread().isInterrupted()) {
-                Thread.interrupted();
-                throw new InterruptedException("ResultSetExportTask has been interrupted by force");
-            }
-        } finally {
-            shutdownContext(taskContext);
-        }
-        return ResultSetExportResult.succeed(fileName);
+    private void validateSuccessful(DataTransferTaskResult result) {
+        Verify.verify(CollectionUtils.isEmpty(result.getSchemaObjectsInfo()), "There shouldn't be any schema object");
+        Verify.singleton(result.getDataObjectsInfo(), "Exported objects");
+        Verify.verify(result.getDataObjectsInfo().get(0).getStatus() == Status.SUCCESS, "Result export task failed!");
     }
 
-    private void shutdownContext(@NonNull TaskContext context) {
-        try {
-            context.shutdown();
-            LOGGER.info("shutdown task context finished");
-        } catch (Exception e) {
-            try {
-                context.shutdownNow();
-                LOGGER.info("shutdown task context immediately finished");
-            } catch (Exception ex) {
-                LOGGER.warn("shutdown task context immediately failed, {}", ex.getMessage());
-            }
-        } finally {
-            LOGGER.info(context.getProgress().toString());
-            LOGGER.info(context.getSummary().toHumanReadableFormat());
+    private String getDumpFilePath(DataTransferTaskResult result, String extension) {
+        List<URL> exportPaths = result.getDataObjectsInfo().get(0).getExportPaths();
+        if (CollectionUtils.isEmpty(exportPaths)) {
+            return getDumpFileDirectory() + getFileName(extension);
         }
-    }
-
-
-    private String getDumpFilePath(String extension) {
-        return getDumpFileDirectory() + getFileName(extension);
+        return exportPaths.get(0).getFile();
     }
 
     private String getFileName(String extension) {
@@ -400,7 +269,7 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
     }
 
     private String getDumpFileDirectory() {
-        return this.dumpParameter.getFilePath() + "/data/" + dumpParameter.getDatabaseName() + "/TABLE/";
+        return workingDir.getPath() + "/data/" + parameter.getDatabase() + "/TABLE/";
     }
 
     private boolean needDataMasking(List<MaskingAlgorithm> algorithms) {
@@ -415,25 +284,17 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
         return false;
     }
 
-    @Data
-    @AllArgsConstructor
-    private static class OrdinalColumn {
-        private int ordinal;
-        private String columnName;
-    }
-
     private void handleExportFile(File origin) throws Exception {
         try {
             if (cloudObjectStorageService.supported()) {
                 try {
                     String objectName = cloudObjectStorageService.uploadTemp(fileName, origin);
                     ((OssTaskReferManager) SpringContextUtil.getBean("ossTaskReferManager")).put(fileName, objectName);
-                } catch (Exception exception) {
-                    throw new UnexpectedException(String
-                            .format("upload result set export file to Object Storage failed, file name: %s", taskId));
+                } catch (Exception e) {
+                    throw new UnexpectedException("upload result set export file to Object Storage failed", e);
                 }
             } else {
-                File dest = Paths.get(dumpParameter.getFilePath(), fileName).toFile();
+                File dest = Paths.get(workingDir.getPath(), fileName).toFile();
                 if (dest.exists()) {
                     FileUtils.deleteQuietly(dest);
                 }
@@ -444,4 +305,10 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
         }
     }
 
+    @Data
+    @AllArgsConstructor
+    private static class OrdinalColumn {
+        private int ordinal;
+        private String columnName;
+    }
 }

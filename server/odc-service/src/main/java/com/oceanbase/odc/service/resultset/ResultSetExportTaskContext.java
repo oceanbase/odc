@@ -36,19 +36,27 @@ public class ResultSetExportTaskContext {
     }
 
     public double progress() {
-        return task.getTaskContext() == null ? 0 : task.getTaskContext().getProgress().getProgress();
+        return task.getJob() == null ? 0 : task.getJob().getProgress();
     }
 
     public boolean isDone() {
         return future.isDone();
     }
 
-    public void cancel(boolean mayInterruptIfRunning) {
-        future.cancel(mayInterruptIfRunning);
+    public boolean cancel(boolean mayInterruptIfRunning) {
+        boolean canceled = true;
+        if (task.getJob() != null) {
+            canceled = task.getJob().cancel(mayInterruptIfRunning);
+        }
+        return canceled && future.cancel(mayInterruptIfRunning);
     }
 
     public boolean isCanceled() {
-        return future.isCancelled();
+        boolean isCanceled = true;
+        if (task.getJob() != null) {
+            isCanceled = task.getJob().isCanceled();
+        }
+        return isCanceled && future.isCancelled();
     }
 
     public ResultSetExportResult get() throws ExecutionException, InterruptedException, TimeoutException {

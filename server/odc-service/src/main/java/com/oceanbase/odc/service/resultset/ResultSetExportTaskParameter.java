@@ -56,8 +56,8 @@ public class ResultSetExportTaskParameter implements Serializable, TaskParameter
         boolean isContainColumnHeader = true;
         @JsonProperty("isTransferEmptyString")
         boolean isTransferEmptyString = true;
-        String columnSeparator = ",";
-        String columnDelimiter = "\"";
+        char columnSeparator = ',';
+        char columnDelimiter = '"';
         String lineSeparator = "\r\n";
     }
 }
