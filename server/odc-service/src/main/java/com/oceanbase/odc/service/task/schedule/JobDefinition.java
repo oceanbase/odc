@@ -22,7 +22,7 @@ import com.oceanbase.odc.service.task.caller.JobContext;
 
 /**
  * @author yaobin
- * @date 2023-11-25
+ * @date 2023-11-23
  * @since 4.2.4
  */
 public interface JobDefinition {

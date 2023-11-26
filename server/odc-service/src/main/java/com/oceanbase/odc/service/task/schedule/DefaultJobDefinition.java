@@ -23,7 +23,7 @@ import lombok.Data;
 
 /**
  * @author yaobin
- * @date 2023-11-24
+ * @date 2023-11-23
  * @since 4.2.4
  */
 @Data
@@ -36,7 +36,4 @@ public class DefaultJobDefinition implements JobDefinition {
     private MisfireStrategy misfireStrategy;
 
     private TriggerConfig triggerConfig;
-
-    public DefaultJobDefinition() {}
-
 }

@@ -18,7 +18,7 @@ package com.oceanbase.odc.service.task.schedule;
 
 /**
  * @author yaobin
- * @date 2023-11-25
+ * @date 2023-11-23
  * @since 4.2.4
  */
 public enum ScheduleSourceType {
