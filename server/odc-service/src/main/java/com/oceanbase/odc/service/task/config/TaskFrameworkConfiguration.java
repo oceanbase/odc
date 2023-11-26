@@ -72,8 +72,8 @@ public class TaskFrameworkConfiguration {
     }
 
     @Bean
-    public JobConfigurationHolder jobConfigurationHolder() {
-        return new JobConfigurationHolder();
+    public JobConfiguration jobConfiguration() {
+        return new DefaultSpringJobConfiguration();
     }
 
     private K8sJobCaller getK8sJobCaller(K8sJobClient k8sJobClient) {

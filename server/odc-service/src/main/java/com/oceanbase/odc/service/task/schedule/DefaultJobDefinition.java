@@ -13,30 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.oceanbase.odc.service.task.schedule;
 
-package com.oceanbase.odc.service.task.constants;
+import com.oceanbase.odc.service.quartz.model.MisfireStrategy;
+import com.oceanbase.odc.service.schedule.model.TriggerConfig;
+import com.oceanbase.odc.service.task.caller.JobContext;
+
+import lombok.Data;
 
 /**
  * @author yaobin
- * @date 2023-11-15
+ * @date 2023-11-24
  * @since 4.2.4
  */
-public class JobConstants {
+@Data
+public class DefaultJobDefinition implements JobDefinition {
 
-    public static final String TEMPLATE_KIND_POD = "Pod";
+    private JobContext jobContext;
 
-    public static final String TEMPLATE_KIND_JOB = "Job";
+    private boolean allowConcurrent;
 
-    public static final String TEMPLATE_API_VERSION = "v1";
+    private MisfireStrategy misfireStrategy;
 
-    public static final String TEMPLATE_BATCH_API_VERSION = "batch/v1";
+    private TriggerConfig triggerConfig;
 
-    public static final String TEMPLATE_JOB_NAME_PREFIX = "task-";
-
-    public static final String RESTART_POLICY_NEVER = "Never";
-
-    public static final String FIELD_SELECTOR_METADATA_NAME = "metadata.name";
-
-    public static final String JOB_DATA_MAP_JOB_CONTEXT = "JOB_CONTEXT";
+    public DefaultJobDefinition() {}
 
 }

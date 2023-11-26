@@ -14,29 +14,28 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.task.constants;
+package com.oceanbase.odc.service.task.schedule;
+
+import org.quartz.Job;
+import org.quartz.JobExecutionContext;
+import org.quartz.JobExecutionException;
+
+import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.service.task.constants.JobConstants;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author yaobin
- * @date 2023-11-15
+ * @date 2023-11-24
  * @since 4.2.4
  */
-public class JobConstants {
+@Slf4j
+public class PrepareCallJob implements Job {
+    @Override
+    public void execute(JobExecutionContext context) throws JobExecutionException {
+        Object o = context.getMergedJobDataMap().get(JobConstants.JOB_DATA_MAP_JOB_CONTEXT);
+        log.info(JsonUtils.toJson(o));
 
-    public static final String TEMPLATE_KIND_POD = "Pod";
-
-    public static final String TEMPLATE_KIND_JOB = "Job";
-
-    public static final String TEMPLATE_API_VERSION = "v1";
-
-    public static final String TEMPLATE_BATCH_API_VERSION = "batch/v1";
-
-    public static final String TEMPLATE_JOB_NAME_PREFIX = "task-";
-
-    public static final String RESTART_POLICY_NEVER = "Never";
-
-    public static final String FIELD_SELECTOR_METADATA_NAME = "metadata.name";
-
-    public static final String JOB_DATA_MAP_JOB_CONTEXT = "JOB_CONTEXT";
-
+    }
 }

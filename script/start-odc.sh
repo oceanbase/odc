@@ -66,11 +66,13 @@ function check_env_value_set() {
 function init_parameters() {
     echo "init parameters start"
 
-    # init parameters require environment variable
-    check_env_value_set DATABASE_HOST "${DATABASE_HOST}"
-    check_env_value_set DATABASE_PORT "${DATABASE_PORT}"
-    check_env_value_set DATABASE_USERNAME "${DATABASE_USERNAME}"
-    check_env_value_set DATABASE_NAME "${DATABASE_NAME}"
+    if [ -z "${ODC_BOOT_MODE}"  ] || [ "${ODC_BOOT_MODE}" != 'TASK_EXECUTOR' ]; then
+        # init parameters require environment variable
+        check_env_value_set DATABASE_HOST "${DATABASE_HOST}"
+        check_env_value_set DATABASE_PORT "${DATABASE_PORT}"
+        check_env_value_set DATABASE_USERNAME "${DATABASE_USERNAME}"
+        check_env_value_set DATABASE_NAME "${DATABASE_NAME}"
+    fi
 
     # init parameters with default value
     profile="${ODC_PROFILE_MODE:-${PROFILE_MODE:-alipay}}"

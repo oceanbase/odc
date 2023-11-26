@@ -17,26 +17,28 @@
 package com.oceanbase.odc.service.task.config;
 
 import org.quartz.Scheduler;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationListener;
+import org.springframework.context.event.ContextRefreshedEvent;
 
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.caller.JobCaller;
-
-import lombok.Data;
 
 /**
  * @author yaobin
  * @date 2023-11-21
  * @since 4.2.4
  */
-@Data
-public class DefaultJobConfiguration implements JobConfiguration {
+public class DefaultSpringJobConfiguration extends DefaultJobConfiguration
+        implements ApplicationListener<ContextRefreshedEvent> {
 
-    protected TaskService taskService;
-
-    protected ConnectionService connectionService;
-
-    protected JobCaller jobCaller;
-
-    protected Scheduler scheduler;
+    @Override
+    public void onApplicationEvent(ContextRefreshedEvent event) {
+        ApplicationContext ctx = event.getApplicationContext();
+        setConnectionService(ctx.getBean(ConnectionService.class));
+        setTaskService(ctx.getBean(TaskService.class));
+        setJobCaller(ctx.getBean(JobCaller.class));
+        setScheduler(ctx.getBean(Scheduler.class));
+    }
 }
