@@ -42,6 +42,10 @@ public class SampleTask extends BaseTask {
 
     private SampleTaskParameter parameter;
 
+    private int executedSqlCount = 0;
+
+    private int totalSqlCount = 0;
+
     public SampleTask(JobContext context) {
         super(context);
     }
@@ -52,7 +56,9 @@ public class SampleTask extends BaseTask {
         Verify.equals(TaskType.SAMPLE, context.getTaskType(), "taskType");
         this.parameter = JsonUtils.fromJson(context.getTaskParameters(), SampleTaskParameter.class);
         validateTaskParameter();
+        this.totalSqlCount = this.parameter.getSqls().size();
         ConnectionConfig connectionConfig = context.getConnectionConfigs().get(0);
+        connectionConfig.setId(1L); // Set connection id to 1 for testing.
         ConnectionSession session = new DefaultConnectSessionFactory(connectionConfig).generateSession();
         try {
             JdbcOperations jdbcOperations = session.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY);
@@ -61,12 +67,13 @@ public class SampleTask extends BaseTask {
                     break;
                 }
                 jdbcOperations.execute(sql);
+                executedSqlCount++;
+                Thread.sleep(500); // Simulate long execution time of SQL.
             }
             this.result = SampleTaskResult.success();
             this.status = TaskStatus.DONE;
-        } catch (Exception e) {
-            this.result = SampleTaskResult.fail();
-            this.status = TaskStatus.FAILED;
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         } finally {
             this.finished = true;
             session.expire();
@@ -76,21 +83,19 @@ public class SampleTask extends BaseTask {
     @Override
     protected void doStop() {
         this.stopped = true;
-    }
-
-    @Override
-    protected void onFinished() {
-        log.info("Task finished, id: {}, result: {}", context.getTaskId(), this.result);
+        this.status = TaskStatus.CANCELED;
     }
 
     @Override
     protected void onFailure(Exception e) {
-        log.warn("Task failed, id: {}", context.getTaskId(), e);
+        this.result = SampleTaskResult.fail();
+        this.status = TaskStatus.FAILED;
+        this.finished = true;
     }
 
     @Override
-    protected void onUpdateProgress() {
-        log.info("Task progress updated, id: {}", context.getTaskId());
+    protected void onUpdate() {
+        this.progress = executedSqlCount * 1.0 / totalSqlCount;
     }
 
     private void validateTaskParameter() {
