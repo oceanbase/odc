@@ -20,13 +20,10 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.Statement;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.Validate;
 import org.pf4j.Extension;
@@ -51,9 +48,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Extension
 public class OracleConnectionExtension extends OBMySQLConnectionExtension {
-    private static final String SERVICE_NAME_PATTERN = "@//([^:/]*):(\\d+)/.*";
-    private static final String SID_PATTERN = "@([^:/]*):(\\d+):.*";
-
     @Override
     public String generateJdbcUrl(@NonNull Properties properties, Map<String, String> jdbcParameters) {
         String host = properties.getProperty(ConnectionConstants.HOST);
@@ -109,31 +103,5 @@ public class OracleConnectionExtension extends OBMySQLConnectionExtension {
             Throwable rootCause = ExceptionUtils.getRootCause(e);
             return TestResult.unknownError(rootCause);
         }
-    }
-
-    private Map<String, String> getHostAndPortFromJdbcUrl(String jdbcUrl) {
-        String host = null;
-        String port = null;
-
-        Pattern serviceNamePattern = Pattern.compile(SERVICE_NAME_PATTERN);
-        Matcher serviceNameMatcher = serviceNamePattern.matcher(jdbcUrl);
-
-        Pattern sidPattern = Pattern.compile(SID_PATTERN);
-        Matcher sidMatcher = sidPattern.matcher(jdbcUrl);
-
-        if (serviceNameMatcher.find()) {
-            host = serviceNameMatcher.group(1);
-            port = serviceNameMatcher.group(2);
-        } else if (sidMatcher.find()) {
-            host = sidMatcher.group(1);
-            port = sidMatcher.group(2);
-        }
-        if (Objects.isNull(host) || Objects.isNull(port)) {
-            throw new VerifyException("invalid jdbc url");
-        }
-        Map<String, String> map = new HashMap<>();
-        map.put("host", host);
-        map.put("port", port);
-        return map;
     }
 }

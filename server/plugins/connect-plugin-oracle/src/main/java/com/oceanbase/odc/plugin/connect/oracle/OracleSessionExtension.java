@@ -18,11 +18,12 @@ package com.oceanbase.odc.plugin.connect.oracle;
 
 import java.sql.Connection;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.pf4j.Extension;
 
 import com.oceanbase.odc.common.util.JdbcOperationsUtil;
-import com.oceanbase.odc.core.shared.exception.UnsupportedException;
+import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.plugin.connect.oboracle.OBOracleSessionExtension;
 
 import lombok.NonNull;
@@ -38,16 +39,23 @@ import lombok.extern.slf4j.Slf4j;
 public class OracleSessionExtension extends OBOracleSessionExtension {
     @Override
     public void killQuery(Connection connection, String connectionId) {
-        throw new UnsupportedOperationException("Not supported for oracle mode");
+        JdbcOperationsUtil.getJdbcOperations(connection).execute("ALTER SYSTEM KILL SESSION '" + connectionId + "'");
     }
 
     @Override
     public String getConnectionId(Connection connection) {
-        String querySql = "select userenv('sessionid') from dual";
+        String querySql =
+                "SELECT SID, SERIAL#  FROM V$SESSION WHERE SID = SYS_CONTEXT('USERENV', 'SID') and AUDSID=SYS_CONTEXT('USERENV', 'SESSIONID')";
+        AtomicReference<String> connectionId = new AtomicReference<>();
         try {
-            return JdbcOperationsUtil.getJdbcOperations(connection).queryForObject(querySql, String.class);
+            JdbcOperationsUtil.getJdbcOperations(connection).query(querySql, (rs, rowNum) -> {
+                connectionId.set(rs.getString("SID") + "," + rs.getString("SERIAL#"));
+                return null;
+            });
+            PreConditions.notNull(connectionId.get(), "SID and SERIAL# can not be null");
+            return connectionId.get();
         } catch (Exception e) {
-            throw new UnsupportedException("Failed to get session id from oracle, message=" + e);
+            throw new RuntimeException("Failed to get session id from oracle, message=" + e);
         }
     }
 
