@@ -68,16 +68,21 @@ public class SqlRewriteUtil {
         FromReference from = froms.get(0);
         Pivot pivot = null;
         UnPivot unPivot = null;
+        boolean containsdblink = false;
         if (from instanceof NameReference) {
             NameReference nameFrom = (NameReference) from;
             pivot = nameFrom.getPivot();
             unPivot = nameFrom.getUnPivot();
+            /**
+             * 如果 {@link containsdblink} 为 true 意味着表名是 {@code xxx@xxx} 样式的，这代表着 dblink，含有 dblink 的情况下不能改写。
+             */
+            containsdblink = StringUtils.startsWith(nameFrom.getUserVariable(), "@");
         } else if (from instanceof ExpressionReference) {
             ExpressionReference exprFrom = (ExpressionReference) from;
             pivot = exprFrom.getPivot();
             unPivot = exprFrom.getUnPivot();
         }
-        if (pivot != null || unPivot != null) {
+        if (pivot != null || unPivot != null || containsdblink) {
             return sql;
         }
         StringBuilder newSql = new StringBuilder(sql);

@@ -31,4 +31,8 @@ public class EventLabelKeys {
 
     public static final String VARIABLE_KEY_TENANT_NAME = "tenantName";
 
+    public static final String VARIABLE_KEY_REGION = "region";
+
+    public static final String VARIABLE_KEY_TASK_ID = "taskId";
+
 }

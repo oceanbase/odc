@@ -1981,6 +1981,7 @@ table_factor
     : tbl_name
     | table_subquery
     | select_with_parens use_flashback?
+    | TABLE LeftParen simple_expr RightParen (AS relation_name|relation_name?)
     | LeftParen table_reference RightParen
     | LeftBrace OJ table_reference RightBrace
     | json_table_expr (AS? relation_name)?
@@ -3547,6 +3548,7 @@ relation_name
 
 function_name
     : NAME_OB
+    | RANDOM
     | DUMP
     | CHARSET
     | COLLATION

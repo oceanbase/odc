@@ -69,7 +69,7 @@ public class NotificationDispatcherTest extends ServiceTestEnv {
     public void testDispatch_SendFailed() {
         MessageEntity entity = messageRepository.save(getMessage().toEntity());
 
-        dispatcher.dispatch(Arrays.asList(getNotification(entity)));
+        dispatcher.dispatch(getNotification(entity));
 
         Assert.assertEquals(MessageSendingStatus.SENT_FAILED, messageRepository.findAll().get(0).getStatus());
     }

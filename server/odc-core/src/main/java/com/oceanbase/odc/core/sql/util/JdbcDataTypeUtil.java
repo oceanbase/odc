@@ -147,7 +147,7 @@ public class JdbcDataTypeUtil {
     public static Object getValueFromStatement(CallableStatement statement, int index, String type)
             throws SQLException {
         JDBCType jdbcType = parseDataType(type);
-        if (null == statement.getString(index)) {
+        if (null == statement.getObject(index)) {
             return null;
         }
         switch (jdbcType) {

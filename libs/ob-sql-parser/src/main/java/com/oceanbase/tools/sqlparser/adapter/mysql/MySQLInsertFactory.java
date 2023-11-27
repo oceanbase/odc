@@ -15,16 +15,24 @@
  */
 package com.oceanbase.tools.sqlparser.adapter.mysql;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.stream.Collectors;
 
 import com.oceanbase.tools.sqlparser.adapter.StatementFactory;
-import com.oceanbase.tools.sqlparser.obmysql.OBParser.Column_listContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Insert_stmtContext;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Insert_valsContext;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Insert_vals_listContext;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Single_table_insertContext;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Update_asgn_listContext;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Values_clauseContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParserBaseVisitor;
-import com.oceanbase.tools.sqlparser.statement.expression.ColumnReference;
+import com.oceanbase.tools.sqlparser.statement.Expression;
+import com.oceanbase.tools.sqlparser.statement.expression.ConstExpression;
 import com.oceanbase.tools.sqlparser.statement.insert.Insert;
-import com.oceanbase.tools.sqlparser.statement.insert.InsertBody;
-import com.oceanbase.tools.sqlparser.statement.insert.SingleTableInsert;
+import com.oceanbase.tools.sqlparser.statement.insert.InsertTable;
+import com.oceanbase.tools.sqlparser.statement.insert.mysql.SetColumn;
 
 import lombok.NonNull;
 
@@ -51,19 +59,80 @@ public class MySQLInsertFactory extends OBParserBaseVisitor<Insert> implements S
 
     @Override
     public Insert visitInsert_stmt(Insert_stmtContext ctx) {
-        Column_listContext columns = ctx.single_table_insert().column_list();
-        InsertBody insertBody = new InsertBody(ctx.single_table_insert());
-        if (columns != null) {
-            insertBody.setColumns(columns.column_definition_ref().stream().map(c -> {
-                StatementFactory<ColumnReference> factory = new MySQLColumnRefFactory(c);
-                return factory.generate();
-            }).collect(Collectors.toList()));
-        }
-        SingleTableInsert insert = new SingleTableInsert(ctx, insertBody);
+        Insert insert = new Insert(ctx, visit(ctx.single_table_insert()));
         if (ctx.replace_with_opt_hint() != null) {
             insert.setReplace(true);
         }
+        if (ctx.IGNORE() != null) {
+            insert.setIgnore(true);
+        }
+        if (ctx.update_asgn_list() != null) {
+            insert.setOnDuplicateKeyUpdateColumns(getSetColumns(ctx.update_asgn_list()));
+        }
         return insert;
+    }
+
+    @Override
+    public Insert visitSingle_table_insert(Single_table_insertContext ctx) {
+        InsertTable insertTable = new InsertTable(ctx, MySQLFromReferenceFactory
+                .getRelationFactor(ctx.dml_table_name().relation_factor()));
+        if (ctx.dml_table_name().use_partition() != null) {
+            insertTable.setPartitionUsage(MySQLFromReferenceFactory
+                    .visitPartitonUsage(ctx.dml_table_name().use_partition()));
+        }
+        if (ctx.column_list() != null) {
+            insertTable.setColumns(ctx.column_list().column_definition_ref().stream()
+                    .map(c -> new MySQLColumnRefFactory(c).generate()).collect(Collectors.toList()));
+        }
+        if (ctx.values_clause() != null) {
+            List<List<Expression>> values = new ArrayList<>();
+            Values_clauseContext vCtx = ctx.values_clause();
+            if (vCtx.insert_vals_list() != null) {
+                fullFillValues(vCtx.insert_vals_list(), values);
+            } else {
+                values.add(Collections.singletonList(new MySQLSelectFactory(vCtx.select_stmt()).generate()));
+            }
+            insertTable.setValues(values);
+        }
+        if (ctx.update_asgn_list() != null) {
+            insertTable.setSetColumns(getSetColumns(ctx.update_asgn_list()));
+        }
+        return new Insert(ctx, Collections.singletonList(insertTable), null);
+    }
+
+    private List<SetColumn> getSetColumns(Update_asgn_listContext ctx) {
+        return ctx.update_asgn_factor().stream().map(c -> {
+            Expression val;
+            if (c.expr_or_default().DEFAULT() != null) {
+                val = new ConstExpression(c.expr_or_default().DEFAULT());
+            } else {
+                val = new MySQLExpressionFactory(c.expr_or_default().expr()).generate();
+            }
+            return new SetColumn(c, new MySQLColumnRefFactory(c.column_definition_ref()).generate(), val);
+        }).collect(Collectors.toList());
+    }
+
+    private void fullFillValues(Insert_vals_listContext ctx, List<List<Expression>> values) {
+        if (ctx.insert_vals_list() != null) {
+            fullFillValues(ctx.insert_vals_list(), values);
+        }
+        List<Expression> vals = new ArrayList<>();
+        fullFillValues(ctx.insert_vals(), vals);
+        values.add(vals);
+    }
+
+    private void fullFillValues(Insert_valsContext ctx, List<Expression> values) {
+        if (ctx.insert_vals() != null) {
+            fullFillValues(ctx.insert_vals(), values);
+        }
+        if (ctx.empty() != null) {
+            return;
+        }
+        if (ctx.expr_or_default().DEFAULT() != null) {
+            values.add(new ConstExpression(ctx.expr_or_default().DEFAULT()));
+        } else {
+            values.add(new MySQLExpressionFactory(ctx.expr_or_default().expr()).generate());
+        }
     }
 
 }

@@ -48,9 +48,6 @@ public class JdbcEventQueue implements EventQueue {
     @Autowired
     private EventMapper eventMapper;
 
-    @Autowired
-    private NotificationProperties notificationProperties;
-
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean offer(Event event) {
@@ -67,16 +64,13 @@ public class JdbcEventQueue implements EventQueue {
 
     @Override
     public List<Event> peek(int batchSize, EventStatus status) {
-        List<Event> events;
         try {
-            events = eventRepository.findNByStatusForUpdate(status,
-                    notificationProperties.getEventDequeueBatchSize()).stream()
-                    .map(entity -> eventMapper.fromEntity(entity)).collect(Collectors.toList());
+            return eventRepository.findNByStatusForUpdate(status, batchSize)
+                    .stream().map(entity -> eventMapper.fromEntity(entity)).collect(Collectors.toList());
         } catch (Exception ex) {
             log.warn("peek events failed, ", ex);
             return ListUtils.EMPTY_LIST;
         }
-        return events;
     }
 
     @Override

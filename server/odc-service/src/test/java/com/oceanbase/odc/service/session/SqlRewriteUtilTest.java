@@ -140,6 +140,13 @@ public class SqlRewriteUtilTest {
         Assert.assertEquals("select distinct val from test t1", sql);
     }
 
+    @Test
+    public void addInternalROWIDColumn_WithDBlink_AddRowIdFailed() {
+        String expect = "select * from aaa@bbb;";
+        String sql = addInternalRowIdColumn(expect);
+        Assert.assertEquals(expect, sql);
+    }
+
     private String addInternalRowIdColumn(String sql) {
         return SqlRewriteUtil.addInternalRowIdColumn(sql,
                 AbstractSyntaxTreeFactories.getAstFactory(DialectType.OB_ORACLE, 0).buildAst(sql));
