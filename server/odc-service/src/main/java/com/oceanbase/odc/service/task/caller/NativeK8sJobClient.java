@@ -29,6 +29,8 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import org.apache.commons.collections4.CollectionUtils;
+
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.Configuration;
@@ -63,7 +65,7 @@ public class NativeK8sJobClient implements K8sJobClient {
 
     @Override
     public String create(@NonNull String namespace, @NonNull String name, @NonNull String image,
-            @NonNull List<String> command, @NonNull PodParam podParam) throws JobException {
+            List<String> command, @NonNull PodParam podParam) throws JobException {
         V1Pod job = getV1Pod(name, image, command, podParam);
         CoreV1Api api = new CoreV1Api();
         try {
@@ -106,8 +108,10 @@ public class NativeK8sJobClient implements K8sJobClient {
     private V1Pod getV1Pod(String jobName, String image, List<String> command, PodParam podParam) {
         V1Container container = new V1Container()
                 .name(jobName)
-                .image(image)
-                .command(command);
+                .image(image);
+        if (CollectionUtils.isNotEmpty(command)) {
+            container.setCommand(command);
+        }
 
         if (podParam.getEnvironments().size() > 0) {
             List<V1EnvVar> envVars = podParam.getEnvironments().entrySet().stream()

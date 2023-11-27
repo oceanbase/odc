@@ -14,29 +14,21 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.task.config;
-
-import org.quartz.Scheduler;
-
-import com.oceanbase.odc.service.connection.ConnectionService;
-import com.oceanbase.odc.service.task.TaskService;
-import com.oceanbase.odc.service.task.caller.JobCaller;
-
-import lombok.Data;
+package com.oceanbase.odc.service.task.schedule;
 
 /**
  * @author yaobin
- * @date 2023-11-21
+ * @date 2023-11-23
  * @since 4.2.4
  */
-@Data
-public class DefaultJobConfiguration implements JobConfiguration {
+public enum ScheduleSourceType {
+    /**
+     * data from task_task
+     */
+    TASK_TASK,
 
-    protected TaskService taskService;
-
-    protected ConnectionService connectionService;
-
-    protected JobCaller jobCaller;
-
-    protected Scheduler scheduler;
+    /**
+     * data from schedule_task
+     */
+    SCHEDULE_TASK
 }

@@ -13,30 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.oceanbase.odc.service.task.schedule;
 
-package com.oceanbase.odc.service.task.config;
-
-import org.quartz.Scheduler;
-
-import com.oceanbase.odc.service.connection.ConnectionService;
-import com.oceanbase.odc.service.task.TaskService;
-import com.oceanbase.odc.service.task.caller.JobCaller;
+import com.oceanbase.odc.service.quartz.model.MisfireStrategy;
+import com.oceanbase.odc.service.schedule.model.TriggerConfig;
+import com.oceanbase.odc.service.task.caller.JobContext;
 
 import lombok.Data;
 
 /**
  * @author yaobin
- * @date 2023-11-21
+ * @date 2023-11-23
  * @since 4.2.4
  */
 @Data
-public class DefaultJobConfiguration implements JobConfiguration {
+public class DefaultJobDefinition implements JobDefinition {
 
-    protected TaskService taskService;
+    private JobContext jobContext;
 
-    protected ConnectionService connectionService;
+    private boolean allowConcurrent;
 
-    protected JobCaller jobCaller;
+    private MisfireStrategy misfireStrategy;
 
-    protected Scheduler scheduler;
+    private TriggerConfig triggerConfig;
 }

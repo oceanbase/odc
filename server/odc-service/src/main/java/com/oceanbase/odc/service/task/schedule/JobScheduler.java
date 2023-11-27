@@ -14,29 +14,21 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.task.config;
+package com.oceanbase.odc.service.task.schedule;
 
-import org.quartz.Scheduler;
-
-import com.oceanbase.odc.service.connection.ConnectionService;
-import com.oceanbase.odc.service.task.TaskService;
-import com.oceanbase.odc.service.task.caller.JobCaller;
-
-import lombok.Data;
+import com.oceanbase.odc.service.task.caller.JobException;
 
 /**
  * @author yaobin
- * @date 2023-11-21
+ * @date 2023-11-23
  * @since 4.2.4
  */
-@Data
-public class DefaultJobConfiguration implements JobConfiguration {
+public interface JobScheduler {
 
-    protected TaskService taskService;
-
-    protected ConnectionService connectionService;
-
-    protected JobCaller jobCaller;
-
-    protected Scheduler scheduler;
+    /**
+     * schedule job
+     * 
+     * @param jd define a job
+     */
+    void scheduleJob(JobDefinition jd) throws JobException;
 }

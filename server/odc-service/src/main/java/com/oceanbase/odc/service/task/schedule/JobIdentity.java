@@ -14,29 +14,39 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.task.config;
-
-import org.quartz.Scheduler;
-
-import com.oceanbase.odc.service.connection.ConnectionService;
-import com.oceanbase.odc.service.task.TaskService;
-import com.oceanbase.odc.service.task.caller.JobCaller;
+package com.oceanbase.odc.service.task.schedule;
 
 import lombok.Data;
 
 /**
+ * Identity a unique job
+ * 
  * @author yaobin
- * @date 2023-11-21
+ * @date 2023-11-23
  * @since 4.2.4
  */
 @Data
-public class DefaultJobConfiguration implements JobConfiguration {
+public class JobIdentity {
 
-    protected TaskService taskService;
+    /**
+     * job id
+     */
+    private Long id;
+    /**
+     * job source type, eg task_task/schedule_task
+     */
+    private ScheduleSourceType sourceType;
+    /**
+     * task type
+     */
+    private String taskType;
 
-    protected ConnectionService connectionService;
+    public static JobIdentity of(Long id, ScheduleSourceType sourceType, String taskType) {
+        JobIdentity identity = new JobIdentity();
+        identity.setId(id);
+        identity.setSourceType(sourceType);
+        identity.setTaskType(taskType);
+        return identity;
+    }
 
-    protected JobCaller jobCaller;
-
-    protected Scheduler scheduler;
 }
