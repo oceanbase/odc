@@ -14,21 +14,29 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.task.constants;
+package com.oceanbase.odc.service.task.executor.util;
+
+import java.util.Objects;
+
+import com.oceanbase.odc.common.util.SystemUtils;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
- * Task framework environment constants. Using 'ODC_' prefix to avoid duplication.
- * 
- * @author yaobin
- * @date 2023-11-21
- * @since 4.2.4
+ * @author gaoda.xy
+ * @date 2023/11/24 14:05
  */
-public class JobEnvConstants {
+@Slf4j
+public class SystemEnvUtil {
 
-    public static final String TASK_PARAMETER = "ODC_TASK_PARAMETER";
-
-    public static final String DEPLOY_MODE = "ODC_TASK_DEPLOY_MODE";
-
-    public static final String BOOT_MODE = "ODC_BOOT_MODE";
+    public static String nullSafeGet(String key) {
+        String value = SystemUtils.getEnvOrProperty(key);
+        if (Objects.nonNull(value)) {
+            return value;
+        }
+        String errMsg = "System env or property '" + key + "' is not set";
+        log.error(errMsg);
+        throw new IllegalStateException(errMsg);
+    }
 
 }

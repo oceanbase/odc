@@ -87,6 +87,11 @@ public enum TaskType implements Translatable {
      * Apply project permission
      */
     APPLY_PROJECT_PERMISSION,
+
+    /**
+     * Sample task (for test)
+     */
+    SAMPLE,
     ;
 
     @Override

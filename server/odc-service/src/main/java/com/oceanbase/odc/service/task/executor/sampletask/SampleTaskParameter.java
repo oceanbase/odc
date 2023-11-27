@@ -14,21 +14,21 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.task.constants;
+package com.oceanbase.odc.service.task.executor.sampletask;
+
+import java.util.List;
+
+import com.oceanbase.odc.core.flow.model.TaskParameters;
+
+import lombok.Data;
 
 /**
- * Task framework environment constants. Using 'ODC_' prefix to avoid duplication.
- * 
- * @author yaobin
- * @date 2023-11-21
- * @since 4.2.4
+ * @author gaoda.xy
+ * @date 2023/11/23 17:59
  */
-public class JobEnvConstants {
+@Data
+public class SampleTaskParameter implements TaskParameters {
 
-    public static final String TASK_PARAMETER = "ODC_TASK_PARAMETER";
-
-    public static final String DEPLOY_MODE = "ODC_TASK_DEPLOY_MODE";
-
-    public static final String BOOT_MODE = "ODC_BOOT_MODE";
+    private List<String> sqls;
 
 }

@@ -14,21 +14,28 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.task.constants;
+package com.oceanbase.odc.service.task.executor;
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
- * Task framework environment constants. Using 'ODC_' prefix to avoid duplication.
+ * A sample implementation of {@link TaskExecutor}.
  * 
- * @author yaobin
- * @date 2023-11-21
- * @since 4.2.4
+ * @author gaoda.xy
+ * @date 2023/11/24 11:22
  */
-public class JobEnvConstants {
+public class ThreadPoolTaskExecutor implements TaskExecutor {
 
-    public static final String TASK_PARAMETER = "ODC_TASK_PARAMETER";
+    private final ExecutorService executor;
 
-    public static final String DEPLOY_MODE = "ODC_TASK_DEPLOY_MODE";
+    public ThreadPoolTaskExecutor(int threadNum) {
+        this.executor = Executors.newFixedThreadPool(threadNum);
+    }
 
-    public static final String BOOT_MODE = "ODC_BOOT_MODE";
+    @Override
+    public void execute(Task task) {
+        executor.submit(task::start);
+    }
 
 }
