@@ -85,7 +85,7 @@
         <fastjson.version>1.2.83</fastjson.version>
         <ob-sql-parser.version>1.2.0</ob-sql-parser.version>
         <commons-cli.version>1.4</commons-cli.version>
-        <oceanbase-client.version>2.4.5</oceanbase-client.version>
+        <oceanbase-client.version>2.4.7.1</oceanbase-client.version>
         <root-project.basedir>${project.basedir}</root-project.basedir>
         <format.config.file>build/eclipse-java-oceanbase-style.xml</format.config.file>
         <formatter-maven-plugin.version>2.11.0</formatter-maven-plugin.version>
@@ -93,7 +93,6 @@
         <spring-jdbc.version>5.3.24</spring-jdbc.version>
         <commons-text.version>1.10.0</commons-text.version>
         <jackson.version>2.14.1</jackson.version>
-        <mysql.jdbc.version>8.0.30</mysql.jdbc.version>
         <maven-javadoc-plugin.version>2.9.1</maven-javadoc-plugin.version>
         <maven-source-plugin.version>2.2.1</maven-source-plugin.version>
         <license-maven-plugin.version>3.0</license-maven-plugin.version>
@@ -197,11 +196,6 @@
                 <version>${jackson.version}</version>
             </dependency>
             <dependency>
-                <groupId>mysql</groupId>
-                <artifactId>mysql-connector-java</artifactId>
-                <version>${mysql.jdbc.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>com.oracle.database.jdbc</groupId>
                 <artifactId>ojdbc8</artifactId>
                 <version>${oracle.jdbc.version}</version>
@@ -297,10 +291,6 @@
         <dependency>
             <groupId>com.fasterxml.jackson.dataformat</groupId>
             <artifactId>jackson-dataformat-yaml</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>mysql</groupId>
-            <artifactId>mysql-connector-java</artifactId>
         </dependency>
         <dependency>
             <groupId>com.oracle.database.jdbc</groupId>

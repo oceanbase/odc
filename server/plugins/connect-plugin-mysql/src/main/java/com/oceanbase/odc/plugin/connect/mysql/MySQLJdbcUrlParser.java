@@ -13,7 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.plugin.connect.obmysql.util;
+
+package com.oceanbase.odc.plugin.connect.mysql;
 
 import java.lang.reflect.Field;
 import java.sql.SQLException;
@@ -22,24 +23,28 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import com.oceanbase.jdbc.UrlParser;
-import com.oceanbase.jdbc.util.Options;
-import com.oceanbase.odc.plugin.connect.obmysql.model.HostAddress;
+import org.mariadb.jdbc.UrlParser;
+import org.mariadb.jdbc.util.Options;
+
+import com.oceanbase.odc.core.shared.jdbc.HostAddress;
+import com.oceanbase.odc.core.shared.jdbc.JdbcUrlParser;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * @author yaobin
- * @date 2023-04-15
- * @since 4.2.0
+ * {@link MySQLJdbcUrlParser}
+ *
+ * @author yh263208
+ * @date 2023-11-24 17:02
+ * @since ODC_release_4.2.3
  */
 @Slf4j
-public class DefaultJdbcUrlParser implements JdbcUrlParser {
+public class MySQLJdbcUrlParser implements JdbcUrlParser {
 
     private final UrlParser urlParser;
 
-    public DefaultJdbcUrlParser(@NonNull String jdbcUrl) throws SQLException {
+    public MySQLJdbcUrlParser(@NonNull String jdbcUrl) throws SQLException {
         this.urlParser = UrlParser.parse(jdbcUrl);
         if (this.urlParser == null) {
             throw new IllegalArgumentException("Invalid jdbc url: " + jdbcUrl);

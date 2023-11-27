@@ -35,12 +35,11 @@ import com.oceanbase.odc.common.util.ExceptionUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.datasource.ConnectionInitializer;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
+import com.oceanbase.odc.core.shared.jdbc.HostAddress;
+import com.oceanbase.odc.core.shared.jdbc.JdbcUrlParser;
 import com.oceanbase.odc.plugin.connect.api.ConnectionExtensionPoint;
 import com.oceanbase.odc.plugin.connect.api.TestResult;
 import com.oceanbase.odc.plugin.connect.obmysql.initializer.EnableTraceInitializer;
-import com.oceanbase.odc.plugin.connect.obmysql.model.HostAddress;
-import com.oceanbase.odc.plugin.connect.obmysql.util.DefaultJdbcUrlParser;
-import com.oceanbase.odc.plugin.connect.obmysql.util.JdbcUrlParser;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -103,6 +102,11 @@ public class OBMySQLConnectionExtension implements ConnectionExtensionPoint {
         return test(jdbcUrl, properties, queryTimeout);
     }
 
+    @Override
+    public JdbcUrlParser getJdbcUrlParser(@NonNull String jdbcUrl) throws SQLException {
+        return new OceanBaseJdbcUrlParser(jdbcUrl);
+    }
+
     protected String getJdbcUrlParameters(Map<String, String> jdbcUrlParams) {
         if (CollectionUtils.isEmpty(jdbcUrlParams)) {
             return null;
@@ -122,7 +126,7 @@ public class OBMySQLConnectionExtension implements ConnectionExtensionPoint {
     private TestResult test(String jdbcUrl, Properties properties, int queryTimeout) {
         HostAddress hostAddress;
         try {
-            hostAddress = parseJdbcUrl(jdbcUrl);
+            hostAddress = getJdbcUrlParser(jdbcUrl).getHostAddresses().get(0);
         } catch (SQLException e) {
             return TestResult.unknownError(e);
         }
@@ -162,12 +166,6 @@ public class OBMySQLConnectionExtension implements ConnectionExtensionPoint {
             }
             return TestResult.unknownError(rootCause);
         }
-    }
-
-    protected HostAddress parseJdbcUrl(String jdbcUrl) throws SQLException {
-        JdbcUrlParser urlParser = new DefaultJdbcUrlParser(jdbcUrl);
-        return new HostAddress(urlParser.getHostAddresses().get(0).getHost(),
-                urlParser.getHostAddresses().get(0).getPort());
     }
 
 }

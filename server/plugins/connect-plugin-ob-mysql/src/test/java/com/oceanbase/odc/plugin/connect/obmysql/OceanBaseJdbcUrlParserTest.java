@@ -13,7 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.connection;
+
+package com.oceanbase.odc.plugin.connect.obmysql;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -24,18 +25,17 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-import com.oceanbase.odc.service.connection.model.HostAddress;
-import com.oceanbase.odc.service.connection.util.DefaultJdbcUrlParser;
-import com.oceanbase.odc.service.connection.util.JdbcUrlParser;
+import com.oceanbase.odc.core.shared.jdbc.HostAddress;
+import com.oceanbase.odc.core.shared.jdbc.JdbcUrlParser;
 
 /**
- * {@link DefaultJdbcUrlParserTest}
+ * {@link OceanBaseJdbcUrlParserTest}
  *
  * @author yh263208
  * @date 2022-09-29 17:28
  * @since ODC_release_3.5.0
  */
-public class DefaultJdbcUrlParserTest {
+public class OceanBaseJdbcUrlParserTest {
 
     @Rule
     public ExpectedException thrown = ExpectedException.none();
@@ -46,12 +46,12 @@ public class DefaultJdbcUrlParserTest {
 
         thrown.expect(IllegalArgumentException.class);
         thrown.expectMessage("Invalid jdbc url: " + jdbcUrl);
-        new DefaultJdbcUrlParser(jdbcUrl);
+        new OceanBaseJdbcUrlParser(jdbcUrl);
     }
 
     @Test
     public void getHostEndPoints_singleHostEndPoint_returnSingleton() throws SQLException {
-        JdbcUrlParser parser = new DefaultJdbcUrlParser("jdbc:oceanbase://0.0.0.0:1234");
+        JdbcUrlParser parser = new OceanBaseJdbcUrlParser("jdbc:oceanbase://0.0.0.0:1234");
 
         List<HostAddress> expect = new ArrayList<>();
         expect.add(new HostAddress("0.0.0.0", 1234));
@@ -61,7 +61,7 @@ public class DefaultJdbcUrlParserTest {
 
     @Test
     public void getHostEndPoints_multiHostEndPoint_returnMultiEndPoints() throws SQLException {
-        JdbcUrlParser parser = new DefaultJdbcUrlParser("jdbc:oceanbase://0.0.0.0:1234,8.8.8.8:4321");
+        JdbcUrlParser parser = new OceanBaseJdbcUrlParser("jdbc:oceanbase://0.0.0.0:1234,8.8.8.8:4321");
 
         List<HostAddress> expect = new ArrayList<>();
         expect.add(new HostAddress("0.0.0.0", 1234));
@@ -72,26 +72,27 @@ public class DefaultJdbcUrlParserTest {
 
     @Test
     public void getSchema_noSchemaExists_returnNull() throws SQLException {
-        JdbcUrlParser parser = new DefaultJdbcUrlParser("jdbc:oceanbase://0.0.0.0:1234");
+        JdbcUrlParser parser = new OceanBaseJdbcUrlParser("jdbc:oceanbase://0.0.0.0:1234");
         Assert.assertNull(parser.getSchema());
     }
 
     @Test
     public void getSchema_schemaExists_returnNotNull() throws SQLException {
-        JdbcUrlParser parser = new DefaultJdbcUrlParser("jdbc:oceanbase://0.0.0.0:1234/abcd");
+        JdbcUrlParser parser = new OceanBaseJdbcUrlParser("jdbc:oceanbase://0.0.0.0:1234/abcd");
         Assert.assertEquals("abcd", parser.getSchema());
     }
 
     @Test
     public void getParameters_noParametersExists_returnNotEmpty() throws SQLException {
-        JdbcUrlParser parser = new DefaultJdbcUrlParser("jdbc:oceanbase://0.0.0.0:1234/abcd");
+        JdbcUrlParser parser = new OceanBaseJdbcUrlParser("jdbc:oceanbase://0.0.0.0:1234/abcd");
         Assert.assertFalse(parser.getParameters().isEmpty());
     }
 
     @Test
     public void getParameters_userParametersExists_returnNotEmpty() throws SQLException {
-        JdbcUrlParser parser = new DefaultJdbcUrlParser("jdbc:oceanbase://0.0.0.0:1234/abcd?user=David");
+        JdbcUrlParser parser = new OceanBaseJdbcUrlParser("jdbc:oceanbase://0.0.0.0:1234/abcd?user=David");
         Assert.assertEquals("David", parser.getParameters().get("user"));
     }
 
 }
+

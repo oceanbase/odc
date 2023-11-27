@@ -25,10 +25,10 @@ import com.alibaba.druid.pool.DruidDataSource;
 import com.oceanbase.odc.core.datasource.CloneableDataSourceFactory;
 import com.oceanbase.odc.core.datasource.ConnectionInitializer;
 import com.oceanbase.odc.core.datasource.DataSourceFactory;
+import com.oceanbase.odc.core.shared.jdbc.JdbcUrlParser;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.util.ConnectionMapper;
-import com.oceanbase.odc.service.connection.util.DefaultJdbcUrlParser;
-import com.oceanbase.odc.service.connection.util.JdbcUrlParser;
+import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 import com.oceanbase.odc.service.session.initializer.SessionCreatedInitializer;
 
 import lombok.NonNull;
@@ -99,7 +99,8 @@ public class DruidDataSourceFactory extends OBConsoleDataSourceFactory {
     }
 
     private void setConnectAndSocketTimeoutFromJdbcUrl(DruidDataSource dataSource) throws SQLException {
-        JdbcUrlParser jdbcUrlParser = new DefaultJdbcUrlParser(getJdbcUrl());
+        JdbcUrlParser jdbcUrlParser = ConnectionPluginUtil
+                .getConnectionExtension(connectionConfig.getDialectType()).getJdbcUrlParser(getJdbcUrl());
         Object socketTimeout = jdbcUrlParser.getParameters().get("socketTimeout");
         Object connectTimeout = jdbcUrlParser.getParameters().get("connectTimeout");
         if (socketTimeout != null) {
