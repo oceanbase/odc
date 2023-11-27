@@ -16,6 +16,7 @@
 
 package com.oceanbase.odc.service.task.executor;
 
+import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.constants.JobEnvConstants;
 import com.oceanbase.odc.service.task.enums.DeployModelEnum;
 import com.oceanbase.odc.service.task.executor.util.SystemEnvUtil;
@@ -35,17 +36,10 @@ public class TaskApplication {
 
     public void run(String[] args) {
         init(args);
-        Task task = TaskFactory.create(jobContextProvider.provide());
-        log.info("Task created, taskDetails: {}", task);
+        JobContext context = jobContextProvider.provide();
+        Task task = TaskFactory.create(context);
+        log.info("Task created, id: {}, context: {}", context.getTaskId(), task.context());
         taskExecutor.execute(task);
-        while (!task.isStopped() && !task.isFinished()) {
-            try {
-                Thread.sleep(1000);
-                log.info("Waiting for task finished ...");
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
     }
 
     private void init(String[] args) {
