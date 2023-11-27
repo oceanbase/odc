@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.plugin.connect.obmysql.model;
+package com.oceanbase.odc.core.shared.jdbc;
 
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
@@ -41,6 +41,11 @@ public class HostAddress {
     private Integer port;
 
     public HostAddress(@NonNull com.oceanbase.jdbc.HostAddress hostAddress) {
+        this.host = hostAddress.host;
+        this.port = hostAddress.port;
+    }
+
+    public HostAddress(@NonNull org.mariadb.jdbc.HostAddress hostAddress) {
         this.host = hostAddress.host;
         this.port = hostAddress.port;
     }

@@ -15,12 +15,16 @@
  */
 package com.oceanbase.odc.plugin.connect.api;
 
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 
 import org.pf4j.ExtensionPoint;
 
 import com.oceanbase.odc.core.datasource.ConnectionInitializer;
+import com.oceanbase.odc.core.shared.jdbc.JdbcUrlParser;
+
+import lombok.NonNull;
 
 /**
  * @author yaobin
@@ -43,4 +47,7 @@ public interface ConnectionExtensionPoint extends ExtensionPoint {
     List<ConnectionInitializer> getConnectionInitializers();
 
     TestResult test(String jdbcUrl, String username, String password, int queryTimeout);
+
+    JdbcUrlParser getJdbcUrlParser(@NonNull String jdbcUrl) throws SQLException;
+
 }
