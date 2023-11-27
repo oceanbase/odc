@@ -25,6 +25,7 @@ import com.oceanbase.odc.core.sql.execute.mapper.GeneralLobMapper;
 import com.oceanbase.odc.core.sql.execute.mapper.JdbcColumnMapper;
 import com.oceanbase.odc.core.sql.execute.mapper.MySQLBitMapper;
 import com.oceanbase.odc.core.sql.execute.mapper.MySQLDatetimeMapper;
+import com.oceanbase.odc.core.sql.execute.mapper.MySQLGeometryMapper;
 import com.oceanbase.odc.core.sql.execute.mapper.MySQLTimestampMapper;
 import com.oceanbase.odc.core.sql.execute.mapper.MySQLYearMapper;
 import com.oceanbase.odc.core.sql.execute.mapper.OracleGeneralDateMapper;
@@ -46,6 +47,7 @@ public class RollBackPlanJdbcRowMapper extends BaseDialectBasedRowMapper {
             mapperList.add(new MySQLDatetimeMapper());
             mapperList.add(new MySQLYearMapper());
             mapperList.add(new MySQLTimestampMapper());
+            mapperList.add(new MySQLGeometryMapper());
         } else if (dialectType == DialectType.OB_ORACLE) {
             mapperList.add(new OracleGeneralDateMapper());
             mapperList.add(new OracleGeneralTimestampTZMapper());

@@ -13,59 +13,50 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.tools.sqlparser.statement.insert;
 
-import java.util.List;
+package com.oceanbase.tools.sqlparser.statement.insert.mysql;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 
 import com.oceanbase.tools.sqlparser.statement.BaseStatement;
+import com.oceanbase.tools.sqlparser.statement.Expression;
+import com.oceanbase.tools.sqlparser.statement.expression.ColumnReference;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.Setter;
 
 /**
- * {@link MultiTableInsert}
+ * {@link SetColumn}
  *
  * @author yh263208
- * @date 2022-12-20 19:18
- * @since ODC_release_4.1.0
- * @see Insert
+ * @date 2023-11-08 20:28
+ * @since ODC_release_4.2.3
  */
 @Getter
+@Setter
 @EqualsAndHashCode(callSuper = false)
-public class MultiTableInsert extends BaseStatement implements Insert {
+public class SetColumn extends BaseStatement {
 
-    private final List<InsertBody> insertBodies;
+    private final Expression value;
+    private final ColumnReference column;
 
-    public MultiTableInsert(@NonNull ParserRuleContext context, @NonNull List<InsertBody> insertBodies) {
+    public SetColumn(@NonNull ParserRuleContext context,
+            @NonNull ColumnReference column, @NonNull Expression value) {
         super(context);
-        this.insertBodies = insertBodies;
+        this.value = value;
+        this.column = column;
     }
 
-    public MultiTableInsert(@NonNull List<InsertBody> insertBodies) {
-        this.insertBodies = insertBodies;
-    }
-
-    @Override
-    public int getType() {
-        return Insert.MULTI_INSERT;
-    }
-
-    @Override
-    public List<InsertBody> getInsertBodies() {
-        return this.insertBodies;
-    }
-
-    @Override
-    public boolean replace() {
-        return false;
+    public SetColumn(@NonNull ColumnReference column, @NonNull Expression value) {
+        this.value = value;
+        this.column = column;
     }
 
     @Override
     public String toString() {
-        return this.getText();
+        return this.column + "=" + this.value;
     }
 
 }

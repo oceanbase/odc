@@ -29,8 +29,8 @@
             <artifactId>connect-plugin-ob-mysql</artifactId>
         </dependency>
         <dependency>
-            <groupId>mysql</groupId>
-            <artifactId>mysql-connector-java</artifactId>
+            <groupId>org.mariadb.jdbc</groupId>
+            <artifactId>mariadb-java-client</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -43,7 +43,6 @@
         </dependency>
     </dependencies>
 
-
     <build>
         <plugins>
             <plugin>
@@ -52,5 +51,4 @@
             </plugin>
         </plugins>
     </build>
-
 </project>

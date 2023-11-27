@@ -137,9 +137,9 @@ ODC Desktop version employs the h2database embedded database as MetaDB, eliminat
 
 Here are the download links for ODC Desktop version installers:
 
-- Windows 64-bit version: [odc-win64-with-jre.exe](https://obodc-front.oss-cn-beijing.aliyuncs.com/ODC%204.2.0/OceanBase%20Developer%20Center%20Setup%204.2.0%20win64jre.exe)
-- MacOS version: [odc-macos-with-jre.dmg](https://obodc-front.oss-cn-beijing.aliyuncs.com/ODC%204.2.0/OceanBase%20Developer%20Center-4.2.0jre.dmg)
-- Fedora/Ubuntu version: [odc-ubuntu.deb](https://obodc-front.oss-cn-beijing.aliyuncs.com/ODC%204.2.0/OceanBase%20Developer%20Center%20Setup%204.2.0%20amd64.deb)
+- Windows 64-bit version: [odc-win64-with-jre.exe](https://obodc-front.oss-cn-beijing.aliyuncs.com/ODC%204.2.2/OceanBase%20Developer%20Center%20Setup%204.2.2%20win64jre.exe)
+- MacOS version: [odc-macos-with-jre.dmg](https://obodc-front.oss-cn-beijing.aliyuncs.com/ODC%204.2.2/OceanBase%20Developer%20Center-4.2.2jre.dmg)
+- Fedora/Ubuntu version: [odc-ubuntu.deb](https://obodc-front.oss-cn-beijing.aliyuncs.com/ODC%204.2.2/OceanBase%20Developer%20Center%20Setup%204.2.2%20amd64.deb)
 
 #### What to do next
 

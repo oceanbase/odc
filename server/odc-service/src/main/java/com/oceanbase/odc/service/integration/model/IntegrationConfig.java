@@ -46,7 +46,7 @@ public class IntegrationConfig implements SecurityResource, OrganizationIsolated
     @NotNull
     private IntegrationType type;
 
-    @Size(min = 1, max = 64, message = "Integration name is out of range [1,64]")
+    @Size(min = 1, max = 128, message = "Integration name is out of range [1,128]")
     @Name(message = "Integration name cannot start or end with whitespaces")
     private String name;
 

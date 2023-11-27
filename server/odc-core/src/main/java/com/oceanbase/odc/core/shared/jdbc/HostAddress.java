@@ -13,45 +13,40 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.tools.sqlparser.statement.insert;
+package com.oceanbase.odc.core.shared.jdbc;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.antlr.v4.runtime.ParserRuleContext;
-
-import com.oceanbase.tools.sqlparser.statement.BaseStatement;
-import com.oceanbase.tools.sqlparser.statement.expression.ColumnReference;
-
+import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.Setter;
+import lombok.ToString;
 
 /**
- * {@link InsertBody}
+ * {@link HostAddress}
  *
  * @author yh263208
- * @date 2022-12-20 19:07
- * @since ODC_release_4.1.0
- * @see BaseStatement
+ * @date 2022-09-29 16:49
+ * @since ODC_release_3.5.0
  */
 @Getter
 @Setter
+@ToString
+@EqualsAndHashCode
 @NoArgsConstructor
-@EqualsAndHashCode(callSuper = false)
-public class InsertBody extends BaseStatement {
+@AllArgsConstructor
+public class HostAddress {
+    private String host;
+    private Integer port;
 
-    private List<ColumnReference> columns = new ArrayList<>();
-
-    public InsertBody(@NonNull ParserRuleContext context) {
-        super(context);
+    public HostAddress(@NonNull com.oceanbase.jdbc.HostAddress hostAddress) {
+        this.host = hostAddress.host;
+        this.port = hostAddress.port;
     }
 
-    @Override
-    public String toString() {
-        return this.getText();
+    public HostAddress(@NonNull org.mariadb.jdbc.HostAddress hostAddress) {
+        this.host = hostAddress.host;
+        this.port = hostAddress.port;
     }
-
 }
