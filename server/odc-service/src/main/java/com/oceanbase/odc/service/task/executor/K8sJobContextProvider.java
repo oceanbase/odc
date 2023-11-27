@@ -17,6 +17,7 @@
 package com.oceanbase.odc.service.task.executor;
 
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.service.task.caller.DefaultJobContext;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.constants.JobEnvConstants;
 import com.oceanbase.odc.service.task.executor.util.SystemEnvUtil;
@@ -29,7 +30,7 @@ public class K8sJobContextProvider implements JobContextProvider {
 
     @Override
     public JobContext provide() {
-        return JsonUtils.fromJson(SystemEnvUtil.nullSafeGet(JobEnvConstants.TASK_PARAMETER), JobContext.class);
+        return JsonUtils.fromJson(SystemEnvUtil.nullSafeGet(JobEnvConstants.TASK_PARAMETER), DefaultJobContext.class);
     }
 
 }

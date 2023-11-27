@@ -45,6 +45,8 @@ public abstract class BaseTask implements Task {
 
     protected boolean finished = false;
 
+    protected double progress = 0;
+
     public BaseTask(JobContext context) {
         this.context = context;
     }
@@ -58,13 +60,22 @@ public abstract class BaseTask implements Task {
         } catch (Exception e) {
             log.error("Task run failed, id: {}", context.getJobIdentity().getId(), e);
             onFailure(e);
+        } finally {
+            uploadResults();
         }
     }
 
     @Override
     public void stop() {
         log.info("Stop task, id: {}", context.getJobIdentity().getId());
-        doStop();
+        try {
+            doStop();
+        } catch (Exception e) {
+            log.error("Task stop failed, id: {}", context.getJobIdentity().getId(), e);
+            onFailure(e);
+        } finally {
+            uploadResults();
+        }
     }
 
     @Override
@@ -96,11 +107,9 @@ public abstract class BaseTask implements Task {
 
     protected abstract void doStop();
 
-    protected abstract void onFinished();
-
     protected abstract void onFailure(Exception e);
 
-    protected abstract void onUpdateProgress();
+    protected abstract void onUpdate();
 
     private void initTaskMonitor() {
         ThreadFactory threadFactory = new ThreadFactoryBuilder()
@@ -108,23 +117,25 @@ public abstract class BaseTask implements Task {
                 .build();
         ScheduledExecutorService scheduledExecutor = Executors.newScheduledThreadPool(1, threadFactory);
         scheduledExecutor.scheduleAtFixedRate(() -> {
-            if (isStopped()) {
-                scheduledExecutor.shutdown();
-            }
             try {
-                onUpdateProgress();
+                updateStatusAndProgress();
             } catch (Exception e) {
                 log.warn("Update task progress failed, id: {}", context.getJobIdentity().getId(), e);
             }
-            try {
-                if (finished) {
-                    onFinished();
-                }
-            } catch (Exception e) {
-                log.warn("Task finished callback failed, id: {}", context.getJobIdentity().getId(), e);
+            if (isStopped() || isFinished()) {
+                scheduledExecutor.shutdown();
             }
         }, 1, 5, TimeUnit.SECONDS);
         log.info("Task monitor init success");
+    }
+
+    private void updateStatusAndProgress() {
+        onUpdate();
+        log.info("Task status: {}, progress: {}%", this.status, String.format("%.2f", this.progress * 100));
+    }
+
+    private void uploadResults() {
+        log.info("Task result: {}", this.result);
     }
 
 }

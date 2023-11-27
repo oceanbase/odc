@@ -20,7 +20,6 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
-import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.service.common.model.HostProperties;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
@@ -40,15 +39,6 @@ public class DefaultJobContext implements JobContext, Serializable {
      * job identity
      */
     private JobIdentity jobIdentity;
-    /**
-     * task id
-     */
-    private Long taskId;
-
-    /**
-     * task type
-     */
-    private TaskType taskType;
     /**
      * task parameters
      */
