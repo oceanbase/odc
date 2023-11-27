@@ -56,6 +56,7 @@ public class DataConverters {
         converterList.add(new MySQLEnumConverter());
         converterList.add(new MySQLSetConverter());
         converterList.add(new MySQLJsonConverter());
+        converterList.add(new MySQLGeometryConverter());
     }
 
     private void initForOracleMode(String serverTimeZoneId) {
