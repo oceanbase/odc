@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.resultset;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
+
 import static org.awaitility.Awaitility.await;
 
 import java.io.File;
