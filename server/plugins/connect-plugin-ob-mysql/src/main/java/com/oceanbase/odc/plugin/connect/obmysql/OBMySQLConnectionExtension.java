@@ -123,7 +123,7 @@ public class OBMySQLConnectionExtension implements ConnectionExtensionPoint {
         return jdbcUrlParams;
     }
 
-    private TestResult test(String jdbcUrl, Properties properties, int queryTimeout) {
+    protected TestResult test(String jdbcUrl, Properties properties, int queryTimeout) {
         HostAddress hostAddress;
         try {
             hostAddress = getJdbcUrlParser(jdbcUrl).getHostAddresses().get(0);

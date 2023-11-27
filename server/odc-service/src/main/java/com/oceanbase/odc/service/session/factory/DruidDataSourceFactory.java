@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.session.factory;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Map;
+import java.util.Properties;
 
 import javax.sql.DataSource;
 
@@ -85,6 +86,13 @@ public class DruidDataSourceFactory extends OBConsoleDataSourceFactory {
          */
         dataSource.setSocketTimeout(DEFAULT_TIMEOUT_MILLIS);
         dataSource.setConnectTimeout(DEFAULT_TIMEOUT_MILLIS);
+        // fix arbitrary file reading vulnerability
+        Properties properties = new Properties();
+        properties.setProperty("allowLoadLocalInfile", "false");
+        properties.setProperty("allowUrlInLocalInfile", "false");
+        properties.setProperty("allowLoadLocalInfileInPath", "");
+        properties.setProperty("autoDeserialize", "false");
+        dataSource.setConnectProperties(properties);
         try {
             setConnectAndSocketTimeoutFromJdbcUrl(dataSource);
         } catch (Exception e) {

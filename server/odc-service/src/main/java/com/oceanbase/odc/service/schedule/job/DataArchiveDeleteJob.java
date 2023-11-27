@@ -25,6 +25,7 @@ import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.service.dlm.model.DlmTask;
+import com.oceanbase.odc.service.dlm.utils.DlmJobIdUtil;
 import com.oceanbase.odc.service.schedule.model.DataArchiveClearParameters;
 import com.oceanbase.tools.migrator.common.enums.JobType;
 
@@ -68,6 +69,9 @@ public class DataArchiveDeleteJob extends AbstractDlmJob {
         List<DlmTask> taskUnits = JsonUtils.fromJson(dataArchiveTask.getResultJson(),
                 new TypeReference<List<DlmTask>>() {});
         taskUnits.forEach(taskUnit -> {
+            taskUnit.setId(DlmJobIdUtil.generateHistoryJobId(taskEntity.getJobName(), taskEntity.getJobGroup(),
+                    taskEntity.getId(),
+                    taskUnits.size()));
             taskUnit.setJobType(JobType.DELETE);
             taskUnit.setStatus(TaskStatus.PREPARING);
         });

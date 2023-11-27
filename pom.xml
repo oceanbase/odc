@@ -117,7 +117,7 @@
         <mina.version>2.1.6</mina.version>
 
         <!-- data-lifecycle-manager version -->
-        <data-lifecycle-manager.version>1.0.4</data-lifecycle-manager.version>
+        <data-lifecycle-manager.version>1.0.6</data-lifecycle-manager.version>
 
         <!-- plugin version -->
         <formatter-maven-plugin.version>2.11.0</formatter-maven-plugin.version>
@@ -1410,7 +1410,7 @@ limitations under the License.
                 </property>
             </activation>
             <properties>
-                <oceanbase-client.version>2.4.5</oceanbase-client.version>
+                <oceanbase-client.version>2.4.7.1</oceanbase-client.version>
             </properties>
         </profile>
         <profile>

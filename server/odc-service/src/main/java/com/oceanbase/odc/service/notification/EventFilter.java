@@ -17,8 +17,10 @@ package com.oceanbase.odc.service.notification;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
-import org.apache.commons.collections.ListUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,9 +28,10 @@ import org.springframework.util.CollectionUtils;
 
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.metadb.notification.EventRepository;
+import com.oceanbase.odc.metadb.notification.NotificationPolicyEntity;
 import com.oceanbase.odc.metadb.notification.NotificationPolicyRepository;
 import com.oceanbase.odc.service.notification.helper.EventMapper;
-import com.oceanbase.odc.service.notification.helper.EventUtils;
+import com.oceanbase.odc.service.notification.helper.NotificationPolicyFilter;
 import com.oceanbase.odc.service.notification.model.Event;
 import com.oceanbase.odc.service.notification.model.EventStatus;
 
@@ -53,20 +56,28 @@ public class EventFilter {
     public List<Event> filter(List<Event> events) {
         List<Event> filtered = new ArrayList<>();
         if (CollectionUtils.isEmpty(events)) {
-            return ListUtils.EMPTY_LIST;
+            return filtered;
         }
+        Set<Long> organizationIds = events.stream().map(Event::getOrganizationId).collect(Collectors.toSet());
+        Map<Long, List<NotificationPolicyEntity>> policies = notificationPolicyRepository
+                .findByOrganizationIds(organizationIds).stream()
+                .collect(Collectors.groupingBy(NotificationPolicyEntity::getOrganizationId));
+        List<Long> thrown = new ArrayList<>();
         for (Event event : events) {
-            String matchExpression = EventUtils.generateMatchExpression(event.getLabels());
-            EventStatus status;
-            if (notificationPolicyRepository.existsByOrganizationIdAndMatchExpression(event.getOrganizationId(),
-                    matchExpression)) {
-                status = EventStatus.CONVERTED;
-                filtered.add(event);
+            List<NotificationPolicyEntity> matched = NotificationPolicyFilter.filter(event.getLabels(),
+                    policies.get(event.getOrganizationId()));
+            if (matched.isEmpty()) {
+                thrown.add(event.getId());
             } else {
-                status = EventStatus.THROWN;
+                filtered.add(event);
             }
-            event.setStatus(status);
-            eventRepository.updateStatusById(event.getId(), status);
+        }
+        if (!CollectionUtils.isEmpty(thrown)) {
+            eventRepository.updateStatusByIds(EventStatus.THROWN, thrown);
+        }
+        if (!CollectionUtils.isEmpty(filtered)) {
+            eventRepository.updateStatusByIds(EventStatus.CONVERTED, filtered.stream().map(Event::getId).collect(
+                    Collectors.toSet()));
         }
         return filtered;
     }
