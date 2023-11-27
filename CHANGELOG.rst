@@ -3,6 +3,44 @@
 
 New
 ~~~
+- Feat(notification): support send notification when schedule job failed
+  (#711) [LuckyLeo]
+- Feat(jdbc): upgrade jdbc to 2.4.7.1 (#761) [LuckyLeo]
+- Feat(ob-sql-parser): supports insert statement and add timeout
+  settings (#754) [IL MARE]
+
+Fix
+~~~
+- Fix(migrate): failed to start up when there is no users or
+  organizations (#860) [IL MARE]
+- Fix(dlm):update limiter failed after data-delete job was created.
+  (#840) [guowl3]
+- Fix(data-security): regex column recognization rule may suffer ReDos 2
+  (#848) [XiaoYang]
+- Fix(data-security): regex column recognization rule may suffer ReDos
+  (#843) [XiaoYang]
+- Fix(dlm): data delete failed after data archived. (#735) [guowl3]
+- Fix(name): change resource name length limit from 64 to 128 (#839)
+  [XiaoYang]
+- Fix(security): add white list for security scanning and modify mysql
+  pl parser's g4 (#837) [IL MARE]
+- Fix(sql-execute): fix number data display error format (#764) [IL
+  MARE]
+- Fix(pldebug): pldebug monitor does not exit block process exiting
+  (#765) [yizhou]
+- Fix(pl): fix column name is wrong when viewing cursor's content (#757)
+  [IL MARE]
+- Fix(sql-check): avoid reporting syntax error when sql is executed
+  successfully (#748) [IL MARE]
+- Fix(web): response header content-type would be application/xml while
+  using RestTemplate (#722) [pynzzZ]
+
+
+v4.2.2 (2023-11-07)
+-------------------
+
+New
+~~~
 - Feat(dlm):support breakpoint recovery (#635) [guowl3]
 - Feat(dlm):support configuring limiter (#626) [guowl3]
 - Feat(data-security): add data type unit into response (#629)
@@ -36,6 +74,18 @@ Changes
 
 Fix
 ~~~
+- Fix(dlm):wrong order status when task is rollback (#707) [guowl3]
+- Fix(sql-execute): no trace id when sql executing failed (#700)
+  [LuckyLeo]
+- Fix(SSO):saved SSO intergration test login failed (#698) [Ang]
+- Fix(SSO):saved SSO intergration test login failed (#698) [Ang]
+- Fix(SSO):saved SSO intergration test login failed (#698) [Ang]
+- Fix(sql-parser): failed to report syntax error if the input's any
+  prefix is grammatical (#699) [IL MARE]
+- Fix(datasource): make 'socketTimeout' and 'connectTimeout' settings
+  work for backend datasource (#691) [IL MARE]
+- Fix(result-set-export): get wrong filename for result-set export task
+  on cloud (#685) [LuckyLeo]
 - Fix(dlm): submit task got condition not supported error while
   condition contains subquery (#668) [guowl3]
 - Fix(database-change): failed to view a scheduled database change task

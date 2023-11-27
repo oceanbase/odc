@@ -15,7 +15,6 @@
  */
 package com.oceanbase.odc.plugin.connect.mysql;
 
-import java.net.URI;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -30,11 +29,12 @@ import org.pf4j.Extension;
 import com.oceanbase.odc.common.util.VersionUtils;
 import com.oceanbase.odc.core.datasource.ConnectionInitializer;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
+import com.oceanbase.odc.core.shared.jdbc.JdbcUrlParser;
 import com.oceanbase.odc.plugin.connect.api.TestResult;
 import com.oceanbase.odc.plugin.connect.mysql.initializer.EnableProfileInitializer;
 import com.oceanbase.odc.plugin.connect.obmysql.OBMySQLConnectionExtension;
-import com.oceanbase.odc.plugin.connect.obmysql.model.HostAddress;
 
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -45,6 +45,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Extension
 public class MySQLConnectionExtension extends OBMySQLConnectionExtension {
+
     private final String MIN_VERSION_SUPPORTED = "5.6.0";
 
     @Override
@@ -63,8 +64,18 @@ public class MySQLConnectionExtension extends OBMySQLConnectionExtension {
     }
 
     @Override
+    public JdbcUrlParser getJdbcUrlParser(@NonNull String jdbcUrl) throws SQLException {
+        return new MySQLJdbcUrlParser(jdbcUrl);
+    }
+
+    @Override
     public TestResult test(String jdbcUrl, Properties properties, int queryTimeout) {
-        TestResult testResult = super.test(jdbcUrl, properties, queryTimeout);
+        // fix arbitrary file reading vulnerability
+        properties.setProperty("allowLoadLocalInfile", "false");
+        properties.setProperty("allowUrlInLocalInfile", "false");
+        properties.setProperty("allowLoadLocalInfileInPath", "");
+        properties.setProperty("autoDeserialize", "false");
+        TestResult testResult = super.internalTest(jdbcUrl, properties, queryTimeout);
         if (testResult.getErrorCode() != null) {
             return testResult;
         }
@@ -78,12 +89,6 @@ public class MySQLConnectionExtension extends OBMySQLConnectionExtension {
             return TestResult.unknownError(e);
         }
         return testResult;
-    }
-
-    @Override
-    protected HostAddress parseJdbcUrl(String jdbcUrl) throws SQLException {
-        URI url = URI.create(jdbcUrl.substring(5));
-        return new HostAddress(url.getHost(), url.getPort());
     }
 
     @Override

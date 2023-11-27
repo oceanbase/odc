@@ -191,6 +191,8 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
         // fix arbitrary file reading vulnerability
         jdbcUrlParams.put("allowLoadLocalInfile", "false");
         jdbcUrlParams.put("allowUrlInLocalInfile", "false");
+        jdbcUrlParams.put("allowLoadLocalInfileInPath", "");
+        jdbcUrlParams.put("autoDeserialize", "false");
         return jdbcUrlParams;
     }
 
@@ -203,22 +205,28 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
         dataSource.setUsername(username);
         dataSource.setPassword(password);
 
+        Properties properties = new Properties();
         if (Objects.nonNull(this.userRole)) {
-            Properties properties = new Properties();
             properties.put(ConnectionConstants.USER_ROLE, this.userRole.name());
             dataSource.setConnectionProperties(properties);
         }
         // Set datasource driver class
         dataSource.setDriverClassName(connectionExtensionPoint.getDriverClassName());
+        // fix arbitrary file reading vulnerability
+        properties.setProperty("allowLoadLocalInfile", "false");
+        properties.setProperty("allowUrlInLocalInfile", "false");
+        properties.setProperty("allowLoadLocalInfileInPath", "");
+        properties.setProperty("autoDeserialize", "false");
+        dataSource.setConnectionProperties(properties);
         if (autoCommit != null) {
             dataSource.setAutoCommit(autoCommit);
         }
         if (this.initConnection) {
-            dataSource.addInitializer(new SessionCreatedInitializer(connectionConfig));
             List<ConnectionInitializer> initializers = connectionExtensionPoint.getConnectionInitializers();
             if (!CollectionUtils.isEmpty(initializers)) {
                 initializers.forEach(dataSource::addInitializer);
             }
+            dataSource.addInitializer(new SessionCreatedInitializer(connectionConfig));
         }
         return dataSource;
     }

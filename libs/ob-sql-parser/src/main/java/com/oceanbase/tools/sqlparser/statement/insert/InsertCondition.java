@@ -13,63 +13,51 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.oceanbase.tools.sqlparser.statement.insert;
 
-import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 
 import com.oceanbase.tools.sqlparser.statement.BaseStatement;
+import com.oceanbase.tools.sqlparser.statement.Expression;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NonNull;
-import lombok.Setter;
 
 /**
- * {@link SingleTableInsert}
+ * {@link InsertCondition}
  *
  * @author yh263208
- * @date 2022-12-20 19:15
- * @since ODC_release_4.1.0
- * @see Insert
+ * @date 2023-11-08 18:01
+ * @since ODC_release_4.2.3
  */
 @Getter
-@Setter
 @EqualsAndHashCode(callSuper = false)
-public class SingleTableInsert extends BaseStatement implements Insert {
+public class InsertCondition extends BaseStatement {
 
-    private boolean replace;
-    private final InsertBody insertBody;
+    private final Expression when;
+    private final List<InsertTable> then;
 
-    public SingleTableInsert(@NonNull ParserRuleContext context, @NonNull InsertBody insertBody) {
+    public InsertCondition(@NonNull ParserRuleContext context,
+            @NonNull Expression when, @NonNull List<InsertTable> then) {
         super(context);
-        this.insertBody = insertBody;
+        this.when = when;
+        this.then = then;
     }
 
-    public SingleTableInsert(@NonNull InsertBody insertBody) {
-        this.insertBody = insertBody;
-    }
-
-    @Override
-    public int getType() {
-        return Insert.SINGLE_INSERT;
-    }
-
-    @Override
-    public List<InsertBody> getInsertBodies() {
-        return Collections.singletonList(insertBody);
-    }
-
-    @Override
-    public boolean replace() {
-        return this.replace;
+    public InsertCondition(@NonNull Expression when, @NonNull List<InsertTable> then) {
+        this.when = when;
+        this.then = then;
     }
 
     @Override
     public String toString() {
-        return this.getText();
+        return "WHEH " + this.when + " THEN" + "\n\t" + this.then.stream()
+                .map(InsertTable::toString).collect(Collectors.joining("\n\t"));
     }
 
 }

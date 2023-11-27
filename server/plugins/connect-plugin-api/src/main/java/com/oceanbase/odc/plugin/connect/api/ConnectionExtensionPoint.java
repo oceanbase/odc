@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.plugin.connect.api;
 
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -22,7 +23,10 @@ import java.util.Properties;
 import org.pf4j.ExtensionPoint;
 
 import com.oceanbase.odc.core.datasource.ConnectionInitializer;
+import com.oceanbase.odc.core.shared.jdbc.JdbcUrlParser;
 import com.oceanbase.odc.plugin.connect.model.ConnectionConstants;
+
+import lombok.NonNull;
 
 /**
  * @author yaobin
@@ -50,6 +54,8 @@ public interface ConnectionExtensionPoint extends ExtensionPoint {
      * @return ConnectionInitializer list or null
      */
     List<ConnectionInitializer> getConnectionInitializers();
+
+    JdbcUrlParser getJdbcUrlParser(@NonNull String jdbcUrl) throws SQLException;
 
     /**
      * @param properties Properties required by test connection, such as USER, PASSWORD, see

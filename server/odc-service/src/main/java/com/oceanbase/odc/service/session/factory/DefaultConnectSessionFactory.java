@@ -33,13 +33,12 @@ import com.oceanbase.odc.core.session.ConnectionSessionFactory;
 import com.oceanbase.odc.core.session.ConnectionSessionIdGenerator;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.session.DefaultConnectionSession;
+import com.oceanbase.odc.core.shared.jdbc.JdbcUrlParser;
 import com.oceanbase.odc.core.sql.execute.task.SqlExecuteTaskManager;
 import com.oceanbase.odc.core.task.TaskManagerFactory;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.model.CreateSessionReq;
 import com.oceanbase.odc.service.connection.util.ConnectionInfoUtil;
-import com.oceanbase.odc.service.connection.util.DefaultJdbcUrlParser;
-import com.oceanbase.odc.service.connection.util.JdbcUrlParser;
 import com.oceanbase.odc.service.datasecurity.accessor.DatasourceColumnAccessor;
 import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 import com.oceanbase.odc.service.session.initializer.SwitchSchemaInitializer;
@@ -97,7 +96,9 @@ public class DefaultConnectSessionFactory implements ConnectionSessionFactory {
     private void registerConsoleDataSource(ConnectionSession session) {
         OBConsoleDataSourceFactory dataSourceFactory = new OBConsoleDataSourceFactory(connectionConfig, autoCommit);
         try {
-            JdbcUrlParser urlParser = new DefaultJdbcUrlParser(dataSourceFactory.getJdbcUrl());
+            JdbcUrlParser urlParser = ConnectionPluginUtil
+                    .getConnectionExtension(connectionConfig.getDialectType())
+                    .getJdbcUrlParser(dataSourceFactory.getJdbcUrl());
             String connectSchema = urlParser.getSchema();
             if (StringUtils.isNotBlank(connectSchema)) {
                 connectSchema = ConnectionSessionUtil.getUserOrSchemaString(connectSchema, session.getDialectType());
