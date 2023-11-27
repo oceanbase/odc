@@ -33,12 +33,13 @@ import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
+import com.oceanbase.odc.core.shared.jdbc.JdbcUrlParser;
+import com.oceanbase.odc.plugin.connect.api.ConnectionExtensionPoint;
 import com.oceanbase.odc.service.connection.util.ConnectTypeUtil;
-import com.oceanbase.odc.service.connection.util.DefaultJdbcUrlParser;
-import com.oceanbase.odc.service.connection.util.JdbcUrlParser;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.lab.LabDataSourceFactory.DataSourceContext;
 import com.oceanbase.odc.service.lab.model.LabProperties;
+import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -75,8 +76,8 @@ public class OBMySQLResourceService {
 
     public DbResourceInfo createObResource(String dbUsername, String password, String dbName, Long userId)
             throws SQLException {
-        DataSourceContext dataSourceContext =
-                dataSourceFactory.getDataSourceContext(userId);
+        DataSourceContext dataSourceContext = dataSourceFactory.getDataSourceContext(userId);
+        ConnectionExtensionPoint ep = ConnectionPluginUtil.getConnectionExtension(DialectType.OB_MYSQL);
         try (Connection connection = dataSourceContext.getDataSource().getConnection()) {
             connection.setAutoCommit(false);
             try (Statement statement = connection.createStatement()) {
@@ -91,8 +92,8 @@ public class OBMySQLResourceService {
                 statement.execute(script);
 
                 connection.commit();
-                resourceInfo.setConnectType(getConnectType(
-                        new DefaultJdbcUrlParser(dataSourceContext.getConnectionProperty().getJdbcUrl()), statement));
+                resourceInfo.setConnectType(getConnectType(ep.getJdbcUrlParser(
+                        dataSourceContext.getConnectionProperty().getJdbcUrl()), statement));
                 log.info("Created Ob resource, username={}, dbName={}", dbUsername, dbName);
                 return resourceInfo;
             } catch (SQLException ex) {
