@@ -51,19 +51,19 @@ public abstract class BaseTask implements Task {
 
     @Override
     public void start() {
-        log.info("Start task, id: {}", context.getTaskId());
+        log.info("Start task, id: {}", context.getJobIdentity().getId());
         try {
             initTaskMonitor();
             doStart();
         } catch (Exception e) {
-            log.error("Task run failed, id: {}", context.getTaskId(), e);
+            log.error("Task run failed, id: {}", context.getJobIdentity().getId(), e);
             onFailure(e);
         }
     }
 
     @Override
     public void stop() {
-        log.info("Stop task, id: {}", context.getTaskId());
+        log.info("Stop task, id: {}", context.getJobIdentity().getId());
         doStop();
     }
 
@@ -104,7 +104,7 @@ public abstract class BaseTask implements Task {
 
     private void initTaskMonitor() {
         ThreadFactory threadFactory = new ThreadFactoryBuilder()
-                .setNameFormat("Task-" + context.getTaskId() + "-Monitor-%d")
+                .setNameFormat("Task-" + context.getJobIdentity().getId() + "-Monitor-%d")
                 .build();
         ScheduledExecutorService scheduledExecutor = Executors.newScheduledThreadPool(1, threadFactory);
         scheduledExecutor.scheduleAtFixedRate(() -> {
@@ -114,14 +114,14 @@ public abstract class BaseTask implements Task {
             try {
                 onUpdateProgress();
             } catch (Exception e) {
-                log.warn("Update task progress failed, id: {}", context.getTaskId(), e);
+                log.warn("Update task progress failed, id: {}", context.getJobIdentity().getId(), e);
             }
             try {
                 if (finished) {
                     onFinished();
                 }
             } catch (Exception e) {
-                log.warn("Task finished callback failed, id: {}", context.getTaskId(), e);
+                log.warn("Task finished callback failed, id: {}", context.getJobIdentity().getId(), e);
             }
         }, 1, 5, TimeUnit.SECONDS);
         log.info("Task monitor init success");

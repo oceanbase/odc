@@ -14,18 +14,28 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.k8s;
+package com.oceanbase.odc.service.task;
+
+import java.util.Collections;
 
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import com.oceanbase.odc.TestConnectionUtil;
+import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.core.shared.constant.ConnectType;
+import com.oceanbase.odc.core.shared.constant.TaskType;
+import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.task.caller.DefaultJobContext;
 import com.oceanbase.odc.service.task.caller.JobCaller;
 import com.oceanbase.odc.service.task.caller.JobException;
 import com.oceanbase.odc.service.task.caller.K8sJobCaller;
 import com.oceanbase.odc.service.task.caller.PodConfig;
+import com.oceanbase.odc.service.task.executor.sampletask.SampleTaskParameter;
 import com.oceanbase.odc.service.task.listener.JobCallerListener;
+import com.oceanbase.odc.service.task.schedule.JobIdentity;
+import com.oceanbase.odc.service.task.schedule.ScheduleSourceType;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -46,53 +56,62 @@ public class JobCallerTest extends BaseJobTest {
         podConfig.setCommand(getCmd());
         podConfig.setNamespace("default");
 
+        JobIdentity jobIdentity = JobIdentity.of(exceptedTaskId, ScheduleSourceType.TASK_TASK, TaskType.ASYNC.name());
         JobCaller jobCaller = new K8sJobCaller(getK8sJobClient(), podConfig);
         jobCaller.getEventPublisher().addEventListener(new JobCallerListener() {
             @Override
-            protected void startSucceed(Long taskId) {
-                Assert.assertEquals(exceptedTaskId, taskId);
+            protected void startSucceed(JobIdentity ji) {
+                Assert.assertEquals(jobIdentity, ji);
             }
 
             @Override
-            protected void stopSucceed(Long taskId) {
-                Assert.assertEquals(exceptedTaskId, taskId);
+            protected void stopSucceed(JobIdentity ji) {
+                Assert.assertEquals(jobIdentity, ji);
             }
         });
 
         DefaultJobContext context = new DefaultJobContext();
-        context.setTaskId(exceptedTaskId);
+        context.setJobIdentity(jobIdentity);
         jobCaller.start(context);
-        jobCaller.stop(exceptedTaskId);
+        context.setJobIdentity(jobIdentity);
+        jobCaller.stop(JobIdentity.of(exceptedTaskId, ScheduleSourceType.TASK_TASK, TaskType.ASYNC.name()));
     }
+
 
     @Test
-    public void test_startJob_failed() throws JobException {
+    public void test_startSampleTask() throws JobException {
         Long exceptedTaskId = System.currentTimeMillis();
         PodConfig podConfig = new PodConfig();
-        podConfig.setImage(getImageName());
-        podConfig.setCommand(getCmd());
+        podConfig.setImage("mengdezhicai/odc:dev-4.2.3-2023112402");
         podConfig.setNamespace("default");
 
+        JobIdentity jobIdentity = JobIdentity.of(exceptedTaskId, ScheduleSourceType.TASK_TASK, TaskType.SAMPLE.name());
         JobCaller jobCaller = new K8sJobCaller(getK8sJobClient(), podConfig);
         jobCaller.getEventPublisher().addEventListener(new JobCallerListener() {
             @Override
-            protected void startFailed(Long taskId, Exception ex) {
-                log.info(ex.getMessage());
-                Assert.assertTrue(ex.getMessage().contains("AlreadyExists"));
+            protected void startSucceed(JobIdentity ji) {
+                Assert.assertEquals(jobIdentity, ji);
+            }
+
+            @Override
+            protected void stopSucceed(JobIdentity ji) {
+                Assert.assertEquals(jobIdentity, ji);
             }
         });
 
         DefaultJobContext context = new DefaultJobContext();
-        context.setTaskId(exceptedTaskId);
+        context.setJobIdentity(jobIdentity);
+        SampleTaskParameter parameter = new SampleTaskParameter();
+        parameter.setSqls(
+                Collections.singletonList(String.format("CREATE TABLE %s (id int(10))", "t_" + exceptedTaskId)));
+        context.setTaskParameters(JsonUtils.toJson(parameter));
+
+        ConnectionConfig connectionConfig = TestConnectionUtil.getTestConnectionConfig(ConnectType.OB_MYSQL);
+        context.setConnectionConfigs(Collections.singletonList(connectionConfig));
+
         jobCaller.start(context);
-        // double start same task
-        try {
-            jobCaller.start(context);
-        } catch (Exception ex) {
-            // ignore
-        } finally {
-            jobCaller.stop(exceptedTaskId);
-        }
 
     }
+
+
 }

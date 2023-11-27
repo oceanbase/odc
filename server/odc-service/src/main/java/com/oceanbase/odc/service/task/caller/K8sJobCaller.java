@@ -16,8 +16,14 @@
 
 package com.oceanbase.odc.service.task.caller;
 
+import java.util.Map;
+
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.common.util.SystemUtils;
+import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.constants.JobEnvConstants;
+import com.oceanbase.odc.service.task.enums.TaskRunModeEnum;
+import com.oceanbase.odc.service.task.schedule.JobIdentity;
 
 /**
  * @author yaobin
@@ -36,17 +42,26 @@ public class K8sJobCaller extends BaseJobCaller {
 
     @Override
     public void doStart(JobContext context) throws JobException {
-        String jobName = JobUtils.generateJobName(context.getTaskId());
+        String jobName = JobUtils.generateJobName(context.getJobIdentity());
         PodParam podParam = new PodParam();
-        podParam.getEnvironments().put(JobEnvConstants.TASK_PARAMETER, JsonUtils.toJson(context));
+        Map<String, String> envs = podParam.getEnvironments();
+        envs.put(JobEnvConstants.BOOT_MODE, JobConstants.ODC_BOOT_MODE_EXECUTOR);
+        envs.put(JobEnvConstants.TASK_RUN_MODE, TaskRunModeEnum.K8S.name());
+        envs.put(JobEnvConstants.TASK_PARAMETER, JsonUtils.toJson(context));
+
+        envs.put("DATABASE_HOST", SystemUtils.getEnvOrProperty("ODC_DATABASE_HOST"));
+        envs.put("DATABASE_PORT", SystemUtils.getEnvOrProperty("ODC_DATABASE_PORT"));
+        envs.put("DATABASE_NAME", SystemUtils.getEnvOrProperty("ODC_DATABASE_NAME"));
+        envs.put("DATABASE_USERNAME", SystemUtils.getEnvOrProperty("ODC_DATABASE_USERNAME"));
+        envs.put("DATABASE_PASSWORD", SystemUtils.getEnvOrProperty("ODC_DATABASE_PASSWORD"));
 
         client.create(podConfig.getNamespace(), jobName, podConfig.getImage(),
                 podConfig.getCommand(), podParam);
     }
 
     @Override
-    public void doStop(Long taskId) throws JobException {
-        String jobName = JobUtils.generateJobName(taskId);
+    public void doStop(JobIdentity ji) throws JobException {
+        String jobName = JobUtils.generateJobName(ji);
         client.delete(podConfig.getNamespace(), jobName);
     }
 }

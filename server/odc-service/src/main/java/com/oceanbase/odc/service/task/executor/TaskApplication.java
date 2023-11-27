@@ -17,7 +17,7 @@
 package com.oceanbase.odc.service.task.executor;
 
 import com.oceanbase.odc.service.task.constants.JobEnvConstants;
-import com.oceanbase.odc.service.task.enums.DeployModelEnum;
+import com.oceanbase.odc.service.task.enums.TaskRunModeEnum;
 import com.oceanbase.odc.service.task.executor.util.SystemEnvUtil;
 
 import lombok.extern.slf4j.Slf4j;
@@ -49,7 +49,7 @@ public class TaskApplication {
     }
 
     private void init(String[] args) {
-        DeployModelEnum mode = DeployModelEnum.valueOf(SystemEnvUtil.nullSafeGet(JobEnvConstants.DEPLOY_MODE));
+        TaskRunModeEnum mode = TaskRunModeEnum.valueOf(SystemEnvUtil.nullSafeGet(JobEnvConstants.TASK_RUN_MODE));
         jobContextProvider = JobContextProviderFactory.create(mode);
         log.info("JobContextProvider init success: {}", jobContextProvider.getClass().getName());
         taskExecutor = new ThreadPoolTaskExecutor(1);

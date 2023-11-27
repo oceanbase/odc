@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.task.listener;
 
 import com.oceanbase.odc.common.event.AbstractEventListener;
 import com.oceanbase.odc.service.task.enums.JobCallerAction;
+import com.oceanbase.odc.service.task.schedule.JobIdentity;
 
 /**
  * @author yaobin
@@ -30,32 +31,33 @@ public class JobCallerListener extends AbstractEventListener<JobCallerEvent> {
     public void onEvent(JobCallerEvent event) {
         if (event.getJobAction() == JobCallerAction.START) {
             if (event.isSuccess()) {
-                startSucceed(event.getTaskId());
+                startSucceed(event.getJobIdentity());
             } else {
-                startFailed(event.getTaskId(), event.getEx());
+                startFailed(event.getJobIdentity(), event.getEx());
             }
         } else if (event.getJobAction() == JobCallerAction.STOP) {
             if (event.isSuccess()) {
-                stopSucceed(event.getTaskId());
+                stopSucceed(event.getJobIdentity());
             } else {
-                stopFailed(event.getTaskId(), event.getEx());
+                stopFailed(event.getJobIdentity(), event.getEx());
             }
         }
     }
 
-    protected void startSucceed(Long taskId) {
+    protected void startSucceed(JobIdentity ji) {
 
     }
 
-    protected void startFailed(Long taskId, Exception ex) {
+    protected void startFailed(JobIdentity ji, Exception ex) {
+
 
     }
 
-    protected void stopSucceed(Long taskId) {
+    protected void stopSucceed(JobIdentity ji) {
 
     }
 
-    protected void stopFailed(Long taskId, Exception ex) {
+    protected void stopFailed(JobIdentity ji, Exception ex) {
 
     }
 }

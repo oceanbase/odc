@@ -27,7 +27,7 @@ public class JobEnvConstants {
 
     public static final String TASK_PARAMETER = "ODC_TASK_PARAMETER";
 
-    public static final String DEPLOY_MODE = "ODC_TASK_DEPLOY_MODE";
+    public static final String TASK_RUN_MODE = "ODC_TASK_RUN_MODE";
 
     public static final String BOOT_MODE = "ODC_BOOT_MODE";
 

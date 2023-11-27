@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.k8s;
+package com.oceanbase.odc.service.task;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -24,7 +24,10 @@ import org.junit.BeforeClass;
 
 import com.oceanbase.odc.service.task.caller.K8sJobClient;
 import com.oceanbase.odc.service.task.caller.NativeK8sJobClient;
+import com.oceanbase.odc.test.database.TestDBConfiguration;
+import com.oceanbase.odc.test.database.TestDBConfigurations;
 import com.oceanbase.odc.test.database.TestProperties;
+import com.oceanbase.odc.test.util.JdbcUtil;
 
 /**
  * @author yaobin
@@ -39,6 +42,14 @@ public abstract class BaseJobTest {
 
     @BeforeClass
     public static void init() throws IOException {
+        TestDBConfiguration tdc = TestDBConfigurations.getInstance().getTestOBMysqlConfiguration();
+        System.setProperty("DATABASE_HOST", tdc.getHost());
+        System.setProperty("DATABASE_PORT", tdc.getPort() + "");
+        System.setProperty("DATABASE_NAME", tdc.getDefaultDBName());
+        System.setProperty("DATABASE_USERNAME",
+                JdbcUtil.buildUser(tdc.getUsername(), tdc.getTenant(), tdc.getCluster()));
+        System.setProperty("DATABASE_PASSWORD", tdc.getPassword());
+
         k8sJobClient = new NativeK8sJobClient(TestProperties.getProperty("odc.k8s.cluster.url"));
         imageName = "perl:5.34.0";
         cmd = Arrays.asList("perl", "-Mbignum=bpi", "-wle", "print bpi(2000)");

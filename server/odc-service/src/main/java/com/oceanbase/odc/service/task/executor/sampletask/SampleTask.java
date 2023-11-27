@@ -49,7 +49,7 @@ public class SampleTask extends BaseTask {
     @Override
     protected void doStart() {
         this.status = TaskStatus.RUNNING;
-        Verify.equals(TaskType.SAMPLE, context.getTaskType(), "taskType");
+        Verify.equals(TaskType.SAMPLE, context.getJobIdentity().getTaskType(), "taskType");
         this.parameter = JsonUtils.fromJson(context.getTaskParameters(), SampleTaskParameter.class);
         validateTaskParameter();
         ConnectionConfig connectionConfig = context.getConnectionConfigs().get(0);
@@ -80,17 +80,17 @@ public class SampleTask extends BaseTask {
 
     @Override
     protected void onFinished() {
-        log.info("Task finished, id: {}, result: {}", context.getTaskId(), this.result);
+        log.info("Task finished, id: {}, result: {}", context.getJobIdentity().getId(), this.result);
     }
 
     @Override
     protected void onFailure(Exception e) {
-        log.warn("Task failed, id: {}", context.getTaskId(), e);
+        log.warn("Task failed, id: {}", context.getJobIdentity().getId(), e);
     }
 
     @Override
     protected void onUpdateProgress() {
-        log.info("Task progress updated, id: {}", context.getTaskId());
+        log.info("Task progress updated, id: {}", context.getJobIdentity().getId());
     }
 
     private void validateTaskParameter() {

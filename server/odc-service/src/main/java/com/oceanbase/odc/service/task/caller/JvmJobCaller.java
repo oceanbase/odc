@@ -17,6 +17,7 @@
 package com.oceanbase.odc.service.task.caller;
 
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
+import com.oceanbase.odc.service.task.schedule.JobIdentity;
 
 /**
  * @author yaobin
@@ -31,7 +32,7 @@ public class JvmJobCaller extends BaseJobCaller {
     }
 
     @Override
-    protected void doStop(Long taskId) throws JobException {
+    protected void doStop(JobIdentity ji) throws JobException {
         throw new UnsupportedException();
     }
 }

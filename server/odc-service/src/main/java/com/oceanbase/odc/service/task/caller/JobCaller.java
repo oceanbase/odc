@@ -17,6 +17,7 @@
 package com.oceanbase.odc.service.task.caller;
 
 import com.oceanbase.odc.common.event.EventPublisher;
+import com.oceanbase.odc.service.task.schedule.JobIdentity;
 
 /**
  * operate odc job for different deployment environment, eg: k8s, master-worker or same jvm process
@@ -38,10 +39,10 @@ public interface JobCaller {
     /**
      * stop a odc job
      * 
-     * @param taskId task id
+     * @param ji job identity
      * @throws JobException throws JobException when stop job failed
      */
-    void stop(Long taskId) throws JobException;
+    void stop(JobIdentity ji) throws JobException;
 
     /**
      * get job execution event publisher
