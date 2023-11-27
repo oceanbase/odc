@@ -19,6 +19,8 @@ package com.oceanbase.odc.service.task.schedule;
 import lombok.Data;
 
 /**
+ * Identity a unique job
+ * 
  * @author yaobin
  * @date 2023-11-23
  * @since 4.2.4
@@ -26,8 +28,17 @@ import lombok.Data;
 @Data
 public class JobIdentity {
 
+    /**
+     * job id
+     */
     private Long id;
+    /**
+     * job source type, eg task_task/schedule_task
+     */
     private ScheduleSourceType sourceType;
+    /**
+     * task type
+     */
     private String taskType;
 
     public static JobIdentity of(Long id, ScheduleSourceType sourceType, String taskType) {

@@ -21,17 +21,31 @@ import com.oceanbase.odc.service.schedule.model.TriggerConfig;
 import com.oceanbase.odc.service.task.caller.JobContext;
 
 /**
+ * Define a job and describe all job information for schedule
+ *
  * @author yaobin
  * @date 2023-11-23
  * @since 4.2.4
  */
 public interface JobDefinition {
 
+    /**
+     * @return job context for task executor
+     */
     JobContext getJobContext();
 
+    /**
+     * @return job concurrent execute
+     */
     boolean isAllowConcurrent();
 
+    /**
+     * @return job misfire strategy
+     */
     MisfireStrategy getMisfireStrategy();
 
+    /**
+     * @return job trigger config
+     */
     TriggerConfig getTriggerConfig();
 }

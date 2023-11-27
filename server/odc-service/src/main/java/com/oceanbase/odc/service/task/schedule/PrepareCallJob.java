@@ -20,9 +20,6 @@ import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 
-import com.oceanbase.odc.common.json.JsonUtils;
-import com.oceanbase.odc.service.task.constants.JobConstants;
-
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -34,8 +31,6 @@ import lombok.extern.slf4j.Slf4j;
 public class PrepareCallJob implements Job {
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {
-        Object o = context.getMergedJobDataMap().get(JobConstants.JOB_DATA_MAP_JOB_CONTEXT);
-        log.info(JsonUtils.toJson(o));
 
     }
 }
