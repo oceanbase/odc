@@ -58,7 +58,6 @@ public class JobSchedulerTest {
 
         jc.setScheduler(sched);
 
-
         JobIdentity jobIdentity = JobIdentity.of(1L, ScheduleSourceType.TASK_TASK, TaskType.ASYNC.name());
         DefaultJobContext ctx = new DefaultJobContext();
         ctx.setJobIdentity(jobIdentity);

@@ -16,6 +16,7 @@
 package com.oceanbase.odc.server;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 
 import javax.validation.Validation;
@@ -40,6 +41,10 @@ import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.authority.interceptor.MethodAuthorizedPostProcessor;
 import com.oceanbase.odc.migrate.AbstractMetaDBMigrate;
 import com.oceanbase.odc.server.starter.StarterSpringApplication;
+import com.oceanbase.odc.service.task.constants.JobConstants;
+import com.oceanbase.odc.service.task.constants.JobEnvConstants;
+import com.oceanbase.odc.service.task.executor.TaskApplication;
+import com.oceanbase.odc.service.task.executor.util.SystemEnvUtil;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -70,6 +75,11 @@ public class OdcServer {
      * @param args
      */
     public static void main(String[] args) {
+        if (Objects.equals(SystemEnvUtil.nullSafeGet(JobEnvConstants.BOOT_MODE), JobConstants.ODC_BOOT_MODE_EXECUTOR)) {
+            log.info("ODC start as task executor mode");
+            new TaskApplication().run(args);
+            return;
+        }
         initEnv();
         System.setProperty("spring.cloud.bootstrap.enabled", "true");
         StarterSpringApplication.run(OdcServer.class, args);
