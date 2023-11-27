@@ -92,6 +92,7 @@ public class DruidDataSourceFactory extends OBConsoleDataSourceFactory {
         properties.setProperty("allowLoadLocalInfile", "false");
         properties.setProperty("allowUrlInLocalInfile", "false");
         properties.setProperty("allowLoadLocalInfileInPath", "");
+        properties.setProperty("autoDeserialize", "false");
         dataSource.setConnectProperties(properties);
         try {
             setConnectAndSocketTimeoutFromJdbcUrl(dataSource);
