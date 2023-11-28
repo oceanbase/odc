@@ -18,6 +18,7 @@ package com.oceanbase.odc.plugin.connect.oracle;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.Properties;
 import java.util.UUID;
 
@@ -27,10 +28,12 @@ import org.junit.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
+import com.oceanbase.odc.core.sql.execute.model.SqlExecTime;
 import com.oceanbase.odc.plugin.connect.api.ConnectionExtensionPoint;
 import com.oceanbase.odc.plugin.connect.api.InformationExtensionPoint;
 import com.oceanbase.odc.plugin.connect.api.SessionExtensionPoint;
 import com.oceanbase.odc.plugin.connect.api.TestResult;
+import com.oceanbase.odc.plugin.connect.api.TraceExtensionPoint;
 import com.oceanbase.odc.plugin.connect.model.ConnectionConstants;
 import com.oceanbase.odc.test.database.TestDBConfiguration;
 import com.oceanbase.odc.test.database.TestDBConfigurations;
@@ -47,18 +50,19 @@ public class OracleExtensionTest extends BaseExtensionPointTest {
     private static ConnectionExtensionPoint connectionExtensionPoint;
     private static InformationExtensionPoint informationExtensionPoint;
     private static SessionExtensionPoint sessionExtensionPoint;
+    private static TraceExtensionPoint traceExtensionPoint;
 
 
     private static TestDBConfiguration configuration =
             TestDBConfigurations.getInstance().getTestOracleConfiguration();
     private static JdbcTemplate jdbcTemplate = new JdbcTemplate(configuration.getDataSource());
 
-
     @BeforeClass
     public static void init() {
         connectionExtensionPoint = getInstance(OracleConnectionExtension.class);
         informationExtensionPoint = getInstance(OracleInformationExtension.class);
         sessionExtensionPoint = getInstance(OracleSessionExtension.class);
+        traceExtensionPoint = getInstance(OracleTraceExtension.class);
     }
 
     private Properties getJdbcProperties() {
@@ -183,6 +187,19 @@ public class OracleExtensionTest extends BaseExtensionPointTest {
         try (Connection connection = getConnection()) {
             String connectId = sessionExtensionPoint.getConnectionId(connection);
             Assert.assertNotNull("connectId is null", connectId);
+        }
+    }
+
+    @Test
+    public void test_oracle_getExecuteDetail() throws SQLException {
+        try (Connection connection = getConnection()) {
+            String sql = "select 1 from dual";
+            try (Statement statement = connection.createStatement()) {
+                statement.execute(sql);
+                SqlExecTime sqlExecTime = traceExtensionPoint.getExecuteDetail(statement, null);
+                Assert.assertNotNull(sqlExecTime);
+                Assert.assertNotNull(sqlExecTime.getExecuteMicroseconds());
+            }
         }
     }
 

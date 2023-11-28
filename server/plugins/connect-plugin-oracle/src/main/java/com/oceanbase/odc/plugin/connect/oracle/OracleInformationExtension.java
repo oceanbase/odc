@@ -36,7 +36,7 @@ public class OracleInformationExtension implements InformationExtensionPoint {
     @Override
     public String getDBVersion(Connection connection) {
         try (Statement statement = connection.createStatement()) {
-            try (ResultSet resultSet = statement.executeQuery("SELECT version FROM v$instance")) {
+            try (ResultSet resultSet = statement.executeQuery("SELECT VERSION FROM SYS.V$INSTANCE")) {
                 if (resultSet.next()) {
                     return resultSet.getString(1);
                 }

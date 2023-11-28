@@ -16,23 +16,52 @@
 
 package com.oceanbase.odc.plugin.connect.oracle;
 
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
+import org.apache.commons.lang3.Validate;
 import org.pf4j.Extension;
 
 import com.oceanbase.odc.core.sql.execute.model.SqlExecTime;
 import com.oceanbase.odc.plugin.connect.api.TraceExtensionPoint;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author jingtian
  * @date 2023/11/8
  * @since ODC_release_4.2.4
  */
+@Slf4j
 @Extension
 public class OracleTraceExtension implements TraceExtensionPoint {
     @Override
     public SqlExecTime getExecuteDetail(Statement statement, String version) throws SQLException {
-        throw new UnsupportedOperationException("Not supported for oracle mode");
+        SqlExecTime sqlExecTime = new SqlExecTime();
+        try {
+            Long execTime = 0L;
+            String sql =
+                    "SELECT PREV_SQL_ID FROM SYS.V$SESSION WHERE SID = SYS_CONTEXT('USERENV', 'SID') and AUDSID=SYS_CONTEXT('USERENV', 'SESSIONID')";
+            String preSqlId = null;
+            ResultSet rs = statement.executeQuery(sql);
+            while (rs.next()) {
+                preSqlId = rs.getString("PREV_SQL_ID");
+            }
+            Validate.notNull(preSqlId, "PREV_SQL_ID can not be null");
+            sql = "select SQL_TEXT, ELAPSED_TIME, LAST_ACTIVE_TIME FROM SYS.V$SQL WHERE SQL_ID='" + preSqlId
+                    + "' ORDER BY LAST_ACTIVE_TIME DESC";
+            ResultSet resultSet = statement.executeQuery(sql);
+            if (resultSet.next()) {
+                // Get only the first row of data
+                execTime = resultSet.getBigDecimal("ELAPSED_TIME").longValue();
+                log.info("Get execute detail from oracle, sql={}, execTime={}", resultSet.getString("SQL_TEXT"),
+                        execTime);
+            }
+            sqlExecTime.setExecuteMicroseconds(execTime);
+        } catch (Exception e) {
+            log.warn("Failed to get execute detail from oracle, message={}", e.getMessage());
+        }
+        return sqlExecTime;
     }
 }
