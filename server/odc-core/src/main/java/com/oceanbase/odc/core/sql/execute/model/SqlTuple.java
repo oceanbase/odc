@@ -67,7 +67,7 @@ public class SqlTuple {
     }
 
     private SqlTuple(@NonNull String sqlId, @NonNull String originalSql, @NonNull String executedSql,
-        @NonNull TraceWatch sqlWatch, @NonNull Integer offset) {
+            @NonNull TraceWatch sqlWatch, @NonNull Integer offset) {
         this.sqlId = sqlId;
         this.originalSql = originalSql;
         this.executedSql = executedSql;
@@ -93,7 +93,7 @@ public class SqlTuple {
     }
 
     public static SqlTuple newTuple(@NonNull String originalSql, @NonNull String executedSql,
-        @NonNull TraceWatch traceWatch, @NonNull Integer offset) {
+            @NonNull TraceWatch traceWatch, @NonNull Integer offset) {
         return new SqlTuple(generateSqlId(), originalSql, executedSql, traceWatch, offset);
     }
 

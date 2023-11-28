@@ -203,7 +203,8 @@ public class ConnectConsoleService {
             return result;
         }
         List<OffsetString> sqls = request.ifSplitSqls()
-                ? SqlUtils.splitWithOffset(connectionSession, request.getSql(), sessionProperties.isOracleRemoveCommentPrefix())
+                ? SqlUtils.splitWithOffset(connectionSession, request.getSql(),
+                        sessionProperties.isOracleRemoveCommentPrefix())
                 : Collections.singletonList(new OffsetString(0, request.getSql()));
         if (sqls.size() == 0) {
             /**
@@ -387,7 +388,8 @@ public class ConnectConsoleService {
      * Rewrite sqls, will do <br>
      * 1. add ODC_INTERNAL_ROWID query column
      */
-    private List<SqlTuple> generateSqlTuple(List<OffsetString> sqls, ConnectionSession session, SqlAsyncExecuteReq request) {
+    private List<SqlTuple> generateSqlTuple(List<OffsetString> sqls, ConnectionSession session,
+            SqlAsyncExecuteReq request) {
         return sqls.stream().filter(s -> StringUtils.isNotBlank(s.getStr())).map(sql -> {
             TraceWatch traceWatch = new TraceWatch("SQL-EXEC");
             SqlTuple target = SqlTuple.newTuple(sql.getStr(), sql.getStr(), traceWatch, sql.getOffset());
@@ -406,7 +408,8 @@ public class ConnectConsoleService {
                 AbstractSyntaxTree ast = target.getAst();
                 BasicResult result = ast.getParseResult();
                 if (result instanceof ParseSqlResult && ((ParseSqlResult) result).isSupportAddROWID()) {
-                    target = SqlTuple.newTuple(sql.getStr(), rewriteSql(sql.getStr(), session, traceWatch, ast), traceWatch, sql.getOffset());
+                    target = SqlTuple.newTuple(sql.getStr(), rewriteSql(sql.getStr(), session, traceWatch, ast),
+                            traceWatch, sql.getOffset());
                     target.initAst(new EmptyAstFactory(ast));
                 }
             } catch (Exception e) {

@@ -28,6 +28,8 @@ import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.sql.split.OffsetString;
 import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
+import com.oceanbase.odc.core.sql.split.SqlSplitter;
+import com.oceanbase.tools.sqlparser.oracle.PlSqlLexer;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -112,26 +114,26 @@ public class SqlUtils {
     private static List<OffsetString> split(DialectType dialectType, SqlCommentProcessor processor, String sql,
             boolean removeCommentPrefix) {
         PreConditions.notBlank(processor.getDelimiter(), "delimiter", "Empty or blank delimiter is not allowed");
-        // if (DialectType.OB_ORACLE == dialectType
-        // && (";".equals(processor.getDelimiter()) || "/".equals(processor.getDelimiter()))) {
-        // SqlSplitter sqlSplitter = new SqlSplitter(PlSqlLexer.class, processor.getDelimiter());
-        // sqlSplitter.setRemoveCommentPrefix(removeCommentPrefix);
-        // List<String> sqls = sqlSplitter.split(sql);
-        // processor.setDelimiter(sqlSplitter.getDelimiter());
-        // return sqls;
-        // } else {
-
-        StringBuffer buffer = new StringBuffer();
-        List<OffsetString> sqls = processor.split(buffer, sql);
-        String bufferStr = buffer.toString();
-        if (bufferStr.trim().length() != 0) {
-            // if buffer is not empty, there will be some errors in syntax
-            log.warn("sql processor's buffer is not empty, there may be some errors. buffer={}", bufferStr);
-            sqls.add(new OffsetString(
-                    sqls.get(sqls.size() - 1).getOffset() + sqls.get(sqls.size() - 1).getStr().length(), bufferStr));
+        if (DialectType.OB_ORACLE == dialectType
+                && (";".equals(processor.getDelimiter()) || "/".equals(processor.getDelimiter()))) {
+            SqlSplitter sqlSplitter = new SqlSplitter(PlSqlLexer.class, processor.getDelimiter());
+            sqlSplitter.setRemoveCommentPrefix(removeCommentPrefix);
+            List<OffsetString> sqls = sqlSplitter.split(sql);
+            processor.setDelimiter(sqlSplitter.getDelimiter());
+            return sqls;
+        } else {
+            StringBuffer buffer = new StringBuffer();
+            List<OffsetString> sqls = processor.split(buffer, sql);
+            String bufferStr = buffer.toString();
+            if (bufferStr.trim().length() != 0) {
+                // if buffer is not empty, there will be some errors in syntax
+                log.warn("sql processor's buffer is not empty, there may be some errors. buffer={}", bufferStr);
+                sqls.add(new OffsetString(
+                        sqls.get(sqls.size() - 1).getOffset() + sqls.get(sqls.size() - 1).getStr().length(),
+                        bufferStr));
+            }
+            return sqls;
         }
-        return sqls;
-        // }
     }
 
     /**

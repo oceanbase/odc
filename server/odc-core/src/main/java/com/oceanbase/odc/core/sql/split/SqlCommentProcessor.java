@@ -156,7 +156,7 @@ public class SqlCommentProcessor {
             for (List<OrderChar> item : lines) {
                 if (Objects.nonNull(this.dialectType) && this.dialectType.isMysql()) {
                     addLineMysql(offsetStrings, buffer, bufferOrder, item);
-                } else if(Objects.nonNull(this.dialectType) && this.dialectType.isOracle()) {
+                } else if (Objects.nonNull(this.dialectType) && this.dialectType.isOracle()) {
                     addLineOracle(offsetStrings, buffer, bufferOrder, item);
                 } else {
                     throw new IllegalArgumentException("dialect type is illegal");

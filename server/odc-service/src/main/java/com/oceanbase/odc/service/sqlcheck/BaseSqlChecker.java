@@ -26,9 +26,11 @@ import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
 import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTree;
 import com.oceanbase.odc.core.sql.split.OffsetString;
 import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
+import com.oceanbase.odc.core.sql.split.SqlSplitter;
 import com.oceanbase.odc.service.sqlcheck.model.CheckViolation;
 import com.oceanbase.odc.service.sqlcheck.parser.SyntaxErrorStatement;
 import com.oceanbase.tools.sqlparser.SyntaxErrorException;
+import com.oceanbase.tools.sqlparser.oracle.PlSqlLexer;
 import com.oceanbase.tools.sqlparser.statement.Statement;
 
 import lombok.NonNull;
@@ -57,20 +59,19 @@ abstract class BaseSqlChecker implements SqlChecker {
         List<OffsetString> sqls = null;
         if (dialectType.isMysql()) {
             sqls = splitByCommentProcessor(sqlScript);
+        } else if (dialectType == DialectType.OB_ORACLE) {
+            if (DEFAULT_DELIMITER.equals(this.delimiter)) {
+                // 如果用户没有改 delimiter 就用现成的分句逻辑
+                SqlSplitter sqlSplitter = new SqlSplitter(PlSqlLexer.class, this.delimiter);
+                sqlSplitter.setRemoveCommentPrefix(false);
+                sqls = sqlSplitter.split(sqlScript);
+            } else {
+                // 如果用户改变了 delimiter，为了避免分句的潜在问题需要使用新的分句逻辑
+                sqls = splitByCommentProcessor(sqlScript);
+            }
+        } else {
+            throw new IllegalStateException("Unknown dialect type, " + dialectType);
         }
-        // else if (dialectType == DialectType.OB_ORACLE) {
-        // if (DEFAULT_DELIMITER.equals(this.delimiter)) {
-        // // 如果用户没有改 delimiter 就用现成的分句逻辑
-        // SqlSplitter sqlSplitter = new SqlSplitter(PlSqlLexer.class, this.delimiter);
-        // sqlSplitter.setRemoveCommentPrefix(false);
-        // sqls = sqlSplitter.split(sqlScript);
-        // } else {
-        // // 如果用户改变了 delimiter，为了避免分句的潜在问题需要使用新的分句逻辑
-        // sqls = splitByCommentProcessor(sqlScript);
-        // }
-        // } else {
-        // throw new IllegalStateException("Unknown dialect type, " + dialectType);
-        // }
         return check(sqls, null);
     }
 
