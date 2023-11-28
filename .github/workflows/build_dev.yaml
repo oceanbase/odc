@@ -95,6 +95,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       odc_rpm_release_number: ${{ steps.calculate_version.outputs.odc_rpm_release_number }}
+      odc_docker_image_tag: ${{ steps.calculate_version.outputs.odc_docker_image_tag }}
     steps:
       - name: Checkout workspace
         uses: actions/checkout@v3
@@ -104,6 +105,9 @@ jobs:
           odc_rpm_release_number=$(date +%Y%m%d%H%M%S)
           echo "odc_rpm_release_number=${odc_rpm_release_number}" >> $GITHUB_OUTPUT
           echo "odc_rpm_release_number=${odc_rpm_release_number}"
+          odc_docker_image_tag="test-task-${odc_rpm_release_number}"
+          echo "odc_docker_image_tag=${odc_docker_image_tag}" >> $GITHUB_OUTPUT
+          echo "odc_docker_image_tag=${odc_docker_image_tag}"
 
   build-rpm-x86_64:
     name: Build RPM (x86_64)
@@ -111,6 +115,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       odc_rpm_release_number: ${{ needs.calculate-version.outputs.odc_rpm_release_number }}
+      odc_docker_image_tag: ${{ needs.calculate-version.outputs.odc_docker_image_tag }}
     steps:
       - name: Checkout workspace
         uses: actions/checkout@v3
@@ -169,8 +174,22 @@ jobs:
           rm --force --recursive --verbose distribution/docker/resources/odc-*.rpm
           mkdir -p distribution/docker/resources/
           mv --verbose server/odc-server/target/rpm/odc-server/RPMS/*/odc-*.rpm distribution/docker/resources/
-      - name: Upload rpm (x86_64)
+      - name: Build docker image (x86_64)
+        run: |
+          sed -e "s/DATE_CHANGE/$(date)/" -i distribution/docker/odc/Dockerfile
+          echo "odc_docker_image_tag=${odc_docker_image_tag}"
+          pushd distribution/docker
+          docker build -t docker.io/oceanbase/odc:${odc_docker_image_tag} -f odc/Dockerfile .
+          docker save -o resources/odc-${odc_docker_image_tag}.tar.gz docker.io/oceanbase/odc:${odc_docker_image_tag}
+          popd
+      - name: Push Docker Image (x86_64)
+        run: |
+          docker login -p${{ secrets.DOCKER_PASSWORD }} -u${{ secrets.DOCKER_USERNAME }}
+          docker load -i distribution/docker/resources/odc-${odc_docker_image_tag}.tar.gz
+          docker tag oceanbase/odc:${odc_docker_image_tag} mengdezhicai/odc:${odc_docker_image_tag}
+          docker push mengdezhicai/odc:${odc_docker_image_tag}
+      - name: Upload docker image (x86_64)
         uses: actions/upload-artifact@v3
         with:
-          name: odc-server-${{ steps.set_release_version.outputs.new_version }}.x86_64.rpm
-          path: distribution/docker/resources/odc-*.rpm
+          name: odc-${{ env.odc_docker_image_tag }}.tar.gz
+          path: distribution/docker/resources/odc-*.tar.gz
