@@ -66,6 +66,15 @@ public class SqlTuple {
         this.sqlWatch = sqlWatch;
     }
 
+    private SqlTuple(@NonNull String sqlId, @NonNull String originalSql, @NonNull String executedSql,
+        @NonNull TraceWatch sqlWatch, @NonNull Integer offset) {
+        this.sqlId = sqlId;
+        this.originalSql = originalSql;
+        this.executedSql = executedSql;
+        this.sqlWatch = sqlWatch;
+        this.offset = offset;
+    }
+
     public SqlTuple softCopy() {
         String sqlId = this.sqlId + "-" + (++this.copiedTimes);
         SqlTuple newOne = new SqlTuple(sqlId, this.originalSql, this.executedSql, this.sqlWatch);
@@ -81,6 +90,11 @@ public class SqlTuple {
     public static SqlTuple newTuple(@NonNull String originalSql, @NonNull String executedSql,
             @NonNull TraceWatch traceWatch) {
         return new SqlTuple(generateSqlId(), originalSql, executedSql, traceWatch);
+    }
+
+    public static SqlTuple newTuple(@NonNull String originalSql, @NonNull String executedSql,
+        @NonNull TraceWatch traceWatch, @NonNull Integer offset) {
+        return new SqlTuple(generateSqlId(), originalSql, executedSql, traceWatch, offset);
     }
 
     public static SqlTuple newTuple(@NonNull String originalAndExecutedSql) {

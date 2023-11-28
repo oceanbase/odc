@@ -20,12 +20,12 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import com.oceanbase.odc.common.lang.Holder;
@@ -143,38 +143,25 @@ public class SqlCommentProcessor {
             List<OffsetString> offsetStrings = new ArrayList<>();
 
             List<OrderChar> orderChars = new ArrayList<>();
-            List<List<OrderChar>> lines1 = new ArrayList<>();
 
             for (int i = 0; i < sqlScript.length(); i++) {
                 orderChars.add(new OrderChar(sqlScript.charAt(i), i));
             }
             // split by \n
-            orderChars.stream().reduce(new ArrayList<OrderChar>(), (list, orderChar) -> {
-                if (orderChar.getCh() == '\n') {
-                    lines1.add(list);
-                    return new ArrayList<>();
-                } else {
-                    list.add(orderChar);
-                    return list;
-                }
-            }, (list1, list2) -> {
-                list1.addAll(list2);
-                return list1;
-            });
+            List<List<OrderChar>> lines = orderChars.stream()
+                    .collect(Collectors.groupingBy(OrderChar::isLineSeparator))
+                    .values().stream()
+                    .collect(Collectors.toList());
             Holder<Integer> bufferOrder = new Holder<>(0);
-            for (List<OrderChar> item : lines1) {
+            for (List<OrderChar> item : lines) {
                 if (Objects.nonNull(this.dialectType) && this.dialectType.isMysql()) {
                     addLineMysql(offsetStrings, buffer, bufferOrder, item);
+                } else if(Objects.nonNull(this.dialectType) && this.dialectType.isOracle()) {
+                    addLineOracle(offsetStrings, buffer, bufferOrder, item);
+                } else {
+                    throw new IllegalArgumentException("dialect type is illegal");
                 }
             }
-            // String[] lines = sqlScript.split("\n");
-            // for (String item : lines) {
-            // if (Objects.nonNull(this.dialectType) && this.dialectType.isOracle()) {
-            // addLineOracle(sqls, buffer, item);
-            // } else {
-            // throw new IllegalArgumentException("dialect type is illegal");
-            // }
-            // }
             return offsetStrings;
         } finally {
             mlComment = false;
@@ -445,22 +432,23 @@ public class SqlCommentProcessor {
         return true;
     }
 
-    private synchronized void addLineOracle(List<String> sqls, StringBuffer buffer, String line) {
+    private synchronized void addLineOracle(List<OffsetString> sqls, StringBuffer buffer, Holder<Integer> bufferOrder,
+            List<OrderChar> line) {
         int pos, out;
         boolean needSpace = false;
         // 标识量，用于标识当前是否处于HINT，CONDITIONAL中
         SSC ssComment = SSC.NONE;
 
         boolean isSameLine = false;
-        int lineLength = line.length();
-        char[] lines = Arrays.copyOf(line.toCharArray(), lineLength + 1);
-        if (lines[0] == 0 && buffer.length() == 0) {
+        int lineLength = line.size();
+        OrderChar[] lines = line.toArray(new OrderChar[lineLength + 1]);
+        if ((lines.length == 0 || lines[0] == null || lines[0].getCh() == 0) && buffer.length() == 0) {
             return;
         }
-
-        lines[lineLength] = 0;
+        lines[lineLength] = new OrderChar((char) 0, lineLength);
         for (pos = out = 0; pos < lineLength; pos++) {
-            char inChar = lines[pos];
+            OrderChar inOrderChar = lines[pos];
+            char inChar = inOrderChar.getCh();
             // 去掉每一行SQL语句最开始的空格
             if (inChar == ' ' && out == 0 && buffer.length() == 0 && !preserveFormat) {
                 continue;
@@ -468,14 +456,19 @@ public class SqlCommentProcessor {
             int delimiterBegin = 0;
             if (preserveFormat) {
                 for (; delimiterBegin < out
-                        && (lines[delimiterBegin] == ' ' || lines[delimiterBegin] == '\t'); delimiterBegin++) {
+                        && (lines[delimiterBegin].getCh() == ' '
+                                || lines[delimiterBegin].getCh() == '\t'); delimiterBegin++) {
                 }
             }
-            if (equalsIgnoreCase((DELIMITER_NAME + " ").toCharArray(), lines, delimiterBegin, (out - delimiterBegin))) {
+            if (equalsIgnoreCase((DELIMITER_NAME + " ").toCharArray(), IntStream.range(0, lines.length)
+                    .mapToObj(i -> lines[i].getCh())
+                    .collect(StringBuilder::new, StringBuilder::append, StringBuilder::append)
+                    .toString()
+                    .toCharArray(), delimiterBegin, (out - delimiterBegin))) {
                 // 检测到"delimiter "字符串，且不在多行注释以及多行字符串中，说明有设定分隔符的语句
                 StringBuilder newDelimiter = new StringBuilder();
                 for (; pos < lineLength; pos++) {
-                    char tempChar = lines[pos];
+                    char tempChar = lines[pos].getCh();
                     if (tempChar != ' ') {
                         newDelimiter.append(tempChar);
                     } else if (newDelimiter.length() != 0) {
@@ -486,24 +479,41 @@ public class SqlCommentProcessor {
                 this.delimiter = newDelimiter.toString();
                 continue;
             }
-            if (!mlComment && inString == '\0' && ssComment != SSC.HINT && isPrefix(lines, pos, delimiter)) {
+            if (!mlComment && inString == '\0' && ssComment != SSC.HINT && isPrefix(IntStream.range(0, lines.length)
+                    .mapToObj(i -> lines[i].getCh())
+                    .collect(StringBuilder::new, StringBuilder::append, StringBuilder::append)
+                    .toString()
+                    .toCharArray(), pos, delimiter)) {
                 // 不是多行注释，未在字符串中，不是hint且以delimiter开头，通常是扫描到了sql的末尾
                 pos += delimiter.length();
-                if (out != 0) {
-                    buffer.append(lines, 0, out);
-                    out = 0;
+                if (buffer.length() == 0) {
+                    bufferOrder.setValue(lines[0].getOrder());
                 }
+                buffer.append(IntStream.range(0, lines.length)
+                        .mapToObj(i -> lines[i].getCh())
+                        .collect(StringBuilder::new, StringBuilder::append, StringBuilder::append)
+                        .toString()
+                        .toCharArray(), 0, out);
+                out = 0;
                 // buffer.append(";").append('\n');
-                sqls.add(buffer.toString());
+                sqls.add(new OffsetString(bufferOrder.getValue(), buffer.toString()));
+                bufferOrder.setValue(bufferOrder.getValue() + buffer.length());
                 pos--;
                 buffer.setLength(0);
                 isSameLine = true;
                 inNormalSql = false;
-            } else if (!mlComment && (inString == '\0' && (inChar == '-' && lines[pos + 1] == '-'
-                    && (lines[pos + 2] != '+' || (lines[pos + 2] == ' '
-                            || lines[pos + 2] == '\0'))))) {
+            } else if (!mlComment && (inString == '\0' && (inChar == '-' && lines[pos + 1].getCh() == '-'
+                    && (lines[pos + 2].getCh() != '+' || (lines[pos + 2].getCh() == ' '
+                            || lines[pos + 2].getCh() == '\0'))))) {
                 // 处于单行注释中，注意规避单行HINT
-                buffer.append(lines, 0, out);
+                if (buffer.length() == 0) {
+                    bufferOrder.setValue(lines[0].getOrder());
+                }
+                buffer.append(IntStream.range(0, lines.length)
+                        .mapToObj(i -> lines[i].getCh())
+                        .collect(StringBuilder::new, StringBuilder::append, StringBuilder::append)
+                        .toString()
+                        .toCharArray(), 0, out);
                 out = 0;
                 if (preserveSingleComments) {
                     // 如果保留单行注释则需要将注释完整地拷贝到缓冲中不能丢弃
@@ -513,65 +523,103 @@ public class SqlCommentProcessor {
                     if (isOnlyWhiteSpace(buffer)) {
                         // 缓冲中全部是空格，或者缓冲为空说明注释要么处于第一行要么处于个已经完结的sql语句之后
                         if (sqls.size() != 0) {
+                            if (buffer.length() == 0) {
+                                bufferOrder.setValue(lines[0].getOrder());
+                            }
                             // 说明注释处于一个已经完结的sql之后，且该sql已经被加入到sql集合中，此处的注释需要追加到最后一句sql中
-                            buffer.append(lines, 0, out);
+                            buffer.append(IntStream.range(0, lines.length)
+                                    .mapToObj(i -> lines[i].getCh())
+                                    .collect(StringBuilder::new, StringBuilder::append, StringBuilder::append)
+                                    .toString()
+                                    .toCharArray(), 0, out);
                             int lastIndex = sqls.size() - 1;
-                            String lastSql = sqls.get(lastIndex);
+                            String lastSql = sqls.get(lastIndex).getStr();
                             if (!isSameLine) {
                                 lastSql += '\n';
                             }
-                            lastSql += buffer.toString() + "\n";
-                            sqls.set(lastIndex, lastSql);
+                            lastSql += buffer + "\n";
+                            sqls.set(lastIndex, new OffsetString(sqls.get(lastIndex).getOffset(), lastSql));
                             buffer.setLength(0);
                         } else {
-                            lines[out++] = '\n';
-                            buffer.append(lines, 0, out - 1);
+                            lines[out++].setCh('\n');
+                            if (buffer.length() == 0) {
+                                bufferOrder.setValue(lines[0].getOrder());
+                            }
+                            buffer.append(IntStream.range(0, lines.length)
+                                    .mapToObj(i -> lines[i].getCh())
+                                    .collect(StringBuilder::new, StringBuilder::append, StringBuilder::append)
+                                    .toString()
+                                    .toCharArray(), 0, out - 1);
                         }
                     } else {
-                        lines[out++] = '\n';
-                        buffer.append(lines, 0, out - 1);
+                        lines[out++].setCh('\n');
+                        if (buffer.length() == 0) {
+                            bufferOrder.setValue(lines[0].getOrder());
+                        }
+                        buffer.append(IntStream.range(0, lines.length)
+                                .mapToObj(i -> lines[i].getCh())
+                                .collect(StringBuilder::new, StringBuilder::append, StringBuilder::append)
+                                .toString()
+                                .toCharArray(), 0, out - 1);
                     }
                     out = 0;
                 }
                 break;
-            } else if (inString == '\0' && (inChar == '/' && lines[pos + 1] == '*') && lines[pos + 2] != '+'
+            } else if (inString == '\0' && (inChar == '/' && lines[pos + 1].getCh() == '*')
+                    && lines[pos + 2].getCh() != '+'
                     && ssComment != SSC.HINT) {
                 // 处于多行注释中，注意规避了HINT和CONDITIONAL，Oracle模式下没有conditional
                 if (preserveMultiComments) {
-                    lines[out++] = '/';
-                    lines[out++] = '*';
+                    lines[out++].setCh('/');
+                    lines[out++].setCh('*');
                 }
                 pos++;
                 mlComment = true;
-            } else if (mlComment && ssComment == SSC.NONE && inChar == '*' && lines[pos + 1] == '/') {
+            } else if (mlComment && ssComment == SSC.NONE && inChar == '*' && lines[pos + 1].getCh() == '/') {
                 // 多行注释结束
                 pos++;
                 mlComment = false;
-                buffer.append(lines, 0, out);
+                if (buffer.length() == 0) {
+                    bufferOrder.setValue(lines[0].getOrder());
+                }
+                buffer.append(IntStream.range(0, lines.length)
+                        .mapToObj(i -> lines[i].getCh())
+                        .collect(StringBuilder::new, StringBuilder::append, StringBuilder::append)
+                        .toString()
+                        .toCharArray(), 0, out);
                 out = 0;
                 if (preserveMultiComments) {
-                    lines[out++] = '*';
-                    lines[out++] = '/';
-                    buffer.append(lines, 0, out);
+                    lines[out++].setCh('*');
+                    lines[out++].setCh('/');
+                    if (buffer.length() == 0) {
+                        bufferOrder.setValue(lines[0].getOrder());
+                    }
+                    buffer.append(IntStream.range(0, lines.length)
+                            .mapToObj(i -> lines[i].getCh())
+                            .collect(StringBuilder::new, StringBuilder::append, StringBuilder::append)
+                            .toString()
+                            .toCharArray(), 0, out);
                     out = 0;
                     if (sqls.size() != 0 && !inNormalSql) {
                         int lastIndex = sqls.size() - 1;
                         String lastSql = sqls.get(lastIndex) + buffer.toString();
-                        sqls.set(lastIndex, lastSql);
+                        sqls.set(lastIndex, new OffsetString(sqls.get(lastIndex).getOffset(), lastSql));
                         buffer.setLength(0);
                     }
                 }
                 needSpace = true;
             } else {
-                if (inString == '\0' && inChar == '/' && lines[pos + 1] == '*') {
-                    if (lines[pos + 2] == '+') {
+                if (inString == '\0' && inChar == '/' && lines[pos + 1].getCh() == '*') {
+                    if (lines[pos + 2].getCh() == '+') {
                         // 处于HINT中
                         ssComment = SSC.HINT;
                     }
-                } else if (inString == '\0' && ssComment != SSC.NONE && inChar == '*' && lines[pos + 1] == '/') {
+                } else if (inString == '\0' && ssComment != SSC.NONE && inChar == '*'
+                        && lines[pos + 1].getCh() == '/') {
                     // HINT或CONDITIONAL结束
                     ssComment = SSC.NONE;
-                } else if (inString == '\0' && inChar == '-' && lines[pos + 1] == '-' && lines[pos + 2] == '+') {
+                } else if (inString == '\0' && inChar == '-' && lines[pos + 1].getCh() == '-'
+                        && lines[pos + 2].getCh() == '+') {
                     // 在Oracle模式下Hint有单行Hint和多行Hint之分，这里处理Oracle模式下的单行Hint
                     ssComment = SSC.HINT;
                 }
@@ -579,7 +627,7 @@ public class SqlCommentProcessor {
                     // 字符指针出字符串或表达式
                     if (escapeString == '\0') {
                         inString = '\0';
-                    } else if (pos >= 1 && matchQEscape(lines[pos - 1])) {
+                    } else if (pos >= 1 && matchQEscape(lines[pos - 1].getCh())) {
                         inString = '\0';
                         escapeString = '\0';
                     }
@@ -587,31 +635,38 @@ public class SqlCommentProcessor {
                         && (inChar == '\'' || inChar == '"' || inChar == '`')) {
                     // 字符指针进入字符串或者表达式
                     inString = inChar;
-                    if (pos >= 1 && (lines[pos - 1] == 'q' || lines[pos - 1] == 'Q')) {
+                    if (pos >= 1 && (lines[pos - 1].getCh() == 'q' || lines[pos - 1].getCh() == 'Q')) {
                         // oracle 特有语法，Q 转义
-                        escapeString = lines[pos + 1];
+                        escapeString = lines[pos + 1].getCh();
                     }
                 }
                 if (!mlComment) {
                     if (needSpace && inChar == ' ') {
-                        lines[out++] = ' ';
+                        lines[out++].setCh(' ');
                     }
                     needSpace = false;
                     // 正常的SQL语句，将其放入line缓冲当中，在合适的实际flush如buffer缓存
-                    lines[out++] = inChar;
+                    lines[out++] = inOrderChar;
                     if (inChar != ' ') {
                         inNormalSql = true;
                     }
                 } else if (preserveMultiComments) {
                     // 保留多行注释
-                    lines[out++] = inChar;
+                    lines[out++] = inOrderChar;
                 }
             }
         }
         // 拦截性的处理，如果out指针没有为0，说明lines中还有内容没有被刷入到buffer，在这里进行flush
         if (out != 0 || buffer.length() != 0) {
-            lines[out++] = '\n';
-            buffer.append(lines, 0, out);
+            lines[out++].setCh('\n');
+            if (buffer.length() == 0) {
+                bufferOrder.setValue(lines[0].getOrder());
+            }
+            buffer.append(IntStream.range(0, lines.length)
+                    .mapToObj(i -> lines[i].getCh())
+                    .collect(StringBuilder::new, StringBuilder::append, StringBuilder::append)
+                    .toString()
+                    .toCharArray(), 0, out);
         }
     }
 
