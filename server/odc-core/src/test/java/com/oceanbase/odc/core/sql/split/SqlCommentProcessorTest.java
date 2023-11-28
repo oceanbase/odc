@@ -50,17 +50,17 @@ public class SqlCommentProcessorTest {
 
     @Test
     public void testIterator_MysqlMode() throws Exception {
-        List<OffsetString> actual;
+        List<String> actual;
         try (InputStream in =
                 this.getClass().getClassLoader().getResourceAsStream("sql/split/comment-processor-mysql-test.sql");
-                CloseableIterator<OffsetString> iterator = SqlCommentProcessor.iterator(in, DialectType.OB_MYSQL, false,
-                        false, false, StandardCharsets.UTF_8)) {
+                CloseableIterator<String> iterator = SqlCommentProcessor.iterator(in, StandardCharsets.UTF_8,
+                        new SqlCommentProcessor(DialectType.OB_MYSQL, false, false, false))) {
             actual = IteratorUtils.toList(iterator);
         }
         List<OffsetString> expected = getSqls("sql/split/comment-processor-mysql-verify.yml");
         Assert.assertEquals(expected.size(), actual.size());
         for (int i = 0; i < actual.size(); i++) {
-            Assert.assertEquals(expected.get(i), actual.get(i));
+            Assert.assertEquals(expected.get(i).getStr(), actual.get(i));
         }
     }
 
@@ -79,15 +79,15 @@ public class SqlCommentProcessorTest {
 
     @Test
     public void testIterator_OracleMode() throws Exception {
-        List<OffsetString> actual;
+        List<String> actual;
         try (InputStream in =
                 this.getClass().getClassLoader().getResourceAsStream("sql/split/comment-processor-oracle-test.sql");
-                CloseableIterator<OffsetString> iterator = SqlCommentProcessor.iterator(in, DialectType.OB_ORACLE,
-                        false, false, false, StandardCharsets.UTF_8)) {
+                CloseableIterator<String> iterator = SqlCommentProcessor.iterator(in, StandardCharsets.UTF_8,
+                        new SqlCommentProcessor(DialectType.OB_ORACLE, false, false, false))) {
             actual = IteratorUtils.toList(iterator);
         }
-        List<OffsetString> expected =
-                getSqls("sql/split/comment-processor-oracle-verify.yml");
+        List<String> expected = getSqls("sql/split/comment-processor-oracle-verify.yml").stream()
+                .map(OffsetString::getStr).collect(Collectors.toList());
         Assert.assertEquals(expected.size(), actual.size());
         for (int i = 0; i < actual.size(); i++) {
             Assert.assertEquals(expected.get(i), actual.get(i));

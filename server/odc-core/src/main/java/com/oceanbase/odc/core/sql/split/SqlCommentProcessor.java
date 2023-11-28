@@ -107,13 +107,8 @@ public class SqlCommentProcessor {
 
     public SqlCommentProcessor() {}
 
-    public static CloseableIterator<OffsetString> iterator(InputStream in, DialectType dialectType,
-            boolean preserveFormat,
-            boolean preserveSingleComments,
-            boolean preserveMultiComments,
-            Charset charset) {
-        return new SqlStatementIterator(in, dialectType, preserveFormat, preserveSingleComments, preserveMultiComments,
-                charset);
+    public static CloseableIterator<String> iterator(InputStream in, Charset charset, SqlCommentProcessor processor) {
+        return new SqlStatementIterator(in, charset, processor);
     }
 
     public static List<OffsetString> removeSqlComments(String originalSql,
@@ -734,26 +729,19 @@ public class SqlCommentProcessor {
         }
     }
 
-    private static class SqlStatementIterator implements CloseableIterator<OffsetString> {
+    private static class SqlStatementIterator implements CloseableIterator<String> {
         private final BufferedReader reader;
         private final StringBuffer buffer = new StringBuffer();
         private final LinkedList<OffsetString> holder = new LinkedList<>();
         private final SqlCommentProcessor processor;
-        private final DialectType dialectType;
 
-        private OffsetString current;
+        private String current;
         private Holder<Integer> bufferOrder = new Holder<>(0);
         private int lastLineOrder = 0;
 
-        public SqlStatementIterator(InputStream input, DialectType dialectType,
-                boolean preserveFormat,
-                boolean preserveSingleComments,
-                boolean preserveMultiComments,
-                Charset charset) {
+        public SqlStatementIterator(InputStream input, Charset charset, SqlCommentProcessor processor) {
             this.reader = new BufferedReader(new InputStreamReader(input, charset));
-            this.dialectType = dialectType;
-            this.processor =
-                    new SqlCommentProcessor(dialectType, preserveFormat, preserveSingleComments, preserveMultiComments);
+            this.processor = processor;
         }
 
         @Override
@@ -765,8 +753,8 @@ public class SqlCommentProcessor {
         }
 
         @Override
-        public OffsetString next() {
-            OffsetString next = current;
+        public String next() {
+            String next = current;
             current = null;
             if (next == null) {
                 next = parseNext();
@@ -777,18 +765,18 @@ public class SqlCommentProcessor {
             return next;
         }
 
-        private OffsetString parseNext() {
+        private String parseNext() {
             try {
                 if (!holder.isEmpty()) {
-                    return holder.poll();
+                    return holder.poll().getStr();
                 }
                 String line;
                 while (holder.isEmpty() && (line = reader.readLine()) != null) {
-                    if (Objects.nonNull(dialectType) && dialectType.isMysql()) {
+                    if (processor.dialectType.isMysql()) {
                         processor.addLineMysql(holder, buffer, bufferOrder, line.chars()
                                 .mapToObj(c -> new OrderChar((char) c, lastLineOrder++))
                                 .collect(Collectors.toList()));
-                    } else if (Objects.nonNull(dialectType) && dialectType.isOracle()) {
+                    } else if (processor.dialectType.isOracle()) {
                         processor.addLineOracle(holder, buffer, bufferOrder, line.chars()
                                 .mapToObj(c -> new OrderChar((char) c, lastLineOrder++))
                                 .collect(Collectors.toList()));
@@ -797,14 +785,14 @@ public class SqlCommentProcessor {
                     lastLineOrder++;
                 }
                 if (!holder.isEmpty()) {
-                    return holder.poll();
+                    return holder.poll().getStr();
                 }
                 if (buffer.toString().trim().isEmpty()) {
                     return null;
                 }
                 String sql = buffer.toString();
                 buffer.setLength(0);
-                return new OffsetString(0, sql);
+                return sql;
             } catch (Exception e) {
                 throw new RuntimeException("Failed to parse input. reason: " + e.getMessage(), e);
             }
