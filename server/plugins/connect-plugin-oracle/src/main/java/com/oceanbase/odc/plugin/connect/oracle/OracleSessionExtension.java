@@ -17,8 +17,9 @@
 package com.oceanbase.odc.plugin.connect.oracle;
 
 import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.Statement;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicReference;
 
 import org.pf4j.Extension;
 
@@ -45,17 +46,22 @@ public class OracleSessionExtension extends OBOracleSessionExtension {
     @Override
     public String getConnectionId(Connection connection) {
         String querySql =
-                "SELECT SID, SERIAL#  FROM V$SESSION WHERE SID = SYS_CONTEXT('USERENV', 'SID') and AUDSID=SYS_CONTEXT('USERENV', 'SESSIONID')";
-        AtomicReference<String> connectionId = new AtomicReference<>();
+                "SELECT SID, SERIAL# FROM V$SESSION WHERE SID = SYS_CONTEXT('USERENV', 'SID') and AUDSID=SYS_CONTEXT('USERENV', 'SESSIONID')";
+        String connectionId = null;
         try {
-            JdbcOperationsUtil.getJdbcOperations(connection).query(querySql, (rs, rowNum) -> {
-                connectionId.set(rs.getString("SID") + "," + rs.getString("SERIAL#"));
-                return null;
-            });
-            PreConditions.notNull(connectionId.get(), "SID and SERIAL# can not be null");
-            return connectionId.get();
+            Statement statement = connection.createStatement();
+            ResultSet rs = statement.executeQuery(querySql);
+            if (rs.next()) {
+                connectionId = rs.getString("SID") + "," + rs.getString("SERIAL#");
+            }
+            PreConditions.notNull(connectionId, "SID and SERIAL# can not be null");
+            return connectionId;
         } catch (Exception e) {
-            throw new RuntimeException("Failed to get session id from oracle, message=" + e);
+            log.info(
+                    "Failed to get connection id from oracle, may not have permission to query V$SESSION, will use SYS_CONTEXT('USERENV', 'SESSIONID') as connection id, error message={}",
+                    e.getMessage());
+            querySql = "select SYS_CONTEXT('USERENV', 'SESSIONID') from dual";
+            return JdbcOperationsUtil.getJdbcOperations(connection).queryForObject(querySql, String.class);
         }
     }
 
