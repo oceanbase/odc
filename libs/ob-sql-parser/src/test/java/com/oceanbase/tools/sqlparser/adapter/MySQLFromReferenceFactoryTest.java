@@ -17,6 +17,7 @@ package com.oceanbase.tools.sqlparser.adapter;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import org.antlr.v4.runtime.BailErrorStrategy;
@@ -74,6 +75,18 @@ public class MySQLFromReferenceFactoryTest {
         FromReference actual = factory.generate();
 
         NameReference expect = new NameReference(null, "tab", null);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_fromTableExpr_generateNameRefSucceed() {
+        Table_referenceContext context = getTableReferenceContext("select a from table(generator(1000)) as abcd");
+        StatementFactory<FromReference> factory = new MySQLFromReferenceFactory(context);
+        FromReference actual = factory.generate();
+
+        FunctionCall functionCall = new FunctionCall("generator",
+                Collections.singletonList(new ExpressionParam(new ConstExpression("1000"))));
+        ExpressionReference expect = new ExpressionReference(functionCall, "abcd");
         Assert.assertEquals(expect, actual);
     }
 

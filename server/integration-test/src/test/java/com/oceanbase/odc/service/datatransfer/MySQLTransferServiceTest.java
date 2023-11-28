@@ -51,7 +51,6 @@ import com.oceanbase.odc.ServiceTestEnv;
 import com.oceanbase.odc.TestConnectionUtil;
 import com.oceanbase.odc.core.datasource.DataSourceFactory;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
-import com.oceanbase.odc.core.shared.constant.ConnectionAccountType;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.plugin.task.api.datatransfer.dumper.AbstractOutputFile;
@@ -97,7 +96,7 @@ public class MySQLTransferServiceTest extends ServiceTestEnv {
     @Test
     public void create_dumpSchema_onlySchemaDumped() throws Exception {
         DataTransferTaskContext context =
-                dataTransferService.create(BUCKET, getDumpConfig(connectionConfig.defaultSchema(), false, true));
+                dataTransferService.create(BUCKET, getDumpConfig(connectionConfig.getDefaultSchema(), false, true));
         Assert.assertNotNull(context.get(60, TimeUnit.SECONDS));
 
         ExportOutput ExportOutput = new ExportOutput(getDumpFile());
@@ -108,7 +107,7 @@ public class MySQLTransferServiceTest extends ServiceTestEnv {
 
     @Test
     public void create_dumpSchema_onlySchemaDumped_mergeSchemaFiles() throws Exception {
-        DataTransferConfig config = getDumpConfig(connectionConfig.defaultSchema(), false, true);
+        DataTransferConfig config = getDumpConfig(connectionConfig.getDefaultSchema(), false, true);
         config.setMergeSchemaFiles(true);
         DataTransferTaskContext context = dataTransferService.create(BUCKET, config);
         Assert.assertNotNull(context.get(60, TimeUnit.SECONDS));
@@ -125,7 +124,8 @@ public class MySQLTransferServiceTest extends ServiceTestEnv {
         assertTableNotExists();
 
         DataTransferTaskContext context = dataTransferService.create(BUCKET, getLoadConfig(false,
-                connectionConfig.defaultSchema(), Collections.singletonList(dumpFile.getAbsolutePath()), false, true));
+                connectionConfig.getDefaultSchema(), Collections.singletonList(dumpFile.getAbsolutePath()), false,
+                true));
         Assert.assertNotNull(context.get(60, TimeUnit.SECONDS));
         assertTableExists();
         assertTableCountEquals(0);
@@ -137,14 +137,14 @@ public class MySQLTransferServiceTest extends ServiceTestEnv {
         File target = copyFile(new ByteArrayInputStream(sqlScript.getBytes()), "sql");
 
         DataTransferTaskContext context = dataTransferService.create(BUCKET, getLoadConfig(true,
-                connectionConfig.defaultSchema(), Collections.singletonList(target.getAbsolutePath()), true, false));
+                connectionConfig.getDefaultSchema(), Collections.singletonList(target.getAbsolutePath()), true, false));
         Assert.assertNotNull(context.get(60, TimeUnit.SECONDS));
         assertTableExists();
         assertTableCountEquals(4);
     }
 
     private void setUpEnv() throws Exception {
-        DataSourceFactory factory = new DruidDataSourceFactory(connectionConfig, ConnectionAccountType.MAIN);
+        DataSourceFactory factory = new DruidDataSourceFactory(connectionConfig);
         DataSource dataSource = factory.getDataSource();
         try (Connection connection = dataSource.getConnection()) {
             String create = "CREATE TABLE " + TEST_TABLE_NAME + "(COL1 varchar(64), COL2 varchar(64))";
@@ -174,7 +174,7 @@ public class MySQLTransferServiceTest extends ServiceTestEnv {
     }
 
     private void clearEnv() throws Exception {
-        DataSourceFactory factory = new DruidDataSourceFactory(connectionConfig, ConnectionAccountType.MAIN);
+        DataSourceFactory factory = new DruidDataSourceFactory(connectionConfig);
         DataSource dataSource = factory.getDataSource();
         try (Connection connection = dataSource.getConnection()) {
             String drop = "DROP TABLE " + TEST_TABLE_NAME;
@@ -258,7 +258,7 @@ public class MySQLTransferServiceTest extends ServiceTestEnv {
     }
 
     private void assertTableExists() throws SQLException {
-        DataSourceFactory factory = new DruidDataSourceFactory(connectionConfig, ConnectionAccountType.MAIN);
+        DataSourceFactory factory = new DruidDataSourceFactory(connectionConfig);
         DataSource dataSource = factory.getDataSource();
         try (Connection connection = dataSource.getConnection()) {
             String sql = "SELECT COUNT(1) FROM " + TEST_TABLE_NAME;
@@ -271,7 +271,7 @@ public class MySQLTransferServiceTest extends ServiceTestEnv {
     }
 
     private void assertTableNotExists() throws SQLException {
-        DataSourceFactory factory = new DruidDataSourceFactory(connectionConfig, ConnectionAccountType.MAIN);
+        DataSourceFactory factory = new DruidDataSourceFactory(connectionConfig);
         DataSource dataSource = factory.getDataSource();
         try (Connection connection = dataSource.getConnection()) {
             String sql = "SELECT COUNT(1) FROM " + TEST_TABLE_NAME;
@@ -309,7 +309,7 @@ public class MySQLTransferServiceTest extends ServiceTestEnv {
     }
 
     private void assertTableCountEquals(int count) throws SQLException {
-        DataSourceFactory factory = new DruidDataSourceFactory(connectionConfig, ConnectionAccountType.MAIN);
+        DataSourceFactory factory = new DruidDataSourceFactory(connectionConfig);
         DataSource dataSource = factory.getDataSource();
         try (Connection connection = dataSource.getConnection()) {
             String sql = "SELECT COUNT(1) FROM " + TEST_TABLE_NAME;

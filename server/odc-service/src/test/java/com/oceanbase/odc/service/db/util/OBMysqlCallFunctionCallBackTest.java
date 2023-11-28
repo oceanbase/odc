@@ -42,20 +42,22 @@ public class OBMysqlCallFunctionCallBackTest {
 
     public static final String TEST_CASE_1 = "func_test";
     public static final String TEST_CASE_2 = "func_test_1";
+    public static final String TEST_CASE_3 = "func_test_2";
 
     @BeforeClass
     public static void setUp() throws IOException {
-        JdbcTemplate oracle =
+        JdbcTemplate mysql =
                 new JdbcTemplate(TestDBConfigurations.getInstance().getTestOBMysqlConfiguration().getDataSource());
-        getContent().forEach(oracle::execute);
+        getContent().forEach(mysql::execute);
     }
 
     @AfterClass
     public static void clear() {
-        JdbcTemplate oracle =
+        JdbcTemplate mysql =
                 new JdbcTemplate(TestDBConfigurations.getInstance().getTestOBMysqlConfiguration().getDataSource());
-        oracle.execute("DROP FUNCTION " + TEST_CASE_1);
-        oracle.execute("DROP FUNCTION " + TEST_CASE_2);
+        mysql.execute("DROP FUNCTION " + TEST_CASE_1);
+        mysql.execute("DROP FUNCTION " + TEST_CASE_2);
+        mysql.execute("DROP FUNCTION " + TEST_CASE_3);
     }
 
     @Test
@@ -181,6 +183,38 @@ public class OBMysqlCallFunctionCallBackTest {
         plOutParam.setParamName(TEST_CASE_2);
         plOutParam.setDataType("int");
         plOutParam.setValue("2");
+        expect.setReturnValue(plOutParam);
+        expect.setOutParams(null);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void doInConnection_unusualParam_callSucceed() {
+        String input = "'in\\put'";
+
+        CallFunctionReq callFunctionReq = new CallFunctionReq();
+        DBFunction function = new DBFunction();
+        function.setFunName(TEST_CASE_3);
+        List<DBPLParam> list = new ArrayList<>();
+        DBPLParam param = new DBPLParam();
+        param.setParamName("p0");
+        param.setDefaultValue(input);
+        param.setDataType("varchar(20)");
+        param.setParamMode(DBPLParamMode.IN);
+        list.add(param);
+        function.setParams(list);
+        callFunctionReq.setFunction(function);
+
+        ConnectionCallback<CallFunctionResp> callback = new OBMysqlCallFunctionCallBack(callFunctionReq, -1);
+        JdbcTemplate jdbcTemplate =
+                new JdbcTemplate(TestDBConfigurations.getInstance().getTestOBMysqlConfiguration().getDataSource());
+        CallFunctionResp actual = jdbcTemplate.execute(callback);
+
+        CallFunctionResp expect = new CallFunctionResp();
+        PLOutParam plOutParam = new PLOutParam();
+        plOutParam.setParamName(TEST_CASE_3);
+        plOutParam.setDataType("varchar(20)");
+        plOutParam.setValue(input);
         expect.setReturnValue(plOutParam);
         expect.setOutParams(null);
         Assert.assertEquals(expect, actual);

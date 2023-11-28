@@ -57,7 +57,7 @@ public class OnlineSchemaChangeExpiredTest extends OBMySqlOscTestEnv {
             OnlineSchemaChangeParameters changeParameters = getOnlineSchemaChangeParameters();
             ScheduleEntity schedule = getScheduleEntity(config, changeParameters);
             List<OnlineSchemaChangeScheduleTaskParameters> subTaskParameters =
-                    changeParameters.generateSubTaskParameters(config, config.defaultSchema());
+                    changeParameters.generateSubTaskParameters(config, config.getDefaultSchema());
             List<ScheduleTaskEntity> taskEntities = new ArrayList<>();
             subTaskParameters.forEach(
                     taskParameter -> taskEntities.add(getScheduleTaskEntity(schedule.getId(), taskParameter)));

@@ -53,7 +53,7 @@ public class DBTableDataController {
     public OdcResult<BatchDataModifyResp> batchGetModifySql(@PathVariable String sid,
             @RequestBody @NotNull @Valid BatchDataModifyReq req) {
         return OdcResult.ok(tableDataService.batchGetModifySql(
-                sessionService.nullSafeGet(SidUtils.getSessionId(sid)), req));
+                sessionService.nullSafeGet(SidUtils.getSessionId(sid), true), req));
     }
 
 }

@@ -25,7 +25,7 @@ import javax.sql.DataSource;
 
 import com.oceanbase.odc.core.datasource.CloneableDataSourceFactory;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
-import com.oceanbase.odc.core.sql.execute.ConnectionExtensionExecutor;
+import com.oceanbase.odc.core.sql.execute.SessionOperations;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -44,12 +44,14 @@ public class SqlExecuteContext<T> implements Future<T> {
     private final Future<T> taskFuture;
     private final CloneableDataSourceFactory dataSourceFactory;
     private final SqlExecuteCallable<T> callable;
+    private final SessionOperations sessionOperations;
     private volatile boolean cancelled;
 
     public SqlExecuteContext(@NonNull Future<T> taskFuture, @NonNull SqlExecuteCallable<T> callable) {
         this.taskFuture = taskFuture;
         this.callable = callable;
         this.dataSourceFactory = callable.getDataSourceFactory();
+        this.sessionOperations = callable.getSessionOperations();
     }
 
     @Override
@@ -84,15 +86,14 @@ public class SqlExecuteContext<T> implements Future<T> {
     }
 
     private boolean killQuery() throws Exception {
-        String connectionId = callable.tryGetConnectionId();
-        ConnectionExtensionExecutor extensionExecutor = callable.getExtensionExecutor();
-        DataSource dataSource = dataSourceFactory.getDataSource();
+        String connectionId = this.callable.tryGetConnectionId();
+        DataSource dataSource = this.dataSourceFactory.getDataSource();
         try (Connection connection = dataSource.getConnection()) {
-            extensionExecutor.killQueryConsumer().accept(connection, connectionId);
+            this.sessionOperations.killQuery(connection, connectionId);
             log.info("Kill query succeed, connectionId={}", connectionId);
         } catch (Exception e) {
-            if (extensionExecutor.getDialectType().isOceanbase()) {
-                ConnectionSessionUtil.killQueryByDirectConnect(connectionId, dataSourceFactory);
+            if (this.dataSourceFactory.getDialectType().isOceanbase()) {
+                ConnectionSessionUtil.killQueryByDirectConnect(connectionId, this.dataSourceFactory);
                 log.info("Kill query by direct connect succeed, connectionId={}", connectionId);
             } else {
                 log.warn("Kill query occur error, connectionId={}", connectionId, e);

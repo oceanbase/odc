@@ -20,3 +20,10 @@ begin
   return p0+p1;
 end;
 $$
+
+create function ${const:com.oceanbase.odc.service.db.util.OBMysqlCallFunctionCallBackTest.TEST_CASE_3} (
+  p0 varchar(20)) returns varchar(20)
+begin
+  return p0;
+end;
+$$

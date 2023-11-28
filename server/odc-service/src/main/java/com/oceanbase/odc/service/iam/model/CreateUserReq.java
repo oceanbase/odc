@@ -35,10 +35,10 @@ import lombok.Setter;
 @Getter
 @Setter
 public class CreateUserReq {
-    @Size(min = 1, max = 64, message = "User name is out of range [1,64]")
+    @Size(min = 1, max = 128, message = "User name is out of range [1,128]")
     @Name(message = "User name cannot start or end with whitespaces")
     private String name;
-    @Size(min = 1, max = 64, message = "User account name is out of range [1,64]")
+    @Size(min = 1, max = 128, message = "User account name is out of range [1,128]")
     @Name(message = "User account name cannot start or end with whitespaces")
     private String accountName;
     @SensitiveInput

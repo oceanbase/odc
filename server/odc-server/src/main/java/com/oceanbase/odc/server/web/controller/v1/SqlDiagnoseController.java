@@ -53,7 +53,7 @@ public class SqlDiagnoseController {
     @ApiOperation(value = "explain", notes = "对sql执行explain查看计划信息，sid示例：sid:1000-1:d:db1")
     @RequestMapping(value = "/explain/{sid}", method = RequestMethod.POST)
     public OdcResult<SqlExplain> explain(@PathVariable String sid, @RequestBody ResourceSql sql) {
-        return OdcResult.ok(diagnoseService.explain(sessionService.nullSafeGet(SidUtils.getSessionId(sid)), sql));
+        return OdcResult.ok(diagnoseService.explain(sessionService.nullSafeGet(SidUtils.getSessionId(sid), true), sql));
     }
 
     @ApiOperation(value = "getExecExplain", notes = "查询实际执行的计划信息，sid示例：sid:1000-1:d:db1,"
@@ -61,7 +61,7 @@ public class SqlDiagnoseController {
     @RequestMapping(value = "/getExecExplain/{sid}", method = RequestMethod.POST)
     public OdcResult<SqlExplain> getExecExplain(@PathVariable String sid, @RequestBody ResourceSql sql) {
         return OdcResult.ok(diagnoseService.getPhysicalPlan(
-                sessionService.nullSafeGet(SidUtils.getSessionId(sid)), sql));
+                sessionService.nullSafeGet(SidUtils.getSessionId(sid), true), sql));
     }
 
     @ApiOperation(value = "getExecDetail", notes = "查询执行sql的信息，例如等待时间、执行时间、IO等，sid示例：sid:1000-1:d:db1,"
@@ -69,22 +69,23 @@ public class SqlDiagnoseController {
     @RequestMapping(value = "/getExecDetail/{sid}", method = RequestMethod.POST)
     public OdcResult<SqlExecDetail> getExecDetail(@PathVariable String sid, @RequestBody ResourceSql sql) {
         return OdcResult.ok(diagnoseService.getExecutionDetail(
-                sessionService.nullSafeGet(SidUtils.getSessionId(sid)), sql));
+                sessionService.nullSafeGet(SidUtils.getSessionId(sid), true), sql));
     }
 
     @ApiOperation(value = "getFullLinkTrace", notes = "获取全链路诊断信息，嵌套数据结构")
     @RequestMapping(value = "/getFullLinkTrace/{sid}", method = RequestMethod.POST)
     public SuccessResponse<TraceSpan> getFullLinkTrace(@PathVariable String sid, @RequestBody ResourceSql sql)
             throws IOException {
-        return Responses
-                .success(diagnoseService.getFullLinkTrace(sessionService.nullSafeGet(SidUtils.getSessionId(sid)), sql));
+        return Responses.success(diagnoseService.getFullLinkTrace(
+                sessionService.nullSafeGet(SidUtils.getSessionId(sid)), sql));
     }
 
     @ApiOperation(value = "getFullLinkTraceDownloadUrl")
     @RequestMapping(value = "/getFullLinkTraceDownloadUrl/{sid}", method = RequestMethod.POST)
     public SuccessResponse<String> getFullLinkTraceJson(@PathVariable String sid, @RequestBody ResourceSql sql)
             throws IOException {
-        return Responses.success(diagnoseService
-                .getFullLinkTraceDownloadUrl(sessionService.nullSafeGet(SidUtils.getSessionId(sid)), sql));
+        return Responses.success(diagnoseService.getFullLinkTraceDownloadUrl(
+                sessionService.nullSafeGet(SidUtils.getSessionId(sid)), sql));
     }
+
 }

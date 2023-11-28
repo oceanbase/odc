@@ -42,6 +42,7 @@ import javax.websocket.Session;
 import javax.websocket.server.PathParam;
 import javax.websocket.server.ServerEndpoint;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -106,6 +107,9 @@ public class WebSocketServer {
 
     @Autowired
     private ConnectionConfigProvider connectionConfigProvider;
+
+    @Value("${odc.server.obclient.command-black-list:}")
+    private List<String> obclientCommandBlackList;
     /**
      * obclient可执行文件路径
      */
@@ -214,7 +218,7 @@ public class WebSocketServer {
         ConnectionSession connectionSession = sessionService.nullSafeGet(SidUtils.getSessionId(resourceId));
         boolean supportSetGBK = isSupportSetGBK(connectionSession);
         String schema = MoreObjects.firstNonNull(ConnectionSessionUtil.getCurrentSchema(connectionSession),
-                connectionConfig.defaultSchema());
+                connectionConfig.getDefaultSchema());
 
         String[] cmds = generateCmd(connectionConfig, supportSetGBK, schema);
 
@@ -274,6 +278,10 @@ public class WebSocketServer {
         if (SystemUtils.getEnvOrProperty("sun.jnu.encoding").equalsIgnoreCase("gbk") && supportSetGBK) {
             obclientCmd.add("--init-command");
             obclientCmd.add("set names gbk");
+        }
+        if (CollectionUtils.isNotEmpty(obclientCommandBlackList)) {
+            obclientCmd.add("--ob-disable_commands");
+            obclientCmd.add(String.join(",", obclientCommandBlackList));
         }
         String password = connectionConfig.getPassword();
         if (StringUtils.isNotBlank(password)) {

@@ -23,12 +23,12 @@ import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 
 import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.core.sql.parser.DropStatement;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckContext;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckRule;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckUtil;
 import com.oceanbase.odc.service.sqlcheck.model.CheckViolation;
 import com.oceanbase.odc.service.sqlcheck.model.SqlCheckRuleType;
-import com.oceanbase.odc.service.sqlcheck.parser.DropStatement;
 import com.oceanbase.tools.sqlparser.statement.Statement;
 
 import lombok.NonNull;

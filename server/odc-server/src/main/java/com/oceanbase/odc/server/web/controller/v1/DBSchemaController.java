@@ -46,14 +46,15 @@ public class DBSchemaController {
     @ApiOperation(value = "list", notes = "列出数据库实例上所有的数据库，sid示例：sid:1000-1")
     @RequestMapping(value = "/list/{sid:.*}", method = RequestMethod.GET)
     public OdcResult<List<DBDatabase>> list(@PathVariable String sid) {
-        return OdcResult.ok(databaseService.listDatabases(sessionService.nullSafeGet(SidUtils.getSessionId(sid))));
+        return OdcResult.ok(databaseService.listDatabases(
+                sessionService.nullSafeGet(SidUtils.getSessionId(sid), true)));
     }
 
     @ApiOperation(value = "detail", notes = "查询数据库详情，包括大小、编码等，sid示例：sid:1000-1:d:db1")
     @RequestMapping(value = "/{sid:.*}", method = RequestMethod.GET)
     public OdcResult<DBDatabase> detail(@PathVariable String sid) {
         ResourceIdentifier i = ResourceIDParser.parse(sid);
-        ConnectionSession session = sessionService.nullSafeGet(i.getSid());
+        ConnectionSession session = sessionService.nullSafeGet(i.getSid(), true);
         return OdcResult.ok(databaseService.detail(session, i.getDatabase()));
     }
 
