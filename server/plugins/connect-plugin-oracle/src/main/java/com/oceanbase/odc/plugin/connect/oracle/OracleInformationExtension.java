@@ -19,6 +19,8 @@ package com.oceanbase.odc.plugin.connect.oracle;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.pf4j.Extension;
 
@@ -33,15 +35,27 @@ import com.oceanbase.odc.plugin.connect.api.InformationExtensionPoint;
  */
 @Extension
 public class OracleInformationExtension implements InformationExtensionPoint {
+    private final String VERSION_REGEX = "\\b(\\d+(?:\\.\\d+)*)\\b";
+
     @Override
     public String getDBVersion(Connection connection) {
         try (Statement statement = connection.createStatement()) {
-            try (ResultSet resultSet = statement.executeQuery("SELECT VERSION FROM SYS.V$INSTANCE")) {
-                if (resultSet.next()) {
-                    return resultSet.getString(1);
+            try (ResultSet rs = statement.executeQuery("SELECT BANNER FROM V$VERSION WHERE BANNER LIKE 'Oracle%'")) {
+                if (rs.next()) {
+                    String banner = rs.getString(1);
+                    Pattern pattern = java.util.regex.Pattern.compile(VERSION_REGEX);
+                    Matcher matcher = pattern.matcher(banner);
+                    if (matcher.find()) {
+                        return matcher.group();
+                    } else {
+                        throw new BadRequestException(ErrorCodes.QueryDBVersionFailed,
+                                new Object[] {"Failed to get oracle version,regular match failed"},
+                                "Failed to get oracle version,regular match failed");
+                    }
+                } else {
+                    throw new BadRequestException(ErrorCodes.QueryDBVersionFailed,
+                            new Object[] {"Result set is empty"}, "Result set is empty");
                 }
-                throw new BadRequestException(ErrorCodes.QueryDBVersionFailed,
-                        new Object[] {"Result set is empty"}, "Result set is empty");
             }
         } catch (Exception e) {
             throw new BadRequestException(ErrorCodes.QueryDBVersionFailed,
