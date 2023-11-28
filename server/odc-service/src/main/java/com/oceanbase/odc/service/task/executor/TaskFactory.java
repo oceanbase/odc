@@ -16,9 +16,11 @@
 
 package com.oceanbase.odc.service.task.executor;
 
+import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.executor.sampletask.SampleTask;
+import com.oceanbase.odc.service.task.schedule.ScheduleSourceType;
 
 /**
  * @author gaoda.xy
@@ -27,22 +29,27 @@ import com.oceanbase.odc.service.task.executor.sampletask.SampleTask;
 public class TaskFactory {
 
     public static Task create(JobContext jobContext) {
-        switch (jobContext.getTaskType()) {
-            case SAMPLE:
-                return new SampleTask(jobContext);
-            case ASYNC:
-            case IMPORT:
-            case EXPORT:
-            case MOCKDATA:
-            case PARTITION_PLAN:
-            case ALTER_SCHEDULE:
-            case SHADOWTABLE_SYNC:
-            case EXPORT_RESULT_SET:
-            case ONLINE_SCHEMA_CHANGE:
-            case APPLY_PROJECT_PERMISSION:
-                throw new UnsupportedException("Not supported yet.");
-            default:
-                throw new UnsupportedException("Unsupported task type.");
+        if (jobContext.getJobIdentity().getSourceType() == ScheduleSourceType.TASK_TASK) {
+            switch (TaskType.valueOf(jobContext.getJobIdentity().getTaskType())) {
+                case SAMPLE:
+                    return new SampleTask(jobContext);
+                case ASYNC:
+                case IMPORT:
+                case EXPORT:
+                case MOCKDATA:
+                case PARTITION_PLAN:
+                case ALTER_SCHEDULE:
+                case SHADOWTABLE_SYNC:
+                case EXPORT_RESULT_SET:
+                case ONLINE_SCHEMA_CHANGE:
+                case APPLY_PROJECT_PERMISSION:
+                    throw new UnsupportedException("Not supported yet.");
+                default:
+                    throw new UnsupportedException("Unsupported task type.");
+            }
+        } else {
+            // todo job type
+            throw new UnsupportedException("Unsupported job type.");
         }
     }
 

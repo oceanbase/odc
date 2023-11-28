@@ -25,10 +25,20 @@ public enum ScheduleSourceType {
     /**
      * data from task_task
      */
-    TASK_TASK,
+    TASK_TASK("task-task"),
 
     /**
      * data from schedule_task
      */
-    SCHEDULE_TASK
+    SCHEDULE_TASK("schedule-task");
+
+    private final String source;
+
+    ScheduleSourceType(String source) {
+        this.source = source;
+    }
+
+    public String getSource() {
+        return source;
+    }
 }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.k8s;
+package com.oceanbase.odc.service.task;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -26,11 +26,14 @@ import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.service.task.caller.JobException;
 import com.oceanbase.odc.service.task.caller.JobUtils;
 import com.oceanbase.odc.service.task.caller.K8sJobClient;
 import com.oceanbase.odc.service.task.caller.NativeK8sJobClient;
 import com.oceanbase.odc.service.task.caller.PodParam;
+import com.oceanbase.odc.service.task.schedule.JobIdentity;
+import com.oceanbase.odc.service.task.schedule.ScheduleSourceType;
 import com.oceanbase.odc.test.database.TestProperties;
 
 /**
@@ -51,9 +54,11 @@ public class NativeK8sClientTest {
     @Test
     public void test_createJob() throws JobException {
 
-        long taskId = System.currentTimeMillis();
+        long exceptedTaskId = System.currentTimeMillis();
+        JobIdentity jobIdentity = JobIdentity.of(exceptedTaskId, ScheduleSourceType.TASK_TASK, TaskType.ASYNC.name());
+
         String imageName = "perl:5.34.0";
-        String exceptedJobName = JobUtils.generateJobName(taskId);
+        String exceptedJobName = JobUtils.generateJobName(jobIdentity);
         List<String> cmd = Arrays.asList("perl", "-Mbignum=bpi", "-wle", "print bpi(2000)");
         PodParam podParam = new PodParam();
         String generateJobOfName = k8sClient.create("default", exceptedJobName, imageName, cmd, podParam);

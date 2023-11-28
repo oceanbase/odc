@@ -16,7 +16,7 @@
 
 package com.oceanbase.odc.service.task.executor;
 
-import com.oceanbase.odc.service.task.enums.DeployModelEnum;
+import com.oceanbase.odc.service.task.enums.TaskRunModeEnum;
 
 /**
  * @author gaoda.xy
@@ -24,12 +24,11 @@ import com.oceanbase.odc.service.task.enums.DeployModelEnum;
  */
 public class JobContextProviderFactory {
 
-    public static JobContextProvider create(DeployModelEnum mode) {
+    public static JobContextProvider create(TaskRunModeEnum mode) {
         switch (mode) {
             case K8S:
                 return new K8sJobContextProvider();
-            case MASTER_WORKER:
-            case STANDALONE:
+            case THREAD:
             default:
                 throw new UnsupportedOperationException("Not supported yet.");
         }

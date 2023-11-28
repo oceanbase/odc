@@ -20,7 +20,7 @@ import org.springframework.boot.context.properties.NestedConfigurationProperty;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.context.annotation.Configuration;
 
-import com.oceanbase.odc.service.task.enums.DeployModelEnum;
+import com.oceanbase.odc.service.task.enums.TaskRunModeEnum;
 
 import lombok.Data;
 
@@ -35,7 +35,7 @@ import lombok.Data;
 @ConfigurationProperties(prefix = "odc.task-framework")
 public class TaskFrameworkProperties {
 
-    private DeployModelEnum deployModel;
+    private TaskRunModeEnum runMode;
 
     @NestedConfigurationProperty
     private K8sProperties k8s = new K8sProperties();

@@ -53,12 +53,12 @@ public abstract class BaseTask implements Task {
 
     @Override
     public void start() {
-        log.info("Start task, id: {}", context.getTaskId());
+        log.info("Start task, id: {}", context.getJobIdentity().getId());
         try {
             initTaskMonitor();
             doStart();
         } catch (Exception e) {
-            log.error("Task run failed, id: {}", context.getTaskId(), e);
+            log.error("Task run failed, id: {}", context.getJobIdentity().getId(), e);
             onFailure(e);
         } finally {
             uploadResults();
@@ -67,11 +67,11 @@ public abstract class BaseTask implements Task {
 
     @Override
     public void stop() {
-        log.info("Stop task, id: {}", context.getTaskId());
+        log.info("Stop task, id: {}", context.getJobIdentity().getId());
         try {
             doStop();
         } catch (Exception e) {
-            log.error("Task stop failed, id: {}", context.getTaskId(), e);
+            log.error("Task stop failed, id: {}", context.getJobIdentity().getId(), e);
             onFailure(e);
         } finally {
             uploadResults();
@@ -113,14 +113,14 @@ public abstract class BaseTask implements Task {
 
     private void initTaskMonitor() {
         ThreadFactory threadFactory = new ThreadFactoryBuilder()
-                .setNameFormat("Task-" + context.getTaskId() + "-Monitor-%d")
+                .setNameFormat("Task-" + context.getJobIdentity().getId() + "-Monitor-%d")
                 .build();
         ScheduledExecutorService scheduledExecutor = Executors.newScheduledThreadPool(1, threadFactory);
         scheduledExecutor.scheduleAtFixedRate(() -> {
             try {
                 updateStatusAndProgress();
             } catch (Exception e) {
-                log.warn("Update task progress failed, id: {}", context.getTaskId(), e);
+                log.warn("Update task progress failed, id: {}", context.getJobIdentity().getId(), e);
             }
             if (isStopped() || isFinished()) {
                 scheduledExecutor.shutdown();

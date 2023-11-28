@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.task.listener;
 
 import com.oceanbase.odc.common.event.AbstractEvent;
 import com.oceanbase.odc.service.task.enums.JobCallerAction;
+import com.oceanbase.odc.service.task.schedule.JobIdentity;
 
 import lombok.Getter;
 
@@ -34,16 +35,16 @@ public class JobCallerEvent extends AbstractEvent {
     private final boolean success;
 
     @Getter
-    private final Long taskId;
+    private final JobIdentity jobIdentity;
 
     @Getter
     private final Exception ex;
 
-    public JobCallerEvent(Long taskId, JobCallerAction jobAction, boolean success, Exception ex) {
-        super(taskId, jobAction.name());
+    public JobCallerEvent(JobIdentity jobIdentity, JobCallerAction jobAction, boolean success, Exception ex) {
+        super(jobIdentity, jobAction.name());
         this.success = success;
         this.jobAction = jobAction;
-        this.taskId = taskId;
+        this.jobIdentity = jobIdentity;
         this.ex = ex;
     }
 }

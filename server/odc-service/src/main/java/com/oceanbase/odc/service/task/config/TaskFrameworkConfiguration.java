@@ -32,7 +32,7 @@ import com.oceanbase.odc.service.task.caller.K8sJobCaller;
 import com.oceanbase.odc.service.task.caller.K8sJobClient;
 import com.oceanbase.odc.service.task.caller.NativeK8sJobClient;
 import com.oceanbase.odc.service.task.caller.PodConfig;
-import com.oceanbase.odc.service.task.enums.DeployModelEnum;
+import com.oceanbase.odc.service.task.enums.TaskRunModeEnum;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -48,7 +48,7 @@ public class TaskFrameworkConfiguration {
     @Bean
     @ConditionalOnMissingBean(K8sJobClient.class)
     public K8sJobClient k8sJobClient(@Autowired TaskFrameworkProperties taskFrameworkProperties) {
-        if (taskFrameworkProperties.getDeployModel() == DeployModelEnum.K8S) {
+        if (taskFrameworkProperties.getRunMode() == TaskRunModeEnum.K8S) {
             try {
                 log.info("k8s url is {}", taskFrameworkProperties.getK8s().getUrl());
                 return new NativeK8sJobClient(taskFrameworkProperties.getK8s().getUrl());
@@ -62,8 +62,8 @@ public class TaskFrameworkConfiguration {
     @Bean
     public JobCaller jobCaller(@Autowired(required = false) K8sJobClient k8sJobClient,
             @Autowired TaskFrameworkProperties taskFrameworkProperties) {
-        switch (taskFrameworkProperties.getDeployModel()) {
-            case STANDALONE:
+        switch (taskFrameworkProperties.getRunMode()) {
+            case THREAD:
                 return new JvmJobCaller();
             case K8S:
             default:
