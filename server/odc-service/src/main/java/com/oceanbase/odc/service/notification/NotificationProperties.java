@@ -39,4 +39,10 @@ public class NotificationProperties {
 
     private int maxResendTimes;
 
+    private int dequeueEventFixedDelayMillis;
+
+    private int dequeueCreatedNotificationFixedDelayMillis;
+
+    private int dequeueFailedNotificationFixedDelayMillis;
+
 }

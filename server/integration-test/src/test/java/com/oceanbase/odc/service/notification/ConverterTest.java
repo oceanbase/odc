@@ -16,18 +16,15 @@
 package com.oceanbase.odc.service.notification;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
-import org.apache.commons.compress.utils.Lists;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -36,11 +33,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 
 import com.oceanbase.odc.ServiceTestEnv;
+import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.metadb.notification.ChannelEntity;
 import com.oceanbase.odc.metadb.notification.ChannelRepository;
 import com.oceanbase.odc.metadb.notification.EventEntity;
 import com.oceanbase.odc.metadb.notification.EventRepository;
+import com.oceanbase.odc.metadb.notification.NotificationChannelRelationEntity;
 import com.oceanbase.odc.metadb.notification.NotificationPolicyChannelRelationRepository;
 import com.oceanbase.odc.metadb.notification.NotificationPolicyEntity;
 import com.oceanbase.odc.metadb.notification.NotificationPolicyRepository;
@@ -95,11 +94,11 @@ public class ConverterTest extends ServiceTestEnv {
         }
         eventRepository.saveAll(events);
 
-        when(policyRepository.findByOrganizationIdAndMatchExpression(anyLong(), anyString()))
-                .thenReturn(Optional.of(getPolicyEntity()));
-        when(policyChannelRepository.findByOrganizationIdAndNotificationPolicyId(anyLong(), anyLong()))
-                .thenReturn(Lists.newArrayList());
-        when(channelRepository.findAllById(any()))
+        when(policyRepository.findByOrganizationIds(any()))
+                .thenReturn(Collections.singletonList(getNotificationPolicy()));
+        when(policyChannelRepository.findByNotificationPolicyIds(any()))
+                .thenReturn(Collections.singletonList(getNotificationChannelRelationEntity()));
+        when(channelRepository.findByIdIn(any()))
                 .thenReturn(Arrays.asList(getChannelEntity()));
 
         List<Notification> notifications =
@@ -140,6 +139,22 @@ public class ConverterTest extends ServiceTestEnv {
         entity.setName("testChannel");
         entity.setCreatorId(USER_ID);
         entity.setOrganizationId(ORGANIZATION_ID);
+        return entity;
+    }
+
+    private NotificationPolicyEntity getNotificationPolicy() {
+        NotificationPolicyEntity policy = new NotificationPolicyEntity();
+        policy.setId(1L);
+        policy.setMatchExpression(JsonUtils.toJson(getLabels()));
+        policy.setOrganizationId(ORGANIZATION_ID);
+        return policy;
+    }
+
+    private NotificationChannelRelationEntity getNotificationChannelRelationEntity() {
+        NotificationChannelRelationEntity entity = new NotificationChannelRelationEntity();
+        entity.setOrganizationId(ORGANIZATION_ID);
+        entity.setChannelId(1L);
+        entity.setNotificationPolicyId(1L);
         return entity;
     }
 

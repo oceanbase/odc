@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Properties;
 
 import javax.sql.DataSource;
 
@@ -162,6 +163,8 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
         // fix arbitrary file reading vulnerability
         jdbcUrlParams.put("allowLoadLocalInfile", "false");
         jdbcUrlParams.put("allowUrlInLocalInfile", "false");
+        jdbcUrlParams.put("allowLoadLocalInfileInPath", "");
+        jdbcUrlParams.put("autoDeserialize", "false");
         return jdbcUrlParams;
     }
 
@@ -175,15 +178,22 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
         dataSource.setPassword(password);
         // Set datasource driver class
         dataSource.setDriverClassName(connectionExtensionPoint.getDriverClassName());
+        // fix arbitrary file reading vulnerability
+        Properties properties = new Properties();
+        properties.setProperty("allowLoadLocalInfile", "false");
+        properties.setProperty("allowUrlInLocalInfile", "false");
+        properties.setProperty("allowLoadLocalInfileInPath", "");
+        properties.setProperty("autoDeserialize", "false");
+        dataSource.setConnectionProperties(properties);
         if (autoCommit != null) {
             dataSource.setAutoCommit(autoCommit);
         }
         if (this.initConnection) {
-            dataSource.addInitializer(new SessionCreatedInitializer(connectionConfig));
             List<ConnectionInitializer> initializers = connectionExtensionPoint.getConnectionInitializers();
             if (!CollectionUtils.isEmpty(initializers)) {
                 initializers.forEach(dataSource::addInitializer);
             }
+            dataSource.addInitializer(new SessionCreatedInitializer(connectionConfig));
         }
         return dataSource;
     }
