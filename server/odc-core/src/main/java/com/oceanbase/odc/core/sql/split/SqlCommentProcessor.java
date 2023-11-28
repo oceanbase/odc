@@ -111,16 +111,27 @@ public class SqlCommentProcessor {
     public static List<String> removeSqlComments(String originalSql,
             String delimiter, DialectType dbMode, boolean preserveFormat) {
         SqlCommentProcessor sqlCommentProcessor = new SqlCommentProcessor(preserveFormat, delimiter);
-        List<String> sqls = new ArrayList<>();
-        String[] lines = originalSql.split("\n");
         StringBuffer buffer = new StringBuffer();
-        // for (String item : lines) {
-        // if (Objects.nonNull(dbMode) && dbMode.isMysql()) {
-        // sqlCommentProcessor.addLineMysql(sqls, buffer, item);
-        // } else {
-        // sqlCommentProcessor.addLineOracle(sqls, buffer, item);
-        // }
-        // }
+        List<OffsetString> offsetStrings = new ArrayList<>();
+        List<OrderChar> orderChars = new ArrayList<>();
+        for (int i = 0; i < originalSql.length(); i++) {
+            orderChars.add(new OrderChar(originalSql.charAt(i), i));
+        }
+        // split by \n
+        List<List<OrderChar>> lines = orderChars.stream()
+            .collect(Collectors.groupingBy(OrderChar::isLineSeparator))
+            .values().stream()
+            .collect(Collectors.toList());
+        Holder<Integer> bufferOrder = new Holder<>(0);
+        for (List<OrderChar> item : lines) {
+            if (Objects.nonNull(dbMode) && dbMode.isMysql()) {
+                sqlCommentProcessor.addLineMysql(offsetStrings, buffer,bufferOrder, item);
+            } else {
+                sqlCommentProcessor.addLineOracle(offsetStrings, buffer,bufferOrder, item);
+            }
+        }
+
+        List<String> returnVal = offsetStrings.stream().map(OffsetString::getStr).collect(Collectors.toList());
         String bufferStr = buffer.toString();
         if (bufferStr.trim().length() != 0) {
             while (true) {
@@ -133,9 +144,9 @@ public class SqlCommentProcessor {
                     break;
                 }
             }
-            sqls.add(bufferStr);
+            returnVal.add(bufferStr);
         }
-        return sqls;
+        return returnVal;
     }
 
     public synchronized List<OffsetString> split(StringBuffer buffer, String sqlScript) {
