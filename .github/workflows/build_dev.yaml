@@ -186,8 +186,8 @@ jobs:
         run: |
           docker login -p${{ secrets.DOCKER_PASSWORD }} -u${{ secrets.DOCKER_USERNAME }}
           docker load -i distribution/docker/resources/odc-${odc_docker_image_tag}.tar.gz
-          docker tag oceanbase/odc:${odc_docker_image_tag} mengdezhicai/odc:${odc_docker_image_tag}
-          docker push mengdezhicai/odc:${odc_docker_image_tag}
+          docker tag oceanbase/odc:${odc_docker_image_tag} ${{ secrets.DOCKER_USERNAME }}/odc:${odc_docker_image_tag}
+          docker push ${{ secrets.DOCKER_USERNAME }}/odc:${odc_docker_image_tag}
       - name: Upload docker image (x86_64)
         uses: actions/upload-artifact@v3
         with:
