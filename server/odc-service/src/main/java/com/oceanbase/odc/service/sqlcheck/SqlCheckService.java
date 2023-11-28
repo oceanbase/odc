@@ -39,6 +39,7 @@ import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.core.sql.split.OffsetString;
 import com.oceanbase.odc.service.collaboration.environment.EnvironmentService;
 import com.oceanbase.odc.service.collaboration.environment.model.Environment;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
@@ -92,7 +93,7 @@ public class SqlCheckService {
     }
 
     public List<CheckViolation> check(@NotNull Long environmentId, @NonNull String databaseName,
-            @NotNull List<String> sqls, @NotNull ConnectionConfig config) {
+            @NotNull List<OffsetString> sqls, @NotNull ConnectionConfig config) {
         if (CollectionUtils.isEmpty(sqls)) {
             return Collections.emptyList();
         }
@@ -106,7 +107,7 @@ public class SqlCheckService {
             List<SqlCheckRule> checkRules = getRules(rules, config.getDialectType(), jdbc);
             DefaultSqlChecker sqlChecker = new DefaultSqlChecker(config.getDialectType(), null, checkRules);
             List<CheckViolation> checkViolations = new ArrayList<>();
-            for (String sql : sqls) {
+            for (OffsetString sql : sqls) {
                 List<CheckViolation> violations = sqlChecker.check(Collections.singletonList(sql), checkContext);
                 fullFillRiskLevel(rules, violations);
                 checkViolations.addAll(violations);

@@ -46,7 +46,7 @@ import lombok.ToString;
 @ToString(exclude = {"ast"})
 @EqualsAndHashCode(exclude = {"ast"})
 public class SqlTuple {
-
+    private int offset;
     @Getter(AccessLevel.NONE)
     private int copiedTimes = 0;
     private final String sqlId;

@@ -41,6 +41,7 @@ import lombok.ToString;
 @EqualsAndHashCode(callSuper = false)
 public class CheckViolation implements Translatable {
 
+    private int offset;
     private String text;
     private int row;
     private int col;

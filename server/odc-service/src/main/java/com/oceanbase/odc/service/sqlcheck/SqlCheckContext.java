@@ -25,6 +25,7 @@ import com.oceanbase.tools.sqlparser.statement.Statement;
 
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.Setter;
 
 /**
  * {@link SqlCheckContext}
@@ -39,6 +40,9 @@ public class SqlCheckContext {
     Long totalStmtCount;
     @Getter
     Long currentStmtIndex;
+    @Getter
+    @Setter
+    Long currentStmtStartOffset;
     private final List<Pair<Statement, List<CheckViolation>>> stmt2Violations;
 
     public SqlCheckContext() {
