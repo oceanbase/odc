@@ -24,7 +24,7 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class ODCMonitor {
+public class OdcMonitor {
 
     public static void alarm(String monitorPoint, String monitorMessage) {
         monitor(monitorPoint, monitorMessage, MonitorLevel.ERROR);

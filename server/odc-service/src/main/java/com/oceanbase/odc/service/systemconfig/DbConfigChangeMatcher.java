@@ -33,7 +33,7 @@ import com.google.common.collect.Sets.SetView;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.metadb.config.SystemConfigDAO;
 import com.oceanbase.odc.metadb.config.SystemConfigEntity;
-import com.oceanbase.odc.service.common.ODCMonitor;
+import com.oceanbase.odc.service.common.OdcMonitor;
 import com.oceanbase.odc.service.config.model.Configuration;
 import com.oceanbase.odc.service.config.util.OrganizationConfigUtil;
 
@@ -70,7 +70,7 @@ public class DbConfigChangeMatcher extends SystemConfigRefreshMatcher implements
             SetView<Configuration> difference = Sets.difference(new HashSet<>(currentVersion),
                     new HashSet<>(lastVersion));
             Set<String> differenceKey = difference.stream().map(Configuration::getKey).collect(Collectors.toSet());
-            ODCMonitor.info(SYSTEM_CONFIG_CHANGED, differenceKey.toString());
+            OdcMonitor.info(SYSTEM_CONFIG_CHANGED, differenceKey.toString());
             log.info("db config change, difference key:" + differenceKey);
         }
         return dbConfigChange;

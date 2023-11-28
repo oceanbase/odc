@@ -466,7 +466,7 @@
             <AppenderRef ref="OdcAPIFileAppender" />
         </Logger>
 
-        <Logger name="com.oceanbase.odc.service.common.ODCMonitor" level="INFO" additivity="false">
+        <Logger name="com.oceanbase.odc.service.common.OdcMonitor" level="INFO" additivity="false">
             <AppenderRef ref="OdcMonitorFileAppender" />
         </Logger>
         <!-- 导入导出程序日志输出 -->
