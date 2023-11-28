@@ -102,7 +102,6 @@ import com.oceanbase.odc.service.common.response.PaginatedData;
 import com.oceanbase.odc.service.connection.ConnectionStatusManager.CheckState;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.DatabaseSyncManager;
-import com.oceanbase.odc.service.connection.database.model.DatabaseSyncProperties;
 import com.oceanbase.odc.service.connection.model.ConnectProperties;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.model.QueryConnectionParams;
@@ -211,9 +210,6 @@ public class ConnectionService {
 
     @Autowired
     private JdbcLockRegistry jdbcLockRegistry;
-
-    @Autowired
-    private DatabaseSyncProperties databaseSyncProperties;
 
     private final ConnectionMapper mapper = ConnectionMapper.INSTANCE;
 
@@ -580,7 +576,7 @@ public class ConnectionService {
             log.info("Connection updated, connection={}", updated);
             if (saved.getProjectId() != null && updated.getProjectId() == null) {
                 // Remove databases from project when unbind project from connection
-                updateDatabaseProjectId(savedEntity, null, databaseSyncProperties.isBlockInternalDatabase());
+                updateDatabaseProjectId(savedEntity, null, false);
             }
             transactionManager.commit(transactionStatus);
         } catch (Exception e) {
