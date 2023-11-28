@@ -52,7 +52,7 @@ public abstract class BaseTimeConsumingInterceptor implements SqlExecuteIntercep
     @Override
     public void afterCompletion(@NonNull SqlExecuteResult response,
             @NonNull ConnectionSession session, @NonNull Map<String, Object> context) throws Exception {
-        try (TraceStage stage = response.getTraceWatch().start(getExecuteStageName())) {
+        try (TraceStage stage = response.getSqlTuple().getSqlWatch().start(getExecuteStageName())) {
             doAfterCompletion(response, session, context);
         }
     }

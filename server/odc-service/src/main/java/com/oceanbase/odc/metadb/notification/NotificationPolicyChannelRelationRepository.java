@@ -15,10 +15,13 @@
  */
 package com.oceanbase.odc.metadb.notification;
 
+import java.util.Collection;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface NotificationPolicyChannelRelationRepository
         extends JpaRepository<NotificationChannelRelationEntity, Long>,
@@ -27,4 +30,8 @@ public interface NotificationPolicyChannelRelationRepository
 
     List<NotificationChannelRelationEntity> findByOrganizationIdAndNotificationPolicyId(Long organizationId,
             Long notificationPolicyId);
+
+    @Query(value = "select * from notification_policy_channel_relation where notification_policy_id in (:ids)",
+            nativeQuery = true)
+    List<NotificationChannelRelationEntity> findByNotificationPolicyIds(@Param("ids") Collection<Long> ids);
 }

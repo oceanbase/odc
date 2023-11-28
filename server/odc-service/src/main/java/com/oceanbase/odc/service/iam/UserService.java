@@ -71,6 +71,7 @@ import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.Cipher;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
+import com.oceanbase.odc.core.shared.constant.OdcConstants;
 import com.oceanbase.odc.core.shared.constant.PermissionType;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
@@ -192,7 +193,6 @@ public class UserService {
      * 10 * 60 * 1000L
      */
     private static final long FAILED_LOGIN_ATTEMPT_LOCK_TIMEOUT = 10 * 60 * 1000L;
-    private static final long ODC_ADMIN_USER_ID = 1L;
     private static final LoadingCache<Long, FailedLoginAttemptLimiter> userIdChangePasswordAttamptCache =
             Caffeine.newBuilder().maximumSize(1000).expireAfterWrite(Duration.ofHours(1L))
                     .build(key -> new FailedLoginAttemptLimiter(FAILED_LOGIN_ATTEMPT_TIMES,
@@ -226,7 +226,7 @@ public class UserService {
                 userRoleEntity.setUserId(userId);
                 userRoleEntity.setRoleId(roleId);
                 userRoleEntity.setOrganizationId(organizationId);
-                userRoleEntity.setCreatorId(ODC_ADMIN_USER_ID);
+                userRoleEntity.setCreatorId(OdcConstants.DEFAULT_ADMIN_USER_ID);
                 userRoleRepository.saveAndFlush(userRoleEntity);
 
                 roleIds.add(roleId);
@@ -296,7 +296,7 @@ public class UserService {
         userEntity.setEnabled(true);
         userEntity.setCipher(Cipher.BCRYPT);
         userEntity.setActive(true);
-        userEntity.setCreatorId(ODC_ADMIN_USER_ID);
+        userEntity.setCreatorId(OdcConstants.DEFAULT_ADMIN_USER_ID);
         userEntity.setBuiltIn(false);
         userEntity.setOrganizationId(organizationId);
         userEntity.setDescription("Auto generated user");

@@ -24,10 +24,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.connection.ConnectionTestService;
-import com.oceanbase.odc.service.connection.model.ConnectionPermissionCheckResp;
 import com.oceanbase.odc.service.connection.model.ConnectionTestResult;
 import com.oceanbase.odc.service.connection.model.TestConnectionReq;
-import com.oceanbase.odc.service.connection.model.VerifyConnectionConfigReq;
 
 import io.swagger.annotations.ApiOperation;
 
@@ -50,18 +48,6 @@ public class ConnectTestController {
     @RequestMapping(value = "/test", method = RequestMethod.POST)
     public SuccessResponse<ConnectionTestResult> test(@RequestBody TestConnectionReq req) {
         return Responses.single(testService.test(req));
-    }
-
-    /**
-     * 验证一个连接的账号权限
-     *
-     * @param req
-     * @return Verify result
-     */
-    @ApiOperation(value = "verifyConnection", notes = "Verify a connection")
-    @RequestMapping(value = "/verify", method = RequestMethod.POST)
-    public SuccessResponse<ConnectionPermissionCheckResp> verifyConnection(@RequestBody VerifyConnectionConfigReq req) {
-        throw new UnsupportedOperationException("Unsupported yet");
     }
 
 }

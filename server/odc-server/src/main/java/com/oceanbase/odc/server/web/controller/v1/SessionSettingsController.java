@@ -41,15 +41,16 @@ public class SessionSettingsController {
     @ApiOperation(value = "getTransactionInfo", notes = "查询事务信息，目前是会话的提交模式，后续可能扩展，sid示例：sid:1000-1:d:db1")
     @RequestMapping(value = "/getTransactionInfo/{sid}", method = RequestMethod.GET)
     public OdcResult<SessionSettings> getSessionSettings(@PathVariable String sid) {
-        return OdcResult.ok(settingsService.getSessionSettings(sessionService.nullSafeGet(SidUtils.getSessionId(sid))));
+        return OdcResult.ok(settingsService.getSessionSettings(
+                sessionService.nullSafeGet(SidUtils.getSessionId(sid), true)));
     }
 
     @ApiOperation(value = "setTransactionInfo", notes = "设置事务信息，目前是会话的提交模式，后续可能扩展，sid示例：sid:1000-1:d:db1")
     @RequestMapping(value = "/setTransactionInfo/{sid}", method = RequestMethod.POST)
     public OdcResult<SessionSettings> setSessionSettings(@PathVariable String sid,
             @RequestBody SessionSettings settings) {
-        return OdcResult.ok(
-                settingsService.setSessionSettings(sessionService.nullSafeGet(SidUtils.getSessionId(sid)), settings));
+        return OdcResult.ok(settingsService.setSessionSettings(
+                sessionService.nullSafeGet(SidUtils.getSessionId(sid), true), settings));
     }
 
 }

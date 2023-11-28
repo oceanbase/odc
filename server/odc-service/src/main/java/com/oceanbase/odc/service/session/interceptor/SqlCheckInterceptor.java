@@ -22,13 +22,16 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.sql.execute.SqlExecuteStages;
+import com.oceanbase.odc.core.sql.execute.model.SqlExecuteStatus;
 import com.oceanbase.odc.service.config.UserConfigFacade;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.regulation.ruleset.RuleService;
@@ -41,6 +44,7 @@ import com.oceanbase.odc.service.sqlcheck.SqlCheckContext;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckRule;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckService;
 import com.oceanbase.odc.service.sqlcheck.model.CheckViolation;
+import com.oceanbase.odc.service.sqlcheck.model.SqlCheckRuleType;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -90,11 +94,11 @@ public class SqlCheckInterceptor extends BaseTimeConsumingInterceptor {
             Map<String, List<CheckViolation>> sql2Violations = new HashMap<>();
             SqlCheckContext checkContext = new SqlCheckContext((long) response.getSqls().size());
             response.getSqls().forEach(v -> {
-                String sql = v.getSqlTuple().getOriginalSql();
-                List<CheckViolation> violations = sqlChecker.check(Collections.singletonList(sql), checkContext);
+                List<CheckViolation> violations = sqlChecker.check(checkContext,
+                        Collections.singletonList(v.getSqlTuple()));
                 List<Rule> vRules = sqlCheckService.fullFillRiskLevel(rules, violations);
                 v.getViolatedRules().addAll(vRules.stream().filter(r -> r.getLevel() > 0).collect(Collectors.toList()));
-                sql2Violations.put(sql, violations);
+                sql2Violations.put(v.getSqlTuple().getOriginalSql(), violations);
             });
             context.put(SQL_CHECK_RESULT_KEY, sql2Violations);
             return response.getSqls().stream().noneMatch(v -> CollectionUtils.isNotEmpty(v.getViolatedRules()));
@@ -117,12 +121,44 @@ public class SqlCheckInterceptor extends BaseTimeConsumingInterceptor {
             return;
         }
         Map<String, List<CheckViolation>> map = (Map<String, List<CheckViolation>>) context.get(SQL_CHECK_RESULT_KEY);
-        response.setCheckViolations(map.get(response.getOriginSql()));
+        List<CheckViolation> results = map.get(response.getOriginSql());
+        if (CollectionUtils.isEmpty(results)) {
+            return;
+        }
+        if (!hasSyntaxError(session.getDialectType(), response)) {
+            results.removeIf(i -> i.getType() == SqlCheckRuleType.SYNTAX_ERROR);
+        }
+        response.setCheckViolations(results);
     }
 
     @Override
     public int getOrder() {
         return 3;
+    }
+
+    private boolean hasSyntaxError(DialectType dialectType, SqlExecuteResult response) {
+        if (response.getStatus() != SqlExecuteStatus.FAILED) {
+            return false;
+        }
+        int errorCode = response.getErrorCode();
+        if (errorCode == -1) {
+            return isSyntaxErrorMessage(response.getTrack());
+        }
+        switch (dialectType) {
+            case OB_ORACLE:
+                return errorCode == 900;
+            case MYSQL:
+            case OB_MYSQL:
+            case ODP_SHARDING_OB_MYSQL:
+                return errorCode == 1064;
+            default:
+                return isSyntaxErrorMessage(response.getTrack());
+        }
+    }
+
+    private boolean isSyntaxErrorMessage(String message) {
+        return StringUtils.containsIgnoreCase(message, "syntax")
+                && StringUtils.containsIgnoreCase(message, "error");
     }
 
 }

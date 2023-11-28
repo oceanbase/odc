@@ -28,8 +28,6 @@ import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 
-import org.apache.commons.collections4.CollectionUtils;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonProperty.Access;
@@ -306,6 +304,11 @@ public class ConnectionConfig
     @JsonProperty(access = Access.READ_ONLY)
     private EnvironmentStyle environmentStyle;
 
+    private Long projectId;
+
+    @JsonProperty(access = Access.READ_ONLY)
+    private String projectName;
+
     /**
      * 连接类型，可选值 CONNECT_TYPE_CLOUD/CONNECT_TYPE_OB 。只读参数
      *
@@ -320,35 +323,27 @@ public class ConnectionConfig
 
     @JsonProperty(access = Access.READ_ONLY)
     public DialectType getDialectType() {
-        if (Objects.nonNull(this.type)) {
-            return this.type.getDialectType();
-        }
-        return null;
+        return Objects.nonNull(this.type) ? this.type.getDialectType() : null;
     }
 
-    /**
-     * override this.defaultSchema for switch schema
-     */
     public String getDefaultSchema() {
-        return defaultSchema();
-    }
-
-    public String defaultSchema() {
         DialectType dialectType = getDialectType();
-        if (DialectType.OB_ORACLE != dialectType) {
-            if (Objects.nonNull(dialectType) && dialectType.isMysql() && StringUtils.isBlank(this.defaultSchema)) {
+        if (dialectType == null) {
+            return this.defaultSchema;
+        } else if (StringUtils.isNotBlank(this.defaultSchema)) {
+            return ConnectionSessionUtil.getUserOrSchemaString(this.defaultSchema, dialectType);
+        }
+        switch (dialectType) {
+            case ORACLE:
+            case OB_ORACLE:
+                return ConnectionSessionUtil.getUserOrSchemaString(this.username, dialectType);
+            case MYSQL:
+            case OB_MYSQL:
+            case ODP_SHARDING_OB_MYSQL:
                 return OdcConstants.MYSQL_DEFAULT_SCHEMA;
-            }
-            return defaultSchema;
+            default:
+                return null;
         }
-        if (CollectionUtils.isNotEmpty(this.permittedActions)) {
-            if (this.permittedActions.contains("connect") || this.permittedActions.contains("*")) {
-                return ConnectionSessionUtil.getUserOrSchemaString(username, DialectType.OB_ORACLE);
-            } else if (this.permittedActions.contains("readonlyconnect")) {
-                return ConnectionSessionUtil.getUserOrSchemaString(readonlyUsername, DialectType.OB_ORACLE);
-            }
-        }
-        return ConnectionSessionUtil.getUserOrSchemaString(username, dialectType);
     }
 
     public void fillPasswordFromSavedIfNull(ConnectionConfig saved) {

@@ -28,7 +28,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
@@ -41,13 +40,11 @@ import org.springframework.jdbc.core.StatementCallback;
 
 import com.oceanbase.jdbc.OceanBaseConnection;
 import com.oceanbase.jdbc.internal.protocol.Protocol;
-import com.oceanbase.odc.common.event.EventPublisher;
 import com.oceanbase.odc.common.lang.Pair;
+import com.oceanbase.odc.common.util.HashUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.datasource.CloneableDataSourceFactory;
 import com.oceanbase.odc.core.shared.Verify;
-import com.oceanbase.odc.core.shared.constant.ConnectionAccountType;
-import com.oceanbase.odc.core.shared.constant.ConnectionVisibleScope;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
@@ -144,17 +141,6 @@ public class ConnectionSessionUtil {
         return input.substring(1, input.length() - 1);
     }
 
-    public static boolean isWriteable(@NonNull ConnectionSession connectionSession) {
-        Set<String> permittedActions = getPermittedActions(connectionSession);
-        // TODO: leverage accountType in connectSession
-        // if permittedActions is null, return true for compatible with previous behavior
-        if (Objects.isNull(permittedActions)) {
-            return true;
-        }
-        return permittedActions.contains("connect") || permittedActions.contains("use")
-                || permittedActions.contains("*");
-    }
-
     @SuppressWarnings("all")
     public static String setFutureJdbc(@NonNull ConnectionSession connectionSession,
             @NonNull Future<List<JdbcGeneralResult>> futureResult, Map<String, Object> context) {
@@ -229,14 +215,13 @@ public class ConnectionSessionUtil {
         return (String) connectionSession.getAttribute(ConnectionSessionConstants.TENANT_NAME);
     }
 
-    public static void setClusterName(@NonNull ConnectionSession connectionSession, @NonNull String tenantName) {
-        connectionSession.setAttribute(ConnectionSessionConstants.CLUSTER_NAME, tenantName);
+    public static void setConnectSchema(@NonNull ConnectionSession connectionSession, @NonNull String schema) {
+        connectionSession.setAttribute(ConnectionSessionConstants.CONNECT_SCHEMA_KEY, schema);
     }
 
-    public static String getClusterName(@NonNull ConnectionSession connectionSession) {
-        return (String) connectionSession.getAttribute(ConnectionSessionConstants.CLUSTER_NAME);
+    public static String getConnectSchema(@NonNull ConnectionSession connectionSession) {
+        return (String) connectionSession.getAttribute(ConnectionSessionConstants.CONNECT_SCHEMA_KEY);
     }
-
 
     public static void setCurrentSchema(@NonNull ConnectionSession connectionSession, @NonNull String schema) {
         connectionSession.setAttribute(ConnectionSessionConstants.CURRENT_SCHEMA_KEY, schema);
@@ -264,25 +249,6 @@ public class ConnectionSessionUtil {
                 .getAttribute(ConnectionSessionConstants.SQL_COMMENT_PROCESSOR_KEY);
     }
 
-    public static void setPermittedActions(@NonNull ConnectionSession connectionSession,
-            @NonNull Set<String> permittedActions) {
-        connectionSession.setAttribute(ConnectionSessionConstants.PERMITTED_ACTIONS_KEY, permittedActions);
-    }
-
-    @SuppressWarnings("all")
-    public static Set<String> getPermittedActions(@NonNull ConnectionSession connectionSession) {
-        return (Set<String>) connectionSession.getAttribute(ConnectionSessionConstants.PERMITTED_ACTIONS_KEY);
-    }
-
-    public static void setVisibleScope(@NonNull ConnectionSession connectionSession,
-            @NonNull ConnectionVisibleScope visibleScope) {
-        connectionSession.setAttribute(ConnectionSessionConstants.VISIBLE_SCOPE_KEY, visibleScope);
-    }
-
-    public static ConnectionVisibleScope getVisibleScope(@NonNull ConnectionSession connectionSession) {
-        return (ConnectionVisibleScope) connectionSession.getAttribute(ConnectionSessionConstants.VISIBLE_SCOPE_KEY);
-    }
-
     public static void setConnectionConfig(@NonNull ConnectionSession connectionSession,
             @NonNull Object connectionConfig) {
         connectionSession.setAttribute(ConnectionSessionConstants.CONNECTION_CONFIG_KEY, connectionConfig);
@@ -290,15 +256,6 @@ public class ConnectionSessionUtil {
 
     public static Object getConnectionConfig(@NonNull ConnectionSession connectionSession) {
         return connectionSession.getAttribute(ConnectionSessionConstants.CONNECTION_CONFIG_KEY);
-    }
-
-    public static void setEventPublisher(@NonNull ConnectionSession connectionSession,
-            @NonNull EventPublisher publisher) {
-        connectionSession.setAttribute(ConnectionSessionConstants.EVENT_PUBLISHER_NAME, publisher);
-    }
-
-    public static EventPublisher getEventPublisher(@NonNull ConnectionSession connectionSession) {
-        return (EventPublisher) connectionSession.getAttribute(ConnectionSessionConstants.EVENT_PUBLISHER_NAME);
     }
 
     public static void setConsoleSessionResetFlag(@NonNull ConnectionSession connectionSession,
@@ -320,16 +277,6 @@ public class ConnectionSessionUtil {
 
     public static Object getColumnAccessor(@NonNull ConnectionSession connectionSession) {
         return connectionSession.getAttribute(ConnectionSessionConstants.COLUMN_ACCESSOR_KEY);
-    }
-
-    public static void setConnectionAccountType(@NonNull ConnectionSession connectionSession,
-            @NonNull ConnectionAccountType accountType) {
-        connectionSession.setAttribute(ConnectionSessionConstants.CONNECTION_ACCOUNT_TYPE_KEY, accountType);
-    }
-
-    public static ConnectionAccountType getConnectionAccountType(@NonNull ConnectionSession connectionSession) {
-        return (ConnectionAccountType) connectionSession
-                .getAttribute(ConnectionSessionConstants.CONNECTION_ACCOUNT_TYPE_KEY);
     }
 
     public static String getConsoleSessionTimeZone(@NonNull ConnectionSession connectionSession) {
@@ -371,19 +318,6 @@ public class ConnectionSessionUtil {
         return (BinaryDataManager) connectionSession.getAttribute(ConnectionSessionConstants.BINARY_FILE_MANAGER_KEY);
     }
 
-    public static void setShowTableColumnInfo(@NonNull ConnectionSession connectionSession,
-            Boolean getTableColumnsInfo) {
-        connectionSession.setAttribute(ConnectionSessionConstants.SHOW_TABLE_COLUMN_INFO, getTableColumnsInfo);
-    }
-
-    public static boolean getShowTableColumnInfo(@NonNull ConnectionSession connectionSession) {
-        Object result = connectionSession.getAttribute(ConnectionSessionConstants.SHOW_TABLE_COLUMN_INFO);
-        if (result == null) {
-            return true;
-        }
-        return (boolean) result;
-    }
-
     @SuppressWarnings("all")
     public static void setBinaryContentMetadata(@NonNull ConnectionSession connectionSession, String key,
             BinaryContentMetaData data) {
@@ -409,7 +343,7 @@ public class ConnectionSessionUtil {
     }
 
     public static File getSessionWorkingDir(@NonNull ConnectionSession connectionSession) throws IOException {
-        return new File(getOrCreateFullPathAppendingSuffixToDataPath(connectionSession.getId()));
+        return new File(getOrCreateFullPathAppendingSuffixToDataPath(getUniqueIdentifier(connectionSession)));
     }
 
     public static File getSessionUploadDir(@NonNull ConnectionSession connectionSession) throws IOException {
@@ -582,6 +516,10 @@ public class ConnectionSessionUtil {
         return (String) connectionSession.getAttribute(ConnectionSessionConstants.OB_ARCHITECTURE);
     }
 
+    public static String getUniqueIdentifier(@NonNull ConnectionSession connectionSession) {
+        return HashUtils.md5(connectionSession.getId()).replace("-", "");
+    }
+
     private static String getOrCreateFullPathAppendingSuffixToDataPath(@NonNull String suffix) throws IOException {
         String dataDir = SystemUtils.getEnvOrProperty("file.storage.dir");
         if (dataDir == null) {
@@ -603,7 +541,8 @@ public class ConnectionSessionUtil {
     private static File getSessionWorkingDir(@NonNull ConnectionSession connectionSession, @NonNull String suffix)
             throws IOException {
         String realSuffix = suffix.startsWith("/") ? suffix.substring(1) : suffix;
-        return new File(getOrCreateFullPathAppendingSuffixToDataPath(connectionSession.getId() + "/" + realSuffix));
+        String key = getUniqueIdentifier(connectionSession);
+        return new File(getOrCreateFullPathAppendingSuffixToDataPath(key + "/" + realSuffix));
     }
 
     private static SyncJdbcExecutor getSyncJdbcExecutor(ConnectionSession session) {

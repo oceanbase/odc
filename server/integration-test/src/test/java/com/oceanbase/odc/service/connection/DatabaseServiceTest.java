@@ -30,7 +30,6 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 
 import com.oceanbase.odc.AuthorityTestEnv;
-import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.metadb.connection.DatabaseEntity;
 import com.oceanbase.odc.metadb.connection.DatabaseRepository;
 import com.oceanbase.odc.service.collaboration.environment.EnvironmentService;
@@ -161,11 +160,8 @@ public class DatabaseServiceTest extends AuthorityTestEnv {
 
     @Test
     public void testTransfer_Success() {
-        Mockito.when(projectService.checkPermission(1L, Arrays.asList(ResourceRoleName.DBA, ResourceRoleName.OWNER)))
-                .thenReturn(true);
-        Mockito.when(projectService.checkPermission(2L, Arrays.asList(ResourceRoleName.DBA, ResourceRoleName.OWNER)))
-                .thenReturn(true);
-        Mockito.when(connectionService.checkPermission(1L, Arrays.asList("update"))).thenReturn(true);
+        Mockito.when(connectionService.checkPermission(Mockito.anyList(), Mockito.anyList())).thenReturn(true);
+        Mockito.when(projectService.checkPermission(Mockito.anyList(), Mockito.anyList())).thenReturn(true);
         databaseRepository.saveAndFlush(getEntity());
         TransferDatabasesReq req = new TransferDatabasesReq();
         req.setDatabaseIds(Arrays.asList(1L));

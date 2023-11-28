@@ -844,13 +844,27 @@ substr_params
     : bit_expr Comma bit_expr (Comma bit_expr)?
     ;
 
+returning_log_error_clause
+    : returning_clause
+    | log_error_clause
+    | returning_clause log_error_clause
+    ;
+
+returning_clause
+    : (RETURNING | RETURN) returning_exprs opt_into_clause
+    ;
+
+log_error_clause
+    : LOG ERRORS into_err_log_caluse opt_simple_expression reject_limit
+    ;
+
 delete_stmt
-    : delete_with_opt_hint FROM table_factor opt_where_extension ((RETURNING returning_exprs opt_into_clause) | (RETURN returning_exprs opt_into_clause))? (LOG ERRORS into_err_log_caluse opt_simple_expression reject_limit)?
-    | delete_with_opt_hint table_factor ((WHERE expr) | (WHERE HINT_VALUE expr))? ((RETURNING returning_exprs opt_into_clause) | (RETURN returning_exprs opt_into_clause))? (LOG ERRORS into_err_log_caluse opt_simple_expression reject_limit)?
+    : delete_with_opt_hint FROM table_factor opt_where_extension returning_log_error_clause?
+    | delete_with_opt_hint table_factor ((WHERE expr) | (WHERE HINT_VALUE expr))? returning_log_error_clause?
     ;
 
 update_stmt
-    : update_with_opt_hint dml_table_clause SET update_asgn_list opt_where_extension ((RETURNING returning_exprs opt_into_clause) | (RETURN returning_exprs opt_into_clause))? (LOG ERRORS into_err_log_caluse opt_simple_expression reject_limit)?
+    : update_with_opt_hint dml_table_clause SET update_asgn_list opt_where_extension returning_log_error_clause?
     ;
 
 update_asgn_list
@@ -2012,9 +2026,9 @@ reject_limit
     ;
 
 single_table_insert
-    : INTO insert_table_clause NOLOGGING? LeftParen column_list RightParen values_clause ((RETURNING returning_exprs opt_into_clause) | (RETURN returning_exprs opt_into_clause))? (LOG ERRORS into_err_log_caluse opt_simple_expression reject_limit)?
-    | INTO insert_table_clause NOLOGGING? LeftParen RightParen values_clause ((RETURNING returning_exprs opt_into_clause) | (RETURN returning_exprs opt_into_clause))? (LOG ERRORS into_err_log_caluse opt_simple_expression reject_limit)?
-    | INTO insert_table_clause NOLOGGING? values_clause ((RETURNING returning_exprs opt_into_clause) | (RETURN returning_exprs opt_into_clause))? (LOG ERRORS into_err_log_caluse opt_simple_expression reject_limit)?
+    : INTO insert_table_clause NOLOGGING? LeftParen column_list RightParen values_clause returning_log_error_clause?
+    | INTO insert_table_clause NOLOGGING? LeftParen RightParen values_clause returning_log_error_clause?
+    | INTO insert_table_clause NOLOGGING? values_clause returning_log_error_clause?
     ;
 
 multi_table_insert
@@ -4191,6 +4205,7 @@ function_name
     | unreserved_keyword_normal
     | oracle_pl_non_reserved_words
     | PRIOR
+    | RANDOM
     ;
 
 column_label

@@ -27,7 +27,9 @@ import com.oceanbase.tools.dbbrowser.parser.listener.OracleModeSqlParserListener
 import com.oceanbase.tools.dbbrowser.parser.result.ParseSqlResult;
 import com.oceanbase.tools.sqlparser.obmysql.OBLexer;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser;
+import com.oceanbase.tools.sqlparser.util.TimeoutTokenStream;
 
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -59,14 +61,16 @@ public class SqlParser {
         // Create a parser that feeds off the tokens buffer.
         OBParser parser = new OBParser(tokens);
         parser.addErrorListener(new CustomErrorListener());
-        // Begin parsing at "pl_entry_stmt_list" rule.
-        ParseTree tree = parser.stmt();
+        log.info("Time cost for sql parsing is {}ms, sql={}", (System.currentTimeMillis() - startTime), sql);
+        return parseMysql(parser.stmt());
+    }
+
+    public static ParseSqlResult parseMysql(@NonNull ParseTree parseTree) {
         // listener for parse target
         MysqlModeSqlParserListener listener = new MysqlModeSqlParserListener();
 
         ParseTreeWalker walker = new ParseTreeWalker();
-        walker.walk(listener, tree);
-        log.info("Time cost for sql parsing is {}ms, sql={}", (System.currentTimeMillis() - startTime), sql);
+        walker.walk(listener, parseTree);
         return new ParseSqlResult(listener);
     }
 
@@ -93,12 +97,15 @@ public class SqlParser {
         com.oceanbase.tools.sqlparser.oboracle.OBParser parser =
                 new com.oceanbase.tools.sqlparser.oboracle.OBParser(tokens);
         parser.addErrorListener(new CustomErrorListener());
-        ParseTree tree = parser.stmt();
-        OracleModeSqlParserListener listener = new OracleModeSqlParserListener();
-
-        ParseTreeWalker walker = new ParseTreeWalker();
-        walker.walk(listener, tree);
         log.info("Time cost for sql parsing is {}ms, sql={}", (System.currentTimeMillis() - startTime), sql);
+        return parseOracle(parser.stmt());
+    }
+
+    public static ParseSqlResult parseOracle(@NonNull ParseTree parseTree) {
+        OracleModeSqlParserListener listener = new OracleModeSqlParserListener();
+        ParseTreeWalker walker = new ParseTreeWalker();
+        walker.walk(listener, parseTree);
         return new ParseSqlResult(listener);
     }
+
 }
