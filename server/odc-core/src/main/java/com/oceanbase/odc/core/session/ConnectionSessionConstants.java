@@ -47,6 +47,13 @@ public class ConnectionSessionConstants {
      * OceanBase special, tenant name
      */
     public static final String TENANT_NAME = "TENANT_NAME";
+
+
+    /**
+     * OceanBase special, cluster name
+     */
+    public static final String CLUSTER_NAME = "CLUSTER_NAME";
+
     /**
      * The query limit of the current database session needs to be stored in the database session in the
      * form of attributes, this is the key
