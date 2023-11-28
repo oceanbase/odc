@@ -160,4 +160,32 @@ public class DataConvertUtilTest {
                 "interval year(2) to month(6)", "+000000004 04:00:00.000000000"));
     }
 
+    @Test
+    public void testGeometryForMySQLAndOBMySQL() {
+        Assert.assertArrayEquals(new Object[] {
+                "ST_GeomFromText('POINT (1 2)', 4322)",
+                "ST_GeomFromText('POINT (1 2)')",
+                "ST_GeomFromText('LINESTRING (0 0, 1 1, 1 2, 2 2)', 4322)",
+                "ST_GeomFromText('POLYGON ((0 0, 1 0, 1 1, 0 1, 0 0))', 4326)",
+                "ST_GeomFromText('MULTIPOINT ((0 0), (1 1), (2 2))', 4326)",
+                "ST_GeomFromText('MULTILINESTRING ((0 0, 1 1, 2 2), (3 3, 4 4, 5 5))', 4326)",
+                "ST_GeomFromText('MULTIPOLYGON (((0 0, 1 0, 1 1, 0 1, 0 0)), ((2 2, 3 2, 3 3, 2 3, 2 2)))', 4326)",
+                "ST_GeomFromText('GEOMETRYCOLLECTION (POINT (0 0), LINESTRING (1 1, 2 2))', 4326)"
+        }, new Object[] {
+                DataConvertUtil.convertToSqlString(DialectType.OB_MYSQL, "geometry", "POINT (1 2) | 4322"),
+                DataConvertUtil.convertToSqlString(DialectType.OB_MYSQL, "point", "POINT (1 2)"),
+                DataConvertUtil.convertToSqlString(DialectType.OB_MYSQL, "linestring",
+                        "LINESTRING (0 0, 1 1, 1 2, 2 2) | 4322"),
+                DataConvertUtil.convertToSqlString(DialectType.MYSQL, "polygon",
+                        "POLYGON ((0 0, 1 0, 1 1, 0 1, 0 0)) | 4326"),
+                DataConvertUtil.convertToSqlString(DialectType.MYSQL, "multipoint",
+                        "MULTIPOINT ((0 0), (1 1), (2 2)) | 4326"),
+                DataConvertUtil.convertToSqlString(DialectType.MYSQL, "multilinestring",
+                        "MULTILINESTRING ((0 0, 1 1, 2 2), (3 3, 4 4, 5 5)) | 4326"),
+                DataConvertUtil.convertToSqlString(DialectType.MYSQL, "multipolygon",
+                        "MULTIPOLYGON (((0 0, 1 0, 1 1, 0 1, 0 0)), ((2 2, 3 2, 3 3, 2 3, 2 2))) | 4326"),
+                DataConvertUtil.convertToSqlString(DialectType.MYSQL, "geometrycollection",
+                        "GEOMETRYCOLLECTION (POINT (0 0), LINESTRING (1 1, 2 2)) | 4326")
+        });
+    }
 }

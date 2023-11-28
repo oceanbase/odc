@@ -811,7 +811,8 @@ public class ConnectionService {
         return connection;
     }
 
-    private ConnectionConfig internalGetSkipUserCheck(Long id, boolean withEnvironment, boolean withProject) {
+    @SkipAuthorize("odc internal usage")
+    public ConnectionConfig internalGetSkipUserCheck(Long id, boolean withEnvironment, boolean withProject) {
         ConnectionConfig config = entityToModel(getEntity(id), withEnvironment, withProject);
         List<ConnectionAttributeEntity> entities = this.attributeRepository.findByConnectionId(config.getId());
         config.setAttributes(attrEntitiesToMap(entities));

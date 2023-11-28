@@ -46,4 +46,5 @@ public interface MessageRepository extends JpaRepository<MessageEntity, Long>,
             nativeQuery = true)
     List<MessageEntity> findNByStatusForUpdate(@Param("status") MessageSendingStatus status,
             @Param("limit") Integer limit);
+
 }

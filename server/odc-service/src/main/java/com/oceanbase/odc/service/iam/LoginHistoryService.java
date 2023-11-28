@@ -56,7 +56,7 @@ public class LoginHistoryService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public void record(LoginHistory loginHistory) {
+    public boolean record(LoginHistory loginHistory) {
         Long userId = loginHistory.getUserId();
         long current = System.currentTimeMillis();
         synchronized (lockObject) {
@@ -64,13 +64,14 @@ public class LoginHistoryService {
             if (loginTime != null) {
                 long intervalMin = TimeUnit.MINUTES.convert(current - loginTime.getTime(), TimeUnit.MILLISECONDS);
                 if (intervalMin < maxLoginRecordTimeMinutes) {
-                    return;
+                    return false;
                 }
             }
             userId2LastLoginTime.put(userId, new Date());
         }
         LoginHistoryEntity saved = loginHistoryRepository.saveAndFlush(loginHistory.toEntity());
         log.info("Login history saved, history={}", saved);
+        return true;
     }
 
     public Map<Long, LastSuccessLoginHistory> lastSuccessLoginHistoryByUserIds(@NotEmpty List<Long> userIds) {

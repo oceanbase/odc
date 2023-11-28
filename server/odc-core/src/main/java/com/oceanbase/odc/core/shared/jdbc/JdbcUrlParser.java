@@ -13,23 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.plugin.connect.obmysql.util;
+package com.oceanbase.odc.core.shared.jdbc;
 
 import java.util.List;
 import java.util.Map;
 
-import com.oceanbase.odc.plugin.connect.obmysql.model.HostAddress;
-
 /**
- * @author yaobin
- * @date 2023-04-15
- * @since 4.2.0
+ * {@link JdbcUrlParser}
+ *
+ * @author yh263208
+ * @date 2022-09-29
+ * @since ODC_release_3.5.0
  */
 public interface JdbcUrlParser {
     /**
      * get list of {@link HostAddress} eg. {@code jdbc:oceanbase://0.0.0.0:1231,8.8.8.8:1234} this jdbc
      * url contains two {@link HostAddress}, as follow:
-     *
+     * 
      * <pre>
      *     0.0.0.0:1231
      *     8.8.8.8:1234
@@ -52,4 +52,5 @@ public interface JdbcUrlParser {
      * @return url parameter
      */
     Map<String, Object> getParameters();
+
 }

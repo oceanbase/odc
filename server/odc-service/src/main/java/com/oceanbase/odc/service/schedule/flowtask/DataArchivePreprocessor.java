@@ -34,7 +34,6 @@ import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
 import com.oceanbase.odc.service.flow.processor.ScheduleTaskPreprocessor;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
-import com.oceanbase.odc.service.schedule.DlmEnvironment;
 import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.model.JobType;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
@@ -49,10 +48,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @ScheduleTaskPreprocessor(type = JobType.DATA_ARCHIVE)
 public class DataArchivePreprocessor extends AbstractDlmJobPreprocessor {
-
-    @Autowired
-    private DlmEnvironment dlmEnvironment;
-
     @Autowired
     private AuthenticationFacade authenticationFacade;
 
@@ -75,10 +70,6 @@ public class DataArchivePreprocessor extends AbstractDlmJobPreprocessor {
             // permission to access it.
             Database sourceDb = databaseService.detail(dataArchiveParameters.getSourceDatabaseId());
             Database targetDb = databaseService.detail(dataArchiveParameters.getTargetDataBaseId());
-            if (dlmEnvironment.isSysTenantUserRequired()) {
-                checkDatasource(sourceDb.getDataSource());
-                checkDatasource(targetDb.getDataSource());
-            }
             dataArchiveParameters.setSourceDatabaseName(sourceDb.getName());
             dataArchiveParameters.setTargetDatabaseName(targetDb.getName());
             dataArchiveParameters.setSourceDataSourceName(sourceDb.getDataSource().getName());
