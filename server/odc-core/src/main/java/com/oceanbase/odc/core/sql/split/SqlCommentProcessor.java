@@ -20,7 +20,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -31,6 +30,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import com.oceanbase.odc.common.lang.Holder;
+import com.oceanbase.odc.common.util.CloseableIterator;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 
 import lombok.AllArgsConstructor;
@@ -107,7 +107,7 @@ public class SqlCommentProcessor {
 
     public SqlCommentProcessor() {}
 
-    public static SqlStatementIterator iterator(InputStream in, DialectType dialectType,
+    public static CloseableIterator<OffsetString> iterator(InputStream in, DialectType dialectType,
             boolean preserveFormat,
             boolean preserveSingleComments,
             boolean preserveMultiComments,
@@ -734,7 +734,7 @@ public class SqlCommentProcessor {
         }
     }
 
-    public static class SqlStatementIterator implements Iterator<OffsetString>, AutoCloseable {
+    private static class SqlStatementIterator implements CloseableIterator<OffsetString> {
         private final BufferedReader reader;
         private final StringBuffer buffer = new StringBuffer();
         private final LinkedList<OffsetString> holder = new LinkedList<>();
@@ -799,7 +799,7 @@ public class SqlCommentProcessor {
                 if (!holder.isEmpty()) {
                     return holder.poll();
                 }
-                if (buffer.toString().trim().length() == 0) {
+                if (buffer.toString().trim().isEmpty()) {
                     return null;
                 }
                 String sql = buffer.toString();

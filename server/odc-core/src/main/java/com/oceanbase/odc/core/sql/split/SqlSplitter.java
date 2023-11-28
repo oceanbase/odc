@@ -15,14 +15,23 @@
  */
 package com.oceanbase.odc.core.sql.split;
 
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.Set;
 import java.util.Stack;
+import java.util.stream.Collectors;
 
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
@@ -34,6 +43,7 @@ import org.apache.commons.lang3.ArrayUtils;
 
 import com.google.common.collect.ImmutableMap;
 import com.oceanbase.odc.common.lang.Holder;
+import com.oceanbase.odc.common.util.CloseableIterator;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.Verify;
@@ -353,6 +363,11 @@ public class SqlSplitter {
         }
         addStmtWhileStmtEnd(tokens, tokenCount);
         return stmts;
+    }
+
+    public static CloseableIterator<String> iterator(InputStream in, Charset charset, Class<? extends Lexer> lexerType,
+            String delimiter) {
+        return new SqlStatementIterator(in, charset, lexerType, delimiter);
     }
 
     private void clear() {
@@ -833,4 +848,113 @@ public class SqlSplitter {
         }
 
     }
+
+    private static class SqlStatementIterator implements CloseableIterator<String> {
+
+        private final BufferedReader reader;
+        private final Class<? extends Lexer> lexerType;
+        private final StringBuilder buffer = new StringBuilder();
+        private final LinkedList<String> holder = new LinkedList<>();
+
+        private String current;
+        private String delimiter;
+        private boolean firstLine = true;
+        private List<String> sqls = new ArrayList<>();
+
+        private static final int SQL_STATEMENT_BUFFER_SIZE = 5;
+        private static final Character SQL_SEPARATOR_CHAR = '/';
+        private static final Character LINE_SEPARATOR_CHAR = '\n';
+        private static final String SQL_MULTI_LINE_COMMENT_PREFIX = "/*";
+        private static final Set<Character> DELIMITER_CHARACTERS = new HashSet<>(Arrays.asList(';', '/', '$'));
+
+        public SqlStatementIterator(InputStream input, Charset charset, Class<? extends Lexer> lexerType,
+                String delimiter) {
+            this.reader = new BufferedReader(new InputStreamReader(input, charset));
+            this.lexerType = lexerType;
+            this.delimiter = delimiter;
+        }
+
+        @Override
+        public boolean hasNext() {
+            if (current == null) {
+                current = parseNext();
+            }
+            return current != null;
+        }
+
+        @Override
+        public String next() {
+            String next = current;
+            current = null;
+            if (next == null) {
+                next = parseNext();
+                if (next == null) {
+                    throw new NoSuchElementException("No more available sql.");
+                }
+            }
+            return next;
+        }
+
+        @Override
+        public void close() throws Exception {
+            reader.close();
+        }
+
+        private String parseNext() {
+            try {
+                if (!holder.isEmpty()) {
+                    return holder.poll();
+                }
+                String line;
+                while (holder.isEmpty() && (line = reader.readLine()) != null) {
+                    if (firstLine) {
+                        buffer.append(line);
+                        firstLine = false;
+                    } else {
+                        buffer.append(LINE_SEPARATOR_CHAR).append(line);
+                    }
+                    // SqlSplitter is non-reentrant, so we need to create a new one for each loop
+                    SqlSplitter splitter = createSplitter();
+                    sqls = splitter.split(buffer.toString()).stream().map(OffsetString::getStr)
+                            .collect(Collectors.toList());
+                    while (sqls.size() > SQL_STATEMENT_BUFFER_SIZE) {
+                        String sql = sqls.remove(0);
+                        holder.addLast(sql);
+                        int index = buffer.indexOf(sql.substring(0, sql.length() - 1));
+                        buffer.delete(0, index + sql.length());
+                        clearUselessPrefix();
+                        delimiter = splitter.getDelimiter();
+                    }
+                }
+                if (!holder.isEmpty()) {
+                    return holder.poll();
+                }
+                if (sqls.isEmpty()) {
+                    return null;
+                }
+                return sqls.remove(0);
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to parse input. reason: " + e.getMessage(), e);
+            }
+        }
+
+        private void clearUselessPrefix() {
+            while (buffer.length() > 0 && DELIMITER_CHARACTERS.contains(buffer.charAt(0))
+                    && !(buffer.toString().startsWith(SQL_MULTI_LINE_COMMENT_PREFIX))) {
+                buffer.deleteCharAt(0);
+            }
+            while ((buffer.length() > 0 && (Character.isWhitespace(buffer.charAt(0)))) ||
+                    (buffer.toString().startsWith(SQL_SEPARATOR_CHAR.toString())
+                            && !buffer.toString().startsWith(SQL_MULTI_LINE_COMMENT_PREFIX))) {
+                buffer.deleteCharAt(0);
+            }
+        }
+
+        private SqlSplitter createSplitter() {
+            return new SqlSplitter(lexerType, delimiter);
+        }
+
+    }
+
+
 }

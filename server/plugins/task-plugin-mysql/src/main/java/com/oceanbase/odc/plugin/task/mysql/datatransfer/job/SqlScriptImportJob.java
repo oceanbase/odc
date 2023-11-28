@@ -35,6 +35,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.oceanbase.odc.common.util.CloseableIterator;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.sql.split.OffsetString;
@@ -86,9 +87,8 @@ public class SqlScriptImportJob extends AbstractJob {
     private void runExternalSqlScript() throws Exception {
         DialectType dialectType = transferConfig.getConnectionInfo().getConnectType().getDialectType();
         String charset = transferConfig.getEncoding().getAlias();
-
-        try (SqlCommentProcessor.SqlStatementIterator iterator = SqlCommentProcessor
-                .iterator(input.openStream(), dialectType, true, true, true, Charset.forName(charset));
+        try (CloseableIterator<OffsetString> iterator = SqlCommentProcessor.iterator(input.openStream(), dialectType,
+                true, true, true, Charset.forName(charset));
                 Connection conn = dataSource.getConnection();
                 Statement stmt = conn.createStatement()) {
             while (!isCanceled() && !Thread.currentThread().isInterrupted() && iterator.hasNext()) {
@@ -136,8 +136,8 @@ public class SqlScriptImportJob extends AbstractJob {
         boolean firstLine = true;
         DialectType dialectType = transferConfig.getConnectionInfo().getConnectType().getDialectType();
         String charset = transferConfig.getEncoding().getAlias();
-        try (SqlCommentProcessor.SqlStatementIterator iterator = SqlCommentProcessor
-                .iterator(input.openStream(), dialectType, true, true, true, Charset.forName(charset));
+        try (CloseableIterator<OffsetString> iterator = SqlCommentProcessor.iterator(input.openStream(), dialectType,
+                true, true, true, Charset.forName(charset));
                 Connection conn = dataSource.getConnection();
                 Statement stmt = conn.createStatement()) {
             while (!Thread.currentThread().isInterrupted() && iterator.hasNext() && !isCanceled()) {
@@ -180,8 +180,8 @@ public class SqlScriptImportJob extends AbstractJob {
 
         DialectType dialectType = transferConfig.getConnectionInfo().getConnectType().getDialectType();
         String charset = transferConfig.getEncoding().getAlias();
-        try (SqlCommentProcessor.SqlStatementIterator iterator = SqlCommentProcessor
-                .iterator(input.openStream(), dialectType, true, true, true, Charset.forName(charset));
+        try (CloseableIterator<OffsetString> iterator = SqlCommentProcessor.iterator(input.openStream(), dialectType,
+                true, true, true, Charset.forName(charset));
                 Connection conn = dataSource.getConnection()) {
             List<String> insertionBuffer = new LinkedList<>();
             while (!Thread.currentThread().isInterrupted() && !isCanceled()) {
