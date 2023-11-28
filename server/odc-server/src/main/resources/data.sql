@@ -712,3 +712,4 @@ INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES
 --
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.run-mode', 'THREAD', 'ODC task run mode contain: THREAD/K8S, default is THREAD' ) ON DUPLICATE KEY UPDATE `id` = `id`;
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.k8s.url', '', 'k8s url when task run mode is K8S' ) ON DUPLICATE KEY UPDATE `id` = `id`;
+INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.k8s.namespace', 'default', 'k8s namespace name' ) ON DUPLICATE KEY UPDATE `id` = `id`;

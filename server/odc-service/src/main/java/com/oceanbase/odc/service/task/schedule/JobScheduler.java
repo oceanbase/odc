@@ -16,6 +16,7 @@
 
 package com.oceanbase.odc.service.task.schedule;
 
+import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.caller.JobException;
 
 /**
@@ -24,6 +25,8 @@ import com.oceanbase.odc.service.task.caller.JobException;
  * @since 4.2.4
  */
 public interface JobScheduler {
+
+    void scheduleJobNow(JobContext jc) throws JobException;
 
     /**
      * schedule job

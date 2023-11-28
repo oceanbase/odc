@@ -20,6 +20,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
+import org.mockito.Mockito;
 import org.quartz.JobExecutionContext;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
@@ -34,6 +35,7 @@ import com.oceanbase.odc.service.task.caller.DefaultJobContext;
 import com.oceanbase.odc.service.task.caller.JobException;
 import com.oceanbase.odc.service.task.config.DefaultJobConfiguration;
 import com.oceanbase.odc.service.task.constants.JobConstants;
+import com.oceanbase.odc.service.task.dispatch.JobDispatcher;
 import com.oceanbase.odc.service.task.schedule.DefaultJobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 import com.oceanbase.odc.service.task.schedule.JobScheduler;
@@ -52,10 +54,9 @@ public class JobSchedulerTest {
     @Test
     public void test_scheduleJob() throws JobException, SchedulerException, InterruptedException {
 
-        DefaultJobConfiguration jc = new DefaultJobConfiguration();
         SchedulerFactory sf = new StdSchedulerFactory();
         Scheduler sched = sf.getScheduler();
-
+        DefaultJobConfiguration jc = new DefaultJobConfiguration() {};
         jc.setScheduler(sched);
 
         JobIdentity jobIdentity = JobIdentity.of(1L, ScheduleSourceType.TASK_TASK, TaskType.ASYNC.name());
@@ -64,8 +65,13 @@ public class JobSchedulerTest {
         DefaultJobDefinition jd = new DefaultJobDefinition();
         jd.setJobContext(ctx);
 
+        JobDispatcher jobDispatcher = Mockito.mock(JobDispatcher.class);
+        Mockito.doNothing().when(jobDispatcher).dispatch(ctx);
+        jc.setJobDispatcher(jobDispatcher);
+
         JobScheduler js = new StdJobScheduler(jc);
         js.scheduleJob(jd);
+
         sched.start();
         CountDownLatch cd = new CountDownLatch(1);
         sched.getListenerManager().addTriggerListener(new TriggerListenerSupport() {

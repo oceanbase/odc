@@ -17,8 +17,6 @@
 package com.oceanbase.odc.service.task.config;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
 
 import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +24,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.service.task.caller.JobCaller;
 import com.oceanbase.odc.service.task.caller.JvmJobCaller;
 import com.oceanbase.odc.service.task.caller.K8sJobCaller;
@@ -67,7 +66,7 @@ public class TaskFrameworkConfiguration {
                 return new JvmJobCaller();
             case K8S:
             default:
-                return getK8sJobCaller(k8sJobClient);
+                return getK8sJobCaller(k8sJobClient, taskFrameworkProperties);
         }
     }
 
@@ -76,17 +75,16 @@ public class TaskFrameworkConfiguration {
         return new DefaultSpringJobConfiguration();
     }
 
-    private K8sJobCaller getK8sJobCaller(K8sJobClient k8sJobClient) {
+    private K8sJobCaller getK8sJobCaller(K8sJobClient k8sJobClient,
+            TaskFrameworkProperties taskFrameworkProperties) {
         if (k8sJobClient == null) {
             throw new BeanCreationException("Current deploy model is k8s, but k8sJobClient is missing");
         }
         PodConfig podConfig = new PodConfig();
-        // todo replaced by odc-executor
-        String imageName = "perl:5.34.0";
-        List<String> cmd = Arrays.asList("perl", "-Mbignum=bpi", "-wle", "print bpi(2000)");
+        // todo read odc version
+        String imageName = SystemUtils.getEnvOrProperty("ODC_IMAGE");
         podConfig.setImage(imageName);
-        podConfig.setCommand(cmd);
-        podConfig.setNamespace("default");
+        podConfig.setNamespace(taskFrameworkProperties.getK8s().getNamespace());
         return new K8sJobCaller(k8sJobClient, podConfig);
     }
 }

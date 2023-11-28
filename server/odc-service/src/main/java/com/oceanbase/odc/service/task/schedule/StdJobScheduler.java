@@ -24,6 +24,7 @@ import org.quartz.impl.JobDetailImpl;
 
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.service.schedule.model.QuartzKeyGenerator;
+import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.caller.JobException;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
@@ -36,11 +37,19 @@ import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 public class StdJobScheduler implements JobScheduler {
 
     private final Scheduler scheduler;
+    private final JobConfiguration configuration;
 
     public StdJobScheduler(JobConfiguration configuration) {
+        this.configuration = configuration;
         this.scheduler = configuration.getScheduler();
         PreConditions.notNull(configuration.getScheduler(), "quartz scheduler");
+        PreConditions.notNull(configuration.getJobDispatcher(), "job dispatcher");
         JobConfigurationHolder.setJobConfiguration(configuration);
+    }
+
+    @Override
+    public void scheduleJobNow(JobContext jc) throws JobException {
+        configuration.getJobDispatcher().dispatch(jc);
     }
 
     @Override

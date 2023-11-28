@@ -24,6 +24,7 @@ import org.springframework.context.event.ContextRefreshedEvent;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.caller.JobCaller;
+import com.oceanbase.odc.service.task.dispatch.ImmediateJobDispatcher;
 
 /**
  * @author yaobin
@@ -38,7 +39,7 @@ public class DefaultSpringJobConfiguration extends DefaultJobConfiguration
         ApplicationContext ctx = event.getApplicationContext();
         setConnectionService(ctx.getBean(ConnectionService.class));
         setTaskService(ctx.getBean(TaskService.class));
-        setJobCaller(ctx.getBean(JobCaller.class));
         setScheduler(ctx.getBean(Scheduler.class));
+        setJobDispatcher(new ImmediateJobDispatcher(ctx.getBean(JobCaller.class)));
     }
 }
