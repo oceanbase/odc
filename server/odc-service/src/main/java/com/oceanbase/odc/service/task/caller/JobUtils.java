@@ -16,7 +16,6 @@
 
 package com.oceanbase.odc.service.task.caller;
 
-import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 
 /**
@@ -27,6 +26,6 @@ import com.oceanbase.odc.service.task.schedule.JobIdentity;
 public class JobUtils {
 
     public static String generateJobName(JobIdentity ji) {
-        return JobConstants.TEMPLATE_JOB_NAME_PREFIX + ji.getSourceType().getSource() + ji.getId();
+        return ji.getSourceType().getSource() + "-" + ji.getId();
     }
 }

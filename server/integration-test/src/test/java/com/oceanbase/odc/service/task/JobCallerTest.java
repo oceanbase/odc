@@ -82,7 +82,7 @@ public class JobCallerTest extends BaseJobTest {
     public void test_startSampleTask() throws JobException {
         Long exceptedTaskId = System.currentTimeMillis();
         PodConfig podConfig = new PodConfig();
-        podConfig.setImage("mengdezhicai/odc:dev-4.2.3-2023112402");
+        podConfig.setImage("mengdezhicai/odc:test-task-latest");
         podConfig.setNamespace("default");
 
         JobIdentity jobIdentity = JobIdentity.of(exceptedTaskId, ScheduleSourceType.TASK_TASK, TaskType.SAMPLE.name());

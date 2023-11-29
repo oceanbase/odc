@@ -53,7 +53,7 @@ public class SampleTask extends BaseTask {
     @Override
     protected void doStart() {
         this.status = TaskStatus.RUNNING;
-        Verify.equals(TaskType.SAMPLE, context.getJobIdentity().getTaskType(), "taskType");
+        Verify.equals(TaskType.SAMPLE.code(), context.getJobIdentity().getTaskType(), "taskType");
         this.parameter = JsonUtils.fromJson(context.getTaskParameters(), SampleTaskParameter.class);
         validateTaskParameter();
         this.totalSqlCount = this.parameter.getSqls().size();
