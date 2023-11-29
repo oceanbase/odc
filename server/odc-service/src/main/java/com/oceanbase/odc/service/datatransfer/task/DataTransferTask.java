@@ -47,7 +47,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.base.MoreObjects;
-import com.google.common.base.Verify;
 import com.oceanbase.odc.common.trace.TraceContextHolder;
 import com.oceanbase.odc.core.datamasking.config.MaskConfig;
 import com.oceanbase.odc.core.datamasking.masker.AbstractDataMasker;
@@ -324,8 +323,9 @@ public class DataTransferTask implements Callable<DataTransferTaskResult> {
                 .filter(objectStatus -> objectStatus.getStatus() != Status.SUCCESS)
                 .map(ObjectResult::getSummary)
                 .collect(Collectors.toList());
-        Verify.verify(CollectionUtils.isEmpty(failedObjects),
-                "Data transfer task completed with unfinished objects! Details : " + failedObjects);
+        if (CollectionUtils.isNotEmpty(failedObjects)) {
+            LOGGER.warn("Data transfer task completed with unfinished objects! Details : {}", failedObjects);
+        }
     }
 
     private List<URL> copyImportScripts(List<String> fileNames, DataTransferFormat format, File destDir)
@@ -367,7 +367,7 @@ public class DataTransferTask implements Callable<DataTransferTaskResult> {
         ExportOutput exportOutput = new ExportOutput(from);
         exportOutput.toFolder(dest);
         log.info("Unzip file to working dir, from={}, dest={}", from.getAbsolutePath(), dest.getAbsolutePath());
-        return exportOutput;
+        return new ExportOutput(dest);
     }
 
     private void copyExportedFiles(DataTransferTaskResult result, String exportPath) {
