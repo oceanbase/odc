@@ -47,11 +47,6 @@ public class StdJobScheduler implements JobScheduler {
     }
 
     @Override
-    public void scheduleJobNow(JobDefinition jd) throws JobException {
-        configuration.getJobDispatcher().dispatch(jd.getJobContext());
-    }
-
-    @Override
     public void scheduleJob(JobDefinition jd) throws JobException {
 
         Trigger trigger = TriggerBuilder.build(jd);
@@ -66,6 +61,11 @@ public class StdJobScheduler implements JobScheduler {
         } catch (SchedulerException e) {
             throw new JobException("add and schedule job failed:", e);
         }
+    }
+
+    @Override
+    public void scheduleJobNow(JobDefinition jd) throws JobException {
+        configuration.getJobDispatcher().dispatch(jd.getJobContext());
     }
 
 }

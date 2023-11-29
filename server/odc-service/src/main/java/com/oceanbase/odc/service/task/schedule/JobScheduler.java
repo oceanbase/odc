@@ -26,17 +26,18 @@ import com.oceanbase.odc.service.task.caller.JobException;
 public interface JobScheduler {
 
     /**
-     * schedule a job right now, TriggerConfig on parameter will be ignored
-     * 
-     * @param jd
-     * @throws JobException
-     */
-    void scheduleJobNow(JobDefinition jd) throws JobException;
-
-    /**
-     * schedule job
-     * 
+     * schedule job which can be set trigger config
+     *
      * @param jd define a job
+     * @throws JobException throw JobException if schedule job failed
      */
     void scheduleJob(JobDefinition jd) throws JobException;
+
+    /**
+     * schedule a job right now, trigger config on job definition will be ignored
+     *
+     * @param jd define a job
+     * @throws JobException hrow JobException if schedule job failed
+     */
+    void scheduleJobNow(JobDefinition jd) throws JobException;
 }
