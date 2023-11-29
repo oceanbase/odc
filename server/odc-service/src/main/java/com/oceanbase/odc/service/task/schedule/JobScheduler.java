@@ -37,7 +37,7 @@ public interface JobScheduler {
      * schedule a job right now, trigger config on job definition will be ignored
      *
      * @param jd define a job
-     * @throws JobException hrow JobException if schedule job failed
+     * @throws JobException throw JobException if schedule job failed
      */
     void scheduleJobNow(JobDefinition jd) throws JobException;
 }
