@@ -16,7 +16,6 @@
 
 package com.oceanbase.odc.service.task.schedule;
 
-import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.caller.JobException;
 
 /**
@@ -26,7 +25,13 @@ import com.oceanbase.odc.service.task.caller.JobException;
  */
 public interface JobScheduler {
 
-    void scheduleJobNow(JobContext jc) throws JobException;
+    /**
+     * schedule a job right now, TriggerConfig on parameter will be ignored
+     * 
+     * @param jd
+     * @throws JobException
+     */
+    void scheduleJobNow(JobDefinition jd) throws JobException;
 
     /**
      * schedule job
