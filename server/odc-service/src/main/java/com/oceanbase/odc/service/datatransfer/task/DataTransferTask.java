@@ -85,6 +85,7 @@ import com.oceanbase.odc.service.plugin.TaskPluginUtil;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
+import com.oceanbase.tools.loaddump.common.enums.DataFormat;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
 import com.oceanbase.tools.loaddump.common.model.DumpParameter;
 import com.oceanbase.tools.loaddump.common.model.Manifest;
@@ -139,13 +140,13 @@ public class DataTransferTask implements Callable<DataTransferTaskResult> {
             if (config.getTransferType() == DataTransferType.IMPORT) {
                 clearWorkingDir();
             } else {
-                handleOutput(result);
                 if (config.getDataTransferFormat() != DataTransferFormat.SQL) {
                     // save csv config to MANIFEST
                     Path manifest = Paths.get(workingDir.getPath(), "data", ExportOutput.MANIFEST);
                     SerializeUtils.serializeObjectByKryo(new Manifest(getDumpParameterForManifest()),
                             manifest.toString());
                 }
+                handleOutput(result);
             }
 
             return result;
@@ -426,6 +427,7 @@ public class DataTransferTask implements Callable<DataTransferTaskResult> {
         dumpParameter.setIgnoreEmptyLine(true);
         dumpParameter.setEscapeCharacter('\\');
         dumpParameter.setEmptyString("");
+        dumpParameter.setDataFormat(DataFormat.CSV);
         if (csvConfig.isBlankToNull()) {
             dumpParameter.setNullString("null");
         }

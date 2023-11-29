@@ -20,7 +20,6 @@ import java.io.File;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -29,10 +28,7 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
 
-import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.core.util.ConfigParser;
-import com.alibaba.datax.core.util.container.CoreConstant;
-import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.CsvColumnMapping;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.CsvConfig;
@@ -51,14 +47,6 @@ import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.paramete
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.parameter.TxtReaderPluginParameter.Column;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.parameter.TxtWriterPluginParameter;
 
-/**
- * We hope to configure the job in the form of an Object instead of a config file. So this class
- * contains some code rewrites for the {@link ConfigParser} class to implement the process of custom
- * config loading.
- * 
- * @author liuyizhuo.lyz
- * @date 2023-09-24
- */
 public class ConfigurationResolver {
     private static final String JAR_PATH;
 
@@ -70,13 +58,6 @@ public class ConfigurationResolver {
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    public static Configuration resolve(JobConfiguration jobConfig) {
-        Configuration custom = Configuration.from(ImmutableMap.of("job", jobConfig));
-        mergeCoreConfiguration(custom);
-        mergePluginConfiguration(custom);
-        return custom;
     }
 
     @SuppressWarnings("all")
@@ -164,7 +145,6 @@ public class ConfigurationResolver {
         // common
         pluginParameter.setEncoding(baseConfig.getEncoding().getAlias());
         pluginParameter.setFileFormat(baseConfig.getDataTransferFormat() == DataTransferFormat.SQL ? "sql" : "csv");
-        pluginParameter.setLineDelimiter(getRealLineSeparator(baseConfig.getCsvConfig().getLineSeparator()));
         // path
         pluginParameter.setPath(Paths.get(workingDir.getPath(), "data", "TABLE").toString());
         pluginParameter.setFileName(table + baseConfig.getDataTransferFormat().getExtension());
@@ -178,6 +158,7 @@ public class ConfigurationResolver {
         }
         // csv config
         if (Objects.nonNull(baseConfig.getCsvConfig())) {
+            pluginParameter.setLineDelimiter(getRealLineSeparator(baseConfig.getCsvConfig().getLineSeparator()));
             pluginParameter.setCsvWriterConfig(getDataXCsvConfig(baseConfig));
             pluginParameter.setSkipHeader(baseConfig.getCsvConfig().isSkipHeader());
             pluginParameter.setNullFormat(baseConfig.getCsvConfig().isBlankToNull() ? "null" : "");
@@ -219,7 +200,7 @@ public class ConfigurationResolver {
         Connection connection = new Connection(url, new String[] {table});
         pluginParameter.setConnection(Collections.singletonList(connection));
         // preSql
-        List<String> preSql = Arrays.asList(Constants.DISABLE_FK);
+        List<String> preSql = Lists.newArrayList(Constants.DISABLE_FK);
         if (baseConfig.isTruncateTableBeforeImport()) {
             preSql.add("TRUNCATE TABLE " + table);
         }
@@ -237,50 +218,6 @@ public class ConfigurationResolver {
         pluginParameter.setColumn(column);
 
         return writer;
-    }
-
-    /**
-     * load core.json from classpath:/datax/conf/
-     */
-    private static void mergeCoreConfiguration(Configuration custom) {
-        custom.merge(
-                Configuration.from(ConfigurationResolver.class.getResourceAsStream("/datax/conf/core.json")), false);
-    }
-
-    /**
-     * load plugin.json from classpath:/datax/plugin/
-     */
-    public static void mergePluginConfiguration(Configuration custom) {
-
-        String readerPluginName = custom.getString(CoreConstant.DATAX_JOB_CONTENT_READER_NAME);
-        String writerPluginName = custom.getString(CoreConstant.DATAX_JOB_CONTENT_WRITER_NAME);
-        String readerPluginResource = "/datax/plugin/reader/" + readerPluginName + "/plugin.json";
-        custom.merge(parseSinglePluginConfig(readerPluginResource, "reader"), true);
-
-        String writerPluginResource = "/datax/plugin/writer/" + writerPluginName + "/plugin.json";
-        custom.merge(parseSinglePluginConfig(writerPluginResource, "writer"), true);
-
-    }
-
-    private static Configuration parseSinglePluginConfig(String resourceLocation, String type) {
-        try {
-            Configuration configuration =
-                    Configuration.from(ConfigurationResolver.class.getResourceAsStream(resourceLocation));
-            String pluginName = configuration.getString("name");
-
-            configuration.set("path", JAR_PATH);
-            configuration.set("loadType", "jarLoader");
-
-            Configuration result = Configuration.newDefault();
-
-            result.set(
-                    String.format("plugin.%s.%s", type, pluginName),
-                    configuration.getInternal());
-
-            return result;
-        } catch (Exception e) {
-            throw new RuntimeException(String.format("Failed to load datax-plugin[%s]", resourceLocation), e);
-        }
     }
 
     private static DataXCsvConfig getDataXCsvConfig(DataTransferConfig baseConfig) {

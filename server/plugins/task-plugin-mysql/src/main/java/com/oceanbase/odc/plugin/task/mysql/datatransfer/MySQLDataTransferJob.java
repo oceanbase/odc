@@ -158,7 +158,7 @@ public class MySQLDataTransferJob implements DataTransferJob {
     }
 
     private void initTransferJobs(DataSource dataSource, String jdbcUrl) {
-        TransferJobFactory factory = new TransferJobFactory(baseConfig, workingDir, inputs, jdbcUrl);
+        TransferJobFactory factory = new TransferJobFactory(baseConfig, workingDir, logDir, inputs, jdbcUrl);
         try {
             if (baseConfig.isTransferDDL()) {
                 List<AbstractJob> jobs = factory.generateSchemaTransferJobs(dataSource);

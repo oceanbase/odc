@@ -49,12 +49,15 @@ public class TransferJobFactory {
 
     private final DataTransferConfig transferConfig;
     private final File workingDir;
+    private final File logDir;
     private final List<URL> inputs;
     private final String jdbcUrl;
 
-    public TransferJobFactory(DataTransferConfig transferConfig, File workingDir, List<URL> inputs, String jdbcUrl) {
+    public TransferJobFactory(DataTransferConfig transferConfig, File workingDir, File logDir, List<URL> inputs,
+            String jdbcUrl) {
         this.transferConfig = transferConfig;
         this.workingDir = workingDir;
+        this.logDir = logDir;
         this.inputs = inputs;
         this.jdbcUrl = jdbcUrl;
     }
@@ -120,7 +123,7 @@ public class TransferJobFactory {
 
                 if (transferConfig.getDataTransferFormat() == DataTransferFormat.CSV) {
                     jobs.add(new DataXTransferJob(object, ConfigurationResolver
-                            .buildJobConfigurationForImport(transferConfig, jdbcUrl, object, url)));
+                            .buildJobConfigurationForImport(transferConfig, jdbcUrl, object, url), workingDir, logDir));
                 } else {
                     jobs.add(new SqlScriptImportJob(object, transferConfig, url, dataSource));
                 }
@@ -148,7 +151,8 @@ public class TransferJobFactory {
                                 .stream().map(DBTableColumn::getName).collect(Collectors.toList());
 
                 AbstractJob job = new DataXTransferJob(table, ConfigurationResolver
-                        .buildJobConfigurationForExport(workingDir, transferConfig, jdbcUrl, table.getName(), columns));
+                        .buildJobConfigurationForExport(workingDir, transferConfig, jdbcUrl, table.getName(), columns),
+                        workingDir, logDir);
                 jobs.add(job);
             }
         }

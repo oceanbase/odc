@@ -1,4 +1,0 @@
-{
-  "name": "mysqlreader",
-  "class": "com.alibaba.datax.plugin.reader.mysqlreader.MysqlReader"
-}

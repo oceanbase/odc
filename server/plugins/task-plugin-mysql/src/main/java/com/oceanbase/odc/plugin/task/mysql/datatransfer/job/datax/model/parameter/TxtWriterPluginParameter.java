@@ -39,7 +39,7 @@ public class TxtWriterPluginParameter extends TxtPluginParameter {
      */
     private String table;
     private String quoteChar;
-    private int commitSize;
+    private Integer commitSize;
 
     private DataXCsvConfig csvWriterConfig;
 

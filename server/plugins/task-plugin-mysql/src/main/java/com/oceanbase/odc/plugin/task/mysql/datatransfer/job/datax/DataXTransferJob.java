@@ -16,169 +16,218 @@
 
 package com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.net.MalformedURLException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
+import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.alibaba.datax.common.element.ColumnCast;
-import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.common.util.MessageSource;
-import com.alibaba.datax.core.job.JobContainer;
-import com.alibaba.datax.core.statistics.communication.Communication;
-import com.alibaba.datax.core.statistics.communication.CommunicationTool;
-import com.alibaba.datax.core.statistics.communication.LocalTGCommunicationManager;
-import com.alibaba.datax.core.statistics.container.communicator.job.StandAloneJobContainerCommunicator;
-import com.alibaba.datax.core.util.container.CoreConstant;
-import com.alibaba.datax.core.util.container.LoadUtil;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import com.oceanbase.odc.common.util.StringUtils;
+import com.google.common.collect.ImmutableMap;
+import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.ObjectResult;
-import com.oceanbase.odc.plugin.task.mysql.datatransfer.common.Constants;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.AbstractJob;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.JobConfiguration;
+import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.parameter.PluginParameter;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.parameter.TxtWriterPluginParameter;
-import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.util.DataXJobIdProvider;
 import com.oceanbase.tools.loaddump.common.model.ObjectStatus.Status;
 
 public class DataXTransferJob extends AbstractJob {
     private static final Logger LOGGER = LoggerFactory.getLogger("DataTransferLogger");
-    private static final int COLLECT_INTERVAL = 1;
-
-    static {
-        Configuration core = Configuration.from(DataXTransferJob.class.getResourceAsStream("/datax/conf/core.json"));
-        // bind column cast strategies
-        ColumnCast.bind(core);
-        // bind i18n properties
-        MessageSource.init(core);
-        // initiate PluginLoader
-        Configuration plugins = Configuration.newDefault();
-        plugins.set(CoreConstant.DATAX_JOB_CONTENT_READER_NAME, Constants.MYSQL_READER);
-        plugins.set(CoreConstant.DATAX_JOB_CONTENT_WRITER_NAME, Constants.TXT_FILE_WRITER);
-        ConfigurationResolver.mergePluginConfiguration(plugins);
-        plugins.set(CoreConstant.DATAX_JOB_CONTENT_READER_NAME, Constants.TXT_FILE_READER);
-        plugins.set(CoreConstant.DATAX_JOB_CONTENT_WRITER_NAME, Constants.MYSQL_WRITER);
-        ConfigurationResolver.mergePluginConfiguration(plugins);
-        LoadUtil.bind(plugins);
-    }
+    private static final Pattern LOG_STATISTICS_PATTERN =
+            Pattern.compile("^.+Total (\\d+) records, (\\d+) bytes.+Error (\\d+) records, (\\d+) bytes.+$");
+    private static final Pattern LOG_DIRTY_RECORD_PATTERN =
+            Pattern.compile("^.+exception.+record.+type$");
+    private static final Pattern DATA_FILE_PATTERN =
+            Pattern.compile("(^\"?(.+)\"?.(sql|csv|dat|txt))__(.+)$", Pattern.CASE_INSENSITIVE);
 
     private final JobConfiguration jobConfig;
-    /**
-     * for monitoring, {@link StandAloneJobContainerCommunicator} need this to collect. Each job should
-     * own a unique ID.
-     */
-    private final Long jobId;
-    private JobContainer jobContainer;
-    private StandAloneJobContainerCommunicator containerCommunicator;
+    private final File workingDir;
+    private final File logDir;
 
-    public DataXTransferJob(ObjectResult object, JobConfiguration jobConfig) {
+    private long failed;
+    private Process process;
+
+    public DataXTransferJob(ObjectResult object, JobConfiguration jobConfig, File workingDir, File logDir) {
         super(object);
         this.jobConfig = jobConfig;
-        this.jobId = DataXJobIdProvider.getInstance().fetch();
+        this.workingDir = workingDir;
+        this.logDir = logDir;
     }
 
     @Override
     public void run() throws Exception {
-
-        ScheduledExecutorService scheduledExecutor = Executors.newSingleThreadScheduledExecutor(
-                new ThreadFactoryBuilder().setNameFormat("datax-monitor-%d").build());
-
+        unzipToWorkingDir(workingDir);
+        File dataxHome = Paths.get(workingDir.getPath(), "datax").toFile();
+        if (!dataxHome.exists()) {
+            throw new FileNotFoundException(dataxHome.getPath());
+        }
+        ExecutorService executor = Executors.newSingleThreadExecutor();
         try {
-            Configuration configuration = ConfigurationResolver.resolve(jobConfig);
-            configuration.set(CoreConstant.DATAX_CORE_CONTAINER_JOB_ID, jobId);
-            this.containerCommunicator = new StandAloneJobContainerCommunicator(configuration);
-
-            scheduledExecutor.scheduleAtFixedRate(this::collect, COLLECT_INTERVAL, COLLECT_INTERVAL,
-                    TimeUnit.SECONDS);
-
-            this.jobContainer = new JobContainer(configuration);
-            jobContainer.start();
-
-            setTaskStatus();
-
-            if (StringUtils.equalsIgnoreCase(jobConfig.getContent()[0].getWriter().getName(),
-                    Constants.TXT_FILE_WRITER)) {
-                setExportFile();
+            String[] cmdArray =
+                    buildDataXExecutorCmd(dataxHome.getPath(), generateConfigurationFile().getPath());
+            process = new ProcessBuilder().command(cmdArray).start();
+            executor.submit(() -> {
+                try {
+                    analysisStatisticsLog(process.getInputStream());
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+            // exit code: 0=success, 1=error
+            int exitValue = process.waitFor();
+            if (exitValue == 0) {
+                renameExportFile();
+                setStatus(Status.SUCCESS);
+            } else {
+                setStatus(Status.FAILURE);
+                throw new RuntimeException(String.format("DataX task failed. Number of failed records: %d .", failed));
             }
-
-        } catch (Throwable e) {
-            setStatus(Status.FAILURE);
-            getCommunicationAndRecord();
-            throw e;
-
         } finally {
-            scheduledExecutor.shutdown();
-            // collect for the last time and call LocalTGCommunicationManager#clear to avoid memory leak
-            collect();
-            LocalTGCommunicationManager.clear(jobId);
+            if (process != null && process.isAlive()) {
+                process.destroy();
+            }
+            executor.shutdown();
+            FileUtils.deleteQuietly(dataxHome);
         }
     }
 
     @Override
     public void cancel() {
-        if (jobContainer != null) {
-            jobContainer.cancel();
+        if (process != null && process.isAlive()) {
+            process.destroy();
         }
         super.cancel();
     }
 
-    private void setTaskStatus() {
-        Communication communication = getCommunicationAndRecord();
-
-        if (communication.getThrowable() != null) {
-            /*
-             * print warning only without throwing
-             */
-            LOGGER.warn("DataX task finished with exception: {}", communication.getThrowable().getMessage());
+    private File generateConfigurationFile() throws IOException {
+        File file = Paths.get(workingDir.getPath(), "job.conf").toFile();
+        if (file.exists()) {
+            FileUtils.deleteQuietly(file);
         }
-
-        if (CommunicationTool.getTotalErrorRecords(communication) == 0) {
-            setStatus(Status.SUCCESS);
-        } else {
-            setStatus(Status.FAILURE);
-            throw new RuntimeException(String.format("DataX task finished with some failed records. "
-                    + "Number of readFailedRecords: %d, number of writeFailedRecords: %d",
-                    communication.getLongCounter("readFailedRecords"),
-                    communication.getLongCounter("writeFailedRecords")));
-        }
+        FileUtils.write(file, JsonUtils.toJson(ImmutableMap.of("job", jobConfig)), StandardCharsets.UTF_8);
+        return file;
     }
 
-    private Communication getCommunicationAndRecord() {
-        if (containerCommunicator == null) {
-            return new Communication();
-        }
-        Communication communication = containerCommunicator.collect();
-        communication.setTimestamp(System.currentTimeMillis());
-
-        increaseTotal(CommunicationTool.getTotalReadRecords(communication));
-        increaseCount(CommunicationTool.getWriteSucceedRecords(communication));
-        return communication;
+    private String[] buildDataXExecutorCmd(String dataxHomePath, String tmpFilePath) {
+        List<String> command = new ArrayList<>();
+        command.add("java");
+        command.add("-server");
+        command.add("-Xms1g");
+        command.add("-Xmx1g");
+        command.add("-XX:+HeapDumpOnOutOfMemoryError");
+        command.add("-classpath");
+        command.add(Paths.get(dataxHomePath, SystemUtils.isOnWindows() ? "lib/*" : "lib/*:.").toString());
+        command.add("-Dfile.encoding=UTF-8");
+        command.add("-Dlogback.statusListenerClass=ch.qos.logback.core.status.NopStatusListener");
+        command.add("-Djava.security.egd=file:///dev/urandom");
+        command.add(String.format("-Ddatax.home=%s", dataxHomePath));
+        command.add(String.format("-Dlogback.configurationFile=%s", Paths.get(dataxHomePath, "conf/logback.xml")));
+        command.add("-Dlog.file.name=datax.all");
+        command.add(String.format("-Dlog.dir=%s", logDir.getPath()));
+        command.add("com.alibaba.datax.core.Engine");
+        command.add("-mode");
+        command.add("standalone");
+        command.add("-jobid");
+        command.add("-1");
+        command.add("-job");
+        command.add(tmpFilePath);
+        return command.toArray(new String[0]);
     }
 
-    private void setExportFile() throws MalformedURLException, FileNotFoundException {
-        TxtWriterPluginParameter pluginParameter =
-                (TxtWriterPluginParameter) jobConfig.getContent()[0].getWriter().getParameter();
-        File file = Paths.get(pluginParameter.getPath(), pluginParameter.getFileName()).toFile();
-        if (!file.exists() || !file.isFile()) {
-            throw new FileNotFoundException(file.getName());
-        }
-        object.setExportPaths(Collections.singletonList(file.toURI().toURL()));
-    }
-
-    private void collect() {
+    private void analysisStatisticsLog(InputStream inputStream) throws IOException {
         try {
-            Communication communication = getCommunicationAndRecord();
-            bytes += communication.getLongCounter(CommunicationTool.REAL_WRITE_BYTES);
-            records += CommunicationTool.getTotalReadRecords(communication);
-        } catch (Exception e) {
-            LOGGER.warn("Error occurred on dataX monitoring, reason:{}. Transfer will continue.", e.getMessage());
+            BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
+            String line;
+            while ((line = reader.readLine()) != null && !Thread.currentThread().isInterrupted()) {
+                Matcher matcher = LOG_STATISTICS_PATTERN.matcher(line);
+                if (matcher.matches()) {
+                    long totalRecords = Long.parseLong(matcher.group(1));
+                    bytes = Long.parseLong(matcher.group(2));
+                    failed = Long.parseLong(matcher.group(3));
+                    object.getTotal().set(totalRecords);
+                    object.getCount().set(totalRecords - failed);
+                }
+                matcher = LOG_DIRTY_RECORD_PATTERN.matcher(line);
+                if (matcher.matches()) {
+                    LOGGER.warn("Dirty record: {}", line);
+                }
+            }
+            reader.close();
+        } finally {
+            if (inputStream != null) {
+                inputStream.close();
+            }
+        }
+    }
+
+    private void renameExportFile() throws IOException {
+        PluginParameter pluginParameter = jobConfig.getContent()[0].getWriter().getParameter();
+        if (!(pluginParameter instanceof TxtWriterPluginParameter)) {
+            return;
+        }
+
+        File dir = new File(((TxtWriterPluginParameter) pluginParameter).getPath());
+        for (File file : dir.listFiles()) {
+            Matcher matcher = DATA_FILE_PATTERN.matcher(file.getName());
+            if (!file.getName().startsWith(((TxtWriterPluginParameter) pluginParameter).getFileName())
+                    || !matcher.matches()) {
+                continue;
+            }
+            String originName = matcher.group(1);
+            Path exportPath = file.toPath();
+            try {
+                exportPath = Files.move(file.toPath(),
+                        Paths.get(((TxtWriterPluginParameter) pluginParameter).getPath(), originName));
+            } catch (IOException e) {
+                LOGGER.warn("Failed to rename file {} to {}, reason: {}", file.getName(), originName, e.getMessage());
+            }
+            object.setExportPaths(Collections.singletonList(exportPath.toUri().toURL()));
+            return;
+        }
+    }
+
+    private synchronized static void unzipToWorkingDir(File workingDir) throws IOException {
+        try (InputStream resource = DataXTransferJob.class.getResourceAsStream("/datax.zip");
+                ZipInputStream zis = new ZipInputStream(resource)) {
+            byte[] buffer = new byte[1024];
+            ZipEntry entry;
+            while ((entry = zis.getNextEntry()) != null) {
+                File file = new File(workingDir, entry.getName());
+                if (entry.isDirectory()) {
+                    file.mkdirs();
+                } else {
+                    File parent = file.getParentFile();
+                    if (!parent.exists()) {
+                        parent.mkdirs();
+                    }
+                    try (FileOutputStream fos = new FileOutputStream(file)) {
+                        int len;
+                        while ((len = zis.read(buffer)) > 0) {
+                            fos.write(buffer, 0, len);
+                        }
+                    }
+                }
+            }
         }
     }
 
