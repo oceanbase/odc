@@ -33,4 +33,6 @@ public class PodConfig {
     private String image;
 
     private List<String> command;
+
+    private PodParam podParam = new PodParam();
 }

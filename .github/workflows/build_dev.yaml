@@ -105,7 +105,7 @@ jobs:
           odc_rpm_release_number=$(date +%Y%m%d%H%M%S)
           echo "odc_rpm_release_number=${odc_rpm_release_number}" >> $GITHUB_OUTPUT
           echo "odc_rpm_release_number=${odc_rpm_release_number}"
-          odc_docker_image_tag="test-task-${odc_rpm_release_number}"
+          odc_docker_image_tag="test-task-latest"
           echo "odc_docker_image_tag=${odc_docker_image_tag}" >> $GITHUB_OUTPUT
           echo "odc_docker_image_tag=${odc_docker_image_tag}"
 

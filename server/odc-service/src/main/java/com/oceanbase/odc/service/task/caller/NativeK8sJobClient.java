@@ -108,7 +108,9 @@ public class NativeK8sJobClient implements K8sJobClient {
     private V1Pod getV1Pod(String jobName, String image, List<String> command, PodParam podParam) {
         V1Container container = new V1Container()
                 .name(jobName)
-                .image(image);
+                .image(image)
+                .imagePullPolicy(podParam.getImagePullPolicy());
+
         if (CollectionUtils.isNotEmpty(command)) {
             container.setCommand(command);
         }

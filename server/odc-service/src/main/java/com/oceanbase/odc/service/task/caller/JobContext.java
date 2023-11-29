@@ -32,8 +32,6 @@ public interface JobContext {
 
     /**
      * get job identity
-     * 
-     * @return
      */
     JobIdentity getJobIdentity();
 

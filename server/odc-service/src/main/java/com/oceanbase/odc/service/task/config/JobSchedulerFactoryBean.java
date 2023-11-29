@@ -14,31 +14,33 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.task.schedule;
+package com.oceanbase.odc.service.task.config;
+
+import org.springframework.beans.factory.FactoryBean;
+
+import com.oceanbase.odc.service.task.schedule.JobScheduler;
+import com.oceanbase.odc.service.task.schedule.StdJobScheduler;
+
+import lombok.Setter;
 
 /**
  * @author yaobin
- * @date 2023-11-23
+ * @date 2023-11-29
  * @since 4.2.4
  */
-public enum ScheduleSourceType {
-    /**
-     * data from task_task
-     */
-    TASK_TASK("task-task"),
+public class JobSchedulerFactoryBean implements FactoryBean<JobScheduler> {
 
-    /**
-     * data from schedule_task
-     */
-    SCHEDULE_TASK("schedule-task");
+    @Setter
+    public JobConfiguration jobConfiguration;
 
-    private final String code;
-
-    ScheduleSourceType(String code) {
-        this.code = code;
+    @Override
+    public JobScheduler getObject() throws Exception {
+        return new StdJobScheduler(jobConfiguration);
     }
 
-    public String getCode() {
-        return code;
+    @Override
+    public Class<?> getObjectType() {
+        return JobScheduler.class;
     }
+
 }

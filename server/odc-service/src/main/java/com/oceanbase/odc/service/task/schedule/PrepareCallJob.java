@@ -20,6 +20,11 @@ import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 
+import com.oceanbase.odc.service.task.caller.JobContext;
+import com.oceanbase.odc.service.task.caller.JobException;
+import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
+import com.oceanbase.odc.service.task.constants.JobConstants;
+
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -32,5 +37,11 @@ public class PrepareCallJob implements Job {
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {
 
+        JobContext jc = (JobContext) context.getMergedJobDataMap().get(JobConstants.JOB_DATA_MAP_JOB_CONTEXT);
+        try {
+            JobConfigurationHolder.getJobConfiguration().getJobDispatcher().dispatch(jc);
+        } catch (JobException e) {
+            throw new JobExecutionException(e);
+        }
     }
 }

@@ -36,10 +36,13 @@ import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 public class StdJobScheduler implements JobScheduler {
 
     private final Scheduler scheduler;
+    private final JobConfiguration configuration;
 
     public StdJobScheduler(JobConfiguration configuration) {
+        this.configuration = configuration;
         this.scheduler = configuration.getScheduler();
         PreConditions.notNull(configuration.getScheduler(), "quartz scheduler");
+        PreConditions.notNull(configuration.getJobDispatcher(), "job dispatcher");
         JobConfigurationHolder.setJobConfiguration(configuration);
     }
 
@@ -58,6 +61,11 @@ public class StdJobScheduler implements JobScheduler {
         } catch (SchedulerException e) {
             throw new JobException("add and schedule job failed:", e);
         }
+    }
+
+    @Override
+    public void scheduleJobNow(JobDefinition jd) throws JobException {
+        configuration.getJobDispatcher().dispatch(jd.getJobContext());
     }
 
 }

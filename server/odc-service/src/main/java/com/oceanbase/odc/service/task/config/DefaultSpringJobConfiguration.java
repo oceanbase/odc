@@ -17,13 +17,16 @@
 package com.oceanbase.odc.service.task.config;
 
 import org.quartz.Scheduler;
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationListener;
-import org.springframework.context.event.ContextRefreshedEvent;
+import org.springframework.context.ApplicationContextAware;
 
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.task.TaskService;
-import com.oceanbase.odc.service.task.caller.JobCaller;
+import com.oceanbase.odc.service.task.caller.K8sJobClient;
+import com.oceanbase.odc.service.task.dispatch.ImmediateJobDispatcher;
+import com.oceanbase.odc.service.task.enums.TaskRunModeEnum;
 
 /**
  * @author yaobin
@@ -31,14 +34,25 @@ import com.oceanbase.odc.service.task.caller.JobCaller;
  * @since 4.2.4
  */
 public class DefaultSpringJobConfiguration extends DefaultJobConfiguration
-        implements ApplicationListener<ContextRefreshedEvent> {
+        implements InitializingBean, ApplicationContextAware {
+
+    private ApplicationContext ctx;
 
     @Override
-    public void onApplicationEvent(ContextRefreshedEvent event) {
-        ApplicationContext ctx = event.getApplicationContext();
+    public void afterPropertiesSet() {
+        setTaskFrameworkProperties(ctx.getBean(TaskFrameworkProperties.class));
         setConnectionService(ctx.getBean(ConnectionService.class));
         setTaskService(ctx.getBean(TaskService.class));
-        setJobCaller(ctx.getBean(JobCaller.class));
-        setScheduler(ctx.getBean(Scheduler.class));
+        setScheduler((Scheduler) ctx.getBean("scheduler"));
+        setJobDispatcher(new ImmediateJobDispatcher());
+        if (getTaskFrameworkProperties().getRunMode() == TaskRunModeEnum.K8S) {
+            setK8sJobClient(ctx.getBean(K8sJobClient.class));
+        }
     }
+
+    @Override
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        this.ctx = applicationContext;
+    }
+
 }

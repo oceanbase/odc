@@ -16,17 +16,30 @@
 
 package com.oceanbase.odc.service.task.caller;
 
-import com.oceanbase.odc.service.task.constants.JobConstants;
+import com.google.gson.Gson;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author yaobin
  * @date 2023-11-15
  * @since 4.2.4
  */
+@Slf4j
 public class JobUtils {
 
     public static String generateJobName(JobIdentity ji) {
-        return JobConstants.TEMPLATE_JOB_NAME_PREFIX + ji.getSourceType().getSource() + ji.getId();
+        return ji.getSourceType().getCode() + "-" + ji.getId();
     }
+
+    public static String toJson(Object obj) {
+        if (obj == null) {
+            return null;
+        }
+        // todo replace by jackson ConnectionConfig serialize ignore by @JsonProperty(value = "password",
+        // access = Access.WRITE_ONLY)
+        return new Gson().toJson(obj);
+    }
+
 }

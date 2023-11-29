@@ -43,6 +43,7 @@ public class TaskFrameworkProperties {
     @Data
     public static class K8sProperties {
         private String url;
+        private String namespace;
     }
 
 }

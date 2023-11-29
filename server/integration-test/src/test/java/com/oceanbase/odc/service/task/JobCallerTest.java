@@ -23,17 +23,19 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import com.oceanbase.odc.TestConnectionUtil;
-import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.task.caller.DefaultJobContext;
 import com.oceanbase.odc.service.task.caller.JobCaller;
 import com.oceanbase.odc.service.task.caller.JobException;
+import com.oceanbase.odc.service.task.caller.JobUtils;
 import com.oceanbase.odc.service.task.caller.K8sJobCaller;
 import com.oceanbase.odc.service.task.caller.PodConfig;
+import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.executor.sampletask.SampleTaskParameter;
 import com.oceanbase.odc.service.task.listener.JobCallerListener;
+import com.oceanbase.odc.service.task.schedule.JobCallerBuilder;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 import com.oceanbase.odc.service.task.schedule.ScheduleSourceType;
 
@@ -79,14 +81,15 @@ public class JobCallerTest extends BaseJobTest {
 
 
     @Test
-    public void test_startSampleTask() throws JobException {
+    public void test_startSampleTask() throws JobException, InterruptedException {
         Long exceptedTaskId = System.currentTimeMillis();
         PodConfig podConfig = new PodConfig();
-        podConfig.setImage("mengdezhicai/odc:dev-4.2.3-2023112402");
+        podConfig.setImage("mengdezhicai/odc:test-task-latest");
+        podConfig.getPodParam().setImagePullPolicy(JobConstants.IMAGE_PULL_POLICY_ALWAYS);
         podConfig.setNamespace("default");
 
         JobIdentity jobIdentity = JobIdentity.of(exceptedTaskId, ScheduleSourceType.TASK_TASK, TaskType.SAMPLE.name());
-        JobCaller jobCaller = new K8sJobCaller(getK8sJobClient(), podConfig);
+        JobCaller jobCaller = JobCallerBuilder.buildK8sJobCaller(getK8sJobClient(), podConfig);
         jobCaller.getEventPublisher().addEventListener(new JobCallerListener() {
             @Override
             protected void startSucceed(JobIdentity ji) {
@@ -104,14 +107,14 @@ public class JobCallerTest extends BaseJobTest {
         SampleTaskParameter parameter = new SampleTaskParameter();
         parameter.setSqls(
                 Collections.singletonList(String.format("CREATE TABLE %s (id int(10))", "t_" + exceptedTaskId)));
-        context.setTaskParameters(JsonUtils.toJson(parameter));
+        context.setTaskParameters(JobUtils.toJson(parameter));
 
         ConnectionConfig connectionConfig = TestConnectionUtil.getTestConnectionConfig(ConnectType.OB_MYSQL);
         context.setConnectionConfigs(Collections.singletonList(connectionConfig));
 
         jobCaller.start(context);
-
+        Thread.sleep(60000);
+        jobCaller.stop(jobIdentity);
     }
-
 
 }
