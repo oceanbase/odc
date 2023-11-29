@@ -74,6 +74,9 @@ public class DumpParameterFactory extends BaseParameterFactory<DumpParameter> {
     @Override
     protected DumpParameter doGenerate(File workingDir) throws IOException {
         DumpParameter parameter = new DumpParameter();
+        if (StringUtils.isNotEmpty(transferConfig.getQuerySql())) {
+            parameter.setQuerySql(transferConfig.getQuerySql());
+        }
         parameter.setSkipCheckDir(true);
         if (transferConfig.getMaxDumpSizeBytes() != null) {
             parameter.setMaxFileSize(transferConfig.getMaxDumpSizeBytes());
@@ -89,6 +92,7 @@ public class DumpParameterFactory extends BaseParameterFactory<DumpParameter> {
         }
         if (transferConfig.isTransferData()) {
             parameter.setPageSize(Integer.MAX_VALUE);
+            parameter.setRetainEmptyFiles(true);
             if (transferConfig.getBatchCommitNum() != null) {
                 parameter.setCommitSize(transferConfig.getBatchCommitNum());
             }
@@ -99,12 +103,6 @@ public class DumpParameterFactory extends BaseParameterFactory<DumpParameter> {
             if (MapUtils.isNotEmpty(transferConfig.getMaskConfig())) {
                 setMaskConfig(parameter, transferConfig);
             }
-        }
-        if (transferConfig.getDataTransferFormat() == DataTransferFormat.CSV) {
-            parameter.setFileSuffix(".csv");
-        }
-        if (transferConfig.getDataTransferFormat() == DataTransferFormat.SQL) {
-            parameter.setFileSuffix(".sql");
         }
         // The default limit in loader-dumper is 64MB. If there is no limit, set it to -1
         long exportFileMaxSize = transferConfig.getExportFileMaxSize();
@@ -174,10 +172,18 @@ public class DumpParameterFactory extends BaseParameterFactory<DumpParameter> {
 
     private void setTransferFormat(DumpParameter parameter, DataTransferConfig transferConfig) {
         DataTransferFormat transferFormat = transferConfig.getDataTransferFormat();
-        if (transferFormat == DataTransferFormat.SQL) {
-            parameter.setDataFormat(DataFormat.SQL);
-        } else if (transferFormat == DataTransferFormat.CSV) {
-            parameter.setDataFormat(DataFormat.CSV);
+        switch (transferFormat) {
+            case SQL:
+                parameter.setDataFormat(DataFormat.SQL);
+                parameter.setFileSuffix(DataTransferFormat.SQL.getExtension());
+                return;
+            case CSV:
+            case EXCEL:
+                parameter.setDataFormat(DataFormat.CSV);
+                parameter.setFileSuffix(DataTransferFormat.CSV.getExtension());
+                return;
+            default:
+                throw new UnsupportedOperationException();
         }
     }
 
@@ -217,6 +223,7 @@ public class DumpParameterFactory extends BaseParameterFactory<DumpParameter> {
             controlManager.register(entry.getKey().getSchemaName(), entry.getKey().getTableName(), controlContext);
         }
         parameter.setControlManager(controlManager);
+        parameter.setUseRuntimeTableName(true);
     }
 
 }

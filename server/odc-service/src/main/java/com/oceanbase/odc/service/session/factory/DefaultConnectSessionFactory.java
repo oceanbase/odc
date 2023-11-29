@@ -154,6 +154,9 @@ public class DefaultConnectSessionFactory implements ConnectionSessionFactory {
         if (StringUtils.isNotBlank(connectionConfig.getTenantName())) {
             ConnectionSessionUtil.setTenantName(session, connectionConfig.getTenantName());
         }
+        if (StringUtils.isNotBlank(connectionConfig.getClusterName())) {
+            ConnectionSessionUtil.setClusterName(session, connectionConfig.getClusterName());
+        }
         setNlsFormat(session);
     }
 
