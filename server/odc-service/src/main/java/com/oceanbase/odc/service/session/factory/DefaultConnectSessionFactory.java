@@ -104,10 +104,13 @@ public class DefaultConnectSessionFactory implements ConnectionSessionFactory {
                 connectSchema = ConnectionSessionUtil.getUserOrSchemaString(connectSchema, session.getDialectType());
                 ConnectionSessionUtil.setConnectSchema(session, connectSchema);
                 ConnectionSessionUtil.setCurrentSchema(session, connectSchema);
+            } else {
+                ConnectionSessionUtil.setConnectSchema(session, null);
+                ConnectionSessionUtil.setCurrentSchema(session, connectionConfig.getDefaultSchema());
             }
         } catch (Exception e) {
             if (StringUtils.isNotBlank(connectionConfig.getDefaultSchema())) {
-                ConnectionSessionUtil.setConnectSchema(session, connectionConfig.getDefaultSchema());
+                ConnectionSessionUtil.setConnectSchema(session, null);
                 ConnectionSessionUtil.setCurrentSchema(session, connectionConfig.getDefaultSchema());
             }
         }
@@ -158,6 +161,7 @@ public class DefaultConnectSessionFactory implements ConnectionSessionFactory {
         if (!session.getDialectType().isOracle()) {
             return;
         }
+        log.info("Begin to set nls format.");
         String nlsDateFormat = session.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY).execute(
                 (ConnectionCallback<String>) con -> ConnectionPluginUtil
                         .getSessionExtension(session.getDialectType()).getVariable(con, "nls_date_format"));

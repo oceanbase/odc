@@ -18,6 +18,7 @@ package com.oceanbase.odc.plugin.connect.oracle;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Collections;
 import java.util.List;
@@ -33,6 +34,7 @@ import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.datasource.ConnectionInitializer;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
 import com.oceanbase.odc.core.shared.exception.VerifyException;
+import com.oceanbase.odc.core.shared.jdbc.JdbcUrlParser;
 import com.oceanbase.odc.plugin.connect.api.TestResult;
 import com.oceanbase.odc.plugin.connect.model.ConnectionConstants;
 import com.oceanbase.odc.plugin.connect.obmysql.OBMySQLConnectionExtension;
@@ -103,5 +105,10 @@ public class OracleConnectionExtension extends OBMySQLConnectionExtension {
             Throwable rootCause = ExceptionUtils.getRootCause(e);
             return TestResult.unknownError(rootCause);
         }
+    }
+
+    @Override
+    public JdbcUrlParser getJdbcUrlParser(@NonNull String jdbcUrl) throws SQLException {
+        return new OracleJdbcUrlParser(jdbcUrl);
     }
 }
