@@ -35,6 +35,10 @@ public class JobConstants {
 
     public static final String RESTART_POLICY_NEVER = "Never";
 
+    public static final String IMAGE_PULL_POLICY_NEVER = "Never";
+
+    public static final String IMAGE_PULL_POLICY_ALWAYS = "Always";
+
     public static final String FIELD_SELECTOR_METADATA_NAME = "metadata.name";
 
     public static final String ODC_BOOT_MODE_EXECUTOR = "TASK_EXECUTOR";

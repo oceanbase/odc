@@ -24,8 +24,9 @@ import org.springframework.context.ApplicationContextAware;
 
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.task.TaskService;
-import com.oceanbase.odc.service.task.caller.JobCaller;
+import com.oceanbase.odc.service.task.caller.K8sJobClient;
 import com.oceanbase.odc.service.task.dispatch.ImmediateJobDispatcher;
+import com.oceanbase.odc.service.task.enums.TaskRunModeEnum;
 
 /**
  * @author yaobin
@@ -39,10 +40,14 @@ public class DefaultSpringJobConfiguration extends DefaultJobConfiguration
 
     @Override
     public void afterPropertiesSet() {
+        setTaskFrameworkProperties(ctx.getBean(TaskFrameworkProperties.class));
         setConnectionService(ctx.getBean(ConnectionService.class));
         setTaskService(ctx.getBean(TaskService.class));
         setScheduler((Scheduler) ctx.getBean("scheduler"));
-        setJobDispatcher(new ImmediateJobDispatcher(ctx.getBean(JobCaller.class)));
+        setJobDispatcher(new ImmediateJobDispatcher());
+        if (getTaskFrameworkProperties().getRunMode() == TaskRunModeEnum.K8S) {
+            setK8sJobClient(ctx.getBean(K8sJobClient.class));
+        }
     }
 
     @Override

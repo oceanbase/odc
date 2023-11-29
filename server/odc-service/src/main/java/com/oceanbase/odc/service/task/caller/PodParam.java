@@ -19,6 +19,8 @@ package com.oceanbase.odc.service.task.caller;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.oceanbase.odc.service.task.constants.JobConstants;
+
 import lombok.Data;
 
 /**
@@ -30,5 +32,7 @@ import lombok.Data;
 public class PodParam {
 
     private Map<String, String> environments = new HashMap<>(2);
+
+    private String imagePullPolicy = JobConstants.IMAGE_PULL_POLICY_NEVER;
 
 }

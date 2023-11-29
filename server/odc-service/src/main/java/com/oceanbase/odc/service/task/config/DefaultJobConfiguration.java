@@ -20,6 +20,7 @@ import org.quartz.Scheduler;
 
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.task.TaskService;
+import com.oceanbase.odc.service.task.caller.K8sJobClient;
 import com.oceanbase.odc.service.task.dispatch.JobDispatcher;
 
 import lombok.Data;
@@ -32,6 +33,8 @@ import lombok.Data;
 @Data
 public abstract class DefaultJobConfiguration implements JobConfiguration {
 
+    protected TaskFrameworkProperties taskFrameworkProperties;
+
     protected TaskService taskService;
 
     protected ConnectionService connectionService;
@@ -39,5 +42,7 @@ public abstract class DefaultJobConfiguration implements JobConfiguration {
     protected JobDispatcher jobDispatcher;
 
     protected Scheduler scheduler;
+
+    protected K8sJobClient k8sJobClient;
 
 }

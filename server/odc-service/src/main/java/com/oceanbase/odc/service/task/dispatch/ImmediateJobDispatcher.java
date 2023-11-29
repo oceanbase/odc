@@ -16,9 +16,15 @@
 
 package com.oceanbase.odc.service.task.dispatch;
 
+import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.service.task.caller.JobCaller;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.caller.JobException;
+import com.oceanbase.odc.service.task.caller.PodConfig;
+import com.oceanbase.odc.service.task.config.JobConfiguration;
+import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
+import com.oceanbase.odc.service.task.enums.TaskRunModeEnum;
+import com.oceanbase.odc.service.task.schedule.JobCallerBuilder;
 
 /**
  * Dispatch job to JobCaller immediately
@@ -29,14 +35,30 @@ import com.oceanbase.odc.service.task.caller.JobException;
  */
 public class ImmediateJobDispatcher implements JobDispatcher {
 
-    private final JobCaller jobCaller;
-
-    public ImmediateJobDispatcher(JobCaller jobCaller) {
-        this.jobCaller = jobCaller;
-    }
-
     @Override
     public void dispatch(JobContext context) throws JobException {
+
+        JobCaller jobCaller = getJobCaller(JobConfigurationHolder.getJobConfiguration());
         jobCaller.start(context);
     }
+
+    private JobCaller getJobCaller(JobConfiguration config) {
+        if (config.getTaskFrameworkProperties().getRunMode() == TaskRunModeEnum.K8S) {
+            String namespace = config.getTaskFrameworkProperties().getK8s().getNamespace();
+            return JobCallerBuilder.buildK8sJobCaller(config.getK8sJobClient(), createDefaultPodConfig(namespace));
+        }
+        return JobCallerBuilder.buildJvmCaller();
+    }
+
+
+    private PodConfig createDefaultPodConfig(String namespace) {
+        PodConfig podConfig = new PodConfig();
+        // todo read odc version
+        String imageName = SystemUtils.getEnvOrProperty("ODC_IMAGE");
+        podConfig.setImage(imageName);
+        podConfig.setNamespace(namespace);
+        return podConfig;
+    }
+
+
 }

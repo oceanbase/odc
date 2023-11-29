@@ -20,6 +20,7 @@ import org.quartz.Scheduler;
 
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.task.TaskService;
+import com.oceanbase.odc.service.task.caller.K8sJobClient;
 import com.oceanbase.odc.service.task.dispatch.JobDispatcher;
 
 /**
@@ -29,6 +30,8 @@ import com.oceanbase.odc.service.task.dispatch.JobDispatcher;
  */
 public interface JobConfiguration {
 
+    TaskFrameworkProperties getTaskFrameworkProperties();
+
     TaskService getTaskService();
 
     ConnectionService getConnectionService();
@@ -36,4 +39,6 @@ public interface JobConfiguration {
     Scheduler getScheduler();
 
     JobDispatcher getJobDispatcher();
+
+    K8sJobClient getK8sJobClient();
 }

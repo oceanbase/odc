@@ -24,7 +24,6 @@ import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.caller.JobException;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.constants.JobConstants;
-import com.oceanbase.odc.service.task.dispatch.JobDispatcher;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -39,9 +38,8 @@ public class PrepareCallJob implements Job {
     public void execute(JobExecutionContext context) throws JobExecutionException {
 
         JobContext jc = (JobContext) context.getMergedJobDataMap().get(JobConstants.JOB_DATA_MAP_JOB_CONTEXT);
-        JobDispatcher dispatcher = JobConfigurationHolder.getJobConfiguration().getJobDispatcher();
         try {
-            dispatcher.dispatch(jc);
+            JobConfigurationHolder.getJobConfiguration().getJobDispatcher().dispatch(jc);
         } catch (JobException e) {
             throw new JobExecutionException(e);
         }
