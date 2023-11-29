@@ -825,11 +825,8 @@ public class SqlCommentProcessor {
                 }
                 String line;
                 while (holder.isEmpty() && (line = reader.readLine()) != null) {
-                    if (Objects.nonNull(dialectType) && dialectType.isMysql()) {
-                        // processor.addLineMysql(holder, buffer, line);
-                    } else if (Objects.nonNull(dialectType) && dialectType.isOracle()) {
-                        // processor.addLineOracle(holder, buffer, line);
-                    }
+                    holder.addAll(processor.split(buffer, line).stream().map(OffsetString::getStr)
+                            .collect(Collectors.toList()));
                 }
                 if (!holder.isEmpty()) {
                     return holder.poll();
