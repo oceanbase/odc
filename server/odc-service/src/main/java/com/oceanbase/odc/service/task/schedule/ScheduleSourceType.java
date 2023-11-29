@@ -32,13 +32,13 @@ public enum ScheduleSourceType {
      */
     SCHEDULE_TASK("schedule-task");
 
-    private final String source;
+    private final String code;
 
-    ScheduleSourceType(String source) {
-        this.source = source;
+    ScheduleSourceType(String code) {
+        this.code = code;
     }
 
-    public String getSource() {
-        return source;
+    public String getCode() {
+        return code;
     }
 }

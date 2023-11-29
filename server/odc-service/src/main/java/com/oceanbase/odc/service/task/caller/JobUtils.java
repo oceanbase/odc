@@ -26,6 +26,6 @@ import com.oceanbase.odc.service.task.schedule.JobIdentity;
 public class JobUtils {
 
     public static String generateJobName(JobIdentity ji) {
-        return ji.getSourceType().getSource() + "-" + ji.getId();
+        return ji.getSourceType().getCode() + "-" + ji.getId();
     }
 }
