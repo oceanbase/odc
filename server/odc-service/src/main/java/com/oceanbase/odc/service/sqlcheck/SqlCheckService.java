@@ -46,6 +46,7 @@ import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.regulation.ruleset.RuleService;
 import com.oceanbase.odc.service.regulation.ruleset.model.QueryRuleMetadataParams;
 import com.oceanbase.odc.service.regulation.ruleset.model.Rule;
+import com.oceanbase.odc.service.regulation.ruleset.model.Rule.RuleViolation;
 import com.oceanbase.odc.service.regulation.ruleset.model.RuleMetadata;
 import com.oceanbase.odc.service.regulation.ruleset.model.RuleType;
 import com.oceanbase.odc.service.session.factory.OBConsoleDataSourceFactory;
@@ -152,6 +153,7 @@ public class SqlCheckService {
             Rule rule = name2RuleMap.getOrDefault(name, null);
             if (Objects.nonNull(rule)) {
                 c.setLevel(rule.getLevel());
+                rule.setViolation(RuleViolation.fromCheckViolation(c));
                 violatedRules.add(rule);
             }
         });

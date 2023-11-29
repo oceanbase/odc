@@ -119,15 +119,15 @@ public class SqlCommentProcessor {
         }
         // split by \n
         List<List<OrderChar>> lines = orderChars.stream()
-            .collect(Collectors.groupingBy(OrderChar::isLineSeparator))
-            .values().stream()
-            .collect(Collectors.toList());
+                .collect(Collectors.groupingBy(OrderChar::isLineSeparator))
+                .values().stream()
+                .collect(Collectors.toList());
         Holder<Integer> bufferOrder = new Holder<>(0);
         for (List<OrderChar> item : lines) {
             if (Objects.nonNull(dbMode) && dbMode.isMysql()) {
-                sqlCommentProcessor.addLineMysql(offsetStrings, buffer,bufferOrder, item);
+                sqlCommentProcessor.addLineMysql(offsetStrings, buffer, bufferOrder, item);
             } else {
-                sqlCommentProcessor.addLineOracle(offsetStrings, buffer,bufferOrder, item);
+                sqlCommentProcessor.addLineOracle(offsetStrings, buffer, bufferOrder, item);
             }
         }
 

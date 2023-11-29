@@ -81,7 +81,7 @@ abstract class BaseSqlChecker implements SqlChecker {
                 return new Pair<>(s.getOffset(), doParse(s.getStr()));
             } catch (Exception e) {
                 if (e instanceof SyntaxErrorException) {
-                    new Pair<>(s.getOffset(), new SyntaxErrorStatement(s.getStr(), (SyntaxErrorException) e));
+                    return new Pair<>(s.getOffset(), new SyntaxErrorStatement(s.getStr(), (SyntaxErrorException) e));
                 }
             }
             return null;
@@ -98,7 +98,8 @@ abstract class BaseSqlChecker implements SqlChecker {
                 return new Pair<>(s.getOffset(), doParse(s.getOriginalSql()));
             } catch (Exception e) {
                 if (e instanceof SyntaxErrorException) {
-                    new Pair<>(s.getOffset(), new SyntaxErrorStatement(s.getOriginalSql(), (SyntaxErrorException) e));
+                    return new Pair<>(s.getOffset(),
+                            new SyntaxErrorStatement(s.getOriginalSql(), (SyntaxErrorException) e));
                 }
             }
             return null;
@@ -140,8 +141,13 @@ abstract class BaseSqlChecker implements SqlChecker {
         List<OffsetString> sqls = processor.split(buffer, sqlScript);
         String bufferStr = buffer.toString();
         if (bufferStr.trim().length() != 0) {
-            sqls.add(new OffsetString(
-                    sqls.get(sqls.size() - 1).getOffset() + sqls.get(sqls.size() - 1).getStr().length(), bufferStr));
+            if (sqls.size() == 0) {
+                sqls.add(new OffsetString(0, bufferStr));
+            } else {
+                sqls.add(new OffsetString(
+                        sqls.get(sqls.size() - 1).getOffset() + sqls.get(sqls.size() - 1).getStr().length(),
+                        bufferStr));
+            }
         }
         return sqls;
     }
