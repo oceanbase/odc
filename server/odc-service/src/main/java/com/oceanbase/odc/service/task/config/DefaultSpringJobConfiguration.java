@@ -17,9 +17,10 @@
 package com.oceanbase.odc.service.task.config;
 
 import org.quartz.Scheduler;
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationListener;
-import org.springframework.context.event.ContextRefreshedEvent;
+import org.springframework.context.ApplicationContextAware;
 
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.task.TaskService;
@@ -32,14 +33,21 @@ import com.oceanbase.odc.service.task.dispatch.ImmediateJobDispatcher;
  * @since 4.2.4
  */
 public class DefaultSpringJobConfiguration extends DefaultJobConfiguration
-        implements ApplicationListener<ContextRefreshedEvent> {
+        implements InitializingBean, ApplicationContextAware {
+
+    private ApplicationContext ctx;
 
     @Override
-    public void onApplicationEvent(ContextRefreshedEvent event) {
-        ApplicationContext ctx = event.getApplicationContext();
+    public void afterPropertiesSet() {
         setConnectionService(ctx.getBean(ConnectionService.class));
         setTaskService(ctx.getBean(TaskService.class));
-        setScheduler(ctx.getBean(Scheduler.class));
+        setScheduler((Scheduler) ctx.getBean("scheduler"));
         setJobDispatcher(new ImmediateJobDispatcher(ctx.getBean(JobCaller.class)));
     }
+
+    @Override
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        this.ctx = applicationContext;
+    }
+
 }

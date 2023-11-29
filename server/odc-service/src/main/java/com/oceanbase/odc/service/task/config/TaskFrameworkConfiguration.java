@@ -75,6 +75,13 @@ public class TaskFrameworkConfiguration {
         return new DefaultSpringJobConfiguration();
     }
 
+    @Bean
+    public JobSchedulerFactoryBean jobSchedulerFactoryBean(@Autowired JobConfiguration jobConfiguration) {
+        JobSchedulerFactoryBean factoryBean = new JobSchedulerFactoryBean();
+        factoryBean.setJobConfiguration(jobConfiguration);
+        return factoryBean;
+    }
+
     private K8sJobCaller getK8sJobCaller(K8sJobClient k8sJobClient,
             TaskFrameworkProperties taskFrameworkProperties) {
         if (k8sJobClient == null) {

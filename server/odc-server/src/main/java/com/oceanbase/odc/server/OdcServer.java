@@ -44,7 +44,6 @@ import com.oceanbase.odc.server.starter.StarterSpringApplication;
 import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.constants.JobEnvConstants;
 import com.oceanbase.odc.service.task.executor.TaskApplication;
-import com.oceanbase.odc.service.task.executor.util.SystemEnvUtil;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -75,7 +74,8 @@ public class OdcServer {
      * @param args
      */
     public static void main(String[] args) {
-        if (Objects.equals(SystemEnvUtil.nullSafeGet(JobEnvConstants.BOOT_MODE), JobConstants.ODC_BOOT_MODE_EXECUTOR)) {
+        if (Objects.equals(SystemUtils.getEnvOrProperty(JobEnvConstants.BOOT_MODE),
+                JobConstants.ODC_BOOT_MODE_EXECUTOR)) {
             log.info("ODC start as task executor mode");
             new TaskApplication().run(args);
             return;
