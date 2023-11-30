@@ -32,12 +32,14 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.time.StopWatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,6 +53,9 @@ import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.paramete
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.parameter.TxtWriterPluginParameter;
 import com.oceanbase.tools.loaddump.common.model.ObjectStatus.Status;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class DataXTransferJob extends AbstractJob {
     private static final Logger LOGGER = LoggerFactory.getLogger("DataTransferLogger");
     private static final Pattern LOG_STATISTICS_PATTERN =
@@ -76,16 +81,25 @@ public class DataXTransferJob extends AbstractJob {
 
     @Override
     public void run() throws Exception {
+        log.info("start transfer object {}", object.getSummary());
+        StopWatch stopWatch = StopWatch.createStarted();
+        log.info("start unzip");
         unzipToWorkingDir(workingDir);
+        stopWatch.stop();
         File dataxHome = Paths.get(workingDir.getPath(), "datax").toFile();
         if (!dataxHome.exists()) {
             throw new FileNotFoundException(dataxHome.getPath());
         }
+        LOGGER.info("Unzip datax resources into {}, elapsed {}s", dataxHome, stopWatch.getTime(TimeUnit.SECONDS));
+        log.info("Unzip datax resources into {}, elapsed {}s", dataxHome, stopWatch.getTime(TimeUnit.SECONDS));
+
         ExecutorService executor = Executors.newSingleThreadExecutor();
         try {
             String[] cmdArray =
                     buildDataXExecutorCmd(dataxHome.getPath(), generateConfigurationFile().getPath());
+            log.info("Command: {}", String.join(" ", cmdArray));
             process = new ProcessBuilder().command(cmdArray).start();
+            log.info("start datax process");
             executor.submit(() -> {
                 try {
                     analysisStatisticsLog(process.getInputStream());
@@ -95,6 +109,7 @@ public class DataXTransferJob extends AbstractJob {
             });
             // exit code: 0=success, 1=error
             int exitValue = process.waitFor();
+            log.info("exit {}", exitValue);
             if (exitValue == 0) {
                 renameExportFile();
                 setStatus(Status.SUCCESS);
@@ -159,6 +174,7 @@ public class DataXTransferJob extends AbstractJob {
             BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
             String line;
             while ((line = reader.readLine()) != null && !Thread.currentThread().isInterrupted()) {
+                log.info(line);
                 Matcher matcher = LOG_STATISTICS_PATTERN.matcher(line);
                 if (matcher.matches()) {
                     long totalRecords = Long.parseLong(matcher.group(1));
@@ -166,6 +182,7 @@ public class DataXTransferJob extends AbstractJob {
                     failed = Long.parseLong(matcher.group(3));
                     object.getTotal().set(totalRecords);
                     object.getCount().set(totalRecords - failed);
+                    continue;
                 }
                 matcher = LOG_DIRTY_RECORD_PATTERN.matcher(line);
                 if (matcher.matches()) {
