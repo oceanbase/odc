@@ -233,7 +233,11 @@ public class SqlCommentProcessor {
             return;
         }
         lines[lineLength] = new OrderChar((char) 0, lineLength);
+        long time1 = System.currentTimeMillis();
         for (pos = out = 0; pos < lineLength; pos++) {
+            long time2 = System.currentTimeMillis();
+            System.out.println("pos:" + pos + " time:" + (time2 - time1) + "ms");
+            time1 = time2;
             OrderChar inOrderChar = lines[pos];
             char inChar = inOrderChar.getCh();
             // 去掉每一行SQL语句最开始的空格
