@@ -68,4 +68,8 @@ public class StdJobScheduler implements JobScheduler {
         configuration.getJobDispatcher().dispatch(jd.getJobContext());
     }
 
+    @Override
+    public void cancelJob(JobIdentity ji) throws JobException {
+
+    }
 }
