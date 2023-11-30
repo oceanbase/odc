@@ -142,6 +142,7 @@ public class MySQLDataTransferJob implements DataTransferJob {
 
         Map<String, String> jdbcUrlParams = new HashMap<>();
         jdbcUrlParams.put("connectTimeout", "5000");
+        jdbcUrlParams.put("useSSL", "false");
         if (StringUtils.isNotBlank(connectionInfo.getProxyHost())
                 && Objects.nonNull(connectionInfo.getProxyPort())) {
             jdbcUrlParams.put("socksProxyHost", connectionInfo.getProxyHost());
