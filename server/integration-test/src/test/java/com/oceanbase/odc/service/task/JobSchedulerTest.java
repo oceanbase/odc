@@ -66,7 +66,7 @@ public class JobSchedulerTest {
         jd.setJobContext(ctx);
 
         JobDispatcher jobDispatcher = Mockito.mock(JobDispatcher.class);
-        Mockito.doNothing().when(jobDispatcher).dispatch(ctx);
+        Mockito.doNothing().when(jobDispatcher).start(ctx);
         jc.setJobDispatcher(jobDispatcher);
 
         JobScheduler js = new StdJobScheduler(jc);

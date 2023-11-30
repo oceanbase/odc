@@ -39,7 +39,7 @@ public class PrepareCallJob implements Job {
 
         JobContext jc = (JobContext) context.getMergedJobDataMap().get(JobConstants.JOB_DATA_MAP_JOB_CONTEXT);
         try {
-            JobConfigurationHolder.getJobConfiguration().getJobDispatcher().dispatch(jc);
+            JobConfigurationHolder.getJobConfiguration().getJobDispatcher().start(jc);
         } catch (JobException e) {
             throw new JobExecutionException(e);
         }

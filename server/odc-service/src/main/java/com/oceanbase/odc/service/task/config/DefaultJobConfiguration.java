@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.task.config;
 
 import org.quartz.Scheduler;
 
+import com.oceanbase.odc.service.common.model.HostProperties;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.caller.K8sJobClient;
@@ -44,5 +45,7 @@ public abstract class DefaultJobConfiguration implements JobConfiguration {
     protected Scheduler scheduler;
 
     protected K8sJobClient k8sJobClient;
+
+    protected HostProperties hostProperties;
 
 }

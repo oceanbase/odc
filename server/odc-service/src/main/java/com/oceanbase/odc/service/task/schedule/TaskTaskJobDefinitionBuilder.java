@@ -19,7 +19,9 @@ package com.oceanbase.odc.service.task.schedule;
 import java.util.Collections;
 import java.util.Map;
 
+import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.metadb.task.TaskEntity;
+import com.oceanbase.odc.service.common.model.HostProperties;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.caller.DefaultJobContext;
@@ -54,6 +56,14 @@ public class TaskTaskJobDefinitionBuilder implements JobDefinitionBuilder {
             config.setDefaultSchema(taskEntity.getDatabaseName());
             jobContext.setConnectionConfigs(Collections.singletonList(config));
         }
+        HostProperties configProp = configuration.getHostProperties();
+        HostProperties actualProp = new HostProperties();
+
+        String host = configProp.getOdcHost() == null ? SystemUtils.getLocalIpAddress() : configProp.getOdcHost();
+        actualProp.setOdcHost(host);
+        actualProp.setPort(configProp.getPort());
+        jobContext.setHostProperties(Collections.singletonList(actualProp));
+
         jd.setJobContext(jobContext);
         return jd;
     }

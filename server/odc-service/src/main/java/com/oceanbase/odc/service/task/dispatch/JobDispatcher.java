@@ -16,15 +16,13 @@
 
 package com.oceanbase.odc.service.task.dispatch;
 
-import com.oceanbase.odc.service.task.caller.JobContext;
-import com.oceanbase.odc.service.task.caller.JobException;
+import com.oceanbase.odc.service.task.caller.JobCaller;
 
 /**
  * @author yaobin
  * @date 2023-11-20
  * @since 4.2.4
  */
-public interface JobDispatcher {
+public interface JobDispatcher extends JobCaller {
 
-    void dispatch(JobContext context) throws JobException;
 }

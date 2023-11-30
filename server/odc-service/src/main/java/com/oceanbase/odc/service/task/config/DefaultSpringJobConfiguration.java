@@ -22,6 +22,7 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
+import com.oceanbase.odc.service.common.model.HostProperties;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.caller.K8sJobClient;
@@ -48,6 +49,7 @@ public class DefaultSpringJobConfiguration extends DefaultJobConfiguration
         if (getTaskFrameworkProperties().getRunMode() == TaskRunModeEnum.K8S) {
             setK8sJobClient(ctx.getBean(K8sJobClient.class));
         }
+        setHostProperties(ctx.getBean(HostProperties.class));
     }
 
     @Override

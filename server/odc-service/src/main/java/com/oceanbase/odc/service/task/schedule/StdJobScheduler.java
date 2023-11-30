@@ -65,11 +65,11 @@ public class StdJobScheduler implements JobScheduler {
 
     @Override
     public void scheduleJobNow(JobDefinition jd) throws JobException {
-        configuration.getJobDispatcher().dispatch(jd.getJobContext());
+        configuration.getJobDispatcher().start(jd.getJobContext());
     }
 
     @Override
     public void cancelJob(JobIdentity ji) throws JobException {
-
+        configuration.getJobDispatcher().stop(ji);
     }
 }

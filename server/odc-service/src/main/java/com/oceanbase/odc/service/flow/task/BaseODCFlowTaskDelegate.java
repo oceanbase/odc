@@ -32,6 +32,7 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.flow.exception.BaseFlowException;
 import com.oceanbase.odc.core.shared.Verify;
+import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.metadb.flow.ServiceTaskInstanceRepository;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.service.common.model.HostProperties;
@@ -53,8 +54,11 @@ import com.oceanbase.odc.service.notification.model.Event;
 import com.oceanbase.odc.service.notification.model.EventLabels;
 import com.oceanbase.odc.service.notification.model.EventStatus;
 import com.oceanbase.odc.service.task.TaskService;
+import com.oceanbase.odc.service.task.caller.JobException;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
+import com.oceanbase.odc.service.task.schedule.JobIdentity;
 import com.oceanbase.odc.service.task.schedule.JobScheduler;
+import com.oceanbase.odc.service.task.schedule.ScheduleSourceType;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -295,8 +299,18 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
 
     @Override
     public boolean cancel(boolean mayInterruptIfRunning) {
-        // todo stop task
-
+        // todo for smoke test
+        if (getTaskType() == TaskType.ASYNC) {
+            JobIdentity ji = JobIdentity.of(taskId, ScheduleSourceType.TASK_TASK, TaskType.SAMPLE.name());
+            try {
+                jobScheduler.cancelJob(ji);
+                log.info("job scheduler cancel job successful");
+                return true;
+            } catch (JobException e) {
+                log.info("job scheduler cancel job failed");
+                throw new RuntimeException(e);
+            }
+        }
         return cancel(mayInterruptIfRunning, taskId, taskService);
     }
 

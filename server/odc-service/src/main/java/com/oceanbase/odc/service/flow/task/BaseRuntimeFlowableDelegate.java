@@ -97,7 +97,7 @@ public abstract class BaseRuntimeFlowableDelegate<T> extends BaseFlowableDelegat
     private final TaskInstanceCreatedListener taskInstanceCreatedlistener;
     private final ActiveTaskStatisticsListener activeTaskStatisticsListener;
     @Autowired
-    private JobScheduler jobScheduler;
+    protected JobScheduler jobScheduler;
 
     public BaseRuntimeFlowableDelegate() {
         this.retryExecutor = RetryExecutor.builder().retryIntervalMillis(1000).retryTimes(3).build();
