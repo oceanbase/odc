@@ -26,7 +26,7 @@ import org.junit.Test;
 
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
-import com.oceanbase.odc.service.task.executor.DefaultTaskResult;
+import com.oceanbase.odc.service.task.executor.task.DefaultTaskResult;
 
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Call;

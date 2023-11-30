@@ -14,28 +14,24 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.task.executor;
+package com.oceanbase.odc.service.task.executor.task;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import com.oceanbase.odc.core.shared.constant.TaskStatus;
+import com.oceanbase.odc.service.task.schedule.JobIdentity;
 
 /**
- * A sample implementation of {@link TaskExecutor}.
- * 
- * @author gaoda.xy
- * @date 2023/11/24 11:22
+ * @author yaobin
+ * @date 2023-11-29
+ * @since 4.2.4
  */
-public class ThreadPoolTaskExecutor implements TaskExecutor {
+public interface TaskResult {
 
-    private final ExecutorService executor;
+    JobIdentity getJobIdentity();
 
-    public ThreadPoolTaskExecutor(int threadNum) {
-        this.executor = Executors.newFixedThreadPool(threadNum);
-    }
+    TaskStatus getTaskStatus();
 
-    @Override
-    public void execute(Task task) {
-        executor.submit(task::start);
-    }
+    Double getProgress();
+
+    String getResultJson();
 
 }

@@ -14,29 +14,22 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.task.executor.util;
+package com.oceanbase.odc.service.task.executor.executor;
 
-import java.util.Objects;
-
-import com.oceanbase.odc.common.util.SystemUtils;
-
-import lombok.extern.slf4j.Slf4j;
+import com.oceanbase.odc.service.task.executor.task.Task;
 
 /**
+ * 
+ * A synchronous task executor.
+ * 
  * @author gaoda.xy
- * @date 2023/11/24 14:05
+ * @date 2023/11/30 10:40
  */
-@Slf4j
-public class SystemEnvUtil {
+public class SyncTaskExecutor implements TaskExecutor {
 
-    public static String nullSafeGet(String key) {
-        String value = SystemUtils.getEnvOrProperty(key);
-        if (Objects.nonNull(value)) {
-            return value;
-        }
-        String errMsg = "System env or property '" + key + "' is not set";
-        log.error(errMsg);
-        throw new IllegalStateException(errMsg);
+    @Override
+    public void execute(Task task) {
+        task.start();
     }
 
 }

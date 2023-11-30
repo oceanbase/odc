@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.task.executor;
+package com.oceanbase.odc.service.task.executor.task;
 
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
@@ -43,7 +43,6 @@ public class TaskFactory {
                 case EXPORT_RESULT_SET:
                 case ONLINE_SCHEMA_CHANGE:
                 case APPLY_PROJECT_PERMISSION:
-                    throw new UnsupportedException("Not supported yet.");
                 default:
                     throw new UnsupportedException("Unsupported task type.");
             }

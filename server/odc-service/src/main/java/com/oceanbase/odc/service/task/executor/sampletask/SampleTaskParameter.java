@@ -31,4 +31,6 @@ public class SampleTaskParameter implements TaskParameters {
 
     private List<String> sqls;
 
+    private String defaultSchema;
+
 }

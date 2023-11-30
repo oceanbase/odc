@@ -22,12 +22,11 @@ import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.shared.Verify;
-import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.odc.service.task.caller.JobContext;
-import com.oceanbase.odc.service.task.executor.BaseTask;
+import com.oceanbase.odc.service.task.executor.task.BaseTask;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -51,19 +50,19 @@ public class SampleTask extends BaseTask {
     }
 
     @Override
-    protected void doStart() {
-        this.status = TaskStatus.RUNNING;
+    protected void onStart() {
         Verify.equals(TaskType.SAMPLE.code(), context.getJobIdentity().getTaskType(), "taskType");
         this.parameter = JsonUtils.fromJson(context.getTaskParameters(), SampleTaskParameter.class);
         validateTaskParameter();
         this.totalSqlCount = this.parameter.getSqls().size();
         ConnectionConfig connectionConfig = context.getConnectionConfigs().get(0);
         connectionConfig.setId(1L); // Set connection id to 1 for testing.
+        connectionConfig.setDefaultSchema(this.parameter.getDefaultSchema());
         ConnectionSession session = new DefaultConnectSessionFactory(connectionConfig).generateSession();
         try {
             JdbcOperations jdbcOperations = session.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY);
             for (String sql : this.parameter.getSqls()) {
-                if (stopped) {
+                if (canceled) {
                     break;
                 }
                 jdbcOperations.execute(sql);
@@ -71,26 +70,16 @@ public class SampleTask extends BaseTask {
                 Thread.sleep(500); // Simulate long execution time of SQL.
             }
             this.result = SampleTaskResult.success();
-            this.status = TaskStatus.DONE;
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         } finally {
-            this.finished = true;
             session.expire();
         }
     }
 
     @Override
-    protected void doStop() {
-        this.stopped = true;
-        this.status = TaskStatus.CANCELED;
-    }
-
-    @Override
-    protected void onFailure(Exception e) {
+    protected void onFail(Exception e) {
         this.result = SampleTaskResult.fail();
-        this.status = TaskStatus.FAILED;
-        this.finished = true;
     }
 
     @Override

@@ -14,16 +14,29 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.task.executor;
+package com.oceanbase.odc.service.task.executor.task;
 
-import com.oceanbase.odc.service.task.caller.JobContext;
+import java.io.Serializable;
+
+import com.oceanbase.odc.core.shared.constant.TaskStatus;
+import com.oceanbase.odc.service.task.schedule.JobIdentity;
+
+import lombok.Data;
 
 /**
- * @author gaoda.xy
- * @date 2023/11/22 16:25
+ * @author yaobin
+ * @date 2023-11-29
+ * @since 4.2.4
  */
-public interface JobContextProvider {
+@Data
+public class DefaultTaskResult implements TaskResult, Serializable {
 
-    JobContext provide();
+    private JobIdentity jobIdentity;
+
+    private TaskStatus taskStatus;
+
+    private Double progress;
+
+    private String resultJson;
 
 }
