@@ -25,6 +25,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -118,10 +120,24 @@ public class SqlCommentProcessor {
             orderChars.add(new OrderChar(originalSql.charAt(i), i));
         }
         // split by \n
-        List<List<OrderChar>> lines = orderChars.stream()
-                .collect(Collectors.groupingBy(OrderChar::isLineSeparator))
-                .values().stream()
-                .collect(Collectors.toList());
+        List<List<OrderChar>> lines = new ArrayList<>();
+        List<OrderChar> line = new ArrayList<>();
+
+        // split by \n
+        for (OrderChar orderChar : orderChars) {
+            if (orderChar.getCh() == '\n') {
+                if (line.isEmpty()) {
+
+                }
+                lines.add(line);
+                line = new ArrayList<>();
+            } else {
+                line.add(orderChar);
+            }
+        }
+        if (!line.isEmpty()) {
+            lines.add(line);
+        }
         Holder<Integer> bufferOrder = new Holder<>(0);
         for (List<OrderChar> item : lines) {
             if (Objects.nonNull(dbMode) && dbMode.isMysql()) {
@@ -153,16 +169,35 @@ public class SqlCommentProcessor {
         try {
             List<OffsetString> offsetStrings = new ArrayList<>();
 
-            List<OrderChar> orderChars = new ArrayList<>();
+            List<List<OrderChar>> lines = new ArrayList<>();
+            List<OrderChar> currentList = new ArrayList<>();
 
-            for (int i = 0; i < sqlScript.length(); i++) {
-                orderChars.add(new OrderChar(sqlScript.charAt(i), i));
+            Pattern pattern = Pattern.compile("\n");
+            Matcher matcher = pattern.matcher(sqlScript);
+
+            int order = 0;
+            int start = 0;
+            while (matcher.find()) {
+                int end = matcher.start();
+                for (int i = start; i < end; i++) {
+                    OrderChar orderChar = new OrderChar(sqlScript.charAt(i),order);
+                    currentList.add(orderChar);
+                    order++;
+                }
+                lines.add(currentList);
+                currentList = new ArrayList<>();
+                start = matcher.end();
             }
-            // split by \n
-            List<List<OrderChar>> lines = orderChars.stream()
-                    .collect(Collectors.groupingBy(OrderChar::isLineSeparator))
-                    .values().stream()
-                    .collect(Collectors.toList());
+            if (start < sqlScript.length()) {
+                for (int i = start; i < sqlScript.length(); i++) {
+                    OrderChar orderChar = new OrderChar(sqlScript.charAt(i), order);
+                    currentList.add(orderChar);
+                    order++;
+                }
+            }
+            if (!currentList.isEmpty()) {
+                lines.add(currentList);
+            }
             Holder<Integer> bufferOrder = new Holder<>(0);
             for (List<OrderChar> item : lines) {
                 if (Objects.nonNull(this.dialectType) && this.dialectType.isMysql()) {
@@ -229,22 +264,23 @@ public class SqlCommentProcessor {
             }
             // 扫描到转义字符，可能出现指令
             if ((!mlComment && inChar == '\\')) {
-                if ((inChar = lines[++pos].getCh()) == 0) {
+                inOrderChar = lines[++pos];
+                inChar = inOrderChar.getCh();
+                if (inChar == 0) {
                     break;
                 }
                 if (inString != '\0' || inChar == 'N') {
-                    lines[out++].setCh('\\');
+                    lines[out++] = lines[pos-1];
                     if (inChar == '`' && inString == inChar) {
                         pos--;
                     } else {
-                        lines[out++].setCh(inChar);
+                        lines[out++] = lines[pos];
                     }
                     continue;
                 }
                 // 非mysql model或没有检索到正确的命令，直接将转义符号及转义字符放入缓冲
-                lines[out++].setCh('\\');
-                lines[out++].setCh(inChar);
-                continue;
+                lines[out++] = lines[pos-1];
+                lines[out++] = lines[pos];
             } else if (!mlComment && inString == '\0' && ssComment != SSC.HINT
                     && isPrefix(IntStream.range(0, lines.length)
                             .mapToObj(i -> lines[i].getCh())
@@ -657,13 +693,13 @@ public class SqlCommentProcessor {
                     }
                     needSpace = false;
                     // 正常的SQL语句，将其放入line缓冲当中，在合适的实际flush如buffer缓存
-                    lines[out++] = inOrderChar;
+                    lines[out++] = new OrderChar(inOrderChar.getCh(), inOrderChar.getOrder());
                     if (inChar != ' ') {
                         inNormalSql = true;
                     }
                 } else if (preserveMultiComments) {
                     // 保留多行注释
-                    lines[out++] = inOrderChar;
+                    lines[out++] = new OrderChar(inOrderChar.getCh(), inOrderChar.getOrder());
                 }
             }
         }
