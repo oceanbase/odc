@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.task.executor;
+package com.oceanbase.odc.service.task.executor.executor;
 
-import com.oceanbase.odc.service.task.caller.JobContext;
+import com.oceanbase.odc.service.task.executor.task.Task;
 
 /**
  * @author gaoda.xy
- * @date 2023/11/22 16:25
+ * @date 2023/11/24 11:18
  */
-public interface JobContextProvider {
+public interface TaskExecutor {
 
-    JobContext provide();
+    void execute(Task task);
 
 }

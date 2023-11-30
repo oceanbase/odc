@@ -14,28 +14,24 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.task.executor;
+package com.oceanbase.odc.service.task.executor.context;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import com.oceanbase.odc.service.task.enums.TaskRunModeEnum;
 
 /**
- * A sample implementation of {@link TaskExecutor}.
- * 
  * @author gaoda.xy
- * @date 2023/11/24 11:22
+ * @date 2023/11/23 13:55
  */
-public class ThreadPoolTaskExecutor implements TaskExecutor {
+public class JobContextProviderFactory {
 
-    private final ExecutorService executor;
-
-    public ThreadPoolTaskExecutor(int threadNum) {
-        this.executor = Executors.newFixedThreadPool(threadNum);
-    }
-
-    @Override
-    public void execute(Task task) {
-        executor.submit(task::start);
+    public static JobContextProvider create(TaskRunModeEnum mode) {
+        switch (mode) {
+            case K8S:
+                return new K8sJobContextProvider();
+            case THREAD:
+            default:
+                throw new UnsupportedOperationException("Not supported yet.");
+        }
     }
 
 }

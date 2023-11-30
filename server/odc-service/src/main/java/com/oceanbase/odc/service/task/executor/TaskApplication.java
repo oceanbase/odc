@@ -16,10 +16,17 @@
 
 package com.oceanbase.odc.service.task.executor;
 
+import com.oceanbase.odc.common.util.SystemUtils;
+import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.constants.JobEnvConstants;
 import com.oceanbase.odc.service.task.enums.TaskRunModeEnum;
-import com.oceanbase.odc.service.task.executor.util.SystemEnvUtil;
+import com.oceanbase.odc.service.task.executor.context.JobContextProvider;
+import com.oceanbase.odc.service.task.executor.context.JobContextProviderFactory;
+import com.oceanbase.odc.service.task.executor.executor.SyncTaskExecutor;
+import com.oceanbase.odc.service.task.executor.executor.TaskExecutor;
+import com.oceanbase.odc.service.task.executor.task.Task;
+import com.oceanbase.odc.service.task.executor.task.TaskFactory;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -38,16 +45,17 @@ public class TaskApplication {
         init(args);
         JobContext context = jobContextProvider.provide();
         Task task = TaskFactory.create(context);
-        log.info("Task created, id: {}, context: {}", context.getJobIdentity().getId(), task.context());
+        log.info("Task created, context: {}", task.context());
         taskExecutor.execute(task);
     }
 
     private void init(String[] args) {
-        TaskRunModeEnum mode = TaskRunModeEnum.valueOf(SystemEnvUtil.nullSafeGet(JobEnvConstants.TASK_RUN_MODE));
-        jobContextProvider = JobContextProviderFactory.create(mode);
-        log.info("JobContextProvider init success: {}", jobContextProvider.getClass().getName());
-        taskExecutor = new ThreadPoolTaskExecutor(1);
-        log.info("Task executor init success: {}", taskExecutor.getClass().getName());
+        String runMode = SystemUtils.getEnvOrProperty(JobEnvConstants.TASK_RUN_MODE);
+        Verify.notBlank(runMode, JobEnvConstants.TASK_RUN_MODE);
+        jobContextProvider = JobContextProviderFactory.create(TaskRunModeEnum.valueOf(runMode));
+        log.info("JobContextProvider init success: {}", jobContextProvider.getClass().getSimpleName());
+        taskExecutor = new SyncTaskExecutor();
+        log.info("Task executor init success: {}", taskExecutor.getClass().getSimpleName());
     }
 
 }

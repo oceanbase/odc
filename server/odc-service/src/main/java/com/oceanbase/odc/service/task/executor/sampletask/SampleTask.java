@@ -27,7 +27,7 @@ import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.odc.service.task.caller.JobContext;
-import com.oceanbase.odc.service.task.executor.BaseTask;
+import com.oceanbase.odc.service.task.executor.task.BaseTask;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -51,7 +51,7 @@ public class SampleTask extends BaseTask {
     }
 
     @Override
-    protected void doStart() {
+    protected void onStart() {
         this.status = TaskStatus.RUNNING;
         Verify.equals(TaskType.SAMPLE.code(), context.getJobIdentity().getTaskType(), "taskType");
         this.parameter = JsonUtils.fromJson(context.getTaskParameters(), SampleTaskParameter.class);
@@ -63,7 +63,7 @@ public class SampleTask extends BaseTask {
         try {
             JdbcOperations jdbcOperations = session.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY);
             for (String sql : this.parameter.getSqls()) {
-                if (stopped) {
+                if (canceled) {
                     break;
                 }
                 jdbcOperations.execute(sql);
@@ -75,22 +75,13 @@ public class SampleTask extends BaseTask {
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         } finally {
-            this.finished = true;
             session.expire();
         }
     }
 
     @Override
-    protected void doStop() {
-        this.stopped = true;
-        this.status = TaskStatus.CANCELED;
-    }
-
-    @Override
-    protected void onFailure(Exception e) {
+    protected void onFail(Exception e) {
         this.result = SampleTaskResult.fail();
-        this.status = TaskStatus.FAILED;
-        this.finished = true;
     }
 
     @Override
