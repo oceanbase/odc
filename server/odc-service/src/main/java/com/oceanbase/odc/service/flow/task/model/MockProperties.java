@@ -32,7 +32,7 @@ public class MockProperties {
     @Value("${odc.task.mockData.maxRowCount:1000000}")
     private long maxRowCount = 1000000;
     private int maxPoolSize = 6;
-    public String resultFileLocationPrefix = "./data/data-mocker";
+    public String resultFileLocationPrefix = "./data/data_mocker";
 
     public File getDownloadPath(@NonNull String taskId) {
         return new File(String.format("%s/%s/download", this.resultFileLocationPrefix, taskId));
