@@ -41,6 +41,8 @@ public abstract class BaseTask implements Task {
 
     protected FlowTaskResult result;
 
+    protected TaskReporter reporter;
+
     protected double progress = 0;
 
     protected boolean canceled = false;
@@ -50,6 +52,7 @@ public abstract class BaseTask implements Task {
     public BaseTask(JobContext context) {
         this.context = context;
         this.status = TaskStatus.PREPARING;
+        this.reporter = new TaskReporter(context.getHostProperties());
     }
 
     @Override
@@ -65,7 +68,7 @@ public abstract class BaseTask implements Task {
             updateStatus(TaskStatus.FAILED);
             log.warn("Task failed, id: {}, status: {}", context.getJobIdentity().getId(), status, e);
         } finally {
-            uploadResults();
+            reportTaskResult();
             finished();
         }
     }
@@ -135,7 +138,7 @@ public abstract class BaseTask implements Task {
                 scheduledExecutor.shutdown();
             }
             try {
-                uploadStatusAndProgress();
+                reportTaskResult();
             } catch (Exception e) {
                 log.warn("Update task progress failed, id: {}", context.getJobIdentity().getId(), e);
             }
@@ -143,15 +146,10 @@ public abstract class BaseTask implements Task {
         log.info("Task monitor init success");
     }
 
-    private void uploadStatusAndProgress() {
+    private void reportTaskResult() {
         onUpdate();
-        // TODO: upload status and progress to odc server
-        log.info("Task status: {}, progress: {}%", this.status, String.format("%.2f", this.progress * 100));
-    }
-
-    private void uploadResults() {
-        // TODO: upload task result to odc server
-        log.info("Task result: {}", this.result);
+        reporter.report(context.getJobIdentity(), status, progress, result);
+        log.info("Task status: {}, progress: {}%, result: {}", status, String.format("%.2f", progress * 100), result);
     }
 
     private void updateStatus(TaskStatus status) {

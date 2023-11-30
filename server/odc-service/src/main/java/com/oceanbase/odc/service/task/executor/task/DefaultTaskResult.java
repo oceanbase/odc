@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.task.executor;
+package com.oceanbase.odc.service.task.executor.task;
 
 import java.io.Serializable;
 
@@ -36,4 +36,7 @@ public class DefaultTaskResult implements TaskResult, Serializable {
     private TaskStatus taskStatus;
 
     private Double progress;
+
+    private String resultJson;
+
 }

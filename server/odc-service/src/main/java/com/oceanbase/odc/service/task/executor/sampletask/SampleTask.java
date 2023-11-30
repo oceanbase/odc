@@ -22,7 +22,6 @@ import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.shared.Verify;
-import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
@@ -52,13 +51,13 @@ public class SampleTask extends BaseTask {
 
     @Override
     protected void onStart() {
-        this.status = TaskStatus.RUNNING;
         Verify.equals(TaskType.SAMPLE.code(), context.getJobIdentity().getTaskType(), "taskType");
         this.parameter = JsonUtils.fromJson(context.getTaskParameters(), SampleTaskParameter.class);
         validateTaskParameter();
         this.totalSqlCount = this.parameter.getSqls().size();
         ConnectionConfig connectionConfig = context.getConnectionConfigs().get(0);
         connectionConfig.setId(1L); // Set connection id to 1 for testing.
+        connectionConfig.setDefaultSchema(this.parameter.getDefaultSchema());
         ConnectionSession session = new DefaultConnectSessionFactory(connectionConfig).generateSession();
         try {
             JdbcOperations jdbcOperations = session.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY);
@@ -71,7 +70,6 @@ public class SampleTask extends BaseTask {
                 Thread.sleep(500); // Simulate long execution time of SQL.
             }
             this.result = SampleTaskResult.success();
-            this.status = TaskStatus.DONE;
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         } finally {

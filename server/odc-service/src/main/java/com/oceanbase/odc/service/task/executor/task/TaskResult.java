@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.task.executor;
+package com.oceanbase.odc.service.task.executor.task;
 
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
@@ -25,10 +25,13 @@ import com.oceanbase.odc.service.task.schedule.JobIdentity;
  * @since 4.2.4
  */
 public interface TaskResult {
+
     JobIdentity getJobIdentity();
 
     TaskStatus getTaskStatus();
 
     Double getProgress();
+
+    String getResultJson();
 
 }
