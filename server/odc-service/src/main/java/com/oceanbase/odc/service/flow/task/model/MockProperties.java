@@ -31,24 +31,11 @@ public class MockProperties {
 
     @Value("${odc.task.mockData.maxRowCount:1000000}")
     private long maxRowCount = 1000000;
-    /**
-     * min connection size for mock
-     */
-    private int minConnectionPoolSize = 4;
-    /**
-     * max connection size for mock
-     */
-    private int maxConnectionPoolSize = 6;
-    /**
-     * increasement step for connection pool
-     */
-    private int connectionPoolIncreaseStep = 3;
-    /**
-     * 文件存储前缀
-     */
-    public String resultFileLocationPrefix = "static/mock";
+    private int maxPoolSize = 6;
+    public String resultFileLocationPrefix = "./data/data-mocker";
 
     public File getDownloadPath(@NonNull String taskId) {
         return new File(String.format("%s/%s/download", this.resultFileLocationPrefix, taskId));
     }
+
 }

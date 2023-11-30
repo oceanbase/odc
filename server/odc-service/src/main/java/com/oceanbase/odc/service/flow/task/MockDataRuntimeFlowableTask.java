@@ -28,15 +28,14 @@ import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.flow.task.model.MockDataTaskResult;
 import com.oceanbase.odc.service.flow.task.model.MockProperties;
-import com.oceanbase.odc.service.flow.task.model.MockTaskConfig;
+import com.oceanbase.odc.service.flow.task.model.OdcMockTaskConfig;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.tools.datamocker.ObDataMocker;
 import com.oceanbase.tools.datamocker.ObMockerFactory;
-import com.oceanbase.tools.datamocker.core.task.AbstractMockerFactory;
 import com.oceanbase.tools.datamocker.core.task.TableTaskContext;
-import com.oceanbase.tools.datamocker.model.config.impl.DefaultTaskConfig;
+import com.oceanbase.tools.datamocker.model.config.MockTaskConfig;
 import com.oceanbase.tools.datamocker.model.enums.MockTaskStatus;
 import com.oceanbase.tools.datamocker.schedule.MockContext;
 
@@ -82,11 +81,11 @@ public class MockDataRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
         return MockTaskStatus.CANCELED == tableTaskContext.getStatus();
     }
 
-    private DefaultTaskConfig getMockTaskConfig(Long taskId, DelegateExecution execution) {
-        MockTaskConfig mockTaskConfig = FlowTaskUtil.getMockParameter(execution);
-        connectionConfig = FlowTaskUtil.getConnectionConfig(execution);
-        return FlowTaskUtil.generateMockConfig(taskId, execution, getTimeOutMilliSeconds(), mockTaskConfig,
-                mockProperties);
+    private MockTaskConfig getMockTaskConfig(Long taskId, DelegateExecution execution) {
+        OdcMockTaskConfig config = FlowTaskUtil.getMockParameter(execution);
+        this.connectionConfig = FlowTaskUtil.getConnectionConfig(execution);
+        return FlowTaskUtil.generateMockConfig(taskId, execution, getTimeoutMillis(),
+                config, mockProperties);
     }
 
     @Override
@@ -94,10 +93,10 @@ public class MockDataRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
         try {
             logInfo(taskId, "MockData task starts, taskId={}, activityId={}", taskId,
                     execution.getCurrentActivityId());
-            DefaultTaskConfig mockTaskConfig = getMockTaskConfig(taskId, execution);
-            AbstractMockerFactory factory = new ObMockerFactory(mockTaskConfig);
-            ObDataMocker mocker = factory.create(new CustomMockScheduler(mockTaskConfig.maxConnection(),
-                    TraceContextHolder.getTraceContext(), ossTaskReferManager, cloudObjectStorageService));
+            MockTaskConfig mockTaskConfig = getMockTaskConfig(taskId, execution);
+            ObMockerFactory factory = new ObMockerFactory(mockTaskConfig);
+            ObDataMocker mocker = factory.create(new CustomMockScheduler(TraceContextHolder.getTraceContext(),
+                    ossTaskReferManager, cloudObjectStorageService));
             context = mocker.start();
             taskService.start(taskId, getResult());
             Verify.notNull(context, "MockContext can not be null");
@@ -143,6 +142,7 @@ public class MockDataRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
             logWarn(taskId, "Mock data task failed, taskId={}", taskId, thrown);
             taskService.fail(taskId, 0, new MockDataTaskResult(connectionConfig, taskId + ""));
         } else {
+            context.shutdown();
             taskService.fail(taskId, context.getProgress(), getResult());
         }
         super.onFailure(taskId, taskService);
@@ -153,6 +153,7 @@ public class MockDataRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
         logInfo(taskId, "Mock data task succeed, taskId={}", taskId);
         taskService.succeed(taskId, getResult());
         updateFlowInstanceStatus(FlowStatus.EXECUTION_SUCCEEDED);
+        context.shutdown();
         super.onSuccessful(taskId, taskService);
     }
 
@@ -160,6 +161,7 @@ public class MockDataRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
     protected void onTimeout(Long taskId, TaskService taskService) {
         logWarn(taskId, "Mock data task timeout, taskId={}", taskId);
         taskService.fail(taskId, context.getProgress(), getResult());
+        context.shutdown();
     }
 
     @Override
