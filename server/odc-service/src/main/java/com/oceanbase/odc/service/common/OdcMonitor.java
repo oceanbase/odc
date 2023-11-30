@@ -27,23 +27,23 @@ import lombok.extern.slf4j.Slf4j;
 public class OdcMonitor {
 
     public static void alarm(String monitorPoint, String monitorMessage) {
-        monitor(monitorPoint, monitorMessage, MonitorLevel.ERROR);
+        monitor(monitorPoint, monitorMessage, monitorMessage, MonitorLevel.ERROR);
     }
 
     public static void alarm(String monitorPoint, Throwable e) {
-        monitor(monitorPoint, e.getMessage(), MonitorLevel.ERROR);
+        monitor(monitorPoint, e.getMessage(), e.toString(), MonitorLevel.ERROR);
     }
 
     public static void warn(String monitorPoint, String monitorMessage) {
-        monitor(monitorPoint, monitorMessage, MonitorLevel.WARN);
+        monitor(monitorPoint, monitorMessage, monitorMessage, MonitorLevel.WARN);
     }
 
     public static void warn(String monitorPoint, Throwable e) {
-        monitor(monitorPoint, e.getMessage(), MonitorLevel.WARN);
+        monitor(monitorPoint, e.getMessage(), e.toString(), MonitorLevel.WARN);
     }
 
     public static void info(String monitorPoint, String monitorMessage) {
-        monitor(monitorPoint, monitorMessage, MonitorLevel.INFO);
+        monitor(monitorPoint, monitorMessage, monitorMessage, MonitorLevel.INFO);
     }
 
 
@@ -69,8 +69,8 @@ public class OdcMonitor {
         }
     }
 
-    private static void monitor(String monitorPoint, String monitorMessage, MonitorLevel level) {
-        String msg = String.format("monitorPoint=%s, monitorMessage=%s", monitorPoint, monitorMessage);
+    private static void monitor(String monitorPoint, String monitorMessage, String logMessage, MonitorLevel level) {
+        String msg = String.format("monitorPoint=%s, monitorMessage=%s", monitorPoint, logMessage);
         switch (level) {
             case INFO:
                 log.info(msg);
