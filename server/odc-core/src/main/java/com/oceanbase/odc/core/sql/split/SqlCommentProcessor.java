@@ -233,10 +233,10 @@ public class SqlCommentProcessor {
             return;
         }
         lines[lineLength] = new OrderChar((char) 0, lineLength);
-        long time1 = System.currentTimeMillis();
+        long time1 = System.nanoTime();
         for (pos = out = 0; pos < lineLength; pos++) {
-            long time2 = System.currentTimeMillis();
-            System.out.println("pos:" + pos + " time:" + (time2 - time1) + "ms");
+            long time2 = System.nanoTime();
+            System.out.println("pos:" + pos + " time:" + (time2 - time1) + "ns");
             time1 = time2;
             OrderChar inOrderChar = lines[pos];
             char inChar = inOrderChar.getCh();
@@ -251,11 +251,7 @@ public class SqlCommentProcessor {
                                 || lines[delimiterBegin].getCh() == '\t'); delimiterBegin++) {
                 }
             }
-            if (equalsIgnoreCase((DELIMITER_NAME + " ").toCharArray(), IntStream.range(0, lines.length)
-                    .mapToObj(i -> lines[i].getCh())
-                    .collect(StringBuilder::new, StringBuilder::append, StringBuilder::append)
-                    .toString()
-                    .toCharArray(), delimiterBegin, (out - delimiterBegin))) {
+            if (equalsIgnoreCase((DELIMITER_NAME + " ").toCharArray(), lines, delimiterBegin, (out - delimiterBegin))) {
                 // 检测到"delimiter "字符串，且不在多行注释以及多行字符串中，说明有设定分隔符的语句
                 StringBuilder newDelimiter = new StringBuilder();
                 for (; pos < lineLength; pos++) {
@@ -290,22 +286,14 @@ public class SqlCommentProcessor {
                 lines[out++] = lines[pos-1];
                 lines[out++] = lines[pos];
             } else if (!mlComment && inString == '\0' && ssComment != SSC.HINT
-                    && isPrefix(IntStream.range(0, lines.length)
-                            .mapToObj(i -> lines[i].getCh())
-                            .collect(StringBuilder::new, StringBuilder::append, StringBuilder::append)
-                            .toString()
-                            .toCharArray(), pos, delimiter)) {
+                    && isPrefix(lines, pos, delimiter)) {
                 // 不是多行注释，未在字符串中，不是hint且以delimiter开头，通常是扫描到了sql的末尾
                 pos += delimiter.length();
                 if (out != 0) {
                     if (buffer.length() == 0) {
                         bufferOrder.setValue(lines[0].getOrder());
                     }
-                    buffer.append(IntStream.range(0, lines.length)
-                            .mapToObj(i -> lines[i].getCh())
-                            .collect(StringBuilder::new, StringBuilder::append, StringBuilder::append)
-                            .toString()
-                            .toCharArray(), 0, out);
+                    append(buffer, lines, 0, out);
                     out = 0;
                 }
                 // buffer.append(";").append('\n');
@@ -322,11 +310,7 @@ public class SqlCommentProcessor {
                 if (buffer.length() == 0) {
                     bufferOrder.setValue(lines[0].getOrder());
                 }
-                buffer.append(IntStream.range(0, lines.length)
-                        .mapToObj(i -> lines[i].getCh())
-                        .collect(StringBuilder::new, StringBuilder::append, StringBuilder::append)
-                        .toString()
-                        .toCharArray(), 0, out);
+                append(buffer, lines, 0, out);
                 out = 0;
                 if (preserveSingleComments) {
                     // 如果保留单行注释则需要将注释完整地拷贝到缓冲中不能丢弃
@@ -340,11 +324,7 @@ public class SqlCommentProcessor {
                                 bufferOrder.setValue(lines[0].getOrder());
                             }
                             // 说明注释处于一个已经完结的sql之后，且该sql已经被加入到sql集合中，此处的注释需要追加到最后一句sql中
-                            buffer.append(IntStream.range(0, lines.length)
-                                    .mapToObj(i -> lines[i].getCh())
-                                    .collect(StringBuilder::new, StringBuilder::append, StringBuilder::append)
-                                    .toString()
-                                    .toCharArray(), 0, out);
+                            append(buffer, lines, 0, out);
                             int lastIndex = sqls.size() - 1;
                             String lastSql = sqls.get(lastIndex).getStr();
                             if (!isSameLine) {
@@ -358,22 +338,14 @@ public class SqlCommentProcessor {
                             if (buffer.length() == 0) {
                                 bufferOrder.setValue(lines[0].getOrder());
                             }
-                            buffer.append(IntStream.range(0, lines.length)
-                                    .mapToObj(i -> lines[i].getCh())
-                                    .collect(StringBuilder::new, StringBuilder::append, StringBuilder::append)
-                                    .toString()
-                                    .toCharArray(), 0, out - 1);
+                            append(buffer, lines, 0, out - 1);
                         }
                     } else {
                         lines[out++].setCh('\n');
                         if (buffer.length() == 0) {
                             bufferOrder.setValue(lines[0].getOrder());
                         }
-                        buffer.append(IntStream.range(0, lines.length)
-                                .mapToObj(i -> lines[i].getCh())
-                                .collect(StringBuilder::new, StringBuilder::append, StringBuilder::append)
-                                .toString()
-                                .toCharArray(), 0, out - 1);
+                        append(buffer, lines, 0, out - 1);
                     }
                     out = 0;
                 }
@@ -396,11 +368,7 @@ public class SqlCommentProcessor {
                 if (buffer.length() == 0) {
                     bufferOrder.setValue(lines[0].getOrder());
                 }
-                buffer.append(IntStream.range(0, lines.length)
-                        .mapToObj(i -> lines[i].getCh())
-                        .collect(StringBuilder::new, StringBuilder::append, StringBuilder::append)
-                        .toString()
-                        .toCharArray(), 0, out);
+                append(buffer, lines, 0, out);
                 out = 0;
                 if (preserveMultiComments) {
                     lines[out++].setCh('*');
@@ -408,11 +376,7 @@ public class SqlCommentProcessor {
                     if (buffer.length() == 0) {
                         bufferOrder.setValue(lines[0].getOrder());
                     }
-                    buffer.append(IntStream.range(0, lines.length)
-                            .mapToObj(i -> lines[i].getCh())
-                            .collect(StringBuilder::new, StringBuilder::append, StringBuilder::append)
-                            .toString()
-                            .toCharArray(), 0, out);
+                    append(buffer, lines, 0, out);
                     out = 0;
                     if (sqls.size() != 0 && !inNormalSql) {
                         int lastIndex = sqls.size() - 1;
@@ -466,11 +430,7 @@ public class SqlCommentProcessor {
             if (buffer.length() == 0) {
                 bufferOrder.setValue(lines[0].getOrder());
             }
-            buffer.append(IntStream.range(0, lines.length)
-                    .mapToObj(i -> lines[i].getCh())
-                    .collect(StringBuilder::new, StringBuilder::append, StringBuilder::append)
-                    .toString()
-                    .toCharArray(), 0, out);
+            append(buffer, lines, 0, out);
         }
     }
 
@@ -515,11 +475,7 @@ public class SqlCommentProcessor {
                                 || lines[delimiterBegin].getCh() == '\t'); delimiterBegin++) {
                 }
             }
-            if (equalsIgnoreCase((DELIMITER_NAME + " ").toCharArray(), IntStream.range(0, lines.length)
-                    .mapToObj(i -> lines[i].getCh())
-                    .collect(StringBuilder::new, StringBuilder::append, StringBuilder::append)
-                    .toString()
-                    .toCharArray(), delimiterBegin, (out - delimiterBegin))) {
+            if (equalsIgnoreCase((DELIMITER_NAME + " ").toCharArray(), lines, delimiterBegin, (out - delimiterBegin))) {
                 // 检测到"delimiter "字符串，且不在多行注释以及多行字符串中，说明有设定分隔符的语句
                 StringBuilder newDelimiter = new StringBuilder();
                 for (; pos < lineLength; pos++) {
@@ -534,21 +490,13 @@ public class SqlCommentProcessor {
                 this.delimiter = newDelimiter.toString();
                 continue;
             }
-            if (!mlComment && inString == '\0' && ssComment != SSC.HINT && isPrefix(IntStream.range(0, lines.length)
-                    .mapToObj(i -> lines[i].getCh())
-                    .collect(StringBuilder::new, StringBuilder::append, StringBuilder::append)
-                    .toString()
-                    .toCharArray(), pos, delimiter)) {
+            if (!mlComment && inString == '\0' && ssComment != SSC.HINT && isPrefix(lines, pos, delimiter)) {
                 // 不是多行注释，未在字符串中，不是hint且以delimiter开头，通常是扫描到了sql的末尾
                 pos += delimiter.length();
                 if (buffer.length() == 0) {
                     bufferOrder.setValue(lines[0].getOrder());
                 }
-                buffer.append(IntStream.range(0, lines.length)
-                        .mapToObj(i -> lines[i].getCh())
-                        .collect(StringBuilder::new, StringBuilder::append, StringBuilder::append)
-                        .toString()
-                        .toCharArray(), 0, out);
+                append(buffer, lines, 0, out);
                 out = 0;
                 // buffer.append(";").append('\n');
                 sqls.add(new OffsetString(bufferOrder.getValue(), buffer.toString()));
@@ -564,11 +512,7 @@ public class SqlCommentProcessor {
                 if (buffer.length() == 0) {
                     bufferOrder.setValue(lines[0].getOrder());
                 }
-                buffer.append(IntStream.range(0, lines.length)
-                        .mapToObj(i -> lines[i].getCh())
-                        .collect(StringBuilder::new, StringBuilder::append, StringBuilder::append)
-                        .toString()
-                        .toCharArray(), 0, out);
+                append(buffer, lines, 0, out);
                 out = 0;
                 if (preserveSingleComments) {
                     // 如果保留单行注释则需要将注释完整地拷贝到缓冲中不能丢弃
@@ -582,11 +526,7 @@ public class SqlCommentProcessor {
                                 bufferOrder.setValue(lines[0].getOrder());
                             }
                             // 说明注释处于一个已经完结的sql之后，且该sql已经被加入到sql集合中，此处的注释需要追加到最后一句sql中
-                            buffer.append(IntStream.range(0, lines.length)
-                                    .mapToObj(i -> lines[i].getCh())
-                                    .collect(StringBuilder::new, StringBuilder::append, StringBuilder::append)
-                                    .toString()
-                                    .toCharArray(), 0, out);
+                            append(buffer, lines, 0, out);
                             int lastIndex = sqls.size() - 1;
                             String lastSql = sqls.get(lastIndex).getStr();
                             if (!isSameLine) {
@@ -600,22 +540,14 @@ public class SqlCommentProcessor {
                             if (buffer.length() == 0) {
                                 bufferOrder.setValue(lines[0].getOrder());
                             }
-                            buffer.append(IntStream.range(0, lines.length)
-                                    .mapToObj(i -> lines[i].getCh())
-                                    .collect(StringBuilder::new, StringBuilder::append, StringBuilder::append)
-                                    .toString()
-                                    .toCharArray(), 0, out - 1);
+                            append(buffer, lines, 0, out - 1);
                         }
                     } else {
                         lines[out++].setCh('\n');
                         if (buffer.length() == 0) {
                             bufferOrder.setValue(lines[0].getOrder());
                         }
-                        buffer.append(IntStream.range(0, lines.length)
-                                .mapToObj(i -> lines[i].getCh())
-                                .collect(StringBuilder::new, StringBuilder::append, StringBuilder::append)
-                                .toString()
-                                .toCharArray(), 0, out - 1);
+                        append(buffer, lines, 0, out - 1);
                     }
                     out = 0;
                 }
@@ -637,11 +569,7 @@ public class SqlCommentProcessor {
                 if (buffer.length() == 0) {
                     bufferOrder.setValue(lines[0].getOrder());
                 }
-                buffer.append(IntStream.range(0, lines.length)
-                        .mapToObj(i -> lines[i].getCh())
-                        .collect(StringBuilder::new, StringBuilder::append, StringBuilder::append)
-                        .toString()
-                        .toCharArray(), 0, out);
+                append(buffer, lines, 0, out);
                 out = 0;
                 if (preserveMultiComments) {
                     lines[out++].setCh('*');
@@ -649,11 +577,7 @@ public class SqlCommentProcessor {
                     if (buffer.length() == 0) {
                         bufferOrder.setValue(lines[0].getOrder());
                     }
-                    buffer.append(IntStream.range(0, lines.length)
-                            .mapToObj(i -> lines[i].getCh())
-                            .collect(StringBuilder::new, StringBuilder::append, StringBuilder::append)
-                            .toString()
-                            .toCharArray(), 0, out);
+                    append(buffer, lines, 0, out);
                     out = 0;
                     if (sqls.size() != 0 && !inNormalSql) {
                         int lastIndex = sqls.size() - 1;
@@ -717,15 +641,11 @@ public class SqlCommentProcessor {
             if (buffer.length() == 0) {
                 bufferOrder.setValue(lines[0].getOrder());
             }
-            buffer.append(IntStream.range(0, lines.length)
-                    .mapToObj(i -> lines[i].getCh())
-                    .collect(StringBuilder::new, StringBuilder::append, StringBuilder::append)
-                    .toString()
-                    .toCharArray(), 0, out);
+            append(buffer, lines, 0, out);
         }
     }
 
-    private boolean equalsIgnoreCase(char[] src, char[] dest, int begin, int count) {
+    private boolean equalsIgnoreCase(char[] src, OrderChar[] dest, int begin, int count) {
         if (src == null && dest == null) {
             return true;
         } else if (src != null && dest != null) {
@@ -734,7 +654,7 @@ public class SqlCommentProcessor {
             }
             for (int i = 0; i < count; i++) {
                 char c1 = src[i];
-                char c2 = dest[begin + i];
+                char c2 = dest[begin + i].getCh();
                 if (c1 == c2) {
                     continue;
                 }
@@ -756,18 +676,22 @@ public class SqlCommentProcessor {
     /**
      * 当前SQL是否是以分隔符开头
      */
-    private boolean isPrefix(char[] line, int pos, String delim) {
-        boolean res = new String(line, pos, line.length - pos).startsWith(delim);
+    private boolean isPrefix(OrderChar[] line, int pos, String delim) {
+        boolean res = IntStream.range(pos, pos + delim.length())
+            .mapToObj(i -> line[i].getCh())
+            .collect(StringBuilder::new, StringBuilder::append, StringBuilder::append)
+            .toString().startsWith(delim);
+
         if (!res || !"/".equals(delim) || line.length <= 1) {
             return res;
         }
         // 匹配到分隔符，分隔符为正斜杠且当前行的大小大于 1，需要注意规避多行注释
         if (pos == 0) {
-            return !(line[pos + 1] == '*');
+            return !(line[pos + 1].getCh() == '*');
         } else if (line.length - 1 == pos) {
-            return !(line[pos - 1] == '*');
+            return !(line[pos - 1].getCh() == '*');
         }
-        return !(line[pos + 1] == '*' || line[pos - 1] == '*');
+        return !(line[pos + 1].getCh() == '*' || line[pos - 1].getCh() == '*');
     }
 
     private boolean matchQEscape(char escapeChar) {
@@ -785,6 +709,12 @@ public class SqlCommentProcessor {
                 return escapeChar == ')';
             default:
                 return this.escapeString == escapeChar;
+        }
+    }
+
+    private void append(StringBuffer buffer, OrderChar[] chars, int begin, int count) {
+        for (int i = 0; i < count; i++) {
+            buffer.append(chars[begin + i].getCh());
         }
     }
 
