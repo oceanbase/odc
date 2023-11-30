@@ -29,7 +29,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
+import org.springframework.util.StopWatch;
+
+import com.google.common.collect.Lists;
 import com.oceanbase.odc.common.lang.Holder;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 
@@ -816,7 +820,7 @@ public class SqlCommentProcessor {
     public static class SqlStatementIterator implements Iterator<String>, AutoCloseable {
         private final BufferedReader reader;
         private final StringBuffer buffer = new StringBuffer();
-        private final LinkedList<String> holder = new LinkedList<>();
+        private final LinkedList<OffsetString> holder = new LinkedList<>();
         private final SqlCommentProcessor processor;
         private final DialectType dialectType;
 
@@ -857,15 +861,22 @@ public class SqlCommentProcessor {
         private String parseNext() {
             try {
                 if (!holder.isEmpty()) {
-                    return holder.poll();
+                    return holder.poll().getStr();
                 }
                 String line;
                 while (holder.isEmpty() && (line = reader.readLine()) != null) {
-                    holder.addAll(processor.split(buffer, line).stream().map(OffsetString::getStr)
+                    if (Objects.nonNull(dialectType) && dialectType.isMysql()) {
+                        processor.addLineMysql(holder, buffer, new Holder<>(0), line.chars()
+                            .mapToObj(c -> new OrderChar((char) c, 0))
                             .collect(Collectors.toList()));
+                    } else if (Objects.nonNull(dialectType) && dialectType.isOracle()) {
+                        processor.addLineOracle(holder, buffer, new Holder<>(0), line.chars()
+                            .mapToObj(c -> new OrderChar((char) c, 0))
+                            .collect(Collectors.toList()));
+                    }
                 }
                 if (!holder.isEmpty()) {
-                    return holder.poll();
+                    return holder.poll().getStr();
                 }
                 if (buffer.toString().trim().length() == 0) {
                     return null;
