@@ -14,23 +14,21 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.task.executor;
+package com.oceanbase.odc.service.task.executor.context;
 
-import com.oceanbase.odc.common.json.JsonUtils;
-import com.oceanbase.odc.service.task.caller.DefaultJobContext;
 import com.oceanbase.odc.service.task.caller.JobContext;
-import com.oceanbase.odc.service.task.constants.JobEnvConstants;
-import com.oceanbase.odc.service.task.executor.util.SystemEnvUtil;
 
 /**
  * @author gaoda.xy
- * @date 2023/11/22 20:21
+ * @date 2023/11/22 16:25
  */
-public class K8sJobContextProvider implements JobContextProvider {
+public interface JobContextProvider {
 
-    @Override
-    public JobContext provide() {
-        return JsonUtils.fromJson(SystemEnvUtil.nullSafeGet(JobEnvConstants.TASK_PARAMETER), DefaultJobContext.class);
-    }
+    /**
+     * Provide job context.
+     * 
+     * @return job context
+     */
+    JobContext provide();
 
 }

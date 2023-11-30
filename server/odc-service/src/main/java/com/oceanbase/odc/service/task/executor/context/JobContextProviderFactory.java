@@ -14,21 +14,24 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.task.executor;
+package com.oceanbase.odc.service.task.executor.context;
 
-import com.oceanbase.odc.core.shared.constant.TaskStatus;
-import com.oceanbase.odc.service.task.schedule.JobIdentity;
+import com.oceanbase.odc.service.task.enums.TaskRunModeEnum;
 
 /**
- * @author yaobin
- * @date 2023-11-29
- * @since 4.2.4
+ * @author gaoda.xy
+ * @date 2023/11/23 13:55
  */
-public interface TaskResult {
-    JobIdentity getJobIdentity();
+public class JobContextProviderFactory {
 
-    TaskStatus getTaskStatus();
-
-    Double getProgress();
+    public static JobContextProvider create(TaskRunModeEnum mode) {
+        switch (mode) {
+            case K8S:
+                return new K8sJobContextProvider();
+            case THREAD:
+            default:
+                throw new UnsupportedOperationException("Not supported yet.");
+        }
+    }
 
 }

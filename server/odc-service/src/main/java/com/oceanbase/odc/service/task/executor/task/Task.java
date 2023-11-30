@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.task.executor;
+package com.oceanbase.odc.service.task.executor.task;
 
 import com.oceanbase.odc.core.flow.model.FlowTaskResult;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.service.task.caller.JobContext;
+import com.oceanbase.odc.service.task.executor.executor.TaskExecutor;
 
 /**
  * Task interface. Each task should implement this interface
@@ -39,18 +40,18 @@ public interface Task {
     void stop();
 
     /**
-     * Check whether current task is stopped
-     * 
-     * @return true if current task is stopped
-     */
-    boolean isStopped();
-
-    /**
      * Check whether current task is finished
      * 
      * @return true if current task is finished
      */
     boolean isFinished();
+
+    /**
+     * Get task progress
+     *
+     * @return progress
+     */
+    double progress();
 
     /**
      * Get job context. Each task implementation should hold a job context
