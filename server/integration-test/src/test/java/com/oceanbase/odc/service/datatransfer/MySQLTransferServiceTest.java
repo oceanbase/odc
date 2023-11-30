@@ -90,6 +90,7 @@ public class MySQLTransferServiceTest extends ServiceTestEnv {
         connectionConfig = TestConnectionUtil.getTestConnectionConfig(ConnectType.from(DialectType.MYSQL));
         connectionConfig.setId(connectionId);
         setUpEnv();
+        log.info("connection: {}", connectionConfig);
         Mockito.when(connectionService.getForConnect(connectionId)).thenReturn(connectionConfig);
         Mockito.when(connectionService.getForConnectionSkipPermissionCheck(connectionId)).thenReturn(connectionConfig);
     }
@@ -157,7 +158,7 @@ public class MySQLTransferServiceTest extends ServiceTestEnv {
         DataTransferTaskContext context =
                 dataTransferService.create(BUCKET, getLoadConfig(false, connectionConfig.getDefaultSchema(),
                         Collections.singletonList(dumpFile.getAbsolutePath()), true, true));
-        Assert.assertNotNull(context.get(600, TimeUnit.SECONDS));
+        Assert.assertNotNull(context.get(60, TimeUnit.SECONDS));
         assertTableExists();
         assertTableCountEquals(2);
     }
