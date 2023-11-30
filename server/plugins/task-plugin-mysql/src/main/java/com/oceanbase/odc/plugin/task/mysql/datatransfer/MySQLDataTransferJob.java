@@ -17,7 +17,11 @@
 package com.oceanbase.odc.plugin.task.mysql.datatransfer;
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -28,10 +32,13 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 import javax.sql.DataSource;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -128,9 +135,11 @@ public class MySQLDataTransferJob implements DataTransferJob {
             }
             if (CollectionUtils.isNotEmpty(dataJobs)) {
                 try {
+                    unzipDataXToWorkingDir(workingDir);
                     runDataJobs();
                 } finally {
                     logSummary(dataJobs, "DATA");
+                    FileUtils.deleteQuietly(Paths.get(workingDir.getPath(), "datax").toFile());
                 }
             }
         }
@@ -142,6 +151,7 @@ public class MySQLDataTransferJob implements DataTransferJob {
 
         Map<String, String> jdbcUrlParams = new HashMap<>();
         jdbcUrlParams.put("connectTimeout", "5000");
+        jdbcUrlParams.put("useSSL", "false");
         if (StringUtils.isNotBlank(connectionInfo.getProxyHost())
                 && Objects.nonNull(connectionInfo.getProxyPort())) {
             jdbcUrlParams.put("socksProxyHost", connectionInfo.getProxyHost());
@@ -229,6 +239,31 @@ public class MySQLDataTransferJob implements DataTransferJob {
             if (job.getObject().getStatus() == Status.FAILURE && baseConfig.isStopWhenError()) {
                 throw new RuntimeException(
                         String.format("Object %s failed, transferring will stop.", job));
+            }
+        }
+    }
+
+    private synchronized static void unzipDataXToWorkingDir(File workingDir) throws IOException {
+        try (InputStream resource = MySQLDataTransferJob.class.getResourceAsStream("/datax.zip");
+                ZipInputStream zis = new ZipInputStream(resource)) {
+            byte[] buffer = new byte[1024];
+            ZipEntry entry;
+            while ((entry = zis.getNextEntry()) != null) {
+                File file = new File(workingDir, entry.getName());
+                if (entry.isDirectory()) {
+                    file.mkdirs();
+                } else {
+                    File parent = file.getParentFile();
+                    if (!parent.exists()) {
+                        parent.mkdirs();
+                    }
+                    try (FileOutputStream fos = new FileOutputStream(file)) {
+                        int len;
+                        while ((len = zis.read(buffer)) > 0) {
+                            fos.write(buffer, 0, len);
+                        }
+                    }
+                }
             }
         }
     }
