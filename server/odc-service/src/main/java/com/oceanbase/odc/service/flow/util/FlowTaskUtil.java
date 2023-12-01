@@ -327,7 +327,7 @@ public class FlowTaskUtil {
                 }
             }
             MockTaskConfig taskConfig = mapper.readValue(mapper.writeValueAsString(map), MockTaskConfig.class);
-            taskConfig.setTaskName(config.getTaskName());
+            taskConfig.setLogDir(taskId + "");
             taskConfig.setDialectType(session.getDialectType().isMysql() ? ObModeType.OB_MYSQL : ObModeType.OB_ORACLE);
             List<MockTableConfig> tableConfigList = taskConfig.getTables();
             PreConditions.notEmpty(tableConfigList, "tasks"); // table config list can not be null or empty
@@ -352,14 +352,6 @@ public class FlowTaskUtil {
             taskConfig.setMaxConnectionSize(mockProperties.getMaxPoolSize());
             DataBaseConfig dataBaseConfig = getDbConfig(conn, execution);
             taskConfig.setDbConfig(dataBaseConfig);
-            if (taskConfig.getTaskName() != null) {
-                return taskConfig;
-            }
-            String taskName = System.currentTimeMillis() + "-"
-                    + dataBaseConfig.getUser() + "-"
-                    + conn.getName() + "-mocker";
-            config.setTaskName(taskName);
-            taskConfig.setTaskName(taskName);
             return taskConfig;
         } catch (Exception e) {
             log.warn("Error initializing mock data task, taskId={}", taskId, e);

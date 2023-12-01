@@ -16,7 +16,6 @@
 package com.oceanbase.odc.service.flow.task.model;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
 
@@ -42,6 +41,7 @@ import lombok.Setter;
 @Setter
 public class MockDataTaskResult implements FlowTaskResult {
 
+    @Deprecated
     private String taskName;
     private MockTaskStatus taskStatus;
     private Long writeCount;
@@ -52,13 +52,14 @@ public class MockDataTaskResult implements FlowTaskResult {
     private Long totalGen;
     private String sessionName;
     private DialectType dbMode;
+    @Deprecated
     private String internalTaskId;
+    @Deprecated
     private List<String> tableTaskIds;
 
     public MockDataTaskResult() {}
 
     public MockDataTaskResult(@NonNull ConnectionConfig connectionConfig, @NonNull MockContext context) {
-        this.taskName = context.getTaskName();
         List<TableTaskContext> tableTaskContexts = context.getTables();
         if (CollectionUtils.isNotEmpty(tableTaskContexts)) {
             TableTaskContext tableTaskContext = tableTaskContexts.get(0);
@@ -68,14 +69,10 @@ public class MockDataTaskResult implements FlowTaskResult {
         }
         this.sessionName = connectionConfig.getName();
         this.dbMode = connectionConfig.getDialectType();
-        this.internalTaskId = context.getTaskId();
-        this.tableTaskIds = context.getTables().stream()
-                .map(TableTaskContext::getTableTaskId).collect(Collectors.toList());
     }
 
-    public MockDataTaskResult(@NonNull ConnectionConfig connectionConfig, @NonNull String internalTaskId) {
+    public MockDataTaskResult(@NonNull ConnectionConfig connectionConfig) {
         this.sessionName = connectionConfig.getName();
-        this.internalTaskId = internalTaskId;
         this.dbMode = connectionConfig.getDialectType();
     }
 

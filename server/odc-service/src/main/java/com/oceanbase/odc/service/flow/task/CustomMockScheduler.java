@@ -41,14 +41,16 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class CustomMockScheduler extends DefaultScheduler {
 
+    private final Long taskId;
     private final Map<String, String> traceContext;
     private final CloudObjectStorageService cloudObjectStorageService;
     private final OssTaskReferManager taskReferManager;
 
-    public CustomMockScheduler(@NonNull Map<String, String> traceContext,
+    public CustomMockScheduler(@NonNull Long taskId, @NonNull Map<String, String> traceContext,
             @NonNull OssTaskReferManager taskReferManager,
             @NonNull CloudObjectStorageService cloudObjectStorageService) {
         this.traceContext = traceContext;
+        this.taskId = taskId;
         this.taskReferManager = taskReferManager;
         this.cloudObjectStorageService = cloudObjectStorageService;
     }
@@ -67,7 +69,7 @@ public class CustomMockScheduler extends DefaultScheduler {
         log.info("Odc will upload mock data file to oss server");
         try {
             String objectName = cloudObjectStorageService.uploadTemp(file.getName(), file);
-            taskReferManager.put(context.getTableTaskId(), objectName);
+            taskReferManager.put(taskId + "", objectName);
             log.info("Upload the data file to the oss successfully, objectName={}", objectName);
         } catch (IOException e) {
             log.warn("Fail to upload file to oss, fileName={}", file.getName(), e);
