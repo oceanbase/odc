@@ -16,6 +16,8 @@
 
 package com.oceanbase.odc.service.common;
 
+import javax.annotation.Nullable;
+
 import org.springframework.context.ApplicationEvent;
 
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
@@ -27,27 +29,27 @@ import lombok.extern.slf4j.Slf4j;
 public class OdcMonitor {
 
     public static void alarm(String monitorPoint, String monitorMessage) {
-        monitor(monitorPoint, monitorMessage, monitorMessage, MonitorLevel.ERROR);
+        monitor(monitorPoint, monitorMessage, MonitorLevel.ERROR, null);
     }
 
     public static void alarm(String monitorPoint, Throwable e) {
-        monitor(monitorPoint, e.getMessage(), e.toString(), MonitorLevel.ERROR);
+        monitor(monitorPoint, e.getMessage(), MonitorLevel.ERROR, e);
     }
 
     public static void warn(String monitorPoint, String monitorMessage) {
-        monitor(monitorPoint, monitorMessage, monitorMessage, MonitorLevel.WARN);
+        monitor(monitorPoint, monitorMessage, MonitorLevel.WARN, null);
     }
 
     public static void warn(String monitorPoint, Throwable e) {
-        monitor(monitorPoint, e.getMessage(), e.toString(), MonitorLevel.WARN);
+        monitor(monitorPoint, e.getMessage(), MonitorLevel.WARN, e);
     }
 
     public static void info(String monitorPoint, String monitorMessage) {
-        monitor(monitorPoint, monitorMessage, monitorMessage, MonitorLevel.INFO);
+        monitor(monitorPoint, monitorMessage, MonitorLevel.INFO, null);
     }
 
 
-    enum MonitorLevel {
+    public enum MonitorLevel {
         INFO, WARN, ERROR
     }
 
@@ -69,17 +71,29 @@ public class OdcMonitor {
         }
     }
 
-    private static void monitor(String monitorPoint, String monitorMessage, String logMessage, MonitorLevel level) {
-        String msg = String.format("monitorPoint=%s, monitorMessage=%s", monitorPoint, logMessage);
+    private static void monitor(String monitorPoint, String monitorMessage, MonitorLevel level, @Nullable Throwable e) {
+        String msg = String.format("monitorPoint=%s, monitorMessage=%s .", monitorPoint, monitorMessage);
         switch (level) {
             case INFO:
-                log.info(msg);
+                if (e == null) {
+                    log.info(msg);
+                } else {
+                    log.info(msg, e);
+                }
                 break;
             case WARN:
-                log.warn(msg);
+                if (e == null) {
+                    log.warn(msg);
+                } else {
+                    log.warn(msg, e);
+                }
                 break;
             case ERROR:
-                log.error(msg);
+                if (e == null) {
+                    log.error(msg);
+                } else {
+                    log.error(msg, e);
+                }
                 break;
             default:
                 throw new IllegalArgumentException();
