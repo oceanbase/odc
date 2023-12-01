@@ -54,7 +54,6 @@ import com.oceanbase.odc.service.notification.model.EventLabels;
 import com.oceanbase.odc.service.notification.model.EventStatus;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
-import com.oceanbase.odc.service.task.schedule.JobScheduler;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -91,8 +90,6 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
     private NotificationProperties notificationProperties;
     @Autowired
     private ConnectionService connectionService;
-    @Autowired
-    private JobScheduler jobScheduler;
 
     private void init(DelegateExecution execution) {
         this.taskId = FlowTaskUtil.getTaskId(execution);

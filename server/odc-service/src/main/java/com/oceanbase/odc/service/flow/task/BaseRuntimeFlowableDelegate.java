@@ -45,7 +45,6 @@ import com.oceanbase.odc.service.flow.exception.ServiceTaskError;
 import com.oceanbase.odc.service.flow.instance.FlowTaskInstance;
 import com.oceanbase.odc.service.flow.listener.ActiveTaskStatisticsListener;
 import com.oceanbase.odc.service.flow.model.ExecutionStrategyConfig;
-import com.oceanbase.odc.service.task.schedule.JobScheduler;
 
 import lombok.Getter;
 import lombok.NonNull;
@@ -85,8 +84,6 @@ public abstract class BaseRuntimeFlowableDelegate<T> extends BaseFlowableDelegat
     private final RetryExecutor retryExecutor;
     private final TaskInstanceCreatedListener taskInstanceCreatedlistener;
     private final ActiveTaskStatisticsListener activeTaskStatisticsListener;
-    @Autowired
-    protected JobScheduler jobScheduler;
 
     public BaseRuntimeFlowableDelegate() {
         this.retryExecutor = RetryExecutor.builder().retryIntervalMillis(1000).retryTimes(3).build();
