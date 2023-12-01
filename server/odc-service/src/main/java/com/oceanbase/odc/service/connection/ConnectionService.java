@@ -881,7 +881,7 @@ public class ConnectionService {
             @NonNull Boolean withProject) {
         return entitiesToModels(Collections.singletonList(entity), entity.getOrganizationId(), withEnvironment,
                 withProject).stream().findFirst()
-                .orElseThrow(() -> new NotFoundException(ResourceType.ODC_CONNECTION, "id", entity.getId()));
+                        .orElseThrow(() -> new NotFoundException(ResourceType.ODC_CONNECTION, "id", entity.getId()));
     }
 
     private ConnectionEntity modelToEntity(@NonNull ConnectionConfig model) {
