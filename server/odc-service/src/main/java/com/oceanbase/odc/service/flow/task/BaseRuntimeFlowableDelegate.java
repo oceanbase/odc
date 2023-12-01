@@ -30,17 +30,14 @@ import org.flowable.engine.delegate.DelegateExecution;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.oceanbase.odc.common.event.EventPublisher;
-import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.RetryExecutor;
 import com.oceanbase.odc.core.flow.BaseFlowableDelegate;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.Verify;
-import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.metadb.flow.FlowInstanceRepository;
-import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.odc.service.flow.FlowableAdaptor;
 import com.oceanbase.odc.service.flow.event.ServiceTaskStartedEvent;
 import com.oceanbase.odc.service.flow.event.TaskInstanceCreatedListener;
@@ -48,15 +45,7 @@ import com.oceanbase.odc.service.flow.exception.ServiceTaskError;
 import com.oceanbase.odc.service.flow.instance.FlowTaskInstance;
 import com.oceanbase.odc.service.flow.listener.ActiveTaskStatisticsListener;
 import com.oceanbase.odc.service.flow.model.ExecutionStrategyConfig;
-import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
-import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
-import com.oceanbase.odc.service.task.caller.DefaultJobContext;
-import com.oceanbase.odc.service.task.executor.sampletask.SampleTaskParameter;
-import com.oceanbase.odc.service.task.schedule.JobDefinition;
-import com.oceanbase.odc.service.task.schedule.JobIdentity;
 import com.oceanbase.odc.service.task.schedule.JobScheduler;
-import com.oceanbase.odc.service.task.schedule.ScheduleSourceType;
-import com.oceanbase.odc.service.task.schedule.TaskTaskJobDefinitionBuilder;
 
 import lombok.Getter;
 import lombok.NonNull;
@@ -118,25 +107,6 @@ public abstract class BaseRuntimeFlowableDelegate<T> extends BaseFlowableDelegat
         try {
             this.activityId = execution.getCurrentActivityId();
             initTargetTaskInstanceId(execution);
-            // todo for smoke test
-            if (this.taskType == TaskType.ASYNC) {
-                Long taskId = FlowTaskUtil.getTaskId(execution);
-                JobIdentity ji = JobIdentity.of(taskId, ScheduleSourceType.TASK_TASK, TaskType.SAMPLE.name());
-                TaskTaskJobDefinitionBuilder factory = new TaskTaskJobDefinitionBuilder();
-
-                JobDefinition jd = factory.build(ji);
-
-                DefaultJobContext jobContext = (DefaultJobContext) jd.getJobContext();
-                DatabaseChangeParameters parameters = FlowTaskUtil.getAsyncParameter(execution);
-                SampleTaskParameter stp = new SampleTaskParameter();
-                stp.setSqls(
-                        SqlUtils.split(DialectType.OB_MYSQL, parameters.getSqlContent(), parameters.getDelimiter()));
-                stp.setDefaultSchema(FlowTaskUtil.getSchemaName(execution));
-                jobContext.setTaskParameters(JsonUtils.toJson(stp));
-                jobScheduler.scheduleJobNow(jd);
-                return;
-            }
-
             callable = initCallable(execution);
             Verify.notNull(callable, "Callable");
             eventPublisher.publishEvent(new ServiceTaskStartedEvent(this, Thread.currentThread()));
