@@ -128,11 +128,10 @@ public abstract class BaseRuntimeFlowableDelegate<T> extends BaseFlowableDelegat
 
                 DefaultJobContext jobContext = (DefaultJobContext) jd.getJobContext();
                 DatabaseChangeParameters parameters = FlowTaskUtil.getAsyncParameter(execution);
-
-
                 SampleTaskParameter stp = new SampleTaskParameter();
                 stp.setSqls(
                         SqlUtils.split(DialectType.OB_MYSQL, parameters.getSqlContent(), parameters.getDelimiter()));
+                stp.setDefaultSchema(FlowTaskUtil.getSchemaName(execution));
                 jobContext.setTaskParameters(JsonUtils.toJson(stp));
                 jobScheduler.scheduleJobNow(jd);
                 return;

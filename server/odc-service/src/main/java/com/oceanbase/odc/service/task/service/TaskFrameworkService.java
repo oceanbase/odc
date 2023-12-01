@@ -21,13 +21,20 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
+import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
+import com.oceanbase.odc.metadb.flow.FlowInstanceEntity;
+import com.oceanbase.odc.metadb.flow.FlowInstanceRepository;
+import com.oceanbase.odc.metadb.flow.ServiceTaskInstanceEntity;
+import com.oceanbase.odc.metadb.flow.ServiceTaskInstanceRepository;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.metadb.task.TaskRepository;
+import com.oceanbase.odc.service.task.caller.JobException;
 import com.oceanbase.odc.service.task.executor.task.TaskResult;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
+import com.oceanbase.odc.service.task.schedule.JobScheduler;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -43,14 +50,36 @@ public class TaskFrameworkService {
 
     @Autowired
     private TaskRepository taskRepository;
+    @Autowired
+    private FlowInstanceRepository flowInstanceRepository;
+    @Autowired
+    private ServiceTaskInstanceRepository serviceTaskInstanceRepository;
+    @Autowired
+    private JobScheduler jobScheduler;
 
     @Transactional(rollbackFor = Exception.class)
     public void update(TaskResult taskResult) {
         JobIdentity identity = taskResult.getJobIdentity();
         TaskEntity taskEntity = nullSafeFindById(identity.getId());
-        taskEntity.setProgressPercentage(taskResult.getProgress());
+        taskEntity.setProgressPercentage(taskResult.getProgress() * 100);
         taskEntity.setStatus(taskResult.getTaskStatus() == null ? TaskStatus.RUNNING : taskResult.getTaskStatus());
+        taskEntity.setResultJson(taskResult.getResultJson());
         taskRepository.update(taskEntity);
+
+        // todo for smoke test
+        if (taskResult.getTaskStatus() == TaskStatus.DONE) {
+            ServiceTaskInstanceEntity serviceTaskInstanceEntity = serviceTaskInstanceRepository.findByTargetTaskId(
+                    taskEntity.getId()).get(0);
+            FlowInstanceEntity flowInstanceEntity = flowInstanceRepository.findById(
+                    serviceTaskInstanceEntity.getFlowInstanceId()).get();
+            flowInstanceEntity.setStatus(FlowStatus.EXECUTION_SUCCEEDED);
+            flowInstanceRepository.update(flowInstanceEntity);
+            try {
+                jobScheduler.cancelJob(taskResult.getJobIdentity());
+            } catch (JobException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     private TaskEntity nullSafeFindById(Long id) {

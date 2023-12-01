@@ -80,4 +80,5 @@ public interface ServiceTaskInstanceRepository extends JpaRepository<ServiceTask
     List<ServiceTaskInstanceEntity> findByScheduleIdAndTaskType(@Param("id") Long scheduleId,
             @Param("type") TaskType type);
 
+    List<ServiceTaskInstanceEntity> findByTargetTaskId(Long targetTaskId);
 }
