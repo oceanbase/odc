@@ -37,7 +37,7 @@ public abstract class AbstractSqlSplitterTest {
         SqlSplitter sqlSplitter = sqlSplitter();
 
         List<String> stmts = sqlSplitter.split(sql).stream().map(OffsetString::getStr).collect(
-            Collectors.toList());
+                Collectors.toList());
 
         Assert.assertTrue(stmts.isEmpty());
     }
@@ -49,7 +49,7 @@ public abstract class AbstractSqlSplitterTest {
         sqlSplitter.setRemoveCommentPrefix(true);
 
         List<String> stmts = sqlSplitter.split(sql).stream().map(OffsetString::getStr).collect(
-            Collectors.toList());
+                Collectors.toList());
         List<String> expected = Arrays.asList("select 1 from dual;");
 
         Assert.assertArrayEquals(expected.toArray(), stmts.toArray());
@@ -62,7 +62,7 @@ public abstract class AbstractSqlSplitterTest {
         SqlSplitter sqlSplitter = new SqlSplitter(lexerType(), "$");
 
         List<String> stmts = sqlSplitter.split(sql).stream().map(OffsetString::getStr).collect(
-            Collectors.toList());
+                Collectors.toList());
         List<String> expected = Arrays.asList("select 1 from dual ;", "select 2 from dual;");
         Assert.assertArrayEquals(expected.toArray(), stmts.toArray());
     }
@@ -72,7 +72,7 @@ public abstract class AbstractSqlSplitterTest {
         String sql = "delimiter $\nselect 1 from dual $\ndelimiter ;\nselect 2 from dual;";
         SqlSplitter sqlSplitter = sqlSplitter();
         List<String> stmts = sqlSplitter.split(sql).stream().map(OffsetString::getStr).collect(
-            Collectors.toList());
+                Collectors.toList());
         List<String> expected = Arrays.asList("select 1 from dual ;", "select 2 from dual;");
         Assert.assertArrayEquals(expected.toArray(), stmts.toArray());
     }
@@ -268,7 +268,7 @@ public abstract class AbstractSqlSplitterTest {
 
         SqlSplitter sqlSplitter = sqlSplitter();
         List<String> stmts = sqlSplitter.split(testData.origin).stream().map(OffsetString::getStr).collect(
-            Collectors.toList());
+                Collectors.toList());
 
         Assert.assertArrayEquals(testData.getExpected().toArray(new String[0]), stmts.toArray(new String[0]));
         Assert.assertEquals(testData.expectedEndDelimiter, sqlSplitter.getDelimiter());

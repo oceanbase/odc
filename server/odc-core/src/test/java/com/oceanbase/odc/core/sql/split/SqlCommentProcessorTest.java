@@ -22,7 +22,6 @@ import java.io.InputStreamReader;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -110,8 +109,9 @@ public class SqlCommentProcessorTest {
         SqlCommentProcessor processor = new SqlCommentProcessor(DialectType.OB_ORACLE, true, true);
         processor.setDelimiter("/");
         StringBuffer buffer = new StringBuffer();
-        List<String> actual = processor.split(buffer, String.join("/", sqls) + "/").stream().map(OffsetString::getStr).collect(
-            Collectors.toList());
+        List<String> actual =
+                processor.split(buffer, String.join("/", sqls) + "/").stream().map(OffsetString::getStr).collect(
+                        Collectors.toList());
         Assert.assertEquals(sqls, actual);
     }
 
@@ -158,8 +158,9 @@ public class SqlCommentProcessorTest {
         SqlCommentProcessor processor = new SqlCommentProcessor(DialectType.OB_ORACLE, true, true);
         processor.setDelimiter("/");
         StringBuffer buffer = new StringBuffer();
-        List<String> actual = processor.split(buffer, String.join("/", sqls) + "/").stream().map(OffsetString::getStr).collect(
-            Collectors.toList());
+        List<String> actual =
+                processor.split(buffer, String.join("/", sqls) + "/").stream().map(OffsetString::getStr).collect(
+                        Collectors.toList());
         Assert.assertEquals(sqls, actual);
     }
 
@@ -182,7 +183,7 @@ public class SqlCommentProcessorTest {
     private List<String> getSqlWithoutComment(SqlCommentProcessor processor, String sqlText) {
         StringBuffer builder = new StringBuffer();
         List<String> sqls = processor.split(builder, sqlText).stream().map(OffsetString::getStr).collect(
-            Collectors.toList());
+                Collectors.toList());
         Assert.assertEquals(0, builder.toString().trim().length());
         return sqls;
     }

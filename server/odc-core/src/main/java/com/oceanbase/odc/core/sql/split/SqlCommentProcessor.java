@@ -29,11 +29,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
-import org.springframework.util.StopWatch;
-
-import com.google.common.collect.Lists;
 import com.oceanbase.odc.common.lang.Holder;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 
@@ -184,7 +180,7 @@ public class SqlCommentProcessor {
             while (matcher.find()) {
                 int end = matcher.start();
                 for (int i = start; i < end; i++) {
-                    OrderChar orderChar = new OrderChar(sqlScript.charAt(i),order);
+                    OrderChar orderChar = new OrderChar(sqlScript.charAt(i), order);
                     currentList.add(orderChar);
                     order++;
                 }
@@ -274,7 +270,7 @@ public class SqlCommentProcessor {
                     break;
                 }
                 if (inString != '\0' || inChar == 'N') {
-                    lines[out++] = lines[pos-1];
+                    lines[out++] = lines[pos - 1];
                     if (inChar == '`' && inString == inChar) {
                         pos--;
                     } else {
@@ -283,7 +279,7 @@ public class SqlCommentProcessor {
                     continue;
                 }
                 // 非mysql model或没有检索到正确的命令，直接将转义符号及转义字符放入缓冲
-                lines[out++] = lines[pos-1];
+                lines[out++] = lines[pos - 1];
                 lines[out++] = lines[pos];
             } else if (!mlComment && inString == '\0' && ssComment != SSC.HINT
                     && isPrefix(lines, pos, delimiter)) {
@@ -678,9 +674,9 @@ public class SqlCommentProcessor {
      */
     private boolean isPrefix(OrderChar[] line, int pos, String delim) {
         boolean res = IntStream.range(pos, pos + delim.length())
-            .mapToObj(i -> line[i].getCh())
-            .collect(StringBuilder::new, StringBuilder::append, StringBuilder::append)
-            .toString().startsWith(delim);
+                .mapToObj(i -> line[i].getCh())
+                .collect(StringBuilder::new, StringBuilder::append, StringBuilder::append)
+                .toString().startsWith(delim);
 
         if (!res || !"/".equals(delim) || line.length <= 1) {
             return res;
@@ -801,12 +797,12 @@ public class SqlCommentProcessor {
                 while (holder.isEmpty() && (line = reader.readLine()) != null) {
                     if (Objects.nonNull(dialectType) && dialectType.isMysql()) {
                         processor.addLineMysql(holder, buffer, new Holder<>(0), line.chars()
-                            .mapToObj(c -> new OrderChar((char) c, 0))
-                            .collect(Collectors.toList()));
+                                .mapToObj(c -> new OrderChar((char) c, 0))
+                                .collect(Collectors.toList()));
                     } else if (Objects.nonNull(dialectType) && dialectType.isOracle()) {
                         processor.addLineOracle(holder, buffer, new Holder<>(0), line.chars()
-                            .mapToObj(c -> new OrderChar((char) c, 0))
-                            .collect(Collectors.toList()));
+                                .mapToObj(c -> new OrderChar((char) c, 0))
+                                .collect(Collectors.toList()));
                     }
                 }
                 if (!holder.isEmpty()) {
