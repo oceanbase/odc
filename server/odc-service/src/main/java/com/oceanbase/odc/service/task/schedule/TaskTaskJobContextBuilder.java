@@ -17,54 +17,31 @@
 package com.oceanbase.odc.service.task.schedule;
 
 import java.util.Collections;
-import java.util.Map;
 
-import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.metadb.task.TaskEntity;
-import com.oceanbase.odc.service.common.model.HostProperties;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.caller.DefaultJobContext;
+import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
-import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 
 /**
  * @author yaobin
  * @date 2023-11-30
  * @since 4.2.4
  */
-public class TaskTaskJobDefinitionBuilder implements JobDefinitionBuilder {
+public class TaskTaskJobContextBuilder extends DefaultJobContextBuilder {
 
     @Override
-    public JobDefinition build(JobIdentity identity) {
-        return build(identity, null);
-    }
-
-    @Override
-    public JobDefinition build(JobIdentity identity, Map<String, Object> taskData) {
-        JobConfiguration configuration = JobConfigurationHolder.getJobConfiguration();
-        DefaultJobDefinition jd = new DefaultJobDefinition();
+    protected JobContext doBuild(JobConfiguration configuration, DefaultJobContext jobContext) {
         TaskService taskService = configuration.getTaskService();
-        TaskEntity taskEntity = taskService.detail(identity.getId());
-
-        DefaultJobContext jobContext = new DefaultJobContext();
-        jobContext.setJobIdentity(identity);
-        jobContext.setTaskData(taskData);
+        TaskEntity taskEntity = taskService.detail(jobContext.getJobIdentity().getId());
         if (taskEntity.getConnectionId() != null) {
             ConnectionConfig config = configuration.getConnectionService()
                     .getForConnectionSkipPermissionCheck(taskEntity.getConnectionId());
             config.setDefaultSchema(taskEntity.getDatabaseName());
             jobContext.setConnectionConfigs(Collections.singletonList(config));
         }
-        HostProperties configProp = configuration.getHostProperties();
-        HostProperties actualProp = new HostProperties();
-
-        String host = configProp.getOdcHost() == null ? SystemUtils.getLocalIpAddress() : configProp.getOdcHost();
-        actualProp.setOdcHost(host);
-        actualProp.setPort(configProp.getPort());
-        jobContext.setHostProperties(Collections.singletonList(actualProp));
-
-        jd.setJobContext(jobContext);
-        return jd;
+        return jobContext;
     }
 }

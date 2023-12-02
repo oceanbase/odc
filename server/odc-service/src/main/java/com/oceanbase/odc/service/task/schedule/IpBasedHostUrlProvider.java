@@ -16,31 +16,26 @@
 
 package com.oceanbase.odc.service.task.schedule;
 
-import com.oceanbase.odc.service.quartz.model.MisfireStrategy;
-import com.oceanbase.odc.service.schedule.model.TriggerConfig;
-import com.oceanbase.odc.service.task.caller.JobContext;
+import com.oceanbase.odc.common.util.SystemUtils;
+import com.oceanbase.odc.service.common.model.HostProperties;
 
 /**
- * Define a job and describe all job information for schedule
- *
  * @author yaobin
- * @date 2023-11-23
+ * @date 2023-12-01
  * @since 4.2.4
  */
-public interface JobDefinition {
+public class IpBasedHostUrlProvider implements HostUrlProvider {
 
-    /**
-     * @return job context for task executor
-     */
-    JobContext getJobContext();
+    private final HostProperties configProperties;
 
-    /**
-     * @return job misfire strategy
-     */
-    MisfireStrategy getMisfireStrategy();
+    public IpBasedHostUrlProvider(HostProperties configProperties) {
+        this.configProperties = configProperties;
+    }
 
-    /**
-     * @return job trigger config
-     */
-    TriggerConfig getTriggerConfig();
+    @Override
+    public String hostUrl() {
+        String host =
+                configProperties.getOdcHost() == null ? SystemUtils.getLocalIpAddress() : configProperties.getOdcHost();
+        return "http://" + host + ":" + configProperties.getPort();
+    }
 }

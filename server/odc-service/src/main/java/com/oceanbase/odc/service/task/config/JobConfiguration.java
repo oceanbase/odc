@@ -18,11 +18,12 @@ package com.oceanbase.odc.service.task.config;
 
 import org.quartz.Scheduler;
 
-import com.oceanbase.odc.service.common.model.HostProperties;
 import com.oceanbase.odc.service.connection.ConnectionService;
+import com.oceanbase.odc.service.schedule.ScheduleTaskService;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.caller.K8sJobClient;
 import com.oceanbase.odc.service.task.dispatch.JobDispatcher;
+import com.oceanbase.odc.service.task.schedule.HostUrlProvider;
 
 /**
  * @author yaobin
@@ -35,6 +36,8 @@ public interface JobConfiguration {
 
     TaskService getTaskService();
 
+    ScheduleTaskService getScheduleTaskService();
+
     ConnectionService getConnectionService();
 
     Scheduler getScheduler();
@@ -43,5 +46,5 @@ public interface JobConfiguration {
 
     K8sJobClient getK8sJobClient();
 
-    HostProperties getHostProperties();
+    HostUrlProvider getHostUrlProvider();
 }

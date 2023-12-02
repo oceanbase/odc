@@ -16,16 +16,17 @@
 
 package com.oceanbase.odc.service.task.schedule;
 
-import java.util.Map;
-
 /**
  * @author yaobin
  * @date 2023-11-30
  * @since 4.2.4
  */
-public interface JobDefinitionBuilder {
+public interface HostUrlProvider {
 
-    JobDefinition build(JobIdentity identity);
-
-    JobDefinition build(JobIdentity identity, Map<String, Object> taskData);
+    /**
+     * provide host url for task executor report result
+     *
+     * @return host url, eg: localhost:8989
+     */
+    String hostUrl();
 }

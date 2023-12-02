@@ -19,7 +19,6 @@ package com.oceanbase.odc.service.task.caller;
 import java.util.List;
 import java.util.Map;
 
-import com.oceanbase.odc.service.common.model.HostProperties;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 
@@ -48,7 +47,7 @@ public interface JobContext {
     /**
      * get odc server host properties
      */
-    List<HostProperties> getHostProperties();
+    List<String> getHostUrls();
 
     /**
      * task data

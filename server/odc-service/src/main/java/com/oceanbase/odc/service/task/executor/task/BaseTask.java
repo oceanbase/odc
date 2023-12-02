@@ -52,7 +52,7 @@ public abstract class BaseTask implements Task {
     public BaseTask(JobContext context) {
         this.context = context;
         this.status = TaskStatus.PREPARING;
-        this.reporter = new TaskReporter(context.getHostProperties());
+        this.reporter = new TaskReporter(context.getHostUrls());
     }
 
     @Override
