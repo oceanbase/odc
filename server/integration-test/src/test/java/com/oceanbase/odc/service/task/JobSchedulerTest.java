@@ -62,8 +62,7 @@ public class JobSchedulerTest {
         JobIdentity jobIdentity = JobIdentity.of(1L, ScheduleSourceType.TASK_TASK, TaskType.ASYNC.name());
         DefaultJobContext ctx = new DefaultJobContext();
         ctx.setJobIdentity(jobIdentity);
-        DefaultJobDefinition jd = new DefaultJobDefinition();
-        jd.setJobContext(ctx);
+        DefaultJobDefinition jd = DefaultJobDefinition.builder().jobContext(ctx).build();
 
         JobDispatcher jobDispatcher = Mockito.mock(JobDispatcher.class);
         Mockito.doNothing().when(jobDispatcher).start(ctx);
