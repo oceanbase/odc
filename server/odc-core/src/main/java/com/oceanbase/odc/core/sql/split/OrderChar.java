@@ -31,8 +31,4 @@ import lombok.NoArgsConstructor;
 public class OrderChar {
     private char ch;
     private int order;
-
-    public boolean isLineSeparator() {
-        return ch == '\n';
-    }
 }
