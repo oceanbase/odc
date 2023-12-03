@@ -69,6 +69,9 @@ public class SqlCommentProcessor {
     @Getter
     private boolean preserveMultiComments = false;
 
+    private static Pattern pattern = Pattern.compile("\n");
+
+
     public SqlCommentProcessor(boolean preserveFormat, String delimiter) {
         this.delimiter = delimiter;
         this.preserveFormat = preserveFormat;
@@ -115,29 +118,7 @@ public class SqlCommentProcessor {
         SqlCommentProcessor sqlCommentProcessor = new SqlCommentProcessor(preserveFormat, delimiter);
         StringBuffer buffer = new StringBuffer();
         List<OffsetString> offsetStrings = new ArrayList<>();
-        List<OrderChar> orderChars = new ArrayList<>();
-        for (int i = 0; i < originalSql.length(); i++) {
-            orderChars.add(new OrderChar(originalSql.charAt(i), i));
-        }
-        // split by \n
-        List<List<OrderChar>> lines = new ArrayList<>();
-        List<OrderChar> line = new ArrayList<>();
-
-        // split by \n
-        for (OrderChar orderChar : orderChars) {
-            if (orderChar.getCh() == '\n') {
-                if (line.isEmpty()) {
-
-                }
-                lines.add(line);
-                line = new ArrayList<>();
-            } else {
-                line.add(orderChar);
-            }
-        }
-        if (!line.isEmpty()) {
-            lines.add(line);
-        }
+        List<List<OrderChar>> lines = splitLine(originalSql);
         Holder<Integer> bufferOrder = new Holder<>(0);
         for (List<OrderChar> item : lines) {
             if (Objects.nonNull(dbMode) && dbMode.isMysql()) {
@@ -169,35 +150,7 @@ public class SqlCommentProcessor {
         try {
             List<OffsetString> offsetStrings = new ArrayList<>();
 
-            List<List<OrderChar>> lines = new ArrayList<>();
-            List<OrderChar> currentList = new ArrayList<>();
-
-            Pattern pattern = Pattern.compile("\n");
-            Matcher matcher = pattern.matcher(sqlScript);
-
-            int order = 0;
-            int start = 0;
-            while (matcher.find()) {
-                int end = matcher.start();
-                for (int i = start; i < end; i++) {
-                    OrderChar orderChar = new OrderChar(sqlScript.charAt(i), order);
-                    currentList.add(orderChar);
-                    order++;
-                }
-                lines.add(currentList);
-                currentList = new ArrayList<>();
-                start = matcher.end();
-            }
-            if (start < sqlScript.length()) {
-                for (int i = start; i < sqlScript.length(); i++) {
-                    OrderChar orderChar = new OrderChar(sqlScript.charAt(i), order);
-                    currentList.add(orderChar);
-                    order++;
-                }
-            }
-            if (!currentList.isEmpty()) {
-                lines.add(currentList);
-            }
+            List<List<OrderChar>> lines = splitLine(sqlScript);
             Holder<Integer> bufferOrder = new Holder<>(0);
             for (List<OrderChar> item : lines) {
                 if (Objects.nonNull(this.dialectType) && this.dialectType.isMysql()) {
@@ -229,11 +182,7 @@ public class SqlCommentProcessor {
             return;
         }
         lines[lineLength] = new OrderChar((char) 0, lineLength);
-        long time1 = System.nanoTime();
         for (pos = out = 0; pos < lineLength; pos++) {
-            long time2 = System.nanoTime();
-            System.out.println("pos:" + pos + " time:" + (time2 - time1) + "ns");
-            time1 = time2;
             OrderChar inOrderChar = lines[pos];
             char inChar = inOrderChar.getCh();
             // 去掉每一行SQL语句最开始的空格
@@ -376,7 +325,7 @@ public class SqlCommentProcessor {
                     out = 0;
                     if (sqls.size() != 0 && !inNormalSql) {
                         int lastIndex = sqls.size() - 1;
-                        String lastSql = sqls.get(lastIndex) + buffer.toString();
+                        String lastSql = sqls.get(lastIndex).getStr() + buffer;
                         sqls.set(lastIndex, new OffsetString(sqls.get(lastIndex).getOffset(), lastSql));
                         buffer.setLength(0);
                     }
@@ -577,7 +526,7 @@ public class SqlCommentProcessor {
                     out = 0;
                     if (sqls.size() != 0 && !inNormalSql) {
                         int lastIndex = sqls.size() - 1;
-                        String lastSql = sqls.get(lastIndex) + buffer.toString();
+                        String lastSql = sqls.get(lastIndex).getStr() + buffer;
                         sqls.set(lastIndex, new OffsetString(sqls.get(lastIndex).getOffset(), lastSql));
                         buffer.setLength(0);
                     }
@@ -709,9 +658,36 @@ public class SqlCommentProcessor {
     }
 
     private void append(StringBuffer buffer, OrderChar[] chars, int begin, int count) {
-        for (int i = 0; i < count; i++) {
-            buffer.append(chars[begin + i].getCh());
+        for (int i = begin; i < count; i++) {
+            buffer.append(chars[i].getCh());
         }
+    }
+
+    private static List<List<OrderChar>> splitLine(String sqlScript) {
+        List<List<OrderChar>> lines = new ArrayList<>();
+        List<OrderChar> currentList = new ArrayList<>();
+        Matcher matcher = pattern.matcher(sqlScript);
+        int start = 0;
+        while (matcher.find()) {
+            int end = matcher.start();
+            for (int i = start; i < end; i++) {
+                OrderChar orderChar = new OrderChar(sqlScript.charAt(i), i);
+                currentList.add(orderChar);
+            }
+            lines.add(currentList);
+            currentList = new ArrayList<>();
+            start = matcher.end();
+        }
+        if (start < sqlScript.length()) {
+            for (int i = start; i < sqlScript.length(); i++) {
+                OrderChar orderChar = new OrderChar(sqlScript.charAt(i), i);
+                currentList.add(orderChar);
+            }
+        }
+        if (!currentList.isEmpty()) {
+            lines.add(currentList);
+        }
+        return lines;
     }
 
     public String getDelimiter() {
