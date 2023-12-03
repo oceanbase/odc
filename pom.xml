@@ -9,7 +9,7 @@
     <packaging>pom</packaging>
     <name>OceanBase Developer Center</name>
     <url>https://github.com/oceanbase/odc</url>
-    <version>4.2.3-SNAPSHOT</version>
+    <version>4.2.4-SNAPSHOT</version>
     <modules>
         <module>server/3rd-party/Libinjection</module>
         <module>server/odc-test</module>
