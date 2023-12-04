@@ -15,6 +15,9 @@
  */
 package com.oceanbase.odc.service.onlineschemachange.pipeline;
 
+import java.util.List;
+
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -61,7 +64,9 @@ public class SwapTableNameValve extends BaseValve {
         DBUserMonitorExecutor userMonitorExecutor = new DBUserMonitorExecutor(config, parameters.getLockUsers());
         ConnectionSession connectionSession = new DefaultConnectSessionFactory(config).generateSession();
         try {
-            userMonitorExecutor.start(parameters.getParameterDataMap());
+            if (enableUserMonitor(parameters.getLockUsers())) {
+                userMonitorExecutor.start(parameters.getParameterDataMap());
+            }
             ConnectionSessionUtil.setCurrentSchema(connectionSession, taskParameters.getDatabaseName());
             DefaultRenameTableInvoker defaultRenameTableInvoker =
                     new DefaultRenameTableInvoker(connectionSession, dbSessionManageFacade);
@@ -69,11 +74,17 @@ public class SwapTableNameValve extends BaseValve {
             context.setSwapSucceedCallBack(true);
         } finally {
             try {
-                userMonitorExecutor.stop();
+                if (enableUserMonitor(parameters.getLockUsers())) {
+                    userMonitorExecutor.stop();
+                }
             } finally {
                 connectionSession.expire();
             }
         }
+    }
+
+    private boolean enableUserMonitor(List<String> lockUsers) {
+        return CollectionUtils.isNotEmpty(lockUsers);
     }
 }
 
