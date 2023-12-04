@@ -22,7 +22,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -68,10 +67,10 @@ public class MaskingAlgorithmController {
     }
 
     @ApiOperation(value = "testMaskingAlgorithm", notes = "Test the effect of masking algorithm")
-    @RequestMapping(value = "/test", method = RequestMethod.POST)
-    public SuccessResponse<MaskingAlgorithm> testMaskingAlgorithm(@RequestBody MaskingAlgorithm algorithm) {
-        algorithm.validate();
-        return Responses.success(maskingAlgorithmService.test(algorithm));
+    @RequestMapping(value = "/{id:[\\d]+}/test", method = RequestMethod.POST)
+    public SuccessResponse<MaskingAlgorithm> testMaskingAlgorithm(@PathVariable Long id,
+            @RequestParam(name = "sample") String sample) {
+        return Responses.success(maskingAlgorithmService.test(id, sample));
     }
 
 }
