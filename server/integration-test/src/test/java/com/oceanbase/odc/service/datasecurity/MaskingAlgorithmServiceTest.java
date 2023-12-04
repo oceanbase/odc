@@ -169,21 +169,24 @@ public class MaskingAlgorithmServiceTest extends ServiceTestEnv {
     public void test_test_MASK() {
         MaskingAlgorithm algorithm = createAlgorithm("test_test", MaskingAlgorithmType.MASK, null);
         algorithm.setSegmentsType(MaskingSegmentsType.PRE_1_POST_1);
-        MaskingAlgorithm masked = service.test(algorithm);
+        MaskingAlgorithm created = service.create(algorithm);
+        MaskingAlgorithm masked = service.test(created.getId(), "example@email.com");
         Assert.assertEquals("e***************m", masked.getMaskedContent());
     }
 
     @Test
     public void test_test_SUBSTUTION() {
         MaskingAlgorithm algorithm = createAlgorithm("test_test", MaskingAlgorithmType.SUBSTITUTION, null);
-        MaskingAlgorithm masked = service.test(algorithm);
+        MaskingAlgorithm created = service.create(algorithm);
+        MaskingAlgorithm masked = service.test(created.getId(), "example@email.com");
         Assert.assertEquals("xxx", masked.getMaskedContent());
     }
 
     @Test
     public void test_test_PSEUDO() {
         MaskingAlgorithm algorithm = createAlgorithm("test_test", MaskingAlgorithmType.PSEUDO, null);
-        MaskingAlgorithm masked = service.test(algorithm);
+        MaskingAlgorithm created = service.create(algorithm);
+        MaskingAlgorithm masked = service.test(created.getId(), "example@email.com");
         Pattern pattern = Pattern.compile("^[a-z]{7}@[a-z]{5}\\.[a-z]{3}$");
         Assert.assertTrue(pattern.matcher(masked.getMaskedContent()).matches());
     }
@@ -191,20 +194,23 @@ public class MaskingAlgorithmServiceTest extends ServiceTestEnv {
     @Test
     public void test_test_HASH() {
         MaskingAlgorithm algorithm = createAlgorithm("test_test", MaskingAlgorithmType.HASH, null);
-        MaskingAlgorithm masked = service.test(algorithm);
+        MaskingAlgorithm created = service.create(algorithm);
+        MaskingAlgorithm masked = service.test(created.getId(), "example@email.com");
         Assert.assertEquals(32, masked.getMaskedContent().length());
     }
 
     public void test_test_ROUNDING() {
         MaskingAlgorithm algorithm = createAlgorithm("test_test", MaskingAlgorithmType.ROUNDING, null);
         algorithm.setSampleContent("1.23");
-        MaskingAlgorithm masked = service.test(algorithm);
+        MaskingAlgorithm created = service.create(algorithm);
+        MaskingAlgorithm masked = service.test(created.getId(), "example@email.com");
         Assert.assertEquals("1.2", masked.getMaskedContent());
     }
 
     public void test_test_NULL() {
         MaskingAlgorithm algorithm = createAlgorithm("test_test", MaskingAlgorithmType.NULL, null);
-        MaskingAlgorithm masked = service.test(algorithm);
+        MaskingAlgorithm created = service.create(algorithm);
+        MaskingAlgorithm masked = service.test(created.getId(), "example@email.com");
         Assert.assertNull(masked.getMaskedContent());
     }
 
