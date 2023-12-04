@@ -64,7 +64,7 @@ public class SessionCreatedInitializer implements ConnectionInitializer {
         }
         List<String> sqls = SqlCommentProcessor.removeSqlComments(
                 initScript, ";", connectionConfig.getDialectType(), false).stream().map(OffsetString::getStr).collect(
-            Collectors.toList());
+                        Collectors.toList());
         if (CollectionUtils.isEmpty(sqls)) {
             return;
         }

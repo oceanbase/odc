@@ -32,7 +32,6 @@ import java.util.stream.IntStream;
 
 import com.oceanbase.odc.common.lang.Holder;
 import com.oceanbase.odc.core.shared.constant.DialectType;
-import com.sun.scenario.effect.Offset;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -148,8 +147,9 @@ public class SqlCommentProcessor {
                 offsetStrings.add(new OffsetString(0, bufferStr));
             } else {
                 offsetStrings.add(new OffsetString(
-                    offsetStrings.get(offsetStrings.size() - 1).getOffset() + offsetStrings.get(offsetStrings.size() - 1).getStr().length(),
-                    bufferStr));
+                        offsetStrings.get(offsetStrings.size() - 1).getOffset()
+                                + offsetStrings.get(offsetStrings.size() - 1).getStr().length(),
+                        bufferStr));
             }
         }
         return offsetStrings;
@@ -732,14 +732,16 @@ public class SqlCommentProcessor {
         }
     }
 
-    public static class SqlStatementIterator implements Iterator<String>, AutoCloseable {
+    public static class SqlStatementIterator implements Iterator<OffsetString>, AutoCloseable {
         private final BufferedReader reader;
         private final StringBuffer buffer = new StringBuffer();
         private final LinkedList<OffsetString> holder = new LinkedList<>();
         private final SqlCommentProcessor processor;
         private final DialectType dialectType;
 
-        private String current;
+        private OffsetString current;
+        private Holder<Integer> bufferOrder = new Holder<>(0);
+        private int lastLineOrder = 0;
 
         public SqlStatementIterator(InputStream input, DialectType dialectType,
                 boolean preserveFormat,
@@ -761,8 +763,8 @@ public class SqlCommentProcessor {
         }
 
         @Override
-        public String next() {
-            String next = current;
+        public OffsetString next() {
+            OffsetString next = current;
             current = null;
             if (next == null) {
                 next = parseNext();
@@ -773,32 +775,34 @@ public class SqlCommentProcessor {
             return next;
         }
 
-        private String parseNext() {
+        private OffsetString parseNext() {
             try {
                 if (!holder.isEmpty()) {
-                    return holder.poll().getStr();
+                    return holder.poll();
                 }
                 String line;
                 while (holder.isEmpty() && (line = reader.readLine()) != null) {
                     if (Objects.nonNull(dialectType) && dialectType.isMysql()) {
-                        processor.addLineMysql(holder, buffer, new Holder<>(0), line.chars()
-                                .mapToObj(c -> new OrderChar((char) c, 0))
+                        processor.addLineMysql(holder, buffer, bufferOrder, line.chars()
+                                .mapToObj(c -> new OrderChar((char) c, lastLineOrder++))
                                 .collect(Collectors.toList()));
                     } else if (Objects.nonNull(dialectType) && dialectType.isOracle()) {
-                        processor.addLineOracle(holder, buffer, new Holder<>(0), line.chars()
-                                .mapToObj(c -> new OrderChar((char) c, 0))
+                        processor.addLineOracle(holder, buffer, bufferOrder, line.chars()
+                                .mapToObj(c -> new OrderChar((char) c, lastLineOrder++))
                                 .collect(Collectors.toList()));
                     }
+                    // consider \n in the end of each line
+                    lastLineOrder++;
                 }
                 if (!holder.isEmpty()) {
-                    return holder.poll().getStr();
+                    return holder.poll();
                 }
                 if (buffer.toString().trim().length() == 0) {
                     return null;
                 }
                 String sql = buffer.toString();
                 buffer.setLength(0);
-                return sql;
+                return new OffsetString(0, sql);
             } catch (Exception e) {
                 throw new RuntimeException("Failed to parse input. reason: " + e.getMessage(), e);
             }

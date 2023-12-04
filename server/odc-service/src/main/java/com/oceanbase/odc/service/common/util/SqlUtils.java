@@ -125,9 +125,9 @@ public class SqlUtils {
             StringBuffer buffer = new StringBuffer();
             List<OffsetString> sqls = processor.split(buffer, sql);
             String bufferStr = buffer.toString();
-            // if buffer is not empty, there will be some errors in syntax
-            log.info("sql processor's buffer is not empty, there may be some errors. buffer={}", bufferStr);
             if (bufferStr.trim().length() != 0) {
+                // if buffer is not empty, there will be some errors in syntax
+                log.info("sql processor's buffer is not empty, there may be some errors. buffer={}", bufferStr);
                 if (sqls.size() == 0) {
                     sqls.add(new OffsetString(0, bufferStr));
                 } else {

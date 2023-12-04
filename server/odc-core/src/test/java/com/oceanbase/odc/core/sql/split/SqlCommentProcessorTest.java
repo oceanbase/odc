@@ -50,16 +50,15 @@ public class SqlCommentProcessorTest {
 
     @Test
     public void testIterator_MysqlMode() throws Exception {
-        List<String> actual;
+        List<OffsetString> actual;
         try (InputStream in =
                 this.getClass().getClassLoader().getResourceAsStream("sql/split/comment-processor-mysql-test.sql");
                 SqlStatementIterator iterator = SqlCommentProcessor.iterator(in, DialectType.OB_MYSQL, false, false,
                         false, StandardCharsets.UTF_8)) {
             actual = IteratorUtils.toList(iterator);
         }
-        List<String> expected =
-                getSqls("sql/split/comment-processor-mysql-verify.yml").stream().map(OffsetString::getStr).collect(
-                        Collectors.toList());
+        List<OffsetString> expected =
+                getSqls("sql/split/comment-processor-mysql-verify.yml");
         Assert.assertEquals(expected.size(), actual.size());
         for (int i = 0; i < actual.size(); i++) {
             Assert.assertEquals(expected.get(i), actual.get(i));
@@ -81,16 +80,15 @@ public class SqlCommentProcessorTest {
 
     @Test
     public void testIterator_OracleMode() throws Exception {
-        List<String> actual;
+        List<OffsetString> actual;
         try (InputStream in =
                 this.getClass().getClassLoader().getResourceAsStream("sql/split/comment-processor-oracle-test.sql");
                 SqlStatementIterator iterator = SqlCommentProcessor.iterator(in, DialectType.OB_ORACLE, false, false,
                         false, StandardCharsets.UTF_8)) {
             actual = IteratorUtils.toList(iterator);
         }
-        List<String> expected =
-                getSqls("sql/split/comment-processor-oracle-verify.yml").stream().map(OffsetString::getStr).collect(
-                        Collectors.toList());
+        List<OffsetString> expected =
+                getSqls("sql/split/comment-processor-oracle-verify.yml");
         Assert.assertEquals(expected.size(), actual.size());
         for (int i = 0; i < actual.size(); i++) {
             Assert.assertEquals(expected.get(i), actual.get(i));
