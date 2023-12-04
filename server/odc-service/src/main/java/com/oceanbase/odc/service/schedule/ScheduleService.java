@@ -26,11 +26,14 @@ import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 
 import org.apache.commons.compress.utils.Lists;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.LineIterator;
 import org.quartz.JobDataMap;
 import org.quartz.JobKey;
 import org.quartz.SchedulerException;
 import org.quartz.Trigger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cglib.beans.BeanMap;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -41,6 +44,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
+import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
@@ -90,6 +94,7 @@ import com.oceanbase.odc.service.schedule.model.ScheduleTaskResp;
 import com.oceanbase.odc.service.schedule.model.TriggerConfig;
 import com.oceanbase.odc.service.schedule.model.TriggerStrategy;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
+import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -141,6 +146,12 @@ public class ScheduleService {
     private TaskDispatchChecker dispatchChecker;
     @Autowired
     private RequestDispatcher requestDispatcher;
+
+    @Value("${odc.log.directory:./log}")
+    private String baseTaskLogDir;
+
+    private static final String LOG_PATH_PATTERN = "schedule/%d/%d/log.%s";
+
     private final ScheduleTaskMapper scheduleTaskMapper = ScheduleTaskMapper.INSTANCE;
 
     public ScheduleEntity create(ScheduleEntity scheduleConfig) {
@@ -420,6 +431,39 @@ public class ScheduleService {
                     objectId));
         }
         return downloadUrls;
+    }
+
+    public String getLog(Long scheduleId, Long taskId, OdcTaskLogLevel logLevel) {
+        if (scheduleId != null) {
+            return String.format("%s-%s-%s", scheduleId, taskId, logLevel);
+        }
+        String filePath = String.format(LOG_PATH_PATTERN, scheduleId, taskId, logLevel.name());
+        if (!new File(filePath).exists()) {
+            return ErrorCodes.TaskLogNotFound.getLocalizedMessage(new Object[] {"Id", taskId});
+        }
+        LineIterator it = null;
+        StringBuilder sb = new StringBuilder();
+        int lineCount = 1;
+        int byteCount = 0;
+        try {
+            it = FileUtils.lineIterator(new File(filePath));
+            while (it.hasNext()) {
+                if (lineCount > 10000 || byteCount > 1024 * 1024) {
+                    sb.append("Logs exceed max limitation (10000 rows or 1 MB), please download logs directly");
+                    break;
+                }
+                String line = it.nextLine();
+                sb.append(line).append("\n");
+                lineCount++;
+                byteCount = byteCount + line.getBytes().length;
+            }
+            return sb.toString();
+        } catch (Exception ex) {
+            log.warn("read task log file failed, reason={}", ex.getMessage());
+            throw new UnexpectedException("read task log file failed, reason: " + ex.getMessage(), ex);
+        } finally {
+            LineIterator.closeQuietly(it);
+        }
     }
 
     public boolean hasExecutingAsyncTask(ScheduleEntity schedule) {
