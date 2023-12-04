@@ -83,6 +83,7 @@
         <org.mapstruct.version>1.4.2.Final</org.mapstruct.version>
         <lombok.version>1.18.10</lombok.version>
         <druid.version>1.2.18</druid.version>
+        <hikari.version>4.0.3</hikari.version>
         <fastjson.version>1.2.83_noneautotype</fastjson.version>
         <mockito.version>3.11.2</mockito.version>
         <moco.version>1.4.0</moco.version>
@@ -635,6 +636,13 @@
                 <groupId>com.alibaba</groupId>
                 <artifactId>druid</artifactId>
                 <version>${druid.version}</version>
+            </dependency>
+
+            <!-- Hikari -->
+            <dependency>
+                <groupId>com.zaxxer</groupId>
+                <artifactId>HikariCP</artifactId>
+                <version>${hikari.version}</version>
             </dependency>
 
             <!-- fastjson低版本有漏洞-->
