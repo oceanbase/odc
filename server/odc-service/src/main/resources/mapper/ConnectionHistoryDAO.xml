@@ -54,8 +54,7 @@
         c.`creator_id` as userId, COALESCE(MAX(a.`last_access_time`), c.`update_time`)as lastAccessTime
         FROM connect_connection c LEFT JOIN connect_connection_access a
         ON c.id=a.connection_id
-        WHERE c.visible_scope='PRIVATE'
-        AND c.is_temp=1
+        WHERE c.is_temp=1
         GROUP BY c.`id`
         HAVING lastAccessTime &lt; TIMESTAMPADD(SECOND, -#{intervalSeconds}, CURRENT_TIMESTAMP);
     </select>
