@@ -32,8 +32,12 @@ import java.util.stream.IntStream;
 
 import com.oceanbase.odc.common.lang.Holder;
 import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.sun.scenario.effect.Offset;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 /**
  * 该类用于SQL预处理，去除注释以及进行SQL断句
@@ -113,7 +117,7 @@ public class SqlCommentProcessor {
                 charset);
     }
 
-    public static List<String> removeSqlComments(String originalSql,
+    public static List<OffsetString> removeSqlComments(String originalSql,
             String delimiter, DialectType dbMode, boolean preserveFormat) {
         SqlCommentProcessor sqlCommentProcessor = new SqlCommentProcessor(preserveFormat, delimiter);
         StringBuffer buffer = new StringBuffer();
@@ -128,7 +132,6 @@ public class SqlCommentProcessor {
             }
         }
 
-        List<String> returnVal = offsetStrings.stream().map(OffsetString::getStr).collect(Collectors.toList());
         String bufferStr = buffer.toString();
         if (bufferStr.trim().length() != 0) {
             while (true) {
@@ -141,9 +144,15 @@ public class SqlCommentProcessor {
                     break;
                 }
             }
-            returnVal.add(bufferStr);
+            if (offsetStrings.size() == 0) {
+                offsetStrings.add(new OffsetString(0, bufferStr));
+            } else {
+                offsetStrings.add(new OffsetString(
+                    offsetStrings.get(offsetStrings.size() - 1).getOffset() + offsetStrings.get(offsetStrings.size() - 1).getStr().length(),
+                    bufferStr));
+            }
         }
-        return returnVal;
+        return offsetStrings;
     }
 
     public synchronized List<OffsetString> split(StringBuffer buffer, String sqlScript) {
@@ -799,6 +808,14 @@ public class SqlCommentProcessor {
         public void close() throws Exception {
             reader.close();
         }
+    }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    static class OrderChar {
+        private char ch;
+        private int order;
     }
 
 }

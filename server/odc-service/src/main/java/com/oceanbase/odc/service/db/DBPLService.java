@@ -47,6 +47,7 @@ import com.oceanbase.odc.core.shared.constant.OdcConstants;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.core.sql.execute.SyncJdbcExecutor;
 import com.oceanbase.odc.core.sql.execute.task.DefaultSqlExecuteTaskManager;
+import com.oceanbase.odc.core.sql.split.OffsetString;
 import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
 import com.oceanbase.odc.core.sql.util.OBUtils;
 import com.oceanbase.odc.service.common.model.OdcSqlExecuteResult;
@@ -194,7 +195,7 @@ public class DBPLService {
     public DBPLObjectIdentity parsePLNameType(@NonNull ConnectionSession session, @NonNull String ddl) {
         DBPLObjectIdentity plObject = new DBPLObjectIdentity();
         List<String> sqls = SqlCommentProcessor.removeSqlComments(ddl + "$$", "$$",
-                session.getDialectType(), true);
+                session.getDialectType(), true).stream().map(OffsetString::getStr).collect(Collectors.toList());
         if (!sqls.isEmpty()) {
             ddl = sqls.get(0);
         }

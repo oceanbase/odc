@@ -34,6 +34,7 @@ import com.oceanbase.odc.core.sql.execute.model.SqlExecuteStatus;
 import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
 import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTree;
 import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTreeFactories;
+import com.oceanbase.odc.core.sql.split.OffsetString;
 import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
 import com.oceanbase.odc.service.session.model.SqlAsyncExecuteReq;
 import com.oceanbase.odc.service.session.model.SqlAsyncExecuteResp;
@@ -77,7 +78,9 @@ public class NlsFormatInterceptor extends BaseTimeConsumingInterceptor {
         if (response.getStatus() != SqlExecuteStatus.SUCCESS || dialect != DialectType.OB_ORACLE) {
             return;
         }
-        List<String> sqls = SqlCommentProcessor.removeSqlComments(response.getOriginSql(), ";", dialect, false);
+        List<String> sqls =
+                SqlCommentProcessor.removeSqlComments(response.getOriginSql(), ";", dialect, false).stream().map(
+                        OffsetString::getStr).collect(Collectors.toList());
         if (CollectionUtils.isEmpty(sqls) || sqls.size() != 1) {
             log.warn("Sql is empty or multi sql exists, sql={}", response.getOriginSql());
             return;
