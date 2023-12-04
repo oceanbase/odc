@@ -70,7 +70,7 @@ public class ConnectionConfigRecycleServiceTest extends ServiceTestEnv {
 
     @Test
     @Transactional
-    public void clearInactiveTempConnectionConfigs_Has2Match1_Return1() throws InterruptedException {
+    public void clearInactiveTempConnectionConfigs_Has2Match1_Return1() {
         ConnectionEntity connection1 = createConnection();
         ConnectionEntity connection2 = createConnection();
         createHistory(connection1.getId(), 1);
