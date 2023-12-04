@@ -126,7 +126,7 @@ public class MaskingAlgorithmService {
         entity.setBuiltin(false);
         entity.setCreatorId(userId);
         entity.setOrganizationId(organizationId);
-        entity.setMaskedContent(test(algorithm).getMaskedContent());
+        entity.setMaskedContent(internalTest(algorithm).getMaskedContent());
         algorithmRepository.save(entity);
         if (algorithm.getSegmentsType() == MaskingSegmentsType.CUSTOM) {
             List<MaskingSegment> segments = algorithm.getSegments();
@@ -174,17 +174,10 @@ public class MaskingAlgorithmService {
     }
 
     @SkipAuthorize("All users can access the masking algorithm")
-    public MaskingAlgorithm test(@NotNull @Valid MaskingAlgorithm algorithm) {
-        MaskConfig maskConfig = MaskingAlgorithmUtil.toSingleFieldMaskConfig(algorithm, "test_field");
-        DataMaskerFactory maskerFactory = new DataMaskerFactory();
-        AbstractDataMasker masker = maskerFactory.createDataMasker(MaskValueType.SINGLE_VALUE.name(), maskConfig);
-        ValueMeta valueMeta = new ValueMeta("string", "test_field");
-        if (algorithm.getType() == MaskingAlgorithmType.ROUNDING) {
-            valueMeta.setDataType("double");
-        }
-        String result = masker.mask(algorithm.getSampleContent(), valueMeta);
-        algorithm.setMaskedContent(result);
-        return algorithm;
+    public MaskingAlgorithm test(@NotNull Long id, @NotBlank String sample) {
+        MaskingAlgorithm algorithm = detail(id);
+        algorithm.setSampleContent(sample);
+        return internalTest(algorithm);
     }
 
     @SkipAuthorize("odc internal usages")
@@ -217,6 +210,19 @@ public class MaskingAlgorithmService {
     @SkipAuthorize("odc internal usages")
     public List<MaskingAlgorithm> getMaskingAlgorithms() {
         return organizationId2Algorithms.get(authenticationFacade.currentOrganizationId());
+    }
+
+    private MaskingAlgorithm internalTest(@NotNull MaskingAlgorithm algorithm) {
+        MaskConfig maskConfig = MaskingAlgorithmUtil.toSingleFieldMaskConfig(algorithm, "test_field");
+        DataMaskerFactory maskerFactory = new DataMaskerFactory();
+        AbstractDataMasker masker = maskerFactory.createDataMasker(MaskValueType.SINGLE_VALUE.name(), maskConfig);
+        ValueMeta valueMeta = new ValueMeta("string", "test_field");
+        if (algorithm.getType() == MaskingAlgorithmType.ROUNDING) {
+            valueMeta.setDataType("double");
+        }
+        String result = masker.mask(algorithm.getSampleContent(), valueMeta);
+        algorithm.setMaskedContent(result);
+        return algorithm;
     }
 
     private List<MaskingAlgorithm> loadMaskingAlgorithmByOrganizationId(@NonNull Long organizationId) {
