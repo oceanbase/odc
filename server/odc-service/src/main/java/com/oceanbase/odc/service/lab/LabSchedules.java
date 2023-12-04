@@ -67,7 +67,6 @@ public class LabSchedules {
         for (ConnectionHistoryEntity connectionHistoryEntity : connectionHistoryEntities) {
             try {
                 log.info("start revoke resource, connectionId={}", connectionHistoryEntity.getConnectionId());
-
                 resourceService.revokeResource(connectionHistoryEntity.getConnectionId());
                 log.info("revoke resource successfully, connectionId={}", connectionHistoryEntity.getConnectionId());
             } catch (Exception ex) {

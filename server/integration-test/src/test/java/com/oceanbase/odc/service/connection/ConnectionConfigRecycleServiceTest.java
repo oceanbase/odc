@@ -33,8 +33,7 @@ import com.oceanbase.odc.core.shared.constant.ConnectionVisibleScope;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.metadb.connection.ConnectionConfigRepository;
 import com.oceanbase.odc.metadb.connection.ConnectionEntity;
-import com.oceanbase.odc.metadb.connection.ConnectionHistoryDAO;
-import com.oceanbase.odc.metadb.connection.ConnectionHistoryEntity;
+import com.oceanbase.odc.metadb.connection.ConnectionHistoryRepository;
 import com.oceanbase.odc.service.connection.model.ConnectProperties;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.test.tool.TestRandom;
@@ -46,7 +45,7 @@ public class ConnectionConfigRecycleServiceTest extends ServiceTestEnv {
     @Autowired
     private ConnectionConfigRecycleService recycleService;
     @Autowired
-    private ConnectionHistoryDAO connectionHistoryDAO;
+    private ConnectionHistoryRepository connectionHistoryRepository;
     @Autowired
     private ConnectionConfigRepository connectionConfigRepository;
     @MockBean
@@ -56,7 +55,7 @@ public class ConnectionConfigRecycleServiceTest extends ServiceTestEnv {
 
     @Before
     public void setUp() throws Exception {
-        connectionHistoryDAO.deleteAll();
+        connectionHistoryRepository.deleteAll();
         connectionConfigRepository.deleteAll();
         when(connectProperties.getTempExpireAfterInactiveIntervalSeconds()).thenReturn(INTERVAL_SECONDS);
         when(authenticationFacade.currentUserId()).thenReturn(USER_ID);
@@ -71,7 +70,7 @@ public class ConnectionConfigRecycleServiceTest extends ServiceTestEnv {
 
     @Test
     @Transactional
-    public void clearInactiveTempConnectionConfigs_Has2Match1_Return1() {
+    public void clearInactiveTempConnectionConfigs_Has2Match1_Return1() throws InterruptedException {
         ConnectionEntity connection1 = createConnection();
         ConnectionEntity connection2 = createConnection();
         createHistory(connection1.getId(), 1);
@@ -81,11 +80,8 @@ public class ConnectionConfigRecycleServiceTest extends ServiceTestEnv {
     }
 
     private void createHistory(Long connectionId, int intervalSeconds) {
-        ConnectionHistoryEntity history = new ConnectionHistoryEntity();
-        history.setConnectionId(connectionId);
-        history.setUserId(USER_ID);
-        history.setLastAccessTime(Date.from(Instant.now().minusSeconds(intervalSeconds)));
-        connectionHistoryDAO.updateOrInsert(history);
+        connectionHistoryRepository.updateOrInsert(connectionId, USER_ID,
+                Date.from(Instant.now().minusSeconds(intervalSeconds)));
     }
 
     private ConnectionEntity createConnection() {

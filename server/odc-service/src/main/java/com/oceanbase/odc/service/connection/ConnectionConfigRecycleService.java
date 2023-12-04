@@ -16,14 +16,18 @@
 package com.oceanbase.odc.service.connection;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.oceanbase.odc.metadb.connection.ConnectionConfigRepository;
-import com.oceanbase.odc.metadb.connection.ConnectionHistoryDAO;
 import com.oceanbase.odc.metadb.connection.ConnectionHistoryEntity;
+import com.oceanbase.odc.metadb.connection.ConnectionHistoryRepository;
 import com.oceanbase.odc.service.connection.model.ConnectProperties;
+import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.iam.util.SecurityContextUtils;
 
 import lombok.extern.slf4j.Slf4j;
@@ -39,7 +43,7 @@ class ConnectionConfigRecycleService {
     private ConnectionConfigRepository connectionConfigRepository;
 
     @Autowired
-    private ConnectionHistoryDAO connectionHistoryDAO;
+    private ConnectionHistoryRepository connectionHistoryRepository;
 
     @Autowired
     private ConnectProperties connectProperties;
@@ -55,12 +59,24 @@ class ConnectionConfigRecycleService {
     int clearInactiveTempConnectionConfigs() {
         int tempExpireAfterInactiveIntervalSeconds = connectProperties.getTempExpireAfterInactiveIntervalSeconds();
         List<ConnectionHistoryEntity> connectionHistoryEntities =
-                connectionHistoryDAO.listInactiveTempConnections(tempExpireAfterInactiveIntervalSeconds);
+                connectionHistoryRepository.listInactiveTempConnections(tempExpireAfterInactiveIntervalSeconds);
+        if (CollectionUtils.isEmpty(connectionHistoryEntities)) {
+            return 0;
+        }
+        List<Long> connectionIds = connectionHistoryEntities.stream().map(ConnectionHistoryEntity::getConnectionId)
+                .collect(Collectors.toList());
+        Map<Long, ConnectionConfig> id2Connection = connectionService.innerListByIds(connectionIds).stream()
+                .collect(Collectors.toMap(ConnectionConfig::getId, o -> o, (o1, o2) -> o2));
+        int deletedCount = 0;
         for (ConnectionHistoryEntity history : connectionHistoryEntities) {
             try {
-                SecurityContextUtils.setCurrentUser(history.getUserId(), history.getOrganizationId(),
-                        null);
+                if (id2Connection.get(history.getConnectionId()) == null) {
+                    continue;
+                }
+                SecurityContextUtils.setCurrentUser(history.getUserId(),
+                        id2Connection.get(history.getConnectionId()).organizationId(), null);
                 connectionService.delete(history.getConnectionId());
+                deletedCount++;
             } catch (Exception exception) {
                 log.warn("Delete inactive temp connection failed, connectionId={}, reason={}",
                         history.getConnectionId(), exception.getMessage());
@@ -68,8 +84,8 @@ class ConnectionConfigRecycleService {
                 SecurityContextUtils.clear();
             }
         }
-        log.info("Clear inactive temp connection configs, deletedCount={}", connectionHistoryEntities.size());
-        return connectionHistoryEntities.size();
+        log.info("Clear inactive temp connection configs, deletedCount={}", deletedCount);
+        return deletedCount;
     }
 
 }

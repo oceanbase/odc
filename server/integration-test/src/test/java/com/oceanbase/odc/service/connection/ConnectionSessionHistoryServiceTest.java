@@ -34,8 +34,8 @@ import com.oceanbase.odc.core.shared.constant.ConnectionVisibleScope;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.metadb.connection.ConnectionConfigRepository;
 import com.oceanbase.odc.metadb.connection.ConnectionEntity;
-import com.oceanbase.odc.metadb.connection.ConnectionHistoryDAO;
 import com.oceanbase.odc.metadb.connection.ConnectionHistoryEntity;
+import com.oceanbase.odc.metadb.connection.ConnectionHistoryRepository;
 import com.oceanbase.odc.service.connection.model.ConnectProperties;
 import com.oceanbase.odc.test.tool.TestRandom;
 
@@ -46,7 +46,7 @@ public class ConnectionSessionHistoryServiceTest extends ServiceTestEnv {
     @Autowired
     private ConnectionSessionHistoryService connectionSessionHistoryService;
     @Autowired
-    private ConnectionHistoryDAO connectionHistoryDAO;
+    private ConnectionHistoryRepository connectionHistoryRepository;
     @Autowired
     private ConnectionConfigRepository connectionConfigRepository;
     @MockBean
@@ -54,14 +54,14 @@ public class ConnectionSessionHistoryServiceTest extends ServiceTestEnv {
 
     @Before
     public void setUp() throws Exception {
-        connectionHistoryDAO.deleteAll();
+        connectionHistoryRepository.deleteAll();
         connectionConfigRepository.deleteAll();
         when(connectProperties.getTempExpireAfterInactiveIntervalSeconds()).thenReturn(INTERVAL_SECONDS);
     }
 
     @After
     public void tearDown() {
-        connectionHistoryDAO.deleteAll();
+        connectionConfigRepository.deleteAll();
         connectionConfigRepository.deleteAll();
     }
 
@@ -73,35 +73,13 @@ public class ConnectionSessionHistoryServiceTest extends ServiceTestEnv {
         createHistory(connection2.getId(), 20);
         List<ConnectionHistoryEntity> historyEntities = connectionSessionHistoryService.listInactiveConnections();
         Assert.assertEquals(1, historyEntities.size());
-        connectionHistoryDAO.deleteAll();
+        connectionHistoryRepository.deleteAll();
         connectionConfigRepository.deleteAll();
     }
 
-    @Test
-    public void testListAllConnections_MultiSessions_Return1() {
-        createHistory(1L, new Date(30));
-        createHistory(1L, new Date(20));
-        createHistory(1L, new Date(10));
-        List<ConnectionHistoryEntity> all = connectionSessionHistoryService.listAll();
-        Assert.assertEquals(1, all.size());
-        Assert.assertEquals(new Date(30), all.get(0).getLastAccessTime());
-        connectionHistoryDAO.deleteAll();
-    }
-
-    private void createHistory(Long connectionId, Date date) {
-        ConnectionHistoryEntity history = new ConnectionHistoryEntity();
-        history.setConnectionId(connectionId);
-        history.setUserId(USER_ID);
-        history.setLastAccessTime(date);
-        connectionHistoryDAO.updateOrInsert(history);
-    }
-
     private void createHistory(Long connectionId, int intervalSeconds) {
-        ConnectionHistoryEntity history = new ConnectionHistoryEntity();
-        history.setConnectionId(connectionId);
-        history.setUserId(USER_ID);
-        history.setLastAccessTime(Date.from(Instant.now().minusSeconds(intervalSeconds)));
-        connectionHistoryDAO.updateOrInsert(history);
+        connectionHistoryRepository.updateOrInsert(connectionId, USER_ID,
+                Date.from(Instant.now().minusSeconds(intervalSeconds)));
     }
 
     private ConnectionEntity createConnection() {
