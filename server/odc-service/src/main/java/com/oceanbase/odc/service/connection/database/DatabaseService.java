@@ -627,9 +627,21 @@ public class DatabaseService {
         PreConditions.validArgumentState(
                 connectionService.checkPermission(connectionIds, Collections.singletonList("update")),
                 ErrorCodes.AccessDenied, null, "Lack of update permission on current datasource");
-        List<ConnectionConfig> connections = connectionService.innerListByIds(connectionIds);
-        connections.forEach(c -> {
-            PreConditions.validArgumentState(c.getProjectId() == null, ErrorCodes.AccessDenied, null,
+        Map<Long, ConnectionConfig> id2Conn = connectionService.innerListByIds(connectionIds).stream()
+                .collect(Collectors.toMap(ConnectionConfig::getId, c -> c, (c1, c2) -> c2));
+        if (databaseSyncProperties.isBlockInternalDatabase()) {
+            connectionIds = databases.stream().filter(database -> {
+                ConnectionConfig connection = id2Conn.get(database.getConnectionId());
+                return connection != null
+                        && !listBlockedDatabaseNames(connection.getDialectType()).contains(database.getName());
+            }).map(DatabaseEntity::getConnectionId).collect(Collectors.toList());
+        }
+        connectionIds.forEach(c -> {
+            ConnectionConfig connection = id2Conn.get(c);
+            if (connection == null) {
+                throw new NotFoundException(ResourceType.ODC_CONNECTION, "id", c);
+            }
+            PreConditions.validArgumentState(connection.getProjectId() == null, ErrorCodes.AccessDenied, null,
                     "Cannot transfer databases in datasource which is bound to project");
         });
     }
