@@ -49,4 +49,7 @@ public class Constants {
     public static final String[] DEPENDENCIES =
             {"SEQUENCE", "TABLE", "VIEW", "FUNCTION", "PROCEDURE", "TRIGGER", "FILE"};
 
+    public static final String[] DEFAULT_DATAX_JVM_PARAMS =
+            {"-Xms1g", "-Xmx1g", "-XX:+HeapDumpOnOutOfMemoryError"};
+
 }

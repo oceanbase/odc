@@ -33,6 +33,8 @@ public class JobConfiguration implements Cloneable {
      */
     private JobContent[] content;
 
+    private String[] jvmParams;
+
     /**
      * deep copy
      */

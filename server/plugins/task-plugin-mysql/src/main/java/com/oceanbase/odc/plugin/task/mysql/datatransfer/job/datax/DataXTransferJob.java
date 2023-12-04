@@ -29,19 +29,23 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Sets;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.ObjectResult;
+import com.oceanbase.odc.plugin.task.mysql.datatransfer.common.Constants;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.AbstractJob;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.JobConfiguration;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.parameter.PluginParameter;
@@ -124,12 +128,13 @@ public class DataXTransferJob extends AbstractJob {
     }
 
     private String[] buildDataXExecutorCmd(String dataxHomePath, String tmpFilePath) {
+        String[] customJvmParams = jobConfig.getJvmParams();
+        Set<String> jvmParams = Sets
+                .newHashSet(ArrayUtils.isEmpty(customJvmParams) ? Constants.DEFAULT_DATAX_JVM_PARAMS : customJvmParams);
         List<String> command = new ArrayList<>();
         command.add("java");
         command.add("-server");
-        command.add("-Xms1g");
-        command.add("-Xmx1g");
-        command.add("-XX:+HeapDumpOnOutOfMemoryError");
+        command.addAll(jvmParams);
         command.add("-classpath");
         command.add(Paths.get(dataxHomePath, SystemUtils.isOnWindows() ? "lib/*" : "lib/*:.").toString());
         command.add("-Dfile.encoding=UTF-8");
@@ -150,8 +155,7 @@ public class DataXTransferJob extends AbstractJob {
     }
 
     private void analysisStatisticsLog(InputStream inputStream) throws IOException {
-        try {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
             String line;
             while ((line = reader.readLine()) != null && !Thread.currentThread().isInterrupted()) {
                 Matcher matcher = LOG_STATISTICS_PATTERN.matcher(line);
@@ -167,7 +171,6 @@ public class DataXTransferJob extends AbstractJob {
                     LOGGER.warn("Dirty record: {}", line);
                 }
             }
-            reader.close();
         } finally {
             if (inputStream != null) {
                 inputStream.close();
@@ -182,6 +185,9 @@ public class DataXTransferJob extends AbstractJob {
         }
 
         File dir = new File(((TxtWriterPluginParameter) pluginParameter).getPath());
+        if (!dir.isDirectory() || !dir.exists()) {
+            throw new FileNotFoundException(dir.getPath());
+        }
         for (File file : dir.listFiles()) {
             Matcher matcher = DATA_FILE_PATTERN.matcher(file.getName());
             if (!file.getName().startsWith(((TxtWriterPluginParameter) pluginParameter).getFileName())
@@ -191,7 +197,7 @@ public class DataXTransferJob extends AbstractJob {
             String originName = matcher.group(1);
             Path exportPath = file.toPath();
             try {
-                exportPath = Files.move(file.toPath(),
+                exportPath = Files.move(exportPath,
                         Paths.get(((TxtWriterPluginParameter) pluginParameter).getPath(), originName));
             } catch (IOException e) {
                 LOGGER.warn("Failed to rename file {} to {}, reason: {}", file.getName(), originName, e.getMessage());
@@ -199,5 +205,6 @@ public class DataXTransferJob extends AbstractJob {
             object.setExportPaths(Collections.singletonList(exportPath.toUri().toURL()));
             return;
         }
+        throw new FileNotFoundException(((TxtWriterPluginParameter) pluginParameter).getFileName());
     }
 }
