@@ -40,4 +40,12 @@ public interface JobScheduler {
      * @throws JobException throw JobException if schedule job failed
      */
     void scheduleJobNow(JobDefinition jd) throws JobException;
+
+    /**
+     * cancel job
+     *
+     * @param ji define a job
+     * @throws JobException throw JobException if cancel job failed
+     */
+    void cancelJob(JobIdentity ji) throws JobException;
 }

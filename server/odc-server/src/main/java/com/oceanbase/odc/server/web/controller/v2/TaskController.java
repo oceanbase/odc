@@ -16,9 +16,7 @@
 
 package com.oceanbase.odc.server.web.controller.v2;
 
-import java.util.Collections;
-import java.util.Map;
-
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -27,8 +25,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
-import com.oceanbase.odc.service.task.caller.JobUtils;
 import com.oceanbase.odc.service.task.executor.task.DefaultTaskResult;
+import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
@@ -43,14 +41,15 @@ import lombok.extern.slf4j.Slf4j;
 @RequestMapping("/api/v2/task")
 public class TaskController {
 
+    @Autowired
+    private TaskFrameworkService taskFrameworkService;
+
     @ApiOperation(value = "updateResult", notes = "update task result")
     @RequestMapping(value = "/result", method = RequestMethod.POST)
     public SuccessResponse<String> updateResult(@RequestBody DefaultTaskResult taskResult) {
-        log.info("====== get task result =======");
-        log.info(JobUtils.toJson(taskResult));
-        Map<String, String> map = Collections.singletonMap("resultUpdate", "ok");
-
-        return Responses.success(JsonUtils.toJson(map));
+        taskFrameworkService.update(taskResult);
+        log.info("update result succeed {}", JsonUtils.toJson(taskResult));
+        return Responses.success("ok");
     }
 
 }

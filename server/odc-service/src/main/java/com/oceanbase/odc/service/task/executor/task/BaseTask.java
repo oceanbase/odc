@@ -43,16 +43,16 @@ public abstract class BaseTask implements Task {
 
     protected TaskReporter reporter;
 
-    protected double progress = 0;
+    protected volatile double progress = 0;
 
-    protected boolean canceled = false;
+    protected volatile boolean canceled = false;
 
-    private boolean finished = false;
+    private volatile boolean finished = false;
 
     public BaseTask(JobContext context) {
         this.context = context;
         this.status = TaskStatus.PREPARING;
-        this.reporter = new TaskReporter(context.getHostProperties());
+        this.reporter = new TaskReporter(context.getHostUrls());
     }
 
     @Override

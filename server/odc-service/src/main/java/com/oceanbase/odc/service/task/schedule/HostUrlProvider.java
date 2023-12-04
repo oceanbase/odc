@@ -13,27 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.oceanbase.odc.service.task.schedule;
-
-import com.oceanbase.odc.service.quartz.model.MisfireStrategy;
-import com.oceanbase.odc.service.schedule.model.TriggerConfig;
-import com.oceanbase.odc.service.task.caller.JobContext;
-
-import lombok.Builder;
-import lombok.Data;
 
 /**
  * @author yaobin
- * @date 2023-11-23
+ * @date 2023-11-30
  * @since 4.2.4
  */
-@Data
-@Builder
-public class DefaultJobDefinition implements JobDefinition {
+public interface HostUrlProvider {
 
-    private JobContext jobContext;
-
-    private MisfireStrategy misfireStrategy;
-
-    private TriggerConfig triggerConfig;
+    /**
+     * provide host url for task executor report result
+     *
+     * @return host url, eg: localhost:8989
+     */
+    String hostUrl();
 }

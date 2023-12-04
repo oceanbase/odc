@@ -18,31 +18,36 @@ package com.oceanbase.odc.service.task.executor.task;
 
 import java.util.List;
 
+import org.apache.commons.collections4.CollectionUtils;
+
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.flow.model.FlowTaskResult;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
-import com.oceanbase.odc.service.common.model.HostProperties;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.task.executor.util.HttpUtil;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author gaoda.xy
  * @date 2023/11/30 19:41
  */
+@Slf4j
 public class TaskReporter {
 
-    private final List<HostProperties> hosts;
+    private final List<String> hostUrls;
 
     private static final String UPLOAD_RESULT_URL = "/api/v2/task/result";
 
-    public TaskReporter(List<HostProperties> hosts) {
-        this.hosts = hosts;
+    public TaskReporter(List<String> hostUrls) {
+        this.hostUrls = hostUrls;
     }
 
     public void report(JobIdentity jobIdentity, TaskStatus status, double progress, FlowTaskResult taskResult) {
-        if (hosts == null || hosts.isEmpty()) {
+        if (CollectionUtils.isEmpty(hostUrls)) {
+            log.warn("host url is empty");
             return;
         }
         DefaultTaskResult result = new DefaultTaskResult();
@@ -51,9 +56,9 @@ public class TaskReporter {
         result.setProgress(progress);
         result.setResultJson(JsonUtils.toJson(taskResult));
         // Task executor prefers to upload result to the first host, if failed, try the next one
-        for (HostProperties host : hosts) {
+        for (String host : hostUrls) {
             try {
-                String url = "http://" + host.getOdcHost() + ":" + host.getPort() + UPLOAD_RESULT_URL;
+                String url = host + UPLOAD_RESULT_URL;
                 SuccessResponse<String> response = HttpUtil.request(url, JsonUtils.toJson(result),
                         new TypeReference<SuccessResponse<String>>() {});
                 if (response != null && response.getSuccessful()) {

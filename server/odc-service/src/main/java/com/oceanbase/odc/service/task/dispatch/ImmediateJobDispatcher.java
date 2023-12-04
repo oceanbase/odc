@@ -16,6 +16,7 @@
 
 package com.oceanbase.odc.service.task.dispatch;
 
+import com.oceanbase.odc.common.event.EventPublisher;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.service.task.caller.JobCaller;
 import com.oceanbase.odc.service.task.caller.JobContext;
@@ -25,6 +26,7 @@ import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.enums.TaskRunModeEnum;
 import com.oceanbase.odc.service.task.schedule.JobCallerBuilder;
+import com.oceanbase.odc.service.task.schedule.JobIdentity;
 
 /**
  * Dispatch job to JobCaller immediately
@@ -36,10 +38,16 @@ import com.oceanbase.odc.service.task.schedule.JobCallerBuilder;
 public class ImmediateJobDispatcher implements JobDispatcher {
 
     @Override
-    public void dispatch(JobContext context) throws JobException {
+    public void start(JobContext context) throws JobException {
 
         JobCaller jobCaller = getJobCaller(JobConfigurationHolder.getJobConfiguration());
         jobCaller.start(context);
+    }
+
+    @Override
+    public void stop(JobIdentity ji) throws JobException {
+        JobCaller jobCaller = getJobCaller(JobConfigurationHolder.getJobConfiguration());
+        jobCaller.stop(ji);
     }
 
     private JobCaller getJobCaller(JobConfiguration config) {
@@ -60,5 +68,8 @@ public class ImmediateJobDispatcher implements JobDispatcher {
         return podConfig;
     }
 
-
+    @Override
+    public EventPublisher getEventPublisher() {
+        throw new UnsupportedOperationException();
+    }
 }
