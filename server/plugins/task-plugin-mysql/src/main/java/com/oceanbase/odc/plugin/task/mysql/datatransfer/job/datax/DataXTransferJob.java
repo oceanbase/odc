@@ -42,6 +42,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.ObjectResult;
@@ -81,7 +82,8 @@ public class DataXTransferJob extends AbstractJob {
         if (!dataxHome.exists()) {
             throw new FileNotFoundException(dataxHome.getPath());
         }
-        ExecutorService executor = Executors.newSingleThreadExecutor();
+        ExecutorService executor =
+                Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat("datax-monitor-%d").build());
         try {
             String[] cmdArray =
                     buildDataXExecutorCmd(dataxHome.getPath(), generateConfigurationFile().getPath());
@@ -157,7 +159,7 @@ public class DataXTransferJob extends AbstractJob {
     private void analysisStatisticsLog(InputStream inputStream) throws IOException {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
             String line;
-            while ((line = reader.readLine()) != null && !Thread.currentThread().isInterrupted()) {
+            while ((line = reader.readLine()) != null && !isCanceled()) {
                 Matcher matcher = LOG_STATISTICS_PATTERN.matcher(line);
                 if (matcher.matches()) {
                     long totalRecords = Long.parseLong(matcher.group(1));

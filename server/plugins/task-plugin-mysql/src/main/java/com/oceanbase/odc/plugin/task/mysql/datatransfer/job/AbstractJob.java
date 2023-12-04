@@ -45,7 +45,7 @@ public abstract class AbstractJob {
     }
 
     public boolean isCanceled() {
-        return canceled;
+        return canceled || Thread.currentThread().isInterrupted();
     }
 
     public boolean isDone() {
