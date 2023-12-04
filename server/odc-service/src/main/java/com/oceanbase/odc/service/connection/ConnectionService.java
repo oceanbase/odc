@@ -70,7 +70,6 @@ import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.ConnectionStatus;
 import com.oceanbase.odc.core.shared.constant.ConnectionVisibleScope;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
-import com.oceanbase.odc.core.shared.constant.OdcConstants;
 import com.oceanbase.odc.core.shared.constant.PermissionType;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
@@ -214,33 +213,20 @@ public class ConnectionService {
 
     private static final String UPDATE_DS_SCHEMA_LOCK_KEY_PREFIX = "update-ds-schema-lock-";
 
-    @SkipAuthorize("odc internal usage")
-    public ConnectionConfig createForBastionUser(@NotNull @Valid ConnectionConfig connection) {
-        TransactionDefinition transactionDefinition = new DefaultTransactionDefinition();
-        TransactionStatus transactionStatus = transactionManager.getTransaction(transactionDefinition);
-        ConnectionConfig saved;
-        try {
-            saved = innerCreate(connection, true);
-            userPermissionService.bindUserAndDataSourcePermission(OdcConstants.DEFAULT_ADMIN_USER_ID,
-                    currentOrganizationId(), saved.getId(), Arrays.asList("read", "update", "delete"));
-            transactionManager.commit(transactionStatus);
-        } catch (Exception e) {
-            transactionManager.rollback(transactionStatus);
-            throw e;
-        }
-        databaseSyncManager.submitSyncDataSourceTask(saved);
-        return saved;
-    }
-
     @PreAuthenticate(actions = "create", resourceType = "ODC_CONNECTION", isForAll = true)
     public ConnectionConfig create(@NotNull @Valid ConnectionConfig connection) {
+        return create(connection, currentUserId(), false);
+    }
+
+    @SkipAuthorize("odc internal usage")
+    public ConnectionConfig create(@NotNull @Valid ConnectionConfig connection, @NotNull Long creatorId,
+            boolean skipPermissionCheck) {
         TransactionDefinition transactionDefinition = new DefaultTransactionDefinition();
         TransactionStatus transactionStatus = transactionManager.getTransaction(transactionDefinition);
         ConnectionConfig saved;
         try {
-            saved = innerCreate(connection, false);
-            userPermissionService.bindUserAndDataSourcePermission(currentUserId(), currentOrganizationId(),
-                    saved.getId(),
+            saved = innerCreate(connection, creatorId, skipPermissionCheck);
+            userPermissionService.bindUserAndDataSourcePermission(creatorId, currentOrganizationId(), saved.getId(),
                     Arrays.asList("read", "update", "delete"));
             transactionManager.commit(transactionStatus);
         } catch (Exception e) {
@@ -256,7 +242,7 @@ public class ConnectionService {
     public List<ConnectionConfig> batchCreate(@NotEmpty @Valid List<ConnectionConfig> connections) {
         List<ConnectionConfig> connectionConfigs = new ArrayList<>();
         for (ConnectionConfig connection : connections) {
-            ConnectionConfig saved = innerCreate(connection, false);
+            ConnectionConfig saved = innerCreate(connection, currentUserId(), false);
             databaseSyncManager.submitSyncDataSourceTask(saved);
             userPermissionService.bindUserAndDataSourcePermission(currentUserId(), currentOrganizationId(),
                     saved.getId(),
@@ -267,7 +253,8 @@ public class ConnectionService {
     }
 
     @SkipAuthorize("odc internal usage")
-    public ConnectionConfig innerCreate(@NotNull @Valid ConnectionConfig connection, boolean skipPermissionCheck) {
+    public ConnectionConfig innerCreate(@NotNull @Valid ConnectionConfig connection, @NotNull Long creatorId,
+            boolean skipPermissionCheck) {
         TransactionDefinition transactionDefinition = new DefaultTransactionDefinition();
         TransactionStatus transactionStatus = transactionManager.getTransaction(transactionDefinition);
         ConnectionConfig created;
@@ -284,7 +271,7 @@ public class ConnectionService {
             }
 
             connection.setOrganizationId(currentOrganizationId());
-            connection.setCreatorId(currentUserId());
+            connection.setCreatorId(creatorId);
             if (Objects.isNull(connection.getProperties())) {
                 connection.setProperties(new HashMap<>());
             }
