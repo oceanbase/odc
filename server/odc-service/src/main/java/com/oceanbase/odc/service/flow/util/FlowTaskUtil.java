@@ -374,6 +374,9 @@ public class FlowTaskUtil {
         dbConfig.setPassword(config.getPassword());
         dbConfig.setPort(config.getPort());
         dbConfig.setTenant(config.getTenantName());
+        Map<String, String> connectParam = new HashMap<>();
+        connectParam.put("compatibleOjdbcVersion", "8");
+        dbConfig.setConnectParam(connectParam);
         if (DialectType.OB_ORACLE.equals(config.getDialectType())) {
             String uname = ConnectionSessionUtil.getUserOrSchemaString(
                     config.getUsername(), DialectType.OB_ORACLE);
@@ -388,10 +391,8 @@ public class FlowTaskUtil {
             return dbConfig;
         }
         if (StringUtils.isNotBlank(endpoint.getProxyHost()) && Objects.nonNull(endpoint.getProxyPort())) {
-            Map<String, String> connectParam = new HashMap<>();
             connectParam.put("socksProxyHost", endpoint.getProxyHost());
             connectParam.put("socksProxyPort", endpoint.getProxyPort().toString());
-            dbConfig.setConnectParam(connectParam);
         }
         return dbConfig;
     }
