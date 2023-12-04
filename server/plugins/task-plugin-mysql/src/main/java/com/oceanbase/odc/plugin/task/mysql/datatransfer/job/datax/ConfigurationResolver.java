@@ -17,7 +17,6 @@
 package com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax;
 
 import java.io.File;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Paths;
 import java.util.Collections;
@@ -48,18 +47,6 @@ import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.paramete
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.parameter.TxtWriterPluginParameter;
 
 public class ConfigurationResolver {
-    private static final String JAR_PATH;
-
-    static {
-        try {
-            JAR_PATH =
-                    new File(ConfigurationResolver.class.getProtectionDomain().getCodeSource().getLocation().toURI())
-                            .getParentFile().getPath();
-        } catch (URISyntaxException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     @SuppressWarnings("all")
     /**
      * <pre>
