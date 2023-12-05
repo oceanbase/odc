@@ -41,6 +41,7 @@ import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
 import com.oceanbase.odc.service.dlm.utils.DataArchiveConditionUtil;
 import com.oceanbase.odc.service.dlm.utils.DlmJobIdUtil;
 import com.oceanbase.odc.service.schedule.ScheduleService;
+import com.oceanbase.odc.service.schedule.flowtask.ScheduleTaskContextHolder;
 import com.oceanbase.tools.migrator.common.configure.LogicTableConfig;
 import com.oceanbase.tools.migrator.common.enums.JobType;
 import com.oceanbase.tools.migrator.job.AbstractJob;
@@ -205,11 +206,26 @@ public class AbstractDlmJob implements OdcJob {
     }
 
     @Override
+    public void before(JobExecutionContext context) {
+        ScheduleTaskEntity scheduleTask = (ScheduleTaskEntity) context.getResult();
+        ScheduleTaskContextHolder.trace(scheduleTask.getJobName(), scheduleTask.getJobGroup(), scheduleTask.getId());
+
+    }
+
+    @Override
+    public void after(JobExecutionContext context) {
+        ScheduleTaskContextHolder.clear();
+    }
+
+    @Override
     public void interrupt() {
         if (jobThread == null) {
             throw new IllegalStateException("Task is not executing.");
         }
         job.getJobMeta().setToStop(true);
+        // if(job != null && job.getJobMeta() != null){
+        // job.getJobMeta().destroyExecutor();
+        // }
         jobThread.interrupt();
     }
 }
