@@ -55,8 +55,6 @@ public class JobCallerBuilder {
         envs.put("DATABASE_USERNAME", SystemUtils.getEnvOrProperty("ODC_DATABASE_USERNAME"));
         envs.put("DATABASE_PASSWORD", SystemUtils.getEnvOrProperty("ODC_DATABASE_PASSWORD"));
 
-        podParam.setRequestCpu(1.0);
-        podParam.setRequestMem(128L);
         return new K8sJobCaller(k8sJobClient, podConfig);
     }
 }

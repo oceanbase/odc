@@ -39,4 +39,8 @@ public class PodParam {
 
     private Long requestMem;
 
+    private String mountPath;
+
+    private Long diskSize;
+
 }
