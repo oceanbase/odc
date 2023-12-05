@@ -434,36 +434,8 @@ public class ScheduleService {
     }
 
     public String getLog(Long scheduleId, Long taskId, OdcTaskLogLevel logLevel) {
-        if (scheduleId != null) {
-            return String.format("%s-%s-%s", scheduleId, taskId, logLevel);
-        }
-        String filePath = String.format(LOG_PATH_PATTERN, scheduleId, taskId, logLevel.name());
-        if (!new File(filePath).exists()) {
-            return ErrorCodes.TaskLogNotFound.getLocalizedMessage(new Object[] {"Id", taskId});
-        }
-        LineIterator it = null;
-        StringBuilder sb = new StringBuilder();
-        int lineCount = 1;
-        int byteCount = 0;
-        try {
-            it = FileUtils.lineIterator(new File(filePath));
-            while (it.hasNext()) {
-                if (lineCount > 10000 || byteCount > 1024 * 1024) {
-                    sb.append("Logs exceed max limitation (10000 rows or 1 MB), please download logs directly");
-                    break;
-                }
-                String line = it.nextLine();
-                sb.append(line).append("\n");
-                lineCount++;
-                byteCount = byteCount + line.getBytes().length;
-            }
-            return sb.toString();
-        } catch (Exception ex) {
-            log.warn("read task log file failed, reason={}", ex.getMessage());
-            throw new UnexpectedException("read task log file failed, reason: " + ex.getMessage(), ex);
-        } finally {
-            LineIterator.closeQuietly(it);
-        }
+        nullSafeGetByIdWithCheckPermission(scheduleId);
+        return scheduleTaskService.getScheduleTaskLog(taskId, logLevel);
     }
 
     public boolean hasExecutingAsyncTask(ScheduleEntity schedule) {
