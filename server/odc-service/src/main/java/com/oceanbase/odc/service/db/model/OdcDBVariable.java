@@ -30,6 +30,7 @@ public class OdcDBVariable extends DBVariable {
     private String valueType;
     private List<String> valueEnums;
     private String unit;
+    private String variableScope;
     private boolean changed = false;
 
     public String getKey() {
