@@ -72,13 +72,15 @@ public class OracleNoColumnCommentExists implements SqlCheckRule {
         context.getAllCheckedStatements(CreateTable.class).forEach(c -> {
             List<ColumnDefinition> defs = tName2ColDefs.computeIfAbsent(getKey(c.left), s -> new ArrayList<>());
             defs.addAll(c.left.getColumnDefinitions());
-            List<Pair<CreateTable, Integer>> createTables = tName2CreateTables.computeIfAbsent(getKey(c.left), s -> new ArrayList<>());
+            List<Pair<CreateTable, Integer>> createTables =
+                    tName2CreateTables.computeIfAbsent(getKey(c.left), s -> new ArrayList<>());
             createTables.add(c);
         });
         List<Pair<SetComment, Integer>> setComments = context.getAllCheckedStatements(SetComment.class);
         if (statement instanceof CreateTable) {
             CreateTable c = (CreateTable) statement;
-            List<Pair<CreateTable, Integer>> createTables = tName2CreateTables.computeIfAbsent(getKey(c), s -> new ArrayList<>());
+            List<Pair<CreateTable, Integer>> createTables =
+                    tName2CreateTables.computeIfAbsent(getKey(c), s -> new ArrayList<>());
             createTables.add(new Pair<>(c, null));
             List<ColumnDefinition> defs = tName2ColDefs.computeIfAbsent(getKey(c), s -> new ArrayList<>());
             defs.addAll(c.getColumnDefinitions());
@@ -107,7 +109,8 @@ public class OracleNoColumnCommentExists implements SqlCheckRule {
             List<Pair<CreateTable, Integer>> tables = tName2CreateTables.get(e.getKey());
             String text = CollectionUtils.isNotEmpty(tables) ? tables.get(0).left.getText() : "";
             return e.getValue().stream().map(d -> SqlCheckUtil.buildViolation(
-                    text, d, getType(), CollectionUtils.isNotEmpty(tables)?tables.get(0).right:0,new Object[] {d.getColumnReference().getColumn()}));
+                    text, d, getType(), CollectionUtils.isNotEmpty(tables) ? tables.get(0).right : 0,
+                    new Object[] {d.getColumnReference().getColumn()}));
         }).collect(Collectors.toList());
     }
 

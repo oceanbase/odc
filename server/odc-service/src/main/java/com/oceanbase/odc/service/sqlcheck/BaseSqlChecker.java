@@ -117,7 +117,7 @@ abstract class BaseSqlChecker implements SqlChecker {
         }
         List<Pair<Integer, Statement>> stmts = inputs.stream()
                 .map(function)
-                .filter(Objects::nonNull)
+                .filter(stmt -> Objects.nonNull(stmt) && Objects.nonNull(stmt.right))
                 .collect(Collectors.toList());
         if (checkContext.currentStmtIndex == null) {
             checkContext.currentStmtIndex = 0L;

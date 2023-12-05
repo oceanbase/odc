@@ -67,7 +67,7 @@ public class CheckViolation implements Translatable {
     }
 
     public CheckViolation(@NonNull String text, int row, int col,
-        int start, int stop, @NonNull SqlCheckRuleType type, Integer offset, @NonNull Object[] args) {
+            int start, int stop, @NonNull SqlCheckRuleType type, Integer offset, @NonNull Object[] args) {
         Validate.isTrue(row >= 0, "Row can not be negative");
         Validate.isTrue(col >= 0, "Col can not be negative");
         Validate.isTrue(start >= 0, "Start can not be negative");

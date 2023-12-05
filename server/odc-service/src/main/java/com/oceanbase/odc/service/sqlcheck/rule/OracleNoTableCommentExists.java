@@ -62,12 +62,14 @@ public class OracleNoTableCommentExists implements SqlCheckRule {
             return Collections.emptyList();
         }
         // 已经检测到了最后一个 sql
-        Map<String, List<Pair<CreateTable, Integer>>> tableName2Table = context.getAllCheckedStatements(CreateTable.class)
-                .stream().collect(Collectors.groupingBy(p -> getKey(p.left)));
+        Map<String, List<Pair<CreateTable, Integer>>> tableName2Table =
+                context.getAllCheckedStatements(CreateTable.class)
+                        .stream().collect(Collectors.groupingBy(p -> getKey(p.left)));
         List<Pair<SetComment, Integer>> setComments = context.getAllCheckedStatements(SetComment.class);
         if (statement instanceof CreateTable) {
             CreateTable c = (CreateTable) statement;
-            List<Pair<CreateTable, Integer>> createTables = tableName2Table.computeIfAbsent(getKey(c), s -> new ArrayList<>());
+            List<Pair<CreateTable, Integer>> createTables =
+                    tableName2Table.computeIfAbsent(getKey(c), s -> new ArrayList<>());
             createTables.add(new Pair<>(c, null));
         } else if (statement instanceof SetComment) {
             setComments.add(new Pair<>((SetComment) statement, null));
@@ -84,7 +86,8 @@ public class OracleNoTableCommentExists implements SqlCheckRule {
         });
         return tableName2Table.values().stream().map(createTables -> {
             Pair<CreateTable, Integer> stmt = createTables.get(0);
-            return SqlCheckUtil.buildViolation(stmt.left.getText(), stmt.left, getType(), stmt.right, new Object[] {stmt.left.getTableName()});
+            return SqlCheckUtil.buildViolation(stmt.left.getText(), stmt.left, getType(), stmt.right,
+                    new Object[] {stmt.left.getTableName()});
         }).collect(Collectors.toList());
     }
 

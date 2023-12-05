@@ -54,7 +54,8 @@ public class SqlCheckContext {
         this.stmt2Violations = new ArrayList<>();
     }
 
-    public void addCheckViolation(@NonNull Statement statement, @NonNull Integer offset, @NonNull List<CheckViolation> violations) {
+    public void addCheckViolation(@NonNull Statement statement, @NonNull Integer offset,
+            @NonNull List<CheckViolation> violations) {
         this.stmt2Violations.add(new Pair<>(new Pair<>(statement, offset), violations));
     }
 
