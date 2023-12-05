@@ -53,6 +53,7 @@ public class NoPrimaryKeyExists implements SqlCheckRule {
         if (!(statement instanceof CreateTable)) {
             return Collections.emptyList();
         }
+        int offset = context.getStatementOffset(statement);
         CreateTable createTable = (CreateTable) statement;
         boolean containsPk = createTable.getColumnDefinitions().stream()
                 .filter(c -> c.getColumnAttributes() != null
@@ -64,7 +65,7 @@ public class NoPrimaryKeyExists implements SqlCheckRule {
             return Collections.emptyList();
         }
         return Collections.singletonList(SqlCheckUtil
-                .buildViolation(statement.getText(), statement, getType(), new Object[] {}));
+                .buildViolation(statement.getText(), statement, getType(), offset, new Object[] {}));
     }
 
     @Override

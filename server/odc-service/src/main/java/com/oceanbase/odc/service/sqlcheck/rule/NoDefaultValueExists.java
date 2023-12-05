@@ -61,10 +61,11 @@ public class NoDefaultValueExists implements SqlCheckRule {
 
     @Override
     public List<CheckViolation> check(@NonNull Statement statement, @NonNull SqlCheckContext context) {
+        int offset = context.getStatementOffset(statement);
         if (statement instanceof CreateTable) {
-            return builds(statement.getText(), ((CreateTable) statement).getColumnDefinitions().stream());
+            return builds(statement.getText(), offset, ((CreateTable) statement).getColumnDefinitions().stream());
         } else if (statement instanceof AlterTable) {
-            return builds(statement.getText(), SqlCheckUtil.fromAlterTable((AlterTable) statement));
+            return builds(statement.getText(), offset, SqlCheckUtil.fromAlterTable((AlterTable) statement));
         }
         return Collections.emptyList();
     }
@@ -79,7 +80,7 @@ public class NoDefaultValueExists implements SqlCheckRule {
         return this.typesAllowNoDefault.stream().anyMatch(s -> StringUtils.equalsIgnoreCase(s, name));
     }
 
-    private List<CheckViolation> builds(String sql, Stream<ColumnDefinition> stream) {
+    private List<CheckViolation> builds(String sql, int offset, Stream<ColumnDefinition> stream) {
         return stream.filter(d -> {
             ColumnAttributes attributes = d.getColumnAttributes();
             if (attributes == null) {
@@ -91,7 +92,8 @@ public class NoDefaultValueExists implements SqlCheckRule {
             if (CollectionUtils.isNotEmpty(typesAllowNoDefault)) {
                 dataTypes = String.join(",", typesAllowNoDefault);
             }
-            return SqlCheckUtil.buildViolation(sql, d, getType(), new Object[] {d.getDataType().getText(), dataTypes});
+            return SqlCheckUtil.buildViolation(sql, d, getType(), offset,
+                    new Object[] {d.getDataType().getText(), dataTypes});
         }).collect(Collectors.toList());
     }
 

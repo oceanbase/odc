@@ -83,7 +83,8 @@ public class OracleNoTableCommentExists implements SqlCheckRule {
         });
         return tableName2Table.values().stream().map(createTables -> {
             CreateTable stmt = createTables.get(0);
-            return SqlCheckUtil.buildViolation(stmt.getText(), stmt, getType(), new Object[] {stmt.getTableName()});
+            return SqlCheckUtil.buildViolation(stmt.getText(), stmt, getType(), context.getStatementOffset(stmt),
+                    new Object[] {stmt.getTableName()});
         }).collect(Collectors.toList());
     }
 

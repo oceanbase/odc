@@ -78,6 +78,7 @@ public class RestrictUniqueIndexNaming implements SqlCheckRule {
 
     @Override
     public List<CheckViolation> check(@NonNull Statement statement, @NonNull SqlCheckContext context) {
+        int offset = context.getStatementOffset(statement);
         if (statement instanceof CreateTable) {
             CreateTable createTable = (CreateTable) statement;
             String tableName = createTable.getTableName();
@@ -102,7 +103,8 @@ public class RestrictUniqueIndexNaming implements SqlCheckRule {
              * </code>
              */
             statements.addAll(filterConstraints(tableName, createTable.getConstraints().stream()));
-            return statements.stream().map(mapper(statement.getText())).collect(Collectors.toList());
+            return statements.stream().map(mapper(statement, context.getStatementOffset(statement)))
+                    .collect(Collectors.toList());
         } else if (statement instanceof CreateIndex) {
             CreateIndex createIndex = (CreateIndex) statement;
             if (!createIndex.isUnique()) {
@@ -113,14 +115,16 @@ public class RestrictUniqueIndexNaming implements SqlCheckRule {
                 return Collections.emptyList();
             }
             return Collections.singletonList(SqlCheckUtil.buildViolation(statement.getText(),
-                    createIndex, getType(), new Object[] {createIndex.getRelation().getRelation(), getPattern()}));
+                    createIndex, getType(), offset,
+                    new Object[] {createIndex.getRelation().getRelation(), getPattern()}));
         } else if (statement instanceof AlterTable) {
             AlterTable alterTable = (AlterTable) statement;
             String tableName = alterTable.getTableName();
             List<Statement> statements = filterUniqueColumnDefs(tableName, SqlCheckUtil.fromAlterTable(alterTable));
             statements.addAll(filterConstraints(tableName, alterTable.getAlterTableActions().stream()
                     .filter(a -> a.getAddConstraint() != null).map(AlterTableAction::getAddConstraint)));
-            return statements.stream().map(mapper(statement.getText())).collect(Collectors.toList());
+            return statements.stream().map(mapper(statement, context.getStatementOffset(statement)))
+                    .collect(Collectors.toList());
         }
         return Collections.emptyList();
     }
@@ -147,7 +151,7 @@ public class RestrictUniqueIndexNaming implements SqlCheckRule {
         return "uk_${table-name}_${column-name-1}_${column-name-2}_...";
     }
 
-    private Function<Statement, CheckViolation> mapper(String sql) {
+    private Function<Statement, CheckViolation> mapper(Statement statement, int offset) {
         return s -> {
             String name = "";
             if (s instanceof InLineConstraint) {
@@ -156,7 +160,8 @@ public class RestrictUniqueIndexNaming implements SqlCheckRule {
                 OutOfLineConstraint c = (OutOfLineConstraint) s;
                 name = c.getConstraintName() == null ? c.getIndexName() : c.getConstraintName();
             }
-            return SqlCheckUtil.buildViolation(sql, s, getType(), new Object[] {name, getPattern()});
+            return SqlCheckUtil.buildViolation(statement.getText(), s, getType(), offset,
+                    new Object[] {name, getPattern()});
         };
     }
 

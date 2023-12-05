@@ -54,7 +54,8 @@ public class MySQLNoTableCommentExists implements SqlCheckRule {
         TableOptions tableOptions = createTable.getTableOptions();
         if (tableOptions == null || tableOptions.getComment() == null) {
             return Collections.singletonList(SqlCheckUtil.buildViolation(
-                    statement.getText(), statement, getType(), new Object[] {createTable.getTableName()}));
+                    statement.getText(), statement, getType(), context.getStatementOffset(statement),
+                    new Object[] {createTable.getTableName()}));
         }
         return Collections.emptyList();
     }

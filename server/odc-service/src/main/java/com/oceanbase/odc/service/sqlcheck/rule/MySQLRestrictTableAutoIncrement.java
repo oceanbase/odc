@@ -57,14 +57,15 @@ public class MySQLRestrictTableAutoIncrement implements SqlCheckRule {
         if (!(statement instanceof CreateTable)) {
             return Collections.emptyList();
         }
+        int offset = context.getStatementOffset(statement);
         CreateTable createTable = (CreateTable) statement;
         TableOptions options = createTable.getTableOptions();
         if (options == null || options.getAutoIncrement() == null) {
             return Collections.singletonList(SqlCheckUtil.buildViolation(
-                    statement.getText(), statement, getType(), new Object[] {initValue, "N/A"}));
+                    statement.getText(), statement, getType(), offset, new Object[] {initValue, "N/A"}));
         } else if (options.getAutoIncrement().compareTo(new BigDecimal(initValue)) != 0) {
             return Collections.singletonList(SqlCheckUtil.buildViolation(statement.getText(),
-                    options, getType(), new Object[] {initValue, options.getAutoIncrement().toString()}));
+                    options, getType(), offset, new Object[] {initValue, options.getAutoIncrement().toString()}));
         }
         return Collections.emptyList();
     }

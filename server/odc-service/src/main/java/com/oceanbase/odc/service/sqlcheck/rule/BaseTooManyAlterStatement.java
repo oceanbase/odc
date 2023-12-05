@@ -61,7 +61,7 @@ public abstract class BaseTooManyAlterStatement implements SqlCheckRule {
                 .map(e -> {
                     List<AlterTable> as = e.getValue();
                     String sql = as.stream().map(AlterTable::getText).collect(Collectors.joining(";"));
-                    return new CheckViolation(sql, 1, 0, 0, sql.length() - 1, getType(), new Object[] {
+                    return new CheckViolation(sql, 1, 0, 0, sql.length() - 1, getType(), 0, new Object[] {
                             as.size(), e.getKey(), maxAlterCount});
                 }).collect(Collectors.toList());
     }

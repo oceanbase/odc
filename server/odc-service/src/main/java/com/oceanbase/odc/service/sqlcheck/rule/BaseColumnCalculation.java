@@ -50,7 +50,8 @@ abstract class BaseColumnCalculation implements SqlCheckRule {
     @Override
     public List<CheckViolation> check(@NonNull Statement statement, @NonNull SqlCheckContext context) {
         return getCalculatedReferences(SqlCheckUtil.getWhereClauses(statement)).stream()
-                .map(s -> SqlCheckUtil.buildViolation(statement.getText(), s, getType(), null))
+                .map(s -> SqlCheckUtil.buildViolation(statement.getText(), s, getType(),
+                        context.getStatementOffset(statement), null))
                 .collect(Collectors.toList());
     }
 

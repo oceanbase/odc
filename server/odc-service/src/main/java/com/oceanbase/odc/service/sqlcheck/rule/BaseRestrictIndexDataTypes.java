@@ -70,15 +70,19 @@ abstract class BaseRestrictIndexDataTypes extends BaseRestrictPKDataTypes {
         if (statement instanceof CreateTable) {
             CreateTable createTable = (CreateTable) statement;
             String ddl = statement.getText();
-            List<CheckViolation> results = builds(ddl, createTable.getColumnDefinitions().stream());
+            List<CheckViolation> results =
+                    builds(ddl, context.getStatementOffset(statement), createTable.getColumnDefinitions().stream());
             Map<String, String> col2TypeName = getColumnName2TypeName(createTable);
-            results.addAll(buildForConstraints(ddl, col2TypeName, createTable.getConstraints().stream()));
-            results.addAll(buildForIndexes(ddl, col2TypeName, createTable.getIndexes().stream()));
+            results.addAll(buildForConstraints(ddl, context.getStatementOffset(statement), col2TypeName,
+                    createTable.getConstraints().stream()));
+            results.addAll(buildForIndexes(ddl, context.getStatementOffset(statement), col2TypeName,
+                    createTable.getIndexes().stream()));
             return results;
         } else if (statement instanceof AlterTable) {
             AlterTable alterTable = (AlterTable) statement;
             String ddl = statement.getText();
-            List<CheckViolation> results = builds(ddl, SqlCheckUtil.fromAlterTable(alterTable));
+            List<CheckViolation> results =
+                    builds(ddl, context.getStatementOffset(statement), SqlCheckUtil.fromAlterTable(alterTable));
             if (this.jdbcOperations == null) {
                 return results;
             }
@@ -87,10 +91,13 @@ abstract class BaseRestrictIndexDataTypes extends BaseRestrictPKDataTypes {
                 return results;
             }
             Map<String, String> col2TypeName = getColumnName2TypeName(createTable);
-            results.addAll(buildForConstraints(ddl, col2TypeName, alterTable.getAlterTableActions()
-                    .stream().filter(a -> a.getAddConstraint() != null).map(AlterTableAction::getAddConstraint)));
-            results.addAll(buildForIndexes(ddl, col2TypeName, alterTable.getAlterTableActions()
-                    .stream().filter(a -> a.getAddIndex() != null).map(AlterTableAction::getAddIndex)));
+            results.addAll(buildForConstraints(ddl, context.getStatementOffset(statement), col2TypeName,
+                    alterTable.getAlterTableActions()
+                            .stream().filter(a -> a.getAddConstraint() != null)
+                            .map(AlterTableAction::getAddConstraint)));
+            results.addAll(buildForIndexes(ddl, context.getStatementOffset(statement), col2TypeName,
+                    alterTable.getAlterTableActions()
+                            .stream().filter(a -> a.getAddIndex() != null).map(AlterTableAction::getAddIndex)));
             return results;
         } else if (statement instanceof CreateIndex && this.jdbcOperations != null) {
             CreateIndex createIndex = (CreateIndex) statement;
@@ -102,13 +109,13 @@ abstract class BaseRestrictIndexDataTypes extends BaseRestrictPKDataTypes {
             Map<String, String> col2TypeName = getColumnName2TypeName(createTable);
             return createIndex.getColumns().stream()
                     .filter(notInTypes(col2TypeName))
-                    .map(builds(statement.getText(), col2TypeName))
+                    .map(builds(statement.getText(), context.getStatementOffset(statement), col2TypeName))
                     .collect(Collectors.toList());
         }
         return Collections.emptyList();
     }
 
-    private Function<SortColumn, CheckViolation> builds(String sql, Map<String, String> col2TypeName) {
+    private Function<SortColumn, CheckViolation> builds(String sql, int offset, Map<String, String> col2TypeName) {
         return sortColumn -> {
             Expression expr = sortColumn.getColumn();
             String column;
@@ -119,28 +126,28 @@ abstract class BaseRestrictIndexDataTypes extends BaseRestrictPKDataTypes {
             }
             Object[] args = new Object[] {column, col2TypeName.get(unquoteIdentifier(column)),
                     String.join(",", allowedTypeNames)};
-            return SqlCheckUtil.buildViolation(sql, sortColumn, getType(), args);
+            return SqlCheckUtil.buildViolation(sql, sortColumn, getType(), offset, args);
         };
     }
 
-    private List<CheckViolation> buildForIndexes(String sql, Map<String, String> col2TypeName,
+    private List<CheckViolation> buildForIndexes(String sql, int offset, Map<String, String> col2TypeName,
             Stream<OutOfLineIndex> stream) {
         return stream.filter(index -> index.getColumns().stream().anyMatch(notInTypes(col2TypeName)))
                 .flatMap(index -> index.getColumns().stream().filter(notInTypes(col2TypeName))
-                        .map(builds(sql, col2TypeName)))
+                        .map(builds(sql, offset, col2TypeName)))
                 .collect(Collectors.toList());
     }
 
-    private List<CheckViolation> buildForConstraints(String sql, Map<String, String> col2TypeName,
+    private List<CheckViolation> buildForConstraints(String sql, int offset, Map<String, String> col2TypeName,
             Stream<OutOfLineConstraint> stream) {
         return stream.filter(c -> (c.isPrimaryKey() || c.isUniqueKey())
                 && c.getColumns().stream().anyMatch(notInTypes(col2TypeName)))
                 .flatMap(c -> c.getColumns().stream().filter(notInTypes(col2TypeName))
-                        .map(builds(sql, col2TypeName)))
+                        .map(builds(sql, offset, col2TypeName)))
                 .collect(Collectors.toList());
     }
 
-    private List<CheckViolation> builds(String sql, Stream<ColumnDefinition> stream) {
+    private List<CheckViolation> builds(String sql, int offset, Stream<ColumnDefinition> stream) {
         return stream.filter(d -> {
             ColumnAttributes a = d.getColumnAttributes();
             if (a == null || CollectionUtils.isEmpty(a.getConstraints())) {
@@ -150,7 +157,7 @@ abstract class BaseRestrictIndexDataTypes extends BaseRestrictPKDataTypes {
                     && !isTypeAllowed(d.getDataType().getName());
         }).map(d -> {
             DataType t = d.getDataType();
-            return SqlCheckUtil.buildViolation(sql, t, getType(),
+            return SqlCheckUtil.buildViolation(sql, t, getType(), offset,
                     new Object[] {d.getColumnReference().getText(), t.getName(),
                             String.join(",", allowedTypeNames)});
         }).collect(Collectors.toList());

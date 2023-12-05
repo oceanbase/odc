@@ -58,16 +58,19 @@ public class OracleRestrictColumnNameCase implements SqlCheckRule {
     @Override
     public List<CheckViolation> check(@NonNull Statement statement, @NonNull SqlCheckContext context) {
         if (statement instanceof CreateTable) {
-            return builds(statement.getText(), ((CreateTable) statement).getColumnDefinitions().stream());
+            return builds(statement.getText(), context.getStatementOffset(statement),
+                    ((CreateTable) statement).getColumnDefinitions().stream());
         } else if (statement instanceof AlterTable) {
             AlterTable alterTable = (AlterTable) statement;
-            List<CheckViolation> r = builds(statement.getText(), SqlCheckUtil.fromAlterTable(alterTable));
+            List<CheckViolation> r = builds(statement.getText(), context.getStatementOffset(statement),
+                    SqlCheckUtil.fromAlterTable(alterTable));
             r.addAll(alterTable.getAlterTableActions().stream().filter(a -> {
                 if (a.getRenameFromColumn() == null) {
                     return false;
                 }
                 return !verify(unquoteIdentifier(a.getRenameToColumnName()));
             }).map(a -> SqlCheckUtil.buildViolation(statement.getText(), a, getType(),
+                    context.getStatementOffset(statement),
                     new Object[] {a.getRenameToColumnName()})).collect(Collectors.toList()));
             return r;
         }
@@ -89,9 +92,9 @@ public class OracleRestrictColumnNameCase implements SqlCheckRule {
         return true;
     }
 
-    private List<CheckViolation> builds(String sql, Stream<ColumnDefinition> stream) {
+    private List<CheckViolation> builds(String sql, int offset, Stream<ColumnDefinition> stream) {
         return stream.filter(d -> !verify(unquoteIdentifier(d.getColumnReference().getColumn())))
-                .map(d -> SqlCheckUtil.buildViolation(sql, d.getColumnReference(), getType(),
+                .map(d -> SqlCheckUtil.buildViolation(sql, d.getColumnReference(), getType(), offset,
                         new Object[] {d.getColumnReference().getColumn()}))
                 .collect(Collectors.toList());
     }

@@ -72,17 +72,18 @@ public class MySQLRestrictPKAutoIncrement implements SqlCheckRule {
 
     @Override
     public List<CheckViolation> check(@NonNull Statement statement, @NonNull SqlCheckContext context) {
+        int offset = context.getStatementOffset(statement);
         if (statement instanceof CreateTable) {
             CreateTable createTable = (CreateTable) statement;
             String ddl = statement.getText();
-            List<CheckViolation> violations = builds(ddl, createTable.getColumnDefinitions().stream());
+            List<CheckViolation> violations = builds(ddl, offset, createTable.getColumnDefinitions().stream());
             Map<String, Boolean> col2AutoIncrement = getColumnName2AutoIncrement(createTable);
-            violations.addAll(builds(ddl, col2AutoIncrement, createTable.getConstraints().stream()));
+            violations.addAll(builds(ddl, offset, col2AutoIncrement, createTable.getConstraints().stream()));
             return violations;
         } else if (statement instanceof AlterTable) {
             AlterTable alterTable = (AlterTable) statement;
             String ddl = statement.getText();
-            List<CheckViolation> violations = builds(ddl, SqlCheckUtil.fromAlterTable(alterTable));
+            List<CheckViolation> violations = builds(ddl, offset, SqlCheckUtil.fromAlterTable(alterTable));
             if (jdbcOperations == null) {
                 return violations;
             }
@@ -91,7 +92,7 @@ public class MySQLRestrictPKAutoIncrement implements SqlCheckRule {
                 return violations;
             }
             Map<String, Boolean> col2AutoIncrement = getColumnName2AutoIncrement(createTable);
-            violations.addAll(builds(ddl, col2AutoIncrement, alterTable.getAlterTableActions().stream()
+            violations.addAll(builds(ddl, offset, col2AutoIncrement, alterTable.getAlterTableActions().stream()
                     .filter(a -> a.getAddConstraint() != null).map(AlterTableAction::getAddConstraint)));
             return violations;
         }
@@ -150,17 +151,17 @@ public class MySQLRestrictPKAutoIncrement implements SqlCheckRule {
         }
     }
 
-    private List<CheckViolation> builds(String sql, Map<String, Boolean> col2AutoIncrement,
+    private List<CheckViolation> builds(String sql, int offset, Map<String, Boolean> col2AutoIncrement,
             Stream<OutOfLineConstraint> stream) {
         return stream.filter(c -> c.isPrimaryKey()
                 && c.getColumns().size() == 1
                 && c.getColumns().stream().anyMatch(notAutoIncrement(col2AutoIncrement)))
                 .flatMap(c -> c.getColumns().stream().filter(notAutoIncrement(col2AutoIncrement))
-                        .map(s -> SqlCheckUtil.buildViolation(sql, s, getType(), new Object[] {})))
+                        .map(s -> SqlCheckUtil.buildViolation(sql, s, getType(), offset, new Object[] {})))
                 .collect(Collectors.toList());
     }
 
-    private List<CheckViolation> builds(String sql, Stream<ColumnDefinition> stream) {
+    private List<CheckViolation> builds(String sql, int offset, Stream<ColumnDefinition> stream) {
         return stream.filter(t -> {
             ColumnAttributes a = t.getColumnAttributes();
             if (a == null || CollectionUtils.isEmpty(a.getConstraints())) {
@@ -168,7 +169,7 @@ public class MySQLRestrictPKAutoIncrement implements SqlCheckRule {
             }
             return a.getConstraints().stream().anyMatch(InLineConstraint::isPrimaryKey)
                     && !Boolean.TRUE.equals(a.getAutoIncrement());
-        }).map(t -> SqlCheckUtil.buildViolation(sql, t, getType(), new Object[] {}))
+        }).map(t -> SqlCheckUtil.buildViolation(sql, t, getType(), offset, new Object[] {}))
                 .collect(Collectors.toList());
     }
 

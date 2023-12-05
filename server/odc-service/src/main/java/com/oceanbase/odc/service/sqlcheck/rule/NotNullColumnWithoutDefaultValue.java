@@ -54,10 +54,11 @@ public class NotNullColumnWithoutDefaultValue implements SqlCheckRule {
 
     @Override
     public List<CheckViolation> check(@NonNull Statement statement, @NonNull SqlCheckContext context) {
+        int offset = context.getStatementOffset(statement);
         if (statement instanceof CreateTable) {
-            return builds(statement.getText(), ((CreateTable) statement).getColumnDefinitions().stream());
+            return builds(statement.getText(), offset, ((CreateTable) statement).getColumnDefinitions().stream());
         } else if (statement instanceof AlterTable) {
-            return builds(statement.getText(), SqlCheckUtil.fromAlterTable((AlterTable) statement));
+            return builds(statement.getText(), offset, SqlCheckUtil.fromAlterTable((AlterTable) statement));
         }
         return Collections.emptyList();
     }
@@ -68,7 +69,7 @@ public class NotNullColumnWithoutDefaultValue implements SqlCheckRule {
                 DialectType.ODP_SHARDING_OB_MYSQL);
     }
 
-    private List<CheckViolation> builds(String sql, Stream<ColumnDefinition> stream) {
+    private List<CheckViolation> builds(String sql, int offset, Stream<ColumnDefinition> stream) {
         return stream.filter(d -> {
             ColumnAttributes ca = d.getColumnAttributes();
             if (ca == null) {
@@ -79,7 +80,7 @@ public class NotNullColumnWithoutDefaultValue implements SqlCheckRule {
                 return false;
             }
             return cs.stream().anyMatch(c -> Boolean.FALSE.equals(c.getNullable())) && ca.getDefaultValue() == null;
-        }).map(d -> SqlCheckUtil.buildViolation(sql, d, getType(), new Object[] {}))
+        }).map(d -> SqlCheckUtil.buildViolation(sql, d, getType(), offset, new Object[] {}))
                 .collect(Collectors.toList());
     }
 

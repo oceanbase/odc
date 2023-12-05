@@ -43,7 +43,8 @@ abstract class BaseLeftFuzzyMatch implements SqlCheckRule {
     @Override
     public List<CheckViolation> check(@NonNull Statement statement, @NonNull SqlCheckContext context) {
         return getLeftFuzzyMatch(SqlCheckUtil.getWhereClauses(statement)).stream()
-                .map(e -> SqlCheckUtil.buildViolation(statement.getText(), e, getType(), null))
+                .map(e -> SqlCheckUtil.buildViolation(statement.getText(), e, getType(),
+                        context.getStatementOffset(statement), null))
                 .collect(Collectors.toList());
     }
 

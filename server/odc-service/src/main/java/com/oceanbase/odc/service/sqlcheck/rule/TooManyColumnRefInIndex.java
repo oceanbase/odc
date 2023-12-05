@@ -57,6 +57,7 @@ public class TooManyColumnRefInIndex implements SqlCheckRule {
 
     @Override
     public List<CheckViolation> check(@NonNull Statement statement, @NonNull SqlCheckContext context) {
+        int offset = context.getStatementOffset(statement);
         if (statement instanceof CreateTable) {
             CreateTable createTable = (CreateTable) statement;
             return createTable.getTableElements().stream().filter(e -> {
@@ -76,7 +77,7 @@ public class TooManyColumnRefInIndex implements SqlCheckRule {
                     size = ((OutOfLineIndex) e).getColumns().size();
                 }
                 return SqlCheckUtil.buildViolation(statement.getText(), e,
-                        getType(), new Object[] {size, maxColumnRefsCount});
+                        getType(), offset, new Object[] {size, maxColumnRefsCount});
             }).collect(Collectors.toList());
         } else if (statement instanceof AlterTable) {
             AlterTable alterTable = (AlterTable) statement;
@@ -95,13 +96,13 @@ public class TooManyColumnRefInIndex implements SqlCheckRule {
                     size = a.getAddConstraint().getColumns().size();
                 }
                 return SqlCheckUtil.buildViolation(statement.getText(), a,
-                        getType(), new Object[] {size, maxColumnRefsCount});
+                        getType(), offset, new Object[] {size, maxColumnRefsCount});
             }).collect(Collectors.toList());
         } else if (statement instanceof CreateIndex) {
             CreateIndex c = (CreateIndex) statement;
             if (c.getColumns().size() > maxColumnRefsCount) {
                 return Collections.singletonList(SqlCheckUtil.buildViolation(statement.getText(),
-                        statement, getType(), new Object[] {c.getColumns().size(), maxColumnRefsCount}));
+                        statement, getType(), offset, new Object[] {c.getColumns().size(), maxColumnRefsCount}));
             }
         }
         return Collections.emptyList();

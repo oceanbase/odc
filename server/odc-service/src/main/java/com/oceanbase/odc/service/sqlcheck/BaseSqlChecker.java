@@ -15,7 +15,9 @@
  */
 package com.oceanbase.odc.service.sqlcheck;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -115,20 +117,24 @@ abstract class BaseSqlChecker implements SqlChecker {
         } else {
             checkContext = new SqlCheckContext();
         }
-        List<Pair<Integer, Statement>> stmts = inputs.stream()
+        Map<Statement, Integer> stmt2Offset = inputs.stream()
                 .map(function)
                 .filter(Objects::nonNull)
-                .collect(Collectors.toList());
+                .collect(Collectors.toMap(
+                        pair -> pair.right,
+                        pair -> pair.left,
+                        (existingValue, newValue) -> existingValue,
+                        () -> new LinkedHashMap<>(inputs.size())));
+        checkContext.addStmt2Offset(stmt2Offset);
         if (checkContext.currentStmtIndex == null) {
             checkContext.currentStmtIndex = 0L;
         }
         if (checkContext.totalStmtCount == null) {
-            checkContext.totalStmtCount = (long) stmts.size();
+            checkContext.totalStmtCount = (long) stmt2Offset.size();
         }
-        return stmts.stream().flatMap(holder -> {
-            List<CheckViolation> violations = doCheck(holder.right, checkContext);
-            violations.stream().forEach(v -> v.setOffset(holder.left));
-            checkContext.addCheckViolation(holder.right, violations);
+        return stmt2Offset.entrySet().stream().flatMap(entry -> {
+            List<CheckViolation> violations = doCheck(entry.getKey(), checkContext);
+            checkContext.addCheckViolation(entry.getKey(), violations);
             checkContext.currentStmtIndex++;
             return violations.stream();
         }).collect(Collectors.toList());

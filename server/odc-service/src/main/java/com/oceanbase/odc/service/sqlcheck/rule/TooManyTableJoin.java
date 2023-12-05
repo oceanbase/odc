@@ -75,7 +75,7 @@ public class TooManyTableJoin implements SqlCheckRule {
         }
         return getTooManyJoinRefs(joins).stream().map(j -> {
             int count = getJoinTableCount(j);
-            return SqlCheckUtil.buildViolation(statement.getText(), j, getType(),
+            return SqlCheckUtil.buildViolation(statement.getText(), j, getType(), context.getStatementOffset(statement),
                     new Object[] {maxJoinTableCount, count});
         }).collect(Collectors.toList());
     }

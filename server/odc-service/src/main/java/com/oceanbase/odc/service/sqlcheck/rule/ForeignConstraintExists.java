@@ -53,13 +53,14 @@ public class ForeignConstraintExists implements SqlCheckRule {
 
     @Override
     public List<CheckViolation> check(@NonNull Statement statement, @NonNull SqlCheckContext context) {
+        int offset = context.getStatementOffset(statement);
         if (statement instanceof CreateTable) {
             CreateTable createTable = (CreateTable) statement;
             List<Statement> statements = getForeignKeys(createTable.getColumnDefinitions().stream());
             statements.addAll(createTable.getConstraints().stream()
                     .filter(f -> f instanceof OutOfLineForeignConstraint).collect(Collectors.toList()));
             return statements.stream()
-                    .map(s -> SqlCheckUtil.buildViolation(statement.getText(), s, getType(), new Object[] {}))
+                    .map(s -> SqlCheckUtil.buildViolation(statement.getText(), s, getType(), offset, new Object[] {}))
                     .collect(Collectors.toList());
         } else if (statement instanceof AlterTable) {
             AlterTable alterTable = (AlterTable) statement;
@@ -68,7 +69,7 @@ public class ForeignConstraintExists implements SqlCheckRule {
                     .filter(a -> a.getAddConstraint() instanceof OutOfLineForeignConstraint)
                     .collect(Collectors.toList()));
             return statements.stream()
-                    .map(a -> SqlCheckUtil.buildViolation(statement.getText(), a, getType(), new Object[] {}))
+                    .map(a -> SqlCheckUtil.buildViolation(statement.getText(), a, getType(), offset, new Object[] {}))
                     .collect(Collectors.toList());
         }
         return Collections.emptyList();

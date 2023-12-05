@@ -54,7 +54,7 @@ public class TooManyInExpression implements SqlCheckRule {
         return getTooManyInExprs(SqlCheckUtil.getWhereClauses(statement)).stream().map(e -> {
             CompoundExpression c = (CompoundExpression) e;
             int count = ((CollectionExpression) c.getRight()).getExpressionList().size();
-            return SqlCheckUtil.buildViolation(statement.getText(), e, getType(),
+            return SqlCheckUtil.buildViolation(statement.getText(), e, getType(), context.getStatementOffset(statement),
                     new Object[] {maxInExprCount, count});
         }).collect(Collectors.toList());
     }

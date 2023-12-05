@@ -135,10 +135,10 @@ public class SqlCheckUtil {
     }
 
     public static CheckViolation buildViolation(String originSql, Statement stmt,
-            SqlCheckRuleType ruleType, Object[] args) {
+            SqlCheckRuleType ruleType, int offset, Object[] args) {
         return new CheckViolation(originSql, stmt.getLine(),
                 stmt.getCharPositionInLine(), stmt.getStart(), stmt.getStop(),
-                ruleType, args == null ? new Object[] {} : args);
+                ruleType, offset, args == null ? new Object[] {} : args);
     }
 
     public static List<CheckResult> buildCheckResults(@NonNull List<CheckViolation> violations) {

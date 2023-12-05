@@ -72,7 +72,7 @@ public class TooManyOutOfLineIndex implements SqlCheckRule {
         String tableName = StringUtils.unwrap(createTable.getTableName(), "\"");
         tableName = StringUtils.unwrap(tableName, "`");
         return Collections.singletonList(SqlCheckUtil.buildViolation(statement.getText(),
-                lastOne, getType(), new Object[] {tableName, maxIndexCount}));
+                lastOne, getType(), context.getStatementOffset(statement), new Object[] {tableName, maxIndexCount}));
     }
 
     @Override

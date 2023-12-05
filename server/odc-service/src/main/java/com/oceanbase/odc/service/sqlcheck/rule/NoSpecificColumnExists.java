@@ -50,14 +50,15 @@ public class NoSpecificColumnExists implements SqlCheckRule {
         if (!(statement instanceof Insert)) {
             return Collections.emptyList();
         }
+        int offset = context.getStatementOffset(statement);
         Insert insert = (Insert) statement;
         List<InsertTable> insertTables = insert.getTableInsert();
         if (CollectionUtils.isNotEmpty(insertTables)) {
-            return build(statement.getText(), insertTables.stream());
+            return build(statement.getText(), offset, insertTables.stream());
         }
-        List<CheckViolation> violations = build(statement.getText(),
+        List<CheckViolation> violations = build(statement.getText(), offset,
                 insert.getConditionalInsert().getConditions().stream().flatMap(i -> i.getThen().stream()));
-        violations.addAll(build(statement.getText(),
+        violations.addAll(build(statement.getText(), offset,
                 insert.getConditionalInsert().getElseClause().stream()));
         return violations;
     }
@@ -73,11 +74,11 @@ public class NoSpecificColumnExists implements SqlCheckRule {
                 DialectType.ODP_SHARDING_OB_MYSQL);
     }
 
-    private List<CheckViolation> build(String sql, Stream<InsertTable> insertTables) {
+    private List<CheckViolation> build(String sql, int offset, Stream<InsertTable> insertTables) {
         return insertTables
                 .filter(i -> CollectionUtils.isEmpty(i.getSetColumns()))
                 .filter(i -> CollectionUtils.isEmpty(i.getColumns()))
-                .map(i -> SqlCheckUtil.buildViolation(sql, i, getType(), null))
+                .map(i -> SqlCheckUtil.buildViolation(sql, i, getType(), offset, null))
                 .collect(Collectors.toList());
     }
 

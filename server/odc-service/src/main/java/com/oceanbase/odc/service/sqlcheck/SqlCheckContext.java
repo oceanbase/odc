@@ -16,7 +16,9 @@
 package com.oceanbase.odc.service.sqlcheck;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import com.oceanbase.odc.common.lang.Pair;
@@ -25,7 +27,6 @@ import com.oceanbase.tools.sqlparser.statement.Statement;
 
 import lombok.Getter;
 import lombok.NonNull;
-import lombok.Setter;
 
 /**
  * {@link SqlCheckContext}
@@ -40,18 +41,26 @@ public class SqlCheckContext {
     Long totalStmtCount;
     @Getter
     Long currentStmtIndex;
-    @Getter
-    @Setter
-    Long currentStmtStartOffset;
     private final List<Pair<Statement, List<CheckViolation>>> stmt2Violations;
+    private final Map<Statement, Integer> stmt2Offset;
 
     public SqlCheckContext() {
         this.stmt2Violations = new ArrayList<>();
+        this.stmt2Offset = new LinkedHashMap<>();
     }
 
     public SqlCheckContext(Long totalStmtCount) {
         this.totalStmtCount = totalStmtCount;
         this.stmt2Violations = new ArrayList<>();
+        this.stmt2Offset = new LinkedHashMap<>();
+    }
+
+    public void addStmt2Offset(Map<Statement, Integer> stmt2Offset) {
+        this.stmt2Offset.putAll(stmt2Offset);
+    }
+
+    public int getStatementOffset(Statement statement) {
+        return this.stmt2Offset.getOrDefault(statement, 0);
     }
 
     public void addCheckViolation(@NonNull Statement statement, @NonNull List<CheckViolation> violations) {

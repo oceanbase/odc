@@ -53,10 +53,11 @@ public class ColumnCollationExists implements SqlCheckRule {
 
     @Override
     public List<CheckViolation> check(@NonNull Statement statement, @NonNull SqlCheckContext context) {
+        int offset = context.getStatementOffset(statement);
         if (statement instanceof CreateTable) {
-            return builds(statement.getText(), ((CreateTable) statement).getColumnDefinitions().stream());
+            return builds(statement.getText(), offset, ((CreateTable) statement).getColumnDefinitions().stream());
         } else if (statement instanceof AlterTable) {
-            return builds(statement.getText(), SqlCheckUtil.fromAlterTable((AlterTable) statement));
+            return builds(statement.getText(), offset, SqlCheckUtil.fromAlterTable((AlterTable) statement));
         }
         return Collections.emptyList();
     }
@@ -67,7 +68,7 @@ public class ColumnCollationExists implements SqlCheckRule {
                 DialectType.ODP_SHARDING_OB_MYSQL);
     }
 
-    private List<CheckViolation> builds(String sql, Stream<ColumnDefinition> stream) {
+    private List<CheckViolation> builds(String sql, int offset, Stream<ColumnDefinition> stream) {
         return stream.filter(d -> {
             DataType dataType = d.getDataType();
             if (dataType instanceof CharacterType) {
@@ -77,7 +78,7 @@ public class ColumnCollationExists implements SqlCheckRule {
             }
             return false;
         }).map(d -> SqlCheckUtil.buildViolation(sql, d.getDataType(),
-                getType(), new Object[] {})).collect(Collectors.toList());
+                getType(), offset, new Object[] {})).collect(Collectors.toList());
     }
 
 }

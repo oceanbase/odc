@@ -57,11 +57,13 @@ public class OracleRestrictTableNameCase implements SqlCheckRule {
 
     @Override
     public List<CheckViolation> check(@NonNull Statement statement, @NonNull SqlCheckContext context) {
+        int offset = context.getStatementOffset(statement);
         if (statement instanceof CreateTable) {
             CreateTable createTable = (CreateTable) statement;
             if (!verify(unquoteIdentifier(createTable.getTableName()))) {
                 return Collections.singletonList(SqlCheckUtil.buildViolation(
-                        statement.getText(), createTable, getType(), new Object[] {createTable.getTableName()}));
+                        statement.getText(), createTable, getType(), offset,
+                        new Object[] {createTable.getTableName()}));
             }
         } else if (statement instanceof AlterTable) {
             AlterTable alterTable = (AlterTable) statement;
@@ -73,14 +75,14 @@ public class OracleRestrictTableNameCase implements SqlCheckRule {
                         return !verify(unquoteIdentifier(a.getRenameToTable().getRelation()));
                     }).map(a -> {
                         RelationFactor r = a.getRenameToTable();
-                        return SqlCheckUtil.buildViolation(statement.getText(), r, getType(),
+                        return SqlCheckUtil.buildViolation(statement.getText(), r, getType(), offset,
                                 new Object[] {r.getRelation()});
                     }).collect(Collectors.toList());
         } else if (statement instanceof RenameTable) {
             RenameTable renameTable = (RenameTable) statement;
             return renameTable.getActions().stream()
                     .filter(r -> !verify(unquoteIdentifier(r.getTo().getRelation())))
-                    .map(a -> SqlCheckUtil.buildViolation(statement.getText(), a.getTo(), getType(),
+                    .map(a -> SqlCheckUtil.buildViolation(statement.getText(), a.getTo(), getType(), offset,
                             new Object[] {a.getTo().getRelation()}))
                     .collect(Collectors.toList());
         }

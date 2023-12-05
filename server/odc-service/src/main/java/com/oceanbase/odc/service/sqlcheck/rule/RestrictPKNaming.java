@@ -77,6 +77,7 @@ public class RestrictPKNaming implements SqlCheckRule {
 
     @Override
     public List<CheckViolation> check(@NonNull Statement statement, @NonNull SqlCheckContext context) {
+        int offset = context.getStatementOffset(statement);
         if (statement instanceof CreateTable) {
             CreateTable createTable = (CreateTable) statement;
             String tableName = createTable.getTableName();
@@ -88,7 +89,7 @@ public class RestrictPKNaming implements SqlCheckRule {
                 String name = c.getConstraintName() == null ? c.getIndexName() : c.getConstraintName();
                 return !matches(tableName, name, c.getColumns());
             }).collect(Collectors.toList()));
-            return statements.stream().map(mapper(statement.getText())).collect(Collectors.toList());
+            return statements.stream().map(mapper(statement.getText(), offset)).collect(Collectors.toList());
         } else if (statement instanceof AlterTable) {
             AlterTable alterTable = (AlterTable) statement;
             String tableName = alterTable.getTableName();
@@ -101,7 +102,7 @@ public class RestrictPKNaming implements SqlCheckRule {
                 return c.getConstraintName() != null
                         && !matches(tableName, c.getConstraintName(), c.getColumns());
             }).map(AlterTableAction::getAddConstraint).collect(Collectors.toList()));
-            return statements.stream().map(mapper(statement.getText())).collect(Collectors.toList());
+            return statements.stream().map(mapper(statement.getText(), offset)).collect(Collectors.toList());
         }
         return Collections.emptyList();
     }
@@ -128,7 +129,7 @@ public class RestrictPKNaming implements SqlCheckRule {
         return "pk_${table-name}_${column-name-1}_${column-name-2}_...";
     }
 
-    private Function<Statement, CheckViolation> mapper(String sql) {
+    private Function<Statement, CheckViolation> mapper(String sql, int offset) {
         return s -> {
             String name = "";
             if (s instanceof InLineConstraint) {
@@ -137,7 +138,7 @@ public class RestrictPKNaming implements SqlCheckRule {
                 OutOfLineConstraint c = (OutOfLineConstraint) s;
                 name = c.getConstraintName() == null ? c.getIndexName() : c.getConstraintName();
             }
-            return SqlCheckUtil.buildViolation(sql, s, getType(), new Object[] {name, getPattern()});
+            return SqlCheckUtil.buildViolation(sql, s, getType(), offset, new Object[] {name, getPattern()});
         };
     }
 

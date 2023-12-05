@@ -48,7 +48,8 @@ abstract class BaseNoNotNullAtInExpr implements SqlCheckRule {
     @Override
     public List<CheckViolation> check(@NonNull Statement statement, @NonNull SqlCheckContext context) {
         return getNoNotNullAtNotInExpr(SqlCheckUtil.getWhereClauses(statement)).stream()
-                .map(e -> SqlCheckUtil.buildViolation(statement.getText(), e, getType(), null))
+                .map(e -> SqlCheckUtil.buildViolation(statement.getText(), e, getType(),
+                        context.getStatementOffset(statement), null))
                 .collect(Collectors.toList());
     }
 

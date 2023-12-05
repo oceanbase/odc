@@ -65,7 +65,8 @@ public class NoValidWhereClause implements SqlCheckRule {
             return Collections.emptyList();
         }
         return getExpressionIsAlwaysTrueOrFalse(wheres).stream()
-                .map(e -> SqlCheckUtil.buildViolation(statement.getText(), e, getType(), null))
+                .map(e -> SqlCheckUtil.buildViolation(statement.getText(), e, getType(),
+                        context.getStatementOffset(statement), null))
                 .collect(Collectors.toList());
     }
 

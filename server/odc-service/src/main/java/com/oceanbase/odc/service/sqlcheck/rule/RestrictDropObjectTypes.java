@@ -62,7 +62,8 @@ public class RestrictDropObjectTypes implements SqlCheckRule {
         if (allowObjectTypes.stream().noneMatch(s -> StringUtils.equalsIgnoreCase(s, objectType))) {
             String allTypes = allowObjectTypes.isEmpty() ? "N/A" : String.join(",", allowObjectTypes);
             return Collections.singletonList(SqlCheckUtil.buildViolation(
-                    statement.getText(), statement, getType(), new Object[] {objectType, allTypes}));
+                    statement.getText(), statement, getType(), context.getStatementOffset(statement),
+                    new Object[] {objectType, allTypes}));
         }
         return Collections.emptyList();
     }

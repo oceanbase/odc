@@ -69,6 +69,7 @@ public class RestrictIndexNaming implements SqlCheckRule {
 
     @Override
     public List<CheckViolation> check(@NonNull Statement statement, @NonNull SqlCheckContext context) {
+        int offset = context.getStatementOffset(statement);
         if (statement instanceof CreateTable) {
             CreateTable createTable = (CreateTable) statement;
             /**
@@ -89,7 +90,7 @@ public class RestrictIndexNaming implements SqlCheckRule {
             }).collect(Collectors.toList());
             return statements.stream().map(s -> {
                 OutOfLineIndex c = (OutOfLineIndex) s;
-                return SqlCheckUtil.buildViolation(statement.getText(), s, getType(),
+                return SqlCheckUtil.buildViolation(statement.getText(), s, getType(), offset,
                         new Object[] {c.getIndexName(), getPattern()});
             }).collect(Collectors.toList());
         } else if (statement instanceof CreateIndex) {
@@ -102,7 +103,8 @@ public class RestrictIndexNaming implements SqlCheckRule {
                 return Collections.emptyList();
             }
             return Collections.singletonList(SqlCheckUtil.buildViolation(statement.getText(),
-                    createIndex, getType(), new Object[] {createIndex.getRelation().getRelation(), getPattern()}));
+                    createIndex, getType(), offset,
+                    new Object[] {createIndex.getRelation().getRelation(), getPattern()}));
         } else if (statement instanceof AlterTable) {
             AlterTable alterTable = (AlterTable) statement;
             return alterTable.getAlterTableActions().stream().filter(alterTableAction -> {
@@ -114,7 +116,7 @@ public class RestrictIndexNaming implements SqlCheckRule {
                         && !matches(alterTable.getTableName(), c.getIndexName(), c.getColumns());
             }).map(a -> {
                 OutOfLineIndex c = a.getAddIndex();
-                return SqlCheckUtil.buildViolation(statement.getText(), a, getType(),
+                return SqlCheckUtil.buildViolation(statement.getText(), a, getType(), offset,
                         new Object[] {c.getIndexName(), getPattern()});
             }).collect(Collectors.toList());
         }
