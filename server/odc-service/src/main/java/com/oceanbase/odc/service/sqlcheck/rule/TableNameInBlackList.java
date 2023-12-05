@@ -58,13 +58,12 @@ public class TableNameInBlackList implements SqlCheckRule {
 
     @Override
     public List<CheckViolation> check(@NonNull Statement statement, @NonNull SqlCheckContext context) {
-        int offset = context.getStatementOffset(statement);
         if (statement instanceof CreateTable) {
             CreateTable createTable = (CreateTable) statement;
             String name = createTable.getTableName();
             if (containsIgnoreCase(name)) {
                 return Collections.singletonList(SqlCheckUtil.buildViolation(statement.getText(),
-                        statement, getType(), offset, new Object[] {name, String.join(",", blackList)}));
+                        statement, getType(), new Object[] {name, String.join(",", blackList)}));
             }
         } else if (statement instanceof AlterTable) {
             AlterTable alterTable = (AlterTable) statement;
@@ -76,14 +75,14 @@ public class TableNameInBlackList implements SqlCheckRule {
                         return containsIgnoreCase(a.getRenameToTable().getRelation());
                     }).map(a -> {
                         RelationFactor r = a.getRenameToTable();
-                        return SqlCheckUtil.buildViolation(statement.getText(), r, getType(), offset,
+                        return SqlCheckUtil.buildViolation(statement.getText(), r, getType(),
                                 new Object[] {r.getRelation(), String.join(",", blackList)});
                     }).collect(Collectors.toList());
         } else if (statement instanceof RenameTable) {
             RenameTable renameTable = (RenameTable) statement;
             return renameTable.getActions().stream()
                     .filter(r -> containsIgnoreCase(r.getTo().getRelation()))
-                    .map(a -> SqlCheckUtil.buildViolation(statement.getText(), a.getTo(), getType(), offset,
+                    .map(a -> SqlCheckUtil.buildViolation(statement.getText(), a.getTo(), getType(),
                             new Object[] {a.getTo().getRelation(), String.join(",", blackList)}))
                     .collect(Collectors.toList());
         }

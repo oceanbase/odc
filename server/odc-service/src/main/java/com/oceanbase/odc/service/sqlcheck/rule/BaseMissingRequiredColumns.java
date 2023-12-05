@@ -64,8 +64,7 @@ public abstract class BaseMissingRequiredColumns implements SqlCheckRule {
             return Collections.emptyList();
         }
         return Collections.singletonList(SqlCheckUtil.buildViolation(
-                statement.getText(), statement, getType(), context.getStatementOffset(statement),
-                new Object[] {String.join(",", tmp)}));
+                statement.getText(), statement, getType(), new Object[] {String.join(",", tmp)}));
     }
 
     protected abstract String unquoteIdentifier(String identifier);

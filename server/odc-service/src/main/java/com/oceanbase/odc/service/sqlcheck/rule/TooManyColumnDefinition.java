@@ -66,7 +66,6 @@ public class TooManyColumnDefinition implements SqlCheckRule {
         String tableName = StringUtils.unwrap(createTable.getTableName(), "\"");
         tableName = StringUtils.unwrap(tableName, "`");
         return Collections.singletonList(SqlCheckUtil.buildViolation(statement.getText(), lastOne, getType(),
-                context.getStatementOffset(statement),
                 new Object[] {tableName, maxColumnDefinitionCount, elts.size()}));
     }
 

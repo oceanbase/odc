@@ -79,8 +79,7 @@ public class SelectStarExists implements SqlCheckRule {
                     }
                 }
                 return false;
-            }).map(p -> SqlCheckUtil.buildViolation(statement.getText(), p, getType(),
-                    context.getStatementOffset(statement), new Object[] {}))
+            }).map(p -> SqlCheckUtil.buildViolation(statement.getText(), p, getType(), new Object[] {}))
                     .collect(Collectors.toList()));
             RelatedSelectBody rs = selectBody.getRelatedSelect();
             selectBody = rs == null ? null : rs.getSelect();

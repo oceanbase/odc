@@ -51,7 +51,6 @@ public class PreferLocalOutOfLineIndex implements SqlCheckRule {
         if (!(statement instanceof CreateTable)) {
             return Collections.emptyList();
         }
-        int offset = context.getStatementOffset(statement);
         CreateTable createTable = (CreateTable) statement;
         List<TableElement> indexes = createTable.getTableElements().stream().filter(
                 e -> e instanceof OutOfLineIndex).filter(e -> {
@@ -68,7 +67,7 @@ public class PreferLocalOutOfLineIndex implements SqlCheckRule {
                     return options == null || options.getGlobal() == null || options.getGlobal();
                 }).collect(Collectors.toList()));
         return indexes.stream().map(t -> SqlCheckUtil.buildViolation(
-                statement.getText(), t, getType(), offset, new Object[] {})).collect(Collectors.toList());
+                statement.getText(), t, getType(), new Object[] {})).collect(Collectors.toList());
     }
 
     @Override

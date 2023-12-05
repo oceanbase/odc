@@ -48,7 +48,6 @@ public class NoWhereClauseExists implements SqlCheckRule {
 
     @Override
     public List<CheckViolation> check(@NonNull Statement statement, @NonNull SqlCheckContext context) {
-        int offset = context.getStatementOffset(statement);
         if (!(statement instanceof Delete) && !(statement instanceof Update)) {
             // 只对 update 和 delete 语句有效
             return Collections.emptyList();
@@ -56,7 +55,7 @@ public class NoWhereClauseExists implements SqlCheckRule {
         List<Expression> wheres = SqlCheckUtil.getWhereClauses(statement);
         if (wheres.isEmpty()) {
             return Collections.singletonList(SqlCheckUtil.buildViolation(
-                    statement.getText(), statement, getType(), offset, null));
+                    statement.getText(), statement, getType(), null));
         }
         return Collections.emptyList();
     }

@@ -75,18 +75,16 @@ abstract class BaseRestrictPKDataTypes implements SqlCheckRule {
 
     @Override
     public List<CheckViolation> check(@NonNull Statement statement, @NonNull SqlCheckContext context) {
-        int offset = context.getStatementOffset(statement);
         if (statement instanceof CreateTable) {
             CreateTable createTable = (CreateTable) statement;
             String ddl = statement.getText();
-            List<CheckViolation> results = builds(ddl, offset, createTable.getColumnDefinitions().stream());
-            results.addAll(
-                    builds(ddl, getColumnName2TypeName(createTable), offset, createTable.getConstraints().stream()));
+            List<CheckViolation> results = builds(ddl, createTable.getColumnDefinitions().stream());
+            results.addAll(builds(ddl, getColumnName2TypeName(createTable), createTable.getConstraints().stream()));
             return results;
         } else if (statement instanceof AlterTable) {
             AlterTable alterTable = (AlterTable) statement;
             String ddl = statement.getText();
-            List<CheckViolation> violations = builds(ddl, offset, SqlCheckUtil.fromAlterTable(alterTable));
+            List<CheckViolation> violations = builds(ddl, SqlCheckUtil.fromAlterTable(alterTable));
             if (jdbcOperations == null) {
                 return violations;
             }
@@ -95,7 +93,7 @@ abstract class BaseRestrictPKDataTypes implements SqlCheckRule {
                 return violations;
             }
             Map<String, String> col2TypeName = getColumnName2TypeName(createTable);
-            violations.addAll(builds(ddl, col2TypeName, offset, alterTable.getAlterTableActions().stream()
+            violations.addAll(builds(ddl, col2TypeName, alterTable.getAlterTableActions().stream()
                     .filter(a -> a.getAddConstraint() != null).map(AlterTableAction::getAddConstraint)));
             return violations;
         }
@@ -145,18 +143,18 @@ abstract class BaseRestrictPKDataTypes implements SqlCheckRule {
         };
     }
 
-    private List<CheckViolation> builds(String sql, Map<String, String> col2TypeName, int offset,
+    private List<CheckViolation> builds(String sql, Map<String, String> col2TypeName,
             Stream<OutOfLineConstraint> stream) {
         return stream.filter(c -> c.isPrimaryKey() && c.getColumns().stream().anyMatch(notInTypes(col2TypeName)))
                 .flatMap(c -> c.getColumns().stream().filter(notInTypes(col2TypeName)).map(s -> {
                     ColumnReference cr = (ColumnReference) s.getColumn();
                     Object[] args = new Object[] {col2TypeName.get(unquoteIdentifier(cr.getColumn())),
                             String.join(",", allowedTypeNames)};
-                    return SqlCheckUtil.buildViolation(sql, s, getType(), offset, args);
+                    return SqlCheckUtil.buildViolation(sql, s, getType(), args);
                 })).collect(Collectors.toList());
     }
 
-    private List<CheckViolation> builds(String sql, int offset, Stream<ColumnDefinition> stream) {
+    private List<CheckViolation> builds(String sql, Stream<ColumnDefinition> stream) {
         return stream.filter(d -> {
             ColumnAttributes a = d.getColumnAttributes();
             if (a == null || CollectionUtils.isEmpty(a.getConstraints())) {
@@ -166,7 +164,7 @@ abstract class BaseRestrictPKDataTypes implements SqlCheckRule {
                     && !isTypeAllowed(d.getDataType().getName());
         }).map(d -> {
             DataType t = d.getDataType();
-            return SqlCheckUtil.buildViolation(sql, t, getType(), offset,
+            return SqlCheckUtil.buildViolation(sql, t, getType(),
                     new Object[] {t.getName(), String.join(",", allowedTypeNames)});
         }).collect(Collectors.toList());
     }

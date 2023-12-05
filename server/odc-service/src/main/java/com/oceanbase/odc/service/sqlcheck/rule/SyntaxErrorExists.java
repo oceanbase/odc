@@ -52,8 +52,7 @@ public class SyntaxErrorExists implements SqlCheckRule {
         }
         SyntaxErrorStatement stmt = (SyntaxErrorStatement) statement;
         return Collections.singletonList(SqlCheckUtil.buildViolation(
-                stmt.getText(), stmt, getType(), context.getStatementOffset(statement),
-                new Object[] {stmt.getException().getMessage()}));
+                stmt.getText(), stmt, getType(), new Object[] {stmt.getException().getMessage()}));
     }
 
     @Override

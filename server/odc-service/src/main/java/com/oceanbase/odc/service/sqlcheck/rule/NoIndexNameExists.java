@@ -55,7 +55,6 @@ public class NoIndexNameExists implements SqlCheckRule {
 
     @Override
     public List<CheckViolation> check(@NonNull Statement statement, @NonNull SqlCheckContext context) {
-        int offset = context.getStatementOffset(statement);
         if (statement instanceof CreateTable) {
             CreateTable createTable = (CreateTable) statement;
             List<Statement> statements = builds(createTable.getColumnDefinitions().stream());
@@ -68,7 +67,7 @@ public class NoIndexNameExists implements SqlCheckRule {
                 return c.isPrimaryKey() || c.isUniqueKey();
             }).collect(Collectors.toList()));
             return statements.stream().map(s -> SqlCheckUtil.buildViolation(
-                    statement.getText(), s, getType(), offset, new Object[] {})).collect(Collectors.toList());
+                    statement.getText(), s, getType(), new Object[] {})).collect(Collectors.toList());
         } else if (statement instanceof AlterTable) {
             AlterTable alterTable = (AlterTable) statement;
             List<Statement> statements = builds(SqlCheckUtil.fromAlterTable(alterTable));
@@ -84,7 +83,7 @@ public class NoIndexNameExists implements SqlCheckRule {
                 return i != null && i.getIndexName() == null;
             }).collect(Collectors.toList()));
             return statements.stream().map(s -> SqlCheckUtil.buildViolation(
-                    statement.getText(), s, getType(), offset, new Object[] {})).collect(Collectors.toList());
+                    statement.getText(), s, getType(), new Object[] {})).collect(Collectors.toList());
         }
         return Collections.emptyList();
     }

@@ -59,7 +59,6 @@ public class MySQLRestrictTableCharset implements SqlCheckRule {
 
     @Override
     public List<CheckViolation> check(@NonNull Statement statement, @NonNull SqlCheckContext context) {
-        int offset = context.getStatementOffset(statement);
         if (statement instanceof CreateTable) {
             TableOptions options = ((CreateTable) statement).getTableOptions();
             if (options != null && options.getCharset() != null && !containsIgnoreCase(options.getCharset())) {
@@ -68,12 +67,12 @@ public class MySQLRestrictTableCharset implements SqlCheckRule {
                     charsets = String.join(",", allowedCharsets);
                 }
                 return Collections.singletonList(SqlCheckUtil.buildViolation(statement.getText(), options,
-                        getType(), offset, new Object[] {options.getCharset(), charsets}));
+                        getType(), new Object[] {options.getCharset(), charsets}));
             }
         } else if (statement instanceof AlterTable) {
             return ((AlterTable) statement).getAlterTableActions().stream()
                     .filter(a -> a.getCharset() != null && !containsIgnoreCase(a.getCharset()))
-                    .map(a -> SqlCheckUtil.buildViolation(statement.getText(), a, getType(), offset,
+                    .map(a -> SqlCheckUtil.buildViolation(statement.getText(), a, getType(),
                             new Object[] {a.getCharset(), String.join(",", allowedCharsets)}))
                     .collect(Collectors.toList());
         }

@@ -59,11 +59,10 @@ public class TooLongCharLength implements SqlCheckRule {
 
     @Override
     public List<CheckViolation> check(@NonNull Statement statement, @NonNull SqlCheckContext context) {
-        int offset = context.getStatementOffset(statement);
         if (statement instanceof CreateTable) {
-            return builds(statement.getText(), offset, ((CreateTable) statement).getColumnDefinitions().stream());
+            return builds(statement.getText(), ((CreateTable) statement).getColumnDefinitions().stream());
         } else if (statement instanceof AlterTable) {
-            return builds(statement.getText(), offset, SqlCheckUtil.fromAlterTable((AlterTable) statement));
+            return builds(statement.getText(), SqlCheckUtil.fromAlterTable((AlterTable) statement));
         }
         return Collections.emptyList();
     }
@@ -74,7 +73,7 @@ public class TooLongCharLength implements SqlCheckRule {
                 DialectType.ODP_SHARDING_OB_MYSQL);
     }
 
-    private List<CheckViolation> builds(String sql, int offset, Stream<ColumnDefinition> stream) {
+    private List<CheckViolation> builds(String sql, Stream<ColumnDefinition> stream) {
         return stream.map(ColumnDefinition::getDataType).filter(d -> {
             if (!StringUtils.startsWithIgnoreCase(d.getName(), "char")
                     && !StringUtils.startsWithIgnoreCase(d.getName(), "character")
@@ -85,7 +84,7 @@ public class TooLongCharLength implements SqlCheckRule {
             return type.getLength().compareTo(new BigDecimal(maxCharLength)) > 0;
         }).map(d -> {
             CharacterType type = (CharacterType) d;
-            return SqlCheckUtil.buildViolation(sql, d, getType(), offset,
+            return SqlCheckUtil.buildViolation(sql, d, getType(),
                     new Object[] {maxCharLength, type.getLength().toString()});
         }).collect(Collectors.toList());
     }

@@ -53,11 +53,10 @@ public class MySQLRestrictAutoIncrementUnsigned implements SqlCheckRule {
 
     @Override
     public List<CheckViolation> check(@NonNull Statement statement, @NonNull SqlCheckContext context) {
-        int offset = context.getStatementOffset(statement);
         if (statement instanceof CreateTable) {
-            return builds(statement.getText(), offset, ((CreateTable) statement).getColumnDefinitions().stream());
+            return builds(statement.getText(), ((CreateTable) statement).getColumnDefinitions().stream());
         } else if (statement instanceof AlterTable) {
-            return builds(statement.getText(), offset, SqlCheckUtil.fromAlterTable((AlterTable) statement));
+            return builds(statement.getText(), SqlCheckUtil.fromAlterTable((AlterTable) statement));
         }
         return Collections.emptyList();
     }
@@ -67,7 +66,7 @@ public class MySQLRestrictAutoIncrementUnsigned implements SqlCheckRule {
         return Arrays.asList(DialectType.OB_MYSQL, DialectType.MYSQL, DialectType.ODP_SHARDING_OB_MYSQL);
     }
 
-    private List<CheckViolation> builds(String sql, int offset, Stream<ColumnDefinition> stream) {
+    private List<CheckViolation> builds(String sql, Stream<ColumnDefinition> stream) {
         return stream.filter(d -> {
             ColumnAttributes ca = d.getColumnAttributes();
             if (ca == null) {
@@ -82,7 +81,7 @@ public class MySQLRestrictAutoIncrementUnsigned implements SqlCheckRule {
             return !Boolean.FALSE.equals(type.getSigned());
         }).map(d -> {
             DataType type = d.getDataType();
-            return SqlCheckUtil.buildViolation(sql, type, getType(), offset, new Object[] {type.getText()});
+            return SqlCheckUtil.buildViolation(sql, type, getType(), new Object[] {type.getText()});
         }).collect(Collectors.toList());
     }
 

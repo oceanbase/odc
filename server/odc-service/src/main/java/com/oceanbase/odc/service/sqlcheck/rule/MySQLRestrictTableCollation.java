@@ -52,7 +52,6 @@ public class MySQLRestrictTableCollation implements SqlCheckRule {
 
     @Override
     public List<CheckViolation> check(@NonNull Statement statement, @NonNull SqlCheckContext context) {
-        int offset = context.getStatementOffset(statement);
         if (statement instanceof CreateTable) {
             TableOptions options = ((CreateTable) statement).getTableOptions();
             String collation = "N/A";
@@ -61,12 +60,12 @@ public class MySQLRestrictTableCollation implements SqlCheckRule {
             }
             if (options != null && options.getCollation() != null && !containsIgnoreCase(options.getCollation())) {
                 return Collections.singletonList(SqlCheckUtil.buildViolation(statement.getText(), options,
-                        getType(), offset, new Object[] {options.getCollation(), collation}));
+                        getType(), new Object[] {options.getCollation(), collation}));
             }
         } else if (statement instanceof AlterTable) {
             return ((AlterTable) statement).getAlterTableActions().stream()
                     .filter(a -> a.getCollation() != null && !containsIgnoreCase(a.getCollation()))
-                    .map(a -> SqlCheckUtil.buildViolation(statement.getText(), a, getType(), offset,
+                    .map(a -> SqlCheckUtil.buildViolation(statement.getText(), a, getType(),
                             new Object[] {a.getCollation(), String.join(",", allowedCollations)}))
                     .collect(Collectors.toList());
         }

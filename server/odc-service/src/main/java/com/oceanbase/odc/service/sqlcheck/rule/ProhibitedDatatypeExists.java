@@ -61,11 +61,10 @@ public class ProhibitedDatatypeExists implements SqlCheckRule {
 
     @Override
     public List<CheckViolation> check(@NonNull Statement statement, @NonNull SqlCheckContext context) {
-        int offset = context.getStatementOffset(statement);
         if (statement instanceof CreateTable) {
-            return builds(statement.getText(), offset, ((CreateTable) statement).getColumnDefinitions().stream());
+            return builds(statement.getText(), ((CreateTable) statement).getColumnDefinitions().stream());
         } else if (statement instanceof AlterTable) {
-            return builds(statement.getText(), offset, SqlCheckUtil.fromAlterTable((AlterTable) statement));
+            return builds(statement.getText(), SqlCheckUtil.fromAlterTable((AlterTable) statement));
         }
         return Collections.emptyList();
     }
@@ -76,7 +75,7 @@ public class ProhibitedDatatypeExists implements SqlCheckRule {
                 DialectType.ODP_SHARDING_OB_MYSQL);
     }
 
-    private List<CheckViolation> builds(String sql, int offset, Stream<ColumnDefinition> stream) {
+    private List<CheckViolation> builds(String sql, Stream<ColumnDefinition> stream) {
         return stream.filter(d -> containsIgnoreCase(d.getDataType().getName()))
                 .map(d -> {
                     DataType type = d.getDataType();
@@ -84,8 +83,7 @@ public class ProhibitedDatatypeExists implements SqlCheckRule {
                     if (CollectionUtils.isNotEmpty(prohibitedTypeNames)) {
                         dataTypes = String.join(",", prohibitedTypeNames);
                     }
-                    return SqlCheckUtil.buildViolation(sql, type, getType(), offset,
-                            new Object[] {type.getText(), dataTypes});
+                    return SqlCheckUtil.buildViolation(sql, type, getType(), new Object[] {type.getText(), dataTypes});
                 }).collect(Collectors.toList());
     }
 

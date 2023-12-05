@@ -58,18 +58,17 @@ public class ColumnNameInBlackList implements SqlCheckRule {
 
     @Override
     public List<CheckViolation> check(@NonNull Statement statement, @NonNull SqlCheckContext context) {
-        int offset = context.getStatementOffset(statement);
         if (statement instanceof CreateTable) {
-            return builds(statement.getText(), offset, ((CreateTable) statement).getColumnDefinitions().stream());
+            return builds(statement.getText(), ((CreateTable) statement).getColumnDefinitions().stream());
         } else if (statement instanceof AlterTable) {
             AlterTable alterTable = (AlterTable) statement;
-            List<CheckViolation> r = builds(statement.getText(), offset, SqlCheckUtil.fromAlterTable(alterTable));
+            List<CheckViolation> r = builds(statement.getText(), SqlCheckUtil.fromAlterTable(alterTable));
             r.addAll(alterTable.getAlterTableActions().stream().filter(a -> {
                 if (a.getRenameFromColumn() == null) {
                     return false;
                 }
                 return containsIgnoreCase(a.getRenameToColumnName());
-            }).map(a -> SqlCheckUtil.buildViolation(statement.getText(), a, getType(), offset,
+            }).map(a -> SqlCheckUtil.buildViolation(statement.getText(), a, getType(),
                     new Object[] {a.getRenameToColumnName(), String.join(",", blackList)}))
                     .collect(Collectors.toList()));
             return r;
@@ -93,9 +92,9 @@ public class ColumnNameInBlackList implements SqlCheckRule {
         return this.blackList.stream().anyMatch(s -> StringUtils.equalsIgnoreCase(s, str));
     }
 
-    private List<CheckViolation> builds(String sql, int offset, Stream<ColumnDefinition> stream) {
+    private List<CheckViolation> builds(String sql, Stream<ColumnDefinition> stream) {
         return stream.filter(d -> containsIgnoreCase(d.getColumnReference().getColumn()))
-                .map(d -> SqlCheckUtil.buildViolation(sql, d.getColumnReference(), getType(), offset, new Object[] {
+                .map(d -> SqlCheckUtil.buildViolation(sql, d.getColumnReference(), getType(), new Object[] {
                         d.getColumnReference().getColumn(), String.join(",", blackList)}))
                 .collect(Collectors.toList());
     }
