@@ -46,15 +46,15 @@ public interface ConnectionHistoryRepository extends JpaRepository<ConnectionHis
     int updateOrInsert(@Param("connectionId") Long connectionId, @Param("userId") Long userId,
             @Param("lastAccessTime") Date lastAccessTime);
 
-    @Query(value = "select max(a.`id`) as id, c.`id` as connection_id, c.`creator_id` as user_id, "
+    @Query(value = "select coalesce(max(a.`id`), -1) as id, c.`id` as connection_id, c.`creator_id` as user_id, "
             + "coalesce(max(a.`last_access_time`), c.`update_time`) as last_access_time, coalesce(max(a.`create_time`), "
             + "c.`create_time`) as create_time, coalesce(max(a.`update_time`), c.`update_time`) as update_time from "
             + "connect_connection c left join connect_connection_access a on c.id=a.connection_id group by c.`id` "
-            + "having last_access_time < timestampadd(second, -(:intervalSeconds), current_timestamp)",
+            + "having last_access_time < timestampadd(second, -:intervalSeconds, current_timestamp)",
             nativeQuery = true)
     List<ConnectionHistoryEntity> listInactiveConnections(@Param("intervalSeconds") Integer intervalSeconds);
 
-    @Query(value = "select max(a.`id`) as id, c.`id` as connection_id, c.`creator_id` as user_id, "
+    @Query(value = "select coalesce(max(a.`id`), -1) as id, c.`id` as connection_id, c.`creator_id` as user_id, "
             + "coalesce(max(a.`last_access_time`), c.`update_time`) as last_access_time, coalesce(max(a.`create_time`), "
             + "c.`create_time`) as create_time, coalesce(max(a.`update_time`), c.`update_time`) as update_time from "
             + "connect_connection c left join connect_connection_access a on c.id=a.connection_id where c.is_temp=1 "

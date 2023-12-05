@@ -70,7 +70,7 @@ public class LabSchedules {
                 resourceService.revokeResource(connectionHistoryEntity.getConnectionId());
                 log.info("revoke resource successfully, connectionId={}", connectionHistoryEntity.getConnectionId());
             } catch (Exception ex) {
-                log.warn("revoke resource failed, connectionId={}", connectionHistoryEntity.getId(), ex);
+                log.warn("revoke resource failed, connectionId={}", connectionHistoryEntity.getConnectionId(), ex);
             }
         }
     }
