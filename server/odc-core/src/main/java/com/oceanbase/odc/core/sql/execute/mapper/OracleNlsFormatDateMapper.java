@@ -15,8 +15,8 @@
  */
 package com.oceanbase.odc.core.sql.execute.mapper;
 
-import java.sql.Date;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.TimeZone;
 
 import org.springframework.context.i18n.LocaleContextHolder;
@@ -52,7 +52,7 @@ public class OracleNlsFormatDateMapper extends OracleGeneralDateMapper {
     }
 
     private Object map(CellData data) throws SQLException {
-        Date date = data.getDate();
+        Timestamp date = data.getTimestamp();
         if (date == null) {
             return null;
         }
