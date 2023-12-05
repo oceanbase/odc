@@ -54,6 +54,7 @@ import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.plugin.task.api.datatransfer.dumper.AbstractOutputFile;
+import com.oceanbase.odc.plugin.task.api.datatransfer.dumper.DataFile;
 import com.oceanbase.odc.plugin.task.api.datatransfer.dumper.ExportOutput;
 import com.oceanbase.odc.plugin.task.api.datatransfer.dumper.SchemaFile;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.CsvConfig;
@@ -93,16 +94,31 @@ public class MySQLTransferServiceTest extends ServiceTestEnv {
         Mockito.when(connectionService.getForConnectionSkipPermissionCheck(connectionId)).thenReturn(connectionConfig);
     }
 
+    /*
+     * dump test
+     */
+    @Test
+    public void create_dumpSchemaAndData_bothSchemaAndDataDumped() throws Exception {
+        DataTransferTaskContext context =
+                dataTransferService.create(BUCKET, getDumpConfig(connectionConfig.getDefaultSchema(), true, true));
+        Assert.assertNotNull(context.get(60, TimeUnit.SECONDS));
+
+        ExportOutput exportOutput = new ExportOutput(getDumpFile());
+        assertFileCountEquals(exportOutput, 2);
+        assertObjectTypeIn(exportOutput, new HashSet<>(Collections.singleton(ObjectType.TABLE)));
+        assertFileTypeMatchAll(exportOutput, new HashSet<>(Arrays.asList(DataFile.class, SchemaFile.class)));
+    }
+
     @Test
     public void create_dumpSchema_onlySchemaDumped() throws Exception {
         DataTransferTaskContext context =
                 dataTransferService.create(BUCKET, getDumpConfig(connectionConfig.getDefaultSchema(), false, true));
         Assert.assertNotNull(context.get(60, TimeUnit.SECONDS));
 
-        ExportOutput ExportOutput = new ExportOutput(getDumpFile());
-        assertFileCountEquals(ExportOutput, 1);
-        assertObjectTypeIn(ExportOutput, new HashSet<>(Collections.singleton(ObjectType.TABLE)));
-        assertFileTypeMatchAll(ExportOutput, new HashSet<>(Collections.singletonList(SchemaFile.class)));
+        ExportOutput exportOutput = new ExportOutput(getDumpFile());
+        assertFileCountEquals(exportOutput, 1);
+        assertObjectTypeIn(exportOutput, new HashSet<>(Collections.singleton(ObjectType.TABLE)));
+        assertFileTypeMatchAll(exportOutput, new HashSet<>(Collections.singletonList(SchemaFile.class)));
     }
 
     @Test
@@ -119,8 +135,36 @@ public class MySQLTransferServiceTest extends ServiceTestEnv {
     }
 
     @Test
+    public void create_dumpData_onlyDataDumped() throws Exception {
+        DataTransferTaskContext context =
+                dataTransferService.create(BUCKET, getDumpConfig(connectionConfig.getDefaultSchema(), true, false));
+        Assert.assertNotNull(context.get(60, TimeUnit.SECONDS));
+
+        ExportOutput exportOutput = new ExportOutput(getDumpFile());
+        assertFileCountEquals(exportOutput, 1);
+        assertObjectTypeIn(exportOutput, new HashSet<>(Collections.singleton(ObjectType.TABLE)));
+        assertFileTypeMatchAll(exportOutput, new HashSet<>(Collections.singletonList(DataFile.class)));
+    }
+
+    /*
+     * load test
+     */
+    @Test
+    public void create_loadSchemaAndData_schemaAndDataLoaded() throws Exception {
+        File dumpFile = dumpSchemaAndDataForLoad(DialectType.MYSQL);
+        assertTableNotExists();
+
+        DataTransferTaskContext context =
+                dataTransferService.create(BUCKET, getLoadConfig(false, connectionConfig.getDefaultSchema(),
+                        Collections.singletonList(dumpFile.getAbsolutePath()), true, true));
+        Assert.assertNotNull(context.get(600, TimeUnit.SECONDS));
+        assertTableExists();
+        assertTableCountEquals(2);
+    }
+
+    @Test
     public void create_loadSchema_schemaLoaded() throws Exception {
-        File dumpFile = dumpSchemaForLoad(DialectType.MYSQL);
+        File dumpFile = dumpSchemaAndDataForLoad(DialectType.MYSQL);
         assertTableNotExists();
 
         DataTransferTaskContext context = dataTransferService.create(BUCKET, getLoadConfig(false,
@@ -162,8 +206,8 @@ public class MySQLTransferServiceTest extends ServiceTestEnv {
         }
     }
 
-    private File dumpSchemaForLoad(DialectType dialectType) throws Exception {
-        DataTransferConfig config = getDumpConfig(connectionConfig.getDefaultSchema(), false, true);
+    private File dumpSchemaAndDataForLoad(DialectType dialectType) throws Exception {
+        DataTransferConfig config = getDumpConfig(connectionConfig.getDefaultSchema(), true, true);
         DataTransferTaskContext context = dataTransferService.create(BUCKET, config);
         Assert.assertNotNull(context.get(60, TimeUnit.SECONDS));
         File dumpFile = getDumpFile();

@@ -10,6 +10,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>task-plugin-mysql</artifactId>
+
     <dependencies>
         <dependency>
             <groupId>com.oceanbase</groupId>
@@ -39,6 +40,11 @@
         <dependency>
             <groupId>com.oceanbase</groupId>
             <artifactId>task-plugin-ob-mysql</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.zaxxer</groupId>
+            <artifactId>HikariCP</artifactId>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 
