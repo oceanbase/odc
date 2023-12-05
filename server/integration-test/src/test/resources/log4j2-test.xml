@@ -38,9 +38,9 @@
         <Routing name="InfoRoutingAppender">
             <Routes pattern="${sys:task.workspace}">
                 <Route>
-                    <RollingFile name="Rolling-${sys:task.workspace}"
-                                 fileName="${sys:task.workspace}/ob-loader-dumper.info"
-                                 filePattern="${sys:task.workspace}/${date:yyyy-MM}/ob-loader-dumper-%d{yyyy-MM-dd}-%i.info.gz">
+                    <RollingFile name="InfoRolling-${ctx:task.workspace}"
+                                 fileName="${ctx:task.workspace}/ob-loader-dumper.all"
+                                 filePattern="${ctx:task.workspace}/${date:yyyy-MM}/ob-loader-dumper-%d{yyyy-MM-dd}-%i.info.gz">
                         <PatternLayout>
                             <pattern>%d{yyyy-MM-dd HH:mm:ss} [%p] %m%n</pattern>
                         </PatternLayout>
@@ -60,9 +60,9 @@
         <Routing name="WarnRoutingAppender">
             <Routes pattern="${sys:task.workspace}">
                 <Route>
-                    <RollingFile name="Rolling-${sys:task.workspace}"
-                                 fileName="${sys:task.workspace}/ob-loader-dumper.warn"
-                                 filePattern="${sys:task.workspace}/${date:yyyy-MM}/ob-loader-dumper-%d{yyyy-MM-dd}-%i.warn.gz">
+                    <RollingFile name="WarnRolling-${ctx:task.workspace}"
+                                 fileName="${ctx:task.workspace}/ob-loader-dumper.warn"
+                                 filePattern="${ctx:task.workspace}/${date:yyyy-MM}/ob-loader-dumper-%d{yyyy-MM-dd}-%i.warn.gz">
                         <PatternLayout>
                             <pattern>%d{yyyy-MM-dd HH:mm:ss} [%p] %m%n</pattern>
                         </PatternLayout>
@@ -233,6 +233,11 @@
         </Logger>
 
         <Logger name="com.oceanbase.tools.loaddump" additivity="false" level="INFO">
+            <AppenderRef ref="InfoRoutingAppender"/>
+            <AppenderRef ref="WarnRoutingAppender"/>
+        </Logger>
+
+        <Logger name="DataTransferLogger" additivity="false" level="INFO">
             <AppenderRef ref="InfoRoutingAppender"/>
             <AppenderRef ref="WarnRoutingAppender"/>
         </Logger>
