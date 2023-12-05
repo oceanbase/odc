@@ -90,7 +90,7 @@ public class SqlScriptImportJob extends AbstractJob {
                 .iterator(input.openStream(), dialectType, true, true, true, Charset.forName(charset));
                 Connection conn = dataSource.getConnection();
                 Statement stmt = conn.createStatement()) {
-            while (!canceled && !Thread.currentThread().isInterrupted() && iterator.hasNext()) {
+            while (!isCanceled() && !Thread.currentThread().isInterrupted() && iterator.hasNext()) {
                 String sql = iterator.next();
                 try {
                     increaseTotal(1);
@@ -139,7 +139,7 @@ public class SqlScriptImportJob extends AbstractJob {
                 .iterator(input.openStream(), dialectType, true, true, true, Charset.forName(charset));
                 Connection conn = dataSource.getConnection();
                 Statement stmt = conn.createStatement()) {
-            while (!Thread.currentThread().isInterrupted() && iterator.hasNext() && !canceled) {
+            while (!Thread.currentThread().isInterrupted() && iterator.hasNext() && !isCanceled()) {
                 String sql = iterator.next();
                 if (firstLine && sql.startsWith("drop") || sql.startsWith("DROP")) {
                     continue;
@@ -183,7 +183,7 @@ public class SqlScriptImportJob extends AbstractJob {
                 .iterator(input.openStream(), dialectType, true, true, true, Charset.forName(charset));
                 Connection conn = dataSource.getConnection()) {
             List<String> insertionBuffer = new LinkedList<>();
-            while (!Thread.currentThread().isInterrupted() && !canceled) {
+            while (!Thread.currentThread().isInterrupted() && !isCanceled()) {
                 try {
                     offer(iterator, insertionBuffer, batchSize);
                     poll(conn, insertionBuffer);
