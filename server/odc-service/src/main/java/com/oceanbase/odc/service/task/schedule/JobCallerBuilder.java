@@ -24,6 +24,7 @@ import com.oceanbase.odc.service.task.caller.JvmJobCaller;
 import com.oceanbase.odc.service.task.caller.K8sJobCaller;
 import com.oceanbase.odc.service.task.caller.K8sJobClient;
 import com.oceanbase.odc.service.task.caller.PodConfig;
+import com.oceanbase.odc.service.task.caller.PodParam;
 import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.constants.JobEnvConstants;
 import com.oceanbase.odc.service.task.enums.TaskRunModeEnum;
@@ -42,7 +43,9 @@ public class JobCallerBuilder {
 
     public static JobCaller buildK8sJobCaller(K8sJobClient k8sJobClient, PodConfig podConfig) {
 
-        Map<String, String> envs = podConfig.getPodParam().getEnvironments();
+        PodParam podParam = podConfig.getPodParam();
+
+        Map<String, String> envs = podParam.getEnvironments();
         envs.put(JobEnvConstants.BOOT_MODE, JobConstants.ODC_BOOT_MODE_EXECUTOR);
         envs.put(JobEnvConstants.TASK_RUN_MODE, TaskRunModeEnum.K8S.name());
 
@@ -52,6 +55,8 @@ public class JobCallerBuilder {
         envs.put("DATABASE_USERNAME", SystemUtils.getEnvOrProperty("ODC_DATABASE_USERNAME"));
         envs.put("DATABASE_PASSWORD", SystemUtils.getEnvOrProperty("ODC_DATABASE_PASSWORD"));
 
+        podParam.setRequestCpu(1.0);
+        podParam.setRequestMem(128L);
         return new K8sJobCaller(k8sJobClient, podConfig);
     }
 }
