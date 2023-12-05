@@ -117,7 +117,8 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
     public void configure(WebSecurity web) {
         // 允许访问静态资源
         web.ignoring().antMatchers(commonSecurityProperties.getStaticResources())
-                .and().ignoring().antMatchers(commonSecurityProperties.getAuthWhitelist());
+                .and().ignoring().antMatchers(commonSecurityProperties.getAuthWhitelist())
+                .and().ignoring().antMatchers("/druid/**");
     }
 
     @Override
@@ -146,7 +147,8 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
                 .migrateSession()
                 .invalidSessionStrategy(new CustomInvalidSessionStrategy(commonSecurityProperties.getLoginPage(),localeResolver));
         // @formatter:on
-        csrfConfigureHelper.configure(http);
+        http.csrf().disable();
+        // csrfConfigureHelper.configure(http);
         http.addFilterBefore(
                 new TestLoginAuthenticationFilter(),
                 OAuth2LoginAuthenticationFilter.class);
