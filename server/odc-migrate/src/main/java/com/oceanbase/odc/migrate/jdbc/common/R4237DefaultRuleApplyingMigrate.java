@@ -20,12 +20,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import javax.persistence.Column;
+import javax.persistence.Convert;
 import javax.sql.DataSource;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.oceanbase.odc.common.jpa.JsonListConverter;
 import com.oceanbase.odc.common.util.YamlUtils;
 import com.oceanbase.odc.core.migrate.JdbcMigratable;
 import com.oceanbase.odc.core.migrate.Migratable;
@@ -35,6 +38,11 @@ import com.oceanbase.odc.metadb.regulation.ruleset.MetadataEntity;
 import com.oceanbase.odc.metadb.regulation.ruleset.RuleMetadataRepository;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -59,33 +67,28 @@ public class R4237DefaultRuleApplyingMigrate implements JdbcMigratable {
 
         Map<String, MetadataEntity> metadataName2Metadata =
                 ruleMetadataRepository.findAll().stream().collect(Collectors.toMap(MetadataEntity::getName, e -> e));
-        List<DefaultRuleApplyingEntity> expected =
-                YamlUtils.fromYaml(MIGRATE_CONFIG_FILE, new TypeReference<List<DefaultRuleApplyingEntity>>() {});
-        expected.stream().forEach(e -> {
-            MetadataEntity metadataEntity = metadataName2Metadata.get(e.getRulesetName());
-            if (metadataEntity == null) {
-                throw new RuntimeException("metadata name " + e.getRulesetName() + " not found");
-            }
-            e.setRuleMetadataId(metadataEntity.getId());
-        });
+        List<InnerDefaultRuleApplying> expected =
+                YamlUtils.fromYaml(MIGRATE_CONFIG_FILE, new TypeReference<List<InnerDefaultRuleApplying>>() {});
+        Map<String, List<DefaultRuleApplyingEntity>> actualRulesetName2RuleApplyings = defaultRuleApplyingRepository
+                .findAll().stream().collect(Collectors.groupingBy(DefaultRuleApplyingEntity::getRulesetName));
 
-        List<DefaultRuleApplyingEntity> actual = defaultRuleApplyingRepository.findAll();
 
-        List<DefaultRuleApplyingEntity> toAdd =
-                expected.stream().filter(metadata -> !actual.contains(metadata)).collect(Collectors.toList());
+    }
 
-        List<DefaultRuleApplyingEntity> toRemove =
-                actual.stream().filter(metadata -> !expected.contains(metadata)).collect(Collectors.toList());
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    class InnerDefaultRuleApplying {
+        private Boolean enabled;
 
-        if (CollectionUtils.isNotEmpty(toAdd)) {
-            log.info("new default rule applying detected, start to add");
-            defaultRuleApplyingRepository.saveAll(toAdd);
-            log.info("add new default rule applying success, size={}", toAdd.size());
-        }
-        if (CollectionUtils.isNotEmpty(toRemove)) {
-            log.info("deprecated default rule applying detected, start to remove");
-            defaultRuleApplyingRepository.deleteAll(toRemove);
-            log.info("remove deprecated default rule applying success, size={}", toRemove.size());
-        }
+        private Integer level;
+
+        private Long rulesetName;
+
+        private String ruleName;
+
+        private List<String> appliedDialectTypes;
+
+        private String propertiesJson;
     }
 }

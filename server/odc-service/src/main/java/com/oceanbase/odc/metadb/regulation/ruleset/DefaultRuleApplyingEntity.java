@@ -65,7 +65,7 @@ public class DefaultRuleApplyingEntity {
     private Integer level;
 
     @Column(name = "ruleset_name", nullable = false)
-    private Long rulesetName;
+    private String rulesetName;
 
     @Column(name = "rule_metadata_id", nullable = false)
     private Long ruleMetadataId;
