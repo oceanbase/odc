@@ -13,32 +13,54 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.oceanbase.odc.metadb.connection;
 
 import java.util.Date;
 
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
+import org.hibernate.annotations.Generated;
+import org.hibernate.annotations.GenerationTime;
+
 import lombok.Data;
 
 /**
- * @Author: Lebie
- * @Date: 2021/12/31 下午4:05
- * @Description: [Entity for recording connect session history]
+ * @author gaoda.xy
+ * @date 2023/12/4 20:51
  */
 @Data
+@Entity
+@Table(name = "connect_connection_access")
 public class ConnectionHistoryEntity {
+
+    @Id
+    @Column(name = "id", nullable = false)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private Date createTime;
-    private Date updateTime;
+
+    @Column(name = "connection_id", nullable = false)
     private Long connectionId;
+
+    @Column(name = "user_id", nullable = false)
     private Long userId;
-    private Long organizationId;
+
+    @Column(name = "last_access_time", nullable = false)
     private Date lastAccessTime;
 
-    public static ConnectionHistoryEntity of(Long connectionId, Long userId, Date lastAccessTime) {
-        ConnectionHistoryEntity entity = new ConnectionHistoryEntity();
-        entity.setConnectionId(connectionId);
-        entity.setUserId(userId);
-        entity.setLastAccessTime(lastAccessTime);
-        return entity;
-    }
+    @Generated(GenerationTime.ALWAYS)
+    @Column(name = "create_time", insertable = false, updatable = false,
+            columnDefinition = "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP")
+    private Date createTime;
+
+    @Generated(GenerationTime.ALWAYS)
+    @Column(name = "update_time", insertable = false, updatable = false,
+            columnDefinition = "datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP")
+    private Date updateTime;
+
 }

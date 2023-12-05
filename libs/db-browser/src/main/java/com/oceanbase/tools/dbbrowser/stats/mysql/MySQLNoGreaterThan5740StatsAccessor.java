@@ -41,7 +41,7 @@ public class MySQLNoGreaterThan5740StatsAccessor implements DBStatsAccessor {
             + "`HOST`, "
             // 若通过 obproxy 连接则 HOST 为 obproxy 的 HOST 地址
             + "`HOST` as PROXY_HOST, "
-            + "`TIME` as EXECUTION_TIME, "
+            + "`TIME` as EXECUTE_TIME, "
             + "COMMAND, "
             + "STATE, "
             + "'UNKNOWN' AS `TRANS_STATE`, "
