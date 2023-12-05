@@ -62,7 +62,6 @@ import com.oceanbase.odc.metadb.regulation.risklevel.RiskLevelRepository;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.metadb.task.TaskRepository;
 import com.oceanbase.odc.metadb.task.TaskSpecs;
-import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.flow.ApprovalPermissionService;
 import com.oceanbase.odc.service.flow.instance.FlowInstance;
 import com.oceanbase.odc.service.flow.model.FlowInstanceDetailResp;
