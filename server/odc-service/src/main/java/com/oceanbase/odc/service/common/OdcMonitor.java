@@ -47,7 +47,7 @@ public class OdcMonitor {
     }
 
 
-    enum MonitorLevel {
+    public enum MonitorLevel {
         INFO, WARN, ERROR
     }
 

@@ -70,7 +70,7 @@ public class DbConfigChangeMatcher extends SystemConfigRefreshMatcher implements
             SetView<Configuration> difference = Sets.difference(new HashSet<>(currentVersion),
                     new HashSet<>(lastVersion));
             Set<String> differenceKey = difference.stream().map(Configuration::getKey).collect(Collectors.toSet());
-            OdcMonitor.info(SYSTEM_CONFIG_CHANGED, differenceKey.toString());
+            OdcMonitor.alarm(SYSTEM_CONFIG_CHANGED, differenceKey.toString());
             log.info("db config change, difference key:" + differenceKey);
         }
         return dbConfigChange;
