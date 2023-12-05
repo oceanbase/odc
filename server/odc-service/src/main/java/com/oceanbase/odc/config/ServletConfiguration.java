@@ -21,16 +21,20 @@ import javax.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.filter.RequestContextFilter;
+import org.springframework.web.servlet.DispatcherServlet;
 
 @Configuration
 public class ServletConfiguration {
 
     @Autowired
     private RequestContextFilter requestContextFilter;
+    @Autowired
+    private DispatcherServlet dispatcherServlet;
 
     @PostConstruct
     public void init() {
         requestContextFilter.setThreadContextInheritable(true);
+        dispatcherServlet.setThreadContextInheritable(true);
     }
 
 }
