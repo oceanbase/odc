@@ -29,6 +29,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
@@ -42,6 +45,8 @@ import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.oceanbase.odc.common.event.AbstractEvent;
+import com.oceanbase.odc.common.event.LocalEventPublisher;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.tableformat.BorderStyle;
 import com.oceanbase.odc.common.util.tableformat.CellStyle;
@@ -56,6 +61,7 @@ import com.oceanbase.odc.plugin.task.api.datatransfer.DataTransferJob;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.ConnectionInfo;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferTaskResult;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferType;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.ObjectResult;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.AbstractJob;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.TransferJobFactory;
@@ -78,6 +84,7 @@ public class MySQLDataTransferJob implements DataTransferJob {
     private final List<AbstractJob> schemaJobs = new LinkedList<>();
     private final List<AbstractJob> dataJobs = new LinkedList<>();
     private final AtomicReference<TaskStatus> status = new AtomicReference<>();
+    private final LocalEventPublisher publisher = new LocalEventPublisher();
 
     private int transferJobNum = 0;
 
@@ -134,11 +141,14 @@ public class MySQLDataTransferJob implements DataTransferJob {
                 }
             }
             if (CollectionUtils.isNotEmpty(dataJobs)) {
+                ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
                 try {
+                    initSchedule(executor);
                     unzipDataXToWorkingDir(workingDir);
                     runDataJobs();
                 } finally {
                     logSummary(dataJobs, "DATA");
+                    executor.shutdown();
                     FileUtils.deleteQuietly(Paths.get(workingDir.getPath(), "datax").toFile());
                 }
             }
@@ -227,6 +237,7 @@ public class MySQLDataTransferJob implements DataTransferJob {
             }
             try {
                 LOGGER.info("Begin to transfer data for {}.", job);
+                publisher.publishEvent(new ObjectStartEvent(job, ""));
                 job.run();
 
                 finishedJobNum.getAndIncrement();
@@ -268,6 +279,28 @@ public class MySQLDataTransferJob implements DataTransferJob {
         }
     }
 
+    private void initSchedule(ScheduledExecutorService executor) {
+        if (baseConfig.isCompressed()) {
+            ThroughputReporter reporter = new ThroughputReporter();
+            publisher.addEventListener(reporter);
+            executor.scheduleAtFixedRate(reporter, 5, 5, TimeUnit.SECONDS);
+        }
+        if (baseConfig.getTransferType() == DataTransferType.EXPORT && baseConfig.getMaxDumpSizeBytes() != null) {
+            executor.scheduleAtFixedRate(() -> {
+                File dataDir = new File(workingDir, "data");
+                long size;
+                if (dataDir.exists()
+                        && (size = FileUtils.sizeOfDirectory(dataDir)) >= baseConfig.getMaxDumpSizeBytes()) {
+                    LOGGER.info("Exported size {} exceeds {}, transfer will stop.", size,
+                            baseConfig.getMaxDumpSizeBytes());
+                    // TODO stop this
+
+                    executor.shutdown();
+                }
+            }, 1, 1, TimeUnit.SECONDS);
+        }
+    }
+
     private void logSummary(List<AbstractJob> jobs, String scope) {
         List<String> summary = new ArrayList<>();
         int index = 1;
@@ -294,5 +327,19 @@ public class MySQLDataTransferJob implements DataTransferJob {
     private void setCell(Table table, List<String> rowContent) {
         CellStyle cs = new CellStyle(HorizontalAlign.CENTER, AbbreviationStyle.DOTS, NullStyle.NULL_TEXT);
         rowContent.forEach(h -> table.addCell(h != null ? h : "", cs));
+    }
+
+    static class ObjectStartEvent extends AbstractEvent {
+
+        /**
+         * Constructs a prototypical Event.
+         *
+         * @param source The object on which the Event initially occurred.
+         * @param eventName
+         * @throws IllegalArgumentException if source is null.
+         */
+        public ObjectStartEvent(Object source, @NonNull String eventName) {
+            super(source, eventName);
+        }
     }
 }
