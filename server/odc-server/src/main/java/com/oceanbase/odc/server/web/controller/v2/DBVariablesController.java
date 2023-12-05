@@ -54,7 +54,7 @@ public class DBVariablesController {
                 this.sessionService.nullSafeGet(i.getSid(), true), i.getVariableScope()));
     }
 
-    @ApiOperation(value = "update", notes = "update vairable")
+    @ApiOperation(value = "update", notes = "update variable")
     @RequestMapping(value = "/update/{sid:.*}", method = RequestMethod.POST)
     public SuccessResponse<Boolean> getUpdateSql(@PathVariable String sid, @RequestBody OdcDBVariable var) {
         var.setVariableScope(ResourceIDParser.parse(sid).getVariableScope());
