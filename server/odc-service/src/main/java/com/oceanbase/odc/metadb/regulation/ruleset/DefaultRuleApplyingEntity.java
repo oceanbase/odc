@@ -33,6 +33,7 @@ import org.hibernate.annotations.GenerationTime;
 import com.oceanbase.odc.common.jpa.JsonListConverter;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 /**
  * @Author: Lebie
@@ -42,6 +43,7 @@ import lombok.Data;
 @Data
 @Entity
 @Table(name = "regulation_default_rule_applying")
+@EqualsAndHashCode(exclude = {"id", "createTime", "updateTime"})
 public class DefaultRuleApplyingEntity {
     @Id
     @Column(name = "id", nullable = false)
