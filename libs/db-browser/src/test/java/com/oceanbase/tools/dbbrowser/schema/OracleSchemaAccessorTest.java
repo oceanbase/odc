@@ -57,6 +57,7 @@ import com.oceanbase.tools.dbbrowser.util.StringUtils;
 /**
  * @author jingtian
  * @date 2023/10/9
+ * @since ODC_release_4.2.4
  */
 public class OracleSchemaAccessorTest extends BaseTestEnv {
     private static final String BASE_PATH = "src/test/resources/table/oracle/";

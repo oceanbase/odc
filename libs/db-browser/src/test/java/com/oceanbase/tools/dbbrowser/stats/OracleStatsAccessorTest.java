@@ -30,7 +30,7 @@ import com.oceanbase.tools.dbbrowser.stats.oracle.OracleStatsAccessor;
 /**
  * @author jingtian
  * @date 2023/11/24
- * @since
+ * @since ODC_release_4.2.4
  */
 public class OracleStatsAccessorTest extends BaseTestEnv {
     private final DBStatsAccessor accessor = new OracleStatsAccessor(new JdbcTemplate(getOracleDataSource()));
