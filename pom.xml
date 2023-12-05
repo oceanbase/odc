@@ -83,6 +83,7 @@
         <org.mapstruct.version>1.4.2.Final</org.mapstruct.version>
         <lombok.version>1.18.10</lombok.version>
         <druid.version>1.2.18</druid.version>
+        <hikari.version>4.0.3</hikari.version>
         <fastjson.version>1.2.83_noneautotype</fastjson.version>
         <mockito.version>3.11.2</mockito.version>
         <moco.version>1.4.0</moco.version>
@@ -117,7 +118,7 @@
         <mina.version>2.1.6</mina.version>
 
         <!-- data-lifecycle-manager version -->
-        <data-lifecycle-manager.version>1.0.4</data-lifecycle-manager.version>
+        <data-lifecycle-manager.version>1.0.6</data-lifecycle-manager.version>
 
         <!-- plugin version -->
         <formatter-maven-plugin.version>2.11.0</formatter-maven-plugin.version>
@@ -635,6 +636,13 @@
                 <groupId>com.alibaba</groupId>
                 <artifactId>druid</artifactId>
                 <version>${druid.version}</version>
+            </dependency>
+
+            <!-- Hikari -->
+            <dependency>
+                <groupId>com.zaxxer</groupId>
+                <artifactId>HikariCP</artifactId>
+                <version>${hikari.version}</version>
             </dependency>
 
             <!-- fastjson低版本有漏洞-->
@@ -1410,7 +1418,7 @@ limitations under the License.
                 </property>
             </activation>
             <properties>
-                <oceanbase-client.version>2.4.5</oceanbase-client.version>
+                <oceanbase-client.version>2.4.7.1</oceanbase-client.version>
             </properties>
         </profile>
         <profile>

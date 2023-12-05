@@ -41,7 +41,7 @@ public class SchemaFile extends AbstractOutputFile {
      * </pre>
      */
     private static final Pattern FILE_PATTERN =
-            Pattern.compile("^\"?([^\\-\\.]+)\"?-schema\\.(sql)$", Pattern.CASE_INSENSITIVE);
+            Pattern.compile("^\"?(.+)\"?-schema\\.(sql)$", Pattern.CASE_INSENSITIVE);
     protected final String objectName;
 
     public SchemaFile(File file, ObjectType objectType) throws FileNotFoundException {

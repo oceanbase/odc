@@ -17,6 +17,8 @@ package com.oceanbase.odc.service.notification;
 
 import java.util.stream.Collectors;
 
+import org.apache.commons.collections4.CollectionUtils;
+
 import com.dingtalk.api.DefaultDingTalkClient;
 import com.dingtalk.api.DingTalkClient;
 import com.dingtalk.api.request.OapiRobotSendRequest;
@@ -61,13 +63,14 @@ public class DingTalkBotChannel implements Channel {
         DingTalkClient client = new DefaultDingTalkClient(this.serviceUri);
         OapiRobotSendRequest request = new OapiRobotSendRequest();
         OapiRobotSendRequest.At at = new OapiRobotSendRequest.At();
-        at.setAtUserIds(userRepository
-                .findByIdIn(message.getToRecipients().stream().map(recipient -> Long.valueOf(recipient))
-                        .collect(Collectors.toSet()))
-                .stream().map(
-                        userEntity -> ChannelUtils.getRecipientAttributeName(this.atUserIdsAttributeName,
-                                userEntity))
-                .collect(Collectors.toList()));
+        if (CollectionUtils.isNotEmpty(message.getToRecipients())) {
+            at.setAtUserIds(userRepository.findByIdIn(message.getToRecipients()
+                    .stream()
+                    .map(Long::valueOf).collect(Collectors.toSet()))
+                    .stream()
+                    .map(userEntity -> ChannelUtils.getRecipientAttributeName(this.atUserIdsAttributeName, userEntity))
+                    .collect(Collectors.toList()));
+        }
         at.setIsAtAll(this.atAll);
         request.setAt(at);
         request.setMsgtype("text");
