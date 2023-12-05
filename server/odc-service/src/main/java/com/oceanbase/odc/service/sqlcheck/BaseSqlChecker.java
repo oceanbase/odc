@@ -127,8 +127,12 @@ abstract class BaseSqlChecker implements SqlChecker {
         }
         return stmts.stream().flatMap(holder -> {
             List<CheckViolation> violations = doCheck(holder.right, checkContext);
-            violations.stream().forEach(v -> v.setOffset(holder.left));
-            checkContext.addCheckViolation(holder.right, violations);
+            violations.stream().forEach(v -> {
+                if (Objects.isNull(v.getOffset())) {
+                    v.setOffset(holder.left);
+                }
+            });
+            checkContext.addCheckViolation(holder.right, holder.left, violations);
             checkContext.currentStmtIndex++;
             return violations.stream();
         }).collect(Collectors.toList());
