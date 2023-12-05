@@ -37,7 +37,6 @@ import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
-import com.oceanbase.odc.service.common.model.OdcSqlExecuteResult;
 import com.oceanbase.odc.service.db.model.OdcDBVariable;
 import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.OracleSqlBuilder;
@@ -120,9 +119,8 @@ public class DBRecyclebinSettingsService {
                     .append("=").value(settings.getTruncateFlashbackEnabled() ? "ON" : "OFF");
         }
         String sql = sqlBuilder.toString();
-        OdcSqlExecuteResult result = variablesService.doExecute(session, sql);
-        log.info("Update session variable, sid={}, sql={}, status={}, affectRows={}",
-                session.getId(), sql, result.isStatus(), result.getRows());
+        session.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY).execute(sql);
+        log.info("Update session variable, sid={}, sql={}", session.getId(), sql);
     }
 
     private SqlBuilder getBuilder(ConnectionSession session) {

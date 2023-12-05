@@ -87,7 +87,6 @@ import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.plugin.TaskPluginUtil;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
-import com.oceanbase.tools.loaddump.common.model.ObjectStatus.Status;
 import com.oceanbase.tools.loaddump.parser.record.Record;
 import com.oceanbase.tools.loaddump.parser.record.csv.CsvFormat;
 import com.oceanbase.tools.loaddump.parser.record.csv.CsvRecordParser;
@@ -346,14 +345,9 @@ public class DataTransferService {
             return;
         }
         DataTransferTaskResult result = new DataTransferTaskResult();
-        List<ObjectResult> objects = config.getExportDbObjects().stream().map(obj -> {
-            ObjectResult object = new ObjectResult();
-            object.setName(obj.getObjectName());
-            object.setType(obj.getDbObjectType().getName());
-            object.setStatus(Status.INITIAL);
-            return object;
-        }).collect(Collectors.toList());
-
+        List<ObjectResult> objects = config.getExportDbObjects().stream().map(
+                obj -> new ObjectResult(config.getSchemaName(), obj.getObjectName(), obj.getDbObjectType().getName()))
+                .collect(Collectors.toList());
         if (config.isTransferDDL()) {
             result.setSchemaObjectsInfo(objects);
         }

@@ -16,16 +16,6 @@
 
 package com.oceanbase.odc.plugin.task.mysql.datatransfer.common;
 
-import static com.oceanbase.tools.loaddump.common.enums.ObjectType.FILE;
-import static com.oceanbase.tools.loaddump.common.enums.ObjectType.FUNCTION;
-import static com.oceanbase.tools.loaddump.common.enums.ObjectType.PROCEDURE;
-import static com.oceanbase.tools.loaddump.common.enums.ObjectType.SEQUENCE;
-import static com.oceanbase.tools.loaddump.common.enums.ObjectType.TABLE;
-import static com.oceanbase.tools.loaddump.common.enums.ObjectType.TRIGGER;
-import static com.oceanbase.tools.loaddump.common.enums.ObjectType.VIEW;
-
-import com.oceanbase.tools.loaddump.common.enums.ObjectType;
-
 public class Constants {
 
     public static final String TXT_FILE_WRITER = "txtfilewriter";
@@ -42,11 +32,13 @@ public class Constants {
 
     public static final String ENABLE_FK = "SET FOREIGN_KEY_CHECKS=1;";
 
-    public static final String DROP_OBJECT_FORMAT = "DROP %s if exists %s;\n";
+    public static final String LINE_BREAKER = "\n";
 
-    public static final String TRUNCATE_FORMAT = "TRUNCATE TABLE %s.%s;\n";
+    public static final String DROP_OBJECT_FORMAT = "DROP %s if exists %s;" + LINE_BREAKER;
 
-    public static final String DEFAULT_PL_DELIMITER = "\n$$\n";
+    public static final String TRUNCATE_FORMAT = "TRUNCATE TABLE %s.%s;" + LINE_BREAKER;
+
+    public static final String DEFAULT_PL_DELIMITER = "$$" + LINE_BREAKER;
 
     public static final String PL_DELIMITER_STMT = "DELIMITER " + DEFAULT_PL_DELIMITER;
 
@@ -54,6 +46,10 @@ public class Constants {
 
     public static final int DEFAULT_BATCH_SIZE = 200;
 
-    public static final ObjectType[] DEPENDENCIES = {SEQUENCE, TABLE, VIEW, FUNCTION, PROCEDURE, TRIGGER, FILE};
+    public static final String[] DEPENDENCIES =
+            {"SEQUENCE", "TABLE", "VIEW", "FUNCTION", "PROCEDURE", "TRIGGER", "FILE"};
+
+    public static final String[] DEFAULT_DATAX_JVM_PARAMS =
+            {"-Xms1g", "-Xmx1g", "-XX:+HeapDumpOnOutOfMemoryError"};
 
 }

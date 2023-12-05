@@ -86,7 +86,17 @@ public class NlsFormatInterceptor extends BaseTimeConsumingInterceptor {
         if (!StringUtils.startsWithIgnoreCase(sql, "set") && !startWithAlterSession(sql)) {
             return;
         }
-        getVariableAssigns(response.getSqlTuple(), dialect).stream().filter(VariableAssign::isSession).forEach(v -> {
+        setNlsFormat(session, response.getSqlTuple());
+    }
+
+    @Override
+    protected String getExecuteStageName() {
+        return SqlExecuteStages.SET_NLS_FORMAT;
+    }
+
+    public static void setNlsFormat(@NonNull ConnectionSession session, @NonNull SqlTuple sqlTuple) {
+        DialectType dialectType = session.getDialectType();
+        getVariableAssigns(sqlTuple, dialectType).stream().filter(VariableAssign::isSession).forEach(v -> {
             String value = getNlsFormatValue(v.getValue());
             if (value == null) {
                 return;
@@ -99,11 +109,6 @@ public class NlsFormatInterceptor extends BaseTimeConsumingInterceptor {
                 ConnectionSessionUtil.setNlsTimestampTZFormat(session, value);
             }
         });
-    }
-
-    @Override
-    protected String getExecuteStageName() {
-        return SqlExecuteStages.SET_NLS_FORMAT;
     }
 
     private boolean startWithAlterSession(String sql) {
@@ -124,7 +129,7 @@ public class NlsFormatInterceptor extends BaseTimeConsumingInterceptor {
         return j >= chars.length;
     }
 
-    private String getNlsFormatValue(Expression value) {
+    private static String getNlsFormatValue(Expression value) {
         if (!(value instanceof ConstExpression)) {
             return null;
         }
@@ -132,7 +137,7 @@ public class NlsFormatInterceptor extends BaseTimeConsumingInterceptor {
         return StringUtils.unwrap(e.getExprConst(), "'");
     }
 
-    private List<VariableAssign> getVariableAssigns(SqlTuple sqlTuple, DialectType dialect) {
+    private static List<VariableAssign> getVariableAssigns(SqlTuple sqlTuple, DialectType dialect) {
         try {
             AbstractSyntaxTree ast = sqlTuple.getAst();
             if (ast == null) {
