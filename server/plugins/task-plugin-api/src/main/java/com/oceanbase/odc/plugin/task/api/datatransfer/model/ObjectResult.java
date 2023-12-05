@@ -39,7 +39,7 @@ public class ObjectResult extends ObjectStatus {
     private List<URL> exportPaths;
 
     public ObjectResult(String schema, String name, String type) {
-        super(name, new AtomicLong(0), new AtomicLong(0), Status.INITIAL);
+        super(name, new AtomicLong(0), new AtomicLong(0), null);
         setType(type);
         setSchema(schema);
     }
