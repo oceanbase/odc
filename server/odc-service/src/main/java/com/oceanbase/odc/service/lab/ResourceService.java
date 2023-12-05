@@ -56,6 +56,7 @@ import com.oceanbase.odc.metadb.iam.UserRoleEntity;
 import com.oceanbase.odc.metadb.iam.UserRoleRepository;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.auth.AuthorizationFacade;
 import com.oceanbase.odc.service.iam.model.Role;
 import com.oceanbase.odc.service.iam.model.User;
@@ -91,6 +92,8 @@ public class ResourceService {
     private ConnectionConfigRepository connectionConfigRepository;
     @Autowired
     private AuthorizationFacade authorizationFacade;
+    @Autowired
+    private AuthenticationFacade authenticationFacade;
     @Autowired
     private ConnectionService connectionService;
     @Autowired
@@ -152,7 +155,7 @@ public class ResourceService {
         Map<String, String> properties = new HashMap<>();
         properties.put("maskHost", "true");
         connection.setProperties(properties);
-        ConnectionConfig saved = connectionService.innerCreate(connection, false);
+        ConnectionConfig saved = connectionService.innerCreate(connection, authenticationFacade.currentUserId(), false);
         log.info("Connection created, connection id={}", saved.getId());
         return saved.getId();
     }
