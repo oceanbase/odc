@@ -34,13 +34,13 @@ import com.oceanbase.odc.core.shared.constant.ConnectionVisibleScope;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.metadb.connection.ConnectionConfigRepository;
 import com.oceanbase.odc.metadb.connection.ConnectionEntity;
-import com.oceanbase.odc.metadb.connection.ConnectionHistoryEntity;
 import com.oceanbase.odc.metadb.connection.ConnectionHistoryRepository;
 import com.oceanbase.odc.service.connection.model.ConnectProperties;
 import com.oceanbase.odc.test.tool.TestRandom;
 
 public class ConnectionSessionHistoryServiceTest extends ServiceTestEnv {
-    private static final int INTERVAL_SECONDS = 15;
+
+    private static final int INTERVAL_SECONDS = 1;
     private static final long USER_ID = 11L;
     private static final long ORGANIZATION_ID = 1L;
     @Autowired
@@ -66,15 +66,13 @@ public class ConnectionSessionHistoryServiceTest extends ServiceTestEnv {
     }
 
     @Test
-    public void testListInactiveConnections_Has2Matches1_Return1() {
+    public void testListInactiveConnections_Has2Matches1_Return1() throws InterruptedException {
         ConnectionEntity connection1 = createConnection();
         ConnectionEntity connection2 = createConnection();
-        createHistory(connection1.getId(), 10);
-        createHistory(connection2.getId(), 20);
-        List<ConnectionHistoryEntity> historyEntities = connectionSessionHistoryService.listInactiveConnections();
-        Assert.assertEquals(1, historyEntities.size());
-        connectionHistoryRepository.deleteAll();
-        connectionConfigRepository.deleteAll();
+        Thread.sleep(2000);
+        createHistory(connection1.getId(), 0);
+        List<ConnectionEntity> entities = connectionSessionHistoryService.listInactiveConnections(null);
+        Assert.assertEquals(1, entities.size());
     }
 
     private void createHistory(Long connectionId, int intervalSeconds) {
@@ -97,4 +95,5 @@ public class ConnectionSessionHistoryServiceTest extends ServiceTestEnv {
         entity.setOrganizationId(ORGANIZATION_ID);
         return connectionConfigRepository.saveAndFlush(entity);
     }
+
 }

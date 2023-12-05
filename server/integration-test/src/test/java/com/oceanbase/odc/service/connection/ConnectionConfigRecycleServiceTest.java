@@ -47,7 +47,7 @@ import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.test.tool.TestRandom;
 
 public class ConnectionConfigRecycleServiceTest extends ServiceTestEnv {
-    private static final int INTERVAL_SECONDS = 10;
+    private static final int INTERVAL_SECONDS = 1;
     private static final long USER_ID = 11L;
     private static final long ORGANIZATION_ID = 1L;
     @Autowired
@@ -84,13 +84,23 @@ public class ConnectionConfigRecycleServiceTest extends ServiceTestEnv {
 
     @Test
     @Transactional
-    public void clearInactiveTempConnectionConfigs_Has2Match1_Return1() {
+    public void clearInactiveTempConnectionConfigs_Has2Match1_Return1() throws InterruptedException {
         ConnectionEntity connection1 = createConnection();
         ConnectionEntity connection2 = createConnection();
-        createHistory(connection1.getId(), 1);
-        createHistory(connection2.getId(), 20);
+        Thread.sleep(2000);
+        createHistory(connection1.getId(), 0);
         int ret = recycleService.clearInactiveTempConnectionConfigs();
         Assert.assertEquals(1, ret);
+    }
+
+    @Test
+    @Transactional
+    public void clearInactiveTempConnectionConfigs_Has2Match2_Return2() throws InterruptedException {
+        ConnectionEntity connection1 = createConnection();
+        ConnectionEntity connection2 = createConnection();
+        Thread.sleep(2000);
+        int ret = recycleService.clearInactiveTempConnectionConfigs();
+        Assert.assertEquals(2, ret);
     }
 
     private void createHistory(Long connectionId, int intervalSeconds) {
