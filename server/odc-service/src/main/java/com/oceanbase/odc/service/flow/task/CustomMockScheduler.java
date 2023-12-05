@@ -21,11 +21,12 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.io.FileUtils;
 
 import com.oceanbase.odc.common.trace.TraceContextHolder;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
 import com.oceanbase.tools.datamocker.core.task.TableTaskContext;
+import com.oceanbase.tools.datamocker.core.write.SqlScriptOutput;
 import com.oceanbase.tools.datamocker.schedule.DefaultScheduler;
 
 import lombok.NonNull;
@@ -57,12 +58,24 @@ public class CustomMockScheduler extends DefaultScheduler {
 
     @Override
     protected void onSuccess(TableTaskContext context) {
-        if (!this.cloudObjectStorageService.supported()
-                || CollectionUtils.isEmpty(context.getOutputFiles())) {
+        SqlScriptOutput output = context.getOutput();
+        File parentFile = output.getOutputDir().getParentFile();
+        if (!parentFile.exists()) {
             return;
         }
-        File file = context.getOutputFiles().get(0);
-        if (file == null || !file.exists()) {
+        File file = new File(parentFile, context.getTableName() + ".zip");
+        try {
+            SqlScriptOutput.toZip(file, output.getOutputDir());
+        } catch (Exception e) {
+            return;
+        } finally {
+            try {
+                FileUtils.deleteDirectory(output.getOutputDir());
+            } catch (Exception e) {
+                // eat exception
+            }
+        }
+        if (!this.cloudObjectStorageService.supported() || !file.exists()) {
             return;
         }
         TraceContextHolder.span(traceContext);

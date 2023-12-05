@@ -162,7 +162,6 @@ public class FlowTaskUtil {
                 .orElseThrow(() -> new VerifyException("No interceptSqlStatus found in intercept flow"));
     }
 
-
     public static void setRiskLevel(@NonNull DelegateExecution delegateExecution, int riskLevel) {
         delegateExecution.setVariable(RuntimeTaskConstants.RISKLEVEL, riskLevel);
     }
@@ -171,7 +170,6 @@ public class FlowTaskUtil {
         return internalGet(delegateExecution.getVariable(RuntimeTaskConstants.RISKLEVEL), Integer.class).orElseThrow(
                 () -> new VerifyException("RiskLevel is absent"));
     }
-
 
     public static void setExecutionExpirationInterval(@NonNull Map<String, Object> variables, long interval,
             @NonNull TimeUnit timeUnit) {
@@ -340,14 +338,13 @@ public class FlowTaskUtil {
                 List<MockColumnConfig> columnConfigs = tableConfig.getColumns();
                 Verify.verify(CollectionUtils.isNotEmpty(columnConfigs), "Columns may not be empty");
 
-                String filePath = String.format("%s/%s.sql",
-                        mockProperties.getDownloadPath(config.getId()).getAbsolutePath(), tableConfig.getTableName());
                 for (MockColumnConfig columnConfig : columnConfigs) {
                     String columnType = columnConfig.getTypeConfig().getColumnType();
                     columnConfig.getTypeConfig()
                             .setColumnType(String.format("%s_%s", taskConfig.getDialectType().name(), columnType));
                 }
-                tableConfig.setLocation(filePath);
+                tableConfig.setOutputDir(String.format("%s/%s",
+                        mockProperties.getDownloadPath(config.getId()).getAbsolutePath(), tableConfig.getTableName()));
             }
             taskConfig.setMaxConnectionSize(mockProperties.getMaxPoolSize());
             DataBaseConfig dataBaseConfig = getDbConfig(conn, execution);
@@ -355,7 +352,7 @@ public class FlowTaskUtil {
             return taskConfig;
         } catch (Exception e) {
             log.warn("Error initializing mock data task, taskId={}", taskId, e);
-            throw new RuntimeException(e);
+            throw new IllegalStateException(e);
         } finally {
             session.expire();
         }
