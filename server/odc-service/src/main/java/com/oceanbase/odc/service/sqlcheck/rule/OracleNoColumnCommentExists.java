@@ -109,7 +109,7 @@ public class OracleNoColumnCommentExists implements SqlCheckRule {
             List<Pair<CreateTable, Integer>> tables = tName2CreateTables.get(e.getKey());
             String text = CollectionUtils.isNotEmpty(tables) ? tables.get(0).left.getText() : "";
             return e.getValue().stream().map(d -> SqlCheckUtil.buildViolation(
-                    text, d, getType(), CollectionUtils.isNotEmpty(tables) ? tables.get(0).right : 0,
+                    text, d, getType(), CollectionUtils.isNotEmpty(tables) ? tables.get(0).right : null,
                     new Object[] {d.getColumnReference().getColumn()}));
         }).collect(Collectors.toList());
     }
