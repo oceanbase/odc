@@ -104,8 +104,7 @@ public class RollbackPlanRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Rol
             String bucketName = "async".concat(File.separator).concat(creator.getId() + "");
             List<String> sqls = databaseChangeFileReader.loadSqlContents(params, connectionConfig.getDialectType(),
                     bucketName, flowTaskProperties.getMaxRollbackContentSizeBytes()).stream().map(OffsetString::getStr)
-                    .collect(
-                            Collectors.toList());
+                    .collect(Collectors.toList());
             if (CollectionUtils.isEmpty(sqls)) {
                 this.isSuccess = true;
                 return RollbackPlanTaskResult.skip();

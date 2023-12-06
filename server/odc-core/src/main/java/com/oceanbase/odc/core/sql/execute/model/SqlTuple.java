@@ -59,14 +59,6 @@ public class SqlTuple {
     private Pair<AbstractSyntaxTree, Exception> ast;
 
     private SqlTuple(@NonNull String sqlId, @NonNull String originalSql, @NonNull String executedSql,
-            @NonNull TraceWatch sqlWatch) {
-        this.sqlId = sqlId;
-        this.originalSql = originalSql;
-        this.executedSql = executedSql;
-        this.sqlWatch = sqlWatch;
-    }
-
-    private SqlTuple(@NonNull String sqlId, @NonNull String originalSql, @NonNull String executedSql,
             @NonNull TraceWatch sqlWatch, @NonNull Integer offset) {
         this.sqlId = sqlId;
         this.originalSql = originalSql;
@@ -77,20 +69,11 @@ public class SqlTuple {
 
     public SqlTuple softCopy() {
         String sqlId = this.sqlId + "-" + (++this.copiedTimes);
-        SqlTuple newOne = new SqlTuple(sqlId, this.originalSql, this.executedSql, this.sqlWatch);
+        SqlTuple newOne = new SqlTuple(sqlId, this.originalSql, this.executedSql, this.sqlWatch, this.offset);
         newOne.ast = this.ast;
         return newOne;
     }
 
-    public static SqlTuple newTuple(@NonNull String originalSql, @NonNull String executedSql) {
-        TraceWatch traceWatch = new TraceWatch("SQL-EXEC");
-        return new SqlTuple(generateSqlId(), originalSql, executedSql, traceWatch);
-    }
-
-    public static SqlTuple newTuple(@NonNull String originalSql, @NonNull String executedSql,
-            @NonNull TraceWatch traceWatch) {
-        return new SqlTuple(generateSqlId(), originalSql, executedSql, traceWatch);
-    }
 
     public static SqlTuple newTuple(@NonNull String originalSql, @NonNull String executedSql,
             @NonNull TraceWatch traceWatch, @NonNull Integer offset) {
@@ -99,15 +82,7 @@ public class SqlTuple {
 
     public static SqlTuple newTuple(@NonNull String originalAndExecutedSql) {
         TraceWatch traceWatch = new TraceWatch("SQL-EXEC");
-        return new SqlTuple(generateSqlId(), originalAndExecutedSql, originalAndExecutedSql, traceWatch);
-    }
-
-    public static List<SqlTuple> newTuples(String... originalAndExecutedSqls) {
-        List<SqlTuple> sqlTuples = new LinkedList<>();
-        for (String originalAndExecutedSql : originalAndExecutedSqls) {
-            sqlTuples.add(newTuple(originalAndExecutedSql));
-        }
-        return sqlTuples;
+        return new SqlTuple(generateSqlId(), originalAndExecutedSql, originalAndExecutedSql, traceWatch, 0);
     }
 
     public static List<SqlTuple> newTuples(Collection<String> originalAndExecutedSqls) {

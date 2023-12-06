@@ -91,8 +91,7 @@ public class RollbackPlan {
 
     private String removeCommentsForSingleSql(String singleSql) {
         return SqlCommentProcessor.removeSqlComments(singleSql, ";", dialectType, false).stream()
-                .map(OffsetString::getStr).collect(
-                        Collectors.toList())
+                .map(OffsetString::getStr).collect(Collectors.toList())
                 .get(0);
     }
 }

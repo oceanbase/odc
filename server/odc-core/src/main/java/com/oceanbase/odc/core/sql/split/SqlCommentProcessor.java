@@ -447,11 +447,13 @@ public class SqlCommentProcessor {
             if (!mlComment && inString == '\0' && ssComment != SSC.HINT && isPrefix(lines, pos, delimiter)) {
                 // 不是多行注释，未在字符串中，不是hint且以delimiter开头，通常是扫描到了sql的末尾
                 pos += delimiter.length();
-                if (buffer.length() == 0) {
-                    bufferOrder.setValue(lines[0].getOrder());
+                if (out != 0) {
+                    if (buffer.length() == 0) {
+                        bufferOrder.setValue(lines[0].getOrder());
+                    }
+                    append(buffer, lines, 0, out);
+                    out = 0;
                 }
-                append(buffer, lines, 0, out);
-                out = 0;
                 // buffer.append(";").append('\n');
                 sqls.add(new OffsetString(bufferOrder.getValue(), buffer.toString()));
                 bufferOrder.setValue(bufferOrder.getValue() + buffer.length());
