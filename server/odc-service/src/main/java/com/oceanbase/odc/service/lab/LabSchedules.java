@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.lab;
 
 import java.util.List;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -24,7 +25,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.core.shared.Verify;
-import com.oceanbase.odc.metadb.connection.ConnectionHistoryEntity;
+import com.oceanbase.odc.metadb.connection.ConnectionEntity;
 import com.oceanbase.odc.service.config.SystemConfigService;
 import com.oceanbase.odc.service.config.model.Configuration;
 import com.oceanbase.odc.service.connection.ConnectionSessionHistoryService;
@@ -61,17 +62,18 @@ public class LabSchedules {
 
     @Scheduled(fixedDelayString = "${odc.lab.schedule.fix-delay-millis:7200000}")
     public void revokeLabResource() {
-        List<ConnectionHistoryEntity> connectionHistoryEntities =
-                connectionSessionHistoryService.listInactiveConnections();
-        log.info("try to revoke lab resource, connectionHistoryEntity count={}", connectionHistoryEntities.size());
-        for (ConnectionHistoryEntity connectionHistoryEntity : connectionHistoryEntities) {
+        List<ConnectionEntity> entities = connectionSessionHistoryService.listInactiveConnections(null);
+        if (CollectionUtils.isEmpty(entities)) {
+            return;
+        }
+        log.info("try to revoke lab resource, connectionHistoryEntity count={}", entities.size());
+        for (ConnectionEntity entity : entities) {
             try {
-                log.info("start revoke resource, connectionId={}", connectionHistoryEntity.getConnectionId());
-
-                resourceService.revokeResource(connectionHistoryEntity.getConnectionId());
-                log.info("revoke resource successfully, connectionId={}", connectionHistoryEntity.getConnectionId());
+                log.info("start revoke resource, connectionId={}", entity.getId());
+                resourceService.revokeResource(entity.getId());
+                log.info("revoke resource successfully, connectionId={}", entity.getId());
             } catch (Exception ex) {
-                log.warn("revoke resource failed, connectionId={}", connectionHistoryEntity.getId(), ex);
+                log.warn("revoke resource failed, connectionId={}", entity.getId(), ex);
             }
         }
     }
