@@ -15,31 +15,23 @@
  */
 package com.oceanbase.odc.service.db;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.validation.constraints.NotEmpty;
-import javax.validation.constraints.NotNull;
-
 import org.springframework.stereotype.Service;
 
-import com.oceanbase.odc.common.util.ExceptionUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
-import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
-import com.oceanbase.odc.core.shared.exception.OBException;
-import com.oceanbase.odc.core.sql.execute.SyncJdbcExecutor;
-import com.oceanbase.odc.service.common.exception.OdcUncheckedException;
-import com.oceanbase.odc.service.common.model.OdcSqlExecuteResult;
+import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.db.model.OdcDBVariable;
+import com.oceanbase.odc.service.session.interceptor.NlsFormatInterceptor;
 import com.oceanbase.tools.dbbrowser.model.DBVariable;
 import com.oceanbase.tools.dbbrowser.model.datatype.DataTypeUtil;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
@@ -135,7 +127,6 @@ public class DBVariablesService {
             } else {
                 variableResponse.setValueType(OdcConstants.DB_VARIABLE_TYPE_STRING);
             }
-
             // 常用的变量放在前面展示
             if (IMPORTANT_DB_VARIABLES.contains(key)) {
                 resultDbVirableList.add(variableResponse);
@@ -143,50 +134,26 @@ public class DBVariablesService {
                 tempResultDbVirableList.add(variableResponse);
             }
         });
-
         resultDbVirableList.addAll(tempResultDbVirableList);
         return resultDbVirableList;
     }
 
-    public OdcSqlExecuteResult doExecute(@NotNull ConnectionSession session, @NotEmpty String sql) {
-        OdcSqlExecuteResult result;
-        try {
-            SyncJdbcExecutor jdbcExecutor = session.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY);
-            int affectRows = jdbcExecutor.update(sql);
-            result = OdcSqlExecuteResult.success(sql);
-            result.setTotal(affectRows);
-            return result;
-        } catch (RuntimeException exception) {
-            throw exception;
-        } catch (Exception exception) {
-            Throwable rootCause = ExceptionUtils.getRootCause(exception);
-            if (rootCause instanceof SQLException) {
-                SQLException sqlException = (SQLException) rootCause;
-                if (isGlobalSessionMissGlobalKeyword(sqlException, session.getDialectType())) {
-                    throw OBException.globalVariableSetSessionScopeNotSupported(rootCause.getMessage());
-                }
-            }
-            throw new OdcUncheckedException(exception);
+    public boolean update(@NonNull ConnectionSession session, @NonNull OdcDBVariable resource) {
+        String dml = getUpdateDml(resource.getVariableScope(), resource);
+        if (StringUtils.isEmpty(dml)) {
+            return false;
         }
+        session.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY).execute(dml);
+        NlsFormatInterceptor.setNlsFormat(session, SqlTuple.newTuple(dml));
+        return true;
     }
 
-    public String getUpdateDml(@NonNull String variableScope, @NonNull OdcDBVariable resource) {
+    private String getUpdateDml(@NonNull String variableScope, @NonNull OdcDBVariable resource) {
         String value = resource.getValue();
         if (!DataTypeUtil.isNumericValue(value)) {
             value = "'" + value + "'";
         }
         return String.format("set %s %s=%s", variableScope, resource.getKey(), value);
-    }
-
-    private boolean isGlobalSessionMissGlobalKeyword(SQLException sqlException, DialectType dialectType) {
-        String matchedMessage = "GLOBAL variable and should be set with SET GLOBAL";
-        int errorCode = sqlException.getErrorCode();
-        String message = sqlException.getMessage();
-        if (dialectType.isMysql()) {
-            return errorCode == 1229 || StringUtils.containsIgnoreCase(message, matchedMessage);
-        } else {
-            return errorCode == 600 || StringUtils.containsIgnoreCase(message, matchedMessage);
-        }
     }
 
 }

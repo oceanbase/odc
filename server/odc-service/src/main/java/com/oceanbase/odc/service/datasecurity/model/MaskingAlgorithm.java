@@ -90,6 +90,7 @@ public class MaskingAlgorithm implements SecurityResource, OrganizationIsolated 
     private Integer precision;
 
     @NotEmpty
+    @Size(min = 1, max = 128, message = "Masking sample content is out of range [1,128]")
     private String sampleContent;
 
     private String maskedContent;

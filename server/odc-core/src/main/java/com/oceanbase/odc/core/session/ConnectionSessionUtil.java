@@ -223,6 +223,14 @@ public class ConnectionSessionUtil {
         return (String) connectionSession.getAttribute(ConnectionSessionConstants.CONNECT_SCHEMA_KEY);
     }
 
+    public static void setClusterName(@NonNull ConnectionSession connectionSession, @NonNull String tenantName) {
+        connectionSession.setAttribute(ConnectionSessionConstants.CLUSTER_NAME, tenantName);
+    }
+
+    public static String getClusterName(@NonNull ConnectionSession connectionSession) {
+        return (String) connectionSession.getAttribute(ConnectionSessionConstants.CLUSTER_NAME);
+    }
+
     public static void setCurrentSchema(@NonNull ConnectionSession connectionSession, @NonNull String schema) {
         connectionSession.setAttribute(ConnectionSessionConstants.CURRENT_SCHEMA_KEY, schema);
     }
