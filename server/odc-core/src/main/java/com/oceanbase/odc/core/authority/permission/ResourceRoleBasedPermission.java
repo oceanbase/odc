@@ -44,7 +44,7 @@ public class ResourceRoleBasedPermission implements Permission {
         this.resourceId = resource.resourceId();
         this.resourceType = resource.resourceType();
         this.resourceRoles = Arrays.stream(StringUtils.split(resourceRole, ","))
-                .map(e -> ResourceRoleName.valueOf(e.trim())).collect(Collectors.toList());
+                .map(e -> ResourceRoleName.valueOf(e.trim().toUpperCase())).collect(Collectors.toList());
         Validate.notNull(resourceId, "ResourceId can not be null");
         Validate.notNull(resourceType, "ResourceType can not be null");
     }
