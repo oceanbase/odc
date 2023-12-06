@@ -56,6 +56,7 @@ public class DataSourceInfoBuilder {
                 dataSourceInfo.setDbType(DataBaseType.OCEANBASEV10.name());
                 dataSourceInfo.setSysUser(connectionConfig.getSysTenantUsername());
                 dataSourceInfo.setUserLocalProxy(false);
+                dataSourceInfo.setClusterName(connectionConfig.getClusterName());
                 if (StringUtils.isNotEmpty(connectionConfig.getSysTenantPassword())) {
                     try {
                         dataSourceInfo.setSysPassword(EncryptUtils.encode(connectionConfig.getSysTenantPassword()));
