@@ -31,7 +31,6 @@ import org.quartz.JobKey;
 import org.quartz.SchedulerException;
 import org.quartz.Trigger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cglib.beans.BeanMap;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -143,12 +142,6 @@ public class ScheduleService {
     private TaskDispatchChecker dispatchChecker;
     @Autowired
     private RequestDispatcher requestDispatcher;
-
-    @Value("${odc.log.directory:./log}")
-    private String baseTaskLogDir;
-
-    private static final String LOG_PATH_PATTERN = "schedule/%d/%d/log.%s";
-
     private final ScheduleTaskMapper scheduleTaskMapper = ScheduleTaskMapper.INSTANCE;
 
     public ScheduleEntity create(ScheduleEntity scheduleConfig) {
