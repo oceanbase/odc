@@ -17,7 +17,6 @@
 package com.oceanbase.odc.service.task.schedule;
 
 import java.util.Collections;
-import java.util.Map;
 
 import com.oceanbase.odc.service.task.caller.DefaultJobContext;
 import com.oceanbase.odc.service.task.caller.JobContext;
@@ -30,30 +29,13 @@ import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
  * @since 4.2.4
  */
 public class DefaultJobContextBuilder implements JobContextBuilder {
-
     @Override
-    public JobContext build(JobIdentity identity) {
-        return build(identity, null);
-    }
-
-    @Override
-    public JobContext build(JobIdentity identity, Map<String, Object> taskData) {
+    public JobContext build(JobDefinition jd) {
         JobConfiguration configuration = JobConfigurationHolder.getJobConfiguration();
-
         DefaultJobContext jobContext = new DefaultJobContext();
-        jobContext.setJobIdentity(identity);
-        jobContext.setTaskData(taskData);
+        jobContext.setJobIdentity(jd.getJobIdentity());
+        jobContext.setJobData(jd.getJobData());
         jobContext.setHostUrls(Collections.singletonList(configuration.getHostUrlProvider().hostUrl()));
-        return doBuild(configuration, jobContext);
-    }
-
-    /**
-     * provide a entrypoint for concrete task to modify job context
-     *
-     * @param configuration job configuration
-     * @param jobContext modified job context
-     */
-    protected JobContext doBuild(JobConfiguration configuration, DefaultJobContext jobContext) {
         return jobContext;
     }
 }

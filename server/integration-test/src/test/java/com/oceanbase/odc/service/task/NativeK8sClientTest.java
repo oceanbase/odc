@@ -32,8 +32,8 @@ import com.oceanbase.odc.service.task.caller.JobUtils;
 import com.oceanbase.odc.service.task.caller.K8sJobClient;
 import com.oceanbase.odc.service.task.caller.NativeK8sJobClient;
 import com.oceanbase.odc.service.task.caller.PodParam;
+import com.oceanbase.odc.service.task.enums.GroupEnum;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
-import com.oceanbase.odc.service.task.schedule.ScheduleSourceType;
 import com.oceanbase.odc.test.database.TestProperties;
 
 /**
@@ -55,7 +55,7 @@ public class NativeK8sClientTest {
     public void test_createJob() throws JobException {
 
         long exceptedTaskId = System.currentTimeMillis();
-        JobIdentity jobIdentity = JobIdentity.of(exceptedTaskId, ScheduleSourceType.TASK_TASK, TaskType.ASYNC.name());
+        JobIdentity jobIdentity = JobIdentity.of(exceptedTaskId, GroupEnum.TASK_TASK, TaskType.ASYNC.name());
 
         String imageName = "perl:5.34.0";
         String exceptedJobName = JobUtils.generateJobName(jobIdentity);

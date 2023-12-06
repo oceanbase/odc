@@ -16,6 +16,8 @@
 
 package com.oceanbase.odc.service.task.executor.sampletask;
 
+import java.util.Map;
+
 import org.springframework.jdbc.core.JdbcOperations;
 
 import com.oceanbase.odc.common.json.JsonUtils;
@@ -26,6 +28,7 @@ import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.odc.service.task.caller.JobContext;
+import com.oceanbase.odc.service.task.constants.JobDataMapConstants;
 import com.oceanbase.odc.service.task.executor.task.BaseTask;
 
 import lombok.extern.slf4j.Slf4j;
@@ -51,11 +54,15 @@ public class SampleTask extends BaseTask {
 
     @Override
     protected void onStart() {
-        Verify.equals(TaskType.SAMPLE.code(), context.getJobIdentity().getTaskType(), "taskType");
-        this.parameter = JsonUtils.fromJson(context.getTaskParameters(), SampleTaskParameter.class);
+        Verify.equals(TaskType.SAMPLE.code(), context.getJobIdentity().getType(), "taskType");
+        Map<String, String> dataMap = context.getJobData();
+
+        this.parameter =
+                JsonUtils.fromJson(dataMap.get(JobDataMapConstants.META_DB_TASK_PARAMETER), SampleTaskParameter.class);
         validateTaskParameter();
         this.totalSqlCount = this.parameter.getSqls().size();
-        ConnectionConfig connectionConfig = context.getConnectionConfigs().get(0);
+        ConnectionConfig connectionConfig =
+                JsonUtils.fromJson(dataMap.get(JobDataMapConstants.CONNECTION_CONFIG), ConnectionConfig.class);
         connectionConfig.setId(1L); // Set connection id to 1 for testing.
         connectionConfig.setDefaultSchema(this.parameter.getDefaultSchema());
         ConnectionSession session = new DefaultConnectSessionFactory(connectionConfig).generateSession();

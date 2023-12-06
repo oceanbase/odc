@@ -19,8 +19,8 @@ package com.oceanbase.odc.service.task.executor.task;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.service.task.caller.JobContext;
+import com.oceanbase.odc.service.task.enums.GroupEnum;
 import com.oceanbase.odc.service.task.executor.sampletask.SampleTask;
-import com.oceanbase.odc.service.task.schedule.ScheduleSourceType;
 
 /**
  * @author gaoda.xy
@@ -29,8 +29,8 @@ import com.oceanbase.odc.service.task.schedule.ScheduleSourceType;
 public class TaskFactory {
 
     public static Task create(JobContext jobContext) {
-        if (jobContext.getJobIdentity().getSourceType() == ScheduleSourceType.TASK_TASK) {
-            switch (TaskType.valueOf(jobContext.getJobIdentity().getTaskType())) {
+        if (jobContext.getJobIdentity().getGroup() == GroupEnum.TASK_TASK) {
+            switch (TaskType.valueOf(jobContext.getJobIdentity().getType())) {
                 case SAMPLE:
                     return new SampleTask(jobContext);
                 case ASYNC:

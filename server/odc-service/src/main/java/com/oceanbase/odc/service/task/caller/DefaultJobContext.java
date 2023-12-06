@@ -54,6 +54,6 @@ public class DefaultJobContext implements JobContext, Serializable {
     /**
      * task other data
      */
-    private Map<String, Object> taskData;
+    private Map<String, String> jobData;
 
 }

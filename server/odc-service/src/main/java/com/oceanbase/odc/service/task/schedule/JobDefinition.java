@@ -16,9 +16,10 @@
 
 package com.oceanbase.odc.service.task.schedule;
 
+import java.util.Map;
+
 import com.oceanbase.odc.service.quartz.model.MisfireStrategy;
 import com.oceanbase.odc.service.schedule.model.TriggerConfig;
-import com.oceanbase.odc.service.task.caller.JobContext;
 
 /**
  * Define a job and describe all job information for schedule
@@ -30,9 +31,17 @@ import com.oceanbase.odc.service.task.caller.JobContext;
 public interface JobDefinition {
 
     /**
+     * get job identity
+     */
+    JobIdentity getJobIdentity();
+
+    /**
      * @return job context for task executor
      */
-    JobContext getJobContext();
+    /**
+     * job data
+     */
+    Map<String, String> getJobData();
 
     /**
      * @return job misfire strategy

@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.oceanbase.odc.service.task.schedule;
 
 import java.util.Map;
@@ -20,23 +21,15 @@ import java.util.Map;
 import com.oceanbase.odc.service.quartz.model.MisfireStrategy;
 import com.oceanbase.odc.service.schedule.model.TriggerConfig;
 
-import lombok.Builder;
-import lombok.Data;
+import lombok.NonNull;
 
 /**
  * @author yaobin
- * @date 2023-11-23
+ * @date 2023-11-30
  * @since 4.2.4
  */
-@Data
-@Builder
-public class DefaultJobDefinition implements JobDefinition {
+public interface JobDefinitionBuilder {
 
-    private JobIdentity jobIdentity;
-
-    private Map<String, String> jobData;
-
-    private MisfireStrategy misfireStrategy;
-
-    private TriggerConfig triggerConfig;
+    JobDefinition build(@NonNull JobIdentity jobIdentity, Map<String, String> jobData,
+            MisfireStrategy misfireStrategy, TriggerConfig triggerConfig);
 }

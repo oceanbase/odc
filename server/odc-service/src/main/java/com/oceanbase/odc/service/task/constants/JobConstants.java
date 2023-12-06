@@ -43,6 +43,6 @@ public class JobConstants {
 
     public static final String ODC_BOOT_MODE_EXECUTOR = "TASK_EXECUTOR";
 
-    public static final String JOB_DATA_MAP_JOB_CONTEXT = JobEnvConstants.TASK_PARAMETER;
+    public static final String QUARTZ_DATA_MAP_JOB_CONTEXT = JobEnvConstants.TASK_ALL_PARAMETERS;
 
 }

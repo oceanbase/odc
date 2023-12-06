@@ -43,6 +43,7 @@ public class StdJobScheduler implements JobScheduler {
         this.scheduler = configuration.getScheduler();
         PreConditions.notNull(configuration.getScheduler(), "quartz scheduler");
         PreConditions.notNull(configuration.getJobDispatcher(), "job dispatcher");
+        PreConditions.notNull(configuration.getHostUrlProvider(), "host url provider");
         JobConfigurationHolder.setJobConfiguration(configuration);
     }
 
@@ -50,7 +51,7 @@ public class StdJobScheduler implements JobScheduler {
     public void scheduleJob(JobDefinition jd) throws JobException {
 
         Trigger trigger = TriggerBuilder.build(jd);
-        JobIdentity jobIdentity = jd.getJobContext().getJobIdentity();
+        JobIdentity jobIdentity = jd.getJobIdentity();
         JobKey jobKey = QuartzKeyGenerator.generateJobKey(jobIdentity);
         JobDetailImpl detail = new JobDetailImpl();
         detail.setKey(jobKey);
@@ -65,7 +66,7 @@ public class StdJobScheduler implements JobScheduler {
 
     @Override
     public void scheduleJobNow(JobDefinition jd) throws JobException {
-        configuration.getJobDispatcher().start(jd.getJobContext());
+        configuration.getJobDispatcher().start(new DefaultJobContextBuilder().build(jd));
     }
 
     @Override

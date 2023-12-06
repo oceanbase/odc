@@ -30,6 +30,7 @@ import com.oceanbase.odc.service.quartz.util.QuartzCronExpressionUtils;
 import com.oceanbase.odc.service.schedule.model.QuartzKeyGenerator;
 import com.oceanbase.odc.service.schedule.model.TriggerConfig;
 import com.oceanbase.odc.service.schedule.model.TriggerStrategy;
+import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.caller.JobException;
 import com.oceanbase.odc.service.task.constants.JobConstants;
 
@@ -42,14 +43,15 @@ public class TriggerBuilder {
 
     public static Trigger build(JobDefinition jd) throws JobException {
         JobDataMap triData = new JobDataMap();
-        triData.put(JobConstants.JOB_DATA_MAP_JOB_CONTEXT, jd.getJobContext());
+        JobContext jc = new DefaultJobContextBuilder().build(jd);
+        triData.put(JobConstants.QUARTZ_DATA_MAP_JOB_CONTEXT, jc);
 
         TriggerConfig triggerConfig = jd.getTriggerConfig();
         if (jd.getTriggerConfig() == null) {
             triggerConfig = new TriggerConfig();
             triggerConfig.setTriggerStrategy(TriggerStrategy.START_NOW);
         }
-        return build(QuartzKeyGenerator.generateTriggerKey(jd.getJobContext().getJobIdentity()),
+        return build(QuartzKeyGenerator.generateTriggerKey(jc.getJobIdentity()),
                 triggerConfig, jd.getMisfireStrategy(), triData);
     }
 

@@ -16,8 +16,6 @@
 
 package com.oceanbase.odc.service.task.schedule;
 
-import java.util.Map;
-
 import com.oceanbase.odc.service.task.caller.JobContext;
 
 /**
@@ -27,7 +25,5 @@ import com.oceanbase.odc.service.task.caller.JobContext;
  */
 public interface JobContextBuilder {
 
-    JobContext build(JobIdentity identity);
-
-    JobContext build(JobIdentity identity, Map<String, Object> taskData);
+    JobContext build(JobDefinition jd);
 }
