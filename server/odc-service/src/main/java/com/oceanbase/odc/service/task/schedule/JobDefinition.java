@@ -36,20 +36,17 @@ public interface JobDefinition {
     JobIdentity getJobIdentity();
 
     /**
-     * @return job context for task executor
-     */
-    /**
      * job data
      */
     Map<String, String> getJobData();
 
     /**
-     * @return job misfire strategy
+     * job misfire strategy
      */
     MisfireStrategy getMisfireStrategy();
 
     /**
-     * @return job trigger config
+     * job trigger config
      */
     TriggerConfig getTriggerConfig();
 }
