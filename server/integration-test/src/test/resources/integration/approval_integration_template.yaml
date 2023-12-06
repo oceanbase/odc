@@ -14,8 +14,8 @@ api:
         processCode: approval_integration_test
     queryParameters: ~
     requestEncrypted: false
-    requestSuccessExpression: '[success]=="true"'
-    extractInstanceIdExpression: "[content][processInstanceId]"
+    requestSuccessExpression: 'queryResult.success==true'
+    extractInstanceIdExpression: "queryResult.content.processInstanceId"
     responseEncrypted: false
   status:
     method: POST
@@ -27,11 +27,11 @@ api:
         processInstanceId: ${process.instance.id}
     queryParameters: ~
     requestEncrypted: false
-    requestSuccessExpression: "[success] == true"
-    processPendingExpression: '[content][processInstanceStatus]=="RUNNING"'
-    processApprovedExpression: '[content][processInstanceStatus]=="COMPLETED" && [content][outResult]=="同意"'
-    processRejectedExpression: '[content][processInstanceStatus]=="COMPLETED" && [content][outResult]=="拒绝"'
-    processTerminatedExpression: '[content][processInstanceStatus]=="TERMINATED"'
+    requestSuccessExpression: "success == true"
+    processPendingExpression: 'content.processInstanceStatus=="RUNNING"'
+    processApprovedExpression: 'content.processInstanceStatus=="COMPLETED" && content.outResult=="同意"'
+    processRejectedExpression: 'content.processInstanceStatus=="COMPLETED" && content.outResult=="拒绝"'
+    processTerminatedExpression: 'content.processInstanceStatus=="TERMINATED"'
     responseEncrypted: false
   cancel:
     method: POST
@@ -43,7 +43,7 @@ api:
         processInstanceId: ${process.instance.id}
     queryParameters: ~
     requestEncrypted: false
-    requestSuccessExpression: "[success] == true"
+    requestSuccessExpression: "success == true"
     responseEncrypted: false
 advanced:
   hyperlinkExpression: http://localhost:8989/procInsId=${process.instance.id}
