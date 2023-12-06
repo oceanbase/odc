@@ -398,6 +398,7 @@ public class IamController {
      * @param req
      * @return
      */
+    @Deprecated
     @ApiOperation(value = "updateUserPermissions", notes = "更新用户权限列表")
     @RequestMapping(value = "/userPermissions/batchUpdateForConnection", method = RequestMethod.POST)
     public SuccessResponse<List<UserPermissionResp>> batchUpdateUserPermissionsForConnection(

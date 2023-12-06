@@ -150,6 +150,7 @@ public class UserPermissionService {
                 .collect(Collectors.toList());
     }
 
+    @Deprecated
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("inside method permission check")
     public List<UserPermissionResp> batchUpdateForConnection(@NonNull BatchUpdateUserPermissionsReq req) {
@@ -304,27 +305,6 @@ public class UserPermissionService {
             userPermissionRepository.saveAndFlush(userPermission);
         });
     }
-
-    @SkipAuthorize("internal usage")
-    @Transactional(rollbackFor = Exception.class)
-    public void bindUserAndCreateDataSourcePermission(@NonNull Long userId, @NonNull Long organizationId) {
-        PermissionEntity permission = new PermissionEntity();
-        permission.setAction("create");
-        permission.setType(PermissionType.PUBLIC_RESOURCE);
-        permission.setResourceIdentifier("ODC_CONNECTION:*");
-        permission.setOrganizationId(organizationId);
-        permission.setCreatorId(userId);
-        permission.setBuiltIn(false);
-        PermissionEntity saved = permissionRepository.saveAndFlush(permission);
-
-        UserPermissionEntity userPermission = new UserPermissionEntity();
-        userPermission.setUserId(userId);
-        userPermission.setPermissionId(saved.getId());
-        userPermission.setCreatorId(userId);
-        userPermission.setOrganizationId(organizationId);
-        userPermissionRepository.saveAndFlush(userPermission);
-    }
-
 
     private void inspectConnectionPermissions(@NonNull Long connectionId, @NonNull String action) {
         List<Permission> permissions = new ArrayList<>();
