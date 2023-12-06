@@ -37,6 +37,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.core.shared.constant.OdcConstants;
 import com.oceanbase.odc.service.common.model.Stats;
 import com.oceanbase.odc.service.common.response.ListResponse;
 import com.oceanbase.odc.service.common.response.PaginatedResponse;
@@ -81,11 +82,11 @@ public class DataSourceController {
 
     @ApiOperation(value = "createDataSource", notes = "Create a datasource")
     @RequestMapping(value = "/datasources", method = RequestMethod.POST)
-    public SuccessResponse<ConnectionConfig> createDataSource(@RequestBody ConnectionConfig connectionConfig) {
+    public SuccessResponse<ConnectionConfig> createDataSource(@RequestBody ConnectionConfig config) {
         if (bastionEnabled) {
-            return Responses.success(connectionService.createForBastionUser(connectionConfig));
+            return Responses.success(connectionService.create(config, OdcConstants.DEFAULT_ADMIN_USER_ID, true));
         }
-        return Responses.success(connectionService.create(connectionConfig));
+        return Responses.success(connectionService.create(config));
     }
 
     @ApiOperation(value = "deleteDataSource", notes = "Delete a datasource")
