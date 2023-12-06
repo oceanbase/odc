@@ -41,7 +41,6 @@ import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskSpecs;
 import com.oceanbase.odc.service.quartz.QuartzJobService;
 import com.oceanbase.odc.service.quartz.util.ScheduleTaskUtils;
-import com.oceanbase.odc.service.schedule.model.JobType;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskResp;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
 
