@@ -20,11 +20,13 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 
 import com.oceanbase.odc.core.datasource.ConnectionInitializer;
+import com.oceanbase.odc.core.sql.split.OffsetString;
 import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 
@@ -61,7 +63,8 @@ public class SessionCreatedInitializer implements ConnectionInitializer {
             return;
         }
         List<String> sqls = SqlCommentProcessor.removeSqlComments(
-                initScript, ";", connectionConfig.getDialectType(), false);
+                initScript, ";", connectionConfig.getDialectType(), false).stream().map(OffsetString::getStr).collect(
+                        Collectors.toList());
         if (CollectionUtils.isEmpty(sqls)) {
             return;
         }

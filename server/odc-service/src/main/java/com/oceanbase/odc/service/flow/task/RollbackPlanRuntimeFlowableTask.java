@@ -19,6 +19,7 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.InputStream;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.flowable.engine.delegate.DelegateExecution;
@@ -30,6 +31,7 @@ import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
+import com.oceanbase.odc.core.sql.split.OffsetString;
 import com.oceanbase.odc.metadb.flow.ServiceTaskInstanceRepository;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
@@ -101,7 +103,8 @@ public class RollbackPlanRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Rol
                     JsonUtils.fromJson(taskEntity.getParametersJson(), DatabaseChangeParameters.class);
             String bucketName = "async".concat(File.separator).concat(creator.getId() + "");
             List<String> sqls = databaseChangeFileReader.loadSqlContents(params, connectionConfig.getDialectType(),
-                    bucketName, flowTaskProperties.getMaxRollbackContentSizeBytes());
+                    bucketName, flowTaskProperties.getMaxRollbackContentSizeBytes()).stream().map(OffsetString::getStr)
+                    .collect(Collectors.toList());
             if (CollectionUtils.isEmpty(sqls)) {
                 this.isSuccess = true;
                 return RollbackPlanTaskResult.skip();
