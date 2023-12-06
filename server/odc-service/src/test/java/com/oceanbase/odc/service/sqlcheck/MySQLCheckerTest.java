@@ -19,6 +19,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -27,6 +28,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 
 import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.core.sql.split.OffsetString;
 import com.oceanbase.odc.service.sqlcheck.model.CheckViolation;
 import com.oceanbase.odc.service.sqlcheck.model.SqlCheckRuleType;
 import com.oceanbase.odc.service.sqlcheck.rule.ColumnCharsetExists;
@@ -943,7 +945,7 @@ public class MySQLCheckerTest {
         };
         DefaultSqlChecker sqlChecker = new DefaultSqlChecker(DialectType.OB_MYSQL,
                 null, Collections.singletonList(new SelectStarExists()));
-        List<CheckViolation> actual = sqlChecker.check(Arrays.asList(sqls), null);
+        List<CheckViolation> actual = sqlChecker.check(toOffsetString(sqls), null);
 
         SqlCheckRuleType type = SqlCheckRuleType.SELECT_STAR_EXISTS;
         CheckViolation c1 = new CheckViolation(sqls[0], 1, 12, 12, 12, type, new Object[] {});
@@ -962,7 +964,7 @@ public class MySQLCheckerTest {
         DefaultSqlChecker sqlChecker = new DefaultSqlChecker(DialectType.OB_MYSQL,
                 null, Collections.singletonList(
                         new MySQLMissingRequiredColumns(new HashSet<>(Arrays.asList("id", "`create_gmt`")))));
-        List<CheckViolation> actual = sqlChecker.check(Arrays.asList(sqls), null);
+        List<CheckViolation> actual = sqlChecker.check(toOffsetString(sqls), null);
 
         SqlCheckRuleType type = SqlCheckRuleType.MISSING_REQUIRED_COLUMNS;
         CheckViolation c1 = new CheckViolation(sqls[0], 1, 0, 0, 42, type, new Object[] {"`create_gmt`"});
@@ -981,7 +983,7 @@ public class MySQLCheckerTest {
         };
         DefaultSqlChecker sqlChecker = new DefaultSqlChecker(DialectType.OB_MYSQL,
                 null, Collections.singletonList(new MySQLRestrictAutoIncrementUnsigned()));
-        List<CheckViolation> actual = sqlChecker.check(Arrays.asList(sqls), null);
+        List<CheckViolation> actual = sqlChecker.check(toOffsetString(sqls), null);
 
         SqlCheckRuleType type = SqlCheckRuleType.RESTRICT_AUTO_INCREMENT_UNSIGNED;
         CheckViolation c1 = new CheckViolation(sqls[0], 1, 21, 21, 23, type, new Object[] {"int"});
@@ -1007,7 +1009,7 @@ public class MySQLCheckerTest {
         };
         DefaultSqlChecker sqlChecker = new DefaultSqlChecker(DialectType.OB_MYSQL,
                 null, Collections.singletonList(new MySQLTooManyAlterStatement(2)));
-        List<CheckViolation> actual = sqlChecker.check(Arrays.asList(sqls), null);
+        List<CheckViolation> actual = sqlChecker.check(toOffsetString(sqls), null);
 
         SqlCheckRuleType type = SqlCheckRuleType.TOO_MANY_ALTER_STATEMENT;
         String s1 = joinAndAppend(new String[] {sqls[2], sqls[3], sqls[5]}, ";");
@@ -1030,7 +1032,7 @@ public class MySQLCheckerTest {
         };
         DefaultSqlChecker sqlChecker = new DefaultSqlChecker(DialectType.OB_MYSQL,
                 null, Collections.singletonList(new NotNullColumnWithoutDefaultValue()));
-        List<CheckViolation> actual = sqlChecker.check(Arrays.asList(sqls), null);
+        List<CheckViolation> actual = sqlChecker.check(toOffsetString(sqls), null);
 
         SqlCheckRuleType type = SqlCheckRuleType.NOT_NULL_COLUMN_WITHOUT_DEFAULT_VALUE;
         CheckViolation c1 = new CheckViolation(sqls[0], 1, 18, 18, 34, type, new Object[] {});
@@ -1050,7 +1052,7 @@ public class MySQLCheckerTest {
         DefaultSqlChecker sqlChecker = new DefaultSqlChecker(DialectType.OB_MYSQL,
                 null,
                 Collections.singletonList(new ProhibitedDatatypeExists(new HashSet<>(Arrays.asList("text", "blob")))));
-        List<CheckViolation> actual = sqlChecker.check(Arrays.asList(sqls), null);
+        List<CheckViolation> actual = sqlChecker.check(toOffsetString(sqls), null);
 
         SqlCheckRuleType type = SqlCheckRuleType.PROHIBITED_DATATYPE_EXISTS;
         CheckViolation c1 = new CheckViolation(sqls[0], 1, 22, 22, 25, type, new Object[] {"text", "blob,text"});
@@ -1205,7 +1207,7 @@ public class MySQLCheckerTest {
         };
         DefaultSqlChecker sqlChecker = new DefaultSqlChecker(DialectType.OB_MYSQL,
                 null, Collections.singletonList(new RestrictDropObjectTypes(Collections.singleton("function"))));
-        List<CheckViolation> actual = sqlChecker.check(Arrays.asList(sqls), null);
+        List<CheckViolation> actual = sqlChecker.check(toOffsetString(sqls), null);
 
         SqlCheckRuleType type = SqlCheckRuleType.RESTRICT_DROP_OBJECT_TYPES;
         CheckViolation c1 = new CheckViolation(sqls[1], 1, 0, 0, 18, type, new Object[] {"PROCEDURE", "function"});
@@ -1259,4 +1261,7 @@ public class MySQLCheckerTest {
         return String.join(delimiter, sqls) + delimiter;
     }
 
+    private List<OffsetString> toOffsetString(String[] strs) {
+        return Arrays.stream(strs).map(s -> new OffsetString(0, s)).collect(Collectors.toList());
+    }
 }

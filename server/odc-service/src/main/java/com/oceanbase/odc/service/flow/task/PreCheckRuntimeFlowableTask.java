@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FileUtils;
@@ -37,6 +38,7 @@ import com.oceanbase.odc.common.unit.BinarySizeUnit;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.core.shared.exception.VerifyException;
+import com.oceanbase.odc.core.sql.split.OffsetString;
 import com.oceanbase.odc.metadb.flow.FlowInstanceRepository;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.service.common.FileManager;
@@ -81,7 +83,7 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
     private volatile DatabasePermissionCheckResult permissionCheckResult = null;
     private static final String CHECK_RESULT_FILE_NAME = "sql-check-result.json";
     private Long creatorId;
-    private List<String> databaseChangeRelatedSqls;
+    private List<OffsetString> databaseChangeRelatedSqls;
     private ConnectionConfig connectionConfig;
     private Long preCheckTaskId;
     @Autowired
@@ -237,7 +239,9 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
     private void doDatabasePermissionCheck() {
         Set<String> unauthorizedDatabaseNames =
                 databaseService.filterUnAuthorizedDatabaseNames(
-                        SchemaExtractor.listSchemaNames(this.databaseChangeRelatedSqls,
+                        SchemaExtractor.listSchemaNames(
+                                this.databaseChangeRelatedSqls.stream().map(OffsetString::getStr).collect(
+                                        Collectors.toList()),
                                 this.connectionConfig.getDialectType()),
                         connectionConfig.getId());
         this.permissionCheckResult =
@@ -261,7 +265,7 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
         }
     }
 
-    private List<String> getFlowRelatedSqls(TaskType taskType, String parametersJson, DialectType dialectType) {
+    private List<OffsetString> getFlowRelatedSqls(TaskType taskType, String parametersJson, DialectType dialectType) {
         if (taskType == TaskType.ASYNC) {
             DatabaseChangeParameters params = JsonUtils.fromJson(parametersJson, DatabaseChangeParameters.class);
             String bucketName = "async".concat(File.separator).concat(this.creatorId.toString());
@@ -275,12 +279,12 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
         if (taskType == TaskType.ONLINE_SCHEMA_CHANGE) {
             OnlineSchemaChangeParameters params =
                     JsonUtils.fromJson(parametersJson, OnlineSchemaChangeParameters.class);
-            return SqlUtils.split(dialectType, params.getSqlContent(), params.getDelimiter());
+            return SqlUtils.splitWithOffset(dialectType, params.getSqlContent(), params.getDelimiter());
         }
         if (taskType == TaskType.EXPORT_RESULT_SET) {
             ResultSetExportTaskParameter parameters =
                     JsonUtils.fromJson(parametersJson, ResultSetExportTaskParameter.class);
-            return SqlUtils.split(dialectType, parameters.getSql(), ";");
+            return SqlUtils.splitWithOffset(dialectType, parameters.getSql(), ";");
         }
         if (taskType == TaskType.ALTER_SCHEDULE) {
             AlterScheduleParameters alterScheduleParameters =

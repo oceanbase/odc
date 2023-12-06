@@ -105,7 +105,8 @@ abstract class BaseRestrictPKDataTypes implements SqlCheckRule {
     protected abstract CreateTable getTableFromRemote(JdbcOperations jdbcOperations, String schema, String tableName);
 
     protected CreateTable getTable(String schema, String tableName, SqlCheckContext checkContext) {
-        List<CreateTable> tables = checkContext.getAllCheckedStatements(CreateTable.class);
+        List<CreateTable> tables = checkContext.getAllCheckedStatements(CreateTable.class).stream().map(p -> p.left)
+                .collect(Collectors.toList());
         if (CollectionUtils.isEmpty(tables)) {
             return getTableFromRemote(jdbcOperations, schema, tableName);
         }

@@ -33,6 +33,7 @@ import org.antlr.v4.runtime.Token;
 import org.apache.commons.lang3.ArrayUtils;
 
 import com.google.common.collect.ImmutableMap;
+import com.oceanbase.odc.common.lang.Holder;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.Verify;
@@ -97,7 +98,7 @@ public class SqlSplitter {
     /**
      * 拆句结果
      */
-    private final List<String> stmts = new ArrayList<>();
+    private final List<OffsetString> stmts = new ArrayList<>();
 
     /**
      * 当前语句状态，初始为 SQL_STMT，进去 PL BLock 后切换到 PL_STMT 状态
@@ -139,6 +140,9 @@ public class SqlSplitter {
 
     private String sql;
     private Boolean whileForLoopFlag = false;
+
+    private Holder<Integer> currentOffset = new Holder<>(0);
+
 
     public SqlSplitter(Class<? extends Lexer> lexerType) {
         this(lexerType, DEFAULT_SQL_DELIMITER);
@@ -224,7 +228,7 @@ public class SqlSplitter {
         return delimiter;
     }
 
-    public List<String> split(String sql) {
+    public List<OffsetString> split(String sql) {
         if (StringUtils.isBlank(sql)) {
             return new ArrayList<>();
         }
@@ -247,6 +251,7 @@ public class SqlSplitter {
             }
 
             String text = token.getText();
+            int offset = token.getStartIndex();
             if (">".equals(text)) {
                 labelRightCount++;
             } else {
@@ -258,6 +263,9 @@ public class SqlSplitter {
                 continue;
             }
             if (innerUtils.isPLStartPatternIgnoreTypes(type)) {
+                if (StringUtils.isBlank(currentStmtBuilder.toString()) && type != tokenDefinition.SPACES()) {
+                    currentOffset.setValue(offset);
+                }
                 // skip analysis blank, comment and other PL block start math pattern ignore types
                 currentStmtBuilder.append(text);
                 continue;
@@ -273,12 +281,18 @@ public class SqlSplitter {
                 }
                 if (isPLBlockStart()) {
                     pushToStack(cacheTokenTypes);
+                    if (StringUtils.isBlank(currentStmtBuilder.toString()) && type != tokenDefinition.SPACES()) {
+                        currentOffset.setValue(offset);
+                    }
                     currentStmtBuilder.append(text);
                     this.state = State.PL_STMT;
                     cacheTokenTypes.clear();
                 } else if (isStmtEnd(tokens, pos)) {
                     pos = addStmtWhileStmtEnd(tokens, pos);
                 } else {
+                    if (StringUtils.isBlank(currentStmtBuilder.toString()) && type != tokenDefinition.SPACES()) {
+                        currentOffset.setValue(offset);
+                    }
                     currentStmtBuilder.append(text);
                 }
             } else if (this.state == State.PL_STMT) {
@@ -319,11 +333,18 @@ public class SqlSplitter {
                         subPLStack.pop();
                         plCacheTokenTypes.clear();
                     }
+                    if (StringUtils.isBlank(currentStmtBuilder.toString()) && type != tokenDefinition.SPACES()) {
+                        currentOffset.setValue(offset);
+                    }
                     currentStmtBuilder.append(text);
                     // add additional tokens in which may contains in pl block ending tokens
                     // like end[;] / end [object_name;] / end [loop;] / end [if;] / end [case;]
                     if (posShift > 0) {
                         for (int index = 1; index <= posShift; index++) {
+                            if (StringUtils.isBlank(currentStmtBuilder.toString())
+                                    && type != tokenDefinition.SPACES()) {
+                                currentOffset.setValue(offset);
+                            }
                             currentStmtBuilder.append(tokens[pos - posShift + index].getText());
                         }
                     }
@@ -343,18 +364,23 @@ public class SqlSplitter {
 
     private int addStmtWhileStmtEnd(Token[] tokens, int pos) {
         String currentStmt = currentStmtBuilder.toString();
+        boolean notDefaultSqlDelimiter = false;
         if (StringUtils.isNotBlank(currentStmt)) {
             for (int cursor = pos - 1; cursor > 0; cursor--) {
                 Token token = tokens[cursor];
                 if (innerUtils.isEOF(token.getType()) || innerUtils.isBlankOrComment(token.getType())) {
                     continue;
                 }
-                if (!DEFAULT_SQL_DELIMITER.equals(token.getText())) {
+                notDefaultSqlDelimiter = !DEFAULT_SQL_DELIMITER.equals(token.getText());
+                if (notDefaultSqlDelimiter) {
                     currentStmt += DEFAULT_SQL_DELIMITER;
                 }
                 break;
             }
-            this.stmts.add(currentStmt.trim());
+            this.stmts.add(new OffsetString(currentOffset.getValue(), currentStmt.trim()));
+            if (notDefaultSqlDelimiter) {
+                this.currentOffset.setValue(this.currentOffset.getValue() + DEFAULT_SQL_DELIMITER.length());
+            }
         }
         this.cacheTokenTypes.clear();
         this.currentStmtBuilder.setLength(0);
