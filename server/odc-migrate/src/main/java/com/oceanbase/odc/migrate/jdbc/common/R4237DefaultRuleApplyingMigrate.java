@@ -110,7 +110,7 @@ public class R4237DefaultRuleApplyingMigrate implements JdbcMigratable {
     @Data
     @AllArgsConstructor
     @NoArgsConstructor
-    static class InnerDefaultRuleApplying {
+    public static class InnerDefaultRuleApplying {
         @JsonProperty("enabled")
         private Boolean enabled;
 
