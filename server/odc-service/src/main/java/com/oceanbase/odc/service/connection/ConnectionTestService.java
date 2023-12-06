@@ -63,7 +63,7 @@ public class ConnectionTestService {
             req.setTenantName("sys");
         }
         if (Objects.nonNull(connectionId)) {
-            ConnectionConfig connection = connectionService.getForConnect(connectionId);
+            ConnectionConfig connection = connectionService.getForConnectionSkipPermissionCheck(connectionId);
             if (Objects.isNull(req.getType())) {
                 req.setType(connection.getType());
             }
