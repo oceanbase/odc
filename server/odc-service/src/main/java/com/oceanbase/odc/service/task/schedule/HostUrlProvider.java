@@ -16,6 +16,8 @@
 
 package com.oceanbase.odc.service.task.schedule;
 
+import java.util.List;
+
 /**
  * @author yaobin
  * @date 2023-11-30
@@ -28,5 +30,5 @@ public interface HostUrlProvider {
      *
      * @return host url, eg: localhost:8989
      */
-    String hostUrl();
+    List<String> hostUrl();
 }
