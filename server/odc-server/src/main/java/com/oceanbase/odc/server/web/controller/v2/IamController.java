@@ -54,7 +54,6 @@ import com.oceanbase.odc.service.iam.RoleService;
 import com.oceanbase.odc.service.iam.UserBatchImportPreviewer;
 import com.oceanbase.odc.service.iam.UserPermissionService;
 import com.oceanbase.odc.service.iam.UserService;
-import com.oceanbase.odc.service.iam.model.BatchUpdateUserPermissionsReq;
 import com.oceanbase.odc.service.iam.model.ChangePasswordReq;
 import com.oceanbase.odc.service.iam.model.CreateRoleReq;
 import com.oceanbase.odc.service.iam.model.CreateUserReq;
@@ -65,7 +64,6 @@ import com.oceanbase.odc.service.iam.model.Role;
 import com.oceanbase.odc.service.iam.model.UpdateRoleReq;
 import com.oceanbase.odc.service.iam.model.UpdateUserReq;
 import com.oceanbase.odc.service.iam.model.User;
-import com.oceanbase.odc.service.iam.model.UserPermissionResp;
 import com.oceanbase.odc.service.iam.model.UserPreviewBatchImportResp;
 
 import io.swagger.annotations.ApiOperation;
@@ -378,31 +376,6 @@ public class IamController {
     public SuccessResponse<Role> setRoleEnabled(@PathVariable Long id,
             @RequestBody SetEnabledReq req) {
         return Responses.success(roleService.setEnabled(id, req.getEnabled()));
-    }
-
-    /**
-     * List all user permissions related to the resource
-     *
-     * @param resourceIdentifier ODC_CONNECTION:id
-     * @return
-     */
-    @ApiOperation(value = "listUserPermissions", notes = "查询用户权限列表")
-    @RequestMapping(value = "/userPermissions", method = RequestMethod.GET)
-    public SuccessResponse<List<UserPermissionResp>> listUserPermissions(@RequestParam() String resourceIdentifier) {
-        return Responses.success(userPermissionService.list(resourceIdentifier));
-    }
-
-    /**
-     * Update all user permissions related to the resource
-     *
-     * @param req
-     * @return
-     */
-    @ApiOperation(value = "updateUserPermissions", notes = "更新用户权限列表")
-    @RequestMapping(value = "/userPermissions/batchUpdateForConnection", method = RequestMethod.POST)
-    public SuccessResponse<List<UserPermissionResp>> batchUpdateUserPermissionsForConnection(
-            @RequestBody BatchUpdateUserPermissionsReq req) {
-        return Responses.success(userPermissionService.batchUpdateForConnection(req));
     }
 
     private <T> T parseJson(String json, String parameterName, Class<T> classType) {
