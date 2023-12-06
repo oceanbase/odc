@@ -27,6 +27,7 @@ import com.oceanbase.odc.core.authority.model.SecurityResource;
 import com.oceanbase.odc.core.shared.OrganizationIsolated;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
+import com.oceanbase.odc.service.sqlcheck.model.CheckViolation;
 
 import lombok.Data;
 
@@ -81,6 +82,9 @@ public class Rule implements SecurityResource, OrganizationIsolated, Serializabl
     @JsonProperty(access = Access.READ_ONLY)
     private Date updateTime;
 
+    @JsonProperty(access = Access.READ_ONLY)
+    private RuleViolation violation;
+
     @Override
     public String resourceId() {
         return this.id == null ? null : this.id.toString();
@@ -99,5 +103,25 @@ public class Rule implements SecurityResource, OrganizationIsolated, Serializabl
     @Override
     public Long id() {
         return this.id;
+    }
+
+    @Data
+    public static class RuleViolation {
+        private int offset;
+        private int start;
+        private int stop;
+        private int level;
+        @Internationalizable
+        private String localizedMessage;
+
+        public static RuleViolation fromCheckViolation(CheckViolation checkViolation) {
+            RuleViolation ruleViolation = new RuleViolation();
+            ruleViolation.setOffset(checkViolation.getOffset());
+            ruleViolation.setStart(checkViolation.getStart());
+            ruleViolation.setStop(checkViolation.getStop());
+            ruleViolation.setLevel(checkViolation.getLevel());
+            ruleViolation.setLocalizedMessage(checkViolation.getLocalizedMessage());
+            return ruleViolation;
+        }
     }
 }

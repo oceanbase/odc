@@ -75,6 +75,7 @@ import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
 import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTree;
 import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTreeFactories;
 import com.oceanbase.odc.core.sql.parser.EmptyAstFactory;
+import com.oceanbase.odc.core.sql.split.OffsetString;
 import com.oceanbase.odc.service.common.model.OdcResultSetMetaData.OdcTable;
 import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.odc.service.common.util.WebResponseUtils;
@@ -201,9 +202,10 @@ public class ConnectConsoleService {
         if (result != null) {
             return result;
         }
-        List<String> sqls = request.ifSplitSqls()
-                ? SqlUtils.split(connectionSession, request.getSql(), sessionProperties.isOracleRemoveCommentPrefix())
-                : Collections.singletonList(request.getSql());
+        List<OffsetString> sqls = request.ifSplitSqls()
+                ? SqlUtils.splitWithOffset(connectionSession, request.getSql(),
+                        sessionProperties.isOracleRemoveCommentPrefix())
+                : Collections.singletonList(new OffsetString(0, request.getSql()));
         if (sqls.size() == 0) {
             /**
              * if a sql only contains delimiter setting(eg. delimiter $$), code will do this
@@ -386,10 +388,11 @@ public class ConnectConsoleService {
      * Rewrite sqls, will do <br>
      * 1. add ODC_INTERNAL_ROWID query column
      */
-    private List<SqlTuple> generateSqlTuple(List<String> sqls, ConnectionSession session, SqlAsyncExecuteReq request) {
-        return sqls.stream().filter(StringUtils::isNotBlank).map(sql -> {
+    private List<SqlTuple> generateSqlTuple(List<OffsetString> sqls, ConnectionSession session,
+            SqlAsyncExecuteReq request) {
+        return sqls.stream().filter(s -> StringUtils.isNotBlank(s.getStr())).map(sql -> {
             TraceWatch traceWatch = new TraceWatch("SQL-EXEC");
-            SqlTuple target = SqlTuple.newTuple(sql, sql, traceWatch);
+            SqlTuple target = SqlTuple.newTuple(sql.getStr(), sql.getStr(), traceWatch, sql.getOffset());
             try (TraceStage parseSql = traceWatch.start(SqlExecuteStages.PARSE_SQL)) {
                 target.initAst(AbstractSyntaxTreeFactories.getAstFactory(session.getDialectType(), 0));
             } catch (IOException e) {
@@ -405,7 +408,8 @@ public class ConnectConsoleService {
                 AbstractSyntaxTree ast = target.getAst();
                 BasicResult result = ast.getParseResult();
                 if (result instanceof ParseSqlResult && ((ParseSqlResult) result).isSupportAddROWID()) {
-                    target = SqlTuple.newTuple(sql, rewriteSql(sql, session, traceWatch, ast), traceWatch);
+                    target = SqlTuple.newTuple(sql.getStr(), rewriteSql(sql.getStr(), session, traceWatch, ast),
+                            traceWatch, sql.getOffset());
                     target.initAst(new EmptyAstFactory(ast));
                 }
             } catch (Exception e) {

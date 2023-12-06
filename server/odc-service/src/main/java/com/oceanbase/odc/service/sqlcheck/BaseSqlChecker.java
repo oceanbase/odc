@@ -20,9 +20,11 @@ import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import com.oceanbase.odc.common.lang.Pair;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
 import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTree;
+import com.oceanbase.odc.core.sql.split.OffsetString;
 import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
 import com.oceanbase.odc.core.sql.split.SqlSplitter;
 import com.oceanbase.odc.service.sqlcheck.model.CheckViolation;
@@ -54,7 +56,7 @@ abstract class BaseSqlChecker implements SqlChecker {
 
     @Override
     public List<CheckViolation> check(@NonNull String sqlScript) {
-        List<String> sqls;
+        List<OffsetString> sqls = null;
         if (dialectType.isMysql()) {
             sqls = splitByCommentProcessor(sqlScript);
         } else if (dialectType == DialectType.OB_ORACLE) {
@@ -73,13 +75,13 @@ abstract class BaseSqlChecker implements SqlChecker {
         return check(sqls, null);
     }
 
-    public List<CheckViolation> check(@NonNull List<String> sqls, SqlCheckContext context) {
+    public List<CheckViolation> check(@NonNull List<OffsetString> sqls, SqlCheckContext context) {
         return doCheck(sqls, context, s -> {
             try {
-                return doParse(s);
+                return new Pair<>(s.getOffset(), doParse(s.getStr()));
             } catch (Exception e) {
                 if (e instanceof SyntaxErrorException) {
-                    return new SyntaxErrorStatement(s, (SyntaxErrorException) e);
+                    return new Pair<>(s.getOffset(), new SyntaxErrorStatement(s.getStr(), (SyntaxErrorException) e));
                 }
             }
             return null;
@@ -91,19 +93,21 @@ abstract class BaseSqlChecker implements SqlChecker {
             try {
                 AbstractSyntaxTree ast = s.getAst();
                 if (ast != null) {
-                    return ast.getStatement();
+                    return new Pair<>(s.getOffset(), ast.getStatement());
                 }
-                return doParse(s.getOriginalSql());
+                return new Pair<>(s.getOffset(), doParse(s.getOriginalSql()));
             } catch (Exception e) {
                 if (e instanceof SyntaxErrorException) {
-                    return new SyntaxErrorStatement(s.getOriginalSql(), (SyntaxErrorException) e);
+                    return new Pair<>(s.getOffset(),
+                            new SyntaxErrorStatement(s.getOriginalSql(), (SyntaxErrorException) e));
                 }
             }
             return null;
         });
     }
 
-    private <T> List<CheckViolation> doCheck(List<T> inputs, SqlCheckContext context, Function<T, Statement> function) {
+    private <T> List<CheckViolation> doCheck(List<T> inputs, SqlCheckContext context,
+            Function<T, Pair<Integer, Statement>> function) {
         final SqlCheckContext checkContext;
         if (context != null) {
             checkContext = context;
@@ -111,9 +115,9 @@ abstract class BaseSqlChecker implements SqlChecker {
         } else {
             checkContext = new SqlCheckContext();
         }
-        List<Statement> stmts = inputs.stream()
+        List<Pair<Integer, Statement>> stmts = inputs.stream()
                 .map(function)
-                .filter(Objects::nonNull)
+                .filter(stmt -> Objects.nonNull(stmt) && Objects.nonNull(stmt.right))
                 .collect(Collectors.toList());
         if (checkContext.currentStmtIndex == null) {
             checkContext.currentStmtIndex = 0L;
@@ -122,21 +126,32 @@ abstract class BaseSqlChecker implements SqlChecker {
             checkContext.totalStmtCount = (long) stmts.size();
         }
         return stmts.stream().flatMap(holder -> {
-            List<CheckViolation> violations = doCheck(holder, checkContext);
-            checkContext.addCheckViolation(holder, violations);
+            List<CheckViolation> violations = doCheck(holder.right, checkContext);
+            violations.stream().forEach(v -> {
+                if (Objects.isNull(v.getOffset())) {
+                    v.setOffset(holder.left);
+                }
+            });
+            checkContext.addCheckViolation(holder.right, holder.left, violations);
             checkContext.currentStmtIndex++;
             return violations.stream();
         }).collect(Collectors.toList());
     }
 
-    private List<String> splitByCommentProcessor(String sqlScript) {
+    private List<OffsetString> splitByCommentProcessor(String sqlScript) {
         SqlCommentProcessor processor = new SqlCommentProcessor(dialectType, true, true);
         processor.setDelimiter(delimiter);
         StringBuffer buffer = new StringBuffer();
-        List<String> sqls = processor.split(buffer, sqlScript);
+        List<OffsetString> sqls = processor.split(buffer, sqlScript);
         String bufferStr = buffer.toString();
         if (bufferStr.trim().length() != 0) {
-            sqls.add(bufferStr);
+            if (sqls.size() == 0) {
+                sqls.add(new OffsetString(0, bufferStr));
+            } else {
+                sqls.add(new OffsetString(
+                        sqls.get(sqls.size() - 1).getOffset() + sqls.get(sqls.size() - 1).getStr().length(),
+                        bufferStr));
+            }
         }
         return sqls;
     }
