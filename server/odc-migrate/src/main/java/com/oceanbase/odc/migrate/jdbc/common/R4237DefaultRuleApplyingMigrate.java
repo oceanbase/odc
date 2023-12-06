@@ -16,8 +16,11 @@
 
 package com.oceanbase.odc.migrate.jdbc.common;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import javax.persistence.Column;
@@ -32,16 +35,19 @@ import com.oceanbase.odc.common.jpa.JsonListConverter;
 import com.oceanbase.odc.common.util.YamlUtils;
 import com.oceanbase.odc.core.migrate.JdbcMigratable;
 import com.oceanbase.odc.core.migrate.Migratable;
+import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.metadb.regulation.ruleset.DefaultRuleApplyingEntity;
 import com.oceanbase.odc.metadb.regulation.ruleset.DefaultRuleApplyingRepository;
 import com.oceanbase.odc.metadb.regulation.ruleset.MetadataEntity;
 import com.oceanbase.odc.metadb.regulation.ruleset.RuleMetadataRepository;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
 
+import javassist.runtime.Inner;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.NonNull;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -71,8 +77,40 @@ public class R4237DefaultRuleApplyingMigrate implements JdbcMigratable {
                 YamlUtils.fromYaml(MIGRATE_CONFIG_FILE, new TypeReference<List<InnerDefaultRuleApplying>>() {});
         Map<String, List<DefaultRuleApplyingEntity>> actualRulesetName2RuleApplyings = defaultRuleApplyingRepository
                 .findAll().stream().collect(Collectors.groupingBy(DefaultRuleApplyingEntity::getRulesetName));
+        List<DefaultRuleApplyingEntity> toAdd = new ArrayList<>();
+        for (InnerDefaultRuleApplying expectedApplying : expected) {
+            String rulesetName = expectedApplying.getRulesetName();
+            MetadataEntity metadataEntity = metadataName2Metadata.get(expectedApplying.getRuleName());
+            if (Objects.isNull(metadataEntity)) {
+                throw new UnexpectedException("rule metadata not found, ruleName: " + expectedApplying.getRuleName());
+            }
 
-
+            List<DefaultRuleApplyingEntity> actualRuleApplyings =
+                    actualRulesetName2RuleApplyings.get(rulesetName);
+            if (CollectionUtils.isEmpty(actualRuleApplyings)) {
+                toAdd.add(generateNewEntity(expectedApplying, rulesetName, metadataEntity.getId()));
+            } else {
+                Optional<DefaultRuleApplyingEntity> existed = actualRuleApplyings.stream()
+                        .filter(r -> metadataEntity.getId() == r.getRuleMetadataId()).findFirst();
+                if (existed.isPresent()) {
+                    DefaultRuleApplyingEntity actualRuleApplying = existed.get();
+                    if (!isApplyingEquals(expectedApplying, actualRuleApplying)) {
+                        actualRuleApplying.setEnabled(expectedApplying.getEnabled());
+                        actualRuleApplying.setLevel(expectedApplying.getLevel());
+                        actualRuleApplying.setAppliedDialectTypes(expectedApplying.getAppliedDialectTypes());
+                        actualRuleApplying.setPropertiesJson(expectedApplying.getPropertiesJson());
+                        toAdd.add(actualRuleApplying);
+                    }
+                } else {
+                    toAdd.add(generateNewEntity(expectedApplying, rulesetName, metadataEntity.getId()));
+                }
+            }
+        }
+        if (CollectionUtils.isNotEmpty(toAdd)) {
+            log.info("default rule applying changed, start saving, size={}", toAdd.size());
+            defaultRuleApplyingRepository.saveAll(toAdd);
+            log.info("saving changed default rule applying succeed, size={}", toAdd.size());
+        }
     }
 
     @Data
@@ -83,7 +121,7 @@ public class R4237DefaultRuleApplyingMigrate implements JdbcMigratable {
 
         private Integer level;
 
-        private Long rulesetName;
+        private String rulesetName;
 
         private String ruleName;
 
@@ -91,4 +129,27 @@ public class R4237DefaultRuleApplyingMigrate implements JdbcMigratable {
 
         private String propertiesJson;
     }
+
+    private boolean isApplyingEquals(@NonNull InnerDefaultRuleApplying innerDefaultRuleApplying,
+            @NonNull DefaultRuleApplyingEntity defaultRuleApplyingEntity) {
+        return Objects.equals(innerDefaultRuleApplying.getEnabled(), defaultRuleApplyingEntity.getEnabled())
+                && Objects.equals(innerDefaultRuleApplying.getLevel(), defaultRuleApplyingEntity.getLevel())
+                && Objects.equals(innerDefaultRuleApplying.getAppliedDialectTypes(),
+                        defaultRuleApplyingEntity.getAppliedDialectTypes())
+                && Objects.equals(innerDefaultRuleApplying.getPropertiesJson(),
+                        defaultRuleApplyingEntity.getPropertiesJson());
+    }
+
+    private DefaultRuleApplyingEntity generateNewEntity(InnerDefaultRuleApplying innerDefaultRuleApplying,
+            String rulesetName, Long metadataId) {
+        DefaultRuleApplyingEntity defaultRuleApplyingEntity = new DefaultRuleApplyingEntity();
+        defaultRuleApplyingEntity.setEnabled(innerDefaultRuleApplying.getEnabled());
+        defaultRuleApplyingEntity.setLevel(innerDefaultRuleApplying.getLevel());
+        defaultRuleApplyingEntity.setRulesetName(rulesetName);
+        defaultRuleApplyingEntity.setRuleMetadataId(metadataId);
+        defaultRuleApplyingEntity.setAppliedDialectTypes(innerDefaultRuleApplying.getAppliedDialectTypes());
+        defaultRuleApplyingEntity.setPropertiesJson(innerDefaultRuleApplying.getPropertiesJson());
+        return defaultRuleApplyingEntity;
+    }
+
 }
