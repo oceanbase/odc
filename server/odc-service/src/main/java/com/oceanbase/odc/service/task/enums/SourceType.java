@@ -21,7 +21,7 @@ package com.oceanbase.odc.service.task.enums;
  * @date 2023-11-23
  * @since 4.2.4
  */
-public enum GroupEnum {
+public enum SourceType {
     /**
      * data from task_task
      */
@@ -34,7 +34,7 @@ public enum GroupEnum {
 
     private final String code;
 
-    GroupEnum(String code) {
+    SourceType(String code) {
         this.code = code;
     }
 
@@ -42,12 +42,12 @@ public enum GroupEnum {
         return code;
     }
 
-    public static GroupEnum from(String name) {
-        for (GroupEnum g : GroupEnum.values()) {
+    public static SourceType from(String name) {
+        for (SourceType g : SourceType.values()) {
             if (g.name().equals(name)) {
                 return g;
             }
         }
-        throw new IllegalArgumentException("unsupported group name" + name);
+        throw new IllegalArgumentException("unsupported source name" + name);
     }
 }

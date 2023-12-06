@@ -33,7 +33,7 @@ import com.oceanbase.odc.service.task.caller.JobUtils;
 import com.oceanbase.odc.service.task.caller.K8sJobCaller;
 import com.oceanbase.odc.service.task.caller.PodConfig;
 import com.oceanbase.odc.service.task.constants.JobConstants;
-import com.oceanbase.odc.service.task.enums.GroupEnum;
+import com.oceanbase.odc.service.task.enums.SourceType;
 import com.oceanbase.odc.service.task.executor.sampletask.SampleTaskParameter;
 import com.oceanbase.odc.service.task.listener.JobCallerListener;
 import com.oceanbase.odc.service.task.schedule.JobCallerBuilder;
@@ -58,7 +58,7 @@ public class JobCallerTest extends BaseJobTest {
         podConfig.setCommand(getCmd());
         podConfig.setNamespace("default");
 
-        JobIdentity jobIdentity = JobIdentity.of(exceptedTaskId, GroupEnum.TASK_TASK, TaskType.ASYNC.name());
+        JobIdentity jobIdentity = JobIdentity.of(exceptedTaskId, SourceType.TASK_TASK, TaskType.ASYNC.name());
         JobCaller jobCaller = new K8sJobCaller(getK8sJobClient(), podConfig);
         jobCaller.getEventPublisher().addEventListener(new JobCallerListener() {
             @Override
@@ -76,7 +76,7 @@ public class JobCallerTest extends BaseJobTest {
         context.setJobIdentity(jobIdentity);
         jobCaller.start(context);
         context.setJobIdentity(jobIdentity);
-        jobCaller.stop(JobIdentity.of(exceptedTaskId, GroupEnum.TASK_TASK, TaskType.ASYNC.name()));
+        jobCaller.stop(JobIdentity.of(exceptedTaskId, SourceType.TASK_TASK, TaskType.ASYNC.name()));
     }
 
 
@@ -88,7 +88,7 @@ public class JobCallerTest extends BaseJobTest {
         podConfig.getPodParam().setImagePullPolicy(JobConstants.IMAGE_PULL_POLICY_ALWAYS);
         podConfig.setNamespace("default");
 
-        JobIdentity jobIdentity = JobIdentity.of(exceptedTaskId, GroupEnum.TASK_TASK, TaskType.SAMPLE.name());
+        JobIdentity jobIdentity = JobIdentity.of(exceptedTaskId, SourceType.TASK_TASK, TaskType.SAMPLE.name());
         JobCaller jobCaller = JobCallerBuilder.buildK8sJobCaller(getK8sJobClient(), podConfig);
         jobCaller.getEventPublisher().addEventListener(new JobCallerListener() {
             @Override

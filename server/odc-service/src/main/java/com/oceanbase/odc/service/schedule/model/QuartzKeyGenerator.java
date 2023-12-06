@@ -36,11 +36,11 @@ public class QuartzKeyGenerator {
     }
 
     public static TriggerKey generateTriggerKey(JobIdentity ji) {
-        return new TriggerKey(ji.getSourceId() + "", ji.getGroup().name() + "#" + ji.getType());
+        return new TriggerKey(ji.getSourceId() + "", ji.getSourceType().name() + "#" + ji.getSourceSubType());
     }
 
     public static JobKey generateJobKey(JobIdentity ji) {
-        return new JobKey(ji.getSourceId() + "", ji.getGroup().name() + "#" + ji.getType());
+        return new JobKey(ji.getSourceId() + "", ji.getSourceType().name() + "#" + ji.getSourceSubType());
     }
 
 }

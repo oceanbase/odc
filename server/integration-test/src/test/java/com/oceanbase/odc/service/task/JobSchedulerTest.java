@@ -36,7 +36,7 @@ import com.oceanbase.odc.service.task.caller.JobException;
 import com.oceanbase.odc.service.task.config.DefaultJobConfiguration;
 import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.dispatch.JobDispatcher;
-import com.oceanbase.odc.service.task.enums.GroupEnum;
+import com.oceanbase.odc.service.task.enums.SourceType;
 import com.oceanbase.odc.service.task.schedule.DefaultJobDefinition;
 import com.oceanbase.odc.service.task.schedule.HostUrlProvider;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
@@ -61,7 +61,7 @@ public class JobSchedulerTest {
         jc.setScheduler(sched);
         jc.setHostUrlProvider(Mockito.mock(HostUrlProvider.class));
 
-        JobIdentity jobIdentity = JobIdentity.of(1L, GroupEnum.TASK_TASK, TaskType.ASYNC.name());
+        JobIdentity jobIdentity = JobIdentity.of(1L, SourceType.TASK_TASK, TaskType.ASYNC.name());
         DefaultJobDefinition jd = DefaultJobDefinition.builder().jobIdentity(jobIdentity).build();
 
         JobDispatcher jobDispatcher = Mockito.mock(JobDispatcher.class);

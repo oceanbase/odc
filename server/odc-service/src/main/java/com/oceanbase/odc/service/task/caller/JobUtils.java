@@ -30,7 +30,7 @@ import lombok.extern.slf4j.Slf4j;
 public class JobUtils {
 
     public static String generateJobName(JobIdentity ji) {
-        return ji.getGroup().getCode() + "-" + ji.getSourceId();
+        return ji.getSourceType().getCode() + "-" + ji.getSourceId();
     }
 
     public static String toJson(Object obj) {

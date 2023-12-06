@@ -54,7 +54,7 @@ public class SampleTask extends BaseTask {
 
     @Override
     protected void onStart() {
-        Verify.equals(TaskType.SAMPLE.code(), context.getJobIdentity().getType(), "taskType");
+        Verify.equals(TaskType.SAMPLE.code(), context.getJobIdentity().getSourceSubType(), "taskType");
         Map<String, String> dataMap = context.getJobData();
 
         this.parameter =

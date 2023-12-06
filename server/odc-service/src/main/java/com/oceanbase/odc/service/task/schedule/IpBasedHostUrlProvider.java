@@ -16,6 +16,9 @@
 
 package com.oceanbase.odc.service.task.schedule;
 
+import java.util.Collections;
+import java.util.List;
+
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.service.common.model.HostProperties;
 
@@ -33,9 +36,9 @@ public class IpBasedHostUrlProvider implements HostUrlProvider {
     }
 
     @Override
-    public String hostUrl() {
+    public List<String> hostUrl() {
         String host =
                 configProperties.getOdcHost() == null ? SystemUtils.getLocalIpAddress() : configProperties.getOdcHost();
-        return "http://" + host + ":" + configProperties.getPort();
+        return Collections.singletonList("http://" + host + ":" + configProperties.getPort());
     }
 }

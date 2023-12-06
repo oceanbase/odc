@@ -16,7 +16,7 @@
 
 package com.oceanbase.odc.service.task.schedule;
 
-import com.oceanbase.odc.service.task.enums.GroupEnum;
+import com.oceanbase.odc.service.task.enums.SourceType;
 
 import lombok.Data;
 
@@ -35,19 +35,19 @@ public class JobIdentity {
      */
     private Long sourceId;
     /**
-     * job group, eg: TASK_TASK,SCHEDULE_TASK
+     * source typ, eg: TASK_TASK,SCHEDULE_TASK
      */
-    private GroupEnum group;
+    private SourceType sourceType;
     /**
-     * job type, eg: ASYNC,IMPORT,EXPORT,MOCKDATA,DATA_ARCHIVE
+     * source sub type, eg: ASYNC,IMPORT,EXPORT,MOCKDATA,DATA_ARCHIVE
      */
-    private String type;
+    private String sourceSubType;
 
-    public static JobIdentity of(Long sourceId, GroupEnum group, String type) {
+    public static JobIdentity of(Long sourceId, SourceType sourceType, String sourceSubType) {
         JobIdentity identity = new JobIdentity();
         identity.setSourceId(sourceId);
-        identity.setGroup(group);
-        identity.setType(type);
+        identity.setSourceType(sourceType);
+        identity.setSourceSubType(sourceSubType);
         return identity;
     }
 
