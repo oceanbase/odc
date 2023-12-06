@@ -45,6 +45,7 @@ import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.oceanbase.odc.common.event.AbstractEvent;
 import com.oceanbase.odc.common.event.LocalEventPublisher;
 import com.oceanbase.odc.common.util.StringUtils;
@@ -141,9 +142,10 @@ public class MySQLDataTransferJob implements DataTransferJob {
                 }
             }
             if (CollectionUtils.isNotEmpty(dataJobs)) {
-                ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
+                ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(
+                        new ThreadFactoryBuilder().setNameFormat("datatransfer-schedule-%d").build());
                 try {
-                    initSchedule(executor);
+                    initSchedules(executor);
                     unzipDataXToWorkingDir(workingDir);
                     runDataJobs();
                 } finally {
@@ -162,6 +164,8 @@ public class MySQLDataTransferJob implements DataTransferJob {
         Map<String, String> jdbcUrlParams = new HashMap<>();
         jdbcUrlParams.put("connectTimeout", "5000");
         jdbcUrlParams.put("useSSL", "false");
+        jdbcUrlParams.put("useUnicode", "true");
+        jdbcUrlParams.put("characterEncoding", "UTF-8");
         if (StringUtils.isNotBlank(connectionInfo.getProxyHost())
                 && Objects.nonNull(connectionInfo.getProxyPort())) {
             jdbcUrlParams.put("socksProxyHost", connectionInfo.getProxyHost());
@@ -206,7 +210,7 @@ public class MySQLDataTransferJob implements DataTransferJob {
             return;
         }
         for (AbstractJob job : schemaJobs) {
-            if (isCanceled()) {
+            if (isCanceled() || job.isCanceled()) {
                 break;
             }
             try {
@@ -232,7 +236,7 @@ public class MySQLDataTransferJob implements DataTransferJob {
             return;
         }
         for (AbstractJob job : dataJobs) {
-            if (isCanceled()) {
+            if (isCanceled() || job.isCanceled()) {
                 break;
             }
             try {
@@ -279,7 +283,7 @@ public class MySQLDataTransferJob implements DataTransferJob {
         }
     }
 
-    private void initSchedule(ScheduledExecutorService executor) {
+    private void initSchedules(ScheduledExecutorService executor) {
         if (baseConfig.isCompressed()) {
             ThroughputReporter reporter = new ThroughputReporter();
             publisher.addEventListener(reporter);
@@ -293,8 +297,8 @@ public class MySQLDataTransferJob implements DataTransferJob {
                         && (size = FileUtils.sizeOfDirectory(dataDir)) >= baseConfig.getMaxDumpSizeBytes()) {
                     LOGGER.info("Exported size {} exceeds {}, transfer will stop.", size,
                             baseConfig.getMaxDumpSizeBytes());
-                    // TODO stop this
-
+                    schemaJobs.forEach(AbstractJob::cancel);
+                    dataJobs.forEach(AbstractJob::cancel);
                     executor.shutdown();
                 }
             }, 1, 1, TimeUnit.SECONDS);
@@ -308,8 +312,8 @@ public class MySQLDataTransferJob implements DataTransferJob {
             summary.add(index++ + "");
             summary.add(job.getObject().getType());
             summary.add(job.getObject().getName());
-            summary.add(job.getObject().getCount() == null ? "" : job.getObject().getCount().toString());
-            summary.add(job.getObject().getStatus().name());
+            summary.add(String.format("%s -> %s", job.getObject().getTotal(), job.getObject().getCount()));
+            summary.add(job.getObject().getStatus() == null ? "" : job.getObject().getStatus().name());
         }
 
         Table table = new Table(5, BorderStyle.HORIZONTAL_ONLY);

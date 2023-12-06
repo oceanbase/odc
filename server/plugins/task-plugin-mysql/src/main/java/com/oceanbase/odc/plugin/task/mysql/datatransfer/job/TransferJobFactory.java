@@ -29,6 +29,7 @@ import javax.sql.DataSource;
 
 import org.apache.commons.lang3.ArrayUtils;
 
+import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.plugin.schema.mysql.MySQLFunctionExtension;
 import com.oceanbase.odc.plugin.schema.mysql.MySQLProcedureExtension;
 import com.oceanbase.odc.plugin.schema.mysql.MySQLTableExtension;
@@ -111,14 +112,18 @@ public class TransferJobFactory {
             for (URL url : inputs) {
                 File file = new File(url.getFile());
                 ObjectResult object;
-                if (!transferConfig.isCompressed()) {
-                    object = new ObjectResult(transferConfig.getSchemaName(), file.getName(), "FILE");
-                } else {
+                if (transferConfig.isCompressed()) {
                     Matcher matcher = DataFile.FILE_PATTERN.matcher(file.getName());
                     if (!matcher.matches()) {
                         continue;
                     }
                     object = new ObjectResult(transferConfig.getSchemaName(), matcher.group(1), "TABLE");
+                } else if (transferConfig.getDataTransferFormat() == DataTransferFormat.SQL) {
+                    object = new ObjectResult(transferConfig.getSchemaName(), file.getName(), "FILE");
+                } else {
+                    Verify.singleton(transferConfig.getExportDbObjects(), "table");
+                    object = new ObjectResult(transferConfig.getSchemaName(),
+                            transferConfig.getExportDbObjects().get(0).getObjectName(), "TABLE");
                 }
 
                 if (transferConfig.getDataTransferFormat() == DataTransferFormat.CSV) {
