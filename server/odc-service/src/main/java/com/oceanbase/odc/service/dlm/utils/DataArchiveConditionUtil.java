@@ -19,6 +19,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -58,6 +59,9 @@ public class DataArchiveConditionUtil {
     }
 
     private static Map<String, String> getVariablesMap(List<OffsetConfig> variables) {
+        if (variables == null || variables.isEmpty()) {
+            return Collections.emptyMap();
+        }
         Map<String, String> map = new HashMap<>();
         variables.forEach(obj -> {
             if (map.containsKey(obj.getName())) {

@@ -223,9 +223,9 @@ public class AbstractDlmJob implements OdcJob {
             throw new IllegalStateException("Task is not executing.");
         }
         job.getJobMeta().setToStop(true);
-         if(job != null && job.getJobMeta() != null){
-         job.getJobMeta().destroyExecutor();
-         }
+        if (job != null && job.getJobMeta() != null) {
+            job.getJobMeta().destroyExecutor();
+        }
         jobThread.interrupt();
     }
 }
