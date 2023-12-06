@@ -47,7 +47,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.base.MoreObjects;
-import com.google.common.base.Verify;
 import com.oceanbase.odc.common.trace.TraceContextHolder;
 import com.oceanbase.odc.core.datamasking.config.MaskConfig;
 import com.oceanbase.odc.core.datamasking.masker.AbstractDataMasker;
@@ -85,6 +84,7 @@ import com.oceanbase.odc.service.plugin.TaskPluginUtil;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
+import com.oceanbase.tools.loaddump.common.enums.DataFormat;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
 import com.oceanbase.tools.loaddump.common.model.DumpParameter;
 import com.oceanbase.tools.loaddump.common.model.Manifest;
@@ -139,13 +139,13 @@ public class DataTransferTask implements Callable<DataTransferTaskResult> {
             if (config.getTransferType() == DataTransferType.IMPORT) {
                 clearWorkingDir();
             } else {
-                handleOutput(result);
                 if (config.getDataTransferFormat() != DataTransferFormat.SQL) {
                     // save csv config to MANIFEST
                     Path manifest = Paths.get(workingDir.getPath(), "data", ExportOutput.MANIFEST);
                     SerializeUtils.serializeObjectByKryo(new Manifest(getDumpParameterForManifest()),
                             manifest.toString());
                 }
+                handleOutput(result);
             }
 
             return result;
@@ -153,6 +153,8 @@ public class DataTransferTask implements Callable<DataTransferTaskResult> {
         } catch (Exception e) {
             log.warn("Failed to run data transfer task.", e);
             LOGGER.warn("Failed to run data transfer task.", e);
+            // clean up files on exception, no matter what type the task is
+            clearWorkingDir();
             throw e;
 
         } finally {
@@ -267,18 +269,18 @@ public class DataTransferTask implements Callable<DataTransferTaskResult> {
         if (workingDir == null || !workingDir.exists()) {
             throw new FileNotFoundException("Working dir does not exist");
         }
-        File importPath = Paths.get(workingDir.getPath(), "data").toFile();
+        File dataPath = Paths.get(workingDir.getPath(), "data").toFile();
 
-        if (importPath.exists()) {
-            boolean deleteRes = FileUtils.deleteQuietly(importPath);
-            log.info("Delete import directory, dir={}, result={}", importPath.getAbsolutePath(), deleteRes);
+        if (dataPath.exists()) {
+            boolean deleteRes = FileUtils.deleteQuietly(dataPath);
+            log.info("Delete data directory, dir={}, result={}", dataPath.getAbsolutePath(), deleteRes);
         }
         for (File subFile : workingDir.listFiles()) {
             if (subFile.isDirectory()) {
                 continue;
             }
             boolean deleteRes = FileUtils.deleteQuietly(subFile);
-            log.info("Delete import file, fileName={}, result={}", subFile.getName(), deleteRes);
+            log.info("Deleted file, fileName={}, result={}", subFile.getName(), deleteRes);
         }
     }
 
@@ -321,8 +323,9 @@ public class DataTransferTask implements Callable<DataTransferTaskResult> {
                 .filter(objectStatus -> objectStatus.getStatus() != Status.SUCCESS)
                 .map(ObjectResult::getSummary)
                 .collect(Collectors.toList());
-        Verify.verify(CollectionUtils.isEmpty(failedObjects),
-                "Data transfer task completed with unfinished objects! Details : " + failedObjects);
+        if (CollectionUtils.isNotEmpty(failedObjects)) {
+            LOGGER.warn("Data transfer task completed with unfinished objects! Details : {}", failedObjects);
+        }
     }
 
     private List<URL> copyImportScripts(List<String> fileNames, DataTransferFormat format, File destDir)
@@ -364,7 +367,7 @@ public class DataTransferTask implements Callable<DataTransferTaskResult> {
         ExportOutput exportOutput = new ExportOutput(from);
         exportOutput.toFolder(dest);
         log.info("Unzip file to working dir, from={}, dest={}", from.getAbsolutePath(), dest.getAbsolutePath());
-        return exportOutput;
+        return new ExportOutput(dest);
     }
 
     private void copyExportedFiles(DataTransferTaskResult result, String exportPath) {
@@ -424,6 +427,7 @@ public class DataTransferTask implements Callable<DataTransferTaskResult> {
         dumpParameter.setIgnoreEmptyLine(true);
         dumpParameter.setEscapeCharacter('\\');
         dumpParameter.setEmptyString("");
+        dumpParameter.setDataFormat(DataFormat.CSV);
         if (csvConfig.isBlankToNull()) {
             dumpParameter.setNullString("null");
         }

@@ -26,7 +26,6 @@ import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.session.ConnectionSession;
-import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
@@ -91,8 +90,6 @@ public class OnlineSchemaChangeValidator {
 
         ConnectionSession session = new DefaultConnectSessionFactory(connectionConfig).generateSession();
         try {
-            validateLockUser(connectionConfig.getDialectType(),
-                    ConnectionSessionUtil.getVersion(session), parameter.getLockUsers());
             for (Statement statement : statements) {
                 String database = createReq.getDatabaseName();
                 String tableName;

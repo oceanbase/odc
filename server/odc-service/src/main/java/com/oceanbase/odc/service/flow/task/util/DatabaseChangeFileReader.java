@@ -25,6 +25,7 @@ import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.core.sql.split.OffsetString;
 import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
@@ -43,13 +44,14 @@ public class DatabaseChangeFileReader {
     @Autowired
     private ObjectStorageFacade storageFacade;
 
-    public List<String> loadSqlContents(DatabaseChangeParameters params, DialectType dialectType, String bucketName,
+    public List<OffsetString> loadSqlContents(DatabaseChangeParameters params, DialectType dialectType,
+            String bucketName,
             long maxSizeBytes)
             throws IOException {
-        List<String> sqls = new LinkedList<>();
+        List<OffsetString> sqls = new LinkedList<>();
         String sqlContent = params.getSqlContent();
         if (StringUtils.isNotBlank(sqlContent)) {
-            sqls.addAll(SqlUtils.split(dialectType, sqlContent, params.getDelimiter()));
+            sqls.addAll(SqlUtils.splitWithOffset(dialectType, sqlContent, params.getDelimiter()));
         }
         List<String> sqlObjectIds = params.getSqlObjectIds();
         if (CollectionUtils.isEmpty(sqlObjectIds)) {
@@ -68,7 +70,7 @@ public class DatabaseChangeFileReader {
                 continue;
             }
             // TODO:全量文件加载到内存存在风险，需做内存优化处理
-            sqls.addAll(SqlUtils.split(dialectType, sqlContent, params.getDelimiter()));
+            sqls.addAll(SqlUtils.splitWithOffset(dialectType, sqlContent, params.getDelimiter()));
         }
         return sqls;
     }

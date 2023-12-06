@@ -17,8 +17,11 @@
 package com.oceanbase.odc.plugin.task.mysql.datatransfer;
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
-import java.sql.SQLException;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -29,14 +32,16 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 import javax.sql.DataSource;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.alibaba.druid.pool.DruidDataSource;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.tableformat.BorderStyle;
 import com.oceanbase.odc.common.util.tableformat.CellStyle;
@@ -55,6 +60,7 @@ import com.oceanbase.odc.plugin.task.api.datatransfer.model.ObjectResult;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.AbstractJob;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.TransferJobFactory;
 import com.oceanbase.tools.loaddump.common.model.ObjectStatus.Status;
+import com.zaxxer.hikari.HikariDataSource;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -116,48 +122,53 @@ public class MySQLDataTransferJob implements DataTransferJob {
 
     @Override
     public DataTransferTaskResult call() throws Exception {
-        try (DruidDataSource dataSource = initDataSource()) {
+        try (HikariDataSource dataSource = initDataSource()) {
 
-            initTransferJobs(dataSource);
+            initTransferJobs(dataSource, dataSource.getJdbcUrl());
 
             if (CollectionUtils.isNotEmpty(schemaJobs)) {
-                runSchemaJobs();
-                logSummary(schemaJobs, "SCHEMA");
+                try {
+                    runSchemaJobs();
+                } finally {
+                    logSummary(schemaJobs, "SCHEMA");
+                }
             }
             if (CollectionUtils.isNotEmpty(dataJobs)) {
-                runDataJobs();
-                logSummary(dataJobs, "DATA");
+                try {
+                    unzipDataXToWorkingDir(workingDir);
+                    runDataJobs();
+                } finally {
+                    logSummary(dataJobs, "DATA");
+                    FileUtils.deleteQuietly(Paths.get(workingDir.getPath(), "datax").toFile());
+                }
             }
         }
         return new DataTransferTaskResult(getDataObjectsStatus(), getSchemaObjectsStatus());
     }
 
-    private DruidDataSource initDataSource() {
+    private HikariDataSource initDataSource() {
         ConnectionInfo connectionInfo = baseConfig.getConnectionInfo();
-        DruidDataSource ds = new DruidDataSource();
-        ds.setUsername(connectionInfo.getUserNameForConnect());
-        ds.setPassword(connectionInfo.getPassword());
-        ds.setDriverClassName(OdcConstants.MYSQL_DRIVER_CLASS_NAME);
 
         Map<String, String> jdbcUrlParams = new HashMap<>();
         jdbcUrlParams.put("connectTimeout", "5000");
+        jdbcUrlParams.put("useSSL", "false");
         if (StringUtils.isNotBlank(connectionInfo.getProxyHost())
                 && Objects.nonNull(connectionInfo.getProxyPort())) {
             jdbcUrlParams.put("socksProxyHost", connectionInfo.getProxyHost());
             jdbcUrlParams.put("socksProxyPort", connectionInfo.getProxyPort() + "");
         }
-        ds.setUrl(new MySQLConnectionExtension().generateJdbcUrl(connectionInfo.getHost(),
+        HikariDataSource dataSource = new HikariDataSource();
+        dataSource.setJdbcUrl(new MySQLConnectionExtension().generateJdbcUrl(connectionInfo.getHost(),
                 connectionInfo.getPort(), connectionInfo.getSchema(), jdbcUrlParams));
-        try {
-            ds.init();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-        return ds;
+        dataSource.setUsername(connectionInfo.getUserNameForConnect());
+        dataSource.setPassword(connectionInfo.getPassword());
+        dataSource.setDriverClassName(OdcConstants.MYSQL_DRIVER_CLASS_NAME);
+        dataSource.setMaximumPoolSize(3);
+        return dataSource;
     }
 
-    private void initTransferJobs(DataSource dataSource) {
-        TransferJobFactory factory = new TransferJobFactory(baseConfig, workingDir, inputs);
+    private void initTransferJobs(DataSource dataSource, String jdbcUrl) {
+        TransferJobFactory factory = new TransferJobFactory(baseConfig, workingDir, logDir, inputs, jdbcUrl);
         try {
             if (baseConfig.isTransferDDL()) {
                 List<AbstractJob> jobs = factory.generateSchemaTransferJobs(dataSource);
@@ -228,6 +239,31 @@ public class MySQLDataTransferJob implements DataTransferJob {
             if (job.getObject().getStatus() == Status.FAILURE && baseConfig.isStopWhenError()) {
                 throw new RuntimeException(
                         String.format("Object %s failed, transferring will stop.", job));
+            }
+        }
+    }
+
+    private synchronized static void unzipDataXToWorkingDir(File workingDir) throws IOException {
+        try (InputStream resource = MySQLDataTransferJob.class.getResourceAsStream("/datax.zip");
+                ZipInputStream zis = new ZipInputStream(resource)) {
+            byte[] buffer = new byte[1024];
+            ZipEntry entry;
+            while ((entry = zis.getNextEntry()) != null) {
+                File file = new File(workingDir, entry.getName());
+                if (entry.isDirectory()) {
+                    file.mkdirs();
+                } else {
+                    File parent = file.getParentFile();
+                    if (!parent.exists()) {
+                        parent.mkdirs();
+                    }
+                    try (FileOutputStream fos = new FileOutputStream(file)) {
+                        int len;
+                        while ((len = zis.read(buffer)) > 0) {
+                            fos.write(buffer, 0, len);
+                        }
+                    }
+                }
             }
         }
     }
