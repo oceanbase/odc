@@ -14,31 +14,16 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.task.schedule;
+package com.oceanbase.odc.service.task.constants;
 
 /**
  * @author yaobin
- * @date 2023-11-23
+ * @date 2023-12-06
  * @since 4.2.4
  */
-public enum ScheduleSourceType {
-    /**
-     * data from task_task
-     */
-    TASK_TASK("task-task"),
+public class JobDataMapConstants {
 
-    /**
-     * data from schedule_task
-     */
-    SCHEDULE_TASK("schedule-task");
+    public static final String CONNECTION_CONFIG = "connectionConfig";
 
-    private final String code;
-
-    ScheduleSourceType(String code) {
-        this.code = code;
-    }
-
-    public String getCode() {
-        return code;
-    }
+    public static final String META_DB_TASK_PARAMETER = "metaDbTaskParameter";
 }

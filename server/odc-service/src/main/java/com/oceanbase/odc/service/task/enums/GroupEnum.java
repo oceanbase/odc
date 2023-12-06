@@ -14,32 +14,40 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.task.caller;
-
-import com.google.gson.Gson;
-import com.oceanbase.odc.service.task.schedule.JobIdentity;
-
-import lombok.extern.slf4j.Slf4j;
+package com.oceanbase.odc.service.task.enums;
 
 /**
  * @author yaobin
- * @date 2023-11-15
+ * @date 2023-11-23
  * @since 4.2.4
  */
-@Slf4j
-public class JobUtils {
+public enum GroupEnum {
+    /**
+     * data from task_task
+     */
+    TASK_TASK("task-task"),
 
-    public static String generateJobName(JobIdentity ji) {
-        return ji.getGroup().getCode() + "-" + ji.getSourceId();
+    /**
+     * data from schedule_task
+     */
+    SCHEDULE_TASK("schedule-task");
+
+    private final String code;
+
+    GroupEnum(String code) {
+        this.code = code;
     }
 
-    public static String toJson(Object obj) {
-        if (obj == null) {
-            return null;
+    public String getCode() {
+        return code;
+    }
+
+    public static GroupEnum from(String name) {
+        for (GroupEnum g : GroupEnum.values()) {
+            if (g.name().equals(name)) {
+                return g;
+            }
         }
-        // todo replace by jackson ConnectionConfig serialize ignore by @JsonProperty(value = "password",
-        // access = Access.WRITE_ONLY)
-        return new Gson().toJson(obj);
+        throw new IllegalArgumentException("unsupported group name" + name);
     }
-
 }

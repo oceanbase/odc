@@ -31,7 +31,7 @@ public class K8sJobContextProvider implements JobContextProvider {
 
     @Override
     public JobContext provide() {
-        String jobContextJson = SystemUtils.getEnvOrProperty(JobEnvConstants.TASK_PARAMETER);
+        String jobContextJson = SystemUtils.getEnvOrProperty(JobEnvConstants.TASK_ALL_PARAMETERS);
         Verify.notBlank(jobContextJson, JobEnvConstants.TASK_RUN_MODE);
         return JsonUtils.fromJson(jobContextJson, DefaultJobContext.class);
     }

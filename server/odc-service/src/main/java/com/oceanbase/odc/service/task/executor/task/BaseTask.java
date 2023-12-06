@@ -59,14 +59,14 @@ public abstract class BaseTask implements Task {
     public void start() {
         try {
             updateStatus(TaskStatus.RUNNING);
-            log.info("Task started, id: {}, status: {}", context.getJobIdentity().getId(), status);
+            log.info("Task started, id: {}, status: {}", context.getJobIdentity().getSourceId(), status);
             initTaskMonitor();
             onStart();
             updateStatus(TaskStatus.DONE);
         } catch (Exception e) {
             onFail(e);
             updateStatus(TaskStatus.FAILED);
-            log.warn("Task failed, id: {}, status: {}", context.getJobIdentity().getId(), status, e);
+            log.warn("Task failed, id: {}, status: {}", context.getJobIdentity().getSourceId(), status, e);
         } finally {
             reportTaskResult();
             finished();
@@ -77,14 +77,14 @@ public abstract class BaseTask implements Task {
     public void stop() {
         try {
             if (finished) {
-                log.warn("Task already finished, id: {}, status: {}", context.getJobIdentity().getId(), status);
+                log.warn("Task already finished, id: {}, status: {}", context.getJobIdentity().getSourceId(), status);
                 return;
             }
             canceled = true;
             updateStatus(TaskStatus.CANCELED);
-            log.info("Task stopped, id: {}, status: {}", context.getJobIdentity().getId(), status);
+            log.info("Task stopped, id: {}, status: {}", context.getJobIdentity().getSourceId(), status);
         } catch (Exception e) {
-            log.warn("Task stop failed, id: {}, status: {}", context.getJobIdentity().getId(), status, e);
+            log.warn("Task stop failed, id: {}, status: {}", context.getJobIdentity().getSourceId(), status, e);
         }
     }
 
@@ -131,7 +131,7 @@ public abstract class BaseTask implements Task {
     protected abstract void onUpdate();
 
     private void initTaskMonitor() {
-        ThreadFactory threadFactory = new TaskThreadFactory(("Task-Monitor-" + context.getJobIdentity().getId()));
+        ThreadFactory threadFactory = new TaskThreadFactory(("Task-Monitor-" + context.getJobIdentity().getSourceId()));
         ScheduledExecutorService scheduledExecutor = Executors.newSingleThreadScheduledExecutor(threadFactory);
         scheduledExecutor.scheduleAtFixedRate(() -> {
             if (finished) {
@@ -140,7 +140,7 @@ public abstract class BaseTask implements Task {
             try {
                 reportTaskResult();
             } catch (Exception e) {
-                log.warn("Update task progress failed, id: {}", context.getJobIdentity().getId(), e);
+                log.warn("Update task progress failed, id: {}", context.getJobIdentity().getSourceId(), e);
             }
         }, 1, 5, TimeUnit.SECONDS);
         log.info("Task monitor init success");
@@ -157,7 +157,7 @@ public abstract class BaseTask implements Task {
     }
 
     private void finished() {
-        log.info("Task finished, id: {}, status: {}", context.getJobIdentity().getId(), status);
+        log.info("Task finished, id: {}, status: {}", context.getJobIdentity().getSourceId(), status);
         finished = true;
     }
 

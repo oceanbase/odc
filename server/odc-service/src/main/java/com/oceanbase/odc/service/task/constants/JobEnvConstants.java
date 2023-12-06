@@ -25,7 +25,7 @@ package com.oceanbase.odc.service.task.constants;
  */
 public class JobEnvConstants {
 
-    public static final String TASK_PARAMETER = "ODC_TASK_PARAMETER";
+    public static final String TASK_ALL_PARAMETERS = "ODC_TASK_ALL_PARAMETERS";
 
     public static final String TASK_RUN_MODE = "ODC_TASK_RUN_MODE";
 

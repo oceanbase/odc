@@ -37,7 +37,7 @@ public class PrepareCallJob implements Job {
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {
 
-        JobContext jc = (JobContext) context.getMergedJobDataMap().get(JobConstants.JOB_DATA_MAP_JOB_CONTEXT);
+        JobContext jc = (JobContext) context.getMergedJobDataMap().get(JobConstants.QUARTZ_DATA_MAP_JOB_CONTEXT);
         try {
             JobConfigurationHolder.getJobConfiguration().getJobDispatcher().start(jc);
         } catch (JobException e) {

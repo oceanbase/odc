@@ -50,7 +50,7 @@ public class TaskFrameworkService {
     @Transactional(rollbackFor = Exception.class)
     public void update(TaskResult taskResult) {
         JobIdentity identity = taskResult.getJobIdentity();
-        TaskEntity taskEntity = nullSafeFindById(identity.getId());
+        TaskEntity taskEntity = nullSafeFindById(identity.getSourceId());
         taskEntity.setProgressPercentage(taskResult.getProgress() * 100);
         taskEntity.setStatus(taskResult.getTaskStatus() == null ? TaskStatus.RUNNING : taskResult.getTaskStatus());
         taskEntity.setResultJson(taskResult.getResultJson());
