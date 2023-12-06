@@ -1282,3 +1282,7 @@
             - TYPE BODY
             - TYPE
             - DATABASE
+            - COLUMN
+            - CONSTRAINT
+            - PARTITION
+            - SUBPARTITION

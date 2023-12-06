@@ -972,17 +972,24 @@ public class OracleSqlCheckerTest {
         String[] sqls = {
                 "create table abcd(ID int, col1 varchar(64))",
                 "drop procedure abcd",
-                "drop function abcd"
+                "drop function abcd",
+                "alter table ansdnd drop primary key, drop column asbdasd.asdas",
+                "alter table asdasda drop partition asda,asdasd"
         };
         DefaultSqlChecker sqlChecker = new DefaultSqlChecker(DialectType.OB_ORACLE,
-                null, Collections.singletonList(new RestrictDropObjectTypes(Collections.singleton("procedure"))));
+                null, Collections.singletonList(new RestrictDropObjectTypes(
+                        new HashSet<>(Arrays.asList("procedure", "partition")))));
         List<CheckViolation> actual = sqlChecker.check(Arrays.asList(sqls), null);
 
         SqlCheckRuleType type = SqlCheckRuleType.RESTRICT_DROP_OBJECT_TYPES;
-        CheckViolation c1 = new CheckViolation(sqls[2], 1, 0, 0, 17, type, new Object[] {"FUNCTION", "procedure"});
+        CheckViolation c1 = new CheckViolation(sqls[2], 1, 0, 0, 17, type,
+                new Object[] {"FUNCTION", "partition,procedure"});
+        CheckViolation c2 = new CheckViolation(sqls[3], 1, 19, 19, 34, type,
+                new Object[] {"CONSTRAINT", "partition,procedure"});
+        CheckViolation c3 = new CheckViolation(sqls[3], 1, 37, 37, 61, type,
+                new Object[] {"COLUMN", "partition,procedure"});
 
-        List<CheckViolation> expect = Collections.singletonList(c1);
-        Assert.assertEquals(expect, actual);
+        Assert.assertEquals(Arrays.asList(c1, c2, c3), actual);
     }
 
     @Test
