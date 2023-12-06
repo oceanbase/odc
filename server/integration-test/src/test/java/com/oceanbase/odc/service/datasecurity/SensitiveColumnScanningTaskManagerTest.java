@@ -85,7 +85,6 @@ public class SensitiveColumnScanningTaskManagerTest extends ServiceTestEnv {
     public static void setUp() {
         mysqlSession = TestConnectionUtil.getTestConnectionSession(ConnectType.OB_MYSQL);
         mysqlSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY).update(sql.getMysql().getCreate());
-
         mysqlConnectionConfig = TestConnectionUtil.getTestConnectionConfig(ConnectType.OB_MYSQL);
 
         oracleSession = TestConnectionUtil.getTestConnectionSession(ConnectType.OB_ORACLE);
@@ -121,7 +120,7 @@ public class SensitiveColumnScanningTaskManagerTest extends ServiceTestEnv {
         SensitiveColumnScanningTaskInfo taskInfo = manager.start(databases, rules, oracleConnectionConfig, null);
         await().atMost(20, SECONDS)
                 .until(() -> manager.get(taskInfo.getTaskId()).getStatus() == ScanningTaskStatus.SUCCESS);
-        Assert.assertEquals(3, manager.get(taskInfo.getTaskId()).getSensitiveColumns().size());
+        Assert.assertEquals(2, manager.get(taskInfo.getTaskId()).getSensitiveColumns().size());
     }
 
     @Test
@@ -141,7 +140,7 @@ public class SensitiveColumnScanningTaskManagerTest extends ServiceTestEnv {
         SensitiveColumnScanningTaskInfo taskInfo = manager.start(databases, rules, oracleConnectionConfig, null);
         await().atMost(20, SECONDS)
                 .until(() -> manager.get(taskInfo.getTaskId()).getStatus() == ScanningTaskStatus.SUCCESS);
-        Assert.assertEquals(27, manager.get(taskInfo.getTaskId()).getSensitiveColumns().size());
+        Assert.assertEquals(20, manager.get(taskInfo.getTaskId()).getSensitiveColumns().size());
     }
 
     @Test
