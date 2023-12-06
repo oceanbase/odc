@@ -63,7 +63,8 @@ public class DataArchivePreprocessor extends AbstractDlmJobPreprocessor {
     @Override
     public void process(CreateFlowInstanceReq req) {
         AlterScheduleParameters parameters = (AlterScheduleParameters) req.getParameters();
-        if (parameters.getOperationType() == OperationType.CREATE) {
+        if (parameters.getOperationType() == OperationType.CREATE
+                || parameters.getOperationType() == OperationType.UPDATE) {
             DataArchiveParameters dataArchiveParameters =
                     (DataArchiveParameters) parameters.getScheduleTaskParameters();
             // Throw exception when the specified database does not exist or the current user does not have
@@ -88,26 +89,28 @@ public class DataArchivePreprocessor extends AbstractDlmJobPreprocessor {
                 sourceSession.expire();
                 targetSession.expire();
             }
+            if (parameters.getOperationType() == OperationType.CREATE) {
+                // pre create
+                ScheduleEntity scheduleEntity = buildScheduleEntity(req);
+                scheduleEntity.setCreatorId(authenticationFacade.currentUser().id());
+                scheduleEntity.setModifierId(scheduleEntity.getCreatorId());
+                scheduleEntity.setOrganizationId(authenticationFacade.currentOrganizationId());
+                scheduleEntity = scheduleService.create(scheduleEntity);
+                parameters.setTaskId(scheduleEntity.getId());
+                // create job limit config
+                RateLimitConfiguration limiterConfig = limiterService.getDefaultLimiterConfig();
+                if (dataArchiveParameters.getRateLimit().getRowLimit() != null) {
+                    limiterConfig.setRowLimit(dataArchiveParameters.getRateLimit().getRowLimit());
+                }
+                if (dataArchiveParameters.getRateLimit().getDataSizeLimit() != null) {
+                    limiterConfig.setDataSizeLimit(dataArchiveParameters.getRateLimit().getDataSizeLimit());
+                }
+                if (dataArchiveParameters.getRateLimit().getBatchSize() != null) {
+                    limiterConfig.setBatchSize(dataArchiveParameters.getRateLimit().getBatchSize());
+                }
+                limiterService.createAndBindToOrder(scheduleEntity.getId(), limiterConfig);
+            }
             log.info("Data archive preprocessing has been completed.");
-            // pre create
-            ScheduleEntity scheduleEntity = buildScheduleEntity(req);
-            scheduleEntity.setCreatorId(authenticationFacade.currentUser().id());
-            scheduleEntity.setModifierId(scheduleEntity.getCreatorId());
-            scheduleEntity.setOrganizationId(authenticationFacade.currentOrganizationId());
-            scheduleEntity = scheduleService.create(scheduleEntity);
-            parameters.setTaskId(scheduleEntity.getId());
-            // create job limit config
-            RateLimitConfiguration limiterConfig = limiterService.getDefaultLimiterConfig();
-            if (dataArchiveParameters.getRateLimit().getRowLimit() != null) {
-                limiterConfig.setRowLimit(dataArchiveParameters.getRateLimit().getRowLimit());
-            }
-            if (dataArchiveParameters.getRateLimit().getDataSizeLimit() != null) {
-                limiterConfig.setDataSizeLimit(dataArchiveParameters.getRateLimit().getDataSizeLimit());
-            }
-            if (dataArchiveParameters.getRateLimit().getBatchSize() != null) {
-                limiterConfig.setBatchSize(dataArchiveParameters.getRateLimit().getBatchSize());
-            }
-            limiterService.createAndBindToOrder(scheduleEntity.getId(), limiterConfig);
         }
         req.setParentFlowInstanceId(parameters.getTaskId());
     }
