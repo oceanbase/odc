@@ -16,8 +16,6 @@
 
 package com.oceanbase.odc.plugin.task.obmysql.datatransfer.task;
 
-import java.util.regex.Pattern;
-
 import com.oceanbase.tools.loaddump.client.DumpClient;
 import com.oceanbase.tools.loaddump.common.model.DumpParameter;
 import com.oceanbase.tools.loaddump.context.TaskContext;
@@ -32,11 +30,6 @@ import lombok.NonNull;
  * @since ODC_release_3.4.0
  */
 public class OceanBaseExportJob extends BaseOceanBaseTransferJob<DumpParameter> {
-    private static final Pattern SCHEMA_FILE_PATTERN =
-            Pattern.compile("^\"?(.+)\"?-schema\\.(sql)$", Pattern.CASE_INSENSITIVE);
-    private static final Pattern DATA_FILE_PATTERN =
-            Pattern.compile("^\"?(.+)\"?(\\.[0-9]+){0,2}\\.(sql|csv|dat|txt)$", Pattern.CASE_INSENSITIVE);
-
     private final DumpClient dumpClient;
 
     public OceanBaseExportJob(@NonNull DumpParameter parameter, boolean transferData, boolean transferSchema,
