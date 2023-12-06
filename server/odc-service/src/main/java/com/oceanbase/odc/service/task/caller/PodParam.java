@@ -35,4 +35,12 @@ public class PodParam {
 
     private String imagePullPolicy = JobConstants.IMAGE_PULL_POLICY_NEVER;
 
+    private Double requestCpu;
+
+    private Long requestMem;
+
+    private String mountPath;
+
+    private Long diskSize;
+
 }
