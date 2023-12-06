@@ -67,7 +67,7 @@ public class ScheduleTaskService {
     @Value("${odc.log.directory:./log}")
     private String logDirectory;
 
-    private static final String LOG_PATH_PATTERN = "%s/scheduleTask/%s/%s/%s/log.%s";
+    private static final String LOG_PATH_PATTERN = "%s/scheduleTask/%s-%s/%s/log.%s";
 
     public ScheduleTaskEntity create(ScheduleTaskEntity taskEntity) {
         return scheduleTaskRepository.save(taskEntity);
