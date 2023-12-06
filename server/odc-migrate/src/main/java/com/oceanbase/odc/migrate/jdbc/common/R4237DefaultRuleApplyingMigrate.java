@@ -23,15 +23,13 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import javax.persistence.Column;
-import javax.persistence.Convert;
 import javax.sql.DataSource;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.oceanbase.odc.common.jpa.JsonListConverter;
 import com.oceanbase.odc.common.util.YamlUtils;
 import com.oceanbase.odc.core.migrate.JdbcMigratable;
 import com.oceanbase.odc.core.migrate.Migratable;
@@ -42,13 +40,10 @@ import com.oceanbase.odc.metadb.regulation.ruleset.MetadataEntity;
 import com.oceanbase.odc.metadb.regulation.ruleset.RuleMetadataRepository;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
 
-import javassist.runtime.Inner;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -70,7 +65,6 @@ public class R4237DefaultRuleApplyingMigrate implements JdbcMigratable {
     public void migrate(DataSource dataSource) {
         this.defaultRuleApplyingRepository = SpringContextUtil.getBean(DefaultRuleApplyingRepository.class);
         this.ruleMetadataRepository = SpringContextUtil.getBean(RuleMetadataRepository.class);
-
         Map<String, MetadataEntity> metadataName2Metadata =
                 ruleMetadataRepository.findAll().stream().collect(Collectors.toMap(MetadataEntity::getName, e -> e));
         List<InnerDefaultRuleApplying> expected =
@@ -116,17 +110,23 @@ public class R4237DefaultRuleApplyingMigrate implements JdbcMigratable {
     @Data
     @AllArgsConstructor
     @NoArgsConstructor
-    class InnerDefaultRuleApplying {
+    static class InnerDefaultRuleApplying {
+        @JsonProperty("enabled")
         private Boolean enabled;
 
+        @JsonProperty("level")
         private Integer level;
 
+        @JsonProperty("rulesetName")
         private String rulesetName;
 
+        @JsonProperty("ruleName")
         private String ruleName;
 
+        @JsonProperty("appliedDialectTypes")
         private List<String> appliedDialectTypes;
 
+        @JsonProperty("propertiesJson")
         private String propertiesJson;
     }
 
