@@ -168,9 +168,6 @@ public class MockDataRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
     @Override
     protected void onProgressUpdate(Long taskId, TaskService taskService) {
         if (Objects.nonNull(context)) {
-            /**
-             * Update percentage, every {@link RuntimeTaskConstants.DEFAULT_TASK_CHECK_INTERVAL_SECONDS}
-             */
             taskService.updateProgress(taskId, context.getProgress());
         }
     }
