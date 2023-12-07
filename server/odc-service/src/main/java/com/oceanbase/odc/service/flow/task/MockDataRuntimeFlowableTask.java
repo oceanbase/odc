@@ -136,12 +136,11 @@ public class MockDataRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
 
     @Override
     protected void onFailure(Long taskId, TaskService taskService) {
-        log.warn("Mock data task failed, taskId={}", taskId);
+        log.warn("Mock data task failed, taskId={}", taskId, thrown);
         if (context != null) {
             context.shutdown();
             taskService.fail(taskId, context.getProgress(), getResult());
         } else {
-            log.warn("Mock data task failed, taskId={}", taskId, thrown);
             taskService.fail(taskId, 0, new MockDataTaskResult(connectionConfig));
         }
         super.onFailure(taskId, taskService);
