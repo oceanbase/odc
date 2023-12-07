@@ -14,9 +14,11 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.common;
+package com.oceanbase.odc.core.monitor;
 
-public class MonitorPointConstants {
 
-    public static final String SYSTEM_CONFIG_CHANGED = "SYSTEM_CONFIG_CHANGED";
+public interface AlarmEventListener {
+
+    void alarm(AlarmEvent event);
+
 }

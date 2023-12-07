@@ -59,8 +59,8 @@
             </DefaultRolloverStrategy>
         </RollingFile>
 
-        <RollingFile name="OdcMonitorFileAppender" fileName="${LOG_DIRECTORY}/monitor.log"
-                     filePattern="${LOG_DIRECTORY}/monitor-%d{yyyy-MM-dd}-%i.log">
+        <RollingFile name="OdcAlarmFileAppender" fileName="${LOG_DIRECTORY}/alarm.log"
+                     filePattern="${LOG_DIRECTORY}/alarm-%d{yyyy-MM-dd}-%i.log">
             <PatternLayout pattern="${LOG_PATTERN}"/>
             <Policies>
                 <SizeBasedTriggeringPolicy size="100MB"/>
@@ -466,8 +466,8 @@
             <AppenderRef ref="OdcAPIFileAppender" />
         </Logger>
 
-        <Logger name="com.oceanbase.odc.service.common.OdcMonitor" level="INFO" additivity="false">
-            <AppenderRef ref="OdcMonitorFileAppender" />
+        <Logger name="com.oceanbase.odc.core.monitor.AlarmService" level="INFO" additivity="false">
+            <AppenderRef ref="OdcAlarmFileAppender" />
         </Logger>
         <!-- 导入导出程序日志输出 -->
         <Logger name="DataTransferLogger" additivity="false" level="INFO">

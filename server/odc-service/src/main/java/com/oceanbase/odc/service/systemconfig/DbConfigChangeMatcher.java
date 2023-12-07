@@ -15,7 +15,7 @@
  */
 package com.oceanbase.odc.service.systemconfig;
 
-import static com.oceanbase.odc.service.common.MonitorPointConstants.SYSTEM_CONFIG_CHANGED;
+import static com.oceanbase.odc.core.monitor.AlarmEventNames.SYSTEM_CONFIG_CHANGED;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -31,9 +31,9 @@ import org.springframework.stereotype.Service;
 import com.google.common.collect.Sets;
 import com.google.common.collect.Sets.SetView;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
+import com.oceanbase.odc.core.monitor.AlarmUtils;
 import com.oceanbase.odc.metadb.config.SystemConfigDAO;
 import com.oceanbase.odc.metadb.config.SystemConfigEntity;
-import com.oceanbase.odc.service.common.OdcMonitor;
 import com.oceanbase.odc.service.config.model.Configuration;
 import com.oceanbase.odc.service.config.util.OrganizationConfigUtil;
 
@@ -70,7 +70,7 @@ public class DbConfigChangeMatcher extends SystemConfigRefreshMatcher implements
             SetView<Configuration> difference = Sets.difference(new HashSet<>(currentVersion),
                     new HashSet<>(lastVersion));
             Set<String> differenceKey = difference.stream().map(Configuration::getKey).collect(Collectors.toSet());
-            OdcMonitor.info(SYSTEM_CONFIG_CHANGED, differenceKey.toString());
+            AlarmUtils.info(SYSTEM_CONFIG_CHANGED, differenceKey.toString());
             log.info("db config change, difference key:" + differenceKey);
         }
         return dbConfigChange;
