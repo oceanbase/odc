@@ -233,8 +233,7 @@ public class ProjectService {
         List<ConnectionEntity> connectionEntities = connectionConfigRepository.findByProjectId(id).stream()
                 .peek(e -> e.setProjectId(null)).collect(Collectors.toList());
         connectionConfigRepository.saveAllAndFlush(connectionEntities);
-        connectionService.updateDatabaseProjectId(
-                connectionEntities.stream().map(ConnectionEntity::getId).collect(Collectors.toList()), null);
+        connectionService.updateDatabaseProjectId(connectionEntities, null, false);
         databaseRepository.setProjectIdToNull(id);
         return entityToModel(saved);
     }

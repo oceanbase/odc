@@ -37,6 +37,7 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -46,7 +47,6 @@ import org.springframework.integration.jdbc.lock.JdbcLockRegistry;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.CollectionUtils;
 import org.springframework.validation.annotation.Validated;
 
 import com.oceanbase.odc.core.authority.util.Authenticated;
@@ -54,6 +54,7 @@ import com.oceanbase.odc.core.authority.util.PreAuthenticate;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
@@ -73,6 +74,7 @@ import com.oceanbase.odc.service.collaboration.project.model.QueryProjectParams;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.model.CreateDatabaseReq;
 import com.oceanbase.odc.service.connection.database.model.Database;
+import com.oceanbase.odc.service.connection.database.model.DatabaseSyncProperties;
 import com.oceanbase.odc.service.connection.database.model.DatabaseSyncStatus;
 import com.oceanbase.odc.service.connection.database.model.DatabaseUser;
 import com.oceanbase.odc.service.connection.database.model.DeleteDatabasesReq;
@@ -138,6 +140,9 @@ public class DatabaseService {
 
     @Autowired
     private OrganizationService organizationService;
+
+    @Autowired
+    private DatabaseSyncProperties databaseSyncProperties;
 
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("internal authenticated")
@@ -372,6 +377,7 @@ public class DatabaseService {
 
     private void syncTeamDataSources(ConnectionConfig connection) {
         Long currentProjectId = connection.getProjectId();
+        List<String> blockedDatabaseNames = listBlockedDatabaseNames(connection.getDialectType());
         DataSource teamDataSource = new OBConsoleDataSourceFactory(connection, true, false).getDataSource();
         try (Connection conn = teamDataSource.getConnection()) {
             List<DatabaseEntity> latestDatabases = dbSchemaService.listDatabases(connection.getDialectType(), conn)
@@ -388,6 +394,10 @@ public class DatabaseService {
                         entity.setConnectionId(connection.getId());
                         entity.setSyncStatus(DatabaseSyncStatus.SUCCEEDED);
                         entity.setProjectId(currentProjectId);
+                        if (databaseSyncProperties.isBlockInternalDatabase()
+                                && blockedDatabaseNames.contains(database.getName())) {
+                            entity.setProjectId(null);
+                        }
                         return entity;
                     }).collect(Collectors.toList());
             Map<String, List<DatabaseEntity>> latestDatabaseName2Database =
@@ -418,18 +428,16 @@ public class DatabaseService {
                     }).collect(Collectors.toList());
 
             JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
-            if (org.apache.commons.collections4.CollectionUtils.isNotEmpty(toAdd)) {
+            if (CollectionUtils.isNotEmpty(toAdd)) {
                 jdbcTemplate.batchUpdate(
                         "insert into connect_database(database_id, organization_id, name, project_id, connection_id, environment_id, sync_status, charset_name, collation_name, table_count, is_existed) values(?,?,?,?,?,?,?,?,?,?,?)",
                         toAdd);
             }
-            List<Object[]> toDelete =
-                    existedDatabasesInDb.stream()
-                            .filter(database -> !latestDatabaseNames.contains(database.getName()))
-                            .map(database -> new Object[] {
-                                    currentProjectId != null ? currentProjectId : database.getProjectId(),
-                                    database.getId()})
-                            .collect(Collectors.toList());
+            List<Object[]> toDelete = existedDatabasesInDb.stream()
+                    .filter(database -> !latestDatabaseNames.contains(database.getName()))
+                    .map(database -> new Object[] {getProjectId(database, currentProjectId, blockedDatabaseNames),
+                            database.getId()})
+                    .collect(Collectors.toList());
             /**
              * just set existed to false if the database has been dropped instead of deleting it directly
              */
@@ -437,18 +445,15 @@ public class DatabaseService {
                 String deleteSql = "update connect_database set is_existed = 0, project_id=? where id = ?";
                 jdbcTemplate.batchUpdate(deleteSql, toDelete);
             }
-
             List<Object[]> toUpdate = existedDatabasesInDb.stream()
                     .filter(database -> latestDatabaseNames.contains(database.getName()))
                     .map(database -> {
                         DatabaseEntity latest = latestDatabaseName2Database.get(database.getName()).get(0);
                         return new Object[] {latest.getTableCount(), latest.getCollationName(), latest.getCharsetName(),
-                                currentProjectId != null ? currentProjectId : database.getProjectId(),
-                                database.getId()};
+                                getProjectId(database, currentProjectId, blockedDatabaseNames), database.getId()};
                     })
                     .collect(Collectors.toList());
-
-            if (org.apache.commons.collections4.CollectionUtils.isNotEmpty(toUpdate)) {
+            if (CollectionUtils.isNotEmpty(toUpdate)) {
                 String update =
                         "update connect_database set table_count=?, collation_name=?, charset_name=?, project_id=? where id = ?";
                 jdbcTemplate.batchUpdate(update, toUpdate);
@@ -464,6 +469,19 @@ public class DatabaseService {
                 }
             }
         }
+    }
+
+    private Long getProjectId(DatabaseEntity database, Long currentProjectId, List<String> blockedDatabaseNames) {
+        Long projectId;
+        if (currentProjectId != null) {
+            projectId = currentProjectId;
+            if (databaseSyncProperties.isBlockInternalDatabase() && blockedDatabaseNames.contains(database.getName())) {
+                projectId = database.getProjectId();
+            }
+        } else {
+            projectId = database.getProjectId();
+        }
+        return projectId;
     }
 
     private void syncIndividualDataSources(ConnectionConfig connection) {
@@ -490,7 +508,7 @@ public class DatabaseService {
                     .collect(Collectors.toList());
 
             JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
-            if (org.apache.commons.collections4.CollectionUtils.isNotEmpty(toAdd)) {
+            if (CollectionUtils.isNotEmpty(toAdd)) {
                 jdbcTemplate.batchUpdate(
                         "insert into connect_database(database_id, organization_id, name, connection_id, environment_id, sync_status) values(?,?,?,?,?,?)",
                         toAdd);
@@ -560,6 +578,21 @@ public class DatabaseService {
         }
     }
 
+    @SkipAuthorize("odc internal usage")
+    public List<String> listBlockedDatabaseNames(DialectType dialectType) {
+        List<String> names = new ArrayList<>();
+        if (dialectType.isOracle()) {
+            names.add("SYS");
+        }
+        if (dialectType.isMysql()) {
+            names.addAll(Arrays.asList("mysql", "information_schema", "test"));
+        }
+        if (dialectType.isOBMysql()) {
+            names.add("oceanbase");
+        }
+        return names;
+    }
+
     private void checkPermission(Long projectId, Long dataSourceId) {
         if (Objects.isNull(projectId) && Objects.isNull(dataSourceId)) {
             throw new AccessDeniedException("invalid projectId or dataSourceId");
@@ -594,9 +627,21 @@ public class DatabaseService {
         PreConditions.validArgumentState(
                 connectionService.checkPermission(connectionIds, Collections.singletonList("update")),
                 ErrorCodes.AccessDenied, null, "Lack of update permission on current datasource");
-        List<ConnectionConfig> connections = connectionService.innerListByIds(connectionIds);
-        connections.forEach(c -> {
-            PreConditions.validArgumentState(c.getProjectId() == null, ErrorCodes.AccessDenied, null,
+        Map<Long, ConnectionConfig> id2Conn = connectionService.innerListByIds(connectionIds).stream()
+                .collect(Collectors.toMap(ConnectionConfig::getId, c -> c, (c1, c2) -> c2));
+        if (databaseSyncProperties.isBlockInternalDatabase()) {
+            connectionIds = databases.stream().filter(database -> {
+                ConnectionConfig connection = id2Conn.get(database.getConnectionId());
+                return connection != null
+                        && !listBlockedDatabaseNames(connection.getDialectType()).contains(database.getName());
+            }).map(DatabaseEntity::getConnectionId).collect(Collectors.toList());
+        }
+        connectionIds.forEach(c -> {
+            ConnectionConfig connection = id2Conn.get(c);
+            if (connection == null) {
+                throw new NotFoundException(ResourceType.ODC_CONNECTION, "id", c);
+            }
+            PreConditions.validArgumentState(connection.getProjectId() == null, ErrorCodes.AccessDenied, null,
                     "Cannot transfer databases in datasource which is bound to project");
         });
     }
