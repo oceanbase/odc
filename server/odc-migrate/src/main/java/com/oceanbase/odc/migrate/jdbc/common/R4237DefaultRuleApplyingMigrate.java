@@ -33,6 +33,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.util.YamlUtils;
 import com.oceanbase.odc.core.migrate.JdbcMigratable;
 import com.oceanbase.odc.core.migrate.Migratable;
+import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.metadb.regulation.ruleset.DefaultRuleApplyingEntity;
 import com.oceanbase.odc.metadb.regulation.ruleset.DefaultRuleApplyingRepository;
@@ -57,18 +58,19 @@ import lombok.extern.slf4j.Slf4j;
 public class R4237DefaultRuleApplyingMigrate implements JdbcMigratable {
     private static final String MIGRATE_CONFIG_FILE = "init-config/init/regulation-rule-applying.yaml";
 
-    private DefaultRuleApplyingRepository defaultRuleApplyingRepository;
-    private RuleMetadataRepository ruleMetadataRepository;
-
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void migrate(DataSource dataSource) {
-        this.defaultRuleApplyingRepository = SpringContextUtil.getBean(DefaultRuleApplyingRepository.class);
-        this.ruleMetadataRepository = SpringContextUtil.getBean(RuleMetadataRepository.class);
+        DefaultRuleApplyingRepository defaultRuleApplyingRepository =
+                SpringContextUtil.getBean(DefaultRuleApplyingRepository.class);
+        RuleMetadataRepository ruleMetadataRepository = SpringContextUtil.getBean(RuleMetadataRepository.class);
+
         Map<String, MetadataEntity> metadataName2Metadata =
                 ruleMetadataRepository.findAll().stream().collect(Collectors.toMap(MetadataEntity::getName, e -> e));
         List<InnerDefaultRuleApplying> expected =
                 YamlUtils.fromYaml(MIGRATE_CONFIG_FILE, new TypeReference<List<InnerDefaultRuleApplying>>() {});
+        Verify.notEmpty(expected, "expectedDefaultRuleApplyings");
+
         Map<String, List<DefaultRuleApplyingEntity>> actualRulesetName2RuleApplyings = defaultRuleApplyingRepository
                 .findAll().stream().collect(Collectors.groupingBy(DefaultRuleApplyingEntity::getRulesetName));
         List<DefaultRuleApplyingEntity> toAdd = new ArrayList<>();
@@ -85,7 +87,7 @@ public class R4237DefaultRuleApplyingMigrate implements JdbcMigratable {
                 toAdd.add(generateNewEntity(expectedApplying, rulesetName, metadataEntity.getId()));
             } else {
                 Optional<DefaultRuleApplyingEntity> existed = actualRuleApplyings.stream()
-                        .filter(r -> metadataEntity.getId() == r.getRuleMetadataId()).findFirst();
+                        .filter(r -> Objects.equals(metadataEntity.getId(), r.getRuleMetadataId())).findFirst();
                 if (existed.isPresent()) {
                     DefaultRuleApplyingEntity actualRuleApplying = existed.get();
                     if (!isApplyingEquals(expectedApplying, actualRuleApplying)) {
