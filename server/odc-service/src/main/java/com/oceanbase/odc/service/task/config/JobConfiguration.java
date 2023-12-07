@@ -24,6 +24,7 @@ import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.caller.K8sJobClient;
 import com.oceanbase.odc.service.task.dispatch.JobDispatcher;
 import com.oceanbase.odc.service.task.schedule.HostUrlProvider;
+import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 
 /**
  * @author yaobin
@@ -47,4 +48,6 @@ public interface JobConfiguration {
     K8sJobClient getK8sJobClient();
 
     HostUrlProvider getHostUrlProvider();
+
+    TaskFrameworkService getTaskFrameworkService();
 }

@@ -16,23 +16,14 @@
 
 package com.oceanbase.odc.service.task.service;
 
-import org.springframework.transaction.annotation.Transactional;
-
 import com.oceanbase.odc.service.task.executor.task.TaskResult;
-import com.oceanbase.odc.service.task.schedule.JobDefinition;
-import com.oceanbase.odc.service.task.schedule.JobIdentity;
 
 /**
  * @author yaobin
  * @date 2023-12-06
  * @since 4.2.4
  */
-public interface TaskFrameworkService {
-    @Transactional(rollbackFor = Exception.class)
-    void handleResult(TaskResult taskResult);
+public interface ResultHandleService {
 
-    @Transactional(rollbackFor = Exception.class)
-    void save(JobDefinition jd);
-
-    JobDefinition find(JobIdentity ji);
+    void handle(TaskResult taskResult);
 }

@@ -26,6 +26,7 @@ import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.task.executor.task.DefaultTaskResult;
+import com.oceanbase.odc.service.task.service.StdTaskFrameworkService;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 
 import io.swagger.annotations.ApiOperation;
@@ -47,7 +48,7 @@ public class TaskController {
     @ApiOperation(value = "updateResult", notes = "update task result")
     @RequestMapping(value = "/result", method = RequestMethod.POST)
     public SuccessResponse<String> updateResult(@RequestBody DefaultTaskResult taskResult) {
-        taskFrameworkService.update(taskResult);
+        taskFrameworkService.handleResult(taskResult);
         log.info("update result succeed {}", JsonUtils.toJson(taskResult));
         return Responses.success("ok");
     }

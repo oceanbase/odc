@@ -49,6 +49,7 @@ public class StdJobScheduler implements JobScheduler {
 
     @Override
     public void scheduleJob(JobDefinition jd) throws JobException {
+        PreConditions.notNull(jd, "job definition");
 
         Trigger trigger = TriggerBuilder.build(jd);
         JobIdentity jobIdentity = jd.getJobIdentity();
@@ -66,7 +67,12 @@ public class StdJobScheduler implements JobScheduler {
 
     @Override
     public void scheduleJobNow(JobDefinition jd) throws JobException {
-        configuration.getJobDispatcher().start(new DefaultJobContextBuilder().build(jd));
+        PreConditions.notNull(jd, "job definition");
+        // if trigger config is null, will set schedule right now
+        if (jd.getTriggerConfig() != null) {
+            ((DefaultJobDefinition) jd).setTriggerConfig(null);
+        }
+        scheduleJob(jd);
     }
 
     @Override

@@ -29,6 +29,7 @@ import com.oceanbase.odc.service.task.caller.K8sJobClient;
 import com.oceanbase.odc.service.task.dispatch.ImmediateJobDispatcher;
 import com.oceanbase.odc.service.task.enums.TaskRunModeEnum;
 import com.oceanbase.odc.service.task.schedule.HostUrlProvider;
+import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 
 /**
  * @author yaobin
@@ -52,6 +53,7 @@ public class DefaultSpringJobConfiguration extends DefaultJobConfiguration
             setK8sJobClient(ctx.getBean(K8sJobClient.class));
         }
         setHostUrlProvider(ctx.getBean(HostUrlProvider.class));
+        setTaskFrameworkService(ctx.getBean(TaskFrameworkService.class));
     }
 
     @Override
