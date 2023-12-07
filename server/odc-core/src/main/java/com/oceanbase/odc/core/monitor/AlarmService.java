@@ -37,6 +37,7 @@ class AlarmService {
         Iterator<AlarmEventListener> iterator = load.iterator();
         while (iterator.hasNext()) {
             AlarmEventListener next = iterator.next();
+            log.info("AlarmEventListener:" + next.getClass().getName() + "have been loaded");
             listeners.add(next);
         }
     }
