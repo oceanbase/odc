@@ -16,6 +16,8 @@
 package com.oceanbase.odc.config;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
@@ -27,9 +29,14 @@ import org.springframework.context.i18n.LocaleContextHolder;
 import com.oceanbase.odc.common.i18n.I18n;
 import com.oceanbase.odc.core.shared.constant.AuditEventAction;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
+import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
+import com.oceanbase.odc.metadb.collaboration.ProjectEntity;
+import com.oceanbase.odc.metadb.collaboration.ProjectRepository;
 import com.oceanbase.odc.service.collaboration.project.ProjectService;
+import com.oceanbase.odc.service.collaboration.project.model.Project;
+import com.oceanbase.odc.service.iam.ResourceRoleService;
 import com.oceanbase.odc.service.iam.UserService;
 import com.oceanbase.odc.service.regulation.approval.ApprovalFlowConfigService;
 import com.oceanbase.odc.service.regulation.risklevel.RiskLevelService;
@@ -59,6 +66,12 @@ public class HookConfiguration {
     @Autowired
     private ProjectService projectService;
 
+    @Autowired
+    private ResourceRoleService resourceRoleService;
+
+    @Autowired
+    private ProjectRepository projectRepository;
+
     @PostConstruct
     public void init() {
         userService.addPostUserDeleteHook(event -> {
@@ -66,6 +79,11 @@ public class HookConfiguration {
             projectService.deleteUserRelatedProjectRoles(userId);
         });
         log.info("PostUserDeleteHook added");
+
+        userService.addPreUserDeleteHook(event -> {
+            projectReferenceCheck(event.getUserId(), event.getOrganizationId());
+        });
+        log.info("PreUserDeleteHook added");
 
         approvalFlowConfigService.addPreApprovalFlowConfigDeleteHook(event -> {
             approvalFlowConfigUsageCheck(event.getId());
@@ -89,6 +107,22 @@ public class HookConfiguration {
                             ResourceType.ODC_RISK_LEVEL.getLocalizedMessage()},
                     errorMessage);
         }
+    }
+
+    private void projectReferenceCheck(Long userId, Long organizationId) {
+        Map<Long, Set<ResourceRoleName>> projectId2ResourceRoleNames =
+                resourceRoleService.getProjectId2ResourceRoleNames(userId);
+        if (projectId2ResourceRoleNames.size() == 0) {
+            return;
+        }
+        Map<Long, ProjectEntity> id2Project =
+                projectRepository.findAllByOrganizationId(organizationId).stream().filter(p -> p.getArchived() == false)
+                        .collect(Collectors.toMap(ProjectEntity::getId, p -> p));
+        throw new UnsupportedException(
+                String.format("cannot delete the user because the user is still in following projects: %s",
+                        projectId2ResourceRoleNames.entrySet().stream().map(e -> id2Project.get(e.getKey()).getName())
+                                .collect(Collectors.joining(", "))));
+
     }
 
 }
