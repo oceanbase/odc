@@ -156,7 +156,6 @@ public class OBMySQLNoGreaterThan1479SchemaAccessor extends BaseOBMySQLLessThan2
                     subPartitionOption.setExpression(subPartExpression);
                 } else {
                     subPartitionOption.setColumnNames(Arrays.asList(subPartExpression.split(",")));
-
                 }
             } else {
                 partition.setWarning("Only support HASH/KEY subpartition currently, please check comparing ddl");
