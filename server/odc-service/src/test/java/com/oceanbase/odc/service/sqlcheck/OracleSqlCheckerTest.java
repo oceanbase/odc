@@ -970,21 +970,28 @@ public class OracleSqlCheckerTest {
     }
 
     @Test
-    public void check_dropProcedure_violationGenerated() {
+    public void check_drop_violationGenerated() {
         String[] sqls = {
                 "create table abcd(ID int, col1 varchar(64))",
                 "drop procedure abcd",
-                "drop function abcd"
+                "drop function abcd",
+                "alter table ansdnd drop primary key, drop column asbdasd.asdas",
+                "alter table asdasda drop partition asda,asdasd"
         };
         DefaultSqlChecker sqlChecker = new DefaultSqlChecker(DialectType.OB_ORACLE,
-                null, Collections.singletonList(new RestrictDropObjectTypes(Collections.singleton("procedure"))));
+                null, Collections.singletonList(new RestrictDropObjectTypes(
+                        new HashSet<>(Arrays.asList("procedure", "partition")))));
         List<CheckViolation> actual = sqlChecker.check(toOffsetString(sqls), null);
 
         SqlCheckRuleType type = SqlCheckRuleType.RESTRICT_DROP_OBJECT_TYPES;
-        CheckViolation c1 = new CheckViolation(sqls[2], 1, 0, 0, 17, type, new Object[] {"FUNCTION", "procedure"});
+        CheckViolation c1 = new CheckViolation(sqls[2], 1, 0, 0, 17, type,
+                new Object[] {"FUNCTION", "partition,procedure"});
+        CheckViolation c2 = new CheckViolation(sqls[3], 1, 19, 19, 34, type,
+                new Object[] {"CONSTRAINT", "partition,procedure"});
+        CheckViolation c3 = new CheckViolation(sqls[3], 1, 37, 37, 61, type,
+                new Object[] {"COLUMN", "partition,procedure"});
 
-        List<CheckViolation> expect = Collections.singletonList(c1);
-        Assert.assertEquals(expect, actual);
+        Assert.assertEquals(Arrays.asList(c1, c2, c3), actual);
     }
 
     @Test
@@ -1131,8 +1138,11 @@ public class OracleSqlCheckerTest {
         SqlCheckRuleType type = SqlCheckRuleType.TOO_MANY_INDEX_KEYS;
         SqlCheckRuleType type1 = SqlCheckRuleType.PREFER_LOCAL_INDEX;
         CheckViolation c1 = new CheckViolation("1", 1, 80, 80, 107, type, new Object[] {"abcd"});
+        c1.setOffset(1);
         CheckViolation c2 = new CheckViolation("2", 1, 58, 58, 77, type1, new Object[] {});
+        c2.setOffset(2);
         CheckViolation c3 = new CheckViolation("1", 1, 80, 80, 107, type1, new Object[] {});
+        c3.setOffset(1);
         List<CheckViolation> violations = Arrays.asList(c1, c2, c3);
 
         List<CheckResult> actual = SqlCheckUtil.buildCheckResults(violations);

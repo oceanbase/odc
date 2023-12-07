@@ -1199,21 +1199,26 @@ public class MySQLCheckerTest {
     }
 
     @Test
-    public void check_dropProcedure_violationGenerated() {
+    public void check_drop_violationGenerated() {
         String[] sqls = {
                 "create table abcd(ida text not null, col1 varchar(64) not null default 'abcd')",
                 "drop procedure abcd",
-                "drop function abcd"
+                "drop function abcd",
+                "alter table abcd drop index `abdhfg`, drop subpartition `pppoi`",
+                "alter table iiiop drop partition a,c,b,f"
         };
         DefaultSqlChecker sqlChecker = new DefaultSqlChecker(DialectType.OB_MYSQL,
-                null, Collections.singletonList(new RestrictDropObjectTypes(Collections.singleton("function"))));
+                null, Collections.singletonList(new RestrictDropObjectTypes(
+                        new HashSet<>(Arrays.asList("function", "partition", "subpartition")))));
         List<CheckViolation> actual = sqlChecker.check(toOffsetString(sqls), null);
 
         SqlCheckRuleType type = SqlCheckRuleType.RESTRICT_DROP_OBJECT_TYPES;
-        CheckViolation c1 = new CheckViolation(sqls[1], 1, 0, 0, 18, type, new Object[] {"PROCEDURE", "function"});
+        CheckViolation c1 = new CheckViolation(sqls[1], 1, 0, 0, 18, type, new Object[] {
+                "PROCEDURE", "partition,subpartition,function"});
+        CheckViolation c2 = new CheckViolation(sqls[3], 1, 17, 17, 35, type, new Object[] {
+                "INDEX", "partition,subpartition,function"});
 
-        List<CheckViolation> expect = Collections.singletonList(c1);
-        Assert.assertEquals(expect, actual);
+        Assert.assertEquals(Arrays.asList(c1, c2), actual);
     }
 
     @Test

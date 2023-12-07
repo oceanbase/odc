@@ -1635,7 +1635,7 @@
       - 'ODP_SHARDING_OB_MYSQL'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-index-datatypes.allowed-datatypes}":["int", "varchar2", "number", "float", "bigint"]}'
 - enabled: 1
-  level: 0
+  level: 1
   rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-prod-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-drop-object-types.name}
   appliedDialectTypes:
