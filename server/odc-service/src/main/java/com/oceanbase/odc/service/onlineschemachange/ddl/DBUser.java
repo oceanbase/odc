@@ -20,12 +20,14 @@ import com.oceanbase.tools.dbbrowser.model.DBObject;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 /**
  * @author yaobin
  * @date 2023-10-13
  * @since 4.2.3
  */
+@EqualsAndHashCode
 @Data
 public class DBUser implements DBObject {
 
