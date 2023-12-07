@@ -25,15 +25,15 @@ public class AlarmEvent {
 
     private final String eventMessage;
 
-    private final MonitorLevel level;
+    private final AlarmLevel level;
 
-    public AlarmEvent(String eventName, String eventMessage, MonitorLevel level) {
+    public AlarmEvent(String eventName, String eventMessage, AlarmLevel level) {
         this.eventName = eventName;
         this.eventMessage = eventMessage;
         this.level = level;
     }
 
-    public enum MonitorLevel {
+    public enum AlarmLevel {
         INFO, WARN, ERROR
     }
 

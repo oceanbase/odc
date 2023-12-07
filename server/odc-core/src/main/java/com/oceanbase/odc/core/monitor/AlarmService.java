@@ -23,7 +23,7 @@ import java.util.ServiceLoader;
 
 import javax.annotation.Nullable;
 
-import com.oceanbase.odc.core.monitor.AlarmEvent.MonitorLevel;
+import com.oceanbase.odc.core.monitor.AlarmEvent.AlarmLevel;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -42,26 +42,26 @@ class AlarmService {
     }
 
     public void alarm(String eventName, String eventMessage) {
-        monitor(eventName, eventMessage, MonitorLevel.ERROR, null);
+        monitor(eventName, eventMessage, AlarmLevel.ERROR, null);
     }
 
     public void alarm(String eventName, Throwable e) {
-        monitor(eventName, e.getMessage(), MonitorLevel.ERROR, e);
+        monitor(eventName, e.getMessage(), AlarmLevel.ERROR, e);
     }
 
     public void warn(String eventName, String eventMessage) {
-        monitor(eventName, eventMessage, MonitorLevel.WARN, null);
+        monitor(eventName, eventMessage, AlarmLevel.WARN, null);
     }
 
     public void warn(String eventName, Throwable e) {
-        monitor(eventName, e.getMessage(), MonitorLevel.WARN, e);
+        monitor(eventName, e.getMessage(), AlarmLevel.WARN, e);
     }
 
     public void info(String eventName, String eventMessage) {
-        monitor(eventName, eventMessage, MonitorLevel.INFO, null);
+        monitor(eventName, eventMessage, AlarmLevel.INFO, null);
     }
 
-    private void monitor(String eventName, String eventMessage, MonitorLevel level, @Nullable Throwable e) {
+    private void monitor(String eventName, String eventMessage, AlarmLevel level, @Nullable Throwable e) {
         String msg = String.format("eventName=%s, eventMessage=%s .", eventName, eventMessage);
         switch (level) {
             case INFO:
