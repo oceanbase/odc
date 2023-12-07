@@ -1283,6 +1283,10 @@
             - TYPE BODY
             - TYPE
             - DATABASE
+            - COLUMN
+            - CONSTRAINT
+            - PARTITION
+            - SUBPARTITION
 - id: 54
   name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.no-primary-key-name-exists.name}
   description: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.no-primary-key-name-exists.description}

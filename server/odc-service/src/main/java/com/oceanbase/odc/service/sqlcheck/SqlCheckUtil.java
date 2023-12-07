@@ -17,8 +17,8 @@ package com.oceanbase.odc.service.sqlcheck;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
@@ -149,9 +149,11 @@ public class SqlCheckUtil {
     }
 
     public static List<CheckResult> buildCheckResults(@NonNull List<CheckViolation> violations) {
-        return violations.stream().collect(Collectors
-                .groupingBy(CheckViolation::getText, LinkedHashMap::new, Collectors.toList()))
-                .entrySet().stream().map(e -> new CheckResult(e.getKey(), e.getValue())).collect(Collectors.toList());
+        return violations.stream().collect(Collectors.groupingBy(CheckViolation::getOffset)).entrySet()
+                .stream()
+                .sorted(Entry.comparingByKey())
+                .map(i -> new CheckResult(i.getValue().get(0).getText(), i.getValue()))
+                .collect(Collectors.toList());
     }
 
     public static Stream<ColumnDefinition> fromAlterTable(@NonNull AlterTable alterTable) {
