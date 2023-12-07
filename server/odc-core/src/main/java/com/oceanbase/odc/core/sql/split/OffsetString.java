@@ -13,21 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.metadb.connection;
 
-import java.util.List;
+package com.oceanbase.odc.core.sql.split;
 
-import org.apache.ibatis.annotations.Param;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-public interface ConnectionHistoryDAO {
-
-    int updateOrInsert(ConnectionHistoryEntity connectionHistoryEntity);
-
-    List<ConnectionHistoryEntity> listAll();
-
-    int deleteAll();
-
-    List<ConnectionHistoryEntity> listInactiveTempConnections(@Param("intervalSeconds") Integer intervalSeconds);
-
-    List<ConnectionHistoryEntity> listInactiveConnections(@Param("intervalSeconds") Integer intervalSeconds);
+/**
+ * @Author: Lebie
+ * @Date: 2023/11/28 16:38
+ * @Description: []
+ */
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+public class OffsetString {
+    private int offset;
+    private String str;
 }

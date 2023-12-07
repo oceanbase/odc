@@ -39,6 +39,7 @@ import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.regulation.ruleset.RuleService;
 import com.oceanbase.odc.service.regulation.ruleset.SqlConsoleRuleService;
 import com.oceanbase.odc.service.regulation.ruleset.model.Rule;
+import com.oceanbase.odc.service.regulation.ruleset.model.Rule.RuleViolation;
 import com.oceanbase.odc.service.regulation.ruleset.model.SqlConsoleRules;
 import com.oceanbase.odc.service.session.model.SqlAsyncExecuteReq;
 import com.oceanbase.odc.service.session.model.SqlAsyncExecuteResp;
@@ -91,7 +92,17 @@ public class SqlConsoleInterceptor extends BaseTimeConsumingInterceptor {
         if (maxSqls.isPresent()) {
             if (sqlTuples.size() > maxSqls.get()) {
                 ruleService.getByRulesetIdAndName(ruleSetId, SqlConsoleRules.MAX_EXECUTE_SQLS.getRuleName())
-                        .ifPresent(rule -> response.getViolatedRules().add(rule));
+                        .ifPresent(rule -> {
+                            Rule violationRule = new Rule();
+                            RuleViolation violation = new RuleViolation();
+                            violation.setLevel(rule.getLevel());
+                            violation.setLocalizedMessage(SqlConsoleRules.MAX_EXECUTE_SQLS
+                                    .getLocalizedMessage(new Object[] {rule.getProperties()
+                                            .get(rule.getMetadata().getPropertyMetadatas().get(0).getName())
+                                            .toString()}));
+                            violationRule.setViolation(violation);
+                            response.getViolatedRules().add(violationRule);
+                        });
                 allowExecute.set(false);
             }
         }
@@ -109,7 +120,18 @@ public class SqlConsoleInterceptor extends BaseTimeConsumingInterceptor {
             BasicResult parseResult = sqlId2BasicResult.get(item.getSqlTuple().getSqlId());
             if (parseResult.isPlDdl() && forbiddenToCreatePl) {
                 ruleService.getByRulesetIdAndName(ruleSetId, SqlConsoleRules.NOT_ALLOWED_CREATE_PL.getRuleName())
-                        .ifPresent(violatedRules::add);
+                        .ifPresent(rule -> {
+                            Rule violationRule = new Rule();
+                            RuleViolation violation = new RuleViolation();
+                            violation.setLevel(rule.getLevel());
+                            violation.setLocalizedMessage(
+                                    SqlConsoleRules.NOT_ALLOWED_CREATE_PL.getLocalizedMessage(null));
+                            violation.setOffset(item.getSqlTuple().getOffset());
+                            violation.setStart(0);
+                            violation.setStop(item.getSqlTuple().getOriginalSql().length());
+                            violationRule.setViolation(violation);
+                            violatedRules.add(violationRule);
+                        });
                 allowExecute.set(false);
             }
             if (allowSqlTypesOpt.isPresent()) {
@@ -121,7 +143,20 @@ public class SqlConsoleInterceptor extends BaseTimeConsumingInterceptor {
                 }
                 if (!allowSqlTypesOpt.get().contains(parseResult.getSqlType().name())) {
                     ruleService.getByRulesetIdAndName(ruleSetId, SqlConsoleRules.ALLOW_SQL_TYPES.getRuleName())
-                            .ifPresent(violatedRules::add);
+                            .ifPresent(rule -> {
+                                Rule violationRule = new Rule();
+                                RuleViolation violation = new RuleViolation();
+                                violation.setLevel(rule.getLevel());
+                                violation.setLocalizedMessage(SqlConsoleRules.ALLOW_SQL_TYPES
+                                        .getLocalizedMessage(new Object[] {rule.getProperties()
+                                                .get(rule.getMetadata().getPropertyMetadatas().get(0).getName())
+                                                .toString()}));
+                                violation.setOffset(item.getSqlTuple().getOffset());
+                                violation.setStart(0);
+                                violation.setStop(item.getSqlTuple().getOriginalSql().length());
+                                violationRule.setViolation(violation);
+                                violatedRules.add(violationRule);
+                            });
                     allowExecute.set(false);
                 }
             }
