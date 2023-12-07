@@ -102,6 +102,7 @@
         <fasterxml.woodstox.version>6.4.0</fasterxml.woodstox.version>
         <groovy-all.version>2.4.7</groovy-all.version>
         <org.locationtech.jts.version>1.16.1</org.locationtech.jts.version>
+        <org.json.version>20230618</org.json.version>
 
         <!-- aliyun-sdk version -->
         <aliyun-sdk.version>4.6.2</aliyun-sdk.version>
@@ -527,11 +528,6 @@
                 <version>${jackson.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.fasterxml.jackson.dataformat</groupId>
-                <artifactId>jackson-dataformat-xml</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>com.jayway.jsonpath</groupId>
                 <artifactId>json-path</artifactId>
                 <version>${json-path.version}</version>
@@ -752,8 +748,7 @@
             <dependency>
                 <groupId>org.json</groupId>
                 <artifactId>json</artifactId>
-                <!-- upgrade to avoid vulnerability issues, version >= 20180130 -->
-                <version>20180813</version>
+                <version>${org.json.version}</version>
             </dependency>
 
             <dependency>
@@ -1017,6 +1012,10 @@
                     <exclusion>
                         <groupId>org.mockito</groupId>
                         <artifactId>mockito-junit-jupiter</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.vaadin.external.google</groupId>
+                        <artifactId>android-json</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
