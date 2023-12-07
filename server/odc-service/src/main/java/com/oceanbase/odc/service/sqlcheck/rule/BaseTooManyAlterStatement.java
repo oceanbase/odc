@@ -16,12 +16,14 @@
 package com.oceanbase.odc.service.sqlcheck.rule;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 import com.oceanbase.odc.service.sqlcheck.SqlCheckContext;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckRule;
+import com.oceanbase.odc.service.sqlcheck.SqlCheckUtil;
 import com.oceanbase.odc.service.sqlcheck.model.CheckViolation;
 import com.oceanbase.odc.service.sqlcheck.model.SqlCheckRuleType;
 import com.oceanbase.tools.sqlparser.statement.Statement;
@@ -44,27 +46,23 @@ public abstract class BaseTooManyAlterStatement implements SqlCheckRule {
 
     @Override
     public List<CheckViolation> check(@NonNull Statement statement, @NonNull SqlCheckContext context) {
-        List<AlterTable> alterTables = context.getAllCheckedStatements(AlterTable.class).stream().map(p -> p.left)
-                .collect(Collectors.toList());
-        Map<String, List<CheckViolation>> sql2Violations = context.getAllCheckViolations().stream()
-                .filter(v -> v.getType() == getType())
-                .collect(Collectors.groupingBy(v -> v.getArgs()[1].toString()));
+        if (!(statement instanceof AlterTable)) {
+            return Collections.emptyList();
+        }
+        AlterTable alterTable = (AlterTable) statement;
+        String key = unquoteIdentifier(alterTable.getTableName());
+        List<AlterTable> alterTables = context.getAllCheckedStatements(AlterTable.class)
+                .stream().map(p -> p.left).collect(Collectors.toList());
         Map<String, List<AlterTable>> tableName2Alters = alterTables.stream()
                 .collect(Collectors.groupingBy(a -> unquoteIdentifier(a.getTableName())));
-        if (statement instanceof AlterTable) {
-            AlterTable alterTable = (AlterTable) statement;
-            List<AlterTable> tables = tableName2Alters.computeIfAbsent(
-                    unquoteIdentifier(alterTable.getTableName()), s -> new ArrayList<>());
-            tables.add(alterTable);
+        tableName2Alters.computeIfAbsent(key, s -> new ArrayList<>()).add(alterTable);
+        alterTables = tableName2Alters.get(key);
+        if (alterTables.size() != this.maxAlterCount + 1) {
+            return Collections.emptyList();
         }
-        return tableName2Alters.entrySet().stream()
-                .filter(e -> e.getValue().size() > maxAlterCount).filter(e -> !sql2Violations.containsKey(e.getKey()))
-                .map(e -> {
-                    List<AlterTable> as = e.getValue();
-                    String sql = as.stream().map(AlterTable::getText).collect(Collectors.joining(";"));
-                    return new CheckViolation(sql, 1, 0, 0, sql.length() - 1, getType(), 0, new Object[] {
-                            as.size(), e.getKey(), maxAlterCount});
-                }).collect(Collectors.toList());
+        return Collections.singletonList(SqlCheckUtil.buildViolation(
+                statement.getText(), statement, getType(),
+                new Object[] {this.maxAlterCount + 1, key, this.maxAlterCount}));
     }
 
     protected abstract String unquoteIdentifier(String identifier);

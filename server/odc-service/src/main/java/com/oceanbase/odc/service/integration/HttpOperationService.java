@@ -34,10 +34,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.expression.MapAccessor;
 import org.springframework.expression.Expression;
 import org.springframework.expression.ExpressionParser;
 import org.springframework.expression.spel.SpelParserConfiguration;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
+import org.springframework.expression.spel.support.StandardEvaluationContext;
 import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.common.json.JsonPathUtils;
@@ -120,23 +122,6 @@ public class HttpOperationService {
         return builder.build();
     }
 
-    public <T> T extractHttpResponse(String decryptedResponse, String extractExpression, Class<T> type) {
-        Object responseObject = JsonPathUtils.read(decryptedResponse, "$");
-        Expression expression = EXPRESSION_PARSER.parseExpression(extractExpression);
-        return expression.getValue(responseObject, type);
-    }
-
-    @RefreshScope
-    @Configuration
-    @Data
-    public static class IntegrationConfigProperties {
-
-        @Value("${odc.integration.url-white-list:}")
-        private List<String> urlWhiteList;
-
-    }
-
-
     public <T> T extractHttpResponse(OdcIntegrationResponse decryptedResponse, String extractExpression,
             Class<T> type) {
         String content = decryptedResponse.getContent();
@@ -155,8 +140,21 @@ public class HttpOperationService {
                 break;
         }
         Object responseObject = JsonPathUtils.read(content, "$");
+        StandardEvaluationContext context = new StandardEvaluationContext(responseObject);
+        // If you don't have MapAccessor configured, you can only use [a][b] to parse.
+        context.addPropertyAccessor(new MapAccessor());
         Expression expression = EXPRESSION_PARSER.parseExpression(extractExpression);
-        return expression.getValue(responseObject, type);
+        return expression.getValue(context, type);
+    }
+
+    @RefreshScope
+    @Configuration
+    @Data
+    private static class IntegrationConfigProperties {
+
+        @Value("${odc.integration.url-white-list:}")
+        private List<String> urlWhiteList;
+
     }
 
 }

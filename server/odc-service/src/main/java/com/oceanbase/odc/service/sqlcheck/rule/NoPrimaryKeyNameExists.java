@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.oceanbase.odc.service.sqlcheck.rule;
 
 import java.util.Arrays;
@@ -35,22 +36,14 @@ import com.oceanbase.tools.sqlparser.statement.createtable.ColumnAttributes;
 import com.oceanbase.tools.sqlparser.statement.createtable.ColumnDefinition;
 import com.oceanbase.tools.sqlparser.statement.createtable.CreateTable;
 import com.oceanbase.tools.sqlparser.statement.createtable.OutOfLineConstraint;
-import com.oceanbase.tools.sqlparser.statement.createtable.OutOfLineIndex;
 
 import lombok.NonNull;
 
-/**
- * {@link NoIndexNameExists}
- *
- * @author yh263208
- * @date 2023-06-20 20:44
- * @since ODC_release_4.2.0
- */
-public class NoIndexNameExists implements SqlCheckRule {
+public class NoPrimaryKeyNameExists implements SqlCheckRule {
 
     @Override
     public SqlCheckRuleType getType() {
-        return SqlCheckRuleType.NO_INDEX_NAME_EXISTS;
+        return SqlCheckRuleType.NO_PRIMARY_KEY_NAME_EXISTS;
     }
 
     @Override
@@ -58,13 +51,11 @@ public class NoIndexNameExists implements SqlCheckRule {
         if (statement instanceof CreateTable) {
             CreateTable createTable = (CreateTable) statement;
             List<Statement> statements = builds(createTable.getColumnDefinitions().stream());
-            statements.addAll(createTable.getIndexes().stream()
-                    .filter(index -> index.getIndexName() == null).collect(Collectors.toList()));
             statements.addAll(createTable.getConstraints().stream().filter(c -> {
                 if (c.getConstraintName() != null || c.getIndexName() != null) {
                     return false;
                 }
-                return c.isUniqueKey();
+                return c.isPrimaryKey();
             }).collect(Collectors.toList()));
             return statements.stream().map(s -> SqlCheckUtil.buildViolation(
                     statement.getText(), s, getType(), new Object[] {})).collect(Collectors.toList());
@@ -76,11 +67,7 @@ public class NoIndexNameExists implements SqlCheckRule {
                 if (c == null || c.getConstraintName() != null || c.getIndexName() != null) {
                     return false;
                 }
-                return c.isUniqueKey();
-            }).collect(Collectors.toList()));
-            statements.addAll(alterTable.getAlterTableActions().stream().filter(alterTableAction -> {
-                OutOfLineIndex i = alterTableAction.getAddIndex();
-                return i != null && i.getIndexName() == null;
+                return c.isPrimaryKey();
             }).collect(Collectors.toList()));
             return statements.stream().map(s -> SqlCheckUtil.buildViolation(
                     statement.getText(), s, getType(), new Object[] {})).collect(Collectors.toList());
@@ -105,7 +92,7 @@ public class NoIndexNameExists implements SqlCheckRule {
             if (c.getConstraintName() != null) {
                 return false;
             }
-            return c.isUniqueKey();
+            return c.isPrimaryKey();
         }).collect(Collectors.toList());
     }
 
