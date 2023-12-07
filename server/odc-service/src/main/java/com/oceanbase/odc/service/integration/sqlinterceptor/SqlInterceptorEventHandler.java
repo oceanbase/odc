@@ -23,7 +23,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Component;
@@ -32,7 +31,6 @@ import com.oceanbase.odc.common.i18n.I18n;
 import com.oceanbase.odc.core.shared.constant.AuditEventAction;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
-import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.service.collaboration.environment.EnvironmentService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
@@ -82,9 +80,6 @@ public class SqlInterceptorEventHandler implements IntegrationEventHandler {
     private void usageCheck(Long integrationId, AuditEventAction auditEventAction) {
         List<Rule> rules = ruleService.getByOrganizationIdAndRuleMetaDataName(
                 authenticationFacade.currentOrganizationId(), SqlConsoleRules.EXTERNAL_SQL_INTERCEPTOR.getRuleName());
-        if (CollectionUtils.isEmpty(rules)) {
-            throw new NotFoundException(ResourceType.ODC_RULE, "type", SqlConsoleRules.EXTERNAL_SQL_INTERCEPTOR);
-        }
         Set<Long> ruleSetIds = new HashSet<>();
         for (Rule rule : rules) {
             Map<String, Object> properties = rule.getProperties();
