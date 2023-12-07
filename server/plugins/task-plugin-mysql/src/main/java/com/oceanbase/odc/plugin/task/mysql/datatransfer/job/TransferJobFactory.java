@@ -43,6 +43,7 @@ import com.oceanbase.odc.plugin.task.api.datatransfer.model.ObjectResult;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.common.Constants;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.ConfigurationResolver;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.DataXTransferJob;
+import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.JobConfiguration;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
 
@@ -127,8 +128,13 @@ public class TransferJobFactory {
                 }
 
                 if (transferConfig.getDataTransferFormat() == DataTransferFormat.CSV) {
-                    jobs.add(new DataXTransferJob(object, ConfigurationResolver
-                            .buildJobConfigurationForImport(transferConfig, jdbcUrl, object, url), workingDir, logDir));
+                    try (Connection conn = dataSource.getConnection()) {
+                        List<DBTableColumn> columns = new MySQLTableExtension()
+                                .getDetail(conn, object.getSchema(), object.getName()).getColumns();
+                        JobConfiguration jobConf = ConfigurationResolver
+                                .buildJobConfigurationForImport(transferConfig, jdbcUrl, object, url, columns);
+                        jobs.add(new DataXTransferJob(object, jobConf, workingDir, logDir));
+                    }
                 } else {
                     jobs.add(new SqlScriptImportJob(object, transferConfig, url, dataSource));
                 }
