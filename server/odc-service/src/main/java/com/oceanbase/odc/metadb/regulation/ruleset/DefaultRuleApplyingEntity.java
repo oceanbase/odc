@@ -14,11 +14,13 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.metadb.connection;
+package com.oceanbase.odc.metadb.regulation.ruleset;
 
 import java.util.Date;
+import java.util.List;
 
 import javax.persistence.Column;
+import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -28,39 +30,50 @@ import javax.persistence.Table;
 import org.hibernate.annotations.Generated;
 import org.hibernate.annotations.GenerationTime;
 
+import com.oceanbase.odc.common.jpa.JsonListConverter;
+
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 /**
- * @author gaoda.xy
- * @date 2023/12/4 20:51
+ * @Author: Lebie
+ * @Date: 2023/12/4 17:18
+ * @Description: []
  */
 @Data
 @Entity
-@Table(name = "connect_connection_access")
-public class ConnectionHistoryEntity {
-
+@Table(name = "regulation_default_rule_applying")
+@EqualsAndHashCode(exclude = {"id", "createTime", "updateTime"})
+public class DefaultRuleApplyingEntity {
     @Id
     @Column(name = "id", nullable = false)
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "connection_id", nullable = false)
-    private Long connectionId;
-
-    @Column(name = "user_id", nullable = false)
-    private Long userId;
-
-    @Column(name = "last_access_time", nullable = false)
-    private Date lastAccessTime;
-
     @Generated(GenerationTime.ALWAYS)
-    @Column(name = "create_time", insertable = false, updatable = false,
-            columnDefinition = "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP")
+    @Column(name = "create_time", insertable = false, updatable = false)
     private Date createTime;
 
     @Generated(GenerationTime.ALWAYS)
-    @Column(name = "update_time", insertable = false, updatable = false,
-            columnDefinition = "datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP")
+    @Column(name = "update_time", insertable = false, updatable = false)
     private Date updateTime;
 
+    @Column(name = "is_enabled", nullable = false)
+    private Boolean enabled;
+
+    @Column(name = "level", nullable = false)
+    private Integer level;
+
+    @Column(name = "ruleset_name", nullable = false)
+    private String rulesetName;
+
+    @Column(name = "rule_metadata_id", nullable = false)
+    private Long ruleMetadataId;
+
+    @Column(name = "applied_dialect_types")
+    @Convert(converter = JsonListConverter.class)
+    private List<String> appliedDialectTypes;
+
+    @Column(name = "properties_json", nullable = false)
+    private String propertiesJson;
 }

@@ -28,12 +28,10 @@ import com.oceanbase.odc.core.migrate.JdbcMigratable;
 import com.oceanbase.odc.core.migrate.Migratable;
 import com.oceanbase.odc.core.migrate.resource.ResourceInitializer;
 import com.oceanbase.odc.core.migrate.resource.model.ResourceConfig;
-import com.oceanbase.odc.service.collaboration.RuleApplyingMigrator;
 import com.oceanbase.odc.service.common.migrate.DefaultValueEncoderFactory;
 import com.oceanbase.odc.service.common.migrate.DefaultValueGeneratorFactory;
 import com.oceanbase.odc.service.common.migrate.IgnoreResourceIdHandle;
 import com.oceanbase.odc.service.common.migrate.ResourceConstants;
-import com.oceanbase.odc.service.common.util.SpringContextUtil;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -50,19 +48,16 @@ public class V42034OrganizationMigrate implements JdbcMigratable {
     private final String DEFAULT_ENV_NAME =
             "${com.oceanbase.odc.builtin-resource.collaboration.environment.default.name}";
 
-    private RuleApplyingMigrator ruleApplyingMigrator;
 
     @Override
     public void migrate(DataSource dataSource) {
         ResourceInitializer initializer = new ResourceInitializer(
                 getResourceConfig(dataSource));
-        this.ruleApplyingMigrator = SpringContextUtil.getBean(RuleApplyingMigrator.class);
         try {
             migrateOrganization(dataSource);
             initializer.init();
             migrateUserRole(dataSource);
             migrateDataSource(dataSource);
-            ruleApplyingMigrator.migrate(1L);
         } catch (Exception e) {
             throw new RuntimeException("init organization resource failed, ", e);
         }

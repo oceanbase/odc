@@ -19,16 +19,19 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
-import com.oceanbase.odc.metadb.connection.ConnectionHistoryDAO;
+import com.oceanbase.odc.metadb.connection.ConnectionConfigRepository;
+import com.oceanbase.odc.metadb.connection.ConnectionEntity;
 import com.oceanbase.odc.metadb.connection.ConnectionHistoryEntity;
+import com.oceanbase.odc.metadb.connection.ConnectionHistoryRepository;
 import com.oceanbase.odc.service.connection.model.ConnectProperties;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.session.ConnectSessionService;
@@ -46,7 +49,10 @@ import lombok.extern.slf4j.Slf4j;
 public class ConnectionSessionHistoryService {
 
     @Autowired
-    private ConnectionHistoryDAO connectionHistoryDAO;
+    private ConnectionHistoryRepository repository;
+
+    @Autowired
+    private ConnectionConfigRepository connectionConfigRepository;
 
     @Autowired
     private ConnectSessionService connectSessionService;
@@ -58,30 +64,28 @@ public class ConnectionSessionHistoryService {
         Collection<ConnectionSession> sessions = connectSessionService.listAllSessions();
         log.info("refresh all session history in db, size={}", sessions.size());
         for (ConnectionSession session : sessions) {
-            if (session.isExpired()) {
-                continue;
-            }
+            ConnectionConfig conn = (ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(session);
+            Long connectionId = conn.getId();
             Long userId = ConnectionSessionUtil.getUserId(session);
             Date lastAccessTime = session.getLastAccessTime();
-            Object connectionConfig = ConnectionSessionUtil.getConnectionConfig(session);
-            if (Objects.nonNull(userId) && Objects.nonNull(lastAccessTime) && Objects.nonNull(connectionConfig)) {
-                updateOrInsert(((ConnectionConfig) connectionConfig).getId(), userId, lastAccessTime);
+            if (Objects.nonNull(userId) && Objects.nonNull(lastAccessTime) && Objects.nonNull(connectionId)) {
+                repository.updateOrInsert(connectionId, userId, lastAccessTime);
+                log.debug("update or insert connection history successfully, connectionId={}", connectionId);
             }
         }
     }
 
-    @Transactional(rollbackFor = Exception.class)
-    public void updateOrInsert(Long connectionId, Long userId, Date lastAccessTime) {
-        connectionHistoryDAO.updateOrInsert(ConnectionHistoryEntity.of(connectionId, userId, lastAccessTime));
-        log.debug("update or insert connection history successfully, connectionId={}", connectionId);
+    public List<ConnectionEntity> listInactiveConnections(Boolean temp) {
+        int intervalSeconds = connectProperties.getTempExpireAfterInactiveIntervalSeconds();
+        Date expireDate = new Date(System.currentTimeMillis() - intervalSeconds * 1000L);
+        Set<Long> connIds = repository.findByLastAccessTimeAfter(expireDate).stream()
+                .map(ConnectionHistoryEntity::getConnectionId).collect(Collectors.toSet());
+        if (temp == null) {
+            return connectionConfigRepository.findByUpdateTimeBefore(expireDate).stream()
+                    .filter(conn -> !connIds.contains(conn.getId())).collect(Collectors.toList());
+        }
+        return connectionConfigRepository.findByUpdateTimeBeforeAndTemp(expireDate, temp).stream()
+                .filter(conn -> !connIds.contains(conn.getId())).collect(Collectors.toList());
     }
 
-    public List<ConnectionHistoryEntity> listAll() {
-        return connectionHistoryDAO.listAll();
-    }
-
-    public List<ConnectionHistoryEntity> listInactiveConnections() {
-        return connectionHistoryDAO
-                .listInactiveConnections(connectProperties.getTempExpireAfterInactiveIntervalSeconds());
-    }
 }

@@ -13,21 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.metadb.connection;
+
+package com.oceanbase.odc.metadb.regulation.ruleset;
 
 import java.util.List;
 
-import org.apache.ibatis.annotations.Param;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
-public interface ConnectionHistoryDAO {
-
-    int updateOrInsert(ConnectionHistoryEntity connectionHistoryEntity);
-
-    List<ConnectionHistoryEntity> listAll();
-
-    int deleteAll();
-
-    List<ConnectionHistoryEntity> listInactiveTempConnections(@Param("intervalSeconds") Integer intervalSeconds);
-
-    List<ConnectionHistoryEntity> listInactiveConnections(@Param("intervalSeconds") Integer intervalSeconds);
+public interface DefaultRuleApplyingRepository extends JpaRepository<DefaultRuleApplyingEntity, Long>,
+        JpaSpecificationExecutor<DefaultRuleApplyingEntity> {
+    List<DefaultRuleApplyingEntity> findByRulesetName(String rulesetName);
 }

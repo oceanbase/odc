@@ -141,6 +141,13 @@ public class SqlCheckUtil {
                 ruleType, args == null ? new Object[] {} : args);
     }
 
+    public static CheckViolation buildViolation(String originSql, Statement stmt,
+            SqlCheckRuleType ruleType, Integer offset, Object[] args) {
+        return new CheckViolation(originSql, stmt.getLine(),
+                stmt.getCharPositionInLine(), stmt.getStart(), stmt.getStop(),
+                ruleType, offset, args == null ? new Object[] {} : args);
+    }
+
     public static List<CheckResult> buildCheckResults(@NonNull List<CheckViolation> violations) {
         return violations.stream().collect(Collectors
                 .groupingBy(CheckViolation::getText, LinkedHashMap::new, Collectors.toList()))

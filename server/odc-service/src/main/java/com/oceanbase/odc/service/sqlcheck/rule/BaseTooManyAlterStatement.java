@@ -44,7 +44,8 @@ public abstract class BaseTooManyAlterStatement implements SqlCheckRule {
 
     @Override
     public List<CheckViolation> check(@NonNull Statement statement, @NonNull SqlCheckContext context) {
-        List<AlterTable> alterTables = context.getAllCheckedStatements(AlterTable.class);
+        List<AlterTable> alterTables = context.getAllCheckedStatements(AlterTable.class).stream().map(p -> p.left)
+                .collect(Collectors.toList());
         Map<String, List<CheckViolation>> sql2Violations = context.getAllCheckViolations().stream()
                 .filter(v -> v.getType() == getType())
                 .collect(Collectors.groupingBy(v -> v.getArgs()[1].toString()));
@@ -61,7 +62,7 @@ public abstract class BaseTooManyAlterStatement implements SqlCheckRule {
                 .map(e -> {
                     List<AlterTable> as = e.getValue();
                     String sql = as.stream().map(AlterTable::getText).collect(Collectors.joining(";"));
-                    return new CheckViolation(sql, 1, 0, 0, sql.length() - 1, getType(), new Object[] {
+                    return new CheckViolation(sql, 1, 0, 0, sql.length() - 1, getType(), 0, new Object[] {
                             as.size(), e.getKey(), maxAlterCount});
                 }).collect(Collectors.toList());
     }

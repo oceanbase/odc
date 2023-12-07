@@ -70,7 +70,6 @@ import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.ConnectionStatus;
 import com.oceanbase.odc.core.shared.constant.ConnectionVisibleScope;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
-import com.oceanbase.odc.core.shared.constant.OdcConstants;
 import com.oceanbase.odc.core.shared.constant.PermissionType;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
@@ -84,6 +83,7 @@ import com.oceanbase.odc.metadb.connection.ConnectionAttributeEntity;
 import com.oceanbase.odc.metadb.connection.ConnectionAttributeRepository;
 import com.oceanbase.odc.metadb.connection.ConnectionConfigRepository;
 import com.oceanbase.odc.metadb.connection.ConnectionEntity;
+import com.oceanbase.odc.metadb.connection.ConnectionHistoryRepository;
 import com.oceanbase.odc.metadb.connection.ConnectionSpecs;
 import com.oceanbase.odc.metadb.connection.DatabaseEntity;
 import com.oceanbase.odc.metadb.connection.DatabaseRepository;
@@ -102,6 +102,7 @@ import com.oceanbase.odc.service.common.response.PaginatedData;
 import com.oceanbase.odc.service.connection.ConnectionStatusManager.CheckState;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.DatabaseSyncManager;
+import com.oceanbase.odc.service.connection.database.model.DatabaseSyncProperties;
 import com.oceanbase.odc.service.connection.model.ConnectProperties;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.model.QueryConnectionParams;
@@ -206,7 +207,13 @@ public class ConnectionService {
     private DatabaseRepository databaseRepository;
 
     @Autowired
+    private ConnectionHistoryRepository connectionHistoryRepository;
+
+    @Autowired
     private JdbcLockRegistry jdbcLockRegistry;
+
+    @Autowired
+    private DatabaseSyncProperties databaseSyncProperties;
 
     private final ConnectionMapper mapper = ConnectionMapper.INSTANCE;
 
@@ -214,33 +221,20 @@ public class ConnectionService {
 
     private static final String UPDATE_DS_SCHEMA_LOCK_KEY_PREFIX = "update-ds-schema-lock-";
 
-    @SkipAuthorize("odc internal usage")
-    public ConnectionConfig createForBastionUser(@NotNull @Valid ConnectionConfig connection) {
-        TransactionDefinition transactionDefinition = new DefaultTransactionDefinition();
-        TransactionStatus transactionStatus = transactionManager.getTransaction(transactionDefinition);
-        ConnectionConfig saved;
-        try {
-            saved = innerCreate(connection, true);
-            userPermissionService.bindUserAndDataSourcePermission(OdcConstants.DEFAULT_ADMIN_USER_ID,
-                    currentOrganizationId(), saved.getId(), Arrays.asList("read", "update", "delete"));
-            transactionManager.commit(transactionStatus);
-        } catch (Exception e) {
-            transactionManager.rollback(transactionStatus);
-            throw e;
-        }
-        databaseSyncManager.submitSyncDataSourceTask(saved);
-        return saved;
-    }
-
     @PreAuthenticate(actions = "create", resourceType = "ODC_CONNECTION", isForAll = true)
     public ConnectionConfig create(@NotNull @Valid ConnectionConfig connection) {
+        return create(connection, currentUserId(), false);
+    }
+
+    @SkipAuthorize("odc internal usage")
+    public ConnectionConfig create(@NotNull @Valid ConnectionConfig connection, @NotNull Long creatorId,
+            boolean skipPermissionCheck) {
         TransactionDefinition transactionDefinition = new DefaultTransactionDefinition();
         TransactionStatus transactionStatus = transactionManager.getTransaction(transactionDefinition);
         ConnectionConfig saved;
         try {
-            saved = innerCreate(connection, false);
-            userPermissionService.bindUserAndDataSourcePermission(currentUserId(), currentOrganizationId(),
-                    saved.getId(),
+            saved = innerCreate(connection, creatorId, skipPermissionCheck);
+            userPermissionService.bindUserAndDataSourcePermission(creatorId, currentOrganizationId(), saved.getId(),
                     Arrays.asList("read", "update", "delete"));
             transactionManager.commit(transactionStatus);
         } catch (Exception e) {
@@ -256,7 +250,7 @@ public class ConnectionService {
     public List<ConnectionConfig> batchCreate(@NotEmpty @Valid List<ConnectionConfig> connections) {
         List<ConnectionConfig> connectionConfigs = new ArrayList<>();
         for (ConnectionConfig connection : connections) {
-            ConnectionConfig saved = innerCreate(connection, false);
+            ConnectionConfig saved = innerCreate(connection, currentUserId(), false);
             databaseSyncManager.submitSyncDataSourceTask(saved);
             userPermissionService.bindUserAndDataSourcePermission(currentUserId(), currentOrganizationId(),
                     saved.getId(),
@@ -267,7 +261,8 @@ public class ConnectionService {
     }
 
     @SkipAuthorize("odc internal usage")
-    public ConnectionConfig innerCreate(@NotNull @Valid ConnectionConfig connection, boolean skipPermissionCheck) {
+    public ConnectionConfig innerCreate(@NotNull @Valid ConnectionConfig connection, @NotNull Long creatorId,
+            boolean skipPermissionCheck) {
         TransactionDefinition transactionDefinition = new DefaultTransactionDefinition();
         TransactionStatus transactionStatus = transactionManager.getTransaction(transactionDefinition);
         ConnectionConfig created;
@@ -284,7 +279,7 @@ public class ConnectionService {
             }
 
             connection.setOrganizationId(currentOrganizationId());
-            connection.setCreatorId(currentUserId());
+            connection.setCreatorId(creatorId);
             if (Objects.isNull(connection.getProperties())) {
                 connection.setProperties(new HashMap<>());
             }
@@ -328,11 +323,13 @@ public class ConnectionService {
         repository.deleteById(id);
         permissionService.deleteResourceRelatedPermissions(id, ResourceType.ODC_CONNECTION,
                 PermissionType.PUBLIC_RESOURCE);
-        log.info("Delete datasource-related permission entity, id={}", id);
+        log.info("Delete related permission entity, id={}", id);
         int affectRows = databaseService.deleteByDataSourceId(id);
-        log.info("delete datasource-related databases successfully, affectRows={}, id={}", affectRows, id);
-        affectRows = this.attributeRepository.deleteByConnectionId(id);
+        log.info("delete related databases successfully, affectRows={}, id={}", affectRows, id);
+        affectRows = attributeRepository.deleteByConnectionId(id);
         log.info("delete related attributes successfully, affectRows={}, id={}", affectRows, id);
+        affectRows = connectionHistoryRepository.deleteByConnectionId(id);
+        log.info("delete related session access history successfully, affectRows={}, id={}", affectRows, id);
         return connection;
     }
 
@@ -583,7 +580,7 @@ public class ConnectionService {
             log.info("Connection updated, connection={}", updated);
             if (saved.getProjectId() != null && updated.getProjectId() == null) {
                 // Remove databases from project when unbind project from connection
-                updateDatabaseProjectId(id, null);
+                updateDatabaseProjectId(savedEntity, null, databaseSyncProperties.isBlockInternalDatabase());
             }
             transactionManager.commit(transactionStatus);
         } catch (Exception e) {
@@ -595,23 +592,30 @@ public class ConnectionService {
     }
 
     @SkipAuthorize("odc internal usage")
-    public void updateDatabaseProjectId(Collection<Long> connectionIds, Long projectId) throws InterruptedException {
+    public void updateDatabaseProjectId(Collection<ConnectionEntity> connectionIds, Long projectId,
+            boolean blockInternalDatabase) throws InterruptedException {
         if (CollectionUtils.isEmpty(connectionIds)) {
             return;
         }
-        for (Long connectionId : connectionIds) {
-            updateDatabaseProjectId(connectionId, projectId);
+        for (ConnectionEntity entity : connectionIds) {
+            updateDatabaseProjectId(entity, projectId, blockInternalDatabase);
         }
     }
 
-    private void updateDatabaseProjectId(Long connectionId, Long projectId) throws InterruptedException {
-        Lock lock = jdbcLockRegistry.obtain(getUpdateDsSchemaLockKey(connectionId));
+    private void updateDatabaseProjectId(ConnectionEntity entity, Long projectId, boolean blockInternalDatabase)
+            throws InterruptedException {
+        Lock lock = jdbcLockRegistry.obtain(getUpdateDsSchemaLockKey(entity.getId()));
         if (!lock.tryLock(3, TimeUnit.SECONDS)) {
             throw new ConflictException(ErrorCodes.ResourceModifying, "Can not acquire jdbc lock");
         }
         try {
-            List<DatabaseEntity> entities = databaseRepository.findByConnectionId(connectionId);
-            entities.forEach(e -> e.setProjectId(projectId));
+            List<DatabaseEntity> entities = databaseRepository.findByConnectionId(entity.getId());
+            List<String> blockDatabaseNames = databaseService.listBlockedDatabaseNames(entity.getDialectType());
+            entities.forEach(e -> {
+                if (!blockInternalDatabase || !blockDatabaseNames.contains(e.getName())) {
+                    e.setProjectId(projectId);
+                }
+            });
             databaseRepository.saveAll(entities);
         } finally {
             lock.unlock();

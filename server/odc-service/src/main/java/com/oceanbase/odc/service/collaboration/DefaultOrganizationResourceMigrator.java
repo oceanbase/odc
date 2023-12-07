@@ -67,9 +67,6 @@ public class DefaultOrganizationResourceMigrator implements OrganizationResource
     private OrganizationService organizationService;
 
     @Autowired
-    private RuleApplyingMigrator ruleApplyingMigrator;
-
-    @Autowired
     private TransactionTemplate transactionTemplate;
 
     @Autowired
@@ -93,7 +90,6 @@ public class DefaultOrganizationResourceMigrator implements OrganizationResource
                     teamOrganizationMigrator.migrate(user);
                     log.info("Initialized team organization resource successfully, organizationId={}, userId={}",
                             user.getOrganizationId(), user.getId());
-                    ruleApplyingMigrator.migrate(user.getOrganizationId());
                 }
                 userOrganizationMigrator.migrate(user);
                 return null;
@@ -118,7 +114,6 @@ public class DefaultOrganizationResourceMigrator implements OrganizationResource
                     log.info("Individual organization not found, start to initialize for userId={}", user.getId());
                     OrganizationEntity saved = individualOrganizationMigrator.migrate(user);
                     log.info("Initialized individual organization successfully for userId={}", user.getId());
-                    ruleApplyingMigrator.migrate(saved.getId());
                 }
                 return null;
             } catch (Exception ex) {

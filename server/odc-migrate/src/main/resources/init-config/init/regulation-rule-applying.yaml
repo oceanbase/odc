@@ -1,7 +1,7 @@
 ## below default environment default rule applyings
 - enabled: 1
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.default.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-default-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.not-allowed-edit-resultset.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -11,7 +11,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.default.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-default-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.not-allowed-export-resultset.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -21,7 +21,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.default.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-default-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.max-return-rows.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -31,7 +31,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.max-return-rows.metadata.name}":1000}'
 - enabled: 1
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.default.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-default-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.allow-sql-types.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -41,7 +41,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.allow-sql-types.metadata.name}":["SELECT"]}'
 - enabled: 1
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.default.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-default-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.max-execute-sqls.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -51,7 +51,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.max-execute-sqls.metadata.name}":1000}'
 - enabled: 1
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.default.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-default-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.not-allowed-debug-pl.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -61,7 +61,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.default.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-default-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.not-allowed-create-pl.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -71,7 +71,7 @@
   propertiesJson: '{}'
 - enabled: 0
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.default.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-default-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.external-sql-interceptor.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -81,7 +81,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.default.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-default-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.syntax-error.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -92,7 +92,7 @@
 ## below dev environment default rule applyings
 - enabled: 0
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.dev.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-dev-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.not-allowed-edit-resultset.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -102,7 +102,7 @@
   propertiesJson: '{}'
 - enabled: 0
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.dev.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-dev-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.not-allowed-export-resultset.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -112,7 +112,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.dev.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-dev-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.max-return-rows.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -122,7 +122,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.max-return-rows.metadata.name}":10000}'
 - enabled: 0
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.dev.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-dev-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.allow-sql-types.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -132,7 +132,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.allow-sql-types.metadata.name}":["UPDATE","DELETE","INSERT","SELECT","CREATE","DROP","ALTER"]}'
 - enabled: 1
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.dev.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-dev-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.max-execute-sqls.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -142,7 +142,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.max-execute-sqls.metadata.name}":1000}'
 - enabled: 0
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.dev.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-dev-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.not-allowed-debug-pl.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -152,7 +152,7 @@
   propertiesJson: '{}'
 - enabled: 0
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.dev.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-dev-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.not-allowed-create-pl.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -162,7 +162,7 @@
   propertiesJson: '{}'
 - enabled: 0
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.dev.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-dev-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.external-sql-interceptor.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -173,7 +173,7 @@
 ## below sit environment default rule applyings
 - enabled: 0
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.sit.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-sit-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.not-allowed-edit-resultset.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -183,7 +183,7 @@
   propertiesJson: '{}'
 - enabled: 0
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.sit.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-sit-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.not-allowed-export-resultset.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -193,7 +193,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.sit.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-sit-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.max-return-rows.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -203,7 +203,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.max-return-rows.metadata.name}":10000}'
 - enabled: 1
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.sit.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-sit-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.allow-sql-types.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -213,7 +213,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.allow-sql-types.metadata.name}":["UPDATE", "DELETE", "INSERT", "SELECT", "SET", "REPLACE", "EXPLAIN", "SHOW", "HELP", "START_TRANS", "COMMIT", "ROLLBACK", "SORT", "DESC", "TRUNCATE"]}'
 - enabled: 1
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.sit.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-sit-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.max-execute-sqls.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -223,7 +223,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.max-execute-sqls.metadata.name}":1000}'
 - enabled: 0
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.sit.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-sit-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.not-allowed-debug-pl.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -233,7 +233,7 @@
   propertiesJson: '{}'
 - enabled: 0
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.sit.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-sit-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.not-allowed-create-pl.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -243,7 +243,7 @@
   propertiesJson: '{}'
 - enabled: 0
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.sit.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-sit-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.external-sql-interceptor.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -254,7 +254,7 @@
 ## below prod environment default rule applyings
 - enabled: 1
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.prod.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-prod-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.not-allowed-edit-resultset.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -264,7 +264,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.prod.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-prod-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.not-allowed-export-resultset.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -274,7 +274,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.prod.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-prod-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.max-return-rows.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -284,7 +284,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.max-return-rows.metadata.name}":1000}'
 - enabled: 1
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.prod.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-prod-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.allow-sql-types.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -294,7 +294,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.allow-sql-types.metadata.name}":["SELECT"]}'
 - enabled: 1
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.prod.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-prod-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.max-execute-sqls.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -304,7 +304,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.max-execute-sqls.metadata.name}":1000}'
 - enabled: 1
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.prod.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-prod-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.not-allowed-debug-pl.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -314,7 +314,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.prod.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-prod-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.not-allowed-create-pl.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -324,7 +324,7 @@
   propertiesJson: '{}'
 - enabled: 0
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.prod.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-prod-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.external-sql-interceptor.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -335,7 +335,7 @@
   ## below sql-check rules
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.sit.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-sit-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.syntax-error.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -345,7 +345,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.sit.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-sit-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.index-column-calculation.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -355,7 +355,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.sit.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-sit-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.index-column-fuzzy-match.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -365,7 +365,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.sit.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-sit-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.no-not-null-exists-not-in.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -375,7 +375,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.sit.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-sit-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.no-specific-column-exists.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -385,7 +385,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.sit.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-sit-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.no-valid-where-clause.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -395,7 +395,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.sit.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-sit-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.no-where-clause-exists.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -405,7 +405,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.sit.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-sit-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-in-expr.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -415,7 +415,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-in-expr.max-in-expr-count}":200}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.sit.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-sit-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-table-join.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -425,7 +425,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-table-join.max-join-table-count}":10}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.sit.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-sit-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-index-keys.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -435,7 +435,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-index-keys.max-index-count}":10}'
 - enabled: 1
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.sit.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-sit-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-column-refs-in-index.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -445,7 +445,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-column-refs-in-index.max-column-ref-count}":100}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.sit.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-sit-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.prefer-local-index.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -454,7 +454,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.sit.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-sit-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-columns.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -464,7 +464,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-columns.max-column-definition-count}":100}'
 - enabled: 1
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.sit.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-sit-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-long-char-length.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -474,7 +474,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-long-char-length.max-char-length}":1000}'
 - enabled: 1
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.sit.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-sit-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.foreign-constraint-exists.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -484,7 +484,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 2
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.sit.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-sit-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.no-primary-key-exists.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -494,7 +494,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.sit.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-sit-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.no-table-comment-exists.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -504,7 +504,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 2
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.sit.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-sit-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.table-name-in-black-list.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -514,7 +514,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.table-name-in-black-list.black-list}":[]}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.sit.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-sit-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-table-charset.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -523,7 +523,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-table-charset.allowed-charsets}":[]}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.sit.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-sit-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-table-collation.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -532,7 +532,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-table-collation.allowed-collations}":[]}'
 - enabled: 1
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.sit.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-sit-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-pk-datatypes.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -542,7 +542,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-pk-datatypes.allowed-datatypes}":["int", "varchar2", "varchar", "number", "float", "bigint"]}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.sit.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-sit-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-pk-auto-increment.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -551,7 +551,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.sit.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-sit-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-column-refs-in-primary-key.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -561,7 +561,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-column-refs-in-primary-key.max-column-ref-count}":100}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.sit.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-sit-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-index-naming.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -571,7 +571,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-index-naming.name-pattern}":null}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.sit.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-sit-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-unique-index-naming.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -581,7 +581,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-unique-index-naming.name-pattern}":null}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.sit.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-sit-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.no-index-name-exists.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -591,7 +591,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.sit.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-sit-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.no-primary-key-name-exists.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -601,7 +601,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.sit.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-sit-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.zerofill-exists.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -610,7 +610,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.sit.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-sit-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.column-charset-exists.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -620,7 +620,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.sit.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-sit-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.column-collation-exists.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -630,7 +630,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.sit.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-sit-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.column-is-nullable.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -640,7 +640,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.column-is-nullable.nullable-datatype-list}":[]}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.sit.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-sit-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.no-default-value-exists.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -650,7 +650,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.no-default-value-exists.no-default-value-datatype-list}":[]}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.sit.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-sit-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.no-column-comment-exists.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -660,7 +660,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.sit.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-sit-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.column-name-in-black-list.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -670,21 +670,21 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.column-name-in-black-list.black-list}":[]}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.sit.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-sit-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-column-name-case.name}
   appliedDialectTypes:
       - 'OB_ORACLE'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-column-name-case.is-uppercase}":false, "${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-column-name-case.is-lowercase}":false}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.sit.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-sit-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-table-name-case.name}
   appliedDialectTypes:
       - 'OB_ORACLE'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-table-name-case.is-uppercase}":false, "${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-table-name-case.is-lowercase}":false}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.sit.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-sit-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-table-auto-increment.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -693,7 +693,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-table-auto-increment.init-value}":1}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.sit.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-sit-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.select-star-exists.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -703,7 +703,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.sit.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-sit-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.missing-required-columns.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -713,7 +713,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.missing-required-columns.column-names}":[]}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.sit.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-sit-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-auto-increment-unsigned.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -722,7 +722,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.sit.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-sit-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-alter-statement.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -732,7 +732,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-alter-statement.max-alter-count}":10}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.sit.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-sit-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.not-null-column-without-default-value.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -742,7 +742,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.sit.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-sit-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-pk-naming.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -752,7 +752,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-pk-naming.name-pattern}":null}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.sit.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-sit-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.prohibited-datatype-exists.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -762,7 +762,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.prohibited-datatype-exists.datatype-names}":[]}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.sit.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-sit-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-index-datatypes.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -772,7 +772,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-index-datatypes.allowed-datatypes}":["int", "varchar2", "number", "float", "bigint"]}'
 - enabled: 1
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.sit.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-sit-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-auto-increment-datatypes.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -781,7 +781,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-auto-increment-datatypes.allowed-datatypes}":["bigint"]}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.sit.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-sit-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-drop-object-types.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -791,7 +791,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-drop-object-types.allowed-object-types}":[]}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.dev.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-dev-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.syntax-error.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -801,7 +801,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.dev.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-dev-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.index-column-calculation.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -811,7 +811,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.dev.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-dev-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.index-column-fuzzy-match.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -821,7 +821,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.dev.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-dev-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.no-not-null-exists-not-in.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -831,7 +831,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.dev.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-dev-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.no-specific-column-exists.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -841,7 +841,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.dev.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-dev-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.no-valid-where-clause.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -851,7 +851,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.dev.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-dev-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.no-where-clause-exists.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -861,7 +861,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.dev.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-dev-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-in-expr.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -871,7 +871,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-in-expr.max-in-expr-count}":200}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.dev.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-dev-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-table-join.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -881,7 +881,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-table-join.max-join-table-count}":10}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.dev.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-dev-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-index-keys.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -891,7 +891,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-index-keys.max-index-count}":10}'
 - enabled: 1
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.dev.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-dev-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-column-refs-in-index.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -901,7 +901,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-column-refs-in-index.max-column-ref-count}":100}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.dev.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-dev-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.prefer-local-index.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -910,7 +910,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.dev.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-dev-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-columns.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -920,7 +920,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-columns.max-column-definition-count}":100}'
 - enabled: 1
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.dev.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-dev-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-long-char-length.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -930,7 +930,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-long-char-length.max-char-length}":1000}'
 - enabled: 1
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.dev.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-dev-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.foreign-constraint-exists.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -940,7 +940,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 2
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.dev.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-dev-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.no-primary-key-exists.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -950,7 +950,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.dev.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-dev-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.no-table-comment-exists.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -960,7 +960,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 2
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.dev.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-dev-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.table-name-in-black-list.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -970,7 +970,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.table-name-in-black-list.black-list}":[]}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.dev.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-dev-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-table-charset.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -979,7 +979,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-table-charset.allowed-charsets}":[]}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.dev.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-dev-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-table-collation.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -988,7 +988,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-table-collation.allowed-collations}":[]}'
 - enabled: 1
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.dev.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-dev-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-pk-datatypes.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -998,7 +998,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-pk-datatypes.allowed-datatypes}":["int", "varchar2", "varchar", "number", "float", "bigint"]}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.dev.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-dev-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-pk-auto-increment.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1007,7 +1007,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.dev.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-dev-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-column-refs-in-primary-key.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1017,7 +1017,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-column-refs-in-primary-key.max-column-ref-count}":100}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.dev.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-dev-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-index-naming.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1027,7 +1027,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-index-naming.name-pattern}":null}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.dev.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-dev-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-unique-index-naming.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1037,7 +1037,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-unique-index-naming.name-pattern}":null}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.dev.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-dev-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.no-index-name-exists.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1047,7 +1047,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.dev.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-dev-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.no-primary-key-name-exists.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1057,7 +1057,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.dev.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-dev-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.zerofill-exists.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1066,7 +1066,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.dev.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-dev-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.column-charset-exists.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1076,7 +1076,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.dev.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-dev-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.column-collation-exists.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1086,7 +1086,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.dev.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-dev-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.column-is-nullable.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1096,7 +1096,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.column-is-nullable.nullable-datatype-list}":[]}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.dev.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-dev-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.no-default-value-exists.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1106,7 +1106,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.no-default-value-exists.no-default-value-datatype-list}":[]}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.dev.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-dev-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.no-column-comment-exists.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1116,7 +1116,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.dev.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-dev-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.column-name-in-black-list.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1126,21 +1126,21 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.column-name-in-black-list.black-list}":[]}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.dev.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-dev-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-column-name-case.name}
   appliedDialectTypes:
       - 'OB_ORACLE'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-column-name-case.is-uppercase}":false, "${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-column-name-case.is-lowercase}":false}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.dev.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-dev-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-table-name-case.name}
   appliedDialectTypes:
       - 'OB_ORACLE'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-table-name-case.is-uppercase}":false, "${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-table-name-case.is-lowercase}":false}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.dev.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-dev-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-table-auto-increment.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1149,7 +1149,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-table-auto-increment.init-value}":1}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.dev.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-dev-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.select-star-exists.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1159,7 +1159,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.dev.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-dev-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.missing-required-columns.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1169,7 +1169,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.missing-required-columns.column-names}":[]}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.dev.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-dev-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-auto-increment-unsigned.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1178,7 +1178,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.dev.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-dev-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-alter-statement.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1188,7 +1188,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-alter-statement.max-alter-count}":10}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.dev.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-dev-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.not-null-column-without-default-value.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1198,7 +1198,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.dev.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-dev-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-pk-naming.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1208,7 +1208,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-pk-naming.name-pattern}":null}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.dev.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-dev-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.prohibited-datatype-exists.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1218,7 +1218,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.prohibited-datatype-exists.datatype-names}":[]}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.dev.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-dev-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-index-datatypes.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1228,7 +1228,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-index-datatypes.allowed-datatypes}":["int", "varchar2", "number", "float", "bigint"]}'
 - enabled: 1
   level: 2
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.dev.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-dev-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-auto-increment-datatypes.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1237,7 +1237,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-auto-increment-datatypes.allowed-datatypes}":["bigint"]}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.dev.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-dev-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-drop-object-types.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1247,7 +1247,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-drop-object-types.allowed-object-types}":[]}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.prod.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-prod-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.syntax-error.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1257,7 +1257,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.prod.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-prod-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.index-column-calculation.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1267,7 +1267,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.prod.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-prod-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.index-column-fuzzy-match.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1277,7 +1277,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.prod.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-prod-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.no-not-null-exists-not-in.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1287,7 +1287,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.prod.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-prod-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.no-specific-column-exists.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1297,7 +1297,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.prod.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-prod-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.no-valid-where-clause.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1307,7 +1307,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.prod.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-prod-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.no-where-clause-exists.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1317,7 +1317,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.prod.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-prod-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-in-expr.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1327,7 +1327,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-in-expr.max-in-expr-count}":200}'
 - enabled: 1
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.prod.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-prod-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-table-join.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1337,7 +1337,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-table-join.max-join-table-count}":10}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.prod.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-prod-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-index-keys.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1347,7 +1347,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-index-keys.max-index-count}":10}'
 - enabled: 1
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.prod.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-prod-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-column-refs-in-index.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1357,7 +1357,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-column-refs-in-index.max-column-ref-count}":100}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.prod.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-prod-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.prefer-local-index.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1366,7 +1366,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.prod.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-prod-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-columns.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1376,7 +1376,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-columns.max-column-definition-count}":100}'
 - enabled: 1
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.prod.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-prod-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-long-char-length.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1386,7 +1386,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-long-char-length.max-char-length}":1000}'
 - enabled: 1
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.prod.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-prod-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.foreign-constraint-exists.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1396,7 +1396,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 2
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.prod.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-prod-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.no-primary-key-exists.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1406,7 +1406,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.prod.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-prod-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.no-table-comment-exists.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1416,7 +1416,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 2
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.prod.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-prod-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.table-name-in-black-list.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1426,7 +1426,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.table-name-in-black-list.black-list}":[]}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.prod.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-prod-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-table-charset.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1435,7 +1435,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-table-charset.allowed-charsets}":[]}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.prod.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-prod-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-table-collation.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1444,7 +1444,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-table-collation.allowed-collations}":[]}'
 - enabled: 1
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.prod.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-prod-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-pk-datatypes.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1454,7 +1454,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-pk-datatypes.allowed-datatypes}":["int", "varchar2", "varchar", "number", "float", "bigint"]}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.prod.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-prod-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-pk-auto-increment.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1463,7 +1463,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.prod.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-prod-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-column-refs-in-primary-key.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1473,7 +1473,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-column-refs-in-primary-key.max-column-ref-count}":100}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.prod.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-prod-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-index-naming.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1483,7 +1483,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-index-naming.name-pattern}":null}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.prod.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-prod-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-unique-index-naming.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1493,7 +1493,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-unique-index-naming.name-pattern}":null}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.prod.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-prod-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.no-index-name-exists.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1503,7 +1503,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.prod.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-prod-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.no-primary-key-name-exists.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1513,7 +1513,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.prod.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-prod-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.zerofill-exists.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1522,7 +1522,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.prod.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-prod-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.column-charset-exists.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1532,7 +1532,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.prod.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-prod-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.column-collation-exists.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1542,7 +1542,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.prod.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-prod-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.column-is-nullable.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1552,7 +1552,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.column-is-nullable.nullable-datatype-list}":[]}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.prod.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-prod-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.no-default-value-exists.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1562,7 +1562,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.no-default-value-exists.no-default-value-datatype-list}":[]}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.prod.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-prod-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.no-column-comment-exists.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1572,7 +1572,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.prod.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-prod-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.column-name-in-black-list.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1582,21 +1582,21 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.column-name-in-black-list.black-list}":[]}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.prod.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-prod-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-column-name-case.name}
   appliedDialectTypes:
       - 'OB_ORACLE'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-column-name-case.is-uppercase}":false, "${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-column-name-case.is-lowercase}":false}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.prod.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-prod-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-table-name-case.name}
   appliedDialectTypes:
       - 'OB_ORACLE'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-table-name-case.is-uppercase}":false, "${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-table-name-case.is-lowercase}":false}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.prod.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-prod-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-table-auto-increment.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1605,7 +1605,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-table-auto-increment.init-value}":1}'
 - enabled: 1
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.prod.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-prod-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.select-star-exists.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1615,7 +1615,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.prod.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-prod-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.missing-required-columns.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1625,7 +1625,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.missing-required-columns.column-names}":[]}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.prod.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-prod-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-auto-increment-unsigned.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1634,7 +1634,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.prod.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-prod-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-alter-statement.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1644,7 +1644,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-alter-statement.max-alter-count}":10}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.prod.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-prod-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.not-null-column-without-default-value.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1654,7 +1654,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.prod.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-prod-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-pk-naming.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1664,7 +1664,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-pk-naming.name-pattern}":null}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.prod.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-prod-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.prohibited-datatype-exists.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1674,7 +1674,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.prohibited-datatype-exists.datatype-names}":[]}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.prod.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-prod-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-index-datatypes.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1684,7 +1684,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-index-datatypes.allowed-datatypes}":["int", "varchar2", "number", "float", "bigint"]}'
 - enabled: 1
   level: 2
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.prod.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-prod-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-auto-increment-datatypes.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1693,7 +1693,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-auto-increment-datatypes.allowed-datatypes}":["bigint"]}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.prod.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-prod-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-drop-object-types.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1703,7 +1703,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-drop-object-types.allowed-object-types}":[]}'
 - enabled: 1
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.default.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-default-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.index-column-calculation.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1713,7 +1713,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.default.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-default-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.index-column-fuzzy-match.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1723,7 +1723,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.default.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-default-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.no-not-null-exists-not-in.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1733,7 +1733,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.default.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-default-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.no-specific-column-exists.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1743,7 +1743,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.default.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-default-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.no-valid-where-clause.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1753,7 +1753,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.default.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-default-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.no-where-clause-exists.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1763,7 +1763,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.default.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-default-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-in-expr.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1773,7 +1773,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-in-expr.max-in-expr-count}":200}'
 - enabled: 1
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.default.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-default-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-table-join.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1783,7 +1783,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-table-join.max-join-table-count}":10}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.default.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-default-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-index-keys.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1793,7 +1793,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-index-keys.max-index-count}":10}'
 - enabled: 1
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.default.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-default-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-column-refs-in-index.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1803,7 +1803,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-column-refs-in-index.max-column-ref-count}":100}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.default.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-default-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.prefer-local-index.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1812,7 +1812,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.default.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-default-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-columns.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1822,7 +1822,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-columns.max-column-definition-count}":100}'
 - enabled: 1
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.default.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-default-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-long-char-length.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1832,7 +1832,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-long-char-length.max-char-length}":1000}'
 - enabled: 1
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.default.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-default-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.foreign-constraint-exists.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1842,7 +1842,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 2
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.default.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-default-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.no-primary-key-exists.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1852,7 +1852,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.default.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-default-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.no-table-comment-exists.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1862,7 +1862,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 2
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.default.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-default-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.table-name-in-black-list.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1872,7 +1872,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.table-name-in-black-list.black-list}":[]}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.default.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-default-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-table-charset.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1881,7 +1881,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-table-charset.allowed-charsets}":[]}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.default.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-default-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-table-collation.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1890,7 +1890,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-table-collation.allowed-collations}":[]}'
 - enabled: 1
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.default.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-default-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-pk-datatypes.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1900,7 +1900,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-pk-datatypes.allowed-datatypes}":["int", "varchar2", "varchar", "number", "float", "bigint"]}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.default.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-default-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-pk-auto-increment.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1909,7 +1909,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.default.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-default-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-column-refs-in-primary-key.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1919,7 +1919,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-column-refs-in-primary-key.max-column-ref-count}":100}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.default.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-default-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-index-naming.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1929,7 +1929,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-index-naming.name-pattern}":null}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.default.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-default-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-unique-index-naming.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1939,7 +1939,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-unique-index-naming.name-pattern}":null}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.default.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-default-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.no-index-name-exists.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1949,7 +1949,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.default.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-default-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.no-primary-key-name-exists.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1959,7 +1959,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.default.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-default-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.zerofill-exists.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1968,7 +1968,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.default.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-default-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.column-charset-exists.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1978,7 +1978,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.default.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-default-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.column-collation-exists.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1988,7 +1988,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.default.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-default-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.column-is-nullable.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -1998,7 +1998,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.column-is-nullable.nullable-datatype-list}":[]}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.default.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-default-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.no-default-value-exists.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -2008,7 +2008,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.no-default-value-exists.no-default-value-datatype-list}":[]}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.default.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-default-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.no-column-comment-exists.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -2018,7 +2018,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.default.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-default-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.column-name-in-black-list.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -2028,21 +2028,21 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.column-name-in-black-list.black-list}":[]}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.default.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-default-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-column-name-case.name}
   appliedDialectTypes:
       - 'OB_ORACLE'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-column-name-case.is-uppercase}":false, "${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-column-name-case.is-lowercase}":false}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.default.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-default-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-table-name-case.name}
   appliedDialectTypes:
       - 'OB_ORACLE'
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-table-name-case.is-uppercase}":false, "${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-table-name-case.is-lowercase}":false}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.default.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-default-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-table-auto-increment.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -2051,7 +2051,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-table-auto-increment.init-value}":1}'
 - enabled: 1
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.default.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-default-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.select-star-exists.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -2061,7 +2061,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.default.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-default-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.missing-required-columns.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -2071,7 +2071,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.missing-required-columns.column-names}":[]}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.default.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-default-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-auto-increment-unsigned.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -2080,7 +2080,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.default.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-default-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-alter-statement.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -2090,7 +2090,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-alter-statement.max-alter-count}":10}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.default.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-default-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.not-null-column-without-default-value.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -2100,7 +2100,7 @@
   propertiesJson: '{}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.default.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-default-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-pk-naming.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -2110,7 +2110,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-pk-naming.name-pattern}":null}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.default.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-default-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.prohibited-datatype-exists.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -2120,7 +2120,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.prohibited-datatype-exists.datatype-names}":[]}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.default.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-default-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-index-datatypes.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -2130,7 +2130,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-index-datatypes.allowed-datatypes}":["int", "varchar2", "number", "float", "bigint"]}'
 - enabled: 1
   level: 1
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.default.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-default-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-auto-increment-datatypes.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
@@ -2139,7 +2139,7 @@
   propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-auto-increment-datatypes.allowed-datatypes}":["bigint"]}'
 - enabled: 1
   level: 0
-  environmentName: ${com.oceanbase.odc.builtin-resource.collaboration.environment.default.name}
+  rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-default-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-drop-object-types.name}
   appliedDialectTypes:
       - 'OB_MYSQL'
