@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.oceanbase.odc.metadb.regulation.ruleset;
 
 import java.util.Date;
 import java.util.List;
-import java.util.Optional;
 
 import javax.persistence.Column;
 import javax.persistence.Convert;
@@ -33,17 +33,18 @@ import org.hibernate.annotations.GenerationTime;
 import com.oceanbase.odc.common.jpa.JsonListConverter;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 /**
  * @Author: Lebie
- * @Date: 2023/5/18 15:28
+ * @Date: 2023/12/4 17:18
  * @Description: []
  */
-
 @Data
 @Entity
-@Table(name = "regulation_rule_applying")
-public class RuleApplyingEntity {
+@Table(name = "regulation_default_rule_applying")
+@EqualsAndHashCode(exclude = {"id", "createTime", "updateTime"})
+public class DefaultRuleApplyingEntity {
     @Id
     @Column(name = "id", nullable = false)
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -57,17 +58,14 @@ public class RuleApplyingEntity {
     @Column(name = "update_time", insertable = false, updatable = false)
     private Date updateTime;
 
-    @Column(name = "organization_id", nullable = false, updatable = false)
-    private Long organizationId;
-
     @Column(name = "is_enabled", nullable = false)
     private Boolean enabled;
 
     @Column(name = "level", nullable = false)
     private Integer level;
 
-    @Column(name = "ruleset_id", nullable = false)
-    private Long rulesetId;
+    @Column(name = "ruleset_name", nullable = false)
+    private String rulesetName;
 
     @Column(name = "rule_metadata_id", nullable = false)
     private Long ruleMetadataId;
@@ -78,23 +76,4 @@ public class RuleApplyingEntity {
 
     @Column(name = "properties_json", nullable = false)
     private String propertiesJson;
-
-    public static RuleApplyingEntity merge(DefaultRuleApplyingEntity defaultRuleApplyingEntity,
-            Optional<RuleApplyingEntity> ruleApplyingEntityOpt) {
-        RuleApplyingEntity entity = new RuleApplyingEntity();
-        if (!ruleApplyingEntityOpt.isPresent()) {
-            entity.setId(defaultRuleApplyingEntity.getId());
-            entity.setEnabled(defaultRuleApplyingEntity.getEnabled());
-            entity.setRuleMetadataId(defaultRuleApplyingEntity.getRuleMetadataId());
-            entity.setAppliedDialectTypes(defaultRuleApplyingEntity.getAppliedDialectTypes());
-            entity.setPropertiesJson(defaultRuleApplyingEntity.getPropertiesJson());
-            entity.setLevel(defaultRuleApplyingEntity.getLevel());
-            entity.setCreateTime(defaultRuleApplyingEntity.getCreateTime());
-            entity.setUpdateTime(defaultRuleApplyingEntity.getUpdateTime());
-            return entity;
-        }
-        entity = ruleApplyingEntityOpt.get();
-        entity.setId(defaultRuleApplyingEntity.getId());
-        return entity;
-    }
 }
