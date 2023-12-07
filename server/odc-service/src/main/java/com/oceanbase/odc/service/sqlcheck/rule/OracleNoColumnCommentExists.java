@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
+import com.oceanbase.odc.common.lang.Pair;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckContext;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckRule;
@@ -67,25 +68,27 @@ public class OracleNoColumnCommentExists implements SqlCheckRule {
         }
         // 已经检测到了最后一个 sql
         Map<String, List<ColumnDefinition>> tName2ColDefs = new HashMap<>();
-        Map<String, List<CreateTable>> tName2CreateTables = new HashMap<>();
+        Map<String, List<Pair<CreateTable, Integer>>> tName2CreateTables = new HashMap<>();
         context.getAllCheckedStatements(CreateTable.class).forEach(c -> {
-            List<ColumnDefinition> defs = tName2ColDefs.computeIfAbsent(getKey(c), s -> new ArrayList<>());
-            defs.addAll(c.getColumnDefinitions());
-            List<CreateTable> createTables = tName2CreateTables.computeIfAbsent(getKey(c), s -> new ArrayList<>());
+            List<ColumnDefinition> defs = tName2ColDefs.computeIfAbsent(getKey(c.left), s -> new ArrayList<>());
+            defs.addAll(c.left.getColumnDefinitions());
+            List<Pair<CreateTable, Integer>> createTables =
+                    tName2CreateTables.computeIfAbsent(getKey(c.left), s -> new ArrayList<>());
             createTables.add(c);
         });
-        List<SetComment> setComments = context.getAllCheckedStatements(SetComment.class);
+        List<Pair<SetComment, Integer>> setComments = context.getAllCheckedStatements(SetComment.class);
         if (statement instanceof CreateTable) {
             CreateTable c = (CreateTable) statement;
-            List<CreateTable> createTables = tName2CreateTables.computeIfAbsent(getKey(c), s -> new ArrayList<>());
-            createTables.add(c);
+            List<Pair<CreateTable, Integer>> createTables =
+                    tName2CreateTables.computeIfAbsent(getKey(c), s -> new ArrayList<>());
+            createTables.add(new Pair<>(c, null));
             List<ColumnDefinition> defs = tName2ColDefs.computeIfAbsent(getKey(c), s -> new ArrayList<>());
             defs.addAll(c.getColumnDefinitions());
         } else if (statement instanceof SetComment) {
-            setComments.add((SetComment) statement);
+            setComments.add(new Pair<>((SetComment) statement, null));
         }
-        setComments.stream().filter(s -> s.getColumn() != null).forEach(s -> {
-            ColumnReference c = s.getColumn();
+        setComments.stream().filter(s -> s.left.getColumn() != null).forEach(s -> {
+            ColumnReference c = s.left.getColumn();
             String tableName = SqlCheckUtil.unquoteOracleIdentifier(c.getRelation());
             String key;
             if (c.getSchema() == null) {
@@ -103,10 +106,11 @@ public class OracleNoColumnCommentExists implements SqlCheckRule {
                     SqlCheckUtil.unquoteOracleIdentifier(d.getColumnReference().getColumn()), columnName));
         });
         return tName2ColDefs.entrySet().stream().flatMap(e -> {
-            List<CreateTable> tables = tName2CreateTables.get(e.getKey());
-            String text = CollectionUtils.isNotEmpty(tables) ? tables.get(0).getText() : "";
+            List<Pair<CreateTable, Integer>> tables = tName2CreateTables.get(e.getKey());
+            String text = CollectionUtils.isNotEmpty(tables) ? tables.get(0).left.getText() : "";
             return e.getValue().stream().map(d -> SqlCheckUtil.buildViolation(
-                    text, d, getType(), new Object[] {d.getColumnReference().getColumn()}));
+                    text, d, getType(), CollectionUtils.isNotEmpty(tables) ? tables.get(0).right : null,
+                    new Object[] {d.getColumnReference().getColumn()}));
         }).collect(Collectors.toList());
     }
 

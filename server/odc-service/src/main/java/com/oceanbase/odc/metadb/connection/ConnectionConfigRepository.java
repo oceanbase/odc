@@ -16,6 +16,7 @@
 package com.oceanbase.odc.metadb.connection;
 
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -32,6 +33,10 @@ import com.oceanbase.odc.core.shared.constant.ConnectionVisibleScope;
 
 public interface ConnectionConfigRepository
         extends JpaRepository<ConnectionEntity, Long>, JpaSpecificationExecutor<ConnectionEntity> {
+
+    List<ConnectionEntity> findByUpdateTimeBefore(Date updateTime);
+
+    List<ConnectionEntity> findByUpdateTimeBeforeAndTemp(Date updateTime, Boolean temp);
 
     List<ConnectionEntity> findByOrganizationIdAndNameIn(Long organizationId, Collection<String> names);
 

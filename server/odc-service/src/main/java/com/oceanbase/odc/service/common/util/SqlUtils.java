@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.common.util;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import com.google.common.collect.Sets;
 import com.oceanbase.odc.common.util.StringUtils;
@@ -25,6 +26,7 @@ import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.core.sql.split.OffsetString;
 import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
 import com.oceanbase.odc.core.sql.split.SqlSplitter;
 import com.oceanbase.tools.sqlparser.oracle.PlSqlLexer;
@@ -76,6 +78,11 @@ public class SqlUtils {
      * @return splited sql
      */
     public static List<String> split(DialectType dialectType, String sql, String delimiter) {
+        return splitWithOffset(dialectType, sql, delimiter).stream().map(OffsetString::getStr).collect(
+                Collectors.toList());
+    }
+
+    public static List<OffsetString> splitWithOffset(DialectType dialectType, String sql, String delimiter) {
         SqlCommentProcessor processor = new SqlCommentProcessor(dialectType, true, true);
         processor.setDelimiter(delimiter);
         return split(dialectType, processor, sql, false);
@@ -88,29 +95,46 @@ public class SqlUtils {
      * @param sql sql
      * @return splited sql
      */
-    public static List<String> split(ConnectionSession connectionSession, String sql, boolean removeCommentPrefix) {
+    public static List<String> split(ConnectionSession connectionSession, String sql,
+            boolean removeCommentPrefix) {
+        SqlCommentProcessor processor = ConnectionSessionUtil.getSqlCommentProcessor(connectionSession);
+        return split(connectionSession.getDialectType(), processor, sql, removeCommentPrefix).stream()
+                .map(OffsetString::getStr).collect(
+                        Collectors.toList());
+    }
+
+    public static List<OffsetString> splitWithOffset(ConnectionSession connectionSession, String sql,
+            boolean removeCommentPrefix) {
         SqlCommentProcessor processor = ConnectionSessionUtil.getSqlCommentProcessor(connectionSession);
         return split(connectionSession.getDialectType(), processor, sql, removeCommentPrefix);
     }
 
-    private static List<String> split(DialectType dialectType, SqlCommentProcessor processor, String sql,
+
+
+    private static List<OffsetString> split(DialectType dialectType, SqlCommentProcessor processor, String sql,
             boolean removeCommentPrefix) {
         PreConditions.notBlank(processor.getDelimiter(), "delimiter", "Empty or blank delimiter is not allowed");
         if (DialectType.OB_ORACLE == dialectType
                 && (";".equals(processor.getDelimiter()) || "/".equals(processor.getDelimiter()))) {
             SqlSplitter sqlSplitter = new SqlSplitter(PlSqlLexer.class, processor.getDelimiter());
             sqlSplitter.setRemoveCommentPrefix(removeCommentPrefix);
-            List<String> sqls = sqlSplitter.split(sql);
+            List<OffsetString> sqls = sqlSplitter.split(sql);
             processor.setDelimiter(sqlSplitter.getDelimiter());
             return sqls;
         } else {
             StringBuffer buffer = new StringBuffer();
-            List<String> sqls = processor.split(buffer, sql);
+            List<OffsetString> sqls = processor.split(buffer, sql);
             String bufferStr = buffer.toString();
             if (bufferStr.trim().length() != 0) {
                 // if buffer is not empty, there will be some errors in syntax
-                log.warn("sql processor's buffer is not empty, there may be some errors. buffer={}", bufferStr);
-                sqls.add(bufferStr);
+                log.info("sql processor's buffer is not empty, there may be some errors. buffer={}", bufferStr);
+                if (sqls.size() == 0) {
+                    sqls.add(new OffsetString(0, bufferStr));
+                } else {
+                    sqls.add(new OffsetString(
+                            sqls.get(sqls.size() - 1).getOffset() + sqls.get(sqls.size() - 1).getStr().length(),
+                            bufferStr));
+                }
             }
             return sqls;
         }
@@ -133,7 +157,8 @@ public class SqlUtils {
     public static String removeComments(SqlCommentProcessor processor, String sql) {
         try {
             StringBuffer buffer = new StringBuffer();
-            List<String> splitedSqls = processor.split(buffer, sql);
+            List<String> splitedSqls = processor.split(buffer, sql).stream().map(OffsetString::getStr)
+                    .collect(Collectors.toList());
             String bufferStr = buffer.toString();
             /**
              * The input sql does not contain delimiters (eg. "select xxx from table -- this is a comment"),

@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import com.oceanbase.odc.common.lang.Pair;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckContext;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckRule;
@@ -61,18 +62,20 @@ public class OracleNoTableCommentExists implements SqlCheckRule {
             return Collections.emptyList();
         }
         // 已经检测到了最后一个 sql
-        Map<String, List<CreateTable>> tableName2Table = context.getAllCheckedStatements(CreateTable.class)
-                .stream().collect(Collectors.groupingBy(this::getKey));
-        List<SetComment> setComments = context.getAllCheckedStatements(SetComment.class);
+        Map<String, List<Pair<CreateTable, Integer>>> tableName2Table =
+                context.getAllCheckedStatements(CreateTable.class)
+                        .stream().collect(Collectors.groupingBy(p -> getKey(p.left)));
+        List<Pair<SetComment, Integer>> setComments = context.getAllCheckedStatements(SetComment.class);
         if (statement instanceof CreateTable) {
             CreateTable c = (CreateTable) statement;
-            List<CreateTable> createTables = tableName2Table.computeIfAbsent(getKey(c), s -> new ArrayList<>());
-            createTables.add(c);
+            List<Pair<CreateTable, Integer>> createTables =
+                    tableName2Table.computeIfAbsent(getKey(c), s -> new ArrayList<>());
+            createTables.add(new Pair<>(c, null));
         } else if (statement instanceof SetComment) {
-            setComments.add((SetComment) statement);
+            setComments.add(new Pair<>((SetComment) statement, null));
         }
-        setComments.stream().filter(s -> s.getTable() != null).forEach(s -> {
-            RelationFactor t = s.getTable();
+        setComments.stream().filter(s -> s.left.getTable() != null).forEach(s -> {
+            RelationFactor t = s.left.getTable();
             String tableName = SqlCheckUtil.unquoteOracleIdentifier(t.getRelation());
             if (t.getSchema() == null) {
                 String currentSchema = this.schemaSupplier == null ? null : this.schemaSupplier.get();
@@ -82,8 +85,9 @@ public class OracleNoTableCommentExists implements SqlCheckRule {
             }
         });
         return tableName2Table.values().stream().map(createTables -> {
-            CreateTable stmt = createTables.get(0);
-            return SqlCheckUtil.buildViolation(stmt.getText(), stmt, getType(), new Object[] {stmt.getTableName()});
+            Pair<CreateTable, Integer> stmt = createTables.get(0);
+            return SqlCheckUtil.buildViolation(stmt.left.getText(), stmt.left, getType(), stmt.right,
+                    new Object[] {stmt.left.getTableName()});
         }).collect(Collectors.toList());
     }
 
