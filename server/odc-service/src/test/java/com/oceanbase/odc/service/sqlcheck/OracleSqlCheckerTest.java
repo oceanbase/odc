@@ -1138,8 +1138,11 @@ public class OracleSqlCheckerTest {
         SqlCheckRuleType type = SqlCheckRuleType.TOO_MANY_INDEX_KEYS;
         SqlCheckRuleType type1 = SqlCheckRuleType.PREFER_LOCAL_INDEX;
         CheckViolation c1 = new CheckViolation("1", 1, 80, 80, 107, type, new Object[] {"abcd"});
+        c1.setOffset(1);
         CheckViolation c2 = new CheckViolation("2", 1, 58, 58, 77, type1, new Object[] {});
+        c2.setOffset(2);
         CheckViolation c3 = new CheckViolation("1", 1, 80, 80, 107, type1, new Object[] {});
+        c3.setOffset(1);
         List<CheckViolation> violations = Arrays.asList(c1, c2, c3);
 
         List<CheckResult> actual = SqlCheckUtil.buildCheckResults(violations);
