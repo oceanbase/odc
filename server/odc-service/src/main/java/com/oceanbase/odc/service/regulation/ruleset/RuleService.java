@@ -156,10 +156,11 @@ public class RuleService {
 
     @PreAuthenticate(actions = "update", resourceType = "ODC_RULESET", indexOfIdParam = 0)
     public Rule update(@NonNull Long rulesetId, @NonNull Long ruleId, @NonNull Rule rule) {
-        Optional<RuleApplyingEntity> savedOpt = ruleApplyingRepository.findByOrganizationIdAndId(
-                authenticationFacade.currentOrganizationId(), ruleId);
         DefaultRuleApplyingEntity defaultApplying = defaultRuleApplyingRepository.findById(ruleId).orElseThrow(
                 () -> new UnexpectedException("default rule applying not found, ruleId = " + ruleId));
+        Optional<RuleApplyingEntity> savedOpt =
+                ruleApplyingRepository.findByOrganizationIdAndRulesetIdAndRuleMetadataId(
+                        authenticationFacade.currentOrganizationId(), rulesetId, defaultApplying.getRuleMetadataId());
         RuleApplyingEntity saved;
         if (savedOpt.isPresent()) {
             saved = savedOpt.get();

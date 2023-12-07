@@ -1300,6 +1300,8 @@
       - label: SUB_TYPE
         value: ALTER
       - label: SUPPORTED_DIALECT_TYPE
+        value: MYSQL
+      - label: SUPPORTED_DIALECT_TYPE
         value: OB_MYSQL
       - label: SUPPORTED_DIALECT_TYPE
         value: OB_ORACLE
