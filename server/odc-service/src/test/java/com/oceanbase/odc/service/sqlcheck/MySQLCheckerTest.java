@@ -1055,15 +1055,10 @@ public class MySQLCheckerTest {
         List<CheckViolation> actual = sqlChecker.check(toOffsetString(sqls), null);
 
         SqlCheckRuleType type = SqlCheckRuleType.TOO_MANY_ALTER_STATEMENT;
-        String s1 = joinAndAppend(new String[] {sqls[2], sqls[3], sqls[5]}, ";");
-        s1 = s1.substring(0, s1.length() - 1);
-        CheckViolation c1 = new CheckViolation(s1, 1, 0, 0, s1.length() - 1, type, new Object[] {3, "abcd", 2});
-        String s2 = joinAndAppend(new String[] {sqls[4], sqls[6], sqls[8]}, ";");
-        s2 = s2.substring(0, s2.length() - 1);
-        CheckViolation c2 = new CheckViolation(s2, 1, 0, 0, s2.length() - 1, type, new Object[] {3, "abcd1", 2});
+        CheckViolation c1 = new CheckViolation(sqls[5], 1, 0, 0, 50, type, new Object[] {3, "abcd", 2});
+        CheckViolation c2 = new CheckViolation(sqls[8], 1, 0, 0, 53, type, new Object[] {3, "abcd1", 2});
 
-        List<CheckViolation> expect = Arrays.asList(c1, c2);
-        Assert.assertEquals(expect, actual);
+        Assert.assertEquals(Arrays.asList(c1, c2), actual);
     }
 
     @Test

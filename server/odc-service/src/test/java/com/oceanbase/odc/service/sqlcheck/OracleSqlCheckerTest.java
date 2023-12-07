@@ -1030,12 +1030,9 @@ public class OracleSqlCheckerTest {
         List<CheckViolation> actual = sqlChecker.check(toOffsetString(sqls), null);
 
         SqlCheckRuleType type = SqlCheckRuleType.TOO_MANY_ALTER_STATEMENT;
-        String s1 = joinAndAppend(new String[] {sqls[1], sqls[4], sqls[6]}, ";");
-        s1 = s1.substring(0, s1.length() - 1);
-        CheckViolation c1 = new CheckViolation(s1, 1, 0, 0, s1.length() - 1, type, new Object[] {3, "ABCD", 2});
+        CheckViolation c1 = new CheckViolation(sqls[4], 1, 0, 0, 30, type, new Object[] {3, "ABCD", 2});
 
-        List<CheckViolation> expect = Collections.singletonList(c1);
-        Assert.assertEquals(expect, actual);
+        Assert.assertEquals(Collections.singletonList(c1), actual);
     }
 
     @Test
