@@ -39,6 +39,7 @@ import com.oceanbase.odc.service.sqlcheck.rule.ForeignConstraintExists;
 import com.oceanbase.odc.service.sqlcheck.rule.NoDefaultValueExists;
 import com.oceanbase.odc.service.sqlcheck.rule.NoIndexNameExists;
 import com.oceanbase.odc.service.sqlcheck.rule.NoPrimaryKeyExists;
+import com.oceanbase.odc.service.sqlcheck.rule.NoPrimaryKeyNameExists;
 import com.oceanbase.odc.service.sqlcheck.rule.NoSpecificColumnExists;
 import com.oceanbase.odc.service.sqlcheck.rule.NoValidWhereClause;
 import com.oceanbase.odc.service.sqlcheck.rule.NoWhereClauseExists;
@@ -741,13 +742,30 @@ public class OracleSqlCheckerTest {
         SqlCheckRuleType type = SqlCheckRuleType.NO_INDEX_NAME_EXISTS;
         CheckViolation c1 = new CheckViolation(sqls[0], 1, 35, 35, 56, type, new Object[] {});
         CheckViolation c2 = new CheckViolation(sqls[1], 1, 37, 37, 42, type, new Object[] {});
-        CheckViolation c3 = new CheckViolation(sqls[1], 1, 53, 53, 63, type, new Object[] {});
-        CheckViolation c4 = new CheckViolation(sqls[3], 1, 36, 36, 50, type, new Object[] {});
         CheckViolation c5 = new CheckViolation(sqls[4], 1, 37, 37, 47, type, new Object[] {});
         CheckViolation c6 = new CheckViolation(sqls[5], 1, 27, 27, 42, type, new Object[] {});
-        CheckViolation c7 = new CheckViolation(sqls[6], 1, 41, 41, 60, type, new Object[] {});
 
-        List<CheckViolation> expect = Arrays.asList(c1, c2, c3, c4, c5, c6, c7);
+        List<CheckViolation> expect = Arrays.asList(c1, c2, c5, c6);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void check_noPrimaryKeyName_violationGenerated() {
+        String[] sqls = new String[] {
+                "create table abcdder(id varchar2(64) unique, id blob primary key, content varchar(64) constraint ancd unique)",
+                "CREATE TABLE bbbb (ID VARCHAR2(64), primary key(id), constraint aaaaa primary key (dd))",
+                "alter table test_unique_tb add check(1), add primary key(id5), add constraint aaa primary key(id6)",
+        };
+        DefaultSqlChecker sqlChecker = new DefaultSqlChecker(DialectType.OB_ORACLE, "$$",
+                Collections.singletonList(new NoPrimaryKeyNameExists()));
+        List<CheckViolation> actual = sqlChecker.check(joinAndAppend(sqls, "$$"));
+
+        SqlCheckRuleType type = SqlCheckRuleType.NO_PRIMARY_KEY_NAME_EXISTS;
+        CheckViolation c1 = new CheckViolation(sqls[0], 1, 53, 53, 63, type, new Object[] {});
+        CheckViolation c2 = new CheckViolation(sqls[1], 1, 36, 36, 50, type, new Object[] {});
+        CheckViolation c5 = new CheckViolation(sqls[2], 1, 41, 41, 60, type, new Object[] {});
+
+        List<CheckViolation> expect = Arrays.asList(c1, c2, c5);
         Assert.assertEquals(expect, actual);
     }
 
@@ -1012,12 +1030,9 @@ public class OracleSqlCheckerTest {
         List<CheckViolation> actual = sqlChecker.check(toOffsetString(sqls), null);
 
         SqlCheckRuleType type = SqlCheckRuleType.TOO_MANY_ALTER_STATEMENT;
-        String s1 = joinAndAppend(new String[] {sqls[1], sqls[4], sqls[6]}, ";");
-        s1 = s1.substring(0, s1.length() - 1);
-        CheckViolation c1 = new CheckViolation(s1, 1, 0, 0, s1.length() - 1, type, new Object[] {3, "ABCD", 2});
+        CheckViolation c1 = new CheckViolation(sqls[4], 1, 0, 0, 30, type, new Object[] {3, "ABCD", 2});
 
-        List<CheckViolation> expect = Collections.singletonList(c1);
-        Assert.assertEquals(expect, actual);
+        Assert.assertEquals(Collections.singletonList(c1), actual);
     }
 
     @Test

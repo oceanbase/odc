@@ -622,6 +622,7 @@
         componentType: SELECT_TAGS
         defaultValues:
             - int
+            - varchar
             - varchar2
             - number
             - float
@@ -1286,3 +1287,46 @@
             - CONSTRAINT
             - PARTITION
             - SUBPARTITION
+- id: 54
+  name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.no-primary-key-name-exists.name}
+  description: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.no-primary-key-name-exists.description}
+  type: SQL_CHECK
+  builtIn: 1
+  labels:
+      - label: SUB_TYPE
+        value: DDL
+      - label: SUB_TYPE
+        value: TABLE
+      - label: SUB_TYPE
+        value: ALTER
+      - label: SUPPORTED_DIALECT_TYPE
+        value: MYSQL
+      - label: SUPPORTED_DIALECT_TYPE
+        value: OB_MYSQL
+      - label: SUPPORTED_DIALECT_TYPE
+        value: OB_ORACLE
+      - label: SUPPORTED_DIALECT_TYPE
+        value: ODP_SHARDING_OB_MYSQL
+- id: 55
+  name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-auto-increment-datatypes.name}
+  description: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-auto-increment-datatypes.description}
+  type: SQL_CHECK
+  builtIn: 1
+  labels:
+      - label: SUB_TYPE
+        value: DDL
+      - label: SUB_TYPE
+        value: TABLE
+      - label: SUB_TYPE
+        value: ALTER
+      - label: SUPPORTED_DIALECT_TYPE
+        value: OB_MYSQL
+      - label: SUPPORTED_DIALECT_TYPE
+        value: ODP_SHARDING_OB_MYSQL
+  propertyMetadatas:
+      - name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-auto-increment-datatypes.allowed-datatypes}
+        description: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-auto-increment-datatypes.allowed-datatypes.description}
+        type: STRING_LIST
+        componentType: SELECT_TAGS
+        defaultValues:
+            - bigint

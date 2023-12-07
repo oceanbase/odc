@@ -114,10 +114,9 @@ public class RuleService {
                 .getSupportedDialectTypes()))
                 .flatMap(rule -> rule.getMetadata().getSupportedDialectTypes().stream().map(DialectType::name))
                 .collect(Collectors.toSet());
-        Stats stats = new Stats()
+        return new Stats()
                 .andDistinct("subTypes", subTypes)
                 .andDistinct("supportedDialectTypes", supportedDialectTypes);
-        return stats;
     }
 
     @SkipAuthorize("internal authenticated")
@@ -157,10 +156,11 @@ public class RuleService {
 
     @PreAuthenticate(actions = "update", resourceType = "ODC_RULESET", indexOfIdParam = 0)
     public Rule update(@NonNull Long rulesetId, @NonNull Long ruleId, @NonNull Rule rule) {
-        Optional<RuleApplyingEntity> savedOpt = ruleApplyingRepository.findByOrganizationIdAndId(
-                authenticationFacade.currentOrganizationId(), ruleId);
         DefaultRuleApplyingEntity defaultApplying = defaultRuleApplyingRepository.findById(ruleId).orElseThrow(
                 () -> new UnexpectedException("default rule applying not found, ruleId = " + ruleId));
+        Optional<RuleApplyingEntity> savedOpt =
+                ruleApplyingRepository.findByOrganizationIdAndRulesetIdAndRuleMetadataId(
+                        authenticationFacade.currentOrganizationId(), rulesetId, defaultApplying.getRuleMetadataId());
         RuleApplyingEntity saved;
         if (savedOpt.isPresent()) {
             saved = savedOpt.get();
@@ -192,7 +192,7 @@ public class RuleService {
     private List<Rule> internalList(@NonNull Long rulesetId, @NonNull QueryRuleMetadataParams params) {
         List<RuleMetadata> ruleMetadatas = metadataService.list(params);
         if (CollectionUtils.isEmpty(ruleMetadatas)) {
-            return Collections.EMPTY_LIST;
+            return Collections.emptyList();
         }
         Ruleset ruleset = rulesetService.detail(rulesetId);
         Map<Long, List<DefaultRuleApplyingEntity>> metadataId2DefaultRuleApplying =
@@ -207,7 +207,7 @@ public class RuleService {
                         .findByOrganizationIdAndRulesetId(authenticationFacade.currentOrganizationId(), rulesetId)
                         .stream()
                         .collect(Collectors.groupingBy(RuleApplyingEntity::getRuleMetadataId));
-        ruleMetadatas.stream().forEach(metadata -> {
+        ruleMetadatas.forEach(metadata -> {
             if (!metadataId2DefaultRuleApplying.containsKey(metadata.getId())) {
                 throw new UnexpectedException("default rule applying not found, ruleMetadataId = " + metadata.getId());
             }
@@ -246,4 +246,5 @@ public class RuleService {
         rule.setOrganizationId(ruleApplyingEntity.getOrganizationId());
         return rule;
     }
+
 }

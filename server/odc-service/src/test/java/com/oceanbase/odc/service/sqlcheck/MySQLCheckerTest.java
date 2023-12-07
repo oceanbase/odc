@@ -41,6 +41,7 @@ import com.oceanbase.odc.service.sqlcheck.rule.MySQLMissingRequiredColumns;
 import com.oceanbase.odc.service.sqlcheck.rule.MySQLNoColumnCommentExists;
 import com.oceanbase.odc.service.sqlcheck.rule.MySQLNoNotNullAtInExpression;
 import com.oceanbase.odc.service.sqlcheck.rule.MySQLNoTableCommentExists;
+import com.oceanbase.odc.service.sqlcheck.rule.MySQLRestrictAutoIncrementDataTypes;
 import com.oceanbase.odc.service.sqlcheck.rule.MySQLRestrictAutoIncrementUnsigned;
 import com.oceanbase.odc.service.sqlcheck.rule.MySQLRestrictIndexDataTypes;
 import com.oceanbase.odc.service.sqlcheck.rule.MySQLRestrictPKAutoIncrement;
@@ -53,6 +54,7 @@ import com.oceanbase.odc.service.sqlcheck.rule.MySQLZeroFillExists;
 import com.oceanbase.odc.service.sqlcheck.rule.NoDefaultValueExists;
 import com.oceanbase.odc.service.sqlcheck.rule.NoIndexNameExists;
 import com.oceanbase.odc.service.sqlcheck.rule.NoPrimaryKeyExists;
+import com.oceanbase.odc.service.sqlcheck.rule.NoPrimaryKeyNameExists;
 import com.oceanbase.odc.service.sqlcheck.rule.NoSpecificColumnExists;
 import com.oceanbase.odc.service.sqlcheck.rule.NoValidWhereClause;
 import com.oceanbase.odc.service.sqlcheck.rule.NoWhereClauseExists;
@@ -639,6 +641,27 @@ public class MySQLCheckerTest {
     }
 
     @Test
+    public void check_restrictAutoIncrementDataTypes_violationGenerated() {
+        String[] sqls = new String[] {
+                "create table abcd(id varchar(64) primary key auto_increment, name int)",
+                "create table abcd1(id varchar(64) primary key, name bigint auto_increment)",
+                "alter table abcd1 add column id int(11) primary key auto_increment",
+                "alter table abcd1 add column name bigint auto_increment)"
+        };
+        DefaultSqlChecker sqlChecker = new DefaultSqlChecker(DialectType.OB_MYSQL, "$$",
+                Collections.singletonList(new MySQLRestrictAutoIncrementDataTypes(Collections.singleton("bigint"))));
+        List<CheckViolation> actual = sqlChecker.check(joinAndAppend(sqls, "$$"));
+
+        SqlCheckRuleType type = SqlCheckRuleType.RESTRICT_AUTO_INCREMENT_DATATYPES;
+        CheckViolation c1 =
+                new CheckViolation(sqls[0], 1, 21, 21, 31, type, new Object[] {"id", "varchar(64)", "bigint"});
+        CheckViolation c2 = new CheckViolation(sqls[2], 1, 32, 32, 38, type, new Object[] {"id", "int(11)", "bigint"});
+
+        List<CheckViolation> expect = Arrays.asList(c1, c2);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
     public void check_restrictAutoIncrementOutOfLinConstraint_violationGenerated() {
         String[] sqls = new String[] {
                 "create table abcd(id varchar(64) auto_increment,name int,age text,constraint pk primary key(name,age))",
@@ -767,14 +790,34 @@ public class MySQLCheckerTest {
 
         SqlCheckRuleType type = SqlCheckRuleType.NO_INDEX_NAME_EXISTS;
         CheckViolation c1 = new CheckViolation(sqls[0], 1, 34, 34, 43, type, new Object[] {});
-        CheckViolation c2 = new CheckViolation(sqls[1], 1, 77, 77, 103, type, new Object[] {});
         CheckViolation c3 = new CheckViolation(sqls[2], 1, 62, 62, 87, type, new Object[] {});
         CheckViolation c4 = new CheckViolation(sqls[3], 1, 68, 68, 86, type, new Object[] {});
         CheckViolation c5 = new CheckViolation(sqls[3], 1, 27, 27, 40, type, new Object[] {});
-        CheckViolation c6 = new CheckViolation(sqls[4], 1, 58, 58, 77, type, new Object[] {});
         CheckViolation c7 = new CheckViolation(sqls[4], 1, 27, 27, 41, type, new Object[] {});
 
-        List<CheckViolation> expect = Arrays.asList(c1, c2, c3, c4, c5, c6, c7);
+        List<CheckViolation> expect = Arrays.asList(c1, c3, c4, c5, c7);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void check_noprimaryKeyNameExists_violationGenerated() {
+        String[] sqls = new String[] {
+                "CREATE TABLE aaaa (ID VARCHAR(64), index idx_name (ID), constraint check(1), constraint primary key (id))",
+                "CREATE TABLE bbbb (ID VARCHAR(64) primary key, fulltext index `AAA` (ID), constraint unique key (id))",
+                "CREATE TABLE cccc (ID VARCHAR(64), constraint abcdet primary key (id))",
+                "alter table test_unique_tb add index(name), add check(1), add primary key(id5)",
+                "alter table test_unique_tb add fulltext index `uuiyt`(name), add constraint uuuu primary key(id6)"
+        };
+        DefaultSqlChecker sqlChecker = new DefaultSqlChecker(DialectType.OB_MYSQL, "$$",
+                Collections.singletonList(new NoPrimaryKeyNameExists()));
+        List<CheckViolation> actual = sqlChecker.check(joinAndAppend(sqls, "$$"));
+
+        SqlCheckRuleType type = SqlCheckRuleType.NO_PRIMARY_KEY_NAME_EXISTS;
+        CheckViolation c1 = new CheckViolation(sqls[0], 1, 77, 77, 103, type, new Object[] {});
+        CheckViolation c3 = new CheckViolation(sqls[1], 1, 34, 34, 44, type, new Object[] {});
+        CheckViolation c4 = new CheckViolation(sqls[3], 1, 58, 58, 77, type, new Object[] {});
+
+        List<CheckViolation> expect = Arrays.asList(c1, c3, c4);
         Assert.assertEquals(expect, actual);
     }
 
@@ -1012,15 +1055,10 @@ public class MySQLCheckerTest {
         List<CheckViolation> actual = sqlChecker.check(toOffsetString(sqls), null);
 
         SqlCheckRuleType type = SqlCheckRuleType.TOO_MANY_ALTER_STATEMENT;
-        String s1 = joinAndAppend(new String[] {sqls[2], sqls[3], sqls[5]}, ";");
-        s1 = s1.substring(0, s1.length() - 1);
-        CheckViolation c1 = new CheckViolation(s1, 1, 0, 0, s1.length() - 1, type, new Object[] {3, "abcd", 2});
-        String s2 = joinAndAppend(new String[] {sqls[4], sqls[6], sqls[8]}, ";");
-        s2 = s2.substring(0, s2.length() - 1);
-        CheckViolation c2 = new CheckViolation(s2, 1, 0, 0, s2.length() - 1, type, new Object[] {3, "abcd1", 2});
+        CheckViolation c1 = new CheckViolation(sqls[5], 1, 0, 0, 50, type, new Object[] {3, "abcd", 2});
+        CheckViolation c2 = new CheckViolation(sqls[8], 1, 0, 0, 53, type, new Object[] {3, "abcd1", 2});
 
-        List<CheckViolation> expect = Arrays.asList(c1, c2);
-        Assert.assertEquals(expect, actual);
+        Assert.assertEquals(Arrays.asList(c1, c2), actual);
     }
 
     @Test
