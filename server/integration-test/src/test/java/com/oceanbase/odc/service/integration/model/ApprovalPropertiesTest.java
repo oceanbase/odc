@@ -54,8 +54,8 @@ public class ApprovalPropertiesTest {
         content.put("processCode", "approval_integration_test");
         body.setContent(content);
         start.setBody(body);
-        start.setRequestSuccessExpression("[success]==\"true\"");
-        start.setExtractInstanceIdExpression("[content][processInstanceId]");
+        start.setRequestSuccessExpression("queryResult.success==true");
+        start.setExtractInstanceIdExpression("queryResult.content.processInstanceId");
         StatusProperties status = new StatusProperties();
         status.setMethod(RequestMethod.POST);
         status.setUrl("http://localhost:18989/status");
@@ -65,13 +65,13 @@ public class ApprovalPropertiesTest {
         content.put("processInstanceId", "${process.instance.id}");
         body.setContent(content);
         status.setBody(body);
-        status.setRequestSuccessExpression("[success] == true");
-        status.setProcessPendingExpression("[content][processInstanceStatus]==\"RUNNING\"");
+        status.setRequestSuccessExpression("success == true");
+        status.setProcessPendingExpression("content.processInstanceStatus==\"RUNNING\"");
         status.setProcessApprovedExpression(
-                "[content][processInstanceStatus]==\"COMPLETED\" && [content][outResult]==\"同意\"");
+                "content.processInstanceStatus==\"COMPLETED\" && content.outResult==\"同意\"");
         status.setProcessRejectedExpression(
-                "[content][processInstanceStatus]==\"COMPLETED\" && [content][outResult]==\"拒绝\"");
-        status.setProcessTerminatedExpression("[content][processInstanceStatus]==\"TERMINATED\"");
+                "content.processInstanceStatus==\"COMPLETED\" && content.outResult==\"拒绝\"");
+        status.setProcessTerminatedExpression("content.processInstanceStatus==\"TERMINATED\"");
         ApiProperties cancel = new ApiProperties();
         cancel.setMethod(RequestMethod.POST);
         cancel.setUrl("http://localhost:18989/cancel");
@@ -81,7 +81,7 @@ public class ApprovalPropertiesTest {
         content.put("processInstanceId", "${process.instance.id}");
         body.setContent(content);
         cancel.setBody(body);
-        cancel.setRequestSuccessExpression("[success] == true");
+        cancel.setRequestSuccessExpression("success == true");
         Api api = new Api();
         api.setStart(start);
         api.setStatus(status);
