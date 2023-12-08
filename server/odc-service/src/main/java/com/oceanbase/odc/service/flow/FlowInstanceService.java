@@ -65,6 +65,7 @@ import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.constant.LimitMetric;
+import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.TaskType;
@@ -388,6 +389,11 @@ public class FlowInstanceService {
 
         Set<String> resourceRoleIdentifiers = userService.getCurrentUserResourceRoleIdentifiers();
         if (params.getContainsAll()) {
+            if (isIndividualSpace()) {
+                specification =
+                        specification.and(FlowInstanceViewSpecs.creatorIdEquals(authenticationFacade.currentUserId()));
+                return flowInstanceViewRepository.findAll(specification, pageable).map(FlowInstanceEntity::from);
+            }
             // does not join any project
             if (CollectionUtils.isEmpty(resourceRoleIdentifiers)) {
                 specification =
@@ -976,6 +982,10 @@ public class FlowInstanceService {
                 .environmentId(String.valueOf(req.getEnvironmentId()))
                 .databaseName(req.getDatabaseName())
                 .build();
+    }
+
+    private boolean isIndividualSpace() {
+        return authenticationFacade.currentOrganization().getType() == OrganizationType.INDIVIDUAL;
     }
 
     public Set<Long> getApprovingAlterScheduleById(Long parentFlowInstanceId) {
