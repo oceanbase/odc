@@ -16,16 +16,14 @@
 
 package com.oceanbase.odc.service.common;
 
-import static com.oceanbase.odc.service.common.MonitorPointConstants.DRUID_ACTIVE_COUNT;
-import static com.oceanbase.odc.service.common.MonitorPointConstants.DRUID_CONNECT_ERROR_COUNT;
-import static com.oceanbase.odc.service.common.MonitorPointConstants.DRUID_MAX_WAIT;
-import static com.oceanbase.odc.service.common.MonitorPointConstants.DRUID_MONITOR_ERROR;
-import static com.oceanbase.odc.service.common.MonitorPointConstants.DRUID_WAIT_THREAD_COUNT;
-import static com.oceanbase.odc.service.common.MonitorPointConstants.METHOD_TOO_LONG_EXECUTE_TIME;
-import static com.oceanbase.odc.service.common.MonitorPointConstants.METHOD_TOO_MUCH_JDBC_EXECUTE_COUNT;
-import static com.oceanbase.odc.service.common.MonitorPointConstants.SQL_EXECUTE_ERROR;
-import static com.oceanbase.odc.service.common.MonitorPointConstants.SQL_TOO_LONG_EXECUTE_TIME;
-import static com.oceanbase.odc.service.common.MonitorPointConstants.SQL_TOO_LONG_SQL_PARAMETERS;
+import static com.oceanbase.odc.core.alarm.AlarmEventNames.DRUID_ACTIVE_COUNT_MORE_THAN_80_PERCENT;
+import static com.oceanbase.odc.core.alarm.AlarmEventNames.DRUID_MONITOR_ERROR;
+import static com.oceanbase.odc.core.alarm.AlarmEventNames.DRUID_WAIT_THREAD_COUNT_MORE_THAN_0;
+import static com.oceanbase.odc.core.alarm.AlarmEventNames.METHOD_TOO_LONG_EXECUTE_TIME;
+import static com.oceanbase.odc.core.alarm.AlarmEventNames.METHOD_TOO_MUCH_JDBC_EXECUTE_COUNT;
+import static com.oceanbase.odc.core.alarm.AlarmEventNames.SQL_EXECUTE_ERROR;
+import static com.oceanbase.odc.core.alarm.AlarmEventNames.SQL_TOO_LONG_EXECUTE_TIME;
+import static com.oceanbase.odc.core.alarm.AlarmEventNames.SQL_TOO_LONG_SQL_PARAMETERS;
 
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
@@ -48,6 +46,7 @@ import com.alibaba.druid.stat.DruidStatManagerFacade;
 import com.alibaba.druid.support.spring.stat.SpringStatManager;
 import com.google.common.base.Preconditions;
 import com.oceanbase.odc.common.util.StringUtils;
+import com.oceanbase.odc.core.alarm.AlarmUtils;
 import com.oceanbase.odc.service.config.SystemConfigService;
 import com.oceanbase.odc.service.config.model.Configuration;
 
@@ -85,10 +84,10 @@ public class DruidMonitor implements InitializingBean {
             try {
                 doMonitor();
             } catch (Exception e) {
-                OdcMonitor.alarm(DRUID_MONITOR_ERROR, e);
+                AlarmUtils.alarm(DRUID_MONITOR_ERROR, e);
                 log.info("monitor error", e);
             }
-        }, 1, 5, TimeUnit.MINUTES);
+        }, 1, 2, TimeUnit.MINUTES);
     }
 
     public void doMonitor() {
@@ -124,7 +123,7 @@ public class DruidMonitor implements InitializingBean {
                 .map(DruidSQLStateVO::buildTooLongParameter)
                 .collect(Collectors.toList());
         if (!msg.isEmpty()) {
-            OdcMonitor.alarm(SQL_TOO_LONG_SQL_PARAMETERS, msg.toString());
+            AlarmUtils.alarm(SQL_TOO_LONG_SQL_PARAMETERS, msg.toString());
         }
     }
 
@@ -133,7 +132,7 @@ public class DruidMonitor implements InitializingBean {
                 v -> v.computeAvgExecuteTime() > getLongMonitorConfig(DruidMonitorConfig.SQL_AVG_EXECUTE_TIME))
                 .map(DruidSQLStateVO::buildTooLongAvgExecuteTimeMsg).collect(Collectors.toList());
         if (!avgExecuteTooLong.isEmpty()) {
-            OdcMonitor.alarm(SQL_TOO_LONG_EXECUTE_TIME, "too long avg execute time + " + avgExecuteTooLong);
+            AlarmUtils.alarm(SQL_TOO_LONG_EXECUTE_TIME, "too long avg execute time + " + avgExecuteTooLong);
         }
     }
 
@@ -143,7 +142,7 @@ public class DruidMonitor implements InitializingBean {
                 .map(DruidSQLStateVO::buildMaxExecuteTimeMsg)
                 .collect(Collectors.toList());
         if (!maxExecuteTooLong.isEmpty()) {
-            OdcMonitor.alarm(SQL_TOO_LONG_EXECUTE_TIME, "too long max execute time + " + maxExecuteTooLong);
+            AlarmUtils.alarm(SQL_TOO_LONG_EXECUTE_TIME, "too long max execute time + " + maxExecuteTooLong);
         }
     }
 
@@ -152,7 +151,7 @@ public class DruidMonitor implements InitializingBean {
                 v -> v.getErrorCount() > 0).map(DruidSQLStateVO::buildSqlErrorMsg)
                 .collect(Collectors.toList());
         if (!sqlError.isEmpty()) {
-            OdcMonitor.alarm(SQL_EXECUTE_ERROR, sqlError.toString());
+            AlarmUtils.alarm(SQL_EXECUTE_ERROR, sqlError.toString());
         }
     }
 
@@ -172,10 +171,16 @@ public class DruidMonitor implements InitializingBean {
     }
 
     private void monitorDruidDataSource() {
-        OdcMonitor.info(DRUID_MAX_WAIT, String.valueOf(druidDataSource.getMaxWait()));
-        OdcMonitor.info(DRUID_WAIT_THREAD_COUNT, String.valueOf(druidDataSource.getWaitThreadCount()));
-        OdcMonitor.info(DRUID_ACTIVE_COUNT, String.valueOf(druidDataSource.getActiveCount()));
-        OdcMonitor.info(DRUID_CONNECT_ERROR_COUNT, String.valueOf(druidDataSource.getConnectErrorCount()));
+        if (druidDataSource.getWaitThreadCount() > 0) {
+            AlarmUtils.alarm(DRUID_WAIT_THREAD_COUNT_MORE_THAN_0,
+                    "DRUID_WAIT_THREAD_COUNT=" + druidDataSource.getWaitThreadCount());
+        }
+        int activeCount = druidDataSource.getActiveCount();
+        int maxActive = druidDataSource.getMaxActive();
+        if (maxActive * 0.8 > 0 && activeCount > maxActive * 0.8) {
+            AlarmUtils.alarm(DRUID_ACTIVE_COUNT_MORE_THAN_80_PERCENT,
+                    "activeCount=" + activeCount + ",maxActive=" + maxActive);
+        }
     }
 
     enum DruidMonitorConfig {
@@ -323,7 +328,7 @@ public class DruidMonitor implements InitializingBean {
                     .append("readBytesLength=").append(readBytesLength).append(", ")
                     .append("dbType=").append(dbType).append(", ")
                     .append("dataSource=").append(dataSource).append(", ")
-                    .append("sql=").append(sql).append(", ")
+                    .append("sql=").append(StringUtils.removeWhitespace(sql)).append(", ")
                     .append("hash=").append(hash).append(", ")
                     .append("lastError=").append(lastError).append(", ")
                     .append("maxTimespan=").append(maxTimespan).append(", ")
@@ -438,7 +443,7 @@ public class DruidMonitor implements InitializingBean {
                 .collect(
                         Collectors.toList());
         if (!msg.isEmpty()) {
-            OdcMonitor.alarm(METHOD_TOO_LONG_EXECUTE_TIME, "method too long avg execute time" + msg);
+            AlarmUtils.alarm(METHOD_TOO_LONG_EXECUTE_TIME, "method too long avg execute time" + msg);
         }
     }
 
@@ -450,7 +455,7 @@ public class DruidMonitor implements InitializingBean {
                 .collect(
                         Collectors.toList());
         if (!msg.isEmpty()) {
-            OdcMonitor.alarm(METHOD_TOO_LONG_EXECUTE_TIME, "method too long avg jdbc execute time" + msg);
+            AlarmUtils.alarm(METHOD_TOO_LONG_EXECUTE_TIME, "method too long avg jdbc execute time" + msg);
         }
     }
 
@@ -463,7 +468,7 @@ public class DruidMonitor implements InitializingBean {
                 .collect(
                         Collectors.toList());
         if (!msg.isEmpty()) {
-            OdcMonitor.alarm(METHOD_TOO_MUCH_JDBC_EXECUTE_COUNT, "method too much jdbc execute count" + msg);
+            AlarmUtils.alarm(METHOD_TOO_MUCH_JDBC_EXECUTE_COUNT, "method too much jdbc execute count" + msg);
         }
     }
 

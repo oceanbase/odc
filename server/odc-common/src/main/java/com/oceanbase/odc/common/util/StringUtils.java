@@ -336,4 +336,12 @@ public abstract class StringUtils extends org.apache.commons.lang3.StringUtils {
         return matcher.matches();
     }
 
+    public static String removeWhitespace(String input) {
+        if (input == null) {
+            return null;
+        }
+        return input.replaceAll("\\s+", "");
+    }
+
+
 }

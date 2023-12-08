@@ -36,9 +36,7 @@ public final class AlarmEventNames {
     /**
      * druid info
      */
-    public static final String DRUID_MAX_WAIT = "DRUID_MAX_WAIT";
-    public static final String DRUID_WAIT_THREAD_COUNT = "DRUID_WAIT_COUNT";
-    public static final String DRUID_ACTIVE_COUNT = "DRUID_ACTIVE_COUNT";
-    public static final String DRUID_CONNECT_ERROR_COUNT = "DRUID_CONNECT_ERROR_COUNT";
+    public static final String DRUID_WAIT_THREAD_COUNT_MORE_THAN_0 = "DRUID_WAIT_THREAD_COUNT_MORE_THAN_0";
+    public static final String DRUID_ACTIVE_COUNT_MORE_THAN_80_PERCENT      = "DRUID_ACTIVE_COUNT_MORE_THAN_80_PERCENT";
 
 }
