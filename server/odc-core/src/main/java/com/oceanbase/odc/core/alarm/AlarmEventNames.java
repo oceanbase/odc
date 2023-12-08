@@ -37,6 +37,6 @@ public final class AlarmEventNames {
      * druid info
      */
     public static final String DRUID_WAIT_THREAD_COUNT_MORE_THAN_0 = "DRUID_WAIT_THREAD_COUNT_MORE_THAN_0";
-    public static final String DRUID_ACTIVE_COUNT_MORE_THAN_80_PERCENT      = "DRUID_ACTIVE_COUNT_MORE_THAN_80_PERCENT";
+    public static final String DRUID_ACTIVE_COUNT_MORE_THAN_80_PERCENT = "DRUID_ACTIVE_COUNT_MORE_THAN_80_PERCENT";
 
 }
