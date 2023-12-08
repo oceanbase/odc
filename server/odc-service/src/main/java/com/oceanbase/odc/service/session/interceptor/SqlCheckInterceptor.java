@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.session.interceptor;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -91,16 +92,16 @@ public class SqlCheckInterceptor extends BaseTimeConsumingInterceptor {
         }
         DefaultSqlChecker sqlChecker = new DefaultSqlChecker(session.getDialectType(), null, sqlCheckRules);
         try {
-            Map<String, List<CheckViolation>> sql2Violations = new HashMap<>();
+            Map<Integer, List<CheckViolation>> offset2Violations = new HashMap<>();
             SqlCheckContext checkContext = new SqlCheckContext((long) response.getSqls().size());
             response.getSqls().forEach(v -> {
                 List<CheckViolation> violations = sqlChecker.check(checkContext,
                         Collections.singletonList(v.getSqlTuple()));
-                List<Rule> vRules = sqlCheckService.fullFillRiskLevel(rules, violations);
-                v.getViolatedRules().addAll(vRules.stream().filter(r -> r.getLevel() > 0).collect(Collectors.toList()));
-                sql2Violations.put(v.getSqlTuple().getOriginalSql(), violations);
+                fullFillRiskLevelAndSetViolation(violations, rules, response);
+                violations
+                        .forEach(c -> offset2Violations.computeIfAbsent(c.getOffset(), k -> new ArrayList<>()).add(c));
             });
-            context.put(SQL_CHECK_RESULT_KEY, sql2Violations);
+            context.put(SQL_CHECK_RESULT_KEY, offset2Violations);
             return response.getSqls().stream().noneMatch(v -> CollectionUtils.isNotEmpty(v.getViolatedRules()));
         } catch (Exception e) {
             log.warn("Failed to init sql check message", e);
@@ -120,8 +121,8 @@ public class SqlCheckInterceptor extends BaseTimeConsumingInterceptor {
         if (!context.containsKey(SQL_CHECK_RESULT_KEY)) {
             return;
         }
-        Map<String, List<CheckViolation>> map = (Map<String, List<CheckViolation>>) context.get(SQL_CHECK_RESULT_KEY);
-        List<CheckViolation> results = map.get(response.getOriginSql());
+        Map<Integer, List<CheckViolation>> map = (Map<Integer, List<CheckViolation>>) context.get(SQL_CHECK_RESULT_KEY);
+        List<CheckViolation> results = map.get(response.getSqlTuple().getOffset());
         if (CollectionUtils.isEmpty(results)) {
             return;
         }
@@ -159,6 +160,16 @@ public class SqlCheckInterceptor extends BaseTimeConsumingInterceptor {
     private boolean isSyntaxErrorMessage(String message) {
         return StringUtils.containsIgnoreCase(message, "syntax")
                 && StringUtils.containsIgnoreCase(message, "error");
+    }
+
+    private void fullFillRiskLevelAndSetViolation(List<CheckViolation> violations,
+            List<Rule> rules, SqlAsyncExecuteResp response) {
+        List<Rule> vRules = sqlCheckService.fullFillRiskLevel(rules, violations)
+                .stream().filter(r -> r.getLevel() > 0).collect(Collectors.toList());
+        Map<Integer, List<Rule>> offset2Rules = vRules.stream().collect(
+                Collectors.groupingBy(rule -> rule.getViolation().getOffset()));
+        response.getSqls().forEach(item -> item.getViolatedRules().addAll(
+                offset2Rules.getOrDefault(item.getSqlTuple().getOffset(), new ArrayList<>())));
     }
 
 }

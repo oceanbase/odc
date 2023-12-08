@@ -42,6 +42,8 @@ import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
+import com.oceanbase.odc.metadb.regulation.ruleset.DefaultRuleApplyingEntity;
+import com.oceanbase.odc.metadb.regulation.ruleset.DefaultRuleApplyingRepository;
 import com.oceanbase.odc.metadb.regulation.ruleset.RuleApplyingEntity;
 import com.oceanbase.odc.metadb.regulation.ruleset.RuleApplyingRepository;
 import com.oceanbase.odc.service.common.model.Stats;
@@ -50,6 +52,7 @@ import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.regulation.ruleset.model.QueryRuleMetadataParams;
 import com.oceanbase.odc.service.regulation.ruleset.model.Rule;
 import com.oceanbase.odc.service.regulation.ruleset.model.RuleMetadata;
+import com.oceanbase.odc.service.regulation.ruleset.model.Ruleset;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -69,7 +72,13 @@ public class RuleService {
     private RuleMetadataService metadataService;
 
     @Autowired
+    private RulesetService rulesetService;
+
+    @Autowired
     private RuleApplyingRepository ruleApplyingRepository;
+
+    @Autowired
+    private DefaultRuleApplyingRepository defaultRuleApplyingRepository;
 
     @Autowired
     private HorizontalDataPermissionValidator permissionValidator;
@@ -134,26 +143,46 @@ public class RuleService {
 
     @SkipAuthorize("internal authenticated")
     public Rule detail(@NonNull Long rulesetId, @NonNull Long ruleId) {
-        RuleApplyingEntity applyingEntity = ruleApplyingRepository.findById(ruleId)
-                .orElseThrow(() -> new UnexpectedException("rule not found, ruleId = " + ruleId));
-        Rule rule = entityToModel(applyingEntity);
-        permissionValidator.checkCurrentOrganization(rule);
+        DefaultRuleApplyingEntity defaultApplying = defaultRuleApplyingRepository.findById(ruleId).orElseThrow(
+                () -> new UnexpectedException("default rule applying not found, ruleId = " + ruleId));
+        Optional<RuleApplyingEntity> applyingEntityOpt =
+                ruleApplyingRepository.findByOrganizationIdAndRulesetIdAndRuleMetadataId(
+                        authenticationFacade.currentOrganizationId(), rulesetId, defaultApplying.getRuleMetadataId());
+        RuleApplyingEntity merged = RuleApplyingEntity.merge(defaultApplying, applyingEntityOpt);
+        Rule rule = entityToModel(merged);
         rule.setRulesetId(rulesetId);
-        rule.setMetadata(metadataService.detail(applyingEntity.getRuleMetadataId()));
+        rule.setMetadata(metadataService.detail(merged.getRuleMetadataId()));
         return rule;
     }
 
     @PreAuthenticate(actions = "update", resourceType = "ODC_RULESET", indexOfIdParam = 0)
     public Rule update(@NonNull Long rulesetId, @NonNull Long ruleId, @NonNull Rule rule) {
-        RuleApplyingEntity saved = ruleApplyingRepository.findByOrganizationIdAndId(
-                authenticationFacade.currentOrganizationId(), ruleId)
-                .orElseThrow(() -> new UnexpectedException("rule not found, ruleId = " + ruleId));
-        saved.setLevel(rule.getLevel());
-        saved.setEnabled(rule.getEnabled());
-        saved.setPropertiesJson(JsonUtils.toJson(rule.getProperties()));
-        if (Objects.nonNull(rule.getAppliedDialectTypes())) {
-            saved.setAppliedDialectTypes(
-                    rule.getAppliedDialectTypes().stream().map(DialectType::name).collect(Collectors.toList()));
+        Optional<RuleApplyingEntity> savedOpt = ruleApplyingRepository.findByOrganizationIdAndId(
+                authenticationFacade.currentOrganizationId(), ruleId);
+        DefaultRuleApplyingEntity defaultApplying = defaultRuleApplyingRepository.findById(ruleId).orElseThrow(
+                () -> new UnexpectedException("default rule applying not found, ruleId = " + ruleId));
+        RuleApplyingEntity saved;
+        if (savedOpt.isPresent()) {
+            saved = savedOpt.get();
+            saved.setLevel(rule.getLevel());
+            saved.setEnabled(rule.getEnabled());
+            saved.setPropertiesJson(JsonUtils.toJson(rule.getProperties()));
+            if (Objects.nonNull(rule.getAppliedDialectTypes())) {
+                saved.setAppliedDialectTypes(
+                        rule.getAppliedDialectTypes().stream().map(DialectType::name).collect(Collectors.toList()));
+            }
+        } else {
+            saved = new RuleApplyingEntity();
+            saved.setOrganizationId(authenticationFacade.currentOrganizationId());
+            saved.setRuleMetadataId(defaultApplying.getRuleMetadataId());
+            saved.setLevel(rule.getLevel());
+            saved.setEnabled(rule.getEnabled());
+            saved.setPropertiesJson(JsonUtils.toJson(rule.getProperties()));
+            if (Objects.nonNull(rule.getAppliedDialectTypes())) {
+                saved.setAppliedDialectTypes(
+                        rule.getAppliedDialectTypes().stream().map(DialectType::name).collect(Collectors.toList()));
+            }
+            saved.setRulesetId(rulesetId);
         }
         ruleApplyingRepository.save(saved);
         rulesetId2RulesCache.invalidate(rulesetId);
@@ -165,19 +194,33 @@ public class RuleService {
         if (CollectionUtils.isEmpty(ruleMetadatas)) {
             return Collections.EMPTY_LIST;
         }
+        Ruleset ruleset = rulesetService.detail(rulesetId);
+        Map<Long, List<DefaultRuleApplyingEntity>> metadataId2DefaultRuleApplying =
+                defaultRuleApplyingRepository.findByRulesetName(ruleset.getName()).stream()
+                        .collect(Collectors.groupingBy(DefaultRuleApplyingEntity::getRuleMetadataId));
+        if (metadataId2DefaultRuleApplying.isEmpty()) {
+            throw new UnexpectedException("default rule applying not found, rulesetId = " + rulesetId);
+        }
         List<Rule> rules = new ArrayList<>();
         Map<Long, List<RuleApplyingEntity>> metadataId2RuleApplying =
-                ruleApplyingRepository.findByRulesetId(rulesetId).stream()
+                ruleApplyingRepository
+                        .findByOrganizationIdAndRulesetId(authenticationFacade.currentOrganizationId(), rulesetId)
+                        .stream()
                         .collect(Collectors.groupingBy(RuleApplyingEntity::getRuleMetadataId));
         ruleMetadatas.stream().forEach(metadata -> {
-            if (!metadataId2RuleApplying.containsKey(metadata.getId())) {
-                log.warn("rule applying record not found, metadataId={}", metadata.getId());
-                throw new UnexpectedException("rule applying record not found, metadataId=" + metadata.getId());
+            if (!metadataId2DefaultRuleApplying.containsKey(metadata.getId())) {
+                throw new UnexpectedException("default rule applying not found, ruleMetadataId = " + metadata.getId());
             }
-            List<RuleApplyingEntity> entities = metadataId2RuleApplying.get(metadata.getId());
-            Verify.equals(1, entities.size(), "ruleApplyingEntities");
-            Rule rule = entityToModel(entities.get(0));
-            permissionValidator.checkCurrentOrganization(rule);
+            List<DefaultRuleApplyingEntity> defaultApplyings = metadataId2DefaultRuleApplying.get(metadata.getId());
+            Verify.equals(1, defaultApplyings.size(), "defaultRuleApplyingEntity");
+            RuleApplyingEntity merged;
+            if (!metadataId2RuleApplying.containsKey(metadata.getId())) {
+                merged = RuleApplyingEntity.merge(defaultApplyings.get(0), Optional.empty());
+            } else {
+                merged = RuleApplyingEntity.merge(defaultApplyings.get(0),
+                        Optional.of(metadataId2RuleApplying.get(metadata.getId()).get(0)));
+            }
+            Rule rule = entityToModel(merged);
             rule.setRulesetId(rulesetId);
             rule.setMetadata(metadata);
             rules.add(rule);

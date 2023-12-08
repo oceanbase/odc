@@ -672,7 +672,7 @@ INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('o
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.features.task.osc.enabled', 'false',
 '是否开启无锁结构变更任务，默认不开启') ON DUPLICATE KEY UPDATE `id`=`id`;
 
-INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.connect.database.sync-databases-interval-millis', '180000', '同步数据源下所有数据库到 metadb 的间隔时间，默认 3 分钟，单位毫秒' ) ON DUPLICATE KEY UPDATE `id` = `id`;
+INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.connect.database.sync.interval-millis', '180000', '同步数据源下所有数据库到 metadb 的间隔时间，默认 3 分钟，单位毫秒' ) ON DUPLICATE KEY UPDATE `id` = `id`;
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task.dlm.default-single-task-row-limit', '20000', 'DLM 单个任务默认每秒行限制' ) ON DUPLICATE KEY UPDATE `id` = `id`;
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task.dlm.max-single-task-row-limit', '50000', 'DLM 单个任务最大每秒行限制' ) ON DUPLICATE KEY UPDATE `id` = `id`;
 
@@ -706,3 +706,6 @@ INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES
 
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.server.obclient.command-black-list',
  'connect,conn,edit,nopager,notee,pager,print,prompt,rehash,system,tee,resetconnection', 'Prohibited commands that can be executed by obclient' ) ON DUPLICATE KEY UPDATE `id` = `id`;
+
+INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.connect.database.sync.block-internal-database', 'true',
+ 'Whether block internal databases during synchronizing databases when the datasource is bound to a project. Default true.') ON DUPLICATE KEY UPDATE `id`=`id`;
