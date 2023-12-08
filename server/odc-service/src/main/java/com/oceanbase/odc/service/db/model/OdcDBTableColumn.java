@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.db.model;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
@@ -113,4 +114,15 @@ public class OdcDBTableColumn extends DBTableColumn {
         }
         return null;
     }
+
+    @Override
+    public Integer getScale() {
+        Integer scale = super.getScale();
+        if (scale != null) {
+            return scale;
+        }
+        // mock data needs this config
+        return StringUtils.equalsIgnoreCase("bit", getTypeName()) ? 0 : null;
+    }
+
 }

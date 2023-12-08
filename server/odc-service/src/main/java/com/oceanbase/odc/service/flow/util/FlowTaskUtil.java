@@ -296,10 +296,10 @@ public class FlowTaskUtil {
                         length--;
                         continue;
                     }
-                    String type =
-                            MockDataTypeUtil.getType(session.getDialectType(), typeConfig.get("columnType").toString());
+                    String type = MockDataTypeUtil.getType(
+                            session.getDialectType(), typeConfig.get("columnType").toString());
                     if (type == null) {
-                        throw new UnsupportedException(String.format("target data type %s has not been supported yet",
+                        throw new UnsupportedException(String.format("Data type %s has not been supported yet",
                                 typeConfig.get("columnType").toString()));
                     }
                     typeConfig.putIfAbsent("name", type);
@@ -314,14 +314,6 @@ public class FlowTaskUtil {
                         }
                     }
                     MockDataTypeUtil.processTypeConfig(type, typeConfig);
-                    if ("BIT".equalsIgnoreCase(typeConfig.get("columnType").toString())) {
-                        // 兼容性处理，mysql模式下的bit类型位宽度使用precision字段传递，不符合mock工具的设定，改用width传递
-                        if (typeConfig.get("highValue") != null) {
-                            typeConfig.put("width", typeConfig.get("highValue"));
-                        }
-                        typeConfig.put("highValue", null);
-                        typeConfig.put("lowValue", null);
-                    }
                 }
             }
             MockTaskConfig taskConfig = mapper.readValue(mapper.writeValueAsString(map), MockTaskConfig.class);
