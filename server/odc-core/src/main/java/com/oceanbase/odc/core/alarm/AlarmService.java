@@ -28,7 +28,7 @@ import com.oceanbase.odc.core.alarm.AlarmEvent.AlarmLevel;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class AlarmService {
+class AlarmService {
 
     private final List<AlarmEventListener> listeners = new ArrayList<>();
 
