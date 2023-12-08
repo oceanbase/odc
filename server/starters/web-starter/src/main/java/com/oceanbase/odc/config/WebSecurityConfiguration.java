@@ -146,8 +146,7 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
                 .migrateSession()
                 .invalidSessionStrategy(new CustomInvalidSessionStrategy(commonSecurityProperties.getLoginPage(),localeResolver));
         // @formatter:on
-        http.csrf().disable();
-        // csrfConfigureHelper.configure(http);
+        csrfConfigureHelper.configure(http);
         http.addFilterBefore(
                 new TestLoginAuthenticationFilter(),
                 OAuth2LoginAuthenticationFilter.class);
