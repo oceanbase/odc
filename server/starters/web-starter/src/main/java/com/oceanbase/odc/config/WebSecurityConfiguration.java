@@ -117,8 +117,7 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
     public void configure(WebSecurity web) {
         // 允许访问静态资源
         web.ignoring().antMatchers(commonSecurityProperties.getStaticResources())
-                .and().ignoring().antMatchers(commonSecurityProperties.getAuthWhitelist())
-                .and().ignoring().antMatchers("/druid/**");
+                .and().ignoring().antMatchers(commonSecurityProperties.getAuthWhitelist());
     }
 
     @Override

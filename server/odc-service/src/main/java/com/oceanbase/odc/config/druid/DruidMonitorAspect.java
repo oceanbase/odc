@@ -41,11 +41,9 @@ public class DruidMonitorAspect {
 
     @Around("@annotation(DruidMonitor)")
     public Object aroundDruidMonitor(ProceedingJoinPoint joinPoint) throws Throwable {
-        // 在调用方法前后应用Druid监控
         return druidStatInterceptor.invoke(new MethodInvocationAdapter(joinPoint));
     }
 
-    // 匹配所有Controller里面的方法
     @Around("controllerMethods()")
     public Object aroundDruidMonitorClass(ProceedingJoinPoint joinPoint) throws Throwable {
         return druidStatInterceptor.invoke(new MethodInvocationAdapter(joinPoint));
