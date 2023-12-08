@@ -212,3 +212,6 @@ insert into odc_version_diff_config(config_key, db_mode, config_value, min_versi
 'geometry:OBJECT, point:OBJECT, linestring:OBJECT, polygon:OBJECT, multipoint:OBJECT, multilinestring:OBJECT, multipolygon:OBJECT, geometrycollection:OBJECT', '3.2.4')  ON DUPLICATE KEY update `config_key`=`config_key`;
 insert into odc_version_diff_config(config_key, db_mode, config_value, min_version) values('column_data_type', 'MYSQL',
 'geometry:OBJECT, point:OBJECT, linestring:OBJECT, polygon:OBJECT, multipoint:OBJECT, multilinestring:OBJECT, multipolygon:OBJECT, geometrycollection:OBJECT', '5.7.0')  ON DUPLICATE KEY update `config_key`=`config_key`;
+
+-- supports sys_refcursor
+insert into odc_version_diff_config(config_key, db_mode, config_value, min_version) values('column_data_type', 'OB_ORACLE', 'SYS_REFCURSOR:OBJECT', '2.2.76')  ON DUPLICATE KEY update `config_key`=`config_key`;
