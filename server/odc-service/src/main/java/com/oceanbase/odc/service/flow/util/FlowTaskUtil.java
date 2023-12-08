@@ -51,6 +51,7 @@ import com.oceanbase.odc.service.integration.model.TemplateVariables;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanTaskParameters;
 import com.oceanbase.odc.service.permissionapply.project.ApplyProjectParameter;
+import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevelDescriber;
 import com.oceanbase.odc.service.resultset.ResultSetExportTaskParameter;
 import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleParameters;
@@ -341,6 +342,9 @@ public class FlowTaskUtil {
             taskConfig.setMaxConnectionSize(mockProperties.getMaxPoolSize());
             DataBaseConfig dataBaseConfig = getDbConfig(conn, execution);
             taskConfig.setDbConfig(dataBaseConfig);
+            DialectType type = conn.getDialectType();
+            taskConfig.setDriverClassName(ConnectionPluginUtil.getConnectionExtension(type).getDriverClassName());
+            taskConfig.setSubProtocolName(type.isOceanbase() ? "oceanbase" : "mysql");
             return taskConfig;
         } catch (Exception e) {
             log.warn("Error initializing mock data task, taskId={}", taskId, e);
