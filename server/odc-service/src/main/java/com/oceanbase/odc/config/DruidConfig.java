@@ -22,8 +22,7 @@ import org.springframework.context.annotation.Configuration;
 import com.alibaba.druid.support.spring.stat.DruidStatInterceptor;
 
 @Configuration
-public class DruidAspectConfig {
-
+public class DruidConfig {
 
     @Bean
     public DruidStatInterceptor druidStatInterceptor() {
