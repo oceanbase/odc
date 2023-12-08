@@ -299,7 +299,6 @@ public class MySQLDataTransferJob implements DataTransferJob {
                             baseConfig.getMaxDumpSizeBytes());
                     schemaJobs.forEach(AbstractJob::cancel);
                     dataJobs.forEach(AbstractJob::cancel);
-                    executor.shutdown();
                 }
             }, 1, 1, TimeUnit.SECONDS);
         }

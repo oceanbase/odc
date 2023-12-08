@@ -88,6 +88,7 @@ public class DataXTransferJob extends AbstractJob {
             String[] cmdArray =
                     buildDataXExecutorCmd(dataxHome.getPath(), generateConfigurationFile().getPath());
             process = new ProcessBuilder().command(cmdArray).start();
+            LOGGER.info("DataX task started.");
             executor.submit(() -> {
                 try {
                     analysisStatisticsLog(process.getInputStream());
