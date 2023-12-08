@@ -101,15 +101,15 @@ import lombok.NonNull;
 @Getter
 public class MysqlModeSqlParserListener extends OBParserBaseListener implements BasicParserListener {
 
-    private boolean selectStmt;
-    private boolean withForUpdate;
-    private boolean limitClause;
-    private SqlType sqlType;
-    private DBObjectType dbObjectType;
-    private boolean setStmt = false;
-    private List<String> dbObjectNameList = new ArrayList<>();
-    private List<DBIndex> indexes = new ArrayList<>();
-    private List<ColumnDefinition> columns = new ArrayList<>();
+    private boolean                 selectStmt;
+    private boolean                 withForUpdate;
+    private boolean                 limitClause;
+    private SqlType                 sqlType;
+    private DBObjectType            dbObjectType;
+    private boolean                 setStmt           = false;
+    private List<String>            dbObjectNameList  = new ArrayList<>();
+    private List<DBIndex>           indexes           = new ArrayList<>();
+    private List<ColumnDefinition>  columns           = new ArrayList<>();
     private List<DBTableConstraint> foreignConstraint = new ArrayList<>();
 
     private void setSqlType(SqlType newType) {
@@ -147,7 +147,7 @@ public class MysqlModeSqlParserListener extends OBParserBaseListener implements 
 
     /**
      * Keep the grammer nodes for entering limit clause for future refactor about limit judgement
-     * 
+     *
      * @param ctx
      */
     @Override
@@ -248,7 +248,6 @@ public class MysqlModeSqlParserListener extends OBParserBaseListener implements 
         setSqlType(SqlType.SET);
     }
 
-
     @Override
     public void enterUpdate_stmt(Update_stmtContext ctx) {
         setSqlType(SqlType.UPDATE);
@@ -256,7 +255,11 @@ public class MysqlModeSqlParserListener extends OBParserBaseListener implements 
 
     @Override
     public void enterExplain_stmt(Explain_stmtContext ctx) {
-        setSqlType(SqlType.EXPLAIN);
+        if (ctx.explain_or_desc().EXPLAIN() != null) {
+            setSqlType(SqlType.EXPLAIN);
+        } else {
+            setSqlType(SqlType.DESC);
+        }
     }
 
     // TODO: extract table name into ObDbTableNames
@@ -388,9 +391,9 @@ public class MysqlModeSqlParserListener extends OBParserBaseListener implements 
         for (OBParser.Table_elementContext element : ctx.table_element_list().table_element()) {
             if (Objects.nonNull(element.column_definition())) {
                 columns.add(ColumnDefinition.builder()
-                        .name(handleObjectName(
-                                element.column_definition().column_definition_ref().column_name().getText()))
-                        .isStored(Objects.nonNull(element.column_definition().STORED())).build());
+                    .name(handleObjectName(
+                        element.column_definition().column_definition_ref().column_name().getText()))
+                    .isStored(Objects.nonNull(element.column_definition().STORED())).build());
             }
         }
     }
@@ -487,7 +490,7 @@ public class MysqlModeSqlParserListener extends OBParserBaseListener implements 
             index.setName(handleObjectName(outOfLineIndex.getIndexName()));
             index.setRange(DBIndexRangeType.GLOBAL);
             if (outOfLineIndex.getIndexOptions().getGlobal() != null
-                    && !outOfLineIndex.getIndexOptions().getGlobal()) {
+                && !outOfLineIndex.getIndexOptions().getGlobal()) {
                 index.setRange(DBIndexRangeType.LOCAL);
             }
             indexes.add(index);
@@ -498,8 +501,8 @@ public class MysqlModeSqlParserListener extends OBParserBaseListener implements 
                 index.setName(handleObjectName(outOfLineConstraint.getIndexName()));
                 index.setRange(DBIndexRangeType.GLOBAL);
                 if (outOfLineConstraint.getState() != null && outOfLineConstraint.getState().getIndexOptions() != null
-                        && outOfLineConstraint.getState().getIndexOptions().getGlobal() != null
-                        && !outOfLineConstraint.getState().getIndexOptions().getGlobal()) {
+                    && outOfLineConstraint.getState().getIndexOptions().getGlobal() != null
+                    && !outOfLineConstraint.getState().getIndexOptions().getGlobal()) {
                     index.setRange(DBIndexRangeType.LOCAL);
                 }
                 indexes.add(index);
@@ -521,7 +524,7 @@ public class MysqlModeSqlParserListener extends OBParserBaseListener implements 
     @Data
     @Builder
     public static class ColumnDefinition {
-        private String name;
+        private String  name;
         private Boolean isStored;
     }
 }
