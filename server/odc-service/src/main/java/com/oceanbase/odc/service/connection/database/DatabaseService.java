@@ -30,6 +30,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import javax.sql.DataSource;
@@ -54,6 +55,7 @@ import com.oceanbase.odc.core.authority.util.PreAuthenticate;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
@@ -551,13 +553,21 @@ public class DatabaseService {
             DBSchemaAccessor dbSchemaAccessor = DBSchemaAccessors.create(connSession);
             List<DBObjectIdentity> dbUsers = dbSchemaAccessor.listUsers();
             Set<String> whiteUsers = OscDBUserUtil.getLockUserWhiteList(config);
+
             return new PageImpl<>(dbUsers.stream()
-                    .filter(u -> !whiteUsers.contains(u.getName()))
+                    .filter(u -> getUserPredicate(config.getDialectType(), whiteUsers).test(u.getName()))
                     .map(d -> DatabaseUser.builder().name(d.getName()).build())
                     .collect(Collectors.toList()));
         } finally {
             connSession.expire();
         }
+    }
+
+    private Predicate<String> getUserPredicate(DialectType dialectType, Set<String> whiteUsers) {
+        if (dialectType.isMysql()) {
+            return u -> u != null && u.contains("@") ? !whiteUsers.contains(u.split("@")[0]) : !whiteUsers.contains(u);
+        }
+        return u -> !whiteUsers.contains(u);
     }
 
     private void checkPermission(Long projectId, Long dataSourceId) {
