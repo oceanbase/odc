@@ -304,7 +304,6 @@ public class OracleModeSqlParserListener extends OBParserBaseListener implements
         setSqlType(SqlType.SET);
     }
 
-
     @Override
     public void enterUpdate_stmt(Update_stmtContext ctx) {
         setSqlType(SqlType.UPDATE);
@@ -312,7 +311,11 @@ public class OracleModeSqlParserListener extends OBParserBaseListener implements
 
     @Override
     public void enterExplain_stmt(Explain_stmtContext ctx) {
-        setSqlType(SqlType.EXPLAIN);
+        if (ctx.explain_or_desc().EXPLAIN() != null) {
+            setSqlType(SqlType.EXPLAIN);
+        } else {
+            setSqlType(SqlType.DESC);
+        }
     }
 
     // TODO: extract table name into ObDbTableNames
@@ -529,7 +532,6 @@ public class OracleModeSqlParserListener extends OBParserBaseListener implements
         setSqlType(SqlType.ALTER);
         this.dbObjectType = DBObjectType.TABLE;
     }
-
 
     @Override
     public void enterAlter_index_stmt(Alter_index_stmtContext ctx) {
