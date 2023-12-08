@@ -88,8 +88,9 @@ public class ResourceRoleService {
     }
 
     @SkipAuthorize("odc internal usage")
-    public Set<String> getResourceRoleIdentifiersByUserId(long userId) {
-        List<UserResourceRoleEntity> userResourceRoleEntities = userResourceRoleRepository.findByUserId(userId);
+    public Set<String> getResourceRoleIdentifiersByUserId(long organizationId, long userId) {
+        List<UserResourceRoleEntity> userResourceRoleEntities =
+                userResourceRoleRepository.findByOrganizationIdAndUserId(organizationId, userId);
         if (CollectionUtils.isEmpty(userResourceRoleEntities)) {
             return Collections.emptySet();
         }
