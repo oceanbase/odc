@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.quartz.SchedulerException;
 import org.quartz.SchedulerListener;
@@ -44,7 +43,6 @@ public class OnlineSchemaChangeMultiTaskTest extends OBMySqlOscTestEnv {
 
 
     @Test
-    @Ignore("TODO: fix this test")
     public void test_osc_multi_task_triggered() {
         createTableForMultiTask();
         try {
