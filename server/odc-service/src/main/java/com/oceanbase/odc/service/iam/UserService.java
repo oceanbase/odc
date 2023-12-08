@@ -379,19 +379,13 @@ public class UserService {
                     "Operation on admin account is not allowed");
         }
         permissionValidator.checkCurrentOrganization(new User(userEntity));
-
-        UserDeleteEvent event = new UserDeleteEvent();
-        event.setUserId(id);
-        event.setOrganizationId(authenticationFacade.currentOrganizationId());
-        for (Consumer<UserDeleteEvent> hook : preUserDeleteHooks) {
-            hook.accept(event);
-        }
-
         userRepository.deleteById(id);
         userRoleRepository.deleteByUserId(id);
         deleteRelatedPermissions(id);
         permissionService.deleteResourceRelatedPermissions(id, ResourceType.ODC_USER, PermissionType.SYSTEM);
-
+        UserDeleteEvent event = new UserDeleteEvent();
+        event.setUserId(id);
+        event.setOrganizationId(authenticationFacade.currentOrganizationId());
         for (Consumer<UserDeleteEvent> hook : postUserDeleteHooks) {
             hook.accept(event);
         }
