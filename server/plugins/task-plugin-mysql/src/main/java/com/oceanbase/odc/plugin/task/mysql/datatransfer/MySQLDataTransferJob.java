@@ -284,7 +284,7 @@ public class MySQLDataTransferJob implements DataTransferJob {
     }
 
     private void initSchedules(ScheduledExecutorService executor) {
-        if (baseConfig.isCompressed()) {
+        if (baseConfig.isCompressed() || baseConfig.getTransferType() == DataTransferType.EXPORT) {
             ThroughputReporter reporter = new ThroughputReporter();
             publisher.addEventListener(reporter);
             executor.scheduleAtFixedRate(reporter, 5, 5, TimeUnit.SECONDS);
