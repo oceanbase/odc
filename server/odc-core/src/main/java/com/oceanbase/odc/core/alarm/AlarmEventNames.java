@@ -31,11 +31,6 @@ public final class AlarmEventNames {
     public static final String METHOD_TOO_LONG_EXECUTE_TIME = "METHOD_TOO_LONG_EXECUTE_TIME";
     public static final String METHOD_TOO_MUCH_JDBC_EXECUTE_COUNT = "METHOD_TOO_MUCH_JDBC_EXECUTE_COUNT";
     public static final String DRUID_MONITOR_ERROR = "DRUID_MONITOR_ERROR";
-
-
-    /**
-     * druid info
-     */
     public static final String DRUID_WAIT_THREAD_COUNT_MORE_THAN_0 = "DRUID_WAIT_THREAD_COUNT_MORE_THAN_0";
     public static final String DRUID_ACTIVE_COUNT_MORE_THAN_80_PERCENT = "DRUID_ACTIVE_COUNT_MORE_THAN_80_PERCENT";
 
