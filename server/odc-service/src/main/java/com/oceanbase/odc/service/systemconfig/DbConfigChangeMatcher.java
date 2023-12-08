@@ -15,7 +15,7 @@
  */
 package com.oceanbase.odc.service.systemconfig;
 
-import static com.oceanbase.odc.core.monitor.AlarmEventNames.SYSTEM_CONFIG_CHANGED;
+import static com.oceanbase.odc.core.alarm.AlarmEventNames.SYSTEM_CONFIG_CHANGED;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -30,8 +30,8 @@ import org.springframework.stereotype.Service;
 
 import com.google.common.collect.Sets;
 import com.google.common.collect.Sets.SetView;
+import com.oceanbase.odc.core.alarm.AlarmUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
-import com.oceanbase.odc.core.monitor.AlarmUtils;
 import com.oceanbase.odc.metadb.config.SystemConfigDAO;
 import com.oceanbase.odc.metadb.config.SystemConfigEntity;
 import com.oceanbase.odc.service.config.model.Configuration;

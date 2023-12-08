@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.core.monitor;
+package com.oceanbase.odc.core.alarm;
 
+public final class AlarmEventNames {
 
-public interface AlarmEventListener {
+    private AlarmEventNames() {}
 
-    void alarm(AlarmEvent event);
-
+    public static final String SYSTEM_CONFIG_CHANGED = "SYSTEM_CONFIG_CHANGED";
 }

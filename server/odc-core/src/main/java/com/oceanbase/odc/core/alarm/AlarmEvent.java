@@ -14,11 +14,27 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.core.monitor;
+package com.oceanbase.odc.core.alarm;
 
-public final class AlarmEventNames {
+import lombok.Getter;
 
-    private AlarmEventNames() {}
+@Getter
+public class AlarmEvent {
 
-    public static final String SYSTEM_CONFIG_CHANGED = "SYSTEM_CONFIG_CHANGED";
+    private final String eventName;
+
+    private final String eventMessage;
+
+    private final AlarmLevel level;
+
+    public AlarmEvent(String eventName, String eventMessage, AlarmLevel level) {
+        this.eventName = eventName;
+        this.eventMessage = eventMessage;
+        this.level = level;
+    }
+
+    public enum AlarmLevel {
+        INFO, WARN, ERROR
+    }
+
 }

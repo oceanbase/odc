@@ -14,27 +14,11 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.core.monitor;
+package com.oceanbase.odc.core.alarm;
 
-import lombok.Getter;
 
-@Getter
-public class AlarmEvent {
+public interface AlarmEventListener {
 
-    private final String eventName;
-
-    private final String eventMessage;
-
-    private final AlarmLevel level;
-
-    public AlarmEvent(String eventName, String eventMessage, AlarmLevel level) {
-        this.eventName = eventName;
-        this.eventMessage = eventMessage;
-        this.level = level;
-    }
-
-    public enum AlarmLevel {
-        INFO, WARN, ERROR
-    }
+    void alarm(AlarmEvent event);
 
 }

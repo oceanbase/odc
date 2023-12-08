@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.core.monitor;
+package com.oceanbase.odc.core.alarm;
 
 public final class AlarmUtils {
 

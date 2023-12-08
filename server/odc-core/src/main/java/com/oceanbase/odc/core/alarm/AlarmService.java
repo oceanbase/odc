@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.core.monitor;
+package com.oceanbase.odc.core.alarm;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -23,7 +23,7 @@ import java.util.ServiceLoader;
 
 import javax.annotation.Nullable;
 
-import com.oceanbase.odc.core.monitor.AlarmEvent.AlarmLevel;
+import com.oceanbase.odc.core.alarm.AlarmEvent.AlarmLevel;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -35,6 +35,7 @@ class AlarmService {
     public AlarmService() {
         ServiceLoader<AlarmEventListener> load = ServiceLoader.load(AlarmEventListener.class);
         Iterator<AlarmEventListener> iterator = load.iterator();
+        log.info("AlarmEventListener has next:" + iterator.hasNext());
         while (iterator.hasNext()) {
             AlarmEventListener next = iterator.next();
             log.info("AlarmEventListener:" + next.getClass().getName() + "have been loaded");
