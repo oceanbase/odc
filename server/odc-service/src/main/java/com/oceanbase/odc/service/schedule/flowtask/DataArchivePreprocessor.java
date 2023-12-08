@@ -29,7 +29,6 @@ import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.dlm.DlmLimiterService;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
-import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
 import com.oceanbase.odc.service.flow.processor.ScheduleTaskPreprocessor;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
@@ -71,6 +70,8 @@ public class DataArchivePreprocessor extends AbstractDlmJobPreprocessor {
             // permission to access it.
             Database sourceDb = databaseService.detail(dataArchiveParameters.getSourceDatabaseId());
             Database targetDb = databaseService.detail(dataArchiveParameters.getTargetDataBaseId());
+            checkDatasource(sourceDb.getDataSource());
+            checkDatasource(targetDb.getDataSource());
             dataArchiveParameters.setSourceDatabaseName(sourceDb.getName());
             dataArchiveParameters.setTargetDatabaseName(targetDb.getName());
             dataArchiveParameters.setSourceDataSourceName(sourceDb.getDataSource().getName());
@@ -98,17 +99,7 @@ public class DataArchivePreprocessor extends AbstractDlmJobPreprocessor {
                 scheduleEntity = scheduleService.create(scheduleEntity);
                 parameters.setTaskId(scheduleEntity.getId());
                 // create job limit config
-                RateLimitConfiguration limiterConfig = limiterService.getDefaultLimiterConfig();
-                if (dataArchiveParameters.getRateLimit().getRowLimit() != null) {
-                    limiterConfig.setRowLimit(dataArchiveParameters.getRateLimit().getRowLimit());
-                }
-                if (dataArchiveParameters.getRateLimit().getDataSizeLimit() != null) {
-                    limiterConfig.setDataSizeLimit(dataArchiveParameters.getRateLimit().getDataSizeLimit());
-                }
-                if (dataArchiveParameters.getRateLimit().getBatchSize() != null) {
-                    limiterConfig.setBatchSize(dataArchiveParameters.getRateLimit().getBatchSize());
-                }
-                limiterService.createAndBindToOrder(scheduleEntity.getId(), limiterConfig);
+                initLimiterConfig(scheduleEntity.getId(), dataArchiveParameters.getRateLimit(), limiterService);
             }
             log.info("Data archive preprocessing has been completed.");
         }
