@@ -57,7 +57,7 @@ public class DBPLController {
     }
 
     @ApiOperation(value = "callProcedure", notes = "call a procedure")
-    @RequestMapping(value = "/procedure/{sid}/call", method = RequestMethod.POST)
+    @RequestMapping(value = "/procedure/{sid}/asyncCall", method = RequestMethod.POST)
     public SuccessResponse<String> callProcedure(
             @PathVariable String sid, @RequestBody CallProcedureReq req) {
         return Responses.ok(this.plService.callProcedure(this.sessionService.nullSafeGet(
@@ -66,14 +66,14 @@ public class DBPLController {
 
     @ApiOperation(value = "callProcedure", notes = "get the async result of a calling procedure")
     @RequestMapping(value = "/procedure/{sid}/getResult", method = RequestMethod.GET)
-    public SuccessResponse<CallProcedureResp> getAsyncCallProcedureResult(@PathVariable String sid,
+    public SuccessResponse<CallProcedureResp> getCallProcedureResult(@PathVariable String sid,
             @RequestParam String requestId, @RequestParam(required = false) Integer timeoutSeconds) {
         return Responses.ok(this.plService.getAsyncCallingResult(
                 this.sessionService.nullSafeGet(SidUtils.getSessionId(sid), false), requestId, timeoutSeconds));
     }
 
     @ApiOperation(value = "callFunction", notes = "call a function")
-    @RequestMapping(value = "/function/{sid}/call", method = RequestMethod.POST)
+    @RequestMapping(value = "/function/{sid}/asyncCall", method = RequestMethod.POST)
     public SuccessResponse<String> callFunction(@PathVariable String sid, @RequestBody CallFunctionReq req) {
         return Responses.ok(this.plService.callFunction(this.sessionService.nullSafeGet(
                 SidUtils.getSessionId(sid), true), req));
@@ -81,7 +81,7 @@ public class DBPLController {
 
     @ApiOperation(value = "callFunction", notes = "get the async result of a calling function")
     @RequestMapping(value = "/function/{sid}/getResult", method = RequestMethod.GET)
-    public SuccessResponse<CallFunctionResp> getAsyncCallFunctionResult(@PathVariable String sid,
+    public SuccessResponse<CallFunctionResp> getCallFunctionResult(@PathVariable String sid,
             @RequestParam String requestId, @RequestParam(required = false) Integer timeoutSeconds) {
         return Responses.ok(this.plService.getAsyncCallingResult(
                 this.sessionService.nullSafeGet(SidUtils.getSessionId(sid), false), requestId, timeoutSeconds));
