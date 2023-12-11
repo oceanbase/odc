@@ -110,17 +110,28 @@ public class HookConfiguration {
 
     private void projectReferenceCheck(Long userId, Long organizationId) {
         Map<Long, Set<ResourceRoleName>> projectId2ResourceRoleNames =
-                resourceRoleService.getProjectId2ResourceRoleNames(userId);
+                resourceRoleService.getProjectId2ResourceRoleNames(userId).entrySet().stream()
+                        .filter(e -> e.getValue().contains(ResourceRoleName.OWNER)
+                                || e.getValue().contains(ResourceRoleName.DBA))
+                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         if (projectId2ResourceRoleNames.size() == 0) {
             return;
         }
         Map<Long, ProjectEntity> id2Project =
                 projectRepository.findAllByOrganizationId(organizationId).stream().filter(p -> p.getArchived() == false)
                         .collect(Collectors.toMap(ProjectEntity::getId, p -> p));
-        throw new UnsupportedException(
-                String.format("cannot delete the user because the user is still in following projects: %s",
-                        projectId2ResourceRoleNames.entrySet().stream().map(e -> id2Project.get(e.getKey()).getName())
-                                .collect(Collectors.joining(", "))));
+        String names = projectId2ResourceRoleNames.keySet().stream().map(id -> id2Project.get(id).getName())
+                .collect(Collectors.joining(", "));
+
+        String errorMessage = String.format(
+                "User id=%s cannot be deleted because it has been referenced to following project: {%s}", userId,
+                names);
+
+        throw new UnsupportedException(ErrorCodes.CannotOperateDueReference,
+                new Object[] {AuditEventAction.DELETE_USER.getLocalizedMessage(),
+                        ResourceType.ODC_USER.getLocalizedMessage(), "name", names,
+                        ResourceType.ODC_PROJECT.getLocalizedMessage()},
+                errorMessage);
 
     }
 
