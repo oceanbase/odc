@@ -89,6 +89,7 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
     private volatile long flowTaskId;
     private volatile long organizationId;
     private volatile boolean continueOnError;
+    private volatile double percentage;
 
     @Override
     protected Void start(Long taskId, TaskService taskService, DelegateExecution execution) throws Exception {
@@ -169,13 +170,17 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
         progressStatusUpdate(tasks);
 
         Optional<Double> res = tasks.stream().map(this::singleTaskPercentage).reduce(Double::sum);
-        double percentage = res.get() * 100 / tasks.getSize();
+        double currentPercentage = res.get() * 100 / tasks.getSize();
 
         TaskEntity flowTask = taskService.detail(taskId);
-        flowTask.setResultJson(JsonUtils.toJson(new OnlineSchemaChangeTaskResult(tasks.getContent())));
-        flowTask.setStatus(this.status);
-        flowTask.setProgressPercentage(Math.min(percentage, 100));
-        taskService.update(flowTask);
+        TaskStatus dbStatus = flowTask.getStatus();
+        if (currentPercentage > this.percentage || dbStatus != this.status) {
+            flowTask.setResultJson(JsonUtils.toJson(new OnlineSchemaChangeTaskResult(tasks.getContent())));
+            flowTask.setStatus(this.status);
+            flowTask.setProgressPercentage(Math.min(currentPercentage, 100));
+            taskService.update(flowTask);
+        }
+        this.percentage = currentPercentage;
         if (this.status.isTerminated()) {
             synchronized (LOCK) {
                 LOCK.notifyAll();
