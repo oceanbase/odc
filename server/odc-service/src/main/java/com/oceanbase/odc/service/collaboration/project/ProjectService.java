@@ -306,6 +306,7 @@ public class ProjectService {
 
 
     @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
+    @Transactional(rollbackFor = Exception.class)
     public boolean deleteProjectMember(@NonNull Long projectId, @NonNull Long userId) {
         if (currentUserId().longValue() == userId.longValue()) {
             throw new BadRequestException("Not allowed to delete yourself");
