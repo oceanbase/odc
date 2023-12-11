@@ -24,7 +24,6 @@ import org.quartz.impl.JobDetailImpl;
 
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.service.schedule.model.QuartzKeyGenerator;
-import com.oceanbase.odc.service.schedule.model.TriggerConfig;
 import com.oceanbase.odc.service.task.caller.JobException;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
@@ -51,12 +50,17 @@ public class StdJobScheduler implements JobScheduler {
     }
 
     @Override
-    public Long scheduleJob(JobDefinition jd, TriggerConfig triggerConfig) throws JobException {
+    public Long scheduleJobNow(JobDefinition jd) throws JobException {
+        PreConditions.notNull(jd, "job definition");
+        return scheduleJob(jd);
+    }
+
+    private Long scheduleJob(JobDefinition jd) throws JobException {
         PreConditions.notNull(jd, "job definition");
 
         JobEntity jobEntity = configuration.getTaskFrameworkService().save(jd);
         JobIdentity jobIdentity = JobIdentity.of(jobEntity.getId());
-        Trigger trigger = TriggerBuilder.build(jobIdentity, jd, triggerConfig);
+        Trigger trigger = TriggerBuilder.build(jobIdentity, jd, null);
         JobKey jobKey = QuartzKeyGenerator.generateJobKey(jobIdentity);
         JobDetailImpl detail = new JobDetailImpl();
         detail.setKey(jobKey);
@@ -71,13 +75,16 @@ public class StdJobScheduler implements JobScheduler {
     }
 
     @Override
-    public Long scheduleJobNow(JobDefinition jd) throws JobException {
-        PreConditions.notNull(jd, "job definition");
-        return scheduleJob(jd, null);
-    }
-
-    @Override
     public void cancelJob(Long id) throws JobException {
+        JobIdentity jobIdentity = JobIdentity.of(id);
+        JobKey jobKey = QuartzKeyGenerator.generateJobKey(jobIdentity);
+        try {
+            if (scheduler.checkExists(jobKey)) {
+                scheduler.deleteJob(jobKey);
+            }
+        } catch (SchedulerException e) {
+            throw new JobException(e);
+        }
         configuration.getJobDispatcher().stop(JobIdentity.of(id));
     }
 }
