@@ -44,6 +44,9 @@ public class DLMConfiguration {
     @Value("${odc.task.dlm.single-task-thread-pool-size:15}")
     private int singleTaskThreadPoolSize;
 
+    @Value("${odc.task.dlm.task-connection-query-timeout-seconds:60}")
+    private int taskConnectionQueryTimeout;
+
     @Bean
     public JobMetaFactory jobMetaFactory(IJobStore jobStore) {
         JobMetaFactory jobMetaFactory = new JobMetaFactory();
@@ -51,6 +54,7 @@ public class DLMConfiguration {
         jobMetaFactory.setExecutorService(Executors.newFixedThreadPool(dlmThreadPoolSize));
         jobMetaFactory.setSingleTaskThreadPoolSize(singleTaskThreadPoolSize);
         jobMetaFactory.setReadWriteRatio(readWriteRatio);
+        jobMetaFactory.setTaskConnectionQueryTimeout(taskConnectionQueryTimeout);
         return jobMetaFactory;
     }
 

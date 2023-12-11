@@ -41,6 +41,8 @@ public class JobMetaFactory extends AbstractJobMetaFactory {
 
     private final SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
     private int singleTaskThreadPoolSize;
+
+    private int taskConnectionQueryTimeout;
     private double readWriteRatio;
 
     public JobMeta create(DlmTask parameters) throws Exception {
@@ -64,6 +66,8 @@ public class JobMetaFactory extends AbstractJobMetaFactory {
                 + parameters.getLogicTableConfig().getWriterTaskCount());
         targetInfo.setConnectionCount(logicTableConfig.getReaderTaskCount()
                 + parameters.getLogicTableConfig().getWriterTaskCount());
+        sourceInfo.setQueryTimeout(taskConnectionQueryTimeout);
+        targetInfo.setQueryTimeout(taskConnectionQueryTimeout);
         log.info("Begin to create dlm job,params={}", logicTableConfig);
         // ClusterMeta and TenantMeta used to calculate min limit size.
         JobReq req =
@@ -78,6 +82,10 @@ public class JobMetaFactory extends AbstractJobMetaFactory {
 
     public void setSingleTaskThreadPoolSize(int singleTaskThreadPoolSize) {
         this.singleTaskThreadPoolSize = singleTaskThreadPoolSize;
+    }
+
+    public void setTaskConnectionQueryTimeout(int taskConnectionQueryTimeout) {
+        this.taskConnectionQueryTimeout = taskConnectionQueryTimeout;
     }
 
 }
