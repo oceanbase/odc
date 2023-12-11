@@ -16,6 +16,7 @@
 
 package com.oceanbase.odc.service.task.executor.executor;
 
+import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.executor.task.Task;
 
 /**
@@ -28,8 +29,8 @@ import com.oceanbase.odc.service.task.executor.task.Task;
 public class SyncTaskExecutor implements TaskExecutor {
 
     @Override
-    public void execute(Task task) {
-        task.start();
+    public void execute(Task task, JobContext jc) {
+        task.start(jc);
     }
 
 }

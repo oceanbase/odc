@@ -31,13 +31,8 @@ import org.hibernate.annotations.Generated;
 import org.hibernate.annotations.GenerationTime;
 
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
-import com.oceanbase.odc.service.quartz.model.MisfireStrategy;
-import com.oceanbase.odc.service.schedule.model.JobType;
-import com.oceanbase.odc.service.schedule.model.ScheduleStatus;
-import com.oceanbase.odc.service.task.enums.SourceType;
 
 import lombok.Data;
-
 
 /**
  * @author yaobin
@@ -46,8 +41,8 @@ import lombok.Data;
  */
 @Data
 @Entity
-@Table(name = "job_schedule")
-public class JobScheduleEntity implements Serializable {
+@Table(name = "job_job")
+public class JobEntity implements Serializable {
 
     private static final long serialVersionUID = 2744695847461276123L;
 
@@ -56,15 +51,11 @@ public class JobScheduleEntity implements Serializable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "source_id", nullable = false)
-    private Long sourceId;
+    @Column(name = "job_Class", nullable = false)
+    private String jobClass;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "source_type", nullable = false)
-    private SourceType sourceType;
-
-    @Column(name = "source_sub_type")
-    private String sourceSubType;
+    @Column(name = "job_type")
+    private String jobType;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
@@ -75,10 +66,6 @@ public class JobScheduleEntity implements Serializable {
 
     @Column(name = "job_data_json", nullable = false)
     private String jobDataJson;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "misfire_strategy", nullable = false)
-    private MisfireStrategy misfireStrategy;
 
     @Column(name = "trigger_config_json", nullable = false)
     private String triggerConfigJson;

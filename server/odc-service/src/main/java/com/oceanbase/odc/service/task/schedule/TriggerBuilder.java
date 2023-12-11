@@ -25,7 +25,6 @@ import org.quartz.Trigger;
 import org.quartz.TriggerKey;
 
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
-import com.oceanbase.odc.service.quartz.model.MisfireStrategy;
 import com.oceanbase.odc.service.quartz.util.QuartzCronExpressionUtils;
 import com.oceanbase.odc.service.schedule.model.QuartzKeyGenerator;
 import com.oceanbase.odc.service.schedule.model.TriggerConfig;
@@ -41,22 +40,20 @@ import com.oceanbase.odc.service.task.constants.JobConstants;
  */
 public class TriggerBuilder {
 
-    public static Trigger build(JobDefinition jd) throws JobException {
+    public static Trigger build(JobIdentity ji, JobDefinition jd, TriggerConfig config) throws JobException {
         JobDataMap triData = new JobDataMap();
-        JobContext jc = new DefaultJobContextBuilder().build(jd);
+        JobContext jc = new DefaultJobContextBuilder().build(ji, jd);
         triData.put(JobConstants.QUARTZ_DATA_MAP_JOB_CONTEXT, jc);
 
-        TriggerConfig triggerConfig = jd.getTriggerConfig();
-        if (jd.getTriggerConfig() == null) {
-            triggerConfig = new TriggerConfig();
-            triggerConfig.setTriggerStrategy(TriggerStrategy.START_NOW);
+        if (config == null) {
+            config = new TriggerConfig();
+            config.setTriggerStrategy(TriggerStrategy.START_NOW);
         }
         return build(QuartzKeyGenerator.generateTriggerKey(jc.getJobIdentity()),
-                triggerConfig, jd.getMisfireStrategy(), triData);
+                config, triData);
     }
 
-    private static Trigger build(TriggerKey key, TriggerConfig config,
-            MisfireStrategy misfireStrategy, JobDataMap triggerDataMap) throws JobException {
+    private static Trigger build(TriggerKey key, TriggerConfig config, JobDataMap triggerDataMap) throws JobException {
         switch (config.getTriggerStrategy()) {
             case START_NOW:
                 return org.quartz.TriggerBuilder
@@ -83,18 +80,6 @@ public class TriggerBuilder {
                 }
 
                 CronScheduleBuilder cronScheduleBuilder = CronScheduleBuilder.cronSchedule(cron);
-
-                switch (misfireStrategy) {
-                    case MISFIRE_INSTRUCTION_IGNORE_MISFIRE:
-                        cronScheduleBuilder = cronScheduleBuilder.withMisfireHandlingInstructionIgnoreMisfires();
-                        break;
-                    case MISFIRE_INSTRUCTION_FIRE_ONCE_NOW:
-                        cronScheduleBuilder = cronScheduleBuilder.withMisfireHandlingInstructionFireAndProceed();
-                        break;
-                    default:
-                        cronScheduleBuilder = cronScheduleBuilder.withMisfireHandlingInstructionDoNothing();
-                        break;
-                }
 
                 return org.quartz.TriggerBuilder.newTrigger().withIdentity(key)
                         .withSchedule(cronScheduleBuilder).usingJobData(triggerDataMap).build();

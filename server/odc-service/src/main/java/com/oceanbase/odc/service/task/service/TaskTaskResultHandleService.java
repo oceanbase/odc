@@ -43,7 +43,7 @@ public class TaskTaskResultHandleService implements ResultHandleService {
     @Override
     public void handle(TaskResult taskResult) {
         JobIdentity identity = taskResult.getJobIdentity();
-        TaskEntity taskEntity = nullSafeFindById(identity.getSourceId());
+        TaskEntity taskEntity = nullSafeFindById(identity.getId());
         taskEntity.setProgressPercentage(taskResult.getProgress() * 100);
         taskEntity.setStatus(taskResult.getTaskStatus() == null ? TaskStatus.RUNNING : taskResult.getTaskStatus());
         taskEntity.setResultJson(taskResult.getResultJson());

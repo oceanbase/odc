@@ -16,24 +16,18 @@
 
 package com.oceanbase.odc.service.task.service;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import javax.annotation.PostConstruct;
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
+import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
-import com.oceanbase.odc.service.common.util.SpringContextUtil;
-import com.oceanbase.odc.service.schedule.model.TriggerConfig;
-import com.oceanbase.odc.service.task.enums.SourceType;
+import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.service.task.executor.task.TaskResult;
-import com.oceanbase.odc.service.task.schedule.DefaultJobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 import com.oceanbase.odc.service.task.schedule.JobScheduler;
@@ -55,14 +49,8 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     @Autowired
     private JobScheduleRepository jobScheduleRepository;
 
-    private Map<SourceType, ResultHandleService> handlers;
-
-    @PostConstruct
-    private void initResultHandler() {
-        handlers = new HashMap<>();
-        handlers.put(SourceType.TASK_TASK, SpringContextUtil.getBean(TaskTaskResultHandleService.class));
-        handlers.put(SourceType.SCHEDULE_TASK, SpringContextUtil.getBean(ScheduleTaskResultHandleService.class));
-    }
+    @Autowired(required = false)
+    private List<ResultHandleService> resultHandleServices;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -71,57 +59,37 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
             log.warn("task is terminated, ignore upload result.{}", JsonUtils.toJson(taskResult));
             return;
         }
-        JobIdentity identity = taskResult.getJobIdentity();
-        getResultHandle(identity.getSourceType()).handle(taskResult);
+        if (resultHandleServices != null) {
+            resultHandleServices.forEach(r -> r.handle(taskResult));
+        }
         updateJobScheduleEntity(taskResult);
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void save(JobDefinition jd) {
-        JobScheduleEntity jse = new JobScheduleEntity();
-        JobIdentity ji = jd.getJobIdentity();
-        jse.setSourceId(ji.getSourceId());
-        jse.setSourceType(ji.getSourceType());
-        jse.setSourceSubType(ji.getSourceSubType());
-        jse.setMisfireStrategy(jd.getMisfireStrategy());
-        jse.setTriggerConfigJson(JsonUtils.toJson(jd.getTriggerConfig()));
+    public JobEntity save(JobDefinition jd) {
+        JobEntity jse = new JobEntity();
         jse.setJobDataJson(JsonUtils.toJson(jd.getJobData()));
         jse.setScheduleTimes(0);
-        jobScheduleRepository.save(jse);
+        jse.setJobClass(jd.getJobClass().getCanonicalName());
+        jse.setJobType(jd.getJobType());
+        jse.setStatus(TaskStatus.PREPARING);
+        return jobScheduleRepository.save(jse);
     }
 
 
     @Override
-    public JobDefinition find(JobIdentity ji) {
-        JobScheduleEntity jse = jobScheduleRepository.findBySourceIdAndSourceType(ji.getSourceId(), ji.getSourceType());
-        return DefaultJobDefinition.builder()
-                .jobIdentity(JobIdentity.of(jse.getSourceId(), jse.getSourceType(), jse.getSourceSubType()))
-                .jobData(JsonUtils.fromJson(jse.getJobDataJson(), new TypeReference<Map<String, String>>() {}))
-                .triggerConfig(JsonUtils.fromJson(jse.getTriggerConfigJson(), new TypeReference<TriggerConfig>() {}))
-                .misfireStrategy(jse.getMisfireStrategy())
-                .build();
-
-    }
-
-
-    private JobScheduleEntity findJobEntity(JobIdentity ji) {
-        return jobScheduleRepository.findBySourceIdAndSourceType(ji.getSourceId(), ji.getSourceType());
+    public JobEntity find(JobIdentity ji) {
+        return jobScheduleRepository.findById(ji.getId())
+                .orElseThrow(() -> new NotFoundException(ResourceType.ODC_TASK, "id", ji.getId()));
     }
 
 
     private void updateJobScheduleEntity(TaskResult taskResult) {
-        JobScheduleEntity jse = findJobEntity(taskResult.getJobIdentity());
+        JobEntity jse = find(taskResult.getJobIdentity());
         updateStatusAndScheduleTimes(jse.getId(), taskResult.getTaskStatus(), jse.getScheduleTimes() + 1);
     }
 
-    private ResultHandleService getResultHandle(SourceType sourceType) {
-        ResultHandleService rhs = handlers.get(sourceType);
-        if (rhs == null) {
-            throw new IllegalArgumentException("Not found source type " + sourceType + " to handle result.");
-        }
-        return rhs;
-    }
 
     private void updateStatusAndScheduleTimes(Long id, TaskStatus status, Integer scheduleTimes) {
         jobScheduleRepository.updateStatusAndScheduleTimesById(id, status, scheduleTimes);

@@ -32,7 +32,7 @@ public interface TaskFrameworkService {
     void handleResult(TaskResult taskResult);
 
     @Transactional(rollbackFor = Exception.class)
-    void save(JobDefinition jd);
+    JobEntity save(JobDefinition jd);
 
-    JobDefinition find(JobIdentity ji);
+    JobEntity find(JobIdentity ji);
 }

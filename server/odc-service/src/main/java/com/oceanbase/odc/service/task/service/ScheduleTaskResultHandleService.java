@@ -25,8 +25,6 @@ import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
-import com.oceanbase.odc.metadb.task.TaskEntity;
-import com.oceanbase.odc.metadb.task.TaskRepository;
 import com.oceanbase.odc.service.task.executor.task.TaskResult;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 
@@ -45,7 +43,7 @@ public class ScheduleTaskResultHandleService implements ResultHandleService {
     @Override
     public void handle(TaskResult taskResult) {
         JobIdentity identity = taskResult.getJobIdentity();
-        ScheduleTaskEntity taskEntity = nullSafeFindById(identity.getSourceId());
+        ScheduleTaskEntity taskEntity = nullSafeFindById(identity.getId());
         taskEntity.setProgressPercentage(taskResult.getProgress() * 100);
         taskEntity.setStatus(taskResult.getTaskStatus() == null ? TaskStatus.RUNNING : taskResult.getTaskStatus());
         taskEntity.setResultJson(taskResult.getResultJson());

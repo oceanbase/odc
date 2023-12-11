@@ -32,8 +32,8 @@ import com.oceanbase.odc.service.task.enums.SourceType;
  * @since 4.2.4
  */
 @Repository
-public interface JobScheduleRepository extends JpaRepository<JobScheduleEntity, Long>,
-        JpaSpecificationExecutor<JobScheduleEntity> {
+public interface JobScheduleRepository extends JpaRepository<JobEntity, Long>,
+        JpaSpecificationExecutor<JobEntity> {
 
     @Transactional
     @Modifying
@@ -41,6 +41,6 @@ public interface JobScheduleRepository extends JpaRepository<JobScheduleEntity, 
     int updateStatusAndScheduleTimesById(Long id, TaskStatus status, Integer scheduleTimes);
 
 
-    JobScheduleEntity findBySourceIdAndSourceType(Long sourceId, SourceType sourceType);
+    JobEntity findBySourceIdAndSourceType(Long sourceId, SourceType sourceType);
 
 }

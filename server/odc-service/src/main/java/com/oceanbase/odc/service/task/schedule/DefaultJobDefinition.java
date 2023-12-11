@@ -17,8 +17,7 @@ package com.oceanbase.odc.service.task.schedule;
 
 import java.util.Map;
 
-import com.oceanbase.odc.service.quartz.model.MisfireStrategy;
-import com.oceanbase.odc.service.schedule.model.TriggerConfig;
+import com.oceanbase.odc.service.task.executor.task.Task;
 
 import lombok.Builder;
 import lombok.Data;
@@ -32,11 +31,10 @@ import lombok.Data;
 @Builder
 public class DefaultJobDefinition implements JobDefinition {
 
-    private JobIdentity jobIdentity;
+    private Class<? extends Task> jobClass;
+
+    private String jobType;
 
     private Map<String, String> jobData;
 
-    private MisfireStrategy misfireStrategy;
-
-    private TriggerConfig triggerConfig;
 }

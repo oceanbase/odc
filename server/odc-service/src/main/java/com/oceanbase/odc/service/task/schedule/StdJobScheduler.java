@@ -24,9 +24,11 @@ import org.quartz.impl.JobDetailImpl;
 
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.service.schedule.model.QuartzKeyGenerator;
+import com.oceanbase.odc.service.schedule.model.TriggerConfig;
 import com.oceanbase.odc.service.task.caller.JobException;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
+import com.oceanbase.odc.service.task.service.JobEntity;
 
 /**
  * @author yaobin
@@ -44,15 +46,17 @@ public class StdJobScheduler implements JobScheduler {
         PreConditions.notNull(configuration.getScheduler(), "quartz scheduler");
         PreConditions.notNull(configuration.getJobDispatcher(), "job dispatcher");
         PreConditions.notNull(configuration.getHostUrlProvider(), "host url provider");
+        PreConditions.notNull(configuration.getTaskFrameworkService(), "task framework sevice");
         JobConfigurationHolder.setJobConfiguration(configuration);
     }
 
     @Override
-    public void scheduleJob(JobDefinition jd) throws JobException {
+    public Long scheduleJob(JobDefinition jd, TriggerConfig triggerConfig) throws JobException {
         PreConditions.notNull(jd, "job definition");
 
-        Trigger trigger = TriggerBuilder.build(jd);
-        JobIdentity jobIdentity = jd.getJobIdentity();
+        JobEntity jobEntity = configuration.getTaskFrameworkService().save(jd);
+        JobIdentity jobIdentity = JobIdentity.of(jobEntity.getId());
+        Trigger trigger = TriggerBuilder.build(jobIdentity, jd, triggerConfig);
         JobKey jobKey = QuartzKeyGenerator.generateJobKey(jobIdentity);
         JobDetailImpl detail = new JobDetailImpl();
         detail.setKey(jobKey);
@@ -63,20 +67,17 @@ public class StdJobScheduler implements JobScheduler {
         } catch (SchedulerException e) {
             throw new JobException("add and schedule job failed:", e);
         }
+        return jobEntity.getId();
     }
 
     @Override
-    public void scheduleJobNow(JobDefinition jd) throws JobException {
+    public Long scheduleJobNow(JobDefinition jd) throws JobException {
         PreConditions.notNull(jd, "job definition");
-        // if trigger config is null, will set schedule right now
-        if (jd.getTriggerConfig() != null) {
-            ((DefaultJobDefinition) jd).setTriggerConfig(null);
-        }
-        scheduleJob(jd);
+        return scheduleJob(jd, null);
     }
 
     @Override
-    public void cancelJob(JobIdentity ji) throws JobException {
-        configuration.getJobDispatcher().stop(ji);
+    public void cancelJob(Long id) throws JobException {
+        configuration.getJobDispatcher().stop(JobIdentity.of(id));
     }
 }

@@ -16,6 +16,7 @@
 
 package com.oceanbase.odc.service.task.schedule;
 
+import com.oceanbase.odc.service.schedule.model.TriggerConfig;
 import com.oceanbase.odc.service.task.caller.JobException;
 
 /**
@@ -26,26 +27,26 @@ import com.oceanbase.odc.service.task.caller.JobException;
 public interface JobScheduler {
 
     /**
-     * schedule job which can be set trigger config
+     * schedule job with trigger config
      *
      * @param jd define a job
      * @throws JobException throw JobException if schedule job failed
      */
-    void scheduleJob(JobDefinition jd) throws JobException;
+    Long scheduleJob(JobDefinition jd, TriggerConfig triggerConfig) throws JobException;
 
     /**
-     * schedule a job right now, trigger config on job definition will be ignored
+     * schedule a job right now
      *
      * @param jd define a job
      * @throws JobException throw JobException if schedule job failed
      */
-    void scheduleJobNow(JobDefinition jd) throws JobException;
+    Long scheduleJobNow(JobDefinition jd) throws JobException;
 
     /**
      * cancel job
      *
-     * @param ji define a job
+     * @param jobId job id
      * @throws JobException throw JobException if cancel job failed
      */
-    void cancelJob(JobIdentity ji) throws JobException;
+    void cancelJob(Long jobId) throws JobException;
 }
