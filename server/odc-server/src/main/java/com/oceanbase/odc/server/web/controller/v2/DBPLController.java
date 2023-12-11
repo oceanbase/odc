@@ -56,7 +56,7 @@ public class DBPLController {
                 SidUtils.getSessionId(sid), true), params));
     }
 
-    @ApiOperation(value = "callProcedure", notes = "call a procedure")
+    @ApiOperation(value = "asyncCall", notes = "call a procedure")
     @RequestMapping(value = "/procedure/{sid}/asyncCall", method = RequestMethod.POST)
     public SuccessResponse<String> callProcedure(
             @PathVariable String sid, @RequestBody CallProcedureReq req) {
@@ -64,7 +64,7 @@ public class DBPLController {
                 SidUtils.getSessionId(sid), true), req));
     }
 
-    @ApiOperation(value = "callProcedure", notes = "get the async result of a calling procedure")
+    @ApiOperation(value = "getResult", notes = "get the async result of a calling procedure")
     @RequestMapping(value = "/procedure/{sid}/getResult", method = RequestMethod.GET)
     public SuccessResponse<CallProcedureResp> getCallProcedureResult(@PathVariable String sid,
             @RequestParam String resultId, @RequestParam(required = false) Integer timeoutSeconds) {
@@ -72,14 +72,14 @@ public class DBPLController {
                 this.sessionService.nullSafeGet(SidUtils.getSessionId(sid), false), resultId, timeoutSeconds));
     }
 
-    @ApiOperation(value = "callFunction", notes = "call a function")
+    @ApiOperation(value = "asyncCall", notes = "call a function")
     @RequestMapping(value = "/function/{sid}/asyncCall", method = RequestMethod.POST)
     public SuccessResponse<String> callFunction(@PathVariable String sid, @RequestBody CallFunctionReq req) {
         return Responses.ok(this.plService.callFunction(this.sessionService.nullSafeGet(
                 SidUtils.getSessionId(sid), true), req));
     }
 
-    @ApiOperation(value = "callFunction", notes = "get the async result of a calling function")
+    @ApiOperation(value = "getResult", notes = "get the async result of a calling function")
     @RequestMapping(value = "/function/{sid}/getResult", method = RequestMethod.GET)
     public SuccessResponse<CallFunctionResp> getCallFunctionResult(@PathVariable String sid,
             @RequestParam String resultId, @RequestParam(required = false) Integer timeoutSeconds) {
