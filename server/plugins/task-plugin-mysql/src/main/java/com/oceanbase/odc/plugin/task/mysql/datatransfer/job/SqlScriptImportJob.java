@@ -101,6 +101,9 @@ public class SqlScriptImportJob extends AbstractJob {
                     LOGGER.warn(errMsg);
                     failures.getAndIncrement();
                 }
+                if (object.getTotal().get() % 100 == 0) {
+                    LOGGER.info("Processed {} SQL statements.", object.getTotal().get());
+                }
             }
             if (failures.get() != 0L) {
                 setStatus(Status.FAILURE);
@@ -229,6 +232,8 @@ public class SqlScriptImportJob extends AbstractJob {
                 break;
             }
             insertionBuffer.add(next);
+            records++;
+            bytes += next.getBytes(Charset.forName(transferConfig.getEncoding().getAlias())).length;
         }
         increaseTotal(insertionBuffer.size());
         if (!provider.hasNext()) {

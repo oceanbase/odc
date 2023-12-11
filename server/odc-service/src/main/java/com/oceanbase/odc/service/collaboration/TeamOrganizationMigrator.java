@@ -72,9 +72,6 @@ public class TeamOrganizationMigrator {
     private UserOrganizationRepository userOrganizationRepository;
 
     @Autowired
-    private RuleApplyingMigrator ruleApplyingMigrator;
-
-    @Autowired
     private OrganizationRepository organizationRepository;
 
     @Autowired

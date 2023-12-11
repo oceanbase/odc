@@ -153,9 +153,10 @@ public class SqlCheckService {
             Rule rule = name2RuleMap.getOrDefault(name, null);
             if (Objects.nonNull(rule)) {
                 c.setLevel(rule.getLevel());
-                Rule violationRule = new Rule();
-                violationRule.setViolation(RuleViolation.fromCheckViolation(c));
-                violatedRules.add(violationRule);
+                Rule newRule = new Rule();
+                newRule.setLevel(rule.getLevel());
+                newRule.setViolation(RuleViolation.fromCheckViolation(c));
+                violatedRules.add(newRule);
             }
         });
         return violatedRules;
