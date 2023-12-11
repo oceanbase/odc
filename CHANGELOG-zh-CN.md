@@ -23,7 +23,7 @@
 基于项目的管控协同
 
 - 增加 2 个内置项目角色：安全管理员，参与者
-- 允许用户申请长居权限
+- 允许用户申请项目权限
 
 ### 缺陷修复
 
@@ -36,12 +36,12 @@ SQL 执行
 
 结果集导出
 
-- 导出任务没有日志打印
+- 任务没有日志打印
 
 PL 对象
 
-- 交互式创建函数过程中，无法通过下拉菜单定义 sys_recursor 类型的返回值
-- OceanBase MySQL 模式下 PL 参数值没有对单引号进行转义
+- 交互式创建函数过程中，无法通过下拉菜单定义 sys_refcursor 类型的返回值
+- OceanBase MySQL 模式下 PL 参数值没有对单引号转义
 
 DLM
 
@@ -49,16 +49,16 @@ DLM
 
 分区计划
 
-- 在 OceanBase 1.4.79 版本下的 MySQL 模式下创建任务失败
+- 在 OceanBase 1.4.79 版本的 MySQL 模式下创建任务失败
 
 SQL-Check
 
-- 无法识别 alter table drop index 类型的 DROP 语句
+- 无法识别`alter table xxx drop index`语句为 DROP INDEX 语句
 
 外部审批集成
 
-- 无法识别索引集合中数据的表达式
-- 外部系统的 xml 返回在反序列化时会丢失原始 xml 的根 tag
+- 无法识别索引集合中的数据的表达式
+- 外部系统返回的 xml 形式的数据在反序列化时会丢失原始 xml 的根 tag
 
 数据脱敏
 
@@ -68,7 +68,7 @@ SQL-Check
 
 - 用户离开项目且不属于任何项目和角色时依然可以创建数据源
 - OceanBase MySQL 以及原生 MySQL 模式下数据库会话中"执行时间"栏目为 0
-- OceanBase Oracle 模式下通过会话变量管理功能进行时间输出格式修改不生效 
+- OceanBase Oracle 模式下通过会话变量管理功能进行时间输出格式的修改在 SQL 执行窗口不生效 
 
 堡垒机集成
 
