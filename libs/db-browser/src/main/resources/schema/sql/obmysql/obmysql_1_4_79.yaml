@@ -124,8 +124,7 @@ sqls:
       '1' as is_sub_part_template,
       p.part_id,
       p.part_name,
-      p.high_bound_val,
-      p.list_val
+      p.high_bound_val
     from
       oceanbase.__all_tenant n,
       oceanbase.__all_database d,

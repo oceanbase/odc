@@ -19,8 +19,12 @@ import java.util.Arrays;
 import java.util.List;
 
 import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.service.common.model.ResourceIdentifier;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class ResourceIDParser {
     // order for this key list should not be modified
     // new key support: new key should insert into head of this list
@@ -43,7 +47,12 @@ public class ResourceIDParser {
         Integer endIndex = rId.length();
         // sid:1:d:test
         for (String key : keyList) {
-            endIndex = extract(rId, resourceIdentifier, endIndex, key);
+            try {
+                endIndex = extract(rId, resourceIdentifier, endIndex, key);
+            } catch (Exception e) {
+                log.warn("Parse resource identifier failed, rId: {}, key: {}", rId, key, e);
+                throw new BadRequestException("Parse resource identifier failed");
+            }
         }
         return resourceIdentifier;
     }

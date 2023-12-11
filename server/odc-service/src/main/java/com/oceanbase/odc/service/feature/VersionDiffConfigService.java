@@ -62,7 +62,6 @@ public class VersionDiffConfigService {
         return getDatatypeList(connectionSession, COLUMN_DATA_TYPE);
     }
 
-
     public List<DataTypeUnit> getDatatypeList(@NonNull ConnectionSession connectionSession, String configKey) {
         List<DataTypeUnit> datatypes = new ArrayList<>();
 
