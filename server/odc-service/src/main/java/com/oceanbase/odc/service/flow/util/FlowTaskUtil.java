@@ -326,6 +326,7 @@ public class FlowTaskUtil {
             for (MockTableConfig tableConfig : tableConfigList) {
                 Verify.notGreaterThan(tableConfig.getTotalCount(), mockProperties.getMaxRowCount(), "MockTotalCount");
                 tableConfig.setTimeoutMillis(timeoutMillis);
+                tableConfig.setConcurrent(mockProperties.getConcurrent());
                 tableConfig.setSchemaName(getSchemaName(execution));
 
                 List<MockColumnConfig> columnConfigs = tableConfig.getColumns();
@@ -344,7 +345,7 @@ public class FlowTaskUtil {
             taskConfig.setDbConfig(dataBaseConfig);
             DialectType type = conn.getDialectType();
             taskConfig.setDriverClassName(ConnectionPluginUtil.getConnectionExtension(type).getDriverClassName());
-            taskConfig.setSubProtocolName(type.isOceanbase() ? "oceanbase" : "mysql");
+            taskConfig.setProtocolName(type.isOceanbase() ? "jdbc:oceanbase" : "jdbc:mysql");
             return taskConfig;
         } catch (Exception e) {
             log.warn("Error initializing mock data task, taskId={}", taskId, e);

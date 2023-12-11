@@ -29,9 +29,12 @@ import lombok.NonNull;
 @Configuration
 public class MockProperties {
 
+    @Value("${odc.task.mockData.maxPoolSize:6}")
+    private int maxPoolSize = 6;
+    @Value("${odc.task.mockData.concurrent:1}")
+    private int concurrent = 1;
     @Value("${odc.task.mockData.maxRowCount:1000000}")
     private long maxRowCount = 1000000;
-    private int maxPoolSize = 6;
     public String resultFileLocationPrefix = "./data/data_mocker";
 
     public File getDownloadPath(@NonNull String taskId) {
