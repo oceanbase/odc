@@ -12,4 +12,4 @@ CREATE TABLE IF NOT EXISTS `job_job` (
   `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
   CONSTRAINT pk_job_schedule PRIMARY KEY (`id`),
   CONSTRAINT uk_job_schedule UNIQUE key (`source_id`,`source_type`)
-) COMMENT = '任务调度记录表';
+) COMMENT = '任务记录表';
