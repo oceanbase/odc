@@ -51,6 +51,16 @@ public class FullLinkTraceUtilTest {
         Assert.assertEquals(expected, span2.getStartTimestamp());
     }
 
+    @Test
+    public void test_DeserializeTimestamp_preserve_accuracy() {
+        String expected = "2023-07-11 14:09:49.650000";
+        String input = "{\"start_ts\":\"2023-07-11 14:09:49.650000\"}";
+
+        TraceSpan span = JsonUtils.fromJson(input, TraceSpan.class);
+
+        Assert.assertEquals(expected, span.getStartTimestamp());
+    }
+
     private Statement mockStmt() throws Exception {
         URL resource = this.getClass().getClassLoader().getResource("trace.json");
         String jsonStr;
