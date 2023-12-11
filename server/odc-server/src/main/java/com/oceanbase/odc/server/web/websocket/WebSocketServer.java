@@ -294,7 +294,8 @@ public class WebSocketServer {
 
     private synchronized void addOsUser(String userId) throws IOException, InterruptedException {
         String osUserName = getOsUserName(userId);
-        Process userExists = new ProcessBuilder().command("grep", "-c", "^" + osUserName + ":", "/etc/passwd").start();
+        Process userExists = new ProcessBuilder()
+                .command("grep", "-c", "^" + osUserName + ":", "/etc/passwd").start();
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(userExists.getInputStream()))) {
             String line = reader.readLine();
             if (StringUtils.equals(line, "1")) {
