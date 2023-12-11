@@ -229,20 +229,6 @@ public class ApprovalPermissionService {
         return userTaskInstanceEntities;
     }
 
-    public List<UserTaskInstanceEntity> getApprovableApprovalInstances(long userId) {
-        Set<Long> roleIds = userService.getUserRoleIds(userId);
-        Set<String> resourceRoleIdentifiers = resourceRoleService.getResourceRoleIdentifiersByUserId(userId);
-        if (CollectionUtils.isEmpty(roleIds)) {
-            if (CollectionUtils.isEmpty(resourceRoleIdentifiers)) {
-                return userTaskInstanceRepository.findByCandidateUserId(userId);
-            } else {
-                return userTaskInstanceRepository.findByCandidateUserIdOrResourceRoleIdentifier(userId,
-                        resourceRoleIdentifiers);
-            }
-        }
-        return userTaskInstanceRepository.findByCandidateUserIdOrRoleIds(userId, roleIds);
-    }
-
     public void setCandidateResourceRole(@NonNull Long approvalInstanceId, @NonNull String resourceRoleIdentifier) {
         UserTaskInstanceCandidateEntity candidateEntity = new UserTaskInstanceCandidateEntity();
         candidateEntity.setApprovalInstanceId(approvalInstanceId);
