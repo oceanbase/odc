@@ -234,14 +234,14 @@ public class DBPLService {
     }
 
     public <T> T getAsyncCallingResult(@NonNull ConnectionSession session,
-            @NonNull String requestId, Integer timeoutSeconds) {
+            @NonNull String resultId, Integer timeoutSeconds) {
         int timeout = Objects.isNull(timeoutSeconds)
                 ? ConnectConsoleService.DEFAULT_GET_RESULT_TIMEOUT_SECONDS
                 : timeoutSeconds;
-        Future<T> future = ConnectionSessionUtil.getFutureJdbcResult(session, requestId);
+        Future<T> future = ConnectionSessionUtil.getFutureJdbcResult(session, resultId);
         try {
             T callingResult = future.get(timeout, TimeUnit.SECONDS);
-            ConnectionSessionUtil.removeFutureJdbc(session, requestId);
+            ConnectionSessionUtil.removeFutureJdbc(session, resultId);
             return callingResult;
         } catch (InterruptedException | ExecutionException e) {
             throw new IllegalStateException(e);

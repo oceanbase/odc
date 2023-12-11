@@ -67,9 +67,9 @@ public class DBPLController {
     @ApiOperation(value = "callProcedure", notes = "get the async result of a calling procedure")
     @RequestMapping(value = "/procedure/{sid}/getResult", method = RequestMethod.GET)
     public SuccessResponse<CallProcedureResp> getCallProcedureResult(@PathVariable String sid,
-            @RequestParam String requestId, @RequestParam(required = false) Integer timeoutSeconds) {
+            @RequestParam String resultId, @RequestParam(required = false) Integer timeoutSeconds) {
         return Responses.ok(this.plService.getAsyncCallingResult(
-                this.sessionService.nullSafeGet(SidUtils.getSessionId(sid), false), requestId, timeoutSeconds));
+                this.sessionService.nullSafeGet(SidUtils.getSessionId(sid), false), resultId, timeoutSeconds));
     }
 
     @ApiOperation(value = "callFunction", notes = "call a function")
@@ -82,9 +82,9 @@ public class DBPLController {
     @ApiOperation(value = "callFunction", notes = "get the async result of a calling function")
     @RequestMapping(value = "/function/{sid}/getResult", method = RequestMethod.GET)
     public SuccessResponse<CallFunctionResp> getCallFunctionResult(@PathVariable String sid,
-            @RequestParam String requestId, @RequestParam(required = false) Integer timeoutSeconds) {
+            @RequestParam String resultId, @RequestParam(required = false) Integer timeoutSeconds) {
         return Responses.ok(this.plService.getAsyncCallingResult(
-                this.sessionService.nullSafeGet(SidUtils.getSessionId(sid), false), requestId, timeoutSeconds));
+                this.sessionService.nullSafeGet(SidUtils.getSessionId(sid), false), resultId, timeoutSeconds));
     }
 
     @ApiOperation(value = "getLine", notes = "get dbms_output printing")
