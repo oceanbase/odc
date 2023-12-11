@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.oceanbase.odc.service.common.model.ResourceSql;
@@ -55,20 +56,35 @@ public class DBPLController {
                 SidUtils.getSessionId(sid), true), params));
     }
 
-    @ApiOperation(value = "callProcedure", notes = "cann a procedure")
-    @RequestMapping(value = "/callProcedure/{sid}", method = RequestMethod.PUT)
-    public SuccessResponse<CallProcedureResp> callProcedure(@PathVariable String sid,
-            @RequestBody CallProcedureReq req) {
+    @ApiOperation(value = "callProcedure", notes = "call a procedure")
+    @RequestMapping(value = "/procedure/{sid}/call", method = RequestMethod.POST)
+    public SuccessResponse<String> callProcedure(
+            @PathVariable String sid, @RequestBody CallProcedureReq req) {
         return Responses.ok(this.plService.callProcedure(this.sessionService.nullSafeGet(
                 SidUtils.getSessionId(sid), true), req));
     }
 
+    @ApiOperation(value = "callProcedure", notes = "get the async result of a calling procedure")
+    @RequestMapping(value = "/procedure/{sid}/getResult", method = RequestMethod.GET)
+    public SuccessResponse<CallProcedureResp> getAsyncCallProcedureResult(@PathVariable String sid,
+            @RequestParam String requestId, @RequestParam(required = false) Integer timeoutSeconds) {
+        return Responses.ok(this.plService.getAsyncCallingResult(
+                this.sessionService.nullSafeGet(SidUtils.getSessionId(sid), false), requestId, timeoutSeconds));
+    }
+
     @ApiOperation(value = "callFunction", notes = "call a function")
-    @RequestMapping(value = "/callFunction/{sid}", method = RequestMethod.PUT)
-    public SuccessResponse<CallFunctionResp> callFunction(@PathVariable String sid,
-            @RequestBody CallFunctionReq req) {
+    @RequestMapping(value = "/function/{sid}/call", method = RequestMethod.POST)
+    public SuccessResponse<String> callFunction(@PathVariable String sid, @RequestBody CallFunctionReq req) {
         return Responses.ok(this.plService.callFunction(this.sessionService.nullSafeGet(
                 SidUtils.getSessionId(sid), true), req));
+    }
+
+    @ApiOperation(value = "callFunction", notes = "get the async result of a calling function")
+    @RequestMapping(value = "/function/{sid}/getResult", method = RequestMethod.GET)
+    public SuccessResponse<CallFunctionResp> getAsyncCallFunctionResult(@PathVariable String sid,
+            @RequestParam String requestId, @RequestParam(required = false) Integer timeoutSeconds) {
+        return Responses.ok(this.plService.getAsyncCallingResult(
+                this.sessionService.nullSafeGet(SidUtils.getSessionId(sid), false), requestId, timeoutSeconds));
     }
 
     @ApiOperation(value = "getLine", notes = "get dbms_output printing")
@@ -78,8 +94,8 @@ public class DBPLController {
     }
 
     @ApiOperation(value = "parsePLNameType", notes = "get a pl's name ant type by parsing")
-    @RequestMapping(value = "/parsePLNameType/{sid}", method = RequestMethod.PUT)
-    public SuccessResponse<PLIdentity> parseNameType(@PathVariable String sid, @RequestBody ResourceSql ddl) {
+    @RequestMapping(value = "/parsePLNameType/{sid}", method = RequestMethod.POST)
+    public SuccessResponse<PLIdentity> getNameAndType(@PathVariable String sid, @RequestBody ResourceSql ddl) {
         DBPLObjectIdentity identity = this.plService.parsePLNameType(
                 this.sessionService.nullSafeGet(SidUtils.getSessionId(sid), true), ddl.getSql());
         return Responses.ok(PLIdentity.of(identity.getType(), identity.getName()));

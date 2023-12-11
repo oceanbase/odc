@@ -17,6 +17,7 @@ package com.oceanbase.odc.core.sql.execute;
 
 import java.util.concurrent.Future;
 
+import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.PreparedStatementCallback;
 import org.springframework.jdbc.core.PreparedStatementCreator;
 import org.springframework.jdbc.core.StatementCallback;
@@ -46,6 +47,14 @@ public interface AsyncJdbcExecutor {
      * @return control handler
      */
     <T> Future<T> execute(PreparedStatementCreator creator, PreparedStatementCallback<T> statementCallback);
+
+    /**
+     * Execute sql script asynchronously
+     *
+     * @param action a callback object that specifies the action
+     * @return control handler
+     */
+    <T> Future<T> execute(ConnectionCallback<T> action);
 
 }
 
