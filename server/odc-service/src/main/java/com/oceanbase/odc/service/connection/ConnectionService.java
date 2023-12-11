@@ -396,6 +396,7 @@ public class ConnectionService {
                 ConnectionConfig c = new ConnectionConfig();
                 c.setId(e.getId());
                 c.setName(e.getName());
+                c.setType(e.getType());
                 return c;
             }).collect(Collectors.toList());
         } else {
