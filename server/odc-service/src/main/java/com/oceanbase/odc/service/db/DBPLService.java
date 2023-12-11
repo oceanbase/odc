@@ -50,13 +50,13 @@ import com.oceanbase.odc.core.sql.execute.task.DefaultSqlExecuteTaskManager;
 import com.oceanbase.odc.core.sql.split.OffsetString;
 import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
 import com.oceanbase.odc.core.sql.util.OBUtils;
-import com.oceanbase.odc.service.common.model.OdcSqlExecuteResult;
 import com.oceanbase.odc.service.db.model.BatchCompileResp;
 import com.oceanbase.odc.service.db.model.BatchCompileStatus;
 import com.oceanbase.odc.service.db.model.CallFunctionReq;
 import com.oceanbase.odc.service.db.model.CallFunctionResp;
 import com.oceanbase.odc.service.db.model.CallProcedureReq;
 import com.oceanbase.odc.service.db.model.CallProcedureResp;
+import com.oceanbase.odc.service.db.model.CompileResult;
 import com.oceanbase.odc.service.db.model.DBMSOutput;
 import com.oceanbase.odc.service.db.model.PLIdentity;
 import com.oceanbase.odc.service.db.model.StartBatchCompileReq;
@@ -166,27 +166,27 @@ public class DBPLService {
         return taskId;
     }
 
-    public OdcSqlExecuteResult compile(ConnectionSession session, PLIdentity compile) {
+    public CompileResult compile(@NonNull ConnectionSession session, @NonNull PLIdentity compile) {
         DBPLObjectIdentity identity = new DBPLObjectIdentity();
         identity.setType(compile.getObDbObjectType());
         identity.setName(compile.getPlName());
         identity.setSchemaName(ConnectionSessionUtil.getCurrentSchema(session));
         SyncJdbcExecutor jdbcExecutor = session.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY);
         OBOracleCompilePLCallBack callBack = new OBOracleCompilePLCallBack(identity, jdbcExecutor);
-        OdcSqlExecuteResult result = new OdcSqlExecuteResult();
+        CompileResult result = new CompileResult();
         try {
             String warning = jdbcExecutor.execute(callBack);
             if (com.oceanbase.tools.dbbrowser.util.StringUtils.isEmpty(warning)) {
-                result.setStatus(true);
+                result.setSuccessful(true);
             } else {
-                result.setStatus(false);
-                result.setTrack(warning);
+                result.setSuccessful(false);
+                result.setErrorMessage(warning);
             }
         } catch (Exception e) {
-            result.setStatus(false);
-            result.setTrack(e.getMessage());
+            result.setSuccessful(false);
+            result.setErrorMessage(e.getMessage());
             if (e.getCause() != null) {
-                result.setTrack(e.getCause().getMessage());
+                result.setErrorMessage(e.getCause().getMessage());
             }
         }
         return result;
