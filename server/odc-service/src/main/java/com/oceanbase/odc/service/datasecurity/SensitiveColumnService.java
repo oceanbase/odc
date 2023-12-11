@@ -123,6 +123,7 @@ public class SensitiveColumnService {
     private VersionDiffConfigService versionDiffConfigService;
 
     private static final SensitiveColumnMapper mapper = SensitiveColumnMapper.INSTANCE;
+    private static final List<DialectType> UNSUPPORTED_DIALECTS = Collections.singletonList(DialectType.MYSQL);
 
     @Transactional(rollbackFor = Exception.class)
     @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA, SECURITY_ADMINISTRATOR"}, resourceType = "ODC_PROJECT",
@@ -483,7 +484,7 @@ public class SensitiveColumnService {
                 .map(database -> database.getDataSource().getId()).collect(Collectors.toSet());
         List<ConnectionConfig> datasources = connectionService.innerListByIds(datasourceIds);
         for (ConnectionConfig ds : datasources) {
-            if (Objects.equals(ds.getDialectType(), DialectType.MYSQL)) {
+            if (UNSUPPORTED_DIALECTS.contains(ds.getDialectType())) {
                 throw new UnsupportedException("MySQL datasource is not supported");
             }
         }
