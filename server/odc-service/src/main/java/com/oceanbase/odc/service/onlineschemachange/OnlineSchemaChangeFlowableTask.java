@@ -85,10 +85,10 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
 
     private volatile TaskStatus status;
     private volatile long scheduleId;
-    private long creatorId;
-    private long flowTaskId;
-    private long organizationId;
-    private boolean continueOnError;
+    private volatile long creatorId;
+    private volatile long flowTaskId;
+    private volatile long organizationId;
+    private volatile boolean continueOnError;
 
     @Override
     protected Void start(Long taskId, TaskService taskService, DelegateExecution execution) throws Exception {
