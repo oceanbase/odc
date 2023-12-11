@@ -79,10 +79,12 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
     @Autowired
     private OrganizationService organizationService;
 
+    private final Object LOCK = new Object();
+
     private final static String checkTaskCronExpression = "0/10 * * * * ?";
 
     private volatile TaskStatus status;
-    private long scheduleId;
+    private volatile long scheduleId;
     private long creatorId;
     private long flowTaskId;
     private long organizationId;
@@ -117,6 +119,12 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
                 taskHandler.start(scheduleId, tasks.get(0).getId());
                 log.info("Successfully start schedule task with id={}", tasks.get(0).getId());
             }
+            synchronized (LOCK) {
+                log.info("Wait task {} to be terminated.", taskId);
+                LOCK.wait();
+                log.info("Accept notify, task {} is terminated, and status is {}.", taskId, this.status.name());
+            }
+
         } finally {
             OnlineSchemaChangeContextHolder.clear();
         }
@@ -154,6 +162,10 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
     @Override
     protected void onProgressUpdate(Long taskId, TaskService taskService) {
         Page<ScheduleTaskEntity> tasks = scheduleTaskService.listTask(Pageable.unpaged(), scheduleId);
+        if (tasks.getSize() == 0) {
+            log.info("List schedule task size is 0 by scheduleId {}.", scheduleId);
+            return;
+        }
         progressStatusUpdate(tasks);
 
         Optional<Double> res = tasks.stream().map(this::singleTaskPercentage).reduce(Double::sum);
@@ -164,6 +176,13 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
         flowTask.setStatus(this.status);
         flowTask.setProgressPercentage(Math.min(percentage, 100));
         taskService.update(flowTask);
+        if (this.status.isTerminated()) {
+            synchronized (LOCK) {
+                LOCK.notifyAll();
+                log.info("Task {} is terminated, and status is {},notify other thread.", taskId, this.status.name());
+            }
+        }
+
     }
 
     private void progressStatusUpdate(Page<ScheduleTaskEntity> tasks) {
