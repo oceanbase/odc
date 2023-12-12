@@ -269,16 +269,22 @@ public class ScheduleService {
             // create a single trigger job if job not found.
             if (!quartzJobService.checkExists(jobKey)) {
                 log.info("Job not found and will be recreated,jobKey={}", jobKey);
-                CreateQuartzJobReq req = buildCreateJobReq(scheduleEntity);
-                req.setTriggerConfig(null);
+                CreateQuartzJobReq req = new CreateQuartzJobReq();
+                req.setScheduleId(scheduleId);
+                req.setType(JobType.valueOf(taskEntity.getJobGroup()));
+                TriggerConfig triggerConfig = new TriggerConfig();
+                triggerConfig.setTriggerStrategy(TriggerStrategy.START_NOW);
+                req.setTriggerConfig(triggerConfig);
                 quartzJobService.createJob(req);
                 log.info("Job recreated,jobKey={}", jobKey);
+                return ScheduleTaskResp.withId(taskId);
+            }else{
+                return scheduleTaskService.start(taskId);
             }
         } catch (SchedulerException e) {
             log.warn("Unexpected exception while check job!", e);
             throw new IllegalStateException("Unexpected exception while check job!");
         }
-        return scheduleTaskService.start(taskId);
     }
 
     public ScheduleTaskResp dataArchiveDelete(Long scheduleId, Long taskId) {
