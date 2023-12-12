@@ -24,13 +24,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.oceanbase.odc.service.common.model.OdcSqlExecuteResult;
 import com.oceanbase.odc.service.common.model.ResourceIdentifier;
 import com.oceanbase.odc.service.common.model.ResourceSql;
 import com.oceanbase.odc.service.common.response.OdcResult;
 import com.oceanbase.odc.service.common.util.ResourceIDParser;
 import com.oceanbase.odc.service.common.util.SidUtils;
 import com.oceanbase.odc.service.db.DBTriggerService;
+import com.oceanbase.odc.service.db.model.CompileResult;
 import com.oceanbase.odc.service.db.model.DBTriggerReq;
 import com.oceanbase.odc.service.session.ConnectSessionService;
 import com.oceanbase.tools.dbbrowser.model.DBTrigger;
@@ -76,10 +76,8 @@ public class DBTriggerController {
 
     @ApiOperation(value = "compile", notes = "编译一个特定的触发器，sid示例：sid:1000-1:tr:tr1")
     @RequestMapping(value = "/compile/{sid:.*}", method = RequestMethod.POST)
-    public OdcResult<OdcSqlExecuteResult> compile(@PathVariable String sid) {
-        ResourceIdentifier i = ResourceIDParser.parse(sid);
-        String trigger = i.getTrigger();
-        return OdcResult.ok(triggerService.compile(sessionService.nullSafeGet(i.getSid(), true), trigger));
+    public OdcResult<CompileResult> compile(@PathVariable String sid) {
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     @ApiOperation(value = "getCreateSql", notes = "获取触发器的创建sql，sid示例：sid:1000-1:tr:tr1")

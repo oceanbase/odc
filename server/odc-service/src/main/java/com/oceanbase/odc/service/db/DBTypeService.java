@@ -26,7 +26,6 @@ import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.plugin.schema.api.TypeExtensionPoint;
-import com.oceanbase.odc.service.common.model.OdcSqlExecuteResult;
 import com.oceanbase.odc.service.common.model.ResourceSql;
 import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
 import com.oceanbase.odc.service.session.ConnectConsoleService;
@@ -73,10 +72,6 @@ public class DBTypeService {
                 ConnectionSessionConstants.BACKEND_DS_KEY)
                 .execute((ConnectionCallback<String>) con -> getTypeExtensionPoint(session)
                         .generateCreateTemplate(unit)));
-    }
-
-    public OdcSqlExecuteResult compile(@NonNull ConnectionSession session, @NonNull String typeName) {
-        throw new UnsupportedOperationException("Not supported yet");
     }
 
     private TypeExtensionPoint getTypeExtensionPoint(@NonNull ConnectionSession session) {
