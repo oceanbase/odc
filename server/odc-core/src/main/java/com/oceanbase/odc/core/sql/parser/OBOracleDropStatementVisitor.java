@@ -17,6 +17,7 @@ package com.oceanbase.odc.core.sql.parser;
 
 import org.antlr.v4.runtime.tree.RuleNode;
 
+import com.oceanbase.tools.sqlparser.oboracle.OBParser.Drop_context_stmtContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Drop_dblink_stmtContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Drop_directory_stmtContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Drop_function_stmtContext;
@@ -148,6 +149,11 @@ class OBOracleDropStatementVisitor extends OBParserBaseVisitor<DropStatement> {
     @Override
     public DropStatement visitDrop_trigger_stmt(Drop_trigger_stmtContext ctx) {
         return new DropStatement(ctx, "TRIGGER");
+    }
+
+    @Override
+    public DropStatement visitDrop_context_stmt(Drop_context_stmtContext ctx) {
+        return new DropStatement(ctx, "CONTEXT");
     }
 
     @Override

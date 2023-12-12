@@ -44,6 +44,8 @@ import com.oceanbase.odc.service.integration.model.TemplateVariables;
 import com.oceanbase.odc.service.integration.model.TemplateVariables.Variable;
 import com.oceanbase.odc.service.regulation.ruleset.RuleService;
 import com.oceanbase.odc.service.regulation.ruleset.SqlConsoleRuleService;
+import com.oceanbase.odc.service.regulation.ruleset.model.Rule;
+import com.oceanbase.odc.service.regulation.ruleset.model.Rule.RuleViolation;
 import com.oceanbase.odc.service.regulation.ruleset.model.SqlConsoleRules;
 import com.oceanbase.odc.service.session.interceptor.BaseTimeConsumingInterceptor;
 import com.oceanbase.odc.service.session.model.SqlAsyncExecuteReq;
@@ -105,15 +107,29 @@ public class ExternalSqlInterceptor extends BaseTimeConsumingInterceptor {
             case IN_BLACK_LIST:
                 ruleService.getByRulesetIdAndName(ruleSetId, SqlConsoleRules.EXTERNAL_SQL_INTERCEPTOR.getRuleName())
                         .ifPresent(rule -> {
-                            rule.setLevel(2);
-                            response.getViolatedRules().add(rule);
+                            Rule violationRule = new Rule();
+                            RuleViolation violation = new RuleViolation();
+                            violation.setLevel(2);
+                            violation.setLocalizedMessage(SqlConsoleRules.EXTERNAL_SQL_INTERCEPTOR
+                                    .getLocalizedMessage(new Object[] {rule.getProperties()
+                                            .get(rule.getMetadata().getPropertyMetadatas().get(0).getName())
+                                            .toString()}));
+                            violationRule.setViolation(violation);
+                            response.getViolatedRules().add(violationRule);
                         });
                 return false;
             case NEED_REVIEW:
                 ruleService.getByRulesetIdAndName(ruleSetId, SqlConsoleRules.EXTERNAL_SQL_INTERCEPTOR.getRuleName())
                         .ifPresent(rule -> {
-                            rule.setLevel(1);
-                            response.getViolatedRules().add(rule);
+                            Rule violationRule = new Rule();
+                            RuleViolation violation = new RuleViolation();
+                            violation.setLevel(1);
+                            violation.setLocalizedMessage(SqlConsoleRules.EXTERNAL_SQL_INTERCEPTOR
+                                    .getLocalizedMessage(new Object[] {rule.getProperties()
+                                            .get(rule.getMetadata().getPropertyMetadatas().get(0).getName())
+                                            .toString()}));
+                            violationRule.setViolation(violation);
+                            response.getViolatedRules().add(violationRule);
                         });
                 return false;
             default:

@@ -167,27 +167,16 @@ public class ProjectService {
     @Transactional(rollbackFor = Exception.class)
     public Project create(@NotNull @Valid Project project) {
         preCheck(project);
-
-        /**
-         * save project entity
-         */
         project.setOrganizationId(currentOrganizationId());
         project.setCreator(currentInnerUser());
         project.setLastModifier(currentInnerUser());
         project.setArchived(false);
         project.setBuiltin(false);
         ProjectEntity saved = repository.save(modelToEntity(project));
-
-        /**
-         * save project members as resource roles
-         */
         List<UserResourceRole> userResourceRoles = resourceRoleService.saveAll(
                 project.getMembers().stream()
                         .map(member -> member2UserResourceRole(member, saved.getId()))
                         .collect(Collectors.toList()));
-
-        grantPermissions(userResourceRoles, currentOrganizationId());
-
         return entityToModel(saved, userResourceRoles);
     }
 
@@ -244,8 +233,7 @@ public class ProjectService {
         List<ConnectionEntity> connectionEntities = connectionConfigRepository.findByProjectId(id).stream()
                 .peek(e -> e.setProjectId(null)).collect(Collectors.toList());
         connectionConfigRepository.saveAllAndFlush(connectionEntities);
-        connectionService.updateDatabaseProjectId(
-                connectionEntities.stream().map(ConnectionEntity::getId).collect(Collectors.toList()), null);
+        connectionService.updateDatabaseProjectId(connectionEntities, null, false);
         databaseRepository.setProjectIdToNull(id);
         return entityToModel(saved);
     }
@@ -296,7 +284,6 @@ public class ProjectService {
                 members.stream()
                         .map(member -> member2UserResourceRole(member, project.getId()))
                         .collect(Collectors.toList()));
-        grantPermissions(userResourceRoles, currentOrganizationId());
         return entityToModel(project, userResourceRoles);
     }
 
@@ -314,13 +301,12 @@ public class ProjectService {
                 members.stream()
                         .map(member -> member2UserResourceRole(member, projectId))
                         .collect(Collectors.toList()));
-        grantPermissions(userResourceRoles, organizationId);
-
         return entityToModel(project, userResourceRoles);
     }
 
 
     @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
+    @Transactional(rollbackFor = Exception.class)
     public boolean deleteProjectMember(@NonNull Long projectId, @NonNull Long userId) {
         if (currentUserId().longValue() == userId.longValue()) {
             throw new BadRequestException("Not allowed to delete yourself");
@@ -364,18 +350,14 @@ public class ProjectService {
         if (CollectionUtils.isEmpty(members)) {
             return true;
         }
-        List<UserResourceRole> updated = resourceRoleService.saveAll(
+        resourceRoleService.saveAll(
                 members.stream().map(member -> {
                     member.setId(userId);
                     return member2UserResourceRole(member, project.getId());
                 }).collect(Collectors.toList()));
-
         checkMemberRoles(detail(projectId).getMembers());
-
-        grantPermissions(updated, currentOrganizationId());
         return true;
     }
-
 
     @SkipAuthorize("internal usage")
     public Map<Long, List<Project>> mapByIdIn(Set<Long> ids) {
@@ -426,20 +408,6 @@ public class ProjectService {
     public Set<Long> getMemberProjectIds(Long userId) {
         return resourceRoleService.listByUserId(userId).stream().map(UserResourceRole::getResourceId)
                 .collect(Collectors.toSet());
-    }
-
-    private void grantPermissions(List<UserResourceRole> userResourceRoles, Long organizationId) {
-        if (CollectionUtils.isEmpty(userResourceRoles)) {
-            return;
-        }
-        /**
-         * grant create datasource permission to DBAs and Owners
-         */
-        userResourceRoles.stream()
-                .filter(userResourceRole -> userResourceRole.getResourceRole() == ResourceRoleName.OWNER
-                        || userResourceRole.getResourceRole() == ResourceRoleName.DBA)
-                .forEach(userResourceRole -> userPermissionService.bindUserAndCreateDataSourcePermission(
-                        userResourceRole.getUserId(), organizationId));
     }
 
     private Project entityToModel(ProjectEntity entity, List<UserResourceRole> userResourceRoles) {

@@ -19,7 +19,9 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import com.oceanbase.odc.core.shared.constant.DialectType;
@@ -30,6 +32,8 @@ import com.oceanbase.odc.service.sqlcheck.SqlCheckUtil;
 import com.oceanbase.odc.service.sqlcheck.model.CheckViolation;
 import com.oceanbase.odc.service.sqlcheck.model.SqlCheckRuleType;
 import com.oceanbase.tools.sqlparser.statement.Statement;
+import com.oceanbase.tools.sqlparser.statement.alter.table.AlterTable;
+import com.oceanbase.tools.sqlparser.statement.alter.table.AlterTableAction;
 
 import lombok.NonNull;
 
@@ -55,14 +59,21 @@ public class RestrictDropObjectTypes implements SqlCheckRule {
 
     @Override
     public List<CheckViolation> check(@NonNull Statement statement, @NonNull SqlCheckContext context) {
-        if (!(statement instanceof DropStatement)) {
-            return Collections.emptyList();
-        }
-        String objectType = ((DropStatement) statement).getObjectType();
-        if (allowObjectTypes.stream().noneMatch(s -> StringUtils.equalsIgnoreCase(s, objectType))) {
-            String allTypes = allowObjectTypes.isEmpty() ? "N/A" : String.join(",", allowObjectTypes);
-            return Collections.singletonList(SqlCheckUtil.buildViolation(
-                    statement.getText(), statement, getType(), new Object[] {objectType, allTypes}));
+        String allTypes = allowObjectTypes.isEmpty() ? "N/A" : String.join(",", allowObjectTypes);
+        if (statement instanceof DropStatement) {
+            String objectType = ((DropStatement) statement).getObjectType();
+            if (notAllow(objectType)) {
+                return Collections.singletonList(SqlCheckUtil.buildViolation(
+                        statement.getText(), statement, getType(), new Object[] {objectType, allTypes}));
+            }
+        } else if (statement instanceof AlterTable) {
+            return ((AlterTable) statement).getAlterTableActions().stream()
+                    .filter(action -> {
+                        String type = getDeleteObjectType(action);
+                        return type != null && notAllow(type);
+                    }).map(action -> SqlCheckUtil.buildViolation(statement.getText(),
+                            action, getType(), new Object[] {getDeleteObjectType(action), allTypes}))
+                    .collect(Collectors.toList());
         }
         return Collections.emptyList();
     }
@@ -71,6 +82,29 @@ public class RestrictDropObjectTypes implements SqlCheckRule {
     public List<DialectType> getSupportsDialectTypes() {
         return Arrays.asList(DialectType.OB_ORACLE, DialectType.MYSQL,
                 DialectType.OB_MYSQL, DialectType.ODP_SHARDING_OB_MYSQL);
+    }
+
+    private boolean notAllow(String objectType) {
+        return this.allowObjectTypes.stream().noneMatch(s -> StringUtils.equalsIgnoreCase(s, objectType));
+    }
+
+    private String getDeleteObjectType(AlterTableAction action) {
+        if (CollectionUtils.isNotEmpty(action.getDropColumns())) {
+            return "COLUMN";
+        } else if (StringUtils.isNotEmpty(action.getDropForeignKeyName())) {
+            return "CONSTRAINT";
+        } else if (StringUtils.isNotEmpty(action.getDropIndexName())) {
+            return "INDEX";
+        } else if (Boolean.TRUE.equals(action.getDropPrimaryKey())) {
+            return "CONSTRAINT";
+        } else if (CollectionUtils.isNotEmpty(action.getDropConstraintNames())) {
+            return "CONSTRAINT";
+        } else if (CollectionUtils.isNotEmpty(action.getDropPartitionNames())) {
+            return "PARTITION";
+        } else if (CollectionUtils.isNotEmpty(action.getDropSubPartitionNames())) {
+            return "SUBPARTITION";
+        }
+        return null;
     }
 
 }

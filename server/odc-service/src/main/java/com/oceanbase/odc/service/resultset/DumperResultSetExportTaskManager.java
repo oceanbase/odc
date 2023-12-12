@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.resultset;
 
 import java.io.File;
+import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -32,10 +33,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import com.google.common.base.MoreObjects;
 import com.oceanbase.odc.common.trace.TraceContextHolder;
 import com.oceanbase.odc.common.util.StringUtils;
-import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConstants;
@@ -66,8 +65,8 @@ public class DumperResultSetExportTaskManager implements ResultSetExportTaskMana
     private final static String DEFAULT_FILE_PREFIX = "CUSTOM_SQL";
 
     private ExecutorService executor;
-    private File logDir;
-
+    @Value("${odc.log.directory:./log}")
+    private String taskLogDir;
     @Value("${odc.resultset.export.thread-count:10}")
     private int threadCount;
 
@@ -97,7 +96,7 @@ public class DumperResultSetExportTaskManager implements ResultSetExportTaskMana
     @Override
     public ResultSetExportTaskContext start(ConnectionConfig connectionConfig, ResultSetExportTaskParameter parameter,
             String taskId) {
-        initLogPath(taskId);
+        File logDir = getLogPath(taskId);
 
         TraceContextHolder.put(DataTransferConstants.LOG_PATH_NAME, logDir.getPath());
         ConnectionSession session = new DefaultConnectSessionFactory(connectionConfig).generateSession();
@@ -136,14 +135,12 @@ public class DumperResultSetExportTaskManager implements ResultSetExportTaskMana
         }
     }
 
-    private void initLogPath(String taskId) {
-        if (logDir == null) {
-            logDir = new File(MoreObjects.firstNonNull(SystemUtils.getEnvOrProperty("odc.log.directory"), "./log")
-                    + "/result-set-export/" + taskId);
-            if (logDir.exists()) {
-                FileUtils.deleteQuietly(logDir);
-            }
+    private File getLogPath(String taskId) {
+        File logDir = Paths.get(taskLogDir, "result-set-export", taskId).toFile();
+        if (logDir.exists()) {
+            FileUtils.deleteQuietly(logDir);
         }
+        return logDir;
     }
 
     private List<MaskingAlgorithm> getRowDataMaskingAlgorithms(String sql, ConnectionSession session) {

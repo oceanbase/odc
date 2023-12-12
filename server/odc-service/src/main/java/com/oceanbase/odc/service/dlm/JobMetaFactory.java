@@ -62,10 +62,10 @@ public class JobMetaFactory extends AbstractJobMetaFactory {
         logicTableConfig.setWriterTaskCount(singleTaskThreadPoolSize - logicTableConfig.getReaderTaskCount());
         DataSourceInfo sourceInfo = DataSourceInfoBuilder.build(parameters.getSourceDs());
         DataSourceInfo targetInfo = DataSourceInfoBuilder.build(parameters.getTargetDs());
-        sourceInfo.setConnectionCount(logicTableConfig.getReaderTaskCount()
-                + parameters.getLogicTableConfig().getWriterTaskCount());
-        targetInfo.setConnectionCount(logicTableConfig.getReaderTaskCount()
-                + parameters.getLogicTableConfig().getWriterTaskCount());
+        sourceInfo.setConnectionCount(2 * (logicTableConfig.getReaderTaskCount()
+                + parameters.getLogicTableConfig().getWriterTaskCount()));
+        targetInfo.setConnectionCount(2 * (logicTableConfig.getReaderTaskCount()
+                + parameters.getLogicTableConfig().getWriterTaskCount()));
         sourceInfo.setQueryTimeout(taskConnectionQueryTimeout);
         targetInfo.setQueryTimeout(taskConnectionQueryTimeout);
         log.info("Begin to create dlm job,params={}", logicTableConfig);

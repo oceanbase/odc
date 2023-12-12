@@ -58,7 +58,7 @@ public class DataXTransferJob extends AbstractJob {
     private static final Pattern LOG_STATISTICS_PATTERN =
             Pattern.compile("^.+Total (\\d+) records, (\\d+) bytes.+Error (\\d+) records, (\\d+) bytes.+$");
     private static final Pattern LOG_DIRTY_RECORD_PATTERN =
-            Pattern.compile("^.+exception.+record.+type$");
+            Pattern.compile("^.+exception.+record.+type.+$");
     private static final Pattern DATA_FILE_PATTERN =
             Pattern.compile("(^\"?(.+)\"?.(sql|csv|dat|txt))__(.+)$", Pattern.CASE_INSENSITIVE);
 
@@ -88,6 +88,7 @@ public class DataXTransferJob extends AbstractJob {
             String[] cmdArray =
                     buildDataXExecutorCmd(dataxHome.getPath(), generateConfigurationFile().getPath());
             process = new ProcessBuilder().command(cmdArray).start();
+            LOGGER.info("DataX task started.");
             executor.submit(() -> {
                 try {
                     analysisStatisticsLog(process.getInputStream());
@@ -97,8 +98,8 @@ public class DataXTransferJob extends AbstractJob {
             });
             // exit code: 0=success, 1=error
             int exitValue = process.waitFor();
-            if (exitValue == 0) {
-                renameExportFile();
+            renameExportFile();
+            if (exitValue == 0 && failed == 0) {
                 setStatus(Status.SUCCESS);
             } else {
                 setStatus(Status.FAILURE);
@@ -162,11 +163,11 @@ public class DataXTransferJob extends AbstractJob {
             while ((line = reader.readLine()) != null && !isCanceled()) {
                 Matcher matcher = LOG_STATISTICS_PATTERN.matcher(line);
                 if (matcher.matches()) {
-                    long totalRecords = Long.parseLong(matcher.group(1));
+                    records = Long.parseLong(matcher.group(1));
                     bytes = Long.parseLong(matcher.group(2));
                     failed = Long.parseLong(matcher.group(3));
-                    object.getTotal().set(totalRecords);
-                    object.getCount().set(totalRecords - failed);
+                    object.getTotal().set(records);
+                    object.getCount().set(records - failed);
                 }
                 matcher = LOG_DIRTY_RECORD_PATTERN.matcher(line);
                 if (matcher.matches()) {

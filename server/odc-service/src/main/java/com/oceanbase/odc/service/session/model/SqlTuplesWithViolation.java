@@ -31,8 +31,8 @@ import lombok.Data;
  */
 @Data
 public class SqlTuplesWithViolation {
-    private SqlTuple sqlTuple;
 
+    private SqlTuple sqlTuple;
     private List<Rule> violatedRules;
 
     public SqlTuplesWithViolation(SqlTuple sqls, List<Rule> violatedRules) {
