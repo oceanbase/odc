@@ -99,6 +99,7 @@ public class FlowInstance extends Graph implements SecurityResource, Organizatio
     @Getter(AccessLevel.NONE)
     protected final ProcessNodeBuilderAccessor accessor;
     protected final FlowableProcessBuilder processBuilder;
+    private final TopologyBuilder topologyBuilder;
 
     /**
      * Create a new {@link FlowInstance}
@@ -106,9 +107,9 @@ public class FlowInstance extends Graph implements SecurityResource, Organizatio
     public FlowInstance(@NonNull String name, @NonNull FlowableAdaptor flowableAdaptor,
             @NonNull AuthenticationFacade authenticationFacade,
             @NonNull FlowInstanceRepository flowInstanceRepository, @NonNull RuntimeService runtimeService,
-            @NonNull RepositoryService repositoryService) {
+            @NonNull RepositoryService repositoryService, TopologyBuilder topologyBuilder) {
         this(name, null, flowableAdaptor, authenticationFacade, flowInstanceRepository, runtimeService,
-                repositoryService);
+                repositoryService, topologyBuilder);
     }
 
     /**
@@ -118,10 +119,10 @@ public class FlowInstance extends Graph implements SecurityResource, Organizatio
             @NonNull FlowableAdaptor flowableAdaptor,
             @NonNull AuthenticationFacade authenticationFacade,
             @NonNull FlowInstanceRepository flowInstanceRepository, @NonNull RuntimeService runtimeService,
-            @NonNull RepositoryService repositoryService) {
+            @NonNull RepositoryService repositoryService, TopologyBuilder topologyBuilder) {
         this(null, name, authenticationFacade.currentUserId(), authenticationFacade.currentOrganizationId(), null, null,
                 FlowStatus.CREATED, null, description, null, null, authenticationFacade,
-                flowInstanceRepository, flowableAdaptor, runtimeService, repositoryService);
+                flowInstanceRepository, flowableAdaptor, runtimeService, repositoryService, topologyBuilder);
         create();
         Verify.notNull(getId(), "id");
         Verify.notNull(getCreateTime(), "CreateTime");
@@ -133,12 +134,12 @@ public class FlowInstance extends Graph implements SecurityResource, Organizatio
             @NonNull FlowableAdaptor flowableAdaptor,
             @NonNull AuthenticationFacade authenticationFacade,
             @NonNull FlowInstanceRepository flowInstanceRepository, @NonNull RuntimeService runtimeService,
-            @NonNull RepositoryService repositoryService) {
+            @NonNull RepositoryService repositoryService, TopologyBuilder topologyBuilder) {
         this(null, name, authenticationFacade.currentUserId(), authenticationFacade.currentOrganizationId(),
                 projectId,
                 parentFlowInstanceId, null, null,
                 FlowStatus.CREATED, null, description, null, null, authenticationFacade,
-                flowInstanceRepository, flowableAdaptor, runtimeService, repositoryService);
+                flowInstanceRepository, flowableAdaptor, runtimeService, repositoryService, topologyBuilder);
         create();
         Verify.notNull(getId(), "id");
         Verify.notNull(getCreateTime(), "CreateTime");
@@ -151,7 +152,7 @@ public class FlowInstance extends Graph implements SecurityResource, Organizatio
     public FlowInstance(@NonNull FlowInstanceEntity entity, @NonNull FlowableAdaptor flowableAdaptor,
             @NonNull AuthenticationFacade authenticationFacade,
             @NonNull FlowInstanceRepository flowInstanceRepository, @NonNull RuntimeService runtimeService,
-            @NonNull RepositoryService repositoryService) {
+            @NonNull RepositoryService repositoryService, TopologyBuilder topologyBuilder) {
         this(entity.getId(), entity.getName(), entity.getCreatorId(), entity.getOrganizationId(),
                 entity.getProjectId(),
                 entity.getParentInstanceId(),
@@ -159,15 +160,15 @@ public class FlowInstance extends Graph implements SecurityResource, Organizatio
                 entity.getProcessInstanceId(), entity.getStatus(),
                 entity.getFlowConfigSnapshotXml(), entity.getDescription(),
                 entity.getCreateTime(), entity.getUpdateTime(), authenticationFacade, flowInstanceRepository,
-                flowableAdaptor, runtimeService, repositoryService);
+                flowableAdaptor, runtimeService, repositoryService, topologyBuilder);
     }
 
     protected FlowInstance(@NonNull String name, @NonNull FlowableAdaptor flowableAdaptor,
             @NonNull AuthenticationFacade authenticationFacade,
             @NonNull FlowInstanceRepository flowInstanceRepository, @NonNull RuntimeService runtimeService,
-            @NonNull RepositoryService repositoryService, @NonNull Long projectId) {
+            @NonNull RepositoryService repositoryService, @NonNull Long projectId, TopologyBuilder topologyBuilder) {
         this(name, null, flowableAdaptor, authenticationFacade, flowInstanceRepository, runtimeService,
-                repositoryService);
+                repositoryService, topologyBuilder);
     }
 
     private FlowInstance(Long id, @NonNull String name, @NonNull Long creatorId, @NonNull Long organizationId,
@@ -180,7 +181,7 @@ public class FlowInstance extends Graph implements SecurityResource, Organizatio
             @NonNull FlowInstanceRepository flowInstanceRepository,
             @NonNull FlowableAdaptor flowableAdaptor,
             @NonNull RuntimeService runtimeService,
-            @NonNull RepositoryService repositoryService) {
+            @NonNull RepositoryService repositoryService, TopologyBuilder topologyBuilder) {
         this.parentFlowInstanceId = parentFlowInstanceId;
         this.id = id;
         this.name = name;
@@ -200,6 +201,7 @@ public class FlowInstance extends Graph implements SecurityResource, Organizatio
         this.flowInstanceRepository = flowInstanceRepository;
         this.flowableAdaptor = flowableAdaptor;
         this.processBuilder = new FlowableProcessBuilder(name);
+        this.topologyBuilder = topologyBuilder;
         this.accessor = new ProcessNodeBuilderAccessor();
     }
 
@@ -211,7 +213,7 @@ public class FlowInstance extends Graph implements SecurityResource, Organizatio
             @NonNull FlowInstanceRepository flowInstanceRepository,
             @NonNull FlowableAdaptor flowableAdaptor,
             @NonNull RuntimeService runtimeService,
-            @NonNull RepositoryService repositoryService) {
+            @NonNull RepositoryService repositoryService, TopologyBuilder topologyBuilder) {
         this.id = id;
         this.name = name;
         this.creatorId = creatorId;
@@ -229,6 +231,7 @@ public class FlowInstance extends Graph implements SecurityResource, Organizatio
         this.flowInstanceRepository = flowInstanceRepository;
         this.flowableAdaptor = flowableAdaptor;
         this.processBuilder = new FlowableProcessBuilder(name);
+        this.topologyBuilder = topologyBuilder;
         this.accessor = new ProcessNodeBuilderAccessor();
     }
 
@@ -415,15 +418,12 @@ public class FlowInstance extends Graph implements SecurityResource, Organizatio
      * this method will insert the topo structure between the related nodes
      */
     public void buildTopology() {
-        forEachInstanceNode(nodeInstance -> {
-            try {
-                nodeInstance.buildTopology();
-            } catch (Exception exception) {
-                log.warn("Node Instance failed to establish topology relationship, nodeId={}, nodeType={}",
-                        nodeInstance.getId(), nodeInstance.getNodeType(), exception);
-                throw exception;
-            }
-        });
+        try {
+            topologyBuilder.buildTopology(this);
+        } catch (Exception exception) {
+            log.warn("Node Instance failed to establish topology relationship, flowInstanceId={}", getId(), exception);
+            throw exception;
+        }
         log.info("Flow instance node establishes the topology relationship successfully, flowInstanceId={}", getId());
     }
 
