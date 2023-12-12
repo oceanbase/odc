@@ -26,6 +26,7 @@ import org.flowable.engine.delegate.DelegateExecution;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.common.util.CloseableIterator;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
@@ -67,7 +68,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class RollbackPlanRuntimeFlowableTask extends BaseODCFlowTaskDelegate<RollbackPlanTaskResult> {
-    private static final String ROLLBACK_PLAN_RESULT_FILE_NAME = "rollback-plan-result.sql";
+
     @Autowired
     protected ServiceTaskInstanceRepository serviceTaskRepository;
     @Autowired
@@ -82,6 +83,9 @@ public class RollbackPlanRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Rol
     private AuthenticationFacade authenticationFacade;
     private volatile boolean isSuccess = false;
     private String objectId;
+    private CloseableIterator<String> sqlIterator;
+
+    private static final String ROLLBACK_PLAN_RESULT_FILE_NAME = "rollback-plan-result.sql";
 
     @Override
     protected RollbackPlanTaskResult start(Long taskId, TaskService taskService, DelegateExecution execution)
@@ -102,10 +106,12 @@ public class RollbackPlanRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Rol
             DatabaseChangeParameters params =
                     JsonUtils.fromJson(taskEntity.getParametersJson(), DatabaseChangeParameters.class);
             String bucketName = "async".concat(File.separator).concat(creator.getId() + "");
-            List<String> sqls = databaseChangeFileReader.loadSqlContents(params, connectionConfig.getDialectType(),
-                    bucketName, flowTaskProperties.getMaxRollbackContentSizeBytes()).stream().map(OffsetString::getStr)
-                    .collect(Collectors.toList());
-            if (CollectionUtils.isEmpty(sqls)) {
+            List<String> sqlContent =
+                    databaseChangeFileReader.loadSqlContentFromUserInput(params, connectionConfig.getDialectType())
+                            .stream().map(OffsetString::getStr).collect(Collectors.toList());
+            sqlIterator = databaseChangeFileReader.loadSqlIteratorFromFiles(params, connectionConfig.getDialectType(),
+                    bucketName, flowTaskProperties.getMaxRollbackContentSizeBytes());
+            if (CollectionUtils.isEmpty(sqlContent) && !sqlIterator.hasNext()) {
                 this.isSuccess = true;
                 return RollbackPlanTaskResult.skip();
             }
@@ -116,7 +122,13 @@ public class RollbackPlanRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Rol
                 StringBuilder rollbackPlans = new StringBuilder();
                 int totalChangeLineConunt = 0;
                 int totalMaxChangeLinesLimit = flowTaskProperties.getTotalMaxChangeLines();
-                for (String sql : sqls) {
+                while (!sqlContent.isEmpty() || sqlIterator.hasNext()) {
+                    String sql;
+                    if (!sqlContent.isEmpty()) {
+                        sql = sqlContent.remove(0);
+                    } else {
+                        sql = sqlIterator.next();
+                    }
                     try {
                         long timeoutForCurrentSql = timeOutMilliSeconds - (System.currentTimeMillis() - startTimestamp);
                         if (timeoutForCurrentSql <= 0) {
@@ -150,8 +162,6 @@ public class RollbackPlanRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Rol
                     }
                 }
                 return handleRollbackResult(rollbackPlans.toString());
-            } catch (Exception e) {
-                throw e;
             } finally {
                 session.expire();
             }
@@ -167,6 +177,10 @@ public class RollbackPlanRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Rol
                 log.warn("Failed to store rollback plan task result for taskId={}, error message={}", taskId, e1);
             }
             throw e;
+        } finally {
+            if (sqlIterator != null) {
+                sqlIterator.close();
+            }
         }
     }
 

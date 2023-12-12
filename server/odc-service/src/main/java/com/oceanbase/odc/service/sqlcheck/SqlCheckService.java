@@ -33,6 +33,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 
+import com.oceanbase.odc.common.util.CloseableIterator;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.datasource.SingleConnectionDataSource;
 import com.oceanbase.odc.core.session.ConnectionSession;
@@ -109,6 +110,31 @@ public class SqlCheckService {
             DefaultSqlChecker sqlChecker = new DefaultSqlChecker(config.getDialectType(), null, checkRules);
             List<CheckViolation> checkViolations = new ArrayList<>();
             for (OffsetString sql : sqls) {
+                List<CheckViolation> violations = sqlChecker.check(Collections.singletonList(sql), checkContext);
+                fullFillRiskLevel(rules, violations);
+                checkViolations.addAll(violations);
+            }
+            return checkViolations;
+        }
+    }
+
+    public List<CheckViolation> check(@NotNull Long environmentId, @NonNull String databaseName,
+            @NotNull CloseableIterator<String> sqlIterator, @NotNull ConnectionConfig config) {
+        if (!sqlIterator.hasNext()) {
+            return Collections.emptyList();
+        }
+        Environment env = this.environmentService.detail(environmentId);
+        List<Rule> rules = this.ruleService.list(env.getRulesetId(), QueryRuleMetadataParams.builder().build());
+        OBConsoleDataSourceFactory factory = new OBConsoleDataSourceFactory(config, true, false);
+        factory.resetSchema(origin -> databaseName);
+        SqlCheckContext checkContext = new SqlCheckContext();
+        try (SingleConnectionDataSource dataSource = (SingleConnectionDataSource) factory.getDataSource()) {
+            JdbcTemplate jdbc = new JdbcTemplate(dataSource);
+            List<SqlCheckRule> checkRules = getRules(rules, config.getDialectType(), jdbc);
+            DefaultSqlChecker sqlChecker = new DefaultSqlChecker(config.getDialectType(), null, checkRules);
+            List<CheckViolation> checkViolations = new ArrayList<>();
+            while (sqlIterator.hasNext()) {
+                OffsetString sql = new OffsetString(0, sqlIterator.next());
                 List<CheckViolation> violations = sqlChecker.check(Collections.singletonList(sql), checkContext);
                 fullFillRiskLevel(rules, violations);
                 checkViolations.addAll(violations);

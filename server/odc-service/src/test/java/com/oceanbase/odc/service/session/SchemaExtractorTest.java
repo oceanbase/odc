@@ -16,6 +16,8 @@
 
 package com.oceanbase.odc.service.session;
 
+import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Set;
@@ -23,8 +25,11 @@ import java.util.Set;
 import org.junit.Assert;
 import org.junit.Test;
 
+import com.oceanbase.odc.common.util.CloseableIterator;
 import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.core.sql.split.SqlSplitter;
 import com.oceanbase.odc.service.session.util.SchemaExtractor;
+import com.oceanbase.tools.sqlparser.oracle.PlSqlLexer;
 
 /**
  * @Author: Lebie
@@ -36,6 +41,17 @@ public class SchemaExtractorTest {
     public void testMySQL_ListSchemaNames() {
         String sql = "select * from db1.table1";
         Set<String> actual = SchemaExtractor.listSchemaNames(Arrays.asList(sql), DialectType.OB_MYSQL);
+        Set<String> expect = Collections.singleton("db1");
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void testMySQL_ListSchemaNames_2() {
+        String sql = "select * from db1.table1";
+        CloseableIterator<String> sqlIterator =
+                SqlSplitter.iterator(new ByteArrayInputStream(sql.getBytes(StandardCharsets.UTF_8)),
+                        StandardCharsets.UTF_8, PlSqlLexer.class, ";");
+        Set<String> actual = SchemaExtractor.listSchemaNames(sqlIterator, DialectType.OB_MYSQL);
         Set<String> expect = Collections.singleton("db1");
         Assert.assertEquals(expect, actual);
     }

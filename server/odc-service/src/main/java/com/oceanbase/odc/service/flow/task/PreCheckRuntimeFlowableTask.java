@@ -21,6 +21,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -35,11 +37,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.unit.BinarySizeUnit;
+import com.oceanbase.odc.common.util.CloseableIterator;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.core.shared.exception.VerifyException;
 import com.oceanbase.odc.core.sql.split.OffsetString;
-import com.oceanbase.odc.metadb.flow.FlowInstanceRepository;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.service.common.FileManager;
 import com.oceanbase.odc.service.common.model.FileBucket;
@@ -84,6 +86,8 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
     private static final String CHECK_RESULT_FILE_NAME = "sql-check-result.json";
     private Long creatorId;
     private List<OffsetString> databaseChangeRelatedSqls;
+    private CloseableIterator<String> sqlIteratorForDBNameCheck;
+    private CloseableIterator<String> sqlIteratorForSqlCheck;
     private ConnectionConfig connectionConfig;
     private Long preCheckTaskId;
     @Autowired
@@ -94,11 +98,9 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
     private DatabaseChangeFileReader databaseChangeFileReader;
     @Autowired
     private SqlCheckService sqlCheckService;
-    @Autowired
-    private FlowInstanceRepository flowInstanceRepository;
 
     @Override
-    protected Void start(Long taskId, TaskService taskService, DelegateExecution execution) {
+    protected Void start(Long taskId, TaskService taskService, DelegateExecution execution) throws Exception {
         this.serviceTaskRepository.updateStatusById(getTargetTaskInstanceId(), FlowNodeStatus.EXECUTING);
         this.preCheckTaskId = FlowTaskUtil.getPreCheckTaskId(execution);
         TaskEntity preCheckTaskEntity = taskService.detail(this.preCheckTaskId);
@@ -120,11 +122,22 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
             // Skip SQL pre-check if connection config is null
             this.databaseChangeRelatedSqls = getFlowRelatedSqls(taskEntity.getTaskType(),
                     taskEntity.getParametersJson(), connectionConfig.getDialectType());
+            this.sqlIteratorForDBNameCheck = getFlowRelatedSqlIterator(taskEntity.getTaskType(),
+                    taskEntity.getParametersJson(), connectionConfig.getDialectType());
+            this.sqlIteratorForSqlCheck = getFlowRelatedSqlIterator(taskEntity.getTaskType(),
+                    taskEntity.getParametersJson(), connectionConfig.getDialectType());
             try {
                 preCheck(taskEntity, preCheckTaskEntity, riskLevelDescriber);
             } catch (Exception e) {
                 log.warn("pre check failed, e");
                 throw new ServiceTaskError(e);
+            } finally {
+                if (Objects.nonNull(this.sqlIteratorForDBNameCheck)) {
+                    this.sqlIteratorForDBNameCheck.close();
+                }
+                if (Objects.nonNull(this.sqlIteratorForSqlCheck)) {
+                    this.sqlIteratorForSqlCheck.close();
+                }
             }
             if (this.sqlCheckResult != null) {
                 riskLevelDescriber.setSqlCheckResult(sqlCheckResult.getMaxLevel() + "");
@@ -237,25 +250,33 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
     }
 
     private void doDatabasePermissionCheck() {
-        Set<String> unauthorizedDatabaseNames =
-                databaseService.filterUnAuthorizedDatabaseNames(
-                        SchemaExtractor.listSchemaNames(
-                                this.databaseChangeRelatedSqls.stream().map(OffsetString::getStr).collect(
-                                        Collectors.toList()),
-                                this.connectionConfig.getDialectType()),
-                        connectionConfig.getId());
-        this.permissionCheckResult =
-                new DatabasePermissionCheckResult(unauthorizedDatabaseNames);
+        Set<String> unauthorizedDatabaseNames = new HashSet<>();
+        if (CollectionUtils.isNotEmpty(databaseChangeRelatedSqls)) {
+            unauthorizedDatabaseNames.addAll(databaseService.filterUnAuthorizedDatabaseNames(
+                    SchemaExtractor.listSchemaNames(this.databaseChangeRelatedSqls.stream().map(OffsetString::getStr)
+                            .collect(Collectors.toList()), this.connectionConfig.getDialectType()),
+                    connectionConfig.getId()));
+        }
+        if (Objects.nonNull(this.sqlIteratorForDBNameCheck)) {
+            unauthorizedDatabaseNames.addAll(databaseService.filterUnAuthorizedDatabaseNames(
+                    SchemaExtractor.listSchemaNames(this.sqlIteratorForDBNameCheck,
+                            this.connectionConfig.getDialectType()),
+                    connectionConfig.getId()));
+        }
+        this.permissionCheckResult = new DatabasePermissionCheckResult(unauthorizedDatabaseNames);
     }
 
     private void doSqlCheck(TaskEntity preCheckTaskEntity, ConnectionConfig connectionConfig,
             RiskLevelDescriber describer) {
-        if (Objects.isNull(this.databaseChangeRelatedSqls)) {
-            return;
+        List<CheckViolation> violations = new ArrayList<>();
+        if (CollectionUtils.isNotEmpty(databaseChangeRelatedSqls)) {
+            violations.addAll(this.sqlCheckService.check(Long.valueOf(describer.getEnvironmentId()),
+                    describer.getDatabaseName(), this.databaseChangeRelatedSqls, connectionConfig));
         }
-        List<CheckViolation> violations = this.sqlCheckService.check(
-                Long.valueOf(describer.getEnvironmentId()), describer.getDatabaseName(), this.databaseChangeRelatedSqls,
-                connectionConfig);
+        if (Objects.nonNull(this.sqlIteratorForSqlCheck)) {
+            violations.addAll(this.sqlCheckService.check(Long.valueOf(describer.getEnvironmentId()),
+                    describer.getDatabaseName(), this.sqlIteratorForSqlCheck, connectionConfig));
+        }
         this.sqlCheckResult = SqlCheckTaskResult.success(violations);
         try {
             storeTaskResultToFile(preCheckTaskEntity.getId(), this.sqlCheckResult);
@@ -268,13 +289,7 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
     private List<OffsetString> getFlowRelatedSqls(TaskType taskType, String parametersJson, DialectType dialectType) {
         if (taskType == TaskType.ASYNC) {
             DatabaseChangeParameters params = JsonUtils.fromJson(parametersJson, DatabaseChangeParameters.class);
-            String bucketName = "async".concat(File.separator).concat(this.creatorId.toString());
-            try {
-                return this.databaseChangeFileReader.loadSqlContents(params,
-                        dialectType, bucketName, -1);
-            } catch (IOException e) {
-                throw new IllegalStateException(e);
-            }
+            return this.databaseChangeFileReader.loadSqlContentFromUserInput(params, dialectType);
         }
         if (taskType == TaskType.ONLINE_SCHEMA_CHANGE) {
             OnlineSchemaChangeParameters params =
@@ -294,13 +309,28 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
             }
             DatabaseChangeParameters databaseChangeParameters =
                     (DatabaseChangeParameters) alterScheduleParameters.getScheduleTaskParameters();
-            String bucketName = "async".concat(File.separator).concat(this.creatorId.toString());
-            try {
-                return this.databaseChangeFileReader.loadSqlContents(databaseChangeParameters,
-                        dialectType, bucketName, -1);
-            } catch (IOException e) {
-                throw new IllegalStateException(e);
+            return this.databaseChangeFileReader.loadSqlContentFromUserInput(databaseChangeParameters, dialectType);
+        }
+        return null;
+    }
+
+    private CloseableIterator<String> getFlowRelatedSqlIterator(TaskType taskType, String parametersJson,
+            DialectType dialectType) {
+        String bucketName = "async".concat(File.separator).concat(this.creatorId.toString());
+        if (taskType == TaskType.ASYNC) {
+            DatabaseChangeParameters params = JsonUtils.fromJson(parametersJson, DatabaseChangeParameters.class);
+            return this.databaseChangeFileReader.loadSqlIteratorFromFiles(params, dialectType, bucketName, -1);
+        }
+        if (taskType == TaskType.ALTER_SCHEDULE) {
+            AlterScheduleParameters alterScheduleParameters =
+                    JsonUtils.fromJson(parametersJson, AlterScheduleParameters.class);
+            if (alterScheduleParameters.getType() != JobType.SQL_PLAN) {
+                return null;
             }
+            DatabaseChangeParameters databaseChangeParameters =
+                    (DatabaseChangeParameters) alterScheduleParameters.getScheduleTaskParameters();
+            return this.databaseChangeFileReader.loadSqlIteratorFromFiles(databaseChangeParameters, dialectType,
+                    bucketName, -1);
         }
         return null;
     }

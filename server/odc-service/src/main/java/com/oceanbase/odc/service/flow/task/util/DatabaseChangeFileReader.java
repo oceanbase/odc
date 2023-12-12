@@ -15,21 +15,26 @@
  */
 package com.oceanbase.odc.service.flow.task.util;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.util.LinkedList;
+import java.io.InputStream;
+import java.io.SequenceInputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import com.oceanbase.odc.common.util.CloseableIterator;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.sql.split.OffsetString;
 import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
-import com.oceanbase.odc.service.objectstorage.model.ObjectMetadata;
+import com.oceanbase.odc.service.objectstorage.model.StorageObject;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -41,37 +46,63 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Component
 public class DatabaseChangeFileReader {
+
     @Autowired
     private ObjectStorageFacade storageFacade;
 
-    public List<OffsetString> loadSqlContents(DatabaseChangeParameters params, DialectType dialectType,
-            String bucketName,
-            long maxSizeBytes)
-            throws IOException {
-        List<OffsetString> sqls = new LinkedList<>();
-        String sqlContent = params.getSqlContent();
-        if (StringUtils.isNotBlank(sqlContent)) {
-            sqls.addAll(SqlUtils.splitWithOffset(dialectType, sqlContent, params.getDelimiter()));
-        }
-        List<String> sqlObjectIds = params.getSqlObjectIds();
-        if (CollectionUtils.isEmpty(sqlObjectIds)) {
-            return sqls;
-        }
-        long totalSize = 0;
-        for (String objectId : sqlObjectIds) {
-            ObjectMetadata metadata = storageFacade.loadMetaData(bucketName, objectId);
-            totalSize += metadata.getTotalLength();
-            if (maxSizeBytes > 0 && totalSize > maxSizeBytes) {
-                log.info("The file size is too large and will not be read later, totalSize={} Byte", totalSize);
-                return sqls;
+    public List<OffsetString> loadSqlContentFromUserInput(DatabaseChangeParameters params, DialectType dialectType) {
+        List<OffsetString> ret = new ArrayList<>();
+        try {
+            String sqlContent = params.getSqlContent();
+            if (StringUtils.isNotBlank(sqlContent)) {
+                ret.addAll(SqlUtils.splitWithOffset(dialectType, sqlContent, params.getDelimiter()));
             }
-            sqlContent = storageFacade.loadObjectContentAsString(bucketName, objectId);
-            if (sqlContent == null) {
-                continue;
-            }
-            // TODO:全量文件加载到内存存在风险，需做内存优化处理
-            sqls.addAll(SqlUtils.splitWithOffset(dialectType, sqlContent, params.getDelimiter()));
+            return ret;
+        } catch (Exception e) {
+            log.warn("Failed to read sql content from user input", e);
+            throw new IllegalStateException("Failed to read sql content from user input");
         }
-        return sqls;
     }
+
+    public CloseableIterator<String> loadSqlIteratorFromFiles(DatabaseChangeParameters params, DialectType dialectType,
+            String bucketName, long maxSizeBytes) {
+        List<String> objectIds = params.getSqlObjectIds();
+        if (CollectionUtils.isEmpty(objectIds)) {
+            return null;
+        }
+        try {
+            InputStream inputStream = readSqlFilesStream(bucketName, objectIds, maxSizeBytes);
+            return SqlUtils.iterator(dialectType, params.getDelimiter(), inputStream, StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            log.warn("Failed to read sql files from object storage", e);
+            throw new IllegalStateException("Failed to read sql files from object storage");
+        }
+    }
+
+    public InputStream readSqlFilesStream(String bucket, List<String> objectIds, long maxBytes) throws IOException {
+        long totalBytes = 0;
+        InputStream inputStream = new ByteArrayInputStream(new byte[0]);
+        for (String objectId : objectIds) {
+            StorageObject object = storageFacade.loadObject(bucket, objectId);
+            InputStream current = object.getContent();
+            totalBytes += object.getMetadata().getTotalLength();
+            // remove UTF-8 BOM if exists
+            current.mark(3);
+            byte[] byteSql = new byte[3];
+            if (current.read(byteSql) >= 3 && byteSql[0] == (byte) 0xef && byteSql[1] == (byte) 0xbb
+                    && byteSql[2] == (byte) 0xbf) {
+                current.reset();
+                current.skip(3);
+            } else {
+                current.reset();
+            }
+            if (maxBytes > 0 && totalBytes > maxBytes) {
+                log.info("The file size is too large and will not be read later, totalSize={} bytes", totalBytes);
+                return inputStream;
+            }
+            inputStream = new SequenceInputStream(inputStream, current);
+        }
+        return inputStream;
+    }
+
 }
