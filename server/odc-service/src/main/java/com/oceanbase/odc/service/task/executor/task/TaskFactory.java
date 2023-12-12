@@ -16,6 +16,8 @@
 
 package com.oceanbase.odc.service.task.executor.task;
 
+import com.oceanbase.odc.service.task.executor.executor.TaskRuntimeException;
+
 /**
  * @author gaoda.xy
  * @date 2023/11/24 11:01
@@ -25,7 +27,7 @@ public class TaskFactory {
     public static Task create(String jobClass) {
         try {
             Class<?> c = Class.forName(jobClass);
-            if (c.isAssignableFrom(Task.class)) {
+            if (!c.isAssignableFrom(Task.class)) {
                 throw new TaskRuntimeException("Job class is not implements Task. name={}" + jobClass);
             }
             return (Task) c.newInstance();

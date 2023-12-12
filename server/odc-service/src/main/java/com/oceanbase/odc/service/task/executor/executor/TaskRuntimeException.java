@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.task.executor.task;
+package com.oceanbase.odc.service.task.executor.executor;
 
 /**
  * @author yaobin
