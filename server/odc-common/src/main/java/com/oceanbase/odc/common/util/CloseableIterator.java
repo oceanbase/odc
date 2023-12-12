@@ -24,6 +24,11 @@ import java.util.Iterator;
  */
 public interface CloseableIterator<T> extends Iterator<T>, AutoCloseable {
 
+    /**
+     * Bytes size that has been iterated.
+     * 
+     * @return bytes size
+     */
     long iteratedBytes();
 
 }
