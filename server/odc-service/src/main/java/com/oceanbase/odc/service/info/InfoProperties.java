@@ -15,7 +15,6 @@
  */
 package com.oceanbase.odc.service.info;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.context.annotation.Configuration;
@@ -47,11 +46,5 @@ public class InfoProperties {
      * 首页文案
      */
     private String homePageText;
-
-    /**
-     * 模拟数据条数限制
-     */
-    @Value("${odc.task.mock-data.max-row-count:1000000}")
-    private long mockDataMaxRowCount;
 
 }
