@@ -148,14 +148,12 @@ public class ScheduleService {
         return scheduleRepository.save(scheduleConfig);
     }
 
-    // this function will be deleted because update is a high-risk operation,
-    @Deprecated
     @Transactional(rollbackFor = Exception.class)
-    public void updateJobData(ScheduleEntity scheduleConfig) throws SchedulerException, ClassNotFoundException {
-        Trigger scheduleTrigger = getScheduleTrigger(scheduleConfig);
+    public void updateJobData(ScheduleEntity scheduleConfig) throws SchedulerException {
+        JobKey jobKey = QuartzKeyGenerator.generateJobKey(scheduleConfig.getId(), scheduleConfig.getJobType());
 
-        if (scheduleTrigger != null) {
-            quartzJobService.deleteJob(scheduleTrigger.getJobKey());
+        if (quartzJobService.checkExists(jobKey)) {
+            quartzJobService.deleteJob(jobKey);
         }
         quartzJobService.createJob(buildCreateJobReq(scheduleConfig));
         scheduleConfig.setStatus(ScheduleStatus.ENABLED);
@@ -229,7 +227,7 @@ public class ScheduleService {
         ExecutorInfo executorInfo = JsonUtils.fromJson(taskEntity.getExecutor(), ExecutorInfo.class);
         // Local interrupt task.
         if (dispatchChecker.isThisMachine(executorInfo)) {
-            JobKey jobKey = QuartzKeyGenerator.generateJobKey(scheduleId, entity.getJobType());
+            JobKey jobKey = QuartzKeyGenerator.generateJobKey(scheduleId, JobType.valueOf(taskEntity.getJobGroup()));
             try {
                 quartzJobService.interruptJob(jobKey);
                 log.info("Local interrupt task succeed,taskId={}", taskId);
@@ -258,8 +256,8 @@ public class ScheduleService {
      */
     public ScheduleTaskResp startTask(Long scheduleId, Long taskId) {
         ScheduleEntity scheduleEntity = nullSafeGetByIdWithCheckPermission(scheduleId, true);
-        JobKey jobKey = QuartzKeyGenerator.generateJobKey(scheduleId, scheduleEntity.getJobType());
         ScheduleTaskEntity taskEntity = scheduleTaskService.nullSafeGetById(taskId);
+        JobKey jobKey = QuartzKeyGenerator.generateJobKey(scheduleId, JobType.valueOf(taskEntity.getJobGroup()));
         if (!taskEntity.getStatus().isRetryAllowed()) {
             log.warn(
                     "The task cannot be restarted because it is currently in progress or has already completed.JobKey={}",
@@ -267,16 +265,9 @@ public class ScheduleService {
             throw new IllegalStateException(
                     "The task cannot be restarted because it is currently in progress or has already completed.");
         }
-        // check job and recreate it when not found.
-        TriggerConfig triggerConfig = JsonUtils.fromJson(scheduleEntity.getTriggerConfigJson(), TriggerConfig.class);
         try {
+            // create a single trigger job if job not found.
             if (!quartzJobService.checkExists(jobKey)) {
-                // job will be deleted once there are no remaining associated triggers.
-                if (!triggerConfig.isSingleTrigger()) {
-                    log.error("Periodic job not found!jobKey={}", jobKey);
-                    scheduleRepository.updateStatusById(scheduleId, ScheduleStatus.TERMINATION);
-                    throw new UnexpectedException("Fatal error:Periodic job not found!Please create new order.");
-                }
                 log.info("Job not found and will be recreated,jobKey={}", jobKey);
                 CreateQuartzJobReq req = buildCreateJobReq(scheduleEntity);
                 req.setTriggerConfig(null);

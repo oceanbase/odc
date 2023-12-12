@@ -92,7 +92,7 @@ public class AbstractDlmJob implements OdcJob {
             try {
                 initTask(taskUnit);
                 job = dataArchiveJobFactory.createJob(taskUnit);
-                log.info("Create dlm job succeed,taskId={},id={}", taskId, job.getJobMeta().getJobId());
+                log.info("Create dlm job succeed,taskId={},jobMeta={}", taskId, job.getJobMeta().toString());
             } catch (Exception e) {
                 log.warn("Create dlm job failed,taskId={},tableName={},errorMessage={}", taskId,
                         taskUnit.getTableName(), e);
