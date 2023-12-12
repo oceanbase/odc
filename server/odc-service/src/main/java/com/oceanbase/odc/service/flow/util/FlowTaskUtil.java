@@ -328,6 +328,8 @@ public class FlowTaskUtil {
                 tableConfig.setTimeoutMillis(timeoutMillis);
                 tableConfig.setConcurrent(mockProperties.getConcurrent());
                 tableConfig.setSchemaName(getSchemaName(execution));
+                tableConfig.setMaxSingleFileSizeInBytes(mockProperties.getMaxSingleFileSizeInBytes());
+                tableConfig.setMaxFileOutputSizeInBytes(mockProperties.getMaxFileOutputSizeInBytes());
 
                 List<MockColumnConfig> columnConfigs = tableConfig.getColumns();
                 Verify.verify(CollectionUtils.isNotEmpty(columnConfigs), "Columns may not be empty");

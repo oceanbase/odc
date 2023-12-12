@@ -35,6 +35,16 @@ public class MockProperties {
     private int concurrent = 1;
     @Value("${odc.task.mockData.maxRowCount:1000000}")
     private long maxRowCount = 1000000;
+    /**
+     * 50 MB
+     */
+    @Value("${odc.task.mockData.maxSingleFileSizeInBytes:52428800}")
+    private Long maxSingleFileSizeInBytes = 52428800L;
+    /**
+     * 400 MB
+     */
+    @Value("${odc.task.mockData.maxFileOutputSizeInBytes:419430400}")
+    private Long maxFileOutputSizeInBytes = 419430400L;
     public String resultFileLocationPrefix = "./data/data_mocker";
 
     public File getDownloadPath(@NonNull String taskId) {
