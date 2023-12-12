@@ -36,6 +36,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import javax.annotation.Nullable;
 import javax.annotation.PreDestroy;
 
 import org.slf4j.Logger;
@@ -48,6 +49,7 @@ import org.springframework.stereotype.Component;
 import com.alibaba.druid.pool.DruidDataSource;
 import com.alibaba.druid.stat.DruidStatManagerFacade;
 import com.alibaba.druid.support.spring.stat.SpringStatManager;
+import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;
 import com.oceanbase.odc.common.concurrent.ExecutorUtils;
 import com.oceanbase.odc.common.util.StringUtils;
@@ -299,7 +301,7 @@ public class DruidMonitor implements InitializingBean {
         private long[] fetchRowCountHistogram;
 
         public Long computeAvgExecuteTime() {
-            return (executeCount == null || executeCount == 0) ? 0 : totalTime / executeCount;
+            return executeCount == 0 ? 0 : totalTime / executeCount;
         }
 
         public String buildLog() {
@@ -385,44 +387,47 @@ public class DruidMonitor implements InitializingBean {
 
         public static DruidSQLStats mapToVO(Map<String, Object> map) {
             DruidSQLStats vo = new DruidSQLStats();
-            vo.setExecuteAndResultSetHoldTime((Long) map.get(DruidSQLStateConstants.EXECUTE_AND_RESULT_SET_HOLD_TIME));
-            vo.setEffectedRowCountHistogram((long[]) map.get(DruidSQLStateConstants.EFFECTED_ROW_COUNT_HISTOGRAM));
+            vo.setExecuteAndResultSetHoldTime(
+                    default0((Long) map.get(DruidSQLStateConstants.EXECUTE_AND_RESULT_SET_HOLD_TIME)));
+            vo.setEffectedRowCountHistogram(
+                    defaultEmptyArray((long[]) map.get(DruidSQLStateConstants.EFFECTED_ROW_COUNT_HISTOGRAM)));
             vo.setLastErrorMessage((String) map.get(DruidSQLStateConstants.LAST_ERROR_MESSAGE));
-            vo.setHistogram((long[]) map.get(DruidSQLStateConstants.HISTOGRAM));
-            vo.setInputStreamOpenCount((Long) map.get(DruidSQLStateConstants.INPUT_STREAM_OPEN_COUNT));
-            vo.setBatchSizeTotal((Long) map.get(DruidSQLStateConstants.BATCH_SIZE_TOTAL));
-            vo.setFetchRowCountMax((Long) map.get(DruidSQLStateConstants.FETCH_ROW_COUNT_MAX));
-            vo.setErrorCount((Long) map.get(DruidSQLStateConstants.ERROR_COUNT));
-            vo.setBatchSizeMax((Long) map.get(DruidSQLStateConstants.BATCH_SIZE_MAX));
+            vo.setHistogram(defaultEmptyArray((long[]) map.get(DruidSQLStateConstants.HISTOGRAM)));
+            vo.setInputStreamOpenCount(default0((Long) map.get(DruidSQLStateConstants.INPUT_STREAM_OPEN_COUNT)));
+            vo.setBatchSizeTotal(default0((Long) map.get(DruidSQLStateConstants.BATCH_SIZE_TOTAL)));
+            vo.setFetchRowCountMax(default0((Long) map.get(DruidSQLStateConstants.FETCH_ROW_COUNT_MAX)));
+            vo.setErrorCount(default0((Long) map.get(DruidSQLStateConstants.ERROR_COUNT)));
+            vo.setBatchSizeMax(default0((Long) map.get(DruidSQLStateConstants.BATCH_SIZE_MAX)));
             vo.setLastErrorTime((String) map.get(DruidSQLStateConstants.LAST_ERROR_TIME));
-            vo.setReaderOpenCount((Long) map.get(DruidSQLStateConstants.READER_OPEN_COUNT));
-            vo.setEffectedRowCountMax((Long) map.get(DruidSQLStateConstants.EFFECTED_ROW_COUNT_MAX));
+            vo.setReaderOpenCount(default0((Long) map.get(DruidSQLStateConstants.READER_OPEN_COUNT)));
+            vo.setEffectedRowCountMax(default0((Long) map.get(DruidSQLStateConstants.EFFECTED_ROW_COUNT_MAX)));
             vo.setLastErrorClass((String) map.get(DruidSQLStateConstants.LAST_ERROR_CLASS));
-            vo.setInTransactionCount((Long) map.get(DruidSQLStateConstants.IN_TRANSACTION_COUNT));
+            vo.setInTransactionCount(default0((Long) map.get(DruidSQLStateConstants.IN_TRANSACTION_COUNT)));
             vo.setLastErrorStackTrace((String) map.get(DruidSQLStateConstants.LAST_ERROR_STACK_TRACE));
-            vo.setResultSetHoldTime((Long) map.get(DruidSQLStateConstants.RESULT_SET_HOLD_TIME));
-            vo.setTotalTime((Long) map.get(DruidSQLStateConstants.TOTAL_TIME));
-            vo.setConcurrentMax((Long) map.get(DruidSQLStateConstants.CONCURRENT_MAX));
-            vo.setRunningCount((Long) map.get(DruidSQLStateConstants.RUNNING_COUNT));
-            vo.setFetchRowCount((Long) map.get(DruidSQLStateConstants.FETCH_ROW_COUNT));
+            vo.setResultSetHoldTime(default0((Long) map.get(DruidSQLStateConstants.RESULT_SET_HOLD_TIME)));
+            vo.setTotalTime(default0((Long) map.get(DruidSQLStateConstants.TOTAL_TIME)));
+            vo.setConcurrentMax(default0((Long) map.get(DruidSQLStateConstants.CONCURRENT_MAX)));
+            vo.setRunningCount(default0((Long) map.get(DruidSQLStateConstants.RUNNING_COUNT)));
+            vo.setFetchRowCount(default0((Long) map.get(DruidSQLStateConstants.FETCH_ROW_COUNT)));
             vo.setMaxTimespanOccurTime((Date) map.get(DruidSQLStateConstants.MAX_TIME_SPAN_OCCUR_TIME));
             vo.setLastSlowParameters((String) map.get(DruidSQLStateConstants.LAST_SLOW_PARAMETERS));
-            vo.setReadBytesLength((Long) map.get(DruidSQLStateConstants.READ_BYTES_LENGTH));
+            vo.setReadBytesLength(default0((Long) map.get(DruidSQLStateConstants.READ_BYTES_LENGTH)));
             vo.setDbType((String) map.get(DruidSQLStateConstants.DB_TYPE));
             vo.setDataSource((String) map.get(DruidSQLStateConstants.DATASOURCE));
             vo.setSql((String) map.get(DruidSQLStateConstants.SQL));
             vo.setLastError(map.get(DruidSQLStateConstants.LAST_ERROR));
-            vo.setMaxTimespan((Long) map.get(DruidSQLStateConstants.MAX_TIME_SPAN));
-            vo.setBlobOpenCount((Long) map.get(DruidSQLStateConstants.BLOB_OPEN_COUNT));
-            vo.setExecuteCount((Long) map.get(DruidSQLStateConstants.EXECUTE_COUNT));
-            vo.setEffectedRowCount((Long) map.get(DruidSQLStateConstants.EFFECTED_ROW_COUNT));
-            vo.setReadStringLength((Long) map.get(DruidSQLStateConstants.READ_STRING_LENGTH));
+            vo.setMaxTimespan(default0((Long) map.get(DruidSQLStateConstants.MAX_TIME_SPAN)));
+            vo.setBlobOpenCount(default0((Long) map.get(DruidSQLStateConstants.BLOB_OPEN_COUNT)));
+            vo.setExecuteCount(default0((Long) map.get(DruidSQLStateConstants.EXECUTE_COUNT)));
+            vo.setEffectedRowCount(default0((Long) map.get(DruidSQLStateConstants.EFFECTED_ROW_COUNT)));
+            vo.setReadStringLength(default0((Long) map.get(DruidSQLStateConstants.READ_STRING_LENGTH)));
             vo.setExecuteAndResultHoldTimeHistogram(
-                    (long[]) map.get(DruidSQLStateConstants.EXECUTE_AND_RESULT_HOLD_TIME_HISTOGRAM));
+                    defaultEmptyArray((long[]) map.get(DruidSQLStateConstants.EXECUTE_AND_RESULT_HOLD_TIME_HISTOGRAM)));
             vo.setFile((String) map.get(DruidSQLStateConstants.FILE));
-            vo.setClobOpenCount((Long) map.get(DruidSQLStateConstants.CLOB_OPEN_COUNT));
+            vo.setClobOpenCount(default0((Long) map.get(DruidSQLStateConstants.CLOB_OPEN_COUNT)));
             vo.setLastTime((Date) map.get(DruidSQLStateConstants.LAST_TIME));
-            vo.setFetchRowCountHistogram((long[]) map.get(DruidSQLStateConstants.FETCH_ROW_COUNT_HISTOGRAM));
+            vo.setFetchRowCountHistogram(
+                    defaultEmptyArray((long[]) map.get(DruidSQLStateConstants.FETCH_ROW_COUNT_HISTOGRAM)));
             return vo;
         }
     }
@@ -480,6 +485,19 @@ public class DruidMonitor implements InitializingBean {
         if (!msg.isEmpty()) {
             AlarmUtils.alarm(METHOD_TOO_MUCH_JDBC_EXECUTE_COUNT, "method too much jdbc execute count" + msg);
         }
+    }
+
+
+    public static Long default0(@Nullable Long value) {
+        return MoreObjects.firstNonNull(value, 0L);
+    }
+
+    public static Integer default0(@Nullable Integer value) {
+        return MoreObjects.firstNonNull(value, 0);
+    }
+
+    public static long[] defaultEmptyArray(@Nullable long[] value) {
+        return MoreObjects.firstNonNull(value, new long[] {});
     }
 
     @Data
@@ -568,15 +586,15 @@ public class DruidMonitor implements InitializingBean {
         }
 
         public Long computeAvgExecuteTime() {
-            return executeTimeMillis / executeCount;
+            return executeCount > 0 ? executeTimeMillis / executeCount : 0;
         }
 
         public Long computeAvgJdbcExecuteTime() {
-            return jdbcExecuteTimeMillis / executeCount;
+            return executeCount > 0 ? jdbcExecuteTimeMillis / executeCount : 0;
         }
 
         public Long computeAvgJdbcExecuteCount() {
-            return jdbcExecuteCount / executeCount;
+            return executeCount > 0 ? jdbcExecuteCount / executeCount : 0;
         }
 
         private String getMethodIdentification() {
@@ -600,27 +618,29 @@ public class DruidMonitor implements InitializingBean {
             DruidMethodStats vo = new DruidMethodStats();
             vo.setClazz((String) map.get(DruidMethodStatConstants.CLASS));
             vo.setMethod((String) map.get(DruidMethodStatConstants.METHOD));
-            vo.setRunningCount((Integer) map.get(DruidMethodStatConstants.RUNNING_COUNT));
-            vo.setConcurrentMax((Integer) map.get(DruidMethodStatConstants.CONCURRENT_MAX));
-            vo.setExecuteCount((Long) map.get(DruidMethodStatConstants.EXECUTE_COUNT));
-            vo.setExecuteErrorCount((Long) map.get(DruidMethodStatConstants.EXECUTE_ERROR_COUNT));
-            vo.setExecuteTimeMillis((Long) map.get(DruidMethodStatConstants.EXECUTE_TIME_MILLIS));
-            vo.setJdbcCommitCount((Long) map.get(DruidMethodStatConstants.JDBC_COMMIT_COUNT));
-            vo.setJdbcReadOnlyCount((Long) map.get(DruidMethodStatConstants.JDBC_READ_ONLY_COUNT));
-            vo.setJdbcRollbackCount((Long) map.get(DruidMethodStatConstants.JDBC_ROLLBACK_COUNT));
-            vo.setJdbcPoolConnectionOpenCount((Long) map.get(DruidMethodStatConstants.JDBC_POOL_CONNECTION_OPEN_COUNT));
+            vo.setRunningCount(default0((Integer) map.get(DruidMethodStatConstants.RUNNING_COUNT)));
+            vo.setConcurrentMax(default0((Integer) map.get(DruidMethodStatConstants.CONCURRENT_MAX)));
+            vo.setExecuteCount(default0((Long) map.get(DruidMethodStatConstants.EXECUTE_COUNT)));
+            vo.setExecuteErrorCount(default0((Long) map.get(DruidMethodStatConstants.EXECUTE_ERROR_COUNT)));
+            vo.setExecuteTimeMillis(default0((Long) map.get(DruidMethodStatConstants.EXECUTE_TIME_MILLIS)));
+            vo.setJdbcCommitCount(default0((Long) map.get(DruidMethodStatConstants.JDBC_COMMIT_COUNT)));
+            vo.setJdbcReadOnlyCount(default0((Long) map.get(DruidMethodStatConstants.JDBC_READ_ONLY_COUNT)));
+            vo.setJdbcRollbackCount(default0((Long) map.get(DruidMethodStatConstants.JDBC_ROLLBACK_COUNT)));
+            vo.setJdbcPoolConnectionOpenCount(
+                    default0((Long) map.get(DruidMethodStatConstants.JDBC_POOL_CONNECTION_OPEN_COUNT)));
             vo.setJdbcPoolConnectionCloseCount(
-                    (Long) map.get(DruidMethodStatConstants.JDBC_POOL_CONNECTION_CLOSE_COUNT));
-            vo.setJdbcResultSetOpenCount((Long) map.get(DruidMethodStatConstants.JDBC_RESULT_SET_OPEN_COUNT));
-            vo.setJdbcResultSetCloseCount((Long) map.get(DruidMethodStatConstants.JDBC_RESULT_SET_CLOSE_COUNT));
-            vo.setJdbcExecuteCount((Long) map.get(DruidMethodStatConstants.JDBC_EXECUTE_COUNT));
-            vo.setJdbcExecuteErrorCount((Long) map.get(DruidMethodStatConstants.JDBC_EXECUTE_ERROR_COUNT));
-            vo.setJdbcExecuteTimeMillis((Long) map.get(DruidMethodStatConstants.JDBC_EXECUTE_TIME_MILLIS));
-            vo.setJdbcFetchRowCount((Long) map.get(DruidMethodStatConstants.JDBC_FETCH_ROW_COUNT));
-            vo.setJdbcUpdateCount((Long) map.get(DruidMethodStatConstants.JDBC_UPDATE_COUNT));
+                    default0((Long) map.get(DruidMethodStatConstants.JDBC_POOL_CONNECTION_CLOSE_COUNT)));
+            vo.setJdbcResultSetOpenCount(default0((Long) map.get(DruidMethodStatConstants.JDBC_RESULT_SET_OPEN_COUNT)));
+            vo.setJdbcResultSetCloseCount(
+                    default0((Long) map.get(DruidMethodStatConstants.JDBC_RESULT_SET_CLOSE_COUNT)));
+            vo.setJdbcExecuteCount(default0((Long) map.get(DruidMethodStatConstants.JDBC_EXECUTE_COUNT)));
+            vo.setJdbcExecuteErrorCount(default0((Long) map.get(DruidMethodStatConstants.JDBC_EXECUTE_ERROR_COUNT)));
+            vo.setJdbcExecuteTimeMillis(default0((Long) map.get(DruidMethodStatConstants.JDBC_EXECUTE_TIME_MILLIS)));
+            vo.setJdbcFetchRowCount(default0((Long) map.get(DruidMethodStatConstants.JDBC_FETCH_ROW_COUNT)));
+            vo.setJdbcUpdateCount(default0((Long) map.get(DruidMethodStatConstants.JDBC_UPDATE_COUNT)));
             vo.setLastError(map.get(DruidMethodStatConstants.LAST_ERROR));
             vo.setLastErrorTime((Date) map.get(DruidMethodStatConstants.LAST_ERROR_TIME));
-            vo.setHistogram((long[]) map.get(DruidMethodStatConstants.HISTOGRAM));
+            vo.setHistogram(defaultEmptyArray((long[]) map.get(DruidMethodStatConstants.HISTOGRAM)));
             return vo;
         }
     }
