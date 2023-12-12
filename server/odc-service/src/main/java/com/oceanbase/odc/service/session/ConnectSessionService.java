@@ -37,6 +37,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 
+import com.oceanbase.odc.common.util.*;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.authority.SecurityManager;
 import com.oceanbase.odc.core.authority.exception.AccessDeniedException;
@@ -233,6 +234,9 @@ public class ConnectSessionService {
         }
         preCheckSessionLimit();
         ConnectionConfig connection = connectionService.getForConnectionSkipPermissionCheck(dataSourceId);
+        if (StringUtils.isNotBlank(schemaName) && connection.getDialectType().isOracle()) {
+            schemaName = com.oceanbase.odc.common.util.StringUtils.quoteOracleIdentifier(schemaName);
+        }
         horizontalDataPermissionValidator.checkCurrentOrganization(connection);
         log.info("Begin to create session, connectionId={}, name={}", connection.id(), connection.getName());
         Set<String> actions = authorizationFacade.getAllPermittedActions(authenticationFacade.currentUser(),
