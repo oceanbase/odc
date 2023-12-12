@@ -41,12 +41,12 @@ public class DruidMonitorAspect {
 
     @Around("@annotation(DruidMonitor)")
     public Object aroundDruidMonitor(ProceedingJoinPoint joinPoint) throws Throwable {
-        return druidStatInterceptor.invoke(new MethodInvocationAdapter(joinPoint));
+        return druidStatInterceptor.invoke(new JointPointMethodInvocationAdapter(joinPoint));
     }
 
     @Around("controllerMethods()")
     public Object aroundDruidMonitorClass(ProceedingJoinPoint joinPoint) throws Throwable {
-        return druidStatInterceptor.invoke(new MethodInvocationAdapter(joinPoint));
+        return druidStatInterceptor.invoke(new JointPointMethodInvocationAdapter(joinPoint));
     }
 
 
