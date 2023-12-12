@@ -72,6 +72,7 @@ import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.model.User;
 import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
 import com.oceanbase.odc.service.quartz.QuartzJobService;
+import com.oceanbase.odc.service.quartz.util.ScheduleTaskUtils;
 import com.oceanbase.odc.service.regulation.approval.ApprovalFlowConfigSelector;
 import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevel;
 import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevelDescriber;
@@ -268,17 +269,18 @@ public class ScheduleService {
         try {
             // create a single trigger job if job not found.
             if (!quartzJobService.checkExists(jobKey)) {
-                log.info("Job not found and will be recreated,jobKey={}", jobKey);
+                log.info("Job not found and will be recreated,jobKey={},taskId={}", jobKey, taskId);
                 CreateQuartzJobReq req = new CreateQuartzJobReq();
                 req.setScheduleId(scheduleId);
                 req.setType(JobType.valueOf(taskEntity.getJobGroup()));
                 TriggerConfig triggerConfig = new TriggerConfig();
                 triggerConfig.setTriggerStrategy(TriggerStrategy.START_NOW);
+                req.setJobDataMap(ScheduleTaskUtils.buildTriggerDataMap(taskId));
                 req.setTriggerConfig(triggerConfig);
                 quartzJobService.createJob(req);
                 log.info("Job recreated,jobKey={}", jobKey);
                 return ScheduleTaskResp.withId(taskId);
-            }else{
+            } else {
                 return scheduleTaskService.start(taskId);
             }
         } catch (SchedulerException e) {
