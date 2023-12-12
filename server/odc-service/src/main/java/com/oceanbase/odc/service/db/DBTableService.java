@@ -15,9 +15,11 @@
  */
 package com.oceanbase.odc.service.db;
 
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import javax.validation.constraints.NotBlank;
@@ -34,6 +36,7 @@ import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
@@ -43,6 +46,7 @@ import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.db.model.GenerateTableDDLResp;
 import com.oceanbase.odc.service.db.model.GenerateUpdateTableDDLReq;
+import com.oceanbase.odc.service.db.model.UpdateTableDdlCheck;
 import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
 import com.oceanbase.odc.service.session.ConnectConsoleService;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
@@ -52,6 +56,12 @@ import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
 import com.oceanbase.tools.dbbrowser.model.DBTableIndex;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
+import com.oceanbase.tools.sqlparser.OBMySQLParser;
+import com.oceanbase.tools.sqlparser.OBOracleSQLParser;
+import com.oceanbase.tools.sqlparser.SQLParser;
+import com.oceanbase.tools.sqlparser.statement.Statement;
+import com.oceanbase.tools.sqlparser.statement.alter.table.AlterTableAction;
+import com.oceanbase.tools.sqlparser.statement.createindex.CreateIndex;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -165,7 +175,32 @@ public class DBTableService {
                 .sql(ddl)
                 .currentIdentity(TableIdentity.of(req.getCurrent().getSchemaName(), req.getCurrent().getName()))
                 .previousIdentity(TableIdentity.of(req.getPrevious().getSchemaName(), req.getPrevious().getName()))
+                .tip(checkUpdateDDL(session.getDialectType(), ddl))
                 .build();
+    }
+
+    private String checkUpdateDDL(DialectType dialectType, String ddl) {
+        SQLParser sqlParser = dialectType.isMysql() ? new OBMySQLParser() : new OBOracleSQLParser();
+        boolean createIndex = false;
+        boolean dropIndex = false;
+        for (String s : SqlUtils.split(dialectType, ddl, ";")) {
+            Statement stmt = sqlParser.parse(new StringReader(s));
+            if (stmt instanceof CreateIndex) {
+                createIndex = true;
+            } else if (stmt instanceof AlterTableAction
+                    && Objects.nonNull(((AlterTableAction) stmt).getDropIndexName())) {
+                dropIndex = true;
+            }
+        }
+        if (dropIndex && createIndex) {
+            return UpdateTableDdlCheck.DROP_AND_CREATE_INDEX.getLocalizedMessage();
+        } else if (dropIndex) {
+            return UpdateTableDdlCheck.DROP_INDEX.getLocalizedMessage();
+        } else if (createIndex) {
+            return UpdateTableDdlCheck.CREATE_INDEX.getLocalizedMessage();
+        } else {
+            return null;
+        }
     }
 
     public Boolean isLowerCaseTableName(@NotNull ConnectionSession connectionSession) {
