@@ -86,7 +86,6 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
     private volatile TaskStatus status;
     private volatile long scheduleId;
     private volatile long creatorId;
-    private volatile long flowTaskId;
     private volatile long organizationId;
     private volatile boolean continueOnError;
     private volatile double percentage;
@@ -98,14 +97,14 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
         this.creatorId = creator.getId();
         this.organizationId = creator.getOrganizationId();
         this.status = TaskStatus.RUNNING;
-        this.flowTaskId = taskId;
+        long flowTaskId = taskId;
         // for public cloud
         String uid = FlowTaskUtil.getCloudMainAccountId(execution);
         OnlineSchemaChangeParameters parameter = FlowTaskUtil.getOnlineSchemaChangeParameter(execution);
         ConnectionConfig connectionConfig = FlowTaskUtil.getConnectionConfig(execution);
         String schema = FlowTaskUtil.getSchemaName(execution);
         continueOnError = parameter.isContinueOnError();
-        OnlineSchemaChangeContextHolder.trace(this.creatorId, this.flowTaskId, this.organizationId);
+        OnlineSchemaChangeContextHolder.trace(this.creatorId, flowTaskId, this.organizationId);
         parameter.buildParameterDataMap();
         ScheduleEntity schedule = createScheduleEntity(connectionConfig, parameter, schema);
         scheduleId = schedule.getId();
@@ -121,9 +120,11 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
                 log.info("Successfully start schedule task with id={}", tasks.get(0).getId());
             }
             synchronized (LOCK) {
-                log.info("Wait task {} to be terminated.", taskId);
-                LOCK.wait();
-                log.info("Accept notify, task {} is terminated, and status is {}.", taskId, this.status.name());
+                while (!this.status.isTerminated()) {
+                    log.info("Wait task {} to be terminated.", taskId);
+                    LOCK.wait();
+                    log.info("Accept notify, task {} is terminated, and status is {}.", taskId, this.status.name());
+                }
             }
 
         } finally {
