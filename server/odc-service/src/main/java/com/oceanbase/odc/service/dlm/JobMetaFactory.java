@@ -23,6 +23,7 @@ import com.oceanbase.tools.migrator.common.configure.LogicTableConfig;
 import com.oceanbase.tools.migrator.common.dto.HistoryJob;
 import com.oceanbase.tools.migrator.common.enums.JobStatus;
 import com.oceanbase.tools.migrator.common.enums.JobType;
+import com.oceanbase.tools.migrator.common.enums.ShardingStrategy;
 import com.oceanbase.tools.migrator.core.AbstractJobMetaFactory;
 import com.oceanbase.tools.migrator.core.JobReq;
 import com.oceanbase.tools.migrator.core.meta.ClusterMeta;
@@ -44,6 +45,8 @@ public class JobMetaFactory extends AbstractJobMetaFactory {
 
     private int taskConnectionQueryTimeout;
     private double readWriteRatio;
+
+    private ShardingStrategy defaultShardingStrategy;
 
     public JobMeta create(DlmTask parameters) throws Exception {
         HistoryJob historyJob = new HistoryJob();
@@ -86,6 +89,10 @@ public class JobMetaFactory extends AbstractJobMetaFactory {
 
     public void setTaskConnectionQueryTimeout(int taskConnectionQueryTimeout) {
         this.taskConnectionQueryTimeout = taskConnectionQueryTimeout;
+    }
+
+    public void setDefaultShardingStrategy(ShardingStrategy defaultShardingStrategy) {
+        this.defaultShardingStrategy = defaultShardingStrategy;
     }
 
 }
