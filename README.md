@@ -121,7 +121,7 @@ Use the script below to launch the ODC Docker container.
  --cpu-period 100000 --cpu-quota 200000 --memory=4G \
  -e "DATABASE_HOST=127.0.0.1" -e "DATABASE_PORT=2881" -e "DATABASE_NAME=odc_metadb" \
  -e "DATABASE_USERNAME=odc@test" -e "DATABASE_PASSWORD=<your_metadb_password>" \
- -e "ODC_ADMIN_INITIAL_PASSWORD=<your_admin_password>" \
+ -e 'ODC_ADMIN_INITIAL_PASSWORD=<your_admin_password>' \
  -e "ODC_SERVER_PORT=8989" \
  oceanbase/odc:latest
 ```

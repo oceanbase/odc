@@ -102,7 +102,7 @@ GRANT ALL ON odc_metadb.* TO odc;
 
 # 将 <your_metadb_password> 替换为您的 MetaDB 的真实密码。如果您按照步骤 1 创建出一个 MetaDB，那么将 <your_metadb_password> 替换为您在步骤 1 中设置的密码
 
-# 使用参数 <your_metadb_password> 为 ODC 的 admin 账户设置一个初始密码。这个密码在您登录 ODC 时将会被用到。密码必须满足以下条件：
+# 使用参数 <your_admin_password> 为 ODC 的 admin 账户设置一个初始密码。这个密码在您登录 ODC 时将会被用到。密码必须满足以下条件：
 # - 至少 2 个数字
 # - 至少 2 个小写字母
 # - 至少 2 个大写字母
@@ -115,7 +115,7 @@ docker run -d -it --name odc --network host \
 --cpu-period 100000 --cpu-quota 200000 --memory=4G \
 -e "DATABASE_HOST=127.0.0.1" -e "DATABASE_PORT=2881" -e "DATABASE_NAME=odc_metadb" \
 -e "DATABASE_USERNAME=odc@test" -e "DATABASE_PASSWORD=<your_metadb_password>" \
--e "ODC_ADMIN_INITIAL_PASSWORD=<your_admin_password>" -e "ODC_SERVER_PORT=8989" \
+-e 'ODC_ADMIN_INITIAL_PASSWORD=<your_admin_password>' -e "ODC_SERVER_PORT=8989" \
 oceanbase/odc:latest
 ```
 
