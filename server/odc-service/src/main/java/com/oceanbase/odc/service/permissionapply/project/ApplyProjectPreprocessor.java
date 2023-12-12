@@ -74,8 +74,11 @@ public class ApplyProjectPreprocessor implements Preprocessor {
         req.setProjectName(projectEntity.getName());
         Locale locale = LocaleContextHolder.getLocale();
         String i18nKey = "com.oceanbase.odc.builtin-resource.permission-apply.project.description";
-        req.setDescription(I18n.translate(i18nKey, new Object[] {projectEntity.getName(),
-                resourceRoleEntities.stream().map(r -> r.getRoleName().name()).collect(Collectors.joining(","))},
+        req.setDescription(I18n.translate(
+                i18nKey,
+                new Object[] {projectEntity.getName(),
+                        resourceRoleEntities.stream().map(r -> r.getRoleName().getLocalizedMessage())
+                                .collect(Collectors.joining(","))},
                 locale));
     }
 
