@@ -24,7 +24,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import com.oceanbase.odc.common.util.CloseableIterator;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
@@ -81,23 +80,6 @@ public class SchemaExtractor {
                 return Stream.empty();
             }
         }).collect(Collectors.toSet());
-    }
-
-    public static Set<String> listSchemaNames(CloseableIterator<String> sqls, DialectType dialectType) {
-        Set<String> ret = new HashSet<>();
-        AbstractSyntaxTreeFactory factory = AbstractSyntaxTreeFactories.getAstFactory(dialectType, 0);
-        if (factory == null) {
-            return ret;
-        }
-        while (sqls.hasNext()) {
-            String sql = sqls.next();
-            try {
-                ret.addAll(listSchemaNames(factory.buildAst(sql), dialectType));
-            } catch (Exception e) {
-                // just eat exception due to parse failed
-            }
-        }
-        return ret;
     }
 
     private static Set<String> listSchemaNames(AbstractSyntaxTree ast, DialectType dialectType) {

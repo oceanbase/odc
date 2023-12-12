@@ -44,7 +44,6 @@ import com.oceanbase.odc.core.datasource.ConnectionInitializer;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
-import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.TaskErrorStrategy;

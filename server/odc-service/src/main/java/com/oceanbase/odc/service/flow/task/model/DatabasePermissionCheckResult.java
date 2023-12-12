@@ -33,4 +33,5 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class DatabasePermissionCheckResult {
     private Set<String> unauthorizedDatabaseNames;
+    private boolean overLimit;
 }

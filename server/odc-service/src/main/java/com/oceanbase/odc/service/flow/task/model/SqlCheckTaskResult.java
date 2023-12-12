@@ -43,11 +43,14 @@ import lombok.ToString;
 @ToString
 public class SqlCheckTaskResult implements Serializable, FlowTaskResult {
     private boolean success;
+    private boolean overLimit;
     private Integer issueCount;
     private Integer maxLevel;
     private String error;
     private String fileName;
     private List<CheckResult> results = new ArrayList<>();
+
+    private static final int MAX_IMPROVEMENT_LEVEL = 2;
 
     public static SqlCheckTaskResult success(
             @NonNull List<CheckViolation> violations) {
@@ -59,6 +62,14 @@ public class SqlCheckTaskResult implements Serializable, FlowTaskResult {
         Optional<CheckViolation> v = violations.stream()
                 .max(Comparator.comparingInt(CheckViolation::getLevel));
         result.setMaxLevel(v.isPresent() ? v.get().getLevel() : 0);
+        return result;
+    }
+
+    public static SqlCheckTaskResult overLimit() {
+        SqlCheckTaskResult result = new SqlCheckTaskResult();
+        result.setOverLimit(true);
+        result.setError("Over limit");
+        result.setMaxLevel(MAX_IMPROVEMENT_LEVEL);
         return result;
     }
 
