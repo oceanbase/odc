@@ -19,6 +19,7 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -738,6 +739,7 @@ public class SqlCommentProcessor {
         private String current;
         private Holder<Integer> bufferOrder = new Holder<>(0);
         private int lastLineOrder = 0;
+        private long iteratedBytes = 0;
 
         public SqlStatementIterator(InputStream input, Charset charset, SqlCommentProcessor processor) {
             this.reader = new BufferedReader(new InputStreamReader(input, charset));
@@ -783,6 +785,7 @@ public class SqlCommentProcessor {
                     }
                     // consider \n in the end of each line
                     lastLineOrder++;
+                    iteratedBytes += line.getBytes(StandardCharsets.UTF_8).length + 1;
                 }
                 if (!holder.isEmpty()) {
                     return holder.poll().getStr();
@@ -802,6 +805,12 @@ public class SqlCommentProcessor {
         public void close() throws Exception {
             reader.close();
         }
+
+        @Override
+        public long iteratedBytes() {
+            return iteratedBytes;
+        }
+
     }
 
     @Data

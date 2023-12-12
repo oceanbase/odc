@@ -860,6 +860,7 @@ public class SqlSplitter {
         private String delimiter;
         private boolean firstLine = true;
         private List<String> sqls = new ArrayList<>();
+        private long iteratedBytes = 0;
 
         private static final int SQL_STATEMENT_BUFFER_SIZE = 5;
         private static final Character SQL_SEPARATOR_CHAR = '/';
@@ -925,6 +926,7 @@ public class SqlSplitter {
                         clearUselessPrefix();
                         delimiter = splitter.getDelimiter();
                     }
+                    iteratedBytes += line.getBytes(Charset.defaultCharset()).length + 1;
                 }
                 if (!holder.isEmpty()) {
                     return holder.poll();
@@ -952,6 +954,11 @@ public class SqlSplitter {
 
         private SqlSplitter createSplitter() {
             return new SqlSplitter(lexerType, delimiter);
+        }
+
+        @Override
+        public long iteratedBytes() {
+            return iteratedBytes;
         }
 
     }

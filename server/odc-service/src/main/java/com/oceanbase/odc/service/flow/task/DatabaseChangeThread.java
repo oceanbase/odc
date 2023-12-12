@@ -15,9 +15,12 @@
  */
 package com.oceanbase.odc.service.flow.task;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.SequenceInputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -33,6 +36,7 @@ import org.springframework.jdbc.core.StatementCallback;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.trace.TaskContextHolder;
 import com.oceanbase.odc.common.util.CSVUtils;
+import com.oceanbase.odc.common.util.CloseableIterator;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.datamasking.algorithm.Algorithm;
 import com.oceanbase.odc.core.datasource.ConnectionInitializer;
@@ -62,6 +66,7 @@ import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeResult;
 import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
+import com.oceanbase.odc.service.objectstorage.model.StorageObject;
 import com.oceanbase.odc.service.session.DBSessionManageFacade;
 import com.oceanbase.odc.service.session.OdcStatementCallBack;
 import com.oceanbase.odc.service.session.initializer.ConsoleTimeoutInitializer;
@@ -83,33 +88,31 @@ import lombok.extern.slf4j.Slf4j;
 public class DatabaseChangeThread extends Thread {
 
     private ConnectionSession connectionSession;
-    private List<String> sqls;
+    private CloseableIterator<String> sqlIterator;
     private DatabaseChangeParameters parameters;
     // sql execute error records file path
     private String errorRecordsFilePath = null;
     private Integer failCount = 0;
     private Integer successCount = 0;
-    private int writeFileSuccessCount = 0;
-    private int writeFileFailCount = 0;
+    private long sqlTotalBytes = 0;
+    private long sqlReadBytes = 0;
     private String zipFileDownloadUrl;
     private String zipFileId;
     private String jsonFileName;
     private boolean isContainQuery = false;
-
     private List<SqlExecuteResult> queryResultSet = new ArrayList<>();
+    @Getter
     private Long startTimestamp = null;
+    @Getter
     private boolean abort = false;
-
     @Getter
     private volatile Boolean stop = false;
     @Setter
     @Getter
     protected long userId;
-
     @Getter
     @Setter
     protected long taskId;
-
     @Getter
     @Setter
     protected long flowInstanceId;
@@ -130,140 +133,161 @@ public class DatabaseChangeThread extends Thread {
 
     private void init(Long userId) {
         List<String> objectIds = parameters.getSqlObjectIds();
-        String sqlStr;
+        InputStream sqlInputStream;
         if (StringUtils.isNotEmpty(parameters.getSqlContent())) {
-            sqlStr = parameters.getSqlContent();
+            byte[] sqlBytes = parameters.getSqlContent().getBytes(StandardCharsets.UTF_8);
+            sqlInputStream = new ByteArrayInputStream(sqlBytes);
+            sqlTotalBytes = sqlBytes.length;
         } else {
             try {
-                sqlStr = readSqlFiles(userId, objectIds);
+                sqlInputStream = readSqlFilesStream(userId, objectIds);
             } catch (IOException exception) {
                 throw new InternalServerError("load async task file failed", exception);
             }
         }
-        PreConditions.notEmpty(sqlStr, "sqlStr");
+        PreConditions.notNull(sqlInputStream, "sqlInputStream", "sql file is empty");
         String delimiter = Objects.isNull(parameters.getDelimiter()) ? ";" : parameters.getDelimiter();
         ConnectionSessionUtil.getSqlCommentProcessor(connectionSession).setDelimiter(delimiter);
-        this.sqls = SqlUtils.split(connectionSession, sqlStr, false);
+        this.sqlIterator = SqlUtils.iterator(connectionSession, sqlInputStream, StandardCharsets.UTF_8);
     }
 
-    private String readSqlFiles(Long userId, List<String> objectIds) throws IOException {
-        StringBuilder sb = new StringBuilder();
+    private InputStream readSqlFilesStream(Long userId, List<String> objectIds) throws IOException {
+        InputStream inputStream = new ByteArrayInputStream(new byte[0]);
         for (String objectId : objectIds) {
-            String objectContentStr = objectStorageFacade.loadObjectContentAsString(
-                    "async".concat(File.separator).concat(String.valueOf(userId)),
-                    objectId);
+            String bucket = "async".concat(File.separator).concat(String.valueOf(userId));
+            StorageObject object = objectStorageFacade.loadObject(bucket, objectId);
+            InputStream current = object.getContent();
+            sqlTotalBytes += object.getMetadata().getTotalLength();
             /**
-             * remove UTF-8 BOM
+             * remove UTF-8 BOM if exists
              */
-            byte[] byteSql = objectContentStr.getBytes();
-            if (byteSql.length >= 3 && byteSql[0] == (byte) 0xef && byteSql[1] == (byte) 0xbb
+            current.mark(3);
+            byte[] byteSql = new byte[3];
+            if (current.read(byteSql) >= 3 && byteSql[0] == (byte) 0xef && byteSql[1] == (byte) 0xbb
                     && byteSql[2] == (byte) 0xbf) {
-                objectContentStr = new String(byteSql, 3, byteSql.length - 3);
+                current.reset();
+                current.skip(3);
+                sqlTotalBytes -= 3;
+            } else {
+                current.reset();
             }
-            sb.append(objectContentStr);
+            inputStream = new SequenceInputStream(inputStream, current);
         }
-        return sb.toString();
+        return inputStream;
     }
 
     @Override
     public void run() {
         TaskContextHolder.trace(userId, taskId);
         log.info("Async task  start to run, task id:{}", this.getTaskId());
-        log.info("Start read sql content, taskId={}", this.getTaskId());
-        init(userId);
-        log.info("Read sql content successfully, taskId={}, sqlCount={}", this.getTaskId(), this.sqls.size());
         startTimestamp = System.currentTimeMillis();
-        String fileDir = FileManager.generateDir(FileBucket.ASYNC);
-        for (int index = 1; index <= sqls.size(); index++) {
-            String sql = sqls.get(index - 1);
-            log.info("Async sql: {}", sql);
-            if (stop) {
-                break;
-            }
-            try {
-                List<SqlTuple> sqlTuples = new ArrayList<>();
-                sqlTuples.add(SqlTuple.newTuple(sql));
-                OdcStatementCallBack statementCallback = new OdcStatementCallBack(sqlTuples, connectionSession, true,
-                        parameters.getQueryLimit());
-                statementCallback.setMaxCachedLines(0);
-                statementCallback.setMaxCachedSize(0);
-                statementCallback.setDbmsoutputMaxRows(0);
-                JdbcOperations executor =
-                        connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY);
-                long timeoutUs = TimeUnit.MILLISECONDS.toMicros(parameters.getTimeoutMillis());
-                if (timeoutUs < 0) {
-                    throw new IllegalArgumentException(
-                            "Timeout settings is too large, " + parameters.getTimeoutMillis());
+        try {
+            log.info("Start read sql content, taskId={}", this.getTaskId());
+            init(userId);
+            log.info("Read sql content successfully, taskId={}", this.getTaskId());
+            int index = 0;
+            while (sqlIterator.hasNext()) {
+                String sql = sqlIterator.next();
+                sqlReadBytes += sqlIterator.iteratedBytes();
+                index++;
+                log.info("Async sql: {}", sql);
+                if (stop) {
+                    break;
                 }
-                ConnectionInitializer initializer = new ConsoleTimeoutInitializer(timeoutUs);
-                executor.execute((ConnectionCallback<Void>) con -> {
-                    initializer.init(con);
-                    return null;
-                });
-                List<JdbcGeneralResult> results =
-                        executor.execute((StatementCallback<List<JdbcGeneralResult>>) stmt -> {
-                            stmt.setQueryTimeout((int) TimeUnit.MILLISECONDS.toSeconds(parameters.getTimeoutMillis()));
-                            return statementCallback.doInStatement(stmt);
-                        });
-                Verify.notEmpty(results, "resultList");
-                GeneralSqlType sqlType = parseSqlType(sql);
-                for (JdbcGeneralResult result : results) {
-                    SqlExecuteResult executeResult = new SqlExecuteResult(result);
-                    if (GeneralSqlType.DQL == sqlType) {
-                        this.isContainQuery = true;
-                        if (maskingService.isMaskingEnabled()) {
-                            try {
-                                dynamicDataMasking(executeResult);
-                            } catch (Exception e) {
-                                // Eat exception and skip data masking
-                                log.warn("Failed to mask query result set in database change task, sql={}",
-                                        executeResult.getExecuteSql(), e);
+                try {
+                    List<SqlTuple> sqlTuples = new ArrayList<>();
+                    sqlTuples.add(SqlTuple.newTuple(sql));
+                    OdcStatementCallBack statementCallback =
+                            new OdcStatementCallBack(sqlTuples, connectionSession, true,
+                                    parameters.getQueryLimit());
+                    statementCallback.setMaxCachedLines(0);
+                    statementCallback.setMaxCachedSize(0);
+                    statementCallback.setDbmsoutputMaxRows(0);
+                    JdbcOperations executor =
+                            connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY);
+                    long timeoutUs = TimeUnit.MILLISECONDS.toMicros(parameters.getTimeoutMillis());
+                    if (timeoutUs < 0) {
+                        throw new IllegalArgumentException(
+                                "Timeout settings is too large, " + parameters.getTimeoutMillis());
+                    }
+                    ConnectionInitializer initializer = new ConsoleTimeoutInitializer(timeoutUs);
+                    executor.execute((ConnectionCallback<Void>) con -> {
+                        initializer.init(con);
+                        return null;
+                    });
+                    List<JdbcGeneralResult> results =
+                            executor.execute((StatementCallback<List<JdbcGeneralResult>>) stmt -> {
+                                stmt.setQueryTimeout(
+                                        (int) TimeUnit.MILLISECONDS.toSeconds(parameters.getTimeoutMillis()));
+                                return statementCallback.doInStatement(stmt);
+                            });
+                    Verify.notEmpty(results, "resultList");
+                    GeneralSqlType sqlType = parseSqlType(sql);
+                    for (JdbcGeneralResult result : results) {
+                        SqlExecuteResult executeResult = new SqlExecuteResult(result);
+                        if (GeneralSqlType.DQL == sqlType) {
+                            this.isContainQuery = true;
+                            if (maskingService.isMaskingEnabled()) {
+                                try {
+                                    dynamicDataMasking(executeResult);
+                                } catch (Exception e) {
+                                    // Eat exception and skip data masking
+                                    log.warn("Failed to mask query result set in database change task, sql={}",
+                                            executeResult.getExecuteSql(), e);
+                                }
                             }
                         }
+                        queryResultSet.add(executeResult);
                     }
-                    queryResultSet.add(executeResult);
-                }
-                boolean success = true;
-                for (JdbcGeneralResult result : results) {
-                    SqlExecuteResult executeResult = new SqlExecuteResult(result);
-                    if (executeResult.getStatus() != SqlExecuteStatus.SUCCESS) {
-                        failCount++;
-                        log.warn("Error occurs when executing sql: {}, error message: {}", sql,
-                                executeResult.getTrack());
-                        // only record info of failed sqls
-                        addErrorRecordsToFile(index, sql, executeResult.getTrack());
-                        success = false;
-                        break;
+                    boolean success = true;
+                    for (JdbcGeneralResult result : results) {
+                        SqlExecuteResult executeResult = new SqlExecuteResult(result);
+                        if (executeResult.getStatus() != SqlExecuteStatus.SUCCESS) {
+                            failCount++;
+                            log.warn("Error occurs when executing sql: {}, error message: {}", sql,
+                                    executeResult.getTrack());
+                            // only record info of failed sqls
+                            addErrorRecordsToFile(index, sql, executeResult.getTrack());
+                            success = false;
+                            break;
+                        }
                     }
-                }
-                if (success) {
-                    successCount++;
-                } else {
+                    if (success) {
+                        successCount++;
+                    } else {
+                        if (TaskErrorStrategy.ABORT.equals(parameters.getErrorStrategy())) {
+                            abort = true;
+                            break;
+                        }
+                    }
+                } catch (Exception e) {
+                    failCount++;
+                    log.warn("Error occurs when executing sql={} :", sql, e);
+                    // only record info of failed sql
+                    addErrorRecordsToFile(index, sql, e.getMessage());
                     if (TaskErrorStrategy.ABORT.equals(parameters.getErrorStrategy())) {
                         abort = true;
                         break;
                     }
                 }
-            } catch (Exception e) {
-                failCount++;
-                log.warn("Error occurs when executing sql={} :", sql, e);
-                // only record info of failed sql
-                addErrorRecordsToFile(index, sql, e.getMessage());
-                if (TaskErrorStrategy.ABORT.equals(parameters.getErrorStrategy())) {
-                    abort = true;
-                    break;
+            }
+        } finally {
+            if (Objects.nonNull(sqlIterator)) {
+                try {
+                    sqlIterator.close();
+                } catch (Exception e) {
+                    throw new RuntimeException("Failed to close sql iterator");
                 }
             }
         }
+        String fileDir = FileManager.generateDir(FileBucket.ASYNC);
         try {
             jsonFileName = writeJsonFile(fileDir, queryResultSet);
             FileMeta fileMeta = writeZipFile(fileDir, queryResultSet, cloudObjectStorageService, flowInstanceId);
             zipFileDownloadUrl = fileMeta.getDownloadUrl();
             zipFileId = fileMeta.getFileId();
-            writeFileSuccessCount++;
             log.info("Async task end up running, task id: {}", this.getTaskId());
         } catch (Exception e) {
-            writeFileFailCount++;
             log.warn("Write async task file failed, task id: {}, error message: {}", this.getTaskId(), e.getMessage());
         } finally {
             TaskContextHolder.clear();
@@ -282,19 +306,6 @@ public class DatabaseChangeThread extends Thread {
         } catch (IOException ex) {
             log.warn("generate error record failed, sql index={}, sql={}, errorMsg={}", index, sql, errorMsg);
         }
-    }
-
-    public boolean isAbort() {
-        return this.abort;
-    }
-
-    public boolean isDone() {
-        // whether all sql execute [successCount + failCount] and result save [writeFileSuccessCount +
-        // writeFileFailCount]
-        // has greater or equal than sql list size + 1
-        // successCount + failCount should be equals to sql list size
-        // writeFileSuccessCount + writeFileFailCount should be 0 or 1
-        return (successCount + failCount + writeFileSuccessCount + writeFileFailCount) >= (sqls.size() + 1);
     }
 
     public void stopTaskAndKillQuery(DBSessionManageFacade sessionManageFacade) {
@@ -320,21 +331,12 @@ public class DatabaseChangeThread extends Thread {
         return taskResult;
     }
 
-    public Long getStartTimestamp() {
-        return startTimestamp;
-    }
-
-    public DatabaseChangeParameters getParameters() {
-        return parameters;
-    }
-
     public double getProgressPercentage() {
-        int totalCount = sqls.size();
-        if (totalCount == 0) {
+        if (sqlTotalBytes == 0) {
             // do nothing and done
             return 100.0D;
         }
-        return (successCount + failCount + writeFileSuccessCount + writeFileFailCount) * 100.0D / (totalCount + 1);
+        return sqlReadBytes * 100.0D / sqlTotalBytes;
     }
 
     public static String writeJsonFile(String dir, List<SqlExecuteResult> executeResult) {
@@ -450,4 +452,5 @@ public class DatabaseChangeThread extends Thread {
             this.fileName = fileName;
         }
     }
+
 }
