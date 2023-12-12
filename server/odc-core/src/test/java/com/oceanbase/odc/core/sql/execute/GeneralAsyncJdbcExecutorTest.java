@@ -26,6 +26,7 @@ import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.springframework.jdbc.core.StatementCallback;
 
 import com.oceanbase.odc.core.datasource.CloneableDataSourceFactory;
 import com.oceanbase.odc.core.datasource.SingleConnectionDataSource;
@@ -54,7 +55,7 @@ public class GeneralAsyncJdbcExecutorTest {
         CloneableDataSourceFactory factory = getDataSourceFactory(DialectType.OB_MYSQL);
         try (SingleConnectionDataSource dataSource = (SingleConnectionDataSource) factory.getDataSource()) {
             GeneralAsyncJdbcExecutor executor = getAyncJdbcExecutor(dataSource, factory);
-            Future<Integer> future = executor.execute(stmt -> {
+            Future<Integer> future = executor.execute((StatementCallback<Integer>) stmt -> {
                 try (ResultSet resultSet = stmt.executeQuery("select sleep(1) from dual")) {
                     Assert.assertTrue(resultSet.next());
                     return resultSet.getInt(1);
@@ -69,7 +70,7 @@ public class GeneralAsyncJdbcExecutorTest {
         CloneableDataSourceFactory factory = getDataSourceFactory(DialectType.OB_MYSQL);
         try (SingleConnectionDataSource dataSource = (SingleConnectionDataSource) factory.getDataSource()) {
             GeneralAsyncJdbcExecutor executor = getAyncJdbcExecutor(dataSource, factory);
-            Future<Integer> future = executor.execute(statement -> {
+            Future<Integer> future = executor.execute((StatementCallback<Integer>) statement -> {
                 throw new RuntimeException("Test exception");
             });
             thrown.expectMessage("Test exception");

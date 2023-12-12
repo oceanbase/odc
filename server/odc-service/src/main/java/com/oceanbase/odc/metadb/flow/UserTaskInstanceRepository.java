@@ -107,10 +107,10 @@ public interface UserTaskInstanceRepository
     @Query(value = "select wait_for_confirm from flow_instance_node_approval where id =:id limit 1", nativeQuery = true)
     Boolean findConfirmById(@Param("id") Long id);
 
-    @Query(value = "SELECT * FROM flow_instance_node_approval WHERE flow_instance_id in (:flowInstanceIds) and status=:#{#status.name()}",
+    @Query(value = "SELECT * FROM flow_instance_node_approval WHERE flow_instance_id in (:flowInstanceIds) and status in (:status)",
             nativeQuery = true)
     List<UserTaskInstanceEntity> findApprovalInstanceIdByFlowInstanceIdAndStatus(
-            @Param("flowInstanceIds") Collection<Long> flowInstanceIds, @Param("status") FlowNodeStatus status);
+            @Param("flowInstanceIds") Collection<Long> flowInstanceIds, @Param("status") Collection<String> status);
 
 
 }

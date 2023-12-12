@@ -440,7 +440,8 @@ public class UserService {
 
     public Set<String> getCurrentUserResourceRoleIdentifiers() {
         long currentUserId = authenticationFacade.currentUserId();
-        return resourceRoleService.getResourceRoleIdentifiersByUserId(currentUserId);
+        long currentOrganizationId = authenticationFacade.currentOrganizationId();
+        return resourceRoleService.getResourceRoleIdentifiersByUserId(currentOrganizationId, currentUserId);
     }
 
     @SkipAuthorize("odc internal usage")
