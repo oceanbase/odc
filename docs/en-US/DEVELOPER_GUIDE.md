@@ -242,7 +242,7 @@ When plaintext configuration is identified, EncryptableConfiguration will automa
 
 ### 3.1.1 Dependent component installation
 
-ODC relies on 2 self-developed components, which you can see in `lib` respectively. In the official release, if these two components are modified, we will upload them to the maven central warehouse for reference in advance, but during the development process, we will reference them through local installation. You need to manually install these two components locally before building, otherwise the build may not be successful. You can complete the installation of dependent components through the following shell script:
+ODC relies on 2 self-developed components, which you can see in `libs` respectively. In the official release, if these two components are modified, we will upload them to the maven central warehouse for reference in advance, but during the development process, we will reference them through local installation. You need to manually install these two components locally before building, otherwise the build may not be successful. You can complete the installation of dependent components through the following shell script:
 
 ```shell
 script/build_libs.sh
