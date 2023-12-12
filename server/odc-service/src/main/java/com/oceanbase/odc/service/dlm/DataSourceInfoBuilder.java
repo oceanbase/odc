@@ -55,7 +55,6 @@ public class DataSourceInfoBuilder {
                         .setFullUserName(OBConsoleDataSourceFactory.getUsername(connectionConfig));
                 dataSourceInfo.setDbType(DataBaseType.OCEANBASEV10.name());
                 dataSourceInfo.setSysUser(connectionConfig.getSysTenantUsername());
-                dataSourceInfo.setUserLocalProxy(false);
                 dataSourceInfo.setClusterName(connectionConfig.getClusterName());
                 if (StringUtils.isNotEmpty(connectionConfig.getSysTenantPassword())) {
                     try {
