@@ -25,7 +25,6 @@ import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.dlm.DlmLimiterService;
 import com.oceanbase.odc.service.dlm.model.DataDeleteParameters;
-import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
 import com.oceanbase.odc.service.flow.processor.ScheduleTaskPreprocessor;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
@@ -65,7 +64,7 @@ public class DataDeletePreprocessor extends AbstractDlmJobPreprocessor {
             // Throw exception when the specified database does not exist or the current user does not have
             // permission to access it.
             Database sourceDb = databaseService.detail(dataDeleteParameters.getDatabaseId());
-
+            checkDatasource(sourceDb.getDataSource());
             ConnectionConfig dataSource = sourceDb.getDataSource();
             dataSource.setDefaultSchema(sourceDb.getName());
             ConnectionSessionFactory connectionSessionFactory = new DefaultConnectSessionFactory(dataSource);
@@ -84,17 +83,7 @@ public class DataDeletePreprocessor extends AbstractDlmJobPreprocessor {
             scheduleEntity.setOrganizationId(authenticationFacade.currentOrganizationId());
             scheduleEntity = scheduleService.create(scheduleEntity);
             parameters.setTaskId(scheduleEntity.getId());
-            RateLimitConfiguration limiterConfig = limiterService.getDefaultLimiterConfig();
-            if (dataDeleteParameters.getRateLimit().getRowLimit() != null) {
-                limiterConfig.setRowLimit(dataDeleteParameters.getRateLimit().getRowLimit());
-            }
-            if (dataDeleteParameters.getRateLimit().getDataSizeLimit() != null) {
-                limiterConfig.setDataSizeLimit(dataDeleteParameters.getRateLimit().getDataSizeLimit());
-            }
-            if (dataDeleteParameters.getRateLimit().getBatchSize() != null) {
-                limiterConfig.setBatchSize(dataDeleteParameters.getRateLimit().getBatchSize());
-            }
-            limiterService.createAndBindToOrder(scheduleEntity.getId(), limiterConfig);
+            initLimiterConfig(scheduleEntity.getId(), dataDeleteParameters.getRateLimit(), limiterService);
         }
         req.setParentFlowInstanceId(parameters.getTaskId());
     }
