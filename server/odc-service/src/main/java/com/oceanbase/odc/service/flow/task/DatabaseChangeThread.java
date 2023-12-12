@@ -188,7 +188,7 @@ public class DatabaseChangeThread extends Thread {
             int index = 0;
             while (sqlIterator.hasNext()) {
                 String sql = sqlIterator.next();
-                sqlReadBytes += sqlIterator.iteratedBytes();
+                sqlReadBytes = sqlIterator.iteratedBytes();
                 index++;
                 log.info("Async sql: {}", sql);
                 if (stop) {
