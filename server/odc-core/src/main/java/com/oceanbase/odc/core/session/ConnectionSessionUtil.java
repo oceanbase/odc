@@ -55,7 +55,6 @@ import com.oceanbase.odc.core.sql.execute.SyncJdbcExecutor;
 import com.oceanbase.odc.core.sql.execute.cache.BinaryDataManager;
 import com.oceanbase.odc.core.sql.execute.cache.model.BinaryContentMetaData;
 import com.oceanbase.odc.core.sql.execute.cache.table.VirtualTable;
-import com.oceanbase.odc.core.sql.execute.model.JdbcGeneralResult;
 import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
 import com.oceanbase.odc.core.sql.util.OdcDBSessionRowMapper;
 
@@ -142,12 +141,12 @@ public class ConnectionSessionUtil {
     }
 
     @SuppressWarnings("all")
-    public static String setFutureJdbc(@NonNull ConnectionSession connectionSession,
-            @NonNull Future<List<JdbcGeneralResult>> futureResult, Map<String, Object> context) {
+    public static <T> String setFutureJdbc(@NonNull ConnectionSession connectionSession,
+            @NonNull Future<T> futureResult, Map<String, Object> context) {
         Object value = connectionSession.getAttribute(ConnectionSessionConstants.FUTURE_JDBC_RESULT_KEY);
-        Map<String, Pair<Future<List<JdbcGeneralResult>>, Map<String, Object>>> id2FutureResult;
+        Map<String, Pair<Future<T>, Map<String, Object>>> id2FutureResult;
         if (value instanceof Map) {
-            id2FutureResult = (Map<String, Pair<Future<List<JdbcGeneralResult>>, Map<String, Object>>>) value;
+            id2FutureResult = (Map<String, Pair<Future<T>, Map<String, Object>>>) value;
         } else {
             id2FutureResult = new ConcurrentHashMap<>();
             connectionSession.setAttribute(ConnectionSessionConstants.FUTURE_JDBC_RESULT_KEY, id2FutureResult);
@@ -157,9 +156,10 @@ public class ConnectionSessionUtil {
         return uuid;
     }
 
-    public static Future<List<JdbcGeneralResult>> getFutureJdbcResult(
+    @SuppressWarnings("all")
+    public static <T> Future<T> getFutureJdbcResult(
             @NonNull ConnectionSession connectionSession, @NonNull String requestId) {
-        return innerGetResult(connectionSession, requestId).left;
+        return (Future<T>) innerGetResult(connectionSession, requestId).left;
     }
 
     public static Map<String, Object> getFutureJdbcContext(
@@ -168,16 +168,16 @@ public class ConnectionSessionUtil {
     }
 
     @SuppressWarnings("all")
-    private static Pair<Future<List<JdbcGeneralResult>>, Map<String, Object>> innerGetResult(
+    private static <T> Pair<Future<T>, Map<String, Object>> innerGetResult(
             @NonNull ConnectionSession connectionSession, @NonNull String requestId) {
         Object value = connectionSession.getAttribute(ConnectionSessionConstants.FUTURE_JDBC_RESULT_KEY);
-        Map<String, Pair<Future<List<JdbcGeneralResult>>, Map<String, Object>>> id2FutureResult;
+        Map<String, Pair<Future<T>, Map<String, Object>>> id2FutureResult;
         if (value instanceof Map) {
-            id2FutureResult = (Map<String, Pair<Future<List<JdbcGeneralResult>>, Map<String, Object>>>) value;
+            id2FutureResult = (Map<String, Pair<Future<T>, Map<String, Object>>>) value;
         } else {
             throw new NotFoundException(ResourceType.ODC_ASYNC_SQL_RESULT, "session id", connectionSession.getId());
         }
-        Pair<Future<List<JdbcGeneralResult>>, Map<String, Object>> resultList = id2FutureResult.get(requestId);
+        Pair<Future<T>, Map<String, Object>> resultList = id2FutureResult.get(requestId);
         if (resultList == null) {
             throw new NotFoundException(ResourceType.ODC_ASYNC_SQL_RESULT, "request id", requestId);
         }
@@ -185,16 +185,16 @@ public class ConnectionSessionUtil {
     }
 
     @SuppressWarnings("all")
-    public static void removeFutureJdbc(@NonNull ConnectionSession connectionSession,
+    public static <T> void removeFutureJdbc(@NonNull ConnectionSession connectionSession,
             @NonNull String requestId) {
         Object value = connectionSession.getAttribute(ConnectionSessionConstants.FUTURE_JDBC_RESULT_KEY);
-        Map<String, Pair<Future<List<JdbcGeneralResult>>, Map<String, Object>>> id2FutureResult;
+        Map<String, Pair<Future<T>, Map<String, Object>>> id2FutureResult;
         if (value == null) {
             return;
         } else if (!(value instanceof Map)) {
             throw new NullPointerException("Result not found by session id " + connectionSession.getId());
         } else {
-            id2FutureResult = (Map<String, Pair<Future<List<JdbcGeneralResult>>, Map<String, Object>>>) value;
+            id2FutureResult = (Map<String, Pair<Future<T>, Map<String, Object>>>) value;
         }
         id2FutureResult.remove(requestId);
     }
