@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.collections4.CollectionUtils;
 import org.flowable.engine.delegate.DelegateExecution;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -79,7 +80,10 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
     @Autowired
     private OrganizationService organizationService;
 
-    private final Object LOCK = new Object();
+    @Value("${osc-task-expired-after-seconds:432000}")
+    private long oscTaskExpiredAfterSeconds;
+
+    private final Object lock = new Object();
 
     private final static String checkTaskCronExpression = "0/10 * * * * ?";
 
@@ -119,10 +123,10 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
                 taskHandler.start(scheduleId, tasks.get(0).getId());
                 log.info("Successfully start schedule task with id={}", tasks.get(0).getId());
             }
-            synchronized (LOCK) {
+            synchronized (lock) {
                 while (!this.status.isTerminated()) {
                     log.info("Wait task {} to be terminated.", taskId);
-                    LOCK.wait();
+                    lock.wait(oscTaskExpiredAfterSeconds * 1000);
                     log.info("Accept notify, task {} is terminated, and status is {}.", taskId, this.status.name());
                 }
             }
@@ -183,8 +187,8 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
         }
         this.percentage = currentPercentage;
         if (this.status.isTerminated()) {
-            synchronized (LOCK) {
-                LOCK.notifyAll();
+            synchronized (lock) {
+                lock.notifyAll();
                 log.info("Task {} is terminated, and status is {},notify other thread.", taskId, this.status.name());
             }
         }
