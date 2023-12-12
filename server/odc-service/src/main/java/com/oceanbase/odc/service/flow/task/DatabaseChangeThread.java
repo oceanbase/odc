@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.SequenceInputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -43,6 +44,7 @@ import com.oceanbase.odc.core.datasource.ConnectionInitializer;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
+import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.TaskErrorStrategy;
@@ -62,8 +64,9 @@ import com.oceanbase.odc.service.datasecurity.model.SensitiveColumn;
 import com.oceanbase.odc.service.datasecurity.util.DataMaskingUtil;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeResult;
-import com.oceanbase.odc.service.flow.task.util.DatabaseChangeFileReader;
+import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
+import com.oceanbase.odc.service.objectstorage.model.StorageObject;
 import com.oceanbase.odc.service.session.DBSessionManageFacade;
 import com.oceanbase.odc.service.session.OdcStatementCallBack;
 import com.oceanbase.odc.service.session.initializer.ConsoleTimeoutInitializer;
@@ -119,17 +122,17 @@ public class DatabaseChangeThread extends Thread {
     @Setter
     protected long flowInstanceId;
     private final CloudObjectStorageService cloudObjectStorageService;
+    private final ObjectStorageFacade objectStorageFacade;
     private final DataMaskingService maskingService;
-    private final DatabaseChangeFileReader fileReader;
 
     public DatabaseChangeThread(ConnectionSession connectionSession, DatabaseChangeParameters parameters,
-            CloudObjectStorageService cloudObjectStorageService, DataMaskingService maskingService,
-            DatabaseChangeFileReader fileReader) {
+            CloudObjectStorageService cloudObjectStorageService, ObjectStorageFacade objectStorageFacade,
+            DataMaskingService maskingService) {
         this.connectionSession = connectionSession;
         this.parameters = parameters;
         this.cloudObjectStorageService = cloudObjectStorageService;
+        this.objectStorageFacade = objectStorageFacade;
         this.maskingService = maskingService;
-        this.fileReader = fileReader;
     }
 
     @Override
@@ -251,8 +254,7 @@ public class DatabaseChangeThread extends Thread {
             sqlTotalBytes = sqlBytes.length;
         } else {
             try {
-                String bucket = "async".concat(File.separator).concat(String.valueOf(userId));
-                sqlInputStream = fileReader.readSqlFilesStream(bucket, objectIds, -1);
+                sqlInputStream = readSqlFilesStream(userId, objectIds);
             } catch (IOException exception) {
                 throw new InternalServerError("load database change task file failed", exception);
             }
@@ -272,6 +274,29 @@ public class DatabaseChangeThread extends Thread {
         } catch (Exception exception) {
             throw new InternalServerError("create database change task file dir failed", exception);
         }
+    }
+
+    private InputStream readSqlFilesStream(Long userId, List<String> objectIds) throws IOException {
+        InputStream inputStream = new ByteArrayInputStream(new byte[0]);
+        for (String objectId : objectIds) {
+            String bucket = "async".concat(File.separator).concat(String.valueOf(userId));
+            StorageObject object = objectStorageFacade.loadObject(bucket, objectId);
+            InputStream current = object.getContent();
+            sqlTotalBytes += object.getMetadata().getTotalLength();
+            // remove UTF-8 BOM if exists
+            current.mark(3);
+            byte[] byteSql = new byte[3];
+            if (current.read(byteSql) >= 3 && byteSql[0] == (byte) 0xef && byteSql[1] == (byte) 0xbb
+                    && byteSql[2] == (byte) 0xbf) {
+                current.reset();
+                current.skip(3);
+                sqlTotalBytes -= 3;
+            } else {
+                current.reset();
+            }
+            inputStream = new SequenceInputStream(inputStream, current);
+        }
+        return inputStream;
     }
 
     private void addErrorRecordsToFile(int index, String sql, String errorMsg) {

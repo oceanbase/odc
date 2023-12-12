@@ -79,7 +79,7 @@ public class DatabaseChangeFileReader {
         }
     }
 
-    public InputStream readSqlFilesStream(String bucket, List<String> objectIds, long maxBytes) throws IOException {
+    private InputStream readSqlFilesStream(String bucket, List<String> objectIds, long maxBytes) throws IOException {
         long totalBytes = 0;
         InputStream inputStream = new ByteArrayInputStream(new byte[0]);
         for (String objectId : objectIds) {

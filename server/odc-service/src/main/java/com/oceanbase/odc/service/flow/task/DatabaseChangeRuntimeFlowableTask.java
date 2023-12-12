@@ -40,8 +40,8 @@ import com.oceanbase.odc.service.flow.exception.ServiceTaskExpiredException;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeResult;
 import com.oceanbase.odc.service.flow.task.model.RollbackPlanTaskResult;
-import com.oceanbase.odc.service.flow.task.util.DatabaseChangeFileReader;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
+import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
 import com.oceanbase.odc.service.session.DBSessionManageFacade;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
@@ -67,7 +67,7 @@ public class DatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDelegate<D
     @Autowired
     private DataMaskingService maskingService;
     @Autowired
-    private DatabaseChangeFileReader fileReader;
+    private ObjectStorageFacade objectStorageFacade;
     @Autowired
     private DBSessionManageFacade sessionManageFacade;
 
@@ -185,7 +185,7 @@ public class DatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDelegate<D
         ConnectionSessionUtil.setCurrentSchema(connectionSession, FlowTaskUtil.getSchemaName(execution));
         ConnectionSessionUtil.setColumnAccessor(connectionSession, new DatasourceColumnAccessor(connectionSession));
         DatabaseChangeThread returnVal = new DatabaseChangeThread(connectionSession, parameters,
-                cloudObjectStorageService, maskingService, fileReader);
+                cloudObjectStorageService, objectStorageFacade, maskingService);
         returnVal.setTaskId(taskId);
         returnVal.setFlowInstanceId(this.getFlowInstanceId());
         returnVal.setUserId(creatorId);
