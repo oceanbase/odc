@@ -31,7 +31,7 @@ import com.oceanbase.odc.core.shared.constant.AuditEventAction;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
-import com.oceanbase.odc.core.shared.exception.UnsupportedException;
+import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.metadb.collaboration.ProjectEntity;
 import com.oceanbase.odc.metadb.collaboration.ProjectRepository;
 import com.oceanbase.odc.service.collaboration.project.ProjectService;
@@ -100,7 +100,7 @@ public class HookConfiguration {
             String errorMessage = String.format(
                     "Approval flow config id=%s cannot be %s because it has been referenced to following risk level: {%s}",
                     flowConfigId, AuditEventAction.DELETE_FLOW_CONFIG, names);
-            throw new UnsupportedException(ErrorCodes.CannotOperateDueReference,
+            throw new BadRequestException(ErrorCodes.CannotOperateDueReference,
                     new Object[] {AuditEventAction.DELETE_FLOW_CONFIG.getLocalizedMessage(),
                             ResourceType.ODC_APPROVAL_FLOW_CONFIG.getLocalizedMessage(), "name", names,
                             ResourceType.ODC_RISK_LEVEL.getLocalizedMessage()},
@@ -127,7 +127,7 @@ public class HookConfiguration {
                 "User id=%s cannot be deleted because it has been referenced to following project: {%s}", userId,
                 names);
 
-        throw new UnsupportedException(ErrorCodes.CannotOperateDueReference,
+        throw new BadRequestException(ErrorCodes.CannotOperateDueReference,
                 new Object[] {AuditEventAction.DELETE_USER.getLocalizedMessage(),
                         ResourceType.ODC_USER.getLocalizedMessage(), "name", names,
                         ResourceType.ODC_PROJECT.getLocalizedMessage()},
