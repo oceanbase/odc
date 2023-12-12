@@ -26,6 +26,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
@@ -40,6 +41,7 @@ import lombok.extern.slf4j.Slf4j;
 public class Graph {
 
     protected final List<GraphEdge> edgeList = new LinkedList<>();
+    @Getter
     protected final List<GraphVertex> vertexList = new LinkedList<>();
     private final AtomicInteger edgeIdGenerator = new AtomicInteger(0);
     public final static float INFINITE = -1;

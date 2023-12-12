@@ -62,6 +62,7 @@ import com.oceanbase.odc.service.flow.instance.FlowNodeInstanceKey;
 import com.oceanbase.odc.service.flow.instance.FlowSequenceInstance;
 import com.oceanbase.odc.service.flow.instance.FlowTaskInstance;
 import com.oceanbase.odc.service.flow.instance.OdcFlowInstance;
+import com.oceanbase.odc.service.flow.instance.TopologyBuilder;
 import com.oceanbase.odc.service.flow.model.ExecutionStrategyConfig;
 import com.oceanbase.odc.service.flow.task.mapper.OdcRuntimeDelegateMapper;
 import com.oceanbase.odc.service.flow.util.FlowInstanceUtil;
@@ -105,10 +106,12 @@ public class FlowFactory {
     private UserTaskInstanceRepository userTaskInstanceRepository;
     @Autowired
     private ServiceTaskInstanceRepository serviceTaskRepository;
+    @Autowired
+    private TopologyBuilder topologyBuilder;
 
     public FlowInstance generateFlowInstance(@NonNull String name, String description) {
         return new OdcFlowInstance(name, description, flowableAdaptor, authenticationFacade,
-                flowInstanceRepository, runtimeService, repositoryService);
+                flowInstanceRepository, runtimeService, repositoryService, topologyBuilder);
     }
 
     public FlowInstance generateFlowInstance(@NonNull String name,
@@ -116,7 +119,7 @@ public class FlowFactory {
         return new OdcFlowInstance(name, description, parentFlowInstanceId, projectId,
                 flowableAdaptor,
                 authenticationFacade,
-                flowInstanceRepository, runtimeService, repositoryService);
+                flowInstanceRepository, runtimeService, repositoryService, topologyBuilder);
     }
 
     public FlowGatewayInstance generateFlowGatewayInstance(@NonNull Long flowInstanceId, boolean isStartEndPoint,
@@ -211,7 +214,7 @@ public class FlowFactory {
 
     private FlowInstance generateFlowInstance(@NonNull FlowInstanceEntity entity) {
         return new OdcFlowInstance(entity, flowableAdaptor, authenticationFacade, flowInstanceRepository,
-                runtimeService, repositoryService);
+                runtimeService, repositoryService, topologyBuilder);
     }
 
     private FlowGatewayInstance generateFlowGatewayInstance(

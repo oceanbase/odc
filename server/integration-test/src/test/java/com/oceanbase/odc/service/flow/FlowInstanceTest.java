@@ -54,6 +54,7 @@ import com.oceanbase.odc.service.flow.instance.FlowGatewayInstance;
 import com.oceanbase.odc.service.flow.instance.FlowInstance;
 import com.oceanbase.odc.service.flow.instance.FlowInstanceConfigurer;
 import com.oceanbase.odc.service.flow.instance.FlowTaskInstance;
+import com.oceanbase.odc.service.flow.instance.TopologyBuilder;
 import com.oceanbase.odc.service.flow.model.ExecutionStrategyConfig;
 import com.oceanbase.odc.service.flow.model.FlowNodeType;
 import com.oceanbase.odc.service.flow.tool.TestFlowRuntimeTaskImpl;
@@ -93,6 +94,9 @@ public class FlowInstanceTest extends ServiceTestEnv {
     private UserTaskInstanceRepository userTaskInstanceRepository;
     @Autowired
     private GateWayInstanceRepository gateWayInstanceRepository;
+
+    @Autowired
+    private TopologyBuilder topologyBuilder;
 
     @Before
     public void setUp() {
@@ -285,7 +289,7 @@ public class FlowInstanceTest extends ServiceTestEnv {
 
     private FlowInstance createFlowInstance(String name) {
         return new FlowInstance(name, flowableAdaptor, authenticationFacade,
-                flowInstanceRepository, runtimeService, repositoryService);
+                flowInstanceRepository, runtimeService, repositoryService, topologyBuilder);
     }
 
     private FlowTaskInstance createTaskInstance(Long flowInstanceId, TaskType taskType,

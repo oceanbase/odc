@@ -43,9 +43,9 @@ public class OdcFlowInstance extends FlowInstance {
             @NonNull FlowableAdaptor flowableAdaptor,
             @NonNull AuthenticationFacade authenticationFacade,
             @NonNull FlowInstanceRepository flowInstanceRepository, @NonNull RuntimeService runtimeService,
-            @NonNull RepositoryService repositoryService) {
+            @NonNull RepositoryService repositoryService,@NonNull TopologyBuilder topologyBuilder ) {
         super(name, description, flowableAdaptor, authenticationFacade, flowInstanceRepository,
-                runtimeService, repositoryService);
+                runtimeService, repositoryService, topologyBuilder);
     }
 
     public OdcFlowInstance(@NonNull String name, String description,
@@ -54,11 +54,11 @@ public class OdcFlowInstance extends FlowInstance {
             @NonNull FlowableAdaptor flowableAdaptor,
             @NonNull AuthenticationFacade authenticationFacade,
             @NonNull FlowInstanceRepository flowInstanceRepository, @NonNull RuntimeService runtimeService,
-            @NonNull RepositoryService repositoryService) {
+            @NonNull RepositoryService repositoryService,@NonNull TopologyBuilder topologyBuilder ) {
         super(name, description, projectId, parentFlowInstanceId, flowableAdaptor,
                 authenticationFacade,
                 flowInstanceRepository,
-                runtimeService, repositoryService);
+                runtimeService, repositoryService, topologyBuilder);
     }
 
     /**
@@ -67,8 +67,9 @@ public class OdcFlowInstance extends FlowInstance {
     public OdcFlowInstance(@NonNull FlowInstanceEntity entity, @NonNull FlowableAdaptor flowableAdaptor,
             @NonNull AuthenticationFacade authenticationFacade,
             @NonNull FlowInstanceRepository flowInstanceRepository, @NonNull RuntimeService runtimeService,
-            @NonNull RepositoryService repositoryService) {
-        super(entity, flowableAdaptor, authenticationFacade, flowInstanceRepository, runtimeService, repositoryService);
+            @NonNull RepositoryService repositoryService,@NonNull TopologyBuilder topologyBuilder ) {
+        super(entity, flowableAdaptor, authenticationFacade, flowInstanceRepository, runtimeService, repositoryService,
+                topologyBuilder);
     }
 
     @Override

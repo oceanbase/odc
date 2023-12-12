@@ -16,9 +16,12 @@
 
 package com.oceanbase.odc.service.flow.instance;
 
-import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -57,40 +60,111 @@ public class TopologyBuilder {
             return (BaseFlowNodeInstance) v;
         }).collect(Collectors.toList());
 
-        List<BaseFlowNodeInstance> targetNodes = flowInstance.getVertexList().stream().map(v -> {
-            List<GraphEdge> outEdges = v.getOutEdges();
-            return outEdges.stream().map(outEdge -> {
-                GraphVertex to = outEdge.getTo();
-                if (!(to instanceof BaseFlowNodeInstance)) {
-                    throw new IllegalStateException("GraphVertex has to be an instance of BaseFlowNodeInstance");
-                }
-                return (BaseFlowNodeInstance) to;
-            }).collect(Collectors.toList());
-        }).flatMap(List::stream).collect(Collectors.toList());
+        List<BaseFlowNodeInstance> targetNodes = flowInstance.getVertexList().stream()
+                .map(v -> {
+                    List<GraphEdge> outEdges = v.getOutEdges();
+                    return outEdges.stream().map(outEdge -> {
+                        GraphVertex to = outEdge.getTo();
+                        if (!(to instanceof BaseFlowNodeInstance)) {
+                            throw new IllegalStateException(
+                                    "GraphVertex has to be an instance of BaseFlowNodeInstance");
+                        }
+                        return (BaseFlowNodeInstance) to;
+                    }).collect(Collectors.toList());
+                })
+                .flatMap(List::stream).collect(Collectors.toList());
 
-        List<BaseFlowNodeInstance> allNodes = Stream.concat(sourceNodes.stream(), targetNodes.stream()).collect(
-                Collectors.toList());
-        List<Long> instanceIds = allNodes.stream().map(BaseFlowNodeInstance::getId).collect(Collectors.toList());
+
+        Set<BaseFlowNodeInstance> allNodesSet = distinctByIdentical(Stream
+                .concat(sourceNodes.stream(), targetNodes.stream())
+                .collect(Collectors.toList()));
+
+        List<NodeInstanceEntity> toCreate = diffToCreate(allNodesSet);
+
+        nodeInstanceEntityRepository.batchCreate(toCreate);
+
+        List<Long> sourceInstanceIds =
+                sourceNodes.stream().map(BaseFlowNodeInstance::getId).collect(Collectors.toList());
+        sequenceRepository.deleteBySourceNodeInstanceIdIn(sourceInstanceIds);
+
+        Set<Long> instanceIds = allNodesSet.stream().map(BaseFlowNodeInstance::getId).collect(Collectors.toSet());
+        List<NodeInstanceEntity> all = nodeInstanceEntityRepository.findByInstanceIdIn(instanceIds);
+
+        Map<NodeInstanceIdentical, List<NodeInstanceEntity>> nodeMap = all.stream().collect(
+                Collectors.groupingBy(NodeInstanceIdentical::new));
+
+        List<SequenceInstanceEntity> sequences = flowInstance.getVertexList().stream()
+                .map(v -> vertexToCreateSequence(v, nodeMap))
+                .flatMap(List::stream).collect(Collectors.toList());
+
+        sequenceRepository.batchCreate(sequences);
+    }
+
+    private List<SequenceInstanceEntity> vertexToCreateSequence(GraphVertex v,
+            Map<NodeInstanceIdentical, List<NodeInstanceEntity>> nodeMap) {
+        BaseFlowNodeInstance source = (BaseFlowNodeInstance) v;
+        List<NodeInstanceEntity> sourceEntities = nodeMap.get(new NodeInstanceIdentical(source));
+        if (sourceEntities.size() >= 2) {
+            log.warn("Duplicate records are found, id={}, nodeType={}, coreType={} ", source.getId(),
+                    source.getNodeType(), source.getCoreFlowableElement());
+            throw new IllegalStateException("Duplicate records are found");
+        }
+
+        NodeInstanceEntity sourceInstanceEntity = sourceEntities.get(0);
+        List<GraphEdge> outEdges = v.getOutEdges();
+        return outEdges.stream()
+                .map(outEdge -> {
+                    GraphVertex graphVertex = outEdge.getTo();
+                    if (!(graphVertex instanceof BaseFlowNodeInstance)) {
+                        throw new IllegalStateException(
+                                "GraphVertex has to be an instance of BaseFlowNodeInstance");
+                    }
+                    BaseFlowNodeInstance target = (BaseFlowNodeInstance) graphVertex;
+                    List<NodeInstanceEntity> nodeInstanceEntities =
+                            nodeMap.get(new NodeInstanceIdentical(target));
+                    if (nodeInstanceEntities.size() >= 2) {
+                        log.warn("Duplicate records are found, id={}, nodeType={}, coreType={} ",
+                                target.getId(),
+                                target.getNodeType(), target.getCoreFlowableElement());
+                        throw new IllegalStateException("Duplicate records are found");
+                    }
+                    NodeInstanceEntity nodeInstanceEntity = nodeInstanceEntities.get(0);
+                    SequenceInstanceEntity sequenceEntity = new SequenceInstanceEntity();
+                    sequenceEntity.setSourceNodeInstanceId(sourceInstanceEntity.getId());
+                    sequenceEntity.setTargetNodeInstanceId(nodeInstanceEntity.getId());
+                    sequenceEntity.setFlowInstanceId(source.getFlowInstanceId());
+                    return sequenceEntity;
+                })
+                .collect(Collectors.toList());
+    }
+
+
+    private Set<BaseFlowNodeInstance> distinctByIdentical(List<BaseFlowNodeInstance> allNodes) {
+        Set<BaseFlowNodeInstance> allNodesSet = new HashSet<BaseFlowNodeInstance>() {
+            @Override
+            public boolean add(BaseFlowNodeInstance i) {
+                for (BaseFlowNodeInstance element : this) {
+                    if (Objects.equals(element.getId(), i.getId()) && element.getNodeType() == i.getNodeType()
+                            && element.getCoreFlowableElementType() == i.getCoreFlowableElementType()) {
+                        return false;
+                    }
+                }
+                return super.add(i);
+            }
+        };
+        allNodesSet.addAll(allNodes);
+        return allNodesSet;
+    }
+
+    private List<NodeInstanceEntity> diffToCreate(Set<BaseFlowNodeInstance> allNodesSet) {
+        Set<Long> instanceIds = allNodesSet.stream().map(BaseFlowNodeInstance::getId).collect(Collectors.toSet());
 
         List<NodeInstanceEntity> byInstanceIdIn = nodeInstanceEntityRepository.findByInstanceIdIn(instanceIds);
         Map<NodeInstanceIdentical, List<NodeInstanceEntity>> dbNodeMap = byInstanceIdIn.stream().collect(
                 Collectors.groupingBy(NodeInstanceIdentical::new));
 
-        List<NodeInstanceEntity> toCreate = new ArrayList<>();
-        List<NodeInstanceEntity> allNodeInstanceEntity = allNodes.stream().map(i -> {
-            i.validExists();
-            List<NodeInstanceEntity> nodeInstanceEntities = dbNodeMap.get(new NodeInstanceIdentical(i));
-            if (CollectionUtils.isNotEmpty(nodeInstanceEntities)) {
-                if (nodeInstanceEntities.size() >= 2) {
-                    log.warn("Duplicate records are found, id={}, nodeType={}, coreType={} ", i.getId(),
-                            i.getNodeType(),
-                            i.getCoreFlowableElement());
-                    throw new IllegalStateException("Duplicate records are found");
-                }
-                if (!nodeInstanceEntities.isEmpty()) {
-                    return nodeInstanceEntities.get(0);
-                }
-            }
+
+        return allNodesSet.stream().filter(n -> filterNoInDb(n, dbNodeMap)).map(i -> {
             Verify.notNull(i.getName(), "Name");
             Verify.notNull(i.getActivityId(), "ActivityId");
             NodeInstanceEntity nodeEntity = new NodeInstanceEntity();
@@ -100,53 +174,27 @@ public class TopologyBuilder {
             nodeEntity.setActivityId(i.getActivityId());
             nodeEntity.setName(i.getName());
             nodeEntity.setFlowableElementType(i.getCoreFlowableElementType());
-            toCreate.add(nodeEntity);
+            dbNodeMap.put(new NodeInstanceIdentical(nodeEntity), Collections.singletonList(nodeEntity));
             return nodeEntity;
         }).collect(Collectors.toList());
-        nodeInstanceEntityRepository.saveAll(toCreate);
+    }
 
-        List<Long> sourceInstanceIds =
-                sourceNodes.stream().map(BaseFlowNodeInstance::getId).collect(Collectors.toList());
-        sequenceRepository.deleteBySourceNodeInstanceIdIn(sourceInstanceIds);
-
-
-        Map<NodeInstanceIdentical, List<NodeInstanceEntity>> nodeMap = allNodeInstanceEntity.stream().collect(
-                Collectors.groupingBy(NodeInstanceIdentical::new));
-
-        List<SequenceInstanceEntity> sequences = flowInstance.getVertexList().stream().map(v -> {
-            BaseFlowNodeInstance source = (BaseFlowNodeInstance) v;
-            List<NodeInstanceEntity> sourceEntities = nodeMap.get(new NodeInstanceIdentical(source));
-
-            if (sourceEntities.size() >= 2) {
-                log.warn("Duplicate records are found, id={}, nodeType={}, coreType={} ", source.getId(),
-                        source.getNodeType(), source.getCoreFlowableElement());
+    private boolean filterNoInDb(BaseFlowNodeInstance node,
+            Map<NodeInstanceIdentical, List<NodeInstanceEntity>> dbNodeMap) {
+        node.validExists();
+        List<NodeInstanceEntity> nodeInstanceEntities = dbNodeMap.get(new NodeInstanceIdentical(node));
+        if (CollectionUtils.isNotEmpty(nodeInstanceEntities)) {
+            if (nodeInstanceEntities.size() >= 2) {
+                log.warn("Duplicate records are found, id={}, nodeType={}, coreType={} ", node.getId(),
+                        node.getNodeType(),
+                        node.getCoreFlowableElement());
                 throw new IllegalStateException("Duplicate records are found");
             }
-            NodeInstanceEntity sourceInsanceEntity = sourceEntities.get(0);
-
-            List<GraphEdge> outEdges = v.getOutEdges();
-            return outEdges.stream().map(outEdge -> {
-                GraphVertex graphVertex = outEdge.getTo();
-                if (!(graphVertex instanceof BaseFlowNodeInstance)) {
-                    throw new IllegalStateException("GraphVertex has to be an instance of BaseFlowNodeInstance");
-                }
-                BaseFlowNodeInstance target = (BaseFlowNodeInstance) graphVertex;
-                List<NodeInstanceEntity> nodeInstanceEntities = nodeMap.get(new NodeInstanceIdentical(target));
-                if (nodeInstanceEntities.size() >= 2) {
-                    log.warn("Duplicate records are found, id={}, nodeType={}, coreType={} ", target.getId(),
-                            target.getNodeType(), target.getCoreFlowableElement());
-                    throw new IllegalStateException("Duplicate records are found");
-                }
-                NodeInstanceEntity nodeInstanceEntity = nodeInstanceEntities.get(0);
-                SequenceInstanceEntity sequenceEntity = new SequenceInstanceEntity();
-                sequenceEntity.setSourceNodeInstanceId(sourceInsanceEntity.getId());
-                sequenceEntity.setTargetNodeInstanceId(nodeInstanceEntity.getId());
-                sequenceEntity.setFlowInstanceId(source.getFlowInstanceId());
-                return sequenceEntity;
-            }).collect(Collectors.toList());
-        }).flatMap(List::stream).collect(Collectors.toList());
-
-        sequenceRepository.saveAll(sequences);
+            if (!nodeInstanceEntities.isEmpty()) {
+                return false;
+            }
+        }
+        return true;
     }
 
     @Data
