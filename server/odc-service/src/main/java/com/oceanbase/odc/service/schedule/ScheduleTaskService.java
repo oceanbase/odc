@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.schedule;
 
 import java.io.File;
+import java.util.List;
 import java.util.Optional;
 
 import org.apache.commons.io.FileUtils;
@@ -96,6 +97,10 @@ public class ScheduleTaskService {
         Specification<ScheduleTaskEntity> specification =
                 Specification.where(ScheduleTaskSpecs.jobNameEquals(scheduleId.toString()));
         return scheduleTaskRepository.findAll(specification, pageable);
+    }
+
+    public List<ScheduleTaskEntity> listTaskByJobNameAndStatus(String jobName, List<TaskStatus> statuses) {
+        return scheduleTaskRepository.findByJobNameAndStatusIn(jobName, statuses);
     }
 
 
