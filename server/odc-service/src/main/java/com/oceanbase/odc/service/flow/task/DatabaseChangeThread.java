@@ -270,7 +270,7 @@ public class DatabaseChangeThread extends Thread {
             jsonFilePath = String.format("%s/%s.json", fileRootDir, jsonFileName);
             jsonFile = new File(jsonFilePath);
             zipFileId = StringUtils.uuid();
-            zipFileRootPath = String.format("%s/%s.json", fileRootDir, zipFileId);
+            zipFileRootPath = String.format("%s/%s", fileRootDir, zipFileId);
             zipFileDownloadUrl = String.format("/api/v2/flow/flowInstances/%s/tasks/download", flowInstanceId);
         } catch (Exception exception) {
             throw new InternalServerError("create database change task file dir failed", exception);
