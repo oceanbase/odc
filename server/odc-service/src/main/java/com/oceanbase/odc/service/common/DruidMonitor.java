@@ -16,6 +16,7 @@
 
 package com.oceanbase.odc.service.common;
 
+import static com.oceanbase.odc.common.util.StringUtils.getBriefSql;
 import static com.oceanbase.odc.core.alarm.AlarmEventNames.DRUID_ACTIVE_COUNT_MORE_THAN_80_PERCENT;
 import static com.oceanbase.odc.core.alarm.AlarmEventNames.DRUID_MONITOR_ERROR;
 import static com.oceanbase.odc.core.alarm.AlarmEventNames.DRUID_WAIT_THREAD_COUNT_MORE_THAN_0;
@@ -31,8 +32,11 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+
+import javax.annotation.PreDestroy;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,6 +49,7 @@ import com.alibaba.druid.pool.DruidDataSource;
 import com.alibaba.druid.stat.DruidStatManagerFacade;
 import com.alibaba.druid.support.spring.stat.SpringStatManager;
 import com.google.common.base.Preconditions;
+import com.oceanbase.odc.common.concurrent.ExecutorUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.alarm.AlarmUtils;
 import com.oceanbase.odc.service.config.SystemConfigService;
@@ -55,7 +60,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Component
 @Slf4j
-@ConditionalOnProperty(value = "odc.monitor.enabled", havingValue = "true")
+@ConditionalOnProperty(value = "odc.system.monitor.enabled", havingValue = "true")
 public class DruidMonitor implements InitializingBean {
 
     private static final Logger SQL_LOGGER = LoggerFactory.getLogger("SqlMonitorLogger");
@@ -76,11 +81,12 @@ public class DruidMonitor implements InitializingBean {
     private SystemConfigService systemConfigService;
 
     private List<Configuration> configurations;
+    private final ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1);
 
     @Override
     public void afterPropertiesSet() throws Exception {
         druidStatManagerFacade.setResetEnable(true);
-        Executors.newScheduledThreadPool(1).scheduleAtFixedRate(() -> {
+        scheduledExecutorService.scheduleAtFixedRate(() -> {
             try {
                 doMonitor();
             } catch (Exception e) {
@@ -97,14 +103,17 @@ public class DruidMonitor implements InitializingBean {
         monitorDruidDataSource();
     }
 
-
+    @PreDestroy
+    public void preDestroy() {
+        ExecutorUtils.gracefulShutdown(scheduledExecutorService, "druidMonitor", 5);
+    }
 
     private void monitorSqlStatData() {
         List<Map<String, Object>> sqlStatDataList = druidStatManagerFacade.getSqlStatDataList(null);
         // reset all stats
         druidStatManagerFacade.resetAll();
 
-        List<DruidSQLStateVO> sqlStatVo = sqlStatDataList.stream().map(DruidSQLStateVO::mapToVO).collect(
+        List<DruidSQLStats> sqlStatVo = sqlStatDataList.stream().map(DruidSQLStats::mapToVO).collect(
                 Collectors.toList());
         if (getBooleanMonitorConfig(DruidMonitorConfig.SQL_LOG_ENABLED)) {
             sqlStatVo.forEach(s -> SQL_LOGGER.info(s.buildLog()));
@@ -116,39 +125,39 @@ public class DruidMonitor implements InitializingBean {
 
     }
 
-    private void monitorTooLongParameter(List<DruidSQLStateVO> sqlStatVo) {
+    private void monitorTooLongParameter(List<DruidSQLStats> sqlStatVo) {
         List<String> msg = sqlStatVo.stream().filter(v -> v.getLastSlowParameters() != null)
                 .filter(t -> t.getLastSlowParameters()
                         .length() > getLongMonitorConfig(DruidMonitorConfig.SQL_PARAMETER_SIZE))
-                .map(DruidSQLStateVO::buildTooLongParameter)
+                .map(DruidSQLStats::buildTooLongParameter)
                 .collect(Collectors.toList());
         if (!msg.isEmpty()) {
             AlarmUtils.alarm(SQL_TOO_LONG_SQL_PARAMETERS, msg.toString());
         }
     }
 
-    private void monitorAvgExecuteTime(List<DruidSQLStateVO> sqlStatVo) {
+    private void monitorAvgExecuteTime(List<DruidSQLStats> sqlStatVo) {
         List<String> avgExecuteTooLong = sqlStatVo.stream().filter(
                 v -> v.computeAvgExecuteTime() > getLongMonitorConfig(DruidMonitorConfig.SQL_AVG_EXECUTE_TIME))
-                .map(DruidSQLStateVO::buildTooLongAvgExecuteTimeMsg).collect(Collectors.toList());
+                .map(DruidSQLStats::buildTooLongAvgExecuteTimeMsg).collect(Collectors.toList());
         if (!avgExecuteTooLong.isEmpty()) {
             AlarmUtils.alarm(SQL_TOO_LONG_EXECUTE_TIME, "too long avg execute time + " + avgExecuteTooLong);
         }
     }
 
-    private void monitorMaxExecuteTime(List<DruidSQLStateVO> sqlStatVo) {
+    private void monitorMaxExecuteTime(List<DruidSQLStats> sqlStatVo) {
         List<String> maxExecuteTooLong = sqlStatVo.stream().filter(
                 v -> v.getMaxTimespan() > getLongMonitorConfig(DruidMonitorConfig.SQL_EXECUTE_TIME))
-                .map(DruidSQLStateVO::buildMaxExecuteTimeMsg)
+                .map(DruidSQLStats::buildMaxExecuteTimeMsg)
                 .collect(Collectors.toList());
         if (!maxExecuteTooLong.isEmpty()) {
             AlarmUtils.alarm(SQL_TOO_LONG_EXECUTE_TIME, "too long max execute time + " + maxExecuteTooLong);
         }
     }
 
-    private void monitorSqlError(List<DruidSQLStateVO> sqlStatVo) {
+    private void monitorSqlError(List<DruidSQLStats> sqlStatVo) {
         List<String> sqlError = sqlStatVo.stream().filter(
-                v -> v.getErrorCount() > 0).map(DruidSQLStateVO::buildSqlErrorMsg)
+                v -> v.getErrorCount() > 0).map(DruidSQLStats::buildSqlErrorMsg)
                 .collect(Collectors.toList());
         if (!sqlError.isEmpty()) {
             AlarmUtils.alarm(SQL_EXECUTE_ERROR, sqlError.toString());
@@ -203,7 +212,7 @@ public class DruidMonitor implements InitializingBean {
         }
     }
 
-    public static final class DruidSQLStateConstants {
+    static final class DruidSQLStateConstants {
         public static final String EXECUTE_AND_RESULT_SET_HOLD_TIME = "ExecuteAndResultSetHoldTime";
         public static final String EFFECTED_ROW_COUNT_HISTOGRAM = "EffectedRowCountHistogram";
         public static final String LAST_ERROR_MESSAGE = "LastErrorMessage";
@@ -246,7 +255,7 @@ public class DruidMonitor implements InitializingBean {
     }
 
     @Data
-    public static class DruidSQLStateVO {
+    static class DruidSQLStats {
         private Long executeAndResultSetHoldTime;
         private long[] effectedRowCountHistogram;
         private String lastErrorMessage;
@@ -290,7 +299,7 @@ public class DruidMonitor implements InitializingBean {
         private long[] fetchRowCountHistogram;
 
         public Long computeAvgExecuteTime() {
-            return totalTime / executeCount;
+            return (executeCount == null || executeCount == 0) ? 0 : totalTime / executeCount;
         }
 
         public String buildLog() {
@@ -349,7 +358,7 @@ public class DruidMonitor implements InitializingBean {
         }
 
         private String getSqlIdentification() {
-            return "file=" + file + ",sql=" + compressSql(sql);
+            return "file=" + file + ",sql=" + getBriefSql(sql, 100);
         }
 
         public String buildTooLongParameter() {
@@ -374,8 +383,8 @@ public class DruidMonitor implements InitializingBean {
                     + ";";
         }
 
-        public static DruidSQLStateVO mapToVO(Map<String, Object> map) {
-            DruidSQLStateVO vo = new DruidSQLStateVO();
+        public static DruidSQLStats mapToVO(Map<String, Object> map) {
+            DruidSQLStats vo = new DruidSQLStats();
             vo.setExecuteAndResultSetHoldTime((Long) map.get(DruidSQLStateConstants.EXECUTE_AND_RESULT_SET_HOLD_TIME));
             vo.setEffectedRowCountHistogram((long[]) map.get(DruidSQLStateConstants.EFFECTED_ROW_COUNT_HISTOGRAM));
             vo.setLastErrorMessage((String) map.get(DruidSQLStateConstants.LAST_ERROR_MESSAGE));
@@ -422,8 +431,8 @@ public class DruidMonitor implements InitializingBean {
         List<Map<String, Object>> methodStatData = springStatManager.getMethodStatData();
         springStatManager.resetStat();
 
-        List<DruidMethodStatVO> methodStatVOS =
-                methodStatData.stream().map(DruidMethodStatVO::mapToVO).collect(
+        List<DruidMethodStats> methodStatVOS =
+                methodStatData.stream().map(DruidMethodStats::mapToVO).collect(
                         Collectors.toList());
 
         if (getBooleanMonitorConfig(DruidMonitorConfig.METHOD_LOG_ENABLED)) {
@@ -436,11 +445,11 @@ public class DruidMonitor implements InitializingBean {
 
     }
 
-    private void monitorMethodAvgExecuteTooLong(List<DruidMethodStatVO> methodStatVOS) {
+    private void monitorMethodAvgExecuteTooLong(List<DruidMethodStats> methodStatVOS) {
         List<String> msg = methodStatVOS.stream()
                 .filter(t -> t.computeAvgExecuteTime() > getLongMonitorConfig(DruidMonitorConfig.METHOD_EXECUTE_TIME))
                 .map(
-                        DruidMethodStatVO::buildTooLongAvgExecuteTimeMsg)
+                        DruidMethodStats::buildTooLongAvgExecuteTimeMsg)
                 .collect(
                         Collectors.toList());
         if (!msg.isEmpty()) {
@@ -448,11 +457,11 @@ public class DruidMonitor implements InitializingBean {
         }
     }
 
-    private void monitorMethodJdbcExecuteTooLong(List<DruidMethodStatVO> methodStatVOS) {
+    private void monitorMethodJdbcExecuteTooLong(List<DruidMethodStats> methodStatVOS) {
         List<String> msg = methodStatVOS.stream().filter(
                 t -> t.computeAvgJdbcExecuteTime() > getLongMonitorConfig(DruidMonitorConfig.METHOD_JDBC_EXECUTE_TIME))
                 .map(
-                        DruidMethodStatVO::buildTooLongJdbcAvgExecuteTimeMsg)
+                        DruidMethodStats::buildTooLongJdbcAvgExecuteTimeMsg)
                 .collect(
                         Collectors.toList());
         if (!msg.isEmpty()) {
@@ -460,12 +469,12 @@ public class DruidMonitor implements InitializingBean {
         }
     }
 
-    private void monitorMethodTooMuchJdbcExecute(List<DruidMethodStatVO> methodStatVOS) {
+    private void monitorMethodTooMuchJdbcExecute(List<DruidMethodStats> methodStatVOS) {
         List<String> msg = methodStatVOS.stream()
                 .filter(t -> t
                         .computeAvgJdbcExecuteCount() > getLongMonitorConfig(DruidMonitorConfig.METHOD_JDBC_COUNT))
                 .map(
-                        DruidMethodStatVO::buildTooMuchJdbcExecuteCountMsg)
+                        DruidMethodStats::buildTooMuchJdbcExecuteCountMsg)
                 .collect(
                         Collectors.toList());
         if (!msg.isEmpty()) {
@@ -474,8 +483,7 @@ public class DruidMonitor implements InitializingBean {
     }
 
     @Data
-    public static final class DruidMethodStatConstants {
-
+    static final class DruidMethodStatConstants {
         public static final String CLASS = "Class";
         public static final String METHOD = "Method";
         public static final String RUNNING_COUNT = "RunningCount";
@@ -503,7 +511,7 @@ public class DruidMonitor implements InitializingBean {
     }
 
     @Data
-    public static class DruidMethodStatVO {
+    public static class DruidMethodStats {
         private String clazz;
         private String method;
         private Integer runningCount;
@@ -588,8 +596,8 @@ public class DruidMonitor implements InitializingBean {
                     + ";";
         }
 
-        public static DruidMethodStatVO mapToVO(Map<String, Object> map) {
-            DruidMethodStatVO vo = new DruidMethodStatVO();
+        public static DruidMethodStats mapToVO(Map<String, Object> map) {
+            DruidMethodStats vo = new DruidMethodStats();
             vo.setClazz((String) map.get(DruidMethodStatConstants.CLASS));
             vo.setMethod((String) map.get(DruidMethodStatConstants.METHOD));
             vo.setRunningCount((Integer) map.get(DruidMethodStatConstants.RUNNING_COUNT));
@@ -614,30 +622,6 @@ public class DruidMonitor implements InitializingBean {
             vo.setLastErrorTime((Date) map.get(DruidMethodStatConstants.LAST_ERROR_TIME));
             vo.setHistogram((long[]) map.get(DruidMethodStatConstants.HISTOGRAM));
             return vo;
-        }
-    }
-
-    public static String compressSql(String sql) {
-        if (sql == null) {
-            return null;
-        }
-        final int maxLength = 100;
-        final int sqlLength = sql.length();
-        if (sqlLength <= maxLength) {
-            return sql;
-        }
-        String lowerCaseSql = sql.toLowerCase();
-        int fromIndex = lowerCaseSql.indexOf("from");
-        if (fromIndex != -1) {
-            final int fromLength = 45;
-            String start = sql.substring(0, Math.min(fromIndex, 20));
-            String fromPart = sql.substring(fromIndex, Math.min(fromIndex + fromLength, sqlLength));
-            String end = sql.substring(Math.max(sqlLength - 20, Math.min(fromIndex + fromLength, sqlLength)));
-            return start + "..." + fromPart + (StringUtils.isBlank(end) ? "" : ("..." + end));
-        } else {
-            String start = sql.substring(0, 80);
-            String end = sql.substring(sqlLength - 80);
-            return start + "..." + end;
         }
     }
 
