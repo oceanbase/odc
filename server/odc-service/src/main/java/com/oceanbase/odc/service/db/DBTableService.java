@@ -15,7 +15,6 @@
  */
 package com.oceanbase.odc.service.db;
 
-import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +27,7 @@ import javax.validation.constraints.NotNull;
 
 import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.stereotype.Service;
@@ -41,6 +41,9 @@ import com.oceanbase.odc.core.shared.constant.OdcConstants;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.core.shared.model.TableIdentity;
+import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTreeFactories;
+import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTreeFactory;
+import com.oceanbase.odc.core.sql.parser.DropStatement;
 import com.oceanbase.odc.plugin.schema.api.TableExtensionPoint;
 import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
@@ -56,10 +59,8 @@ import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
 import com.oceanbase.tools.dbbrowser.model.DBTableIndex;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
-import com.oceanbase.tools.sqlparser.OBMySQLParser;
-import com.oceanbase.tools.sqlparser.OBOracleSQLParser;
-import com.oceanbase.tools.sqlparser.SQLParser;
 import com.oceanbase.tools.sqlparser.statement.Statement;
+import com.oceanbase.tools.sqlparser.statement.alter.table.AlterTable;
 import com.oceanbase.tools.sqlparser.statement.alter.table.AlterTableAction;
 import com.oceanbase.tools.sqlparser.statement.createindex.CreateIndex;
 
@@ -180,16 +181,25 @@ public class DBTableService {
     }
 
     private String checkUpdateDDL(DialectType dialectType, String ddl) {
-        SQLParser sqlParser = dialectType.isMysql() ? new OBMySQLParser() : new OBOracleSQLParser();
         boolean createIndex = false;
         boolean dropIndex = false;
         for (String s : SqlUtils.split(dialectType, ddl, ";")) {
-            Statement stmt = sqlParser.parse(new StringReader(s));
+            Statement stmt = parseSingleSql(dialectType, s);
+            if (stmt == null) {
+                continue;
+            }
             if (stmt instanceof CreateIndex) {
                 createIndex = true;
-            } else if (stmt instanceof AlterTableAction
-                    && Objects.nonNull(((AlterTableAction) stmt).getDropIndexName())) {
+            } else if (stmt instanceof DropStatement && ((DropStatement) stmt).getObjectType().equals("INDEX")) {
                 dropIndex = true;
+            } else if (stmt instanceof AlterTable) {
+                for (AlterTableAction tableAction : ((AlterTable) stmt).getAlterTableActions()) {
+                    if (Objects.nonNull(tableAction.getAddIndex())) {
+                        createIndex = true;
+                    } else if (Objects.nonNull(tableAction.getDropIndexName())) {
+                        dropIndex = true;
+                    }
+                }
             }
         }
         if (dropIndex && createIndex) {
@@ -198,7 +208,17 @@ public class DBTableService {
             return UpdateTableDdlCheck.DROP_INDEX.getLocalizedMessage();
         } else if (createIndex) {
             return UpdateTableDdlCheck.CREATE_INDEX.getLocalizedMessage();
-        } else {
+        }
+        return null;
+    }
+
+    private Statement parseSingleSql(DialectType dialectType, String sql) {
+        try {
+            AbstractSyntaxTreeFactory factory = AbstractSyntaxTreeFactories.getAstFactory(dialectType, 0);
+            Validate.notNull(factory, "AbstractSyntaxTreeFactory can not be null");
+            return factory.buildAst(sql).getStatement();
+        } catch (Exception e) {
+            log.warn("parse generated update table sql failed, sql={}, error={}", sql, e.getMessage());
             return null;
         }
     }
