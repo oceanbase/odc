@@ -101,6 +101,12 @@ public class DataArchivePreprocessor extends AbstractDlmJobPreprocessor {
                 // create job limit config
                 initLimiterConfig(scheduleEntity.getId(), dataArchiveParameters.getRateLimit(), limiterService);
             }
+            if (parameters.getOperationType() == OperationType.UPDATE) {
+                parameters.setDescription(req.getDescription());
+                ScheduleEntity scheduleEntity = scheduleService.nullSafeGetById(parameters.getTaskId());
+                // update job limit config
+                limiterService.updateByOrderId(scheduleEntity.getId(), dataArchiveParameters.getRateLimit());
+            }
             log.info("Data archive preprocessing has been completed.");
         }
         req.setParentFlowInstanceId(parameters.getTaskId());
