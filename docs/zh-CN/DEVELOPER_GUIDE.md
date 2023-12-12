@@ -7,7 +7,7 @@
 
 1. 配置 git 并拉取代码仓库，第一步是拉取代码仓库是因为仓库里包含一些准备开发环境的脚本，位于 `script` 目录 。
 2. 安装 Java 开发环境，包括 JDK 和 Maven 。
-3. 安装 Node.js 开发环境，包括 Node.js 和 tnpm （非必须）。
+3. 安装 Node.js 开发环境，包括 Node.js 和 pnpm （非必须）。
 4. 配置 IDE，主要是代码格式化插件配置 。
 5. 配置 单元测试运行环境，单元测试依赖的数据库帐密是加密存储在配置文件中的，需要配置秘钥到开发机 。
 
@@ -25,7 +25,7 @@ cd odc
 
 ⚠️ 环境准备说明
 
-- 后端开发环境也可以不安装 node.js/tnpm，因为日常开发测试是基于 CDN 引用前端资源文件的，实现原理可以参考 [4.1 基于静态资源服务器的前后端联调](#4.1) 。
+- 后端开发环境也可以不安装 node.js/pnpm，因为日常开发测试是基于 CDN 引用前端资源文件的，实现原理可以参考 [4.1 基于静态资源服务器的前后端联调](#4.1) 。
 - 如果习惯在命令行环境下开发，可忽略 IntelliJ IDEA 配置章节。
 
 ## 2.1 准备 java 开发环境
@@ -169,6 +169,16 @@ IDEA Code Style 配置示意图
 
 ![image.png](../en-US/images/idea-setttings-code-style-editorconfig.png)
 
+### 2.3.3 IDEA 其他重要配置
+
+#### 2.3.3.1 build process heap size
+
+IDEA 默认的 build process heap size 为 700M，对于 ODC 项目来说，这个值太小了，会导致编译失败。
+
+这里调整为 2000MB，配置路径为 Settings -> Build, Execution, Deployment -> Compiler -> Build process heap size。
+
+![image.png](../en-US/images/idea-settings-build-process-heap-size.png)
+
 ## 2.4 配置单元测试运行环境
 
 ODC 的部分单元测试用例依赖真实的数据库服务，数据库帐密是加密存储在配置文件里的。
@@ -205,7 +215,7 @@ odc.mysql.default.commandline=your_mysql_test_server_mysql_cli_commandline
 
 ### 3.1.1 依赖组件安装
 
-ODC 依赖 2 个自研组件，您可以分别在`lib`目录下看到它们。在正式的发布中，如果对这 2 个组件进行了修改，我们会提前将其上传至 maven 中央仓库以供引用，但是在开发过程中我们是通过本地安装的方式进行引用的。您在构建之前需要手动将这 2 个组件安装到本地，否则可能会导致构建不成功。您可以通过以下 shell 脚本完成依赖组件的安装：
+ODC 依赖 2 个自研组件，您可以分别在`libs`目录下看到它们。在正式的发布中，如果对这 2 个组件进行了修改，我们会提前将其上传至 maven 中央仓库以供引用，但是在开发过程中我们是通过本地安装的方式进行引用的。您在构建之前需要手动将这 2 个组件安装到本地，否则可能会导致构建不成功。您可以通过以下 shell 脚本完成依赖组件的安装：
 
 ```shell
 script/build_libs.sh
@@ -290,45 +300,73 @@ export ODC_SERVER_PORT=8989
 
 ## 3.3 IDEA 启动 odc-server
 
-OdcServer 类是 odc-server 程序入口，可直接运行。
-首次运行会失败，因为还没有配置启动参数，获取 metadb 配置会出错。
+OdcServer 类是 odc-server 程序入口，可直接运行。 首次运行会失败，因为还没有配置启动参数，获取 metadb 配置会出错。
 
-> 注意：IDE 启动也依赖首先构建前端资源并拷贝到 odc-server resources 目录。
+### 3.3.1 前端资源
 
-启动 ODC Server 时在启动项中添加如下配置，会自动拉取前端资源。
+IDE 启动也依赖前端资源。可以采取本地构建的方式，也可以采取引用前端静态资源的方式。
+
+**方式一. 本地构建前端资源**
+
+使用以下脚本构建前端资源，会完成构建并拷贝资源文件到到 odc-server 模块 resources 目录。
+
+```shell
+#init node env for first build
+script/init_node_env.sh
+
+#sync submodule odc-client to client
+script/update_submodule.sh
+
+#build odc-client
+script/build_sqlconsole.sh
+```
+
+**方式二. 引用前端静态资源**
+
+启动 ODC Server 时在启动项中添加如下配置，会自动拉取前端资源。前后端分离的研发协同模式下，采用这个方式后端开发可以不关注前端构建过程。
+
+注意以下样例里的 `http://static-resource-server/dev-4.2.2/index.html` 是一个示意地址，实际使用时需要替换为对应的地址。
 
 ```shell
 --ODC_INDEX_PAGE_URI=http://static-resource-server/dev-4.2.2/index.html
 ```
 
-### 3.3.1 启动参数
+### 3.3.2 首次构建
 
-注意配置的是 环境变量（environment variables， `--`语法），而不是 VM options（ `-D`语法），样例如下
+在启动 odc-server 之前，还需要完成首次构建，包括 libs 构建和 plugins 构建。
+
+- 如果 libs 目录存在未发布的更新，需要按照 3.1.1 章节的指引完成依赖组件的安装。
+- 接下来需要完成插件的构建，插件的构建是集成在 ODC 的构建过程中的，您可以通过以下 shell 命令完成 ODC 后端构建。
+
+```shell
+script/build_jar.sh
+```
+
+构建完成后，您可以在`distribution/plugins`以及`distribution/starters` 目录中看到这些构建完成的插件。
+
+![image.png](../en-US/images/odc-plugins-starters.png)
+
+### 3.3.3 启动 OdcServer
+
+**运行 OdcServer**
+
+找到 OdcServer 类，右键启动。
+
+![image.png](../en-US/images/idea-run-configuration-start-odc-server.png)
+
+**设置启动参数**
+
+启动参数样例如下
 
 ```shell
 --ODC_DATABASE_HOST=your_metadb_host --ODC_DATABASE_PORT=your_metadb_port --ODC_DATABASE_NAME=your_metadb_database --ODC_DATABASE_USERNAME=your_metadb_user --ODC_DATABASE_PASSWORD=your_metadb_password --server.port=8989
 ```
 
-### 3.3.2 构建支持组件
+注意配置的是 环境变量（environment variables，`--`语法），而不是 VM options（ `-D`语法）。
+为方便运行之后查看日志，可以配置 log/odc.log 文件内容在 console 中展示。
 
-首先您需要按照 3.1.1 章节的指引完成依赖组件的安装，如果您已经完成了这一步，请忽略。
+OdcServer 启动设置示意如下
 
-接下来，您需要完成 ODC 插件的构建，您可以在`server/plugins`以及`server/starters`目录中看到它们，您可以通过以下 shell 命令完成构建：
-
-```shell
-mvn clean package -Dmaven.test.skip=true
-```
-
-插件的构建是集成在 ODC 的构建过程中的。默认情况下，您可以在`distribution/plugins`以及`distribution/starters`目录中看到这些构建完成的插件：
-
-![image.png](../en-US/images/odc-plugins-starters.png)
-
-### 3.3.3 配置过程
-
-运行 OdcServer
-![image.png](../en-US/images/idea-run-configuration-start-odc-server.png)
-
-设置启动参数
 ![image.png](../en-US/images/idea-run-configuration-start-odc-server-2.png)
 
 # 4. 前后端集成和联调
