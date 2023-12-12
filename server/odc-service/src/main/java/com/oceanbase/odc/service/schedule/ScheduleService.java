@@ -276,7 +276,7 @@ public class ScheduleService {
                 TriggerConfig triggerConfig = new TriggerConfig();
                 triggerConfig.setTriggerStrategy(TriggerStrategy.START_NOW);
                 req.setTriggerConfig(triggerConfig);
-                quartzJobService.createJob(req,ScheduleTaskUtils.buildTriggerDataMap(taskId));
+                quartzJobService.createJob(req, ScheduleTaskUtils.buildTriggerDataMap(taskId));
                 log.info("Job recreated,jobKey={}", jobKey);
                 return ScheduleTaskResp.withId(taskId);
             } else {
