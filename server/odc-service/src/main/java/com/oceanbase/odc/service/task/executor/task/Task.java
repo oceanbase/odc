@@ -32,7 +32,7 @@ public interface Task {
     /**
      * Start current task. This method will be called by {@link TaskExecutor} for fire a task
      */
-    void start();
+    void start(JobContext context);
 
     /**
      * Stop current task. This method will be called by {@link TaskExecutor} for stop a task

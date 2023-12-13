@@ -14,22 +14,26 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.task.schedule;
-
-import java.util.Map;
-
-import com.oceanbase.odc.service.quartz.model.MisfireStrategy;
-import com.oceanbase.odc.service.schedule.model.TriggerConfig;
-
-import lombok.NonNull;
+package com.oceanbase.odc.service.task.executor.executor;
 
 /**
  * @author yaobin
- * @date 2023-11-30
+ * @date 2023-11-15
  * @since 4.2.4
  */
-public interface JobDefinitionBuilder {
+public class TaskRuntimeException extends RuntimeException {
 
-    JobDefinition build(@NonNull JobIdentity jobIdentity, Map<String, String> jobData,
-            MisfireStrategy misfireStrategy, TriggerConfig triggerConfig);
+    public TaskRuntimeException() {}
+
+    public TaskRuntimeException(String message) {
+        super(message);
+    }
+
+    public TaskRuntimeException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
+    public TaskRuntimeException(Throwable cause) {
+        super(cause);
+    }
 }

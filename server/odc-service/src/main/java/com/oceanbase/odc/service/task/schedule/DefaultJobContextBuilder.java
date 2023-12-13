@@ -28,10 +28,11 @@ import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
  */
 public class DefaultJobContextBuilder implements JobContextBuilder {
     @Override
-    public JobContext build(JobDefinition jd) {
+    public JobContext build(JobIdentity ji, JobDefinition jd) {
         JobConfiguration configuration = JobConfigurationHolder.getJobConfiguration();
         DefaultJobContext jobContext = new DefaultJobContext();
-        jobContext.setJobIdentity(jd.getJobIdentity());
+        jobContext.setJobIdentity(ji);
+        jobContext.setJobClass(jd.getJobClass().getCanonicalName());
         jobContext.setJobData(jd.getJobData());
         jobContext.setHostUrls(configuration.getHostUrlProvider().hostUrl());
         return jobContext;

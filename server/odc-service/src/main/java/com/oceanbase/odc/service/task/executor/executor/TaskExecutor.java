@@ -16,6 +16,7 @@
 
 package com.oceanbase.odc.service.task.executor.executor;
 
+import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.executor.task.Task;
 
 /**
@@ -24,6 +25,6 @@ import com.oceanbase.odc.service.task.executor.task.Task;
  */
 public interface TaskExecutor {
 
-    void execute(Task task);
+    void execute(Task task, JobContext jc);
 
 }

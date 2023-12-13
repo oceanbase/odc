@@ -30,18 +30,19 @@ import org.quartz.Trigger.CompletedExecutionInstruction;
 import org.quartz.impl.StdSchedulerFactory;
 import org.quartz.listeners.TriggerListenerSupport;
 
-import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.caller.JobException;
 import com.oceanbase.odc.service.task.config.DefaultJobConfiguration;
 import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.dispatch.JobDispatcher;
-import com.oceanbase.odc.service.task.enums.SourceType;
+import com.oceanbase.odc.service.task.executor.sampletask.SampleTask;
 import com.oceanbase.odc.service.task.schedule.DefaultJobDefinition;
 import com.oceanbase.odc.service.task.schedule.HostUrlProvider;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 import com.oceanbase.odc.service.task.schedule.JobScheduler;
 import com.oceanbase.odc.service.task.schedule.StdJobScheduler;
+import com.oceanbase.odc.service.task.service.JobEntity;
+import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 
 import cn.hutool.core.lang.Assert;
 
@@ -60,16 +61,19 @@ public class JobSchedulerTest {
         DefaultJobConfiguration jc = new DefaultJobConfiguration() {};
         jc.setScheduler(sched);
         jc.setHostUrlProvider(Mockito.mock(HostUrlProvider.class));
+        TaskFrameworkService taskFrameworkService = Mockito.mock(TaskFrameworkService.class);
+        jc.setTaskFrameworkService(taskFrameworkService);
+        Mockito.when(taskFrameworkService.save(Mockito.any())).thenReturn(Mockito.mock(JobEntity.class));
+        Mockito.when(taskFrameworkService.find(Mockito.any())).thenReturn(Mockito.mock(JobEntity.class));
 
-        JobIdentity jobIdentity = JobIdentity.of(1L, SourceType.TASK_TASK, TaskType.ASYNC.name());
-        DefaultJobDefinition jd = DefaultJobDefinition.builder().jobIdentity(jobIdentity).build();
+        DefaultJobDefinition jd = DefaultJobDefinition.builder().jobClass(SampleTask.class).build();
 
         JobDispatcher jobDispatcher = Mockito.mock(JobDispatcher.class);
         Mockito.doNothing().when(jobDispatcher).start(Mockito.mock(JobContext.class));
         jc.setJobDispatcher(jobDispatcher);
 
         JobScheduler js = new StdJobScheduler(jc);
-        js.scheduleJob(jd);
+        Long id = js.scheduleJobNow(jd);
 
         sched.start();
         CountDownLatch cd = new CountDownLatch(1);
@@ -85,7 +89,7 @@ public class JobSchedulerTest {
                     JobExecutionContext context,
                     CompletedExecutionInstruction triggerInstructionCode) {
                 JobContext o = (JobContext) context.getMergedJobDataMap().get(JobConstants.QUARTZ_DATA_MAP_JOB_CONTEXT);
-                Assert.equals(jobIdentity, o.getJobIdentity());
+                Assert.equals(JobIdentity.of(id), o.getJobIdentity());
                 cd.countDown();
             }
         });

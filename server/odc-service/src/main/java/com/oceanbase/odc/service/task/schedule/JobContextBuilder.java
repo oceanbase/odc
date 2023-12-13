@@ -25,5 +25,5 @@ import com.oceanbase.odc.service.task.caller.JobContext;
  */
 public interface JobContextBuilder {
 
-    JobContext build(JobDefinition jd);
+    JobContext build(JobIdentity ji, JobDefinition jd);
 }

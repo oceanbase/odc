@@ -24,10 +24,8 @@ import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.shared.Verify;
-import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
-import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.constants.JobDataMapConstants;
 import com.oceanbase.odc.service.task.executor.task.BaseTask;
 
@@ -48,13 +46,8 @@ public class SampleTask extends BaseTask {
 
     private int totalSqlCount = 0;
 
-    public SampleTask(JobContext context) {
-        super(context);
-    }
-
     @Override
     protected void onStart() {
-        Verify.equals(TaskType.SAMPLE.code(), context.getJobIdentity().getSourceSubType(), "taskType");
         Map<String, String> dataMap = context.getJobData();
 
         this.parameter =

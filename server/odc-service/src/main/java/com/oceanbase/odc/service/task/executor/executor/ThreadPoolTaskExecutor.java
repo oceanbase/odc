@@ -19,6 +19,7 @@ package com.oceanbase.odc.service.task.executor.executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.executor.task.Task;
 
 /**
@@ -36,8 +37,8 @@ public class ThreadPoolTaskExecutor implements TaskExecutor {
     }
 
     @Override
-    public void execute(Task task) {
-        executor.submit(task::start);
+    public void execute(Task task, JobContext jc) {
+        executor.submit(() -> task.start(jc));
     }
 
 }

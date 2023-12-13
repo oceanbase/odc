@@ -17,6 +17,7 @@
 package com.oceanbase.odc.service.task;
 
 import java.util.Collections;
+import java.util.List;
 
 import org.junit.Assert;
 import org.junit.Ignore;
@@ -24,20 +25,20 @@ import org.junit.Test;
 
 import com.oceanbase.odc.TestConnectionUtil;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
-import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.task.caller.DefaultJobContext;
 import com.oceanbase.odc.service.task.caller.JobCaller;
+import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.caller.JobException;
-import com.oceanbase.odc.service.task.caller.JobUtils;
 import com.oceanbase.odc.service.task.caller.K8sJobCaller;
 import com.oceanbase.odc.service.task.caller.PodConfig;
 import com.oceanbase.odc.service.task.constants.JobConstants;
-import com.oceanbase.odc.service.task.enums.SourceType;
-import com.oceanbase.odc.service.task.executor.sampletask.SampleTaskParameter;
 import com.oceanbase.odc.service.task.listener.JobCallerListener;
+import com.oceanbase.odc.service.task.schedule.DefaultJobContextBuilder;
 import com.oceanbase.odc.service.task.schedule.JobCallerBuilder;
+import com.oceanbase.odc.service.task.schedule.JobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
+import com.oceanbase.odc.service.task.schedule.SampleTaskJobDefinitionBuilder;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -58,7 +59,7 @@ public class JobCallerTest extends BaseJobTest {
         podConfig.setCommand(getCmd());
         podConfig.setNamespace("default");
 
-        JobIdentity jobIdentity = JobIdentity.of(exceptedTaskId, SourceType.TASK_TASK, TaskType.ASYNC.name());
+        JobIdentity jobIdentity = JobIdentity.of(exceptedTaskId);
         JobCaller jobCaller = new K8sJobCaller(getK8sJobClient(), podConfig);
         jobCaller.getEventPublisher().addEventListener(new JobCallerListener() {
             @Override
@@ -76,7 +77,7 @@ public class JobCallerTest extends BaseJobTest {
         context.setJobIdentity(jobIdentity);
         jobCaller.start(context);
         context.setJobIdentity(jobIdentity);
-        jobCaller.stop(JobIdentity.of(exceptedTaskId, SourceType.TASK_TASK, TaskType.ASYNC.name()));
+        jobCaller.stop(JobIdentity.of(exceptedTaskId));
     }
 
 
@@ -88,7 +89,7 @@ public class JobCallerTest extends BaseJobTest {
         podConfig.getPodParam().setImagePullPolicy(JobConstants.IMAGE_PULL_POLICY_ALWAYS);
         podConfig.setNamespace("default");
 
-        JobIdentity jobIdentity = JobIdentity.of(exceptedTaskId, SourceType.TASK_TASK, TaskType.SAMPLE.name());
+        JobIdentity jobIdentity = JobIdentity.of(exceptedTaskId);
         JobCaller jobCaller = JobCallerBuilder.buildK8sJobCaller(getK8sJobClient(), podConfig);
         jobCaller.getEventPublisher().addEventListener(new JobCallerListener() {
             @Override
@@ -102,17 +103,16 @@ public class JobCallerTest extends BaseJobTest {
             }
         });
 
-        DefaultJobContext context = new DefaultJobContext();
-        context.setJobIdentity(jobIdentity);
-        SampleTaskParameter parameter = new SampleTaskParameter();
-        parameter.setSqls(
-                Collections.singletonList(String.format("CREATE TABLE %s (id int(10))", "t_" + exceptedTaskId)));
-        context.setTaskParameters(JobUtils.toJson(parameter));
+        List<String> sqls =
+                Collections.singletonList(String.format("CREATE TABLE %s (id int(10))", "t_" + exceptedTaskId));
 
         ConnectionConfig connectionConfig = TestConnectionUtil.getTestConnectionConfig(ConnectType.OB_MYSQL);
-        context.setConnectionConfigs(Collections.singletonList(connectionConfig));
 
-        jobCaller.start(context);
+        JobDefinition jd = new SampleTaskJobDefinitionBuilder()
+                .build(connectionConfig, connectionConfig.getDefaultSchema(), sqls);
+        JobContext jc = new DefaultJobContextBuilder().build(jobIdentity, jd);
+
+        jobCaller.start(jc);
         Thread.sleep(60000);
         jobCaller.stop(jobIdentity);
     }
