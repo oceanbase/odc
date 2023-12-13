@@ -61,6 +61,9 @@ public class JobEntity implements Serializable {
     @Column(name = "status", nullable = false)
     private TaskStatus status;
 
+    @Column(name = "executor")
+    private String executor;
+
     @Column(name = "schedule_times", nullable = false)
     private Integer scheduleTimes;
 

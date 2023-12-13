@@ -11,6 +11,5 @@ CREATE TABLE IF NOT EXISTS `job_job` (
   `organization_id` bigint  DEFAULT NULL COMMENT '所属组织 ID, references iam_organization(id)',
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
-  CONSTRAINT pk_job_schedule PRIMARY KEY (`id`),
-  CONSTRAINT uk_job_schedule UNIQUE key (`source_id`,`source_type`)
+  CONSTRAINT pk_job_schedule PRIMARY KEY (`id`)
 ) COMMENT = '任务记录表';
