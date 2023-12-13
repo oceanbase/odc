@@ -29,7 +29,6 @@ import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.dlm.DlmLimiterService;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
-import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
 import com.oceanbase.odc.service.flow.processor.ScheduleTaskPreprocessor;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
@@ -63,13 +62,16 @@ public class DataArchivePreprocessor extends AbstractDlmJobPreprocessor {
     @Override
     public void process(CreateFlowInstanceReq req) {
         AlterScheduleParameters parameters = (AlterScheduleParameters) req.getParameters();
-        if (parameters.getOperationType() == OperationType.CREATE) {
+        if (parameters.getOperationType() == OperationType.CREATE
+                || parameters.getOperationType() == OperationType.UPDATE) {
             DataArchiveParameters dataArchiveParameters =
                     (DataArchiveParameters) parameters.getScheduleTaskParameters();
             // Throw exception when the specified database does not exist or the current user does not have
             // permission to access it.
             Database sourceDb = databaseService.detail(dataArchiveParameters.getSourceDatabaseId());
             Database targetDb = databaseService.detail(dataArchiveParameters.getTargetDataBaseId());
+            checkDatasource(sourceDb.getDataSource());
+            checkDatasource(targetDb.getDataSource());
             dataArchiveParameters.setSourceDatabaseName(sourceDb.getName());
             dataArchiveParameters.setTargetDatabaseName(targetDb.getName());
             dataArchiveParameters.setSourceDataSourceName(sourceDb.getDataSource().getName());
@@ -88,26 +90,24 @@ public class DataArchivePreprocessor extends AbstractDlmJobPreprocessor {
                 sourceSession.expire();
                 targetSession.expire();
             }
+            if (parameters.getOperationType() == OperationType.CREATE) {
+                // pre create
+                ScheduleEntity scheduleEntity = buildScheduleEntity(req);
+                scheduleEntity.setCreatorId(authenticationFacade.currentUser().id());
+                scheduleEntity.setModifierId(scheduleEntity.getCreatorId());
+                scheduleEntity.setOrganizationId(authenticationFacade.currentOrganizationId());
+                scheduleEntity = scheduleService.create(scheduleEntity);
+                parameters.setTaskId(scheduleEntity.getId());
+                // create job limit config
+                initLimiterConfig(scheduleEntity.getId(), dataArchiveParameters.getRateLimit(), limiterService);
+            }
+            if (parameters.getOperationType() == OperationType.UPDATE) {
+                parameters.setDescription(req.getDescription());
+                ScheduleEntity scheduleEntity = scheduleService.nullSafeGetById(parameters.getTaskId());
+                // update job limit config
+                limiterService.updateByOrderId(scheduleEntity.getId(), dataArchiveParameters.getRateLimit());
+            }
             log.info("Data archive preprocessing has been completed.");
-            // pre create
-            ScheduleEntity scheduleEntity = buildScheduleEntity(req);
-            scheduleEntity.setCreatorId(authenticationFacade.currentUser().id());
-            scheduleEntity.setModifierId(scheduleEntity.getCreatorId());
-            scheduleEntity.setOrganizationId(authenticationFacade.currentOrganizationId());
-            scheduleEntity = scheduleService.create(scheduleEntity);
-            parameters.setTaskId(scheduleEntity.getId());
-            // create job limit config
-            RateLimitConfiguration limiterConfig = limiterService.getDefaultLimiterConfig();
-            if (dataArchiveParameters.getRateLimit().getRowLimit() != null) {
-                limiterConfig.setRowLimit(dataArchiveParameters.getRateLimit().getRowLimit());
-            }
-            if (dataArchiveParameters.getRateLimit().getDataSizeLimit() != null) {
-                limiterConfig.setDataSizeLimit(dataArchiveParameters.getRateLimit().getDataSizeLimit());
-            }
-            if (dataArchiveParameters.getRateLimit().getBatchSize() != null) {
-                limiterConfig.setBatchSize(dataArchiveParameters.getRateLimit().getBatchSize());
-            }
-            limiterService.createAndBindToOrder(scheduleEntity.getId(), limiterConfig);
         }
         req.setParentFlowInstanceId(parameters.getTaskId());
     }

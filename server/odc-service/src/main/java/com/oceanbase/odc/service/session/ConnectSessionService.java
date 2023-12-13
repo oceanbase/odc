@@ -233,6 +233,9 @@ public class ConnectSessionService {
         }
         preCheckSessionLimit();
         ConnectionConfig connection = connectionService.getForConnectionSkipPermissionCheck(dataSourceId);
+        if (StringUtils.isNotBlank(schemaName) && connection.getDialectType().isOracle()) {
+            schemaName = com.oceanbase.odc.common.util.StringUtils.quoteOracleIdentifier(schemaName);
+        }
         horizontalDataPermissionValidator.checkCurrentOrganization(connection);
         log.info("Begin to create session, connectionId={}, name={}", connection.id(), connection.getName());
         Set<String> actions = authorizationFacade.getAllPermittedActions(authenticationFacade.currentUser(),
