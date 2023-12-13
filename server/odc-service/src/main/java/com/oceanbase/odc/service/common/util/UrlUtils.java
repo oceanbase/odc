@@ -65,4 +65,9 @@ public class UrlUtils {
         return CollectionUtils.isEmpty(strings) ? null : strings.get(0);
     }
 
+    @SneakyThrows
+    public static String getPath(String url) {
+        return UriComponentsBuilder.fromUriString(url).build().getPath();
+    }
+
 }
