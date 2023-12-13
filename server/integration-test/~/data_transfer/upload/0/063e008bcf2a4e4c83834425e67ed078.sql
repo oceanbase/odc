@@ -1,0 +1,1 @@
+INSERT INTO loader_dumper_test VALUES ('3', 'Marry'),('4', 'Tom');
