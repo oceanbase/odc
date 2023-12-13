@@ -122,7 +122,7 @@ public class RollbackPlanRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Rol
                 StringBuilder rollbackPlans = new StringBuilder();
                 int totalChangeLineConunt = 0;
                 int totalMaxChangeLinesLimit = flowTaskProperties.getTotalMaxChangeLines();
-                while (!sqlContent.isEmpty() || sqlIterator.hasNext()) {
+                while (!sqlContent.isEmpty() || (sqlIterator != null && sqlIterator.hasNext())) {
                     String sql;
                     if (!sqlContent.isEmpty()) {
                         sql = sqlContent.remove(0);
