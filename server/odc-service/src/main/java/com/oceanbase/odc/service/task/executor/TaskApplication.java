@@ -52,6 +52,10 @@ public class TaskApplication {
     private void init(String[] args) {
         String runMode = SystemUtils.getEnvOrProperty(JobEnvConstants.TASK_RUN_MODE);
         Verify.notBlank(runMode, JobEnvConstants.TASK_RUN_MODE);
+
+        String ld = SystemUtils.getEnvOrProperty(JobEnvConstants.LOG_DIRECTORY);
+        System.setProperty(JobEnvConstants.LOG_DIRECTORY, ld);
+        
         jobContextProvider = JobContextProviderFactory.create(TaskRunModeEnum.valueOf(runMode));
         log.info("JobContextProvider init success: {}", jobContextProvider.getClass().getSimpleName());
         taskExecutor = new SyncTaskExecutor();

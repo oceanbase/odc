@@ -54,6 +54,7 @@ public class JobCallerBuilder {
         envs.put("DATABASE_NAME", SystemUtils.getEnvOrProperty("ODC_DATABASE_NAME"));
         envs.put("DATABASE_USERNAME", SystemUtils.getEnvOrProperty("ODC_DATABASE_USERNAME"));
         envs.put("DATABASE_PASSWORD", SystemUtils.getEnvOrProperty("ODC_DATABASE_PASSWORD"));
+        envs.put(JobEnvConstants.LOG_DIRECTORY, SystemUtils.getEnvOrProperty(JobEnvConstants.LOG_DIRECTORY));
 
         return new K8sJobCaller(k8sJobClient, podConfig);
     }

@@ -33,4 +33,6 @@ public class JobEnvConstants {
 
     public static final String DATABASE_PORT = "DATABASE_PORT";
 
+    public static final String LOG_DIRECTORY = "odc.log.directory";
+
 }

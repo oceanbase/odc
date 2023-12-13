@@ -20,6 +20,8 @@ import java.util.Optional;
 
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
+import com.oceanbase.odc.service.task.constants.JobEnvConstants;
+import com.oceanbase.odc.service.task.executor.logger.LogUtils;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -35,7 +37,7 @@ public class ExecutorBizImpl implements ExecutorBiz {
     private final String logFilePrefix;
 
     public ExecutorBizImpl() {
-        logFilePrefix = Optional.of(SystemUtils.getEnvOrProperty("odc.log.directory")).orElse("log");
+        logFilePrefix = Optional.of(SystemUtils.getEnvOrProperty(JobEnvConstants.LOG_DIRECTORY)).orElse("./log");
     }
 
     @Override
