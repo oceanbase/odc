@@ -338,7 +338,8 @@ public class DatabaseChangeThread extends Thread {
             // do nothing and done
             return 100.0D;
         }
-        return sqlReadBytes * 100.0D / sqlTotalBytes;
+        double progress = sqlReadBytes * 100.0D / sqlTotalBytes;
+        return Math.min(progress, 100.0D);
     }
 
     private void appendResultToJsonFile(List<SqlExecuteResult> results, boolean start, boolean end) {
