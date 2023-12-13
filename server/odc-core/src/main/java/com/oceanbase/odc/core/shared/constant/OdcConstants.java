@@ -89,6 +89,8 @@ public class OdcConstants {
     public static final String SCHEDULE_TASK_ID = "SCHEDULE_TASK_ID";
     public static final String ORGANIZATION_ID = "ORGANIZATION_ID";
 
+    public static final String MDC_CONTEXT = "MDC_CONTEXT";
+
     /**
      * OB ErrorCodes
      */

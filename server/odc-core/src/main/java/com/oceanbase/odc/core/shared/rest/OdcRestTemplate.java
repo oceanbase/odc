@@ -98,7 +98,7 @@ public final class OdcRestTemplate extends RestTemplate {
             ODCRestContext context = API_CALL_LOG_PREFIX.get();
             log.debug("failed call rest {}, URL:{}, cost={} ms ", context.getApiName(), context.getRealUrl(),
                     context.getExecTime(), e);
-            throw new UnexpectedException("Internal service call failed, please contact support team");
+            throw new UnexpectedException("Internal service call failed, please contact support team.", e);
         } finally {
             clearContext();
         }

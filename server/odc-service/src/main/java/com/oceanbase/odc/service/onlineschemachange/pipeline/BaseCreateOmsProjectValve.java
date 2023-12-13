@@ -25,6 +25,7 @@ import java.util.UUID;
 
 import org.quartz.JobKey;
 import org.quartz.SchedulerException;
+import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.oceanbase.odc.common.json.JsonUtils;
@@ -148,6 +149,7 @@ public abstract class BaseCreateOmsProjectValve extends BaseValve {
     private Map<String, Object> getStringObjectMap(Long scheduleTaskId) {
         Map<String, Object> dataMap = new HashMap<>(2);
         dataMap.put(OdcConstants.SCHEDULE_TASK_ID, scheduleTaskId);
+        dataMap.put(OdcConstants.MDC_CONTEXT, JsonUtils.toJson(MDC.getCopyOfContextMap()));
         return dataMap;
     }
 

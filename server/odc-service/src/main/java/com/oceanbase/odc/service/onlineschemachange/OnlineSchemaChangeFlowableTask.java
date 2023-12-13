@@ -23,7 +23,6 @@ import java.util.stream.Collectors;
 import org.apache.commons.collections4.CollectionUtils;
 import org.flowable.engine.delegate.DelegateExecution;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -80,11 +79,6 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
     @Autowired
     private OrganizationService organizationService;
 
-    @Value("${osc-task-expired-after-seconds:432000}")
-    private long oscTaskExpiredAfterSeconds;
-
-    private final Object lock = new Object();
-
     private final static String checkTaskCronExpression = "0/10 * * * * ?";
 
     private volatile TaskStatus status;
@@ -109,7 +103,6 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
         String schema = FlowTaskUtil.getSchemaName(execution);
         continueOnError = parameter.isContinueOnError();
         OnlineSchemaChangeContextHolder.trace(this.creatorId, flowTaskId, this.organizationId);
-        parameter.buildParameterDataMap();
         ScheduleEntity schedule = createScheduleEntity(connectionConfig, parameter, schema);
         scheduleId = schedule.getId();
         try {
@@ -123,14 +116,6 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
                 taskHandler.start(scheduleId, tasks.get(0).getId());
                 log.info("Successfully start schedule task with id={}", tasks.get(0).getId());
             }
-            synchronized (lock) {
-                while (!this.status.isTerminated()) {
-                    log.info("Wait task {} to be terminated.", taskId);
-                    lock.wait(oscTaskExpiredAfterSeconds * 1000);
-                    log.info("Accept notify, task {} is terminated, and status is {}.", taskId, this.status.name());
-                }
-            }
-
         } finally {
             OnlineSchemaChangeContextHolder.clear();
         }
@@ -167,30 +152,28 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
 
     @Override
     protected void onProgressUpdate(Long taskId, TaskService taskService) {
-        Page<ScheduleTaskEntity> tasks = scheduleTaskService.listTask(Pageable.unpaged(), scheduleId);
-        if (tasks.getSize() == 0) {
-            log.info("List schedule task size is 0 by scheduleId {}.", scheduleId);
-            return;
-        }
-        progressStatusUpdate(tasks);
-
-        Optional<Double> res = tasks.stream().map(this::singleTaskPercentage).reduce(Double::sum);
-        double currentPercentage = res.get() * 100 / tasks.getSize();
-
-        TaskEntity flowTask = taskService.detail(taskId);
-        TaskStatus dbStatus = flowTask.getStatus();
-        if (currentPercentage > this.percentage || dbStatus != this.status) {
-            flowTask.setResultJson(JsonUtils.toJson(new OnlineSchemaChangeTaskResult(tasks.getContent())));
-            flowTask.setStatus(this.status);
-            flowTask.setProgressPercentage(Math.min(currentPercentage, 100));
-            taskService.update(flowTask);
-        }
-        this.percentage = currentPercentage;
-        if (this.status.isTerminated()) {
-            synchronized (lock) {
-                lock.notifyAll();
-                log.info("Task {} is terminated, and status is {},notify other thread.", taskId, this.status.name());
+        try {
+            Page<ScheduleTaskEntity> tasks = scheduleTaskService.listTask(Pageable.unpaged(), scheduleId);
+            if (tasks.getSize() == 0) {
+                log.info("List schedule task size is 0 by scheduleId {}.", scheduleId);
+                return;
             }
+            progressStatusUpdate(tasks);
+
+            Optional<Double> res = tasks.stream().map(this::singleTaskPercentage).reduce(Double::sum);
+            double currentPercentage = res.get() * 100 / tasks.getSize();
+
+            TaskEntity flowTask = taskService.detail(taskId);
+            TaskStatus dbStatus = flowTask.getStatus();
+            if (currentPercentage > this.percentage || dbStatus != this.status) {
+                flowTask.setResultJson(JsonUtils.toJson(new OnlineSchemaChangeTaskResult(tasks.getContent())));
+                flowTask.setStatus(this.status);
+                flowTask.setProgressPercentage(Math.min(currentPercentage, 100));
+                taskService.update(flowTask);
+            }
+            this.percentage = currentPercentage;
+        } catch (Throwable ex) {
+            log.warn("onProgressUpdate occur exception,", ex);
         }
 
     }
