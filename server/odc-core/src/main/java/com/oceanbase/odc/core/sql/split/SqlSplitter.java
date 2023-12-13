@@ -16,7 +16,6 @@
 package com.oceanbase.odc.core.sql.split;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
@@ -878,18 +877,9 @@ public class SqlSplitter {
         @Override
         public boolean hasNext() {
             if (current == null) {
-                try {
-                    current = parseNext();
-                } catch (Exception e) {
-                    // eat exception
-                    return false;
-                }
+                current = parseNext();
             }
-            boolean hasNext = current != null;
-            if (!hasNext) {
-                tryCloseReader();
-            }
-            return hasNext;
+            return current != null;
         }
 
         @Override
@@ -899,7 +889,6 @@ public class SqlSplitter {
             if (next == null) {
                 next = parseNext();
                 if (next == null) {
-                    tryCloseReader();
                     throw new NoSuchElementException("No more available sql.");
                 }
             }
@@ -964,14 +953,6 @@ public class SqlSplitter {
 
         private SqlSplitter createSplitter() {
             return new SqlSplitter(lexerType, delimiter);
-        }
-
-        private void tryCloseReader() {
-            try {
-                reader.close();
-            } catch (IOException e) {
-                // ignore
-            }
         }
 
     }
