@@ -105,7 +105,7 @@ public class MockDataTypeUtil {
         } else if (DialectType.OB_ORACLE.equals(dialectType)) {
             key = String.format("%s_%s", DialectType.OB_ORACLE, dataType);
         } else {
-            throw new UnsupportedException(String.format("Dialect type: %s has not been supported yet", dialectType));
+            throw new UnsupportedException(String.format("Dialect type %s has not been supported yet", dialectType));
         }
         return TYPE_MAP.get(key);
     }
