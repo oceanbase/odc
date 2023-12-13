@@ -20,7 +20,6 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
-import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 
 import lombok.Data;
@@ -38,14 +37,12 @@ public class DefaultJobContext implements JobContext, Serializable {
      * job identity
      */
     private JobIdentity jobIdentity;
+
     /**
-     * task parameters
+     * job class
      */
-    private String taskParameters;
-    /**
-     * task connection config
-     */
-    private List<ConnectionConfig> connectionConfigs;
+    private String jobClass;
+
     /**
      * odc server host url list
      */

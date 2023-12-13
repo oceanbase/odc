@@ -17,6 +17,7 @@
 package com.oceanbase.odc.service.task.caller;
 
 import com.google.gson.Gson;
+import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.service.task.constants.JobEnvConstants;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
@@ -32,7 +33,7 @@ import lombok.extern.slf4j.Slf4j;
 public class JobUtils {
 
     public static String generateJobName(JobIdentity ji) {
-        return ji.getGroup().getCode() + "-" + ji.getSourceId();
+        return JobConstants.TEMPLATE_JOB_NAME_PREFIX + "-" + ji.getId();
     }
 
     public static String toJson(Object obj) {

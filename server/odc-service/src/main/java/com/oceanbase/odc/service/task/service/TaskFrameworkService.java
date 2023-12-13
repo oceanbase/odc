@@ -16,49 +16,23 @@
 
 package com.oceanbase.odc.service.task.service;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.oceanbase.odc.core.authority.util.SkipAuthorize;
-import com.oceanbase.odc.core.shared.constant.ResourceType;
-import com.oceanbase.odc.core.shared.constant.TaskStatus;
-import com.oceanbase.odc.core.shared.exception.NotFoundException;
-import com.oceanbase.odc.metadb.task.TaskEntity;
-import com.oceanbase.odc.metadb.task.TaskRepository;
 import com.oceanbase.odc.service.task.executor.task.TaskResult;
+import com.oceanbase.odc.service.task.schedule.JobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
-import com.oceanbase.odc.service.task.schedule.JobScheduler;
-
-import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author yaobin
- * @date 2023-11-30
+ * @date 2023-12-06
  * @since 4.2.4
  */
-@Service
-@Slf4j
-@SkipAuthorize("odc internal usage")
-public class TaskFrameworkService {
-
-    @Autowired
-    private TaskRepository taskRepository;
-    @Autowired
-    private JobScheduler jobScheduler;
+public interface TaskFrameworkService {
+    @Transactional(rollbackFor = Exception.class)
+    void handleResult(TaskResult taskResult);
 
     @Transactional(rollbackFor = Exception.class)
-    public void update(TaskResult taskResult) {
-        JobIdentity identity = taskResult.getJobIdentity();
-        TaskEntity taskEntity = nullSafeFindById(identity.getSourceId());
-        taskEntity.setProgressPercentage(taskResult.getProgress() * 100);
-        taskEntity.setStatus(taskResult.getTaskStatus() == null ? TaskStatus.RUNNING : taskResult.getTaskStatus());
-        taskEntity.setResultJson(taskResult.getResultJson());
-        taskRepository.update(taskEntity);
-    }
+    JobEntity save(JobDefinition jd);
 
-    private TaskEntity nullSafeFindById(Long id) {
-        return taskRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException(ResourceType.ODC_TASK, "id", id));
-    }
+    JobEntity find(JobIdentity ji);
 }

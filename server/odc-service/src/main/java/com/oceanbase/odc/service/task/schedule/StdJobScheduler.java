@@ -27,6 +27,7 @@ import com.oceanbase.odc.service.schedule.model.QuartzKeyGenerator;
 import com.oceanbase.odc.service.task.caller.JobException;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
+import com.oceanbase.odc.service.task.service.JobEntity;
 
 /**
  * @author yaobin
@@ -44,14 +45,22 @@ public class StdJobScheduler implements JobScheduler {
         PreConditions.notNull(configuration.getScheduler(), "quartz scheduler");
         PreConditions.notNull(configuration.getJobDispatcher(), "job dispatcher");
         PreConditions.notNull(configuration.getHostUrlProvider(), "host url provider");
+        PreConditions.notNull(configuration.getTaskFrameworkService(), "task framework sevice");
         JobConfigurationHolder.setJobConfiguration(configuration);
     }
 
     @Override
-    public void scheduleJob(JobDefinition jd) throws JobException {
+    public Long scheduleJobNow(JobDefinition jd) throws JobException {
+        PreConditions.notNull(jd, "job definition");
+        return scheduleJob(jd);
+    }
 
-        Trigger trigger = TriggerBuilder.build(jd);
-        JobIdentity jobIdentity = jd.getJobIdentity();
+    private Long scheduleJob(JobDefinition jd) throws JobException {
+        PreConditions.notNull(jd, "job definition");
+
+        JobEntity jobEntity = configuration.getTaskFrameworkService().save(jd);
+        JobIdentity jobIdentity = JobIdentity.of(jobEntity.getId());
+        Trigger trigger = TriggerBuilder.build(jobIdentity, jd, null);
         JobKey jobKey = QuartzKeyGenerator.generateJobKey(jobIdentity);
         JobDetailImpl detail = new JobDetailImpl();
         detail.setKey(jobKey);
@@ -62,15 +71,20 @@ public class StdJobScheduler implements JobScheduler {
         } catch (SchedulerException e) {
             throw new JobException("add and schedule job failed:", e);
         }
+        return jobEntity.getId();
     }
 
     @Override
-    public void scheduleJobNow(JobDefinition jd) throws JobException {
-        configuration.getJobDispatcher().start(new DefaultJobContextBuilder().build(jd));
-    }
-
-    @Override
-    public void cancelJob(JobIdentity ji) throws JobException {
-        configuration.getJobDispatcher().stop(ji);
+    public void cancelJob(Long id) throws JobException {
+        JobIdentity jobIdentity = JobIdentity.of(id);
+        JobKey jobKey = QuartzKeyGenerator.generateJobKey(jobIdentity);
+        try {
+            if (scheduler.checkExists(jobKey)) {
+                scheduler.deleteJob(jobKey);
+            }
+        } catch (SchedulerException e) {
+            throw new JobException(e);
+        }
+        configuration.getJobDispatcher().stop(JobIdentity.of(id));
     }
 }

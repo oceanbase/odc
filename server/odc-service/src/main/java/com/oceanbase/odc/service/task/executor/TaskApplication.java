@@ -44,9 +44,9 @@ public class TaskApplication {
     public void run(String[] args) {
         init(args);
         JobContext context = jobContextProvider.provide();
-        Task task = TaskFactory.create(context);
+        Task task = TaskFactory.create(context.getJobClass());
         log.info("Task created, context: {}", task.context());
-        taskExecutor.execute(task);
+        taskExecutor.execute(task, context);
     }
 
     private void init(String[] args) {

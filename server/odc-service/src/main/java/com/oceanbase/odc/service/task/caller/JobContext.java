@@ -34,6 +34,11 @@ public interface JobContext {
     JobIdentity getJobIdentity();
 
     /**
+     * get job class
+     */
+    String getJobClass();
+
+    /**
      * get odc server host properties
      */
     List<String> getHostUrls();

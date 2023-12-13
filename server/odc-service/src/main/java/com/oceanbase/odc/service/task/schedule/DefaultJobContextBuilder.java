@@ -16,8 +16,6 @@
 
 package com.oceanbase.odc.service.task.schedule;
 
-import java.util.Collections;
-
 import com.oceanbase.odc.service.task.caller.DefaultJobContext;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
@@ -30,12 +28,13 @@ import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
  */
 public class DefaultJobContextBuilder implements JobContextBuilder {
     @Override
-    public JobContext build(JobDefinition jd) {
+    public JobContext build(JobIdentity ji, JobDefinition jd) {
         JobConfiguration configuration = JobConfigurationHolder.getJobConfiguration();
         DefaultJobContext jobContext = new DefaultJobContext();
-        jobContext.setJobIdentity(jd.getJobIdentity());
+        jobContext.setJobIdentity(ji);
+        jobContext.setJobClass(jd.getJobClass().getCanonicalName());
         jobContext.setJobData(jd.getJobData());
-        jobContext.setHostUrls(Collections.singletonList(configuration.getHostUrlProvider().hostUrl()));
+        jobContext.setHostUrls(configuration.getHostUrlProvider().hostUrl());
         return jobContext;
     }
 }
