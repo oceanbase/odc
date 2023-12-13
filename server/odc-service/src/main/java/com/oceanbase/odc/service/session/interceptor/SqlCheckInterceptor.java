@@ -20,6 +20,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
@@ -63,6 +64,7 @@ import lombok.extern.slf4j.Slf4j;
 public class SqlCheckInterceptor extends BaseTimeConsumingInterceptor {
 
     public final static String NEED_SQL_CHECK_KEY = "NEED_SQL_CHECK";
+    public final static String SQL_CHECK_INTERCEPTED = "SQL_CHECK_INTERCEPTED";
     private final static String SQL_CHECK_RESULT_KEY = "SQL_CHECK_RESULT";
     @Autowired
     private UserConfigFacade userConfigFacade;
@@ -79,15 +81,18 @@ public class SqlCheckInterceptor extends BaseTimeConsumingInterceptor {
         if (this.authenticationFacade.currentUser().getOrganizationType() != OrganizationType.TEAM
                 || Boolean.FALSE.equals(context.get(NEED_SQL_CHECK_KEY))) {
             // 个人组织下不检查
+            context.put(SQL_CHECK_INTERCEPTED, true);
             return true;
         }
         Long ruleSetId = ConnectionSessionUtil.getRuleSetId(session);
         if (ruleSetId == null) {
+            context.put(SQL_CHECK_INTERCEPTED, true);
             return true;
         }
         List<Rule> rules = this.ruleService.listAllFromCache(ruleSetId);
         List<SqlCheckRule> sqlCheckRules = this.sqlCheckService.getRules(rules, session);
         if (CollectionUtils.isEmpty(sqlCheckRules)) {
+            context.put(SQL_CHECK_INTERCEPTED, true);
             return true;
         }
         DefaultSqlChecker sqlChecker = new DefaultSqlChecker(session.getDialectType(), null, sqlCheckRules);
@@ -102,10 +107,18 @@ public class SqlCheckInterceptor extends BaseTimeConsumingInterceptor {
                         .forEach(c -> offset2Violations.computeIfAbsent(c.getOffset(), k -> new ArrayList<>()).add(c));
             });
             context.put(SQL_CHECK_RESULT_KEY, offset2Violations);
-            return response.getSqls().stream().noneMatch(v -> CollectionUtils.isNotEmpty(v.getViolatedRules()));
+            Boolean intercepted =
+                    response.getSqls().stream().noneMatch(v -> CollectionUtils.isNotEmpty(v.getViolatedRules()));
+            context.put(SQL_CHECK_INTERCEPTED, intercepted);
+            if (Objects.nonNull(context.get(SqlConsoleInterceptor.SQL_CONSOLE_INTERCEPTED))) {
+                return intercepted && (Boolean) context.get(SqlConsoleInterceptor.SQL_CONSOLE_INTERCEPTED);
+            } else {
+                return true;
+            }
         } catch (Exception e) {
             log.warn("Failed to init sql check message", e);
         }
+        context.put(SQL_CHECK_INTERCEPTED, true);
         return true;
     }
 
