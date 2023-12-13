@@ -19,6 +19,7 @@ package com.oceanbase.odc.service.task;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.oceanbase.odc.common.util.StringUtils;
@@ -34,6 +35,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class EmbedServerTest {
 
+    @Ignore
     @Test
     public void test_server() throws Exception {
 
@@ -43,15 +45,5 @@ public class EmbedServerTest {
         synchronized (this) {
             this.wait(100000000);
         }
-    }
-
-    @Test
-    public void test_path() throws Exception{
-        Pattern p = Pattern.compile("/([0-9]+)/tasks/log");
-        Matcher matcher = p.matcher("/1233/tasks/log");
-        if (matcher.find()) {
-            log.info("found : " + matcher.group(1));
-        }
-
     }
 }
