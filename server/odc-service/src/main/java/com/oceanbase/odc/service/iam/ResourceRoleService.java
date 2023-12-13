@@ -101,9 +101,14 @@ public class ResourceRoleService {
 
     @SkipAuthorize
     public Map<Long, Set<ResourceRoleName>> getProjectId2ResourceRoleNames() {
+        return getProjectId2ResourceRoleNames(authenticationFacade.currentUserId());
+    }
+
+    @SkipAuthorize
+    public Map<Long, Set<ResourceRoleName>> getProjectId2ResourceRoleNames(Long userId) {
         Map<Long, ResourceRole> id2ResourceRoles = listResourceRoles().stream().collect(Collectors
                 .toMap(ResourceRole::getId, resourceRole -> resourceRole, (existingValue, newValue) -> newValue));
-        return userResourceRoleRepository.findByUserId(authenticationFacade.currentUserId()).stream()
+        return userResourceRoleRepository.findByUserId(userId).stream()
                 .collect(Collectors.groupingBy(UserResourceRoleEntity::getResourceId, Collectors.mapping(
                         e -> id2ResourceRoles.get(e.getResourceRoleId()).getRoleName(), Collectors.toSet())));
     }

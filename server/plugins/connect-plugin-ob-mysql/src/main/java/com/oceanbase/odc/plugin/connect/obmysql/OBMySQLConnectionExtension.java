@@ -117,9 +117,8 @@ public class OBMySQLConnectionExtension implements ConnectionExtensionPoint {
     }
 
     protected Map<String, String> appendDefaultJdbcUrlParameters(Map<String, String> jdbcUrlParams) {
-        if (!jdbcUrlParams.containsKey("enableFullLinkTrace")) {
-            jdbcUrlParams.put("enableFullLinkTrace", "true");
-        }
+        // there is a bug of oceanbase-client 2.4.7.1, setting this to true may cause OOM exception
+        jdbcUrlParams.put("enableFullLinkTrace", "false");
         return jdbcUrlParams;
     }
 

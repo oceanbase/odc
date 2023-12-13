@@ -10,7 +10,7 @@ Preparing the development environment involves the following steps:
    The first step is to clone the code repository because it contains some scripts to prepare the development environment, <br>
    which are located in the `script` directory.
 2. Install the Java development environment, including JDK and Maven.
-3. Install the Node.js development environment, including Node.js and tnpm (optional).
+3. Install the Node.js development environment, including Node.js and pnpm (optional).
 4. Configure the IDE, mainly the code formatting plugin configuration.
 5. Configure the unit test running environment. <br>
    The database account and password required for unit testing are encrypted and stored in the configuration file, <br>
@@ -30,7 +30,7 @@ cd odc
 
 ⚠️ Environment Preparation Notes
 
-- Node.js/tnpm installation is not necessary for backend development environment, <br>
+- Node.js/pnpm installation is not necessary for backend development environment, <br>
   as daily development testing is based on referencing front-end resource files through static resource server.
 - Refer to [4.1 Front-end and back-end integration based on a static resource server](#4.1) for implementation details.
 - If you prefer to develop in a command-line environment, you can ignore the IntelliJ IDEA configuration chapter.
@@ -195,6 +195,15 @@ The configuration path for IDEA is Settings -> Code Style.
 The following is a schematic diagram of IDEA Code Style configuration.
 ![image.png](../en-US/images/idea-setttings-code-style-editorconfig.png)
 
+### 2.3.3 IDEA Other Settings
+
+#### 2.3.3.1 build process heap size
+
+The default build process heap size in IntelliJ IDEA is set to 700M, which is too small for the ODC project and can result in compilation failures. To adjust this value to 2000MB, follow these steps:
+Settings -> Build, Execution, Deployment -> Compiler -> Build process heap size .
+
+![image.png](../en-US/images/idea-settings-build-process-heap-size.png)
+
 ## 2.4 Configure the unit test running environment.
 
 Some of ODC's unit test cases rely on real database services, and the database account and password are encrypted and stored in the configuration file.
@@ -233,7 +242,7 @@ When plaintext configuration is identified, EncryptableConfiguration will automa
 
 ### 3.1.1 Dependent component installation
 
-ODC relies on 2 self-developed components, which you can see in `lib` respectively. In the official release, if these two components are modified, we will upload them to the maven central warehouse for reference in advance, but during the development process, we will reference them through local installation. You need to manually install these two components locally before building, otherwise the build may not be successful. You can complete the installation of dependent components through the following shell script:
+ODC relies on 2 self-developed components, which you can see in `libs` respectively. In the official release, if these two components are modified, we will upload them to the maven central warehouse for reference in advance, but during the development process, we will reference them through local installation. You need to manually install these two components locally before building, otherwise the build may not be successful. You can complete the installation of dependent components through the following shell script:
 
 ```shell
 script/build_libs.sh
@@ -321,44 +330,73 @@ export ODC_SERVER_PORT=8989
 The OdcServer class is the entry point for the odc-server program and can be run directly.
 The first run will fail because there are no startup parameters configured, and retrieving the metadb configuration will result in an error.
 
-> Note: IDE startup also depends on building front-end resources first and copying them to the odc-server resources directory.
+### 3.3.1 Frontend Resources
 
-When starting ODC Server, add the following configuration to the startup options, which will automatically pull in the front-end resources.
+The IDE startup also depends on frontend resources. There are two ways to handle this: building the frontend resources locally or referencing the frontend static resources.
+
+**Option 1: Building Frontend Resources Locally**
+You can use the following script to build the frontend resources. This script will complete the build process and copy the resource files to the resources directory of the odc-server module.
+
+```shell
+#init node env for first build
+script/init_node_env.sh
+
+#sync submodule odc-client to client
+script/update_submodule.sh
+
+#build odc-client
+script/build_sqlconsole.sh
+```
+
+**Option 2: Referencing Frontend Static Resources**
+
+When starting the ODC Server, you can add the following configuration to the startup options, which will automatically fetch the frontend resources. In a development mode where frontend and backend are separate, this approach allows backend developers to not worry about the frontend build process.
+Please note that in the example below, http://static-resource-server/dev-4.2.2/index.html is a placeholder URL and should be replaced with the actual address.
 
 ```shell
 --ODC_INDEX_PAGE_URI=http://static-resource-server/dev-4.2.2/index.html
 ```
 
-### 3.3.1 Run arguments
+By adding this configuration, the ODC Server will fetch the frontend static resources from the specified URL during startup. This allows the frontend and backend to work together seamlessly in a decoupled development environment.
 
-Notice here we use Spring environment variables arguments `--`, not VM options（ `-D`）, example
+### 3.3.2 First-time Build
 
-```shell
---ODC_DATABASE_HOST=your_metadb_host --ODC_DATABASE_PORT=your_metadb_port 
---ODC_DATABASE_NAME=your_metadb_database --ODC_DATABASE_USERNAME=your_metadb_user 
---ODC_DATABASE_PASSWORD=your_metadb_password --server.port=8989
-```
+Before starting the odc-server, you need to complete the first-time build, including building the libs and plugins.
 
-### 3.3.2 Build support components
-
-First, you need to complete the installation of dependent components according to the instructions in Chapter 3.1.1. If you have already completed this step, please ignore it.
-
-Next, you need to complete the build of the ODC plugin. You can see them in the `server/plugins` and `server/starters` directories. You can complete the build through the following shell command:
+- If there are unpublished updates in the libs directory, you need to follow the instructions in section 3.1.1 to install the dependency components.
+- Next, you need to build the plugins. The plugin build is integrated into the ODC build process, and you can use the following shell command to complete the backend build of ODC.
 
 ```shell
-mvn clean package -Dmaven.test.skip=true
+script/build_jar.sh
 ```
 
-The building of the plugin is integrated into the ODC building process. By default, you can see these built plugins in the `distribution/plugins` and `distribution/starters` directories:
+After the build is complete, you can see the built plugins in the distribution/plugins and distribution/starters directories.
 
 ![image.png](./images/odc-plugins-starters.png)
 
-### 3.3.3 Configuration
+### 3.3.3 Start OdcServer
 
-Run OdcServer
+**Running OdcServer**
+
+Find the OdcServer class and right-click to start it.
+
 ![image.png](../en-US/images/idea-run-configuration-start-odc-server.png)
 
-Set Run arguments
+**Setting up Launch Parameters**
+
+The launch parameters should be set as follows:
+
+```shell
+--ODC_DATABASE_HOST=your_metadb_host --ODC_DATABASE_PORT=your_metadb_port --ODC_DATABASE_NAME=your_metadb_database --ODC_DATABASE_USERNAME=your_metadb_user --ODC_DATABASE_PASSWORD=your_metadb_password --server.port=8989
+```
+
+Notice here we use Spring environment variables arguments `--`, not VM options（ `-D`）, example
+
+Note that these are environment variables specified using the -- syntax, not VM options using the -D syntax.
+To conveniently view the log after running, you can configure the contents of the log/odc.log file to be displayed in the console.
+
+The setup for starting OdcServer is shown below.
+
 ![image.png](../en-US/images/idea-run-configuration-start-odc-server-2.png)
 
 # 4. Frontend-backend integration

@@ -106,7 +106,7 @@ function get_odc_version() {
 
 #############################################
 # initial node environment,
-# include node12 and tnpm
+# include node12 and pnpm
 # RETURN:  0 if succeed, non-zero if failed
 #############################################
 function init_node_env() {
@@ -150,15 +150,15 @@ function init_node_env() {
         return 5
     fi
 
-    if ! is_cmd_exists tnpm; then
-        if ! npm install -g tnpm --registry=http://registry.npm.alibaba-inc.com; then
-            func_echo "install tnpm failed"
+    if ! is_cmd_exists pnpm; then
+        if ! npm install -g pnpm; then
+            func_echo "install pnpm failed"
             return 6
         fi
     fi
 
-    if ! tnpm -v; then
-        func_echo "tnpm check failed"
+    if ! pnpm -v; then
+        func_echo "pnpm check failed"
         return 7
     fi
 
@@ -224,12 +224,12 @@ function build_sqlconsole() {
     fi
     func_echo "pnpm install success"
 
-    if ! tnpm run build:odc; then
-        func_echo "tnpm run build:odc failed"
+    if ! pnpm run build:odc; then
+        func_echo "pnpm run build:odc failed"
         popd
         return 3
     fi
-    func_echo "tnpm run build:odc success"
+    func_echo "pnpm run build:odc success"
 
     popd
 
@@ -239,10 +239,10 @@ function build_sqlconsole() {
         mkdir -p "${backend_static_path}"
     fi
 
-    rm --force --recursive --verbose ${backend_static_path}/*
+    rm -vfR ${backend_static_path}/*
 
     func_echo "copy files to backend static path"
-    cp --force --recursive --verbose ${sqlconsole_path}/dist/renderer/* ${backend_static_path}
+    cp -vfR ${sqlconsole_path}/dist/renderer/* ${backend_static_path}
     return $?
 }
 
@@ -261,7 +261,7 @@ function fetch_sqlconsole_from_cdn() {
         return 1
     fi
 
-    rm --force --recursive --verbose ${backend_static_path}/*
+    rm -vfR ${backend_static_path}/*
 
     if [ ! -d "${backend_static_path}" ]; then
         func_echo "mkdir ${backend_static_path}"
@@ -349,7 +349,7 @@ function copy_obclient() {
     local target_obclient_file_path="${ODC_DIR}/import/obclient.tar.gz"
     if [[ -f "${source_obclient_file_path}" ]]; then
         echo "${source_obclient_file_path} exists, will copy to ${target_obclient_file_path} ..."
-        cp --force --verbose "${source_obclient_file_path}" "${target_obclient_file_path}"
+        cp -vf "${source_obclient_file_path}" "${target_obclient_file_path}"
         return $?
     else
         echo "${source_obclient_file_path} not exists, skip copy."
@@ -382,7 +382,7 @@ function maven_build_rpm() {
 
 function copy_rpm_resources() {
     echo "copy rpm package(s) to distribution/docker/resources"
-    rm --force --recursive --verbose ${ODC_DIR}/distribution/docker/resources/odc-*.rpm
+    rm -vf ${ODC_DIR}/distribution/docker/resources/odc-*.rpm
     mkdir -p ${ODC_DIR}/distribution/docker/resources/
     mv --verbose ${ODC_DIR}/server/odc-server/target/rpm/odc-server/RPMS/*/odc-*.rpm ${ODC_DIR}/distribution/docker/resources/
     return $?
@@ -415,8 +415,8 @@ function print_env_info() {
     echo "check node"
     node -v
 
-    echo "check tnpm"
-    tnpm -v
+    echo "check pnpm"
+    pnpm -v
 
     echo "check jdk"
     java -version
