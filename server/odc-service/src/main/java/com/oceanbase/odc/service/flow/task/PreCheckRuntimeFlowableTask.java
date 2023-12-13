@@ -38,11 +38,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.unit.BinarySizeUnit;
-import com.oceanbase.odc.common.util.CloseableIterator;
-import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.core.shared.exception.VerifyException;
 import com.oceanbase.odc.core.sql.split.OffsetString;
+import com.oceanbase.odc.core.sql.split.SqlIterator;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.service.common.FileManager;
 import com.oceanbase.odc.service.common.model.FileBucket;
@@ -89,7 +89,8 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
     private volatile DatabasePermissionCheckResult permissionCheckResult = null;
     private Long creatorId;
     private List<OffsetString> userInputSqls;
-    private CloseableIterator<String> uploadFileSqlIterator;
+    private InputStream uploadFileInputStream;
+    private SqlIterator uploadFileSqlIterator;
     private ConnectionConfig connectionConfig;
     private Long preCheckTaskId;
     @Autowired
@@ -104,7 +105,6 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
     private SqlCheckProperties sqlCheckProperties;
 
     private static final String CHECK_RESULT_FILE_NAME = "sql-check-result.json";
-    private static final long MAX_RISK_LEVEL = 2L;
 
     @Override
     protected Void start(Long taskId, TaskService taskService, DelegateExecution execution) throws Exception {
@@ -127,18 +127,20 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
         RiskLevelDescriber riskLevelDescriber = FlowTaskUtil.getRiskLevelDescriber(execution);
         if (Objects.nonNull(this.connectionConfig)) {
             // Skip SQL pre-check if connection config is null
-            this.userInputSqls = getFlowRelatedSqls(taskEntity.getTaskType(),
-                    taskEntity.getParametersJson(), connectionConfig.getDialectType());
-            this.uploadFileSqlIterator = getFlowRelatedSqlIterator(taskEntity.getTaskType(),
-                    taskEntity.getParametersJson(), connectionConfig.getDialectType());
+            loadUserInputSqlContent(taskEntity.getTaskType(), taskEntity.getParametersJson());
+            loadUploadFileInputStream(taskEntity.getTaskType(), taskEntity.getParametersJson());
             try {
                 preCheck(taskEntity, preCheckTaskEntity, riskLevelDescriber);
             } catch (Exception e) {
                 log.warn("pre check failed, e");
                 throw new ServiceTaskError(e);
             } finally {
-                if (Objects.nonNull(this.uploadFileSqlIterator)) {
-                    this.uploadFileSqlIterator.close();
+                if (Objects.nonNull(this.uploadFileInputStream)) {
+                    try {
+                        this.uploadFileInputStream.close();
+                    } catch (IOException e) {
+                        // ignore
+                    }
                 }
             }
             if (this.sqlCheckResult != null) {
@@ -298,7 +300,7 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
         }
         if (Objects.nonNull(this.uploadFileSqlIterator)) {
             while (this.uploadFileSqlIterator.hasNext()) {
-                String sql = this.uploadFileSqlIterator.next();
+                String sql = this.uploadFileSqlIterator.next().getStr();
                 int sqlBytes = sql.getBytes(StandardCharsets.UTF_8).length;
                 if (curSqlBytes + sqlBytes > maxSqlBytes) {
                     return true;
@@ -310,53 +312,53 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
         return false;
     }
 
-    private List<OffsetString> getFlowRelatedSqls(TaskType taskType, String parametersJson, DialectType dialectType) {
+    private void loadUserInputSqlContent(TaskType taskType, String parameter) {
+        String sqlContent = null;
+        String delimiter = ";";
         if (taskType == TaskType.ASYNC) {
-            DatabaseChangeParameters params = JsonUtils.fromJson(parametersJson, DatabaseChangeParameters.class);
-            return this.databaseChangeFileReader.loadSqlContentFromUserInput(params, dialectType);
-        }
-        if (taskType == TaskType.ONLINE_SCHEMA_CHANGE) {
-            OnlineSchemaChangeParameters params =
-                    JsonUtils.fromJson(parametersJson, OnlineSchemaChangeParameters.class);
-            return SqlUtils.splitWithOffset(dialectType, params.getSqlContent(), params.getDelimiter());
-        }
-        if (taskType == TaskType.EXPORT_RESULT_SET) {
-            ResultSetExportTaskParameter parameters =
-                    JsonUtils.fromJson(parametersJson, ResultSetExportTaskParameter.class);
-            return SqlUtils.splitWithOffset(dialectType, parameters.getSql(), ";");
-        }
-        if (taskType == TaskType.ALTER_SCHEDULE) {
-            AlterScheduleParameters alterScheduleParameters =
-                    JsonUtils.fromJson(parametersJson, AlterScheduleParameters.class);
-            if (alterScheduleParameters.getType() != JobType.SQL_PLAN) {
-                return null;
+            DatabaseChangeParameters params = JsonUtils.fromJson(parameter, DatabaseChangeParameters.class);
+            sqlContent = params.getSqlContent();
+            delimiter = params.getDelimiter();
+        } else if (taskType == TaskType.ONLINE_SCHEMA_CHANGE) {
+            OnlineSchemaChangeParameters params = JsonUtils.fromJson(parameter, OnlineSchemaChangeParameters.class);
+            sqlContent = params.getSqlContent();
+            delimiter = params.getDelimiter();
+        } else if (taskType == TaskType.EXPORT_RESULT_SET) {
+            ResultSetExportTaskParameter params = JsonUtils.fromJson(parameter, ResultSetExportTaskParameter.class);
+            sqlContent = params.getSql();
+        } else if (taskType == TaskType.ALTER_SCHEDULE) {
+            AlterScheduleParameters params = JsonUtils.fromJson(parameter, AlterScheduleParameters.class);
+            if (params.getType() != JobType.SQL_PLAN) {
+                return;
             }
-            DatabaseChangeParameters databaseChangeParameters =
-                    (DatabaseChangeParameters) alterScheduleParameters.getScheduleTaskParameters();
-            return this.databaseChangeFileReader.loadSqlContentFromUserInput(databaseChangeParameters, dialectType);
+            DatabaseChangeParameters dcParams = (DatabaseChangeParameters) params.getScheduleTaskParameters();
+            sqlContent = dcParams.getSqlContent();
+            delimiter = dcParams.getDelimiter();
         }
-        return null;
+        if (StringUtils.isBlank(sqlContent)) {
+            this.userInputSqls = SqlUtils.splitWithOffset(connectionConfig.getDialectType(), sqlContent, delimiter);
+        }
     }
 
-    private CloseableIterator<String> getFlowRelatedSqlIterator(TaskType taskType, String parametersJson,
-            DialectType dialectType) {
+    private void loadUploadFileInputStream(TaskType taskType, String parametersJson) {
         String bucketName = "async".concat(File.separator).concat(this.creatorId.toString());
+        DatabaseChangeParameters params = null;
         if (taskType == TaskType.ASYNC) {
-            DatabaseChangeParameters params = JsonUtils.fromJson(parametersJson, DatabaseChangeParameters.class);
-            return this.databaseChangeFileReader.loadSqlIteratorFromFiles(params, dialectType, bucketName, -1);
-        }
-        if (taskType == TaskType.ALTER_SCHEDULE) {
-            AlterScheduleParameters alterScheduleParameters =
-                    JsonUtils.fromJson(parametersJson, AlterScheduleParameters.class);
-            if (alterScheduleParameters.getType() != JobType.SQL_PLAN) {
-                return null;
+            params = JsonUtils.fromJson(parametersJson, DatabaseChangeParameters.class);
+        } else if (taskType == TaskType.ALTER_SCHEDULE) {
+            AlterScheduleParameters asParams = JsonUtils.fromJson(parametersJson, AlterScheduleParameters.class);
+            if (asParams.getType() != JobType.SQL_PLAN) {
+                return;
             }
-            DatabaseChangeParameters databaseChangeParameters =
-                    (DatabaseChangeParameters) alterScheduleParameters.getScheduleTaskParameters();
-            return this.databaseChangeFileReader.loadSqlIteratorFromFiles(databaseChangeParameters, dialectType,
-                    bucketName, -1);
+            params = (DatabaseChangeParameters) asParams.getScheduleTaskParameters();
         }
-        return null;
+        if (Objects.nonNull(params)) {
+            this.uploadFileInputStream = databaseChangeFileReader.readInputStreamFromSqlObjects(params, bucketName, -1);
+            if (Objects.nonNull(this.uploadFileInputStream)) {
+                this.uploadFileSqlIterator = SqlUtils.iterator(connectionConfig.getDialectType(), params.getDelimiter(),
+                        this.uploadFileInputStream, StandardCharsets.UTF_8);
+            }
+        }
     }
 
     private void storeTaskResultToFile(Long preCheckTaskId, SqlCheckTaskResult result) throws IOException {

@@ -19,19 +19,12 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.SequenceInputStream;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import com.oceanbase.odc.common.util.CloseableIterator;
-import com.oceanbase.odc.common.util.StringUtils;
-import com.oceanbase.odc.core.shared.constant.DialectType;
-import com.oceanbase.odc.core.sql.split.OffsetString;
-import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
 import com.oceanbase.odc.service.objectstorage.model.StorageObject;
@@ -50,29 +43,14 @@ public class DatabaseChangeFileReader {
     @Autowired
     private ObjectStorageFacade storageFacade;
 
-    public List<OffsetString> loadSqlContentFromUserInput(DatabaseChangeParameters params, DialectType dialectType) {
-        List<OffsetString> ret = new ArrayList<>();
-        try {
-            String sqlContent = params.getSqlContent();
-            if (StringUtils.isNotBlank(sqlContent)) {
-                ret.addAll(SqlUtils.splitWithOffset(dialectType, sqlContent, params.getDelimiter()));
-            }
-            return ret;
-        } catch (Exception e) {
-            log.warn("Failed to read sql content from user input", e);
-            throw new IllegalStateException("Failed to read sql content from user input");
-        }
-    }
-
-    public CloseableIterator<String> loadSqlIteratorFromFiles(DatabaseChangeParameters params, DialectType dialectType,
-            String bucketName, long maxSizeBytes) {
+    public InputStream readInputStreamFromSqlObjects(DatabaseChangeParameters params, String bucketName,
+            long maxSizeBytes) {
         List<String> objectIds = params.getSqlObjectIds();
         if (CollectionUtils.isEmpty(objectIds)) {
             return null;
         }
         try {
-            InputStream inputStream = readSqlFilesStream(bucketName, objectIds, maxSizeBytes);
-            return SqlUtils.iterator(dialectType, params.getDelimiter(), inputStream, StandardCharsets.UTF_8);
+            return readSqlFilesStream(bucketName, objectIds, maxSizeBytes);
         } catch (Exception e) {
             log.warn("Failed to read sql files from object storage", e);
             throw new IllegalStateException("Failed to read sql files from object storage");

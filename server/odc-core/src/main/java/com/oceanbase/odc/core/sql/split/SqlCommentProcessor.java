@@ -16,6 +16,7 @@
 package com.oceanbase.odc.core.sql.split;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
@@ -31,7 +32,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import com.oceanbase.odc.common.lang.Holder;
-import com.oceanbase.odc.common.util.CloseableIterator;
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 
 import lombok.AllArgsConstructor;
@@ -108,7 +109,7 @@ public class SqlCommentProcessor {
 
     public SqlCommentProcessor() {}
 
-    public static CloseableIterator<String> iterator(InputStream in, Charset charset, SqlCommentProcessor processor) {
+    public static SqlIterator iterator(InputStream in, Charset charset, SqlCommentProcessor processor) {
         return new SqlStatementIterator(in, charset, processor);
     }
 
@@ -152,6 +153,9 @@ public class SqlCommentProcessor {
     }
 
     public synchronized List<OffsetString> split(StringBuffer buffer, String sqlScript) {
+        if (StringUtils.isBlank(sqlScript)) {
+            return new ArrayList<>();
+        }
         try {
             List<OffsetString> offsetStrings = new ArrayList<>();
 
@@ -730,14 +734,15 @@ public class SqlCommentProcessor {
         }
     }
 
-    private static class SqlStatementIterator implements CloseableIterator<String> {
+    private static class SqlStatementIterator implements SqlIterator {
+
         private final BufferedReader reader;
         private final StringBuffer buffer = new StringBuffer();
         private final LinkedList<OffsetString> holder = new LinkedList<>();
+        private final Holder<Integer> bufferOrder = new Holder<>(0);
         private final SqlCommentProcessor processor;
 
-        private String current;
-        private Holder<Integer> bufferOrder = new Holder<>(0);
+        private OffsetString current;
         private int lastLineOrder = 0;
         private long iteratedBytes = 0;
 
@@ -751,26 +756,36 @@ public class SqlCommentProcessor {
             if (current == null) {
                 current = parseNext();
             }
-            return current != null;
+            boolean hasNext = current != null;
+            if (!hasNext) {
+                tryCloseReader();
+            }
+            return hasNext;
         }
 
         @Override
-        public String next() {
-            String next = current;
+        public OffsetString next() {
+            OffsetString next = current;
             current = null;
             if (next == null) {
                 next = parseNext();
                 if (next == null) {
+                    tryCloseReader();
                     throw new NoSuchElementException("No more available sql.");
                 }
             }
             return next;
         }
 
-        private String parseNext() {
+        @Override
+        public long iteratedBytes() {
+            return iteratedBytes;
+        }
+
+        private OffsetString parseNext() {
             try {
                 if (!holder.isEmpty()) {
-                    return holder.poll().getStr();
+                    return holder.poll();
                 }
                 String line;
                 while (holder.isEmpty() && (line = reader.readLine()) != null) {
@@ -788,27 +803,25 @@ public class SqlCommentProcessor {
                     iteratedBytes += line.getBytes(StandardCharsets.UTF_8).length + 1;
                 }
                 if (!holder.isEmpty()) {
-                    return holder.poll().getStr();
+                    return holder.poll();
                 }
                 if (buffer.toString().trim().isEmpty()) {
                     return null;
                 }
                 String sql = buffer.toString();
                 buffer.setLength(0);
-                return sql;
+                return new OffsetString(0, sql);
             } catch (Exception e) {
                 throw new RuntimeException("Failed to parse input. reason: " + e.getMessage(), e);
             }
         }
 
-        @Override
-        public void close() throws Exception {
-            reader.close();
-        }
-
-        @Override
-        public long iteratedBytes() {
-            return iteratedBytes;
+        private void tryCloseReader() {
+            try {
+                reader.close();
+            } catch (IOException e) {
+                // ignore
+            }
         }
 
     }

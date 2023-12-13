@@ -16,6 +16,7 @@
 package com.oceanbase.odc.core.sql.split;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
@@ -43,7 +44,6 @@ import org.apache.commons.lang3.ArrayUtils;
 
 import com.google.common.collect.ImmutableMap;
 import com.oceanbase.odc.common.lang.Holder;
-import com.oceanbase.odc.common.util.CloseableIterator;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.Verify;
@@ -365,7 +365,7 @@ public class SqlSplitter {
         return stmts;
     }
 
-    public static CloseableIterator<String> iterator(InputStream in, Charset charset, Class<? extends Lexer> lexerType,
+    public static SqlIterator iterator(InputStream in, Charset charset, Class<? extends Lexer> lexerType,
             String delimiter) {
         return new SqlStatementIterator(in, charset, lexerType, delimiter);
     }
@@ -849,14 +849,14 @@ public class SqlSplitter {
 
     }
 
-    private static class SqlStatementIterator implements CloseableIterator<String> {
+    private static class SqlStatementIterator implements SqlIterator {
 
         private final BufferedReader reader;
         private final Class<? extends Lexer> lexerType;
         private final StringBuilder buffer = new StringBuilder();
-        private final LinkedList<String> holder = new LinkedList<>();
+        private final LinkedList<OffsetString> holder = new LinkedList<>();
 
-        private String current;
+        private OffsetString current;
         private String delimiter;
         private boolean firstLine = true;
         private List<String> sqls = new ArrayList<>();
@@ -880,16 +880,21 @@ public class SqlSplitter {
             if (current == null) {
                 current = parseNext();
             }
-            return current != null;
+            boolean hasNext = current != null;
+            if (!hasNext) {
+                tryCloseReader();
+            }
+            return hasNext;
         }
 
         @Override
-        public String next() {
-            String next = current;
+        public OffsetString next() {
+            OffsetString next = current;
             current = null;
             if (next == null) {
                 next = parseNext();
                 if (next == null) {
+                    tryCloseReader();
                     throw new NoSuchElementException("No more available sql.");
                 }
             }
@@ -897,11 +902,11 @@ public class SqlSplitter {
         }
 
         @Override
-        public void close() throws Exception {
-            reader.close();
+        public long iteratedBytes() {
+            return iteratedBytes;
         }
 
-        private String parseNext() {
+        private OffsetString parseNext() {
             try {
                 if (!holder.isEmpty()) {
                     return holder.poll();
@@ -920,7 +925,7 @@ public class SqlSplitter {
                             .collect(Collectors.toList());
                     while (sqls.size() > SQL_STATEMENT_BUFFER_SIZE) {
                         String sql = sqls.remove(0);
-                        holder.addLast(sql);
+                        holder.addLast(new OffsetString(0, sql));
                         int index = buffer.indexOf(sql.substring(0, sql.length() - 1));
                         buffer.delete(0, index + sql.length());
                         clearUselessPrefix();
@@ -934,7 +939,7 @@ public class SqlSplitter {
                 if (sqls.isEmpty()) {
                     return null;
                 }
-                return sqls.remove(0);
+                return new OffsetString(0, sqls.remove(0));
             } catch (Exception e) {
                 throw new RuntimeException("Failed to parse input. reason: " + e.getMessage(), e);
             }
@@ -956,12 +961,14 @@ public class SqlSplitter {
             return new SqlSplitter(lexerType, delimiter);
         }
 
-        @Override
-        public long iteratedBytes() {
-            return iteratedBytes;
+        private void tryCloseReader() {
+            try {
+                reader.close();
+            } catch (IOException e) {
+                // ignore
+            }
         }
 
     }
-
 
 }

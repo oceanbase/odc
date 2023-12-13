@@ -23,7 +23,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.google.common.collect.Sets;
-import com.oceanbase.odc.common.util.CloseableIterator;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
@@ -31,6 +30,7 @@ import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.sql.split.OffsetString;
 import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
+import com.oceanbase.odc.core.sql.split.SqlIterator;
 import com.oceanbase.odc.core.sql.split.SqlSplitter;
 import com.oceanbase.tools.sqlparser.oracle.PlSqlLexer;
 
@@ -143,20 +143,18 @@ public class SqlUtils {
         }
     }
 
-    public static CloseableIterator<String> iterator(DialectType dialectType, String delimiter, InputStream input,
-            Charset charset) {
+    public static SqlIterator iterator(DialectType dialectType, String delimiter, InputStream input, Charset charset) {
         SqlCommentProcessor processor = new SqlCommentProcessor(dialectType, true, true);
         processor.setDelimiter(delimiter);
         return iterator(input, charset, dialectType, processor);
     }
 
-    public static CloseableIterator<String> iterator(ConnectionSession connectionSession, InputStream input,
-            Charset charset) {
+    public static SqlIterator iterator(ConnectionSession connectionSession, InputStream input, Charset charset) {
         SqlCommentProcessor processor = ConnectionSessionUtil.getSqlCommentProcessor(connectionSession);
         return iterator(input, charset, connectionSession.getDialectType(), processor);
     }
 
-    private static CloseableIterator<String> iterator(InputStream input, Charset charset, DialectType dialectType,
+    private static SqlIterator iterator(InputStream input, Charset charset, DialectType dialectType,
             SqlCommentProcessor processor) {
         PreConditions.notBlank(processor.getDelimiter(), "delimiter", "Empty or blank delimiter is not allowed");
         if (DialectType.OB_ORACLE == dialectType

@@ -37,7 +37,6 @@ import org.springframework.jdbc.core.StatementCallback;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.trace.TaskContextHolder;
 import com.oceanbase.odc.common.util.CSVUtils;
-import com.oceanbase.odc.common.util.CloseableIterator;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.datamasking.algorithm.Algorithm;
 import com.oceanbase.odc.core.datasource.ConnectionInitializer;
@@ -54,6 +53,7 @@ import com.oceanbase.odc.core.sql.execute.model.SqlExecuteStatus;
 import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
 import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTreeFactories;
 import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTreeFactory;
+import com.oceanbase.odc.core.sql.split.SqlIterator;
 import com.oceanbase.odc.service.common.FileManager;
 import com.oceanbase.odc.service.common.model.FileBucket;
 import com.oceanbase.odc.service.common.util.OdcFileUtil;
@@ -88,7 +88,8 @@ public class DatabaseChangeThread extends Thread {
 
     private final ConnectionSession connectionSession;
     private final DatabaseChangeParameters parameters;
-    private CloseableIterator<String> sqlIterator;
+    private InputStream sqlInputStream;
+    private SqlIterator sqlIterator;
     private String errorRecordsFilePath = null;
     private int failCount = 0;
     private int successCount = 0;
@@ -143,7 +144,7 @@ public class DatabaseChangeThread extends Thread {
             init(userId);
             int index = 0;
             while (sqlIterator.hasNext()) {
-                String sql = sqlIterator.next();
+                String sql = sqlIterator.next().getStr();
                 sqlReadBytes = sqlIterator.iteratedBytes();
                 index++;
                 log.info("Async sql: {}", sql);
@@ -233,11 +234,11 @@ public class DatabaseChangeThread extends Thread {
         } finally {
             TaskContextHolder.clear();
             connectionSession.expire();
-            if (Objects.nonNull(sqlIterator)) {
+            if (Objects.nonNull(sqlInputStream)) {
                 try {
-                    sqlIterator.close();
+                    sqlInputStream.close();
                 } catch (Exception e) {
-                    throw new RuntimeException("Failed to close sql iterator");
+                    // ignore
                 }
             }
         }
@@ -246,7 +247,6 @@ public class DatabaseChangeThread extends Thread {
     private void init(Long userId) {
         log.info("Start read sql content, taskId={}", this.getTaskId());
         List<String> objectIds = parameters.getSqlObjectIds();
-        InputStream sqlInputStream;
         if (StringUtils.isNotEmpty(parameters.getSqlContent())) {
             byte[] sqlBytes = parameters.getSqlContent().getBytes(StandardCharsets.UTF_8);
             sqlInputStream = new ByteArrayInputStream(sqlBytes);

@@ -34,10 +34,10 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.oceanbase.odc.common.util.CloseableIterator;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
+import com.oceanbase.odc.core.sql.split.SqlIterator;
 import com.oceanbase.odc.plugin.schema.mysql.MySQLFunctionExtension;
 import com.oceanbase.odc.plugin.schema.mysql.MySQLProcedureExtension;
 import com.oceanbase.odc.plugin.schema.mysql.MySQLTableExtension;
@@ -85,12 +85,11 @@ public class SqlScriptImportJob extends AbstractJob {
     private void runExternalSqlScript() throws Exception {
         DialectType dialectType = transferConfig.getConnectionInfo().getConnectType().getDialectType();
         String charset = transferConfig.getEncoding().getAlias();
-        try (CloseableIterator<String> iterator = SqlCommentProcessor.iterator(input.openStream(),
-                Charset.forName(charset), new SqlCommentProcessor(dialectType, true, true, true));
-                Connection conn = dataSource.getConnection();
-                Statement stmt = conn.createStatement()) {
+        try (Connection conn = dataSource.getConnection(); Statement stmt = conn.createStatement()) {
+            SqlIterator iterator = SqlCommentProcessor.iterator(input.openStream(), Charset.forName(charset),
+                    new SqlCommentProcessor(dialectType, true, true, true));
             while (!isCanceled() && !Thread.currentThread().isInterrupted() && iterator.hasNext()) {
-                String sql = iterator.next();
+                String sql = iterator.next().getStr();
                 try {
                     increaseTotal(1);
                     stmt.execute(sql);
@@ -137,12 +136,11 @@ public class SqlScriptImportJob extends AbstractJob {
         boolean firstLine = true;
         DialectType dialectType = transferConfig.getConnectionInfo().getConnectType().getDialectType();
         String charset = transferConfig.getEncoding().getAlias();
-        try (CloseableIterator<String> iterator = SqlCommentProcessor.iterator(input.openStream(),
-                Charset.forName(charset), new SqlCommentProcessor(dialectType, true, true, true));
-                Connection conn = dataSource.getConnection();
-                Statement stmt = conn.createStatement()) {
+        try (Connection conn = dataSource.getConnection(); Statement stmt = conn.createStatement()) {
+            SqlIterator iterator = SqlCommentProcessor.iterator(input.openStream(), Charset.forName(charset),
+                    new SqlCommentProcessor(dialectType, true, true, true));
             while (!Thread.currentThread().isInterrupted() && iterator.hasNext() && !isCanceled()) {
-                String sql = iterator.next();
+                String sql = iterator.next().getStr();
                 if (firstLine && sql.startsWith("drop") || sql.startsWith("DROP")) {
                     continue;
                 }
@@ -181,9 +179,9 @@ public class SqlScriptImportJob extends AbstractJob {
 
         DialectType dialectType = transferConfig.getConnectionInfo().getConnectType().getDialectType();
         String charset = transferConfig.getEncoding().getAlias();
-        try (CloseableIterator<String> iterator = SqlCommentProcessor.iterator(input.openStream(),
-                Charset.forName(charset), new SqlCommentProcessor(dialectType, true, true, true));
-                Connection conn = dataSource.getConnection()) {
+        try (Connection conn = dataSource.getConnection()) {
+            SqlIterator iterator = SqlCommentProcessor.iterator(input.openStream(), Charset.forName(charset),
+                    new SqlCommentProcessor(dialectType, true, true, true));
             List<String> insertionBuffer = new LinkedList<>();
             while (!Thread.currentThread().isInterrupted() && !isCanceled()) {
                 try {
@@ -225,9 +223,9 @@ public class SqlScriptImportJob extends AbstractJob {
         }
     }
 
-    private void offer(CloseableIterator<String> provider, List<String> insertionBuffer, int batchSize) {
+    private void offer(SqlIterator provider, List<String> insertionBuffer, int batchSize) {
         for (int i = 0; i < batchSize && provider.hasNext(); i++) {
-            String next = provider.next();
+            String next = provider.next().getStr();
             if (next.equalsIgnoreCase(Constants.COMMIT_STMT)) {
                 break;
             }

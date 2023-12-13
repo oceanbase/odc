@@ -27,7 +27,6 @@ import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import com.oceanbase.odc.common.util.CloseableIterator;
 import com.oceanbase.odc.test.dataloader.DataLoaders;
 
 import lombok.Data;
@@ -45,10 +44,10 @@ public abstract class AbstractSqlStatementIteratorTest {
         String sql = " ";
         SqlSplitter sqlSplitter = sqlSplitter();
         List<String> except = sqlSplitter.split(sql).stream().map(OffsetString::getStr).collect(Collectors.toList());
-        CloseableIterator<String> sqlStatementIterator = sqlStatementIterator(sql);
+        SqlIterator sqlStatementIterator = sqlStatementIterator(sql);
         List<String> actual = new ArrayList<>();
         while (sqlStatementIterator.hasNext()) {
-            actual.add(sqlStatementIterator.next());
+            actual.add(sqlStatementIterator.next().getStr());
         }
         Assert.assertEquals(except, actual);
     }
@@ -58,10 +57,10 @@ public abstract class AbstractSqlStatementIteratorTest {
         String sql = "select 1 from dual $\nselect 2 from dual;";
         SqlSplitter sqlSplitter = sqlSplitter();
         List<String> except = sqlSplitter.split(sql).stream().map(OffsetString::getStr).collect(Collectors.toList());
-        CloseableIterator<String> sqlStatementIterator = sqlStatementIterator(sql);
+        SqlIterator sqlStatementIterator = sqlStatementIterator(sql);
         List<String> actual = new ArrayList<>();
         while (sqlStatementIterator.hasNext()) {
-            actual.add(sqlStatementIterator.next());
+            actual.add(sqlStatementIterator.next().getStr());
         }
         Assert.assertEquals(except, actual);
     }
@@ -71,10 +70,10 @@ public abstract class AbstractSqlStatementIteratorTest {
         String sql = "delimiter $\nselect 1 from dual $\ndelimiter ;\nselect 2 from dual;";
         SqlSplitter sqlSplitter = sqlSplitter();
         List<String> except = sqlSplitter.split(sql).stream().map(OffsetString::getStr).collect(Collectors.toList());
-        CloseableIterator<String> sqlStatementIterator = sqlStatementIterator(sql);
+        SqlIterator sqlStatementIterator = sqlStatementIterator(sql);
         List<String> actual = new ArrayList<>();
         while (sqlStatementIterator.hasNext()) {
-            actual.add(sqlStatementIterator.next());
+            actual.add(sqlStatementIterator.next().getStr());
         }
         Assert.assertEquals(except, actual);
     }
@@ -270,10 +269,10 @@ public abstract class AbstractSqlStatementIteratorTest {
         SqlSplitter sqlSplitter = sqlSplitter();
         List<String> except =
                 sqlSplitter.split(testData.origin).stream().map(OffsetString::getStr).collect(Collectors.toList());
-        CloseableIterator<String> sqlStatementIterator = sqlStatementIterator(testData.origin);
+        SqlIterator sqlStatementIterator = sqlStatementIterator(testData.origin);
         List<String> actual = new ArrayList<>();
         while (sqlStatementIterator.hasNext()) {
-            actual.add(sqlStatementIterator.next());
+            actual.add(sqlStatementIterator.next().getStr());
         }
         Assert.assertEquals(except, actual);
     }
@@ -282,7 +281,7 @@ public abstract class AbstractSqlStatementIteratorTest {
         return new SqlSplitter(lexerType());
     }
 
-    private CloseableIterator<String> sqlStatementIterator(String sql) {
+    private SqlIterator sqlStatementIterator(String sql) {
         return SqlSplitter.iterator(new ByteArrayInputStream(sql.getBytes(StandardCharsets.UTF_8)),
                 StandardCharsets.UTF_8, lexerType(), ";");
     }

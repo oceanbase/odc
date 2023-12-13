@@ -18,23 +18,24 @@ package com.oceanbase.odc.service.flow.task;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.flowable.engine.delegate.DelegateExecution;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.oceanbase.odc.common.json.JsonUtils;
-import com.oceanbase.odc.common.util.CloseableIterator;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.core.sql.split.OffsetString;
+import com.oceanbase.odc.core.sql.split.SqlIterator;
 import com.oceanbase.odc.metadb.flow.ServiceTaskInstanceRepository;
 import com.oceanbase.odc.metadb.task.TaskEntity;
+import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
@@ -83,7 +84,9 @@ public class RollbackPlanRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Rol
     private AuthenticationFacade authenticationFacade;
     private volatile boolean isSuccess = false;
     private String objectId;
-    private CloseableIterator<String> sqlIterator;
+    private List<OffsetString> userInputSqls;
+    private SqlIterator uploadFileSqlIterator;
+    private InputStream uploadFileInputStream;
 
     private static final String ROLLBACK_PLAN_RESULT_FILE_NAME = "rollback-plan-result.sql";
 
@@ -106,28 +109,35 @@ public class RollbackPlanRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Rol
             DatabaseChangeParameters params =
                     JsonUtils.fromJson(taskEntity.getParametersJson(), DatabaseChangeParameters.class);
             String bucketName = "async".concat(File.separator).concat(creator.getId() + "");
-            List<String> sqlContent =
-                    databaseChangeFileReader.loadSqlContentFromUserInput(params, connectionConfig.getDialectType())
-                            .stream().map(OffsetString::getStr).collect(Collectors.toList());
-            sqlIterator = databaseChangeFileReader.loadSqlIteratorFromFiles(params, connectionConfig.getDialectType(),
-                    bucketName, flowTaskProperties.getMaxRollbackContentSizeBytes());
-            if (CollectionUtils.isEmpty(sqlContent) && (sqlIterator == null || !sqlIterator.hasNext())) {
+            if (StringUtils.isNotBlank(params.getSqlContent())) {
+                this.userInputSqls = SqlUtils.splitWithOffset(connectionConfig.getDialectType(), params.getSqlContent(),
+                        params.getDelimiter());
+            }
+            if (CollectionUtils.isNotEmpty(params.getSqlObjectIds())) {
+                this.uploadFileInputStream = databaseChangeFileReader.readInputStreamFromSqlObjects(params, bucketName,
+                        flowTaskProperties.getMaxRollbackContentSizeBytes());
+                if (this.uploadFileInputStream != null) {
+                    this.uploadFileSqlIterator = SqlUtils.iterator(connectionConfig.getDialectType(),
+                            params.getDelimiter(), this.uploadFileInputStream, StandardCharsets.UTF_8);
+                }
+            }
+            if (CollectionUtils.isEmpty(userInputSqls)
+                    && (uploadFileSqlIterator == null || !uploadFileSqlIterator.hasNext())) {
                 this.isSuccess = true;
                 return RollbackPlanTaskResult.skip();
             }
-
             ConnectionSession session = new DefaultConnectSessionFactory(connectionConfig).generateSession();
             ConnectionSessionUtil.setCurrentSchema(session, FlowTaskUtil.getSchemaName(execution));
             try {
                 StringBuilder rollbackPlans = new StringBuilder();
                 int totalChangeLineConunt = 0;
                 int totalMaxChangeLinesLimit = flowTaskProperties.getTotalMaxChangeLines();
-                while (!sqlContent.isEmpty() || (sqlIterator != null && sqlIterator.hasNext())) {
+                while (!userInputSqls.isEmpty() || (uploadFileSqlIterator != null && uploadFileSqlIterator.hasNext())) {
                     String sql;
-                    if (!sqlContent.isEmpty()) {
-                        sql = sqlContent.remove(0);
+                    if (!userInputSqls.isEmpty()) {
+                        sql = userInputSqls.remove(0).getStr();
                     } else {
-                        sql = sqlIterator.next();
+                        sql = uploadFileSqlIterator.next().getStr();
                     }
                     try {
                         long timeoutForCurrentSql = timeOutMilliSeconds - (System.currentTimeMillis() - startTimestamp);
@@ -178,8 +188,8 @@ public class RollbackPlanRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Rol
             }
             throw e;
         } finally {
-            if (sqlIterator != null) {
-                sqlIterator.close();
+            if (uploadFileInputStream != null) {
+                uploadFileInputStream.close();
             }
         }
     }
