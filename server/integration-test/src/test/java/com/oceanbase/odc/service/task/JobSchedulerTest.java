@@ -41,6 +41,8 @@ import com.oceanbase.odc.service.task.schedule.HostUrlProvider;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 import com.oceanbase.odc.service.task.schedule.JobScheduler;
 import com.oceanbase.odc.service.task.schedule.StdJobScheduler;
+import com.oceanbase.odc.service.task.service.JobEntity;
+import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 
 import cn.hutool.core.lang.Assert;
 
@@ -59,6 +61,10 @@ public class JobSchedulerTest {
         DefaultJobConfiguration jc = new DefaultJobConfiguration() {};
         jc.setScheduler(sched);
         jc.setHostUrlProvider(Mockito.mock(HostUrlProvider.class));
+        TaskFrameworkService taskFrameworkService = Mockito.mock(TaskFrameworkService.class);
+        jc.setTaskFrameworkService(taskFrameworkService);
+        Mockito.when(taskFrameworkService.save(Mockito.any())).thenReturn(Mockito.mock(JobEntity.class));
+        Mockito.when(taskFrameworkService.find(Mockito.any())).thenReturn(Mockito.mock(JobEntity.class));
 
         DefaultJobDefinition jd = DefaultJobDefinition.builder().jobClass(SampleTask.class).build();
 
