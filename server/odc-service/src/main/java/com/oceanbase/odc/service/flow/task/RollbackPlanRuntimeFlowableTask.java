@@ -189,7 +189,11 @@ public class RollbackPlanRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Rol
             throw e;
         } finally {
             if (uploadFileInputStream != null) {
-                uploadFileInputStream.close();
+                try {
+                    uploadFileInputStream.close();
+                } catch (Exception e) {
+                    // ignore
+                }
             }
         }
     }
