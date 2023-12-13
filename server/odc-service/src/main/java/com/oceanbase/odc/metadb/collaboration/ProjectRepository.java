@@ -29,4 +29,6 @@ public interface ProjectRepository extends JpaRepository<ProjectEntity, Long>, J
 
     List<ProjectEntity> findByIdIn(Collection<Long> ids);
 
+    List<ProjectEntity> findAllByOrganizationId(Long organizationId);
+
 }
