@@ -99,8 +99,8 @@ public class RiskLevelService {
     @SkipAuthorize("internal usage")
     public RiskLevel findHighestRiskLevel() {
         return entityToModel(
-                riskLevelRepository.findByOrganizationIdAndLevel(authenticationFacade.currentOrganizationId(), 2)
-                        .orElseThrow(() -> new NotFoundException(ResourceType.ODC_RISK_LEVEL, "level", 2)));
+                riskLevelRepository.findByOrganizationIdAndLevel(authenticationFacade.currentOrganizationId(), 3)
+                        .orElseThrow(() -> new NotFoundException(ResourceType.ODC_RISK_LEVEL, "level", 3)));
     }
 
     @SkipAuthorize("internal authenticated")
