@@ -96,6 +96,13 @@ public class RiskLevelService {
                         .orElseThrow(() -> new NotFoundException(ResourceType.ODC_RISK_LEVEL, "level", 0)));
     }
 
+    @SkipAuthorize("internal usage")
+    public RiskLevel findHighestRiskLevel() {
+        return entityToModel(
+                riskLevelRepository.findByOrganizationIdAndLevel(authenticationFacade.currentOrganizationId(), 2)
+                        .orElseThrow(() -> new NotFoundException(ResourceType.ODC_RISK_LEVEL, "level", 2)));
+    }
+
     @SkipAuthorize("internal authenticated")
     public RiskLevel findHighestRiskLevel(Collection<RiskLevel> riskLevels) {
         if (CollectionUtils.isEmpty(riskLevels)) {

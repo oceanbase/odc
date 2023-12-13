@@ -13,24 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.flow.task.model;
 
-import java.util.Set;
+package com.oceanbase.odc.service.sqlcheck;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.cloud.context.config.annotation.RefreshScope;
+import org.springframework.context.annotation.Configuration;
+
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 /**
- * @Author: Lebie
- * @Date: 2023/8/8 16:01
- * @Description: []
+ * @author gaoda.xy
+ * @date 2023/12/12 23:02
  */
 @Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class DatabasePermissionCheckResult {
-    private Set<String> unauthorizedDatabaseNames;
+@Configuration
+@RefreshScope
+@ConfigurationProperties(prefix = "odc.task.pre-check")
+public class SqlCheckProperties {
+
+    private long maxSqlContentBytes = 5 * 1024 * 1024;
+
 }

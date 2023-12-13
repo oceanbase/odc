@@ -21,6 +21,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -34,7 +35,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.flowable.engine.delegate.DelegateExecution;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.unit.BinarySizeUnit;
@@ -65,12 +65,14 @@ import com.oceanbase.odc.service.resultset.ResultSetExportTaskParameter;
 import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleParameters;
 import com.oceanbase.odc.service.schedule.model.JobType;
 import com.oceanbase.odc.service.session.util.SchemaExtractor;
+import com.oceanbase.odc.service.sqlcheck.SqlCheckProperties;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckService;
 import com.oceanbase.odc.service.sqlcheck.model.CheckResult;
 import com.oceanbase.odc.service.sqlcheck.model.CheckViolation;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
 
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -82,12 +84,12 @@ import lombok.extern.slf4j.Slf4j;
 public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
 
     private volatile boolean success = false;
+    private volatile boolean overLimit = false;
     private volatile SqlCheckTaskResult sqlCheckResult = null;
     private volatile DatabasePermissionCheckResult permissionCheckResult = null;
-    private static final String CHECK_RESULT_FILE_NAME = "sql-check-result.json";
     private Long creatorId;
-    private List<OffsetString> databaseChangeRelatedSqls;
-    private CloseableIterator<String> sqlIterator;
+    private List<OffsetString> userInputSqls;
+    private CloseableIterator<String> uploadFileSqlIterator;
     private ConnectionConfig connectionConfig;
     private Long preCheckTaskId;
     @Autowired
@@ -98,8 +100,11 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
     private DatabaseChangeFileReader databaseChangeFileReader;
     @Autowired
     private SqlCheckService sqlCheckService;
-    @Value("${odc.task.pre-check.max-sql-count:1000}")
-    private long maxSqlCount;
+    @Autowired
+    private SqlCheckProperties sqlCheckProperties;
+
+    private static final String CHECK_RESULT_FILE_NAME = "sql-check-result.json";
+    private static final long MAX_RISK_LEVEL = 2L;
 
     @Override
     protected Void start(Long taskId, TaskService taskService, DelegateExecution execution) throws Exception {
@@ -122,9 +127,9 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
         RiskLevelDescriber riskLevelDescriber = FlowTaskUtil.getRiskLevelDescriber(execution);
         if (Objects.nonNull(this.connectionConfig)) {
             // Skip SQL pre-check if connection config is null
-            this.databaseChangeRelatedSqls = getFlowRelatedSqls(taskEntity.getTaskType(),
+            this.userInputSqls = getFlowRelatedSqls(taskEntity.getTaskType(),
                     taskEntity.getParametersJson(), connectionConfig.getDialectType());
-            this.sqlIterator = getFlowRelatedSqlIterator(taskEntity.getTaskType(),
+            this.uploadFileSqlIterator = getFlowRelatedSqlIterator(taskEntity.getTaskType(),
                     taskEntity.getParametersJson(), connectionConfig.getDialectType());
             try {
                 preCheck(taskEntity, preCheckTaskEntity, riskLevelDescriber);
@@ -132,12 +137,15 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
                 log.warn("pre check failed, e");
                 throw new ServiceTaskError(e);
             } finally {
-                if (Objects.nonNull(this.sqlIterator)) {
-                    this.sqlIterator.close();
+                if (Objects.nonNull(this.uploadFileSqlIterator)) {
+                    this.uploadFileSqlIterator.close();
                 }
             }
             if (this.sqlCheckResult != null) {
                 riskLevelDescriber.setSqlCheckResult(sqlCheckResult.getMaxLevel() + "");
+            }
+            if (this.overLimit) {
+                riskLevelDescriber.setOverLimit(true);
             }
         }
         try {
@@ -246,29 +254,9 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
     }
 
     private void doSqlCheckAndDatabasePermissionCheck(TaskEntity preCheckTaskEntity, RiskLevelDescriber describer) {
-        Set<String> unauthorizedDatabaseNames = new HashSet<>();
         List<OffsetString> sqls = new ArrayList<>();
-        if (CollectionUtils.isNotEmpty(databaseChangeRelatedSqls) && databaseChangeRelatedSqls.size() > maxSqlCount) {
-            this.permissionCheckResult = new DatabasePermissionCheckResult(unauthorizedDatabaseNames, true);
-            this.sqlCheckResult = SqlCheckTaskResult.overLimit();
-            storeTaskResult(preCheckTaskEntity);
-            return;
-        }
-        if (CollectionUtils.isNotEmpty(databaseChangeRelatedSqls)) {
-            sqls.addAll(databaseChangeRelatedSqls);
-        }
-        if (Objects.nonNull(this.sqlIterator)) {
-            while (this.sqlIterator.hasNext()) {
-                if (sqls.size() < maxSqlCount) {
-                    sqls.add(new OffsetString(0, this.sqlIterator.next()));
-                } else {
-                    this.permissionCheckResult = new DatabasePermissionCheckResult(unauthorizedDatabaseNames, true);
-                    this.sqlCheckResult = SqlCheckTaskResult.overLimit();
-                    storeTaskResult(preCheckTaskEntity);
-                    return;
-                }
-            }
-        }
+        this.overLimit = getSqlContentUntilOverLimit(sqls, sqlCheckProperties.getMaxSqlContentBytes());
+        Set<String> unauthorizedDatabaseNames = new HashSet<>();
         List<CheckViolation> violations = new ArrayList<>();
         if (CollectionUtils.isNotEmpty(sqls)) {
             violations.addAll(this.sqlCheckService.check(Long.valueOf(describer.getEnvironmentId()),
@@ -278,18 +266,48 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
                             .collect(Collectors.toList()), this.connectionConfig.getDialectType()),
                     connectionConfig.getId()));
         }
-        this.permissionCheckResult = new DatabasePermissionCheckResult(unauthorizedDatabaseNames, false);
+        this.permissionCheckResult = new DatabasePermissionCheckResult(unauthorizedDatabaseNames);
         this.sqlCheckResult = SqlCheckTaskResult.success(violations);
-        storeTaskResult(preCheckTaskEntity);
-    }
-
-    private void storeTaskResult(TaskEntity preCheckTaskEntity) {
         try {
             storeTaskResultToFile(preCheckTaskEntity.getId(), this.sqlCheckResult);
             sqlCheckResult.setFileName(CHECK_RESULT_FILE_NAME);
         } catch (Exception e) {
             throw new ServiceTaskError(e);
         }
+    }
+
+    /**
+     * Get the sql content from the databaseChangeRelatedSqls and sqlIterator, and put them into the
+     * sqlBuffer. If the sql content is over the maxSqlBytes, return true, else return false.
+     *
+     * @param sqlBuffer the buffer to store the sql content
+     * @param maxSqlBytes the max sql content bytes
+     * @return true if the sql content is over the maxSqlBytes, else return false
+     */
+    boolean getSqlContentUntilOverLimit(@NonNull List<OffsetString> sqlBuffer, long maxSqlBytes) {
+        long curSqlBytes = 0;
+        if (CollectionUtils.isNotEmpty(userInputSqls)) {
+            for (OffsetString sql : userInputSqls) {
+                int sqlBytes = sql.getStr().getBytes(StandardCharsets.UTF_8).length;
+                if (curSqlBytes + sqlBytes > maxSqlBytes) {
+                    return true;
+                }
+                curSqlBytes += sqlBytes;
+                sqlBuffer.add(sql);
+            }
+        }
+        if (Objects.nonNull(this.uploadFileSqlIterator)) {
+            while (this.uploadFileSqlIterator.hasNext()) {
+                String sql = this.uploadFileSqlIterator.next();
+                int sqlBytes = sql.getBytes(StandardCharsets.UTF_8).length;
+                if (curSqlBytes + sqlBytes > maxSqlBytes) {
+                    return true;
+                }
+                curSqlBytes += sqlBytes;
+                sqlBuffer.add(new OffsetString(0, sql));
+            }
+        }
+        return false;
     }
 
     private List<OffsetString> getFlowRelatedSqls(TaskType taskType, String parametersJson, DialectType dialectType) {
@@ -362,6 +380,7 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
     private PreCheckTaskResult buildPreCheckResult() {
         PreCheckTaskResult result = new PreCheckTaskResult();
         result.setExecutorInfo(new ExecutorInfo(this.hostProperties));
+        result.setOverLimit(this.overLimit);
         if (Objects.nonNull(this.sqlCheckResult)) {
             this.sqlCheckResult.setResults(null);
         }

@@ -64,6 +64,7 @@ public class FlowNodeInstanceDetailResp {
     private String externalFlowInstanceUrl;
     private Integer issueCount;
     private List<String> unauthorizedDatabaseNames;
+    private Boolean preCheckOverLimit;
 
     public static FlowNodeInstanceMapper mapper() {
         return new FlowNodeInstanceMapper();
@@ -145,6 +146,7 @@ public class FlowNodeInstanceDetailResp {
                 PreCheckTaskResult result =
                         JsonUtils.fromJson(taskEntity.getResultJson(), PreCheckTaskResult.class);
                 if (result != null) {
+                    resp.setPreCheckOverLimit(result.isOverLimit());
                     if (Objects.nonNull(result.getSqlCheckResult())) {
                         resp.setIssueCount(result.getSqlCheckResult().getIssueCount());
                     }
