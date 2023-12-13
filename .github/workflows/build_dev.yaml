@@ -81,6 +81,10 @@ jobs:
     steps:
       - name: Checkout workspace
         uses: actions/checkout@v3
+        with:
+          lfs: true
+      - name: Checkout LFS objects
+        run: git lfs checkout
       - name: action by obfarm++odc_ut++COMMIT=${{ github.event.pull_request.head.sha }}
         uses: ./.github/obfarm/
         id: odc_ut
@@ -116,6 +120,9 @@ jobs:
         uses: actions/checkout@v3
         with:
           submodules: "recursive"
+          lfs: true
+      - name: Checkout LFS objects
+        run: git lfs checkout
       - name: Setup JDK 8
         uses: actions/setup-java@v3
         with:
