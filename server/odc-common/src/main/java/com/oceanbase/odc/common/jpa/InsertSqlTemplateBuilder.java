@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.config.jpa;
+package com.oceanbase.odc.common.jpa;
 
 import java.util.ArrayList;
 import java.util.List;

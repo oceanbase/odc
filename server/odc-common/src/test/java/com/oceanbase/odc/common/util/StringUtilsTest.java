@@ -316,4 +316,14 @@ public class StringUtilsTest {
         String result = StringUtils.removeFirstStart(null, "hedll", "gret");
         Assert.assertNull(result);
     }
+
+    @Test
+    public void testCamelCaseToSnakeCase() {
+        Assert.assertEquals("test_case", StringUtils.camelCaseToSnakeCase("testCase"));
+    }
+
+    @Test
+    public void testRemoveWhitespace() {
+        Assert.assertEquals("HelloWorld", StringUtils.removeWhitespace("\nHello World\n"));
+    }
 }
