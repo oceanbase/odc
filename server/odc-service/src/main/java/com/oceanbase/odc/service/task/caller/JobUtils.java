@@ -17,6 +17,8 @@
 package com.oceanbase.odc.service.task.caller;
 
 import com.google.gson.Gson;
+import com.oceanbase.odc.common.util.SystemUtils;
+import com.oceanbase.odc.service.task.constants.JobEnvConstants;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 
 import lombok.extern.slf4j.Slf4j;
@@ -42,4 +44,8 @@ public class JobUtils {
         return new Gson().toJson(obj);
     }
 
+    public static int getPort() {
+        String port = SystemUtils.getEnvOrProperty(JobEnvConstants.DATABASE_PORT);
+        return port == null ? 8989 : Integer.parseInt(port);
+    }
 }

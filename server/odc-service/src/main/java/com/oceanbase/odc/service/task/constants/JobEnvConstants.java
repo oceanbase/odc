@@ -31,4 +31,6 @@ public class JobEnvConstants {
 
     public static final String BOOT_MODE = "ODC_BOOT_MODE";
 
+    public static final String DATABASE_PORT = "DATABASE_PORT";
+
 }

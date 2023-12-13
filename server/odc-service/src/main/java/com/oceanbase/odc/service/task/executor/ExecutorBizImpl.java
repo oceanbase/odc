@@ -41,7 +41,7 @@ public class ExecutorBizImpl implements ExecutorBiz {
     @Override
     public SuccessResponse<String> log(Long id, String logType) {
         String filePath = String.format(LOG_PATH_PATTERN, logFilePrefix, id, logType);
-        log.info("accept log request id = {}, logType= {}", id, logType);
+        log.info("Accept log request, task id = {}, logType = {}", id, logType);
 
         return new SuccessResponse<>(LogUtils.getLog(filePath));
     }
