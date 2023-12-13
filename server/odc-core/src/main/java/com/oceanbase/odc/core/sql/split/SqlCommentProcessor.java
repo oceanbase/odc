@@ -754,7 +754,12 @@ public class SqlCommentProcessor {
         @Override
         public boolean hasNext() {
             if (current == null) {
-                current = parseNext();
+                try {
+                    current = parseNext();
+                } catch (Exception e) {
+                    // eat exception
+                    return false;
+                }
             }
             boolean hasNext = current != null;
             if (!hasNext) {

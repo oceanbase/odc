@@ -335,7 +335,7 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
             sqlContent = dcParams.getSqlContent();
             delimiter = dcParams.getDelimiter();
         }
-        if (StringUtils.isBlank(sqlContent)) {
+        if (StringUtils.isNotBlank(sqlContent)) {
             this.userInputSqls = SqlUtils.splitWithOffset(connectionConfig.getDialectType(), sqlContent, delimiter);
         }
     }
