@@ -52,7 +52,7 @@ public class SqlCommentProcessorTest {
         List<OffsetString> actual;
         try (InputStream in =
                 this.getClass().getClassLoader().getResourceAsStream("sql/split/comment-processor-mysql-test.sql")) {
-            SqlIterator iterator = SqlCommentProcessor.iterator(in, StandardCharsets.UTF_8,
+            SqlStatementIterator iterator = SqlCommentProcessor.iterator(in, StandardCharsets.UTF_8,
                     new SqlCommentProcessor(DialectType.OB_MYSQL, false, false, false));
             actual = IteratorUtils.toList(iterator);
         }
@@ -81,7 +81,7 @@ public class SqlCommentProcessorTest {
         List<OffsetString> actual;
         try (InputStream in =
                 this.getClass().getClassLoader().getResourceAsStream("sql/split/comment-processor-oracle-test.sql")) {
-            SqlIterator iterator = SqlCommentProcessor.iterator(in, StandardCharsets.UTF_8,
+            SqlStatementIterator iterator = SqlCommentProcessor.iterator(in, StandardCharsets.UTF_8,
                     new SqlCommentProcessor(DialectType.OB_ORACLE, false, false, false));
             actual = IteratorUtils.toList(iterator);
         }

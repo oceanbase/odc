@@ -35,7 +35,7 @@ import lombok.Data;
  * @author gaoda.xy
  * @date 2023/11/27 20:40
  */
-public abstract class AbstractSqlStatementIteratorTest {
+public abstract class AbstractSqlSplitterIteratorTest {
 
     protected abstract Class<? extends Lexer> lexerType();
 
@@ -44,7 +44,7 @@ public abstract class AbstractSqlStatementIteratorTest {
         String sql = " ";
         SqlSplitter sqlSplitter = sqlSplitter();
         List<String> except = sqlSplitter.split(sql).stream().map(OffsetString::getStr).collect(Collectors.toList());
-        SqlIterator sqlStatementIterator = sqlStatementIterator(sql);
+        SqlStatementIterator sqlStatementIterator = sqlStatementIterator(sql);
         List<String> actual = new ArrayList<>();
         while (sqlStatementIterator.hasNext()) {
             actual.add(sqlStatementIterator.next().getStr());
@@ -57,7 +57,7 @@ public abstract class AbstractSqlStatementIteratorTest {
         String sql = "select 1 from dual $\nselect 2 from dual;";
         SqlSplitter sqlSplitter = sqlSplitter();
         List<String> except = sqlSplitter.split(sql).stream().map(OffsetString::getStr).collect(Collectors.toList());
-        SqlIterator sqlStatementIterator = sqlStatementIterator(sql);
+        SqlStatementIterator sqlStatementIterator = sqlStatementIterator(sql);
         List<String> actual = new ArrayList<>();
         while (sqlStatementIterator.hasNext()) {
             actual.add(sqlStatementIterator.next().getStr());
@@ -70,7 +70,7 @@ public abstract class AbstractSqlStatementIteratorTest {
         String sql = "delimiter $\nselect 1 from dual $\ndelimiter ;\nselect 2 from dual;";
         SqlSplitter sqlSplitter = sqlSplitter();
         List<String> except = sqlSplitter.split(sql).stream().map(OffsetString::getStr).collect(Collectors.toList());
-        SqlIterator sqlStatementIterator = sqlStatementIterator(sql);
+        SqlStatementIterator sqlStatementIterator = sqlStatementIterator(sql);
         List<String> actual = new ArrayList<>();
         while (sqlStatementIterator.hasNext()) {
             actual.add(sqlStatementIterator.next().getStr());
@@ -269,7 +269,7 @@ public abstract class AbstractSqlStatementIteratorTest {
         SqlSplitter sqlSplitter = sqlSplitter();
         List<String> except =
                 sqlSplitter.split(testData.origin).stream().map(OffsetString::getStr).collect(Collectors.toList());
-        SqlIterator sqlStatementIterator = sqlStatementIterator(testData.origin);
+        SqlStatementIterator sqlStatementIterator = sqlStatementIterator(testData.origin);
         List<String> actual = new ArrayList<>();
         while (sqlStatementIterator.hasNext()) {
             actual.add(sqlStatementIterator.next().getStr());
@@ -281,7 +281,7 @@ public abstract class AbstractSqlStatementIteratorTest {
         return new SqlSplitter(lexerType());
     }
 
-    private SqlIterator sqlStatementIterator(String sql) {
+    private SqlStatementIterator sqlStatementIterator(String sql) {
         return SqlSplitter.iterator(new ByteArrayInputStream(sql.getBytes(StandardCharsets.UTF_8)),
                 StandardCharsets.UTF_8, lexerType(), ";");
     }

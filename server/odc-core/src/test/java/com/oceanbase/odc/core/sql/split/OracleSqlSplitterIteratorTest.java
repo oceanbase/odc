@@ -17,18 +17,26 @@
 package com.oceanbase.odc.core.sql.split;
 
 import org.antlr.v4.runtime.Lexer;
+import org.junit.Test;
 
-import com.oceanbase.tools.sqlparser.oboracle.PLLexer;
+import com.oceanbase.tools.sqlparser.oracle.PlSqlLexer;
 
 /**
  * @author gaoda.xy
- * @date 2023/11/27 20:46
+ * @date 2023/11/28 19:06
  */
-public class OBOracleSqlStatementIteratorTest extends AbstractSqlStatementIteratorTest {
-
+public class OracleSqlSplitterIteratorTest extends AbstractSqlSplitterIteratorTest {
     @Override
     protected Class<? extends Lexer> lexerType() {
-        return PLLexer.class;
+        return PlSqlLexer.class;
+    }
+
+    /**
+     * OB parser cannot handle string with backslash inside scenario
+     */
+    @Test
+    public void split_StringWithBackslashInside() {
+        verifyByFileName("src/test/resources/sql/split/sql-splitter-10-string-with-backslash-inside.yml");
     }
 
 }

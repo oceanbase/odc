@@ -53,7 +53,7 @@ import com.oceanbase.odc.core.sql.execute.model.SqlExecuteStatus;
 import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
 import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTreeFactories;
 import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTreeFactory;
-import com.oceanbase.odc.core.sql.split.SqlIterator;
+import com.oceanbase.odc.core.sql.split.SqlStatementIterator;
 import com.oceanbase.odc.service.common.FileManager;
 import com.oceanbase.odc.service.common.model.FileBucket;
 import com.oceanbase.odc.service.common.util.OdcFileUtil;
@@ -89,7 +89,7 @@ public class DatabaseChangeThread extends Thread {
     private final ConnectionSession connectionSession;
     private final DatabaseChangeParameters parameters;
     private InputStream sqlInputStream;
-    private SqlIterator sqlIterator;
+    private SqlStatementIterator sqlIterator;
     private String errorRecordsFilePath = null;
     private int failCount = 0;
     private int successCount = 0;

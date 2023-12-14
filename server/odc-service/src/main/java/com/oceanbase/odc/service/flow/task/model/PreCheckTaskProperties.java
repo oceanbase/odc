@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.sqlcheck;
+package com.oceanbase.odc.service.flow.task.model;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
@@ -30,7 +30,7 @@ import lombok.Data;
 @Configuration
 @RefreshScope
 @ConfigurationProperties(prefix = "odc.task.pre-check")
-public class SqlCheckProperties {
+public class PreCheckTaskProperties {
 
     private long maxSqlContentBytes = 5 * 1024 * 1024;
 

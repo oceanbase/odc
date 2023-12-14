@@ -108,8 +108,8 @@ public class SqlCommentProcessor {
 
     public SqlCommentProcessor() {}
 
-    public static SqlIterator iterator(InputStream in, Charset charset, SqlCommentProcessor processor) {
-        return new SqlStatementIterator(in, charset, processor);
+    public static SqlStatementIterator iterator(InputStream in, Charset charset, SqlCommentProcessor processor) {
+        return new SqlCommentProcessorIterator(in, charset, processor);
     }
 
     public static List<OffsetString> removeSqlComments(String originalSql,
@@ -733,7 +733,7 @@ public class SqlCommentProcessor {
         }
     }
 
-    private static class SqlStatementIterator implements SqlIterator {
+    private static class SqlCommentProcessorIterator implements SqlStatementIterator {
 
         private final BufferedReader reader;
         private final StringBuffer buffer = new StringBuffer();
@@ -745,7 +745,7 @@ public class SqlCommentProcessor {
         private int lastLineOrder = 0;
         private long iteratedBytes = 0;
 
-        public SqlStatementIterator(InputStream input, Charset charset, SqlCommentProcessor processor) {
+        public SqlCommentProcessorIterator(InputStream input, Charset charset, SqlCommentProcessor processor) {
             this.reader = new BufferedReader(new InputStreamReader(input, charset));
             this.processor = processor;
         }

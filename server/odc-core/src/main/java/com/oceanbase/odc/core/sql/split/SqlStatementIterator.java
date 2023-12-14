@@ -26,7 +26,7 @@ import java.util.Iterator;
  * @author gaoda.xy
  * @date 2023/12/13 15:04
  */
-public interface SqlIterator extends Iterator<OffsetString> {
+public interface SqlStatementIterator extends Iterator<OffsetString> {
 
     /**
      * This method is used to get the current number of bytes of the SQL file stream that has been

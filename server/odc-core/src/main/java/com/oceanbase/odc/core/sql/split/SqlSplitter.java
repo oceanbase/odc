@@ -364,9 +364,9 @@ public class SqlSplitter {
         return stmts;
     }
 
-    public static SqlIterator iterator(InputStream in, Charset charset, Class<? extends Lexer> lexerType,
+    public static SqlStatementIterator iterator(InputStream in, Charset charset, Class<? extends Lexer> lexerType,
             String delimiter) {
-        return new SqlStatementIterator(in, charset, lexerType, delimiter);
+        return new SqlSplitterIterator(in, charset, lexerType, delimiter);
     }
 
     private void clear() {
@@ -848,7 +848,8 @@ public class SqlSplitter {
 
     }
 
-    private static class SqlStatementIterator implements SqlIterator {
+    // TODO: The offset is not accurate (default -1), need to be improved.
+    private static class SqlSplitterIterator implements SqlStatementIterator {
 
         private final BufferedReader reader;
         private final Class<? extends Lexer> lexerType;
@@ -867,7 +868,7 @@ public class SqlSplitter {
         private static final String SQL_MULTI_LINE_COMMENT_PREFIX = "/*";
         private static final Set<Character> DELIMITER_CHARACTERS = new HashSet<>(Arrays.asList(';', '/', '$'));
 
-        public SqlStatementIterator(InputStream input, Charset charset, Class<? extends Lexer> lexerType,
+        public SqlSplitterIterator(InputStream input, Charset charset, Class<? extends Lexer> lexerType,
                 String delimiter) {
             this.reader = new BufferedReader(new InputStreamReader(input, charset));
             this.lexerType = lexerType;
@@ -919,7 +920,7 @@ public class SqlSplitter {
                             .collect(Collectors.toList());
                     while (sqls.size() > SQL_STATEMENT_BUFFER_SIZE) {
                         String sql = sqls.remove(0);
-                        holder.addLast(new OffsetString(0, sql));
+                        holder.addLast(new OffsetString(-1, sql));
                         int index = buffer.indexOf(sql.substring(0, sql.length() - 1));
                         buffer.delete(0, index + sql.length());
                         clearUselessPrefix();
@@ -933,7 +934,7 @@ public class SqlSplitter {
                 if (sqls.isEmpty()) {
                     return null;
                 }
-                return new OffsetString(0, sqls.remove(0));
+                return new OffsetString(-1, sqls.remove(0));
             } catch (Exception e) {
                 throw new RuntimeException("Failed to parse input. reason: " + e.getMessage(), e);
             }

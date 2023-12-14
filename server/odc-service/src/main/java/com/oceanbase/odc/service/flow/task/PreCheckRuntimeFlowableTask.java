@@ -42,7 +42,7 @@ import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.core.shared.exception.VerifyException;
 import com.oceanbase.odc.core.sql.split.OffsetString;
-import com.oceanbase.odc.core.sql.split.SqlIterator;
+import com.oceanbase.odc.core.sql.split.SqlStatementIterator;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.service.common.FileManager;
 import com.oceanbase.odc.service.common.model.FileBucket;
@@ -54,6 +54,7 @@ import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
 import com.oceanbase.odc.service.flow.model.PreCheckTaskResult;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.DatabasePermissionCheckResult;
+import com.oceanbase.odc.service.flow.task.model.PreCheckTaskProperties;
 import com.oceanbase.odc.service.flow.task.model.SqlCheckTaskResult;
 import com.oceanbase.odc.service.flow.task.util.DatabaseChangeFileReader;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
@@ -65,7 +66,6 @@ import com.oceanbase.odc.service.resultset.ResultSetExportTaskParameter;
 import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleParameters;
 import com.oceanbase.odc.service.schedule.model.JobType;
 import com.oceanbase.odc.service.session.util.SchemaExtractor;
-import com.oceanbase.odc.service.sqlcheck.SqlCheckProperties;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckService;
 import com.oceanbase.odc.service.sqlcheck.model.CheckResult;
 import com.oceanbase.odc.service.sqlcheck.model.CheckViolation;
@@ -90,7 +90,7 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
     private Long creatorId;
     private List<OffsetString> userInputSqls;
     private InputStream uploadFileInputStream;
-    private SqlIterator uploadFileSqlIterator;
+    private SqlStatementIterator uploadFileSqlIterator;
     private ConnectionConfig connectionConfig;
     private Long preCheckTaskId;
     @Autowired
@@ -102,7 +102,7 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
     @Autowired
     private SqlCheckService sqlCheckService;
     @Autowired
-    private SqlCheckProperties sqlCheckProperties;
+    private PreCheckTaskProperties preCheckTaskProperties;
 
     private static final String CHECK_RESULT_FILE_NAME = "sql-check-result.json";
 
@@ -257,7 +257,7 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
 
     private void doSqlCheckAndDatabasePermissionCheck(TaskEntity preCheckTaskEntity, RiskLevelDescriber describer) {
         List<OffsetString> sqls = new ArrayList<>();
-        this.overLimit = getSqlContentUntilOverLimit(sqls, sqlCheckProperties.getMaxSqlContentBytes());
+        this.overLimit = getSqlContentUntilOverLimit(sqls, preCheckTaskProperties.getMaxSqlContentBytes());
         Set<String> unauthorizedDatabaseNames = new HashSet<>();
         List<CheckViolation> violations = new ArrayList<>();
         if (CollectionUtils.isNotEmpty(sqls)) {

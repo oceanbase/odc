@@ -32,7 +32,7 @@ import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.core.sql.split.OffsetString;
-import com.oceanbase.odc.core.sql.split.SqlIterator;
+import com.oceanbase.odc.core.sql.split.SqlStatementIterator;
 import com.oceanbase.odc.metadb.flow.ServiceTaskInstanceRepository;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.service.common.util.SqlUtils;
@@ -85,7 +85,7 @@ public class RollbackPlanRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Rol
     private volatile boolean isSuccess = false;
     private String objectId;
     private List<OffsetString> userInputSqls;
-    private SqlIterator uploadFileSqlIterator;
+    private SqlStatementIterator uploadFileSqlIterator;
     private InputStream uploadFileInputStream;
 
     private static final String ROLLBACK_PLAN_RESULT_FILE_NAME = "rollback-plan-result.sql";
