@@ -23,7 +23,7 @@ import org.aopalliance.intercept.MethodInvocation;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.reflect.MethodSignature;
 
-public class JointPointMethodInvocationAdapter implements MethodInvocation {
+class JointPointMethodInvocationAdapter implements MethodInvocation {
     private final ProceedingJoinPoint joinPoint;
     private final MethodSignature methodSignature;
     private final Method method;
