@@ -57,12 +57,19 @@ public class NodeInstanceEntityRepositoryTest extends ServiceTestEnv {
 
     @Test
     public void testSaveNodeInstanceEntity() {
+        NodeInstanceEntity entity = createEntity();
+        repository.save(entity);
+        Assert.assertEquals(getById(entity.getId()), entity);
+    }
+
+    @Test
+    public void bulkSave_saveSeveralEntities_saveSucceed() {
         List<NodeInstanceEntity> entities = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
             entities.add(createEntity());
         }
-        entities = repository.bulkSave(entities);
-        List<NodeInstanceEntity> entities1 = repository.findAll();
+        repository.bulkSave(entities);
+        Assert.assertEquals(10, repository.findAll().size());
     }
 
     @Test
