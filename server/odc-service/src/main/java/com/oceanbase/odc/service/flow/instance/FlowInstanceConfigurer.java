@@ -73,9 +73,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Getter
 public class FlowInstanceConfigurer extends GraphConfigurer<FlowInstance, BaseFlowNodeInstance> {
-
+    private static final float DEFAULT_EDGE_WEIGHT = 1;
     /**
-     * 在实际的配置过程中，可能会出现多次操作同一个流程节点（例如多次 next 同一节点）， 原理上要求这种情况下拓扑图中链接到的是同一个对象，这种场景下就必须通过accessor
+     * 在实际的配置过程中，可能会出现多次操作同一个流程节点（例如多次 next 同一节点），原理上要求这种情况下拓扑图中链接到的是同一个对象，这种场景下就必须通过accessor
      * 根据名字获取到同一个对象才行。
      */
     private final ProcessNodeBuilderAccessor accessor;
@@ -83,17 +83,11 @@ public class FlowInstanceConfigurer extends GraphConfigurer<FlowInstance, BaseFl
      * Built-in {@link FlowableProcessBuilder} of {@link FlowInstance}
      */
     private final FlowableProcessBuilder targetProcessBuilder;
-    private static final float DEFAULT_EDGE_WEIGHT = 1;
     protected final FlowableAdaptor flowableAdaptor;
     /**
      * Current {@link ExecutionConfigurer} of target {@link FlowableProcessBuilder}
      */
     protected final ExecutionConfigurer targetExecution;
-    /**
-     * 构造流程拓扑图时需要设定流程节点和{@code flowable}节点之间的关联，这种关联原理上只需要在
-     * 流程创建的时候设定一次，由于流程的创建和加载都是用的是{@link FlowInstanceConfigurer} 因此在加载时就需要规定不进行绑定，这个标志位就是做这个标记的。
-     */
-    protected final boolean requiresActivityIdAndName;
 
     /**
      * This constructor can not be invoked by user
@@ -102,13 +96,12 @@ public class FlowInstanceConfigurer extends GraphConfigurer<FlowInstance, BaseFl
      */
     protected FlowInstanceConfigurer(@NonNull FlowInstance flowInstance,
             @NonNull FlowableProcessBuilder targetProcessBuilder, @NonNull FlowableAdaptor flowableAdaptor,
-            @NonNull ProcessNodeBuilderAccessor accessor, boolean requiresActivityIdAndName) {
+            @NonNull ProcessNodeBuilderAccessor accessor) {
         super(flowInstance);
-        this.targetExecution = targetProcessBuilder.newExecution();
         this.targetProcessBuilder = targetProcessBuilder;
         this.flowableAdaptor = flowableAdaptor;
         this.accessor = accessor;
-        this.requiresActivityIdAndName = requiresActivityIdAndName;
+        this.targetExecution = targetProcessBuilder.newExecution();
     }
 
     /**
@@ -118,14 +111,12 @@ public class FlowInstanceConfigurer extends GraphConfigurer<FlowInstance, BaseFl
      */
     protected FlowInstanceConfigurer(@NonNull FlowInstance flowInstance,
             @NonNull FlowableProcessBuilder targetProcessBuilder, @NonNull ExecutionConfigurer targetExecution,
-            @NonNull FlowableAdaptor flowableAdaptor, @NonNull ProcessNodeBuilderAccessor accessor,
-            boolean requiresActivityIdAndName) {
+            @NonNull FlowableAdaptor flowableAdaptor, @NonNull ProcessNodeBuilderAccessor accessor) {
         super(flowInstance);
+        this.accessor = accessor;
         this.targetExecution = targetExecution;
         this.targetProcessBuilder = targetProcessBuilder;
         this.flowableAdaptor = flowableAdaptor;
-        this.accessor = accessor;
-        this.requiresActivityIdAndName = requiresActivityIdAndName;
     }
 
     public FlowInstanceConfigurer next(@NonNull FlowApprovalInstance nextNode) {
@@ -215,9 +206,7 @@ public class FlowInstanceConfigurer extends GraphConfigurer<FlowInstance, BaseFl
             String serviceTaskName = FlowNodeType.APPROVAL_TASK.name() + "_external_approval_task_" + nextNode.getId();
             ServiceTaskBuilder serviceTaskBuilder = nullSafeGetNodeBuilder(serviceTaskName, nextNode,
                     () -> new ServiceTaskBuilder(serviceTaskName, CreateExternalApprovalTask.class));
-            if (this.requiresActivityIdAndName) {
-                flowableAdaptor.setFlowableElement(nextNode, new FlowableElement(serviceTaskBuilder));
-            }
+            nextNode.bindFlowableElement(new FlowableElement(serviceTaskBuilder));
             String gatewayName = FlowNodeType.APPROVAL_TASK.name() + "_external_approval_gateway_" + nextNode.getId();
             ExclusiveGatewayBuilder gatewayBuilder = nullSafeGetNodeBuilder(gatewayName, nextNode,
                     () -> new ExclusiveGatewayBuilder(gatewayName));
@@ -276,9 +265,7 @@ public class FlowInstanceConfigurer extends GraphConfigurer<FlowInstance, BaseFl
                 userTimerTaskConsumer.accept(builder);
                 return builder;
             });
-            if (this.requiresActivityIdAndName) {
-                flowableAdaptor.setFlowableElement(nextNode, new FlowableElement(userTimerTaskBuilder));
-            }
+            nextNode.bindFlowableElement(new FlowableElement(userTimerTaskBuilder));
             targetExecution.next(userTimerTaskBuilder);
             if (log.isDebugEnabled()) {
                 log.debug("Define a timer execution user task node instance completion, instanceId={}, intanceType={}, "
@@ -314,9 +301,7 @@ public class FlowInstanceConfigurer extends GraphConfigurer<FlowInstance, BaseFl
             userManuTaskConsumer.accept(builder);
             return builder;
         });
-        if (this.requiresActivityIdAndName) {
-            flowableAdaptor.setFlowableElement(nextNode, new FlowableElement(userTaskBuilder));
-        }
+        nextNode.bindFlowableElement(new FlowableElement(userTaskBuilder));
         targetExecution.next(userTaskBuilder);
         if (log.isDebugEnabled()) {
             log.debug("Define a manual execution task node instance completion, instanceId={}, intanceType={}, "
@@ -383,9 +368,7 @@ public class FlowInstanceConfigurer extends GraphConfigurer<FlowInstance, BaseFl
         } else {
             timerBuilder = target.addTimerEvent(Duration.ofSeconds(intervalSeconds), true);
         }
-        if (this.requiresActivityIdAndName) {
-            flowableAdaptor.setFlowableElement(attachedNode, new FlowableElement(timerBuilder));
-        }
+        attachedNode.bindFlowableElement(new FlowableElement(timerBuilder));
         if (log.isDebugEnabled()) {
             log.debug("Defining the execution expire interval completion, instanceId={}, intanceType={}",
                     attachedNode.getId(), attachedNode.getNodeType());
@@ -410,9 +393,7 @@ public class FlowInstanceConfigurer extends GraphConfigurer<FlowInstance, BaseFl
             }
         }
         ErrorBoundaryEventBuilder errorBuilder = builder.addErrorProcessEvent(errorCode, true);
-        if (this.requiresActivityIdAndName) {
-            flowableAdaptor.setFlowableElement(nextNode, new FlowableElement(errorBuilder));
-        }
+        nextNode.bindFlowableElement(new FlowableElement(errorBuilder));
         targetProcessBuilder.newExecution(errorBuilder).endProcess();
         if (log.isDebugEnabled()) {
             log.debug(

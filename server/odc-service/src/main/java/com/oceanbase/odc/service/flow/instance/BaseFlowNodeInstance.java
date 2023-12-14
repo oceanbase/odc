@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.flow.instance;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -61,15 +62,16 @@ public abstract class BaseFlowNodeInstance extends GraphVertex implements Securi
     private final FlowNodeType nodeType;
     private final long organizationId;
     private final long flowInstanceId;
+    private final List<FlowableElement> bindFlowableElements;
     @Setter
     private String activityId;
 
     @Getter(AccessLevel.NONE)
+    protected final FlowableAdaptor flowableAdaptor;
+    @Getter(AccessLevel.NONE)
     private final NodeInstanceEntityRepository nodeRepository;
     @Getter(AccessLevel.NONE)
     private final SequenceInstanceRepository sequenceRepository;
-    @Getter(AccessLevel.NONE)
-    protected final FlowableAdaptor flowableAdaptor;
 
     /**
      * Default constructor of a flow instance node, It is used to read from the database. At this time,
@@ -109,6 +111,7 @@ public abstract class BaseFlowNodeInstance extends GraphVertex implements Securi
         } else {
             this.activityId = null;
         }
+        this.bindFlowableElements = new ArrayList<>();
     }
 
     /**
@@ -138,6 +141,10 @@ public abstract class BaseFlowNodeInstance extends GraphVertex implements Securi
     @Override
     public Long id() {
         return getId();
+    }
+
+    public void bindFlowableElement(@NonNull FlowableElement element) {
+        this.bindFlowableElements.add(element);
     }
 
     /**

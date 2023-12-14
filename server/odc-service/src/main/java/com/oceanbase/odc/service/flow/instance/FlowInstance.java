@@ -35,6 +35,7 @@ import org.flowable.engine.repository.DeploymentBuilder;
 import org.flowable.engine.repository.ProcessDefinition;
 import org.flowable.engine.runtime.ProcessInstance;
 
+import com.oceanbase.odc.common.lang.Pair;
 import com.oceanbase.odc.core.authority.model.SecurityResource;
 import com.oceanbase.odc.core.flow.BaseExecutionListener;
 import com.oceanbase.odc.core.flow.ExecutionConfigurer;
@@ -42,6 +43,7 @@ import com.oceanbase.odc.core.flow.builder.FlowableProcessBuilder;
 import com.oceanbase.odc.core.flow.graph.Graph;
 import com.oceanbase.odc.core.flow.graph.GraphEdge;
 import com.oceanbase.odc.core.flow.graph.GraphVertex;
+import com.oceanbase.odc.core.flow.model.FlowableElement;
 import com.oceanbase.odc.core.flow.util.FlowUtil;
 import com.oceanbase.odc.core.shared.OrganizationIsolated;
 import com.oceanbase.odc.core.shared.Verify;
@@ -144,8 +146,7 @@ public class FlowInstance extends Graph implements SecurityResource, Organizatio
         Verify.notNull(getUpdateTime(), "UpdateTime");
     }
 
-    public FlowInstance(@NonNull String name, String description, Long projectId,
-            Long parentFlowInstanceId,
+    public FlowInstance(@NonNull String name, String description, Long projectId, Long parentFlowInstanceId,
             @NonNull FlowableAdaptor flowableAdaptor,
             @NonNull AuthenticationFacade authenticationFacade,
             @NonNull FlowInstanceRepository flowInstanceRepository,
@@ -185,11 +186,9 @@ public class FlowInstance extends Graph implements SecurityResource, Organizatio
     }
 
     private FlowInstance(Long id, @NonNull String name, @NonNull Long creatorId, @NonNull Long organizationId,
-            Long projectId,
-            Long parentFlowInstanceId,
+            Long projectId, Long parentFlowInstanceId,
             String processDefinitionId, String processInstanceId, @NonNull FlowStatus status,
-            String flowConfigSnapShotXml, String description, Date createTime,
-            Date updateTime,
+            String flowConfigSnapShotXml, String description, Date createTime, Date updateTime,
             @NonNull AuthenticationFacade authenticationFacade,
             @NonNull FlowInstanceRepository flowInstanceRepository,
             @NonNull NodeInstanceEntityRepository nodeInstanceRepository,
@@ -434,6 +433,13 @@ public class FlowInstance extends Graph implements SecurityResource, Organizatio
      * this method will insert the topo structure between the related nodes
      */
     public void buildTopology() {
+        List<Pair<BaseFlowNodeInstance, FlowableElement>> elts = new ArrayList<>();
+        forEachInstanceNode(inst -> {
+            for (FlowableElement elt : inst.getBindFlowableElements()) {
+                elts.add(new Pair<>(inst, elt));
+            }
+        });
+        this.flowableAdaptor.setFlowableElements(elts);
         List<NodeInstanceEntity> entities = new ArrayList<>();
         forEachInstanceNode(inst -> {
             NodeInstanceEntity nodeEntity = new NodeInstanceEntity();
@@ -525,8 +531,7 @@ public class FlowInstance extends Graph implements SecurityResource, Organizatio
     }
 
     public FlowInstanceConfigurer newFlowInstanceConfigurer() {
-        return new FlowInstanceConfigurer(this, processBuilder, flowableAdaptor, accessor,
-                this.processInstanceId == null);
+        return new FlowInstanceConfigurer(this, processBuilder, flowableAdaptor, accessor);
     }
 
     public FlowInstance converge(@NonNull List<FlowInstanceConfigurer> configurerList,
@@ -578,8 +583,7 @@ public class FlowInstance extends Graph implements SecurityResource, Organizatio
     }
 
     protected FlowInstanceConfigurer newFlowInstanceConfigurer(@NonNull ExecutionConfigurer configurer) {
-        return new FlowInstanceConfigurer(this, processBuilder, configurer, flowableAdaptor, accessor,
-                this.processInstanceId == null);
+        return new FlowInstanceConfigurer(this, processBuilder, configurer, flowableAdaptor, accessor);
     }
 
     private void validExists() {

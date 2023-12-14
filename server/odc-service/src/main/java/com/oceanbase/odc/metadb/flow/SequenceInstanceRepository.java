@@ -18,10 +18,12 @@ package com.oceanbase.odc.metadb.flow;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.util.Collections;
 import java.util.List;
 
 import javax.transaction.Transactional;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
@@ -61,6 +63,9 @@ public interface SequenceInstanceRepository
     JdbcTemplate getJdbcTemplate();
 
     default List<SequenceInstanceEntity> bulkSave(List<SequenceInstanceEntity> entities) {
+        if (CollectionUtils.isEmpty(entities)) {
+            return Collections.emptyList();
+        }
         String psSql = "insert into flow_instance_sequence(source_node_instance_id,"
                 + "target_node_instance_id,flow_instance_id) values(?,?,?)";
         JdbcTemplate jdbcTemplate = getJdbcTemplate();

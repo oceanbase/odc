@@ -17,6 +17,8 @@ package com.oceanbase.odc.service.flow;
 
 import static org.mockito.Mockito.when;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -30,6 +32,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 
 import com.oceanbase.odc.ServiceTestEnv;
 import com.oceanbase.odc.common.event.LocalEventPublisher;
+import com.oceanbase.odc.common.lang.Pair;
 import com.oceanbase.odc.core.flow.model.FlowableElement;
 import com.oceanbase.odc.core.flow.model.FlowableElementType;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
@@ -41,6 +44,7 @@ import com.oceanbase.odc.metadb.flow.NodeInstanceEntityRepository;
 import com.oceanbase.odc.metadb.flow.SequenceInstanceRepository;
 import com.oceanbase.odc.metadb.flow.ServiceTaskInstanceRepository;
 import com.oceanbase.odc.metadb.flow.UserTaskInstanceRepository;
+import com.oceanbase.odc.service.flow.instance.BaseFlowNodeInstance;
 import com.oceanbase.odc.service.flow.instance.FlowApprovalInstance;
 import com.oceanbase.odc.service.flow.instance.FlowGatewayInstance;
 import com.oceanbase.odc.service.flow.instance.FlowTaskInstance;
@@ -66,8 +70,6 @@ public class FlowableAdaptorTest extends ServiceTestEnv {
     private NodeInstanceEntityRepository nodeInstanceEntityRepository;
     @Autowired
     private FlowInstanceRepository flowInstanceRepository;
-    @Autowired
-    private NodeInstanceEntityRepository nodeRepository;
     @Autowired
     private SequenceInstanceRepository sequenceRepository;
     @Autowired
@@ -120,8 +122,8 @@ public class FlowableAdaptorTest extends ServiceTestEnv {
         FlowGatewayInstance gatewayInstance = createGatewayInstance(flowInstanceEntity.getId());
 
         String activityId = UUID.randomUUID().toString();
-        flowableAdaptor.setFlowableElement(gatewayInstance,
-                new FlowableElement(activityId, UUID.randomUUID().toString(), FlowableElementType.EXCLUSIVE_GATEWAY));
+        flowableAdaptor.setFlowableElements(Collections.singletonList(new Pair<>(gatewayInstance,
+                new FlowableElement(activityId, UUID.randomUUID().toString(), FlowableElementType.EXCLUSIVE_GATEWAY))));
 
         FlowGatewayInstance actual =
                 flowableAdaptor.getGatewayInstanceByActivityId(activityId, flowInstanceEntity.getId())
@@ -130,13 +132,30 @@ public class FlowableAdaptorTest extends ServiceTestEnv {
     }
 
     @Test
+    public void setFlowableElements_setSeveralSameElts_saveOnlyOneSucceed() {
+        FlowInstanceEntity flowInstanceEntity = createFlowInstanceEntity();
+        FlowGatewayInstance gatewayInstance = createGatewayInstance(flowInstanceEntity.getId());
+
+        String activityId = UUID.randomUUID().toString();
+        Pair<BaseFlowNodeInstance, FlowableElement> elt = new Pair<>(gatewayInstance,
+                new FlowableElement(activityId, UUID.randomUUID().toString(), FlowableElementType.EXCLUSIVE_GATEWAY));
+        flowableAdaptor.setFlowableElements(Collections.singletonList(elt));
+        List<Pair<BaseFlowNodeInstance, FlowableElement>> elts = new ArrayList<>();
+        elts.add(elt);
+        elts.add(elt);
+        flowableAdaptor.setFlowableElements(elts);
+
+        Assert.assertEquals(1, nodeInstanceEntityRepository.findAll().size());
+    }
+
+    @Test
     public void get_getFlowApprovalTaskByAcitvityId_successGot() {
         FlowInstanceEntity flowInstanceEntity = createFlowInstanceEntity();
         FlowApprovalInstance approvalInstance = createApprovalInstance(flowInstanceEntity.getId());
 
         String activityId = UUID.randomUUID().toString();
-        flowableAdaptor.setFlowableElement(approvalInstance,
-                new FlowableElement(activityId, UUID.randomUUID().toString(), FlowableElementType.USER_TASK));
+        flowableAdaptor.setFlowableElements(Collections.singletonList(new Pair<>(approvalInstance,
+                new FlowableElement(activityId, UUID.randomUUID().toString(), FlowableElementType.USER_TASK))));
 
         FlowApprovalInstance actual =
                 flowableAdaptor.getApprovalInstanceByActivityId(activityId, flowInstanceEntity.getId())
@@ -150,8 +169,8 @@ public class FlowableAdaptorTest extends ServiceTestEnv {
         FlowApprovalInstance approvalInstance = createApprovalInstance(flowInstanceEntity.getId());
 
         String name = UUID.randomUUID().toString();
-        flowableAdaptor.setFlowableElement(approvalInstance,
-                new FlowableElement(UUID.randomUUID().toString(), name, FlowableElementType.USER_TASK));
+        flowableAdaptor.setFlowableElements(Collections.singletonList(new Pair<>(approvalInstance,
+                new FlowableElement(UUID.randomUUID().toString(), name, FlowableElementType.USER_TASK))));
 
         FlowApprovalInstance actual = flowableAdaptor.getApprovalInstanceByName(name, flowInstanceEntity.getId())
                 .orElseThrow(IllegalStateException::new);
@@ -164,8 +183,8 @@ public class FlowableAdaptorTest extends ServiceTestEnv {
         FlowTaskInstance taskInstance = createTaskInstance(flowInstanceEntity.getId());
 
         String activityId = UUID.randomUUID().toString();
-        flowableAdaptor.setFlowableElement(taskInstance,
-                new FlowableElement(activityId, UUID.randomUUID().toString(), FlowableElementType.SERVICE_TASK));
+        flowableAdaptor.setFlowableElements(Collections.singletonList(new Pair<>(taskInstance,
+                new FlowableElement(activityId, UUID.randomUUID().toString(), FlowableElementType.SERVICE_TASK))));
 
         FlowTaskInstance actual = flowableAdaptor.getTaskInstanceByActivityId(activityId, flowInstanceEntity.getId())
                 .orElseThrow(IllegalStateException::new);
@@ -179,22 +198,22 @@ public class FlowableAdaptorTest extends ServiceTestEnv {
         FlowTaskInstance taskInstance = createTaskInstance(flowInstanceEntity.getId());
         String serviceActivityId = UUID.randomUUID().toString();
         String serviceName = UUID.randomUUID().toString();
-        flowableAdaptor.setFlowableElement(taskInstance,
-                new FlowableElement(serviceActivityId, serviceName, FlowableElementType.SERVICE_TASK));
+        flowableAdaptor.setFlowableElements(Collections.singletonList(new Pair<>(taskInstance,
+                new FlowableElement(serviceActivityId, serviceName, FlowableElementType.SERVICE_TASK))));
         String signalActivityId = UUID.randomUUID().toString();
         String signalName = UUID.randomUUID().toString();
-        flowableAdaptor.setFlowableElement(taskInstance,
-                new FlowableElement(signalActivityId, signalName, FlowableElementType.SIGNAL_CATCH_EVENT));
+        flowableAdaptor.setFlowableElements(Collections.singletonList(new Pair<>(taskInstance,
+                new FlowableElement(signalActivityId, signalName, FlowableElementType.SIGNAL_CATCH_EVENT))));
         String signalActivityId1 = UUID.randomUUID().toString();
         String signalName1 = UUID.randomUUID().toString();
-        flowableAdaptor.setFlowableElement(taskInstance,
-                new FlowableElement(signalActivityId1, signalName1, FlowableElementType.SIGNAL_CATCH_EVENT));
+        flowableAdaptor.setFlowableElements(Collections.singletonList(new Pair<>(taskInstance,
+                new FlowableElement(signalActivityId1, signalName1, FlowableElementType.SIGNAL_CATCH_EVENT))));
 
         FlowApprovalInstance approvalInstance = createApprovalInstance(flowInstanceEntity.getId());
         String userTaskActivityId = UUID.randomUUID().toString();
         String userTaskName = UUID.randomUUID().toString();
-        flowableAdaptor.setFlowableElement(approvalInstance,
-                new FlowableElement(userTaskActivityId, userTaskName, FlowableElementType.USER_TASK));
+        flowableAdaptor.setFlowableElements(Collections.singletonList(new Pair<>(approvalInstance,
+                new FlowableElement(userTaskActivityId, userTaskName, FlowableElementType.USER_TASK))));
 
         List<FlowableElement> elementList = flowableAdaptor.getFlowableElementByType(taskInstance.getId(),
                 FlowNodeType.SERVICE_TASK, FlowableElementType.SIGNAL_CATCH_EVENT);
@@ -203,19 +222,19 @@ public class FlowableAdaptorTest extends ServiceTestEnv {
 
     private FlowGatewayInstance createGatewayInstance(Long flowInstanceId) {
         return new FlowGatewayInstance(1L, flowInstanceId, true, true, flowableAdaptor,
-                nodeRepository, sequenceRepository, gateWayInstanceRepository);
+                nodeInstanceEntityRepository, sequenceRepository, gateWayInstanceRepository);
     }
 
     private FlowApprovalInstance createApprovalInstance(Long flowInstanceId) {
         return new FlowApprovalInstance(1L, flowInstanceId, null, 12, true, true, false, flowableAdaptor,
                 taskService, formService, new LocalEventPublisher(), authenticationFacade,
-                nodeRepository, sequenceRepository, userTaskInstanceRepository);
+                nodeInstanceEntityRepository, sequenceRepository, userTaskInstanceRepository);
     }
 
     private FlowTaskInstance createTaskInstance(Long flowInstanceId) {
         return new FlowTaskInstance(TaskType.ASYNC, 1L, flowInstanceId, ExecutionStrategyConfig.autoStrategy(),
                 true, true, taskType -> null, flowableAdaptor, new LocalEventPublisher(), taskService,
-                nodeRepository, sequenceRepository, serviceTaskRepository);
+                nodeInstanceEntityRepository, sequenceRepository, serviceTaskRepository);
     }
 
     private FlowInstanceEntity createFlowInstanceEntity() {

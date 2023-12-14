@@ -81,14 +81,12 @@ public class OdcFlowInstance extends FlowInstance {
 
     @Override
     public FlowInstanceConfigurer newFlowInstanceConfigurer() {
-        return new OdcFlowInstanceConfigurer(this, processBuilder, flowableAdaptor, accessor,
-                getProcessInstanceId() == null);
+        return new OdcFlowInstanceConfigurer(this, processBuilder, flowableAdaptor, accessor);
     }
 
     @Override
     protected FlowInstanceConfigurer newFlowInstanceConfigurer(@NonNull ExecutionConfigurer configurer) {
-        return new OdcFlowInstanceConfigurer(this, processBuilder, configurer, flowableAdaptor, accessor,
-                getProcessInstanceId() == null);
+        return new OdcFlowInstanceConfigurer(this, processBuilder, configurer, flowableAdaptor, accessor);
     }
 
 }

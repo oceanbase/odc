@@ -19,6 +19,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
@@ -29,6 +30,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import com.oceanbase.odc.common.event.EventPublisher;
+import com.oceanbase.odc.common.lang.Pair;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.flow.model.FlowableElement;
 import com.oceanbase.odc.core.flow.model.FlowableElementType;
@@ -77,8 +79,6 @@ public class FlowableAdaptorImpl implements FlowableAdaptor {
     private ServiceTaskInstanceRepository serviceTaskInstanceRepository;
     @Autowired
     private EventPublisher eventPublisher;
-    @Autowired
-    private NodeInstanceEntityRepository nodeRepository;
     @Autowired
     private SequenceInstanceRepository sequenceRepository;
     @Autowired
@@ -186,7 +186,7 @@ public class FlowableAdaptorImpl implements FlowableAdaptor {
                 .findByInstanceTypeAndActivityId(FlowNodeType.SERVICE_TASK, activityId, flowInstanceId);
         return innerConvert(optional, this,
                 (entity, flowService) -> new FlowTaskInstance(entity, new OdcRuntimeDelegateMapper(), flowService,
-                        eventPublisher, taskService, nodeRepository, sequenceRepository,
+                        eventPublisher, taskService, nodeInstanceRepository, sequenceRepository,
                         serviceTaskInstanceRepository));
     }
 
@@ -198,7 +198,7 @@ public class FlowableAdaptorImpl implements FlowableAdaptor {
                         flowInstanceId);
         return innerConvert(optional, this,
                 (entity, flowService) -> new FlowApprovalInstance(entity, flowService, taskService, formService,
-                        eventPublisher, authenticationFacade, nodeRepository, sequenceRepository,
+                        eventPublisher, authenticationFacade, nodeInstanceRepository, sequenceRepository,
                         userTaskInstanceRepository));
     }
 
@@ -209,7 +209,7 @@ public class FlowableAdaptorImpl implements FlowableAdaptor {
                 userTaskInstanceRepository.findByInstanceTypeAndName(FlowNodeType.APPROVAL_TASK, name, flowInstanceId);
         return innerConvert(optional, this,
                 (entity, flowService) -> new FlowApprovalInstance(entity, flowService, taskService, formService,
-                        eventPublisher, authenticationFacade, nodeRepository, sequenceRepository,
+                        eventPublisher, authenticationFacade, nodeInstanceRepository, sequenceRepository,
                         userTaskInstanceRepository));
     }
 
@@ -220,31 +220,30 @@ public class FlowableAdaptorImpl implements FlowableAdaptor {
                 gateWayInstanceRepository.findByInstanceTypeAndActivityId(FlowNodeType.GATEWAY, activityId,
                         flowInstanceId);
         return innerConvert(optional, this,
-                (gateway, flowService) -> new FlowGatewayInstance(gateway, flowService, nodeRepository,
+                (gateway, flowService) -> new FlowGatewayInstance(gateway, flowService, nodeInstanceRepository,
                         sequenceRepository, gateWayInstanceRepository));
     }
 
     @Override
-    public void setFlowableElement(@NonNull BaseFlowNodeInstance nodeInstance,
-            @NonNull FlowableElement flowableElement) {
-        List<NodeInstanceEntity> entities =
-                nodeInstanceRepository.findByInstanceIdAndInstanceTypeAndFlowableElementType(nodeInstance.getId(),
-                        nodeInstance.getNodeType(), flowableElement.getType());
-        for (NodeInstanceEntity entity : entities) {
-            if (Objects.equals(entity.getFlowableElementType(), flowableElement.getType()) &&
-                    (Objects.equals(entity.getName(), flowableElement.getName()) ||
-                            Objects.equals(entity.getActivityId(), flowableElement.getActivityId()))) {
-                return;
-            }
-        }
-        NodeInstanceEntity entity = new NodeInstanceEntity();
-        entity.setActivityId(flowableElement.getActivityId());
-        entity.setName(flowableElement.getName());
-        entity.setFlowableElementType(flowableElement.getType());
-        entity.setInstanceType(nodeInstance.getNodeType());
-        entity.setInstanceId(nodeInstance.getId());
-        entity.setFlowInstanceId(nodeInstance.getFlowInstanceId());
-        nodeInstanceRepository.save(entity);
+    public void setFlowableElements(@NonNull List<Pair<BaseFlowNodeInstance, FlowableElement>> elements) {
+        Set<Long> ids = elements.stream().map(p -> p.left.getId()).collect(Collectors.toSet());
+        List<NodeInstanceEntity> entities = this.nodeInstanceRepository.findByInstanceIds(ids);
+        List<NodeInstanceEntity> nodes = elements.stream()
+                .filter(p -> entities.stream()
+                        .noneMatch(e -> Objects.equals(e.getFlowableElementType(), p.right.getType())
+                                && (Objects.equals(e.getName(), p.right.getName())
+                                        || Objects.equals(e.getActivityId(), p.right.getActivityId()))))
+                .map(p -> {
+                    NodeInstanceEntity entity = new NodeInstanceEntity();
+                    entity.setActivityId(p.right.getActivityId());
+                    entity.setName(p.right.getName());
+                    entity.setFlowableElementType(p.right.getType());
+                    entity.setInstanceType(p.left.getNodeType());
+                    entity.setInstanceId(p.left.getId());
+                    entity.setFlowInstanceId(p.left.getFlowInstanceId());
+                    return entity;
+                }).collect(Collectors.toList());
+        this.nodeInstanceRepository.bulkSave(nodes);
     }
 
     private <T, V> Optional<T> innerConvert(@NonNull Optional<V> optional, @NonNull FlowableAdaptor flowableAdaptor,
