@@ -105,7 +105,6 @@ public class MySQLTransferServiceTest extends ServiceTestEnv {
      * dump test
      */
     @Test
-    @Ignore
     public void create_dumpSchemaAndData_bothSchemaAndDataDumped() throws Exception {
         DataTransferTaskContext context =
                 dataTransferService.create(BUCKET, getDumpConfig(connectionConfig.getDefaultSchema(), true, true));
