@@ -75,13 +75,22 @@ public class SqlConsoleInterceptor extends BaseTimeConsumingInterceptor {
     @Override
     public boolean doPreHandle(@NonNull SqlAsyncExecuteReq request, @NonNull SqlAsyncExecuteResp response,
             @NonNull ConnectionSession session, @NonNull Map<String, Object> context) {
+        boolean sqlConsoleIntercepted = handle(request, response, session, context);
+        context.put(SQL_CONSOLE_INTERCEPTED, sqlConsoleIntercepted);
+        if (Objects.nonNull(context.get(SqlCheckInterceptor.SQL_CHECK_INTERCEPTED))) {
+            return sqlConsoleIntercepted && (Boolean) context.get(SqlCheckInterceptor.SQL_CHECK_INTERCEPTED);
+        } else {
+            return true;
+        }
+    }
+
+    private boolean handle(@NonNull SqlAsyncExecuteReq request, @NonNull SqlAsyncExecuteResp response,
+            @NonNull ConnectionSession session, @NonNull Map<String, Object> context) {
         Long ruleSetId = ConnectionSessionUtil.getRuleSetId(session);
         if (Objects.isNull(ruleSetId) || isIndividualTeam()) {
-            context.put(SQL_CONSOLE_INTERCEPTED, true);
             return true;
         }
         if (Objects.equals(Boolean.FALSE, context.get(NEED_SQL_CONSOLE_CHECK))) {
-            context.put(SQL_CONSOLE_INTERCEPTED, true);
             return true;
         }
 
@@ -179,12 +188,7 @@ public class SqlConsoleInterceptor extends BaseTimeConsumingInterceptor {
                 }
             }
         }
-        context.put(SQL_CONSOLE_INTERCEPTED, allowExecute.get());
-        if (Objects.nonNull(context.get(SqlCheckInterceptor.SQL_CHECK_INTERCEPTED))) {
-            return allowExecute.get() && (Boolean) context.get(SqlCheckInterceptor.SQL_CHECK_INTERCEPTED);
-        } else {
-            return true;
-        }
+        return allowExecute.get();
     }
 
     @Override
