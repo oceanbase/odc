@@ -108,7 +108,12 @@ public class SqlCheckInterceptor extends BaseTimeConsumingInterceptor {
             });
             context.put(SQL_CHECK_RESULT_KEY, offset2Violations);
             Boolean intercepted =
-                    response.getSqls().stream().noneMatch(v -> CollectionUtils.isNotEmpty(v.getViolatedRules()));
+                response.getSqls().stream().noneMatch(v -> {
+                    if (CollectionUtils.isEmpty(v.getViolatedRules())) {
+                        return false;
+                    }
+                    return v.getViolatedRules().stream().anyMatch(rule -> rule.getLevel() > 0);
+                });
             context.put(SQL_CHECK_INTERCEPTED, intercepted);
             if (Objects.nonNull(context.get(SqlConsoleInterceptor.SQL_CONSOLE_INTERCEPTED))) {
                 return intercepted && (Boolean) context.get(SqlConsoleInterceptor.SQL_CONSOLE_INTERCEPTED);
@@ -177,8 +182,7 @@ public class SqlCheckInterceptor extends BaseTimeConsumingInterceptor {
 
     private void fullFillRiskLevelAndSetViolation(List<CheckViolation> violations,
             List<Rule> rules, SqlAsyncExecuteResp response) {
-        List<Rule> vRules = sqlCheckService.fullFillRiskLevel(rules, violations)
-                .stream().filter(r -> r.getLevel() > 0).collect(Collectors.toList());
+        List<Rule> vRules = new ArrayList<>(sqlCheckService.fullFillRiskLevel(rules, violations));
         Map<Integer, List<Rule>> offset2Rules = vRules.stream().collect(
                 Collectors.groupingBy(rule -> rule.getViolation().getOffset()));
         response.getSqls().forEach(item -> item.getViolatedRules().addAll(
