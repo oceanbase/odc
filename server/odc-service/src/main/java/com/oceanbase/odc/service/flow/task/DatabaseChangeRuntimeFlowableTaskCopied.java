@@ -96,6 +96,7 @@ public class DatabaseChangeRuntimeFlowableTaskCopied extends BaseODCFlowTaskDele
             // JobScheduler
 
 
+
             result = JsonUtils.fromJson(taskEntity.getResultJson(), DatabaseChangeResult.class);
             asyncTaskThread.run();
             RollbackPlanTaskResult rollbackPlanTaskResult = null;
@@ -188,7 +189,7 @@ public class DatabaseChangeRuntimeFlowableTaskCopied extends BaseODCFlowTaskDele
         ConnectionSessionUtil.setCurrentSchema(connectionSession, FlowTaskUtil.getSchemaName(execution));
         ConnectionSessionUtil.setColumnAccessor(connectionSession, new DatasourceColumnAccessor(connectionSession));
         DatabaseChangeThread returnVal = new DatabaseChangeThread(connectionSession, parameters,
-                cloudObjectStorageService, objectStorageFacade, maskingService);
+            cloudObjectStorageService, objectStorageFacade, maskingService);
         returnVal.setTaskId(taskId);
         returnVal.setFlowInstanceId(this.getFlowInstanceId());
         returnVal.setUserId(creatorId);
