@@ -13,18 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.metadb.iam.resourcerole;
 
-import java.util.List;
+package com.oceanbase.odc.config.druid;
 
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-import com.oceanbase.odc.core.shared.constant.ResourceType;
-
-public interface ResourceRoleRepository
-        extends JpaRepository<ResourceRoleEntity, Long>, JpaSpecificationExecutor<ResourceRoleEntity> {
-
-    List<ResourceRoleEntity> findByResourceType(ResourceType resourceType);
-
+@Target({ElementType.METHOD, ElementType.TYPE})
+@Retention(RetentionPolicy.RUNTIME)
+public @interface DruidMonitor {
 }

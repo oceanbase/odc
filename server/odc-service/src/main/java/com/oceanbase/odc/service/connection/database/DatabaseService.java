@@ -322,9 +322,8 @@ public class DatabaseService {
     public boolean transfer(@NonNull @Valid TransferDatabasesReq req) {
         List<DatabaseEntity> entities = databaseRepository.findAllById(req.getDatabaseIds());
         checkTransferable(entities, req.getProjectId());
-        List<DatabaseEntity> transferred = entities.stream().peek(database -> database.setProjectId(req.getProjectId()))
-                .collect(Collectors.toList());
-        databaseRepository.saveAll(transferred);
+        databaseRepository.setProjectIdByIdIn(req.getProjectId(), entities.stream().map(DatabaseEntity::getId)
+                .collect(Collectors.toSet()));
         return true;
     }
 

@@ -361,22 +361,21 @@ public class DataTransferService {
     }
 
     private void injectSysConfig(ConnectionConfig connectionConfig, DataTransferConfig transferConfig) {
-        String sysUserInConfig = transferConfig.getSysUser();
-        if (StringUtils.isBlank(sysUserInConfig)) {
+        String sysUserInMeta = connectionConfig.getSysTenantUsername();
+        if (StringUtils.isBlank(sysUserInMeta)) {
             log.info("No Sys user setting");
             return;
         }
-        String sysPasswordInConfig = transferConfig.getSysPassword();
-        connectionConfig.setSysTenantUsername(sysUserInConfig);
-        connectionConfig.setSysTenantPassword(sysPasswordInConfig);
+        connectionConfig.setUsername(sysUserInMeta);
+        connectionConfig.setPassword(connectionConfig.getSysTenantPassword());
         if (testSysTenantAccount(connectionConfig)) {
             log.info("Sys user has been approved, connectionId={}", connectionConfig.getId());
-            transferConfig.getConnectionInfo().setSysTenantUsername(sysUserInConfig);
-            transferConfig.getConnectionInfo().setSysTenantPassword(sysPasswordInConfig);
+            transferConfig.getConnectionInfo().setSysTenantUsername(sysUserInMeta);
+            transferConfig.getConnectionInfo().setSysTenantPassword(connectionConfig.getSysTenantPassword());
             return;
         }
         log.info("Access denied, Sys tenant account and password error, connectionId={}, sysUserInConfig={}",
-                connectionConfig.getId(), sysUserInConfig);
+                connectionConfig.getId(), sysUserInMeta);
         transferConfig.getConnectionInfo().setSysTenantUsername(null);
         transferConfig.getConnectionInfo().setSysTenantPassword(null);
     }
