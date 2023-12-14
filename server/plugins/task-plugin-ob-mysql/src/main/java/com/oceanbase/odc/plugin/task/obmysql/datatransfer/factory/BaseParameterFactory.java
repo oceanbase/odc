@@ -200,6 +200,12 @@ public abstract class BaseParameterFactory<T extends BaseParameter> {
                 throw new IllegalArgumentException("Can not accept a blank object name");
             }
             Set<String> nameSet = whiteListMap.computeIfAbsent(dbObject.getDbObjectType(), k -> new HashSet<>());
+            if (StringUtils.isNotEmpty(transferConfig.getQuerySql())) {
+                // do not quote table name for result-set-export task, because ob-loader-dumper will quote it in
+                // insertion repeatedly
+                nameSet.add(objectName);
+                continue;
+            }
             if (transferConfig.getConnectionInfo().getConnectType().getDialectType().isOracle()) {
                 nameSet.add(StringUtils.quoteOracleIdentifier(objectName));
             } else {
