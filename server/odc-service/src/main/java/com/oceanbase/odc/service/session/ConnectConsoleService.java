@@ -87,6 +87,7 @@ import com.oceanbase.odc.service.db.session.KillSessionResult;
 import com.oceanbase.odc.service.dml.ValueEncodeType;
 import com.oceanbase.odc.service.feature.AllFeatures;
 import com.oceanbase.odc.service.session.interceptor.SqlCheckInterceptor;
+import com.oceanbase.odc.service.session.interceptor.SqlConsoleInterceptor;
 import com.oceanbase.odc.service.session.interceptor.SqlExecuteInterceptorService;
 import com.oceanbase.odc.service.session.model.BinaryContent;
 import com.oceanbase.odc.service.session.model.OdcResultSetMetaData.OdcTable;
@@ -190,7 +191,7 @@ public class ConnectConsoleService {
     }
 
     public SqlAsyncExecuteResp execute(@NotNull String sessionId,
-            @NotNull @Valid SqlAsyncExecuteReq request, boolean needSqlCheck) throws Exception {
+            @NotNull @Valid SqlAsyncExecuteReq request, boolean needSqlRuleCheck) throws Exception {
         ConnectionSession connectionSession = sessionService.nullSafeGet(sessionId, true);
 
         long maxSqlLength = sessionProperties.getMaxSqlLength();
@@ -226,7 +227,8 @@ public class ConnectConsoleService {
         SqlAsyncExecuteResp response = SqlAsyncExecuteResp.newSqlAsyncExecuteResp(sqlTuples);
         Map<String, Object> context = new HashMap<>();
         context.put(SHOW_TABLE_COLUMN_INFO, request.getShowTableColumnInfo());
-        context.put(SqlCheckInterceptor.NEED_SQL_CHECK_KEY, needSqlCheck);
+        context.put(SqlCheckInterceptor.NEED_SQL_CHECK_KEY, needSqlRuleCheck);
+        context.put(SqlConsoleInterceptor.NEED_SQL_CONSOLE_CHECK, needSqlRuleCheck);
         List<TraceStage> stages = sqlTuples.stream()
                 .map(s -> s.getSqlWatch().start(SqlExecuteStages.SQL_PRE_CHECK))
                 .collect(Collectors.toList());
