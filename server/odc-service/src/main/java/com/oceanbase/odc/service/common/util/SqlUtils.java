@@ -161,7 +161,7 @@ public class SqlUtils {
         PreConditions.notBlank(processor.getDelimiter(), "delimiter", "Empty or blank delimiter is not allowed");
         if (DialectType.OB_ORACLE == dialectType
                 && (";".equals(processor.getDelimiter()) || "/".equals(processor.getDelimiter()))) {
-            return SqlSplitter.iterator(input, charset, PlSqlLexer.class, processor.getDelimiter());
+            return SqlSplitter.iterator(input, charset, processor.getDelimiter());
         } else {
             return SqlCommentProcessor.iterator(input, charset, processor);
         }
