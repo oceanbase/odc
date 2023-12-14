@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.collaboration;
 
 import java.util.Objects;
+import java.util.Optional;
 
 import javax.sql.DataSource;
 
@@ -98,16 +99,15 @@ public class DefaultOrganizationResourceMigrator implements OrganizationResource
         }));
         this.transactionTemplate.execute((transactionStatus -> {
             try {
-                organizationService.getByOrganizationTypeAndUserId(
-                        OrganizationType.INDIVIDUAL, user.getId()).orElseGet(() -> {
-                            log.info("Individual organization not found, start to initialize for userId={}",
-                                    user.getId());
-                            OrganizationEntity saved = individualOrganizationMigrator.migrate(user);
-                            log.info(
-                                    "Initialized individual organization successfully for userId={}, organizationId={}",
-                                    user.getId(), saved.getId());
-                            return Organization.ofEntity(saved);
-                        });
+                Optional<Organization> individualOrganization =
+                        organizationService.getByOrganizationTypeAndUserId(OrganizationType.INDIVIDUAL, user.getId());
+                if (!individualOrganization.isPresent()) {
+                    log.info("Individual organization not found, start to initialize for userId={}",
+                            user.getId());
+                    OrganizationEntity saved = individualOrganizationMigrator.migrate(user);
+                    log.info("Initialized individual organization successfully for userId={}, organizationId={}",
+                            user.getId(), saved.getId());
+                }
                 return null;
             } catch (Exception ex) {
                 transactionStatus.setRollbackOnly();
