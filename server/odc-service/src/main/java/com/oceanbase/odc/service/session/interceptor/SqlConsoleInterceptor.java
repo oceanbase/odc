@@ -133,7 +133,6 @@ public class SqlConsoleInterceptor extends BaseTimeConsumingInterceptor {
                     maxSqlSizeRule.get().getViolation().setStart(0);
                     maxSqlSizeRule.get().getViolation().setStop(item.getSqlTuple().getOriginalSql().length());
                     violatedRules.add(maxSqlSizeRule.get());
-                    violatedRules.add(maxSqlSizeRule.get());
                 }
             }
             BasicResult parseResult = sqlId2BasicResult.get(item.getSqlTuple().getSqlId());

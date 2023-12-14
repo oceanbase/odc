@@ -108,12 +108,12 @@ public class SqlCheckInterceptor extends BaseTimeConsumingInterceptor {
             });
             context.put(SQL_CHECK_RESULT_KEY, offset2Violations);
             Boolean intercepted =
-                response.getSqls().stream().noneMatch(v -> {
-                    if (CollectionUtils.isEmpty(v.getViolatedRules())) {
-                        return false;
-                    }
-                    return v.getViolatedRules().stream().anyMatch(rule -> rule.getLevel() > 0);
-                });
+                    response.getSqls().stream().noneMatch(v -> {
+                        if (CollectionUtils.isEmpty(v.getViolatedRules())) {
+                            return false;
+                        }
+                        return v.getViolatedRules().stream().anyMatch(rule -> rule.getLevel() > 0);
+                    });
             context.put(SQL_CHECK_INTERCEPTED, intercepted);
             if (Objects.nonNull(context.get(SqlConsoleInterceptor.SQL_CONSOLE_INTERCEPTED))) {
                 return intercepted && (Boolean) context.get(SqlConsoleInterceptor.SQL_CONSOLE_INTERCEPTED);
