@@ -37,9 +37,13 @@ public class EmbedServerTest {
 
         EmbedServer server = new EmbedServer();
         server.start(8888);
-
-        synchronized (this) {
-            this.wait(100000000);
+        try {
+            synchronized (this) {
+                this.wait(30 * 60 * 1000);
+            }
+        } finally {
+            server.stop();
         }
+
     }
 }

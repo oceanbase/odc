@@ -46,17 +46,18 @@ public class TaskApplication {
     public void run(String[] args) {
         init(args);
         EmbedServer server = new EmbedServer();
-
         server.start(JobUtils.getPort());
-        JobContext context = jobContextProvider.provide();
-        Task task = TaskFactory.create(context.getJobClass());
-        log.info("Task created, context: {}", task.context());
-        taskExecutor.execute(task, context);
         try {
-            server.stop();
-        } catch (Exception e) {
-            log.info("stop embed server occur exception:", e);
-            throw new TaskRuntimeException(e);
+            JobContext context = jobContextProvider.provide();
+            Task task = TaskFactory.create(context.getJobClass());
+            log.info("Task created, context: {}", task.context());
+            taskExecutor.execute(task, context);
+        } finally {
+            try {
+                server.stop();
+            } catch (Exception e) {
+                log.warn("stop embed server occur exception:", e);
+            }
         }
     }
 
