@@ -116,6 +116,7 @@ public class SqlCheckInterceptor extends BaseTimeConsumingInterceptor {
                 violations
                         .forEach(c -> offset2Violations.computeIfAbsent(c.getOffset(), k -> new ArrayList<>()).add(c));
             });
+            context.put(SQL_CHECK_RESULT_KEY, offset2Violations);
             return response.getSqls().stream().noneMatch(v -> {
                 if (CollectionUtils.isEmpty(v.getViolatedRules())) {
                     return false;
