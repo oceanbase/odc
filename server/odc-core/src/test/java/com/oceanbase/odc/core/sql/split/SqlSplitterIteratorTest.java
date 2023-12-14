@@ -16,7 +16,12 @@
 
 package com.oceanbase.odc.core.sql.split;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -26,6 +31,7 @@ import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import com.oceanbase.odc.common.util.YamlUtils;
 import com.oceanbase.odc.test.dataloader.DataLoaders;
 import com.oceanbase.tools.sqlparser.oracle.PlSqlLexer;
 
@@ -35,7 +41,7 @@ import lombok.Data;
  * @author gaoda.xy
  * @date 2023/11/28 19:06
  */
-public class OracleSqlSplitterIteratorTest {
+public class SqlSplitterIteratorTest {
 
     @Test
     public void split_Delimiter$$_DelimiterChanged() {
@@ -299,6 +305,46 @@ public class OracleSqlSplitterIteratorTest {
         private String origin;
         private List<String> expected;
         private String expectedEndDelimiter;
+    }
+
+    /**
+     * Test the {@link OffsetString#getOffset()} is accurate.
+     * 
+     * @throws IOException
+     */
+    @Test
+    public void test_offset() throws IOException {
+        String sql = getSqlFromFile("sql/split/sql-splitter-0-offset-test.sql");
+        SqlStatementIterator sqlStatementIterator = sqlStatementIterator(sql);
+        List<OffsetString> actual = new ArrayList<>();
+        while (sqlStatementIterator.hasNext()) {
+            actual.add(sqlStatementIterator.next());
+        }
+        List<OffsetString> expected = getSqls("sql/split/sql-splitter-0-offset-verify.yml");
+        Assert.assertEquals(expected.size(), actual.size());
+        for (int i = 0; i < expected.size(); i++) {
+            Assert.assertEquals(expected.get(i), actual.get(i));
+        }
+    }
+
+    private String getSqlFromFile(String fileName) throws IOException {
+        InputStream input = this.getClass().getClassLoader().getResourceAsStream(fileName);
+        assert input != null;
+        BufferedReader reader = new BufferedReader(new InputStreamReader((input)));
+        StringWriter writer = new StringWriter();
+        char[] buffer = new char[1024];
+        int len = reader.read(buffer);
+        while (len != -1) {
+            writer.write(buffer, 0, len);
+            len = reader.read(buffer, 0, len);
+        }
+        reader.close();
+        writer.close();
+        return writer.getBuffer().toString();
+    }
+
+    private List<OffsetString> getSqls(String fileName) {
+        return YamlUtils.fromYamlList(fileName, OffsetString.class);
     }
 
 }

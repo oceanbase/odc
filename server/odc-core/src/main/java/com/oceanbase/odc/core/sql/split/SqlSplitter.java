@@ -861,7 +861,6 @@ public class SqlSplitter {
         private long iteratedBytes = 0;
         private int offset = 0;
 
-        private static final int SQL_STATEMENT_BUFFER_SIZE = 1;
         private static final Character ORACLE_SQL_QUOTE_CHAR = '\'';
         private static final Character SQL_SEPARATOR_CHAR = '/';
         private static final Character LINE_SEPARATOR_CHAR = '\n';
@@ -922,7 +921,7 @@ public class SqlSplitter {
                     SqlSplitter splitter = createSplitter();
                     sqls = splitter.split(buffer.toString()).stream().map(OffsetString::getStr)
                             .collect(Collectors.toList());
-                    while (sqls.size() > SQL_STATEMENT_BUFFER_SIZE) {
+                    while (sqls.size() > 1) {
                         String sql = sqls.remove(0);
                         int index = buffer.indexOf(sql.substring(0, sql.length() - 1));
                         holder.addLast(new OffsetString(offset + index, sql));
@@ -938,7 +937,7 @@ public class SqlSplitter {
                 if (sqls.isEmpty()) {
                     return null;
                 }
-                return new OffsetString(-1, sqls.remove(0));
+                return new OffsetString(offset, sqls.remove(0));
             } catch (Exception e) {
                 throw new RuntimeException("Failed to parse input. reason: " + e.getMessage(), e);
             }
@@ -986,7 +985,7 @@ public class SqlSplitter {
                 } else {
                     if (p == ORACLE_SQL_QUOTE_CHAR) {
                         innerQuote = true;
-                    } else if (p == '/' && line.charAt(i + 1) == '*') {
+                    } else if (p == '/' && q == '*') {
                         return i;
                     }
                 }
