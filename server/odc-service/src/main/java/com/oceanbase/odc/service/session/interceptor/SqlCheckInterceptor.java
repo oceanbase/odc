@@ -20,6 +20,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
@@ -63,6 +64,7 @@ import lombok.extern.slf4j.Slf4j;
 public class SqlCheckInterceptor extends BaseTimeConsumingInterceptor {
 
     public final static String NEED_SQL_CHECK_KEY = "NEED_SQL_CHECK";
+    public final static String SQL_CHECK_INTERCEPTED = "SQL_CHECK_INTERCEPTED";
     private final static String SQL_CHECK_RESULT_KEY = "SQL_CHECK_RESULT";
     @Autowired
     private UserConfigFacade userConfigFacade;
@@ -73,8 +75,21 @@ public class SqlCheckInterceptor extends BaseTimeConsumingInterceptor {
     @Autowired
     private AuthenticationFacade authenticationFacade;
 
+
     @Override
     public boolean doPreHandle(@NonNull SqlAsyncExecuteReq request, @NonNull SqlAsyncExecuteResp response,
+            @NonNull ConnectionSession session, @NonNull Map<String, Object> context) {
+        boolean sqlCheckIntercepted = handle(request, response, session, context);
+        context.put(SQL_CHECK_INTERCEPTED, sqlCheckIntercepted);
+        if (Objects.nonNull(context.get(SqlConsoleInterceptor.SQL_CONSOLE_INTERCEPTED))) {
+            return sqlCheckIntercepted && (Boolean) context.get(SqlConsoleInterceptor.SQL_CONSOLE_INTERCEPTED);
+        } else {
+            return true;
+        }
+    }
+
+
+    private boolean handle(@NonNull SqlAsyncExecuteReq request, @NonNull SqlAsyncExecuteResp response,
             @NonNull ConnectionSession session, @NonNull Map<String, Object> context) {
         if (this.authenticationFacade.currentUser().getOrganizationType() != OrganizationType.TEAM
                 || Boolean.FALSE.equals(context.get(NEED_SQL_CHECK_KEY))) {

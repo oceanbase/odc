@@ -15,7 +15,6 @@
  */
 package com.oceanbase.odc.service.collaboration;
 
-import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -100,20 +99,14 @@ public class DefaultOrganizationResourceMigrator implements OrganizationResource
         }));
         this.transactionTemplate.execute((transactionStatus -> {
             try {
-                Organization team = organizationService
-                        .getByOrganizationTypeAndUserId(OrganizationType.TEAM, user.getId())
-                        .orElseThrow(() -> new RuntimeException("User doesn't belong to any TEAM organization"));
-                Organization individual = new Organization();
-                individual.setId(-1L);
-                individual.setType(OrganizationType.INDIVIDUAL);
-                boolean hasIndividualPermission =
-                        verticalPermissionValidator.implies(individual, Arrays.asList("read", "update"), team.getId());
-                Optional<Organization> organization = organizationService.getByOrganizationTypeAndUserId(
-                        OrganizationType.INDIVIDUAL, user.getId());
-                if (!organization.isPresent() && hasIndividualPermission) {
-                    log.info("Individual organization not found, start to initialize for userId={}", user.getId());
+                Optional<Organization> individualOrganization =
+                        organizationService.getByOrganizationTypeAndUserId(OrganizationType.INDIVIDUAL, user.getId());
+                if (!individualOrganization.isPresent()) {
+                    log.info("Individual organization not found, start to initialize for userId={}",
+                            user.getId());
                     OrganizationEntity saved = individualOrganizationMigrator.migrate(user);
-                    log.info("Initialized individual organization successfully for userId={}", user.getId());
+                    log.info("Initialized individual organization successfully for userId={}, organizationId={}",
+                            user.getId(), saved.getId());
                 }
                 return null;
             } catch (Exception ex) {
