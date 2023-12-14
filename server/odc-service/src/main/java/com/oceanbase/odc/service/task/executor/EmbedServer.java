@@ -158,8 +158,8 @@ public class EmbedServer {
         private static final Logger logger = LoggerFactory.getLogger(EmbedHttpServerHandler.class);
 
         private final Pattern logUrlPattern = Pattern.compile("/([0-9]+)/tasks/log");
-        private ExecutorBiz executorBiz;
-        private ThreadPoolExecutor bizThreadPool;
+        private final ExecutorBiz executorBiz;
+        private final ThreadPoolExecutor bizThreadPool;
 
         public EmbedHttpServerHandler(ExecutorBiz executorBiz, ThreadPoolExecutor bizThreadPool) {
             this.executorBiz = executorBiz;

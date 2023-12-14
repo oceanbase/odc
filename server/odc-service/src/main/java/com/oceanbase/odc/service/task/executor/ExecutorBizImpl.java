@@ -19,6 +19,7 @@ package com.oceanbase.odc.service.task.executor;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.task.caller.JobUtils;
 import com.oceanbase.odc.service.task.executor.logger.LogUtils;
+import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -34,6 +35,13 @@ public class ExecutorBizImpl implements ExecutorBiz {
 
     @Override
     public SuccessResponse<String> log(Long id, String logType) {
+        try {
+            OdcTaskLogLevel.valueOf(logType);
+        } catch (Exception e) {
+            log.warn("logType {} is illegal ", logType);
+            new SuccessResponse<>("logType " + logType + " is illegal.");
+        }
+
         String filePath = String.format(LOG_PATH_PATTERN, JobUtils.getLogPath(), id, logType);
         log.info("Accept log request, task id = {}, logType = {}", id, logType);
 
