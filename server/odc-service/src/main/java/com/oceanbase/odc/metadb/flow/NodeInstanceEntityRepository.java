@@ -15,6 +15,9 @@
  */
 package com.oceanbase.odc.metadb.flow;
 
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.Statement;
 import java.util.Collection;
 import java.util.List;
 
@@ -25,6 +28,8 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.jdbc.core.ConnectionCallback;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.oceanbase.odc.core.flow.model.FlowableElementType;
 import com.oceanbase.odc.service.flow.model.FlowNodeType;
@@ -60,5 +65,39 @@ public interface NodeInstanceEntityRepository extends JpaRepository<NodeInstance
     @Modifying
     int deleteByInstanceIdAndInstanceType(@Param("instanceId") Long instanceId,
             @Param("instanceType") FlowNodeType instanceType);
+
+    JdbcTemplate getJdbcTemplate();
+
+    default List<NodeInstanceEntity> bulkSave(List<NodeInstanceEntity> entities) {
+        String psSql = "insert into flow_instance_node(instance_id,instance_type,"
+                + "activity_id,name,flowable_element_type,flow_instance_id) values(?,?,?,?,?,?)";
+        JdbcTemplate jdbcTemplate = getJdbcTemplate();
+        return jdbcTemplate.execute((ConnectionCallback<List<NodeInstanceEntity>>) con -> {
+            PreparedStatement ps = con.prepareStatement(psSql, Statement.RETURN_GENERATED_KEYS);
+            for (NodeInstanceEntity item : entities) {
+                ps.setLong(1, item.getInstanceId());
+                ps.setString(2, item.getInstanceType().name());
+                ps.setString(3, item.getActivityId());
+                ps.setString(4, item.getName());
+                ps.setString(5, item.getFlowableElementType().name());
+                ps.setLong(6, item.getFlowInstanceId());
+                ps.addBatch();
+            }
+            ps.executeBatch();
+            ResultSet resultSet = ps.getGeneratedKeys();
+            int i = 0;
+            while (resultSet.next()) {
+                NodeInstanceEntity entity = entities.get(i++);
+                if (resultSet.getObject("id") != null) {
+                    entity.setId(Long.valueOf(resultSet.getObject("id").toString()));
+                } else if (resultSet.getObject("ID") != null) {
+                    entity.setId(Long.valueOf(resultSet.getObject("ID").toString()));
+                } else if (resultSet.getObject("GENERATED_KEY") != null) {
+                    entity.setId(Long.valueOf(resultSet.getObject("GENERATED_KEY").toString()));
+                }
+            }
+            return entities;
+        });
+    }
 
 }
