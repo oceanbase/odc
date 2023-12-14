@@ -40,6 +40,7 @@ spring:
           enabled: true
           slow-sql-millis: 1000
           log-slow-sql: true
+          merge-sql: true
   jpa:
     open-in-view: false
   sql:

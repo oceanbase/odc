@@ -46,6 +46,7 @@ import org.springframework.scheduling.concurrent.ConcurrentTaskExecutor;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
+import com.alibaba.druid.support.spring.stat.DruidStatInterceptor;
 import com.oceanbase.odc.common.concurrent.ExecutorUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.config.jpa.EnhancedJpaRepository;
@@ -92,6 +93,11 @@ public class MetaDBConfiguration {
     public PlatformTransactionManager metadbTransactionManager(
             LocalContainerEntityManagerFactoryBean metadbEntityManagerFactory) {
         return new JpaTransactionManager(Objects.requireNonNull(metadbEntityManagerFactory.getObject()));
+    }
+
+    @Bean
+    public DruidStatInterceptor druidStatInterceptor() {
+        return new DruidStatInterceptor();
     }
 
     @Primary
