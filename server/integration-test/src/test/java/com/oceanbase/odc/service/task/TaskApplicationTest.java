@@ -38,7 +38,7 @@ import com.oceanbase.odc.service.task.schedule.SampleTaskJobDefinitionBuilder;
  * @date 2023-12-14
  * @since 4.2.4
  */
-@Ignore("manual run this ")
+@Ignore("manual run this case")
 public class TaskApplicationTest extends BaseJobTest {
 
     @Test

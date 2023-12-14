@@ -79,7 +79,7 @@ public class EmbedServer {
                 EventLoopGroup workerGroup = new NioEventLoopGroup();
                 ThreadPoolExecutor bizThreadPool = new ThreadPoolExecutor(
                         0,
-                        200,
+                        128,
                         60L,
                         TimeUnit.SECONDS,
                         new LinkedBlockingQueue<Runnable>(64),
