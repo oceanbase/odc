@@ -35,4 +35,6 @@ public class JobEnvConstants {
 
     public static final String LOG_DIRECTORY = "odc.log.directory";
 
+    public static final String ODC_SERVER_PORT = "ODC_SERVER_PORT";
+
 }

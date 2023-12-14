@@ -16,11 +16,8 @@
 
 package com.oceanbase.odc.service.task.executor;
 
-import java.util.Optional;
-
-import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
-import com.oceanbase.odc.service.task.constants.JobEnvConstants;
+import com.oceanbase.odc.service.task.caller.JobUtils;
 import com.oceanbase.odc.service.task.executor.logger.LogUtils;
 
 import lombok.extern.slf4j.Slf4j;
@@ -34,15 +31,10 @@ import lombok.extern.slf4j.Slf4j;
 public class ExecutorBizImpl implements ExecutorBiz {
 
     private static final String LOG_PATH_PATTERN = "%s/%s/task.%s";
-    private final String logFilePrefix;
-
-    public ExecutorBizImpl() {
-        logFilePrefix = Optional.of(SystemUtils.getEnvOrProperty(JobEnvConstants.LOG_DIRECTORY)).orElse("./log");
-    }
 
     @Override
     public SuccessResponse<String> log(Long id, String logType) {
-        String filePath = String.format(LOG_PATH_PATTERN, logFilePrefix, id, logType);
+        String filePath = String.format(LOG_PATH_PATTERN, JobUtils.getLogPath(), id, logType);
         log.info("Accept log request, task id = {}, logType = {}", id, logType);
 
         return new SuccessResponse<>(LogUtils.getLog(filePath));

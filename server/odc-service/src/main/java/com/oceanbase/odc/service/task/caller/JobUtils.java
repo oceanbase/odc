@@ -17,8 +17,8 @@
 package com.oceanbase.odc.service.task.caller;
 
 import com.google.gson.Gson;
-import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.common.util.SystemUtils;
+import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.constants.JobEnvConstants;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 
@@ -46,7 +46,12 @@ public class JobUtils {
     }
 
     public static int getPort() {
-        String port = SystemUtils.getEnvOrProperty(JobEnvConstants.DATABASE_PORT);
+        String port = SystemUtils.getEnvOrProperty(JobEnvConstants.ODC_SERVER_PORT);
         return port == null ? 8989 : Integer.parseInt(port);
+    }
+
+    public static String getLogPath() {
+        String logPath = SystemUtils.getEnvOrProperty(JobEnvConstants.LOG_DIRECTORY);
+        return logPath == null ? "./log" : logPath;
     }
 }

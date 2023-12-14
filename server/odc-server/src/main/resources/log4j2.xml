@@ -443,7 +443,7 @@
             </Routes>
         </Routing>
 
-        <!-- 以下为无锁结构变更任务日志配置 -->
+        <!-- task executor -->
         <Routing name="AllRoutingTaskExecutorAppender">
             <Routes pattern="${ctx:taskId}">
                 <Route>

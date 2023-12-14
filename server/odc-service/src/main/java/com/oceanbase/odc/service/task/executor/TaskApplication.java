@@ -19,12 +19,14 @@ package com.oceanbase.odc.service.task.executor;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.service.task.caller.JobContext;
+import com.oceanbase.odc.service.task.caller.JobUtils;
 import com.oceanbase.odc.service.task.constants.JobEnvConstants;
 import com.oceanbase.odc.service.task.enums.TaskRunModeEnum;
 import com.oceanbase.odc.service.task.executor.context.JobContextProvider;
 import com.oceanbase.odc.service.task.executor.context.JobContextProviderFactory;
 import com.oceanbase.odc.service.task.executor.executor.SyncTaskExecutor;
 import com.oceanbase.odc.service.task.executor.executor.TaskExecutor;
+import com.oceanbase.odc.service.task.executor.executor.TaskRuntimeException;
 import com.oceanbase.odc.service.task.executor.task.Task;
 import com.oceanbase.odc.service.task.executor.task.TaskFactory;
 
@@ -43,10 +45,19 @@ public class TaskApplication {
 
     public void run(String[] args) {
         init(args);
+        EmbedServer server = new EmbedServer();
+
+        server.start(JobUtils.getPort());
         JobContext context = jobContextProvider.provide();
         Task task = TaskFactory.create(context.getJobClass());
         log.info("Task created, context: {}", task.context());
         taskExecutor.execute(task, context);
+        try {
+            server.stop();
+        } catch (Exception e) {
+            log.info("stop embed server occur exception:", e);
+            throw new TaskRuntimeException(e);
+        }
     }
 
     private void init(String[] args) {
@@ -55,7 +66,7 @@ public class TaskApplication {
 
         String ld = SystemUtils.getEnvOrProperty(JobEnvConstants.LOG_DIRECTORY);
         System.setProperty(JobEnvConstants.LOG_DIRECTORY, ld);
-        
+
         jobContextProvider = JobContextProviderFactory.create(TaskRunModeEnum.valueOf(runMode));
         log.info("JobContextProvider init success: {}", jobContextProvider.getClass().getSimpleName());
         taskExecutor = new SyncTaskExecutor();

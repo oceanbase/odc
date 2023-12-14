@@ -27,7 +27,7 @@ public class TaskFactory {
     public static Task create(String jobClass) {
         try {
             Class<?> c = Class.forName(jobClass);
-            if (!c.isAssignableFrom(Task.class)) {
+            if (!Task.class.isAssignableFrom(c)) {
                 throw new TaskRuntimeException("Job class is not implements Task. name={}" + jobClass);
             }
             return (Task) c.newInstance();
