@@ -122,7 +122,6 @@ public class SqlCheckInterceptor extends BaseTimeConsumingInterceptor {
                 }
                 return v.getViolatedRules().stream().anyMatch(rule -> rule.getLevel() > 0);
             });
-
         } catch (Exception e) {
             log.warn("Failed to init sql check message", e);
         }
