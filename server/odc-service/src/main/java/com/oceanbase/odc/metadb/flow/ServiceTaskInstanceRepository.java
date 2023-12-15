@@ -88,30 +88,30 @@ public interface ServiceTaskInstanceRepository extends OdcJpaRepository<ServiceT
 
     default List<ServiceTaskInstanceEntity> batchCreate(List<ServiceTaskInstanceEntity> entities) {
         String sql = InsertSqlTemplateBuilder.from("flow_instance_node_task")
-                .field(ServiceTaskInstanceEntity_.ORGANIZATION_ID)
+                .field(ServiceTaskInstanceEntity_.organizationId)
                 .field("task_task_id")
                 .field("task_execution_strategy")
-                .field(ServiceTaskInstanceEntity_.TASK_TYPE)
+                .field(ServiceTaskInstanceEntity_.taskType)
                 .field("wait_execution_expire_interval_seconds")
                 .field(ServiceTaskInstanceEntity_.status)
                 .field("is_start_endpoint")
                 .field("is_end_endpoint")
-                .field(ServiceTaskInstanceEntity_.FLOW_INSTANCE_ID)
-                .field(ServiceTaskInstanceEntity_.EXECUTION_TIME)
+                .field(ServiceTaskInstanceEntity_.flowInstanceId)
+                .field(ServiceTaskInstanceEntity_.executionTime)
                 .build();
         JdbcTemplate jdbcTemplate = getJdbcTemplate();
         return jdbcTemplate.execute((ConnectionCallback<List<ServiceTaskInstanceEntity>>) con -> {
             PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             for (ServiceTaskInstanceEntity e : entities) {
-                ps.setLong(1, e.getOrganizationId());
-                ps.setLong(2, e.getTargetTaskId());
-                ps.setString(3, e.getStrategy().name());
-                ps.setString(4, e.getTaskType().name());
-                ps.setInt(5, e.getWaitExecExpireIntervalSeconds());
-                ps.setString(6, e.getStatus().name());
-                ps.setBoolean(7, e.isStartEndpoint());
-                ps.setBoolean(8, e.isEndEndpoint());
-                ps.setLong(9, e.getFlowInstanceId());
+                ps.setObject(1, e.getOrganizationId());
+                ps.setObject(2, e.getTargetTaskId());
+                ps.setObject(3, e.getStrategy().name());
+                ps.setObject(4, e.getTaskType().name());
+                ps.setObject(5, e.getWaitExecExpireIntervalSeconds());
+                ps.setObject(6, e.getStatus().name());
+                ps.setObject(7, e.isStartEndpoint());
+                ps.setObject(8, e.isEndEndpoint());
+                ps.setObject(9, e.getFlowInstanceId());
                 ps.setObject(10, e.getExecutionTime());
                 ps.addBatch();
             }
@@ -119,14 +119,7 @@ public interface ServiceTaskInstanceRepository extends OdcJpaRepository<ServiceT
             ResultSet resultSet = ps.getGeneratedKeys();
             int i = 0;
             while (resultSet.next()) {
-                ServiceTaskInstanceEntity entity = entities.get(i++);
-                if (resultSet.getObject("id") != null) {
-                    entity.setId(Long.valueOf(resultSet.getObject("id").toString()));
-                } else if (resultSet.getObject("ID") != null) {
-                    entity.setId(Long.valueOf(resultSet.getObject("ID").toString()));
-                } else if (resultSet.getObject("GENERATED_KEY") != null) {
-                    entity.setId(Long.valueOf(resultSet.getObject("GENERATED_KEY").toString()));
-                }
+                entities.get(i++).setId(getGeneratedId(resultSet));
             }
             return entities;
         });

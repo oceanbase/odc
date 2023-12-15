@@ -69,35 +69,28 @@ public interface GateWayInstanceRepository
 
     default List<GateWayInstanceEntity> batchCreate(List<GateWayInstanceEntity> entities) {
         String sql = InsertSqlTemplateBuilder.from("flow_instance_node_gateway")
-                .field(GateWayInstanceEntity_.ORGANIZATION_ID)
-                .field(GateWayInstanceEntity_.STATUS)
+                .field(GateWayInstanceEntity_.organizationId)
+                .field(GateWayInstanceEntity_.status)
                 .field("is_start_endpoint")
                 .field("is_end_endpoint")
-                .field(GateWayInstanceEntity_.FLOW_INSTANCE_ID)
+                .field(GateWayInstanceEntity_.flowInstanceId)
                 .build();
         JdbcTemplate jdbcTemplate = getJdbcTemplate();
         return jdbcTemplate.execute((ConnectionCallback<List<GateWayInstanceEntity>>) con -> {
             PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             for (GateWayInstanceEntity item : entities) {
-                ps.setLong(1, item.getOrganizationId());
-                ps.setString(2, item.getStatus().name());
+                ps.setObject(1, item.getOrganizationId());
+                ps.setObject(2, item.getStatus().name());
                 ps.setObject(3, item.isStartEndpoint());
                 ps.setObject(4, item.isEndEndpoint());
-                ps.setLong(5, item.getFlowInstanceId());
+                ps.setObject(5, item.getFlowInstanceId());
                 ps.addBatch();
             }
             ps.executeBatch();
             ResultSet resultSet = ps.getGeneratedKeys();
             int i = 0;
             while (resultSet.next()) {
-                GateWayInstanceEntity entity = entities.get(i++);
-                if (resultSet.getObject("id") != null) {
-                    entity.setId(Long.valueOf(resultSet.getObject("id").toString()));
-                } else if (resultSet.getObject("ID") != null) {
-                    entity.setId(Long.valueOf(resultSet.getObject("ID").toString()));
-                } else if (resultSet.getObject("GENERATED_KEY") != null) {
-                    entity.setId(Long.valueOf(resultSet.getObject("GENERATED_KEY").toString()));
-                }
+                entities.get(i++).setId(getGeneratedId(resultSet));
             }
             return entities;
         });

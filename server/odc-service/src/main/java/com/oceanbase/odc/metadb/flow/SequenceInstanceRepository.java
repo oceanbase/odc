@@ -73,23 +73,16 @@ public interface SequenceInstanceRepository
         return jdbcTemplate.execute((ConnectionCallback<List<SequenceInstanceEntity>>) con -> {
             PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             for (SequenceInstanceEntity item : entities) {
-                ps.setLong(1, item.getSourceNodeInstanceId());
-                ps.setLong(2, item.getTargetNodeInstanceId());
-                ps.setLong(3, item.getFlowInstanceId());
+                ps.setObject(1, item.getSourceNodeInstanceId());
+                ps.setObject(2, item.getTargetNodeInstanceId());
+                ps.setObject(3, item.getFlowInstanceId());
                 ps.addBatch();
             }
             ps.executeBatch();
             ResultSet resultSet = ps.getGeneratedKeys();
             int i = 0;
             while (resultSet.next()) {
-                SequenceInstanceEntity entity = entities.get(i++);
-                if (resultSet.getObject("id") != null) {
-                    entity.setId(Long.valueOf(resultSet.getObject("id").toString()));
-                } else if (resultSet.getObject("ID") != null) {
-                    entity.setId(Long.valueOf(resultSet.getObject("ID").toString()));
-                } else if (resultSet.getObject("GENERATED_KEY") != null) {
-                    entity.setId(Long.valueOf(resultSet.getObject("GENERATED_KEY").toString()));
-                }
+                entities.get(i++).setId(getGeneratedId(resultSet));
             }
             return entities;
         });

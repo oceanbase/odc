@@ -82,26 +82,19 @@ public interface NodeInstanceEntityRepository extends OdcJpaRepository<NodeInsta
         return jdbcTemplate.execute((ConnectionCallback<List<NodeInstanceEntity>>) con -> {
             PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             for (NodeInstanceEntity item : entities) {
-                ps.setLong(1, item.getInstanceId());
-                ps.setString(2, item.getInstanceType().name());
-                ps.setLong(3, item.getFlowInstanceId());
-                ps.setString(4, item.getActivityId());
-                ps.setString(5, item.getName());
-                ps.setString(6, item.getFlowableElementType().name());
+                ps.setObject(1, item.getInstanceId());
+                ps.setObject(2, item.getInstanceType().name());
+                ps.setObject(3, item.getFlowInstanceId());
+                ps.setObject(4, item.getActivityId());
+                ps.setObject(5, item.getName());
+                ps.setObject(6, item.getFlowableElementType().name());
                 ps.addBatch();
             }
             ps.executeBatch();
             ResultSet resultSet = ps.getGeneratedKeys();
             int i = 0;
             while (resultSet.next()) {
-                NodeInstanceEntity entity = entities.get(i++);
-                if (resultSet.getObject("id") != null) {
-                    entity.setId(Long.valueOf(resultSet.getObject("id").toString()));
-                } else if (resultSet.getObject("ID") != null) {
-                    entity.setId(Long.valueOf(resultSet.getObject("ID").toString()));
-                } else if (resultSet.getObject("GENERATED_KEY") != null) {
-                    entity.setId(Long.valueOf(resultSet.getObject("GENERATED_KEY").toString()));
-                }
+                entities.get(i++).setId(getGeneratedId(resultSet));
             }
             return entities;
         });

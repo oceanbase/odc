@@ -475,7 +475,24 @@ public class FlowInstance extends Graph implements SecurityResource, Organizatio
      * this method will insert the topo structure between the related nodes
      */
     public void buildTopology() {
-        forEachInstanceNode(BaseFlowNodeInstance::create);
+        List<FlowApprovalInstance> approvalInstances = new ArrayList<>();
+        List<FlowTaskInstance> taskInstances = new ArrayList<>();
+        List<FlowGatewayInstance> gatewayInstances = new ArrayList<>();
+        forEachInstanceNode(inst -> {
+            if (inst instanceof FlowApprovalInstance) {
+                approvalInstances.add((FlowApprovalInstance) inst);
+            } else if (inst instanceof FlowTaskInstance) {
+                taskInstances.add((FlowTaskInstance) inst);
+            } else if (inst instanceof FlowGatewayInstance) {
+                gatewayInstances.add((FlowGatewayInstance) inst);
+            } else {
+                throw new IllegalStateException("Unknown node instance, " + inst.getClass());
+            }
+        });
+        FlowApprovalInstance.batchCreate(approvalInstances, this.userTaskInstanceRepository,
+                this.userTaskInstanceCandidateRepository);
+        FlowTaskInstance.batchCreate(taskInstances, this.serviceTaskRepository);
+        FlowGatewayInstance.batchCreate(gatewayInstances, this.gateWayInstanceRepository);
         List<Pair<BaseFlowNodeInstance, FlowableElement>> elts = new ArrayList<>();
         forEachInstanceNode(inst -> {
             for (FlowableElement elt : inst.getBindFlowableElements()) {

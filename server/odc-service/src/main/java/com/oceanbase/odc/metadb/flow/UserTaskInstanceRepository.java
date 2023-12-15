@@ -120,53 +120,46 @@ public interface UserTaskInstanceRepository
 
     default List<UserTaskInstanceEntity> batchCreate(List<UserTaskInstanceEntity> entities) {
         String sql = InsertSqlTemplateBuilder.from("flow_instance_node_approval")
-                .field(UserTaskInstanceEntity_.ORGANIZATION_ID)
-                .field(UserTaskInstanceEntity_.USER_TASK_ID)
-                .field(UserTaskInstanceEntity_.STATUS)
-                .field(UserTaskInstanceEntity_.OPERATOR_ID)
-                .field(UserTaskInstanceEntity_.COMMENT)
+                .field(UserTaskInstanceEntity_.organizationId)
+                .field(UserTaskInstanceEntity_.userTaskId)
+                .field(UserTaskInstanceEntity_.status)
+                .field(UserTaskInstanceEntity_.operatorId)
+                .field(UserTaskInstanceEntity_.comment)
                 .field("approval_expire_interval_seconds")
                 .field("is_approved")
                 .field("is_start_endpoint")
                 .field("is_end_endpoint")
-                .field(UserTaskInstanceEntity_.FLOW_INSTANCE_ID)
+                .field(UserTaskInstanceEntity_.flowInstanceId)
                 .field("is_auto_approve")
-                .field(UserTaskInstanceEntity_.WAIT_FOR_CONFIRM)
-                .field(UserTaskInstanceEntity_.EXTERNAL_FLOW_INSTANCE_ID)
-                .field(UserTaskInstanceEntity_.EXTERNAL_APPROVAL_ID)
+                .field(UserTaskInstanceEntity_.waitForConfirm)
+                .field(UserTaskInstanceEntity_.externalFlowInstanceId)
+                .field(UserTaskInstanceEntity_.externalApprovalId)
                 .build();
         JdbcTemplate jdbcTemplate = getJdbcTemplate();
         return jdbcTemplate.execute((ConnectionCallback<List<UserTaskInstanceEntity>>) con -> {
             PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             for (UserTaskInstanceEntity e : entities) {
-                ps.setLong(1, e.getOrganizationId());
-                ps.setString(2, e.getUserTaskId());
-                ps.setString(3, e.getStatus().name());
-                ps.setLong(4, e.getOperatorId());
-                ps.setString(5, e.getComment());
-                ps.setInt(6, e.getExpireIntervalSeconds());
-                ps.setBoolean(7, e.isApproved());
-                ps.setBoolean(8, e.isStartEndpoint());
-                ps.setBoolean(9, e.isEndEndpoint());
-                ps.setLong(10, e.getFlowInstanceId());
-                ps.setBoolean(11, e.isAutoApprove());
-                ps.setBoolean(12, e.getWaitForConfirm());
-                ps.setString(13, e.getExternalFlowInstanceId());
-                ps.setLong(14, e.getExternalApprovalId());
+                ps.setObject(1, e.getOrganizationId());
+                ps.setObject(2, e.getUserTaskId());
+                ps.setObject(3, e.getStatus().name());
+                ps.setObject(4, e.getOperatorId());
+                ps.setObject(5, e.getComment());
+                ps.setObject(6, e.getExpireIntervalSeconds());
+                ps.setObject(7, e.isApproved());
+                ps.setObject(8, e.isStartEndpoint());
+                ps.setObject(9, e.isEndEndpoint());
+                ps.setObject(10, e.getFlowInstanceId());
+                ps.setObject(11, e.isAutoApprove());
+                ps.setObject(12, e.getWaitForConfirm());
+                ps.setObject(13, e.getExternalFlowInstanceId());
+                ps.setObject(14, e.getExternalApprovalId());
                 ps.addBatch();
             }
             ps.executeBatch();
             ResultSet resultSet = ps.getGeneratedKeys();
             int i = 0;
             while (resultSet.next()) {
-                UserTaskInstanceEntity entity = entities.get(i++);
-                if (resultSet.getObject("id") != null) {
-                    entity.setId(Long.valueOf(resultSet.getObject("id").toString()));
-                } else if (resultSet.getObject("ID") != null) {
-                    entity.setId(Long.valueOf(resultSet.getObject("ID").toString()));
-                } else if (resultSet.getObject("GENERATED_KEY") != null) {
-                    entity.setId(Long.valueOf(resultSet.getObject("GENERATED_KEY").toString()));
-                }
+                entities.get(i++).setId(getGeneratedId(resultSet));
             }
             return entities;
         });

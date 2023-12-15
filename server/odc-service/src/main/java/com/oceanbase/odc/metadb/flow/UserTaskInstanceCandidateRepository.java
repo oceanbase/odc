@@ -69,33 +69,26 @@ public interface UserTaskInstanceCandidateRepository extends OdcJpaRepository<Us
 
     default List<UserTaskInstanceCandidateEntity> batchCreate(List<UserTaskInstanceCandidateEntity> entities) {
         String sql = InsertSqlTemplateBuilder.from("flow_instance_node_approval_candidate")
-                .field(UserTaskInstanceCandidateEntity_.APPROVAL_INSTANCE_ID)
-                .field(UserTaskInstanceCandidateEntity_.USER_ID)
-                .field(UserTaskInstanceCandidateEntity_.ROLE_ID)
-                .field(UserTaskInstanceCandidateEntity_.RESOURCE_ROLE_IDENTIFIER)
+                .field(UserTaskInstanceCandidateEntity_.approvalInstanceId)
+                .field(UserTaskInstanceCandidateEntity_.userId)
+                .field(UserTaskInstanceCandidateEntity_.roleId)
+                .field(UserTaskInstanceCandidateEntity_.resourceRoleIdentifier)
                 .build();
         JdbcTemplate jdbcTemplate = getJdbcTemplate();
         return jdbcTemplate.execute((ConnectionCallback<List<UserTaskInstanceCandidateEntity>>) con -> {
             PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             for (UserTaskInstanceCandidateEntity e : entities) {
-                ps.setLong(1, e.getApprovalInstanceId());
-                ps.setLong(2, e.getUserId());
-                ps.setLong(3, e.getRoleId());
-                ps.setString(4, e.getResourceRoleIdentifier());
+                ps.setObject(1, e.getApprovalInstanceId());
+                ps.setObject(2, e.getUserId());
+                ps.setObject(3, e.getRoleId());
+                ps.setObject(4, e.getResourceRoleIdentifier());
                 ps.addBatch();
             }
             ps.executeBatch();
             ResultSet resultSet = ps.getGeneratedKeys();
             int i = 0;
             while (resultSet.next()) {
-                UserTaskInstanceCandidateEntity entity = entities.get(i++);
-                if (resultSet.getObject("id") != null) {
-                    entity.setId(Long.valueOf(resultSet.getObject("id").toString()));
-                } else if (resultSet.getObject("ID") != null) {
-                    entity.setId(Long.valueOf(resultSet.getObject("ID").toString()));
-                } else if (resultSet.getObject("GENERATED_KEY") != null) {
-                    entity.setId(Long.valueOf(resultSet.getObject("GENERATED_KEY").toString()));
-                }
+                entities.get(i++).setId(getGeneratedId(resultSet));
             }
             return entities;
         });

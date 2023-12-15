@@ -16,6 +16,8 @@
 package com.oceanbase.odc.config.jpa;
 
 import java.io.Serializable;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -164,6 +166,17 @@ public interface OdcJpaRepository<T, ID extends Serializable>
 
     static boolean isNullOrEmpty(Object obj) {
         return obj == null || obj instanceof String && ((String) obj).isEmpty();
+    }
+
+    default Long getGeneratedId(ResultSet resultSet) throws SQLException {
+        if (resultSet.getObject("id") != null) {
+            return Long.valueOf(resultSet.getObject("id").toString());
+        } else if (resultSet.getObject("ID") != null) {
+            return Long.valueOf(resultSet.getObject("ID").toString());
+        } else if (resultSet.getObject("GENERATED_KEY") != null) {
+            return Long.valueOf(resultSet.getObject("GENERATED_KEY").toString());
+        }
+        return null;
     }
 
 }
