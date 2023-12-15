@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.task.service;
+package com.oceanbase.odc.metadb.task;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -75,6 +75,9 @@ public class JobEntity implements Serializable {
 
     @Column(name = "result_json")
     private String resultJson;
+
+    @Column(name = "progress_percentage")
+    private double progressPercentage;
 
     @Column(name = "creator_id", updatable = false)
     private Long creatorId;

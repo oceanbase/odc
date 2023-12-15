@@ -27,6 +27,7 @@ import org.quartz.impl.JobDetailImpl;
 
 import com.oceanbase.odc.common.event.EventPublisher;
 import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.schedule.model.QuartzKeyGenerator;
 import com.oceanbase.odc.service.task.caller.JobException;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
@@ -34,7 +35,6 @@ import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.executor.task.TaskResult;
 import com.oceanbase.odc.service.task.listener.TaskResultUploadEvent;
 import com.oceanbase.odc.service.task.listener.TaskResultUploadListener;
-import com.oceanbase.odc.service.task.service.JobEntity;
 
 /**
  * @author yaobin
@@ -63,8 +63,6 @@ public class StdJobScheduler implements JobScheduler {
     }
 
     private Long scheduleJob(JobDefinition jd) throws JobException {
-        PreConditions.notNull(jd, "job definition");
-
         JobEntity jobEntity = configuration.getTaskFrameworkService().save(jd);
         JobIdentity jobIdentity = JobIdentity.of(jobEntity.getId());
         Trigger trigger = TriggerBuilder.build(jobIdentity, jd, null);
@@ -111,6 +109,7 @@ public class StdJobScheduler implements JobScheduler {
             }
         });
         cd.await(timeout, timeUnit);
+
     }
 
     @Override

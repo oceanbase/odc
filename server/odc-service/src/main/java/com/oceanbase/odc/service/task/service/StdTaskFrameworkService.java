@@ -16,6 +16,8 @@
 
 package com.oceanbase.odc.service.task.service;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
@@ -28,10 +30,11 @@ import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
+import com.oceanbase.odc.metadb.task.JobEntity;
+import com.oceanbase.odc.metadb.task.JobScheduleRepository;
 import com.oceanbase.odc.service.task.executor.task.TaskResult;
 import com.oceanbase.odc.service.task.listener.TaskResultUploadEvent;
 import com.oceanbase.odc.service.task.schedule.JobDefinition;
-import com.oceanbase.odc.service.task.schedule.JobIdentity;
 import com.oceanbase.odc.service.task.schedule.JobScheduler;
 
 import lombok.Setter;
@@ -52,6 +55,9 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     @Autowired
     private JobScheduleRepository jobScheduleRepository;
 
+    @Autowired(required = false)
+    private List<ResultHandleService> resultHandleServices;
+
     @Setter
     private EventPublisher publisher;
 
@@ -67,11 +73,19 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
             return;
         }
         JobEntity je = find(taskResult.getJobIdentity().getId());
+
         if (je.getStatus().isTerminated()) {
             log.warn("task is terminated, ignore upload result.{}", JsonUtils.toJson(taskResult));
             return;
         }
+        if (taskResult.getProgress() == je.getProgressPercentage() && taskResult.getTaskStatus() == je.getStatus()) {
+            log.warn("task progress is not changed, ignore upload result.{}", JsonUtils.toJson(taskResult));
+            return;
+        }
         updateJobScheduleEntity(taskResult);
+        if (resultHandleServices != null) {
+            resultHandleServices.forEach(r -> r.handle(taskResult));
+        }
         if (publisher != null) {
             taskResultPublisherExecutor.execute(() -> publisher.publishEvent(new TaskResultUploadEvent(taskResult)));
         }
@@ -98,12 +112,12 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
 
     private void updateJobScheduleEntity(TaskResult taskResult) {
         JobEntity jse = find(taskResult.getJobIdentity().getId());
-        updateStatusAndScheduleTimes(jse.getId(), taskResult.getTaskStatus(), jse.getScheduleTimes() + 1);
+        jse.setResultJson(taskResult.getResultJson());
+        jse.setStatus(taskResult.getTaskStatus());
+        jse.setProgressPercentage(taskResult.getProgress());
+        jse.setExecutor(JsonUtils.toJson(taskResult.getExecutorInfo()));
+        jobScheduleRepository.update(jse);
     }
 
-
-    private void updateStatusAndScheduleTimes(Long id, TaskStatus status, Integer scheduleTimes) {
-        jobScheduleRepository.updateStatusAndScheduleTimesById(id, status, scheduleTimes);
-    }
 
 }

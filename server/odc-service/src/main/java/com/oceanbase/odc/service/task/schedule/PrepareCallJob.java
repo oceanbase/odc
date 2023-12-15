@@ -20,6 +20,8 @@ import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 
+import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.service.task.caller.DefaultJobContext;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.caller.JobException;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
@@ -37,7 +39,9 @@ public class PrepareCallJob implements Job {
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {
 
-        JobContext jc = (JobContext) context.getMergedJobDataMap().get(JobConstants.QUARTZ_DATA_MAP_JOB_CONTEXT);
+        JobContext jc = JsonUtils.fromJson(
+                context.getMergedJobDataMap().getString(JobConstants.QUARTZ_DATA_MAP_JOB_CONTEXT),
+                DefaultJobContext.class);
         try {
             JobConfigurationHolder.getJobConfiguration().getJobDispatcher().start(jc);
         } catch (JobException e) {

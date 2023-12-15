@@ -16,7 +16,6 @@
 
 package com.oceanbase.odc.service.task.listener;
 
-import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.executor.task.TaskResult;
@@ -34,8 +33,6 @@ public class TaskResultProgressUploadListener extends TaskResultUploadListener {
     private final TaskService taskService;
     private final Long jobId;
     private final Long taskTaskId;
-    private volatile double progress;
-    private volatile TaskStatus status;
 
     public TaskResultProgressUploadListener(TaskService taskService, @NonNull Long jobId, @NonNull Long taskTaskId) {
         this.taskService = taskService;
@@ -50,15 +47,10 @@ public class TaskResultProgressUploadListener extends TaskResultUploadListener {
         if (identity.getId() != jobId) {
             return;
         }
-        if (taskResult.getProgress() > progress || taskResult.getTaskStatus() != status) {
-            progress = taskResult.getProgress();
-            status = taskResult.getTaskStatus();
-            TaskEntity taskEntity = taskService.detail(taskTaskId);
-            taskEntity.setProgressPercentage(taskResult.getProgress() * 100);
-            taskEntity.setStatus(taskResult.getTaskStatus());
-            taskEntity.setResultJson(taskResult.getResultJson());
-            taskService.update(taskEntity);
-        }
-
+        TaskEntity taskEntity = taskService.detail(taskTaskId);
+        taskEntity.setProgressPercentage(taskResult.getProgress() * 100);
+        taskEntity.setStatus(taskResult.getTaskStatus());
+        taskEntity.setResultJson(taskResult.getResultJson());
+        taskService.update(taskEntity);
     }
 }

@@ -49,7 +49,7 @@ public class DefaultSpringJobConfiguration extends DefaultJobConfiguration
         setConnectionService(ctx.getBean(ConnectionService.class));
         setTaskService(ctx.getBean(TaskService.class));
         setScheduleTaskService(ctx.getBean(ScheduleTaskService.class));
-        setScheduler((Scheduler) ctx.getBean("scheduler"));
+        setScheduler((Scheduler) ctx.getBean("taskFrameworkSchedulerFactoryBean"));
         setJobDispatcher(new ImmediateJobDispatcher());
         if (getTaskFrameworkProperties().getRunMode() == TaskRunModeEnum.K8S) {
             setK8sJobClient(ctx.getBean(K8sJobClient.class));

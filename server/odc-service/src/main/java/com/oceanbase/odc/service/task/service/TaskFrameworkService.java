@@ -18,10 +18,9 @@ package com.oceanbase.odc.service.task.service;
 
 import org.springframework.transaction.annotation.Transactional;
 
-import com.oceanbase.odc.common.event.EventPublisher;
+import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.task.executor.task.TaskResult;
 import com.oceanbase.odc.service.task.schedule.JobDefinition;
-import com.oceanbase.odc.service.task.schedule.JobIdentity;
 
 /**
  * @author yaobin

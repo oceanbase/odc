@@ -21,7 +21,6 @@ import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.service.flow.task.BaseRuntimeFlowableDelegate;
 import com.oceanbase.odc.service.flow.task.DataTransferRuntimeFlowableTask;
-import com.oceanbase.odc.service.flow.task.DatabaseChangeRuntimeFlowableTask;
 import com.oceanbase.odc.service.flow.task.DatabaseChangeRuntimeFlowableTaskCopied;
 import com.oceanbase.odc.service.flow.task.MockDataRuntimeFlowableTask;
 import com.oceanbase.odc.service.flow.task.PartitionPlanTask;
