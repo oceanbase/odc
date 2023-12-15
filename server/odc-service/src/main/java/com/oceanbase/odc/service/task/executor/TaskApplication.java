@@ -19,6 +19,7 @@ package com.oceanbase.odc.service.task.executor;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.service.task.caller.JobContext;
+import com.oceanbase.odc.service.task.caller.JobUtils;
 import com.oceanbase.odc.service.task.constants.JobEnvConstants;
 import com.oceanbase.odc.service.task.enums.TaskRunModeEnum;
 import com.oceanbase.odc.service.task.executor.context.JobContextProvider;
@@ -43,15 +44,29 @@ public class TaskApplication {
 
     public void run(String[] args) {
         init(args);
-        JobContext context = jobContextProvider.provide();
-        Task task = TaskFactory.create(context.getJobClass());
-        log.info("Task created, context: {}", task.context());
-        taskExecutor.execute(task, context);
+        EmbedServer server = new EmbedServer();
+        server.start(JobUtils.getPort());
+        try {
+            JobContext context = jobContextProvider.provide();
+            Task task = TaskFactory.create(context.getJobClass());
+            log.info("Task created, context: {}", task.context());
+            taskExecutor.execute(task, context);
+        } finally {
+            try {
+                server.stop();
+            } catch (Exception e) {
+                log.warn("stop embed server occur exception:", e);
+            }
+        }
     }
 
     private void init(String[] args) {
         String runMode = SystemUtils.getEnvOrProperty(JobEnvConstants.TASK_RUN_MODE);
         Verify.notBlank(runMode, JobEnvConstants.TASK_RUN_MODE);
+
+        String ld = SystemUtils.getEnvOrProperty(JobEnvConstants.LOG_DIRECTORY);
+        System.setProperty(JobEnvConstants.LOG_DIRECTORY, ld);
+
         jobContextProvider = JobContextProviderFactory.create(TaskRunModeEnum.valueOf(runMode));
         log.info("JobContextProvider init success: {}", jobContextProvider.getClass().getSimpleName());
         taskExecutor = new SyncTaskExecutor();

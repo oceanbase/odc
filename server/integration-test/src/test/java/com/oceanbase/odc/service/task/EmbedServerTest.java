@@ -14,27 +14,36 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.task.constants;
+package com.oceanbase.odc.service.task;
+
+import org.junit.Ignore;
+import org.junit.Test;
+
+import com.oceanbase.odc.service.task.executor.EmbedServer;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
- * Task framework environment constants. Using 'ODC_' prefix to avoid duplication.
- * 
  * @author yaobin
- * @date 2023-11-21
+ * @date 2023-12-13
  * @since 4.2.4
  */
-public class JobEnvConstants {
+@Slf4j
+public class EmbedServerTest {
 
-    public static final String TASK_ALL_PARAMETERS = "ODC_TASK_ALL_PARAMETERS";
+    @Ignore
+    @Test
+    public void test_server() throws Exception {
 
-    public static final String TASK_RUN_MODE = "ODC_TASK_RUN_MODE";
+        EmbedServer server = new EmbedServer();
+        server.start(8888);
+        try {
+            synchronized (this) {
+                this.wait(30 * 60 * 1000);
+            }
+        } finally {
+            server.stop();
+        }
 
-    public static final String BOOT_MODE = "ODC_BOOT_MODE";
-
-    public static final String DATABASE_PORT = "DATABASE_PORT";
-
-    public static final String LOG_DIRECTORY = "odc.log.directory";
-
-    public static final String ODC_SERVER_PORT = "ODC_SERVER_PORT";
-
+    }
 }

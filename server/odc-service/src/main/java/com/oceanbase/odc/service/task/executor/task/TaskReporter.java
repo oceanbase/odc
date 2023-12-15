@@ -22,10 +22,13 @@ import org.apache.commons.collections4.CollectionUtils;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.flow.model.FlowTaskResult;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
+import com.oceanbase.odc.service.task.caller.JobUtils;
 import com.oceanbase.odc.service.task.executor.util.HttpUtil;
+import com.oceanbase.odc.service.task.model.ExecutorInfo;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 
 import lombok.extern.slf4j.Slf4j;
@@ -55,6 +58,15 @@ public class TaskReporter {
         result.setTaskStatus(status);
         result.setProgress(progress);
         result.setResultJson(JsonUtils.toJson(taskResult));
+
+        ExecutorInfo ei = new ExecutorInfo();
+        ei.setHost(SystemUtils.getLocalIpAddress());
+        ei.setPort(JobUtils.getPort());
+        ei.setHostName(SystemUtils.getHostName());
+        ei.setPid(SystemUtils.getPid());
+        ei.setJvmStartTime(SystemUtils.getJVMStartTime());
+        result.setExecutorInfo(ei);
+
         // Task executor prefers to upload result to the first host, if failed, try the next one
         for (String host : hostUrls) {
             try {
