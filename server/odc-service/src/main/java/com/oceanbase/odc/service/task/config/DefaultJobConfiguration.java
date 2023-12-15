@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.task.config;
 
 import org.quartz.Scheduler;
 
+import com.oceanbase.odc.common.event.EventPublisher;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.schedule.ScheduleTaskService;
 import com.oceanbase.odc.service.task.TaskService;
@@ -53,5 +54,7 @@ public abstract class DefaultJobConfiguration implements JobConfiguration {
     protected HostUrlProvider hostUrlProvider;
 
     protected TaskFrameworkService taskFrameworkService;
+
+    protected EventPublisher eventPublisher;
 
 }

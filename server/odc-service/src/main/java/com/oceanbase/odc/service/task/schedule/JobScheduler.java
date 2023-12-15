@@ -16,6 +16,11 @@
 
 package com.oceanbase.odc.service.task.schedule;
 
+import java.util.concurrent.TimeUnit;
+
+import com.oceanbase.odc.common.event.EventPublisher;
+import com.oceanbase.odc.common.event.LocalEventPublisher;
+import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.service.task.caller.JobException;
 
 /**
@@ -42,4 +47,21 @@ public interface JobScheduler {
      * @throws JobException throw JobException if cancel job failed
      */
     void cancelJob(Long jobId) throws JobException;
+
+    /**
+     * await job to be completed
+     *
+     * @param id job id
+     * @param timeout await timeout
+     * @param timeUnit await time uit
+     * @throws InterruptedException throws InterruptedException if await be interrupted
+     */
+    void await(Long id, Long timeout, TimeUnit timeUnit) throws InterruptedException;
+
+    /**
+     * get job execution event publisher
+     *
+     * @return job execution event publisher
+     */
+    EventPublisher getEventPublisher();
 }

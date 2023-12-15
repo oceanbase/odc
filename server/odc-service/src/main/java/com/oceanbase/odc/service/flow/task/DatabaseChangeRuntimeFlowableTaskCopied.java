@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.flow.task;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
@@ -22,30 +24,38 @@ import org.flowable.engine.delegate.DelegateExecution;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.oceanbase.odc.common.json.JsonUtils;
-import com.oceanbase.odc.core.flow.exception.BaseFlowException;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
+import com.oceanbase.odc.core.shared.constant.TaskStatus;
+import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.service.connection.model.ConnectProperties;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.datasecurity.DataMaskingService;
 import com.oceanbase.odc.service.datasecurity.accessor.DatasourceColumnAccessor;
-import com.oceanbase.odc.service.flow.exception.ServiceTaskCancelledException;
 import com.oceanbase.odc.service.flow.exception.ServiceTaskError;
-import com.oceanbase.odc.service.flow.exception.ServiceTaskExpiredException;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeResult;
-import com.oceanbase.odc.service.flow.task.model.RollbackPlanTaskResult;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
 import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
 import com.oceanbase.odc.service.session.DBSessionManageFacade;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.odc.service.task.TaskService;
+import com.oceanbase.odc.service.task.caller.JobException;
+import com.oceanbase.odc.service.task.caller.JobUtils;
+import com.oceanbase.odc.service.task.constants.JobDataMapConstants;
+import com.oceanbase.odc.service.task.executor.sampletask.SampleTask;
+import com.oceanbase.odc.service.task.listener.TaskResultProgressUploadListener;
+import com.oceanbase.odc.service.task.schedule.DefaultJobDefinition;
+import com.oceanbase.odc.service.task.schedule.JobDefinition;
+import com.oceanbase.odc.service.task.schedule.JobScheduler;
+import com.oceanbase.odc.service.task.service.JobEntity;
+import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -70,6 +80,10 @@ public class DatabaseChangeRuntimeFlowableTaskCopied extends BaseODCFlowTaskDele
     private DataMaskingService maskingService;
     @Autowired
     private DBSessionManageFacade sessionManageFacade;
+    @Autowired
+    private JobScheduler jobScheduler;
+    @Autowired
+    private TaskFrameworkService taskFrameworkService;
 
     @Override
     public boolean cancel(boolean mayInterruptIfRunning, Long taskId, TaskService taskService) {
@@ -86,52 +100,48 @@ public class DatabaseChangeRuntimeFlowableTaskCopied extends BaseODCFlowTaskDele
     }
 
     @Override
-    protected DatabaseChangeResult start(Long taskId, TaskService taskService, DelegateExecution execution) {
+    protected DatabaseChangeResult start(Long taskId, TaskService taskService, DelegateExecution execution)
+            throws JobException {
         DatabaseChangeResult result;
         try {
             log.info("Async task starts, taskId={}, activityId={}", taskId, execution.getCurrentActivityId());
-            asyncTaskThread = generateOdcAsyncTaskThread(taskId, execution);
-            taskService.start(taskId);
+
             TaskEntity taskEntity = taskService.detail(taskId);
-            // JobScheduler
-
-
-
-            result = JsonUtils.fromJson(taskEntity.getResultJson(), DatabaseChangeResult.class);
-            asyncTaskThread.run();
-            RollbackPlanTaskResult rollbackPlanTaskResult = null;
-            if (result != null) {
-                rollbackPlanTaskResult = result.getRollbackPlanResult();
+            JobDefinition jd = buildJobDefinition(execution);
+            Long jobId = jobScheduler.scheduleJobNow(jd);
+            jobScheduler.getEventPublisher().addEventListener(
+                    new TaskResultProgressUploadListener(taskService, jobId, taskEntity.getId()));
+            try {
+                jobScheduler.await(jobId, FlowTaskUtil.getExecutionExpirationIntervalMillis(execution),
+                        TimeUnit.MILLISECONDS);
+            } catch (Exception e) {
+                log.warn("wait job finished, occur exception:", e);
             }
-            result = asyncTaskThread.getResult();
-            result.setRollbackPlanResult(rollbackPlanTaskResult);
-            if (asyncTaskThread.isAbort()) {
-                isFailure = true;
-                taskService.fail(taskId, asyncTaskThread.getProgressPercentage(), result);
-            } else if (asyncTaskThread.getStop()) {
-                isFailure = true;
-                taskService.fail(taskId, asyncTaskThread.getProgressPercentage(), result);
-                if (isTimeout()) {
-                    throw new ServiceTaskExpiredException();
-                } else {
-                    throw new ServiceTaskCancelledException();
-                }
-            } else {
-                isSuccessful = true;
-                taskService.succeed(taskId, result);
-            }
+            JobEntity jobEntity = taskFrameworkService.find(jobId);
+            result = JsonUtils.fromJson(jobEntity.getResultJson(), DatabaseChangeResult.class);
+            TaskStatus status = jobEntity.getStatus();
+            isSuccessful = status == TaskStatus.DONE;
+            isFailure = !isSuccessful;
             log.info("Async task ends, taskId={}, activityId={}, returnVal={}, timeCost={}", taskId,
                     execution.getCurrentActivityId(),
                     result, System.currentTimeMillis() - getStartTimeMilliSeconds());
         } catch (Exception e) {
             log.error("Error occurs while async task executing", e);
-            if (e instanceof BaseFlowException) {
-                throw e;
-            } else {
-                throw new ServiceTaskError(e);
-            }
+            throw new ServiceTaskError(e);
         }
         return result;
+    }
+
+    private JobDefinition buildJobDefinition(DelegateExecution execution) {
+        DatabaseChangeParameters parameters = FlowTaskUtil.getAsyncParameter(execution);
+        ConnectionConfig config = FlowTaskUtil.getConnectionConfig(execution);
+        Map<String, String> jobData = new HashMap<>();
+        jobData.put(JobDataMapConstants.META_DB_TASK_PARAMETER, JsonUtils.toJson(parameters));
+        jobData.put(JobDataMapConstants.CONNECTION_CONFIG, JobUtils.toJson(config));
+        return DefaultJobDefinition.builder().jobClass(SampleTask.class)
+                .jobType(TaskType.ASYNC.name())
+                .jobData(jobData)
+                .build();
     }
 
     @Override
@@ -173,27 +183,5 @@ public class DatabaseChangeRuntimeFlowableTaskCopied extends BaseODCFlowTaskDele
         }
     }
 
-    private DatabaseChangeThread generateOdcAsyncTaskThread(Long taskId, DelegateExecution execution) {
-        Long creatorId = FlowTaskUtil.getTaskCreator(execution).getId();
-        DatabaseChangeParameters parameters = FlowTaskUtil.getAsyncParameter(execution);
-        ConnectionConfig connectionConfig = FlowTaskUtil.getConnectionConfig(execution);
-        connectionConfig.setQueryTimeoutSeconds((int) TimeUnit.MILLISECONDS.toSeconds(parameters.getTimeoutMillis()));
-        DefaultConnectSessionFactory sessionFactory = new DefaultConnectSessionFactory(connectionConfig);
-        sessionFactory.setSessionTimeoutMillis(parameters.getTimeoutMillis());
-        ConnectionSession connectionSession = sessionFactory.generateSession();
-        if (connectionSession.getDialectType() == DialectType.OB_ORACLE) {
-            ConnectionSessionUtil.initConsoleSessionTimeZone(connectionSession, connectProperties.getDefaultTimeZone());
-        }
-        SqlCommentProcessor processor = new SqlCommentProcessor(connectionConfig.getDialectType(), true, true);
-        ConnectionSessionUtil.setSqlCommentProcessor(connectionSession, processor);
-        ConnectionSessionUtil.setCurrentSchema(connectionSession, FlowTaskUtil.getSchemaName(execution));
-        ConnectionSessionUtil.setColumnAccessor(connectionSession, new DatasourceColumnAccessor(connectionSession));
-        DatabaseChangeThread returnVal = new DatabaseChangeThread(connectionSession, parameters,
-            cloudObjectStorageService, objectStorageFacade, maskingService);
-        returnVal.setTaskId(taskId);
-        returnVal.setFlowInstanceId(this.getFlowInstanceId());
-        returnVal.setUserId(creatorId);
-        return returnVal;
-    }
 
 }

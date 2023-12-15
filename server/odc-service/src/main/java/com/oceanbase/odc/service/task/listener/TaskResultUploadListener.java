@@ -14,26 +14,15 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.task.service;
+package com.oceanbase.odc.service.task.listener;
 
-import org.springframework.transaction.annotation.Transactional;
-
-import com.oceanbase.odc.common.event.EventPublisher;
-import com.oceanbase.odc.service.task.executor.task.TaskResult;
-import com.oceanbase.odc.service.task.schedule.JobDefinition;
-import com.oceanbase.odc.service.task.schedule.JobIdentity;
+import com.oceanbase.odc.common.event.AbstractEventListener;
 
 /**
  * @author yaobin
- * @date 2023-12-06
+ * @date 2023-11-16
  * @since 4.2.4
  */
-public interface TaskFrameworkService {
-    @Transactional(rollbackFor = Exception.class)
-    void handleResult(TaskResult taskResult);
+public abstract class TaskResultUploadListener extends AbstractEventListener<TaskResultUploadEvent> {
 
-    @Transactional(rollbackFor = Exception.class)
-    JobEntity save(JobDefinition jd);
-
-    JobEntity find(Long id);
 }

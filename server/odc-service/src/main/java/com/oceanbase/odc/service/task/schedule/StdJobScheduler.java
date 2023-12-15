@@ -16,17 +16,24 @@
 
 package com.oceanbase.odc.service.task.schedule;
 
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
 import org.quartz.JobKey;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.Trigger;
 import org.quartz.impl.JobDetailImpl;
 
+import com.oceanbase.odc.common.event.EventPublisher;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.service.schedule.model.QuartzKeyGenerator;
 import com.oceanbase.odc.service.task.caller.JobException;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
+import com.oceanbase.odc.service.task.executor.task.TaskResult;
+import com.oceanbase.odc.service.task.listener.TaskResultUploadEvent;
+import com.oceanbase.odc.service.task.listener.TaskResultUploadListener;
 import com.oceanbase.odc.service.task.service.JobEntity;
 
 /**
@@ -86,5 +93,28 @@ public class StdJobScheduler implements JobScheduler {
             throw new JobException(e);
         }
         configuration.getJobDispatcher().stop(JobIdentity.of(id));
+    }
+
+    public void await(Long id, Long timeout, TimeUnit timeUnit) throws InterruptedException {
+        CountDownLatch cd = new CountDownLatch(1);
+        getEventPublisher().addEventListener(new TaskResultUploadListener() {
+            @Override
+            public void onEvent(TaskResultUploadEvent event) {
+                TaskResult taskResult = event.getTaskResult();
+                JobIdentity jobIdentity = taskResult.getJobIdentity();
+                if (jobIdentity.getId() != id) {
+                    return;
+                }
+                if (taskResult.getTaskStatus().isTerminated()) {
+                    cd.countDown();
+                }
+            }
+        });
+        cd.await(timeout, timeUnit);
+    }
+
+    @Override
+    public EventPublisher getEventPublisher() {
+        return configuration.getEventPublisher();
     }
 }

@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.task.config;
 
 import org.quartz.Scheduler;
 
+import com.oceanbase.odc.common.event.EventPublisher;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.schedule.ScheduleTaskService;
 import com.oceanbase.odc.service.task.TaskService;
@@ -50,4 +51,6 @@ public interface JobConfiguration {
     HostUrlProvider getHostUrlProvider();
 
     TaskFrameworkService getTaskFrameworkService();
+
+    EventPublisher getEventPublisher();
 }

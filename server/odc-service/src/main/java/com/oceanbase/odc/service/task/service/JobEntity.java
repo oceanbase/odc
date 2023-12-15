@@ -73,6 +73,9 @@ public class JobEntity implements Serializable {
     @Column(name = "trigger_config_json", nullable = false)
     private String triggerConfigJson;
 
+    @Column(name = "result_json")
+    private String resultJson;
+
     @Column(name = "creator_id", updatable = false)
     private Long creatorId;
 

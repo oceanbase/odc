@@ -16,22 +16,25 @@
 
 package com.oceanbase.odc.service.task.service;
 
-import java.util.List;
-
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.oceanbase.odc.common.event.EventPublisher;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.service.task.executor.task.TaskResult;
+import com.oceanbase.odc.service.task.listener.TaskResultUploadEvent;
 import com.oceanbase.odc.service.task.schedule.JobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 import com.oceanbase.odc.service.task.schedule.JobScheduler;
 
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -49,20 +52,29 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     @Autowired
     private JobScheduleRepository jobScheduleRepository;
 
-    @Autowired(required = false)
-    private List<ResultHandleService> resultHandleServices;
+    @Setter
+    private EventPublisher publisher;
+
+    @Autowired
+    @Qualifier(value = "taskResultPublisherExecutor")
+    private ThreadPoolTaskExecutor taskResultPublisherExecutor;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void handleResult(TaskResult taskResult) {
-        if (taskResult.getTaskStatus().isTerminated()) {
+        if (taskResult.getJobIdentity() == null || taskResult.getJobIdentity().getId() == null) {
+            log.warn("Job identity is null");
+            return;
+        }
+        JobEntity je = find(taskResult.getJobIdentity().getId());
+        if (je.getStatus().isTerminated()) {
             log.warn("task is terminated, ignore upload result.{}", JsonUtils.toJson(taskResult));
             return;
         }
-        if (resultHandleServices != null) {
-            resultHandleServices.forEach(r -> r.handle(taskResult));
-        }
         updateJobScheduleEntity(taskResult);
+        if (publisher != null) {
+            taskResultPublisherExecutor.execute(() -> publisher.publishEvent(new TaskResultUploadEvent(taskResult)));
+        }
     }
 
     @Override
@@ -79,14 +91,13 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
 
 
     @Override
-    public JobEntity find(JobIdentity ji) {
-        return jobScheduleRepository.findById(ji.getId())
-                .orElseThrow(() -> new NotFoundException(ResourceType.ODC_TASK, "id", ji.getId()));
+    public JobEntity find(Long jodId) {
+        return jobScheduleRepository.findById(jodId)
+                .orElseThrow(() -> new NotFoundException(ResourceType.ODC_TASK, "id", jodId));
     }
 
-
     private void updateJobScheduleEntity(TaskResult taskResult) {
-        JobEntity jse = find(taskResult.getJobIdentity());
+        JobEntity jse = find(taskResult.getJobIdentity().getId());
         updateStatusAndScheduleTimes(jse.getId(), taskResult.getTaskStatus(), jse.getScheduleTimes() + 1);
     }
 
