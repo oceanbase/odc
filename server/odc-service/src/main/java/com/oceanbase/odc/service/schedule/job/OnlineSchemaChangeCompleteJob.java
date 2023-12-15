@@ -27,6 +27,7 @@ import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.onlineschemachange.OnlineSchemaChangeContextHolder;
 import com.oceanbase.odc.service.onlineschemachange.OnlineSchemaChangeTaskHandler;
+import com.oceanbase.odc.service.onlineschemachange.ddl.DdlConstants;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -40,7 +41,7 @@ public class OnlineSchemaChangeCompleteJob implements OdcJob {
     @Override
     public void execute(JobExecutionContext context) {
         JobDataMap jobDataMap = context.getMergedJobDataMap();
-        String mdcContextObj = jobDataMap.getString(OdcConstants.MDC_CONTEXT);
+        String mdcContextObj = jobDataMap.getString(DdlConstants.MDC_CONTEXT);
         if (mdcContextObj != null) {
             OnlineSchemaChangeContextHolder.retrace(JsonUtils.fromJson(mdcContextObj,
                     new TypeReference<Map<String, String>>() {}));

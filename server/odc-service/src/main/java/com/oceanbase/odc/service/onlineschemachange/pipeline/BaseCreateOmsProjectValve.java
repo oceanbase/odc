@@ -36,6 +36,7 @@ import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.onlineschemachange.configuration.OnlineSchemaChangeProperties;
+import com.oceanbase.odc.service.onlineschemachange.ddl.DdlConstants;
 import com.oceanbase.odc.service.onlineschemachange.exception.OmsException;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeScheduleTaskParameters;
 import com.oceanbase.odc.service.onlineschemachange.oms.enums.OmsOceanBaseType;
@@ -149,7 +150,7 @@ public abstract class BaseCreateOmsProjectValve extends BaseValve {
     private Map<String, Object> getStringObjectMap(Long scheduleTaskId) {
         Map<String, Object> dataMap = new HashMap<>(2);
         dataMap.put(OdcConstants.SCHEDULE_TASK_ID, scheduleTaskId);
-        dataMap.put(OdcConstants.MDC_CONTEXT, JsonUtils.toJson(MDC.getCopyOfContextMap()));
+        dataMap.put(DdlConstants.MDC_CONTEXT, JsonUtils.toJson(MDC.getCopyOfContextMap()));
         return dataMap;
     }
 
