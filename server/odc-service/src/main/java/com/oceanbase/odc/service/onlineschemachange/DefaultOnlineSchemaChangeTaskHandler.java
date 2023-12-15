@@ -392,19 +392,22 @@ public class DefaultOnlineSchemaChangeTaskHandler implements OnlineSchemaChangeT
         dropNewTableIfExits(taskParam, session);
 
         SyncJdbcExecutor executor = session.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY);
+        String finalTableDdl;
         executor.execute(taskParam.getNewTableCreateDdl());
         if (param.getSqlType() == OnlineSchemaChangeSqlType.ALTER) {
             taskParam.getSqlsToBeExecuted().forEach(executor::execute);
 
             // update new table ddl for display
-            String finalTableDdl = DdlUtils.queryOriginTableCreateDdl(session, taskParam.getNewTableName());
+            finalTableDdl = DdlUtils.queryOriginTableCreateDdl(session, taskParam.getNewTableName());
             String ddlForDisplay = DdlUtils.replaceTableName(finalTableDdl, taskParam.getOriginTableName(),
                     session.getDialectType(), OnlineSchemaChangeSqlType.CREATE);
             taskParam.setNewTableCreateDdlForDisplay(ddlForDisplay);
             scheduleTaskRepository.updateTaskResult(scheduleTaskId,
                     JsonUtils.toJson(new OnlineSchemaChangeScheduleTaskResult(taskParam)));
+        } else {
+            finalTableDdl = DdlUtils.queryOriginTableCreateDdl(session, taskParam.getNewTableName());
         }
-        log.info("Successfully created new table, ddl: {}", taskParam.getNewTableCreateDdl());
+        log.info("Successfully created new table, ddl: {}", finalTableDdl);
         validateColumnDifferent(taskParam, session);
     }
 

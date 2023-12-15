@@ -20,6 +20,7 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonProperty.Access;
+import com.oceanbase.odc.service.schedule.model.TriggerConfig;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -46,5 +47,5 @@ public class DatabasePartitionPlan implements Serializable {
     private boolean inspectEnable;
     private InspectTriggerStrategy inspectTriggerStrategy;
     private List<TablePartitionPlan> tablePartitionPlans;
-
+    private TriggerConfig triggerConfig;
 }
