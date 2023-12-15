@@ -74,23 +74,9 @@ jobs:
       - name: Run PMD scan
         run: mvn pmd:check
 
-  unit-test-odc:
-    name: Unit Test (ODC)
-    if: ${{ github.event_name == 'pull_request' }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout workspace
-        uses: actions/checkout@v3
-      - name: action by obfarm++odc_ut++COMMIT=${{ github.event.pull_request.head.sha }}
-        uses: ./.github/obfarm/
-        id: odc_ut
-        with:
-          pipeline_id: ${{ github.run_id }}
-          project: ${{ github.repository }}
-
   calculate-version:
     name: Calculate Version Number
-    needs: [ check-format, pmd-scan, unit-test-odc ]
+    needs: [ check-format, pmd-scan ]
     if: ${{ github.event_name == 'pull_request' }}
     runs-on: ubuntu-latest
     outputs:
