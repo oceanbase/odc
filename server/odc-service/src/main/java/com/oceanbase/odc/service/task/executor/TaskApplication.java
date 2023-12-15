@@ -43,6 +43,7 @@ public class TaskApplication {
     private JobContextProvider jobContextProvider;
 
     public void run(String[] args) {
+
         init(args);
         EmbedServer server = new EmbedServer();
         int port = JobUtils.getPort();
@@ -64,11 +65,10 @@ public class TaskApplication {
     }
 
     private void init(String[] args) {
+        System.setProperty(JobEnvConstants.LOG_DIRECTORY, JobUtils.getLogPath());
+
         String runMode = SystemUtils.getEnvOrProperty(JobEnvConstants.TASK_RUN_MODE);
         Verify.notBlank(runMode, JobEnvConstants.TASK_RUN_MODE);
-
-        String ld = SystemUtils.getEnvOrProperty(JobEnvConstants.LOG_DIRECTORY);
-        System.setProperty(JobEnvConstants.LOG_DIRECTORY, ld);
 
         jobContextProvider = JobContextProviderFactory.create(TaskRunModeEnum.valueOf(runMode));
         log.info("JobContextProvider init success: {}", jobContextProvider.getClass().getSimpleName());
