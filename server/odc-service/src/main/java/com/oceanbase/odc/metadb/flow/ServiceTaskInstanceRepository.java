@@ -15,18 +15,21 @@
  */
 package com.oceanbase.odc.metadb.flow;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.transaction.Transactional;
 
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import com.oceanbase.odc.config.jpa.InsertSqlTemplateBuilder;
+import com.oceanbase.odc.config.jpa.OdcJpaRepository;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
 import com.oceanbase.odc.service.flow.model.FlowNodeType;
@@ -38,7 +41,7 @@ import com.oceanbase.odc.service.flow.model.FlowNodeType;
  * @date 2022-02-15 11:44
  * @since ODC_release_3.3.0
  */
-public interface ServiceTaskInstanceRepository extends JpaRepository<ServiceTaskInstanceEntity, Long>,
+public interface ServiceTaskInstanceRepository extends OdcJpaRepository<ServiceTaskInstanceEntity, Long>,
         JpaSpecificationExecutor<ServiceTaskInstanceEntity> {
 
     @Transactional
@@ -80,4 +83,31 @@ public interface ServiceTaskInstanceRepository extends JpaRepository<ServiceTask
     List<ServiceTaskInstanceEntity> findByScheduleIdAndTaskType(@Param("id") Long scheduleId,
             @Param("type") TaskType type);
 
+    default void batchCreate(Collection<ServiceTaskInstanceEntity> entities) {
+        String sql = InsertSqlTemplateBuilder.from("flow_instance_node_task")
+                .field(ServiceTaskInstanceEntity_.ORGANIZATION_ID)
+                .field("task_task_id")
+                .field("task_execution_strategy")
+                .field(ServiceTaskInstanceEntity_.TASK_TYPE)
+                .field("wait_execution_expire_interval_seconds")
+                .field(ServiceTaskInstanceEntity_.status)
+                .field("is_start_endpoint")
+                .field("is_end_endpoint")
+                .field(ServiceTaskInstanceEntity_.FLOW_INSTANCE_ID)
+                .field(ServiceTaskInstanceEntity_.EXECUTION_TIME)
+                .build();
+        List<Object[]> params = entities.stream().map(e -> new Object[] {
+                e.getOrganizationId(),
+                e.getTargetTaskId(),
+                e.getStrategy().name(),
+                e.getTaskType().name(),
+                e.getWaitExecExpireIntervalSeconds(),
+                e.getStatus().name(),
+                e.isStartEndpoint(),
+                e.isEndEndpoint(),
+                e.getFlowInstanceId(),
+                e.getExecutionTime()
+        }).collect(Collectors.toList());
+        getJdbcTemplate().batchUpdate(sql, params);
+    }
 }

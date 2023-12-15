@@ -65,7 +65,7 @@ public interface NodeInstanceEntityRepository extends OdcJpaRepository<NodeInsta
     int deleteByInstanceIdAndInstanceType(@Param("instanceId") Long instanceId,
             @Param("instanceType") FlowNodeType instanceType);
 
-    default void batchCreate(List<NodeInstanceEntity> nodeInstanceEntity) {
+    default void batchCreate(Collection<NodeInstanceEntity> nodeInstanceEntity) {
         String flowInstanceNode = InsertSqlTemplateBuilder.from("flow_instance_node")
                 .field(NodeInstanceEntity_.instanceId)
                 .field(NodeInstanceEntity_.instanceType)

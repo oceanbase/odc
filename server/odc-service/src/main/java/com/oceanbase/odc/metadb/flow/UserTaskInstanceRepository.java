@@ -18,15 +18,17 @@ package com.oceanbase.odc.metadb.flow;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import javax.transaction.Transactional;
 
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import com.oceanbase.odc.config.jpa.InsertSqlTemplateBuilder;
+import com.oceanbase.odc.config.jpa.OdcJpaRepository;
 import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
 import com.oceanbase.odc.service.flow.model.FlowNodeType;
 
@@ -38,7 +40,7 @@ import com.oceanbase.odc.service.flow.model.FlowNodeType;
  * @since ODC_release_3.3.0
  */
 public interface UserTaskInstanceRepository
-        extends JpaRepository<UserTaskInstanceEntity, Long>, JpaSpecificationExecutor<UserTaskInstanceEntity> {
+        extends OdcJpaRepository<UserTaskInstanceEntity, Long>, JpaSpecificationExecutor<UserTaskInstanceEntity> {
 
     List<UserTaskInstanceEntity> findByStatus(FlowNodeStatus status);
 
@@ -112,5 +114,41 @@ public interface UserTaskInstanceRepository
     List<UserTaskInstanceEntity> findApprovalInstanceIdByFlowInstanceIdAndStatus(
             @Param("flowInstanceIds") Collection<Long> flowInstanceIds, @Param("status") FlowNodeStatus status);
 
+    default void batchUpdate(Collection<UserTaskInstanceEntity> userTaskInstanceEntities) {
+        String sql = InsertSqlTemplateBuilder.from("flow_instance_node_approval")
+                .field(UserTaskInstanceEntity_.ORGANIZATION_ID)
+                .field(UserTaskInstanceEntity_.USER_TASK_ID)
+                .field(UserTaskInstanceEntity_.STATUS)
+                .field(UserTaskInstanceEntity_.OPERATOR_ID)
+                .field(UserTaskInstanceEntity_.COMMENT)
+                .field("approval_expire_interval_seconds")
+                .field("is_approved")
+                .field("is_start_endpoint")
+                .field("is_end_endpoint")
+                .field(UserTaskInstanceEntity_.FLOW_INSTANCE_ID)
+                .field("is_auto_approve")
+                .field(UserTaskInstanceEntity_.WAIT_FOR_CONFIRM)
+                .field(UserTaskInstanceEntity_.EXTERNAL_FLOW_INSTANCE_ID)
+                .field(UserTaskInstanceEntity_.EXTERNAL_APPROVAL_ID)
+                .build();
+        List<Object[]> params = userTaskInstanceEntities.stream().map(i -> new Object[] {
+                i.getOrganizationId(),
+                i.getUserTaskId(),
+                i.getStatus().name(),
+                i.getOperatorId(),
+                i.getComment(),
+                i.getExpireIntervalSeconds(),
+                i.isApproved(),
+                i.isStartEndpoint(),
+                i.isEndEndpoint(),
+                i.getFlowInstanceId(),
+                i.isAutoApprove(),
+                i.getWaitForConfirm(),
+                i.getExternalFlowInstanceId(),
+                i.getExternalApprovalId()
+        }).collect(Collectors.toList());
+        getJdbcTemplate().batchUpdate(sql, params);
+
+    }
 
 }

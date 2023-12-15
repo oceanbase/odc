@@ -21,6 +21,8 @@ import org.flowable.engine.RuntimeService;
 import com.oceanbase.odc.core.flow.ExecutionConfigurer;
 import com.oceanbase.odc.metadb.flow.FlowInstanceEntity;
 import com.oceanbase.odc.metadb.flow.FlowInstanceRepository;
+import com.oceanbase.odc.metadb.flow.NodeInstanceEntityRepository;
+import com.oceanbase.odc.metadb.flow.SequenceInstanceRepository;
 import com.oceanbase.odc.service.flow.FlowableAdaptor;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 
@@ -43,9 +45,11 @@ public class OdcFlowInstance extends FlowInstance {
             @NonNull FlowableAdaptor flowableAdaptor,
             @NonNull AuthenticationFacade authenticationFacade,
             @NonNull FlowInstanceRepository flowInstanceRepository, @NonNull RuntimeService runtimeService,
-            @NonNull RepositoryService repositoryService, @NonNull TopologyBuilder topologyBuilder) {
+            @NonNull RepositoryService repositoryService,
+            @NonNull NodeInstanceEntityRepository nodeInstanceEntityRepository,
+            SequenceInstanceRepository sequenceInstanceRepository) {
         super(name, description, flowableAdaptor, authenticationFacade, flowInstanceRepository,
-                runtimeService, repositoryService, topologyBuilder);
+                runtimeService, repositoryService, nodeInstanceEntityRepository, sequenceInstanceRepository);
     }
 
     public OdcFlowInstance(@NonNull String name, String description,
@@ -54,11 +58,13 @@ public class OdcFlowInstance extends FlowInstance {
             @NonNull FlowableAdaptor flowableAdaptor,
             @NonNull AuthenticationFacade authenticationFacade,
             @NonNull FlowInstanceRepository flowInstanceRepository, @NonNull RuntimeService runtimeService,
-            @NonNull RepositoryService repositoryService, @NonNull TopologyBuilder topologyBuilder) {
+            @NonNull RepositoryService repositoryService,
+            @NonNull NodeInstanceEntityRepository nodeInstanceEntityRepository,
+            SequenceInstanceRepository sequenceInstanceRepository) {
         super(name, description, projectId, parentFlowInstanceId, flowableAdaptor,
                 authenticationFacade,
                 flowInstanceRepository,
-                runtimeService, repositoryService, topologyBuilder);
+                runtimeService, repositoryService, nodeInstanceEntityRepository, sequenceInstanceRepository);
     }
 
     /**
@@ -67,9 +73,11 @@ public class OdcFlowInstance extends FlowInstance {
     public OdcFlowInstance(@NonNull FlowInstanceEntity entity, @NonNull FlowableAdaptor flowableAdaptor,
             @NonNull AuthenticationFacade authenticationFacade,
             @NonNull FlowInstanceRepository flowInstanceRepository, @NonNull RuntimeService runtimeService,
-            @NonNull RepositoryService repositoryService, @NonNull TopologyBuilder topologyBuilder) {
+            @NonNull RepositoryService repositoryService,
+            @NonNull NodeInstanceEntityRepository nodeInstanceEntityRepository,
+            SequenceInstanceRepository sequenceInstanceRepository) {
         super(entity, flowableAdaptor, authenticationFacade, flowInstanceRepository, runtimeService, repositoryService,
-                topologyBuilder);
+                nodeInstanceEntityRepository, sequenceInstanceRepository);
     }
 
     @Override

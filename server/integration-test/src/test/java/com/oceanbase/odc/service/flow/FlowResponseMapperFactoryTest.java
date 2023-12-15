@@ -60,7 +60,6 @@ import com.oceanbase.odc.service.flow.instance.FlowGatewayInstance;
 import com.oceanbase.odc.service.flow.instance.FlowInstance;
 import com.oceanbase.odc.service.flow.instance.FlowSequenceInstance;
 import com.oceanbase.odc.service.flow.instance.FlowTaskInstance;
-import com.oceanbase.odc.service.flow.instance.TopologyBuilder;
 import com.oceanbase.odc.service.flow.model.ExecutionStrategyConfig;
 import com.oceanbase.odc.service.flow.model.FlowInstanceDetailResp;
 import com.oceanbase.odc.service.flow.model.FlowInstanceDetailResp.FlowInstanceMapper;
@@ -117,7 +116,10 @@ public class FlowResponseMapperFactoryTest extends ServiceTestEnv {
     private DatabaseService databaseService;
 
     @Autowired
-    private TopologyBuilder topologyBuilder;
+    private NodeInstanceEntityRepository nodeInstanceEntityRepository;
+
+    @Autowired
+    private SequenceInstanceRepository sequenceInstanceRepository;
 
     @Before
     public void setUp() {
@@ -237,7 +239,8 @@ public class FlowResponseMapperFactoryTest extends ServiceTestEnv {
 
     private FlowInstance createFlowInstance() {
         return new FlowInstance("test", flowAdaptor, authenticationFacade,
-                flowInstanceRepository, runtimeService, repositoryService, topologyBuilder);
+                flowInstanceRepository, runtimeService, repositoryService, nodeInstanceEntityRepository,
+                sequenceInstanceRepository);
     }
 
     private FlowTaskInstance createTaskInstance(Long flowInstanceId, ExecutionStrategyConfig config,

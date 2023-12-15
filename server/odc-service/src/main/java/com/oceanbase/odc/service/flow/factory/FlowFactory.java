@@ -62,7 +62,6 @@ import com.oceanbase.odc.service.flow.instance.FlowNodeInstanceKey;
 import com.oceanbase.odc.service.flow.instance.FlowSequenceInstance;
 import com.oceanbase.odc.service.flow.instance.FlowTaskInstance;
 import com.oceanbase.odc.service.flow.instance.OdcFlowInstance;
-import com.oceanbase.odc.service.flow.instance.TopologyBuilder;
 import com.oceanbase.odc.service.flow.model.ExecutionStrategyConfig;
 import com.oceanbase.odc.service.flow.task.mapper.OdcRuntimeDelegateMapper;
 import com.oceanbase.odc.service.flow.util.FlowInstanceUtil;
@@ -107,11 +106,15 @@ public class FlowFactory {
     @Autowired
     private ServiceTaskInstanceRepository serviceTaskRepository;
     @Autowired
-    private TopologyBuilder topologyBuilder;
+    private NodeInstanceEntityRepository nodeInstanceEntityRepository;
+
+    @Autowired
+    private SequenceInstanceRepository sequenceInstanceRepository;
 
     public FlowInstance generateFlowInstance(@NonNull String name, String description) {
         return new OdcFlowInstance(name, description, flowableAdaptor, authenticationFacade,
-                flowInstanceRepository, runtimeService, repositoryService, topologyBuilder);
+                flowInstanceRepository, runtimeService, repositoryService, nodeInstanceEntityRepository,
+                sequenceInstanceRepository);
     }
 
     public FlowInstance generateFlowInstance(@NonNull String name,
@@ -119,7 +122,8 @@ public class FlowFactory {
         return new OdcFlowInstance(name, description, parentFlowInstanceId, projectId,
                 flowableAdaptor,
                 authenticationFacade,
-                flowInstanceRepository, runtimeService, repositoryService, topologyBuilder);
+                flowInstanceRepository, runtimeService, repositoryService, nodeInstanceEntityRepository,
+                sequenceInstanceRepository);
     }
 
     public FlowGatewayInstance generateFlowGatewayInstance(@NonNull Long flowInstanceId, boolean isStartEndPoint,
@@ -214,7 +218,7 @@ public class FlowFactory {
 
     private FlowInstance generateFlowInstance(@NonNull FlowInstanceEntity entity) {
         return new OdcFlowInstance(entity, flowableAdaptor, authenticationFacade, flowInstanceRepository,
-                runtimeService, repositoryService, topologyBuilder);
+                runtimeService, repositoryService, nodeInstanceEntityRepository, sequenceInstanceRepository);
     }
 
     private FlowGatewayInstance generateFlowGatewayInstance(

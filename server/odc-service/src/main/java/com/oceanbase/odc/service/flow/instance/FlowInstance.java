@@ -15,12 +15,15 @@
  */
 package com.oceanbase.odc.service.flow.instance;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -48,8 +51,13 @@ import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.metadb.flow.FlowInstanceEntity;
 import com.oceanbase.odc.metadb.flow.FlowInstanceRepository;
+import com.oceanbase.odc.metadb.flow.NodeInstanceEntity;
+import com.oceanbase.odc.metadb.flow.NodeInstanceEntityRepository;
+import com.oceanbase.odc.metadb.flow.SequenceInstanceEntity;
+import com.oceanbase.odc.metadb.flow.SequenceInstanceRepository;
 import com.oceanbase.odc.service.flow.FlowableAdaptor;
 import com.oceanbase.odc.service.flow.model.FlowNodeType;
+import com.oceanbase.odc.service.flow.model.NodeInstanceIdentical;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 
 import lombok.AccessLevel;
@@ -99,7 +107,8 @@ public class FlowInstance extends Graph implements SecurityResource, Organizatio
     @Getter(AccessLevel.NONE)
     protected final ProcessNodeBuilderAccessor accessor;
     protected final FlowableProcessBuilder processBuilder;
-    private final TopologyBuilder topologyBuilder;
+    private final NodeInstanceEntityRepository nodeInstanceEntityRepository;
+    private final SequenceInstanceRepository sequenceInstanceRepository;
 
     /**
      * Create a new {@link FlowInstance}
@@ -107,9 +116,10 @@ public class FlowInstance extends Graph implements SecurityResource, Organizatio
     public FlowInstance(@NonNull String name, @NonNull FlowableAdaptor flowableAdaptor,
             @NonNull AuthenticationFacade authenticationFacade,
             @NonNull FlowInstanceRepository flowInstanceRepository, @NonNull RuntimeService runtimeService,
-            @NonNull RepositoryService repositoryService, TopologyBuilder topologyBuilder) {
+            @NonNull RepositoryService repositoryService, NodeInstanceEntityRepository nodeInstanceEntityRepository,
+            SequenceInstanceRepository sequenceInstanceRepository) {
         this(name, null, flowableAdaptor, authenticationFacade, flowInstanceRepository, runtimeService,
-                repositoryService, topologyBuilder);
+                repositoryService, nodeInstanceEntityRepository, sequenceInstanceRepository);
     }
 
     /**
@@ -119,10 +129,13 @@ public class FlowInstance extends Graph implements SecurityResource, Organizatio
             @NonNull FlowableAdaptor flowableAdaptor,
             @NonNull AuthenticationFacade authenticationFacade,
             @NonNull FlowInstanceRepository flowInstanceRepository, @NonNull RuntimeService runtimeService,
-            @NonNull RepositoryService repositoryService, TopologyBuilder topologyBuilder) {
+            @NonNull RepositoryService repositoryService, NodeInstanceEntityRepository nodeInstanceEntityRepository,
+            SequenceInstanceRepository sequenceInstanceRepository) {
         this(null, name, authenticationFacade.currentUserId(), authenticationFacade.currentOrganizationId(), null, null,
                 FlowStatus.CREATED, null, description, null, null, authenticationFacade,
-                flowInstanceRepository, flowableAdaptor, runtimeService, repositoryService, topologyBuilder);
+                flowInstanceRepository, flowableAdaptor, runtimeService, repositoryService,
+                nodeInstanceEntityRepository,
+                sequenceInstanceRepository);
         create();
         Verify.notNull(getId(), "id");
         Verify.notNull(getCreateTime(), "CreateTime");
@@ -134,12 +147,15 @@ public class FlowInstance extends Graph implements SecurityResource, Organizatio
             @NonNull FlowableAdaptor flowableAdaptor,
             @NonNull AuthenticationFacade authenticationFacade,
             @NonNull FlowInstanceRepository flowInstanceRepository, @NonNull RuntimeService runtimeService,
-            @NonNull RepositoryService repositoryService, TopologyBuilder topologyBuilder) {
+            @NonNull RepositoryService repositoryService, NodeInstanceEntityRepository nodeInstanceEntityRepository,
+            SequenceInstanceRepository sequenceInstanceRepository) {
         this(null, name, authenticationFacade.currentUserId(), authenticationFacade.currentOrganizationId(),
                 projectId,
                 parentFlowInstanceId, null, null,
                 FlowStatus.CREATED, null, description, null, null, authenticationFacade,
-                flowInstanceRepository, flowableAdaptor, runtimeService, repositoryService, topologyBuilder);
+                flowInstanceRepository, flowableAdaptor, runtimeService, repositoryService,
+                nodeInstanceEntityRepository,
+                sequenceInstanceRepository);
         create();
         Verify.notNull(getId(), "id");
         Verify.notNull(getCreateTime(), "CreateTime");
@@ -152,7 +168,8 @@ public class FlowInstance extends Graph implements SecurityResource, Organizatio
     public FlowInstance(@NonNull FlowInstanceEntity entity, @NonNull FlowableAdaptor flowableAdaptor,
             @NonNull AuthenticationFacade authenticationFacade,
             @NonNull FlowInstanceRepository flowInstanceRepository, @NonNull RuntimeService runtimeService,
-            @NonNull RepositoryService repositoryService, TopologyBuilder topologyBuilder) {
+            @NonNull RepositoryService repositoryService, NodeInstanceEntityRepository nodeInstanceEntityRepository,
+            SequenceInstanceRepository sequenceInstanceRepository) {
         this(entity.getId(), entity.getName(), entity.getCreatorId(), entity.getOrganizationId(),
                 entity.getProjectId(),
                 entity.getParentInstanceId(),
@@ -160,15 +177,18 @@ public class FlowInstance extends Graph implements SecurityResource, Organizatio
                 entity.getProcessInstanceId(), entity.getStatus(),
                 entity.getFlowConfigSnapshotXml(), entity.getDescription(),
                 entity.getCreateTime(), entity.getUpdateTime(), authenticationFacade, flowInstanceRepository,
-                flowableAdaptor, runtimeService, repositoryService, topologyBuilder);
+                flowableAdaptor, runtimeService, repositoryService, nodeInstanceEntityRepository,
+                sequenceInstanceRepository);
     }
 
     protected FlowInstance(@NonNull String name, @NonNull FlowableAdaptor flowableAdaptor,
             @NonNull AuthenticationFacade authenticationFacade,
             @NonNull FlowInstanceRepository flowInstanceRepository, @NonNull RuntimeService runtimeService,
-            @NonNull RepositoryService repositoryService, @NonNull Long projectId, TopologyBuilder topologyBuilder) {
+            @NonNull RepositoryService repositoryService, @NonNull Long projectId,
+            NodeInstanceEntityRepository nodeInstanceEntityRepository,
+            SequenceInstanceRepository sequenceInstanceRepository) {
         this(name, null, flowableAdaptor, authenticationFacade, flowInstanceRepository, runtimeService,
-                repositoryService, topologyBuilder);
+                repositoryService, nodeInstanceEntityRepository, sequenceInstanceRepository);
     }
 
     private FlowInstance(Long id, @NonNull String name, @NonNull Long creatorId, @NonNull Long organizationId,
@@ -181,7 +201,8 @@ public class FlowInstance extends Graph implements SecurityResource, Organizatio
             @NonNull FlowInstanceRepository flowInstanceRepository,
             @NonNull FlowableAdaptor flowableAdaptor,
             @NonNull RuntimeService runtimeService,
-            @NonNull RepositoryService repositoryService, TopologyBuilder topologyBuilder) {
+            @NonNull RepositoryService repositoryService, NodeInstanceEntityRepository nodeInstanceEntityRepository,
+            SequenceInstanceRepository sequenceInstanceRepository) {
         this.parentFlowInstanceId = parentFlowInstanceId;
         this.id = id;
         this.name = name;
@@ -201,7 +222,8 @@ public class FlowInstance extends Graph implements SecurityResource, Organizatio
         this.flowInstanceRepository = flowInstanceRepository;
         this.flowableAdaptor = flowableAdaptor;
         this.processBuilder = new FlowableProcessBuilder(name);
-        this.topologyBuilder = topologyBuilder;
+        this.nodeInstanceEntityRepository = nodeInstanceEntityRepository;
+        this.sequenceInstanceRepository = sequenceInstanceRepository;
         this.accessor = new ProcessNodeBuilderAccessor();
     }
 
@@ -213,7 +235,8 @@ public class FlowInstance extends Graph implements SecurityResource, Organizatio
             @NonNull FlowInstanceRepository flowInstanceRepository,
             @NonNull FlowableAdaptor flowableAdaptor,
             @NonNull RuntimeService runtimeService,
-            @NonNull RepositoryService repositoryService, TopologyBuilder topologyBuilder) {
+            @NonNull RepositoryService repositoryService, NodeInstanceEntityRepository nodeInstanceEntityRepository,
+            SequenceInstanceRepository sequenceInstanceRepository) {
         this.id = id;
         this.name = name;
         this.creatorId = creatorId;
@@ -231,7 +254,8 @@ public class FlowInstance extends Graph implements SecurityResource, Organizatio
         this.flowInstanceRepository = flowInstanceRepository;
         this.flowableAdaptor = flowableAdaptor;
         this.processBuilder = new FlowableProcessBuilder(name);
-        this.topologyBuilder = topologyBuilder;
+        this.nodeInstanceEntityRepository = nodeInstanceEntityRepository;
+        this.sequenceInstanceRepository = sequenceInstanceRepository;
         this.accessor = new ProcessNodeBuilderAccessor();
     }
 
@@ -418,13 +442,103 @@ public class FlowInstance extends Graph implements SecurityResource, Organizatio
      * this method will insert the topo structure between the related nodes
      */
     public void buildTopology() {
-        try {
-            topologyBuilder.buildTopology(this);
-        } catch (Exception exception) {
-            log.warn("Node Instance failed to establish topology relationship, flowInstanceId={}", getId(), exception);
-            throw exception;
-        }
+        List<BaseFlowNodeInstance> nodes = new ArrayList<>();
+        forEachInstanceNode(node -> {
+            nodes.add(node);
+            for (GraphEdge edge : node.getOutEdges()) {
+                GraphVertex to = edge.getTo();
+                if (!(to instanceof BaseFlowNodeInstance)) {
+                    throw new IllegalStateException(
+                            "GraphVertex has to be an instance of BaseFlowNodeInstance");
+                }
+                nodes.add((BaseFlowNodeInstance) to);
+            }
+        });
+        Set<BaseFlowNodeInstance> nodeInstanceSet = distinctByIdentical(nodes);
+        nodeInstanceEntityRepository.batchCreate(mapToCreate(nodeInstanceSet));
+
+        Set<Long> instanceIds = nodeInstanceSet.stream().map(BaseFlowNodeInstance::getId).collect(Collectors.toSet());
+        List<NodeInstanceEntity> all = nodeInstanceEntityRepository.findByInstanceIdIn(instanceIds);
+
+        Map<NodeInstanceIdentical, List<NodeInstanceEntity>> nodeMap = all.stream().collect(
+                Collectors.groupingBy(NodeInstanceIdentical::new));
+        List<SequenceInstanceEntity> sequences = this.getVertexList().stream()
+                .map(v -> vertexToCreateSequence(v, nodeMap))
+                .flatMap(List::stream).collect(Collectors.toList());
+
+        sequenceInstanceRepository.batchCreate(sequences);
         log.info("Flow instance node establishes the topology relationship successfully, flowInstanceId={}", getId());
+    }
+
+
+    private Set<BaseFlowNodeInstance> distinctByIdentical(List<BaseFlowNodeInstance> allNodes) {
+        Set<BaseFlowNodeInstance> allNodesSet = new HashSet<BaseFlowNodeInstance>() {
+            @Override
+            public boolean add(BaseFlowNodeInstance i) {
+                for (BaseFlowNodeInstance element : this) {
+                    if (Objects.equals(element.getId(), i.getId()) && element.getNodeType() == i.getNodeType()
+                            && element.getCoreFlowableElementType() == i.getCoreFlowableElementType()) {
+                        return false;
+                    }
+                }
+                return super.add(i);
+            }
+        };
+        allNodesSet.addAll(allNodes);
+        return allNodesSet;
+    }
+
+    private List<NodeInstanceEntity> mapToCreate(Set<BaseFlowNodeInstance> allNodesSet) {
+        return allNodesSet.stream().map(i -> {
+            Verify.notNull(i.getName(), "Name");
+            Verify.notNull(i.getActivityId(), "ActivityId");
+            NodeInstanceEntity nodeEntity = new NodeInstanceEntity();
+            nodeEntity.setInstanceId(i.getId());
+            nodeEntity.setInstanceType(i.getNodeType());
+            nodeEntity.setFlowInstanceId(i.getFlowInstanceId());
+            nodeEntity.setActivityId(i.getActivityId());
+            nodeEntity.setName(i.getName());
+            nodeEntity.setFlowableElementType(i.getCoreFlowableElementType());
+            return nodeEntity;
+        }).collect(Collectors.toList());
+    }
+
+    private List<SequenceInstanceEntity> vertexToCreateSequence(GraphVertex v,
+            Map<NodeInstanceIdentical, List<NodeInstanceEntity>> nodeMap) {
+        BaseFlowNodeInstance source = (BaseFlowNodeInstance) v;
+        List<NodeInstanceEntity> sourceEntities = nodeMap.get(new NodeInstanceIdentical(source));
+        if (sourceEntities.size() >= 2) {
+            log.warn("Duplicate records are found, id={}, nodeType={}, coreType={} ", source.getId(),
+                    source.getNodeType(), source.getCoreFlowableElement());
+            throw new IllegalStateException("Duplicate records are found");
+        }
+
+        NodeInstanceEntity sourceInstanceEntity = sourceEntities.get(0);
+        List<GraphEdge> outEdges = v.getOutEdges();
+        return outEdges.stream()
+                .map(outEdge -> {
+                    GraphVertex graphVertex = outEdge.getTo();
+                    if (!(graphVertex instanceof BaseFlowNodeInstance)) {
+                        throw new IllegalStateException(
+                                "GraphVertex has to be an instance of BaseFlowNodeInstance");
+                    }
+                    BaseFlowNodeInstance target = (BaseFlowNodeInstance) graphVertex;
+                    List<NodeInstanceEntity> nodeInstanceEntities =
+                            nodeMap.get(new NodeInstanceIdentical(target));
+                    if (nodeInstanceEntities.size() >= 2) {
+                        log.warn("Duplicate records are found, id={}, nodeType={}, coreType={} ",
+                                target.getId(),
+                                target.getNodeType(), target.getCoreFlowableElement());
+                        throw new IllegalStateException("Duplicate records are found");
+                    }
+                    NodeInstanceEntity nodeInstanceEntity = nodeInstanceEntities.get(0);
+                    SequenceInstanceEntity sequenceEntity = new SequenceInstanceEntity();
+                    sequenceEntity.setSourceNodeInstanceId(sourceInstanceEntity.getId());
+                    sequenceEntity.setTargetNodeInstanceId(nodeInstanceEntity.getId());
+                    sequenceEntity.setFlowInstanceId(source.getFlowInstanceId());
+                    return sequenceEntity;
+                })
+                .collect(Collectors.toList());
     }
 
     @Override

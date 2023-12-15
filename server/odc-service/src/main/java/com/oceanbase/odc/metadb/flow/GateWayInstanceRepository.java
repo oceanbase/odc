@@ -15,16 +15,20 @@
  */
 package com.oceanbase.odc.metadb.flow;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import javax.transaction.Transactional;
 
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import com.oceanbase.odc.config.jpa.InsertSqlTemplateBuilder;
+import com.oceanbase.odc.config.jpa.OdcJpaRepository;
 import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
 import com.oceanbase.odc.service.flow.model.FlowNodeType;
 
@@ -36,7 +40,7 @@ import com.oceanbase.odc.service.flow.model.FlowNodeType;
  * @since ODC_release_3.3.0
  */
 public interface GateWayInstanceRepository
-        extends JpaRepository<GateWayInstanceEntity, Long>, JpaSpecificationExecutor<GateWayInstanceEntity> {
+        extends OdcJpaRepository<GateWayInstanceEntity, Long>, JpaSpecificationExecutor<GateWayInstanceEntity> {
 
     @Transactional
     @Query("delete from GateWayInstanceEntity as ut where ut.flowInstanceId=:instanceId")
@@ -59,5 +63,23 @@ public interface GateWayInstanceRepository
             nativeQuery = true)
     Optional<GateWayInstanceEntity> findByInstanceTypeAndName(@Param("instanceType") FlowNodeType instanceType,
             @Param("name") String name, @Param("flowInstanceId") Long flowInstanceId);
+
+    default void batchUpdate(Collection<GateWayInstanceEntity> entities) {
+        String sql = InsertSqlTemplateBuilder.from("flow_instance_node_gateway")
+                .field(GateWayInstanceEntity_.ORGANIZATION_ID)
+                .field(GateWayInstanceEntity_.STATUS)
+                .field("is_start_endpoint")
+                .field("is_end_endpoint")
+                .field(GateWayInstanceEntity_.FLOW_INSTANCE_ID)
+                .build();
+        List<Object[]> params = entities.stream().map(e -> new Object[] {
+                e.getOrganizationId(),
+                e.getStatus().name(),
+                e.isStartEndpoint(),
+                e.isEndEndpoint(),
+                e.getFlowInstanceId()
+        }).collect(Collectors.toList());
+        getJdbcTemplate().batchUpdate(sql, params);
+    }
 
 }
