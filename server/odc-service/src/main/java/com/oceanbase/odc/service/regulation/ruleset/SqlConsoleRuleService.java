@@ -128,7 +128,7 @@ public class SqlConsoleRuleService {
                 return true;
             }).map(rule -> {
                 if (Objects.isNull(rule.getProperties())) {
-                    return Collections.EMPTY_LIST;
+                    return null;
                 }
                 Object property = rule.getProperties().getOrDefault(consoleRule.getPropertyName(), null);
                 if (Objects.isNull(property) || !List.class.isAssignableFrom(property.getClass())) {
@@ -145,7 +145,10 @@ public class SqlConsoleRuleService {
                 }
                 return result;
             }).collect(Collectors.toList());
-            if (CollectionUtils.isEmpty(properties) || properties.get(0).isEmpty()) {
+            if (CollectionUtils.isEmpty(properties)) {
+                return Optional.empty();
+            }
+            if (properties.get(0).isEmpty()) {
                 return Optional.of(Collections.emptyList());
             } else {
                 return Optional.of((List<T>) properties.get(0));

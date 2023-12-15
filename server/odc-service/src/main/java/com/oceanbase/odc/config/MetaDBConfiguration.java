@@ -27,6 +27,7 @@ import javax.sql.DataSource;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.mybatis.spring.SqlSessionFactoryBean;
 import org.mybatis.spring.annotation.MapperScan;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.orm.jpa.EntityManagerFactoryBuilder;
 import org.springframework.context.annotation.Bean;
@@ -46,6 +47,8 @@ import org.springframework.scheduling.concurrent.ConcurrentTaskExecutor;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
+import com.alibaba.druid.DbType;
+import com.alibaba.druid.filter.stat.StatFilter;
 import com.alibaba.druid.support.spring.stat.DruidStatInterceptor;
 import com.oceanbase.odc.common.concurrent.ExecutorUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
@@ -96,8 +99,18 @@ public class MetaDBConfiguration {
     }
 
     @Bean
+    @ConditionalOnProperty(value = "odc.system.monitor.enabled", havingValue = "true")
     public DruidStatInterceptor druidStatInterceptor() {
         return new DruidStatInterceptor();
+    }
+
+    @Bean
+    @ConditionalOnProperty(value = "odc.system.monitor.enabled", havingValue = "true")
+    public StatFilter statFilter() {
+        StatFilter statFilter = new StatFilter();
+        // use mysql parser to merge sql
+        statFilter.setDbType(DbType.mysql);
+        return statFilter;
     }
 
     @Primary
