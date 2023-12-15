@@ -106,7 +106,7 @@ public class MetaDBConfiguration {
 
     @Bean
     @ConditionalOnProperty(value = "odc.system.monitor.enabled", havingValue = "true")
-    public StatFilter statFilter(){
+    public StatFilter statFilter() {
         StatFilter statFilter = new StatFilter();
         // use mysql parser to merge sql
         statFilter.setDbType(DbType.mysql);
