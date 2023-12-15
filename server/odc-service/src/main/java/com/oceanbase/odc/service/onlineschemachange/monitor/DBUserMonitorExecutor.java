@@ -17,7 +17,6 @@
 package com.oceanbase.odc.service.onlineschemachange.monitor;
 
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -48,7 +47,7 @@ public class DBUserMonitorExecutor {
         this.toMonitorUsers = toMonitorUsers;
     }
 
-    public void start(Map<String, Object> logParameter) {
+    public void start() {
         if (CollectionUtils.isEmpty(toMonitorUsers)) {
             log.info("To monitor users is null, do not start db user status monitor.");
         }
@@ -57,7 +56,7 @@ public class DBUserMonitorExecutor {
         }
 
         executorService = Executors.newSingleThreadExecutor();
-        DBUserMonitorFactory userLogStatusMonitorFactory = new DBUserLogStatusMonitorFactory(logParameter);
+        DBUserMonitorFactory userLogStatusMonitorFactory = new DBUserLogStatusMonitorFactory();
         dbUserMonitor = userLogStatusMonitorFactory.generateDBUserMonitor(connectionConfig,
                 toMonitorUsers, 200, Integer.MAX_VALUE, TimeUnit.MILLISECONDS);
         executorService.execute(dbUserMonitor);

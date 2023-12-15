@@ -16,9 +16,6 @@
 
 package com.oceanbase.odc.service.onlineschemachange.monitor;
 
-import static com.oceanbase.odc.core.shared.constant.OdcConstants.CREATOR_ID;
-import static com.oceanbase.odc.core.shared.constant.OdcConstants.FLOW_TASK_ID;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -28,11 +25,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
+import org.slf4j.MDC;
+
 import com.google.common.collect.Lists;
 import com.oceanbase.odc.common.concurrent.Await;
 import com.oceanbase.odc.common.util.tableformat.Table;
 import com.oceanbase.odc.core.session.ConnectionSession;
-import com.oceanbase.odc.core.shared.constant.OdcConstants;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.db.browser.DBStatsAccessors;
 import com.oceanbase.odc.service.onlineschemachange.OnlineSchemaChangeContextHolder;
@@ -62,17 +60,16 @@ public class DBUserLogStatusMonitor implements DBUserMonitor {
     private final AtomicBoolean done;
     private final OscDBAccessor dbSchemaAccessor;
     private final DBStatsAccessor dbStatsAccessor;
-    private final Map<String, Object> logParameter;
 
     private final Integer period;
     private final Integer timeout;
     private final TimeUnit timeUnit;
     private final ConnectionSession connSession;
+    private final Map<String, String> mdcContext;
 
     public DBUserLogStatusMonitor(ConnectionConfig connConfig, List<String> toMonitorUsers,
-            Map<String, Object> logParameter, Integer period, Integer timeout, TimeUnit timeUnit) {
+            Integer period, Integer timeout, TimeUnit timeUnit) {
         this.toMonitorUsers = toMonitorUsers;
-        this.logParameter = logParameter;
         // Generate a new ConnectionSession in monitor
         this.connSession = new DefaultConnectSessionFactory(connConfig).generateSession();
         OscFactoryWrapper oscFactoryWrapper = OscFactoryWrapperGenerator.generate(connConfig.getDialectType());
@@ -83,6 +80,7 @@ public class DBUserLogStatusMonitor implements DBUserMonitor {
         this.period = period;
         this.timeout = timeout;
         this.timeUnit = timeUnit;
+        this.mdcContext = MDC.getCopyOfContextMap();
     }
 
     @Override
@@ -125,17 +123,11 @@ public class DBUserLogStatusMonitor implements DBUserMonitor {
 
     @Override
     public void run() {
-        if (logParameter != null) {
-            OnlineSchemaChangeContextHolder.trace((String) (logParameter.get(CREATOR_ID)),
-                    (String) logParameter.get(FLOW_TASK_ID),
-                    (String) logParameter.get(OdcConstants.ORGANIZATION_ID));
-        }
+        OnlineSchemaChangeContextHolder.retrace(mdcContext);
         try {
             start();
         } finally {
-            if (logParameter != null) {
-                OnlineSchemaChangeContextHolder.clear();
-            }
+            OnlineSchemaChangeContextHolder.clear();
         }
     }
 
