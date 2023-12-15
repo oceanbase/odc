@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -64,6 +65,7 @@ import com.oceanbase.odc.metadb.flow.GateWayInstanceRepository;
 import com.oceanbase.odc.metadb.flow.NodeInstanceEntityRepository;
 import com.oceanbase.odc.metadb.flow.SequenceInstanceRepository;
 import com.oceanbase.odc.metadb.flow.ServiceTaskInstanceRepository;
+import com.oceanbase.odc.metadb.flow.UserTaskInstanceCandidateRepository;
 import com.oceanbase.odc.metadb.flow.UserTaskInstanceRepository;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.metadb.task.TaskRepository;
@@ -115,6 +117,7 @@ import lombok.NonNull;
  */
 public class FlowInstanceServiceTest extends ServiceTestEnv {
 
+    private final AtomicLong counter = new AtomicLong(1L);
     @Autowired
     private FlowInstanceService flowInstanceService;
     @Autowired
@@ -166,7 +169,8 @@ public class FlowInstanceServiceTest extends ServiceTestEnv {
     private FlowFactory flowFactory;
     @Rule
     public ExpectedException thrown = ExpectedException.none();
-
+    @Autowired
+    private UserTaskInstanceCandidateRepository userTaskInstanceCandidateRepository;
 
     @Before
     public void setUp() {
@@ -474,9 +478,9 @@ public class FlowInstanceServiceTest extends ServiceTestEnv {
                         first_route_approval_2, first_route_approval_2_gateway, first_route_task_1,
                         second_route_approval_1, second_route_approval_1_gateway, second_route_task_1),
                 sequences);
+        flowInstance.forEachInstanceNode(inst -> inst.setId(null));
         flowInstance.buildTopology();
     }
-
 
     private FlowInstance createFlowInstance(String name) {
         return flowFactory.generateFlowInstance(name, null, 1L, null);
@@ -484,25 +488,30 @@ public class FlowInstanceServiceTest extends ServiceTestEnv {
 
     private FlowTaskInstance createTaskInstance(Long flowInstanceId, TaskEntity taskEntity,
             ExecutionStrategyConfig config) {
-        FlowTaskInstance taskInstance =
-                new FlowTaskInstance(taskEntity.getTaskType(), authenticationFacade.currentOrganizationId(),
-                        flowInstanceId, config, false, true, type -> TestFlowRuntimeTaskImpl.class,
-                        flowableAdaptor, eventPublisher, flowTaskService, nodeRepository,
-                        sequenceRepository, serviceTaskRepository);
+        FlowTaskInstance taskInstance = new FlowTaskInstance(taskEntity.getTaskType(),
+                authenticationFacade.currentOrganizationId(), flowInstanceId, config, false, true,
+                type -> TestFlowRuntimeTaskImpl.class, flowableAdaptor, eventPublisher, flowTaskService,
+                nodeRepository, sequenceRepository, serviceTaskRepository);
+        taskInstance.setId(counter.incrementAndGet());
         taskInstance.setTargetTaskId(taskEntity.getId());
-        taskInstance.update();
         return taskInstance;
     }
 
     private FlowApprovalInstance createApprovalInstance(Long flowInstanceId) {
-        return new TestFlowApprovalInstance(authenticationFacade.currentOrganizationId(), flowInstanceId,
-                10, false, false, flowableAdaptor, flowTaskService, formService, eventPublisher,
-                authenticationFacade, nodeRepository, sequenceRepository, userTaskInstanceRepository);
+        FlowApprovalInstance inst = new TestFlowApprovalInstance(authenticationFacade.currentOrganizationId(),
+                flowInstanceId, 10, false, false, flowableAdaptor, flowTaskService, formService, eventPublisher,
+                authenticationFacade, nodeRepository, sequenceRepository,
+                userTaskInstanceRepository, userTaskInstanceCandidateRepository);
+        inst.setId(counter.incrementAndGet());
+        return inst;
     }
 
     private FlowGatewayInstance createGatewayInstance(Long flowInstanceId, boolean startEndPoint, boolean endEndPoint) {
-        return new FlowGatewayInstance(authenticationFacade.currentOrganizationId(), flowInstanceId, startEndPoint,
-                endEndPoint, flowableAdaptor, nodeRepository, sequenceRepository, gateWayInstanceRepository);
+        FlowGatewayInstance inst = new FlowGatewayInstance(authenticationFacade.currentOrganizationId(),
+                flowInstanceId, startEndPoint, endEndPoint, flowableAdaptor, nodeRepository, sequenceRepository,
+                gateWayInstanceRepository);
+        inst.setId(counter.incrementAndGet());
+        return inst;
     }
 
     private CreateFlowInstanceReq createFlowInstanceReq() {
@@ -527,7 +536,6 @@ public class FlowInstanceServiceTest extends ServiceTestEnv {
         req.setParameters(param);
         return req;
     }
-
 
     private TaskEntity createTaskEntity() {
         TaskEntity taskEntity = TestRandom.nextObject(TaskEntity.class);
@@ -605,10 +613,11 @@ class TestFlowApprovalInstance extends FlowApprovalInstance {
             @NonNull AuthenticationFacade authenticationFacade,
             @NonNull NodeInstanceEntityRepository nodeRepository,
             @NonNull SequenceInstanceRepository sequenceRepository,
-            @NonNull UserTaskInstanceRepository userTaskInstanceRepository) {
+            @NonNull UserTaskInstanceRepository userTaskInstanceRepository,
+            @NonNull UserTaskInstanceCandidateRepository userTaskInstanceCandidateRepository) {
         super(organizationId, flowInstanceId, null, expireIntervalSeconds, startEndpoint, endEndPoint, false,
                 flowableAdaptor, taskService, formService, eventPublisher, authenticationFacade, nodeRepository,
-                sequenceRepository, userTaskInstanceRepository);
+                sequenceRepository, userTaskInstanceRepository, userTaskInstanceCandidateRepository);
     }
 
     @Override

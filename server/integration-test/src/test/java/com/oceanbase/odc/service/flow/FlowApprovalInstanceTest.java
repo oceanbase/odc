@@ -39,6 +39,7 @@ import com.oceanbase.odc.metadb.flow.NodeInstanceEntity;
 import com.oceanbase.odc.metadb.flow.NodeInstanceEntityRepository;
 import com.oceanbase.odc.metadb.flow.SequenceInstanceEntity;
 import com.oceanbase.odc.metadb.flow.SequenceInstanceRepository;
+import com.oceanbase.odc.metadb.flow.UserTaskInstanceCandidateRepository;
 import com.oceanbase.odc.metadb.flow.UserTaskInstanceEntity;
 import com.oceanbase.odc.metadb.flow.UserTaskInstanceRepository;
 import com.oceanbase.odc.service.flow.instance.FlowApprovalInstance;
@@ -74,6 +75,8 @@ public class FlowApprovalInstanceTest extends ServiceTestEnv {
     private UserTaskInstanceRepository userTaskInstanceRepository;
     @Autowired
     private FlowableAdaptor flowableAdaptor;
+    @Autowired
+    private UserTaskInstanceCandidateRepository userTaskInstanceCandidateRepository;
 
     @Before
     public void setUp() {
@@ -191,7 +194,9 @@ public class FlowApprovalInstanceTest extends ServiceTestEnv {
             String activityId, Long flowInstanceId) {
         FlowApprovalInstance instance = new FlowApprovalInstance(1L, flowInstanceId, null, 12, startEndPoint,
                 endEndPoint, false, flowableAdaptor, taskService, formService, new LocalEventPublisher(),
-                authenticationFacade, nodeRepository, sequenceRepository, userTaskInstanceRepository);
+                authenticationFacade, nodeRepository, sequenceRepository, userTaskInstanceRepository,
+                userTaskInstanceCandidateRepository);
+        instance.create();
         instance.setName(name);
         instance.setActivityId(activityId);
         return instance;
@@ -218,7 +223,8 @@ public class FlowApprovalInstanceTest extends ServiceTestEnv {
         entity.setEndEndpoint(instance.isEndEndPoint());
         entity.setExpireIntervalSeconds(instance.getExpireIntervalSeconds());
         return new FlowApprovalInstance(entity, flowableAdaptor, taskService, formService, new LocalEventPublisher(),
-                authenticationFacade, nodeRepository, sequenceRepository, userTaskInstanceRepository);
+                authenticationFacade, nodeRepository, sequenceRepository, userTaskInstanceRepository,
+                userTaskInstanceCandidateRepository);
     }
 
     private void next(FlowApprovalInstance from, FlowApprovalInstance to) {

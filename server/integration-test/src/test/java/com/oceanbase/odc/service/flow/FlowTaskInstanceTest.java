@@ -117,6 +117,7 @@ public class FlowTaskInstanceTest extends ServiceTestEnv {
                 ExecutionStrategyConfig.autoStrategy(), startEndPoint, endEndPoint, taskType -> null,
                 flowableAdaptor, new LocalEventPublisher(), taskService, nodeRepository,
                 sequenceRepository, serviceTaskRepository);
+        instance.create();
         instance.setActivityId(activityId);
         instance.setName(name);
         return instance;

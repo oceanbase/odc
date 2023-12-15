@@ -49,6 +49,7 @@ import com.oceanbase.odc.metadb.flow.SequenceInstanceRepository;
 import com.oceanbase.odc.metadb.flow.ServiceTaskInstanceEntity;
 import com.oceanbase.odc.metadb.flow.ServiceTaskInstanceRepository;
 import com.oceanbase.odc.metadb.flow.ServiceTaskInstanceSpecs;
+import com.oceanbase.odc.metadb.flow.UserTaskInstanceCandidateRepository;
 import com.oceanbase.odc.metadb.flow.UserTaskInstanceEntity;
 import com.oceanbase.odc.metadb.flow.UserTaskInstanceRepository;
 import com.oceanbase.odc.metadb.flow.UserTaskInstanceSpecs;
@@ -105,6 +106,8 @@ public class FlowFactory {
     private UserTaskInstanceRepository userTaskInstanceRepository;
     @Autowired
     private ServiceTaskInstanceRepository serviceTaskRepository;
+    @Autowired
+    private UserTaskInstanceCandidateRepository userTaskInstanceCandidateRepository;
 
     public FlowInstance generateFlowInstance(@NonNull String name, String description) {
         return new OdcFlowInstance(name, description, flowableAdaptor, authenticationFacade,
@@ -130,7 +133,7 @@ public class FlowFactory {
         return new FlowApprovalInstance(authenticationFacade.currentOrganizationId(), flowInstanceId,
                 externalApprovalId, expireIntervalSeconds, isStartEndPoint, isEndEndPoint,
                 autoApprove, flowableAdaptor, flowableTaskService, formService, eventPublisher, authenticationFacade,
-                nodeRepository, sequenceRepository, userTaskInstanceRepository);
+                nodeRepository, sequenceRepository, userTaskInstanceRepository, userTaskInstanceCandidateRepository);
     }
 
     public FlowApprovalInstance generateFlowApprovalInstance(@NonNull Long flowInstanceId, boolean isStartEndPoint,
@@ -139,7 +142,7 @@ public class FlowFactory {
         return new FlowApprovalInstance(authenticationFacade.currentOrganizationId(), flowInstanceId,
                 expireIntervalSeconds, isStartEndPoint, isEndEndPoint, autoApprove, flowableAdaptor,
                 flowableTaskService, formService, eventPublisher, authenticationFacade, nodeRepository,
-                sequenceRepository, userTaskInstanceRepository, waitForConfirm);
+                sequenceRepository, userTaskInstanceRepository, waitForConfirm, userTaskInstanceCandidateRepository);
     }
 
     public FlowTaskInstance generateFlowTaskInstance(@NonNull Long flowInstanceId, boolean isStartEndPoint,
@@ -232,9 +235,9 @@ public class FlowFactory {
         Long id = entity.getId();
         try {
             entity.setId(null);
-            FlowApprovalInstance target = new FlowApprovalInstance(entity, flowableAdaptor,
-                    flowableTaskService, formService, eventPublisher, authenticationFacade,
-                    nodeRepository, sequenceRepository, userTaskInstanceRepository);
+            FlowApprovalInstance target = new FlowApprovalInstance(entity, flowableAdaptor, flowableTaskService,
+                    formService, eventPublisher, authenticationFacade, nodeRepository, sequenceRepository,
+                    userTaskInstanceRepository, userTaskInstanceCandidateRepository);
             setNameAndActivityId(id, target, nodes);
             return target;
         } finally {

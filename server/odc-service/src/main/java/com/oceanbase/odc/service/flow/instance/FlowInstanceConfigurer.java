@@ -23,6 +23,7 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import org.apache.commons.lang.Validate;
 import org.flowable.bpmn.model.FlowNode;
 import org.flowable.bpmn.model.Gateway;
 import org.flowable.bpmn.model.Task;
@@ -73,6 +74,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Getter
 public class FlowInstanceConfigurer extends GraphConfigurer<FlowInstance, BaseFlowNodeInstance> {
+
     private static final float DEFAULT_EDGE_WEIGHT = 1;
     /**
      * 在实际的配置过程中，可能会出现多次操作同一个流程节点（例如多次 next 同一节点），原理上要求这种情况下拓扑图中链接到的是同一个对象，这种场景下就必须通过accessor
@@ -83,6 +85,7 @@ public class FlowInstanceConfigurer extends GraphConfigurer<FlowInstance, BaseFl
      * Built-in {@link FlowableProcessBuilder} of {@link FlowInstance}
      */
     private final FlowableProcessBuilder targetProcessBuilder;
+    private final Long flowInstanceId;
     protected final FlowableAdaptor flowableAdaptor;
     /**
      * Current {@link ExecutionConfigurer} of target {@link FlowableProcessBuilder}
@@ -101,6 +104,8 @@ public class FlowInstanceConfigurer extends GraphConfigurer<FlowInstance, BaseFl
         this.targetProcessBuilder = targetProcessBuilder;
         this.flowableAdaptor = flowableAdaptor;
         this.accessor = accessor;
+        Validate.notNull(flowInstance.getId(), "FlowInstanceId can not be null");
+        this.flowInstanceId = flowInstance.getId();
         this.targetExecution = targetProcessBuilder.newExecution();
     }
 
@@ -117,6 +122,8 @@ public class FlowInstanceConfigurer extends GraphConfigurer<FlowInstance, BaseFl
         this.targetExecution = targetExecution;
         this.targetProcessBuilder = targetProcessBuilder;
         this.flowableAdaptor = flowableAdaptor;
+        Validate.notNull(flowInstance.getId(), "FlowInstanceId can not be null");
+        this.flowInstanceId = flowInstance.getId();
     }
 
     public FlowInstanceConfigurer next(@NonNull FlowApprovalInstance nextNode) {
@@ -196,18 +203,20 @@ public class FlowInstanceConfigurer extends GraphConfigurer<FlowInstance, BaseFl
 
     protected FlowInstanceConfigurer next(@NonNull FlowApprovalInstance nextNode,
             @NonNull Consumer<UserTaskBuilder> userTaskConsumer) {
-        String userTaskName = FlowNodeType.APPROVAL_TASK.name() + "_user_task_" + nextNode.getId();
+        String userTaskName = FlowNodeType.APPROVAL_TASK.name() + "_user_task_" + getNameSuffix(nextNode);
         UserTaskBuilder userTaskBuilder = nullSafeGetNodeBuilder(userTaskName, nextNode, () -> {
             UserTaskBuilder builder = new UserTaskBuilder(userTaskName);
             userTaskConsumer.accept(builder);
             return builder;
         });
         if (Objects.nonNull(nextNode.getExternalApprovalId())) {
-            String serviceTaskName = FlowNodeType.APPROVAL_TASK.name() + "_external_approval_task_" + nextNode.getId();
+            String serviceTaskName = FlowNodeType.APPROVAL_TASK.name()
+                    + "_external_approval_task_" + getNameSuffix(nextNode);
             ServiceTaskBuilder serviceTaskBuilder = nullSafeGetNodeBuilder(serviceTaskName, nextNode,
                     () -> new ServiceTaskBuilder(serviceTaskName, CreateExternalApprovalTask.class));
             nextNode.bindFlowableElement(new FlowableElement(serviceTaskBuilder));
-            String gatewayName = FlowNodeType.APPROVAL_TASK.name() + "_external_approval_gateway_" + nextNode.getId();
+            String gatewayName = FlowNodeType.APPROVAL_TASK.name()
+                    + "_external_approval_gateway_" + getNameSuffix(nextNode);
             ExclusiveGatewayBuilder gatewayBuilder = nullSafeGetNodeBuilder(gatewayName, nextNode,
                     () -> new ExclusiveGatewayBuilder(gatewayName));
             targetExecution.next(serviceTaskBuilder).next(gatewayBuilder);
@@ -220,9 +229,8 @@ public class FlowInstanceConfigurer extends GraphConfigurer<FlowInstance, BaseFl
             targetExecution.next(userTaskBuilder);
         }
         if (log.isDebugEnabled()) {
-            log.debug(
-                    "Successfully set up the approval task node instance, instanceId={}, instanceType={}, activityId={}, name={}",
-                    nextNode.getId(), nextNode.getNodeType(), userTaskBuilder.getGraphId(), userTaskBuilder.getName());
+            log.debug("Successfully set up the approval task node instance, instanceType={}, activityId={}, name={}",
+                    nextNode.getNodeType(), userTaskBuilder.getGraphId(), userTaskBuilder.getName());
         }
         return next(userTaskBuilder, nextNode);
     }
@@ -234,7 +242,7 @@ public class FlowInstanceConfigurer extends GraphConfigurer<FlowInstance, BaseFl
         Class<? extends BaseRuntimeFlowableDelegate<?>> clazz = nextNode.getTargetDelegateClass();
         Verify.notNull(clazz, "AbstractRuntimeFlowableDelegate.class");
 
-        String serviceTaskName = FlowNodeType.SERVICE_TASK.name() + "_service_task_" + nextNode.getId();
+        String serviceTaskName = FlowNodeType.SERVICE_TASK.name() + "_service_task_" + getNameSuffix(nextNode);
         ServiceTaskBuilder serviceTaskBuilder = nullSafeGetNodeBuilder(serviceTaskName, nextNode, () -> {
             ServiceTaskBuilder taskBuilder = new ServiceTaskBuilder(serviceTaskName, clazz);
             serviceTaskConsumer.accept(taskBuilder);
@@ -245,17 +253,17 @@ public class FlowInstanceConfigurer extends GraphConfigurer<FlowInstance, BaseFl
         if (strategyConfig.getStrategy() == FlowTaskExecutionStrategy.AUTO) {
             targetExecution.next(serviceTaskBuilder);
             if (log.isDebugEnabled()) {
-                log.debug("Set up the service task succeed, nodeInstanceId={}, activityId={}, name={}",
-                        nextNode.getId(), serviceTaskBuilder.getGraphId(), serviceTaskBuilder.getName());
+                log.debug("Set up the service task succeed, activityId={}, name={}",
+                        serviceTaskBuilder.getGraphId(), serviceTaskBuilder.getName());
             }
             return next(serviceTaskBuilder, nextNode);
         }
         if (strategyConfig.getStrategy() == FlowTaskExecutionStrategy.TIMER) {
             if (log.isDebugEnabled()) {
-                log.debug("Start defining a timer execution user task node instance, instanceId={}, instanceType={}, "
-                        + "strategy={}", nextNode.getId(), nextNode.getTaskType(), strategyConfig.getStrategy());
+                log.debug("Start defining a timer execution user task node instance, instanceType={}, strategy={}",
+                        nextNode.getTaskType(), strategyConfig.getStrategy());
             }
-            String timerTaskName = FlowNodeType.SERVICE_TASK.name() + "_timer_task_" + nextNode.getId();
+            String timerTaskName = FlowNodeType.SERVICE_TASK.name() + "_timer_task_" + getNameSuffix(nextNode);
             UserTaskBuilder userTimerTaskBuilder = nullSafeGetNodeBuilder(timerTaskName, nextNode, () -> {
                 UserTaskBuilder builder = new UserTaskBuilder(timerTaskName);
                 TimerBoundaryEventBuilder timerBuilder =
@@ -268,16 +276,17 @@ public class FlowInstanceConfigurer extends GraphConfigurer<FlowInstance, BaseFl
             nextNode.bindFlowableElement(new FlowableElement(userTimerTaskBuilder));
             targetExecution.next(userTimerTaskBuilder);
             if (log.isDebugEnabled()) {
-                log.debug("Define a timer execution user task node instance completion, instanceId={}, intanceType={}, "
-                        + "strategy={}", nextNode.getId(), nextNode.getNodeType(), strategyConfig.getStrategy());
+                log.debug("Define a timer execution user task node instance completion, intanceType={}, strategy={}",
+                        nextNode.getNodeType(), strategyConfig.getStrategy());
             }
-            String gatewayName = FlowNodeType.SERVICE_TASK.name() + "_timer_task_exclusive_gateway_" + nextNode.getId();
+            String gatewayName = FlowNodeType.SERVICE_TASK.name()
+                    + "_timer_task_exclusive_gateway_" + getNameSuffix(nextNode);
             ExclusiveGatewayBuilder gatewayBuilder =
                     nullSafeGetNodeBuilder(gatewayName, nextNode, () -> new ExclusiveGatewayBuilder(gatewayName));
             targetExecution.next(gatewayBuilder);
             if (log.isDebugEnabled()) {
-                log.debug("Set up the gateway node succeed, instanceId={}, intanceType={}, activityId={}",
-                        nextNode.getId(), nextNode.getNodeType(), gatewayBuilder.getGraphId());
+                log.debug("Set up the gateway node succeed, intanceType={}, activityId={}",
+                        nextNode.getNodeType(), gatewayBuilder.getGraphId());
             }
             targetExecution.route(String.format("${%s}", FlowTaskInstance.ABORT_VARIABLE_NAME),
                     this.targetProcessBuilder.endProcess());
@@ -285,17 +294,17 @@ public class FlowInstanceConfigurer extends GraphConfigurer<FlowInstance, BaseFl
                     gatewayBuilder.getGraphId() + " -> " + serviceTaskBuilder.getGraphId(),
                     String.format("${!%s}", FlowTaskInstance.ABORT_VARIABLE_NAME)));
             if (log.isDebugEnabled()) {
-                log.debug("Set up the service task node succeed, nodeInstanceId={}, activityId={}, name={}",
-                        nextNode.getId(), serviceTaskBuilder.getGraphId(), serviceTaskBuilder.getName());
+                log.debug("Set up the service task node succeed, activityId={}, name={}",
+                        serviceTaskBuilder.getGraphId(), serviceTaskBuilder.getName());
             }
             return next(serviceTaskBuilder, nextNode);
         }
 
         if (log.isDebugEnabled()) {
-            log.debug("Start defining a manual execution task node instance, instanceId={}, instanceType={}, "
-                    + "strategy={}", nextNode.getId(), nextNode.getNodeType(), strategyConfig.getStrategy());
+            log.debug("Start defining a manual execution task node instance, instanceType={}, strategy={}",
+                    nextNode.getNodeType(), strategyConfig.getStrategy());
         }
-        String waitTaskName = FlowNodeType.SERVICE_TASK.name() + "_wait_task_" + nextNode.getId();
+        String waitTaskName = FlowNodeType.SERVICE_TASK.name() + "_wait_task_" + getNameSuffix(nextNode);
         UserTaskBuilder userTaskBuilder = nullSafeGetNodeBuilder(waitTaskName, nextNode, () -> {
             UserTaskBuilder builder = new UserTaskBuilder(waitTaskName);
             userManuTaskConsumer.accept(builder);
@@ -304,16 +313,17 @@ public class FlowInstanceConfigurer extends GraphConfigurer<FlowInstance, BaseFl
         nextNode.bindFlowableElement(new FlowableElement(userTaskBuilder));
         targetExecution.next(userTaskBuilder);
         if (log.isDebugEnabled()) {
-            log.debug("Define a manual execution task node instance completion, instanceId={}, intanceType={}, "
-                    + "strategy={}", nextNode.getId(), nextNode.getNodeType(), strategyConfig.getStrategy());
+            log.debug("Define a manual execution task node instance completion, intanceType={}, strategy={}",
+                    nextNode.getNodeType(), strategyConfig.getStrategy());
         }
-        String gatewayName = FlowNodeType.SERVICE_TASK.name() + "_wait_task_exclusive_gateway_" + nextNode.getId();
+        String gatewayName = FlowNodeType.SERVICE_TASK.name()
+                + "_wait_task_exclusive_gateway_" + getNameSuffix(nextNode);
         ExclusiveGatewayBuilder gatewayBuilder =
                 nullSafeGetNodeBuilder(gatewayName, nextNode, () -> new ExclusiveGatewayBuilder(gatewayName));
         targetExecution.next(gatewayBuilder);
         if (log.isDebugEnabled()) {
-            log.debug("Set up the gateway node succeed, instanceId={}, intanceType={}, activityId={}",
-                    nextNode.getId(), nextNode.getNodeType(), gatewayBuilder.getGraphId());
+            log.debug("Set up the gateway node succeed, intanceType={}, activityId={}",
+                    nextNode.getNodeType(), gatewayBuilder.getGraphId());
         }
         targetExecution.route(String.format("${%s}", FlowTaskInstance.ABORT_VARIABLE_NAME),
                 this.targetProcessBuilder.endProcess());
@@ -321,15 +331,15 @@ public class FlowInstanceConfigurer extends GraphConfigurer<FlowInstance, BaseFl
                 gatewayBuilder.getGraphId() + " -> " + serviceTaskBuilder.getGraphId(),
                 String.format("${!%s}", FlowTaskInstance.ABORT_VARIABLE_NAME)));
         if (log.isDebugEnabled()) {
-            log.debug("Set up the service task node succeed, nodeInstanceId={}, activityId={}, name={}",
-                    nextNode.getId(), serviceTaskBuilder.getGraphId(), serviceTaskBuilder.getName());
+            log.debug("Set up the service task node succeed, activityId={}, name={}",
+                    serviceTaskBuilder.getGraphId(), serviceTaskBuilder.getName());
         }
         return next(serviceTaskBuilder, nextNode);
     }
 
     protected FlowInstanceConfigurer next(@NonNull FlowGatewayInstance nextNode,
             @NonNull Consumer<BaseProcessNodeBuilder<? extends Gateway>> gatewayConsumer) {
-        String gatewayName = FlowNodeType.GATEWAY.name() + "_exclusive_gateway_" + nextNode.getId();
+        String gatewayName = FlowNodeType.GATEWAY.name() + "_exclusive_gateway_" + getNameSuffix(nextNode);
         ExclusiveGatewayBuilder gatewayBuilder = nullSafeGetNodeBuilder(gatewayName, nextNode, () -> {
             ExclusiveGatewayBuilder builder = new ExclusiveGatewayBuilder(gatewayName);
             gatewayConsumer.accept(builder);
@@ -337,8 +347,8 @@ public class FlowInstanceConfigurer extends GraphConfigurer<FlowInstance, BaseFl
         });
         targetExecution.next(gatewayBuilder);
         if (log.isDebugEnabled()) {
-            log.debug("Set up the gateway node succeed, instanceId={}, intanceType={}, activityId={}, name={}",
-                    nextNode.getId(), nextNode.getNodeType(), gatewayBuilder.getGraphId(), gatewayBuilder.getName());
+            log.debug("Set up the gateway node succeed, intanceType={}, activityId={}, name={}",
+                    nextNode.getNodeType(), gatewayBuilder.getGraphId(), gatewayBuilder.getName());
         }
         return next(gatewayBuilder, nextNode);
     }
@@ -351,14 +361,17 @@ public class FlowInstanceConfigurer extends GraphConfigurer<FlowInstance, BaseFl
         return timerBuilder;
     }
 
+    private String getNameSuffix(BaseFlowNodeInstance inst) {
+        return this.flowInstanceId + "-" + inst.getShortUniqueId();
+    }
+
     private <T extends Task> TimerBoundaryEventBuilder setTimerBoundaryEvent(
             @NonNull BaseFlowNodeInstance attachedNode,
             @NonNull BaseTaskBuilder<T> target, Integer intervalSeconds, Date time) {
         Verify.verify(intervalSeconds != null || time != null, "Expire settings can not be null");
         Verify.verify(intervalSeconds == null || time == null, "Time and interval seconds can't both be set");
         if (log.isDebugEnabled()) {
-            log.debug("Start defining the execution expire interval, instanceId={}, intanceType={}",
-                    attachedNode.getId(), attachedNode.getNodeType());
+            log.debug("Start defining the execution expire interval, intanceType={}", attachedNode.getNodeType());
         }
         List<BaseProcessNodeBuilder<?>> subNodeBuilders = target.getSubProcessNodeBuilders();
         Verify.verify(subNodeBuilders.isEmpty(), "SubProcessNodeBuilder is not empty");
@@ -370,8 +383,7 @@ public class FlowInstanceConfigurer extends GraphConfigurer<FlowInstance, BaseFl
         }
         attachedNode.bindFlowableElement(new FlowableElement(timerBuilder));
         if (log.isDebugEnabled()) {
-            log.debug("Defining the execution expire interval completion, instanceId={}, intanceType={}",
-                    attachedNode.getId(), attachedNode.getNodeType());
+            log.debug("Defining the execution expire interval completion, intanceType={}", attachedNode.getNodeType());
         }
         return timerBuilder;
     }
@@ -379,8 +391,8 @@ public class FlowInstanceConfigurer extends GraphConfigurer<FlowInstance, BaseFl
     protected ErrorBoundaryEventBuilder setHandleableError(@NonNull FlowTaskInstance nextNode,
             @NonNull ServiceTaskBuilder builder, @NonNull ErrorCode errorCode) {
         if (log.isDebugEnabled()) {
-            log.debug("Start defining service task error handling logic, instanceId={}, intanceType={}, errorCode={}",
-                    nextNode.getId(), nextNode.getNodeType(), errorCode);
+            log.debug("Start defining service task error handling logic, intanceType={}, errorCode={}",
+                    nextNode.getNodeType(), errorCode);
         }
         List<BaseProcessNodeBuilder<?>> subNodeBuilders = builder.getSubProcessNodeBuilders();
         for (BaseProcessNodeBuilder<?> subNodeBuilder : subNodeBuilders) {
@@ -396,9 +408,8 @@ public class FlowInstanceConfigurer extends GraphConfigurer<FlowInstance, BaseFl
         nextNode.bindFlowableElement(new FlowableElement(errorBuilder));
         targetProcessBuilder.newExecution(errorBuilder).endProcess();
         if (log.isDebugEnabled()) {
-            log.debug(
-                    "Defining the service task error handling completion, instanceId={}, intanceType={}, errorCode={}",
-                    nextNode.getId(), nextNode.getNodeType(), errorCode);
+            log.debug("Defining the service task error handling completion, intanceType={}, errorCode={}",
+                    nextNode.getNodeType(), errorCode);
         }
         return errorBuilder;
     }

@@ -43,6 +43,7 @@ import com.oceanbase.odc.metadb.flow.GateWayInstanceRepository;
 import com.oceanbase.odc.metadb.flow.NodeInstanceEntityRepository;
 import com.oceanbase.odc.metadb.flow.SequenceInstanceRepository;
 import com.oceanbase.odc.metadb.flow.ServiceTaskInstanceRepository;
+import com.oceanbase.odc.metadb.flow.UserTaskInstanceCandidateRepository;
 import com.oceanbase.odc.metadb.flow.UserTaskInstanceRepository;
 import com.oceanbase.odc.service.flow.instance.BaseFlowNodeInstance;
 import com.oceanbase.odc.service.flow.instance.FlowApprovalInstance;
@@ -82,6 +83,8 @@ public class FlowableAdaptorTest extends ServiceTestEnv {
     private UserTaskInstanceRepository userTaskInstanceRepository;
     @Autowired
     private ServiceTaskInstanceRepository serviceTaskRepository;
+    @Autowired
+    private UserTaskInstanceCandidateRepository userTaskInstanceCandidateRepository;
 
     @Before
     public void setUp() {
@@ -221,20 +224,28 @@ public class FlowableAdaptorTest extends ServiceTestEnv {
     }
 
     private FlowGatewayInstance createGatewayInstance(Long flowInstanceId) {
-        return new FlowGatewayInstance(1L, flowInstanceId, true, true, flowableAdaptor,
+        FlowGatewayInstance inst = new FlowGatewayInstance(1L, flowInstanceId, true, true, flowableAdaptor,
                 nodeInstanceEntityRepository, sequenceRepository, gateWayInstanceRepository);
+        inst.create();
+        return inst;
     }
 
     private FlowApprovalInstance createApprovalInstance(Long flowInstanceId) {
-        return new FlowApprovalInstance(1L, flowInstanceId, null, 12, true, true, false, flowableAdaptor,
-                taskService, formService, new LocalEventPublisher(), authenticationFacade,
-                nodeInstanceEntityRepository, sequenceRepository, userTaskInstanceRepository);
+        FlowApprovalInstance inst = new FlowApprovalInstance(1L, flowInstanceId, null, 12, true, true, false,
+                flowableAdaptor, taskService, formService, new LocalEventPublisher(), authenticationFacade,
+                nodeInstanceEntityRepository, sequenceRepository, userTaskInstanceRepository,
+                userTaskInstanceCandidateRepository);
+        inst.create();
+        return inst;
     }
 
     private FlowTaskInstance createTaskInstance(Long flowInstanceId) {
-        return new FlowTaskInstance(TaskType.ASYNC, 1L, flowInstanceId, ExecutionStrategyConfig.autoStrategy(),
+        FlowTaskInstance inst = new FlowTaskInstance(TaskType.ASYNC, 1L, flowInstanceId,
+                ExecutionStrategyConfig.autoStrategy(),
                 true, true, taskType -> null, flowableAdaptor, new LocalEventPublisher(), taskService,
                 nodeInstanceEntityRepository, sequenceRepository, serviceTaskRepository);
+        inst.create();
+        return inst;
     }
 
     private FlowInstanceEntity createFlowInstanceEntity() {

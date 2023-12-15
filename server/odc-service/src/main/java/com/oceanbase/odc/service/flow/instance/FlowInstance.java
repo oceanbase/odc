@@ -433,6 +433,7 @@ public class FlowInstance extends Graph implements SecurityResource, Organizatio
      * this method will insert the topo structure between the related nodes
      */
     public void buildTopology() {
+        forEachInstanceNode(BaseFlowNodeInstance::create);
         List<Pair<BaseFlowNodeInstance, FlowableElement>> elts = new ArrayList<>();
         forEachInstanceNode(inst -> {
             for (FlowableElement elt : inst.getBindFlowableElements()) {

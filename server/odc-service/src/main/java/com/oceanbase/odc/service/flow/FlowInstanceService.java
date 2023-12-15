@@ -666,7 +666,6 @@ public class FlowInstanceService {
                     flowFactory.generateFlowTaskInstance(flowInstance.getId(), !addRollbackPlanNode, true, taskType,
                             strategyConfig);
             taskInstance.setTargetTaskId(taskEntity.getId());
-            taskInstance.update();
             if (addRollbackPlanNode) {
                 FlowTaskInstance rollbackPlanInstance =
                         flowFactory.generateFlowTaskInstance(flowInstance.getId(), true, false,
@@ -723,7 +722,6 @@ public class FlowInstanceService {
                     false, TaskType.PRE_CHECK,
                     ExecutionStrategyConfig.autoStrategy());
             riskDetectInstance.setTargetTaskId(preCheckTaskEntity.getId());
-            riskDetectInstance.update();
             FlowGatewayInstance riskLevelGateway =
                     flowFactory.generateFlowGatewayInstance(flowInstance.getId(), false, true);
             FlowInstanceConfigurer startConfigurer =
@@ -788,8 +786,7 @@ public class FlowInstanceService {
                     nodeConfig.getAutoApproval(), approvalFlowConfig.getApprovalExpirationIntervalSeconds(),
                     nodeConfig.getExternalApprovalId());
             if (Objects.nonNull(resourceRoleId)) {
-                approvalPermissionService.setCandidateResourceRole(approvalInstance.getId(),
-                        StringUtils.join(flowInstanceReq.getProjectId(), ":", resourceRoleId));
+                approvalInstance.setCandidate(StringUtils.join(flowInstanceReq.getProjectId(), ":", resourceRoleId));
             }
             FlowGatewayInstance approvalGatewayInstance =
                     flowFactory.generateFlowGatewayInstance(flowInstance.getId(), false, true);
@@ -802,7 +799,6 @@ public class FlowInstanceService {
                 FlowTaskInstance taskInstance = flowFactory.generateFlowTaskInstance(flowInstance.getId(), false, true,
                         taskType, strategyConfig);
                 taskInstance.setTargetTaskId(targetTaskId);
-                taskInstance.update();
                 FlowInstanceConfigurer taskConfigurer;
                 if (taskType == TaskType.ASYNC
                         && Boolean.TRUE.equals(((DatabaseChangeParameters) parameters).getGenerateRollbackPlan())) {

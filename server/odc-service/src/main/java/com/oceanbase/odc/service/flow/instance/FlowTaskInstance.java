@@ -118,10 +118,6 @@ public class FlowTaskInstance extends BaseFlowNodeInstance {
         this.taskType = taskType;
         this.delegateConvertor = convertor;
         alloc();
-        create();
-        Verify.notNull(getId(), "id");
-        Verify.notNull(getCreateTime(), "CreateTime");
-        Verify.notNull(getUpdateTime(), "UpdateTime");
         eventPublisher.publishEvent(new TaskInstanceCreatedEvent(this));
     }
 
@@ -131,7 +127,7 @@ public class FlowTaskInstance extends BaseFlowNodeInstance {
     }
 
     @Override
-    protected void create() {
+    public void create() {
         validNotExists();
         ServiceTaskInstanceEntity entity = new ServiceTaskInstanceEntity();
         entity.setOrganizationId(getOrganizationId());
@@ -141,6 +137,7 @@ public class FlowTaskInstance extends BaseFlowNodeInstance {
         entity.setEndEndpoint(isEndEndPoint());
         entity.setStrategy(this.strategyConfig.getStrategy());
         entity.setTaskType(getTaskType());
+        entity.setTargetTaskId(getTargetTaskId());
         entity.setWaitExecExpireIntervalSeconds(this.strategyConfig.getPendingExpireIntervalSeconds());
         entity.setExecutionTime(this.strategyConfig.getExecutionTime());
         entity = serviceTaskRepository.save(entity);

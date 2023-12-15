@@ -62,10 +62,6 @@ public class FlowGatewayInstance extends BaseFlowNodeInstance {
                 nodeRepository, sequenceRepository);
         this.gateWayInstanceRepository = gatewayInstanceRepository;
         alloc();
-        create();
-        Verify.notNull(getId(), "id");
-        Verify.notNull(getCreateTime(), "CreateTime");
-        Verify.notNull(getUpdateTime(), "UpdateTime");
     }
 
     @Override
@@ -74,7 +70,7 @@ public class FlowGatewayInstance extends BaseFlowNodeInstance {
     }
 
     @Override
-    protected void create() {
+    public void create() {
         validNotExists();
         GateWayInstanceEntity entity = new GateWayInstanceEntity();
         entity.setOrganizationId(getOrganizationId());

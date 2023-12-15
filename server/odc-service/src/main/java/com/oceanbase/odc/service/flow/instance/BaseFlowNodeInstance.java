@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.UUID;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.RandomStringUtils;
 
 import com.oceanbase.odc.core.authority.model.SecurityResource;
 import com.oceanbase.odc.core.flow.graph.GraphVertex;
@@ -58,6 +59,7 @@ public abstract class BaseFlowNodeInstance extends GraphVertex implements Securi
     protected Date createTime;
     protected Date updateTime;
     private final boolean endEndPoint;
+    private final String shortUniqueId;
     private final boolean startEndpoint;
     private final FlowNodeType nodeType;
     private final long organizationId;
@@ -112,6 +114,7 @@ public abstract class BaseFlowNodeInstance extends GraphVertex implements Securi
             this.activityId = null;
         }
         this.bindFlowableElements = new ArrayList<>();
+        this.shortUniqueId = RandomStringUtils.random(12, UUID.randomUUID().toString().replace("-", ""));
     }
 
     /**
@@ -219,7 +222,7 @@ public abstract class BaseFlowNodeInstance extends GraphVertex implements Securi
     /**
      * Create instance information
      */
-    abstract protected void create();
+    abstract public void create();
 
     /**
      * Update instance information

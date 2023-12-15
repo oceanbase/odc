@@ -47,6 +47,7 @@ import com.oceanbase.odc.metadb.flow.NodeInstanceEntityRepository;
 import com.oceanbase.odc.metadb.flow.SequenceInstanceRepository;
 import com.oceanbase.odc.metadb.flow.ServiceTaskInstanceEntity;
 import com.oceanbase.odc.metadb.flow.ServiceTaskInstanceRepository;
+import com.oceanbase.odc.metadb.flow.UserTaskInstanceCandidateRepository;
 import com.oceanbase.odc.metadb.flow.UserTaskInstanceEntity;
 import com.oceanbase.odc.metadb.flow.UserTaskInstanceRepository;
 import com.oceanbase.odc.service.flow.instance.BaseFlowNodeInstance;
@@ -93,6 +94,8 @@ public class FlowableAdaptorImpl implements FlowableAdaptor {
     private AuthenticationFacade authenticationFacade;
     @Autowired
     private GateWayInstanceRepository gateWayInstanceRepository;
+    @Autowired
+    private UserTaskInstanceCandidateRepository userTaskInstanceCandidateRepository;
 
     @Override
     public void setProcessInstanceId(@NonNull Long flowInstanceId, @NonNull String processInstanceId) {
@@ -199,7 +202,7 @@ public class FlowableAdaptorImpl implements FlowableAdaptor {
         return innerConvert(optional, this,
                 (entity, flowService) -> new FlowApprovalInstance(entity, flowService, taskService, formService,
                         eventPublisher, authenticationFacade, nodeInstanceRepository, sequenceRepository,
-                        userTaskInstanceRepository));
+                        userTaskInstanceRepository, userTaskInstanceCandidateRepository));
     }
 
     @Override
@@ -210,7 +213,7 @@ public class FlowableAdaptorImpl implements FlowableAdaptor {
         return innerConvert(optional, this,
                 (entity, flowService) -> new FlowApprovalInstance(entity, flowService, taskService, formService,
                         eventPublisher, authenticationFacade, nodeInstanceRepository, sequenceRepository,
-                        userTaskInstanceRepository));
+                        userTaskInstanceRepository, userTaskInstanceCandidateRepository));
     }
 
     @Override
