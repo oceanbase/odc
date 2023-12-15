@@ -83,18 +83,18 @@ import com.oceanbase.odc.service.connection.database.model.QueryDatabaseParams;
 import com.oceanbase.odc.service.connection.database.model.TransferDatabasesReq;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.db.DBSchemaService;
-import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.iam.HorizontalDataPermissionValidator;
 import com.oceanbase.odc.service.iam.OrganizationService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
+import com.oceanbase.odc.service.onlineschemachange.ddl.DBUser;
+import com.oceanbase.odc.service.onlineschemachange.ddl.OscDBAccessor;
+import com.oceanbase.odc.service.onlineschemachange.ddl.OscDBAccessorFactory;
 import com.oceanbase.odc.service.onlineschemachange.rename.OscDBUserUtil;
 import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.odc.service.session.factory.OBConsoleDataSourceFactory;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.tools.dbbrowser.model.DBDatabase;
-import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
-import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -567,13 +567,13 @@ public class DatabaseService {
         DefaultConnectSessionFactory factory = new DefaultConnectSessionFactory(config);
         ConnectionSession connSession = factory.generateSession();
         try {
-            DBSchemaAccessor dbSchemaAccessor = DBSchemaAccessors.create(connSession);
-            List<DBObjectIdentity> dbUsers = dbSchemaAccessor.listUsers();
+            OscDBAccessor dbSchemaAccessor = new OscDBAccessorFactory().generate(connSession);
+            List<DBUser> dbUsers = dbSchemaAccessor.listUsers(null);
             Set<String> whiteUsers = OscDBUserUtil.getLockUserWhiteList(config);
 
             return new PageImpl<>(dbUsers.stream()
-                    .filter(u -> getUserPredicate(config.getDialectType(), whiteUsers).test(u.getName()))
-                    .map(d -> DatabaseUser.builder().name(d.getName()).build())
+                    .filter(u -> getUserPredicate(whiteUsers).test(u.getName()))
+                    .map(d -> DatabaseUser.builder().name(d.getNameWithHost()).build())
                     .collect(Collectors.toList()));
         } finally {
             connSession.expire();
@@ -595,10 +595,7 @@ public class DatabaseService {
         return names;
     }
 
-    private Predicate<String> getUserPredicate(DialectType dialectType, Set<String> whiteUsers) {
-        if (dialectType.isMysql()) {
-            return u -> u != null && u.contains("@") ? !whiteUsers.contains(u.split("@")[0]) : !whiteUsers.contains(u);
-        }
+    private Predicate<String> getUserPredicate(Set<String> whiteUsers) {
         return u -> !whiteUsers.contains(u);
     }
 

@@ -35,6 +35,8 @@ public class DBUser implements DBObject {
 
     private DBAccountLockType accountLocked;
 
+    private String host;
+
     @Override
     public String name() {
         return this.name;
@@ -43,5 +45,9 @@ public class DBUser implements DBObject {
     @Override
     public DBObjectType type() {
         return DBObjectType.USER;
+    }
+
+    public String getNameWithHost() {
+        return name + (host == null ? "" : "@'" + host + "'");
     }
 }

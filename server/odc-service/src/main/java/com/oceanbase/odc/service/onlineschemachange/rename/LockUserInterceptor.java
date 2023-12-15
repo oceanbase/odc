@@ -65,7 +65,7 @@ public class LockUserInterceptor implements RenameTableInterceptor {
         // filter users is unlocked and to lock them
         shouldBeLockedUsers = oscDBAccessor.listUsers(parameters.getLockUsers())
                 .stream().filter(dbUser -> dbUser.getAccountLocked() == DBAccountLockType.UNLOCKED)
-                .map(DBUser::getName)
+                .map(DBUser::getNameWithHost)
                 .collect(Collectors.toList());
 
         if (CollectionUtils.isEmpty(shouldBeLockedUsers)) {
