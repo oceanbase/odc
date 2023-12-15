@@ -54,7 +54,6 @@ import com.oceanbase.odc.service.schedule.model.JobType;
 import com.oceanbase.odc.service.schedule.model.PartitionPlanJobParameters;
 import com.oceanbase.odc.service.schedule.model.ScheduleStatus;
 import com.oceanbase.odc.service.schedule.model.TriggerConfig;
-import com.oceanbase.odc.service.schedule.model.TriggerStrategy;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartition;
@@ -287,7 +286,8 @@ public class PartitionPlanService {
         try {
             // Create partition plan job.
             ScheduleEntity scheduleEntity = createDatabasePartitionPlanSchedule(
-                    databasePartitionPlanEntity.getDatabaseId(),databasePartitionPlanEntity.getId(),databasePartitionPlan.getTriggerConfig());
+                    databasePartitionPlanEntity.getDatabaseId(), databasePartitionPlanEntity.getId(),
+                    databasePartitionPlan.getTriggerConfig());
             // Bind partition plan job to entity.
             databasePartitionPlanRepository.updateScheduleIdById(databasePartitionPlanEntity.getId(),
                     scheduleEntity.getId());
@@ -331,7 +331,8 @@ public class PartitionPlanService {
      * Create a quartz job to execute partition-plan.
      */
     @Transactional
-    public ScheduleEntity createDatabasePartitionPlanSchedule(Long databaseId,Long partitionPlanId,TriggerConfig triggerConfig)
+    public ScheduleEntity createDatabasePartitionPlanSchedule(Long databaseId, Long partitionPlanId,
+            TriggerConfig triggerConfig)
             throws SchedulerException, ClassNotFoundException {
         ScheduleEntity scheduleEntity = new ScheduleEntity();
         scheduleEntity.setDatabaseId(databaseId);

@@ -47,5 +47,5 @@ public class DatabasePartitionPlan implements Serializable {
     private boolean inspectEnable;
     private InspectTriggerStrategy inspectTriggerStrategy;
     private List<TablePartitionPlan> tablePartitionPlans;
-    private TriggerConfig            triggerConfig;
+    private TriggerConfig triggerConfig;
 }
