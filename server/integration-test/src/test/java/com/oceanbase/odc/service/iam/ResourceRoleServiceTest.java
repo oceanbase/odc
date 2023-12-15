@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.iam;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
 import org.junit.After;
@@ -65,8 +66,8 @@ public class ResourceRoleServiceTest extends MockedAuthorityTestEnv {
 
     @Test
     public void testSaveAll_Success() {
-        Mockito.when(resourceRoleRepository.findByResourceTypeAndRoleName(Mockito.any(), Mockito.any()))
-                .thenReturn(Optional.of(getResourceRoleEntity()));
+        Mockito.when(resourceRoleRepository.findAll()).thenReturn(getResourceRoleEntity());
+        Mockito.when(resourceRoleRepository.findById(1L)).thenReturn(Optional.of(getResourceRoleEntity().get(0)));
         Mockito.when(authenticationFacade.currentOrganizationId()).thenReturn(1L);
 
         resourceRoleService.saveAll(Arrays.asList(getProjectOwner()));
@@ -77,9 +78,9 @@ public class ResourceRoleServiceTest extends MockedAuthorityTestEnv {
 
     @Test
     public void testListByResourceId_Success() {
-        Mockito.when(resourceRoleRepository.findByResourceTypeAndRoleName(Mockito.any(), Mockito.any()))
-                .thenReturn(Optional.of(getResourceRoleEntity()));
-        Mockito.when(resourceRoleRepository.findById(1L)).thenReturn(Optional.of(getResourceRoleEntity()));
+        Mockito.when(resourceRoleRepository.findAll()).thenReturn(getResourceRoleEntity());
+        Mockito.when(resourceRoleRepository.findById(Mockito.anyLong()))
+                .thenReturn(Optional.of(getResourceRoleEntity().get(0)));
         Mockito.when(authenticationFacade.currentOrganizationId()).thenReturn(1L);
         resourceRoleService.saveAll(Arrays.asList(getProjectOwner()));
 
@@ -89,9 +90,8 @@ public class ResourceRoleServiceTest extends MockedAuthorityTestEnv {
 
     @Test
     public void testListByOrganizationIdAndUserId_Success() {
-        Mockito.when(resourceRoleRepository.findByResourceTypeAndRoleName(Mockito.any(), Mockito.any()))
-                .thenReturn(Optional.of(getResourceRoleEntity()));
-        Mockito.when(resourceRoleRepository.findById(1L)).thenReturn(Optional.of(getResourceRoleEntity()));
+        Mockito.when(resourceRoleRepository.findAll()).thenReturn(getResourceRoleEntity());
+        Mockito.when(resourceRoleRepository.findById(1L)).thenReturn(Optional.of(getResourceRoleEntity().get(0)));
         Mockito.when(authenticationFacade.currentOrganizationId()).thenReturn(1L);
         resourceRoleService.saveAll(Arrays.asList(getProjectOwner()));
 
@@ -101,9 +101,8 @@ public class ResourceRoleServiceTest extends MockedAuthorityTestEnv {
 
     @Test
     public void testDeleteById_Success() {
-        Mockito.when(resourceRoleRepository.findByResourceTypeAndRoleName(Mockito.any(), Mockito.any()))
-                .thenReturn(Optional.of(getResourceRoleEntity()));
-        Mockito.when(resourceRoleRepository.findById(1L)).thenReturn(Optional.of(getResourceRoleEntity()));
+        Mockito.when(resourceRoleRepository.findAll()).thenReturn(getResourceRoleEntity());
+        Mockito.when(resourceRoleRepository.findById(1L)).thenReturn(Optional.of(getResourceRoleEntity().get(0)));
         Mockito.when(authenticationFacade.currentOrganizationId()).thenReturn(1L);
         resourceRoleService.saveAll(Arrays.asList(getProjectOwner()));
 
@@ -119,11 +118,11 @@ public class ResourceRoleServiceTest extends MockedAuthorityTestEnv {
         return projectOwner;
     }
 
-    private ResourceRoleEntity getResourceRoleEntity() {
+    private List<ResourceRoleEntity> getResourceRoleEntity() {
         ResourceRoleEntity entity = new ResourceRoleEntity();
         entity.setId(1L);
         entity.setRoleName(ResourceRoleName.OWNER);
         entity.setResourceType(ResourceType.ODC_PROJECT);
-        return entity;
+        return Arrays.asList(entity);
     }
 }

@@ -109,7 +109,11 @@ public class ExternalSqlInterceptor extends BaseTimeConsumingInterceptor {
                         .ifPresent(rule -> {
                             Rule violationRule = new Rule();
                             RuleViolation violation = new RuleViolation();
+                            violation.setText(request.getSql());
                             violation.setLevel(2);
+                            violation.setOffset(0);
+                            violation.setStart(0);
+                            violation.setStop(request.getSql().length());
                             violation.setLocalizedMessage(SqlConsoleRules.EXTERNAL_SQL_INTERCEPTOR
                                     .getLocalizedMessage(new Object[] {rule.getProperties()
                                             .get(rule.getMetadata().getPropertyMetadatas().get(0).getName())
@@ -123,7 +127,11 @@ public class ExternalSqlInterceptor extends BaseTimeConsumingInterceptor {
                         .ifPresent(rule -> {
                             Rule violationRule = new Rule();
                             RuleViolation violation = new RuleViolation();
+                            violation.setText(request.getSql());
                             violation.setLevel(1);
+                            violation.setOffset(0);
+                            violation.setStart(0);
+                            violation.setStop(request.getSql().length());
                             violation.setLocalizedMessage(SqlConsoleRules.EXTERNAL_SQL_INTERCEPTOR
                                     .getLocalizedMessage(new Object[] {rule.getProperties()
                                             .get(rule.getMetadata().getPropertyMetadatas().get(0).getName())

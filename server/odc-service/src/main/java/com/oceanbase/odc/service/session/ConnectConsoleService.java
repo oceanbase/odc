@@ -35,6 +35,7 @@ import javax.validation.constraints.NotNull;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -87,6 +88,7 @@ import com.oceanbase.odc.service.db.session.KillSessionResult;
 import com.oceanbase.odc.service.dml.ValueEncodeType;
 import com.oceanbase.odc.service.feature.AllFeatures;
 import com.oceanbase.odc.service.session.interceptor.SqlCheckInterceptor;
+import com.oceanbase.odc.service.session.interceptor.SqlConsoleInterceptor;
 import com.oceanbase.odc.service.session.interceptor.SqlExecuteInterceptorService;
 import com.oceanbase.odc.service.session.model.BinaryContent;
 import com.oceanbase.odc.service.session.model.OdcResultSetMetaData.OdcTable;
@@ -190,7 +192,7 @@ public class ConnectConsoleService {
     }
 
     public SqlAsyncExecuteResp execute(@NotNull String sessionId,
-            @NotNull @Valid SqlAsyncExecuteReq request, boolean needSqlCheck) throws Exception {
+            @NotNull @Valid SqlAsyncExecuteReq request, boolean needSqlRuleCheck) throws Exception {
         ConnectionSession connectionSession = sessionService.nullSafeGet(sessionId, true);
 
         long maxSqlLength = sessionProperties.getMaxSqlLength();
@@ -226,7 +228,8 @@ public class ConnectConsoleService {
         SqlAsyncExecuteResp response = SqlAsyncExecuteResp.newSqlAsyncExecuteResp(sqlTuples);
         Map<String, Object> context = new HashMap<>();
         context.put(SHOW_TABLE_COLUMN_INFO, request.getShowTableColumnInfo());
-        context.put(SqlCheckInterceptor.NEED_SQL_CHECK_KEY, needSqlCheck);
+        context.put(SqlCheckInterceptor.NEED_SQL_CHECK_KEY, needSqlRuleCheck);
+        context.put(SqlConsoleInterceptor.NEED_SQL_CONSOLE_CHECK, needSqlRuleCheck);
         List<TraceStage> stages = sqlTuples.stream()
                 .map(s -> s.getSqlWatch().start(SqlExecuteStages.SQL_PRE_CHECK))
                 .collect(Collectors.toList());
@@ -251,6 +254,7 @@ public class ConnectConsoleService {
         statementCallBack.setFullLinkTraceTimeout(sessionProperties.getFullLinkTraceTimeoutSeconds());
         statementCallBack.setMaxCachedSize(sessionProperties.getResultSetMaxCachedSize());
         statementCallBack.setMaxCachedLines(sessionProperties.getResultSetMaxCachedLines());
+        statementCallBack.setLocale(LocaleContextHolder.getLocale());
 
         Future<List<JdbcGeneralResult>> futureResult = connectionSession.getAsyncJdbcExecutor(
                 ConnectionSessionConstants.CONSOLE_DS_KEY).execute(statementCallBack);

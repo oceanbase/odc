@@ -15,21 +15,19 @@
  */
 package com.oceanbase.odc.service.schedule.job;
 
-import static com.oceanbase.odc.core.shared.constant.OdcConstants.CREATOR_ID;
-import static com.oceanbase.odc.core.shared.constant.OdcConstants.FLOW_TASK_ID;
-
 import java.util.Map;
 
 import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.onlineschemachange.OnlineSchemaChangeContextHolder;
 import com.oceanbase.odc.service.onlineschemachange.OnlineSchemaChangeTaskHandler;
-import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
+import com.oceanbase.odc.service.onlineschemachange.ddl.DdlConstants;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -43,12 +41,12 @@ public class OnlineSchemaChangeCompleteJob implements OdcJob {
     @Override
     public void execute(JobExecutionContext context) {
         JobDataMap jobDataMap = context.getMergedJobDataMap();
-        OnlineSchemaChangeParameters onlineSchemaChangeParameters = JsonUtils.fromJson(JsonUtils.toJson(jobDataMap),
-                OnlineSchemaChangeParameters.class);
-        Map<String, Object> parameterDataMap = onlineSchemaChangeParameters.getParameterDataMap();
-        OnlineSchemaChangeContextHolder.trace((String) (parameterDataMap.get(CREATOR_ID)),
-                (String) parameterDataMap.get(FLOW_TASK_ID),
-                (String) parameterDataMap.get(OdcConstants.ORGANIZATION_ID));
+        String mdcContextObj = jobDataMap.getString(DdlConstants.MDC_CONTEXT);
+        if (mdcContextObj != null) {
+            OnlineSchemaChangeContextHolder.retrace(JsonUtils.fromJson(mdcContextObj,
+                    new TypeReference<Map<String, String>>() {}));
+        }
+
         try {
             log.info("Start execute {}", getClass().getSimpleName());
 

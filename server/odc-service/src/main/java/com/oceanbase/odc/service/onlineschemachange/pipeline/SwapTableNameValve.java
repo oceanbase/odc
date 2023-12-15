@@ -65,7 +65,7 @@ public class SwapTableNameValve extends BaseValve {
         ConnectionSession connectionSession = new DefaultConnectSessionFactory(config).generateSession();
         try {
             if (enableUserMonitor(parameters.getLockUsers())) {
-                userMonitorExecutor.start(parameters.getParameterDataMap());
+                userMonitorExecutor.start();
             }
             ConnectionSessionUtil.setCurrentSchema(connectionSession, taskParameters.getDatabaseName());
             DefaultRenameTableInvoker defaultRenameTableInvoker =

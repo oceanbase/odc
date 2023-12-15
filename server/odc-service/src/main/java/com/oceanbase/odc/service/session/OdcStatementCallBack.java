@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -42,6 +43,7 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.time.StopWatch;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.StatementCallback;
 
@@ -124,6 +126,8 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
     private long maxCachedSize = 1024 * 1024 * 1024; // 1 GB
     @Setter
     private Integer dbmsoutputMaxRows = null;
+    @Setter
+    private Locale locale;
 
     public OdcStatementCallBack(@NonNull List<SqlTuple> sqls, @NonNull ConnectionSession connectionSession) {
         this(sqls, connectionSession, null, null);
@@ -153,6 +157,9 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
 
     @Override
     public List<JdbcGeneralResult> doInStatement(Statement statement) throws SQLException, DataAccessException {
+        if (Objects.nonNull(locale)) {
+            LocaleContextHolder.setLocale(locale);
+        }
         if (ConnectionSessionUtil.isConsoleSessionReset(connectionSession)) {
             ConnectionSessionUtil.setConsoleSessionResetFlag(connectionSession, false);
             return this.sqls.stream().map(sqlTuple -> {

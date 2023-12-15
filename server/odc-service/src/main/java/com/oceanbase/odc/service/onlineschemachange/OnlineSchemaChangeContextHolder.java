@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.onlineschemachange;
 
+import java.util.Map;
+
 import org.slf4j.MDC;
 
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
@@ -47,13 +49,15 @@ public class OnlineSchemaChangeContextHolder {
         trace(userIdL, taskIdL, organizationIdL);
     }
 
+    public static void retrace(Map<String, String> context) {
+        MDC.setContextMap(context);
+    }
+
     /**
      * 清除任务日志meta信息上下文
      */
     public static void clear() {
-        MDC.remove(TASK_WORK_SPACE);
-        MDC.remove(TASK_ID);
-        MDC.remove(OdcConstants.ORGANIZATION_ID);
+        MDC.clear();
     }
 
     public static String get(String key) {
