@@ -230,7 +230,7 @@ public class FlowableAdaptorImpl implements FlowableAdaptor {
     @Override
     public void setFlowableElements(@NonNull List<Pair<BaseFlowNodeInstance, FlowableElement>> elements) {
         Set<Long> ids = elements.stream().map(p -> p.left.getId()).collect(Collectors.toSet());
-        List<NodeInstanceEntity> entities = this.nodeInstanceRepository.findByInstanceIds(ids);
+        List<NodeInstanceEntity> entities = this.nodeInstanceRepository.findByInstanceIdIn(ids);
         List<NodeInstanceEntity> nodes = elements.stream()
                 .filter(p -> entities.stream()
                         .noneMatch(e -> Objects.equals(e.getFlowableElementType(), p.right.getType())
@@ -246,7 +246,7 @@ public class FlowableAdaptorImpl implements FlowableAdaptor {
                     entity.setFlowInstanceId(p.left.getFlowInstanceId());
                     return entity;
                 }).collect(Collectors.toList());
-        this.nodeInstanceRepository.bulkSave(nodes);
+        this.nodeInstanceRepository.batchCreate(nodes);
     }
 
     private <T, V> Optional<T> innerConvert(@NonNull Optional<V> optional, @NonNull FlowableAdaptor flowableAdaptor,

@@ -452,7 +452,8 @@ public class FlowInstance extends Graph implements SecurityResource, Organizatio
             nodeEntity.setFlowableElementType(inst.getCoreFlowableElementType());
             entities.add(nodeEntity);
         });
-        Map<NodeInstanceEntityKey, NodeInstanceEntity> map = this.nodeInstanceRepository.bulkSave(entities)
+        Map<NodeInstanceEntityKey, NodeInstanceEntity> map = this.nodeInstanceRepository
+                .batchCreate(entities)
                 .stream().collect(Collectors.toMap(NodeInstanceEntityKey::new, e -> e));
         List<SequenceInstanceEntity> seqs = new ArrayList<>();
         forEachInstanceNode(inst -> {
@@ -471,7 +472,7 @@ public class FlowInstance extends Graph implements SecurityResource, Organizatio
                 seqs.add(sequenceEntity);
             }
         });
-        this.sequenceRepository.bulkSave(seqs);
+        this.sequenceRepository.batchCreate(seqs);
         log.info("Flow instance node establishes the topology relationship successfully, flowInstanceId={}", getId());
     }
 

@@ -68,7 +68,7 @@ public class NodeInstanceEntityRepositoryTest extends ServiceTestEnv {
         for (int i = 0; i < 10; i++) {
             entities.add(createEntity());
         }
-        repository.bulkSave(entities);
+        repository.batchCreate(entities);
         Assert.assertEquals(10, repository.findAll().size());
     }
 

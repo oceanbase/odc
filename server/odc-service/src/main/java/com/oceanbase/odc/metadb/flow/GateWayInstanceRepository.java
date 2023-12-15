@@ -15,16 +15,23 @@
  */
 package com.oceanbase.odc.metadb.flow;
 
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.Statement;
+import java.util.List;
 import java.util.Optional;
 
 import javax.transaction.Transactional;
 
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.jdbc.core.ConnectionCallback;
+import org.springframework.jdbc.core.JdbcTemplate;
 
+import com.oceanbase.odc.common.jpa.InsertSqlTemplateBuilder;
+import com.oceanbase.odc.config.jpa.OdcJpaRepository;
 import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
 import com.oceanbase.odc.service.flow.model.FlowNodeType;
 
@@ -36,7 +43,7 @@ import com.oceanbase.odc.service.flow.model.FlowNodeType;
  * @since ODC_release_3.3.0
  */
 public interface GateWayInstanceRepository
-        extends JpaRepository<GateWayInstanceEntity, Long>, JpaSpecificationExecutor<GateWayInstanceEntity> {
+        extends OdcJpaRepository<GateWayInstanceEntity, Long>, JpaSpecificationExecutor<GateWayInstanceEntity> {
 
     @Transactional
     @Query("delete from GateWayInstanceEntity as ut where ut.flowInstanceId=:instanceId")
@@ -59,5 +66,41 @@ public interface GateWayInstanceRepository
             nativeQuery = true)
     Optional<GateWayInstanceEntity> findByInstanceTypeAndName(@Param("instanceType") FlowNodeType instanceType,
             @Param("name") String name, @Param("flowInstanceId") Long flowInstanceId);
+
+    default List<GateWayInstanceEntity> batchCreate(List<GateWayInstanceEntity> entities) {
+        String sql = InsertSqlTemplateBuilder.from("flow_instance_node_gateway")
+                .field(GateWayInstanceEntity_.ORGANIZATION_ID)
+                .field(GateWayInstanceEntity_.STATUS)
+                .field("is_start_endpoint")
+                .field("is_end_endpoint")
+                .field(GateWayInstanceEntity_.FLOW_INSTANCE_ID)
+                .build();
+        JdbcTemplate jdbcTemplate = getJdbcTemplate();
+        return jdbcTemplate.execute((ConnectionCallback<List<GateWayInstanceEntity>>) con -> {
+            PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+            for (GateWayInstanceEntity item : entities) {
+                ps.setLong(1, item.getOrganizationId());
+                ps.setString(2, item.getStatus().name());
+                ps.setObject(3, item.isStartEndpoint());
+                ps.setObject(4, item.isEndEndpoint());
+                ps.setLong(5, item.getFlowInstanceId());
+                ps.addBatch();
+            }
+            ps.executeBatch();
+            ResultSet resultSet = ps.getGeneratedKeys();
+            int i = 0;
+            while (resultSet.next()) {
+                GateWayInstanceEntity entity = entities.get(i++);
+                if (resultSet.getObject("id") != null) {
+                    entity.setId(Long.valueOf(resultSet.getObject("id").toString()));
+                } else if (resultSet.getObject("ID") != null) {
+                    entity.setId(Long.valueOf(resultSet.getObject("ID").toString()));
+                } else if (resultSet.getObject("GENERATED_KEY") != null) {
+                    entity.setId(Long.valueOf(resultSet.getObject("GENERATED_KEY").toString()));
+                }
+            }
+            return entities;
+        });
+    }
 
 }

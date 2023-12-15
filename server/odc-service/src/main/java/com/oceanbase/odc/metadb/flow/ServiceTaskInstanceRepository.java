@@ -15,18 +15,24 @@
  */
 package com.oceanbase.odc.metadb.flow;
 
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.Statement;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
 import javax.transaction.Transactional;
 
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.jdbc.core.ConnectionCallback;
+import org.springframework.jdbc.core.JdbcTemplate;
 
+import com.oceanbase.odc.common.jpa.InsertSqlTemplateBuilder;
+import com.oceanbase.odc.config.jpa.OdcJpaRepository;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
 import com.oceanbase.odc.service.flow.model.FlowNodeType;
@@ -38,7 +44,7 @@ import com.oceanbase.odc.service.flow.model.FlowNodeType;
  * @date 2022-02-15 11:44
  * @since ODC_release_3.3.0
  */
-public interface ServiceTaskInstanceRepository extends JpaRepository<ServiceTaskInstanceEntity, Long>,
+public interface ServiceTaskInstanceRepository extends OdcJpaRepository<ServiceTaskInstanceEntity, Long>,
         JpaSpecificationExecutor<ServiceTaskInstanceEntity> {
 
     @Transactional
@@ -79,5 +85,51 @@ public interface ServiceTaskInstanceRepository extends JpaRepository<ServiceTask
             + "where a.parent_instance_id=:id and b.task_type=:#{#type.name()}", nativeQuery = true)
     List<ServiceTaskInstanceEntity> findByScheduleIdAndTaskType(@Param("id") Long scheduleId,
             @Param("type") TaskType type);
+
+    default List<ServiceTaskInstanceEntity> batchCreate(List<ServiceTaskInstanceEntity> entities) {
+        String sql = InsertSqlTemplateBuilder.from("flow_instance_node_task")
+                .field(ServiceTaskInstanceEntity_.ORGANIZATION_ID)
+                .field("task_task_id")
+                .field("task_execution_strategy")
+                .field(ServiceTaskInstanceEntity_.TASK_TYPE)
+                .field("wait_execution_expire_interval_seconds")
+                .field(ServiceTaskInstanceEntity_.status)
+                .field("is_start_endpoint")
+                .field("is_end_endpoint")
+                .field(ServiceTaskInstanceEntity_.FLOW_INSTANCE_ID)
+                .field(ServiceTaskInstanceEntity_.EXECUTION_TIME)
+                .build();
+        JdbcTemplate jdbcTemplate = getJdbcTemplate();
+        return jdbcTemplate.execute((ConnectionCallback<List<ServiceTaskInstanceEntity>>) con -> {
+            PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+            for (ServiceTaskInstanceEntity e : entities) {
+                ps.setLong(1, e.getOrganizationId());
+                ps.setLong(2, e.getTargetTaskId());
+                ps.setString(3, e.getStrategy().name());
+                ps.setString(4, e.getTaskType().name());
+                ps.setInt(5, e.getWaitExecExpireIntervalSeconds());
+                ps.setString(6, e.getStatus().name());
+                ps.setBoolean(7, e.isStartEndpoint());
+                ps.setBoolean(8, e.isEndEndpoint());
+                ps.setLong(9, e.getFlowInstanceId());
+                ps.setObject(10, e.getExecutionTime());
+                ps.addBatch();
+            }
+            ps.executeBatch();
+            ResultSet resultSet = ps.getGeneratedKeys();
+            int i = 0;
+            while (resultSet.next()) {
+                ServiceTaskInstanceEntity entity = entities.get(i++);
+                if (resultSet.getObject("id") != null) {
+                    entity.setId(Long.valueOf(resultSet.getObject("id").toString()));
+                } else if (resultSet.getObject("ID") != null) {
+                    entity.setId(Long.valueOf(resultSet.getObject("ID").toString()));
+                } else if (resultSet.getObject("GENERATED_KEY") != null) {
+                    entity.setId(Long.valueOf(resultSet.getObject("GENERATED_KEY").toString()));
+                }
+            }
+            return entities;
+        });
+    }
 
 }

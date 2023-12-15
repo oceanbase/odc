@@ -19,13 +19,10 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 
 import javax.transaction.Transactional;
 
-import org.apache.commons.collections4.CollectionUtils;
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -33,6 +30,8 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+import com.oceanbase.odc.common.jpa.InsertSqlTemplateBuilder;
+import com.oceanbase.odc.config.jpa.OdcJpaRepository;
 import com.oceanbase.odc.core.flow.model.FlowableElementType;
 import com.oceanbase.odc.service.flow.model.FlowNodeType;
 
@@ -43,7 +42,7 @@ import com.oceanbase.odc.service.flow.model.FlowNodeType;
  * @date 2022-02-09 14:18
  * @since ODC_release_3.3.0
  */
-public interface NodeInstanceEntityRepository extends JpaRepository<NodeInstanceEntity, Long>,
+public interface NodeInstanceEntityRepository extends OdcJpaRepository<NodeInstanceEntity, Long>,
         JpaSpecificationExecutor<NodeInstanceEntity> {
 
     @Query(value = "select * from flow_instance_node where instance_id=:instanceId and instance_type=:#{#instanceType.name()} and "
@@ -54,11 +53,10 @@ public interface NodeInstanceEntityRepository extends JpaRepository<NodeInstance
 
     List<NodeInstanceEntity> findByFlowInstanceId(Long flowInstanceId);
 
+    List<NodeInstanceEntity> findByInstanceIdIn(Collection<Long> instanceId);
+
     @Query(value = "select * from flow_instance_node where id in (:ids)", nativeQuery = true)
     List<NodeInstanceEntity> findByIds(@Param("ids") Collection<Long> ids);
-
-    @Query(value = "select * from flow_instance_node where instance_id in (:ids)", nativeQuery = true)
-    List<NodeInstanceEntity> findByInstanceIds(@Param("ids") Collection<Long> ids);
 
     @Transactional
     @Query("delete from NodeInstanceEntity as ni where ni.flowInstanceId=:instanceId")
@@ -71,24 +69,25 @@ public interface NodeInstanceEntityRepository extends JpaRepository<NodeInstance
     int deleteByInstanceIdAndInstanceType(@Param("instanceId") Long instanceId,
             @Param("instanceType") FlowNodeType instanceType);
 
-    JdbcTemplate getJdbcTemplate();
-
-    default List<NodeInstanceEntity> bulkSave(List<NodeInstanceEntity> entities) {
-        if (CollectionUtils.isEmpty(entities)) {
-            return Collections.emptyList();
-        }
-        String psSql = "insert into flow_instance_node(instance_id,instance_type,"
-                + "activity_id,name,flowable_element_type,flow_instance_id) values(?,?,?,?,?,?)";
+    default List<NodeInstanceEntity> batchCreate(List<NodeInstanceEntity> entities) {
+        String sql = InsertSqlTemplateBuilder.from("flow_instance_node")
+                .field(NodeInstanceEntity_.instanceId)
+                .field(NodeInstanceEntity_.instanceType)
+                .field(NodeInstanceEntity_.flowInstanceId)
+                .field(NodeInstanceEntity_.activityId)
+                .field(NodeInstanceEntity_.name)
+                .field(NodeInstanceEntity_.flowableElementType)
+                .build();
         JdbcTemplate jdbcTemplate = getJdbcTemplate();
         return jdbcTemplate.execute((ConnectionCallback<List<NodeInstanceEntity>>) con -> {
-            PreparedStatement ps = con.prepareStatement(psSql, Statement.RETURN_GENERATED_KEYS);
+            PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             for (NodeInstanceEntity item : entities) {
                 ps.setLong(1, item.getInstanceId());
                 ps.setString(2, item.getInstanceType().name());
-                ps.setString(3, item.getActivityId());
-                ps.setString(4, item.getName());
-                ps.setString(5, item.getFlowableElementType().name());
-                ps.setLong(6, item.getFlowInstanceId());
+                ps.setLong(3, item.getFlowInstanceId());
+                ps.setString(4, item.getActivityId());
+                ps.setString(5, item.getName());
+                ps.setString(6, item.getFlowableElementType().name());
                 ps.addBatch();
             }
             ps.executeBatch();

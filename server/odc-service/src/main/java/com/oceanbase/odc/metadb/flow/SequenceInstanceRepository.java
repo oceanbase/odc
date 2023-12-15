@@ -18,19 +18,20 @@ package com.oceanbase.odc.metadb.flow;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
-import java.util.Collections;
+import java.util.Collection;
 import java.util.List;
 
 import javax.transaction.Transactional;
 
-import org.apache.commons.collections4.CollectionUtils;
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.JdbcTemplate;
+
+import com.oceanbase.odc.common.jpa.InsertSqlTemplateBuilder;
+import com.oceanbase.odc.config.jpa.OdcJpaRepository;
 
 /**
  * Repository layer for {@link SequenceInstanceEntity}
@@ -40,7 +41,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
  * @since ODC_release_3.3.0
  */
 public interface SequenceInstanceRepository
-        extends JpaRepository<SequenceInstanceEntity, Long>, JpaSpecificationExecutor<SequenceInstanceEntity> {
+        extends OdcJpaRepository<SequenceInstanceEntity, Long>, JpaSpecificationExecutor<SequenceInstanceEntity> {
 
     @Transactional
     @Query("delete from SequenceInstanceEntity as si where si.sourceNodeInstanceId=:nodeInstanceId or si.targetNodeInstanceId=:nodeInstanceId")
@@ -52,6 +53,8 @@ public interface SequenceInstanceRepository
     @Modifying
     int deleteBySourceNodeInstanceId(@Param("sourceNodeInstanceId") Long sourceNodeInstanceId);
 
+    int deleteBySourceNodeInstanceIdIn(Collection<Long> sourceNodeInstanceId);
+
     @Transactional
     @Query("delete from SequenceInstanceEntity as si where si.flowInstanceId=:instanceId")
     @Modifying
@@ -60,17 +63,15 @@ public interface SequenceInstanceRepository
     @Query(value = "select * from flow_instance_sequence where flow_instance_id=:flowInstanceId", nativeQuery = true)
     List<SequenceInstanceEntity> findByFlowInstanceId(@Param("flowInstanceId") Long flowInstanceId);
 
-    JdbcTemplate getJdbcTemplate();
-
-    default List<SequenceInstanceEntity> bulkSave(List<SequenceInstanceEntity> entities) {
-        if (CollectionUtils.isEmpty(entities)) {
-            return Collections.emptyList();
-        }
-        String psSql = "insert into flow_instance_sequence(source_node_instance_id,"
-                + "target_node_instance_id,flow_instance_id) values(?,?,?)";
+    default List<SequenceInstanceEntity> batchCreate(List<SequenceInstanceEntity> entities) {
+        String sql = InsertSqlTemplateBuilder.from("flow_instance_sequence")
+                .field(SequenceInstanceEntity_.sourceNodeInstanceId)
+                .field(SequenceInstanceEntity_.targetNodeInstanceId)
+                .field(SequenceInstanceEntity_.flowInstanceId)
+                .build();
         JdbcTemplate jdbcTemplate = getJdbcTemplate();
         return jdbcTemplate.execute((ConnectionCallback<List<SequenceInstanceEntity>>) con -> {
-            PreparedStatement ps = con.prepareStatement(psSql, Statement.RETURN_GENERATED_KEYS);
+            PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             for (SequenceInstanceEntity item : entities) {
                 ps.setLong(1, item.getSourceNodeInstanceId());
                 ps.setLong(2, item.getTargetNodeInstanceId());

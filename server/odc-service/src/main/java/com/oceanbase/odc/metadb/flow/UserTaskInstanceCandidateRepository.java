@@ -15,16 +15,23 @@
  */
 package com.oceanbase.odc.metadb.flow;
 
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.Statement;
 import java.util.Collection;
 import java.util.List;
 
 import javax.transaction.Transactional;
 
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.jdbc.core.ConnectionCallback;
+import org.springframework.jdbc.core.JdbcTemplate;
+
+import com.oceanbase.odc.common.jpa.InsertSqlTemplateBuilder;
+import com.oceanbase.odc.config.jpa.OdcJpaRepository;
 
 /**
  * Repository layer for {@link UserTaskInstanceCandidateEntity}
@@ -33,7 +40,7 @@ import org.springframework.data.repository.query.Param;
  * @date 2022-02-07 16:47
  * @since ODC_release_3.3.0
  */
-public interface UserTaskInstanceCandidateRepository extends JpaRepository<UserTaskInstanceCandidateEntity, Long>,
+public interface UserTaskInstanceCandidateRepository extends OdcJpaRepository<UserTaskInstanceCandidateEntity, Long>,
         JpaSpecificationExecutor<UserTaskInstanceCandidateEntity> {
 
     List<UserTaskInstanceCandidateEntity> findByApprovalInstanceId(Long approvalInstanceId);
@@ -59,5 +66,39 @@ public interface UserTaskInstanceCandidateRepository extends JpaRepository<UserT
     @Modifying
     int deleteByApprovalInstanceIdAndRoleIds(@Param("approvalInstanceId") Long approvalInstanceId,
             @Param("candidates") Collection<Long> candidates);
+
+    default List<UserTaskInstanceCandidateEntity> batchCreate(List<UserTaskInstanceCandidateEntity> entities) {
+        String sql = InsertSqlTemplateBuilder.from("flow_instance_node_approval_candidate")
+                .field(UserTaskInstanceCandidateEntity_.APPROVAL_INSTANCE_ID)
+                .field(UserTaskInstanceCandidateEntity_.USER_ID)
+                .field(UserTaskInstanceCandidateEntity_.ROLE_ID)
+                .field(UserTaskInstanceCandidateEntity_.RESOURCE_ROLE_IDENTIFIER)
+                .build();
+        JdbcTemplate jdbcTemplate = getJdbcTemplate();
+        return jdbcTemplate.execute((ConnectionCallback<List<UserTaskInstanceCandidateEntity>>) con -> {
+            PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+            for (UserTaskInstanceCandidateEntity e : entities) {
+                ps.setLong(1, e.getApprovalInstanceId());
+                ps.setLong(2, e.getUserId());
+                ps.setLong(3, e.getRoleId());
+                ps.setString(4, e.getResourceRoleIdentifier());
+                ps.addBatch();
+            }
+            ps.executeBatch();
+            ResultSet resultSet = ps.getGeneratedKeys();
+            int i = 0;
+            while (resultSet.next()) {
+                UserTaskInstanceCandidateEntity entity = entities.get(i++);
+                if (resultSet.getObject("id") != null) {
+                    entity.setId(Long.valueOf(resultSet.getObject("id").toString()));
+                } else if (resultSet.getObject("ID") != null) {
+                    entity.setId(Long.valueOf(resultSet.getObject("ID").toString()));
+                } else if (resultSet.getObject("GENERATED_KEY") != null) {
+                    entity.setId(Long.valueOf(resultSet.getObject("GENERATED_KEY").toString()));
+                }
+            }
+            return entities;
+        });
+    }
 
 }
