@@ -28,7 +28,7 @@ import com.oceanbase.odc.common.util.StringUtils;
 
 public final class InsertSqlTemplateBuilder {
     private String tableName;
-    private List<String> filed = new ArrayList<>();
+    private List<String> fields = new ArrayList<>();
 
     public static InsertSqlTemplateBuilder from(String tableName) {
         InsertSqlTemplateBuilder insertSqlTemplateBuilder = new InsertSqlTemplateBuilder();
@@ -37,12 +37,12 @@ public final class InsertSqlTemplateBuilder {
     }
 
     public InsertSqlTemplateBuilder field(SingularAttribute<?, ?> attr) {
-        filed.add(StringUtils.camelCaseToSnakeCase(attr.getName()));
+        fields.add(StringUtils.camelCaseToSnakeCase(attr.getName()));
         return this;
     }
 
     public InsertSqlTemplateBuilder field(String attr) {
-        filed.add(attr);
+        fields.add(attr);
         return this;
     }
 
@@ -51,9 +51,9 @@ public final class InsertSqlTemplateBuilder {
         sb.append("INSERT INTO `");
         sb.append(tableName);
         sb.append("` (");
-        sb.append(String.join(",", filed));
+        sb.append(String.join(",", fields));
         sb.append(") VALUES (");
-        String value = Joiner.on(",").join(IntStream.range(0, filed.size()).mapToObj(i -> "?")
+        String value = Joiner.on(",").join(IntStream.range(0, fields.size()).mapToObj(i -> "?")
                 .collect(Collectors.toList()));
         sb.append(value);
         sb.append(");");
