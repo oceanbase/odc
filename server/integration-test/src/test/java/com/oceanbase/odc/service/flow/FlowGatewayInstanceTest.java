@@ -105,6 +105,7 @@ public class FlowGatewayInstanceTest extends ServiceTestEnv {
             String activityId) {
         FlowGatewayInstance instance = new FlowGatewayInstance(1L, 1L, startEndPoint, endEndPoint,
                 flowableAdaptor, nodeRepository, sequenceRepository, gateWayInstanceRepository);
+        instance.create();
         instance.setActivityId(activityId);
         instance.setName(name);
         return instance;
