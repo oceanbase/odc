@@ -164,10 +164,10 @@ public class MySQLNoGreaterThan5740SchemaAccessor implements DBSchemaAccessor {
     @Override
     public List<DBObjectIdentity> listUsers() {
         MySQLSqlBuilder sb = new MySQLSqlBuilder();
-        sb.append("SELECT DISTINCT user,host FROM mysql.user");
+        sb.append("SELECT DISTINCT user FROM mysql.user");
         return jdbcOperations.query(sb.toString(), (rs, rowNum) -> {
             DBObjectIdentity dbUser = new DBObjectIdentity();
-            dbUser.setName(rs.getString(1) + "@'"+ rs.getString(2)+"'");
+            dbUser.setName(rs.getString(1));
             dbUser.setType(DBObjectType.USER);
             return dbUser;
         });
