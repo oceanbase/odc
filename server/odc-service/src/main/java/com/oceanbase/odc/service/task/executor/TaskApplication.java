@@ -46,7 +46,7 @@ public class TaskApplication {
         init(args);
         EmbedServer server = new EmbedServer();
         int port = JobUtils.getPort();
-        log.info("Task port is  {}.", port);
+        log.info("Task application port is {}.", port);
         server.start(JobUtils.getPort());
         log.info("Starting embed server.");
         try {
