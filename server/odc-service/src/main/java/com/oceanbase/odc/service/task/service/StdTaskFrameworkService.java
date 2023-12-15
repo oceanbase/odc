@@ -105,9 +105,19 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
 
 
     @Override
-    public JobEntity find(Long jodId) {
-        return jobScheduleRepository.findById(jodId)
-                .orElseThrow(() -> new NotFoundException(ResourceType.ODC_TASK, "id", jodId));
+    public JobEntity find(Long id) {
+        return jobScheduleRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException(ResourceType.ODC_TASK, "id", id));
+    }
+
+    @Override
+    public void startSuccess(Long id, String jobName) {
+        JobEntity jobEntity = find(id);
+        jobEntity.setStatus(TaskStatus.RUNNING);
+        jobEntity.setJobName(jobName);
+        Integer times = jobEntity.getScheduleTimes();
+        jobEntity.setScheduleTimes(times == null ? 1 : times + 1);
+        jobScheduleRepository.updateJobNameAndStatus(jobEntity);
     }
 
     private void updateJobScheduleEntity(TaskResult taskResult) {

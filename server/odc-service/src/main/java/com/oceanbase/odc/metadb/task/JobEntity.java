@@ -67,6 +67,9 @@ public class JobEntity implements Serializable {
     @Column(name = "schedule_times", nullable = false)
     private Integer scheduleTimes;
 
+    @Column(name = "job_name", nullable = false)
+    private String jobName;
+
     @Column(name = "job_data_json", nullable = false)
     private String jobDataJson;
 

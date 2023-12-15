@@ -35,11 +35,11 @@ public class K8sJobCaller extends BaseJobCaller {
     }
 
     @Override
-    public void doStart(JobContext context) throws JobException {
+    public String doStart(JobContext context) throws JobException {
         String jobName = JobUtils.generateJobName(context.getJobIdentity());
         podConfig.getPodParam().getEnvironments().put(JobEnvConstants.TASK_ALL_PARAMETERS, JobUtils.toJson(context));
 
-        client.create(podConfig.getNamespace(), jobName, podConfig.getImage(),
+        return client.create(podConfig.getNamespace(), jobName, podConfig.getImage(),
                 podConfig.getCommand(), podConfig.getPodParam());
     }
 

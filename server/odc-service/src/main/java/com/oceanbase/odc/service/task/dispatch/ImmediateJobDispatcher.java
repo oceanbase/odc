@@ -17,7 +17,6 @@
 package com.oceanbase.odc.service.task.dispatch;
 
 import com.oceanbase.odc.common.event.EventPublisher;
-import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.service.task.caller.JobCaller;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.caller.JobException;
@@ -66,8 +65,7 @@ public class ImmediateJobDispatcher implements JobDispatcher {
     private PodConfig createDefaultPodConfig(String namespace) {
         PodConfig podConfig = new PodConfig();
         // todo read odc version
-        String imageName = SystemUtils.getEnvOrProperty("ODC_IMAGE");
-        podConfig.setImage(imageName);
+        podConfig.setImage("mengdezhicai/odc:test-task-latest");
         podConfig.setNamespace(namespace);
 
         PodParam podParam = podConfig.getPodParam();

@@ -35,4 +35,6 @@ public interface TaskFrameworkService {
     JobEntity save(JobDefinition jd);
 
     JobEntity find(Long id);
+
+    void startSuccess(Long id, String jobName);
 }

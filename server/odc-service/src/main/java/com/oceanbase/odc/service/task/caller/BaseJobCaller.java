@@ -18,6 +18,8 @@ package com.oceanbase.odc.service.task.caller;
 
 import com.oceanbase.odc.common.event.EventPublisher;
 import com.oceanbase.odc.common.event.LocalEventPublisher;
+import com.oceanbase.odc.service.task.config.JobConfiguration;
+import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.enums.JobCallerAction;
 import com.oceanbase.odc.service.task.listener.JobCallerEvent;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
@@ -30,18 +32,21 @@ import com.oceanbase.odc.service.task.schedule.JobIdentity;
 public abstract class BaseJobCaller implements JobCaller {
 
     private final EventPublisher publisher = new LocalEventPublisher();
+    private final JobConfiguration configuration = JobConfigurationHolder.getJobConfiguration();
 
     @Override
     public void start(JobContext context) throws JobException {
 
         try {
-            doStart(context);
+            String jobName = doStart(context);
+            if (configuration != null) {
+                configuration.getTaskFrameworkService().startSuccess(context.getJobIdentity().getId(), jobName);
+            }
             publisher.publishEvent(new JobCallerEvent(context.getJobIdentity(), JobCallerAction.START, true, null));
         } catch (JobException ex) {
             publisher.publishEvent(new JobCallerEvent(context.getJobIdentity(), JobCallerAction.START, false, ex));
             throw ex;
         }
-
     }
 
     @Override
@@ -60,7 +65,7 @@ public abstract class BaseJobCaller implements JobCaller {
         return this.publisher;
     }
 
-    protected abstract void doStart(JobContext context) throws JobException;
+    protected abstract String doStart(JobContext context) throws JobException;
 
     protected abstract void doStop(JobIdentity ji) throws JobException;
 

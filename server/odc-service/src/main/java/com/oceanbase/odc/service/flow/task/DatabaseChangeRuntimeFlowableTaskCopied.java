@@ -79,7 +79,12 @@ public class DatabaseChangeRuntimeFlowableTaskCopied extends BaseODCFlowTaskDele
 
     @Override
     public boolean cancel(boolean mayInterruptIfRunning, Long taskId, TaskService taskService) {
-        taskService.cancel(taskId);
+        try {
+            jobScheduler.cancelJob(jobEntity.getId());
+        } catch (JobException e) {
+            log.warn("cancel job failed.", e);
+            return false;
+        }
         return true;
     }
 

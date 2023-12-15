@@ -20,13 +20,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.oceanbase.odc.core.shared.constant.ResourceType;
-import com.oceanbase.odc.core.shared.constant.TaskStatus;
-import com.oceanbase.odc.core.shared.exception.NotFoundException;
-import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
 import com.oceanbase.odc.service.task.executor.task.TaskResult;
-import com.oceanbase.odc.service.task.schedule.JobIdentity;
 
 /**
  * @author yaobin
@@ -42,18 +37,8 @@ public class ScheduleTaskResultHandleService implements ResultHandleService {
     @Transactional(rollbackFor = Exception.class)
     @Override
     public void handle(TaskResult taskResult) {
-        JobIdentity identity = taskResult.getJobIdentity();
-        ScheduleTaskEntity taskEntity = nullSafeFindById(identity.getId());
-        taskEntity.setProgressPercentage(taskResult.getProgress() * 100);
-        taskEntity.setStatus(taskResult.getTaskStatus() == null ? TaskStatus.RUNNING : taskResult.getTaskStatus());
-        taskEntity.setResultJson(taskResult.getResultJson());
 
-        scheduleTaskRepository.update(taskEntity);
     }
 
-    private ScheduleTaskEntity nullSafeFindById(Long id) {
-        return scheduleTaskRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException(ResourceType.ODC_TASK, "id", id));
-    }
 
 }

@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS `job_job` (
   `job_type` varchar(32) DEFAULT NULL COMMENT '任务类型，可选值有: ASYNC,IMPORT,EXPORT,MOCKDATA',
   `status` varchar(16) NOT NULL COMMENT '任务运行状态，可选值有：PREPARING,RUNNING,FAILED,CANCELED,DONE',
   `schedule_times` int  DEFAULT NULL COMMENT '已调度次数',
+  `job_name` varchar(512) DEFAULT NULL COMMENT 'job name',
   `trigger_config_json` mediumtext DEFAULT NULL COMMENT '触发器配置参数json格式',
   `job_data_json` mediumtext DEFAULT NULL COMMENT '任务参数，不同任务由不同字段组成，为json格式',
   `result_json` mediumtext DEFAULT NULL COMMENT '任务执行结果',
