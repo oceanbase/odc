@@ -242,8 +242,9 @@ public class FlowResponseMapperFactoryTest extends ServiceTestEnv {
     }
 
     private FlowInstance createFlowInstance() {
-        return new FlowInstance("test", flowAdaptor, authenticationFacade,
-                flowInstanceRepository, nodeRepository, sequenceRepository, runtimeService, repositoryService);
+        return new FlowInstance("test", flowAdaptor, authenticationFacade, flowInstanceRepository,
+                nodeRepository, sequenceRepository, gateWayInstanceRepository, serviceTaskRepository,
+                userTaskInstanceRepository, userTaskInstanceCandidateRepository, runtimeService, repositoryService);
     }
 
     private FlowTaskInstance createTaskInstance(Long flowInstanceId, ExecutionStrategyConfig config,

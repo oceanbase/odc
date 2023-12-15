@@ -185,7 +185,9 @@ public class FlowFactoryTest extends ServiceTestEnv {
 
     private FlowInstance createFlowInstance() {
         return new FlowInstance("Test Instance", flowAdaptor, authenticationFacade,
-                flowInstanceRepository, nodeRepository, sequenceRepository, runtimeService, repositoryService);
+                flowInstanceRepository, nodeRepository, sequenceRepository, gateWayInstanceRepository,
+                serviceTaskRepository, userTaskInstanceRepository, userTaskInstanceCandidateRepository,
+                runtimeService, repositoryService);
     }
 
     private FlowTaskInstance createTaskInstance(Long flowInstanceId, ExecutionStrategyConfig config) {

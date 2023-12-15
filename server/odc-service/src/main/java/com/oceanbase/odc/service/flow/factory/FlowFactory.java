@@ -111,14 +111,17 @@ public class FlowFactory {
 
     public FlowInstance generateFlowInstance(@NonNull String name, String description) {
         return new OdcFlowInstance(name, description, flowableAdaptor, authenticationFacade,
-                flowInstanceRepository, nodeRepository, sequenceRepository, runtimeService, repositoryService);
+                flowInstanceRepository, nodeRepository, sequenceRepository, gatewayInstanceRepository,
+                serviceTaskRepository, userTaskInstanceRepository, userTaskInstanceCandidateRepository,
+                runtimeService, repositoryService);
     }
 
     public FlowInstance generateFlowInstance(@NonNull String name,
             Long parentFlowInstanceId, Long projectId, String description) {
         return new OdcFlowInstance(name, description, parentFlowInstanceId, projectId,
                 flowableAdaptor, authenticationFacade, flowInstanceRepository, nodeRepository,
-                sequenceRepository, runtimeService, repositoryService);
+                sequenceRepository, gatewayInstanceRepository, serviceTaskRepository, userTaskInstanceRepository,
+                userTaskInstanceCandidateRepository, runtimeService, repositoryService);
     }
 
     public FlowGatewayInstance generateFlowGatewayInstance(@NonNull Long flowInstanceId, boolean isStartEndPoint,
@@ -213,7 +216,9 @@ public class FlowFactory {
 
     private FlowInstance generateFlowInstance(@NonNull FlowInstanceEntity entity) {
         return new OdcFlowInstance(entity, flowableAdaptor, authenticationFacade,
-                flowInstanceRepository, nodeRepository, sequenceRepository, runtimeService, repositoryService);
+                flowInstanceRepository, nodeRepository, sequenceRepository, gatewayInstanceRepository,
+                serviceTaskRepository, userTaskInstanceRepository, userTaskInstanceCandidateRepository,
+                runtimeService, repositoryService);
     }
 
     private FlowGatewayInstance generateFlowGatewayInstance(

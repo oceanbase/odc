@@ -21,8 +21,12 @@ import org.flowable.engine.RuntimeService;
 import com.oceanbase.odc.core.flow.ExecutionConfigurer;
 import com.oceanbase.odc.metadb.flow.FlowInstanceEntity;
 import com.oceanbase.odc.metadb.flow.FlowInstanceRepository;
+import com.oceanbase.odc.metadb.flow.GateWayInstanceRepository;
 import com.oceanbase.odc.metadb.flow.NodeInstanceEntityRepository;
 import com.oceanbase.odc.metadb.flow.SequenceInstanceRepository;
+import com.oceanbase.odc.metadb.flow.ServiceTaskInstanceRepository;
+import com.oceanbase.odc.metadb.flow.UserTaskInstanceCandidateRepository;
+import com.oceanbase.odc.metadb.flow.UserTaskInstanceRepository;
 import com.oceanbase.odc.service.flow.FlowableAdaptor;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 
@@ -47,9 +51,15 @@ public class OdcFlowInstance extends FlowInstance {
             @NonNull FlowInstanceRepository flowInstanceRepository,
             @NonNull NodeInstanceEntityRepository nodeInstanceRepository,
             @NonNull SequenceInstanceRepository sequenceRepository,
+            @NonNull GateWayInstanceRepository gateWayInstanceRepository,
+            @NonNull ServiceTaskInstanceRepository serviceTaskRepository,
+            @NonNull UserTaskInstanceRepository userTaskInstanceRepository,
+            @NonNull UserTaskInstanceCandidateRepository userTaskInstanceCandidateRepository,
             @NonNull RuntimeService runtimeService, @NonNull RepositoryService repositoryService) {
         super(name, description, flowableAdaptor, authenticationFacade, flowInstanceRepository,
-                nodeInstanceRepository, sequenceRepository, runtimeService, repositoryService);
+                nodeInstanceRepository, sequenceRepository, gateWayInstanceRepository,
+                serviceTaskRepository, userTaskInstanceRepository, userTaskInstanceCandidateRepository,
+                runtimeService, repositoryService);
     }
 
     public OdcFlowInstance(@NonNull String name, String description,
@@ -59,10 +69,15 @@ public class OdcFlowInstance extends FlowInstance {
             @NonNull FlowInstanceRepository flowInstanceRepository,
             @NonNull NodeInstanceEntityRepository nodeInstanceRepository,
             @NonNull SequenceInstanceRepository sequenceRepository,
+            @NonNull GateWayInstanceRepository gateWayInstanceRepository,
+            @NonNull ServiceTaskInstanceRepository serviceTaskRepository,
+            @NonNull UserTaskInstanceRepository userTaskInstanceRepository,
+            @NonNull UserTaskInstanceCandidateRepository userTaskInstanceCandidateRepository,
             @NonNull RuntimeService runtimeService, @NonNull RepositoryService repositoryService) {
-        super(name, description, projectId, parentFlowInstanceId, flowableAdaptor,
-                authenticationFacade, flowInstanceRepository, nodeInstanceRepository,
-                sequenceRepository, runtimeService, repositoryService);
+        super(name, description, projectId, parentFlowInstanceId, flowableAdaptor, authenticationFacade,
+                flowInstanceRepository, nodeInstanceRepository, sequenceRepository, gateWayInstanceRepository,
+                serviceTaskRepository, userTaskInstanceRepository, userTaskInstanceCandidateRepository,
+                runtimeService, repositoryService);
     }
 
     /**
@@ -74,9 +89,14 @@ public class OdcFlowInstance extends FlowInstance {
             @NonNull FlowInstanceRepository flowInstanceRepository,
             @NonNull NodeInstanceEntityRepository nodeInstanceRepository,
             @NonNull SequenceInstanceRepository sequenceRepository,
+            @NonNull GateWayInstanceRepository gateWayInstanceRepository,
+            @NonNull ServiceTaskInstanceRepository serviceTaskRepository,
+            @NonNull UserTaskInstanceRepository userTaskInstanceRepository,
+            @NonNull UserTaskInstanceCandidateRepository userTaskInstanceCandidateRepository,
             @NonNull RuntimeService runtimeService, @NonNull RepositoryService repositoryService) {
-        super(entity, flowableAdaptor, authenticationFacade, flowInstanceRepository,
-                nodeInstanceRepository, sequenceRepository, runtimeService, repositoryService);
+        super(entity, flowableAdaptor, authenticationFacade, flowInstanceRepository, nodeInstanceRepository,
+                sequenceRepository, gateWayInstanceRepository, serviceTaskRepository, userTaskInstanceRepository,
+                userTaskInstanceCandidateRepository, runtimeService, repositoryService);
     }
 
     @Override

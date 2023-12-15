@@ -287,8 +287,9 @@ public class FlowInstanceTest extends ServiceTestEnv {
     }
 
     private FlowInstance createFlowInstance(String name) {
-        return new FlowInstance(name, flowableAdaptor, authenticationFacade,
-                flowInstanceRepository, nodeRepository, sequenceRepository, runtimeService, repositoryService);
+        return new FlowInstance(name, flowableAdaptor, authenticationFacade, flowInstanceRepository,
+                nodeRepository, sequenceRepository, gateWayInstanceRepository, serviceTaskRepository,
+                userTaskInstanceRepository, userTaskInstanceCandidateRepository, runtimeService, repositoryService);
     }
 
     private FlowTaskInstance createTaskInstance(Long flowInstanceId, TaskType taskType,
