@@ -14,27 +14,16 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.task.constants;
+package com.oceanbase.odc.service.task.executor;
+
+import com.oceanbase.odc.service.common.response.SuccessResponse;
 
 /**
- * Task framework environment constants. Using 'ODC_' prefix to avoid duplication.
- * 
  * @author yaobin
- * @date 2023-11-21
+ * @date 2023-12-13
  * @since 4.2.4
  */
-public class JobEnvConstants {
+public interface ExecutorBiz {
 
-    public static final String TASK_ALL_PARAMETERS = "ODC_TASK_ALL_PARAMETERS";
-
-    public static final String TASK_RUN_MODE = "ODC_TASK_RUN_MODE";
-
-    public static final String BOOT_MODE = "ODC_BOOT_MODE";
-
-    public static final String DATABASE_PORT = "DATABASE_PORT";
-
-    public static final String LOG_DIRECTORY = "odc.log.directory";
-
-    public static final String ODC_SERVER_PORT = "ODC_SERVER_PORT";
-
+    SuccessResponse<String> log(Long id, String logType);
 }

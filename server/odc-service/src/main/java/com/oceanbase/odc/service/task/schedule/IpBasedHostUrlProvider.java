@@ -21,6 +21,7 @@ import java.util.List;
 
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.service.common.model.HostProperties;
+import com.oceanbase.odc.service.task.caller.JobUtils;
 
 /**
  * @author yaobin
@@ -39,6 +40,8 @@ public class IpBasedHostUrlProvider implements HostUrlProvider {
     public List<String> hostUrl() {
         String host =
                 configProperties.getOdcHost() == null ? SystemUtils.getLocalIpAddress() : configProperties.getOdcHost();
-        return Collections.singletonList("http://" + host + ":" + configProperties.getPort());
+        int port =
+                configProperties.getPort() == null ? JobUtils.getPort() : Integer.parseInt(configProperties.getPort());
+        return Collections.singletonList("http://" + host + ":" + port);
     }
 }

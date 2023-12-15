@@ -22,8 +22,17 @@ import java.util.List;
 
 import org.junit.BeforeClass;
 
+import com.oceanbase.odc.service.common.model.HostProperties;
+import com.oceanbase.odc.service.task.caller.JobUtils;
 import com.oceanbase.odc.service.task.caller.K8sJobClient;
 import com.oceanbase.odc.service.task.caller.NativeK8sJobClient;
+import com.oceanbase.odc.service.task.config.DefaultJobConfiguration;
+import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
+import com.oceanbase.odc.service.task.constants.JobConstants;
+import com.oceanbase.odc.service.task.constants.JobEnvConstants;
+import com.oceanbase.odc.service.task.enums.TaskRunModeEnum;
+import com.oceanbase.odc.service.task.schedule.HostUrlProvider;
+import com.oceanbase.odc.service.task.schedule.IpBasedHostUrlProvider;
 import com.oceanbase.odc.test.database.TestDBConfiguration;
 import com.oceanbase.odc.test.database.TestDBConfigurations;
 import com.oceanbase.odc.test.database.TestProperties;
@@ -49,6 +58,14 @@ public abstract class BaseJobTest {
         System.setProperty("DATABASE_USERNAME",
                 JdbcUtil.buildUser(tdc.getUsername(), tdc.getTenant(), tdc.getCluster()));
         System.setProperty("DATABASE_PASSWORD", tdc.getPassword());
+        System.setProperty(JobEnvConstants.LOG_DIRECTORY, JobUtils.getLogPath());
+        System.setProperty(JobEnvConstants.BOOT_MODE, JobConstants.ODC_BOOT_MODE_EXECUTOR);
+        System.setProperty(JobEnvConstants.TASK_RUN_MODE, TaskRunModeEnum.K8S.name());
+        DefaultJobConfiguration jc = new DefaultJobConfiguration() {};
+
+        HostUrlProvider urlProvider = new IpBasedHostUrlProvider(new HostProperties());
+        jc.setHostUrlProvider(urlProvider);
+        JobConfigurationHolder.setJobConfiguration(jc);
 
         k8sJobClient = new NativeK8sJobClient(TestProperties.getProperty("odc.k8s.cluster.url"));
         imageName = "perl:5.34.0";
