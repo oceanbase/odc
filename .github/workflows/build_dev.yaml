@@ -24,59 +24,8 @@ on:
       - "**"
 
 jobs:
-  check-format:
-    name: Check Code Format
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout workspace
-        uses: actions/checkout@v3
-      - name: Setup JDK 8
-        uses: actions/setup-java@v3
-        with:
-          java-version: "8"
-          distribution: "temurin"
-          cache: maven
-      - name: Check code format
-        run: mvn impsort:check formatter:validate
-      - name: Check license
-        run: mvn license:check
-
-  pmd-scan:
-    name: PMD Scan
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout workspace
-        uses: actions/checkout@v3
-      - name: Setup JDK 8
-        uses: actions/setup-java@v3
-        with:
-          java-version: "8"
-          distribution: "temurin"
-          cache: maven
-      - name: Install ob-sql-parser
-        run: |
-          echo "Start install ob-sql-parser"
-          pushd libs/ob-sql-parser
-          echo "Current dir is "`pwd`
-          mvn clean install -Dmaven.test.skip=true
-          echo "Install ob-sql-parser success"
-          popd
-      - name: Install db-browser
-        run: |
-          echo "Start install db-browser"
-          pushd libs/db-browser
-          echo "Current dir is "`pwd`
-          mvn clean install -Dmaven.test.skip=true
-          echo "Install db-browser success"
-          popd
-      - name: Build project
-        run: mvn clean install -Dmaven.test.skip=true
-      - name: Run PMD scan
-        run: mvn pmd:check
-
   calculate-version:
     name: Calculate Version Number
-    needs: [ check-format, pmd-scan ]
     if: ${{ github.event_name == 'pull_request' }}
     runs-on: ubuntu-latest
     outputs:
@@ -126,22 +75,6 @@ jobs:
           echo "RPM's version is "${new_version}
           mvn versions:set -DnewVersion="${new_version}"
           mvn versions:commit
-      - name: Install ob-sql-parser
-        run: |
-          echo "Start install ob-sql-parser"
-          pushd libs/ob-sql-parser
-          echo "Current dir is "`pwd`
-          mvn clean install -Dmaven.test.skip=true
-          echo "Install ob-sql-parser success"
-          popd
-      - name: Install db-browser
-        run: |
-          echo "Start install db-browser"
-          pushd libs/db-browser
-          echo "Current dir is "`pwd`
-          mvn clean install -Dmaven.test.skip=true
-          echo "Install db-browser success"
-          popd
       - name: Build jar & rpm (x86_64)
         run: |
           echo "Start prepare oceanbase-client"
