@@ -226,7 +226,7 @@ public class ShadowTableComparingService {
             return;
         }
         Map<Long, Set<UserEntity>> flowInstanceId2Users = approvalPermissionService
-                .getCandidatesByFlowInstanceIds(Collections.singleton(taskEntity.getFlowInstanceId()));
+                .getApproverByFlowInstanceIds(Collections.singleton(taskEntity.getFlowInstanceId()));
         Set<Long> approvalUserIds =
                 flowInstanceId2Users.get(taskEntity.getFlowInstanceId()).stream().filter(Objects::nonNull)
                         .map(UserEntity::getId).collect(

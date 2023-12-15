@@ -146,7 +146,7 @@ public class SqlConsoleRuleService {
                 return result;
             }).collect(Collectors.toList());
             if (CollectionUtils.isEmpty(properties) || properties.get(0).isEmpty()) {
-                return Optional.empty();
+                return Optional.of(Collections.emptyList());
             } else {
                 return Optional.of((List<T>) properties.get(0));
             }

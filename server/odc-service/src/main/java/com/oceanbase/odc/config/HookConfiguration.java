@@ -16,6 +16,8 @@
 package com.oceanbase.odc.config;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
@@ -27,9 +29,13 @@ import org.springframework.context.i18n.LocaleContextHolder;
 import com.oceanbase.odc.common.i18n.I18n;
 import com.oceanbase.odc.core.shared.constant.AuditEventAction;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
+import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
-import com.oceanbase.odc.core.shared.exception.UnsupportedException;
+import com.oceanbase.odc.core.shared.exception.BadRequestException;
+import com.oceanbase.odc.metadb.collaboration.ProjectEntity;
+import com.oceanbase.odc.metadb.collaboration.ProjectRepository;
 import com.oceanbase.odc.service.collaboration.project.ProjectService;
+import com.oceanbase.odc.service.iam.ResourceRoleService;
 import com.oceanbase.odc.service.iam.UserService;
 import com.oceanbase.odc.service.regulation.approval.ApprovalFlowConfigService;
 import com.oceanbase.odc.service.regulation.risklevel.RiskLevelService;
@@ -59,6 +65,12 @@ public class HookConfiguration {
     @Autowired
     private ProjectService projectService;
 
+    @Autowired
+    private ResourceRoleService resourceRoleService;
+
+    @Autowired
+    private ProjectRepository projectRepository;
+
     @PostConstruct
     public void init() {
         userService.addPostUserDeleteHook(event -> {
@@ -66,6 +78,11 @@ public class HookConfiguration {
             projectService.deleteUserRelatedProjectRoles(userId);
         });
         log.info("PostUserDeleteHook added");
+
+        userService.addPreUserDeleteHook(event -> {
+            projectReferenceCheck(event.getUserId(), event.getOrganizationId());
+        });
+        log.info("PreUserDeleteHook added");
 
         approvalFlowConfigService.addPreApprovalFlowConfigDeleteHook(event -> {
             approvalFlowConfigUsageCheck(event.getId());
@@ -83,12 +100,39 @@ public class HookConfiguration {
             String errorMessage = String.format(
                     "Approval flow config id=%s cannot be %s because it has been referenced to following risk level: {%s}",
                     flowConfigId, AuditEventAction.DELETE_FLOW_CONFIG, names);
-            throw new UnsupportedException(ErrorCodes.CannotOperateDueReference,
+            throw new BadRequestException(ErrorCodes.CannotOperateDueReference,
                     new Object[] {AuditEventAction.DELETE_FLOW_CONFIG.getLocalizedMessage(),
                             ResourceType.ODC_APPROVAL_FLOW_CONFIG.getLocalizedMessage(), "name", names,
                             ResourceType.ODC_RISK_LEVEL.getLocalizedMessage()},
                     errorMessage);
         }
+    }
+
+    private void projectReferenceCheck(Long userId, Long organizationId) {
+        Map<Long, Set<ResourceRoleName>> projectId2ResourceRoleNames =
+                resourceRoleService.getProjectId2ResourceRoleNames(userId).entrySet().stream()
+                        .filter(e -> e.getValue().contains(ResourceRoleName.OWNER)
+                                || e.getValue().contains(ResourceRoleName.DBA))
+                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        if (projectId2ResourceRoleNames.size() == 0) {
+            return;
+        }
+        Map<Long, ProjectEntity> id2Project =
+                projectRepository.findAllByOrganizationId(organizationId).stream().filter(p -> p.getArchived() == false)
+                        .collect(Collectors.toMap(ProjectEntity::getId, p -> p));
+        String names = projectId2ResourceRoleNames.keySet().stream().map(id -> id2Project.get(id).getName())
+                .collect(Collectors.joining(", "));
+
+        String errorMessage = String.format(
+                "User id=%s cannot be deleted because it has been referenced to following project: {%s}", userId,
+                names);
+
+        throw new BadRequestException(ErrorCodes.CannotOperateDueReference,
+                new Object[] {AuditEventAction.DELETE_USER.getLocalizedMessage(),
+                        ResourceType.ODC_USER.getLocalizedMessage(), "name", names,
+                        ResourceType.ODC_PROJECT.getLocalizedMessage()},
+                errorMessage);
+
     }
 
 }

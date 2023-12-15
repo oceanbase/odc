@@ -17,7 +17,6 @@ package com.oceanbase.odc.service.collaboration;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 import org.apache.commons.collections.ListUtils;
 import org.junit.After;
@@ -87,16 +86,7 @@ public class ProjectServiceTest extends ServiceTestEnv {
         Mockito.when(userOrganizationService.userBelongsToOrganization(Mockito.any(), Mockito.any())).thenReturn(true);
         Mockito.when(authenticationFacade.currentOrganizationId()).thenReturn(1L);
         Mockito.when(authenticationFacade.currentUser()).thenReturn(getUser());
-        Mockito.when(
-                resourceRoleRepository.findByResourceTypeAndRoleName(ResourceType.ODC_PROJECT, ResourceRoleName.OWNER))
-                .thenReturn(Optional.of(getProjectResourceRole(ResourceRoleName.OWNER)));
-        Mockito.when(
-                resourceRoleRepository.findByResourceTypeAndRoleName(ResourceType.ODC_PROJECT, ResourceRoleName.DBA))
-                .thenReturn(Optional.of(getProjectResourceRole(ResourceRoleName.DBA)));
-        Mockito.when(
-                resourceRoleRepository.findByResourceTypeAndRoleName(ResourceType.ODC_PROJECT,
-                        ResourceRoleName.DEVELOPER))
-                .thenReturn(Optional.of(getProjectResourceRole(ResourceRoleName.DEVELOPER)));
+        Mockito.when(resourceRoleRepository.findAll()).thenReturn(listAllProjectResourceRoles());
 
         projectRepository.deleteAll();
 
@@ -264,12 +254,27 @@ public class ProjectServiceTest extends ServiceTestEnv {
         return new User(getUserEntity());
     }
 
-    private ResourceRoleEntity getProjectResourceRole(ResourceRoleName roleNames) {
-        ResourceRoleEntity entity = new ResourceRoleEntity();
-        entity.setId(1L);
-        entity.setRoleName(roleNames);
-        entity.setResourceType(ResourceType.ODC_PROJECT);
-        return entity;
+    private List<ResourceRoleEntity> listAllProjectResourceRoles() {
+        List<ResourceRoleEntity> roles = new ArrayList<>();
+        ResourceRoleEntity owner = new ResourceRoleEntity();
+        owner.setId(1L);
+        owner.setRoleName(ResourceRoleName.OWNER);
+        owner.setResourceType(ResourceType.ODC_PROJECT);
+        roles.add(owner);
+
+        ResourceRoleEntity dba = new ResourceRoleEntity();
+        owner.setId(2L);
+        owner.setRoleName(ResourceRoleName.DBA);
+        owner.setResourceType(ResourceType.ODC_PROJECT);
+        roles.add(dba);
+
+        ResourceRoleEntity developer = new ResourceRoleEntity();
+        owner.setId(3L);
+        owner.setRoleName(ResourceRoleName.DEVELOPER);
+        owner.setResourceType(ResourceType.ODC_PROJECT);
+        roles.add(developer);
+
+        return roles;
     }
 
     private List<UserResourceRole> listUserResourceRole(Long resourceId) {

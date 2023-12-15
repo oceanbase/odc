@@ -21,4 +21,17 @@ public final class AlarmEventNames {
     private AlarmEventNames() {}
 
     public static final String SYSTEM_CONFIG_CHANGED = "SYSTEM_CONFIG_CHANGED";
+
+    /**
+     * Druid alarm
+     */
+    public static final String SQL_TOO_LONG_SQL_PARAMETERS = "SQL_TOO_LONG_SQL_PARAMETERS";
+    public static final String SQL_TOO_LONG_EXECUTE_TIME = "SQL_TOO_LONG_EXECUTE_TIME";
+    public static final String SQL_EXECUTE_ERROR = "SQL_EXECUTE_ERROR";
+    public static final String METHOD_TOO_LONG_EXECUTE_TIME = "METHOD_TOO_LONG_EXECUTE_TIME";
+    public static final String METHOD_TOO_MUCH_JDBC_EXECUTE_COUNT = "METHOD_TOO_MUCH_JDBC_EXECUTE_COUNT";
+    public static final String DRUID_MONITOR_ERROR = "DRUID_MONITOR_ERROR";
+    public static final String DRUID_WAIT_THREAD_COUNT_MORE_THAN_0 = "DRUID_WAIT_THREAD_COUNT_MORE_THAN_0";
+    public static final String DRUID_ACTIVE_COUNT_MORE_THAN_80_PERCENT = "DRUID_ACTIVE_COUNT_MORE_THAN_80_PERCENT";
+
 }

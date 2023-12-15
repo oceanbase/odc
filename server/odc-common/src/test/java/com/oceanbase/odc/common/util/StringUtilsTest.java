@@ -316,4 +316,40 @@ public class StringUtilsTest {
         String result = StringUtils.removeFirstStart(null, "hedll", "gret");
         Assert.assertNull(result);
     }
+
+    @Test
+    public void test_from_close_begin_getBriefSql() {
+        String sql =
+                "select * as asasdjadnjabdasdahjdknkqndjbjfbcdcxvnsdwqjdnjwqdnscasndknadjbascbadnasndqwbdqwbjd  from t_user  where id=1";
+        String briefSql = StringUtils.getBriefSql(sql, 70);
+        System.out.println(briefSql);
+        Assert.assertEquals(briefSql.length(), 70);
+    }
+
+    @Test
+    public void test_from_close_end_getBriefSql() {
+        String sql =
+                "select * from t_user where id=1 and name='asasdjadnjabdasdahjdknkqndjbjfbcdcxvnsdqjdnjwqdnscasndknadjbascbadnasndqwbdqwbjd'";
+        String briefSql = StringUtils.getBriefSql(sql, 70);
+        System.out.println(briefSql);
+        Assert.assertEquals(briefSql.length(), 70);
+    }
+
+    @Test
+    public void test_from_close_middle_getBriefSql() {
+        String sql =
+                "select * as asasdjadnjabdasdahjdknkqndjbjfbcdcxvnsdwqjdnjwqdnscasndknadjbascbadnasndqwbdqwbjd  from t_user where id=1 and name='asasdjadnjabdasdahjdknkqndjbjfbcdcxvnsdqjdnjwqdnscasndknadjbascbadnasndqwbdqwbjd'";
+        String briefSql = StringUtils.getBriefSql(sql, 70);
+        System.out.println(briefSql);
+        Assert.assertEquals(briefSql.length(), 70);
+    }
+
+    @Test
+    public void test_no_fromgetBriefSql() {
+        String sql =
+                "insert into test_db (id,version,name) values(1,0,'awsdajsdashbdhabdhabshdbashdbashbdjhasbdhasbdhnczhdqwbdba')";
+        String briefSql = StringUtils.getBriefSql(sql, 50);
+        System.out.println(briefSql);
+        Assert.assertEquals(briefSql.length(), 50);
+    }
 }
