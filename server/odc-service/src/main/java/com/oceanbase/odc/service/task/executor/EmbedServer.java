@@ -158,6 +158,7 @@ public class EmbedServer {
         private static final Logger logger = LoggerFactory.getLogger(EmbedHttpServerHandler.class);
 
         private final Pattern logUrlPattern = Pattern.compile("/([0-9]+)/tasks/log");
+        private final Pattern cancelTaskPattern = Pattern.compile("/([0-9]+)/tasks/cancel");
         private final ExecutorBiz executorBiz;
         private final ThreadPoolExecutor bizThreadPool;
 
@@ -175,8 +176,12 @@ public class EmbedServer {
             String uri = UrlUtils.decode(msg.uri());
             HttpMethod httpMethod = msg.method();
             boolean keepAlive = HttpUtil.isKeepAlive(msg);
-            logger.info(">>>>>>>>>>> odc-job get uri {}", uri);
-            logger.info(">>>>>>>>>>> odc-job get requestData {}", requestData);
+            if (uri != null) {
+                logger.info(">>>>>>>>>>> odc-job get uri {}", uri);
+            }
+            if (requestData != null) {
+                logger.info(">>>>>>>>>>> odc-job get requestData {}", requestData);
+            }
 
             // invoke
             bizThreadPool.execute(new Runnable() {
@@ -208,6 +213,12 @@ public class EmbedServer {
                     return executorBiz.log(Long.parseLong(matcher.group(1)),
                             UrlUtils.getQueryParameterFirst(uri, "logType"));
                 }
+                matcher = cancelTaskPattern.matcher(path);
+                if (matcher.find()) {
+                    // todo cancel job
+                    return new SuccessResponse<>("cancel job success.");
+                }
+
                 return new SuccessResponse<>("invalid request, uri-mapping(" + uri + ") not found.");
             } catch (Exception e) {
                 logger.error(e.getMessage(), e);

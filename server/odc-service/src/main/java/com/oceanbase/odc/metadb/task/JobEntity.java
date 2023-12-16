@@ -67,6 +67,9 @@ public class JobEntity implements Serializable {
     @Column(name = "schedule_times", nullable = false)
     private Integer scheduleTimes;
 
+    @Column(name = "execution_times", nullable = false)
+    private Integer executionTimes;
+
     @Column(name = "job_name", nullable = false)
     private String jobName;
 
@@ -81,6 +84,9 @@ public class JobEntity implements Serializable {
 
     @Column(name = "progress_percentage")
     private double progressPercentage;
+
+    @Column(name = "description")
+    private String description;
 
     @Column(name = "creator_id", updatable = false)
     private Long creatorId;

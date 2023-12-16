@@ -16,7 +16,6 @@
 
 package com.oceanbase.odc.service.task.dispatch;
 
-import com.oceanbase.odc.common.event.EventPublisher;
 import com.oceanbase.odc.service.task.caller.JobCaller;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.caller.JobException;
@@ -39,10 +38,10 @@ import com.oceanbase.odc.service.task.schedule.JobIdentity;
 public class ImmediateJobDispatcher implements JobDispatcher {
 
     @Override
-    public void start(JobContext context) throws JobException {
+    public String start(JobContext context) throws JobException {
 
         JobCaller jobCaller = getJobCaller(JobConfigurationHolder.getJobConfiguration());
-        jobCaller.start(context);
+        return jobCaller.start(context);
     }
 
     @Override
@@ -76,8 +75,4 @@ public class ImmediateJobDispatcher implements JobDispatcher {
         return podConfig;
     }
 
-    @Override
-    public EventPublisher getEventPublisher() {
-        throw new UnsupportedOperationException();
-    }
 }

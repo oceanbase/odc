@@ -16,6 +16,9 @@
 
 package com.oceanbase.odc.service.task.caller;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
 import com.google.gson.Gson;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.service.task.constants.JobConstants;
@@ -32,8 +35,10 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class JobUtils {
 
+    private static final DateTimeFormatter DTF = DateTimeFormatter.ofPattern("yyyyMMddHHmmssSSS");
+
     public static String generateJobName(JobIdentity ji) {
-        return JobConstants.TEMPLATE_JOB_NAME_PREFIX + "-" + ji.getId();
+        return JobConstants.TEMPLATE_JOB_NAME_PREFIX + ji.getId() + "-" + LocalDateTime.now().format(DTF);
     }
 
     public static String toJson(Object obj) {

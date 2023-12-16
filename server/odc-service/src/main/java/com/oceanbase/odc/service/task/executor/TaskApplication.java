@@ -46,26 +46,30 @@ public class TaskApplication {
 
         init(args);
         EmbedServer server = new EmbedServer();
-        int port = JobUtils.getPort();
-        log.info("Task application port is {}.", port);
         server.start(JobUtils.getPort());
         log.info("Starting embed server.");
         try {
             JobContext context = jobContextProvider.provide();
             Task task = TaskFactory.create(context.getJobClass());
-            log.info("Task created, context: {}", task.context());
+            log.info("Task created, context: {}", context);
             taskExecutor.execute(task, context);
+            ExitHelper.await();
         } finally {
             try {
                 server.stop();
             } catch (Exception e) {
-                log.warn("stop embed server occur exception:", e);
+                log.warn("Stop embed server occur exception:", e);
             }
         }
+
     }
 
     private void init(String[] args) {
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            log.info("Task executor exits, systemInfo={}", SystemUtils.getSystemMemoryInfo());
+        }));
         System.setProperty(JobEnvConstants.LOG_DIRECTORY, JobUtils.getLogPath());
+        log.info("Log directory is {}.", JobUtils.getLogPath());
 
         String runMode = SystemUtils.getEnvOrProperty(JobEnvConstants.TASK_RUN_MODE);
         Verify.notBlank(runMode, JobEnvConstants.TASK_RUN_MODE);
@@ -74,6 +78,8 @@ public class TaskApplication {
         log.info("JobContextProvider init success: {}", jobContextProvider.getClass().getSimpleName());
         taskExecutor = new SyncTaskExecutor();
         log.info("Task executor init success: {}", taskExecutor.getClass().getSimpleName());
+        log.info("Task application ip is {}.", SystemUtils.getLocalIpAddress());
+        log.info("Task application port is {}.", JobUtils.getPort());
     }
 
 }

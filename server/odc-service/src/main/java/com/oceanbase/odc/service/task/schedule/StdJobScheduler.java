@@ -33,6 +33,8 @@ import com.oceanbase.odc.service.task.caller.JobException;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.executor.task.TaskResult;
+import com.oceanbase.odc.service.task.listener.DefaultJobCallerListener;
+import com.oceanbase.odc.service.task.listener.DestroyJobListener;
 import com.oceanbase.odc.service.task.listener.TaskResultUploadEvent;
 import com.oceanbase.odc.service.task.listener.TaskResultUploadListener;
 
@@ -52,8 +54,11 @@ public class StdJobScheduler implements JobScheduler {
         PreConditions.notNull(configuration.getScheduler(), "quartz scheduler");
         PreConditions.notNull(configuration.getJobDispatcher(), "job dispatcher");
         PreConditions.notNull(configuration.getHostUrlProvider(), "host url provider");
-        PreConditions.notNull(configuration.getTaskFrameworkService(), "task framework sevice");
+        PreConditions.notNull(configuration.getTaskFrameworkService(), "task framework service");
         JobConfigurationHolder.setJobConfiguration(configuration);
+
+        getEventPublisher().addEventListener(new DestroyJobListener(this));
+        getEventPublisher().addEventListener(new DefaultJobCallerListener(this));
     }
 
     @Override
@@ -90,7 +95,8 @@ public class StdJobScheduler implements JobScheduler {
         } catch (SchedulerException e) {
             throw new JobException(e);
         }
-        configuration.getJobDispatcher().stop(JobIdentity.of(id));
+        JobEntity jobEntity = configuration.getTaskFrameworkService().find(id);
+        configuration.getJobDispatcher().stop(JobIdentity.of(id, jobEntity.getJobName()));
     }
 
     public void await(Long id, Long timeout, TimeUnit timeUnit) throws InterruptedException {

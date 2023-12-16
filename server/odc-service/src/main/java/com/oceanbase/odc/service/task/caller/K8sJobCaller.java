@@ -45,7 +45,6 @@ public class K8sJobCaller extends BaseJobCaller {
 
     @Override
     public void doStop(JobIdentity ji) throws JobException {
-        String jobName = JobUtils.generateJobName(ji);
-        client.delete(podConfig.getNamespace(), jobName);
+        client.delete(podConfig.getNamespace(), ji.getName());
     }
 }

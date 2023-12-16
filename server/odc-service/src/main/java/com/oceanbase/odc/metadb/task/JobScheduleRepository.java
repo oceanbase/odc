@@ -24,6 +24,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import com.oceanbase.odc.core.shared.constant.TaskStatus;
+
 /**
  * @author yaobin
  * @date 2023-12-06
@@ -43,9 +45,25 @@ public interface JobScheduleRepository extends JpaRepository<JobEntity, Long>,
 
     @Transactional
     @Query("update JobEntity set "
-            + "jobName=:#{#param.jobName},status=:#{#param.status},scheduleTimes=:#{#param.scheduleTimes}"
+            + "jobName=:#{#param.jobName},status=:#{#param.status},scheduleTimes=:#{#param.scheduleTimes},"
+            + "executionTimes=:#{#param.executionTimes}"
             + " where id=:#{#param.id}")
     @Modifying
-    int updateJobNameAndStatus(@Param("param") JobEntity entity);
+    void updateJobNameAndStatus(@Param("param") JobEntity entity);
+
+
+    @Transactional
+    @Query("update JobEntity set "
+            + "scheduleTimes=:#{scheduleTimes}"
+            + " where id=:#{id}")
+    @Modifying
+    void updateScheduleTimes(Long id, Integer scheduleTimes);
+
+    @Transactional
+    @Query("update JobEntity set "
+            + "status=:#{status}"
+            + " where id=:#{id}")
+    @Modifying
+    void updateStatus(TaskStatus status);
 
 }

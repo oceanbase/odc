@@ -15,9 +15,13 @@
  */
 package com.oceanbase.odc.service.schedule.model;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
 import org.quartz.JobKey;
 import org.quartz.TriggerKey;
 
+import com.oceanbase.odc.common.util.TimeUtils;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 
 /**
@@ -27,6 +31,7 @@ import com.oceanbase.odc.service.task.schedule.JobIdentity;
  * @Descripition: Defines the key generation rules to ensure global uniqueness in this class.
  */
 public class QuartzKeyGenerator {
+
     public static TriggerKey generateTriggerKey(Long scheduleId, JobType jobType) {
         return new TriggerKey(scheduleId + "", jobType.name());
     }

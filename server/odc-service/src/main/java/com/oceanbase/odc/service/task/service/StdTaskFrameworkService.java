@@ -17,6 +17,7 @@
 package com.oceanbase.odc.service.task.service;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -24,6 +25,7 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.event.EventPublisher;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
@@ -32,8 +34,11 @@ import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.metadb.task.JobScheduleRepository;
+import com.oceanbase.odc.service.task.executor.executor.TaskRuntimeException;
+import com.oceanbase.odc.service.task.executor.task.Task;
 import com.oceanbase.odc.service.task.executor.task.TaskResult;
 import com.oceanbase.odc.service.task.listener.TaskResultUploadEvent;
+import com.oceanbase.odc.service.task.schedule.DefaultJobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobScheduler;
 
@@ -74,7 +79,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         }
         JobEntity je = find(taskResult.getJobIdentity().getId());
 
-        if (je.getStatus().isTerminated()) {
+        if (je.getStatus() == TaskStatus.DESTROYED) {
             log.warn("task is terminated, ignore upload result.{}", JsonUtils.toJson(taskResult));
             return;
         }
@@ -110,13 +115,31 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
                 .orElseThrow(() -> new NotFoundException(ResourceType.ODC_TASK, "id", id));
     }
 
+    @SuppressWarnings("unchecked")
+    @Override
+    public JobDefinition getJobDefinition(Long id) {
+        JobEntity entity = find(id);
+        Class<? extends Task> cl;
+        try {
+            cl = (Class<? extends Task>) Class.forName(entity.getJobName());
+        } catch (ClassNotFoundException e) {
+            throw new TaskRuntimeException(e);
+        }
+        return DefaultJobDefinition.builder()
+                .jobData(JsonUtils.fromJson(entity.getJobDataJson(), new TypeReference<Map<String, String>>() {}))
+                .jobClass(cl).build();
+    }
+
     @Override
     public void startSuccess(Long id, String jobName) {
         JobEntity jobEntity = find(id);
         jobEntity.setStatus(TaskStatus.RUNNING);
         jobEntity.setJobName(jobName);
         Integer times = jobEntity.getScheduleTimes();
-        jobEntity.setScheduleTimes(times == null ? 1 : times + 1);
+        // increment executionTimes
+        jobEntity.setExecutionTimes(times == null ? 1 : times + 1);
+        // reset scheduleTimes to zero
+        jobEntity.setScheduleTimes(0);
         jobScheduleRepository.updateJobNameAndStatus(jobEntity);
     }
 
@@ -129,5 +152,18 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         jobScheduleRepository.update(jse);
     }
 
+    @Override
+    public void updateScheduleTimes(Long id, Integer scheduleTimes) {
+        jobScheduleRepository.updateScheduleTimes(id, scheduleTimes);
+    }
 
+    @Override
+    public void updateStatus(TaskStatus status) {
+        jobScheduleRepository.updateStatus(status);
+    }
+
+    @Override
+    public void update(JobEntity jobEntity) {
+        jobScheduleRepository.update(jobEntity);
+    }
 }
