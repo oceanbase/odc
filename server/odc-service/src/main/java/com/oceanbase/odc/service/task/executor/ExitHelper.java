@@ -34,7 +34,7 @@ public class ExitHelper {
         try {
             LATCH.await();
         } catch (InterruptedException e) {
-            log.warn(" thread be interrupted and await exit:", e);
+            log.warn("Await thread be interrupted and exit:", e);
         }
     }
 

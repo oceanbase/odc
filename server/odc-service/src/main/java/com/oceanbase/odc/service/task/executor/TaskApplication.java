@@ -26,6 +26,7 @@ import com.oceanbase.odc.service.task.executor.context.JobContextProvider;
 import com.oceanbase.odc.service.task.executor.context.JobContextProviderFactory;
 import com.oceanbase.odc.service.task.executor.executor.SyncTaskExecutor;
 import com.oceanbase.odc.service.task.executor.executor.TaskExecutor;
+import com.oceanbase.odc.service.task.executor.executor.ThreadPoolTaskExecutor;
 import com.oceanbase.odc.service.task.executor.task.Task;
 import com.oceanbase.odc.service.task.executor.task.TaskFactory;
 
@@ -76,7 +77,7 @@ public class TaskApplication {
 
         jobContextProvider = JobContextProviderFactory.create(TaskRunModeEnum.valueOf(runMode));
         log.info("JobContextProvider init success: {}", jobContextProvider.getClass().getSimpleName());
-        taskExecutor = new SyncTaskExecutor();
+        taskExecutor = new ThreadPoolTaskExecutor(1);
         log.info("Task executor init success: {}", taskExecutor.getClass().getSimpleName());
         log.info("Task application ip is {}.", SystemUtils.getLocalIpAddress());
         log.info("Task application port is {}.", JobUtils.getPort());
