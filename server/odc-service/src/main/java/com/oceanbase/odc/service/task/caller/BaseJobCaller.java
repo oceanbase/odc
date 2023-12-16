@@ -31,16 +31,15 @@ public abstract class BaseJobCaller implements JobCaller {
 
     @Override
     public String start(JobContext context) throws JobException {
-
+        String jobName = null;
         try {
-            String jobName = doStart(context);
+            jobName = doStart(context);
             JobIdentity copyJi = JobIdentity.of(context.getJobIdentity().getId(), jobName);
             publishEvent(new JobCallerEvent(copyJi, JobCallerAction.START, true, null));
-            return jobName;
         } catch (JobException ex) {
             publishEvent(new JobCallerEvent(context.getJobIdentity(), JobCallerAction.START, false, ex));
-            throw ex;
         }
+        return jobName;
 
     }
 

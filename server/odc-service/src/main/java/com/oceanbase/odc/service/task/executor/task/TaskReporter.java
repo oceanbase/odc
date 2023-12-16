@@ -16,6 +16,7 @@
 
 package com.oceanbase.odc.service.task.executor.task;
 
+import java.text.MessageFormat;
 import java.util.List;
 
 import org.apache.commons.collections4.CollectionUtils;
@@ -74,10 +75,13 @@ public class TaskReporter {
                 SuccessResponse<String> response = HttpUtil.request(url, JsonUtils.toJson(result),
                         new TypeReference<SuccessResponse<String>>() {});
                 if (response != null && response.getSuccessful()) {
+                    log.info("Report to host {} success, result is {}, response is {}.", host, JsonUtils.toJson(result),
+                            JsonUtils.toJson(response));
                     break;
                 }
             } catch (Exception e) {
-                // eat exception
+                log.warn(MessageFormat.format("Report to host {0} failed, result is {}, error is {1}", host,
+                        JsonUtils.toJson(result)), e);
             }
         }
     }

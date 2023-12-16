@@ -21,6 +21,7 @@ import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.data.repository.query.Param;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -102,6 +103,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         JobEntity jse = new JobEntity();
         jse.setJobDataJson(JsonUtils.toJson(jd.getJobData()));
         jse.setScheduleTimes(0);
+        jse.setExecutionTimes(0);
         jse.setJobClass(jd.getJobClass().getCanonicalName());
         jse.setJobType(jd.getJobType());
         jse.setStatus(TaskStatus.PREPARING);
@@ -121,7 +123,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         JobEntity entity = find(id);
         Class<? extends Task> cl;
         try {
-            cl = (Class<? extends Task>) Class.forName(entity.getJobName());
+            cl = (Class<? extends Task>) Class.forName(entity.getJobClass());
         } catch (ClassNotFoundException e) {
             throw new TaskRuntimeException(e);
         }
@@ -135,9 +137,8 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         JobEntity jobEntity = find(id);
         jobEntity.setStatus(TaskStatus.RUNNING);
         jobEntity.setJobName(jobName);
-        Integer times = jobEntity.getScheduleTimes();
         // increment executionTimes
-        jobEntity.setExecutionTimes(times == null ? 1 : times + 1);
+        jobEntity.setExecutionTimes(jobEntity.getExecutionTimes() + 1);
         // reset scheduleTimes to zero
         jobEntity.setScheduleTimes(0);
         jobScheduleRepository.updateJobNameAndStatus(jobEntity);
@@ -158,8 +159,8 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     }
 
     @Override
-    public void updateStatus(TaskStatus status) {
-        jobScheduleRepository.updateStatus(status);
+    public void updateStatus(Long id,TaskStatus status) {
+        jobScheduleRepository.updateStatus(id,status);
     }
 
     @Override

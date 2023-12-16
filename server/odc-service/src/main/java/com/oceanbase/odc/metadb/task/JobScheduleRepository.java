@@ -54,16 +54,16 @@ public interface JobScheduleRepository extends JpaRepository<JobEntity, Long>,
 
     @Transactional
     @Query("update JobEntity set "
-            + "scheduleTimes=:#{scheduleTimes}"
-            + " where id=:#{id}")
+            + "scheduleTimes=:scheduleTimes"
+            + " where id=:id")
     @Modifying
-    void updateScheduleTimes(Long id, Integer scheduleTimes);
+    void updateScheduleTimes(@Param("id") Long id, @Param("scheduleTimes") Integer scheduleTimes);
 
     @Transactional
     @Query("update JobEntity set "
-            + "status=:#{status}"
-            + " where id=:#{id}")
+            + "status=:status"
+            + " where id=:id")
     @Modifying
-    void updateStatus(TaskStatus status);
+    void updateStatus(@Param("id") Long id, @Param("status") TaskStatus status);
 
 }
