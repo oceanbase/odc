@@ -83,6 +83,7 @@ public abstract class BaseTask implements Task {
                 return;
             }
             canceled = true;
+            onStop();
             updateStatus(TaskStatus.CANCELED);
             log.info("Task stopped, id: {}, status: {}", context.getJobIdentity().getId(), status);
         } catch (Exception e) {
@@ -119,6 +120,12 @@ public abstract class BaseTask implements Task {
      * Deal with task run logic here
      */
     protected abstract void onStart();
+
+
+    /**
+     * Deal with task run logic here
+     */
+    protected abstract void onStop();
 
     /**
      * Deal with task stop logic here

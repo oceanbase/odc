@@ -28,6 +28,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.session.ConnectionSession;
+import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.core.shared.constant.TaskType;
@@ -92,7 +94,6 @@ public class DatabaseChangeRuntimeFlowableTaskCopied extends BaseODCFlowTaskDele
     public boolean cancel(boolean mayInterruptIfRunning, Long taskId, TaskService taskService) {
         try {
             jobScheduler.cancelJob(jobEntity.getId());
-            killCurrentQuery(sessionManageFacade);
         } catch (JobException e) {
             log.warn("cancel job failed.", e);
             return false;
@@ -181,7 +182,12 @@ public class DatabaseChangeRuntimeFlowableTaskCopied extends BaseODCFlowTaskDele
     }
 
     private JobDefinition buildJobDefinition(DelegateExecution execution) {
+
         DatabaseChangeParameters parameters = FlowTaskUtil.getAsyncParameter(execution);
+        PreConditions.validArgumentState(
+                parameters.getSqlContent() != null || CollectionUtils.isNotEmpty(parameters.getSqlObjectIds()),
+            ErrorCodes.BadArgument, new Object[]{"sql"}, "input sql is empty");
+
         ConnectionConfig config = FlowTaskUtil.getConnectionConfig(execution);
         Map<String, String> jobData = new HashMap<>();
         jobData.put(JobDataMapConstants.META_DB_TASK_PARAMETER, JsonUtils.toJson(parameters));
@@ -200,8 +206,6 @@ public class DatabaseChangeRuntimeFlowableTaskCopied extends BaseODCFlowTaskDele
                 objectMetadatas.add(om);
             }
             jobData.put(JobDataMapConstants.OBJECT_METADATA, JsonUtils.toJson(objectMetadatas));
-        } else {
-            jobData.put(JobDataMapConstants.OBJECT_METADATA, null);
         }
 
         return DefaultJobDefinition.builder().jobClass(DatabaseChangeTask.class)
@@ -210,15 +214,6 @@ public class DatabaseChangeRuntimeFlowableTaskCopied extends BaseODCFlowTaskDele
                 .build();
     }
 
-    public void killCurrentQuery(DBSessionManageFacade sessionManageFacade) {
-        log.info("Try to kill current query");
-        try {
-            sessionManageFacade.killCurrentQuery(generateSession());
-            log.info("Kill current query success");
-        } catch (Exception e) {
-            log.warn("Kill current query failed", e);
-        }
-    }
 
     private ConnectionSession generateSession() {
         ConnectionConfig connectionConfig = FlowTaskUtil.getConnectionConfig(getExecution());

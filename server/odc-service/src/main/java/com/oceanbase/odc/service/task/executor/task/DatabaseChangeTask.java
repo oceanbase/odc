@@ -132,8 +132,13 @@ public class DatabaseChangeTask extends BaseTask {
     }
 
     @Override
-    protected void onFail(Exception e) {
+    protected void onStop() {
+        expireConnectionSession();
+    }
 
+    @Override
+    protected void onFail(Exception e) {
+        expireConnectionSession();
     }
 
     @Override
@@ -165,14 +170,13 @@ public class DatabaseChangeTask extends BaseTask {
         String sqlStr = null;
         if (StringUtils.isNotEmpty(parameters.getSqlContent())) {
             sqlStr = parameters.getSqlContent();
-        } else {
-            if (getJobData().get(JobDataMapConstants.OBJECT_METADATA) != null) {
-                try {
-                    sqlStr = readSqlFiles();
-                } catch (IOException exception) {
-                    throw new InternalServerError("load async task file failed", exception);
-                }
+        } else if (getJobData().get(JobDataMapConstants.OBJECT_METADATA) != null) {
+            try {
+                sqlStr = readSqlFiles();
+            } catch (IOException exception) {
+                throw new InternalServerError("load async task file failed", exception);
             }
+
         }
         PreConditions.notEmpty(sqlStr, "sqlStr");
         String delimiter = Objects.isNull(parameters.getDelimiter()) ? ";" : parameters.getDelimiter();
@@ -255,7 +259,7 @@ public class DatabaseChangeTask extends BaseTask {
             writeFileFailCount++;
             log.warn("Write async task file failed, task id: {}, error message: {}", this.getTaskId(), e.getMessage());
         } finally {
-            connectionSession.expire();
+            expireConnectionSession();
         }
     }
 
@@ -483,5 +487,13 @@ public class DatabaseChangeTask extends BaseTask {
         }
     }
 
+    private void expireConnectionSession() {
+        if (getConnectionSession() != null && !getConnectionSession().isExpired()) {
+            getConnectionSession().expire();
+        }
+    }
 
+    private ConnectionSession getConnectionSession() {
+        return connectionSession;
+    }
 }

@@ -78,6 +78,11 @@ public class SampleTask extends BaseTask {
     }
 
     @Override
+    protected void onStop() {
+
+    }
+
+    @Override
     protected void onFail(Exception e) {
         this.result = SampleTaskResult.fail();
     }
