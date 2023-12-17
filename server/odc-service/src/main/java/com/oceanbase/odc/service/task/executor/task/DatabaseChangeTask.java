@@ -191,6 +191,7 @@ public class DatabaseChangeTask extends BaseTask {
         ConnectionConfig connectionConfig =
                 JsonUtils.fromJson(getJobData().get(JobDataMapConstants.CONNECTION_CONFIG), ConnectionConfig.class);
         connectionConfig.setId(1L);
+        connectionConfig.setDefaultSchema(getJobData().get(JobDataMapConstants.CURRENT_SCHEMA_KEY));
         connectionConfig.setQueryTimeoutSeconds((int) TimeUnit.MILLISECONDS.toSeconds(parameters.getTimeoutMillis()));
         DefaultConnectSessionFactory sessionFactory = new DefaultConnectSessionFactory(connectionConfig);
         sessionFactory.setSessionTimeoutMillis(parameters.getTimeoutMillis());
@@ -201,8 +202,6 @@ public class DatabaseChangeTask extends BaseTask {
         }
         SqlCommentProcessor processor = new SqlCommentProcessor(connectionConfig.getDialectType(), true, true);
         ConnectionSessionUtil.setSqlCommentProcessor(connectionSession, processor);
-        ConnectionSessionUtil.setCurrentSchema(connectionSession,
-                getJobData().get(JobDataMapConstants.CURRENT_SCHEMA_KEY));
         ConnectionSessionUtil.setColumnAccessor(connectionSession, new DatasourceColumnAccessor(connectionSession));
 
         return connectionSession;

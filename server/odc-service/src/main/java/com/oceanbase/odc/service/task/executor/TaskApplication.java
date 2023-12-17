@@ -54,6 +54,8 @@ public class TaskApplication {
             log.info("Task created, context: {}", context);
             taskExecutor.execute(task, context);
             ExitHelper.await();
+        } catch (Exception e) {
+            log.warn("Execute task error:", e);
         } finally {
             try {
                 server.stop();
