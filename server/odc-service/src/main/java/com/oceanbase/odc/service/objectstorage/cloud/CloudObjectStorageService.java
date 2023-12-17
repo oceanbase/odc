@@ -87,12 +87,13 @@ public class CloudObjectStorageService {
     private CloudObjectStorage cloudObjectStorage;
     private ObjectStorageConfiguration objectStorageConfiguration;
 
-    public CloudObjectStorageService(@Autowired @Qualifier("cloudClient") CloudObjectStorage cloudObjectStorage,
+    @Autowired
+    public CloudObjectStorageService(@Qualifier("cloudClient") CloudObjectStorage cloudObjectStorage,
             CloudEnvConfigurations cloudEnvConfigurations) {
         this(cloudObjectStorage, cloudEnvConfigurations.getObjectStorageConfiguration());
     }
 
-    public CloudObjectStorageService(@Autowired @Qualifier("cloudClient") CloudObjectStorage cloudObjectStorage,
+    public CloudObjectStorageService(CloudObjectStorage cloudObjectStorage,
             ObjectStorageConfiguration objectStorageConfiguration) {
         this.cloudObjectStorage = cloudObjectStorage;
         this.objectStorageConfiguration = objectStorageConfiguration;
