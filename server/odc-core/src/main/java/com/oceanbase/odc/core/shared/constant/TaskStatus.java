@@ -25,6 +25,7 @@ public enum TaskStatus {
     FAILED,
     CANCELED,
     DONE,
+    SCHEDULE_FAILED,
     DESTROYED;
 
     public boolean isTerminated() {

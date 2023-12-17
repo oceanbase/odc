@@ -16,6 +16,8 @@
 
 package com.oceanbase.odc.service.task.executor.task;
 
+import java.util.Collections;
+import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
@@ -35,7 +37,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public abstract class BaseTask implements Task {
 
-    protected JobContext context;
+    private JobContext context;
+
+    private Map<String, String> jobData;
 
     protected TaskStatus status;
 
@@ -52,6 +56,7 @@ public abstract class BaseTask implements Task {
     @Override
     public void start(JobContext context) {
         this.context = context;
+        this.jobData = Collections.unmodifiableMap(getJobContext().getJobData());
         this.status = TaskStatus.PREPARING;
         this.reporter = new TaskReporter(context.getHostUrls());
         try {
@@ -91,22 +96,22 @@ public abstract class BaseTask implements Task {
     }
 
     @Override
-    public double progress() {
+    public double getProgress() {
         return progress;
     }
 
     @Override
-    public JobContext context() {
+    public JobContext getJobContext() {
         return context;
     }
 
     @Override
-    public TaskStatus status() {
+    public TaskStatus getTaskStatus() {
         return status;
     }
 
     @Override
-    public FlowTaskResult result() {
+    public FlowTaskResult getTaskResult() {
         return result;
     }
 
@@ -158,4 +163,11 @@ public abstract class BaseTask implements Task {
         finished = true;
     }
 
+    protected Map<String, String> getJobData() {
+        return this.jobData;
+    }
+
+    public boolean isCanceled() {
+        return canceled;
+    }
 }

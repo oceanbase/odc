@@ -48,7 +48,7 @@ public class SampleTask extends BaseTask {
 
     @Override
     protected void onStart() {
-        Map<String, String> dataMap = context.getJobData();
+        Map<String, String> dataMap = getJobContext().getJobData();
 
         this.parameter =
                 JsonUtils.fromJson(dataMap.get(JobDataMapConstants.META_DB_TASK_PARAMETER), SampleTaskParameter.class);

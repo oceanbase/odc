@@ -89,8 +89,13 @@ public class CloudObjectStorageService {
 
     public CloudObjectStorageService(@Autowired @Qualifier("cloudClient") CloudObjectStorage cloudObjectStorage,
             CloudEnvConfigurations cloudEnvConfigurations) {
+        this(cloudObjectStorage, cloudEnvConfigurations.getObjectStorageConfiguration());
+    }
+
+    public CloudObjectStorageService(@Autowired @Qualifier("cloudClient") CloudObjectStorage cloudObjectStorage,
+            ObjectStorageConfiguration objectStorageConfiguration) {
         this.cloudObjectStorage = cloudObjectStorage;
-        this.objectStorageConfiguration = cloudEnvConfigurations.getObjectStorageConfiguration();
+        this.objectStorageConfiguration = objectStorageConfiguration;
         if (this.cloudObjectStorage.supported()) {
             validateBucket();
             createTempDirectory();

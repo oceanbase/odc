@@ -21,7 +21,6 @@ import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.data.repository.query.Param;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -159,8 +158,8 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     }
 
     @Override
-    public void updateStatus(Long id,TaskStatus status) {
-        jobScheduleRepository.updateStatus(id,status);
+    public void updateStatus(Long id, TaskStatus status) {
+        jobScheduleRepository.updateStatus(id, status);
     }
 
     @Override

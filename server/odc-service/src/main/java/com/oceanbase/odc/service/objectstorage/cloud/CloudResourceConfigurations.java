@@ -64,19 +64,25 @@ public class CloudResourceConfigurations {
     @RefreshScope
     public CloudClient cloudClient(@Autowired CloudEnvConfigurations cloudEnvConfigurations) {
         ObjectStorageConfiguration objectStorageConfiguration = cloudEnvConfigurations.getObjectStorageConfiguration();
-        CloudProvider cloudProvider = objectStorageConfiguration.getCloudProvider();
-        log.info("recreate cloud client, ak=" + objectStorageConfiguration.getAccessKeyId());
-        switch (cloudProvider) {
-            case ALIBABA_CLOUD:
-                try {
-                    return createAlibabaCloudClient(objectStorageConfiguration);
-                } catch (ClientException e) {
-                    throw new RuntimeException("Create Alibaba Cloud Client failed", e);
-                }
-            case AWS:
-                return createAmazonCloudClient(objectStorageConfiguration);
-            default:
-                return new NullCloudClient();
+        return new CloudClientBuilder().generateCloudClient(objectStorageConfiguration);
+    }
+
+    public class CloudClientBuilder {
+        public CloudClient generateCloudClient(ObjectStorageConfiguration objectStorageConfiguration) {
+            CloudProvider cloudProvider = objectStorageConfiguration.getCloudProvider();
+            log.info("recreate cloud client, ak=" + objectStorageConfiguration.getAccessKeyId());
+            switch (cloudProvider) {
+                case ALIBABA_CLOUD:
+                    try {
+                        return createAlibabaCloudClient(objectStorageConfiguration);
+                    } catch (ClientException e) {
+                        throw new RuntimeException("Create Alibaba Cloud Client failed", e);
+                    }
+                case AWS:
+                    return createAmazonCloudClient(objectStorageConfiguration);
+                default:
+                    return new NullCloudClient();
+            }
         }
     }
 

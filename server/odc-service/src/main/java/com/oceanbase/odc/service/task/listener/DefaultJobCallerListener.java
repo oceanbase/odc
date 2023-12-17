@@ -59,12 +59,12 @@ public class DefaultJobCallerListener extends JobCallerListener {
             JobEntity jobEntity = taskFrameworkService.find(ji.getId());
             if (jobEntity.getScheduleTimes() >= 5) {
                 jobEntity.setDescription("After retry 5 times to schedule job but failed.");
-                jobEntity.setStatus(TaskStatus.FAILED);
+                jobEntity.setStatus(TaskStatus.SCHEDULE_FAILED);
                 taskFrameworkService.update(jobEntity);
                 return;
             }
 
-            log.info("Start job {} failed and retry again.", ji.getId());
+            log.info("Start job " + ji.getId() + " failed and retry again, error is: ", ex);
             taskFrameworkService.updateScheduleTimes(ji.getId(), jobEntity.getScheduleTimes() + 1);
             JobDefinition jd = taskFrameworkService.getJobDefinition(ji.getId());
             JobContext jc = new DefaultJobContextBuilder().build(ji, jd);

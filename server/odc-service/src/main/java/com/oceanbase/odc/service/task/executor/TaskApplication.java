@@ -24,7 +24,6 @@ import com.oceanbase.odc.service.task.constants.JobEnvConstants;
 import com.oceanbase.odc.service.task.enums.TaskRunModeEnum;
 import com.oceanbase.odc.service.task.executor.context.JobContextProvider;
 import com.oceanbase.odc.service.task.executor.context.JobContextProviderFactory;
-import com.oceanbase.odc.service.task.executor.executor.SyncTaskExecutor;
 import com.oceanbase.odc.service.task.executor.executor.TaskExecutor;
 import com.oceanbase.odc.service.task.executor.executor.ThreadPoolTaskExecutor;
 import com.oceanbase.odc.service.task.executor.task.Task;

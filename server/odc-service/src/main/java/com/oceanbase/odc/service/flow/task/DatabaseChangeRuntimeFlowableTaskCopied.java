@@ -15,7 +15,10 @@
  */
 package com.oceanbase.odc.service.flow.task;
 
+import java.io.File;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -23,6 +26,7 @@ import org.flowable.engine.delegate.DelegateExecution;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.core.shared.constant.TaskType;
@@ -37,12 +41,15 @@ import com.oceanbase.odc.service.flow.task.model.DatabaseChangeResult;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
 import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
+import com.oceanbase.odc.service.objectstorage.cloud.model.CloudEnvConfigurations;
+import com.oceanbase.odc.service.objectstorage.model.ObjectMetadata;
 import com.oceanbase.odc.service.session.DBSessionManageFacade;
+import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.caller.JobException;
 import com.oceanbase.odc.service.task.caller.JobUtils;
 import com.oceanbase.odc.service.task.constants.JobDataMapConstants;
-import com.oceanbase.odc.service.task.executor.sampletask.SampleTask;
+import com.oceanbase.odc.service.task.executor.task.DatabaseChangeTask;
 import com.oceanbase.odc.service.task.schedule.DefaultJobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobScheduler;
@@ -62,6 +69,7 @@ public class DatabaseChangeRuntimeFlowableTaskCopied extends BaseODCFlowTaskDele
     private volatile JobEntity jobEntity;
     private volatile boolean isSuccessful = false;
     private volatile boolean isFailure = false;
+    private volatile DelegateExecution execution;
     @Autowired
     private CloudObjectStorageService cloudObjectStorageService;
     @Autowired
@@ -76,11 +84,14 @@ public class DatabaseChangeRuntimeFlowableTaskCopied extends BaseODCFlowTaskDele
     private JobScheduler jobScheduler;
     @Autowired
     private TaskFrameworkService taskFrameworkService;
+    @Autowired
+    private CloudEnvConfigurations cloudEnvConfigurations;
 
     @Override
     public boolean cancel(boolean mayInterruptIfRunning, Long taskId, TaskService taskService) {
         try {
             jobScheduler.cancelJob(jobEntity.getId());
+            killCurrentQuery(sessionManageFacade);
         } catch (JobException e) {
             log.warn("cancel job failed.", e);
             return false;
@@ -96,11 +107,12 @@ public class DatabaseChangeRuntimeFlowableTaskCopied extends BaseODCFlowTaskDele
     @Override
     protected DatabaseChangeResult start(Long taskId, TaskService taskService, DelegateExecution execution)
             throws JobException {
+        this.execution = execution;
         DatabaseChangeResult result;
         try {
             log.info("Async task starts, taskId={}, activityId={}", taskId, execution.getCurrentActivityId());
 
-            JobDefinition jd = buildJobDefinition(execution);
+            JobDefinition jd = buildJobDefinition(execution, taskId);
             Long jobId = jobScheduler.scheduleJobNow(jd);
             jobEntity = taskFrameworkService.find(jobId);
             try {
@@ -133,19 +145,6 @@ public class DatabaseChangeRuntimeFlowableTaskCopied extends BaseODCFlowTaskDele
         return jd;
     }
 
-
-    private JobDefinition buildJobDefinition(DelegateExecution execution, Long taskId) {
-        DatabaseChangeParameters parameters = FlowTaskUtil.getAsyncParameter(execution);
-        ConnectionConfig config = FlowTaskUtil.getConnectionConfig(execution);
-        Map<String, String> jobData = new HashMap<>();
-        jobData.put(JobDataMapConstants.META_DB_TASK_PARAMETER, JsonUtils.toJson(parameters));
-        jobData.put(JobDataMapConstants.CONNECTION_CONFIG, JobUtils.toJson(config));
-        jobData.put(JobDataMapConstants.BUZ_ID, taskId + "");
-        return DefaultJobDefinition.builder().jobClass(SampleTask.class)
-                .jobType(TaskType.ASYNC.name())
-                .jobData(jobData)
-                .build();
-    }
 
     @Override
     protected boolean isSuccessful() {
@@ -180,5 +179,48 @@ public class DatabaseChangeRuntimeFlowableTaskCopied extends BaseODCFlowTaskDele
 
     }
 
+    private JobDefinition buildJobDefinition(DelegateExecution execution, Long taskId) {
+        DatabaseChangeParameters parameters = FlowTaskUtil.getAsyncParameter(execution);
+        ConnectionConfig config = FlowTaskUtil.getConnectionConfig(execution);
+        Map<String, String> jobData = new HashMap<>();
+        jobData.put(JobDataMapConstants.META_DB_TASK_PARAMETER, JsonUtils.toJson(parameters));
+        jobData.put(JobDataMapConstants.CONNECTION_CONFIG, JobUtils.toJson(config));
+        jobData.put(JobDataMapConstants.FLOW_INSTANCE_ID, FlowTaskUtil.getFlowInstanceId(execution) + "");
+        jobData.put(JobDataMapConstants.CURRENT_SCHEMA_KEY, FlowTaskUtil.getSchemaName(execution));
+        jobData.put(JobDataMapConstants.SESSION_TIME_ZONE, connectProperties.getDefaultTimeZone());
+        jobData.put(JobDataMapConstants.OBJECT_STORAGE_CONFIGURATION,
+                JsonUtils.toJson(cloudEnvConfigurations.getObjectStorageConfiguration()));
+        List<ObjectMetadata> objectMetadatas = new ArrayList<>();
+        for (String objectId : parameters.getSqlObjectIds()) {
+            ObjectMetadata om = objectStorageFacade.loadMetaData(
+                    "async".concat(File.separator).concat(FlowTaskUtil.getTaskCreator(execution).getId() + ""),
+                    objectId);
+            objectMetadatas.add(om);
+        }
+        jobData.put(JobDataMapConstants.OBJECT_METADATA, JsonUtils.toJson(objectMetadatas));
+        return DefaultJobDefinition.builder().jobClass(DatabaseChangeTask.class)
+                .jobType(TaskType.ASYNC.name())
+                .jobData(jobData)
+                .build();
+    }
 
+    public void killCurrentQuery(DBSessionManageFacade sessionManageFacade) {
+        log.info("Try to kill current query");
+        try {
+            sessionManageFacade.killCurrentQuery(generateSession());
+            log.info("Kill current query success");
+        } catch (Exception e) {
+            log.warn("Kill current query failed", e);
+        }
+    }
+
+    private ConnectionSession generateSession() {
+        ConnectionConfig connectionConfig = FlowTaskUtil.getConnectionConfig(getExecution());
+        DefaultConnectSessionFactory sessionFactory = new DefaultConnectSessionFactory(connectionConfig);
+        return sessionFactory.generateSession();
+    }
+
+    private DelegateExecution getExecution() {
+        return this.execution;
+    }
 }

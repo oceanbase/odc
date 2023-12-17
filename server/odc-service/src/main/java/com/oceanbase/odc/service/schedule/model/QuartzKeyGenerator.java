@@ -15,13 +15,9 @@
  */
 package com.oceanbase.odc.service.schedule.model;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-
 import org.quartz.JobKey;
 import org.quartz.TriggerKey;
 
-import com.oceanbase.odc.common.util.TimeUtils;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 
 /**
