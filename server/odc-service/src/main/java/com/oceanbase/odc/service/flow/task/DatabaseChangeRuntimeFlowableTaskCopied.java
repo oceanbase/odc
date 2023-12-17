@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.flowable.engine.delegate.DelegateExecution;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -112,7 +113,7 @@ public class DatabaseChangeRuntimeFlowableTaskCopied extends BaseODCFlowTaskDele
         try {
             log.info("Async task starts, taskId={}, activityId={}", taskId, execution.getCurrentActivityId());
 
-            JobDefinition jd = buildJobDefinition(execution, taskId);
+            JobDefinition jd = buildJobDefinition(execution);
             Long jobId = jobScheduler.scheduleJobNow(jd);
             jobEntity = taskFrameworkService.find(jobId);
             try {
@@ -136,7 +137,7 @@ public class DatabaseChangeRuntimeFlowableTaskCopied extends BaseODCFlowTaskDele
         return result;
     }
 
-    private JobDefinition buildJobDefinition(DelegateExecution execution) {
+    private JobDefinition buildJobDefinition() {
         DatabaseChangeParameters parameters = FlowTaskUtil.getAsyncParameter(execution);
         ConnectionConfig config = FlowTaskUtil.getConnectionConfig(execution);
         JobDefinition jd = new SampleTaskJobDefinitionBuilder().build(config, FlowTaskUtil.getSchemaName(execution),
@@ -179,7 +180,7 @@ public class DatabaseChangeRuntimeFlowableTaskCopied extends BaseODCFlowTaskDele
 
     }
 
-    private JobDefinition buildJobDefinition(DelegateExecution execution, Long taskId) {
+    private JobDefinition buildJobDefinition(DelegateExecution execution) {
         DatabaseChangeParameters parameters = FlowTaskUtil.getAsyncParameter(execution);
         ConnectionConfig config = FlowTaskUtil.getConnectionConfig(execution);
         Map<String, String> jobData = new HashMap<>();
@@ -190,14 +191,19 @@ public class DatabaseChangeRuntimeFlowableTaskCopied extends BaseODCFlowTaskDele
         jobData.put(JobDataMapConstants.SESSION_TIME_ZONE, connectProperties.getDefaultTimeZone());
         jobData.put(JobDataMapConstants.OBJECT_STORAGE_CONFIGURATION,
                 JsonUtils.toJson(cloudEnvConfigurations.getObjectStorageConfiguration()));
-        List<ObjectMetadata> objectMetadatas = new ArrayList<>();
-        for (String objectId : parameters.getSqlObjectIds()) {
-            ObjectMetadata om = objectStorageFacade.loadMetaData(
-                    "async".concat(File.separator).concat(FlowTaskUtil.getTaskCreator(execution).getId() + ""),
-                    objectId);
-            objectMetadatas.add(om);
+        if (CollectionUtils.isNotEmpty(parameters.getSqlObjectIds())) {
+            List<ObjectMetadata> objectMetadatas = new ArrayList<>();
+            for (String objectId : parameters.getSqlObjectIds()) {
+                ObjectMetadata om = objectStorageFacade.loadMetaData(
+                        "async".concat(File.separator).concat(FlowTaskUtil.getTaskCreator(execution).getId() + ""),
+                        objectId);
+                objectMetadatas.add(om);
+            }
+            jobData.put(JobDataMapConstants.OBJECT_METADATA, JsonUtils.toJson(objectMetadatas));
+        } else {
+            jobData.put(JobDataMapConstants.OBJECT_METADATA, null);
         }
-        jobData.put(JobDataMapConstants.OBJECT_METADATA, JsonUtils.toJson(objectMetadatas));
+
         return DefaultJobDefinition.builder().jobClass(DatabaseChangeTask.class)
                 .jobType(TaskType.ASYNC.name())
                 .jobData(jobData)

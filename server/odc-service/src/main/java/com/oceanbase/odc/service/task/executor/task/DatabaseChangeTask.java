@@ -162,14 +162,16 @@ public class DatabaseChangeTask extends BaseTask {
 
     private void init() {
         this.connectionSession = generateSession();
-        String sqlStr;
+        String sqlStr = null;
         if (StringUtils.isNotEmpty(parameters.getSqlContent())) {
             sqlStr = parameters.getSqlContent();
         } else {
-            try {
-                sqlStr = readSqlFiles();
-            } catch (IOException exception) {
-                throw new InternalServerError("load async task file failed", exception);
+            if (getJobData().get(JobDataMapConstants.OBJECT_METADATA) != null) {
+                try {
+                    sqlStr = readSqlFiles();
+                } catch (IOException exception) {
+                    throw new InternalServerError("load async task file failed", exception);
+                }
             }
         }
         PreConditions.notEmpty(sqlStr, "sqlStr");
