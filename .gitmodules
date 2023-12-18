@@ -6,4 +6,3 @@
 	path = build-resource
 	url = https://github.com/oceanbase/odc-build-resource.git
 	branch = main
-
