@@ -43,6 +43,8 @@ public class TraceSpan {
             .appendOptional(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSSSSS"))
             .toFormatter()
             .withLocale(Locale.ENGLISH);
+    public static final DateTimeFormatter OUTPUT_FORMATTER =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSSSSS");
 
     @JsonAlias("logs")
     private String logs;
@@ -74,13 +76,13 @@ public class TraceSpan {
     @JsonSetter("start_ts")
     public void setStartTs(String ts) {
         LocalDateTime ldt = LocalDateTime.parse(ts, TIMESTAMP_FORMATTER);
-        this.startTimestamp = ldt.toString().replaceAll("T", " ");
+        this.startTimestamp = ldt.format(OUTPUT_FORMATTER);
     }
 
     @JsonSetter("end_ts")
     public void setEndTs(String ts) {
         LocalDateTime ldt = LocalDateTime.parse(ts, TIMESTAMP_FORMATTER);
-        this.endTimestamp = ldt.toString().replaceAll("T", " ");
+        this.endTimestamp = ldt.format(OUTPUT_FORMATTER);
     }
 
     public void setTags(List<Object> tags) {

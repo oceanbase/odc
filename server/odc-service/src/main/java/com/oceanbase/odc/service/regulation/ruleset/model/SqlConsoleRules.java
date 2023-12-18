@@ -15,6 +15,13 @@
  */
 package com.oceanbase.odc.service.regulation.ruleset.model;
 
+import static com.oceanbase.odc.common.i18n.Translatable.I18N_KEY_PREFIX;
+
+import org.springframework.context.i18n.LocaleContextHolder;
+
+import com.oceanbase.odc.common.i18n.I18n;
+import com.oceanbase.odc.common.i18n.Translatable;
+
 import lombok.NonNull;
 
 /**
@@ -22,7 +29,7 @@ import lombok.NonNull;
  * @Date: 2023/7/17 15:58
  * @Description: []
  */
-public enum SqlConsoleRules {
+public enum SqlConsoleRules implements Translatable {
     ALLOW_SQL_TYPES("allow-sql-types"),
     NOT_ALLOWED_DEBUG_PL("not-allowed-debug-pl"),
     NOT_ALLOWED_CREATE_PL("not-allowed-create-pl"),
@@ -38,6 +45,7 @@ public enum SqlConsoleRules {
         this.name = name;
     }
 
+
     public String getRuleName() {
         return "${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console." + this.name + ".name}";
     }
@@ -49,5 +57,24 @@ public enum SqlConsoleRules {
     public boolean isBooleanRule() {
         return this == NOT_ALLOWED_DEBUG_PL || this == NOT_ALLOWED_CREATE_PL || this == NOT_ALLOWED_EDIT_RESULTSET
                 || this == NOT_ALLOWED_EXPORT_RESULTSET;
+    }
+
+    public String getLocalizedMessage(Object[] args) {
+        return translate(args, "message");
+    }
+
+
+    @Override
+    public String code() {
+        return this.name;
+    }
+
+    private String prefix() {
+        return I18N_KEY_PREFIX + "builtin-resource.regulation.rule.sql-console." + code();
+    }
+
+    private String translate(Object[] args, String subtype) {
+        String key = prefix() + "." + subtype;
+        return I18n.translate(key, args, key, LocaleContextHolder.getLocale());
     }
 }

@@ -7,49 +7,38 @@
 OceanBase 开发者中心（以下简称 ODC）是开源的全场景数据库开发和数据管理协同工具，通过协同开发解决数据库的变更风险管控、数据管理和数据安全问题。
 ![image](https://github.com/oceanbase/odc/assets/15030999/1af41ae6-8cf6-4d1e-9e36-c62ec8f76801)
 
-
-
 ## 🤔 选择 ODC 的理由
 
 ### 随时随地高效 SQL 开发
 
 - ODC 基于现代 WEB 架构，随时随地，只要有浏览器就可以访问您的数据库。
 - ODC SQL 开发功能全面且易用，桌面开发工具有的功能 ODC 也有，甚至支持 PL 调试。
-![image](https://github.com/oceanbase/odc/assets/15030999/e261f64d-dbdf-4140-a150-3cb2bd1abce1)
-
+  ![image](https://github.com/oceanbase/odc/assets/15030999/e261f64d-dbdf-4140-a150-3cb2bd1abce1)
 
 ### 守护 SQL 开发过程的每一次变更
 
 - 在 SQL 开发过程的全部场景，包括可视化对象管理、SQL 查询、数据编辑、数据导入和导出、... ，ODC 都内置了风险控制。
 - ODC 提供基于项目的协同和变更审批流程，并且内置了 SQL 检查规则、SQL 窗口规范、风险等级识别。
-![image](https://github.com/oceanbase/odc/assets/15030999/cda58c5e-5327-4ea8-ac83-607f1d9d0688)
-
-
+  ![image](https://github.com/oceanbase/odc/assets/15030999/cda58c5e-5327-4ea8-ac83-607f1d9d0688)
 
 ### 自动数据生命周期管理
 
 - ODC 支持数据按照保留时长清理或归档，5 分钟构建你的冷热数据分离系统。
 - ODC 不仅支持按照数据的时间标记处理，也支持按照分区批量处理。
 - 还可以通过 ODC SQL 计划任务完成计算任务，为什么还要继续使用你的 CRONTAB ？
-![image](https://github.com/oceanbase/odc/assets/15030999/95a606e8-bcd8-49b9-9667-2e72b90c3ea3)
-
+  ![image](https://github.com/oceanbase/odc/assets/15030999/95a606e8-bcd8-49b9-9667-2e72b90c3ea3)
 
 ### 全场景敏感数据保护
 
 - ODC 数据脱敏支持静态场景也支持动态场景，结构变更、SQL 查询、结果集导出、数据导出 全部开发场景都会脱敏。
 - 安全管理员配置敏感数据规则和脱敏算法，DBA 和 开发 都无法接触敏感数据。
-![image](https://github.com/oceanbase/odc/assets/15030999/baf76d2f-1ce9-42e8-91a3-a2f873683f62)
-
-
-
+  ![image](https://github.com/oceanbase/odc/assets/15030999/baf76d2f-1ce9-42e8-91a3-a2f873683f62)
 
 ### 无需改变已有系统就可以集成 ODC 到当前工作流程
 
 - 无需改变您的系统就可以把 ODC 集成到您当前的数据库开发协同工作流程中.
 - SSO、审批集成、SQL 审核集成、堡垒机集成、审计集成，企业管控集成需要的能力全都有。
-![image](https://github.com/oceanbase/odc/assets/15030999/79f0fd1d-f3dc-4a45-b236-ec64476df5b2)
-
-
+  ![image](https://github.com/oceanbase/odc/assets/15030999/79f0fd1d-f3dc-4a45-b236-ec64476df5b2)
 
 ## 🚀 安装部署
 
@@ -102,20 +91,21 @@ GRANT ALL ON odc_metadb.* TO odc;
 
 # 将 <your_metadb_password> 替换为您的 MetaDB 的真实密码。如果您按照步骤 1 创建出一个 MetaDB，那么将 <your_metadb_password> 替换为您在步骤 1 中设置的密码
 
-# 使用参数 <your_metadb_password> 为 ODC 的 admin 账户设置一个初始密码。这个密码在您登录 ODC 时将会被用到。密码必须满足以下条件：
+# 使用参数 <your_admin_password> 为 ODC 的 admin 账户设置一个初始密码。这个密码在您登录 ODC 时将会被用到。密码必须满足以下条件：
 # - 至少 2 个数字
 # - 至少 2 个小写字母
 # - 至少 2 个大写字母
-# - 至少 2 个特殊字符，特殊字符的范围是 ._+@#$%
-# - 不包含空格和其他特殊郋，长度为 8-32
+# - 至少 2 个特殊字符，允许的特殊字符的范围是 ._+@#$% 
+# - 不包含空格和其他特殊字符
+# - 长度为 8-32
 
 # 启动 ODC 将花费大约 2 分钟
 
 docker run -d -it --name odc --network host \
 --cpu-period 100000 --cpu-quota 200000 --memory=4G \
 -e "DATABASE_HOST=127.0.0.1" -e "DATABASE_PORT=2881" -e "DATABASE_NAME=odc_metadb" \
--e "DATABASE_USERNAME=odc@test" -e "DATABASE_PASSWORD=<your_metadb_password>" \
--e "ODC_ADMIN_INITIAL_PASSWORD=<your_admin_password>" -e "ODC_SERVER_PORT=8989" \
+-e "DATABASE_USERNAME=odc@test" -e 'DATABASE_PASSWORD=<your_metadb_password>' \
+-e 'ODC_ADMIN_INITIAL_PASSWORD=<your_admin_password>' -e "ODC_SERVER_PORT=8989" \
 oceanbase/odc:latest
 ```
 

@@ -71,6 +71,10 @@ public class JobMetaFactory extends AbstractJobMetaFactory {
                 + parameters.getLogicTableConfig().getWriterTaskCount());
         sourceInfo.setQueryTimeout(taskConnectionQueryTimeout);
         targetInfo.setQueryTimeout(taskConnectionQueryTimeout);
+        sourceInfo.setConnectionCount(2 * (logicTableConfig.getReaderTaskCount()
+                + parameters.getLogicTableConfig().getWriterTaskCount()));
+        targetInfo.setConnectionCount(2 * (logicTableConfig.getReaderTaskCount()
+                + parameters.getLogicTableConfig().getWriterTaskCount()));
         log.info("Begin to create dlm job,params={}", logicTableConfig);
         // ClusterMeta and TenantMeta used to calculate min limit size.
         JobReq req =

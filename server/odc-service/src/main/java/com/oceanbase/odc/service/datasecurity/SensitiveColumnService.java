@@ -47,9 +47,11 @@ import com.oceanbase.odc.core.authority.util.PreAuthenticate;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
+import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.metadb.datasecurity.SensitiveColumnEntity;
 import com.oceanbase.odc.metadb.datasecurity.SensitiveColumnRepository;
 import com.oceanbase.odc.metadb.datasecurity.SensitiveColumnSpecs;
@@ -121,6 +123,7 @@ public class SensitiveColumnService {
     private VersionDiffConfigService versionDiffConfigService;
 
     private static final SensitiveColumnMapper mapper = SensitiveColumnMapper.INSTANCE;
+    private static final List<DialectType> UNSUPPORTED_DIALECTS = Collections.singletonList(DialectType.MYSQL);
 
     @Transactional(rollbackFor = Exception.class)
     @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA, SECURITY_ADMINISTRATOR"}, resourceType = "ODC_PROJECT",
@@ -186,6 +189,7 @@ public class SensitiveColumnService {
             @NotEmpty @Valid List<SensitiveColumn> columns) {
         Set<Long> databaseIds =
                 columns.stream().map(SensitiveColumn::getDatabase).map(Database::getId).collect(Collectors.toSet());
+        blockNativeMySQLDatasource(databaseIds);
         checkProjectDatabases(projectId, databaseIds);
         Set<Long> maskingAlgorithmIds =
                 columns.stream().map(SensitiveColumn::getMaskingAlgorithmId).collect(Collectors.toSet());
@@ -203,6 +207,7 @@ public class SensitiveColumnService {
             entity.setCreatorId(userId);
             entity.setOrganizationId(organizationId);
             entities.add(entity);
+            exists.add(new SensitiveColumnMeta(entity));
         }
         repository.saveAll(entities);
         log.info("Sensitive columns has been created, id={}", entities.stream().map(SensitiveColumnEntity::getId)
@@ -368,6 +373,7 @@ public class SensitiveColumnService {
             checkProjectDatabases(projectId, databaseIds);
         }
         PreConditions.notEmpty(databaseIds, "databaseIds");
+        blockNativeMySQLDatasource(databaseIds);
         List<Database> databases = databaseService.listDatabasesByIds(databaseIds);
         List<SensitiveRule> rules;
         if (req.getAllSensitiveRules()) {
@@ -465,10 +471,29 @@ public class SensitiveColumnService {
         return repository.findAll(spec).stream().map(mapper::entityToModel).collect(Collectors.toList());
     }
 
+    /**
+     * Block the MySQL datasource, because data-masking is not supported during export data in MySQL.
+     * 
+     * @param databaseIds
+     */
+    private void blockNativeMySQLDatasource(Collection<Long> databaseIds) {
+        if (CollectionUtils.isEmpty(databaseIds)) {
+            return;
+        }
+        Set<Long> datasourceIds = databaseService.listDatabasesByIds(databaseIds).stream()
+                .map(database -> database.getDataSource().getId()).collect(Collectors.toSet());
+        List<ConnectionConfig> datasources = connectionService.innerListByIds(datasourceIds);
+        for (ConnectionConfig ds : datasources) {
+            if (UNSUPPORTED_DIALECTS.contains(ds.getDialectType())) {
+                throw new UnsupportedException("MySQL datasource is not supported");
+            }
+        }
+    }
+
     private void checkProjectDatabases(@NotNull Long projectId, @NotEmpty Collection<Long> databaseIds) {
         Set<Long> founds = databaseService.listDatabaseIdsByProjectId(projectId);
         List<Long> notFounds = databaseIds.stream().filter(id -> !founds.contains(id)).collect(Collectors.toList());
-        if (notFounds.size() > 0) {
+        if (!notFounds.isEmpty()) {
             throw new NotFoundException(ResourceType.ODC_DATABASE, "id",
                     notFounds.stream().map(Object::toString).collect(Collectors.joining(", ")));
         }
@@ -477,7 +502,7 @@ public class SensitiveColumnService {
     private void checkoutSensitiveRules(@NotNull Long projectId, @NotEmpty Collection<SensitiveRule> rules) {
         List<Long> invalids = rules.stream().filter(rule -> !Objects.equals(rule.getProjectId(), projectId))
                 .map(SensitiveRule::id).collect(Collectors.toList());
-        if (invalids.size() > 0) {
+        if (!invalids.isEmpty()) {
             throw new NotFoundException(ResourceType.ODC_SENSITIVE_RULE, "id",
                     invalids.stream().map(Object::toString).collect(Collectors.joining(", ")));
         }

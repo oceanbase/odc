@@ -18,29 +18,22 @@ package com.oceanbase.odc.service.session.model;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.springframework.beans.BeanUtils;
-
-import com.oceanbase.odc.service.common.model.OdcResultSetMetaData;
 import com.oceanbase.odc.service.db.model.OdcDBTableColumn;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 /**
  * @author jingtian
  */
 @Data
+@EqualsAndHashCode(callSuper = true)
 public class DBResultSetMetaData extends OdcResultSetMetaData {
 
     private List<OdcDBTableColumn> columnList;
 
     public DBResultSetMetaData() {}
-
-    public DBResultSetMetaData(OdcResultSetMetaData odcResultSetMetaData) {
-        BeanUtils.copyProperties(odcResultSetMetaData, this);
-        this.columnList = odcResultSetMetaData.getDbColumnList().stream().map(OdcDBTableColumn::new)
-                .collect(Collectors.toList());
-    }
 
     public void setColumnList(List<DBTableColumn> columnList) {
         if (columnList == null) {
@@ -62,4 +55,5 @@ public class DBResultSetMetaData extends OdcResultSetMetaData {
         this.dbColumnList = dbColumnList;
         this.columnList = columnList.stream().map(OdcDBTableColumn::new).collect(Collectors.toList());
     }
+
 }

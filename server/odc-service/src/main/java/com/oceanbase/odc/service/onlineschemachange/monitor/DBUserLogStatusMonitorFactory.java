@@ -17,7 +17,6 @@
 package com.oceanbase.odc.service.onlineschemachange.monitor;
 
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
@@ -29,15 +28,9 @@ import com.oceanbase.odc.service.connection.model.ConnectionConfig;
  */
 public class DBUserLogStatusMonitorFactory implements DBUserMonitorFactory {
 
-    private final Map<String, Object> logParameter;
-
-    public DBUserLogStatusMonitorFactory(Map<String, Object> logParameter) {
-        this.logParameter = logParameter;
-    }
-
     @Override
     public DBUserMonitor generateDBUserMonitor(ConnectionConfig connConfig, List<String> toMonitorUsers,
             Integer period, Integer timeout, TimeUnit timeUnit) {
-        return new DBUserLogStatusMonitor(connConfig, toMonitorUsers, logParameter, period, timeout, timeUnit);
+        return new DBUserLogStatusMonitor(connConfig, toMonitorUsers, period, timeout, timeUnit);
     }
 }
