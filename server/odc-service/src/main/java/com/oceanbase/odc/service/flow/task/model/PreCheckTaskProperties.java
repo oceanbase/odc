@@ -14,29 +14,24 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.flow.model;
+package com.oceanbase.odc.service.flow.task.model;
 
-import com.oceanbase.odc.core.flow.model.FlowTaskResult;
-import com.oceanbase.odc.service.flow.task.model.DatabasePermissionCheckResult;
-import com.oceanbase.odc.service.flow.task.model.SqlCheckTaskResult;
-import com.oceanbase.odc.service.task.model.ExecutorInfo;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.cloud.context.config.annotation.RefreshScope;
+import org.springframework.context.annotation.Configuration;
 
 import lombok.Data;
 
 /**
- * @Author: Lebie
- * @Date: 2023/8/9 16:26
- * @Description: []
+ * @author gaoda.xy
+ * @date 2023/12/12 23:02
  */
 @Data
-public class PreCheckTaskResult implements FlowTaskResult {
+@Configuration
+@RefreshScope
+@ConfigurationProperties(prefix = "odc.task.pre-check")
+public class PreCheckTaskProperties {
 
-    private boolean overLimit;
-
-    private ExecutorInfo executorInfo;
-
-    private SqlCheckTaskResult sqlCheckResult;
-
-    private DatabasePermissionCheckResult permissionCheckResult;
+    private long maxSqlContentBytes = 5 * 1024 * 1024;
 
 }
