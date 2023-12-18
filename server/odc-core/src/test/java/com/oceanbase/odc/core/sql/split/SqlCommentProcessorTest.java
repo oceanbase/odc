@@ -31,7 +31,6 @@ import org.junit.Test;
 
 import com.oceanbase.odc.common.util.YamlUtils;
 import com.oceanbase.odc.core.shared.constant.DialectType;
-import com.oceanbase.odc.core.sql.split.SqlCommentProcessor.SqlStatementIterator;
 
 public class SqlCommentProcessorTest {
 
@@ -52,13 +51,12 @@ public class SqlCommentProcessorTest {
     public void testIterator_MysqlMode() throws Exception {
         List<OffsetString> actual;
         try (InputStream in =
-                this.getClass().getClassLoader().getResourceAsStream("sql/split/comment-processor-mysql-test.sql");
-                SqlStatementIterator iterator = SqlCommentProcessor.iterator(in, DialectType.OB_MYSQL, false, false,
-                        false, StandardCharsets.UTF_8)) {
+                this.getClass().getClassLoader().getResourceAsStream("sql/split/comment-processor-mysql-test.sql")) {
+            SqlStatementIterator iterator = SqlCommentProcessor.iterator(in, StandardCharsets.UTF_8,
+                    new SqlCommentProcessor(DialectType.OB_MYSQL, false, false, false));
             actual = IteratorUtils.toList(iterator);
         }
-        List<OffsetString> expected =
-                getSqls("sql/split/comment-processor-mysql-verify.yml");
+        List<OffsetString> expected = getSqls("sql/split/comment-processor-mysql-verify.yml");
         Assert.assertEquals(expected.size(), actual.size());
         for (int i = 0; i < actual.size(); i++) {
             Assert.assertEquals(expected.get(i), actual.get(i));
@@ -82,13 +80,12 @@ public class SqlCommentProcessorTest {
     public void testIterator_OracleMode() throws Exception {
         List<OffsetString> actual;
         try (InputStream in =
-                this.getClass().getClassLoader().getResourceAsStream("sql/split/comment-processor-oracle-test.sql");
-                SqlStatementIterator iterator = SqlCommentProcessor.iterator(in, DialectType.OB_ORACLE, false, false,
-                        false, StandardCharsets.UTF_8)) {
+                this.getClass().getClassLoader().getResourceAsStream("sql/split/comment-processor-oracle-test.sql")) {
+            SqlStatementIterator iterator = SqlCommentProcessor.iterator(in, StandardCharsets.UTF_8,
+                    new SqlCommentProcessor(DialectType.OB_ORACLE, false, false, false));
             actual = IteratorUtils.toList(iterator);
         }
-        List<OffsetString> expected =
-                getSqls("sql/split/comment-processor-oracle-verify.yml");
+        List<OffsetString> expected = getSqls("sql/split/comment-processor-oracle-verify.yml");
         Assert.assertEquals(expected.size(), actual.size());
         for (int i = 0; i < actual.size(); i++) {
             Assert.assertEquals(expected.get(i), actual.get(i));
@@ -179,36 +176,8 @@ public class SqlCommentProcessorTest {
         return writer.getBuffer().toString();
     }
 
-    private List<String> getSqlWithoutComment(SqlCommentProcessor processor, String sqlText) {
-        StringBuffer builder = new StringBuffer();
-        List<String> sqls = processor.split(builder, sqlText).stream().map(OffsetString::getStr).collect(
-                Collectors.toList());
-        Assert.assertEquals(0, builder.toString().trim().length());
-        return sqls;
-    }
-
-    private List<String> getVerifySqlFromFile(String fileName, String delimiter) throws IOException {
-        InputStream input = this.getClass().getClassLoader().getResourceAsStream(fileName);
-        assert input != null;
-        BufferedReader reader = new BufferedReader(new InputStreamReader(input));
-        StringBuilder rawBuffer = new StringBuilder();
-        List<String> rawList = new ArrayList<>();
-        String raw = reader.readLine();
-        while (raw != null) {
-            rawBuffer.append(raw);
-            if (raw.trim().endsWith(delimiter)) {
-                rawList.add(String.format("%s\n", rawBuffer.toString()));
-                rawBuffer.setLength(0);
-            } else {
-                rawBuffer.append('\n');
-            }
-            raw = reader.readLine();
-        }
-        reader.close();
-        return rawList;
-    }
-
     private List<OffsetString> getSqls(String fileName) {
         return YamlUtils.fromYamlList(fileName, OffsetString.class);
     }
+
 }
