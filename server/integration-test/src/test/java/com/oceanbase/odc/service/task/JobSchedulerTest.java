@@ -30,6 +30,7 @@ import org.quartz.Trigger.CompletedExecutionInstruction;
 import org.quartz.impl.StdSchedulerFactory;
 import org.quartz.listeners.TriggerListenerSupport;
 
+import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.caller.JobException;
 import com.oceanbase.odc.service.task.config.DefaultJobConfiguration;
@@ -41,7 +42,6 @@ import com.oceanbase.odc.service.task.schedule.HostUrlProvider;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 import com.oceanbase.odc.service.task.schedule.JobScheduler;
 import com.oceanbase.odc.service.task.schedule.StdJobScheduler;
-import com.oceanbase.odc.service.task.service.JobEntity;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 
 import cn.hutool.core.lang.Assert;

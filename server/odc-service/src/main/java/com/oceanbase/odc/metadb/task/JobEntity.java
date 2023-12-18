@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.task.service;
+package com.oceanbase.odc.metadb.task;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -54,7 +54,7 @@ public class JobEntity implements Serializable {
     @Column(name = "job_Class", nullable = false)
     private String jobClass;
 
-    @Column(name = "job_type")
+    @Column(name = "job_type", nullable = false)
     private String jobType;
 
     @Enumerated(EnumType.STRING)
@@ -67,11 +67,26 @@ public class JobEntity implements Serializable {
     @Column(name = "schedule_times", nullable = false)
     private Integer scheduleTimes;
 
+    @Column(name = "execution_times", nullable = false)
+    private Integer executionTimes;
+
+    @Column(name = "job_name", nullable = false)
+    private String jobName;
+
     @Column(name = "job_data_json", nullable = false)
     private String jobDataJson;
 
     @Column(name = "trigger_config_json", nullable = false)
     private String triggerConfigJson;
+
+    @Column(name = "result_json")
+    private String resultJson;
+
+    @Column(name = "progress_percentage")
+    private double progressPercentage;
+
+    @Column(name = "description")
+    private String description;
 
     @Column(name = "creator_id", updatable = false)
     private Long creatorId;

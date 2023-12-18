@@ -24,6 +24,7 @@ import org.quartz.SimpleScheduleBuilder;
 import org.quartz.Trigger;
 import org.quartz.TriggerKey;
 
+import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.service.quartz.util.QuartzCronExpressionUtils;
 import com.oceanbase.odc.service.schedule.model.QuartzKeyGenerator;
@@ -43,7 +44,7 @@ public class TriggerBuilder {
     public static Trigger build(JobIdentity ji, JobDefinition jd, TriggerConfig config) throws JobException {
         JobDataMap triData = new JobDataMap();
         JobContext jc = new DefaultJobContextBuilder().build(ji, jd);
-        triData.put(JobConstants.QUARTZ_DATA_MAP_JOB_CONTEXT, jc);
+        triData.put(JobConstants.QUARTZ_DATA_MAP_JOB_CONTEXT, JsonUtils.toJson(jc));
 
         if (config == null) {
             config = new TriggerConfig();

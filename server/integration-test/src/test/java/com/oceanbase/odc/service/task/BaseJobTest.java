@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.junit.BeforeClass;
+import org.mockito.Mockito;
 
 import com.oceanbase.odc.service.common.model.HostProperties;
 import com.oceanbase.odc.service.task.caller.JobUtils;
@@ -33,6 +34,7 @@ import com.oceanbase.odc.service.task.constants.JobEnvConstants;
 import com.oceanbase.odc.service.task.enums.TaskRunModeEnum;
 import com.oceanbase.odc.service.task.schedule.HostUrlProvider;
 import com.oceanbase.odc.service.task.schedule.IpBasedHostUrlProvider;
+import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 import com.oceanbase.odc.test.database.TestDBConfiguration;
 import com.oceanbase.odc.test.database.TestDBConfigurations;
 import com.oceanbase.odc.test.database.TestProperties;
@@ -65,6 +67,7 @@ public abstract class BaseJobTest {
 
         HostUrlProvider urlProvider = new IpBasedHostUrlProvider(new HostProperties());
         jc.setHostUrlProvider(urlProvider);
+        jc.setTaskFrameworkService(Mockito.mock(TaskFrameworkService.class));
         JobConfigurationHolder.setJobConfiguration(jc);
 
         k8sJobClient = new NativeK8sJobClient(TestProperties.getProperty("odc.k8s.cluster.url"));

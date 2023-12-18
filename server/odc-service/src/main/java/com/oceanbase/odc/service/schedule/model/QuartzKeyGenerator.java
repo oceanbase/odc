@@ -27,6 +27,7 @@ import com.oceanbase.odc.service.task.schedule.JobIdentity;
  * @Descripition: Defines the key generation rules to ensure global uniqueness in this class.
  */
 public class QuartzKeyGenerator {
+
     public static TriggerKey generateTriggerKey(Long scheduleId, JobType jobType) {
         return new TriggerKey(scheduleId + "", jobType.name());
     }

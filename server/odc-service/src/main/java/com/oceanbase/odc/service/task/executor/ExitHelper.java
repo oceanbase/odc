@@ -14,39 +14,31 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.task.schedule;
+package com.oceanbase.odc.service.task.executor;
 
-import lombok.Data;
+import java.util.concurrent.CountDownLatch;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
- * Identity a unique job
- * 
  * @author yaobin
- * @date 2023-11-23
+ * @date 2023-12-13
  * @since 4.2.4
  */
-@Data
-public class JobIdentity {
+@Slf4j
+public class ExitHelper {
 
-    /**
-     * job id
-     */
-    private Long id;
+    private static final CountDownLatch LATCH = new CountDownLatch(1);
 
-    /**
-     * job name
-     */
-    private String name;
-
-    public static JobIdentity of(Long id) {
-        return of(id, null);
+    public static void await() {
+        try {
+            LATCH.await();
+        } catch (InterruptedException e) {
+            log.warn("Await thread be interrupted and exit:", e);
+        }
     }
 
-    public static JobIdentity of(Long id, String name) {
-        JobIdentity jobIdentity = new JobIdentity();
-        jobIdentity.setId(id);
-        jobIdentity.setName(name);
-        return jobIdentity;
+    public static void exit() {
+        LATCH.countDown();
     }
-
 }

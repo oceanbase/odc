@@ -13,40 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.oceanbase.odc.service.task.listener;
 
-package com.oceanbase.odc.service.task.schedule;
+import com.oceanbase.odc.common.event.AbstractEvent;
+import com.oceanbase.odc.service.task.executor.task.TaskResult;
 
-import lombok.Data;
+import lombok.Getter;
 
 /**
- * Identity a unique job
- * 
  * @author yaobin
- * @date 2023-11-23
+ * @date 2023-11-16
  * @since 4.2.4
  */
-@Data
-public class JobIdentity {
+public class TaskResultUploadEvent extends AbstractEvent {
 
-    /**
-     * job id
-     */
-    private Long id;
+    @Getter
+    private final TaskResult taskResult;
 
-    /**
-     * job name
-     */
-    private String name;
-
-    public static JobIdentity of(Long id) {
-        return of(id, null);
+    public TaskResultUploadEvent(TaskResult taskResult) {
+        super(taskResult, "upload");
+        this.taskResult = taskResult;
     }
-
-    public static JobIdentity of(Long id, String name) {
-        JobIdentity jobIdentity = new JobIdentity();
-        jobIdentity.setId(id);
-        jobIdentity.setName(name);
-        return jobIdentity;
-    }
-
 }
+

@@ -24,8 +24,8 @@ import com.oceanbase.odc.service.task.constants.JobEnvConstants;
 import com.oceanbase.odc.service.task.enums.TaskRunModeEnum;
 import com.oceanbase.odc.service.task.executor.context.JobContextProvider;
 import com.oceanbase.odc.service.task.executor.context.JobContextProviderFactory;
-import com.oceanbase.odc.service.task.executor.executor.SyncTaskExecutor;
 import com.oceanbase.odc.service.task.executor.executor.TaskExecutor;
+import com.oceanbase.odc.service.task.executor.executor.ThreadPoolTaskExecutor;
 import com.oceanbase.odc.service.task.executor.task.Task;
 import com.oceanbase.odc.service.task.executor.task.TaskFactory;
 
@@ -43,34 +43,43 @@ public class TaskApplication {
     private JobContextProvider jobContextProvider;
 
     public void run(String[] args) {
+
         init(args);
         EmbedServer server = new EmbedServer();
         server.start(JobUtils.getPort());
+        log.info("Starting embed server.");
         try {
             JobContext context = jobContextProvider.provide();
             Task task = TaskFactory.create(context.getJobClass());
-            log.info("Task created, context: {}", task.context());
+            log.info("Task created, context: {}", context);
             taskExecutor.execute(task, context);
+            ExitHelper.await();
         } finally {
             try {
                 server.stop();
             } catch (Exception e) {
-                log.warn("stop embed server occur exception:", e);
+                log.warn("Stop embed server occur exception:", e);
             }
         }
+
     }
 
     private void init(String[] args) {
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            log.info("Task executor exits, systemInfo={}", SystemUtils.getSystemMemoryInfo());
+        }));
+        System.setProperty(JobEnvConstants.LOG_DIRECTORY, JobUtils.getLogPath());
+        log.info("Log directory is {}.", JobUtils.getLogPath());
+
         String runMode = SystemUtils.getEnvOrProperty(JobEnvConstants.TASK_RUN_MODE);
         Verify.notBlank(runMode, JobEnvConstants.TASK_RUN_MODE);
 
-        String ld = SystemUtils.getEnvOrProperty(JobEnvConstants.LOG_DIRECTORY);
-        System.setProperty(JobEnvConstants.LOG_DIRECTORY, ld);
-
         jobContextProvider = JobContextProviderFactory.create(TaskRunModeEnum.valueOf(runMode));
         log.info("JobContextProvider init success: {}", jobContextProvider.getClass().getSimpleName());
-        taskExecutor = new SyncTaskExecutor();
+        taskExecutor = new ThreadPoolTaskExecutor(1);
         log.info("Task executor init success: {}", taskExecutor.getClass().getSimpleName());
+        log.info("Task application ip is {}.", SystemUtils.getLocalIpAddress());
+        log.info("Task application port is {}.", JobUtils.getPort());
     }
 
 }

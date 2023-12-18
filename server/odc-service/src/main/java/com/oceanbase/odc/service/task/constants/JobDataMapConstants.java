@@ -26,4 +26,6 @@ public class JobDataMapConstants {
     public static final String CONNECTION_CONFIG = "connectionConfig";
 
     public static final String META_DB_TASK_PARAMETER = "metaDbTaskParameter";
+
+    public static final String BUZ_ID = "buzId";
 }

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.task.service;
+package com.oceanbase.odc.metadb.task;
 
 import javax.transaction.Transactional;
 
@@ -21,10 +21,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
-import com.oceanbase.odc.service.task.enums.SourceType;
 
 /**
  * @author yaobin
@@ -36,11 +36,34 @@ public interface JobScheduleRepository extends JpaRepository<JobEntity, Long>,
         JpaSpecificationExecutor<JobEntity> {
 
     @Transactional
+    @Query("update JobEntity set "
+            + "executor=:#{#param.executor},status=:#{#param.status},"
+            + "progressPercentage=:#{#param.progressPercentage},resultJson=:#{#param.resultJson}"
+            + " where id=:#{#param.id}")
     @Modifying
-    @Query("update JobScheduleEntity st set st.status = ?2, st.scheduleTimes = ?3 where st.id = ?1")
-    int updateStatusAndScheduleTimesById(Long id, TaskStatus status, Integer scheduleTimes);
+    int update(@Param("param") JobEntity entity);
+
+    @Transactional
+    @Query("update JobEntity set "
+            + "jobName=:#{#param.jobName},status=:#{#param.status},scheduleTimes=:#{#param.scheduleTimes},"
+            + "executionTimes=:#{#param.executionTimes}"
+            + " where id=:#{#param.id}")
+    @Modifying
+    void updateJobNameAndStatus(@Param("param") JobEntity entity);
 
 
-    JobEntity findBySourceIdAndSourceType(Long sourceId, SourceType sourceType);
+    @Transactional
+    @Query("update JobEntity set "
+            + "scheduleTimes=:scheduleTimes"
+            + " where id=:id")
+    @Modifying
+    void updateScheduleTimes(@Param("id") Long id, @Param("scheduleTimes") Integer scheduleTimes);
+
+    @Transactional
+    @Query("update JobEntity set "
+            + "status=:status"
+            + " where id=:id")
+    @Modifying
+    void updateStatus(@Param("id") Long id, @Param("status") TaskStatus status);
 
 }

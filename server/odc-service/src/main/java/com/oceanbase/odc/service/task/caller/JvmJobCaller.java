@@ -27,7 +27,7 @@ import com.oceanbase.odc.service.task.schedule.JobIdentity;
 public class JvmJobCaller extends BaseJobCaller {
 
     @Override
-    protected void doStart(JobContext context) throws JobException {
+    protected String doStart(JobContext context) throws JobException {
         throw new UnsupportedException();
     }
 

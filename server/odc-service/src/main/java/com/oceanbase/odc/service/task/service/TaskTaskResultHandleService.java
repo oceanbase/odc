@@ -16,15 +16,18 @@
 
 package com.oceanbase.odc.service.task.service;
 
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.oceanbase.odc.core.shared.constant.ResourceType;
-import com.oceanbase.odc.core.shared.constant.TaskStatus;
-import com.oceanbase.odc.core.shared.exception.NotFoundException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.metadb.task.TaskEntity;
-import com.oceanbase.odc.metadb.task.TaskRepository;
+import com.oceanbase.odc.service.task.TaskService;
+import com.oceanbase.odc.service.task.constants.JobDataMapConstants;
 import com.oceanbase.odc.service.task.executor.task.TaskResult;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 
@@ -37,23 +40,27 @@ import com.oceanbase.odc.service.task.schedule.JobIdentity;
 public class TaskTaskResultHandleService implements ResultHandleService {
 
     @Autowired
-    private TaskRepository taskRepository;
+    private TaskService taskService;
+
+    @Autowired
+    private StdTaskFrameworkService stdTaskFrameworkService;
 
     @Transactional(rollbackFor = Exception.class)
     @Override
     public void handle(TaskResult taskResult) {
         JobIdentity identity = taskResult.getJobIdentity();
-        TaskEntity taskEntity = nullSafeFindById(identity.getId());
-        taskEntity.setProgressPercentage(taskResult.getProgress() * 100);
-        taskEntity.setStatus(taskResult.getTaskStatus() == null ? TaskStatus.RUNNING : taskResult.getTaskStatus());
-        taskEntity.setResultJson(taskResult.getResultJson());
+        JobEntity jobEntity = stdTaskFrameworkService.find(identity.getId());
+        Map<String, String> jobData =
+                JsonUtils.fromJson(jobEntity.getJobDataJson(), new TypeReference<Map<String, String>>() {});
+        String taskTaskIdString = jobData.get(JobDataMapConstants.BUZ_ID);
+        if (taskTaskIdString != null) {
+            Long taskTaskId = Long.parseLong(taskTaskIdString);
+            TaskEntity taskEntity = taskService.detail(taskTaskId);
+            taskEntity.setProgressPercentage(taskResult.getProgress() * 100);
+            taskEntity.setStatus(taskResult.getTaskStatus());
+            taskEntity.setResultJson(taskResult.getResultJson());
+            taskService.update(taskEntity);
+        }
 
-        taskRepository.update(taskEntity);
     }
-
-    private TaskEntity nullSafeFindById(Long id) {
-        return taskRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException(ResourceType.ODC_TASK, "id", id));
-    }
-
 }
