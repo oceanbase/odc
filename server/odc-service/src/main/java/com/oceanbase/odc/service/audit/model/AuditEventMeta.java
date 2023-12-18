@@ -56,6 +56,11 @@ public class AuditEventMeta {
     private String sidExtractExpression;
 
     /**
+     * database id extract expression which is an SpEL
+     */
+    private String databaseIdExtractExpression;
+
+    /**
      * Flag if this event is in connection
      */
     @JsonProperty("isInConnection")
