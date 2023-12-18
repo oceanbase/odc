@@ -79,10 +79,10 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         }
         JobEntity je = find(taskResult.getJobIdentity().getId());
 
-        if (je.getStatus() == TaskStatus.DESTROYED) {
+       /* if (je.getStatus() == TaskStatus.DESTROYED) {
             log.warn("task is terminated, ignore upload result.{}", JsonUtils.toJson(taskResult));
             return;
-        }
+        }*/
         if (taskResult.getProgress() == je.getProgressPercentage() && taskResult.getTaskStatus() == je.getStatus()) {
             log.warn("task progress is not changed, ignore upload result.{}", JsonUtils.toJson(taskResult));
             return;
