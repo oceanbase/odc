@@ -15,9 +15,6 @@
  */
 package com.oceanbase.odc.metadb.flow;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.Statement;
 import java.util.Collection;
 import java.util.List;
 
@@ -27,11 +24,11 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import org.springframework.jdbc.core.ConnectionCallback;
-import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.oceanbase.odc.common.jpa.InsertSqlTemplateBuilder;
 import com.oceanbase.odc.config.jpa.OdcJpaRepository;
+
+import cn.hutool.core.lang.func.Func1;
 
 /**
  * Repository layer for {@link SequenceInstanceEntity}
@@ -69,23 +66,14 @@ public interface SequenceInstanceRepository
                 .field(SequenceInstanceEntity_.targetNodeInstanceId)
                 .field(SequenceInstanceEntity_.flowInstanceId)
                 .build();
-        JdbcTemplate jdbcTemplate = getJdbcTemplate();
-        return jdbcTemplate.execute((ConnectionCallback<List<SequenceInstanceEntity>>) con -> {
-            PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
-            for (SequenceInstanceEntity item : entities) {
-                ps.setObject(1, item.getSourceNodeInstanceId());
-                ps.setObject(2, item.getTargetNodeInstanceId());
-                ps.setObject(3, item.getFlowInstanceId());
-                ps.addBatch();
-            }
-            ps.executeBatch();
-            ResultSet resultSet = ps.getGeneratedKeys();
-            int i = 0;
-            while (resultSet.next()) {
-                entities.get(i++).setId(getGeneratedId(resultSet));
-            }
-            return entities;
-        });
+
+        List<Func1<SequenceInstanceEntity, Object>> valueGetter = valueGetterBuilder().add(
+                SequenceInstanceEntity::getSourceNodeInstanceId)
+                .add(SequenceInstanceEntity::getTargetNodeInstanceId)
+                .add(SequenceInstanceEntity::getFlowInstanceId)
+                .build();
+
+        return batchUpdate(entities, sql, valueGetter, SequenceInstanceEntity::setId);
     }
 
 }

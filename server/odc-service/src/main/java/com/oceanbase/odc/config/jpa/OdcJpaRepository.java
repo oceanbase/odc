@@ -23,6 +23,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 import javax.persistence.EntityManager;
@@ -39,6 +41,8 @@ import org.springframework.util.CollectionUtils;
 
 import com.google.common.collect.Iterables;
 
+import cn.hutool.core.lang.func.Func1;
+
 public interface OdcJpaRepository<T, ID extends Serializable>
         extends JpaRepository<T, ID>, JpaSpecificationExecutor<T> {
 
@@ -47,6 +51,39 @@ public interface OdcJpaRepository<T, ID extends Serializable>
     NamedParameterJdbcTemplate getNamedParameterJdbcTemplate();
 
     EntityManager getEntityManager();
+
+    /**
+     *
+     * @param entities
+     * @param sql
+     * @param valueGetter
+     * @param idSetter
+     * @return entities and assign generated id;
+     */
+    List<T> batchUpdate(List<T> entities, String sql, Map<Integer, Func1<T, Object>> valueGetter,
+            BiConsumer<T, ID> idSetter);
+
+    List<T> batchUpdate(List<T> entities, String sql, List<Func1<T, Object>> valueGetter,
+            BiConsumer<T, ID> idSetter);
+
+
+    class ValueGetterBuilder<T> {
+
+        private List<Func1<T, Object>> valueGetter = new ArrayList<>();
+
+        public ValueGetterBuilder<T> add(Func1<T, Object> getter) {
+            valueGetter.add(getter);
+            return this;
+        }
+
+        public List<Func1<T, Object>> build() {
+            return valueGetter;
+        }
+    }
+
+    default ValueGetterBuilder<T> valueGetterBuilder() {
+        return new ValueGetterBuilder<>();
+    }
 
     default <Y, E> List<E> partitionFind(Collection<Y> ids, Function<List<Y>, List<E>> func) {
         return partitionFind(ids, 100, func);
