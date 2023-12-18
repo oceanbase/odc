@@ -121,9 +121,7 @@ public class DatabaseChangeTask extends BaseTask {
         ObjectStorageConfiguration otc = JsonUtils.fromJson(
                 getJobData().get(JobDataMapConstants.OBJECT_STORAGE_CONFIGURATION), ObjectStorageConfiguration.class);
 
-        CloudResourceConfigurations cloudResourceConfigurations = new CloudResourceConfigurations();
-        CloudClient cloudClient = cloudResourceConfigurations.new CloudClientBuilder().generateCloudClient(otc);
-
+        CloudClient cloudClient = new CloudResourceConfigurations.CloudClientBuilder().generateCloudClient(otc);
         this.cloudObjectStorageService = new CloudObjectStorageService(cloudClient, otc);
         log.info("Async task  start to run, task id:{}", this.getTaskId());
         log.info("Start read sql content, taskId={}", this.getTaskId());
