@@ -294,7 +294,7 @@
 - type: "UNKNOWN_TASK_TYPE"
   action: "CREATE_TASK"
   method_signature: "com.oceanbase.odc.server.web.controller.v2.FlowInstanceController.createFlowInstance"
-  sid_extract_expression: "{#flowInstanceReq.connectionId}"
+  database_id_extract_expression: "{#flowInstanceReq.databaseId}"
   in_connection: 1
   enabled: 1
   id: 40

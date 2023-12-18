@@ -277,15 +277,7 @@ public class AuditEventAspect {
                 .username(authenticationFacade.currentUsername())
                 .detail(parseDetailFromApiParams(apiParams))
                 .build();
-        // 创建连接时，请求中还没有 id，需要通过 VisibleScope 来判断是否为公共连接
-        // 若 VisibleScope 不为 ORGANIZATION，则返回 null，表示不审计
-        if (auditEventMeta.getMethodSignature().endsWith("createConnection")
-                && Objects.nonNull(apiParams.get("connection"))) {
-            ConnectionConfig connection = (ConnectionConfig) apiParams.get("connection");
-            if (Objects.nonNull(connection) && connection.getVisibleScope() != ConnectionVisibleScope.ORGANIZATION) {
-                return null;
-            }
-        }
+
         if (auditEventMeta.getInConnection()) {
             String sid = parseSid(auditEventMeta, method, args);
             if (StringUtils.isNotEmpty(sid)) {
