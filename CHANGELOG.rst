@@ -3,6 +3,10 @@
 
 New
 ~~~
+- Feat(partition-plan): support setting scheduling strategy (#1136)
+  [guowl3]
+- Feat(data-masking): prohibit data-masking for native MySQL datasource
+  (#1095) [XiaoYang]
 - Feat(data-transfer): support log throughput of datatransfer (#1056)
   [LuckyLeo]
 - Feat(sql-execute): supports locating specific issue locations in
@@ -58,6 +62,52 @@ Changes
 
 Fix
 ~~~
+- Fix(database-change): timeout or oom when upload a large sql files
+  (#1151) [XiaoYang]
+- Fix(monitor): fix druid stats parser error (#1213) [Ang]
+- Fix(sql-rule): disabling the rule 'allow-execute-sql-types'  does not
+  work (#1194) [pynzzZ]
+- Fix(database): optimize error message of synchronizing databases
+  failure (#1202) [pynzzZ]
+- Fix(monitor): druid stats use mysql parser (#1208) [Ang]
+- Fix(concurrent): remove servlet configuration (#1188) [LuckyLeo]
+- Fix(osc): osc log is not show totally and  flow task is done
+  unnormally (#1110) [krihy]
+- Fix(iam): users need re-login to access the individual space after
+  they are granted for individual_space (#1147) [pynzzZ]
+- Fix(sql-rule): several sql interception bugs (#1165) [pynzzZ]
+- Fix(data-transfer): only inject sys tenant config when it's configured
+  in datasource (#1172) [LuckyLeo]
+- Fix(sql-check): can not give violations related comments normally when
+  there exists same name tables (#1163) [IL MARE]
+- Fix(project): transaction timeout when transfer too many databases or
+  add too many users into projects (#1071) [pynzzZ]
+- Fix(session): session creation will fail when the oracle schema name
+  is lowercase (#1135) [pynzzZ]
+- Fix(dlm): displays incomplete information after editing (#1073)
+  [guowl3]
+- Fix(database-object) :Provide relevant prompts to users for high-risk
+  operations when drop or create index (#1143) [zhangxiao]
+- Fix(project): could delete users who are currently joining projects
+  (#1061) [pynzzZ]
+- Fix(jdbc): full link trace leads to OOM exception (#1145) [LuckyLeo]
+- Fix(result-set-export): there is no data in exported xlsx file (#1139)
+  [LuckyLeo]
+- Fix(ticket): approvers viewing shadow table sync ticket fails after
+  the ticket is approved/rejected (#1119) [pynzzZ]
+- Fix(connect-plugin): failed to connect to native percona mysql
+  datasource when there is "-" in version string (#1115) [zhangxiao]
+- Fix(ticket): tickets not filtered by projects (#1111) [pynzzZ]
+- Fix(ticket): list all tickets returns empty in individual space
+  (#1089) [pynzzZ]
+- Fix(project): the project owner can remove all project dbas from the
+  project (#1114) [pynzzZ]
+- Fix(obclient): do not create os user when it already exists (#1096)
+  [LuckyLeo]
+- Fix(full-link-trace): no tags and references in downloaded json file
+  (#1102) [LuckyLeo]
+- Fix(project): project participants can create database and add them
+  into the project (#1098) [pynzzZ]
 - Fix(sql-rule): cannot execute sqls with dblink in team space's sql
   console (#1083) [pynzzZ]
 - Fix(result-export): there is no log printed for result export task
