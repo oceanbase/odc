@@ -15,12 +15,10 @@
  */
 package com.oceanbase.odc.metadb.flow;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.Statement;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 
 import javax.transaction.Transactional;
 
@@ -28,8 +26,6 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import org.springframework.jdbc.core.ConnectionCallback;
-import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.oceanbase.odc.common.jpa.InsertSqlTemplateBuilder;
 import com.oceanbase.odc.config.jpa.OdcJpaRepository;
@@ -99,30 +95,20 @@ public interface ServiceTaskInstanceRepository extends OdcJpaRepository<ServiceT
                 .field(ServiceTaskInstanceEntity_.flowInstanceId)
                 .field(ServiceTaskInstanceEntity_.executionTime)
                 .build();
-        JdbcTemplate jdbcTemplate = getJdbcTemplate();
-        return jdbcTemplate.execute((ConnectionCallback<List<ServiceTaskInstanceEntity>>) con -> {
-            PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
-            for (ServiceTaskInstanceEntity e : entities) {
-                ps.setObject(1, e.getOrganizationId());
-                ps.setObject(2, e.getTargetTaskId());
-                ps.setObject(3, e.getStrategy().name());
-                ps.setObject(4, e.getTaskType().name());
-                ps.setObject(5, e.getWaitExecExpireIntervalSeconds());
-                ps.setObject(6, e.getStatus().name());
-                ps.setObject(7, e.isStartEndpoint());
-                ps.setObject(8, e.isEndEndpoint());
-                ps.setObject(9, e.getFlowInstanceId());
-                ps.setObject(10, e.getExecutionTime());
-                ps.addBatch();
-            }
-            ps.executeBatch();
-            ResultSet resultSet = ps.getGeneratedKeys();
-            int i = 0;
-            while (resultSet.next()) {
-                entities.get(i++).setId(getGeneratedId(resultSet));
-            }
-            return entities;
-        });
+
+        List<Function<ServiceTaskInstanceEntity, Object>> getter = valueGetterBuilder().add(
+                ServiceTaskInstanceEntity::getOrganizationId)
+                .add(ServiceTaskInstanceEntity::getTargetTaskId)
+                .add((ServiceTaskInstanceEntity entity) -> entity.getTaskType().name())
+                .add(ServiceTaskInstanceEntity::getWaitExecExpireIntervalSeconds)
+                .add((ServiceTaskInstanceEntity entity) -> entity.getStatus().name())
+                .add(ServiceTaskInstanceEntity::isStartEndpoint)
+                .add(ServiceTaskInstanceEntity::isEndEndpoint)
+                .add(ServiceTaskInstanceEntity::getFlowInstanceId)
+                .add(ServiceTaskInstanceEntity::getExecutionTime)
+                .build();
+
+        return batchCreate(entities, sql, getter, ServiceTaskInstanceEntity::setId);
     }
 
 }

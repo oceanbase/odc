@@ -15,11 +15,9 @@
  */
 package com.oceanbase.odc.metadb.flow;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.Statement;
 import java.util.Collection;
 import java.util.List;
+import java.util.function.Function;
 
 import javax.transaction.Transactional;
 
@@ -27,8 +25,6 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import org.springframework.jdbc.core.ConnectionCallback;
-import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.oceanbase.odc.common.jpa.InsertSqlTemplateBuilder;
 import com.oceanbase.odc.config.jpa.OdcJpaRepository;
@@ -74,24 +70,16 @@ public interface UserTaskInstanceCandidateRepository extends OdcJpaRepository<Us
                 .field(UserTaskInstanceCandidateEntity_.roleId)
                 .field(UserTaskInstanceCandidateEntity_.resourceRoleIdentifier)
                 .build();
-        JdbcTemplate jdbcTemplate = getJdbcTemplate();
-        return jdbcTemplate.execute((ConnectionCallback<List<UserTaskInstanceCandidateEntity>>) con -> {
-            PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
-            for (UserTaskInstanceCandidateEntity e : entities) {
-                ps.setObject(1, e.getApprovalInstanceId());
-                ps.setObject(2, e.getUserId());
-                ps.setObject(3, e.getRoleId());
-                ps.setObject(4, e.getResourceRoleIdentifier());
-                ps.addBatch();
-            }
-            ps.executeBatch();
-            ResultSet resultSet = ps.getGeneratedKeys();
-            int i = 0;
-            while (resultSet.next()) {
-                entities.get(i++).setId(getGeneratedId(resultSet));
-            }
-            return entities;
-        });
+
+        List<Function<UserTaskInstanceCandidateEntity, Object>> getter = valueGetterBuilder().add(
+                UserTaskInstanceCandidateEntity::getApprovalInstanceId)
+                .add(UserTaskInstanceCandidateEntity::getUserId)
+                .add(UserTaskInstanceCandidateEntity::getUserId)
+                .add(UserTaskInstanceCandidateEntity::getRoleId)
+                .add(UserTaskInstanceCandidateEntity::getResourceRoleIdentifier)
+                .build();
+
+        return batchCreate(entities, sql, getter, UserTaskInstanceCandidateEntity::setId);
     }
 
 }

@@ -15,11 +15,9 @@
  */
 package com.oceanbase.odc.metadb.flow;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.Statement;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
 
 import javax.transaction.Transactional;
 
@@ -27,8 +25,6 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import org.springframework.jdbc.core.ConnectionCallback;
-import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.oceanbase.odc.common.jpa.InsertSqlTemplateBuilder;
 import com.oceanbase.odc.config.jpa.OdcJpaRepository;
@@ -75,25 +71,16 @@ public interface GateWayInstanceRepository
                 .field("is_end_endpoint")
                 .field(GateWayInstanceEntity_.flowInstanceId)
                 .build();
-        JdbcTemplate jdbcTemplate = getJdbcTemplate();
-        return jdbcTemplate.execute((ConnectionCallback<List<GateWayInstanceEntity>>) con -> {
-            PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
-            for (GateWayInstanceEntity item : entities) {
-                ps.setObject(1, item.getOrganizationId());
-                ps.setObject(2, item.getStatus().name());
-                ps.setObject(3, item.isStartEndpoint());
-                ps.setObject(4, item.isEndEndpoint());
-                ps.setObject(5, item.getFlowInstanceId());
-                ps.addBatch();
-            }
-            ps.executeBatch();
-            ResultSet resultSet = ps.getGeneratedKeys();
-            int i = 0;
-            while (resultSet.next()) {
-                entities.get(i++).setId(getGeneratedId(resultSet));
-            }
-            return entities;
-        });
+
+        List<Function<GateWayInstanceEntity, Object>> getter = valueGetterBuilder().add(
+                GateWayInstanceEntity::getOrganizationId)
+                .add((GateWayInstanceEntity e) -> e.getStatus().name())
+                .add(GateWayInstanceEntity::isStartEndpoint)
+                .add(GateWayInstanceEntity::isEndEndpoint)
+                .add(GateWayInstanceEntity::getFlowInstanceId)
+                .build();
+
+        return batchCreate(entities, sql, getter, GateWayInstanceEntity::setId);
     }
 
 }

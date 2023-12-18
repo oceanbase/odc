@@ -17,6 +17,7 @@ package com.oceanbase.odc.metadb.flow;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.function.Function;
 
 import javax.transaction.Transactional;
 
@@ -27,8 +28,6 @@ import org.springframework.data.repository.query.Param;
 
 import com.oceanbase.odc.common.jpa.InsertSqlTemplateBuilder;
 import com.oceanbase.odc.config.jpa.OdcJpaRepository;
-
-import cn.hutool.core.lang.func.Func1;
 
 /**
  * Repository layer for {@link SequenceInstanceEntity}
@@ -67,13 +66,13 @@ public interface SequenceInstanceRepository
                 .field(SequenceInstanceEntity_.flowInstanceId)
                 .build();
 
-        List<Func1<SequenceInstanceEntity, Object>> valueGetter = valueGetterBuilder().add(
+        List<Function<SequenceInstanceEntity, Object>> valueGetter = valueGetterBuilder().add(
                 SequenceInstanceEntity::getSourceNodeInstanceId)
                 .add(SequenceInstanceEntity::getTargetNodeInstanceId)
                 .add(SequenceInstanceEntity::getFlowInstanceId)
                 .build();
 
-        return batchUpdate(entities, sql, valueGetter, SequenceInstanceEntity::setId);
+        return batchCreate(entities, sql, valueGetter, SequenceInstanceEntity::setId);
     }
 
 }

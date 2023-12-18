@@ -16,7 +16,6 @@
 package com.oceanbase.odc.config.jpa;
 
 import java.io.Serializable;
-import java.lang.reflect.Field;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -26,11 +25,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.BiConsumer;
+import java.util.function.Function;
 import java.util.stream.IntStream;
 
-import javax.persistence.Column;
 import javax.persistence.EntityManager;
-import javax.persistence.metamodel.SingularAttribute;
 import javax.sql.DataSource;
 
 import org.hibernate.engine.jdbc.connections.internal.DatasourceConnectionProviderImpl;
@@ -43,9 +41,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
 import com.google.common.base.Preconditions;
-import com.oceanbase.odc.common.util.StringUtils;
 
-import cn.hutool.core.lang.func.Func1;
 import lombok.SneakyThrows;
 
 public class EnhancedJpaRepository<T, ID extends Serializable> extends SimpleJpaRepository<T, ID> {
@@ -74,16 +70,16 @@ public class EnhancedJpaRepository<T, ID extends Serializable> extends SimpleJpa
     }
 
     @SneakyThrows
-    public List<T> batchUpdate(List<T> entities, String sql, Map<Integer, Func1<T, Object>> valueGetter,
-            BiConsumer<T, ID> idSetter) {
+    public List<T> batchCreate(List<T> entities, String sql, Map<Integer, Function<T, Object>> valueGetter,
+            BiConsumer<T, Long> idSetter) {
         Preconditions.checkArgument(entities.stream().allMatch(e -> entityInformation.getId(e) == null),
                 "can't create entity, cause not new entities");
         return getJdbcTemplate().execute((ConnectionCallback<List<T>>) con -> {
             PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             for (T item : entities) {
-                for (Entry<Integer, Func1<T, Object>> e : valueGetter.entrySet()) {
+                for (Entry<Integer, Function<T, Object>> e : valueGetter.entrySet()) {
                     try {
-                        Object call = e.getValue().call(item);
+                        Object call = e.getValue().apply(item);
                         ps.setObject(e.getKey(), call);
                     } catch (Exception ex) {
                         throw new RuntimeException(ex);
@@ -102,30 +98,23 @@ public class EnhancedJpaRepository<T, ID extends Serializable> extends SimpleJpa
     }
 
     @SneakyThrows
-    public List<T> batchUpdate(List<T> entities, String sql, List<Func1<T, Object>> valueGetter,
-            BiConsumer<T, ID> idSetter) {
-        Map<Integer, Func1<T, Object>> valueGetterMap = new HashMap<>();
+    public List<T> batchCreate(List<T> entities, String sql, List<Function<T, Object>> valueGetter,
+            BiConsumer<T, Long> idSetter) {
+        Map<Integer, Function<T, Object>> valueGetterMap = new HashMap<>();
         IntStream.range(1, valueGetter.size() + 1).forEach(i -> valueGetterMap.put(i, valueGetter.get(i - 1)));
-        return batchUpdate(entities, sql, valueGetterMap, idSetter);
+        return batchCreate(entities, sql, valueGetterMap, idSetter);
     }
 
-
-    @SneakyThrows
-    private ID getGeneratedId(ResultSet resultSet) throws SQLException {
-        SingularAttribute<? super T, ?> idAttribute = entityInformation.getIdAttribute();
-        Preconditions.checkNotNull(idAttribute, "idAttribute");
-        String idName = idAttribute.getName();
-        String idColumnName = StringUtils.camelCaseToSnakeCase(idName);
-        Field idField = entityInformation.getJavaType().getDeclaredField(idName);
-        Column columnAnnotation = idField.getAnnotation(Column.class);
-        if (columnAnnotation != null && columnAnnotation.name() != null) {
-            idColumnName = columnAnnotation.name();
+    private Long getGeneratedId(ResultSet resultSet) throws SQLException {
+        if (resultSet.getObject("id") != null) {
+            return Long.valueOf(resultSet.getObject("id").toString());
+        } else if (resultSet.getObject("ID") != null) {
+            return Long.valueOf(resultSet.getObject("ID").toString());
+        } else if (resultSet.getObject("GENERATED_KEY") != null) {
+            return Long.valueOf(resultSet.getObject("GENERATED_KEY").toString());
         }
-        Object id = resultSet.getObject(idColumnName);
-        Preconditions.checkNotNull(id, "class=" + entityInformation.getJavaType() + ",idColumnName=" + idColumnName);
-        return (ID) id;
+        return null;
     }
-
 
     public JdbcTemplate getJdbcTemplate() {
         return (JdbcTemplate) namedParameterJdbcTemplate.getJdbcOperations();

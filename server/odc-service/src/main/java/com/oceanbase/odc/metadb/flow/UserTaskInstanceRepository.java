@@ -15,12 +15,10 @@
  */
 package com.oceanbase.odc.metadb.flow;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.Statement;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
 
 import javax.transaction.Transactional;
 
@@ -28,8 +26,6 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import org.springframework.jdbc.core.ConnectionCallback;
-import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.oceanbase.odc.common.jpa.InsertSqlTemplateBuilder;
 import com.oceanbase.odc.config.jpa.OdcJpaRepository;
@@ -135,34 +131,25 @@ public interface UserTaskInstanceRepository
                 .field(UserTaskInstanceEntity_.externalFlowInstanceId)
                 .field(UserTaskInstanceEntity_.externalApprovalId)
                 .build();
-        JdbcTemplate jdbcTemplate = getJdbcTemplate();
-        return jdbcTemplate.execute((ConnectionCallback<List<UserTaskInstanceEntity>>) con -> {
-            PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
-            for (UserTaskInstanceEntity e : entities) {
-                ps.setObject(1, e.getOrganizationId());
-                ps.setObject(2, e.getUserTaskId());
-                ps.setObject(3, e.getStatus().name());
-                ps.setObject(4, e.getOperatorId());
-                ps.setObject(5, e.getComment());
-                ps.setObject(6, e.getExpireIntervalSeconds());
-                ps.setObject(7, e.isApproved());
-                ps.setObject(8, e.isStartEndpoint());
-                ps.setObject(9, e.isEndEndpoint());
-                ps.setObject(10, e.getFlowInstanceId());
-                ps.setObject(11, e.isAutoApprove());
-                ps.setObject(12, e.getWaitForConfirm());
-                ps.setObject(13, e.getExternalFlowInstanceId());
-                ps.setObject(14, e.getExternalApprovalId());
-                ps.addBatch();
-            }
-            ps.executeBatch();
-            ResultSet resultSet = ps.getGeneratedKeys();
-            int i = 0;
-            while (resultSet.next()) {
-                entities.get(i++).setId(getGeneratedId(resultSet));
-            }
-            return entities;
-        });
+
+        List<Function<UserTaskInstanceEntity, Object>> getter = valueGetterBuilder().add(
+                UserTaskInstanceEntity::getOrganizationId)
+                .add(UserTaskInstanceEntity::getUserTaskId)
+                .add((UserTaskInstanceEntity e) -> e.getStatus().name())
+                .add(UserTaskInstanceEntity::getOperatorId)
+                .add(UserTaskInstanceEntity::getComment)
+                .add(UserTaskInstanceEntity::getExpireIntervalSeconds)
+                .add(UserTaskInstanceEntity::isApproved)
+                .add(UserTaskInstanceEntity::isStartEndpoint)
+                .add(UserTaskInstanceEntity::isEndEndpoint)
+                .add(UserTaskInstanceEntity::getFlowInstanceId)
+                .add(UserTaskInstanceEntity::isAutoApprove)
+                .add(UserTaskInstanceEntity::getWaitForConfirm)
+                .add(UserTaskInstanceEntity::getExternalFlowInstanceId)
+                .add(UserTaskInstanceEntity::getExternalApprovalId)
+                .build();
+
+        return batchCreate(entities, sql, getter, UserTaskInstanceEntity::setId);
     }
 
 }

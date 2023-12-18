@@ -15,11 +15,9 @@
  */
 package com.oceanbase.odc.metadb.flow;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.Statement;
 import java.util.Collection;
 import java.util.List;
+import java.util.function.Function;
 
 import javax.transaction.Transactional;
 
@@ -27,8 +25,6 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import org.springframework.jdbc.core.ConnectionCallback;
-import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.oceanbase.odc.common.jpa.InsertSqlTemplateBuilder;
 import com.oceanbase.odc.config.jpa.OdcJpaRepository;
@@ -78,26 +74,16 @@ public interface NodeInstanceEntityRepository extends OdcJpaRepository<NodeInsta
                 .field(NodeInstanceEntity_.name)
                 .field(NodeInstanceEntity_.flowableElementType)
                 .build();
-        JdbcTemplate jdbcTemplate = getJdbcTemplate();
-        return jdbcTemplate.execute((ConnectionCallback<List<NodeInstanceEntity>>) con -> {
-            PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
-            for (NodeInstanceEntity item : entities) {
-                ps.setObject(1, item.getInstanceId());
-                ps.setObject(2, item.getInstanceType().name());
-                ps.setObject(3, item.getFlowInstanceId());
-                ps.setObject(4, item.getActivityId());
-                ps.setObject(5, item.getName());
-                ps.setObject(6, item.getFlowableElementType().name());
-                ps.addBatch();
-            }
-            ps.executeBatch();
-            ResultSet resultSet = ps.getGeneratedKeys();
-            int i = 0;
-            while (resultSet.next()) {
-                entities.get(i++).setId(getGeneratedId(resultSet));
-            }
-            return entities;
-        });
+
+        List<Function<NodeInstanceEntity, Object>> getter = valueGetterBuilder().add(NodeInstanceEntity::getInstanceId)
+                .add((NodeInstanceEntity e) -> e.getInstanceType().name())
+                .add(NodeInstanceEntity::getFlowInstanceId)
+                .add(NodeInstanceEntity::getActivityId)
+                .add(NodeInstanceEntity::getName)
+                .add((NodeInstanceEntity e) -> e.getFlowableElementType().name())
+                .build();
+
+        return batchCreate(entities, sql, getter, NodeInstanceEntity::setId);
     }
 
 }

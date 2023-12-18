@@ -16,8 +16,6 @@
 package com.oceanbase.odc.config.jpa;
 
 import java.io.Serializable;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -41,8 +39,6 @@ import org.springframework.util.CollectionUtils;
 
 import com.google.common.collect.Iterables;
 
-import cn.hutool.core.lang.func.Func1;
-
 public interface OdcJpaRepository<T, ID extends Serializable>
         extends JpaRepository<T, ID>, JpaSpecificationExecutor<T> {
 
@@ -60,23 +56,23 @@ public interface OdcJpaRepository<T, ID extends Serializable>
      * @param idSetter
      * @return entities and assign generated id;
      */
-    List<T> batchUpdate(List<T> entities, String sql, Map<Integer, Func1<T, Object>> valueGetter,
-            BiConsumer<T, ID> idSetter);
+    List<T> batchCreate(List<T> entities, String sql, Map<Integer, Function<T, Object>> valueGetter,
+            BiConsumer<T, Long> idSetter);
 
-    List<T> batchUpdate(List<T> entities, String sql, List<Func1<T, Object>> valueGetter,
-            BiConsumer<T, ID> idSetter);
+    List<T> batchCreate(List<T> entities, String sql, List<Function<T, Object>> valueGetter,
+            BiConsumer<T, Long> idSetter);
 
 
     class ValueGetterBuilder<T> {
 
-        private List<Func1<T, Object>> valueGetter = new ArrayList<>();
+        private final List<Function<T, Object>> valueGetter = new ArrayList<>();
 
-        public ValueGetterBuilder<T> add(Func1<T, Object> getter) {
+        public ValueGetterBuilder<T> add(Function<T, Object> getter) {
             valueGetter.add(getter);
             return this;
         }
 
-        public List<Func1<T, Object>> build() {
+        public List<Function<T, Object>> build() {
             return valueGetter;
         }
     }
@@ -203,17 +199,6 @@ public interface OdcJpaRepository<T, ID extends Serializable>
 
     static boolean isNullOrEmpty(Object obj) {
         return obj == null || obj instanceof String && ((String) obj).isEmpty();
-    }
-
-    default Long getGeneratedId(ResultSet resultSet) throws SQLException {
-        if (resultSet.getObject("id") != null) {
-            return Long.valueOf(resultSet.getObject("id").toString());
-        } else if (resultSet.getObject("ID") != null) {
-            return Long.valueOf(resultSet.getObject("ID").toString());
-        } else if (resultSet.getObject("GENERATED_KEY") != null) {
-            return Long.valueOf(resultSet.getObject("GENERATED_KEY").toString());
-        }
-        return null;
     }
 
 }
