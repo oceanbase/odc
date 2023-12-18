@@ -110,6 +110,7 @@ public class MetaDBConfiguration {
         StatFilter statFilter = new StatFilter();
         // use mysql parser to merge sql
         statFilter.setDbType(DbType.mysql);
+        statFilter.setMergeSql(true);
         return statFilter;
     }
 
