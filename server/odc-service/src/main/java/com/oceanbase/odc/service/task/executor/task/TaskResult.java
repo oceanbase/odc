@@ -31,9 +31,12 @@ public interface TaskResult {
 
     TaskStatus getTaskStatus();
 
-    Double getProgress();
-
     String getResultJson();
 
     ExecutorInfo getExecutorInfo();
+
+    double getProgress();
+
+    boolean isFinished();
+
 }

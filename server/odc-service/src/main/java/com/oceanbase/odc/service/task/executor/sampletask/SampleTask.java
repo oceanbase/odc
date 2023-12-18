@@ -24,6 +24,7 @@ import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.shared.Verify;
+import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.odc.service.task.constants.JobDataMapConstants;
@@ -48,8 +49,8 @@ public class SampleTask extends BaseTask {
 
     @Override
     protected void onStart() {
+        updateStatus(TaskStatus.RUNNING);
         Map<String, String> dataMap = context.getJobData();
-
         this.parameter =
                 JsonUtils.fromJson(dataMap.get(JobDataMapConstants.META_DB_TASK_PARAMETER), SampleTaskParameter.class);
         validateTaskParameter();
@@ -70,6 +71,7 @@ public class SampleTask extends BaseTask {
                 Thread.sleep(500); // Simulate long execution time of SQL.
             }
             this.result = SampleTaskResult.success();
+            updateStatus(TaskStatus.DONE);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         } finally {
