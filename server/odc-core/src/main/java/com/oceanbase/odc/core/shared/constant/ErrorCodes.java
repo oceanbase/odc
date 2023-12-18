@@ -181,6 +181,7 @@ public enum ErrorCodes implements ErrorCode {
     BuiltInResourceNotAvailable,
     ResourceCreating,
     ResourceModifying,
+    ResourceSynchronizing,
 
     // Integration
     EnableSqlInterceptorNotAllowed,

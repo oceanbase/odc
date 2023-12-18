@@ -54,7 +54,6 @@ import com.oceanbase.odc.service.schedule.model.JobType;
 import com.oceanbase.odc.service.schedule.model.PartitionPlanJobParameters;
 import com.oceanbase.odc.service.schedule.model.ScheduleStatus;
 import com.oceanbase.odc.service.schedule.model.TriggerConfig;
-import com.oceanbase.odc.service.schedule.model.TriggerStrategy;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartition;
@@ -287,7 +286,8 @@ public class PartitionPlanService {
         try {
             // Create partition plan job.
             ScheduleEntity scheduleEntity = createDatabasePartitionPlanSchedule(
-                    databasePartitionPlanEntity);
+                    databasePartitionPlanEntity.getDatabaseId(), databasePartitionPlanEntity.getId(),
+                    databasePartitionPlan.getTriggerConfig());
             // Bind partition plan job to entity.
             databasePartitionPlanRepository.updateScheduleIdById(databasePartitionPlanEntity.getId(),
                     scheduleEntity.getId());
@@ -331,10 +331,11 @@ public class PartitionPlanService {
      * Create a quartz job to execute partition-plan.
      */
     @Transactional
-    public ScheduleEntity createDatabasePartitionPlanSchedule(DatabasePartitionPlanEntity databasePartitionPlan)
+    public ScheduleEntity createDatabasePartitionPlanSchedule(Long databaseId, Long partitionPlanId,
+            TriggerConfig triggerConfig)
             throws SchedulerException, ClassNotFoundException {
         ScheduleEntity scheduleEntity = new ScheduleEntity();
-        scheduleEntity.setDatabaseId(databasePartitionPlan.getDatabaseId());
+        scheduleEntity.setDatabaseId(databaseId);
         scheduleEntity.setStatus(ScheduleStatus.ENABLED);
         scheduleEntity.setCreatorId(authenticationFacade.currentUserId());
         scheduleEntity.setModifierId(authenticationFacade.currentUserId());
@@ -343,9 +344,6 @@ public class PartitionPlanService {
         scheduleEntity.setMisfireStrategy(MisfireStrategy.MISFIRE_INSTRUCTION_DO_NOTHING);
         scheduleEntity.setJobType(JobType.PARTITION_PLAN);
 
-        TriggerConfig triggerConfig = new TriggerConfig();
-        triggerConfig.setTriggerStrategy(TriggerStrategy.CRON);
-        triggerConfig.setCronExpression(defaultScheduleCron);
         scheduleEntity.setTriggerConfigJson(JsonUtils.toJson(triggerConfig));
 
         Database database = databaseService.detail(scheduleEntity.getDatabaseId());
@@ -353,11 +351,9 @@ public class PartitionPlanService {
         scheduleEntity.setConnectionId(database.getDataSource().getId());
         scheduleEntity.setDatabaseName(database.getName());
         PartitionPlanJobParameters jobParameters = new PartitionPlanJobParameters();
-        jobParameters.setDatabasePartitionPlanId(databasePartitionPlan.getId());
+        jobParameters.setDatabasePartitionPlanId(partitionPlanId);
         scheduleEntity.setJobParametersJson(JsonUtils.toJson(jobParameters));
         scheduleEntity = scheduleService.create(scheduleEntity);
-        // Bind job to databasePartitionPlan.
-        databasePartitionPlan.setScheduleId(scheduleEntity.getId());
         scheduleService.enable(scheduleEntity);
         return scheduleEntity;
     }

@@ -82,17 +82,17 @@ public class DlmLimiterService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public RateLimitConfiguration updateByOrderId(Long orderId, RateLimitConfiguration ratelimit) {
-        checkLimiterConfig(ratelimit);
+    public RateLimitConfiguration updateByOrderId(Long orderId, RateLimitConfiguration rateLimit) {
+        checkLimiterConfig(rateLimit);
         Optional<DlmLimiterConfigEntity> entityOptional = limiterConfigRepository.findByOrderId(orderId);
         if (entityOptional.isPresent()) {
             DlmLimiterConfigEntity entity = entityOptional.get();
             entity.setRowLimit(
-                    ratelimit.getRowLimit() == null ? entity.getRowLimit() : ratelimit.getRowLimit());
+                    rateLimit.getRowLimit() == null ? entity.getRowLimit() : rateLimit.getRowLimit());
             entity.setBatchSize(
-                    ratelimit.getBatchSize() == null ? entity.getBatchSize() : ratelimit.getBatchSize());
-            entity.setDataSizeLimit(ratelimit.getDataSizeLimit() == null ? entity.getDataSizeLimit()
-                    : ratelimit.getDataSizeLimit());
+                    rateLimit.getBatchSize() == null ? entity.getBatchSize() : rateLimit.getBatchSize());
+            entity.setDataSizeLimit(rateLimit.getDataSizeLimit() == null ? entity.getDataSizeLimit()
+                    : rateLimit.getDataSizeLimit());
             DataArchiveParameters parameters =
                     ScheduleTaskUtil.getDataArchiveParameters(scheduleService.nullSafeGetById(orderId));
             parameters.setRateLimit(mapper.entityToModel(entity));

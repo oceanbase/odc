@@ -107,6 +107,7 @@ public class Rule implements SecurityResource, OrganizationIsolated, Serializabl
 
     @Data
     public static class RuleViolation {
+        private String text;
         private int offset;
         private int start;
         private int stop;
@@ -121,6 +122,7 @@ public class Rule implements SecurityResource, OrganizationIsolated, Serializabl
             ruleViolation.setStop(checkViolation.getStop());
             ruleViolation.setLevel(checkViolation.getLevel());
             ruleViolation.setLocalizedMessage(checkViolation.getLocalizedMessage());
+            ruleViolation.setText(checkViolation.getText());
             return ruleViolation;
         }
     }

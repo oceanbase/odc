@@ -396,7 +396,7 @@ public class FlowInstanceService {
             }
             // find by project id
             if (Objects.nonNull(params.getProjectId())) {
-                specification.and(FlowInstanceViewSpecs.projectIdEquals(params.getProjectId()));
+                specification = specification.and(FlowInstanceViewSpecs.projectIdEquals(params.getProjectId()));
                 // if other project roles, show current user's created, waiting for approval and approved/rejected
                 // tickets
                 if (!projectService.checkPermission(params.getProjectId(), Arrays.asList(ResourceRoleName.OWNER))) {

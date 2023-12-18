@@ -51,6 +51,12 @@ public class ApprovalFlowConfigSelector {
     @SkipAuthorize("internal usage")
     public RiskLevel select(RiskLevelDescriber describer) {
         /**
+         * if describer is over limit, return the highest risk level
+         */
+        if (describer.isOverLimit()) {
+            return riskLevelService.findHighestRiskLevel();
+        }
+        /**
          * find all risk detect rules
          */
         List<RiskDetectRule> rules =
