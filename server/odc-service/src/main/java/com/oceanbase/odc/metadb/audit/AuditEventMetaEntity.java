@@ -27,7 +27,6 @@ import javax.persistence.Table;
 import org.hibernate.annotations.Generated;
 import org.hibernate.annotations.GenerationTime;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.oceanbase.odc.core.shared.constant.AuditEventAction;
 import com.oceanbase.odc.core.shared.constant.AuditEventType;
 

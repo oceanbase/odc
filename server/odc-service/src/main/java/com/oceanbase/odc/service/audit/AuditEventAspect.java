@@ -294,21 +294,22 @@ public class AuditEventAspect {
                 auditEvent.setDatabaseName(database.getName());
                 setConnectionRelatedProperties(auditEvent, String.valueOf(database.getConnectionId()));
             }
-            // 如果是创建任务流程，需要从请求中获取具体的 type
-            if (Objects.nonNull(auditEvent) && AuditEventAction.CREATE_TASK == auditEventMeta.getAction()) {
-                CreateFlowInstanceReq req = (CreateFlowInstanceReq) apiParams.get("flowInstanceReq");
-                if (Objects.nonNull(req)) {
-                    AuditEventType type = AuditUtils.getEventTypeFromTaskType(req.getTaskType());
-                    auditEvent.setType(type);
-                    auditEvent.setAction(AuditUtils.getActualActionForTask(type, auditEventMeta.getAction()));
-                }
-            }
         }
 
         if (StringUtils.isNotBlank(auditEventMeta.getSidExtractExpression())) {
             String sid = parseSid(auditEventMeta, method, args);
             if (StringUtils.isNotEmpty(sid)) {
                 auditEvent = setConnectionRelatedProperties(auditEvent, sid);
+            }
+        }
+
+        // 如果是创建任务流程，需要从请求中获取具体的 type
+        if (Objects.nonNull(auditEvent) && AuditEventAction.CREATE_TASK == auditEventMeta.getAction()) {
+            CreateFlowInstanceReq req = (CreateFlowInstanceReq) apiParams.get("flowInstanceReq");
+            if (Objects.nonNull(req)) {
+                AuditEventType type = AuditUtils.getEventTypeFromTaskType(req.getTaskType());
+                auditEvent.setType(type);
+                auditEvent.setAction(AuditUtils.getActualActionForTask(type, auditEventMeta.getAction()));
             }
         }
         return auditEvent;
@@ -456,7 +457,7 @@ public class AuditEventAspect {
         /**
          * If sid represents static connectionId
          */
-        if (!StringUtils.contains(sid, "-")) {
+        if (!StringUtils.contains(sid, "sid:")) {
             ConnectionConfig config = connectionService.getWithoutPermissionCheck(Long.parseLong(sid));
             if (Objects.nonNull(config)) {
                 fillAuditEventByConnectionConfig(auditEvent, config);

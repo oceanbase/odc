@@ -64,6 +64,7 @@ public class AuditEventMeta {
      * Flag if this event is in connection
      */
     @JsonProperty("isInConnection")
+    @Deprecated
     private Boolean inConnection;
 
     /**
