@@ -43,7 +43,6 @@ import lombok.extern.slf4j.Slf4j;
 public class OnlineSchemaChangeMultiTaskTest extends OBMySqlOscTestEnv {
 
 
-
     @Test
     @Ignore("TODO: fix this test")
     public void test_osc_multi_task_triggered() {
@@ -77,4 +76,5 @@ public class OnlineSchemaChangeMultiTaskTest extends OBMySqlOscTestEnv {
             dropTableForMultiTask();
         }
     }
+
 }
