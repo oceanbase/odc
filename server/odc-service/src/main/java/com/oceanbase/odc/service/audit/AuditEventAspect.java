@@ -305,7 +305,7 @@ public class AuditEventAspect {
             }
         }
 
-        if (auditEventMeta.getInConnection()) {
+        if (StringUtils.isNotBlank(auditEventMeta.getSidExtractExpression())) {
             String sid = parseSid(auditEventMeta, method, args);
             if (StringUtils.isNotEmpty(sid)) {
                 auditEvent = setConnectionRelatedProperties(auditEvent, sid);
