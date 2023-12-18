@@ -16,18 +16,27 @@
 
 package com.oceanbase.odc.service.task.schedule;
 
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
 import org.quartz.JobKey;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.Trigger;
 import org.quartz.impl.JobDetailImpl;
 
+import com.oceanbase.odc.common.event.EventPublisher;
 import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.schedule.model.QuartzKeyGenerator;
 import com.oceanbase.odc.service.task.caller.JobException;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
-import com.oceanbase.odc.service.task.service.JobEntity;
+import com.oceanbase.odc.service.task.executor.task.TaskResult;
+import com.oceanbase.odc.service.task.listener.DefaultJobCallerListener;
+import com.oceanbase.odc.service.task.listener.DestroyJobListener;
+import com.oceanbase.odc.service.task.listener.TaskResultUploadEvent;
+import com.oceanbase.odc.service.task.listener.TaskResultUploadListener;
 
 /**
  * @author yaobin
@@ -45,8 +54,11 @@ public class StdJobScheduler implements JobScheduler {
         PreConditions.notNull(configuration.getScheduler(), "quartz scheduler");
         PreConditions.notNull(configuration.getJobDispatcher(), "job dispatcher");
         PreConditions.notNull(configuration.getHostUrlProvider(), "host url provider");
-        PreConditions.notNull(configuration.getTaskFrameworkService(), "task framework sevice");
+        PreConditions.notNull(configuration.getTaskFrameworkService(), "task framework service");
         JobConfigurationHolder.setJobConfiguration(configuration);
+
+        getEventPublisher().addEventListener(new DestroyJobListener(this));
+        getEventPublisher().addEventListener(new DefaultJobCallerListener(this));
     }
 
     @Override
@@ -56,8 +68,6 @@ public class StdJobScheduler implements JobScheduler {
     }
 
     private Long scheduleJob(JobDefinition jd) throws JobException {
-        PreConditions.notNull(jd, "job definition");
-
         JobEntity jobEntity = configuration.getTaskFrameworkService().save(jd);
         JobIdentity jobIdentity = JobIdentity.of(jobEntity.getId());
         Trigger trigger = TriggerBuilder.build(jobIdentity, jd, null);
@@ -85,6 +95,31 @@ public class StdJobScheduler implements JobScheduler {
         } catch (SchedulerException e) {
             throw new JobException(e);
         }
-        configuration.getJobDispatcher().stop(JobIdentity.of(id));
+        JobEntity jobEntity = configuration.getTaskFrameworkService().find(id);
+        configuration.getJobDispatcher().stop(JobIdentity.of(id, jobEntity.getJobName()));
+    }
+
+    public void await(Long id, Long timeout, TimeUnit timeUnit) throws InterruptedException {
+        CountDownLatch cd = new CountDownLatch(1);
+        getEventPublisher().addEventListener(new TaskResultUploadListener() {
+            @Override
+            public void onEvent(TaskResultUploadEvent event) {
+                TaskResult taskResult = event.getTaskResult();
+                JobIdentity jobIdentity = taskResult.getJobIdentity();
+                if (jobIdentity.getId() != id) {
+                    return;
+                }
+                if (taskResult.getTaskStatus().isTerminated()) {
+                    cd.countDown();
+                }
+            }
+        });
+        cd.await(timeout, timeUnit);
+
+    }
+
+    @Override
+    public EventPublisher getEventPublisher() {
+        return configuration.getEventPublisher();
     }
 }

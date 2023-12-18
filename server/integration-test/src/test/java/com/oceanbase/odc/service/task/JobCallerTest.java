@@ -16,10 +16,9 @@
 
 package com.oceanbase.odc.service.task;
 
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 
-import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -33,7 +32,6 @@ import com.oceanbase.odc.service.task.caller.JobException;
 import com.oceanbase.odc.service.task.caller.K8sJobCaller;
 import com.oceanbase.odc.service.task.caller.PodConfig;
 import com.oceanbase.odc.service.task.constants.JobConstants;
-import com.oceanbase.odc.service.task.listener.JobCallerListener;
 import com.oceanbase.odc.service.task.schedule.DefaultJobContextBuilder;
 import com.oceanbase.odc.service.task.schedule.JobCallerBuilder;
 import com.oceanbase.odc.service.task.schedule.JobDefinition;
@@ -61,17 +59,6 @@ public class JobCallerTest extends BaseJobTest {
 
         JobIdentity jobIdentity = JobIdentity.of(exceptedTaskId);
         JobCaller jobCaller = new K8sJobCaller(getK8sJobClient(), podConfig);
-        jobCaller.getEventPublisher().addEventListener(new JobCallerListener() {
-            @Override
-            protected void startSucceed(JobIdentity ji) {
-                Assert.assertEquals(jobIdentity, ji);
-            }
-
-            @Override
-            protected void stopSucceed(JobIdentity ji) {
-                Assert.assertEquals(jobIdentity, ji);
-            }
-        });
 
         DefaultJobContext context = new DefaultJobContext();
         context.setJobIdentity(jobIdentity);
@@ -91,20 +78,10 @@ public class JobCallerTest extends BaseJobTest {
 
         JobIdentity jobIdentity = JobIdentity.of(exceptedTaskId);
         JobCaller jobCaller = JobCallerBuilder.buildK8sJobCaller(getK8sJobClient(), podConfig);
-        jobCaller.getEventPublisher().addEventListener(new JobCallerListener() {
-            @Override
-            protected void startSucceed(JobIdentity ji) {
-                Assert.assertEquals(jobIdentity, ji);
-            }
 
-            @Override
-            protected void stopSucceed(JobIdentity ji) {
-                Assert.assertEquals(jobIdentity, ji);
-            }
-        });
-
-        List<String> sqls =
-                Collections.singletonList(String.format("CREATE TABLE %s (id int(10))", "t_" + exceptedTaskId));
+        String sql1 = String.format("CREATE TABLE %s (id int(10))", "t_" + exceptedTaskId);
+        List<String> sqls = new ArrayList<>();
+        sqls.add(sql1);
 
         ConnectionConfig connectionConfig = TestConnectionUtil.getTestConnectionConfig(ConnectType.OB_MYSQL);
 
@@ -112,9 +89,10 @@ public class JobCallerTest extends BaseJobTest {
                 .build(connectionConfig, connectionConfig.getDefaultSchema(), sqls);
         JobContext jc = new DefaultJobContextBuilder().build(jobIdentity, jd);
 
-        jobCaller.start(jc);
-        Thread.sleep(60000);
-        jobCaller.stop(jobIdentity);
+        String name = jobCaller.start(jc);
+        Thread.sleep(600000);
+        JobIdentity newJi = JobIdentity.of(exceptedTaskId, name);
+        jobCaller.stop(newJi);
     }
 
 }

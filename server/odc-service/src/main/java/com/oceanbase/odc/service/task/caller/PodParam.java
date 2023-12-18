@@ -33,7 +33,7 @@ public class PodParam {
 
     private Map<String, String> environments = new HashMap<>(2);
 
-    private String imagePullPolicy = JobConstants.IMAGE_PULL_POLICY_NEVER;
+    private String imagePullPolicy = JobConstants.IMAGE_PULL_POLICY_ALWAYS;
 
     private Double requestCpu;
 

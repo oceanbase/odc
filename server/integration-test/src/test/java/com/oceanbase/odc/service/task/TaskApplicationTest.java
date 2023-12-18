@@ -27,6 +27,7 @@ import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.caller.JobUtils;
 import com.oceanbase.odc.service.task.constants.JobEnvConstants;
+import com.oceanbase.odc.service.task.executor.ExitHelper;
 import com.oceanbase.odc.service.task.executor.TaskApplication;
 import com.oceanbase.odc.service.task.schedule.DefaultJobContextBuilder;
 import com.oceanbase.odc.service.task.schedule.JobDefinition;
@@ -53,7 +54,15 @@ public class TaskApplicationTest extends BaseJobTest {
                 .build(connectionConfig, connectionConfig.getDefaultSchema(), sqls);
         JobContext jc = new DefaultJobContextBuilder().build(jobIdentity, jd);
         System.setProperty(JobEnvConstants.TASK_ALL_PARAMETERS, JobUtils.toJson(jc));
+        new Thread(() -> {
+            try {
+                Thread.sleep(20 * 1000);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            } finally {
+                ExitHelper.exit();
+            }
+        }).start();
         new TaskApplication().run(null);
-
     }
 }

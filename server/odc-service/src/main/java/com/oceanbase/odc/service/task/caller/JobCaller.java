@@ -16,7 +16,6 @@
 
 package com.oceanbase.odc.service.task.caller;
 
-import com.oceanbase.odc.common.event.EventPublisher;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 
 /**
@@ -34,7 +33,7 @@ public interface JobCaller {
      * @param context job context
      * @throws JobException throws JobException when start job failed
      */
-    void start(JobContext context) throws JobException;
+    String start(JobContext context) throws JobException;
 
     /**
      * stop a odc job
@@ -43,12 +42,5 @@ public interface JobCaller {
      * @throws JobException throws JobException when stop job failed
      */
     void stop(JobIdentity ji) throws JobException;
-
-    /**
-     * get job execution event publisher
-     * 
-     * @return job execution event publisher
-     */
-    EventPublisher getEventPublisher();
 
 }

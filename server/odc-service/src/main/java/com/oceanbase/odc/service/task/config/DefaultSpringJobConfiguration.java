@@ -22,6 +22,7 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
+import com.oceanbase.odc.common.event.LocalEventPublisher;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.schedule.ScheduleTaskService;
 import com.oceanbase.odc.service.task.TaskService;
@@ -29,6 +30,7 @@ import com.oceanbase.odc.service.task.caller.K8sJobClient;
 import com.oceanbase.odc.service.task.dispatch.ImmediateJobDispatcher;
 import com.oceanbase.odc.service.task.enums.TaskRunModeEnum;
 import com.oceanbase.odc.service.task.schedule.HostUrlProvider;
+import com.oceanbase.odc.service.task.service.StdTaskFrameworkService;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 
 /**
@@ -47,13 +49,19 @@ public class DefaultSpringJobConfiguration extends DefaultJobConfiguration
         setConnectionService(ctx.getBean(ConnectionService.class));
         setTaskService(ctx.getBean(TaskService.class));
         setScheduleTaskService(ctx.getBean(ScheduleTaskService.class));
-        setScheduler((Scheduler) ctx.getBean("scheduler"));
+        setScheduler((Scheduler) ctx.getBean("taskFrameworkSchedulerFactoryBean"));
         setJobDispatcher(new ImmediateJobDispatcher());
         if (getTaskFrameworkProperties().getRunMode() == TaskRunModeEnum.K8S) {
             setK8sJobClient(ctx.getBean(K8sJobClient.class));
         }
         setHostUrlProvider(ctx.getBean(HostUrlProvider.class));
-        setTaskFrameworkService(ctx.getBean(TaskFrameworkService.class));
+        LocalEventPublisher publisher = new LocalEventPublisher();
+        TaskFrameworkService tfs = ctx.getBean(TaskFrameworkService.class);
+        if (tfs instanceof StdTaskFrameworkService) {
+            ((StdTaskFrameworkService) tfs).setPublisher(publisher);
+        }
+        setTaskFrameworkService(tfs);
+        setEventPublisher(publisher);
     }
 
     @Override

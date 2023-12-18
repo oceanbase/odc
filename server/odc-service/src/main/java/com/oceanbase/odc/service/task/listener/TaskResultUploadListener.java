@@ -14,39 +14,15 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.task.schedule;
+package com.oceanbase.odc.service.task.listener;
 
-import lombok.Data;
+import com.oceanbase.odc.common.event.AbstractEventListener;
 
 /**
- * Identity a unique job
- * 
  * @author yaobin
- * @date 2023-11-23
+ * @date 2023-11-16
  * @since 4.2.4
  */
-@Data
-public class JobIdentity {
-
-    /**
-     * job id
-     */
-    private Long id;
-
-    /**
-     * job name
-     */
-    private String name;
-
-    public static JobIdentity of(Long id) {
-        return of(id, null);
-    }
-
-    public static JobIdentity of(Long id, String name) {
-        JobIdentity jobIdentity = new JobIdentity();
-        jobIdentity.setId(id);
-        jobIdentity.setName(name);
-        return jobIdentity;
-    }
+public abstract class TaskResultUploadListener extends AbstractEventListener<TaskResultUploadEvent> {
 
 }
