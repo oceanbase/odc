@@ -99,6 +99,7 @@ public interface ServiceTaskInstanceRepository extends OdcJpaRepository<ServiceT
         List<Function<ServiceTaskInstanceEntity, Object>> getter = valueGetterBuilder().add(
                 ServiceTaskInstanceEntity::getOrganizationId)
                 .add(ServiceTaskInstanceEntity::getTargetTaskId)
+                .add((ServiceTaskInstanceEntity e) -> e.getStrategy().name())
                 .add((ServiceTaskInstanceEntity entity) -> entity.getTaskType().name())
                 .add(ServiceTaskInstanceEntity::getWaitExecExpireIntervalSeconds)
                 .add((ServiceTaskInstanceEntity entity) -> entity.getStatus().name())

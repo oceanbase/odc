@@ -74,7 +74,6 @@ public interface UserTaskInstanceCandidateRepository extends OdcJpaRepository<Us
         List<Function<UserTaskInstanceCandidateEntity, Object>> getter = valueGetterBuilder().add(
                 UserTaskInstanceCandidateEntity::getApprovalInstanceId)
                 .add(UserTaskInstanceCandidateEntity::getUserId)
-                .add(UserTaskInstanceCandidateEntity::getUserId)
                 .add(UserTaskInstanceCandidateEntity::getRoleId)
                 .add(UserTaskInstanceCandidateEntity::getResourceRoleIdentifier)
                 .build();
