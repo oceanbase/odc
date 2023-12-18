@@ -82,11 +82,11 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
     private final static String checkTaskCronExpression = "0/10 * * * * ?";
 
     private volatile TaskStatus status;
-    private long scheduleId;
-    private long creatorId;
-    private long flowTaskId;
-    private long organizationId;
-    private boolean continueOnError;
+    private volatile long scheduleId;
+    private volatile long creatorId;
+    private volatile long organizationId;
+    private volatile boolean continueOnError;
+    private volatile double percentage;
 
     @Override
     protected Void start(Long taskId, TaskService taskService, DelegateExecution execution) throws Exception {
@@ -95,15 +95,14 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
         this.creatorId = creator.getId();
         this.organizationId = creator.getOrganizationId();
         this.status = TaskStatus.RUNNING;
-        this.flowTaskId = taskId;
+        long flowTaskId = taskId;
         // for public cloud
         String uid = FlowTaskUtil.getCloudMainAccountId(execution);
         OnlineSchemaChangeParameters parameter = FlowTaskUtil.getOnlineSchemaChangeParameter(execution);
         ConnectionConfig connectionConfig = FlowTaskUtil.getConnectionConfig(execution);
         String schema = FlowTaskUtil.getSchemaName(execution);
         continueOnError = parameter.isContinueOnError();
-        OnlineSchemaChangeContextHolder.trace(this.creatorId, this.flowTaskId, this.organizationId);
-        parameter.buildParameterDataMap();
+        OnlineSchemaChangeContextHolder.trace(this.creatorId, flowTaskId, this.organizationId);
         ScheduleEntity schedule = createScheduleEntity(connectionConfig, parameter, schema);
         scheduleId = schedule.getId();
         try {
@@ -153,17 +152,30 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
 
     @Override
     protected void onProgressUpdate(Long taskId, TaskService taskService) {
-        Page<ScheduleTaskEntity> tasks = scheduleTaskService.listTask(Pageable.unpaged(), scheduleId);
-        progressStatusUpdate(tasks);
+        try {
+            Page<ScheduleTaskEntity> tasks = scheduleTaskService.listTask(Pageable.unpaged(), scheduleId);
+            if (tasks.getSize() == 0) {
+                log.info("List schedule task size is 0 by scheduleId {}.", scheduleId);
+                return;
+            }
+            progressStatusUpdate(tasks);
 
-        Optional<Double> res = tasks.stream().map(this::singleTaskPercentage).reduce(Double::sum);
-        double percentage = res.get() * 100 / tasks.getSize();
+            Optional<Double> res = tasks.stream().map(this::singleTaskPercentage).reduce(Double::sum);
+            double currentPercentage = res.get() * 100 / tasks.getSize();
 
-        TaskEntity flowTask = taskService.detail(taskId);
-        flowTask.setResultJson(JsonUtils.toJson(new OnlineSchemaChangeTaskResult(tasks.getContent())));
-        flowTask.setStatus(this.status);
-        flowTask.setProgressPercentage(Math.min(percentage, 100));
-        taskService.update(flowTask);
+            TaskEntity flowTask = taskService.detail(taskId);
+            TaskStatus dbStatus = flowTask.getStatus();
+            if (currentPercentage > this.percentage || dbStatus != this.status) {
+                flowTask.setResultJson(JsonUtils.toJson(new OnlineSchemaChangeTaskResult(tasks.getContent())));
+                flowTask.setStatus(this.status);
+                flowTask.setProgressPercentage(Math.min(currentPercentage, 100));
+                taskService.update(flowTask);
+            }
+            this.percentage = currentPercentage;
+        } catch (Throwable ex) {
+            log.warn("onProgressUpdate occur exception,", ex);
+        }
+
     }
 
     private void progressStatusUpdate(Page<ScheduleTaskEntity> tasks) {

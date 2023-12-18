@@ -41,13 +41,13 @@ function create_node_env() {
         return 6
     fi
 
-    if ! npm install -g tnpm --registry=http://registry.npm.alibaba-inc.com; then
-        echo "install tnpm failed"
+    if ! npm install -g pnpm; then
+        echo "install pnpm failed"
         return 7
     fi
 
-    if ! tnpm -v; then
-        echo "tnpm check failed"
+    if ! pnpm -v; then
+        echo "pnpm check failed"
         return 8
     fi
 

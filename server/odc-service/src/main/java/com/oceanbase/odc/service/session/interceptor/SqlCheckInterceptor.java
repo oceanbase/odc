@@ -20,6 +20,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
@@ -63,6 +64,7 @@ import lombok.extern.slf4j.Slf4j;
 public class SqlCheckInterceptor extends BaseTimeConsumingInterceptor {
 
     public final static String NEED_SQL_CHECK_KEY = "NEED_SQL_CHECK";
+    public final static String SQL_CHECK_INTERCEPTED = "SQL_CHECK_INTERCEPTED";
     private final static String SQL_CHECK_RESULT_KEY = "SQL_CHECK_RESULT";
     @Autowired
     private UserConfigFacade userConfigFacade;
@@ -73,8 +75,21 @@ public class SqlCheckInterceptor extends BaseTimeConsumingInterceptor {
     @Autowired
     private AuthenticationFacade authenticationFacade;
 
+
     @Override
     public boolean doPreHandle(@NonNull SqlAsyncExecuteReq request, @NonNull SqlAsyncExecuteResp response,
+            @NonNull ConnectionSession session, @NonNull Map<String, Object> context) {
+        boolean sqlCheckIntercepted = handle(request, response, session, context);
+        context.put(SQL_CHECK_INTERCEPTED, sqlCheckIntercepted);
+        if (Objects.nonNull(context.get(SqlConsoleInterceptor.SQL_CONSOLE_INTERCEPTED))) {
+            return sqlCheckIntercepted && (Boolean) context.get(SqlConsoleInterceptor.SQL_CONSOLE_INTERCEPTED);
+        } else {
+            return true;
+        }
+    }
+
+
+    private boolean handle(@NonNull SqlAsyncExecuteReq request, @NonNull SqlAsyncExecuteResp response,
             @NonNull ConnectionSession session, @NonNull Map<String, Object> context) {
         if (this.authenticationFacade.currentUser().getOrganizationType() != OrganizationType.TEAM
                 || Boolean.FALSE.equals(context.get(NEED_SQL_CHECK_KEY))) {
@@ -102,7 +117,12 @@ public class SqlCheckInterceptor extends BaseTimeConsumingInterceptor {
                         .forEach(c -> offset2Violations.computeIfAbsent(c.getOffset(), k -> new ArrayList<>()).add(c));
             });
             context.put(SQL_CHECK_RESULT_KEY, offset2Violations);
-            return response.getSqls().stream().noneMatch(v -> CollectionUtils.isNotEmpty(v.getViolatedRules()));
+            return response.getSqls().stream().noneMatch(v -> {
+                if (CollectionUtils.isEmpty(v.getViolatedRules())) {
+                    return false;
+                }
+                return v.getViolatedRules().stream().anyMatch(rule -> rule.getLevel() > 0);
+            });
         } catch (Exception e) {
             log.warn("Failed to init sql check message", e);
         }
@@ -164,8 +184,7 @@ public class SqlCheckInterceptor extends BaseTimeConsumingInterceptor {
 
     private void fullFillRiskLevelAndSetViolation(List<CheckViolation> violations,
             List<Rule> rules, SqlAsyncExecuteResp response) {
-        List<Rule> vRules = sqlCheckService.fullFillRiskLevel(rules, violations)
-                .stream().filter(r -> r.getLevel() > 0).collect(Collectors.toList());
+        List<Rule> vRules = new ArrayList<>(sqlCheckService.fullFillRiskLevel(rules, violations));
         Map<Integer, List<Rule>> offset2Rules = vRules.stream().collect(
                 Collectors.groupingBy(rule -> rule.getViolation().getOffset()));
         response.getSqls().forEach(item -> item.getViolatedRules().addAll(

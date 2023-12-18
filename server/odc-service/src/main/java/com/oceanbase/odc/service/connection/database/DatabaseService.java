@@ -322,9 +322,8 @@ public class DatabaseService {
     public boolean transfer(@NonNull @Valid TransferDatabasesReq req) {
         List<DatabaseEntity> entities = databaseRepository.findAllById(req.getDatabaseIds());
         checkTransferable(entities, req.getProjectId());
-        List<DatabaseEntity> transferred = entities.stream().peek(database -> database.setProjectId(req.getProjectId()))
-                .collect(Collectors.toList());
-        databaseRepository.saveAll(transferred);
+        databaseRepository.setProjectIdByIdIn(req.getProjectId(), entities.stream().map(DatabaseEntity::getId)
+                .collect(Collectors.toSet()));
         return true;
     }
 
@@ -355,7 +354,8 @@ public class DatabaseService {
     public Boolean internalSyncDataSourceSchemas(@NonNull Long dataSourceId) throws InterruptedException {
         Lock lock = jdbcLockRegistry.obtain(connectionService.getUpdateDsSchemaLockKey(dataSourceId));
         if (!lock.tryLock(3, TimeUnit.SECONDS)) {
-            throw new ConflictException(ErrorCodes.ResourceModifying, "Can not acquire jdbc lock");
+            throw new ConflictException(ErrorCodes.ResourceSynchronizing,
+                    new Object[] {ResourceType.ODC_DATABASE.getLocalizedMessage()}, "Can not acquire jdbc lock");
         }
         try {
             ConnectionConfig connection = connectionService.getForConnectionSkipPermissionCheck(dataSourceId);

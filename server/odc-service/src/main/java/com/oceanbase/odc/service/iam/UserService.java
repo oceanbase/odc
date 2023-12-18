@@ -186,6 +186,7 @@ public class UserService {
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private final List<Consumer<PasswordChangeEvent>> postPasswordChangeHooks = new ArrayList<>();
     private final List<Consumer<UserDeleteEvent>> postUserDeleteHooks = new ArrayList<>();
+    private final List<Consumer<UserDeleteEvent>> preUserDeleteHooks = new ArrayList<>();
     private static final int FAILED_LOGIN_ATTEMPT_TIMES = 5;
     private static final long WITHOUT_ROLE_ID = 0L;
     /**
@@ -378,12 +379,19 @@ public class UserService {
                     "Operation on admin account is not allowed");
         }
         permissionValidator.checkCurrentOrganization(new User(userEntity));
+
+        UserDeleteEvent event = new UserDeleteEvent();
+        event.setUserId(id);
+        event.setOrganizationId(authenticationFacade.currentOrganizationId());
+        for (Consumer<UserDeleteEvent> hook : preUserDeleteHooks) {
+            hook.accept(event);
+        }
+
         userRepository.deleteById(id);
         userRoleRepository.deleteByUserId(id);
         deleteRelatedPermissions(id);
         permissionService.deleteResourceRelatedPermissions(id, ResourceType.ODC_USER, PermissionType.SYSTEM);
-        UserDeleteEvent event = new UserDeleteEvent();
-        event.setUserId(id);
+
         for (Consumer<UserDeleteEvent> hook : postUserDeleteHooks) {
             hook.accept(event);
         }
@@ -827,6 +835,11 @@ public class UserService {
         postUserDeleteHooks.add(hook);
     }
 
+    @SkipAuthorize("odc internal usage")
+    public void addPreUserDeleteHook(Consumer<UserDeleteEvent> hook) {
+        preUserDeleteHooks.add(hook);
+    }
+
     /**
      * reset password only refer to admin user
      */
@@ -898,6 +911,7 @@ public class UserService {
     }
     @Data
     public static class UserDeleteEvent {
+        private Long organizationId;
         private Long userId;
     }
 

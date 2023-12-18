@@ -336,4 +336,58 @@ public abstract class StringUtils extends org.apache.commons.lang3.StringUtils {
         return matcher.matches();
     }
 
+    public static String removeWhitespace(String input) {
+        if (input == null) {
+            return null;
+        }
+        return input.replaceAll("\\s+", "");
+    }
+
+    public static String getBriefSql(String sql, Integer maxLength) {
+        if (sql == null) {
+            return null;
+        }
+        if (maxLength == 0) {
+            return "";
+        }
+        if (maxLength < 50) {
+            return sql.substring(0, maxLength);
+        }
+
+        final int sqlLength = sql.length();
+        if (sqlLength <= maxLength) {
+            return sql;
+        }
+        String lowerCaseSql = sql.toLowerCase();
+        final String from = "from";
+        final String omit = "...";
+        int fromIndex = lowerCaseSql.indexOf(from);
+        // tree part
+        if (fromIndex != -1) {
+            int partLength = maxLength / 3;
+            int fromPartEnd = Math.min(fromIndex + partLength, sqlLength);
+            String middle = sql.substring(fromIndex, fromPartEnd);
+            if (sqlLength - fromPartEnd <= partLength) {
+                // means end part not need compress
+                int beginPartEndPox = maxLength - (sqlLength - fromIndex);
+                String beginPart = sql.substring(0, beginPartEndPox - omit.length()) + omit;
+                return beginPart + sql.substring(fromIndex, sqlLength);
+            }
+            if (fromIndex <= partLength) {
+                int endPartLength = maxLength - fromPartEnd;
+                String endPart = omit + sql.substring(sqlLength - endPartLength + omit.length(), sqlLength);
+                return sql.substring(0, fromPartEnd) + endPart;
+            }
+            String beginPart = sql.substring(0, partLength - omit.length()) + omit;
+            int endPartLength = maxLength - (beginPart.length() + middle.length());
+            String endPart = omit + sql.substring(sqlLength - endPartLength + omit.length(), sqlLength);
+            return beginPart + middle + endPart;
+        } else {
+            int partLength = maxLength / 2;
+            String start = sql.substring(0, partLength - omit.length());
+            String end = sql.substring(sqlLength - partLength);
+            return start + "..." + end;
+        }
+    }
+
 }

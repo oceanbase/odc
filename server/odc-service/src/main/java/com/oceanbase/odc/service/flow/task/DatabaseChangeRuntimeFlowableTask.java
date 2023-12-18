@@ -63,11 +63,11 @@ public class DatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDelegate<D
     @Autowired
     private CloudObjectStorageService cloudObjectStorageService;
     @Autowired
-    private ObjectStorageFacade objectStorageFacade;
-    @Autowired
     private ConnectProperties connectProperties;
     @Autowired
     private DataMaskingService maskingService;
+    @Autowired
+    private ObjectStorageFacade objectStorageFacade;
     @Autowired
     private DBSessionManageFacade sessionManageFacade;
 
