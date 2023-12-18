@@ -54,7 +54,7 @@ public class JobEntity implements Serializable {
     @Column(name = "job_Class", nullable = false)
     private String jobClass;
 
-    @Column(name = "job_type")
+    @Column(name = "job_type", nullable = false)
     private String jobType;
 
     @Enumerated(EnumType.STRING)

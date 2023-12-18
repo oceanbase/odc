@@ -21,7 +21,6 @@ import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.data.repository.query.Param;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -80,10 +79,10 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         }
         JobEntity je = find(taskResult.getJobIdentity().getId());
 
-        if (je.getStatus() == TaskStatus.DESTROYED) {
-            log.warn("task is terminated, ignore upload result.{}", JsonUtils.toJson(taskResult));
-            return;
-        }
+        /*
+         * if (je.getStatus() == TaskStatus.DESTROYED) {
+         * log.warn("task is terminated, ignore upload result.{}", JsonUtils.toJson(taskResult)); return; }
+         */
         if (taskResult.getProgress() == je.getProgressPercentage() && taskResult.getTaskStatus() == je.getStatus()) {
             log.warn("task progress is not changed, ignore upload result.{}", JsonUtils.toJson(taskResult));
             return;
@@ -159,8 +158,8 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     }
 
     @Override
-    public void updateStatus(Long id,TaskStatus status) {
-        jobScheduleRepository.updateStatus(id,status);
+    public void updateStatus(Long id, TaskStatus status) {
+        jobScheduleRepository.updateStatus(id, status);
     }
 
     @Override

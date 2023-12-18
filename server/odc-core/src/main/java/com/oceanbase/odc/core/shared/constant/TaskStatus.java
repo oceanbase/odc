@@ -24,8 +24,7 @@ public enum TaskStatus {
     RUNNING,
     FAILED,
     CANCELED,
-    DONE,
-    DESTROYED;
+    DONE;
 
     public boolean isTerminated() {
         return TaskStatus.CANCELED == this || TaskStatus.FAILED == this || TaskStatus.DONE == this;
