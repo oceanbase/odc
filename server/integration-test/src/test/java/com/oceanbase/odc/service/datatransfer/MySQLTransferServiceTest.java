@@ -42,6 +42,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -70,7 +71,13 @@ import com.oceanbase.tools.loaddump.common.enums.ObjectType;
 
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * Due to the current single test on GitHub being executed by ob-farm, it is temporarily not
+ * possible to obtain the lfs file. So this unit test will be temporarily skipped and manually
+ * executed by the developer.
+ */
 @Slf4j
+@Ignore("run it manually")
 public class MySQLTransferServiceTest extends ServiceTestEnv {
     private static final String BUCKET = UUID.randomUUID().toString().replace("-", "").toUpperCase();
     private static final String TEST_TABLE_NAME = "loader_dumper_test";

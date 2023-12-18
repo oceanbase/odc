@@ -21,6 +21,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -35,11 +38,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.unit.BinarySizeUnit;
-import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.core.shared.exception.VerifyException;
 import com.oceanbase.odc.core.sql.split.OffsetString;
-import com.oceanbase.odc.metadb.flow.FlowInstanceRepository;
+import com.oceanbase.odc.core.sql.split.SqlStatementIterator;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.service.common.FileManager;
 import com.oceanbase.odc.service.common.model.FileBucket;
@@ -51,6 +54,7 @@ import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
 import com.oceanbase.odc.service.flow.model.PreCheckTaskResult;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.DatabasePermissionCheckResult;
+import com.oceanbase.odc.service.flow.task.model.PreCheckTaskProperties;
 import com.oceanbase.odc.service.flow.task.model.SqlCheckTaskResult;
 import com.oceanbase.odc.service.flow.task.util.DatabaseChangeFileReader;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
@@ -68,6 +72,7 @@ import com.oceanbase.odc.service.sqlcheck.model.CheckViolation;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
 
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -79,11 +84,13 @@ import lombok.extern.slf4j.Slf4j;
 public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
 
     private volatile boolean success = false;
+    private volatile boolean overLimit = false;
     private volatile SqlCheckTaskResult sqlCheckResult = null;
     private volatile DatabasePermissionCheckResult permissionCheckResult = null;
-    private static final String CHECK_RESULT_FILE_NAME = "sql-check-result.json";
     private Long creatorId;
-    private List<OffsetString> databaseChangeRelatedSqls;
+    private List<OffsetString> userInputSqls;
+    private InputStream uploadFileInputStream;
+    private SqlStatementIterator uploadFileSqlIterator;
     private ConnectionConfig connectionConfig;
     private Long preCheckTaskId;
     @Autowired
@@ -95,10 +102,12 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
     @Autowired
     private SqlCheckService sqlCheckService;
     @Autowired
-    private FlowInstanceRepository flowInstanceRepository;
+    private PreCheckTaskProperties preCheckTaskProperties;
+
+    private static final String CHECK_RESULT_FILE_NAME = "sql-check-result.json";
 
     @Override
-    protected Void start(Long taskId, TaskService taskService, DelegateExecution execution) {
+    protected Void start(Long taskId, TaskService taskService, DelegateExecution execution) throws Exception {
         this.serviceTaskRepository.updateStatusById(getTargetTaskInstanceId(), FlowNodeStatus.EXECUTING);
         this.preCheckTaskId = FlowTaskUtil.getPreCheckTaskId(execution);
         TaskEntity preCheckTaskEntity = taskService.detail(this.preCheckTaskId);
@@ -118,16 +127,27 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
         RiskLevelDescriber riskLevelDescriber = FlowTaskUtil.getRiskLevelDescriber(execution);
         if (Objects.nonNull(this.connectionConfig)) {
             // Skip SQL pre-check if connection config is null
-            this.databaseChangeRelatedSqls = getFlowRelatedSqls(taskEntity.getTaskType(),
-                    taskEntity.getParametersJson(), connectionConfig.getDialectType());
+            loadUserInputSqlContent(taskEntity.getTaskType(), taskEntity.getParametersJson());
+            loadUploadFileInputStream(taskEntity.getTaskType(), taskEntity.getParametersJson());
             try {
                 preCheck(taskEntity, preCheckTaskEntity, riskLevelDescriber);
             } catch (Exception e) {
                 log.warn("pre check failed, e");
                 throw new ServiceTaskError(e);
+            } finally {
+                if (Objects.nonNull(this.uploadFileInputStream)) {
+                    try {
+                        this.uploadFileInputStream.close();
+                    } catch (IOException e) {
+                        // ignore
+                    }
+                }
             }
             if (this.sqlCheckResult != null) {
                 riskLevelDescriber.setSqlCheckResult(sqlCheckResult.getMaxLevel() + "");
+            }
+            if (this.overLimit) {
+                riskLevelDescriber.setOverLimit(true);
             }
         }
         try {
@@ -208,8 +228,7 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
                     return;
                 }
             }
-            doSqlCheck(preCheckTaskEntity, connectionConfig, riskLevelDescriber);
-            doDatabasePermissionCheck();
+            doSqlCheckAndDatabasePermissionCheck(preCheckTaskEntity, riskLevelDescriber);
             if (isIntercepted(this.sqlCheckResult, this.permissionCheckResult)) {
                 throw new ServiceTaskError(new RuntimeException());
             }
@@ -236,26 +255,20 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
         return false;
     }
 
-    private void doDatabasePermissionCheck() {
-        Set<String> unauthorizedDatabaseNames =
-                databaseService.filterUnAuthorizedDatabaseNames(
-                        SchemaExtractor.listSchemaNames(
-                                this.databaseChangeRelatedSqls.stream().map(OffsetString::getStr).collect(
-                                        Collectors.toList()),
-                                this.connectionConfig.getDialectType()),
-                        connectionConfig.getId());
-        this.permissionCheckResult =
-                new DatabasePermissionCheckResult(unauthorizedDatabaseNames);
-    }
-
-    private void doSqlCheck(TaskEntity preCheckTaskEntity, ConnectionConfig connectionConfig,
-            RiskLevelDescriber describer) {
-        if (Objects.isNull(this.databaseChangeRelatedSqls)) {
-            return;
+    private void doSqlCheckAndDatabasePermissionCheck(TaskEntity preCheckTaskEntity, RiskLevelDescriber describer) {
+        List<OffsetString> sqls = new ArrayList<>();
+        this.overLimit = getSqlContentUntilOverLimit(sqls, preCheckTaskProperties.getMaxSqlContentBytes());
+        Set<String> unauthorizedDatabaseNames = new HashSet<>();
+        List<CheckViolation> violations = new ArrayList<>();
+        if (CollectionUtils.isNotEmpty(sqls)) {
+            violations.addAll(this.sqlCheckService.check(Long.valueOf(describer.getEnvironmentId()),
+                    describer.getDatabaseName(), sqls, connectionConfig));
+            unauthorizedDatabaseNames.addAll(databaseService.filterUnAuthorizedDatabaseNames(
+                    SchemaExtractor.listSchemaNames(sqls.stream().map(OffsetString::getStr)
+                            .collect(Collectors.toList()), this.connectionConfig.getDialectType()),
+                    connectionConfig.getId()));
         }
-        List<CheckViolation> violations = this.sqlCheckService.check(
-                Long.valueOf(describer.getEnvironmentId()), describer.getDatabaseName(), this.databaseChangeRelatedSqls,
-                connectionConfig);
+        this.permissionCheckResult = new DatabasePermissionCheckResult(unauthorizedDatabaseNames);
         this.sqlCheckResult = SqlCheckTaskResult.success(violations);
         try {
             storeTaskResultToFile(preCheckTaskEntity.getId(), this.sqlCheckResult);
@@ -265,44 +278,87 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
         }
     }
 
-    private List<OffsetString> getFlowRelatedSqls(TaskType taskType, String parametersJson, DialectType dialectType) {
+    /**
+     * Get the sql content from the databaseChangeRelatedSqls and sqlIterator, and put them into the
+     * sqlBuffer. If the sql content is over the maxSqlBytes, return true, else return false.
+     *
+     * @param sqlBuffer the buffer to store the sql content
+     * @param maxSqlBytes the max sql content bytes
+     * @return true if the sql content is over the maxSqlBytes, else return false
+     */
+    boolean getSqlContentUntilOverLimit(@NonNull List<OffsetString> sqlBuffer, long maxSqlBytes) {
+        long curSqlBytes = 0;
+        if (CollectionUtils.isNotEmpty(userInputSqls)) {
+            for (OffsetString sql : userInputSqls) {
+                int sqlBytes = sql.getStr().getBytes(StandardCharsets.UTF_8).length;
+                if (curSqlBytes + sqlBytes > maxSqlBytes) {
+                    return true;
+                }
+                curSqlBytes += sqlBytes;
+                sqlBuffer.add(sql);
+            }
+        }
+        if (Objects.nonNull(this.uploadFileSqlIterator)) {
+            while (this.uploadFileSqlIterator.hasNext()) {
+                String sql = this.uploadFileSqlIterator.next().getStr();
+                int sqlBytes = sql.getBytes(StandardCharsets.UTF_8).length;
+                if (curSqlBytes + sqlBytes > maxSqlBytes) {
+                    return true;
+                }
+                curSqlBytes += sqlBytes;
+                sqlBuffer.add(new OffsetString(0, sql));
+            }
+        }
+        return false;
+    }
+
+    private void loadUserInputSqlContent(TaskType taskType, String parameter) {
+        String sqlContent = null;
+        String delimiter = ";";
         if (taskType == TaskType.ASYNC) {
-            DatabaseChangeParameters params = JsonUtils.fromJson(parametersJson, DatabaseChangeParameters.class);
-            String bucketName = "async".concat(File.separator).concat(this.creatorId.toString());
-            try {
-                return this.databaseChangeFileReader.loadSqlContents(params,
-                        dialectType, bucketName, -1);
-            } catch (IOException e) {
-                throw new IllegalStateException(e);
+            DatabaseChangeParameters params = JsonUtils.fromJson(parameter, DatabaseChangeParameters.class);
+            sqlContent = params.getSqlContent();
+            delimiter = params.getDelimiter();
+        } else if (taskType == TaskType.ONLINE_SCHEMA_CHANGE) {
+            OnlineSchemaChangeParameters params = JsonUtils.fromJson(parameter, OnlineSchemaChangeParameters.class);
+            sqlContent = params.getSqlContent();
+            delimiter = params.getDelimiter();
+        } else if (taskType == TaskType.EXPORT_RESULT_SET) {
+            ResultSetExportTaskParameter params = JsonUtils.fromJson(parameter, ResultSetExportTaskParameter.class);
+            sqlContent = params.getSql();
+        } else if (taskType == TaskType.ALTER_SCHEDULE) {
+            AlterScheduleParameters params = JsonUtils.fromJson(parameter, AlterScheduleParameters.class);
+            if (params.getType() != JobType.SQL_PLAN) {
+                return;
+            }
+            DatabaseChangeParameters dcParams = (DatabaseChangeParameters) params.getScheduleTaskParameters();
+            sqlContent = dcParams.getSqlContent();
+            delimiter = dcParams.getDelimiter();
+        }
+        if (StringUtils.isNotBlank(sqlContent)) {
+            this.userInputSqls = SqlUtils.splitWithOffset(connectionConfig.getDialectType(), sqlContent, delimiter);
+        }
+    }
+
+    private void loadUploadFileInputStream(TaskType taskType, String parametersJson) {
+        String bucketName = "async".concat(File.separator).concat(this.creatorId.toString());
+        DatabaseChangeParameters params = null;
+        if (taskType == TaskType.ASYNC) {
+            params = JsonUtils.fromJson(parametersJson, DatabaseChangeParameters.class);
+        } else if (taskType == TaskType.ALTER_SCHEDULE) {
+            AlterScheduleParameters asParams = JsonUtils.fromJson(parametersJson, AlterScheduleParameters.class);
+            if (asParams.getType() != JobType.SQL_PLAN) {
+                return;
+            }
+            params = (DatabaseChangeParameters) asParams.getScheduleTaskParameters();
+        }
+        if (Objects.nonNull(params)) {
+            this.uploadFileInputStream = databaseChangeFileReader.readInputStreamFromSqlObjects(params, bucketName, -1);
+            if (Objects.nonNull(this.uploadFileInputStream)) {
+                this.uploadFileSqlIterator = SqlUtils.iterator(connectionConfig.getDialectType(), params.getDelimiter(),
+                        this.uploadFileInputStream, StandardCharsets.UTF_8);
             }
         }
-        if (taskType == TaskType.ONLINE_SCHEMA_CHANGE) {
-            OnlineSchemaChangeParameters params =
-                    JsonUtils.fromJson(parametersJson, OnlineSchemaChangeParameters.class);
-            return SqlUtils.splitWithOffset(dialectType, params.getSqlContent(), params.getDelimiter());
-        }
-        if (taskType == TaskType.EXPORT_RESULT_SET) {
-            ResultSetExportTaskParameter parameters =
-                    JsonUtils.fromJson(parametersJson, ResultSetExportTaskParameter.class);
-            return SqlUtils.splitWithOffset(dialectType, parameters.getSql(), ";");
-        }
-        if (taskType == TaskType.ALTER_SCHEDULE) {
-            AlterScheduleParameters alterScheduleParameters =
-                    JsonUtils.fromJson(parametersJson, AlterScheduleParameters.class);
-            if (alterScheduleParameters.getType() != JobType.SQL_PLAN) {
-                return null;
-            }
-            DatabaseChangeParameters databaseChangeParameters =
-                    (DatabaseChangeParameters) alterScheduleParameters.getScheduleTaskParameters();
-            String bucketName = "async".concat(File.separator).concat(this.creatorId.toString());
-            try {
-                return this.databaseChangeFileReader.loadSqlContents(databaseChangeParameters,
-                        dialectType, bucketName, -1);
-            } catch (IOException e) {
-                throw new IllegalStateException(e);
-            }
-        }
-        return null;
     }
 
     private void storeTaskResultToFile(Long preCheckTaskId, SqlCheckTaskResult result) throws IOException {
@@ -326,6 +382,7 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
     private PreCheckTaskResult buildPreCheckResult() {
         PreCheckTaskResult result = new PreCheckTaskResult();
         result.setExecutorInfo(new ExecutorInfo(this.hostProperties));
+        result.setOverLimit(this.overLimit);
         if (Objects.nonNull(this.sqlCheckResult)) {
             this.sqlCheckResult.setResults(null);
         }

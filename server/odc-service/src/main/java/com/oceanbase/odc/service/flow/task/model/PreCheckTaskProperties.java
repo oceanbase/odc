@@ -14,27 +14,24 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.config;
+package com.oceanbase.odc.service.flow.task.model;
 
-import javax.annotation.PostConstruct;
-
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.filter.RequestContextFilter;
-import org.springframework.web.servlet.DispatcherServlet;
 
+import lombok.Data;
+
+/**
+ * @author gaoda.xy
+ * @date 2023/12/12 23:02
+ */
+@Data
 @Configuration
-public class ServletConfiguration {
+@RefreshScope
+@ConfigurationProperties(prefix = "odc.task.pre-check")
+public class PreCheckTaskProperties {
 
-    @Autowired
-    private RequestContextFilter requestContextFilter;
-    @Autowired
-    private DispatcherServlet dispatcherServlet;
-
-    @PostConstruct
-    public void init() {
-        requestContextFilter.setThreadContextInheritable(true);
-        dispatcherServlet.setThreadContextInheritable(true);
-    }
+    private long maxSqlContentBytes = 5 * 1024 * 1024;
 
 }

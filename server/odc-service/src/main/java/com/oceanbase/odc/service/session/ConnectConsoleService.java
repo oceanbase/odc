@@ -35,6 +35,7 @@ import javax.validation.constraints.NotNull;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -253,6 +254,7 @@ public class ConnectConsoleService {
         statementCallBack.setFullLinkTraceTimeout(sessionProperties.getFullLinkTraceTimeoutSeconds());
         statementCallBack.setMaxCachedSize(sessionProperties.getResultSetMaxCachedSize());
         statementCallBack.setMaxCachedLines(sessionProperties.getResultSetMaxCachedLines());
+        statementCallBack.setLocale(LocaleContextHolder.getLocale());
 
         Future<List<JdbcGeneralResult>> futureResult = connectionSession.getAsyncJdbcExecutor(
                 ConnectionSessionConstants.CONSOLE_DS_KEY).execute(statementCallBack);
