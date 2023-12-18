@@ -89,7 +89,7 @@ public class TestDBConfigurations {
         }
         String sysUserPasswordKey = TestProperties.getProperty(type.sysUserPasswordKey);
         if (sysUserPasswordKey != null) {
-            properties.setProperty(TestDBConfiguration.DB_SYS_PASSWORD_KEY, sysUserNameKey);
+            properties.setProperty(TestDBConfiguration.DB_SYS_PASSWORD_KEY, sysUserPasswordKey);
         }
         properties.setProperty(TestDBConfiguration.DB_TYPE_KEY, type.toString());
         return properties;
