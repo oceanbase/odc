@@ -432,6 +432,8 @@ public class ConnectionService {
         List<Permission> granted = res2Actions.entrySet().stream()
                 .map(e -> securityManager.getPermissionByActions(e.getKey(), e.getValue()))
                 .collect(Collectors.toList());
+        Set<Long> projectRelatedConnectionIds = databaseService.statsConnectionConfig().stream()
+                .map(ConnectionConfig::getId).collect(Collectors.toSet());
         Map<Long, CheckState> connId2State = new HashMap<>();
         for (Long connId : ids) {
             ConnectionConfig conn = connMap.get(connId);
@@ -440,21 +442,20 @@ public class ConnectionService {
                 connId2State.put(connId, CheckState.of(ConnectionStatus.UNKNOWN));
                 continue;
             }
-            boolean grant;
             String connIdStr = connId + "";
             Permission p = new ConnectionPermission(connIdStr, ResourcePermission.READ);
-            grant = granted.stream().anyMatch(g -> g.implies(p));
+            boolean hasReadPermission = granted.stream().anyMatch(g -> g.implies(p));
             SecurityResource allKey = new DefaultSecurityResource("ODC_CONNECTION");
             Set<String> actions = res2Actions.getOrDefault(allKey, new HashSet<>());
             SecurityResource thisKey = new DefaultSecurityResource(connIdStr, "ODC_CONNECTION");
             actions.addAll(res2Actions.getOrDefault(thisKey, new HashSet<>()));
             conn.setPermittedActions(actions);
-            if (!grant) {
-                // 不具备 connId 对应连接的读权限，此时需要将连接状态置为 unknown 避免越权
-                connId2State.put(connId, CheckState.of(ConnectionStatus.UNKNOWN));
-            } else {
-                // 有权限，从 statusManager 中获取
+            boolean joinedProject = projectRelatedConnectionIds.contains(connId);
+
+            if (hasReadPermission || joinedProject) {
                 connId2State.put(connId, this.statusManager.getAndRefreshStatus(conn));
+            } else {
+                connId2State.put(connId, CheckState.of(ConnectionStatus.UNKNOWN));
             }
         }
         return connId2State;
