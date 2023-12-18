@@ -47,6 +47,7 @@ import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
+import com.oceanbase.odc.core.sql.split.SqlCommentProcessor.OrderChar;
 import com.oceanbase.tools.sqlparser.oracle.PlSqlLexer;
 
 import lombok.Getter;
@@ -861,11 +862,9 @@ public class SqlSplitter {
         private long iteratedBytes = 0;
         private int offset = 0;
 
-        private static final Character ORACLE_SQL_QUOTE_CHAR = '\'';
         private static final Character SQL_SEPARATOR_CHAR = '/';
         private static final Character LINE_SEPARATOR_CHAR = '\n';
         private static final String SQL_MULTI_LINE_COMMENT_PREFIX = "/*";
-        private static final String SQL_MULTI_LINE_COMMENT_SUFFIX = "*/";
         private static final Set<Character> DELIMITER_CHARACTERS = new HashSet<>(Arrays.asList(';', '/', '$'));
 
         public SqlSplitterIterator(InputStream input, Charset charset, String delimiter) {
@@ -875,16 +874,16 @@ public class SqlSplitter {
 
         @Override
         public boolean hasNext() {
-            if (current == null) {
-                current = parseNext();
+            if (this.current == null) {
+                this.current = parseNext();
             }
-            return current != null;
+            return this.current != null;
         }
 
         @Override
         public OffsetString next() {
-            OffsetString next = current;
-            current = null;
+            OffsetString next = this.current;
+            this.current = null;
             if (next == null) {
                 next = parseNext();
                 if (next == null) {
@@ -896,105 +895,81 @@ public class SqlSplitter {
 
         @Override
         public long iteratedBytes() {
-            return iteratedBytes;
+            return this.iteratedBytes;
         }
 
         private OffsetString parseNext() {
             try {
-                if (!holder.isEmpty()) {
-                    return holder.poll();
+                if (!this.holder.isEmpty()) {
+                    return this.holder.poll();
                 }
                 String line;
-                while (holder.isEmpty() && (line = reader.readLine()) != null) {
-                    iteratedBytes += line.getBytes(Charset.defaultCharset()).length + 1;
+                while (this.holder.isEmpty() && (line = this.reader.readLine()) != null) {
+                    this.iteratedBytes += line.getBytes(Charset.defaultCharset()).length + 1;
                     addLineToBuffer(line);
-                    int multiLineCommentPrefixPos = indexOfMultiLineCommentPrefix(line);
-                    if (multiLineCommentPrefixPos > 0) {
-                        StringBuilder temp = new StringBuilder(line.substring(multiLineCommentPrefixPos + 2));
-                        while (temp.indexOf(SQL_MULTI_LINE_COMMENT_SUFFIX) < 0 && (line = reader.readLine()) != null) {
-                            iteratedBytes += line.getBytes(Charset.defaultCharset()).length + 1;
-                            addLineToBuffer(line);
-                            temp.append(line);
-                        }
+                    SqlCommentProcessor processor = new SqlCommentProcessor();
+                    LinkedList<OffsetString> innerHolder = new LinkedList<>();
+                    StringBuffer innerBuffer = new StringBuffer();
+                    Holder<Integer> bufferOrder = new Holder<>(0);
+                    processor.addLineOracle(innerHolder, innerBuffer, bufferOrder,
+                            line.chars().mapToObj(c -> new OrderChar((char) c, -1)).collect(Collectors.toList()));
+                    while (processor.isMlComment() && (line = reader.readLine()) != null) {
+                        this.iteratedBytes += line.getBytes(Charset.defaultCharset()).length + 1;
+                        addLineToBuffer(line);
+                        processor.addLineOracle(innerHolder, innerBuffer, bufferOrder,
+                                line.chars().mapToObj(c -> new OrderChar((char) c, -1)).collect(Collectors.toList()));
                     }
                     // SqlSplitter is non-reentrant, so we need to create a new one for each loop
                     SqlSplitter splitter = createSplitter();
-                    sqls = splitter.split(buffer.toString()).stream().map(OffsetString::getStr)
+                    this.sqls = splitter.split(this.buffer.toString()).stream().map(OffsetString::getStr)
                             .collect(Collectors.toList());
-                    while (sqls.size() > 1) {
-                        String sql = sqls.remove(0);
-                        int index = buffer.indexOf(sql.substring(0, sql.length() - 1));
-                        holder.addLast(new OffsetString(offset + index, sql));
-                        buffer.delete(0, index + sql.length());
-                        offset += index + sql.length();
+                    while (this.sqls.size() > 1) {
+                        String sql = this.sqls.remove(0);
+                        int index = this.buffer.indexOf(sql.substring(0, sql.length() - 1));
+                        this.holder.addLast(new OffsetString(this.offset + index, sql));
+                        this.buffer.delete(0, index + sql.length());
+                        this.offset += index + sql.length();
                         clearUselessPrefix();
-                        delimiter = splitter.getDelimiter();
+                        this.delimiter = splitter.getDelimiter();
                     }
                 }
-                if (!holder.isEmpty()) {
-                    return holder.poll();
+                if (!this.holder.isEmpty()) {
+                    return this.holder.poll();
                 }
-                if (sqls.isEmpty()) {
+                if (this.sqls.isEmpty()) {
                     return null;
                 }
-                return new OffsetString(offset, sqls.remove(0));
+                return new OffsetString(this.offset, this.sqls.remove(0));
             } catch (Exception e) {
                 throw new RuntimeException("Failed to parse input. reason: " + e.getMessage(), e);
             }
         }
 
         private void addLineToBuffer(String line) {
-            if (firstLine) {
-                buffer.append(line);
-                firstLine = false;
+            if (this.firstLine) {
+                this.buffer.append(line);
+                this.firstLine = false;
             } else {
-                buffer.append(LINE_SEPARATOR_CHAR).append(line);
+                this.buffer.append(LINE_SEPARATOR_CHAR).append(line);
             }
         }
 
         private void clearUselessPrefix() {
-            while (buffer.length() > 0 && DELIMITER_CHARACTERS.contains(buffer.charAt(0))
-                    && !(buffer.toString().startsWith(SQL_MULTI_LINE_COMMENT_PREFIX))) {
-                buffer.deleteCharAt(0);
-                offset++;
+            while (this.buffer.length() > 0 && DELIMITER_CHARACTERS.contains(this.buffer.charAt(0))
+                    && !(this.buffer.toString().startsWith(SQL_MULTI_LINE_COMMENT_PREFIX))) {
+                this.buffer.deleteCharAt(0);
+                this.offset++;
             }
-            while ((buffer.length() > 0 && (Character.isWhitespace(buffer.charAt(0)))) ||
-                    (buffer.toString().startsWith(SQL_SEPARATOR_CHAR.toString())
-                            && !buffer.toString().startsWith(SQL_MULTI_LINE_COMMENT_PREFIX))) {
-                buffer.deleteCharAt(0);
-                offset++;
+            while ((this.buffer.length() > 0 && (Character.isWhitespace(this.buffer.charAt(0)))) ||
+                    (this.buffer.toString().startsWith(SQL_SEPARATOR_CHAR.toString())
+                            && !this.buffer.toString().startsWith(SQL_MULTI_LINE_COMMENT_PREFIX))) {
+                this.buffer.deleteCharAt(0);
+                this.offset++;
             }
-        }
-
-        private int indexOfMultiLineCommentPrefix(String line) {
-            if (StringUtils.isBlank(line) || !line.contains(SQL_MULTI_LINE_COMMENT_PREFIX)) {
-                return -1;
-            }
-            boolean innerQuote = false;
-            for (int i = 0; i < line.length() - 1; i++) {
-                char p = line.charAt(i);
-                char q = line.charAt(i + 1);
-                if (p == ORACLE_SQL_QUOTE_CHAR && q == ORACLE_SQL_QUOTE_CHAR) {
-                    i++;
-                    continue;
-                }
-                if (innerQuote) {
-                    if (p == ORACLE_SQL_QUOTE_CHAR) {
-                        innerQuote = false;
-                    }
-                } else {
-                    if (p == ORACLE_SQL_QUOTE_CHAR) {
-                        innerQuote = true;
-                    } else if (p == '/' && q == '*') {
-                        return i;
-                    }
-                }
-            }
-            return -1;
         }
 
         private SqlSplitter createSplitter() {
-            return new SqlSplitter(PlSqlLexer.class, delimiter);
+            return new SqlSplitter(PlSqlLexer.class, this.delimiter);
         }
 
     }

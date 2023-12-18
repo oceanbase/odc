@@ -57,6 +57,7 @@ public class SqlCommentProcessor {
      */
     private boolean preserveFormat = false;
     private String delimiter = ";";
+    @Getter
     private boolean mlComment = false;
     private char inString = '\0';
     private DialectType dialectType;
@@ -400,7 +401,7 @@ public class SqlCommentProcessor {
         return true;
     }
 
-    private synchronized void addLineOracle(List<OffsetString> sqls, StringBuffer buffer, Holder<Integer> bufferOrder,
+    public synchronized void addLineOracle(List<OffsetString> sqls, StringBuffer buffer, Holder<Integer> bufferOrder,
             List<OrderChar> line) {
         int pos, out;
         boolean needSpace = false;
