@@ -117,19 +117,11 @@ public class ApprovalPermissionService {
         return userTaskInstanceEntities;
     }
 
-    public void setCandidateResourceRole(@NonNull Long approvalInstanceId, @NonNull String resourceRoleIdentifier) {
-        UserTaskInstanceCandidateEntity candidateEntity = new UserTaskInstanceCandidateEntity();
-        candidateEntity.setApprovalInstanceId(approvalInstanceId);
-        candidateEntity.setResourceRoleIdentifier(resourceRoleIdentifier);
-        userTaskCandidateRepository.save(candidateEntity);
-    }
-
     public List<UserTaskInstanceEntity> listApprovableExternalInstances() {
         return userTaskInstanceRepository.findByStatus(FlowNodeStatus.EXECUTING).stream()
                 .filter(entity -> entity.getExternalApprovalId() != null && entity.getExternalFlowInstanceId() != null)
                 .collect(Collectors.toList());
     }
-
 
     public Map<Long, Set<UserEntity>> getApproverByFlowInstanceIds(@NonNull Collection<Long> flowInstanceIds) {
         return getUsersByFlowInstanceIdsAndStatus(flowInstanceIds, FlowNodeStatus.getExecutingAndFinalStatuses());

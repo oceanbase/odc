@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.flow.instance;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,6 +26,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.flowable.engine.TaskService;
 import org.flowable.task.api.Task;
 import org.flowable.task.api.TaskInfo;
@@ -118,10 +120,6 @@ public class FlowTaskInstance extends BaseFlowNodeInstance {
         this.taskType = taskType;
         this.delegateConvertor = convertor;
         alloc();
-        create();
-        Verify.notNull(getId(), "id");
-        Verify.notNull(getCreateTime(), "CreateTime");
-        Verify.notNull(getUpdateTime(), "UpdateTime");
         eventPublisher.publishEvent(new TaskInstanceCreatedEvent(this));
     }
 
@@ -130,19 +128,26 @@ public class FlowTaskInstance extends BaseFlowNodeInstance {
         return FlowableElementType.SERVICE_TASK;
     }
 
+    public static List<FlowTaskInstance> batchCreate(List<FlowTaskInstance> instances,
+            @NonNull ServiceTaskInstanceRepository serviceTaskInstanceRepository) {
+        if (CollectionUtils.isEmpty(instances)) {
+            return Collections.emptyList();
+        }
+        List<ServiceTaskInstanceEntity> entities = instances.stream()
+                .map(FlowTaskInstance::mapToTaskEntity).collect(Collectors.toList());
+        entities = serviceTaskInstanceRepository.batchCreate(entities);
+        for (int i = 0; i < instances.size(); i++) {
+            instances.get(i).setId(entities.get(i).getId());
+            instances.get(i).createTime = entities.get(i).getCreateTime();
+            instances.get(i).updateTime = entities.get(i).getUpdateTime();
+        }
+        return instances;
+    }
+
     @Override
-    protected void create() {
+    public void create() {
         validNotExists();
-        ServiceTaskInstanceEntity entity = new ServiceTaskInstanceEntity();
-        entity.setOrganizationId(getOrganizationId());
-        entity.setStatus(getStatus());
-        entity.setFlowInstanceId(getFlowInstanceId());
-        entity.setStartEndpoint(isStartEndpoint());
-        entity.setEndEndpoint(isEndEndPoint());
-        entity.setStrategy(this.strategyConfig.getStrategy());
-        entity.setTaskType(getTaskType());
-        entity.setWaitExecExpireIntervalSeconds(this.strategyConfig.getPendingExpireIntervalSeconds());
-        entity.setExecutionTime(this.strategyConfig.getExecutionTime());
+        ServiceTaskInstanceEntity entity = mapToTaskEntity(this);
         entity = serviceTaskRepository.save(entity);
         Verify.notNull(entity.getId(), "id");
         Verify.notNull(entity.getCreateTime(), "CreateTime");
@@ -280,6 +285,21 @@ public class FlowTaskInstance extends BaseFlowNodeInstance {
         tasks.forEach(task -> taskService.complete(task.getId(), variables));
         log.info("Execution node of the task instance has been executed, instanceId={}, names={}, aborted={}",
                 getId(), tasks.stream().map(TaskInfo::getName).collect(Collectors.toList()), aborted);
+    }
+
+    private static ServiceTaskInstanceEntity mapToTaskEntity(FlowTaskInstance instance) {
+        ServiceTaskInstanceEntity entity = new ServiceTaskInstanceEntity();
+        entity.setOrganizationId(instance.getOrganizationId());
+        entity.setStatus(instance.getStatus());
+        entity.setFlowInstanceId(instance.getFlowInstanceId());
+        entity.setStartEndpoint(instance.isStartEndpoint());
+        entity.setEndEndpoint(instance.isEndEndPoint());
+        entity.setStrategy(instance.strategyConfig.getStrategy());
+        entity.setTaskType(instance.getTaskType());
+        entity.setTargetTaskId(instance.getTargetTaskId());
+        entity.setWaitExecExpireIntervalSeconds(instance.strategyConfig.getPendingExpireIntervalSeconds());
+        entity.setExecutionTime(instance.strategyConfig.getExecutionTime());
+        return entity;
     }
 
 }

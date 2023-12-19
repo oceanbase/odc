@@ -17,14 +17,17 @@ package com.oceanbase.odc.metadb.flow;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.function.Function;
 
 import javax.transaction.Transactional;
 
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+
+import com.oceanbase.odc.common.jpa.InsertSqlTemplateBuilder;
+import com.oceanbase.odc.config.jpa.OdcJpaRepository;
 
 /**
  * Repository layer for {@link UserTaskInstanceCandidateEntity}
@@ -33,7 +36,7 @@ import org.springframework.data.repository.query.Param;
  * @date 2022-02-07 16:47
  * @since ODC_release_3.3.0
  */
-public interface UserTaskInstanceCandidateRepository extends JpaRepository<UserTaskInstanceCandidateEntity, Long>,
+public interface UserTaskInstanceCandidateRepository extends OdcJpaRepository<UserTaskInstanceCandidateEntity, Long>,
         JpaSpecificationExecutor<UserTaskInstanceCandidateEntity> {
 
     List<UserTaskInstanceCandidateEntity> findByApprovalInstanceId(Long approvalInstanceId);
@@ -59,5 +62,23 @@ public interface UserTaskInstanceCandidateRepository extends JpaRepository<UserT
     @Modifying
     int deleteByApprovalInstanceIdAndRoleIds(@Param("approvalInstanceId") Long approvalInstanceId,
             @Param("candidates") Collection<Long> candidates);
+
+    default List<UserTaskInstanceCandidateEntity> batchCreate(List<UserTaskInstanceCandidateEntity> entities) {
+        String sql = InsertSqlTemplateBuilder.from("flow_instance_node_approval_candidate")
+                .field(UserTaskInstanceCandidateEntity_.approvalInstanceId)
+                .field(UserTaskInstanceCandidateEntity_.userId)
+                .field(UserTaskInstanceCandidateEntity_.roleId)
+                .field(UserTaskInstanceCandidateEntity_.resourceRoleIdentifier)
+                .build();
+
+        List<Function<UserTaskInstanceCandidateEntity, Object>> getter = valueGetterBuilder().add(
+                UserTaskInstanceCandidateEntity::getApprovalInstanceId)
+                .add(UserTaskInstanceCandidateEntity::getUserId)
+                .add(UserTaskInstanceCandidateEntity::getRoleId)
+                .add(UserTaskInstanceCandidateEntity::getResourceRoleIdentifier)
+                .build();
+
+        return batchCreate(entities, sql, getter, UserTaskInstanceCandidateEntity::setId);
+    }
 
 }

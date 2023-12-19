@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.flowable.engine.FormService;
 import org.flowable.engine.RepositoryService;
@@ -47,6 +48,7 @@ import com.oceanbase.odc.metadb.flow.GateWayInstanceRepository;
 import com.oceanbase.odc.metadb.flow.NodeInstanceEntityRepository;
 import com.oceanbase.odc.metadb.flow.SequenceInstanceRepository;
 import com.oceanbase.odc.metadb.flow.ServiceTaskInstanceRepository;
+import com.oceanbase.odc.metadb.flow.UserTaskInstanceCandidateRepository;
 import com.oceanbase.odc.metadb.flow.UserTaskInstanceRepository;
 import com.oceanbase.odc.metadb.iam.UserEntity;
 import com.oceanbase.odc.metadb.task.TaskEntity;
@@ -114,6 +116,9 @@ public class FlowResponseMapperFactoryTest extends ServiceTestEnv {
     private GateWayInstanceRepository gateWayInstanceRepository;
     @MockBean
     private DatabaseService databaseService;
+    @Autowired
+    private UserTaskInstanceCandidateRepository userTaskInstanceCandidateRepository;
+    private final AtomicLong counter = new AtomicLong(0L);
 
     @Before
     public void setUp() {
@@ -165,6 +170,8 @@ public class FlowResponseMapperFactoryTest extends ServiceTestEnv {
     @Test
     public void generateFlowNodeInstanceDetailResp_approvalInstance_returnDesp() {
         FlowApprovalInstance approvalInstance = createApprovalInstance(1L, 15, true, true);
+        approvalInstance.setId(null);
+        approvalInstance.create();
         approvalInstance.setStatus(FlowNodeStatus.EXECUTING);
 
         FlowNodeInstanceMapper nodeMapper = responseFactory
@@ -189,6 +196,8 @@ public class FlowResponseMapperFactoryTest extends ServiceTestEnv {
     public void generateFlowNodeInstanceDetailResp_pendingTaskInstance_returnDesp() {
         FlowTaskInstance taskInstance = createTaskInstance(1L,
                 ExecutionStrategyConfig.manualStrategy(15, TimeUnit.SECONDS), true);
+        taskInstance.setId(null);
+        taskInstance.create();
         taskInstance.setStatus(FlowNodeStatus.PENDING);
 
         FlowNodeInstanceMapper nodeMapper = responseFactory
@@ -228,22 +237,24 @@ public class FlowResponseMapperFactoryTest extends ServiceTestEnv {
                         first_route_approval_2, first_route_approval_2_gateway, first_route_task_1,
                         second_route_approval_1, second_route_approval_1_gateway, second_route_task_1),
                 sequences);
+        flowInstance.forEachInstanceNode(inst -> inst.setId(null));
         flowInstance.buildTopology();
     }
 
     private FlowInstance createFlowInstance() {
-        return new FlowInstance("test", flowAdaptor, authenticationFacade,
-                flowInstanceRepository, runtimeService, repositoryService);
+        return new FlowInstance("test", flowAdaptor, authenticationFacade, flowInstanceRepository,
+                nodeRepository, sequenceRepository, gateWayInstanceRepository, serviceTaskRepository,
+                userTaskInstanceRepository, userTaskInstanceCandidateRepository, runtimeService, repositoryService);
     }
 
     private FlowTaskInstance createTaskInstance(Long flowInstanceId, ExecutionStrategyConfig config,
             boolean startEndPoint) {
-        FlowTaskInstance taskInstance =
-                new FlowTaskInstance(TaskType.ASYNC, authenticationFacade.currentOrganizationId(),
-                        flowInstanceId, config, startEndPoint, true, type -> TestFlowRuntimeTaskImpl.class, flowAdaptor,
-                        eventPublisher, taskService, nodeRepository, sequenceRepository, serviceTaskRepository);
+        FlowTaskInstance taskInstance = new FlowTaskInstance(TaskType.ASYNC,
+                authenticationFacade.currentOrganizationId(), flowInstanceId, config, startEndPoint, true,
+                type -> TestFlowRuntimeTaskImpl.class, flowAdaptor, eventPublisher, taskService, nodeRepository,
+                sequenceRepository, serviceTaskRepository);
         taskInstance.setTargetTaskId(1L);
-        taskInstance.update();
+        taskInstance.setId(counter.incrementAndGet());
         return taskInstance;
     }
 
@@ -258,14 +269,19 @@ public class FlowResponseMapperFactoryTest extends ServiceTestEnv {
 
     private FlowApprovalInstance createApprovalInstance(Long flowInstanceId, Integer expireIntervalSeconds,
             boolean startEndPoint, boolean endEndPoint) {
-        return new FlowApprovalInstance(authenticationFacade.currentOrganizationId(), flowInstanceId, null,
-                expireIntervalSeconds, startEndPoint, endEndPoint, false, flowAdaptor, taskService, formService,
-                eventPublisher, authenticationFacade, nodeRepository, sequenceRepository, userTaskInstanceRepository);
+        FlowApprovalInstance inst = new FlowApprovalInstance(authenticationFacade.currentOrganizationId(),
+                flowInstanceId, null, expireIntervalSeconds, startEndPoint, endEndPoint, false, flowAdaptor,
+                taskService, formService, eventPublisher, authenticationFacade, nodeRepository, sequenceRepository,
+                userTaskInstanceRepository, userTaskInstanceCandidateRepository);
+        inst.setId(counter.incrementAndGet());
+        return inst;
     }
 
     private FlowGatewayInstance createGatewayInstance(Long flowInstanceId, boolean startEndPoint, boolean endEndPoint) {
-        return new FlowGatewayInstance(authenticationFacade.currentOrganizationId(), flowInstanceId,
+        FlowGatewayInstance inst = new FlowGatewayInstance(authenticationFacade.currentOrganizationId(), flowInstanceId,
                 startEndPoint, endEndPoint, flowAdaptor, nodeRepository, sequenceRepository, gateWayInstanceRepository);
+        inst.setId(counter.incrementAndGet());
+        return inst;
     }
 
     private TaskEntity createTaskEntity() {
