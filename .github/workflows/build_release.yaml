@@ -152,10 +152,8 @@ jobs:
         run: |
           echo "Start prepare oceanbase-client"
           pushd import
-          echo "Current dir is "`pwd`
-          rm -rf obclient_aarch.tar.gz
-          rm -rf obclient_win.tar.gz
-          mv obclient_x86.tar.gz obclient.tar.gz
+          echo "Current dir is "`pwd`          
+          cp ../build-resource/obclient/2.2.4/linux_x86/obclient.tar.gz obclient.tar.gz
           popd
           echo "Prepare oceanbase-client success"
           echo "Start build rpm package"

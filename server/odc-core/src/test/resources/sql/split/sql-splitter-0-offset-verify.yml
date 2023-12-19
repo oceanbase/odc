@@ -1,0 +1,36 @@
+- str: select 1 from dual;
+  offset: 0
+- str: select 2 from dual;
+  offset: 19
+- str: select /*here is a comment*/ 3 from dual;
+  offset: 39
+- str: |-
+    -- here is a line comment
+    select /*+READ_CONSISTENCY(WEAK)*/ 4 from dual;
+  offset: 81
+- str: |-
+    select '''', '  2 '' ''/*' /* dsfgsdvcb ; ;
+    sdsd ; ; ;
+    asda*/
+    from dual;
+  offset: 156
+- str: |-
+    select/*
+    
+    1
+    2
+    3
+    4
+    5
+    6
+    7
+    8
+    9
+    
+    0
+    
+    1234567890*/
+    1 from dual;
+  offset: 229
+- str: select 1 from dual;
+  offset: 302
