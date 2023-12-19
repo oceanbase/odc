@@ -277,6 +277,9 @@ public class FlowTaskUtil {
             @NonNull MockProperties mockProperties) {
         ConnectionConfig conn = getConnectionConfig(execution);
         conn.setDefaultSchema(getSchemaName(execution));
+        if (conn.getDialectType().isOracle()) {
+            conn.setDefaultSchema("\"" + getSchemaName(execution) + "\"");
+        }
         ConnectionSession session = new DefaultConnectSessionFactory(conn).generateSession();
         try {
             String taskJson = config.getTaskDetail();
