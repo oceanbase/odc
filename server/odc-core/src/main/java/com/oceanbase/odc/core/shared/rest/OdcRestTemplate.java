@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.core.shared.rest;
 
+import static com.oceanbase.odc.core.alarm.AlarmEventNames.REST_API_CALL_FAILED;
+
 import java.net.URI;
 import java.util.LinkedList;
 
@@ -26,6 +28,7 @@ import org.springframework.web.client.ResponseExtractor;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
+import com.oceanbase.odc.core.alarm.AlarmUtils;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 
 import lombok.AllArgsConstructor;
@@ -98,7 +101,9 @@ public final class OdcRestTemplate extends RestTemplate {
             ODCRestContext context = API_CALL_LOG_PREFIX.get();
             log.debug("failed call rest {}, URL:{}, cost={} ms ", context.getApiName(), context.getRealUrl(),
                     context.getExecTime(), e);
-            throw new UnexpectedException("Internal service call failed, please contact support team.", e);
+            AlarmUtils.alarm(REST_API_CALL_FAILED,
+                    String.format("URL=%s, errorMsg=%s", context.getRealUrl(), e.getMessage()));
+            throw new UnexpectedException("Internal service call failed, please contact support team", e);
         } finally {
             clearContext();
         }
