@@ -30,7 +30,6 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import javax.sql.DataSource;
@@ -562,7 +561,7 @@ public class DatabaseService {
     }
 
     @SkipAuthorize("internal authorized")
-    public Page<DatabaseUser> listUsers(Long dataSourceId) {
+    public Page<DatabaseUser> listUserForOsc(Long dataSourceId) {
         ConnectionConfig config = connectionService.getForConnectionSkipPermissionCheck(dataSourceId);
         horizontalDataPermissionValidator.checkCurrentOrganization(config);
         DefaultConnectSessionFactory factory = new DefaultConnectSessionFactory(config);
@@ -573,7 +572,7 @@ public class DatabaseService {
             Set<String> whiteUsers = OscDBUserUtil.getLockUserWhiteList(config);
 
             return new PageImpl<>(dbUsers.stream()
-                    .filter(u -> getUserPredicate(whiteUsers).test(u.getName()))
+                    .filter(u -> !whiteUsers.contains(u.getName()))
                     .map(d -> DatabaseUser.builder().name(d.getNameWithHost()).build())
                     .collect(Collectors.toList()));
         } finally {
@@ -594,10 +593,6 @@ public class DatabaseService {
             names.add("oceanbase");
         }
         return names;
-    }
-
-    private Predicate<String> getUserPredicate(Set<String> whiteUsers) {
-        return u -> !whiteUsers.contains(u);
     }
 
     private void checkPermission(Long projectId, Long dataSourceId) {
