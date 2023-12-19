@@ -81,7 +81,7 @@ public class TaskApplicationTest extends BaseJobTest {
         JobDefinition jd = buildJobDefinition();
         JobContext jc = new DefaultJobContextBuilder().build(jobIdentity, jd);
         System.setProperty(JobEnvConstants.TASK_ALL_PARAMETERS, JobUtils.toJson(jc));
-        // mainMethodExit(60 * 1000);
+        mainMethodExit(60 * 1000);
         new TaskApplication().run(null);
     }
 
