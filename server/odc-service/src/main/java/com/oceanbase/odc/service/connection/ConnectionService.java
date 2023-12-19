@@ -20,7 +20,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -70,6 +69,7 @@ import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.ConnectionStatus;
 import com.oceanbase.odc.core.shared.constant.ConnectionVisibleScope;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
+import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.constant.PermissionType;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
@@ -424,6 +424,28 @@ public class ConnectionService {
         Map<Long, ConnectionConfig> connMap =
                 entitiesToModels(repository.findAll(spec), currentOrganizationId(), false, false).stream()
                         .collect(Collectors.toMap(ConnectionConfig::getId, c -> c));
+
+        if (authenticationFacade.currentOrganization().getType() == OrganizationType.INDIVIDUAL) {
+            return getIndividualSpaceStatus(ids, connMap);
+        } else {
+            return getTeamSpaceStatus(ids, connMap, user);
+        }
+    }
+
+    private Map<Long, CheckState> getIndividualSpaceStatus(Set<Long> ids, Map<Long, ConnectionConfig> connMap) {
+        Map<Long, CheckState> connId2State = new HashMap<>();
+        for (Long connId : ids) {
+            ConnectionConfig conn = connMap.get(connId);
+            if (conn == null) {
+                connId2State.put(connId, CheckState.of(ConnectionStatus.UNKNOWN));
+            } else {
+                connId2State.put(connId, this.statusManager.getAndRefreshStatus(conn));
+            }
+        }
+        return connId2State;
+    }
+
+    private Map<Long, CheckState> getTeamSpaceStatus(Set<Long> ids, Map<Long, ConnectionConfig> connMap, User user) {
         Map<SecurityResource, Set<String>> res2Actions = authorizationFacade.getRelatedResourcesAndActions(user)
                 .entrySet().stream().collect(Collectors.toMap(e -> {
                     SecurityResource s = e.getKey();
@@ -438,20 +460,13 @@ public class ConnectionService {
         for (Long connId : ids) {
             ConnectionConfig conn = connMap.get(connId);
             if (conn == null) {
-                // 没有找到对应的连接，可能是非法的 connId，保险起见将状态设置为 unknown
+                // may invalid connection id, set the status to UNKNOWN
                 connId2State.put(connId, CheckState.of(ConnectionStatus.UNKNOWN));
                 continue;
             }
-            String connIdStr = connId + "";
-            Permission p = new ConnectionPermission(connIdStr, ResourcePermission.READ);
+            Permission p = new ConnectionPermission(connId + "", ResourcePermission.READ);
             boolean hasReadPermission = granted.stream().anyMatch(g -> g.implies(p));
-            SecurityResource allKey = new DefaultSecurityResource("ODC_CONNECTION");
-            Set<String> actions = res2Actions.getOrDefault(allKey, new HashSet<>());
-            SecurityResource thisKey = new DefaultSecurityResource(connIdStr, "ODC_CONNECTION");
-            actions.addAll(res2Actions.getOrDefault(thisKey, new HashSet<>()));
-            conn.setPermittedActions(actions);
             boolean joinedProject = projectRelatedConnectionIds.contains(connId);
-
             if (hasReadPermission || joinedProject) {
                 connId2State.put(connId, this.statusManager.getAndRefreshStatus(conn));
             } else {
@@ -460,6 +475,7 @@ public class ConnectionService {
         }
         return connId2State;
     }
+
 
     @SkipAuthorize("odc internal usage")
     public List<ConnectionConfig> batchNullSafeGet(@NonNull Collection<Long> ids) {
