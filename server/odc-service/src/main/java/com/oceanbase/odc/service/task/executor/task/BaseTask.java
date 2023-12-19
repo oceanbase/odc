@@ -146,6 +146,25 @@ public abstract class BaseTask implements Task {
         log.info("Task monitor init success");
     }
 
+    private void doFinal() {
+        // Report final result
+        onUpdate();
+        if (this.status == TaskStatus.DONE) {
+            this.progress = 1.0;
+        }
+        log.info("Task finished with status: {}, id: {}, start to report final result",
+                context.getJobIdentity().getId(), status);
+        DefaultTaskResult finalResult = buildCurrentResult();
+        reportTaskResultWithRetry(finalResult, REPORT_RESULT_RETRY_TIMES, REPORT_RESULT_RETRY_INTERVAL_SECONDS);
+
+        // TODO: May solve log file here
+
+        // Report finish signal to task server
+        finalResult.setFinished(true);
+        reportTaskResultWithRetry(finalResult, REPORT_RESULT_RETRY_TIMES, REPORT_RESULT_RETRY_INTERVAL_SECONDS);
+        this.finished = true;
+    }
+
     private void reportTaskResult() {
         onUpdate();
         if (this.status == TaskStatus.DONE) {
@@ -156,34 +175,24 @@ public abstract class BaseTask implements Task {
                 status, String.format("%.2f", progress * 100), result);
     }
 
-    private void doFinal() {
-        onUpdate();
-        if (this.status == TaskStatus.DONE) {
-            this.progress = 1.0;
-        }
-        log.info("Task finished with status: {}, id: {}, start to report final result",
-                context.getJobIdentity().getId(), status);
-        DefaultTaskResult finalResult = buildCurrentResult();
-        finalResult.setFinished(true);
+    private void reportTaskResultWithRetry(TaskResult result, int retries, int intervalSeconds) {
         int retryTimes = 0;
-        while (retryTimes < REPORT_RESULT_RETRY_TIMES) {
+        while (retryTimes < retries) {
             try {
                 retryTimes++;
-                boolean success = reporter.report(finalResult);
+                boolean success = reporter.report(result);
                 if (success) {
-                    log.info("Report final result reported successfully");
+                    log.info("Report task result successfully");
                     break;
                 } else {
-                    log.warn("Report final result failed, will retry after {} seconds, remaining retries: {}",
-                            REPORT_RESULT_RETRY_INTERVAL_SECONDS, REPORT_RESULT_RETRY_TIMES - retryTimes);
-                    Thread.sleep(REPORT_RESULT_RETRY_INTERVAL_SECONDS * 1000);
+                    log.warn("Report task result failed, will retry after {} seconds, remaining retries: {}",
+                            intervalSeconds, retries - retryTimes);
+                    Thread.sleep(intervalSeconds * 1000L);
                 }
             } catch (Exception e) {
-                log.warn("Report final result failed, taskId: {}", context.getJobIdentity().getId(), e);
+                log.warn("Report task result failed, taskId: {}", context.getJobIdentity().getId(), e);
             }
         }
-        // TODO: May solve log file here
-        this.finished = true;
     }
 
     private DefaultTaskResult buildCurrentResult() {
