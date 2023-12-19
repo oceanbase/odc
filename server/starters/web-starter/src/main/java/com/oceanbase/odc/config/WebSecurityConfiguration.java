@@ -38,7 +38,6 @@ import com.oceanbase.odc.service.captcha.CaptchaAuthenticationProcessingFilter;
 import com.oceanbase.odc.service.iam.auth.CustomAuthenticationEntryPoint;
 import com.oceanbase.odc.service.iam.auth.CustomAuthenticationFailureHandler;
 import com.oceanbase.odc.service.iam.auth.CustomAuthenticationSuccessHandler;
-import com.oceanbase.odc.service.iam.auth.CustomInvalidSessionStrategy;
 import com.oceanbase.odc.service.iam.auth.CustomLogoutSuccessHandler;
 import com.oceanbase.odc.service.iam.auth.UsernamePasswordConfigureHelper;
 import com.oceanbase.odc.service.iam.auth.bastion.BastionAuthenticationProcessingFilter;
@@ -143,10 +142,10 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
                 // SessionCreationPolicy.ALWAYS --> SessionCreationPolicy.IF_REQUIRED，防止登出后再次访问页面生成session造成无法跳转至登录页
                 .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
                 .sessionFixation()
-                .migrateSession()
-                .invalidSessionStrategy(new CustomInvalidSessionStrategy(commonSecurityProperties.getLoginPage(),localeResolver));
+                .migrateSession();
         // @formatter:on
         csrfConfigureHelper.configure(http);
+
         http.addFilterBefore(
                 new TestLoginAuthenticationFilter(),
                 OAuth2LoginAuthenticationFilter.class);
