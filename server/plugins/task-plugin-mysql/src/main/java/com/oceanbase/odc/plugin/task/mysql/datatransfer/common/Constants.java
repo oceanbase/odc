@@ -26,6 +26,8 @@ public class Constants {
 
     public static final String MYSQL_WRITER = "mysqlwriter";
 
+    public static final String GROOVY_TRANSFORMER = "dx_groovy";
+
     public static final String DDL_SUFFIX = "-schema.sql";
 
     public static final String DISABLE_FK = "SET FOREIGN_KEY_CHECKS=0;";

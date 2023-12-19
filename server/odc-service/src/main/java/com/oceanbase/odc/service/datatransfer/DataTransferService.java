@@ -45,6 +45,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -54,6 +55,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.oceanbase.odc.common.trace.TraceContextHolder;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ConnectionAccountType;
@@ -68,6 +70,7 @@ import com.oceanbase.odc.plugin.task.api.datatransfer.model.ConnectionInfo;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.CsvColumnMapping;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.CsvConfig;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConstants;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferTaskResult;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.ObjectResult;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.UploadFileResult;
@@ -154,20 +157,22 @@ public class DataTransferService {
         try {
             // set log path
             Path logPath = Paths.get(taskLogDir, "data-transfer", bucket);
-
+            TraceContextHolder.put(DataTransferConstants.LOG_PATH_NAME, logPath.toString());
             // clear working directory and create bucket for client mode
             File workingDir = dataTransferAdapter.preHandleWorkDir(transferConfig, bucket,
                     fileManager.getWorkingDir(TaskType.EXPORT, bucket));
             if (!workingDir.exists() || !workingDir.isDirectory()) {
                 throw new IllegalStateException("Failed to create working dir, " + workingDir.getAbsolutePath());
             }
+            LOGGER.info("Data transfer task starts, working directory:{}", workingDir);
+
             // 目标目录可能已经存在且其中可能存留有导入导出历史脏数据，这里需要清理避免潜在问题，且为了影响最小化，只清理导入导出相关的目录
             String parent = new File(workingDir, "data").getAbsolutePath();
             Arrays.stream(ObjectType.values()).map(ObjectType::getName).forEach(objectName -> {
                 File target = new File(parent, objectName);
                 if (target.exists() && target.isDirectory()) {
                     boolean deleteRes = FileUtils.deleteQuietly(target);
-                    log.info("Delete object directory, dir={}, result={}", target.getAbsolutePath(), deleteRes);
+                    LOGGER.info("Delete object directory, dir={}, result={}", target.getAbsolutePath(), deleteRes);
                 }
             });
             // inject connection info
@@ -203,6 +208,7 @@ public class DataTransferService {
 
         } catch (Exception e) {
             LOGGER.warn("Failed to init data transfer task.", e);
+            TraceContextHolder.clear();
             throw e;
         }
     }
@@ -325,7 +331,6 @@ public class DataTransferService {
             }
         } catch (IOException e) {
             log.warn("Errors occured when parse CSV file, csvConfig={}", csvConfig, e);
-            LOGGER.warn("Errors occured when parse CSV file, csvConfig={}", csvConfig, e);
             throw e;
         }
         return mappingList;
@@ -366,16 +371,18 @@ public class DataTransferService {
             log.info("No Sys user setting");
             return;
         }
-        connectionConfig.setUsername(sysUserInMeta);
-        connectionConfig.setPassword(connectionConfig.getSysTenantPassword());
-        if (testSysTenantAccount(connectionConfig)) {
-            log.info("Sys user has been approved, connectionId={}", connectionConfig.getId());
+        ConnectionConfig copied = new ConnectionConfig();
+        BeanUtils.copyProperties(connectionConfig, copied);
+        copied.setUsername(sysUserInMeta);
+        copied.setPassword(copied.getSysTenantPassword());
+        if (testSysTenantAccount(copied)) {
+            log.info("Sys user has been approved, connectionId={}", copied.getId());
             transferConfig.getConnectionInfo().setSysTenantUsername(sysUserInMeta);
-            transferConfig.getConnectionInfo().setSysTenantPassword(connectionConfig.getSysTenantPassword());
+            transferConfig.getConnectionInfo().setSysTenantPassword(copied.getSysTenantPassword());
             return;
         }
         log.info("Access denied, Sys tenant account and password error, connectionId={}, sysUserInConfig={}",
-                connectionConfig.getId(), sysUserInMeta);
+                copied.getId(), sysUserInMeta);
         transferConfig.getConnectionInfo().setSysTenantUsername(null);
         transferConfig.getConnectionInfo().setSysTenantPassword(null);
     }

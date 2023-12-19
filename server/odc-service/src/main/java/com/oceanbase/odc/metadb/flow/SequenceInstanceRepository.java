@@ -15,15 +15,19 @@
  */
 package com.oceanbase.odc.metadb.flow;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.function.Function;
 
 import javax.transaction.Transactional;
 
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+
+import com.oceanbase.odc.common.jpa.InsertSqlTemplateBuilder;
+import com.oceanbase.odc.config.jpa.OdcJpaRepository;
 
 /**
  * Repository layer for {@link SequenceInstanceEntity}
@@ -33,7 +37,7 @@ import org.springframework.data.repository.query.Param;
  * @since ODC_release_3.3.0
  */
 public interface SequenceInstanceRepository
-        extends JpaRepository<SequenceInstanceEntity, Long>, JpaSpecificationExecutor<SequenceInstanceEntity> {
+        extends OdcJpaRepository<SequenceInstanceEntity, Long>, JpaSpecificationExecutor<SequenceInstanceEntity> {
 
     @Transactional
     @Query("delete from SequenceInstanceEntity as si where si.sourceNodeInstanceId=:nodeInstanceId or si.targetNodeInstanceId=:nodeInstanceId")
@@ -45,6 +49,8 @@ public interface SequenceInstanceRepository
     @Modifying
     int deleteBySourceNodeInstanceId(@Param("sourceNodeInstanceId") Long sourceNodeInstanceId);
 
+    int deleteBySourceNodeInstanceIdIn(Collection<Long> sourceNodeInstanceId);
+
     @Transactional
     @Query("delete from SequenceInstanceEntity as si where si.flowInstanceId=:instanceId")
     @Modifying
@@ -52,5 +58,21 @@ public interface SequenceInstanceRepository
 
     @Query(value = "select * from flow_instance_sequence where flow_instance_id=:flowInstanceId", nativeQuery = true)
     List<SequenceInstanceEntity> findByFlowInstanceId(@Param("flowInstanceId") Long flowInstanceId);
+
+    default List<SequenceInstanceEntity> batchCreate(List<SequenceInstanceEntity> entities) {
+        String sql = InsertSqlTemplateBuilder.from("flow_instance_sequence")
+                .field(SequenceInstanceEntity_.sourceNodeInstanceId)
+                .field(SequenceInstanceEntity_.targetNodeInstanceId)
+                .field(SequenceInstanceEntity_.flowInstanceId)
+                .build();
+
+        List<Function<SequenceInstanceEntity, Object>> valueGetter = valueGetterBuilder().add(
+                SequenceInstanceEntity::getSourceNodeInstanceId)
+                .add(SequenceInstanceEntity::getTargetNodeInstanceId)
+                .add(SequenceInstanceEntity::getFlowInstanceId)
+                .build();
+
+        return batchCreate(entities, sql, valueGetter, SequenceInstanceEntity::setId);
+    }
 
 }

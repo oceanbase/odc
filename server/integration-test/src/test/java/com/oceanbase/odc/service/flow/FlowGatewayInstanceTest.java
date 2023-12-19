@@ -27,6 +27,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import com.oceanbase.odc.ServiceTestEnv;
 import com.oceanbase.odc.metadb.flow.GateWayInstanceEntity;
 import com.oceanbase.odc.metadb.flow.GateWayInstanceRepository;
+import com.oceanbase.odc.metadb.flow.NodeInstanceEntity;
 import com.oceanbase.odc.metadb.flow.NodeInstanceEntityRepository;
 import com.oceanbase.odc.metadb.flow.SequenceInstanceRepository;
 import com.oceanbase.odc.service.flow.instance.FlowGatewayInstance;
@@ -65,7 +66,6 @@ public class FlowGatewayInstanceTest extends ServiceTestEnv {
     @Test
     public void create_createFlowGatewayInstance_createSucceed() {
         FlowGatewayInstance instance = createGatewayInstance(false, true);
-        instance.buildTopology();
 
         List<GateWayInstanceEntity> entityList = gateWayInstanceRepository.findAll();
         Assert.assertEquals(1, entityList.size());
@@ -75,7 +75,14 @@ public class FlowGatewayInstanceTest extends ServiceTestEnv {
     @Test
     public void delete_deleteFlowGatewayInstance_deleteSucceed() {
         FlowGatewayInstance instance = createGatewayInstance(true, false);
-        instance.buildTopology();
+        NodeInstanceEntity nodeEntity = new NodeInstanceEntity();
+        nodeEntity.setInstanceId(instance.getId());
+        nodeEntity.setInstanceType(instance.getNodeType());
+        nodeEntity.setFlowInstanceId(instance.getFlowInstanceId());
+        nodeEntity.setActivityId(instance.getActivityId());
+        nodeEntity.setName(instance.getName());
+        nodeEntity.setFlowableElementType(instance.getCoreFlowableElementType());
+        nodeRepository.save(nodeEntity);
         instance = copyFrom(instance);
         instance.delete();
 
@@ -86,7 +93,6 @@ public class FlowGatewayInstanceTest extends ServiceTestEnv {
     @Test
     public void update_updateStatus_updateSucceed() {
         FlowGatewayInstance instance = createGatewayInstance(true, false);
-        instance.buildTopology();
         instance.setStatus(FlowNodeStatus.COMPLETED);
         instance.update();
 
@@ -99,6 +105,7 @@ public class FlowGatewayInstanceTest extends ServiceTestEnv {
             String activityId) {
         FlowGatewayInstance instance = new FlowGatewayInstance(1L, 1L, startEndPoint, endEndPoint,
                 flowableAdaptor, nodeRepository, sequenceRepository, gateWayInstanceRepository);
+        instance.create();
         instance.setActivityId(activityId);
         instance.setName(name);
         return instance;

@@ -54,6 +54,8 @@ import com.oceanbase.odc.common.trace.TraceContextHolder;
 import com.oceanbase.odc.common.util.ExceptionUtils;
 import com.oceanbase.odc.common.util.LogUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
+import com.oceanbase.odc.core.alarm.AlarmEventNames;
+import com.oceanbase.odc.core.alarm.AlarmUtils;
 import com.oceanbase.odc.core.authority.exception.AccessDeniedException;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.HttpException;
@@ -305,6 +307,7 @@ public class RestExceptionHandler {
         boolean isValidateException = StringUtils.isNotEmpty(ex.getMessage());
         if (!isValidateException) {
             log.warn("Unhandled NullPointerException: ", ex);
+            AlarmUtils.warn(AlarmEventNames.UNKNOWN_API_EXCEPTION, buildAlarmContent(handlerMethod, ex));
         }
         Error error = isValidateException ? Error.ofBadRequest(ex) : Error.ofUnexpected(ex);
         error.addDetail(ex);
@@ -317,6 +320,7 @@ public class RestExceptionHandler {
     @ResponseStatus(value = HttpStatus.INTERNAL_SERVER_ERROR)
     public ErrorResponse handleOtherIllegalException(RuntimeException ex, HandlerMethod handlerMethod) {
         log.warn("Unhandled unchecked exception: ", ex);
+        AlarmUtils.warn(AlarmEventNames.UNKNOWN_API_EXCEPTION, buildAlarmContent(handlerMethod, ex));
         Error error = Error.ofUnexpected(ex);
         error.addDetail(ex);
         return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, error, ex, handlerMethod);
@@ -327,6 +331,7 @@ public class RestExceptionHandler {
     @ResponseStatus(value = HttpStatus.INTERNAL_SERVER_ERROR)
     public ErrorResponse handleUnknownException(Exception ex, HandlerMethod handlerMethod) {
         log.warn("Unhandled checked exception: ", ex);
+        AlarmUtils.warn(AlarmEventNames.UNKNOWN_API_EXCEPTION, buildAlarmContent(handlerMethod, ex));
         Error error = Error.ofUnexpected(ex);
         error.addDetail(ex);
         return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, error, ex, handlerMethod);
@@ -337,6 +342,7 @@ public class RestExceptionHandler {
     @ResponseStatus(value = HttpStatus.INTERNAL_SERVER_ERROR)
     public ErrorResponse handleThrowable(Throwable ex, HandlerMethod handlerMethod) {
         log.warn("Unhandled checked exception: ", ex);
+        AlarmUtils.warn(AlarmEventNames.UNKNOWN_API_EXCEPTION, buildAlarmContent(handlerMethod, ex));
         Error error = Error.ofUnexpected(ex);
         error.addDetail(ex);
         return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, error, ex, handlerMethod);
@@ -376,5 +382,9 @@ public class RestExceptionHandler {
                 + "  handler={}, exceptionType={}, message={}, rootReason={}, perfLevel={}, response={}",
                 httpMethod, fullURL, request.getRemoteHost(), clientAddress,
                 handler, exceptionType, e.getMessage(), rootReason, perfLevel, response);
+    }
+
+    private String buildAlarmContent(HandlerMethod handlerMethod, Throwable e) {
+        return "method=" + handlerMethod.getMethod().getName() + "msg=" + e.getMessage();
     }
 }
