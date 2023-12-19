@@ -1,8 +1,14 @@
 # OceanBase Developer Center (ODC) CHANGELOG
 
-## 4.2.3 (2023-12-15)
+## 4.2.3 (2023-12-21)
 
 ### 功能变化
+
+数据源
+
+- 允许数据源绑定到项目
+- 支持 OceanBase Sharding MySQL 数据源
+- 支持克隆数据源
 
 导入导出
 
@@ -13,11 +19,6 @@
 
 - OceanBase MySQL 以及原生 MySQL 模式下支持 GIS 数据类型
 - 白屏创建或删除索引时给出高风险操作提示
-
-数据源
-
-- 允许数据源绑定到项目
-- 支持 OceanBase Sharding MySQL 数据源
 
 基于项目的管控协同
 
@@ -37,7 +38,28 @@ SQL-Check
 
 - 支持定时调度
 
+SQL 执行
+
+- SQL 片段最大支持 65535 大小的内容
+- 支持 Ctrl+Enter 快捷键执行当前语句
+
+堡垒机集成
+
+- 支持 SQL Check
+
+DLM
+
+- 支持日志查看
+
 ### 缺陷修复
+
+数据源
+
+- 用户离开项目且不属于任何项目和角色时依然可以创建数据源
+- OceanBase MySQL 以及原生 MySQL 模式下数据库会话中"执行时间"栏目为 0
+- OceanBase Oracle 模式下通过会话变量管理功能进行时间输出格式的修改在 SQL 执行窗口不生效
+- OceanBase Oracle 模式下无法连接小写的 schema
+- 无法连接 percona 分支构建的 MySQL 数据源
 
 SQL 执行
 
@@ -78,14 +100,6 @@ SQL-Check
 
 - 当扫描到重复列时会导致敏感列添加失败
 
-数据源
-
-- 用户离开项目且不属于任何项目和角色时依然可以创建数据源
-- OceanBase MySQL 以及原生 MySQL 模式下数据库会话中"执行时间"栏目为 0
-- OceanBase Oracle 模式下通过会话变量管理功能进行时间输出格式的修改在 SQL 执行窗口不生效
-- OceanBase Oracle 模式下无法连接小写的 schema
-- 无法连接 percona 分支构建的 MySQL 数据源
-
 基于项目的管控协同
 
 - 用户被赋予"个人空间"权限后必须重新登陆才能生效
@@ -125,6 +139,16 @@ SQL-Check
 obclient 集成
 
 - 重复创建同名操作系统用户导致报错
+
+工单
+
+- 创建工单耗时过久
+
+操作审计
+
+- 操作审计记录中"数据源"栏目为空
+- SQL 执行事件没有被记录
+- 打开 SQL 窗口事件没有被记录
 
 ### 改进
 

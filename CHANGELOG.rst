@@ -3,6 +3,11 @@
 
 New
 ~~~
+- Feat(monitor):add api alarm (#1212) [Ang]
+- Feat(datatransfer): support masking data for mysql datatransfer
+  (#1198) [LuckyLeo]
+- Feat(datasource): show datasource's connect status in team space's SQL
+  console (#1224) [pynzzZ]
 - Feat(partition-plan): support setting scheduling strategy (#1136)
   [guowl3]
 - Feat(data-masking): prohibit data-masking for native MySQL datasource
@@ -62,6 +67,12 @@ Changes
 
 Fix
 ~~~
+- Fix(flow): creating flow costs too much time (#1183) [IL MARE,
+  ungreat]
+- Fix(osc): lock ob mysql user failed when host with ip limited (#1072)
+  [krihy]
+- Fix(audit): several operating records issues after ODC V4.2.0 (#1222)
+  [pynzzZ]
 - Fix(database-object):modify the prompt that prompts users about the
   risk of index changes #1228. [zhangxiao]
 - Fix(database-change): timeout or oom when upload a large sql files
