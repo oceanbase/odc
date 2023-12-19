@@ -19,16 +19,24 @@ package com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax;
 import java.io.File;
 import java.net.URL;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.MapUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Lists;
+import com.oceanbase.odc.common.util.StringUtils;
+import com.oceanbase.odc.core.datamasking.masker.AbstractDataMasker;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
+import com.oceanbase.odc.core.shared.model.TableIdentity;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.CsvColumnMapping;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.CsvConfig;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
@@ -38,6 +46,7 @@ import com.oceanbase.odc.plugin.task.mysql.datatransfer.common.Constants;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.JobConfiguration;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.JobContent;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.JobContent.Parameter;
+import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.parameter.GroovyTransformerParameter;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.parameter.MySQLReaderPluginParameter;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.parameter.MySQLWriterPluginParameter;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.parameter.MySQLWriterPluginParameter.Connection;
@@ -45,8 +54,11 @@ import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.paramete
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.parameter.TxtReaderPluginParameter;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.parameter.TxtReaderPluginParameter.Column;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.parameter.TxtWriterPluginParameter;
+import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 
 public class ConfigurationResolver {
+    private static final Logger LOGGER = LoggerFactory.getLogger("DataTransferLogger");
+
     @SuppressWarnings("all")
     /**
      * <pre>
@@ -61,7 +73,7 @@ public class ConfigurationResolver {
      * </pre>
      */
     public static JobConfiguration buildJobConfigurationForImport(DataTransferConfig baseConfig, String jdbcUrl,
-            ObjectResult object, URL resource) {
+            ObjectResult object, URL resource, List<DBTableColumn> columns) {
         if (baseConfig.getDataTransferFormat() == DataTransferFormat.SQL) {
             throw new UnsupportedException("SQL files should not be imported by DataX!");
         }
@@ -72,8 +84,9 @@ public class ConfigurationResolver {
         Long errorRecordLimit = baseConfig.isStopWhenError() ? 0L : null;
         jobConfig.getSetting().getErrorLimit().setRecord(errorRecordLimit);
 
-        jobContent.setReader(createTxtReaderParameter(baseConfig, resource));
-        jobContent.setWriter(createMySQLWriterParameter(baseConfig, jdbcUrl, object.getName()));
+        List<CsvColumnMapping> columnMappings = getColumnMapping(baseConfig, columns, object.getName());
+        jobContent.setReader(createTxtReaderParameter(baseConfig, resource, columnMappings));
+        jobContent.setWriter(createMySQLWriterParameter(baseConfig, jdbcUrl, object.getName(), columnMappings));
         jobConfig.setContent(new JobContent[] {jobContent});
         return jobConfig;
     }
@@ -88,11 +101,18 @@ public class ConfigurationResolver {
 
         jobContent.setReader(createMySQLReaderParameter(baseConfig, jdbcUrl, table));
         jobContent.setWriter(createTxtWriterParameter(workingDir, baseConfig, table, columns));
+        Map<TableIdentity, Map<String, AbstractDataMasker>> maskConfigs = baseConfig.getMaskConfig();
+        if (MapUtils.isNotEmpty(maskConfigs)) {
+            jobContent.setTransformer(
+                    createTransformerParameters(
+                            maskConfigs.get(TableIdentity.of(baseConfig.getSchemaName(), table)), columns));
+        }
         jobConfig.setContent(new JobContent[] {jobContent});
         return jobConfig;
     }
 
-    private static Parameter createTxtReaderParameter(DataTransferConfig baseConfig, URL input) {
+    private static Parameter createTxtReaderParameter(DataTransferConfig baseConfig, URL input,
+            List<CsvColumnMapping> columnMappings) {
 
         Parameter reader = new Parameter();
         TxtReaderPluginParameter pluginParameter = new TxtReaderPluginParameter();
@@ -105,13 +125,9 @@ public class ConfigurationResolver {
         // path
         pluginParameter.setPath(Collections.singletonList(input.getPath()));
         // column
-        List<Object> column = Collections.singletonList("*");
-        if (CollectionUtils.isNotEmpty(baseConfig.getCsvColumnMappings())) {
-            column = baseConfig.getCsvColumnMappings().stream()
-                    .map(mapping -> new Column(mapping.getSrcColumnPosition(), "string"))
-                    .collect(Collectors.toList());
-        }
-        pluginParameter.setColumn(column);
+        pluginParameter.setColumn(columnMappings.stream()
+                .map(mapping -> new Column(mapping.getSrcColumnPosition(), "string"))
+                .collect(Collectors.toList()));
         // csv config
         if (Objects.nonNull(baseConfig.getCsvConfig())) {
             pluginParameter.setCsvReaderConfig(getDataXCsvConfig(baseConfig));
@@ -174,7 +190,8 @@ public class ConfigurationResolver {
         return reader;
     }
 
-    private static Parameter createMySQLWriterParameter(DataTransferConfig baseConfig, String url, String table) {
+    private static Parameter createMySQLWriterParameter(DataTransferConfig baseConfig, String url, String table,
+            List<CsvColumnMapping> columnMappings) {
         Parameter writer = new Parameter();
         MySQLWriterPluginParameter pluginParameter = new MySQLWriterPluginParameter();
         writer.setName(Constants.MYSQL_WRITER);
@@ -195,16 +212,26 @@ public class ConfigurationResolver {
         // postSql
         pluginParameter.setPostSql(Collections.singletonList(Constants.ENABLE_FK));
         // column
-        List<String> column = Collections.singletonList("*");
-        if (CollectionUtils.isNotEmpty(baseConfig.getCsvColumnMappings())) {
-            column = baseConfig.getCsvColumnMappings().stream()
-                    .sorted(Comparator.comparingInt(CsvColumnMapping::getSrcColumnPosition))
-                    .map(CsvColumnMapping::getDestColumnName)
-                    .collect(Collectors.toList());
-        }
-        pluginParameter.setColumn(column);
+        pluginParameter.setColumn(columnMappings.stream()
+                .map(CsvColumnMapping::getDestColumnName)
+                .collect(Collectors.toList()));
 
         return writer;
+    }
+
+    private static List<Parameter> createTransformerParameters(Map<String, AbstractDataMasker> field2Masker,
+            List<String> columns) {
+        if (MapUtils.isEmpty(field2Masker)) {
+            return null;
+        }
+        Parameter transformer = new Parameter();
+        GroovyTransformerParameter pluginParameter = new GroovyTransformerParameter();
+        transformer.setName(Constants.GROOVY_TRANSFORMER);
+        transformer.setParameter(pluginParameter);
+
+        pluginParameter.setCode(GroovyMaskRuleGenerator.generate(field2Masker, columns));
+
+        return Collections.singletonList(transformer);
     }
 
     private static DataXCsvConfig getDataXCsvConfig(DataTransferConfig baseConfig) {
@@ -241,6 +268,43 @@ public class ConfigurationResolver {
             }
         }
         return realLineSeparator.toString();
+    }
+
+    private static List<CsvColumnMapping> getColumnMapping(DataTransferConfig baseConfig,
+            List<DBTableColumn> tableColumns, String table) {
+        List<CsvColumnMapping> mappings = baseConfig.getCsvColumnMappings();
+        if (CollectionUtils.isEmpty(mappings)) {
+            // if mappings are empty, the number of columns in source file and target table must be identical
+            mappings = new ArrayList<>();
+            for (int i = 0; i < tableColumns.size(); i++) {
+                CsvColumnMapping mapping = new CsvColumnMapping();
+                mapping.setSrcColumnPosition(i);
+                mapping.setDestColumnPosition(i);
+                mapping.setDestColumnName(tableColumns.get(i).getName());
+                mapping.setDestColumnType(tableColumns.get(i).getTypeName());
+                mappings.add(mapping);
+            }
+        }
+        return mappings.stream()
+                .filter(mapping -> !isNeedToSkip(baseConfig.getSkippedDataType(), mapping, table))
+                .sorted(Comparator.comparingInt(CsvColumnMapping::getSrcColumnPosition))
+                .collect(Collectors.toList());
+    }
+
+    private static boolean isNeedToSkip(List<String> skippedDataTypes, CsvColumnMapping column, String table) {
+        if (CollectionUtils.isEmpty(skippedDataTypes)) {
+            return false;
+        }
+        if (Objects.isNull(column.getDestColumnType())) {
+            return true;
+        }
+        boolean matched = skippedDataTypes.stream()
+                .anyMatch(type -> StringUtils.equalsIgnoreCase(type, column.getDestColumnType()));
+        if (matched) {
+            LOGGER.info("The type of column [{}].[{}] is {}, needs to be skipped.",
+                    table, column.getDestColumnName(), column.getDestColumnType());
+        }
+        return matched;
     }
 
 }

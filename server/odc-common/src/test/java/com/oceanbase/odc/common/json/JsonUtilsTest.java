@@ -15,7 +15,6 @@
  */
 package com.oceanbase.odc.common.json;
 
-import java.io.IOException;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -179,12 +178,21 @@ public class JsonUtilsTest {
     }
 
     @Test
-    public void convert_xmlToJson() throws IOException {
+    public void convert_xmlToJson() {
         String xml =
-                "<bookstore><book><title>oceanbase</title><author>odc</author><price>99.99</price></book></bookstore>\n";
-        String excepted = "{\"book\":{\"title\":\"oceanbase\",\"author\":\"odc\",\"price\":\"99.99\"}}";
+                "<bookstore><book><author>odc</author><price>99.99</price><title>oceanbase</title></book></bookstore>";
+        String excepted = "{\"bookstore\":{\"book\":{\"author\":\"odc\",\"price\":99.99,\"title\":\"oceanbase\"}}}";
         String json = JsonUtils.xmlToJson(xml);
         Assert.assertEquals(excepted, json);
+    }
+
+    @Test
+    public void convert_jsonToXml() {
+        String json = "{\"bookstore\":{\"book\":{\"author\":\"odc\",\"price\":99.99,\"title\":\"oceanbase\"}}}";
+        String excepted =
+                "<bookstore><book><author>odc</author><price>99.99</price><title>oceanbase</title></book></bookstore>";
+        String xml = JsonUtils.jsonToXml(json);
+        Assert.assertEquals(excepted, xml);
     }
 
     @Data

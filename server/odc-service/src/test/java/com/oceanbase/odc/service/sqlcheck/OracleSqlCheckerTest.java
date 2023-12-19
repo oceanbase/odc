@@ -19,6 +19,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -27,6 +28,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 
 import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.core.sql.split.OffsetString;
 import com.oceanbase.odc.service.sqlcheck.model.CheckResult;
 import com.oceanbase.odc.service.sqlcheck.model.CheckViolation;
 import com.oceanbase.odc.service.sqlcheck.model.SqlCheckRuleType;
@@ -37,6 +39,7 @@ import com.oceanbase.odc.service.sqlcheck.rule.ForeignConstraintExists;
 import com.oceanbase.odc.service.sqlcheck.rule.NoDefaultValueExists;
 import com.oceanbase.odc.service.sqlcheck.rule.NoIndexNameExists;
 import com.oceanbase.odc.service.sqlcheck.rule.NoPrimaryKeyExists;
+import com.oceanbase.odc.service.sqlcheck.rule.NoPrimaryKeyNameExists;
 import com.oceanbase.odc.service.sqlcheck.rule.NoSpecificColumnExists;
 import com.oceanbase.odc.service.sqlcheck.rule.NoValidWhereClause;
 import com.oceanbase.odc.service.sqlcheck.rule.NoWhereClauseExists;
@@ -739,13 +742,30 @@ public class OracleSqlCheckerTest {
         SqlCheckRuleType type = SqlCheckRuleType.NO_INDEX_NAME_EXISTS;
         CheckViolation c1 = new CheckViolation(sqls[0], 1, 35, 35, 56, type, new Object[] {});
         CheckViolation c2 = new CheckViolation(sqls[1], 1, 37, 37, 42, type, new Object[] {});
-        CheckViolation c3 = new CheckViolation(sqls[1], 1, 53, 53, 63, type, new Object[] {});
-        CheckViolation c4 = new CheckViolation(sqls[3], 1, 36, 36, 50, type, new Object[] {});
         CheckViolation c5 = new CheckViolation(sqls[4], 1, 37, 37, 47, type, new Object[] {});
         CheckViolation c6 = new CheckViolation(sqls[5], 1, 27, 27, 42, type, new Object[] {});
-        CheckViolation c7 = new CheckViolation(sqls[6], 1, 41, 41, 60, type, new Object[] {});
 
-        List<CheckViolation> expect = Arrays.asList(c1, c2, c3, c4, c5, c6, c7);
+        List<CheckViolation> expect = Arrays.asList(c1, c2, c5, c6);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void check_noPrimaryKeyName_violationGenerated() {
+        String[] sqls = new String[] {
+                "create table abcdder(id varchar2(64) unique, id blob primary key, content varchar(64) constraint ancd unique)",
+                "CREATE TABLE bbbb (ID VARCHAR2(64), primary key(id), constraint aaaaa primary key (dd))",
+                "alter table test_unique_tb add check(1), add primary key(id5), add constraint aaa primary key(id6)",
+        };
+        DefaultSqlChecker sqlChecker = new DefaultSqlChecker(DialectType.OB_ORACLE, "$$",
+                Collections.singletonList(new NoPrimaryKeyNameExists()));
+        List<CheckViolation> actual = sqlChecker.check(joinAndAppend(sqls, "$$"));
+
+        SqlCheckRuleType type = SqlCheckRuleType.NO_PRIMARY_KEY_NAME_EXISTS;
+        CheckViolation c1 = new CheckViolation(sqls[0], 1, 53, 53, 63, type, new Object[] {});
+        CheckViolation c2 = new CheckViolation(sqls[1], 1, 36, 36, 50, type, new Object[] {});
+        CheckViolation c5 = new CheckViolation(sqls[2], 1, 41, 41, 60, type, new Object[] {});
+
+        List<CheckViolation> expect = Arrays.asList(c1, c2, c5);
         Assert.assertEquals(expect, actual);
     }
 
@@ -938,7 +958,7 @@ public class OracleSqlCheckerTest {
         };
         DefaultSqlChecker sqlChecker = new DefaultSqlChecker(DialectType.OB_ORACLE,
                 null, Collections.singletonList(new SelectStarExists()));
-        List<CheckViolation> actual = sqlChecker.check(Arrays.asList(sqls), null);
+        List<CheckViolation> actual = sqlChecker.check(toOffsetString(sqls), null);
 
         SqlCheckRuleType type = SqlCheckRuleType.SELECT_STAR_EXISTS;
         CheckViolation c1 = new CheckViolation(sqls[0], 1, 12, 12, 12, type, new Object[] {});
@@ -957,7 +977,7 @@ public class OracleSqlCheckerTest {
         DefaultSqlChecker sqlChecker = new DefaultSqlChecker(DialectType.OB_ORACLE,
                 null, Collections.singletonList(
                         new OracleMissingRequiredColumns(new HashSet<>(Arrays.asList("id", "\"create_gmt\"")))));
-        List<CheckViolation> actual = sqlChecker.check(Arrays.asList(sqls), null);
+        List<CheckViolation> actual = sqlChecker.check(toOffsetString(sqls), null);
 
         SqlCheckRuleType type = SqlCheckRuleType.MISSING_REQUIRED_COLUMNS;
         CheckViolation c1 = new CheckViolation(sqls[0], 1, 0, 0, 42, type, new Object[] {"\"create_gmt\""});
@@ -968,21 +988,28 @@ public class OracleSqlCheckerTest {
     }
 
     @Test
-    public void check_dropProcedure_violationGenerated() {
+    public void check_drop_violationGenerated() {
         String[] sqls = {
                 "create table abcd(ID int, col1 varchar(64))",
                 "drop procedure abcd",
-                "drop function abcd"
+                "drop function abcd",
+                "alter table ansdnd drop primary key, drop column asbdasd.asdas",
+                "alter table asdasda drop partition asda,asdasd"
         };
         DefaultSqlChecker sqlChecker = new DefaultSqlChecker(DialectType.OB_ORACLE,
-                null, Collections.singletonList(new RestrictDropObjectTypes(Collections.singleton("procedure"))));
-        List<CheckViolation> actual = sqlChecker.check(Arrays.asList(sqls), null);
+                null, Collections.singletonList(new RestrictDropObjectTypes(
+                        new HashSet<>(Arrays.asList("procedure", "partition")))));
+        List<CheckViolation> actual = sqlChecker.check(toOffsetString(sqls), null);
 
         SqlCheckRuleType type = SqlCheckRuleType.RESTRICT_DROP_OBJECT_TYPES;
-        CheckViolation c1 = new CheckViolation(sqls[2], 1, 0, 0, 17, type, new Object[] {"FUNCTION", "procedure"});
+        CheckViolation c1 = new CheckViolation(sqls[2], 1, 0, 0, 17, type,
+                new Object[] {"FUNCTION", "partition,procedure"});
+        CheckViolation c2 = new CheckViolation(sqls[3], 1, 19, 19, 34, type,
+                new Object[] {"CONSTRAINT", "partition,procedure"});
+        CheckViolation c3 = new CheckViolation(sqls[3], 1, 37, 37, 61, type,
+                new Object[] {"COLUMN", "partition,procedure"});
 
-        List<CheckViolation> expect = Collections.singletonList(c1);
-        Assert.assertEquals(expect, actual);
+        Assert.assertEquals(Arrays.asList(c1, c2, c3), actual);
     }
 
     @Test
@@ -1000,15 +1027,12 @@ public class OracleSqlCheckerTest {
         };
         DefaultSqlChecker sqlChecker = new DefaultSqlChecker(DialectType.OB_ORACLE,
                 null, Collections.singletonList(new OracleTooManyAlterStatement(2)));
-        List<CheckViolation> actual = sqlChecker.check(Arrays.asList(sqls), null);
+        List<CheckViolation> actual = sqlChecker.check(toOffsetString(sqls), null);
 
         SqlCheckRuleType type = SqlCheckRuleType.TOO_MANY_ALTER_STATEMENT;
-        String s1 = joinAndAppend(new String[] {sqls[1], sqls[4], sqls[6]}, ";");
-        s1 = s1.substring(0, s1.length() - 1);
-        CheckViolation c1 = new CheckViolation(s1, 1, 0, 0, s1.length() - 1, type, new Object[] {3, "ABCD", 2});
+        CheckViolation c1 = new CheckViolation(sqls[4], 1, 0, 0, 30, type, new Object[] {3, "ABCD", 2});
 
-        List<CheckViolation> expect = Collections.singletonList(c1);
-        Assert.assertEquals(expect, actual);
+        Assert.assertEquals(Collections.singletonList(c1), actual);
     }
 
     @Test
@@ -1020,7 +1044,7 @@ public class OracleSqlCheckerTest {
         };
         DefaultSqlChecker sqlChecker = new DefaultSqlChecker(DialectType.OB_ORACLE,
                 null, Collections.singletonList(new NotNullColumnWithoutDefaultValue()));
-        List<CheckViolation> actual = sqlChecker.check(Arrays.asList(sqls), null);
+        List<CheckViolation> actual = sqlChecker.check(toOffsetString(sqls), null);
 
         SqlCheckRuleType type = SqlCheckRuleType.NOT_NULL_COLUMN_WITHOUT_DEFAULT_VALUE;
         CheckViolation c1 = new CheckViolation(sqls[0], 1, 18, 18, 34, type, new Object[] {});
@@ -1040,7 +1064,7 @@ public class OracleSqlCheckerTest {
         DefaultSqlChecker sqlChecker = new DefaultSqlChecker(DialectType.OB_ORACLE,
                 null,
                 Collections.singletonList(new ProhibitedDatatypeExists(new HashSet<>(Arrays.asList("blob", "clob")))));
-        List<CheckViolation> actual = sqlChecker.check(Arrays.asList(sqls), null);
+        List<CheckViolation> actual = sqlChecker.check(toOffsetString(sqls), null);
 
         SqlCheckRuleType type = SqlCheckRuleType.PROHIBITED_DATATYPE_EXISTS;
         CheckViolation c1 = new CheckViolation(sqls[0], 1, 22, 22, 25, type, new Object[] {"blob", "clob,blob"});
@@ -1062,7 +1086,7 @@ public class OracleSqlCheckerTest {
         };
         DefaultSqlChecker sqlChecker = new DefaultSqlChecker(DialectType.OB_ORACLE,
                 null, Collections.singletonList(new OracleNoTableCommentExists(() -> "test")));
-        List<CheckViolation> actual = sqlChecker.check(Arrays.asList(sqls), null);
+        List<CheckViolation> actual = sqlChecker.check(toOffsetString(sqls), null);
 
         SqlCheckRuleType type = SqlCheckRuleType.NO_TABLE_COMMENT_EXISTS;
         CheckViolation c1 = new CheckViolation(sqls[3], 1, 0, 0, 79, type, new Object[] {"\"abcd\""});
@@ -1084,7 +1108,7 @@ public class OracleSqlCheckerTest {
         };
         DefaultSqlChecker sqlChecker = new DefaultSqlChecker(DialectType.OB_ORACLE,
                 null, Collections.singletonList(new OracleNoColumnCommentExists(() -> "test")));
-        List<CheckViolation> actual = sqlChecker.check(Arrays.asList(sqls), null);
+        List<CheckViolation> actual = sqlChecker.check(toOffsetString(sqls), null);
 
         SqlCheckRuleType type = SqlCheckRuleType.NO_COLUMN_COMMENT_EXISTS;
         CheckViolation c1 = new CheckViolation(sqls[2], 1, 39, 39, 78, type, new Object[] {"col1"});
@@ -1129,8 +1153,11 @@ public class OracleSqlCheckerTest {
         SqlCheckRuleType type = SqlCheckRuleType.TOO_MANY_INDEX_KEYS;
         SqlCheckRuleType type1 = SqlCheckRuleType.PREFER_LOCAL_INDEX;
         CheckViolation c1 = new CheckViolation("1", 1, 80, 80, 107, type, new Object[] {"abcd"});
+        c1.setOffset(1);
         CheckViolation c2 = new CheckViolation("2", 1, 58, 58, 77, type1, new Object[] {});
+        c2.setOffset(2);
         CheckViolation c3 = new CheckViolation("1", 1, 80, 80, 107, type1, new Object[] {});
+        c3.setOffset(1);
         List<CheckViolation> violations = Arrays.asList(c1, c2, c3);
 
         List<CheckResult> actual = SqlCheckUtil.buildCheckResults(violations);
@@ -1142,6 +1169,10 @@ public class OracleSqlCheckerTest {
 
     private String joinAndAppend(String[] sqls, String delimiter) {
         return String.join(delimiter, sqls) + delimiter;
+    }
+
+    private List<OffsetString> toOffsetString(String[] strs) {
+        return Arrays.stream(strs).map(s -> new OffsetString(0, s)).collect(Collectors.toList());
     }
 
 }

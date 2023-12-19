@@ -59,6 +59,16 @@ public class AuditEvent {
     private String actionName;
 
     /**
+     * Database id for this event
+     */
+    private Long databaseId;
+
+    /**
+     * Database name for this event; Null if not in connection
+     */
+    private String databaseName;
+
+    /**
      * Connection id for this event; Null if not in connection
      */
     private Long connectionId;

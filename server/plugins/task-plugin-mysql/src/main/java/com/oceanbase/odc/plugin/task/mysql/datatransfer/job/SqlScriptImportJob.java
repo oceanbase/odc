@@ -23,7 +23,6 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
@@ -38,6 +37,7 @@ import org.slf4j.LoggerFactory;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
+import com.oceanbase.odc.core.sql.split.SqlStatementIterator;
 import com.oceanbase.odc.plugin.schema.mysql.MySQLFunctionExtension;
 import com.oceanbase.odc.plugin.schema.mysql.MySQLProcedureExtension;
 import com.oceanbase.odc.plugin.schema.mysql.MySQLTableExtension;
@@ -85,13 +85,11 @@ public class SqlScriptImportJob extends AbstractJob {
     private void runExternalSqlScript() throws Exception {
         DialectType dialectType = transferConfig.getConnectionInfo().getConnectType().getDialectType();
         String charset = transferConfig.getEncoding().getAlias();
-
-        try (SqlCommentProcessor.SqlStatementIterator iterator = SqlCommentProcessor
-                .iterator(input.openStream(), dialectType, true, true, true, Charset.forName(charset));
-                Connection conn = dataSource.getConnection();
-                Statement stmt = conn.createStatement()) {
+        try (Connection conn = dataSource.getConnection(); Statement stmt = conn.createStatement()) {
+            SqlStatementIterator iterator = SqlCommentProcessor.iterator(input.openStream(), Charset.forName(charset),
+                    new SqlCommentProcessor(dialectType, true, true, true));
             while (!isCanceled() && !Thread.currentThread().isInterrupted() && iterator.hasNext()) {
-                String sql = iterator.next();
+                String sql = iterator.next().getStr();
                 try {
                     increaseTotal(1);
                     stmt.execute(sql);
@@ -101,6 +99,9 @@ public class SqlScriptImportJob extends AbstractJob {
                             String.format("Error occurred when executing sql: [%s], reason: %s", sql, e.getMessage());
                     LOGGER.warn(errMsg);
                     failures.getAndIncrement();
+                }
+                if (object.getTotal().get() % 100 == 0) {
+                    LOGGER.info("Processed {} SQL statements.", object.getTotal().get());
                 }
             }
             if (failures.get() != 0L) {
@@ -135,12 +136,11 @@ public class SqlScriptImportJob extends AbstractJob {
         boolean firstLine = true;
         DialectType dialectType = transferConfig.getConnectionInfo().getConnectType().getDialectType();
         String charset = transferConfig.getEncoding().getAlias();
-        try (SqlCommentProcessor.SqlStatementIterator iterator = SqlCommentProcessor
-                .iterator(input.openStream(), dialectType, true, true, true, Charset.forName(charset));
-                Connection conn = dataSource.getConnection();
-                Statement stmt = conn.createStatement()) {
+        try (Connection conn = dataSource.getConnection(); Statement stmt = conn.createStatement()) {
+            SqlStatementIterator iterator = SqlCommentProcessor.iterator(input.openStream(), Charset.forName(charset),
+                    new SqlCommentProcessor(dialectType, true, true, true));
             while (!Thread.currentThread().isInterrupted() && iterator.hasNext() && !isCanceled()) {
-                String sql = iterator.next();
+                String sql = iterator.next().getStr();
                 if (firstLine && sql.startsWith("drop") || sql.startsWith("DROP")) {
                     continue;
                 }
@@ -179,9 +179,9 @@ public class SqlScriptImportJob extends AbstractJob {
 
         DialectType dialectType = transferConfig.getConnectionInfo().getConnectType().getDialectType();
         String charset = transferConfig.getEncoding().getAlias();
-        try (SqlCommentProcessor.SqlStatementIterator iterator = SqlCommentProcessor
-                .iterator(input.openStream(), dialectType, true, true, true, Charset.forName(charset));
-                Connection conn = dataSource.getConnection()) {
+        try (Connection conn = dataSource.getConnection()) {
+            SqlStatementIterator iterator = SqlCommentProcessor.iterator(input.openStream(), Charset.forName(charset),
+                    new SqlCommentProcessor(dialectType, true, true, true));
             List<String> insertionBuffer = new LinkedList<>();
             while (!Thread.currentThread().isInterrupted() && !isCanceled()) {
                 try {
@@ -223,13 +223,15 @@ public class SqlScriptImportJob extends AbstractJob {
         }
     }
 
-    private void offer(Iterator<String> provider, List<String> insertionBuffer, int batchSize) {
+    private void offer(SqlStatementIterator provider, List<String> insertionBuffer, int batchSize) {
         for (int i = 0; i < batchSize && provider.hasNext(); i++) {
-            String next = provider.next();
+            String next = provider.next().getStr();
             if (next.equalsIgnoreCase(Constants.COMMIT_STMT)) {
                 break;
             }
             insertionBuffer.add(next);
+            records++;
+            bytes += next.getBytes(Charset.forName(transferConfig.getEncoding().getAlias())).length;
         }
         increaseTotal(insertionBuffer.size());
         if (!provider.hasNext()) {

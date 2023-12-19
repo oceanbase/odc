@@ -20,7 +20,6 @@ import static org.mockito.Mockito.when;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.stream.Collectors;
 
 import org.flowable.engine.FormService;
 import org.flowable.engine.TaskService;
@@ -40,6 +39,7 @@ import com.oceanbase.odc.metadb.flow.NodeInstanceEntity;
 import com.oceanbase.odc.metadb.flow.NodeInstanceEntityRepository;
 import com.oceanbase.odc.metadb.flow.SequenceInstanceEntity;
 import com.oceanbase.odc.metadb.flow.SequenceInstanceRepository;
+import com.oceanbase.odc.metadb.flow.UserTaskInstanceCandidateRepository;
 import com.oceanbase.odc.metadb.flow.UserTaskInstanceEntity;
 import com.oceanbase.odc.metadb.flow.UserTaskInstanceRepository;
 import com.oceanbase.odc.service.flow.instance.FlowApprovalInstance;
@@ -75,6 +75,8 @@ public class FlowApprovalInstanceTest extends ServiceTestEnv {
     private UserTaskInstanceRepository userTaskInstanceRepository;
     @Autowired
     private FlowableAdaptor flowableAdaptor;
+    @Autowired
+    private UserTaskInstanceCandidateRepository userTaskInstanceCandidateRepository;
 
     @Before
     public void setUp() {
@@ -95,7 +97,6 @@ public class FlowApprovalInstanceTest extends ServiceTestEnv {
     @Test
     public void create_createFlowApprovalInstance_createSucceed() {
         FlowApprovalInstance instance = createApprovalInstance(false, true);
-        instance.buildTopology();
 
         List<UserTaskInstanceEntity> entityList = userTaskInstanceRepository.findAll();
         Assert.assertEquals(1, entityList.size());
@@ -105,29 +106,19 @@ public class FlowApprovalInstanceTest extends ServiceTestEnv {
     @Test
     public void delete_deleteFlowApprovalInstance_deleteSucceed() {
         FlowApprovalInstance taskInstance = createApprovalInstance(true, false);
-        taskInstance.buildTopology();
+        NodeInstanceEntity nodeEntity = new NodeInstanceEntity();
+        nodeEntity.setInstanceId(taskInstance.getId());
+        nodeEntity.setInstanceType(taskInstance.getNodeType());
+        nodeEntity.setFlowInstanceId(taskInstance.getFlowInstanceId());
+        nodeEntity.setActivityId(taskInstance.getActivityId());
+        nodeEntity.setName(taskInstance.getName());
+        nodeEntity.setFlowableElementType(taskInstance.getCoreFlowableElementType());
+        nodeRepository.save(nodeEntity);
         taskInstance = copyFrom(taskInstance);
 
         Assert.assertTrue(taskInstance.delete());
         List<UserTaskInstanceEntity> entityList = userTaskInstanceRepository.findAll();
         Assert.assertEquals(0, entityList.size());
-    }
-
-    @Test
-    public void buildTopology_beginAndEndWithApproval_buildSucceed() {
-        FlowApprovalInstance begin = createApprovalInstance(true, false);
-        FlowApprovalInstance end = createApprovalInstance(false, true);
-        next(begin, end);
-        NodeInstanceEntity beginNode = nodeRepository.findByInstanceIdAndInstanceTypeAndFlowableElementType(
-                begin.getId(), FlowNodeType.APPROVAL_TASK, begin.getCoreFlowableElementType()).get(0);
-        NodeInstanceEntity endNode = nodeRepository.findByInstanceIdAndInstanceTypeAndFlowableElementType(
-                end.getId(), FlowNodeType.APPROVAL_TASK, end.getCoreFlowableElementType()).get(0);
-
-        List<SequenceInstanceEntity> entities = sequenceRepository.findAll().stream()
-                .filter(e -> e.getSourceNodeInstanceId().equals(beginNode.getId())
-                        && e.getTargetNodeInstanceId().equals(endNode.getId()))
-                .collect(Collectors.toList());
-        Assert.assertEquals(1, entities.size());
     }
 
     @Test
@@ -161,7 +152,6 @@ public class FlowApprovalInstanceTest extends ServiceTestEnv {
     @Test
     public void update_updateStatusAndUserTaskId_updateSucceed() {
         FlowApprovalInstance expect = createApprovalInstance(true, false);
-        expect.buildTopology();
         expect.setStatus(FlowNodeStatus.COMPLETED);
         expect.setUserTaskId(UUID.randomUUID().toString());
         expect.update();
@@ -176,7 +166,6 @@ public class FlowApprovalInstanceTest extends ServiceTestEnv {
     public void disApprove_disApproveWithComment_disApproveSucceed() {
         FlowApprovalInstance instance = createApprovalInstance(true, false);
         instance.setUserTaskId("123");
-        instance.buildTopology();
         String comment = "dis-approve comment";
         instance.disApprove(comment, true);
 
@@ -191,7 +180,6 @@ public class FlowApprovalInstanceTest extends ServiceTestEnv {
     public void approve_approveWithComment_approveSucceed() {
         FlowApprovalInstance instance = createApprovalInstance(true, false);
         instance.setUserTaskId("123");
-        instance.buildTopology();
         String comment = "approve comment";
         instance.approve(comment, true);
 
@@ -206,7 +194,9 @@ public class FlowApprovalInstanceTest extends ServiceTestEnv {
             String activityId, Long flowInstanceId) {
         FlowApprovalInstance instance = new FlowApprovalInstance(1L, flowInstanceId, null, 12, startEndPoint,
                 endEndPoint, false, flowableAdaptor, taskService, formService, new LocalEventPublisher(),
-                authenticationFacade, nodeRepository, sequenceRepository, userTaskInstanceRepository);
+                authenticationFacade, nodeRepository, sequenceRepository, userTaskInstanceRepository,
+                userTaskInstanceCandidateRepository);
+        instance.create();
         instance.setName(name);
         instance.setActivityId(activityId);
         return instance;
@@ -233,7 +223,8 @@ public class FlowApprovalInstanceTest extends ServiceTestEnv {
         entity.setEndEndpoint(instance.isEndEndPoint());
         entity.setExpireIntervalSeconds(instance.getExpireIntervalSeconds());
         return new FlowApprovalInstance(entity, flowableAdaptor, taskService, formService, new LocalEventPublisher(),
-                authenticationFacade, nodeRepository, sequenceRepository, userTaskInstanceRepository);
+                authenticationFacade, nodeRepository, sequenceRepository, userTaskInstanceRepository,
+                userTaskInstanceCandidateRepository);
     }
 
     private void next(FlowApprovalInstance from, FlowApprovalInstance to) {
@@ -242,8 +233,6 @@ public class FlowApprovalInstanceTest extends ServiceTestEnv {
         edge.setTo(to);
         from.addOutEdge(edge);
         to.addInEdge(edge);
-        from.buildTopology();
-        to.buildTopology();
     }
 
 }

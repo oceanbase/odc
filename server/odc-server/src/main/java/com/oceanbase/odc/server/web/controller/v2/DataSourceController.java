@@ -213,7 +213,7 @@ public class DataSourceController {
     @ApiOperation(value = "listUsers", notes = "list users in datasource")
     @RequestMapping(value = "/datasources/{id:[\\d]+}/users", method = RequestMethod.GET)
     public PaginatedResponse<DatabaseUser> listUsers(@PathVariable Long id) {
-        return Responses.paginated(databaseService.listUsers(id));
+        return Responses.paginated(databaseService.listUserForOsc(id));
     }
 
 }

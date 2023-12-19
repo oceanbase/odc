@@ -47,6 +47,7 @@ import com.oceanbase.odc.service.sqlcheck.factory.NoDefaultValueExistsFactory;
 import com.oceanbase.odc.service.sqlcheck.factory.NoIndexNameExistsFactory;
 import com.oceanbase.odc.service.sqlcheck.factory.NoNotNullAtInExpressionFactory;
 import com.oceanbase.odc.service.sqlcheck.factory.NoPrimaryKeyExistsFactory;
+import com.oceanbase.odc.service.sqlcheck.factory.NoPrimaryKeyNameExistsFactory;
 import com.oceanbase.odc.service.sqlcheck.factory.NoSpecificColumnExistsFactory;
 import com.oceanbase.odc.service.sqlcheck.factory.NoTableCommentExistsFactory;
 import com.oceanbase.odc.service.sqlcheck.factory.NoValidWhereClauseFactory;
@@ -54,6 +55,7 @@ import com.oceanbase.odc.service.sqlcheck.factory.NoWhereClauseExistsFactory;
 import com.oceanbase.odc.service.sqlcheck.factory.NotNullColumnWithoutDefaultValueFactory;
 import com.oceanbase.odc.service.sqlcheck.factory.PreferLocalOutOfLineIndexFactory;
 import com.oceanbase.odc.service.sqlcheck.factory.ProhibitedDatatypeExistsFactory;
+import com.oceanbase.odc.service.sqlcheck.factory.RestrictAutoIncrementDataTypesFactory;
 import com.oceanbase.odc.service.sqlcheck.factory.RestrictAutoIncrementUnsignedFactory;
 import com.oceanbase.odc.service.sqlcheck.factory.RestrictColumnNameCaseFactory;
 import com.oceanbase.odc.service.sqlcheck.factory.RestrictColumnNotNullFactory;
@@ -140,6 +142,8 @@ public class SqlCheckRules {
         rules.add(new ProhibitedDatatypeExistsFactory());
         rules.add(new RestrictIndexDataTypesFactory(jdbc));
         rules.add(new RestrictDropObjectTypesFactory());
+        rules.add(new NoPrimaryKeyNameExistsFactory());
+        rules.add(new RestrictAutoIncrementDataTypesFactory());
         rules.add(new SyntaxErrorExistsFactory());
         return rules;
     }

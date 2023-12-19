@@ -25,15 +25,16 @@ import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
-import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.core.sql.execute.SyncJdbcExecutor;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.dlm.DlmLimiterService;
 import com.oceanbase.odc.service.dlm.model.DataArchiveTableConfig;
 import com.oceanbase.odc.service.dlm.model.OffsetConfig;
+import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
 import com.oceanbase.odc.service.dlm.utils.DataArchiveConditionUtil;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
 import com.oceanbase.odc.service.flow.processor.Preprocessor;
@@ -84,10 +85,11 @@ public class AbstractDlmJobPreprocessor implements Preprocessor {
 
     public void checkDatasource(ConnectionConfig datasource) {
         if (datasource.getDialectType().isOracle()) {
-            throw new UnsupportedException("This function is not supported for Oracle data sources.");
+            throw new UnsupportedException("DLM is not supported for Oracle data sources.");
         }
-        if (datasource.getDialectType().isOBMysql()) {
-            PreConditions.notEmpty(datasource.getSysTenantUsername(), "SysTenantUser");
+        if (datasource.getDialectType().isOceanbase() && StringUtils.isEmpty(datasource.getClusterName())) {
+            throw new UnsupportedException(
+                    "DLM currently does not support tenant instances. Please configure the cluster information and try again.");
         }
     }
 
@@ -151,6 +153,21 @@ public class AbstractDlmJobPreprocessor implements Preprocessor {
         } catch (Exception e) {
             throw new IllegalArgumentException(String.format("Parse condition error,message=%s", e.getMessage()));
         }
+    }
+
+    protected void initLimiterConfig(Long scheduleId, RateLimitConfiguration limiterConfig,
+            DlmLimiterService limiterService) {
+        RateLimitConfiguration defaultLimiterConfig = limiterService.getDefaultLimiterConfig();
+        if (limiterConfig.getRowLimit() == null) {
+            limiterConfig.setRowLimit(defaultLimiterConfig.getRowLimit());
+        }
+        if (limiterConfig.getDataSizeLimit() == null) {
+            limiterConfig.setDataSizeLimit(defaultLimiterConfig.getDataSizeLimit());
+        }
+        if (limiterConfig.getBatchSize() == null) {
+            limiterConfig.setBatchSize(defaultLimiterConfig.getBatchSize());
+        }
+        limiterService.createAndBindToOrder(scheduleId, limiterConfig);
     }
 
 }

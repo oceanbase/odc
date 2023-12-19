@@ -15,22 +15,21 @@
  */
 package com.oceanbase.odc.service.flow.instance;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.RandomStringUtils;
 
 import com.oceanbase.odc.core.authority.model.SecurityResource;
-import com.oceanbase.odc.core.flow.graph.GraphEdge;
 import com.oceanbase.odc.core.flow.graph.GraphVertex;
 import com.oceanbase.odc.core.flow.model.FlowableElement;
 import com.oceanbase.odc.core.flow.model.FlowableElementType;
 import com.oceanbase.odc.core.shared.OrganizationIsolated;
-import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.metadb.flow.NodeInstanceEntity;
 import com.oceanbase.odc.metadb.flow.NodeInstanceEntityRepository;
-import com.oceanbase.odc.metadb.flow.SequenceInstanceEntity;
 import com.oceanbase.odc.metadb.flow.SequenceInstanceRepository;
 import com.oceanbase.odc.service.flow.FlowableAdaptor;
 import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
@@ -64,15 +63,17 @@ public abstract class BaseFlowNodeInstance extends GraphVertex implements Securi
     private final FlowNodeType nodeType;
     private final long organizationId;
     private final long flowInstanceId;
+    private final List<FlowableElement> bindFlowableElements;
+    private final transient String shortUniqueId;
     @Setter
     private String activityId;
 
     @Getter(AccessLevel.NONE)
+    protected final FlowableAdaptor flowableAdaptor;
+    @Getter(AccessLevel.NONE)
     private final NodeInstanceEntityRepository nodeRepository;
     @Getter(AccessLevel.NONE)
     private final SequenceInstanceRepository sequenceRepository;
-    @Getter(AccessLevel.NONE)
-    protected final FlowableAdaptor flowableAdaptor;
 
     /**
      * Default constructor of a flow instance node, It is used to read from the database. At this time,
@@ -112,6 +113,8 @@ public abstract class BaseFlowNodeInstance extends GraphVertex implements Securi
         } else {
             this.activityId = null;
         }
+        this.bindFlowableElements = new ArrayList<>();
+        this.shortUniqueId = RandomStringUtils.random(12, UUID.randomUUID().toString().replace("-", ""));
     }
 
     /**
@@ -141,6 +144,10 @@ public abstract class BaseFlowNodeInstance extends GraphVertex implements Securi
     @Override
     public Long id() {
         return getId();
+    }
+
+    public void bindFlowableElement(@NonNull FlowableElement element) {
+        this.bindFlowableElements.add(element);
     }
 
     /**
@@ -183,63 +190,6 @@ public abstract class BaseFlowNodeInstance extends GraphVertex implements Securi
         return returnVal;
     }
 
-    /**
-     * Build the topology of the node, related tables are as follow:
-     *
-     * <pre>
-     *     1. {@code flow_instance_node}
-     *     2. {@code flow_instance_sequence}
-     * </pre>
-     *
-     * this method will insert the topo structure between the related nodes
-     */
-    public void buildTopology() {
-        NodeInstanceEntity sourceEntity = getNodeInstance();
-        sequenceRepository.deleteBySourceNodeInstanceId(sourceEntity.getId());
-        List<GraphEdge> outEdges = getOutEdges();
-        for (GraphEdge outEdge : outEdges) {
-            GraphVertex graphVertex = outEdge.getTo();
-            if (!(graphVertex instanceof BaseFlowNodeInstance)) {
-                throw new IllegalStateException("GraphVertex has to be an instance of BaseFlowNodeInstance");
-            }
-            NodeInstanceEntity targetEntity = ((BaseFlowNodeInstance) graphVertex).getNodeInstance();
-            SequenceInstanceEntity sequenceEntity = new SequenceInstanceEntity();
-            sequenceEntity.setSourceNodeInstanceId(sourceEntity.getId());
-            sequenceEntity.setTargetNodeInstanceId(targetEntity.getId());
-            sequenceEntity.setFlowInstanceId(getFlowInstanceId());
-            sequenceRepository.save(sequenceEntity);
-        }
-    }
-
-    /**
-     * Get information from the table {@code flow_instance_node}
-     *
-     * @return related {@link NodeInstanceEntity}
-     */
-    protected NodeInstanceEntity getNodeInstance() {
-        validExists();
-        FlowableElementType coreType = getCoreFlowableElementType();
-        List<NodeInstanceEntity> nodeInstanceEntities =
-                nodeRepository.findByInstanceIdAndInstanceTypeAndFlowableElementType(getId(), getNodeType(), coreType);
-        if (nodeInstanceEntities.size() >= 2) {
-            log.warn("Duplicate records are found, id={}, nodeType={}, coreType={} ", this.id, this.nodeType, coreType);
-            throw new IllegalStateException("Duplicate records are found");
-        }
-        if (!nodeInstanceEntities.isEmpty()) {
-            return nodeInstanceEntities.get(0);
-        }
-        Verify.notNull(getName(), "Name");
-        Verify.notNull(getActivityId(), "ActivityId");
-        NodeInstanceEntity nodeEntity = new NodeInstanceEntity();
-        nodeEntity.setInstanceId(getId());
-        nodeEntity.setInstanceType(getNodeType());
-        nodeEntity.setFlowInstanceId(getFlowInstanceId());
-        nodeEntity.setActivityId(getActivityId());
-        nodeEntity.setName(getName());
-        nodeEntity.setFlowableElementType(coreType);
-        return nodeRepository.save(nodeEntity);
-    }
-
     protected void validExists() {
         if (getId() == null) {
             throw new NullPointerException("Id of this instance can not be null");
@@ -272,7 +222,7 @@ public abstract class BaseFlowNodeInstance extends GraphVertex implements Securi
     /**
      * Create instance information
      */
-    abstract protected void create();
+    abstract public void create();
 
     /**
      * Update instance information

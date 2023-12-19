@@ -320,7 +320,7 @@ public class DataTransferTask implements Callable<DataTransferTaskResult> {
     private void validateSuccessful(DataTransferTaskResult result) {
         List<String> failedObjects = ListUtils.union(result.getDataObjectsInfo(), result.getSchemaObjectsInfo())
                 .stream()
-                .filter(objectStatus -> objectStatus.getStatus() != Status.SUCCESS)
+                .filter(objectStatus -> objectStatus.getStatus() == Status.FAILURE)
                 .map(ObjectResult::getSummary)
                 .collect(Collectors.toList());
         if (CollectionUtils.isNotEmpty(failedObjects)) {
@@ -413,7 +413,7 @@ public class DataTransferTask implements Callable<DataTransferTaskResult> {
         csvConfig.setColumnSeparator(manifest.getColumnSeparator());
         csvConfig.setColumnDelimiter(manifest.getColumnDelimiter());
         csvConfig.setLineSeparator(manifest.getLineSeparator());
-        csvConfig.setSkipHeader(manifest.isSkipHeader());
+        csvConfig.setSkipHeader(!manifest.isSkipHeader());
         csvConfig.setBlankToNull(StringUtils.equalsIgnoreCase(manifest.getNullString(), "null"));
     }
 

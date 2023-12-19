@@ -35,6 +35,7 @@ import javax.validation.constraints.NotNull;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -75,7 +76,7 @@ import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
 import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTree;
 import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTreeFactories;
 import com.oceanbase.odc.core.sql.parser.EmptyAstFactory;
-import com.oceanbase.odc.service.common.model.OdcResultSetMetaData.OdcTable;
+import com.oceanbase.odc.core.sql.split.OffsetString;
 import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.odc.service.common.util.WebResponseUtils;
 import com.oceanbase.odc.service.connection.ConnectionService;
@@ -87,8 +88,10 @@ import com.oceanbase.odc.service.db.session.KillSessionResult;
 import com.oceanbase.odc.service.dml.ValueEncodeType;
 import com.oceanbase.odc.service.feature.AllFeatures;
 import com.oceanbase.odc.service.session.interceptor.SqlCheckInterceptor;
+import com.oceanbase.odc.service.session.interceptor.SqlConsoleInterceptor;
 import com.oceanbase.odc.service.session.interceptor.SqlExecuteInterceptorService;
 import com.oceanbase.odc.service.session.model.BinaryContent;
+import com.oceanbase.odc.service.session.model.OdcResultSetMetaData.OdcTable;
 import com.oceanbase.odc.service.session.model.QueryTableOrViewDataReq;
 import com.oceanbase.odc.service.session.model.SqlAsyncExecuteReq;
 import com.oceanbase.odc.service.session.model.SqlAsyncExecuteResp;
@@ -117,7 +120,7 @@ import lombok.extern.slf4j.Slf4j;
 @SkipAuthorize("inside connect session")
 public class ConnectConsoleService {
 
-    private static final int DEFAULT_GET_RESULT_TIMEOUT_SECONDS = 3;
+    public static final int DEFAULT_GET_RESULT_TIMEOUT_SECONDS = 3;
     private static String SHOW_TABLE_COLUMN_INFO = "SHOW_TABLE_COLUMN_INFO";
     @Autowired
     private ConnectSessionService sessionService;
@@ -189,7 +192,7 @@ public class ConnectConsoleService {
     }
 
     public SqlAsyncExecuteResp execute(@NotNull String sessionId,
-            @NotNull @Valid SqlAsyncExecuteReq request, boolean needSqlCheck) throws Exception {
+            @NotNull @Valid SqlAsyncExecuteReq request, boolean needSqlRuleCheck) throws Exception {
         ConnectionSession connectionSession = sessionService.nullSafeGet(sessionId, true);
 
         long maxSqlLength = sessionProperties.getMaxSqlLength();
@@ -201,9 +204,10 @@ public class ConnectConsoleService {
         if (result != null) {
             return result;
         }
-        List<String> sqls = request.ifSplitSqls()
-                ? SqlUtils.split(connectionSession, request.getSql(), sessionProperties.isOracleRemoveCommentPrefix())
-                : Collections.singletonList(request.getSql());
+        List<OffsetString> sqls = request.ifSplitSqls()
+                ? SqlUtils.splitWithOffset(connectionSession, request.getSql(),
+                        sessionProperties.isOracleRemoveCommentPrefix())
+                : Collections.singletonList(new OffsetString(0, request.getSql()));
         if (sqls.size() == 0) {
             /**
              * if a sql only contains delimiter setting(eg. delimiter $$), code will do this
@@ -224,7 +228,8 @@ public class ConnectConsoleService {
         SqlAsyncExecuteResp response = SqlAsyncExecuteResp.newSqlAsyncExecuteResp(sqlTuples);
         Map<String, Object> context = new HashMap<>();
         context.put(SHOW_TABLE_COLUMN_INFO, request.getShowTableColumnInfo());
-        context.put(SqlCheckInterceptor.NEED_SQL_CHECK_KEY, needSqlCheck);
+        context.put(SqlCheckInterceptor.NEED_SQL_CHECK_KEY, needSqlRuleCheck);
+        context.put(SqlConsoleInterceptor.NEED_SQL_CONSOLE_CHECK, needSqlRuleCheck);
         List<TraceStage> stages = sqlTuples.stream()
                 .map(s -> s.getSqlWatch().start(SqlExecuteStages.SQL_PRE_CHECK))
                 .collect(Collectors.toList());
@@ -249,6 +254,7 @@ public class ConnectConsoleService {
         statementCallBack.setFullLinkTraceTimeout(sessionProperties.getFullLinkTraceTimeoutSeconds());
         statementCallBack.setMaxCachedSize(sessionProperties.getResultSetMaxCachedSize());
         statementCallBack.setMaxCachedLines(sessionProperties.getResultSetMaxCachedLines());
+        statementCallBack.setLocale(LocaleContextHolder.getLocale());
 
         Future<List<JdbcGeneralResult>> futureResult = connectionSession.getAsyncJdbcExecutor(
                 ConnectionSessionConstants.CONSOLE_DS_KEY).execute(statementCallBack);
@@ -386,10 +392,11 @@ public class ConnectConsoleService {
      * Rewrite sqls, will do <br>
      * 1. add ODC_INTERNAL_ROWID query column
      */
-    private List<SqlTuple> generateSqlTuple(List<String> sqls, ConnectionSession session, SqlAsyncExecuteReq request) {
-        return sqls.stream().filter(StringUtils::isNotBlank).map(sql -> {
+    private List<SqlTuple> generateSqlTuple(List<OffsetString> sqls, ConnectionSession session,
+            SqlAsyncExecuteReq request) {
+        return sqls.stream().filter(s -> StringUtils.isNotBlank(s.getStr())).map(sql -> {
             TraceWatch traceWatch = new TraceWatch("SQL-EXEC");
-            SqlTuple target = SqlTuple.newTuple(sql, sql, traceWatch);
+            SqlTuple target = SqlTuple.newTuple(sql.getStr(), sql.getStr(), traceWatch, sql.getOffset());
             try (TraceStage parseSql = traceWatch.start(SqlExecuteStages.PARSE_SQL)) {
                 target.initAst(AbstractSyntaxTreeFactories.getAstFactory(session.getDialectType(), 0));
             } catch (IOException e) {
@@ -405,7 +412,8 @@ public class ConnectConsoleService {
                 AbstractSyntaxTree ast = target.getAst();
                 BasicResult result = ast.getParseResult();
                 if (result instanceof ParseSqlResult && ((ParseSqlResult) result).isSupportAddROWID()) {
-                    target = SqlTuple.newTuple(sql, rewriteSql(sql, session, traceWatch, ast), traceWatch);
+                    target = SqlTuple.newTuple(sql.getStr(), rewriteSql(sql.getStr(), session, traceWatch, ast),
+                            traceWatch, sql.getOffset());
                     target.initAst(new EmptyAstFactory(ast));
                 }
             } catch (Exception e) {

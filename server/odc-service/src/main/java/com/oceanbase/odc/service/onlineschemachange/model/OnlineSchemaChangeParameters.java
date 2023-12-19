@@ -15,24 +15,18 @@
  */
 package com.oceanbase.odc.service.onlineschemachange.model;
 
-import static com.oceanbase.odc.service.onlineschemachange.OnlineSchemaChangeContextHolder.TASK_ID;
-import static com.oceanbase.odc.service.onlineschemachange.OnlineSchemaChangeContextHolder.TASK_WORK_SPACE;
-
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 import com.oceanbase.odc.core.flow.model.TaskParameters;
-import com.oceanbase.odc.core.shared.constant.OdcConstants;
 import com.oceanbase.odc.core.shared.constant.TaskErrorStrategy;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.core.shared.model.TableIdentity;
 import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
-import com.oceanbase.odc.service.onlineschemachange.OnlineSchemaChangeContextHolder;
 import com.oceanbase.odc.service.onlineschemachange.ddl.DdlUtils;
 import com.oceanbase.odc.service.onlineschemachange.subtask.SubTaskParameterFactory;
 
@@ -60,7 +54,6 @@ public class OnlineSchemaChangeParameters implements Serializable, TaskParameter
 
     private String delimiter = ";";
 
-    private Map<String, Object> parameterDataMap = new HashMap<>();
     private List<String> lockUsers;
     private SwapTableType swapTableType;
 
@@ -90,10 +83,4 @@ public class OnlineSchemaChangeParameters implements Serializable, TaskParameter
         }
     }
 
-    public void buildParameterDataMap() {
-        parameterDataMap.put(OdcConstants.CREATOR_ID, OnlineSchemaChangeContextHolder.get(TASK_WORK_SPACE));
-        parameterDataMap.put(OdcConstants.FLOW_TASK_ID, OnlineSchemaChangeContextHolder.get(TASK_ID));
-        parameterDataMap.put(OdcConstants.ORGANIZATION_ID,
-                OnlineSchemaChangeContextHolder.get(OdcConstants.ORGANIZATION_ID));
-    }
 }

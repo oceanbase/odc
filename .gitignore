@@ -12,7 +12,6 @@
 # ignore specific directories
 .idea
 .repository/
-build-resource/
 target
 _build/
 conf/

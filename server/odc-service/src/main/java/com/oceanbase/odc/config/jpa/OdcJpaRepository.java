@@ -21,6 +21,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 import javax.persistence.EntityManager;
@@ -45,6 +47,39 @@ public interface OdcJpaRepository<T, ID extends Serializable>
     NamedParameterJdbcTemplate getNamedParameterJdbcTemplate();
 
     EntityManager getEntityManager();
+
+    /**
+     *
+     * @param entities
+     * @param sql
+     * @param valueGetter
+     * @param idSetter
+     * @return entities and assign generated id;
+     */
+    List<T> batchCreate(List<T> entities, String sql, Map<Integer, Function<T, Object>> valueGetter,
+            BiConsumer<T, Long> idSetter);
+
+    List<T> batchCreate(List<T> entities, String sql, List<Function<T, Object>> valueGetter,
+            BiConsumer<T, Long> idSetter);
+
+
+    class ValueGetterBuilder<T> {
+
+        private final List<Function<T, Object>> valueGetter = new ArrayList<>();
+
+        public ValueGetterBuilder<T> add(Function<T, Object> getter) {
+            valueGetter.add(getter);
+            return this;
+        }
+
+        public List<Function<T, Object>> build() {
+            return valueGetter;
+        }
+    }
+
+    default ValueGetterBuilder<T> valueGetterBuilder() {
+        return new ValueGetterBuilder<>();
+    }
 
     default <Y, E> List<E> partitionFind(Collection<Y> ids, Function<List<Y>, List<E>> func) {
         return partitionFind(ids, 100, func);

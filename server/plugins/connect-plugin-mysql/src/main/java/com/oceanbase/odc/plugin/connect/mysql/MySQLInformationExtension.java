@@ -54,7 +54,14 @@ public class MySQLInformationExtension implements InformationExtensionPoint {
             throw new BadRequestException(ErrorCodes.QueryDBVersionFailed,
                     new Object[] {"Result set is empty"}, "Result set is empty");
         }
-        return dbVersion;
+        return parseDBVersion(dbVersion);
+    }
+
+    private String parseDBVersion(String version) {
+        if (version.contains("-")) {
+            return version.split("-")[0];
+        }
+        return version;
     }
 
 }

@@ -15,16 +15,19 @@
  */
 package com.oceanbase.odc.metadb.flow;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
 
 import javax.transaction.Transactional;
 
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import com.oceanbase.odc.common.jpa.InsertSqlTemplateBuilder;
+import com.oceanbase.odc.config.jpa.OdcJpaRepository;
 import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
 import com.oceanbase.odc.service.flow.model.FlowNodeType;
 
@@ -36,7 +39,7 @@ import com.oceanbase.odc.service.flow.model.FlowNodeType;
  * @since ODC_release_3.3.0
  */
 public interface GateWayInstanceRepository
-        extends JpaRepository<GateWayInstanceEntity, Long>, JpaSpecificationExecutor<GateWayInstanceEntity> {
+        extends OdcJpaRepository<GateWayInstanceEntity, Long>, JpaSpecificationExecutor<GateWayInstanceEntity> {
 
     @Transactional
     @Query("delete from GateWayInstanceEntity as ut where ut.flowInstanceId=:instanceId")
@@ -59,5 +62,25 @@ public interface GateWayInstanceRepository
             nativeQuery = true)
     Optional<GateWayInstanceEntity> findByInstanceTypeAndName(@Param("instanceType") FlowNodeType instanceType,
             @Param("name") String name, @Param("flowInstanceId") Long flowInstanceId);
+
+    default List<GateWayInstanceEntity> batchCreate(List<GateWayInstanceEntity> entities) {
+        String sql = InsertSqlTemplateBuilder.from("flow_instance_node_gateway")
+                .field(GateWayInstanceEntity_.organizationId)
+                .field(GateWayInstanceEntity_.status)
+                .field("is_start_endpoint")
+                .field("is_end_endpoint")
+                .field(GateWayInstanceEntity_.flowInstanceId)
+                .build();
+
+        List<Function<GateWayInstanceEntity, Object>> getter = valueGetterBuilder().add(
+                GateWayInstanceEntity::getOrganizationId)
+                .add((GateWayInstanceEntity e) -> e.getStatus().name())
+                .add(GateWayInstanceEntity::isStartEndpoint)
+                .add(GateWayInstanceEntity::isEndEndpoint)
+                .add(GateWayInstanceEntity::getFlowInstanceId)
+                .build();
+
+        return batchCreate(entities, sql, getter, GateWayInstanceEntity::setId);
+    }
 
 }

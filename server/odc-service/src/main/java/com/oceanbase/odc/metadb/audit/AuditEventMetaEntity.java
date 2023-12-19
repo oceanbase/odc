@@ -91,6 +91,12 @@ public class AuditEventMetaEntity {
     private String sidExtractExpression;
 
     /**
+     * database_id extract expression which is an SpEL
+     */
+    @Column(name = "database_id_extract_expression")
+    private String databaseIdExtractExpression;
+
+    /**
      * Flag if this event is in connection
      */
     @Column(name = "is_in_connection", nullable = false)

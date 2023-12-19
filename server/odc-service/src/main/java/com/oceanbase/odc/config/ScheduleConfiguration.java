@@ -220,7 +220,7 @@ public class ScheduleConfiguration {
     }
 
     @Scheduled(fixedRate = SHORT_VALIDATE_INTERVAL_MS)
-    private void clearExpiredTask() {
+    public void clearExpiredTask() {
         SensitiveColumnScanningResultCache.getInstance().clearExpiredTaskInfo();
     }
 

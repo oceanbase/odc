@@ -15,11 +15,15 @@
  */
 package com.oceanbase.odc.service.flow.task;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.SequenceInputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -39,7 +43,6 @@ import com.oceanbase.odc.core.datasource.ConnectionInitializer;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
-import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.TaskErrorStrategy;
@@ -50,9 +53,9 @@ import com.oceanbase.odc.core.sql.execute.model.SqlExecuteStatus;
 import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
 import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTreeFactories;
 import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTreeFactory;
+import com.oceanbase.odc.core.sql.split.SqlStatementIterator;
 import com.oceanbase.odc.service.common.FileManager;
 import com.oceanbase.odc.service.common.model.FileBucket;
-import com.oceanbase.odc.service.common.model.FileMeta;
 import com.oceanbase.odc.service.common.util.OdcFileUtil;
 import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.odc.service.datasecurity.DataMaskingService;
@@ -62,6 +65,7 @@ import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeResult;
 import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
+import com.oceanbase.odc.service.objectstorage.model.StorageObject;
 import com.oceanbase.odc.service.session.DBSessionManageFacade;
 import com.oceanbase.odc.service.session.OdcStatementCallBack;
 import com.oceanbase.odc.service.session.initializer.ConsoleTimeoutInitializer;
@@ -82,38 +86,41 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class DatabaseChangeThread extends Thread {
 
-    private ConnectionSession connectionSession;
-    private List<String> sqls;
-    private DatabaseChangeParameters parameters;
-    // sql execute error records file path
+    private final ConnectionSession connectionSession;
+    private final DatabaseChangeParameters parameters;
+    private InputStream sqlInputStream;
+    private SqlStatementIterator sqlIterator;
     private String errorRecordsFilePath = null;
-    private Integer failCount = 0;
-    private Integer successCount = 0;
-    private int writeFileSuccessCount = 0;
-    private int writeFileFailCount = 0;
-    private String zipFileDownloadUrl;
-    private String zipFileId;
+    private int failCount = 0;
+    private int successCount = 0;
+    private long sqlTotalBytes = 0;
+    private long sqlReadBytes = 0;
+    private String fileRootDir;
     private String jsonFileName;
-    private boolean isContainQuery = false;
-
-    private List<SqlExecuteResult> queryResultSet = new ArrayList<>();
+    private String jsonFilePath;
+    private File jsonFile;
+    private String zipFileId;
+    private String zipFileRootPath;
+    private String zipFileDownloadUrl;
+    private int csvFileIndex = 0;
+    private final List<CSVExecuteResult> csvFileMappers = new ArrayList<>();
+    private final List<SqlExecuteResult> queryResultSetBuffer = new ArrayList<>();
+    @Getter
     private Long startTimestamp = null;
+    @Getter
     private boolean abort = false;
-
+    private boolean isContainQuery = false;
     @Getter
     private volatile Boolean stop = false;
     @Setter
     @Getter
     protected long userId;
-
     @Getter
     @Setter
     protected long taskId;
-
     @Getter
     @Setter
     protected long flowInstanceId;
-
     private final CloudObjectStorageService cloudObjectStorageService;
     private final ObjectStorageFacade objectStorageFacade;
     private final DataMaskingService maskingService;
@@ -128,153 +135,172 @@ public class DatabaseChangeThread extends Thread {
         this.maskingService = maskingService;
     }
 
-    private void init(Long userId) {
-        List<String> objectIds = parameters.getSqlObjectIds();
-        String sqlStr;
-        if (StringUtils.isNotEmpty(parameters.getSqlContent())) {
-            sqlStr = parameters.getSqlContent();
-        } else {
-            try {
-                sqlStr = readSqlFiles(userId, objectIds);
-            } catch (IOException exception) {
-                throw new InternalServerError("load async task file failed", exception);
-            }
-        }
-        PreConditions.notEmpty(sqlStr, "sqlStr");
-        String delimiter = Objects.isNull(parameters.getDelimiter()) ? ";" : parameters.getDelimiter();
-        ConnectionSessionUtil.getSqlCommentProcessor(connectionSession).setDelimiter(delimiter);
-        this.sqls = SqlUtils.split(connectionSession, sqlStr, false);
-    }
-
-    private String readSqlFiles(Long userId, List<String> objectIds) throws IOException {
-        StringBuilder sb = new StringBuilder();
-        for (String objectId : objectIds) {
-            String objectContentStr = objectStorageFacade.loadObjectContentAsString(
-                    "async".concat(File.separator).concat(String.valueOf(userId)),
-                    objectId);
-            /**
-             * remove UTF-8 BOM
-             */
-            byte[] byteSql = objectContentStr.getBytes();
-            if (byteSql.length >= 3 && byteSql[0] == (byte) 0xef && byteSql[1] == (byte) 0xbb
-                    && byteSql[2] == (byte) 0xbf) {
-                objectContentStr = new String(byteSql, 3, byteSql.length - 3);
-            }
-            sb.append(objectContentStr);
-        }
-        return sb.toString();
-    }
-
     @Override
     public void run() {
         TaskContextHolder.trace(userId, taskId);
-        log.info("Async task  start to run, task id:{}", this.getTaskId());
-        log.info("Start read sql content, taskId={}", this.getTaskId());
-        init(userId);
-        log.info("Read sql content successfully, taskId={}, sqlCount={}", this.getTaskId(), this.sqls.size());
+        log.info("Database change task start to run, taskId={}", this.getTaskId());
         startTimestamp = System.currentTimeMillis();
-        String fileDir = FileManager.generateDir(FileBucket.ASYNC);
-        for (int index = 1; index <= sqls.size(); index++) {
-            String sql = sqls.get(index - 1);
-            log.info("Async sql: {}", sql);
-            if (stop) {
-                break;
-            }
-            try {
-                List<SqlTuple> sqlTuples = new ArrayList<>();
-                sqlTuples.add(SqlTuple.newTuple(sql));
-                OdcStatementCallBack statementCallback = new OdcStatementCallBack(sqlTuples, connectionSession, true,
-                        parameters.getQueryLimit());
-                statementCallback.setMaxCachedLines(0);
-                statementCallback.setMaxCachedSize(0);
-                statementCallback.setDbmsoutputMaxRows(0);
-                JdbcOperations executor =
-                        connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY);
-                long timeoutUs = TimeUnit.MILLISECONDS.toMicros(parameters.getTimeoutMillis());
-                if (timeoutUs < 0) {
-                    throw new IllegalArgumentException(
-                            "Timeout settings is too large, " + parameters.getTimeoutMillis());
+        try {
+            init(userId);
+            int index = 0;
+            while (sqlIterator.hasNext()) {
+                String sql = sqlIterator.next().getStr();
+                sqlReadBytes = sqlIterator.iteratedBytes();
+                index++;
+                log.info("Async sql: {}", sql);
+                if (stop) {
+                    break;
                 }
-                ConnectionInitializer initializer = new ConsoleTimeoutInitializer(timeoutUs);
-                executor.execute((ConnectionCallback<Void>) con -> {
-                    initializer.init(con);
-                    return null;
-                });
-                List<JdbcGeneralResult> results =
-                        executor.execute((StatementCallback<List<JdbcGeneralResult>>) stmt -> {
-                            stmt.setQueryTimeout((int) TimeUnit.MILLISECONDS.toSeconds(parameters.getTimeoutMillis()));
-                            return statementCallback.doInStatement(stmt);
-                        });
-                Verify.notEmpty(results, "resultList");
-                GeneralSqlType sqlType = parseSqlType(sql);
-                for (JdbcGeneralResult result : results) {
-                    SqlExecuteResult executeResult = new SqlExecuteResult(result);
-                    if (GeneralSqlType.DQL == sqlType) {
-                        this.isContainQuery = true;
-                        if (maskingService.isMaskingEnabled()) {
-                            try {
-                                dynamicDataMasking(executeResult);
-                            } catch (Exception e) {
-                                // Eat exception and skip data masking
-                                log.warn("Failed to mask query result set in database change task, sql={}",
-                                        executeResult.getExecuteSql(), e);
+                try {
+                    List<SqlTuple> sqlTuples = Collections.singletonList(SqlTuple.newTuple(sql));
+                    OdcStatementCallBack statementCallback =
+                            new OdcStatementCallBack(sqlTuples, connectionSession, true, parameters.getQueryLimit());
+                    statementCallback.setMaxCachedLines(0);
+                    statementCallback.setMaxCachedSize(0);
+                    statementCallback.setDbmsoutputMaxRows(0);
+                    JdbcOperations executor =
+                            connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY);
+                    long timeoutUs = TimeUnit.MILLISECONDS.toMicros(parameters.getTimeoutMillis());
+                    if (timeoutUs < 0) {
+                        throw new IllegalArgumentException(
+                                "Timeout settings is too large, " + parameters.getTimeoutMillis());
+                    }
+                    ConnectionInitializer initializer = new ConsoleTimeoutInitializer(timeoutUs);
+                    executor.execute((ConnectionCallback<Void>) con -> {
+                        initializer.init(con);
+                        return null;
+                    });
+                    List<JdbcGeneralResult> results =
+                            executor.execute((StatementCallback<List<JdbcGeneralResult>>) stmt -> {
+                                stmt.setQueryTimeout(
+                                        (int) TimeUnit.MILLISECONDS.toSeconds(parameters.getTimeoutMillis()));
+                                return statementCallback.doInStatement(stmt);
+                            });
+                    Verify.notEmpty(results, "resultList");
+                    GeneralSqlType sqlType = parseSqlType(sql);
+                    for (JdbcGeneralResult result : results) {
+                        SqlExecuteResult executeResult = new SqlExecuteResult(result);
+                        if (GeneralSqlType.DQL == sqlType) {
+                            this.isContainQuery = true;
+                            if (maskingService.isMaskingEnabled()) {
+                                try {
+                                    dynamicDataMasking(executeResult);
+                                } catch (Exception e) {
+                                    // Eat exception and skip data masking
+                                    log.warn("Failed to mask query result set in database change task, sql={}",
+                                            executeResult.getExecuteSql(), e);
+                                }
                             }
                         }
+                        queryResultSetBuffer.add(executeResult);
                     }
-                    queryResultSet.add(executeResult);
-                }
-                boolean success = true;
-                for (JdbcGeneralResult result : results) {
-                    SqlExecuteResult executeResult = new SqlExecuteResult(result);
-                    if (executeResult.getStatus() != SqlExecuteStatus.SUCCESS) {
-                        failCount++;
-                        log.warn("Error occurs when executing sql: {}, error message: {}", sql,
-                                executeResult.getTrack());
-                        // only record info of failed sqls
-                        addErrorRecordsToFile(index, sql, executeResult.getTrack());
-                        success = false;
-                        break;
+                    appendResultToJsonFile(queryResultSetBuffer, index == 1, !sqlIterator.hasNext());
+                    writeCsvFiles(queryResultSetBuffer);
+                    queryResultSetBuffer.clear();
+                    boolean success = true;
+                    for (JdbcGeneralResult result : results) {
+                        SqlExecuteResult executeResult = new SqlExecuteResult(result);
+                        if (executeResult.getStatus() != SqlExecuteStatus.SUCCESS) {
+                            failCount++;
+                            log.warn("Error occurs when executing sql: {}, error message: {}", sql,
+                                    executeResult.getTrack());
+                            // only record info of failed sqls
+                            addErrorRecordsToFile(index, sql, executeResult.getTrack());
+                            success = false;
+                            break;
+                        }
                     }
-                }
-                if (success) {
-                    successCount++;
-                } else {
+                    if (success) {
+                        successCount++;
+                    } else {
+                        if (TaskErrorStrategy.ABORT.equals(parameters.getErrorStrategy())) {
+                            abort = true;
+                            break;
+                        }
+                    }
+                } catch (Exception e) {
+                    failCount++;
+                    log.warn("Error occurs when executing sql={} :", sql, e);
+                    // only record info of failed sql
+                    addErrorRecordsToFile(index, sql, e.getMessage());
                     if (TaskErrorStrategy.ABORT.equals(parameters.getErrorStrategy())) {
                         abort = true;
                         break;
                     }
                 }
-            } catch (Exception e) {
-                failCount++;
-                log.warn("Error occurs when executing sql={} :", sql, e);
-                // only record info of failed sql
-                addErrorRecordsToFile(index, sql, e.getMessage());
-                if (TaskErrorStrategy.ABORT.equals(parameters.getErrorStrategy())) {
-                    abort = true;
-                    break;
-                }
             }
-        }
-        try {
-            jsonFileName = writeJsonFile(fileDir, queryResultSet);
-            FileMeta fileMeta = writeZipFile(fileDir, queryResultSet, cloudObjectStorageService, flowInstanceId);
-            zipFileDownloadUrl = fileMeta.getDownloadUrl();
-            zipFileId = fileMeta.getFileId();
-            writeFileSuccessCount++;
+            writeZipFile();
             log.info("Async task end up running, task id: {}", this.getTaskId());
-        } catch (Exception e) {
-            writeFileFailCount++;
-            log.warn("Write async task file failed, task id: {}, error message: {}", this.getTaskId(), e.getMessage());
         } finally {
             TaskContextHolder.clear();
             connectionSession.expire();
+            if (Objects.nonNull(sqlInputStream)) {
+                try {
+                    sqlInputStream.close();
+                } catch (Exception e) {
+                    // ignore
+                }
+            }
         }
+    }
+
+    private void init(Long userId) {
+        log.info("Start read sql content, taskId={}", this.getTaskId());
+        List<String> objectIds = parameters.getSqlObjectIds();
+        if (StringUtils.isNotEmpty(parameters.getSqlContent())) {
+            byte[] sqlBytes = parameters.getSqlContent().getBytes(StandardCharsets.UTF_8);
+            sqlInputStream = new ByteArrayInputStream(sqlBytes);
+            sqlTotalBytes = sqlBytes.length;
+        } else {
+            try {
+                sqlInputStream = readSqlFilesStream(userId, objectIds);
+            } catch (IOException exception) {
+                throw new InternalServerError("load database change task file failed", exception);
+            }
+        }
+        String delimiter = Objects.isNull(parameters.getDelimiter()) ? ";" : parameters.getDelimiter();
+        ConnectionSessionUtil.getSqlCommentProcessor(connectionSession).setDelimiter(delimiter);
+        this.sqlIterator = SqlUtils.iterator(connectionSession, sqlInputStream, StandardCharsets.UTF_8);
+        log.info("Read sql content successfully, taskId={}", this.getTaskId());
+        try {
+            fileRootDir = FileManager.generateDir(FileBucket.ASYNC);
+            jsonFileName = StringUtils.uuid();
+            jsonFilePath = String.format("%s/%s.json", fileRootDir, jsonFileName);
+            jsonFile = new File(jsonFilePath);
+            zipFileId = StringUtils.uuid();
+            zipFileRootPath = String.format("%s/%s", fileRootDir, zipFileId);
+            zipFileDownloadUrl = String.format("/api/v2/flow/flowInstances/%s/tasks/download", flowInstanceId);
+        } catch (Exception exception) {
+            throw new InternalServerError("create database change task file dir failed", exception);
+        }
+    }
+
+    private InputStream readSqlFilesStream(Long userId, List<String> objectIds) throws IOException {
+        InputStream inputStream = new ByteArrayInputStream(new byte[0]);
+        for (String objectId : objectIds) {
+            String bucket = "async".concat(File.separator).concat(String.valueOf(userId));
+            StorageObject object = objectStorageFacade.loadObject(bucket, objectId);
+            InputStream current = object.getContent();
+            sqlTotalBytes += object.getMetadata().getTotalLength();
+            // remove UTF-8 BOM if exists
+            current.mark(3);
+            byte[] byteSql = new byte[3];
+            if (current.read(byteSql) >= 3 && byteSql[0] == (byte) 0xef && byteSql[1] == (byte) 0xbb
+                    && byteSql[2] == (byte) 0xbf) {
+                current.reset();
+                current.skip(3);
+                sqlTotalBytes -= 3;
+            } else {
+                current.reset();
+            }
+            inputStream = new SequenceInputStream(inputStream, current);
+        }
+        return inputStream;
     }
 
     private void addErrorRecordsToFile(int index, String sql, String errorMsg) {
         if (StringUtils.isBlank(this.errorRecordsFilePath)) {
-            this.errorRecordsFilePath =
-                    FileManager.generateDir(FileBucket.ASYNC) + File.separator + StringUtils.uuid() + ".txt";
+            this.errorRecordsFilePath = fileRootDir + File.separator + StringUtils.uuid() + ".txt";
         }
         try (FileWriter fw = new FileWriter(this.errorRecordsFilePath, true)) {
             String modifiedErrorMsg = generateErrorRecord(index, sql, errorMsg);
@@ -282,19 +308,6 @@ public class DatabaseChangeThread extends Thread {
         } catch (IOException ex) {
             log.warn("generate error record failed, sql index={}, sql={}, errorMsg={}", index, sql, errorMsg);
         }
-    }
-
-    public boolean isAbort() {
-        return this.abort;
-    }
-
-    public boolean isDone() {
-        // whether all sql execute [successCount + failCount] and result save [writeFileSuccessCount +
-        // writeFileFailCount]
-        // has greater or equal than sql list size + 1
-        // successCount + failCount should be equals to sql list size
-        // writeFileSuccessCount + writeFileFailCount should be 0 or 1
-        return (successCount + failCount + writeFileSuccessCount + writeFileFailCount) >= (sqls.size() + 1);
     }
 
     public void stopTaskAndKillQuery(DBSessionManageFacade sessionManageFacade) {
@@ -320,87 +333,82 @@ public class DatabaseChangeThread extends Thread {
         return taskResult;
     }
 
-    public Long getStartTimestamp() {
-        return startTimestamp;
-    }
-
-    public DatabaseChangeParameters getParameters() {
-        return parameters;
-    }
-
     public double getProgressPercentage() {
-        int totalCount = sqls.size();
-        if (totalCount == 0) {
+        if (sqlTotalBytes == 0) {
             // do nothing and done
             return 100.0D;
         }
-        return (successCount + failCount + writeFileSuccessCount + writeFileFailCount) * 100.0D / (totalCount + 1);
+        double progress = sqlReadBytes * 100.0D / sqlTotalBytes;
+        return Math.min(progress, 100.0D);
     }
 
-    public static String writeJsonFile(String dir, List<SqlExecuteResult> executeResult) {
+    private void appendResultToJsonFile(List<SqlExecuteResult> results, boolean start, boolean end) {
         try {
-            FileUtils.forceMkdir(new File(dir));
-            String fileId = StringUtils.uuid();
-            String filePath = dir + String.format("/%s.json", fileId);
-            String jsonString = JsonUtils.toJson(executeResult);
-            FileUtils.writeStringToFile(new File(filePath), jsonString, StandardCharsets.UTF_8, true);
-            log.info("async task result set was saved as JSON file successfully, file name={}", filePath);
-            return fileId;
+            if (start) {
+                FileUtils.writeStringToFile(jsonFile, "[", StandardCharsets.UTF_8, true);
+            }
+            if (!results.isEmpty()) {
+                if (!start) {
+                    FileUtils.writeStringToFile(jsonFile, ",", StandardCharsets.UTF_8, true);
+                }
+                String jsonString = JsonUtils.toJson(results);
+                FileUtils.writeStringToFile(jsonFile, jsonString.substring(1, jsonString.length() - 1),
+                        StandardCharsets.UTF_8, true);
+            }
+            if (end) {
+                FileUtils.writeStringToFile(jsonFile, "]", StandardCharsets.UTF_8, true);
+            }
+            log.info("async task result set was saved as JSON file successfully, file name={}", jsonFilePath);
         } catch (IOException e) {
             log.warn("build JSON file failed, errorMessage={}", e.getMessage());
             throw new UnexpectedException("build JSON file failed");
         }
     }
 
-    public static FileMeta writeZipFile(String dir, List<SqlExecuteResult> result,
-            CloudObjectStorageService cloudObjectStorageService, long flowInstanceId) {
+    private void writeCsvFiles(List<SqlExecuteResult> results) {
         try {
-            FileUtils.forceMkdir(new File(dir));
-            List<CSVExecuteResult> csvFileMappers = new ArrayList<>();
-            String fileId = StringUtils.uuid();
-            int sequence = 0;
-            for (int i = 0; i < result.size(); i++) {
-                sequence++;
-                SqlExecuteResult sqlExecuteResult = result.get(i);
-                if (Objects.isNull(sqlExecuteResult.getRows()) || sqlExecuteResult.getRows().size() == 0) {
+            for (SqlExecuteResult result : results) {
+                csvFileIndex++;
+                if (Objects.isNull(result.getRows()) || result.getRows().isEmpty()) {
                     continue;
                 }
-                String csv = CSVUtils.buildCSVFormatData(sqlExecuteResult.getColumns(), sqlExecuteResult.getRows());
-                String filePath = String.format("%s/%s/%s.csv", dir, fileId, i);
+                String csv = CSVUtils.buildCSVFormatData(result.getColumns(), result.getRows());
+                String filePath = String.format("%s/%s.csv", zipFileRootPath, csvFileIndex);
                 FileUtils.writeStringToFile(new File(filePath), csv, StandardCharsets.UTF_8, true);
-
-                String executeSql = result.get(i).getExecuteSql();
-                String fileName = String.format("%s.csv", i);
-                CSVExecuteResult csvExecuteResult = new CSVExecuteResult(sequence, executeSql, fileName);
+                String executeSql = result.getExecuteSql();
+                String fileName = String.format("%s.csv", csvFileIndex);
+                CSVExecuteResult csvExecuteResult = new CSVExecuteResult(csvFileIndex, executeSql, fileName);
                 csvFileMappers.add(csvExecuteResult);
             }
+        } catch (IOException ex) {
+            throw new UnexpectedException("write csv file failed");
+        }
+    }
 
-            // write json file to record CSV file name and its corresponding execute sql
+    private void writeZipFile() {
+        try {
             String jsonString = JsonUtils.prettyToJson(csvFileMappers);
-            FileUtils.writeStringToFile(new File(String.format("%s/%s/csv_execute_result.json", dir, fileId)),
-                    jsonString,
-                    StandardCharsets.UTF_8, true);
-            OdcFileUtil.zip(String.format("%s/%s", dir, fileId), String.format("%s/%s.zip", dir, fileId));
-            log.info("Async task result set was saved as local zip file successfully, file name={}", fileId);
-            String downloadUrl = String.format("/api/v2/flow/flowInstances/%s/tasks/download", flowInstanceId);
-            // 公有云场景，需要上传文件到 OSS
+            FileUtils.writeStringToFile(new File(String.format("%s/csv_execute_result.json", zipFileRootPath)),
+                    jsonString, StandardCharsets.UTF_8, true);
+            OdcFileUtil.zip(String.format(zipFileRootPath), String.format("%s.zip", zipFileRootPath));
+            log.info("database change task result set was saved as local zip file, file name={}", zipFileId);
+            // Public cloud scenario, need to upload files to OSS
             if (Objects.nonNull(cloudObjectStorageService) && cloudObjectStorageService.supported()) {
-                File tempZipFile = new File(String.format("%s/%s.zip", dir, fileId));
+                File tempZipFile = new File(String.format("%s.zip", zipFileRootPath));
                 try {
-                    String objectName = cloudObjectStorageService.uploadTemp(fileId + ".zip", tempZipFile);
-                    downloadUrl = cloudObjectStorageService.getBucketName() + "/" + objectName;
-                    log.info("upload async task result set zip file to OSS successfully, file name={}", fileId);
+                    String objectName = cloudObjectStorageService.uploadTemp(zipFileId + ".zip", tempZipFile);
+                    zipFileDownloadUrl = cloudObjectStorageService.getBucketName() + "/" + objectName;
+                    log.info("upload database change task result set zip file to OSS, file name={}", zipFileId);
                 } catch (Exception exception) {
-                    log.warn("upload async task result set zip file to OSS failed, file name={}", fileId);
-                    throw new RuntimeException(String
-                            .format("upload async task result set zip file to OSS failed, file name: %s", fileId),
+                    log.warn("upload database change task result set zip file to OSS failed, file name={}", zipFileId);
+                    throw new RuntimeException(String.format(
+                            "upload database change task result set zip file to OSS failed, file name: %s", zipFileId),
                             exception.getCause());
                 } finally {
                     OdcFileUtil.deleteFiles(tempZipFile);
                 }
             }
-            FileUtils.deleteDirectory(new File(String.format("%s/%s", dir, fileId)));
-            return new FileMeta(fileId, downloadUrl);
+            FileUtils.deleteDirectory(new File(zipFileRootPath));
         } catch (IOException ex) {
             throw new UnexpectedException("build zip file failed");
         }
@@ -450,4 +458,5 @@ public class DatabaseChangeThread extends Thread {
             this.fileName = fileName;
         }
     }
+
 }

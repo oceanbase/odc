@@ -25,6 +25,7 @@ import com.oceanbase.tools.sqlparser.statement.Statement;
 
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.Setter;
 
 /**
  * {@link SqlCheckContext}
@@ -39,7 +40,10 @@ public class SqlCheckContext {
     Long totalStmtCount;
     @Getter
     Long currentStmtIndex;
-    private final List<Pair<Statement, List<CheckViolation>>> stmt2Violations;
+    @Getter
+    @Setter
+    Long currentStmtStartOffset;
+    private final List<Pair<Pair<Statement, Integer>, List<CheckViolation>>> stmt2Violations;
 
     public SqlCheckContext() {
         this.stmt2Violations = new ArrayList<>();
@@ -50,27 +54,25 @@ public class SqlCheckContext {
         this.stmt2Violations = new ArrayList<>();
     }
 
-    public void addCheckViolation(@NonNull Statement statement, @NonNull List<CheckViolation> violations) {
-        this.stmt2Violations.add(new Pair<>(statement, violations));
+    public void addCheckViolation(@NonNull Statement statement, @NonNull Integer offset,
+            @NonNull List<CheckViolation> violations) {
+        this.stmt2Violations.add(new Pair<>(new Pair<>(statement, offset), violations));
     }
 
     public void combine(@NonNull SqlCheckContext checkContext) {
         this.stmt2Violations.addAll(checkContext.stmt2Violations);
     }
 
-    public List<Statement> getAllCheckedStatements() {
-        return this.stmt2Violations.stream().map(p -> p.left).collect(Collectors.toList());
-    }
 
     public List<CheckViolation> getAllCheckViolations() {
         return this.stmt2Violations.stream().flatMap(p -> p.right.stream()).collect(Collectors.toList());
     }
 
     @SuppressWarnings("all")
-    public <T extends Statement> List<T> getAllCheckedStatements(Class<T> clazz) {
+    public <T extends Statement> List<Pair<T, Integer>> getAllCheckedStatements(Class<T> clazz) {
         return this.stmt2Violations.stream().map(p -> p.left)
-                .filter(s -> s.getClass().equals(clazz))
-                .map(statement -> (T) statement).collect(Collectors.toList());
+                .filter(s -> s.left.getClass().equals(clazz))
+                .map(statement -> new Pair<>((T) statement.left, statement.right)).collect(Collectors.toList());
     }
 
 }

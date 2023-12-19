@@ -17,45 +17,36 @@ package com.oceanbase.odc.core.shared.constant;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonValue;
-import com.oceanbase.odc.common.util.StringUtils;
+import org.springframework.context.i18n.LocaleContextHolder;
 
-public enum ResourceRoleName {
-    OWNER("OWNER"),
+import com.oceanbase.odc.common.i18n.Translatable;
 
-    DBA("DBA"),
+public enum ResourceRoleName implements Translatable {
 
-    DEVELOPER("DEVELOPER"),
+    OWNER,
 
-    SECURITY_ADMINISTRATOR("SECURITY_ADMINISTRATOR"),
+    DBA,
 
-    PARTICIPANT("PARTICIPANT");
+    DEVELOPER,
 
-    private String value;
+    SECURITY_ADMINISTRATOR,
 
-    ResourceRoleName(String value) {
-        this.value = value;
-    }
+    PARTICIPANT;
 
     public static List<ResourceRoleName> all() {
         return Arrays.asList(ResourceRoleName.values());
     }
 
-    @JsonValue
-    public String getValue() {
-        return this.value;
+    @Override
+    public String code() {
+        return name();
     }
 
-    @JsonCreator
-    public static ResourceRoleName fromValue(String value) {
-        for (ResourceRoleName resourceRole : ResourceRoleName.values()) {
-            if (StringUtils.equalsIgnoreCase(resourceRole.getValue(), StringUtils.trim(value))) {
-                return resourceRole;
-            }
-        }
-        throw new IllegalArgumentException("ResourceRoleName value not supported, given value '" + value + "'");
+    public String getLocalizedMessage() {
+        Locale locale = LocaleContextHolder.getLocale();
+        return translate(null, locale);
     }
 
 }

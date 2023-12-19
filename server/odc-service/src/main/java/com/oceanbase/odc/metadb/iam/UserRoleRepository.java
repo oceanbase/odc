@@ -18,8 +18,6 @@ package com.oceanbase.odc.metadb.iam;
 import java.util.Collection;
 import java.util.List;
 
-import javax.validation.constraints.NotEmpty;
-
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
@@ -42,10 +40,7 @@ public interface UserRoleRepository
 
     List<UserRoleEntity> findByRoleIdIn(Collection<Long> roleIds);
 
-    @Query(value = "select * from iam_user_role "
-            + " where organization_id=:organizationId and user_id in (:userIds)", nativeQuery = true)
-    List<UserRoleEntity> findByOrganizationIdAndUserIdIn(@Param("organizationId") Long organizationId,
-            @Param("userIds") @NotEmpty Collection<Long> userIds);
+    List<UserRoleEntity> findByOrganizationIdAndUserIdIn(Long organizationId, Collection<Long> userIds);
 
     @Modifying
     @Transactional
