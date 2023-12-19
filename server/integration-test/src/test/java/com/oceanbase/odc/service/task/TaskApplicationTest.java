@@ -65,4 +65,29 @@ public class TaskApplicationTest extends BaseJobTest {
         }).start();
         new TaskApplication().run(null);
     }
+
+
+    @Test
+    public void test_executeDatabaseChangeTask() {
+        Long exceptedTaskId = System.currentTimeMillis();;
+        JobIdentity jobIdentity = JobIdentity.of(exceptedTaskId);
+        ConnectionConfig connectionConfig = TestConnectionUtil.getTestConnectionConfig(ConnectType.OB_MYSQL);
+        List<String> sqls =
+            Collections.singletonList(String.format("CREATE TABLE %s (id int(10))", "t_" + exceptedTaskId));
+
+        JobDefinition jd = new SampleTaskJobDefinitionBuilder()
+            .build(connectionConfig, connectionConfig.getDefaultSchema(), sqls);
+        JobContext jc = new DefaultJobContextBuilder().build(jobIdentity, jd);
+        System.setProperty(JobEnvConstants.TASK_ALL_PARAMETERS, JobUtils.toJson(jc));
+        new Thread(() -> {
+            try {
+                Thread.sleep(20 * 1000);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            } finally {
+                ExitHelper.exit();
+            }
+        }).start();
+        new TaskApplication().run(null);
+    }
 }
