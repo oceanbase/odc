@@ -67,7 +67,7 @@ public abstract class BaseParameterFactory<T extends BaseParameter> {
         setSessionInfo(parameter);
         setFileConfig(parameter, workingDir);
         parameter.setThreads(3);
-        if (transferConfig.getDataTransferFormat() != DataTransferFormat.CSV) {
+        if (transferConfig.getDataTransferFormat() == DataTransferFormat.SQL) {
             return parameter;
         }
         if (transferConfig.getTransferType() == DataTransferType.EXPORT) {

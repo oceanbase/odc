@@ -343,6 +343,12 @@ public abstract class StringUtils extends org.apache.commons.lang3.StringUtils {
         return input.replaceAll("\\s+", "");
     }
 
+    public static String camelCaseToSnakeCase(String camelCase) {
+        String regex = "([a-z])([A-Z]+)";
+        String replacement = "$1_$2";
+        return StringUtils.lowerCase(camelCase.replaceAll(regex, replacement));
+    }
+
     public static String getBriefSql(String sql, Integer maxLength) {
         if (sql == null) {
             return null;

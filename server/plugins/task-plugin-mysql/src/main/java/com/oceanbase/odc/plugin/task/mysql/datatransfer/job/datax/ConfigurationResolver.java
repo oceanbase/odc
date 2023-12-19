@@ -23,16 +23,20 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Lists;
 import com.oceanbase.odc.common.util.StringUtils;
+import com.oceanbase.odc.core.datamasking.masker.AbstractDataMasker;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
+import com.oceanbase.odc.core.shared.model.TableIdentity;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.CsvColumnMapping;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.CsvConfig;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
@@ -42,6 +46,7 @@ import com.oceanbase.odc.plugin.task.mysql.datatransfer.common.Constants;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.JobConfiguration;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.JobContent;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.JobContent.Parameter;
+import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.parameter.GroovyTransformerParameter;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.parameter.MySQLReaderPluginParameter;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.parameter.MySQLWriterPluginParameter;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.parameter.MySQLWriterPluginParameter.Connection;
@@ -96,6 +101,12 @@ public class ConfigurationResolver {
 
         jobContent.setReader(createMySQLReaderParameter(baseConfig, jdbcUrl, table));
         jobContent.setWriter(createTxtWriterParameter(workingDir, baseConfig, table, columns));
+        Map<TableIdentity, Map<String, AbstractDataMasker>> maskConfigs = baseConfig.getMaskConfig();
+        if (MapUtils.isNotEmpty(maskConfigs)) {
+            jobContent.setTransformer(
+                    createTransformerParameters(
+                            maskConfigs.get(TableIdentity.of(baseConfig.getSchemaName(), table)), columns));
+        }
         jobConfig.setContent(new JobContent[] {jobContent});
         return jobConfig;
     }
@@ -206,6 +217,21 @@ public class ConfigurationResolver {
                 .collect(Collectors.toList()));
 
         return writer;
+    }
+
+    private static List<Parameter> createTransformerParameters(Map<String, AbstractDataMasker> field2Masker,
+            List<String> columns) {
+        if (MapUtils.isEmpty(field2Masker)) {
+            return null;
+        }
+        Parameter transformer = new Parameter();
+        GroovyTransformerParameter pluginParameter = new GroovyTransformerParameter();
+        transformer.setName(Constants.GROOVY_TRANSFORMER);
+        transformer.setParameter(pluginParameter);
+
+        pluginParameter.setCode(GroovyMaskRuleGenerator.generate(field2Masker, columns));
+
+        return Collections.singletonList(transformer);
     }
 
     private static DataXCsvConfig getDataXCsvConfig(DataTransferConfig baseConfig) {

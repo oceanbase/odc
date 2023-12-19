@@ -28,9 +28,11 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -50,10 +52,14 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 
 import com.oceanbase.odc.ServiceTestEnv;
 import com.oceanbase.odc.TestConnectionUtil;
+import com.oceanbase.odc.core.datamasking.config.MaskConfig;
+import com.oceanbase.odc.core.datamasking.masker.AbstractDataMasker;
+import com.oceanbase.odc.core.datamasking.masker.SingleValueDataMasker;
 import com.oceanbase.odc.core.datasource.DataSourceFactory;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.TaskType;
+import com.oceanbase.odc.core.shared.model.TableIdentity;
 import com.oceanbase.odc.plugin.task.api.datatransfer.dumper.AbstractOutputFile;
 import com.oceanbase.odc.plugin.task.api.datatransfer.dumper.DataFile;
 import com.oceanbase.odc.plugin.task.api.datatransfer.dumper.ExportOutput;
@@ -145,6 +151,19 @@ public class MySQLTransferServiceTest extends ServiceTestEnv {
     public void create_dumpData_onlyDataDumped() throws Exception {
         DataTransferTaskContext context =
                 dataTransferService.create(BUCKET, getDumpConfig(connectionConfig.getDefaultSchema(), true, false));
+        Assert.assertNotNull(context.get(60, TimeUnit.SECONDS));
+
+        ExportOutput exportOutput = new ExportOutput(getDumpFile());
+        assertFileCountEquals(exportOutput, 1);
+        assertObjectTypeIn(exportOutput, new HashSet<>(Collections.singleton(ObjectType.TABLE)));
+        assertFileTypeMatchAll(exportOutput, new HashSet<>(Collections.singletonList(DataFile.class)));
+    }
+
+    @Test
+    public void create_dumpData_onlyDataDumped_WithMaskConfig() throws Exception {
+        DataTransferConfig dumpConfig = getDumpConfig(connectionConfig.getDefaultSchema(), true, false);
+        dumpConfig.setMaskConfig(getMaskConfig(connectionConfig.getDefaultSchema()));
+        DataTransferTaskContext context = dataTransferService.create(BUCKET, dumpConfig);
         Assert.assertNotNull(context.get(60, TimeUnit.SECONDS));
 
         ExportOutput exportOutput = new ExportOutput(getDumpFile());
@@ -297,6 +316,15 @@ public class MySQLTransferServiceTest extends ServiceTestEnv {
             config.setFileType("SQL");
         }
         return config;
+    }
+
+    private Map<TableIdentity, Map<String, AbstractDataMasker>> getMaskConfig(String schema) {
+        Map<TableIdentity, Map<String, AbstractDataMasker>> maskConfig = new HashMap<>();
+        Map<String, AbstractDataMasker> field2Masker = new HashMap<>();
+        field2Masker.put("COL1", new SingleValueDataMasker(new MaskConfig()));
+        field2Masker.put("COL2", new SingleValueDataMasker(new MaskConfig()));
+        maskConfig.put(TableIdentity.of(schema, TEST_TABLE_NAME), field2Masker);
+        return maskConfig;
     }
 
     private File getDumpFile() throws IOException {

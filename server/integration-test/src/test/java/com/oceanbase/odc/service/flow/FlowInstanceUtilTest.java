@@ -22,6 +22,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.flowable.engine.FormService;
 import org.flowable.engine.RepositoryService;
@@ -41,6 +42,7 @@ import com.oceanbase.odc.metadb.flow.GateWayInstanceRepository;
 import com.oceanbase.odc.metadb.flow.NodeInstanceEntityRepository;
 import com.oceanbase.odc.metadb.flow.SequenceInstanceRepository;
 import com.oceanbase.odc.metadb.flow.ServiceTaskInstanceRepository;
+import com.oceanbase.odc.metadb.flow.UserTaskInstanceCandidateRepository;
 import com.oceanbase.odc.metadb.flow.UserTaskInstanceRepository;
 import com.oceanbase.odc.service.flow.instance.BaseFlowNodeInstance;
 import com.oceanbase.odc.service.flow.instance.FlowApprovalInstance;
@@ -63,6 +65,7 @@ import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
  */
 public class FlowInstanceUtilTest extends ServiceTestEnv {
 
+    private final AtomicLong counter = new AtomicLong(0L);
     @MockBean
     private AuthenticationFacade authenticationFacade;
     @Autowired
@@ -87,6 +90,8 @@ public class FlowInstanceUtilTest extends ServiceTestEnv {
     private UserTaskInstanceRepository userTaskInstanceRepository;
     @Autowired
     private GateWayInstanceRepository gateWayInstanceRepository;
+    @Autowired
+    private UserTaskInstanceCandidateRepository userTaskInstanceCandidateRepository;
 
     @Before
     public void setUp() {
@@ -148,29 +153,38 @@ public class FlowInstanceUtilTest extends ServiceTestEnv {
                         first_route_approval_2, first_route_approval_2_gateway, first_route_task_1,
                         second_route_approval_1, second_route_approval_1_gateway, second_route_task_1),
                 sequences);
+        flowInstance.forEachInstanceNode(inst -> inst.setId(null));
         flowInstance.buildTopology();
     }
 
     private FlowInstance createFlowInstance() {
-        return new FlowInstance("Test Instance", flowAdaptor, authenticationFacade,
-                flowInstanceRepository, runtimeService, repositoryService);
+        return new FlowInstance("Test Instance", flowAdaptor, authenticationFacade, flowInstanceRepository,
+                nodeRepository, sequenceRepository, gateWayInstanceRepository, serviceTaskRepository,
+                userTaskInstanceRepository, userTaskInstanceCandidateRepository, runtimeService, repositoryService);
     }
 
     private FlowTaskInstance createTaskInstance(Long flowInstanceId, ExecutionStrategyConfig config) {
-        return new FlowTaskInstance(TaskType.ASYNC, authenticationFacade.currentOrganizationId(),
+        FlowTaskInstance inst = new FlowTaskInstance(TaskType.ASYNC, authenticationFacade.currentOrganizationId(),
                 flowInstanceId, config, false, true, type -> TestFlowRuntimeTaskImpl.class, flowAdaptor,
                 new LocalEventPublisher(), taskService, nodeRepository, sequenceRepository, serviceTaskRepository);
+        inst.setId(counter.incrementAndGet());
+        return inst;
     }
 
     private FlowApprovalInstance createApprovalInstance(Long flowInstanceId) {
-        return new FlowApprovalInstance(authenticationFacade.currentOrganizationId(), flowInstanceId, null,
-                10, false, false, false, flowAdaptor, taskService, formService, new LocalEventPublisher(),
-                authenticationFacade, nodeRepository, sequenceRepository, userTaskInstanceRepository);
+        FlowApprovalInstance inst = new FlowApprovalInstance(authenticationFacade.currentOrganizationId(),
+                flowInstanceId, null, 10, false, false, false, flowAdaptor, taskService, formService,
+                new LocalEventPublisher(), authenticationFacade, nodeRepository, sequenceRepository,
+                userTaskInstanceRepository, userTaskInstanceCandidateRepository);
+        inst.setId(counter.incrementAndGet());
+        return inst;
     }
 
     private FlowGatewayInstance createGatewayInstance(Long flowInstanceId, boolean startEndPoint, boolean endEndPoint) {
-        return new FlowGatewayInstance(authenticationFacade.currentOrganizationId(), flowInstanceId, startEndPoint,
-                endEndPoint, flowAdaptor, nodeRepository, sequenceRepository, gateWayInstanceRepository);
+        FlowGatewayInstance inst = new FlowGatewayInstance(authenticationFacade.currentOrganizationId(), flowInstanceId,
+                startEndPoint, endEndPoint, flowAdaptor, nodeRepository, sequenceRepository, gateWayInstanceRepository);
+        inst.setId(counter.incrementAndGet());
+        return inst;
     }
 
 }
