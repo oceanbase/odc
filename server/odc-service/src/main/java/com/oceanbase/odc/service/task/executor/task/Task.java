@@ -47,7 +47,7 @@ public interface Task {
     boolean isFinished();
 
     /**
-     * Get task progress
+     * Get task progress, the progress should be between 0 and 1 (include 0 and 1)
      *
      * @return progress
      */

@@ -36,10 +36,12 @@ public class DefaultTaskResult implements TaskResult, Serializable {
 
     private TaskStatus taskStatus;
 
-    private Double progress;
-
     private String resultJson;
 
     private ExecutorInfo executorInfo;
+
+    private double progress;
+
+    private boolean finished;
 
 }
