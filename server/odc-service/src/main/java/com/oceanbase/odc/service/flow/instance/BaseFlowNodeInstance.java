@@ -59,12 +59,12 @@ public abstract class BaseFlowNodeInstance extends GraphVertex implements Securi
     protected Date createTime;
     protected Date updateTime;
     private final boolean endEndPoint;
-    private final String shortUniqueId;
     private final boolean startEndpoint;
     private final FlowNodeType nodeType;
     private final long organizationId;
     private final long flowInstanceId;
     private final List<FlowableElement> bindFlowableElements;
+    private final transient String shortUniqueId;
     @Setter
     private String activityId;
 
