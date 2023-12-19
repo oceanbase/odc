@@ -25,7 +25,7 @@ import org.springframework.test.jdbc.JdbcTestUtils;
 
 import com.oceanbase.odc.ServiceTestEnv;
 
-public class R4201AuditEventMetaMigrateTest extends ServiceTestEnv {
+public class R4239AuditEventMetaMigrateTest extends ServiceTestEnv {
 
     @Autowired
     private DataSource dataSource;
@@ -34,7 +34,7 @@ public class R4201AuditEventMetaMigrateTest extends ServiceTestEnv {
 
     @Test
     public void migrate() {
-        R4201AuditEventMetaMigrate migrate = new R4201AuditEventMetaMigrate();
+        R4239AuditEventMetaMigrate migrate = new R4239AuditEventMetaMigrate();
         migrate.migrate(dataSource);
 
         int count = JdbcTestUtils.countRowsInTableWhere(

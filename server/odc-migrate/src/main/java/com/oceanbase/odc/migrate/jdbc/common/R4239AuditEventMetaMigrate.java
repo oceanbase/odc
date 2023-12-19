@@ -39,9 +39,9 @@ import lombok.extern.slf4j.Slf4j;
  * @Description: []
  */
 @Slf4j
-@Migratable(version = "4.2.0.1", description = "Built-in audit event meta migrate",
+@Migratable(version = "4.2.3.9", description = "Built-in audit event meta migrate",
         repeatable = true, ignoreChecksum = true)
-public class R4201AuditEventMetaMigrate implements JdbcMigratable {
+public class R4239AuditEventMetaMigrate implements JdbcMigratable {
     private static final String MIGRATE_CONFIG_FILE = "init-config/default-audit-event-meta.yml";
 
     @Override
