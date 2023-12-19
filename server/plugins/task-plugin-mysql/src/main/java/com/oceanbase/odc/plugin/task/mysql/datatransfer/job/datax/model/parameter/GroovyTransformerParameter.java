@@ -14,23 +14,16 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model;
+package com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.parameter;
 
 import java.util.List;
-
-import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.parameter.PluginParameter;
 
 import lombok.Data;
 
 @Data
-public class JobContent {
-    private Parameter reader;
-    private Parameter writer;
-    private List<Parameter> transformer;
+public class GroovyTransformerParameter implements PluginParameter {
 
-    @Data
-    public static class Parameter {
-        String name;
-        PluginParameter parameter;
-    }
+    private String code;
+    private List<String> extraPackage;
+
 }
