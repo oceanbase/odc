@@ -23,10 +23,14 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
-import com.oceanbase.odc.core.flow.model.FlowTaskResult;
+import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.core.task.TaskThreadFactory;
 import com.oceanbase.odc.service.task.caller.JobContext;
+import com.oceanbase.odc.service.task.constants.JobDataMapConstants;
+import com.oceanbase.odc.service.task.model.ExecutorInfo;
+import com.oceanbase.odc.service.task.util.JobUtils;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -37,58 +41,49 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public abstract class BaseTask implements Task {
 
+    private static final int REPORT_TASK_INFO_INTERVAL_SECONDS = 5;
+    private static final int REPORT_RESULT_RETRY_TIMES = 10;
+    private static final int REPORT_RESULT_RETRY_INTERVAL_SECONDS = 10;
+    private static final int DEFAULT_TASK_TIMEOUT_MILLI_SECONDS = 48 * 60 * 60 * 1000;
+
     private JobContext context;
-
     private Map<String, String> jobData;
+    private TaskReporter reporter;
 
-    protected TaskStatus status;
-
-    protected FlowTaskResult result;
-
-    protected TaskReporter reporter;
-
-    protected volatile double progress = 0;
-
-    protected volatile boolean canceled = false;
-
+    private volatile TaskStatus status = TaskStatus.PREPARING;
+    private volatile boolean canceled = false;
     private volatile boolean finished = false;
+    private volatile long startTimeMilliSeconds;
 
     @Override
     public void start(JobContext context) {
+        this.startTimeMilliSeconds = System.currentTimeMillis();
         this.context = context;
-        this.jobData = Collections.unmodifiableMap(getJobContext().getJobData());
-        this.status = TaskStatus.PREPARING;
-        this.reporter = new TaskReporter(context.getHostUrls());
         try {
-            updateStatus(TaskStatus.RUNNING);
-            log.info("Task started, id: {}, status: {}", context.getJobIdentity().getId(), status);
+            this.jobData = Collections.unmodifiableMap(getJobContext().getJobData());
+            this.reporter = new TaskReporter(context.getHostUrls());
+            onInit();
             initTaskMonitor();
             onStart();
-            updateStatus(TaskStatus.DONE);
         } catch (Exception e) {
-            onFail(e);
+            log.info("Task failed, id: {}, details: {}", context.getJobIdentity().getId(), e);
             updateStatus(TaskStatus.FAILED);
-            log.warn("Task failed, id: {}, status: {}", context.getJobIdentity().getId(), status, e);
+            onFail(e);
         } finally {
-            reportTaskResult();
-            finished();
+            doFinal();
         }
     }
 
     @Override
     public void stop() {
-        try {
-            if (finished) {
-                log.warn("Task already finished, id: {}, status: {}", context.getJobIdentity().getId(), status);
-                return;
-            }
-            canceled = true;
-            onStop();
-            updateStatus(TaskStatus.CANCELED);
-            log.info("Task stopped, id: {}, status: {}", context.getJobIdentity().getId(), status);
-        } catch (Exception e) {
-            log.warn("Task stop failed, id: {}, status: {}", context.getJobIdentity().getId(), status, e);
+        if (isFinished()) {
+            log.warn("Task is already finished and cannot be canceled, id: {}", getJobContext().getJobIdentity().getId());
+            return;
         }
+        canceled = true;
+        onStop();
+        updateStatus(TaskStatus.CANCELED);
+        log.info("Task canceled, id: {}", getJobContext().getJobIdentity().getId());
     }
 
     @Override
@@ -96,15 +91,6 @@ public abstract class BaseTask implements Task {
         return finished;
     }
 
-    @Override
-    public double getProgress() {
-        return progress;
-    }
-
-    @Override
-    public JobContext getJobContext() {
-        return context;
-    }
 
     @Override
     public TaskStatus getTaskStatus() {
@@ -112,14 +98,123 @@ public abstract class BaseTask implements Task {
     }
 
     @Override
-    public FlowTaskResult getTaskResult() {
+    public JobContext getJobContext() {
+        return context;
+    }
+    protected void updateStatus(TaskStatus status) {
+        this.status = status;
+    }
+    protected Map<String, String> getJobData() {
+        return this.jobData;
+    }
+
+    protected boolean isCanceled() {
+        return canceled;
+    }
+
+    private boolean isTimeout() {
+        String milliSecStr = getJobData().get(JobDataMapConstants.TIMEOUT_MILLI_SECONDS);
+        long milliSec = milliSecStr != null ? Long.parseLong(milliSecStr) : DEFAULT_TASK_TIMEOUT_MILLI_SECONDS;
+        return System.currentTimeMillis() - startTimeMilliSeconds > milliSec;
+    }
+
+    private void initTaskMonitor() {
+        ThreadFactory threadFactory = new TaskThreadFactory(("Task-Monitor-" + getJobContext().getJobIdentity().getId()));
+        ScheduledExecutorService scheduledExecutor = Executors.newSingleThreadScheduledExecutor(threadFactory);
+        scheduledExecutor.scheduleAtFixedRate(() -> {
+            // check task is timeout or not
+            if (isTimeout()) {
+                // when task execution is timeout then stop it.
+                stop();
+            }
+            if (isFinished() || getTaskStatus().isTerminated()) {
+                scheduledExecutor.shutdown();
+            }
+            try {
+                reportTaskResult();
+            } catch (Exception e) {
+                log.warn("Update task info failed, id: {}", getJobContext().getJobIdentity().getId(), e);
+            }
+        }, 1, REPORT_TASK_INFO_INTERVAL_SECONDS, TimeUnit.SECONDS);
+        log.info("Task monitor init success");
+    }
+
+    private void doFinal() {
+        // Report final result
+        // onUpdate();
+        log.info("Task finished with status: {}, id: {}, start to report final result",
+            getJobContext().getJobIdentity().getId(), getTaskStatus());
+        DefaultTaskResult finalResult = buildCurrentResult();
+        reportTaskResultWithRetry(finalResult, REPORT_RESULT_RETRY_TIMES, REPORT_RESULT_RETRY_INTERVAL_SECONDS);
+
+        // TODO: May solve log file here
+
+        // Report finish signal to task server
+        finalResult.setFinished(true);
+        reportTaskResultWithRetry(finalResult, REPORT_RESULT_RETRY_TIMES, REPORT_RESULT_RETRY_INTERVAL_SECONDS);
+        this.finished = true;
+    }
+
+    private void reportTaskResult() {
+        double progress = getProgress();
+        // onUpdate();
+        if (getTaskStatus() == TaskStatus.DONE) {
+            progress = 1.0;
+        }
+        reporter.report(buildCurrentResult());
+        log.info("Report task info, id: {}, status: {}, progress: {}%, result: {}", getJobContext().getJobIdentity().getId(),
+                getTaskStatus(), String.format("%.2f", progress * 100), getTaskResult());
+    }
+
+    private void reportTaskResultWithRetry(TaskResult result, int retries, int intervalSeconds) {
+        int retryTimes = 0;
+        while (retryTimes < retries) {
+            try {
+                retryTimes++;
+                boolean success = reporter.report(result);
+                if (success) {
+                    log.info("Report task result successfully");
+                    break;
+                } else {
+                    log.warn("Report task result failed, will retry after {} seconds, remaining retries: {}",
+                            intervalSeconds, retries - retryTimes);
+                    Thread.sleep(intervalSeconds * 1000L);
+                }
+            } catch (Exception e) {
+                log.warn("Report task result failed, taskId: {}", getJobContext().getJobIdentity().getId(), e);
+            }
+        }
+    }
+
+    private DefaultTaskResult buildCurrentResult() {
+        DefaultTaskResult result = new DefaultTaskResult();
+        result.setResultJson(JsonUtils.toJson(getTaskResult()));
+        result.setTaskStatus(getTaskStatus());
+        result.setProgress(getProgress());
+        result.setFinished(false);
+        result.setJobIdentity(getJobContext().getJobIdentity());
+        ExecutorInfo ei = new ExecutorInfo();
+        ei.setHost(SystemUtils.getLocalIpAddress());
+        ei.setPort(JobUtils.getPort());
+        ei.setHostName(SystemUtils.getHostName());
+        ei.setPid(SystemUtils.getPid());
+        ei.setJvmStartTime(SystemUtils.getJVMStartTime());
+        result.setExecutorInfo(ei);
         return result;
     }
+
+
+    /**
+     * Deal with task init method
+     */
+    protected abstract void onInit();
+
 
     /**
      * Deal with task run logic here
      */
     protected abstract void onStart();
+
 
 
     /**
@@ -129,52 +224,9 @@ public abstract class BaseTask implements Task {
 
     /**
      * Deal with task stop logic here
-     * 
+     *
      * @param e exception
      */
     protected abstract void onFail(Exception e);
 
-    /**
-     * Deal with task update logic here, will be invoked by {@link BaseTask#initTaskMonitor()}
-     */
-    protected abstract void onUpdate();
-
-    private void initTaskMonitor() {
-        ThreadFactory threadFactory = new TaskThreadFactory(("Task-Monitor-" + context.getJobIdentity().getId()));
-        ScheduledExecutorService scheduledExecutor = Executors.newSingleThreadScheduledExecutor(threadFactory);
-        scheduledExecutor.scheduleAtFixedRate(() -> {
-            if (finished) {
-                scheduledExecutor.shutdown();
-            }
-            try {
-                reportTaskResult();
-            } catch (Exception e) {
-                log.warn("Update task progress failed, id: {}", context.getJobIdentity().getId(), e);
-            }
-        }, 1, 5, TimeUnit.SECONDS);
-        log.info("Task monitor init success");
-    }
-
-    private void reportTaskResult() {
-        onUpdate();
-        reporter.report(context.getJobIdentity(), status, progress, result);
-        log.info("Task status: {}, progress: {}%, result: {}", status, String.format("%.2f", progress * 100), result);
-    }
-
-    private void updateStatus(TaskStatus status) {
-        this.status = status;
-    }
-
-    private void finished() {
-        log.info("Task finished, id: {}, status: {}", context.getJobIdentity().getId(), status);
-        finished = true;
-    }
-
-    protected Map<String, String> getJobData() {
-        return this.jobData;
-    }
-
-    public boolean isCanceled() {
-        return canceled;
-    }
 }

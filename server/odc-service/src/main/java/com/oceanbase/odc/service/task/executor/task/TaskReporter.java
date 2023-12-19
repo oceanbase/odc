@@ -23,14 +23,8 @@ import org.apache.commons.collections4.CollectionUtils;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.json.JsonUtils;
-import com.oceanbase.odc.common.util.SystemUtils;
-import com.oceanbase.odc.core.flow.model.FlowTaskResult;
-import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
-import com.oceanbase.odc.service.task.caller.JobUtils;
 import com.oceanbase.odc.service.task.executor.util.HttpUtil;
-import com.oceanbase.odc.service.task.model.ExecutorInfo;
-import com.oceanbase.odc.service.task.schedule.JobIdentity;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -49,26 +43,11 @@ public class TaskReporter {
         this.hostUrls = hostUrls;
     }
 
-    public void report(JobIdentity jobIdentity, TaskStatus status, double progress, FlowTaskResult taskResult) {
+    public boolean report(TaskResult result) {
         if (CollectionUtils.isEmpty(hostUrls)) {
             log.warn("host url is empty");
-            return;
+            return false;
         }
-        DefaultTaskResult result = new DefaultTaskResult();
-        result.setJobIdentity(jobIdentity);
-        result.setTaskStatus(status);
-        result.setProgress(progress);
-        result.setResultJson(JsonUtils.toJson(taskResult));
-
-        ExecutorInfo ei = new ExecutorInfo();
-        ei.setHost(SystemUtils.getLocalIpAddress());
-        ei.setPort(JobUtils.getPort());
-        ei.setHostName(SystemUtils.getHostName());
-        ei.setPid(SystemUtils.getPid());
-        ei.setJvmStartTime(SystemUtils.getJVMStartTime());
-        result.setExecutorInfo(ei);
-
-        // Task executor prefers to upload result to the first host, if failed, try the next one
         for (String host : hostUrls) {
             try {
                 String url = host + UPLOAD_RESULT_URL;
@@ -77,13 +56,14 @@ public class TaskReporter {
                 if (response != null && response.getSuccessful()) {
                     log.info("Report to host {} success, result is {}, response is {}.", host, JsonUtils.toJson(result),
                             JsonUtils.toJson(response));
-                    break;
+                    return true;
                 }
             } catch (Exception e) {
                 log.warn(MessageFormat.format("Report to host {0} failed, result is {1}, error is: ", host,
                         JsonUtils.toJson(result)), e);
             }
         }
+        return false;
     }
 
 }

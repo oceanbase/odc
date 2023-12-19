@@ -45,6 +45,7 @@ import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.TaskErrorStrategy;
+import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.core.shared.exception.InternalServerError;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.core.sql.execute.model.JdbcGeneralResult;
@@ -66,8 +67,6 @@ import com.oceanbase.odc.service.datasecurity.util.DataMaskingUtil;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeResult;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
-import com.oceanbase.odc.service.objectstorage.cloud.CloudResourceConfigurations;
-import com.oceanbase.odc.service.objectstorage.cloud.client.CloudClient;
 import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfiguration;
 import com.oceanbase.odc.service.objectstorage.model.ObjectMetadata;
 import com.oceanbase.odc.service.session.OdcStatementCallBack;
@@ -116,16 +115,18 @@ public class DatabaseChangeTask extends BaseTask {
     private DataMaskingService maskingService;
 
     @Override
-    protected void onStart() {
-
-        ObjectStorageConfiguration otc = JsonUtils.fromJson(
-                getJobData().get(JobDataMapConstants.OBJECT_STORAGE_CONFIGURATION), ObjectStorageConfiguration.class);
-
-        CloudClient cloudClient = new CloudResourceConfigurations.CloudClientBuilder().generateCloudClient(otc);
-        this.cloudObjectStorageService = new CloudObjectStorageService(cloudClient, otc);
+    protected void onInit() {
         log.info("Async task  start to run, task id:{}", this.getTaskId());
         log.info("Start read sql content, taskId={}", this.getTaskId());
+
+        ObjectStorageConfiguration storageConfig = JsonUtils.fromJson(
+                getJobData().get(JobDataMapConstants.OBJECT_STORAGE_CONFIGURATION), ObjectStorageConfiguration.class);
+        this.cloudObjectStorageService = CloudObjectStorageServiceBuilder.build(storageConfig);
         init();
+    }
+
+    @Override
+    protected void onStart() {
         run();
     }
 
@@ -140,14 +141,17 @@ public class DatabaseChangeTask extends BaseTask {
     }
 
     @Override
-    protected void onUpdate() {
+    public double getProgress() {
+        double progress = 0;
         int totalCount = sqls.size();
         if (totalCount == 0) {
             // do nothing and done
-            this.progress = 100.0D;
+            progress = 100.0D;
+        } else {
+            progress =
+                    (successCount + failCount + writeFileSuccessCount + writeFileFailCount) * 100.0D / (totalCount + 1);
         }
-        this.progress =
-                (successCount + failCount + writeFileSuccessCount + writeFileFailCount) * 100.0D / (totalCount + 1);
+        return progress;
     }
 
     @Override
@@ -164,6 +168,9 @@ public class DatabaseChangeTask extends BaseTask {
     }
 
     private void init() {
+        this.taskId = getJobContext().getJobIdentity().getId();
+        this.parameters = JsonUtils.fromJson(getJobData().get(JobDataMapConstants.META_DB_TASK_PARAMETER),
+                DatabaseChangeParameters.class);
         this.connectionSession = generateSession();
         String sqlStr = null;
         if (StringUtils.isNotEmpty(parameters.getSqlContent())) {
@@ -183,14 +190,10 @@ public class DatabaseChangeTask extends BaseTask {
     }
 
     private ConnectionSession generateSession() {
-        this.taskId = getJobContext().getJobIdentity().getId();
-        this.parameters = JsonUtils.fromJson(getJobData().get(JobDataMapConstants.META_DB_TASK_PARAMETER),
-                DatabaseChangeParameters.class);
         ConnectionConfig connectionConfig =
                 JsonUtils.fromJson(getJobData().get(JobDataMapConstants.CONNECTION_CONFIG), ConnectionConfig.class);
         connectionConfig.setId(1L);
         connectionConfig.setDefaultSchema(getJobData().get(JobDataMapConstants.CURRENT_SCHEMA_KEY));
-        connectionConfig.setQueryTimeoutSeconds((int) TimeUnit.MILLISECONDS.toSeconds(parameters.getTimeoutMillis()));
         DefaultConnectSessionFactory sessionFactory = new DefaultConnectSessionFactory(connectionConfig);
         sessionFactory.setSessionTimeoutMillis(parameters.getTimeoutMillis());
         ConnectionSession connectionSession = sessionFactory.generateSession();
@@ -229,7 +232,6 @@ public class DatabaseChangeTask extends BaseTask {
     }
 
     private void run() {
-
         log.info("Read sql content successfully, taskId={}, sqlCount={}", this.getTaskId(), this.sqls.size());
         startTimestamp = System.currentTimeMillis();
         String fileDir = FileManager.generateDir(FileBucket.ASYNC);
@@ -252,6 +254,7 @@ public class DatabaseChangeTask extends BaseTask {
             zipFileId = fileMeta.getFileId();
             writeFileSuccessCount++;
             log.info("Async task end up running, task id: {}", this.getTaskId());
+            updateStatus(TaskStatus.DONE);
         } catch (Exception e) {
             writeFileFailCount++;
             log.warn("Write async task file failed, task id: {}, error message: {}", this.getTaskId(), e.getMessage());
@@ -296,8 +299,8 @@ public class DatabaseChangeTask extends BaseTask {
                 if (GeneralSqlType.DQL == sqlType) {
                     this.isContainQuery = true;
                     /*
-                     * if (maskingService.isMaskingEnabled()) { try { dynamicDataMasking(executeResult); } catch
-                     * (Exception e) { // Eat exception and skip data masking
+                     * todo mask if (maskingService.isMaskingEnabled()) { try { dynamicDataMasking(executeResult); }
+                     * catch (Exception e) { // Eat exception and skip data masking
                      * log.warn("Failed to mask query result set in database change task, sql={}",
                      * executeResult.getExecuteSql(), e); } }
                      */

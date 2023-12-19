@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.task.caller;
+package com.oceanbase.odc.service.task.util;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -72,5 +72,6 @@ public class JobUtils {
         config.setId(1L);
         return config;
     }
+
 
 }

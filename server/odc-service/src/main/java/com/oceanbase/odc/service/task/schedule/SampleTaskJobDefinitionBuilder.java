@@ -22,10 +22,10 @@ import java.util.Map;
 
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
-import com.oceanbase.odc.service.task.caller.JobUtils;
 import com.oceanbase.odc.service.task.constants.JobDataMapConstants;
 import com.oceanbase.odc.service.task.executor.sampletask.SampleTask;
 import com.oceanbase.odc.service.task.executor.sampletask.SampleTaskParameter;
+import com.oceanbase.odc.service.task.util.JobUtils;
 
 /**
  * @author yaobin

@@ -87,12 +87,12 @@ public class CloudResourceConfigurations {
 
 
         CloudClient createAlibabaCloudClient(ObjectStorageConfiguration configuration)
-            throws ClientException {
+                throws ClientException {
             String endpoint = configuration.getEndpoint();
             String accessKeyId = configuration.getAccessKeyId();
             String accessKeySecret = configuration.getAccessKeySecret();
             com.aliyun.oss.ClientBuilderConfiguration clientBuilderConfiguration =
-                new com.aliyun.oss.ClientBuilderConfiguration();
+                    new com.aliyun.oss.ClientBuilderConfiguration();
             clientBuilderConfiguration.setProtocol(com.aliyun.oss.common.comm.Protocol.HTTPS);
             OSS oss = new OSSClientBuilder().build(endpoint, accessKeyId, accessKeySecret, clientBuilderConfiguration);
 
@@ -111,18 +111,18 @@ public class CloudResourceConfigurations {
             String accessKeyId = configuration.getAccessKeyId();
             String accessKeySecret = configuration.getAccessKeySecret();
             AWSStaticCredentialsProvider credentialsProvider = new AWSStaticCredentialsProvider(
-                new BasicAWSCredentials(accessKeyId, accessKeySecret));
+                    new BasicAWSCredentials(accessKeyId, accessKeySecret));
             ClientConfiguration clientConfiguration = new ClientConfiguration().withProtocol(Protocol.HTTPS);
             AmazonS3 s3 = AmazonS3ClientBuilder.standard()
-                .withCredentials(credentialsProvider)
-                .withRegion(region)
-                .withClientConfiguration(clientConfiguration)
-                .disableChunkedEncoding()
-                .build();
+                    .withCredentials(credentialsProvider)
+                    .withRegion(region)
+                    .withClientConfiguration(clientConfiguration)
+                    .disableChunkedEncoding()
+                    .build();
             AWSSecurityTokenService sts = AWSSecurityTokenServiceClientBuilder.standard()
-                .withCredentials(credentialsProvider)
-                .withRegion(region)
-                .build();
+                    .withCredentials(credentialsProvider)
+                    .withRegion(region)
+                    .build();
             String roleSessionName = configuration.getRoleSessionName();
             String roleArn = configuration.getRoleArn();
             return new AmazonCloudClient(s3, sts, roleSessionName, roleArn);

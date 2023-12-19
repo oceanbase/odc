@@ -17,6 +17,7 @@
 package com.oceanbase.odc.service.task.constants;
 
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
+import com.oceanbase.odc.service.flow.task.model.RuntimeTaskConstants;
 
 /**
  * @author yaobin
@@ -40,4 +41,6 @@ public class JobDataMapConstants {
     public static final String OBJECT_STORAGE_CONFIGURATION = "objectStorageConfiguration";
 
     public static final String OBJECT_METADATA = "objectMetadata";
+
+    public static final String TIMEOUT_MILLI_SECONDS = RuntimeTaskConstants.TIMEOUT_MILLI_SECONDS;
 }

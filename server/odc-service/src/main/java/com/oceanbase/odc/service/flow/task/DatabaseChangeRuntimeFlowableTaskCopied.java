@@ -27,7 +27,6 @@ import org.flowable.engine.delegate.DelegateExecution;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.oceanbase.odc.common.json.JsonUtils;
-import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
@@ -46,7 +45,6 @@ import com.oceanbase.odc.service.objectstorage.cloud.model.CloudEnvConfiguration
 import com.oceanbase.odc.service.objectstorage.model.ObjectMetadata;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.caller.JobException;
-import com.oceanbase.odc.service.task.caller.JobUtils;
 import com.oceanbase.odc.service.task.constants.JobDataMapConstants;
 import com.oceanbase.odc.service.task.executor.task.DatabaseChangeTask;
 import com.oceanbase.odc.service.task.schedule.DefaultJobDefinition;
@@ -54,6 +52,7 @@ import com.oceanbase.odc.service.task.schedule.JobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobScheduler;
 import com.oceanbase.odc.service.task.schedule.SampleTaskJobDefinitionBuilder;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
+import com.oceanbase.odc.service.task.util.JobUtils;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -176,7 +175,7 @@ public class DatabaseChangeRuntimeFlowableTaskCopied extends BaseODCFlowTaskDele
         DatabaseChangeParameters parameters = FlowTaskUtil.getAsyncParameter(execution);
         PreConditions.validArgumentState(
                 parameters.getSqlContent() != null || CollectionUtils.isNotEmpty(parameters.getSqlObjectIds()),
-            ErrorCodes.BadArgument, new Object[]{"sql"}, "input sql is empty");
+                ErrorCodes.BadArgument, new Object[] {"sql"}, "input sql is empty");
 
         ConnectionConfig config = FlowTaskUtil.getConnectionConfig(execution);
         Map<String, String> jobData = new HashMap<>();
@@ -187,6 +186,8 @@ public class DatabaseChangeRuntimeFlowableTaskCopied extends BaseODCFlowTaskDele
         jobData.put(JobDataMapConstants.SESSION_TIME_ZONE, connectProperties.getDefaultTimeZone());
         jobData.put(JobDataMapConstants.OBJECT_STORAGE_CONFIGURATION,
                 JsonUtils.toJson(cloudEnvConfigurations.getObjectStorageConfiguration()));
+        jobData.put(JobDataMapConstants.TIMEOUT_MILLI_SECONDS,
+                FlowTaskUtil.getExecutionExpirationIntervalMillis(execution) + "");
         if (CollectionUtils.isNotEmpty(parameters.getSqlObjectIds())) {
             List<ObjectMetadata> objectMetadatas = new ArrayList<>();
             for (String objectId : parameters.getSqlObjectIds()) {

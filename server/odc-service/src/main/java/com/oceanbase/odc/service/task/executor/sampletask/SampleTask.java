@@ -21,9 +21,11 @@ import java.util.Map;
 import org.springframework.jdbc.core.JdbcOperations;
 
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.core.flow.model.FlowTaskResult;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.shared.Verify;
+import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.odc.service.task.constants.JobDataMapConstants;
@@ -46,8 +48,17 @@ public class SampleTask extends BaseTask {
 
     private int totalSqlCount = 0;
 
+    private FlowTaskResult result;
+    private TaskStatus tas;
+
+    @Override
+    protected void onInit() {
+
+    }
+
     @Override
     protected void onStart() {
+        updateStatus(TaskStatus.RUNNING);
         Map<String, String> dataMap = getJobContext().getJobData();
 
         this.parameter =
@@ -62,7 +73,7 @@ public class SampleTask extends BaseTask {
         try {
             JdbcOperations jdbcOperations = session.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY);
             for (String sql : this.parameter.getSqls()) {
-                if (canceled) {
+                if (isCanceled()) {
                     break;
                 }
                 jdbcOperations.execute(sql);
@@ -70,6 +81,7 @@ public class SampleTask extends BaseTask {
                 Thread.sleep(500); // Simulate long execution time of SQL.
             }
             this.result = SampleTaskResult.success();
+            updateStatus(TaskStatus.DONE);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         } finally {
@@ -87,14 +99,19 @@ public class SampleTask extends BaseTask {
         this.result = SampleTaskResult.fail();
     }
 
-    @Override
-    protected void onUpdate() {
-        this.progress = executedSqlCount * 1.0 / totalSqlCount;
-    }
-
     private void validateTaskParameter() {
         Verify.notNull(this.parameter, "parameter");
         Verify.notEmpty(this.parameter.getSqls(), "sql");
+    }
+
+    @Override
+    public double getProgress() {
+        return executedSqlCount * 1.0 / totalSqlCount;
+    }
+
+    @Override
+    public FlowTaskResult getTaskResult() {
+        return this.result;
     }
 
 }

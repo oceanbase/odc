@@ -21,7 +21,7 @@ import java.util.List;
 
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.service.common.model.HostProperties;
-import com.oceanbase.odc.service.task.caller.JobUtils;
+import com.oceanbase.odc.service.task.util.JobUtils;
 
 /**
  * @author yaobin

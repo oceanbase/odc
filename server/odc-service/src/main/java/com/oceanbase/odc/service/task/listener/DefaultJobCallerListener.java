@@ -16,7 +16,6 @@
 
 package com.oceanbase.odc.service.task.listener;
 
-import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.caller.JobException;
@@ -59,7 +58,6 @@ public class DefaultJobCallerListener extends JobCallerListener {
             JobEntity jobEntity = taskFrameworkService.find(ji.getId());
             if (jobEntity.getScheduleTimes() >= 5) {
                 jobEntity.setDescription("After retry 5 times to schedule job but failed.");
-                jobEntity.setStatus(TaskStatus.SCHEDULE_FAILED);
                 taskFrameworkService.update(jobEntity);
                 return;
             }
