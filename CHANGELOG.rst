@@ -62,6 +62,8 @@ Changes
 
 Fix
 ~~~
+- Fix(database-object):modify the prompt that prompts users about the
+  risk of index changes #1228. [zhangxiao]
 - Fix(database-change): timeout or oom when upload a large sql files
   (#1151) [XiaoYang]
 - Fix(monitor): fix druid stats parser error (#1213) [Ang]
