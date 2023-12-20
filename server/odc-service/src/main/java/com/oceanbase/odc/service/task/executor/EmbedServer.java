@@ -28,6 +28,7 @@ import org.slf4j.LoggerFactory;
 
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.ExceptionUtils;
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.common.util.UrlUtils;
 
@@ -176,10 +177,10 @@ public class EmbedServer {
             String uri = UrlUtils.decode(msg.uri());
             HttpMethod httpMethod = msg.method();
             boolean keepAlive = HttpUtil.isKeepAlive(msg);
-            if (uri != null) {
+            if (StringUtils.isNotBlank(uri)) {
                 logger.info(">>>>>>>>>>> odc-job get uri {}", uri);
             }
-            if (requestData != null) {
+            if (StringUtils.isNotBlank(requestData)) {
                 logger.info(">>>>>>>>>>> odc-job get requestData {}", requestData);
             }
 

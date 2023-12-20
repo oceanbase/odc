@@ -15,19 +15,24 @@
  */
 package com.oceanbase.odc.service.flow.task;
 
+import java.io.File;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.flowable.engine.delegate.DelegateExecution;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.metadb.task.JobEntity;
-import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.odc.service.connection.model.ConnectProperties;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.flow.exception.ServiceTaskError;
@@ -35,17 +40,17 @@ import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeResult;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
 import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
-import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
+import com.oceanbase.odc.service.objectstorage.cloud.model.CloudEnvConfigurations;
+import com.oceanbase.odc.service.objectstorage.model.ObjectMetadata;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.caller.JobException;
-import com.oceanbase.odc.service.task.caller.JobUtils;
 import com.oceanbase.odc.service.task.constants.JobDataMapConstants;
-import com.oceanbase.odc.service.task.executor.sampletask.SampleTask;
+import com.oceanbase.odc.service.task.executor.task.DatabaseChangeTask;
 import com.oceanbase.odc.service.task.schedule.DefaultJobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobScheduler;
-import com.oceanbase.odc.service.task.schedule.SampleTaskJobDefinitionBuilder;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
+import com.oceanbase.odc.service.task.util.JobUtils;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -60,8 +65,7 @@ public class DatabaseChangeRuntimeFlowableTaskCopied extends BaseODCFlowTaskDele
     private volatile JobEntity jobEntity;
     private volatile boolean isSuccessful = false;
     private volatile boolean isFailure = false;
-    @Autowired
-    private CloudObjectStorageService cloudObjectStorageService;
+    private volatile DelegateExecution execution;
     @Autowired
     private ObjectStorageFacade objectStorageFacade;
     @Autowired
@@ -70,6 +74,8 @@ public class DatabaseChangeRuntimeFlowableTaskCopied extends BaseODCFlowTaskDele
     private JobScheduler jobScheduler;
     @Autowired
     private TaskFrameworkService taskFrameworkService;
+    @Autowired
+    private CloudEnvConfigurations cloudEnvConfigurations;
 
     @Override
     public boolean cancel(boolean mayInterruptIfRunning, Long taskId, TaskService taskService) {
@@ -90,6 +96,7 @@ public class DatabaseChangeRuntimeFlowableTaskCopied extends BaseODCFlowTaskDele
     @Override
     protected DatabaseChangeResult start(Long taskId, TaskService taskService, DelegateExecution execution)
             throws JobException {
+        this.execution = execution;
         DatabaseChangeResult result;
         try {
             log.info("Async task starts, taskId={}, activityId={}", taskId, execution.getCurrentActivityId());
@@ -116,29 +123,6 @@ public class DatabaseChangeRuntimeFlowableTaskCopied extends BaseODCFlowTaskDele
             throw new ServiceTaskError(e);
         }
         return result;
-    }
-
-    private JobDefinition buildJobDefinition(DelegateExecution execution) {
-        DatabaseChangeParameters parameters = FlowTaskUtil.getAsyncParameter(execution);
-        ConnectionConfig config = FlowTaskUtil.getConnectionConfig(execution);
-        JobDefinition jd = new SampleTaskJobDefinitionBuilder().build(config, FlowTaskUtil.getSchemaName(execution),
-                SqlUtils.split(config.getDialectType(), parameters.getSqlContent(), ";"));
-        jd.getJobData().put(JobDataMapConstants.BUZ_ID, FlowTaskUtil.getTaskId(execution) + "");
-        return jd;
-    }
-
-
-    private JobDefinition buildJobDefinition(DelegateExecution execution, Long taskId) {
-        DatabaseChangeParameters parameters = FlowTaskUtil.getAsyncParameter(execution);
-        ConnectionConfig config = FlowTaskUtil.getConnectionConfig(execution);
-        Map<String, String> jobData = new HashMap<>();
-        jobData.put(JobDataMapConstants.META_DB_TASK_PARAMETER, JsonUtils.toJson(parameters));
-        jobData.put(JobDataMapConstants.CONNECTION_CONFIG, JobUtils.toJson(config));
-        jobData.put(JobDataMapConstants.BUZ_ID, taskId + "");
-        return DefaultJobDefinition.builder().jobClass(SampleTask.class)
-                .jobType(TaskType.ASYNC.name())
-                .jobData(jobData)
-                .build();
     }
 
     @Override
@@ -174,5 +158,38 @@ public class DatabaseChangeRuntimeFlowableTaskCopied extends BaseODCFlowTaskDele
 
     }
 
+    private JobDefinition buildJobDefinition(DelegateExecution execution) {
 
+        DatabaseChangeParameters parameters = FlowTaskUtil.getAsyncParameter(execution);
+        PreConditions.validArgumentState(
+                parameters.getSqlContent() != null || CollectionUtils.isNotEmpty(parameters.getSqlObjectIds()),
+                ErrorCodes.BadArgument, new Object[] {"sql"}, "input sql is empty");
+
+        ConnectionConfig config = FlowTaskUtil.getConnectionConfig(execution);
+        Map<String, String> jobData = new HashMap<>();
+        jobData.put(JobDataMapConstants.META_DB_TASK_PARAMETER, JsonUtils.toJson(parameters));
+        jobData.put(JobDataMapConstants.CONNECTION_CONFIG, JobUtils.toJson(config));
+        jobData.put(JobDataMapConstants.FLOW_INSTANCE_ID, FlowTaskUtil.getFlowInstanceId(execution) + "");
+        jobData.put(JobDataMapConstants.CURRENT_SCHEMA_KEY, FlowTaskUtil.getSchemaName(execution));
+        jobData.put(JobDataMapConstants.SESSION_TIME_ZONE, connectProperties.getDefaultTimeZone());
+        jobData.put(JobDataMapConstants.OBJECT_STORAGE_CONFIGURATION,
+                JsonUtils.toJson(cloudEnvConfigurations.getObjectStorageConfiguration()));
+        jobData.put(JobDataMapConstants.TIMEOUT_MILLI_SECONDS,
+                FlowTaskUtil.getExecutionExpirationIntervalMillis(execution) + "");
+        if (CollectionUtils.isNotEmpty(parameters.getSqlObjectIds())) {
+            List<ObjectMetadata> objectMetadatas = new ArrayList<>();
+            for (String objectId : parameters.getSqlObjectIds()) {
+                ObjectMetadata om = objectStorageFacade.loadMetaData(
+                        "async".concat(File.separator).concat(FlowTaskUtil.getTaskCreator(execution).getId() + ""),
+                        objectId);
+                objectMetadatas.add(om);
+            }
+            jobData.put(JobDataMapConstants.OBJECT_METADATA, JsonUtils.toJson(objectMetadatas));
+        }
+
+        return DefaultJobDefinition.builder().jobClass(DatabaseChangeTask.class)
+                .jobType(TaskType.ASYNC.name())
+                .jobData(jobData)
+                .build();
+    }
 }

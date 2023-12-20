@@ -27,11 +27,12 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import com.oceanbase.odc.service.task.caller.JobException;
-import com.oceanbase.odc.service.task.caller.JobUtils;
 import com.oceanbase.odc.service.task.caller.K8sJobClient;
 import com.oceanbase.odc.service.task.caller.NativeK8sJobClient;
 import com.oceanbase.odc.service.task.caller.PodParam;
+import com.oceanbase.odc.service.task.config.TaskFrameworkProperties.K8sProperties;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
+import com.oceanbase.odc.service.task.util.JobUtils;
 import com.oceanbase.odc.test.database.TestProperties;
 
 /**
@@ -46,7 +47,9 @@ public class NativeK8sClientTest {
 
     @BeforeClass
     public static void init() throws IOException {
-        k8sClient = new NativeK8sJobClient(TestProperties.getProperty("odc.k8s.cluster.url"));
+        K8sProperties k8sProperties = new K8sProperties();
+        k8sProperties.setKubeUrl(TestProperties.getProperty("odc.k8s.cluster.url"));
+        k8sClient = new NativeK8sJobClient(k8sProperties);
     }
 
     @Test

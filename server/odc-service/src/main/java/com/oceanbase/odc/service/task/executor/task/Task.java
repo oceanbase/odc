@@ -51,27 +51,27 @@ public interface Task {
      *
      * @return progress
      */
-    double progress();
+    double getProgress();
 
     /**
      * Get job context. Each task implementation should hold a job context
      *
      * @return {@link JobContext}
      */
-    JobContext context();
+    JobContext getJobContext();
 
     /**
      * Get task status
      * 
      * @return {@link TaskStatus}
      */
-    TaskStatus status();
+    TaskStatus getTaskStatus();
 
     /**
      * Get task result
      * 
      * @return {@link FlowTaskResult} (The FlowTaskResult will be changed to TaskResult in the future)
      */
-    FlowTaskResult result();
+    FlowTaskResult getTaskResult();
 
 }

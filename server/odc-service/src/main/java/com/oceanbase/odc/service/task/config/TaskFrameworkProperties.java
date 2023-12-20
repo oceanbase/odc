@@ -37,13 +37,16 @@ public class TaskFrameworkProperties {
 
     private TaskRunModeEnum runMode;
 
+    private String odcUrl;
+
     @NestedConfigurationProperty
     private K8sProperties k8s = new K8sProperties();
 
     @Data
     public static class K8sProperties {
-        private String url;
+        private String kubeUrl;
         private String namespace;
+        private String kubeConfig;
     }
 
 }

@@ -19,29 +19,23 @@ package com.oceanbase.odc.service.task.schedule;
 import java.util.Collections;
 import java.util.List;
 
-import com.oceanbase.odc.common.util.SystemUtils;
-import com.oceanbase.odc.service.common.model.HostProperties;
-import com.oceanbase.odc.service.task.util.JobUtils;
+import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 
 /**
  * @author yaobin
- * @date 2023-12-01
+ * @date 2023-12-15
  * @since 4.2.4
  */
-public class IpBasedHostUrlProvider implements HostUrlProvider {
+public class FixedHostUrlProvider implements HostUrlProvider {
 
-    private final HostProperties configProperties;
+    private final TaskFrameworkProperties taskFrameworkProperties;
 
-    public IpBasedHostUrlProvider(HostProperties configProperties) {
-        this.configProperties = configProperties;
+    public FixedHostUrlProvider(TaskFrameworkProperties taskFrameworkProperties) {
+        this.taskFrameworkProperties = taskFrameworkProperties;
     }
 
     @Override
     public List<String> hostUrl() {
-        String host =
-                configProperties.getOdcHost() == null ? SystemUtils.getLocalIpAddress() : configProperties.getOdcHost();
-        int port =
-                configProperties.getPort() == null ? JobUtils.getPort() : Integer.parseInt(configProperties.getPort());
-        return Collections.singletonList("http://" + host + ":" + port);
+        return Collections.singletonList(taskFrameworkProperties.getOdcUrl());
     }
 }

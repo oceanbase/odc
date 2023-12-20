@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.objectstorage.model;
 
+import java.io.Serializable;
 import java.util.Date;
 
 import lombok.AllArgsConstructor;
@@ -31,7 +32,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ObjectMetadata {
+public class ObjectMetadata implements Serializable {
     private String objectId;
 
     private long creatorId;

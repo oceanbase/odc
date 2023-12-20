@@ -19,7 +19,6 @@ package com.oceanbase.odc.service.task.executor;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.service.task.caller.JobContext;
-import com.oceanbase.odc.service.task.caller.JobUtils;
 import com.oceanbase.odc.service.task.constants.JobEnvConstants;
 import com.oceanbase.odc.service.task.enums.TaskRunModeEnum;
 import com.oceanbase.odc.service.task.executor.context.JobContextProvider;
@@ -28,6 +27,7 @@ import com.oceanbase.odc.service.task.executor.executor.TaskExecutor;
 import com.oceanbase.odc.service.task.executor.executor.ThreadPoolTaskExecutor;
 import com.oceanbase.odc.service.task.executor.task.Task;
 import com.oceanbase.odc.service.task.executor.task.TaskFactory;
+import com.oceanbase.odc.service.task.util.JobUtils;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -54,6 +54,8 @@ public class TaskApplication {
             log.info("Task created, context: {}", context);
             taskExecutor.execute(task, context);
             ExitHelper.await();
+        } catch (Exception e) {
+            log.warn("Execute task error:", e);
         } finally {
             try {
                 server.stop();

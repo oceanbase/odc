@@ -21,6 +21,7 @@ import java.util.Map;
 import org.springframework.jdbc.core.JdbcOperations;
 
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.core.flow.model.FlowTaskResult;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.shared.Verify;
@@ -47,10 +48,19 @@ public class SampleTask extends BaseTask {
 
     private int totalSqlCount = 0;
 
+    private FlowTaskResult result;
+    private TaskStatus tas;
+
+    @Override
+    protected void onInit() {
+
+    }
+
     @Override
     protected void onStart() {
         updateStatus(TaskStatus.RUNNING);
-        Map<String, String> dataMap = context.getJobData();
+        Map<String, String> dataMap = getJobContext().getJobData();
+
         this.parameter =
                 JsonUtils.fromJson(dataMap.get(JobDataMapConstants.META_DB_TASK_PARAMETER), SampleTaskParameter.class);
         validateTaskParameter();
@@ -63,7 +73,7 @@ public class SampleTask extends BaseTask {
         try {
             JdbcOperations jdbcOperations = session.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY);
             for (String sql : this.parameter.getSqls()) {
-                if (canceled) {
+                if (isCanceled()) {
                     break;
                 }
                 jdbcOperations.execute(sql);
@@ -80,18 +90,28 @@ public class SampleTask extends BaseTask {
     }
 
     @Override
-    protected void onFail(Exception e) {
-        this.result = SampleTaskResult.fail();
+    protected void onStop() {
+
     }
 
     @Override
-    protected void onUpdate() {
-        this.progress = executedSqlCount * 1.0 / totalSqlCount;
+    protected void onFail(Exception e) {
+        this.result = SampleTaskResult.fail();
     }
 
     private void validateTaskParameter() {
         Verify.notNull(this.parameter, "parameter");
         Verify.notEmpty(this.parameter.getSqls(), "sql");
+    }
+
+    @Override
+    public double getProgress() {
+        return executedSqlCount * 1.0 / totalSqlCount;
+    }
+
+    @Override
+    public FlowTaskResult getTaskResult() {
+        return this.result;
     }
 
 }

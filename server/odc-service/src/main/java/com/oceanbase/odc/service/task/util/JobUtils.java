@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.task.caller;
+package com.oceanbase.odc.service.task.util;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 import com.google.gson.Gson;
 import com.oceanbase.odc.common.util.SystemUtils;
+import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.constants.JobEnvConstants;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
@@ -52,11 +53,25 @@ public class JobUtils {
 
     public static int getPort() {
         String port = SystemUtils.getEnvOrProperty(JobEnvConstants.ODC_SERVER_PORT);
-        return port == null ? 8989 : Integer.parseInt(port);
+        return port != null ? Integer.parseInt(port) : 8989;
     }
 
     public static String getLogPath() {
         String logPath = SystemUtils.getEnvOrProperty(JobEnvConstants.LOG_DIRECTORY);
         return logPath == null ? "./log" : logPath;
     }
+
+    public static ConnectionConfig getMetaDBConnectionConfig() {
+        ConnectionConfig config = new ConnectionConfig();
+        config.setHost(SystemUtils.getEnvOrProperty("DATABASE_HOST"));
+        String port = SystemUtils.getEnvOrProperty("DATABASE_PORT");
+        config.setPort(port != null ? Integer.parseInt(port) : 8989);
+        config.setDefaultSchema(SystemUtils.getEnvOrProperty("DATABASE_NAME"));
+        config.setName(SystemUtils.getEnvOrProperty("DATABASE_USERNAME"));
+        config.setPassword(SystemUtils.getEnvOrProperty("DATABASE_PASSWORD"));
+        config.setId(1L);
+        return config;
+    }
+
+
 }

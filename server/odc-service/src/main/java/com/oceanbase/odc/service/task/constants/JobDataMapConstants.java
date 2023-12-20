@@ -16,6 +16,9 @@
 
 package com.oceanbase.odc.service.task.constants;
 
+import com.oceanbase.odc.core.session.ConnectionSessionConstants;
+import com.oceanbase.odc.service.flow.task.model.RuntimeTaskConstants;
+
 /**
  * @author yaobin
  * @date 2023-12-06
@@ -28,4 +31,16 @@ public class JobDataMapConstants {
     public static final String META_DB_TASK_PARAMETER = "metaDbTaskParameter";
 
     public static final String BUZ_ID = "buzId";
+
+    public static final String FLOW_INSTANCE_ID = "flowInstanceId";
+
+    public static final String CURRENT_SCHEMA_KEY = ConnectionSessionConstants.CURRENT_SCHEMA_KEY;
+
+    public static final String SESSION_TIME_ZONE = ConnectionSessionConstants.SESSION_TIME_ZONE;
+
+    public static final String OBJECT_STORAGE_CONFIGURATION = "objectStorageConfiguration";
+
+    public static final String OBJECT_METADATA = "objectMetadata";
+
+    public static final String TIMEOUT_MILLI_SECONDS = RuntimeTaskConstants.TIMEOUT_MILLI_SECONDS;
 }
