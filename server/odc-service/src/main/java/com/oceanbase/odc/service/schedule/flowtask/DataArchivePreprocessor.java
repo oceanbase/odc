@@ -118,7 +118,9 @@ public class DataArchivePreprocessor extends AbstractDlmJobPreprocessor {
                         scheduleEntity.getId().toString(), Arrays.asList(TaskStatus.RUNNING, TaskStatus.PREPARING));
                 if (scheduleEntity.getStatus() != ScheduleStatus.PAUSE || !runningTasks.isEmpty()) {
                     throw new IllegalStateException(
-                            String.format("Resume schedule not allowed,schedule status=%s,running tasks=%s",
+                            String.format(
+                                    "The task can only be edited when it is paused and there are no active subtasks executing."
+                                            + "status=%s,subtaskCount=%s",
                                     scheduleEntity.getStatus(), runningTasks.size()));
                 }
                 // update job limit config

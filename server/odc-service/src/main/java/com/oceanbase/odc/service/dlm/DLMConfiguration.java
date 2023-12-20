@@ -45,7 +45,7 @@ public class DLMConfiguration {
     @Value("${odc.task.dlm.single-task-thread-pool-size:15}")
     private int singleTaskThreadPoolSize;
 
-    @Value("${odc.task.dlm.task-connection-query-timeout-seconds:60}")
+    @Value("${odc.task.dlm.task-connection-query-timeout-seconds:180}")
     private int taskConnectionQueryTimeout;
 
     @Value("${odc.task.dlm.sharding-strategy:MATCH}")

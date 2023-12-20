@@ -27,6 +27,8 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.collections4.CollectionUtils;
+
 import com.oceanbase.odc.service.dlm.model.OffsetConfig;
 
 /**
@@ -59,7 +61,7 @@ public class DataArchiveConditionUtil {
     }
 
     private static Map<String, String> getVariablesMap(List<OffsetConfig> variables) {
-        if (variables == null || variables.isEmpty()) {
+        if (CollectionUtils.isEmpty(variables)) {
             return Collections.emptyMap();
         }
         Map<String, String> map = new HashMap<>();
