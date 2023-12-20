@@ -152,6 +152,8 @@ public abstract class BaseTask implements Task {
         reportTaskResultWithRetry(finalResult, REPORT_RESULT_RETRY_TIMES, REPORT_RESULT_RETRY_INTERVAL_SECONDS);
 
         // TODO: May solve log file here
+        //String logPath = JobUtils.getLogPath();
+
 
         // Report finish signal to task server
         finalResult.setFinished(true);

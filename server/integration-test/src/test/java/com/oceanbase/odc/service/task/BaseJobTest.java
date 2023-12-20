@@ -32,10 +32,10 @@ import com.oceanbase.odc.service.task.config.TaskFrameworkProperties.K8sProperti
 import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.constants.JobEnvConstants;
 import com.oceanbase.odc.service.task.enums.TaskRunModeEnum;
+import com.oceanbase.odc.service.task.executor.logger.LogUtils;
 import com.oceanbase.odc.service.task.schedule.HostUrlProvider;
 import com.oceanbase.odc.service.task.schedule.IpBasedHostUrlProvider;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
-import com.oceanbase.odc.service.task.util.JobUtils;
 import com.oceanbase.odc.test.database.TestDBConfiguration;
 import com.oceanbase.odc.test.database.TestDBConfigurations;
 import com.oceanbase.odc.test.database.TestProperties;
@@ -61,7 +61,7 @@ public abstract class BaseJobTest {
         System.setProperty("DATABASE_USERNAME",
                 JdbcUtil.buildUser(tdc.getUsername(), tdc.getTenant(), tdc.getCluster()));
         System.setProperty("DATABASE_PASSWORD", tdc.getPassword());
-        System.setProperty(JobEnvConstants.LOG_DIRECTORY, JobUtils.getLogPath());
+        System.setProperty(JobEnvConstants.LOG_DIRECTORY, LogUtils.getBaseLogPath());
         System.setProperty(JobEnvConstants.BOOT_MODE, JobConstants.ODC_BOOT_MODE_EXECUTOR);
         System.setProperty(JobEnvConstants.TASK_RUN_MODE, TaskRunModeEnum.K8S.name());
         DefaultJobConfiguration jc = new DefaultJobConfiguration() {};

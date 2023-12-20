@@ -18,8 +18,10 @@ package com.oceanbase.odc.service.task.service;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
@@ -30,6 +32,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.event.EventPublisher;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
+import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
@@ -168,7 +171,13 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         jobScheduleRepository.update(jobEntity);
     }
 
-    public Set<Long> findJobByFlowInstanceIdAndJobType(Long flowInstanceId, String jobType) {
-        return jobScheduleRepository.findJobByFlowInstanceIdAndJobType(flowInstanceId,jobType);
+    @Override
+    public Optional<JobEntity> findJobByFlowInstanceIdAndJobType(Long flowInstanceId, String jobType) {
+        List<JobEntity> jobEntities = jobScheduleRepository.findJobByFlowInstanceIdAndJobType(flowInstanceId,jobType);
+        if(CollectionUtils.isNotEmpty(jobEntities)){
+            Verify.singleton(jobEntities, "flowInstanceId");
+            return Optional.of(jobEntities.get(0));
+        }
+        return Optional.empty();
     }
 }

@@ -16,6 +16,7 @@
 
 package com.oceanbase.odc.service.task.service;
 
+import java.util.Optional;
 import java.util.Set;
 
 import org.springframework.transaction.annotation.Transactional;
@@ -49,6 +50,6 @@ public interface TaskFrameworkService {
 
     void update(JobEntity jobEntity);
 
-    Set<Long> findJobByFlowInstanceIdAndJobType(Long flowInstanceId, String jobType);
+    Optional<JobEntity> findJobByFlowInstanceIdAndJobType(Long flowInstanceId, String jobType);
 
 }

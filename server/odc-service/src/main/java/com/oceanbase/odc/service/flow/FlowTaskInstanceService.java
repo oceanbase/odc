@@ -60,6 +60,7 @@ import com.oceanbase.odc.core.shared.exception.InternalServerError;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.metadb.flow.FlowInstanceRepository;
+import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.metadb.task.TaskRepository;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
@@ -198,12 +199,15 @@ public class FlowTaskInstanceService {
 
         // forward to target host when task is not be executed on this machine or running in k8s pod
         if (taskFrameworkProperties.getRunMode() == TaskRunModeEnum.K8S) {
-           Set<Long> ids = taskFrameworkService.findJobByFlowInstanceIdAndJobType(id, taskEntity.getTaskType().name());
-            if (!taskEntity.getStatus().isTerminated()) {
-                return forwardRemote(taskEntity);
-            } else {
-                // todo get from oss
-                return null;
+            Optional<JobEntity> jobEntity = taskFrameworkService.findJobByFlowInstanceIdAndJobType(id,
+                taskEntity.getTaskType().name());
+            if(jobEntity.isPresent()) {
+                if (!taskEntity.getStatus().isTerminated()) {
+                    return forwardRemote(jobEntity.get());
+                } else {
+                    // todo get from oss
+                    return null;
+                }
             }
         }
 
@@ -226,6 +230,15 @@ public class FlowTaskInstanceService {
          * 任务不在当前机器上，需要进行 {@code RPC} 转发获取
          */
         ExecutorInfo executorInfo = JsonUtils.fromJson(taskEntity.getExecutor(), ExecutorInfo.class);
+        DispatchResponse response = requestDispatcher.forward(executorInfo.getHost(), executorInfo.getPort());
+        return response.getContentByType(new TypeReference<SuccessResponse<String>>() {}).getData();
+    }
+
+    private String forwardRemote(JobEntity jobEntity) throws IOException {
+        /**
+         * 任务不在当前机器上，需要进行 {@code RPC} 转发获取
+         */
+        ExecutorInfo executorInfo = JsonUtils.fromJson(jobEntity.getExecutor(), ExecutorInfo.class);
         DispatchResponse response = requestDispatcher.forward(executorInfo.getHost(), executorInfo.getPort());
         return response.getContentByType(new TypeReference<SuccessResponse<String>>() {}).getData();
     }

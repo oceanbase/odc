@@ -30,8 +30,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ExecutorBizImpl implements ExecutorBiz {
 
-    private static final String LOG_PATH_PATTERN = "%s/%s/task.%s";
-
     @Override
     public SuccessResponse<String> log(Long id, String logType) {
         log.info("Accept log request, task id = {}, logType = {}", id, logType);
@@ -42,9 +40,6 @@ public class ExecutorBizImpl implements ExecutorBiz {
             new SuccessResponse<>("logType " + logType + " is illegal.");
         }
 
-        // String filePath = String.format(LOG_PATH_PATTERN, JobUtils.getLogPath(), id, logType);
-        // todo optimize log
-        String filePath = "/opt/odc/log/odc.log";
-        return new SuccessResponse<>(LogUtils.getLog(filePath));
+        return new SuccessResponse<>(LogUtils.getJobLogPath(id, logType));
     }
 }

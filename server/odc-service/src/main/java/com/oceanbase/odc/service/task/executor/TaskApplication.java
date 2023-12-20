@@ -25,6 +25,7 @@ import com.oceanbase.odc.service.task.executor.context.JobContextProvider;
 import com.oceanbase.odc.service.task.executor.context.JobContextProviderFactory;
 import com.oceanbase.odc.service.task.executor.executor.TaskExecutor;
 import com.oceanbase.odc.service.task.executor.executor.ThreadPoolTaskExecutor;
+import com.oceanbase.odc.service.task.executor.logger.LogUtils;
 import com.oceanbase.odc.service.task.executor.task.Task;
 import com.oceanbase.odc.service.task.executor.task.TaskFactory;
 import com.oceanbase.odc.service.task.util.JobUtils;
@@ -70,8 +71,8 @@ public class TaskApplication {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             log.info("Task executor exits, systemInfo={}", SystemUtils.getSystemMemoryInfo());
         }));
-        System.setProperty(JobEnvConstants.LOG_DIRECTORY, JobUtils.getLogPath());
-        log.info("Log directory is {}.", JobUtils.getLogPath());
+        System.setProperty(JobEnvConstants.LOG_DIRECTORY, LogUtils.getBaseLogPath());
+        log.info("Log directory is {}.", LogUtils.getBaseLogPath());
 
         String runMode = SystemUtils.getEnvOrProperty(JobEnvConstants.TASK_RUN_MODE);
         Verify.notBlank(runMode, JobEnvConstants.TASK_RUN_MODE);

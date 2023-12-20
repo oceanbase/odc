@@ -21,8 +21,10 @@ import java.io.File;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.LineIterator;
 
+import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
+import com.oceanbase.odc.service.task.constants.JobEnvConstants;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -36,6 +38,7 @@ public class LogUtils {
 
     private static final long MAX_LOG_LINE_COUNT = 10000;
     private static final long MAX_LOG_BYTE_COUNT = 1024 * 1024;
+    private static final String LOG_PATH_PATTERN = "%s/%s/task.%s";
 
     public static String getLog(String filePath) {
 
@@ -65,5 +68,17 @@ public class LogUtils {
         } finally {
             LineIterator.closeQuietly(it);
         }
+    }
+
+
+    public static String getBaseLogPath() {
+        String logPath = SystemUtils.getEnvOrProperty(JobEnvConstants.LOG_DIRECTORY);
+        return logPath == null ? "./log" : logPath;
+    }
+    public static String getJobLogPath(Long jobId, String logType) {
+
+        // String filePath = String.format(LOG_PATH_PATTERN, JobUtils.getLogPath(), id, logType);
+        // todo optimize log
+       return "/opt/odc/log/odc.log";
     }
 }
