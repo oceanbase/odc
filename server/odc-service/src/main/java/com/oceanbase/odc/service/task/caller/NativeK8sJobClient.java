@@ -21,8 +21,10 @@ import static com.oceanbase.odc.service.task.constants.JobConstants.RESTART_POLI
 import static com.oceanbase.odc.service.task.constants.JobConstants.TEMPLATE_API_VERSION;
 import static com.oceanbase.odc.service.task.constants.JobConstants.TEMPLATE_KIND_POD;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.time.Duration;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -30,6 +32,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
+
+import com.oceanbase.odc.common.util.EncodeUtils;
+import com.oceanbase.odc.common.util.StringUtils;
+import com.oceanbase.odc.core.shared.Verify;
+import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
@@ -41,7 +48,9 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1PodSpec;
+import io.kubernetes.client.util.ClientBuilder;
 import io.kubernetes.client.util.Config;
+import io.kubernetes.client.util.KubeConfig;
 import lombok.NonNull;
 
 /**
@@ -51,15 +60,27 @@ import lombok.NonNull;
  */
 public class NativeK8sJobClient implements K8sJobClient {
 
-    public NativeK8sJobClient(String k8sClusterUrl) throws IOException {
-        ApiClient apiClient = Config.defaultClient();
+    public NativeK8sJobClient(TaskFrameworkProperties.K8sProperties k8sProperties) throws IOException {
+        ApiClient apiClient = null;
+        if (StringUtils.isNotBlank(k8sProperties.getKubeConfig())) {
+            byte[] kubeConfigBytes = EncodeUtils.base64DecodeFromString(k8sProperties.getKubeConfig());
+            Verify.notNull(kubeConfigBytes, "kube config");
+            try (Reader targetReader = new InputStreamReader(new ByteArrayInputStream(kubeConfigBytes))) {
+                KubeConfig kubeConfig = KubeConfig.loadKubeConfig(targetReader);
+                apiClient = ClientBuilder.kubeconfig(kubeConfig).build();
+            }
+        } else {
+            apiClient = Config.defaultClient().setBasePath(k8sProperties.getUrl());
+        }
+        Verify.notNull(apiClient, "k8s api client");
         apiClient.setHttpClient(apiClient
                 .getHttpClient()
                 .newBuilder()
-                .readTimeout(Duration.ZERO)
+                .readTimeout(60000, TimeUnit.MILLISECONDS)
+                .connectTimeout(60000, TimeUnit.MILLISECONDS)
                 .pingInterval(1, TimeUnit.MINUTES)
-                .build())
-                .setBasePath(k8sClusterUrl);
+                .build());
+
         Configuration.setDefaultApiClient(apiClient);
     }
 

@@ -28,6 +28,7 @@ import com.oceanbase.odc.service.task.caller.K8sJobClient;
 import com.oceanbase.odc.service.task.caller.NativeK8sJobClient;
 import com.oceanbase.odc.service.task.config.DefaultJobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
+import com.oceanbase.odc.service.task.config.TaskFrameworkProperties.K8sProperties;
 import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.constants.JobEnvConstants;
 import com.oceanbase.odc.service.task.enums.TaskRunModeEnum;
@@ -70,7 +71,9 @@ public abstract class BaseJobTest {
         jc.setTaskFrameworkService(Mockito.mock(TaskFrameworkService.class));
         JobConfigurationHolder.setJobConfiguration(jc);
 
-        k8sJobClient = new NativeK8sJobClient(TestProperties.getProperty("odc.k8s.cluster.url"));
+        K8sProperties k8sProperties = new K8sProperties();
+        k8sProperties.setUrl(TestProperties.getProperty("odc.k8s.cluster.url"));
+        k8sJobClient = new NativeK8sJobClient(k8sProperties);
         imageName = "perl:5.34.0";
         cmd = Arrays.asList("perl", "-Mbignum=bpi", "-wle", "print bpi(2000)");
     }

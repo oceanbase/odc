@@ -77,7 +77,8 @@ public abstract class BaseTask implements Task {
     @Override
     public void stop() {
         if (isFinished()) {
-            log.warn("Task is already finished and cannot be canceled, id: {}", getJobContext().getJobIdentity().getId());
+            log.warn("Task is already finished and cannot be canceled, id: {}",
+                    getJobContext().getJobIdentity().getId());
             return;
         }
         canceled = true;
@@ -101,9 +102,11 @@ public abstract class BaseTask implements Task {
     public JobContext getJobContext() {
         return context;
     }
+
     protected void updateStatus(TaskStatus status) {
         this.status = status;
     }
+
     protected Map<String, String> getJobData() {
         return this.jobData;
     }
@@ -119,7 +122,8 @@ public abstract class BaseTask implements Task {
     }
 
     private void initTaskMonitor() {
-        ThreadFactory threadFactory = new TaskThreadFactory(("Task-Monitor-" + getJobContext().getJobIdentity().getId()));
+        ThreadFactory threadFactory =
+                new TaskThreadFactory(("Task-Monitor-" + getJobContext().getJobIdentity().getId()));
         ScheduledExecutorService scheduledExecutor = Executors.newSingleThreadScheduledExecutor(threadFactory);
         scheduledExecutor.scheduleAtFixedRate(() -> {
             // check task is timeout or not
@@ -142,8 +146,8 @@ public abstract class BaseTask implements Task {
     private void doFinal() {
         // Report final result
         // onUpdate();
-        log.info("Task finished with status: {}, id: {}, start to report final result",
-            getJobContext().getJobIdentity().getId(), getTaskStatus());
+        log.info("Task id: {}, finished with status: {}, start to report final result",
+                getJobContext().getJobIdentity().getId(), getTaskStatus());
         DefaultTaskResult finalResult = buildCurrentResult();
         reportTaskResultWithRetry(finalResult, REPORT_RESULT_RETRY_TIMES, REPORT_RESULT_RETRY_INTERVAL_SECONDS);
 
@@ -162,7 +166,8 @@ public abstract class BaseTask implements Task {
             progress = 1.0;
         }
         reporter.report(buildCurrentResult());
-        log.info("Report task info, id: {}, status: {}, progress: {}%, result: {}", getJobContext().getJobIdentity().getId(),
+        log.info("Report task info, id: {}, status: {}, progress: {}%, result: {}",
+                getJobContext().getJobIdentity().getId(),
                 getTaskStatus(), String.format("%.2f", progress * 100), getTaskResult());
     }
 
