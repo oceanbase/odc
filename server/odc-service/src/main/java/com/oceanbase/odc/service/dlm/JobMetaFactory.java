@@ -79,7 +79,9 @@ public class JobMetaFactory extends AbstractJobMetaFactory {
         JobReq req =
                 new JobReq(historyJob, parameters.getLogicTableConfig(), sourceInfo, targetInfo, new ClusterMeta(),
                         new ClusterMeta(), new TenantMeta(), new TenantMeta());
-        return super.create(req);
+        JobMeta jobMeta = super.create(req);
+        jobMeta.setShardingStrategy(defaultShardingStrategy);
+        return jobMeta;
     }
 
     public void setReadWriteRatio(double readWriteRatio) {
