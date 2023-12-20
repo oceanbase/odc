@@ -2,7 +2,7 @@ CREATE TABLE IF NOT EXISTS `job_job` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `job_class` varchar(256) NOT NULL COMMENT '任务执行的 Class 类名',
   `job_type` varchar(32) NOT NULL COMMENT '任务类型，可选值有: ASYNC,IMPORT,EXPORT,MOCKDATA',
-  `flow_instance_id` bigint(20) DEFAULT NULL comment 'Process instance id, references flow_instance(id)',
+  `flow_instance_id` bigint(20) NOT NULL comment 'Process instance id, references flow_instance(id)',
   `status` varchar(16) NOT NULL COMMENT '任务运行状态，可选值有：PREPARING,RUNNING,FAILED,CANCELED,DONE',
   `schedule_times` int NOT NULL COMMENT '已调度次数',
   `execution_times` int NOT NULL COMMENT '已执行次数',

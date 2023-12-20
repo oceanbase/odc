@@ -91,8 +91,12 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
             return;
         }
         updateJobScheduleEntity(taskResult);
-        if (resultHandleServices != null) {
-            resultHandleServices.forEach(r -> r.handle(taskResult));
+        try {
+            if (resultHandleServices != null) {
+                resultHandleServices.forEach(r -> r.handle(taskResult));
+            }
+        } catch (Exception e) {
+            log.warn("ResultHandlerService handle result occur error:",e);
         }
         if (publisher != null) {
             taskResultPublisherExecutor.execute(() -> publisher.publishEvent(new TaskResultUploadEvent(taskResult)));
