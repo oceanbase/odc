@@ -46,6 +46,8 @@ public class JobMetaFactory extends AbstractJobMetaFactory {
     private int taskConnectionQueryTimeout;
     private double readWriteRatio;
 
+    private int defaultScanBatchSize;
+
     private ShardingStrategy defaultShardingStrategy;
 
     public JobMeta create(DlmTask parameters) throws Exception {
@@ -63,6 +65,7 @@ public class JobMetaFactory extends AbstractJobMetaFactory {
         LogicTableConfig logicTableConfig = parameters.getLogicTableConfig();
         logicTableConfig.setReaderTaskCount((int) (singleTaskThreadPoolSize * readWriteRatio / (1 + readWriteRatio)));
         logicTableConfig.setWriterTaskCount(singleTaskThreadPoolSize - logicTableConfig.getReaderTaskCount());
+        logicTableConfig.setGeneratorBatchSize(defaultScanBatchSize);
         DataSourceInfo sourceInfo = DataSourceInfoBuilder.build(parameters.getSourceDs());
         DataSourceInfo targetInfo = DataSourceInfoBuilder.build(parameters.getTargetDs());
         sourceInfo.setConnectionCount(2 * (logicTableConfig.getReaderTaskCount()
@@ -93,6 +96,10 @@ public class JobMetaFactory extends AbstractJobMetaFactory {
 
     public void setDefaultShardingStrategy(ShardingStrategy defaultShardingStrategy) {
         this.defaultShardingStrategy = defaultShardingStrategy;
+    }
+
+    public void setDefaultScanBatchSize(int defaultScanBatchSize) {
+        this.defaultScanBatchSize = defaultScanBatchSize;
     }
 
 }

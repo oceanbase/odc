@@ -48,8 +48,11 @@ public class DLMConfiguration {
     @Value("${odc.task.dlm.task-connection-query-timeout-seconds:60}")
     private int taskConnectionQueryTimeout;
 
-    @Value("${odc.task.dlm.sharding-strategy:MATCH}")
+    @Value("${odc.task.dlm.sharding-strategy:FIXED_LENGTH}")
     private ShardingStrategy shardingStrategy;
+
+    @Value("${odc.task.dlm.default-scan-batch-size:10000}")
+    private int defaultScanBatchSize;
 
     @Bean
     public JobMetaFactory jobMetaFactory(IJobStore jobStore) {
@@ -60,6 +63,7 @@ public class DLMConfiguration {
         jobMetaFactory.setReadWriteRatio(readWriteRatio);
         jobMetaFactory.setTaskConnectionQueryTimeout(taskConnectionQueryTimeout);
         jobMetaFactory.setDefaultShardingStrategy(shardingStrategy);
+        jobMetaFactory.setDefaultScanBatchSize(defaultScanBatchSize);
         return jobMetaFactory;
     }
 
