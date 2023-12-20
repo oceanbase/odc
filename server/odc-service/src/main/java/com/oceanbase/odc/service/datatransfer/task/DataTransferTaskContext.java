@@ -34,7 +34,7 @@ public class DataTransferTaskContext implements Future<DataTransferTaskResult> {
 
     public DataTransferTaskResult getStatus() {
         if (task.getJob() == null) {
-            return null;
+            return new DataTransferTaskResult();
         }
         return new DataTransferTaskResult(task.getJob().getDataObjectsStatus(),
                 task.getJob().getSchemaObjectsStatus());

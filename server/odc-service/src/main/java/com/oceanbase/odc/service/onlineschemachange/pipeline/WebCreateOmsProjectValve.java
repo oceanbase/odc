@@ -49,7 +49,9 @@ public class WebCreateOmsProjectValve extends BaseCreateOmsProjectValve {
         String configUrl = getConfigUrl(connectionSession);
         request.setConfigUrl(configUrl);
         request.setDrcUserName(config.getSysTenantUsername());
-        request.setDrcPassword(Base64.getEncoder().encodeToString(config.getSysTenantPassword().getBytes()));
+        if (config.getSysTenantPassword() != null) {
+            request.setDrcPassword(Base64.getEncoder().encodeToString(config.getSysTenantPassword().getBytes()));
+        }
         if (config.getDialectType() == DialectType.OB_MYSQL && isObCE(connectionSession)) {
             request.setType(OmsOceanBaseType.OB_MYSQL_CE.name());
         }

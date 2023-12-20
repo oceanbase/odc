@@ -119,7 +119,9 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
             DataTransferTaskResult result = job.call();
             validateSuccessful(result);
 
-            String localResultSetFilePath = getDumpFilePath(result, parameter.getFileFormat().getExtension());
+            String localResultSetFilePath = getDumpFilePath(result,
+                    parameter.getFileFormat() == DataTransferFormat.SQL ? DataTransferFormat.SQL.getExtension()
+                            : DataTransferFormat.CSV.getExtension());
             /*
              * 对于空结果集，OBDumper 不生成文件，ODC 需要生成一个空文件以免报错
              */
@@ -132,7 +134,7 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
              * OBDumper 不支持 excel 导出，需要先生成 csv, 然后使用工具类转换成 xlsx
              */
             if (DataTransferFormat.EXCEL == parameter.getFileFormat()) {
-                String excelFilePath = getDumpFileDirectory() + DataTransferFormat.EXCEL.getExtension();
+                String excelFilePath = getDumpFileDirectory() + getFileName(DataTransferFormat.EXCEL.getExtension());
                 try {
                     FileConvertUtils.convertCsvToXls(localResultSetFilePath, excelFilePath,
                             parameter.isSaveSql() ? Collections.singletonList(parameter.getSql()) : null);

@@ -58,9 +58,12 @@ import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.AuditEventAction;
 import com.oceanbase.odc.core.shared.constant.AuditEventResult;
 import com.oceanbase.odc.core.shared.constant.AuditEventType;
-import com.oceanbase.odc.core.shared.constant.ConnectionVisibleScope;
+import com.oceanbase.odc.core.shared.constant.ResourceType;
+import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.core.sql.execute.model.SqlExecuteStatus;
 import com.oceanbase.odc.metadb.audit.AuditEventEntity;
+import com.oceanbase.odc.metadb.connection.DatabaseEntity;
+import com.oceanbase.odc.metadb.connection.DatabaseRepository;
 import com.oceanbase.odc.service.audit.model.AuditEvent;
 import com.oceanbase.odc.service.audit.model.AuditEventMeta;
 import com.oceanbase.odc.service.audit.util.AuditEventMapper;
@@ -114,6 +117,9 @@ public class AuditEventAspect {
 
     @Autowired
     private ConnectionService connectionService;
+
+    @Autowired
+    private DatabaseRepository databaseRepository;
 
     @Autowired
     private ConnectSessionService sessionService;
@@ -277,29 +283,33 @@ public class AuditEventAspect {
                 .username(authenticationFacade.currentUsername())
                 .detail(parseDetailFromApiParams(apiParams))
                 .build();
-        // 创建连接时，请求中还没有 id，需要通过 VisibleScope 来判断是否为公共连接
-        // 若 VisibleScope 不为 ORGANIZATION，则返回 null，表示不审计
-        if (auditEventMeta.getMethodSignature().endsWith("createConnection")
-                && Objects.nonNull(apiParams.get("connection"))) {
-            ConnectionConfig connection = (ConnectionConfig) apiParams.get("connection");
-            if (Objects.nonNull(connection) && connection.getVisibleScope() != ConnectionVisibleScope.ORGANIZATION) {
-                return null;
+
+        if (StringUtils.isNotBlank(auditEventMeta.getDatabaseIdExtractExpression())) {
+            Long databaseId = parseDatabaseId(auditEventMeta, method, args);
+            if (Objects.nonNull(databaseId)) {
+                DatabaseEntity database =
+                        databaseRepository.findById(databaseId).orElseThrow(() -> new NotFoundException(
+                                ResourceType.ODC_DATABASE, "id", databaseId));
+                auditEvent.setDatabaseId(databaseId);
+                auditEvent.setDatabaseName(database.getName());
+                setConnectionRelatedProperties(auditEvent, String.valueOf(database.getConnectionId()));
             }
         }
-        if (auditEventMeta.getInConnection()) {
+
+        if (StringUtils.isNotBlank(auditEventMeta.getSidExtractExpression())) {
             String sid = parseSid(auditEventMeta, method, args);
             if (StringUtils.isNotEmpty(sid)) {
                 auditEvent = setConnectionRelatedProperties(auditEvent, sid);
             }
-            // 如果是创建任务流程，需要从请求中获取具体的 type
-            if (Objects.nonNull(auditEvent) && AuditEventAction.CREATE_TASK == auditEventMeta.getAction()) {
-                CreateFlowInstanceReq req = (CreateFlowInstanceReq) apiParams.get("flowInstanceReq");
-                if (Objects.nonNull(req)) {
-                    AuditEventType type = AuditUtils.getEventTypeFromTaskType(req.getTaskType());
-                    auditEvent.setType(type);
-                    auditEvent.setAction(AuditUtils.getActualActionForTask(type, auditEventMeta.getAction()));
-                }
+        }
 
+        // 如果是创建任务流程，需要从请求中获取具体的 type
+        if (Objects.nonNull(auditEvent) && AuditEventAction.CREATE_TASK == auditEventMeta.getAction()) {
+            CreateFlowInstanceReq req = (CreateFlowInstanceReq) apiParams.get("flowInstanceReq");
+            if (Objects.nonNull(req)) {
+                AuditEventType type = AuditUtils.getEventTypeFromTaskType(req.getTaskType());
+                auditEvent.setType(type);
+                auditEvent.setAction(AuditUtils.getActualActionForTask(type, auditEventMeta.getAction()));
             }
         }
         return auditEvent;
@@ -393,18 +403,23 @@ public class AuditEventAspect {
         return actualAction;
     }
 
-
-    private String parseSid(AuditEventMeta auditEventMeta, Method method, Object[] args) {
+    private <T> T parse(String expressionStr, Method method, Object[] args, Class<T> clazz) {
         String[] parameterNames = nameDiscoverer.getParameterNames(method);
-        if (Objects.isNull(parameterNames) || ArrayUtils.isEmpty(parameterNames)) {
+        if (StringUtils.isEmpty(expressionStr) || Objects.isNull(parameterNames)
+                || ArrayUtils.isEmpty(parameterNames)) {
             return null;
         }
-        Expression expression = parser.parseExpression(auditEventMeta.getSidExtractExpression());
+        Expression expression = parser.parseExpression(expressionStr);
         EvaluationContext context = new StandardEvaluationContext();
         for (int idx = 0; idx < parameterNames.length; idx++) {
             context.setVariable(parameterNames[idx], args[idx]);
         }
-        String sid = expression.getValue(context, String.class);
+        return expression.getValue(context, clazz);
+    }
+
+
+    private String parseSid(AuditEventMeta auditEventMeta, Method method, Object[] args) {
+        String sid = parse(auditEventMeta.getSidExtractExpression(), method, args, String.class);
         // sid 为一个 list 的情况，由 ',' 隔开，这里获取 list 的第一个值即可
         if (StringUtils.isNotEmpty(sid)) {
             if (sid.contains(COMMA)) {
@@ -412,6 +427,10 @@ public class AuditEventAspect {
             }
         }
         return StringUtils.isNotBlank(sid) && !StringUtils.equalsIgnoreCase(sid, "null") ? sid : StringUtils.EMPTY;
+    }
+
+    private Long parseDatabaseId(AuditEventMeta auditEventMeta, Method method, Object[] args) {
+        return parse(auditEventMeta.getDatabaseIdExtractExpression(), method, args, Long.class);
     }
 
     /**
@@ -438,7 +457,7 @@ public class AuditEventAspect {
         /**
          * If sid represents static connectionId
          */
-        if (!StringUtils.contains(sid, "-")) {
+        if (!StringUtils.contains(sid, "sid:")) {
             ConnectionConfig config = connectionService.getWithoutPermissionCheck(Long.parseLong(sid));
             if (Objects.nonNull(config)) {
                 fillAuditEventByConnectionConfig(auditEvent, config);
@@ -450,13 +469,7 @@ public class AuditEventAspect {
             ConnectionSession session = sessionService.nullSafeGet(SidUtils.getSessionId(sid));
             Object value = ConnectionSessionUtil.getConnectionConfig(session);
             if (value instanceof ConnectionConfig) {
-                /**
-                 * Do NOT record event happened in private connection
-                 */
                 ConnectionConfig config = (ConnectionConfig) value;
-                if (ConnectionVisibleScope.PRIVATE == config.getVisibleScope()) {
-                    return null;
-                }
                 fillAuditEventByConnectionConfig(auditEvent, config);
             }
         }

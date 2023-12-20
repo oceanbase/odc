@@ -21,6 +21,12 @@ import org.flowable.engine.RuntimeService;
 import com.oceanbase.odc.core.flow.ExecutionConfigurer;
 import com.oceanbase.odc.metadb.flow.FlowInstanceEntity;
 import com.oceanbase.odc.metadb.flow.FlowInstanceRepository;
+import com.oceanbase.odc.metadb.flow.GateWayInstanceRepository;
+import com.oceanbase.odc.metadb.flow.NodeInstanceEntityRepository;
+import com.oceanbase.odc.metadb.flow.SequenceInstanceRepository;
+import com.oceanbase.odc.metadb.flow.ServiceTaskInstanceRepository;
+import com.oceanbase.odc.metadb.flow.UserTaskInstanceCandidateRepository;
+import com.oceanbase.odc.metadb.flow.UserTaskInstanceRepository;
 import com.oceanbase.odc.service.flow.FlowableAdaptor;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 
@@ -42,45 +48,65 @@ public class OdcFlowInstance extends FlowInstance {
     public OdcFlowInstance(@NonNull String name, String description,
             @NonNull FlowableAdaptor flowableAdaptor,
             @NonNull AuthenticationFacade authenticationFacade,
-            @NonNull FlowInstanceRepository flowInstanceRepository, @NonNull RuntimeService runtimeService,
-            @NonNull RepositoryService repositoryService) {
+            @NonNull FlowInstanceRepository flowInstanceRepository,
+            @NonNull NodeInstanceEntityRepository nodeInstanceRepository,
+            @NonNull SequenceInstanceRepository sequenceRepository,
+            @NonNull GateWayInstanceRepository gateWayInstanceRepository,
+            @NonNull ServiceTaskInstanceRepository serviceTaskRepository,
+            @NonNull UserTaskInstanceRepository userTaskInstanceRepository,
+            @NonNull UserTaskInstanceCandidateRepository userTaskInstanceCandidateRepository,
+            @NonNull RuntimeService runtimeService, @NonNull RepositoryService repositoryService) {
         super(name, description, flowableAdaptor, authenticationFacade, flowInstanceRepository,
+                nodeInstanceRepository, sequenceRepository, gateWayInstanceRepository,
+                serviceTaskRepository, userTaskInstanceRepository, userTaskInstanceCandidateRepository,
                 runtimeService, repositoryService);
     }
 
     public OdcFlowInstance(@NonNull String name, String description,
-            Long parentFlowInstanceId,
-            Long projectId,
+            Long parentFlowInstanceId, Long projectId,
             @NonNull FlowableAdaptor flowableAdaptor,
             @NonNull AuthenticationFacade authenticationFacade,
-            @NonNull FlowInstanceRepository flowInstanceRepository, @NonNull RuntimeService runtimeService,
-            @NonNull RepositoryService repositoryService) {
-        super(name, description, projectId, parentFlowInstanceId, flowableAdaptor,
-                authenticationFacade,
-                flowInstanceRepository,
+            @NonNull FlowInstanceRepository flowInstanceRepository,
+            @NonNull NodeInstanceEntityRepository nodeInstanceRepository,
+            @NonNull SequenceInstanceRepository sequenceRepository,
+            @NonNull GateWayInstanceRepository gateWayInstanceRepository,
+            @NonNull ServiceTaskInstanceRepository serviceTaskRepository,
+            @NonNull UserTaskInstanceRepository userTaskInstanceRepository,
+            @NonNull UserTaskInstanceCandidateRepository userTaskInstanceCandidateRepository,
+            @NonNull RuntimeService runtimeService, @NonNull RepositoryService repositoryService) {
+        super(name, description, projectId, parentFlowInstanceId, flowableAdaptor, authenticationFacade,
+                flowInstanceRepository, nodeInstanceRepository, sequenceRepository, gateWayInstanceRepository,
+                serviceTaskRepository, userTaskInstanceRepository, userTaskInstanceCandidateRepository,
                 runtimeService, repositoryService);
     }
 
     /**
      * Load a {@link OdcFlowInstance} from {@code metaDB}
      */
-    public OdcFlowInstance(@NonNull FlowInstanceEntity entity, @NonNull FlowableAdaptor flowableAdaptor,
+    public OdcFlowInstance(@NonNull FlowInstanceEntity entity,
+            @NonNull FlowableAdaptor flowableAdaptor,
             @NonNull AuthenticationFacade authenticationFacade,
-            @NonNull FlowInstanceRepository flowInstanceRepository, @NonNull RuntimeService runtimeService,
-            @NonNull RepositoryService repositoryService) {
-        super(entity, flowableAdaptor, authenticationFacade, flowInstanceRepository, runtimeService, repositoryService);
+            @NonNull FlowInstanceRepository flowInstanceRepository,
+            @NonNull NodeInstanceEntityRepository nodeInstanceRepository,
+            @NonNull SequenceInstanceRepository sequenceRepository,
+            @NonNull GateWayInstanceRepository gateWayInstanceRepository,
+            @NonNull ServiceTaskInstanceRepository serviceTaskRepository,
+            @NonNull UserTaskInstanceRepository userTaskInstanceRepository,
+            @NonNull UserTaskInstanceCandidateRepository userTaskInstanceCandidateRepository,
+            @NonNull RuntimeService runtimeService, @NonNull RepositoryService repositoryService) {
+        super(entity, flowableAdaptor, authenticationFacade, flowInstanceRepository, nodeInstanceRepository,
+                sequenceRepository, gateWayInstanceRepository, serviceTaskRepository, userTaskInstanceRepository,
+                userTaskInstanceCandidateRepository, runtimeService, repositoryService);
     }
 
     @Override
     public FlowInstanceConfigurer newFlowInstanceConfigurer() {
-        return new OdcFlowInstanceConfigurer(this, processBuilder, flowableAdaptor, accessor,
-                getProcessInstanceId() == null);
+        return new OdcFlowInstanceConfigurer(this, processBuilder, flowableAdaptor, accessor);
     }
 
     @Override
     protected FlowInstanceConfigurer newFlowInstanceConfigurer(@NonNull ExecutionConfigurer configurer) {
-        return new OdcFlowInstanceConfigurer(this, processBuilder, configurer, flowableAdaptor, accessor,
-                getProcessInstanceId() == null);
+        return new OdcFlowInstanceConfigurer(this, processBuilder, configurer, flowableAdaptor, accessor);
     }
 
 }

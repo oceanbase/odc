@@ -64,6 +64,7 @@ public class FlowNodeInstanceDetailResp {
     private String externalFlowInstanceUrl;
     private Integer issueCount;
     private List<String> unauthorizedDatabaseNames;
+    private Boolean preCheckOverLimit;
 
     public static FlowNodeInstanceMapper mapper() {
         return new FlowNodeInstanceMapper();
@@ -133,9 +134,13 @@ public class FlowNodeInstanceDetailResp {
                 taskEntity = getTaskById.apply(instance.getTargetTaskId());
             }
             if (instance.getStatus() == FlowNodeStatus.PENDING || instance.getStatus() == FlowNodeStatus.EXPIRED) {
-                long waitExpireInterval = TimeUnit.MILLISECONDS.convert(
-                        instance.getStrategyConfig().getPendingExpireIntervalSeconds(), TimeUnit.SECONDS);
-                resp.setDeadlineTime(new Date(instance.getUpdateTime().getTime() + waitExpireInterval));
+                ExecutionStrategyConfig strategyConfig = instance.getStrategyConfig();
+                if (strategyConfig.getStrategy() == FlowTaskExecutionStrategy.TIMER) {
+                    resp.setDeadlineTime(strategyConfig.getExecutionTime());
+                } else {
+                    resp.setDeadlineTime(new Date(instance.getUpdateTime().getTime() + TimeUnit.MILLISECONDS
+                            .convert(strategyConfig.getPendingExpireIntervalSeconds(), TimeUnit.SECONDS)));
+                }
             } else if (instance.getStatus() == FlowNodeStatus.EXECUTING && taskEntity != null) {
                 long expireInterval = TimeUnit.MILLISECONDS.convert(
                         taskEntity.getExecutionExpirationIntervalSeconds(), TimeUnit.SECONDS);
@@ -145,6 +150,7 @@ public class FlowNodeInstanceDetailResp {
                 PreCheckTaskResult result =
                         JsonUtils.fromJson(taskEntity.getResultJson(), PreCheckTaskResult.class);
                 if (result != null) {
+                    resp.setPreCheckOverLimit(result.isOverLimit());
                     if (Objects.nonNull(result.getSqlCheckResult())) {
                         resp.setIssueCount(result.getSqlCheckResult().getIssueCount());
                     }
