@@ -99,8 +99,11 @@ import com.oceanbase.odc.service.permissionapply.project.ApplyProjectResult;
 import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleResult;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.odc.service.task.TaskService;
+import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
+import com.oceanbase.odc.service.task.enums.TaskRunModeEnum;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
+import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -151,6 +154,12 @@ public class FlowTaskInstanceService {
     @Value("${odc.task.async.result-preview-max-size-bytes:5242880}")
     private long resultPreviewMaxSizeBytes;
 
+    @Autowired
+    private TaskFrameworkProperties taskFrameworkProperties;
+
+    @Autowired
+    private TaskFrameworkService taskFrameworkService;
+
     public FlowInstanceDetailResp executeTask(@NotNull Long id) throws IOException {
         List<FlowTaskInstance> instances =
                 filterTaskInstance(id, instance -> instance.getStatus() == FlowNodeStatus.PENDING);
@@ -186,6 +195,18 @@ public class FlowTaskInstanceService {
         if (taskEntity.getResultJson() == null) {
             return null;
         }
+
+        // forward to target host when task is not be executed on this machine or running in k8s pod
+        if (taskFrameworkProperties.getRunMode() == TaskRunModeEnum.K8S) {
+           Set<Long> ids = taskFrameworkService.findJobByFlowInstanceIdAndJobType(id, taskEntity.getTaskType().name());
+            if (!taskEntity.getStatus().isTerminated()) {
+                return forwardRemote(taskEntity);
+            } else {
+                // todo get from oss
+                return null;
+            }
+        }
+
         if (!dispatchChecker.isTaskEntityOnThisMachine(taskEntity)) {
             /**
              * 任务不在当前机器上，需要进行 {@code RPC} 转发获取
@@ -198,6 +219,15 @@ public class FlowTaskInstanceService {
             return getMockDataLog(taskEntity, level);
         }
         return taskService.getLog(taskEntity.getCreatorId(), taskEntity.getId() + "", taskEntity.getTaskType(), level);
+    }
+
+    private String forwardRemote(TaskEntity taskEntity) throws IOException {
+        /**
+         * 任务不在当前机器上，需要进行 {@code RPC} 转发获取
+         */
+        ExecutorInfo executorInfo = JsonUtils.fromJson(taskEntity.getExecutor(), ExecutorInfo.class);
+        DispatchResponse response = requestDispatcher.forward(executorInfo.getHost(), executorInfo.getPort());
+        return response.getContentByType(new TypeReference<SuccessResponse<String>>() {}).getData();
     }
 
     public List<? extends FlowTaskResult> getResult(@NotNull Long id) throws IOException {

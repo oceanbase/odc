@@ -15,6 +15,10 @@
  */
 package com.oceanbase.odc.metadb.task;
 
+import java.util.Collection;
+import java.util.List;
+import java.util.Set;
+
 import javax.transaction.Transactional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -24,7 +28,10 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
+import com.oceanbase.odc.core.shared.constant.TaskType;
+import com.oceanbase.odc.metadb.flow.FlowInstanceEntity;
 
 /**
  * @author yaobin
@@ -65,5 +72,10 @@ public interface JobScheduleRepository extends JpaRepository<JobEntity, Long>,
             + " where id=:id")
     @Modifying
     void updateStatus(@Param("id") Long id, @Param("status") TaskStatus status);
+
+    @Query(value = "select e.id from JobEntity e where e.flowInstanceId=:flowInstanceId and e.jobType=:jobType")
+    Set<Long> findJobByFlowInstanceIdAndJobType(@Param("flowInstanceId") Long flowInstanceId,
+        @Param("jobType") String jobType);
+
 
 }

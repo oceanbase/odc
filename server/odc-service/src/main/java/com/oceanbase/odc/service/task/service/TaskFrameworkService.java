@@ -16,6 +16,8 @@
 
 package com.oceanbase.odc.service.task.service;
 
+import java.util.Set;
+
 import org.springframework.transaction.annotation.Transactional;
 
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
@@ -46,4 +48,7 @@ public interface TaskFrameworkService {
     void updateStatus(Long id, TaskStatus status);
 
     void update(JobEntity jobEntity);
+
+    Set<Long> findJobByFlowInstanceIdAndJobType(Long flowInstanceId, String jobType);
+
 }

@@ -37,4 +37,6 @@ public class DefaultJobDefinition implements JobDefinition {
 
     private Map<String, String> jobData;
 
+    private Long flowInstanceId;
+
 }

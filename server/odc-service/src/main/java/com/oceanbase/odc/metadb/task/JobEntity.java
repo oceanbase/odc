@@ -57,6 +57,9 @@ public class JobEntity implements Serializable {
     @Column(name = "job_type", nullable = false)
     private String jobType;
 
+    @Column(name = "flow_instance_id", nullable = true)
+    private Long flowInstanceId;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private TaskStatus status;
@@ -72,6 +75,9 @@ public class JobEntity implements Serializable {
 
     @Column(name = "job_name", nullable = false)
     private String jobName;
+
+    @Column(name = "run_mode", nullable = false)
+    private String runMode;
 
     @Column(name = "job_data_json", nullable = false)
     private String jobDataJson;

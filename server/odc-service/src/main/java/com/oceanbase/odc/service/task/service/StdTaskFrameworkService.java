@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.task.service;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -34,6 +35,7 @@ import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.metadb.task.JobScheduleRepository;
+import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.executor.executor.TaskRuntimeException;
 import com.oceanbase.odc.service.task.executor.task.Task;
 import com.oceanbase.odc.service.task.executor.task.TaskResult;
@@ -70,6 +72,9 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     @Qualifier(value = "taskResultPublisherExecutor")
     private ThreadPoolTaskExecutor taskResultPublisherExecutor;
 
+    @Autowired
+    private TaskFrameworkProperties taskFrameworkProperties;
+
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void handleResult(TaskResult taskResult) {
@@ -101,6 +106,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         jse.setJobClass(jd.getJobClass().getCanonicalName());
         jse.setJobType(jd.getJobType());
         jse.setStatus(TaskStatus.PREPARING);
+        jse.setFlowInstanceId(jd.getFlowInstance());
         return jobScheduleRepository.save(jse);
     }
 
@@ -160,5 +166,9 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     @Override
     public void update(JobEntity jobEntity) {
         jobScheduleRepository.update(jobEntity);
+    }
+
+    public Set<Long> findJobByFlowInstanceIdAndJobType(Long flowInstanceId, String jobType) {
+        return jobScheduleRepository.findJobByFlowInstanceIdAndJobType(flowInstanceId,jobType);
     }
 }

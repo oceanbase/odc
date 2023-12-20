@@ -202,6 +202,7 @@ public class DatabaseChangeRuntimeFlowableTaskCopied extends BaseODCFlowTaskDele
         return DefaultJobDefinition.builder().jobClass(DatabaseChangeTask.class)
                 .jobType(TaskType.ASYNC.name())
                 .jobData(jobData)
+                .flowInstanceId(FlowTaskUtil.getFlowInstanceId(execution))
                 .build();
     }
 
