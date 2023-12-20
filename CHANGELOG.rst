@@ -67,6 +67,9 @@ Changes
 
 Fix
 ~~~
+- Fix(web-framework): invalid csrf token result into Invalid session
+  error message (#1233) [yizhou]
+- Fix(apply-project): failed to set mdc value (#1237) [XiaoYang]
 - Fix(flow): creating flow costs too much time (#1183) [IL MARE,
   ungreat]
 - Fix(osc): lock ob mysql user failed when host with ip limited (#1072)
