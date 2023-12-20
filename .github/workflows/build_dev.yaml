@@ -44,8 +44,8 @@ jobs:
           echo "odc_docker_image_tag=${odc_docker_image_tag}" >> $GITHUB_OUTPUT
           echo "odc_docker_image_tag=${odc_docker_image_tag}"
 
-  build-rpm-x86_64:
-    name: Build RPM (x86_64)
+  build-docker-x86_64:
+    name: Build Docker Image (x86_64)
     needs: [ calculate-version ]
     runs-on: ubuntu-latest
     env:
@@ -66,6 +66,28 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: "16"
+      - name: Build front static resources
+        run: |
+            echo "Current directory: "`pwd`
+            echo "Start build front static resources"
+            pushd client
+            echo "Run npm install pnpm -g"
+            npm install pnpm -g
+            echo "Run pnpm install"
+            pnpm install
+            echo "Run npm run build:odc"
+            npm run build:odc
+            popd
+            echo "Build front static resources success"
+            echo "Start copy resources files"
+            static_resources_path="server/odc-server/src/main/resources/static"
+            if [ ! -d "${static_resources_path}" ]; then
+              echo "mkdir -p ${static_resources_path}"
+              mkdir -p "${static_resources_path}"
+            fi
+            rm --force --recursive --verbose ${static_resources_path}/*
+            cp --force --recursive --verbose client/dist/renderer/* ${static_resources_path}
+            echo "Copy resources files success"
       - name: Set release version
         id: set_release_version
         run: |
@@ -91,7 +113,7 @@ jobs:
           mvn clean install -Dmaven.test.skip=true
           echo "Install db-browser success"
           popd
-      - name: Build jar & rpm (x86_64)
+      - name: Build rpm (x86_64)
         run: |
           echo "Start prepare oceanbase-client"
           pushd import
@@ -117,7 +139,7 @@ jobs:
           docker build -t docker.io/oceanbase/odc:${odc_docker_image_tag} -f odc/Dockerfile .
           docker save -o resources/odc-${odc_docker_image_tag}.tar.gz docker.io/oceanbase/odc:${odc_docker_image_tag}
           popd
-      - name: Push Docker Image (x86_64)
+      - name: Push docker image (x86_64)
         run: |
           docker login -p${{ secrets.DOCKER_PASSWORD }} -u${{ secrets.DOCKER_USERNAME }}
           docker load -i distribution/docker/resources/odc-${odc_docker_image_tag}.tar.gz
