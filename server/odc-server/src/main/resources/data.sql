@@ -711,7 +711,7 @@ INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES
 -- v4.2.4
 --
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.run-mode', 'THREAD', 'ODC task run mode contain: THREAD/K8S, default is THREAD' ) ON DUPLICATE KEY UPDATE `id` = `id`;
-INSERT INTO config_system_configuration ( `key`, `value`, `description`)  VALUES( 'odc.task-framework.odc-url', '', 'odc server url, constituted by domain or k8s service name') ON DUPLICATE KEY UPDATE `id`=`id`;
-INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.k8s.url', '', 'k8s url when task run mode is K8S' ) ON DUPLICATE KEY UPDATE `id` = `id`;
+INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.odc-url', '', 'odc server url, constituted by domain or k8s service name, will use odc server ip when it is null') ON DUPLICATE KEY UPDATE `id`=`id`;
+INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.k8s.kube-config', '', 'use k8s kube config connect to k8s default, instead of use k8s url when kube config is null' ) ON DUPLICATE KEY UPDATE `id` = `id`;
+INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.k8s.url', '', 'use k8s url connect to k8s when kube config is null' ) ON DUPLICATE KEY UPDATE `id` = `id`;
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.k8s.namespace', 'default', 'k8s namespace name' ) ON DUPLICATE KEY UPDATE `id` = `id`;
-INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.k8s.kube-config', '', 'k8s kube config' ) ON DUPLICATE KEY UPDATE `id` = `id`;
