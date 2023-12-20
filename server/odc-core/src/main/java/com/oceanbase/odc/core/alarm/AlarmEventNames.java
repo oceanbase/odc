@@ -20,7 +20,21 @@ public final class AlarmEventNames {
 
     private AlarmEventNames() {}
 
+    /**
+     * alarm
+     */
     public static final String SYSTEM_CONFIG_CHANGED = "SYSTEM_CONFIG_CHANGED";
+    public static final String REST_API_CALL_FAILED = "REST_API_CALL_FAILED";
+
+    /**
+     * warn
+     */
+    public static final String UNKNOWN_API_EXCEPTION = "UNKNOWN_API_EXCEPTION";
+
+    /**
+     * info
+     */
+    public static final String IS_HEALTHY = "IS_HEALTHY";
 
     /**
      * Druid alarm

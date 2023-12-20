@@ -19,8 +19,8 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -31,6 +31,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import com.oceanbase.odc.common.lang.Holder;
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 
 import lombok.AllArgsConstructor;
@@ -56,6 +57,7 @@ public class SqlCommentProcessor {
      */
     private boolean preserveFormat = false;
     private String delimiter = ";";
+    @Getter
     private boolean mlComment = false;
     private char inString = '\0';
     private DialectType dialectType;
@@ -107,13 +109,8 @@ public class SqlCommentProcessor {
 
     public SqlCommentProcessor() {}
 
-    public static SqlStatementIterator iterator(InputStream in, DialectType dialectType,
-            boolean preserveFormat,
-            boolean preserveSingleComments,
-            boolean preserveMultiComments,
-            Charset charset) {
-        return new SqlStatementIterator(in, dialectType, preserveFormat, preserveSingleComments, preserveMultiComments,
-                charset);
+    public static SqlStatementIterator iterator(InputStream in, Charset charset, SqlCommentProcessor processor) {
+        return new SqlCommentProcessorIterator(in, charset, processor);
     }
 
     public static List<OffsetString> removeSqlComments(String originalSql,
@@ -156,6 +153,9 @@ public class SqlCommentProcessor {
     }
 
     public synchronized List<OffsetString> split(StringBuffer buffer, String sqlScript) {
+        if (StringUtils.isBlank(sqlScript)) {
+            return new ArrayList<>();
+        }
         try {
             List<OffsetString> offsetStrings = new ArrayList<>();
 
@@ -401,7 +401,7 @@ public class SqlCommentProcessor {
         return true;
     }
 
-    private synchronized void addLineOracle(List<OffsetString> sqls, StringBuffer buffer, Holder<Integer> bufferOrder,
+    public synchronized void addLineOracle(List<OffsetString> sqls, StringBuffer buffer, Holder<Integer> bufferOrder,
             List<OrderChar> line) {
         int pos, out;
         boolean needSpace = false;
@@ -734,26 +734,21 @@ public class SqlCommentProcessor {
         }
     }
 
-    public static class SqlStatementIterator implements Iterator<OffsetString>, AutoCloseable {
+    private static class SqlCommentProcessorIterator implements SqlStatementIterator {
+
         private final BufferedReader reader;
         private final StringBuffer buffer = new StringBuffer();
         private final LinkedList<OffsetString> holder = new LinkedList<>();
+        private final Holder<Integer> bufferOrder = new Holder<>(0);
         private final SqlCommentProcessor processor;
-        private final DialectType dialectType;
 
         private OffsetString current;
-        private Holder<Integer> bufferOrder = new Holder<>(0);
         private int lastLineOrder = 0;
+        private long iteratedBytes = 0;
 
-        public SqlStatementIterator(InputStream input, DialectType dialectType,
-                boolean preserveFormat,
-                boolean preserveSingleComments,
-                boolean preserveMultiComments,
-                Charset charset) {
+        public SqlCommentProcessorIterator(InputStream input, Charset charset, SqlCommentProcessor processor) {
             this.reader = new BufferedReader(new InputStreamReader(input, charset));
-            this.dialectType = dialectType;
-            this.processor =
-                    new SqlCommentProcessor(dialectType, preserveFormat, preserveSingleComments, preserveMultiComments);
+            this.processor = processor;
         }
 
         @Override
@@ -777,6 +772,11 @@ public class SqlCommentProcessor {
             return next;
         }
 
+        @Override
+        public long iteratedBytes() {
+            return iteratedBytes;
+        }
+
         private OffsetString parseNext() {
             try {
                 if (!holder.isEmpty()) {
@@ -784,22 +784,23 @@ public class SqlCommentProcessor {
                 }
                 String line;
                 while (holder.isEmpty() && (line = reader.readLine()) != null) {
-                    if (Objects.nonNull(dialectType) && dialectType.isMysql()) {
+                    if (processor.dialectType.isMysql()) {
                         processor.addLineMysql(holder, buffer, bufferOrder, line.chars()
                                 .mapToObj(c -> new OrderChar((char) c, lastLineOrder++))
                                 .collect(Collectors.toList()));
-                    } else if (Objects.nonNull(dialectType) && dialectType.isOracle()) {
+                    } else if (processor.dialectType.isOracle()) {
                         processor.addLineOracle(holder, buffer, bufferOrder, line.chars()
                                 .mapToObj(c -> new OrderChar((char) c, lastLineOrder++))
                                 .collect(Collectors.toList()));
                     }
                     // consider \n in the end of each line
                     lastLineOrder++;
+                    iteratedBytes += line.getBytes(StandardCharsets.UTF_8).length + 1;
                 }
                 if (!holder.isEmpty()) {
                     return holder.poll();
                 }
-                if (buffer.toString().trim().length() == 0) {
+                if (buffer.toString().trim().isEmpty()) {
                     return null;
                 }
                 String sql = buffer.toString();
@@ -810,10 +811,6 @@ public class SqlCommentProcessor {
             }
         }
 
-        @Override
-        public void close() throws Exception {
-            reader.close();
-        }
     }
 
     @Data

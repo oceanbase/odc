@@ -17,6 +17,7 @@
 package com.oceanbase.odc.service.schedule.job;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.quartz.JobExecutionContext;
 import org.quartz.SchedulerException;
@@ -79,7 +80,9 @@ public class PartitionPlanJob implements OdcJob {
 
         List<TablePartitionPlanEntity> tablePartitionPlans =
                 partitionPlanService
-                        .getValidTablePlanByDatabasePartitionPlanId(jobParameters.getDatabasePartitionPlanId());
+                        .getValidTablePlanByDatabasePartitionPlanId(jobParameters.getDatabasePartitionPlanId()).stream()
+                        .filter(TablePartitionPlanEntity::getIsAutoPartition).collect(
+                                Collectors.toList());
 
         if (!databasePartitionPlan.isConfigEnabled() || tablePartitionPlans.isEmpty()) {
             log.info(

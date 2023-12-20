@@ -71,7 +71,7 @@ public class DBUserLogStatusMonitorTest {
         Integer period = 200;
         Integer timeout = Integer.MAX_VALUE;
         TimeUnit timeUnit = TimeUnit.MILLISECONDS;
-        DBUserLogStatusMonitorFactory monitorFactory = new DBUserLogStatusMonitorFactory(null);
+        DBUserLogStatusMonitorFactory monitorFactory = new DBUserLogStatusMonitorFactory();
         DBUserMonitor dbUserMonitor = monitorFactory.generateDBUserMonitor(
                 (ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(connectionSession),
                 toMonitorUsers, period, timeout, timeUnit);

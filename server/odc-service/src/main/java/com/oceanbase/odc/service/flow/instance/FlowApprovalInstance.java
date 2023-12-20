@@ -15,22 +15,27 @@
  */
 package com.oceanbase.odc.service.flow.instance;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.flowable.engine.FormService;
 import org.flowable.engine.TaskService;
 import org.flowable.engine.form.FormProperty;
 import org.flowable.engine.impl.form.BooleanFormType;
 
 import com.oceanbase.odc.common.event.EventPublisher;
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.flow.model.FlowableElementType;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.metadb.flow.NodeInstanceEntityRepository;
 import com.oceanbase.odc.metadb.flow.SequenceInstanceRepository;
+import com.oceanbase.odc.metadb.flow.UserTaskInstanceCandidateEntity;
+import com.oceanbase.odc.metadb.flow.UserTaskInstanceCandidateRepository;
 import com.oceanbase.odc.metadb.flow.UserTaskInstanceEntity;
 import com.oceanbase.odc.metadb.flow.UserTaskInstanceRepository;
 import com.oceanbase.odc.service.flow.FlowableAdaptor;
@@ -65,6 +70,8 @@ public class FlowApprovalInstance extends BaseFlowUserTaskInstance {
     private final boolean autoApprove;
     @Setter
     private String externalFlowInstanceId;
+    @Setter
+    private String candidate;
     private final Long externalApprovalId;
     private boolean waitForConfirm;
 
@@ -72,6 +79,8 @@ public class FlowApprovalInstance extends BaseFlowUserTaskInstance {
     private final AuthenticationFacade authenticationFacade;
     @Getter(AccessLevel.NONE)
     private final UserTaskInstanceRepository userTaskInstanceRepository;
+    @Getter(AccessLevel.NONE)
+    private final UserTaskInstanceCandidateRepository userTaskInstanceCandidateRepository;
 
     public FlowApprovalInstance(@NonNull UserTaskInstanceEntity entity, @NonNull FlowableAdaptor flowableAdaptor,
             @NonNull TaskService taskService, @NonNull FormService formService,
@@ -79,7 +88,8 @@ public class FlowApprovalInstance extends BaseFlowUserTaskInstance {
             @NonNull AuthenticationFacade authenticationFacade,
             @NonNull NodeInstanceEntityRepository nodeRepository,
             @NonNull SequenceInstanceRepository sequenceRepository,
-            @NonNull UserTaskInstanceRepository userTaskInstanceRepository) {
+            @NonNull UserTaskInstanceRepository userTaskInstanceRepository,
+            @NonNull UserTaskInstanceCandidateRepository userTaskInstanceCandidateRepository) {
         super(FlowNodeType.APPROVAL_TASK, entity.getId(), entity.getOrganizationId(), entity.getStatus(),
                 entity.getUserTaskId(), entity.getFlowInstanceId(), entity.getCreateTime(), entity.getUpdateTime(),
                 entity.isStartEndpoint(), entity.isEndEndpoint(), taskService, formService, eventPublisher,
@@ -93,34 +103,11 @@ public class FlowApprovalInstance extends BaseFlowUserTaskInstance {
         this.autoApprove = entity.isAutoApprove();
         this.externalFlowInstanceId = entity.getExternalFlowInstanceId();
         this.externalApprovalId = entity.getExternalApprovalId();
+        this.userTaskInstanceCandidateRepository = userTaskInstanceCandidateRepository;
         alloc();
     }
 
-    public FlowApprovalInstance(@NonNull Long organizationId, @NonNull Long flowInstanceId,
-            Long externalApprovalId,
-            @NonNull Integer expireIntervalSeconds, boolean startEndpoint, boolean endEndPoint, boolean autoApprove,
-            @NonNull FlowableAdaptor flowableAdaptor, @NonNull TaskService taskService,
-            @NonNull FormService formService,
-            @NonNull EventPublisher eventPublisher,
-            @NonNull AuthenticationFacade authenticationFacade,
-            @NonNull NodeInstanceEntityRepository nodeRepository,
-            @NonNull SequenceInstanceRepository sequenceRepository,
-            @NonNull UserTaskInstanceRepository userTaskInstanceRepository) {
-        super(FlowNodeType.APPROVAL_TASK, organizationId, flowInstanceId, startEndpoint, endEndPoint,
-                taskService, formService, eventPublisher, flowableAdaptor, nodeRepository, sequenceRepository);
-        this.userTaskInstanceRepository = userTaskInstanceRepository;
-        this.authenticationFacade = authenticationFacade;
-        this.expireIntervalSeconds = expireIntervalSeconds;
-        this.autoApprove = autoApprove;
-        this.externalApprovalId = externalApprovalId;
-        alloc();
-        create();
-        Verify.notNull(getId(), "id");
-        Verify.notNull(getCreateTime(), "CreateTime");
-        Verify.notNull(getUpdateTime(), "UpdateTime");
-    }
-
-    public FlowApprovalInstance(@NonNull Long organizationId, @NonNull Long flowInstanceId,
+    public FlowApprovalInstance(@NonNull Long organizationId, @NonNull Long flowInstanceId, Long externalApprovalId,
             @NonNull Integer expireIntervalSeconds, boolean startEndpoint, boolean endEndPoint, boolean autoApprove,
             @NonNull FlowableAdaptor flowableAdaptor, @NonNull TaskService taskService,
             @NonNull FormService formService,
@@ -129,7 +116,28 @@ public class FlowApprovalInstance extends BaseFlowUserTaskInstance {
             @NonNull NodeInstanceEntityRepository nodeRepository,
             @NonNull SequenceInstanceRepository sequenceRepository,
             @NonNull UserTaskInstanceRepository userTaskInstanceRepository,
-            @NonNull Boolean waitForConfirm) {
+            @NonNull UserTaskInstanceCandidateRepository userTaskInstanceCandidateRepository) {
+        super(FlowNodeType.APPROVAL_TASK, organizationId, flowInstanceId, startEndpoint, endEndPoint,
+                taskService, formService, eventPublisher, flowableAdaptor, nodeRepository, sequenceRepository);
+        this.userTaskInstanceRepository = userTaskInstanceRepository;
+        this.authenticationFacade = authenticationFacade;
+        this.expireIntervalSeconds = expireIntervalSeconds;
+        this.autoApprove = autoApprove;
+        this.externalApprovalId = externalApprovalId;
+        this.userTaskInstanceCandidateRepository = userTaskInstanceCandidateRepository;
+        alloc();
+    }
+
+    public FlowApprovalInstance(@NonNull Long organizationId, @NonNull Long flowInstanceId,
+            @NonNull Integer expireIntervalSeconds, boolean startEndpoint, boolean endEndPoint, boolean autoApprove,
+            @NonNull FlowableAdaptor flowableAdaptor, @NonNull TaskService taskService,
+            @NonNull FormService formService,
+            @NonNull EventPublisher eventPublisher,
+            @NonNull AuthenticationFacade authenticationFacade,
+            @NonNull NodeInstanceEntityRepository nodeRepository,
+            @NonNull SequenceInstanceRepository sequenceRepository,
+            @NonNull UserTaskInstanceRepository userTaskInstanceRepository, @NonNull Boolean waitForConfirm,
+            @NonNull UserTaskInstanceCandidateRepository userTaskInstanceCandidateRepository) {
         super(FlowNodeType.APPROVAL_TASK, organizationId, flowInstanceId, startEndpoint, endEndPoint,
                 taskService, formService, eventPublisher, flowableAdaptor, nodeRepository, sequenceRepository);
         this.userTaskInstanceRepository = userTaskInstanceRepository;
@@ -138,11 +146,8 @@ public class FlowApprovalInstance extends BaseFlowUserTaskInstance {
         this.autoApprove = autoApprove;
         this.waitForConfirm = waitForConfirm;
         this.externalApprovalId = null;
+        this.userTaskInstanceCandidateRepository = userTaskInstanceCandidateRepository;
         alloc();
-        create();
-        Verify.notNull(getId(), "id");
-        Verify.notNull(getCreateTime(), "CreateTime");
-        Verify.notNull(getUpdateTime(), "UpdateTime");
     }
 
     @Override
@@ -150,24 +155,31 @@ public class FlowApprovalInstance extends BaseFlowUserTaskInstance {
         return FlowableElementType.USER_TASK;
     }
 
+    public static List<FlowApprovalInstance> batchCreate(List<FlowApprovalInstance> instances,
+            @NonNull UserTaskInstanceRepository userTaskInstanceRepository,
+            @NonNull UserTaskInstanceCandidateRepository userTaskInstanceCandidateRepository) {
+        if (CollectionUtils.isEmpty(instances)) {
+            return Collections.emptyList();
+        }
+        List<UserTaskInstanceEntity> entities = instances.stream()
+                .map(FlowApprovalInstance::mapToUserEntity).collect(Collectors.toList());
+        entities = userTaskInstanceRepository.batchCreate(entities);
+        for (int i = 0; i < instances.size(); i++) {
+            instances.get(i).setId(entities.get(i).getId());
+            instances.get(i).createTime = entities.get(i).getCreateTime();
+            instances.get(i).updateTime = entities.get(i).getUpdateTime();
+        }
+        List<UserTaskInstanceCandidateEntity> entities1 = instances.stream()
+                .filter(instance -> StringUtils.isNotBlank(instance.getCandidate()))
+                .map(FlowApprovalInstance::mapToCandidateEntity).collect(Collectors.toList());
+        userTaskInstanceCandidateRepository.batchCreate(entities1);
+        return instances;
+    }
+
     @Override
-    protected void create() {
+    public void create() {
         validNotExists();
-        UserTaskInstanceEntity entity = new UserTaskInstanceEntity();
-        entity.setOrganizationId(getOrganizationId());
-        entity.setUserTaskId(getUserTaskId());
-        entity.setStatus(getStatus());
-        entity.setOperatorId(getOperatorId());
-        entity.setComment(getComment());
-        entity.setApproved(isApproved());
-        entity.setStartEndpoint(isStartEndpoint());
-        entity.setEndEndpoint(isEndEndPoint());
-        entity.setFlowInstanceId(getFlowInstanceId());
-        entity.setAutoApprove(isAutoApprove());
-        entity.setExpireIntervalSeconds(getExpireIntervalSeconds());
-        entity.setExternalFlowInstanceId(getExternalFlowInstanceId());
-        entity.setExternalApprovalId(getExternalApprovalId());
-        entity.setWaitForConfirm(isWaitForConfirm());
+        UserTaskInstanceEntity entity = mapToUserEntity(this);
         entity = userTaskInstanceRepository.save(entity);
         Verify.notNull(entity.getId(), "id");
         Verify.notNull(entity.getCreateTime(), "CreateTime");
@@ -175,6 +187,10 @@ public class FlowApprovalInstance extends BaseFlowUserTaskInstance {
         this.id = entity.getId();
         this.createTime = entity.getCreateTime();
         this.updateTime = entity.getUpdateTime();
+        if (this.candidate != null) {
+            UserTaskInstanceCandidateEntity candidateEntity = mapToCandidateEntity(this);
+            userTaskInstanceCandidateRepository.save(candidateEntity);
+        }
         log.info("Create approval task instance successfully, approvalTask={}", entity);
     }
 
@@ -253,6 +269,34 @@ public class FlowApprovalInstance extends BaseFlowUserTaskInstance {
             this.operatorId = originOperatorId;
             throw e;
         }
+    }
+
+    private static UserTaskInstanceEntity mapToUserEntity(FlowApprovalInstance instance) {
+        UserTaskInstanceEntity entity = new UserTaskInstanceEntity();
+        entity.setOrganizationId(instance.getOrganizationId());
+        entity.setUserTaskId(instance.getUserTaskId());
+        entity.setStatus(instance.getStatus());
+        entity.setOperatorId(instance.getOperatorId());
+        entity.setComment(instance.getComment());
+        entity.setApproved(instance.isApproved());
+        entity.setStartEndpoint(instance.isStartEndpoint());
+        entity.setEndEndpoint(instance.isEndEndPoint());
+        entity.setFlowInstanceId(instance.getFlowInstanceId());
+        entity.setAutoApprove(instance.isAutoApprove());
+        entity.setExpireIntervalSeconds(instance.getExpireIntervalSeconds());
+        entity.setExternalFlowInstanceId(instance.getExternalFlowInstanceId());
+        entity.setExternalApprovalId(instance.getExternalApprovalId());
+        entity.setWaitForConfirm(instance.isWaitForConfirm());
+        return entity;
+    }
+
+    private static UserTaskInstanceCandidateEntity mapToCandidateEntity(FlowApprovalInstance instance) {
+        Verify.notNull(instance.getId(), "FlowApprovalInstanceId");
+        Verify.notNull(instance.getCandidate(), "FlowApprovalInstanceCandidate");
+        UserTaskInstanceCandidateEntity entity = new UserTaskInstanceCandidateEntity();
+        entity.setApprovalInstanceId(instance.getId());
+        entity.setResourceRoleIdentifier(instance.getCandidate());
+        return entity;
     }
 
 }

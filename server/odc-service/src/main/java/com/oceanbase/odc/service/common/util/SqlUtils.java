@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.common.util;
 
+import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -29,6 +31,7 @@ import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.sql.split.OffsetString;
 import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
 import com.oceanbase.odc.core.sql.split.SqlSplitter;
+import com.oceanbase.odc.core.sql.split.SqlStatementIterator;
 import com.oceanbase.tools.sqlparser.oracle.PlSqlLexer;
 
 import lombok.extern.slf4j.Slf4j;
@@ -137,6 +140,30 @@ public class SqlUtils {
                 }
             }
             return sqls;
+        }
+    }
+
+    public static SqlStatementIterator iterator(DialectType dialectType, String delimiter, InputStream input,
+            Charset charset) {
+        SqlCommentProcessor processor = new SqlCommentProcessor(dialectType, true, true);
+        processor.setDelimiter(delimiter);
+        return iterator(input, charset, dialectType, processor);
+    }
+
+    public static SqlStatementIterator iterator(ConnectionSession connectionSession, InputStream input,
+            Charset charset) {
+        SqlCommentProcessor processor = ConnectionSessionUtil.getSqlCommentProcessor(connectionSession);
+        return iterator(input, charset, connectionSession.getDialectType(), processor);
+    }
+
+    private static SqlStatementIterator iterator(InputStream input, Charset charset, DialectType dialectType,
+            SqlCommentProcessor processor) {
+        PreConditions.notBlank(processor.getDelimiter(), "delimiter", "Empty or blank delimiter is not allowed");
+        if (DialectType.OB_ORACLE == dialectType
+                && (";".equals(processor.getDelimiter()) || "/".equals(processor.getDelimiter()))) {
+            return SqlSplitter.iterator(input, charset, processor.getDelimiter());
+        } else {
+            return SqlCommentProcessor.iterator(input, charset, processor);
         }
     }
 

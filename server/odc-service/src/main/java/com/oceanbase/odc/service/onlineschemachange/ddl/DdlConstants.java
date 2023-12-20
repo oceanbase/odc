@@ -43,5 +43,7 @@ public class DdlConstants {
 
     public static final String OMS_GROUP_PREFIX = "ob_oms";
 
+    public static final String MDC_CONTEXT = "MDC_CONTEXT";
+
 
 }

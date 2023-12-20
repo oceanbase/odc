@@ -29,6 +29,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import com.oceanbase.odc.ServiceTestEnv;
 import com.oceanbase.odc.common.event.LocalEventPublisher;
 import com.oceanbase.odc.core.shared.constant.TaskType;
+import com.oceanbase.odc.metadb.flow.NodeInstanceEntity;
 import com.oceanbase.odc.metadb.flow.NodeInstanceEntityRepository;
 import com.oceanbase.odc.metadb.flow.SequenceInstanceRepository;
 import com.oceanbase.odc.metadb.flow.ServiceTaskInstanceEntity;
@@ -71,7 +72,6 @@ public class FlowTaskInstanceTest extends ServiceTestEnv {
     @Test
     public void create_createFlowTaskInstance_createSucceed() {
         FlowTaskInstance instance = createTaskInstance(false, true);
-        instance.buildTopology();
 
         List<ServiceTaskInstanceEntity> entityList = serviceTaskRepository.findAll();
         Assert.assertEquals(1, entityList.size());
@@ -81,7 +81,14 @@ public class FlowTaskInstanceTest extends ServiceTestEnv {
     @Test
     public void delete_deleteFlowTaskInstance_deleteSucceed() {
         FlowTaskInstance taskInstance = createTaskInstance(true, false);
-        taskInstance.buildTopology();
+        NodeInstanceEntity nodeEntity = new NodeInstanceEntity();
+        nodeEntity.setInstanceId(taskInstance.getId());
+        nodeEntity.setInstanceType(taskInstance.getNodeType());
+        nodeEntity.setFlowInstanceId(taskInstance.getFlowInstanceId());
+        nodeEntity.setActivityId(taskInstance.getActivityId());
+        nodeEntity.setName(taskInstance.getName());
+        nodeEntity.setFlowableElementType(taskInstance.getCoreFlowableElementType());
+        nodeRepository.save(nodeEntity);
         taskInstance = copyFrom(taskInstance);
         taskInstance.delete();
 
@@ -92,7 +99,6 @@ public class FlowTaskInstanceTest extends ServiceTestEnv {
     @Test
     public void update_updateStatusAndTargetTaskId_updateSucceed() {
         FlowTaskInstance taskInstance = createTaskInstance(true, false);
-        taskInstance.buildTopology();
         taskInstance.setStatus(FlowNodeStatus.COMPLETED);
         Random random = new Random();
         Long taskId = random.nextLong();
@@ -111,6 +117,7 @@ public class FlowTaskInstanceTest extends ServiceTestEnv {
                 ExecutionStrategyConfig.autoStrategy(), startEndPoint, endEndPoint, taskType -> null,
                 flowableAdaptor, new LocalEventPublisher(), taskService, nodeRepository,
                 sequenceRepository, serviceTaskRepository);
+        instance.create();
         instance.setActivityId(activityId);
         instance.setName(name);
         return instance;
