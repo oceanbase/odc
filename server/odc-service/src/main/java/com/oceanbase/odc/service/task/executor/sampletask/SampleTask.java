@@ -106,7 +106,7 @@ public class SampleTask extends BaseTask {
 
     @Override
     public double getProgress() {
-        return executedSqlCount * 1.0 / totalSqlCount;
+        return executedSqlCount * 100.0 / totalSqlCount;
     }
 
     @Override

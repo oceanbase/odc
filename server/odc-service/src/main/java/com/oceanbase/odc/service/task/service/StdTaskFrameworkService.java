@@ -96,7 +96,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
                 resultHandleServices.forEach(r -> r.handle(taskResult));
             }
         } catch (Exception e) {
-            log.warn("ResultHandlerService handle result occur error:",e);
+            log.warn("ResultHandlerService handle result occur error:", e);
         }
         if (publisher != null) {
             taskResultPublisherExecutor.execute(() -> publisher.publishEvent(new TaskResultUploadEvent(taskResult)));

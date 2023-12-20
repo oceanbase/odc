@@ -47,6 +47,7 @@ public class TaskController {
     @ApiOperation(value = "updateResult", notes = "update task result")
     @RequestMapping(value = "/result", method = RequestMethod.POST)
     public SuccessResponse<String> updateResult(@RequestBody DefaultTaskResult taskResult) {
+        log.info("Accept task result {}.", JsonUtils.toJson(taskResult));
         taskFrameworkService.handleResult(taskResult);
         log.info("update result succeed {}", JsonUtils.toJson(taskResult));
         return Responses.success("ok");

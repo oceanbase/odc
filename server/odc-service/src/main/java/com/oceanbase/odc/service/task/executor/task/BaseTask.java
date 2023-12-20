@@ -16,6 +16,7 @@
 
 package com.oceanbase.odc.service.task.executor.task;
 
+import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.Executors;
@@ -163,14 +164,18 @@ public abstract class BaseTask implements Task {
 
     private void reportTaskResult() {
         double progress = getProgress();
+        if (new BigDecimal(progress).compareTo(new BigDecimal("100.0")) > 0) {
+            log.warn("progress value {} is illegal, bigger than 100.0", progress);
+            return;
+        }
         // onUpdate();
         if (getTaskStatus() == TaskStatus.DONE) {
-            progress = 1.0;
+            progress = 100.0;
         }
         reporter.report(buildCurrentResult());
         log.info("Report task info, id: {}, status: {}, progress: {}%, result: {}",
                 getJobContext().getJobIdentity().getId(),
-                getTaskStatus(), String.format("%.2f", progress * 100), getTaskResult());
+                getTaskStatus(), String.format("%.2f", progress), getTaskResult());
     }
 
     private void reportTaskResultWithRetry(TaskResult result, int retries, int intervalSeconds) {
