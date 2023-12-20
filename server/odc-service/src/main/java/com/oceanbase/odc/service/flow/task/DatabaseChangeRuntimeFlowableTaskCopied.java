@@ -33,7 +33,6 @@ import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.metadb.task.JobEntity;
-import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.odc.service.connection.model.ConnectProperties;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.flow.exception.ServiceTaskError;
@@ -50,7 +49,6 @@ import com.oceanbase.odc.service.task.executor.task.DatabaseChangeTask;
 import com.oceanbase.odc.service.task.schedule.DefaultJobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobScheduler;
-import com.oceanbase.odc.service.task.schedule.SampleTaskJobDefinitionBuilder;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 import com.oceanbase.odc.service.task.util.JobUtils;
 
@@ -127,16 +125,6 @@ public class DatabaseChangeRuntimeFlowableTaskCopied extends BaseODCFlowTaskDele
         return result;
     }
 
-    private JobDefinition buildJobDefinition() {
-        DatabaseChangeParameters parameters = FlowTaskUtil.getAsyncParameter(execution);
-        ConnectionConfig config = FlowTaskUtil.getConnectionConfig(execution);
-        JobDefinition jd = new SampleTaskJobDefinitionBuilder().build(config, FlowTaskUtil.getSchemaName(execution),
-                SqlUtils.split(config.getDialectType(), parameters.getSqlContent(), ";"));
-        jd.getJobData().put(JobDataMapConstants.BUZ_ID, FlowTaskUtil.getTaskId(execution) + "");
-        return jd;
-    }
-
-
     @Override
     protected boolean isSuccessful() {
         return isSuccessful;
@@ -203,10 +191,5 @@ public class DatabaseChangeRuntimeFlowableTaskCopied extends BaseODCFlowTaskDele
                 .jobType(TaskType.ASYNC.name())
                 .jobData(jobData)
                 .build();
-    }
-
-
-    private DelegateExecution getExecution() {
-        return this.execution;
     }
 }
