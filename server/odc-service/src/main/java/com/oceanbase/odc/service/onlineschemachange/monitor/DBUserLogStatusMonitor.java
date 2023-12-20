@@ -138,7 +138,7 @@ public class DBUserLogStatusMonitor implements DBUserMonitor {
 
         List<String> tableColumns = new ArrayList<>();
         userLockedStatus.forEach(u -> {
-            tableColumns.add(u.getName());
+            tableColumns.add(u.getNameWithHost());
             tableColumns.add(u.getAccountLocked().name());
             Long sessionCounts = sessionMap.get(u.getName());
             tableColumns.add(Objects.isNull(sessionCounts) ? 0 + "" : sessionCounts + "");

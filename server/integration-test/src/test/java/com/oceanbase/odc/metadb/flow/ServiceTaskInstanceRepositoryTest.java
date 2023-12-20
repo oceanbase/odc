@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.metadb.flow;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -69,6 +70,16 @@ public class ServiceTaskInstanceRepositoryTest extends ServiceTestEnv {
         ServiceTaskInstanceEntity entity = createEntity();
         repository.save(entity);
         Assert.assertEquals(getById(entity.getId()), entity);
+    }
+
+    @Test
+    public void bulkSave_saveSeveralEntities_saveSucceed() {
+        List<ServiceTaskInstanceEntity> entities = new ArrayList<>();
+        for (int i = 0; i < 10; i++) {
+            entities.add(createEntity());
+        }
+        repository.batchCreate(entities);
+        Assert.assertEquals(10, repository.findAll().size());
     }
 
     @Test

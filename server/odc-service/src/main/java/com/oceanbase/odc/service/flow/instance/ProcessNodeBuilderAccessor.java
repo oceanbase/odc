@@ -47,7 +47,7 @@ public class ProcessNodeBuilderAccessor {
      */
     public void setNodeBuilder(@NonNull BaseFlowNodeInstance nodeInstance,
             @NonNull BaseProcessNodeBuilder<? extends FlowNode> nodeBuilder) {
-        FlowNodeInstanceKey key = new FlowNodeInstanceKey(nodeInstance);
+        FlowNodeInstanceKey key = new FlowNodeInstanceKey(nodeInstance.getShortUniqueId(), nodeInstance.getNodeType());
         Map<String, BaseProcessNodeBuilder<?>> name2NodeBuilder =
                 nodeInstance2NodeBuilders.computeIfAbsent(key, subKey -> new HashMap<>());
         String builderName = nodeBuilder.getName();
@@ -64,7 +64,7 @@ public class ProcessNodeBuilderAccessor {
      */
     public Optional<BaseProcessNodeBuilder<? extends FlowNode>> getNodeBuilderByName(@NonNull String name,
             @NonNull BaseFlowNodeInstance instance) {
-        FlowNodeInstanceKey key = new FlowNodeInstanceKey(instance);
+        FlowNodeInstanceKey key = new FlowNodeInstanceKey(instance.getShortUniqueId(), instance.getNodeType());
         Map<String, BaseProcessNodeBuilder<?>> name2NodeBuilder = nodeInstance2NodeBuilders.get(key);
         if (name2NodeBuilder == null) {
             return Optional.empty();

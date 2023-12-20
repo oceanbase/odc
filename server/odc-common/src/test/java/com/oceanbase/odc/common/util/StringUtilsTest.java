@@ -318,6 +318,16 @@ public class StringUtilsTest {
     }
 
     @Test
+    public void testCamelCaseToSnakeCase() {
+        Assert.assertEquals("test_case", StringUtils.camelCaseToSnakeCase("testCase"));
+    }
+
+    @Test
+    public void testRemoveWhitespace() {
+        Assert.assertEquals("HelloWorld", StringUtils.removeWhitespace("\nHello World\n"));
+    }
+
+    @Test
     public void test_from_close_begin_getBriefSql() {
         String sql =
                 "select * as asasdjadnjabdasdahjdknkqndjbjfbcdcxvnsdwqjdnjwqdnscasndknadjbascbadnasndqwbdqwbjd  from t_user  where id=1";

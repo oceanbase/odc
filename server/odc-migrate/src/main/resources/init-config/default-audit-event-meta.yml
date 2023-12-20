@@ -53,8 +53,9 @@
   id: 7
 - type: "CONNECTION_MANAGEMENT"
   action: "CREATE_SESSION"
-  method_signature: "com.oceanbase.odc.server.web.controller.v2.ConnectSessionController.createSession"
-  sid_extract_expression: "{#req.connectionId}"
+  method_signature: "com.oceanbase.odc.server.web.controller.v2.ConnectSessionController.createSessionByDatabase"
+  sid_extract_expression: ""
+  database_id_extract_expression: "{#databaseId}"
   in_connection: 1
   enabled: 1
   id: 8
@@ -294,7 +295,8 @@
 - type: "UNKNOWN_TASK_TYPE"
   action: "CREATE_TASK"
   method_signature: "com.oceanbase.odc.server.web.controller.v2.FlowInstanceController.createFlowInstance"
-  sid_extract_expression: "{#flowInstanceReq.connectionId}"
+  sid_extract_expression: ""
+  database_id_extract_expression: "{#flowInstanceReq.databaseId}"
   in_connection: 1
   enabled: 1
   id: 40

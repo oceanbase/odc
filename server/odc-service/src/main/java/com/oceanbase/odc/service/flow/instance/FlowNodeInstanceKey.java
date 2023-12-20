@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.flow.instance;
 
+import org.apache.commons.lang.Validate;
+
 import com.oceanbase.odc.service.flow.model.FlowNodeType;
 
 import lombok.EqualsAndHashCode;
@@ -23,20 +25,31 @@ import lombok.NonNull;
 import lombok.ToString;
 
 @Getter
-@EqualsAndHashCode
 @ToString
+@EqualsAndHashCode
 public class FlowNodeInstanceKey {
+
+    private final String shortUniqueId;
     private final Long instanceId;
     private final FlowNodeType instanceType;
 
     public FlowNodeInstanceKey(@NonNull BaseFlowNodeInstance instance) {
+        Validate.notNull(instance.getId(), "Id for instance can not be null");
         this.instanceId = instance.getId();
         this.instanceType = instance.getNodeType();
+        this.shortUniqueId = null;
     }
 
     public FlowNodeInstanceKey(@NonNull Long instanceId, @NonNull FlowNodeType instanceType) {
         this.instanceId = instanceId;
         this.instanceType = instanceType;
+        this.shortUniqueId = null;
+    }
+
+    public FlowNodeInstanceKey(@NonNull String shortUniqueId, @NonNull FlowNodeType instanceType) {
+        this.instanceId = null;
+        this.instanceType = instanceType;
+        this.shortUniqueId = shortUniqueId;
     }
 
 }
