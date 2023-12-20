@@ -50,7 +50,8 @@ public class TaskFrameworkConfiguration {
     public K8sJobClient k8sJobClient(@Autowired TaskFrameworkProperties taskFrameworkProperties) {
         if (taskFrameworkProperties.getRunMode() == TaskRunModeEnum.K8S) {
             try {
-                log.info("k8s is not null {}", taskFrameworkProperties.getK8s());
+                log.info("k8s url is {}", taskFrameworkProperties.getK8s().getKubeUrl());
+                log.info("k8s namespace is {}", taskFrameworkProperties.getK8s().getNamespace());
                 return new NativeK8sJobClient(taskFrameworkProperties.getK8s());
             } catch (IOException e) {
                 log.warn("Create NativeK8sJobClient occur error", e);

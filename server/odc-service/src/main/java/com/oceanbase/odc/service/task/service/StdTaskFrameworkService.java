@@ -113,7 +113,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         jse.setJobClass(jd.getJobClass().getCanonicalName());
         jse.setJobType(jd.getJobType());
         jse.setStatus(TaskStatus.PREPARING);
-        jse.setFlowInstanceId(jd.getFlowInstance());
+        jse.setFlowInstanceId(jd.getFlowInstanceId());
         return jobScheduleRepository.save(jse);
     }
 
