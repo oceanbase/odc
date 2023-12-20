@@ -16,34 +16,22 @@
 
 package com.oceanbase.odc.service.task.schedule;
 
-import java.util.Map;
+import java.util.Collections;
+import java.util.List;
 
-import com.oceanbase.odc.service.task.executor.task.Task;
+import com.oceanbase.odc.common.util.SystemUtils;
+import com.oceanbase.odc.service.task.constants.JobEnvConstants;
 
 /**
- * Define a job and describe all job information for schedule
- *
  * @author yaobin
- * @date 2023-11-23
+ * @date 2023-12-01
  * @since 4.2.4
  */
-public interface JobDefinition {
+public class ServiceNameHostUrlProvider implements HostUrlProvider {
 
-    /**
-     * job class
-     */
-    Class<? extends Task> getJobClass();
-
-    /**
-     * job type
-     */
-    String getJobType();
-
-    /**
-     * job data
-     */
-    Map<String, String> getJobData();
-
-    Long getFlowInstanceId();
-
+    @Override
+    public List<String> hostUrl() {
+        return Collections.singletonList("http://" + SystemUtils.getEnvOrProperty(JobEnvConstants.ODC_SERVICE_HOST)
+                + ":" + SystemUtils.getEnvOrProperty(JobEnvConstants.ODC_SERVER_PORT));
+    }
 }
