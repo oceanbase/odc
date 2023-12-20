@@ -38,7 +38,6 @@ import com.oceanbase.odc.service.iam.LoginHistoryService;
 import com.oceanbase.odc.service.iam.auth.CustomAuthenticationEntryPoint;
 import com.oceanbase.odc.service.iam.auth.CustomAuthenticationFailureHandler;
 import com.oceanbase.odc.service.iam.auth.CustomAuthenticationSuccessHandler;
-import com.oceanbase.odc.service.iam.auth.CustomInvalidSessionStrategy;
 import com.oceanbase.odc.service.iam.auth.CustomLogoutSuccessHandler;
 import com.oceanbase.odc.service.iam.auth.play.PlaysiteOpenAPIClient;
 import com.oceanbase.odc.service.iam.auth.play.PlaysiteOpenAPIConstants;
@@ -137,8 +136,7 @@ public class PlaySiteSecurityConfiguration extends WebSecurityConfigurerAdapter 
                 // Never: Spring Security will never create an HttpSession, but will use the existing one
                 .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
                 .sessionFixation()
-                .migrateSession()
-                .invalidSessionStrategy(new CustomInvalidSessionStrategy(LOGIN_PAGE,localeResolver));
+                .migrateSession();
         // @formatter:on        
         csrfConfigureHelper.configure(http);
 
