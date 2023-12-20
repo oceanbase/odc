@@ -18,13 +18,10 @@ package com.oceanbase.odc.service.task.executor.task;
 
 import com.oceanbase.odc.service.task.executor.executor.TaskRuntimeException;
 
-import lombok.extern.slf4j.Slf4j;
-
 /**
  * @author gaoda.xy
  * @date 2023/11/24 11:01
  */
-@Slf4j
 public class TaskFactory {
 
     public static Task create(String jobClass) {
