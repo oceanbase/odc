@@ -42,6 +42,7 @@ import org.springframework.security.web.csrf.InvalidCsrfTokenException;
 import org.springframework.security.web.csrf.MissingCsrfTokenException;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.stereotype.Component;
+import org.springframework.web.servlet.LocaleResolver;
 
 import com.google.common.net.InetAddresses;
 import com.oceanbase.odc.common.trace.TraceContextHolder;
@@ -51,30 +52,36 @@ import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.service.common.response.OdcErrorResult;
 import com.oceanbase.odc.service.common.util.WebRequestUtils;
 import com.oceanbase.odc.service.common.util.WebResponseUtils;
+import com.oceanbase.odc.service.iam.auth.CustomInvalidSessionStrategy;
 
 /**
  * @author wenniu.ly
  * @date 2021/6/18
  */
-
 @Component
 public class CsrfConfigureHelper {
 
     @Autowired
     private CommonSecurityProperties commonSecurityProperties;
 
+    @Autowired
+    private LocaleResolver localeResolver;
+
     public void configure(HttpSecurity http) throws Exception {
         if (commonSecurityProperties.isCsrfEnabled()) {
             // @formatter:off
-            http.exceptionHandling()
-                    .accessDeniedHandler(accessDeniedHandler())
-                .and()
-                    .csrf()
-                    .requireCsrfProtectionMatcher(requestMatcher())
-                    .csrfTokenRepository(new OdcCsrfTokenRepository());
+            http.csrf()
+                .requireCsrfProtectionMatcher(requestMatcher())
+                .csrfTokenRepository(new OdcCsrfTokenRepository())
+            .and()
+                .exceptionHandling()
+                .accessDeniedHandler(accessDeniedHandler());
             // @formatter:on
         } else {
             http.csrf().disable();
+            http.sessionManagement()
+                    .invalidSessionStrategy(
+                            new CustomInvalidSessionStrategy(commonSecurityProperties.getLoginPage(), localeResolver));
         }
     }
 
