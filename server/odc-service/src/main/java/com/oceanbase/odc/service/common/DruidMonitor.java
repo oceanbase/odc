@@ -339,7 +339,7 @@ public class DruidMonitor implements InitializingBean {
                     .append("readBytesLength=").append(readBytesLength).append(", ")
                     .append("dbType=").append(dbType).append(", ")
                     .append("dataSource=").append(dataSource).append(", ")
-                    .append("sql=").append(StringUtils.removeWhitespace(sql)).append(", ")
+                    .append("sql=[").append(StringUtils.removeWhitespace(sql)).append("], ")
                     .append("hash=").append(hash).append(", ")
                     .append("lastError=")
                     .append(StringUtils.removeWhitespace(lastError == null ? "" : lastError.toString())).append(", ")
