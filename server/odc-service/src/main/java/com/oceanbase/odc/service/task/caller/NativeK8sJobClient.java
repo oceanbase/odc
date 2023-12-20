@@ -60,6 +60,8 @@ import lombok.NonNull;
  */
 public class NativeK8sJobClient implements K8sJobClient {
 
+    private static final long TIMEOUT_MILLS = 60000;
+
     public NativeK8sJobClient(TaskFrameworkProperties.K8sProperties k8sProperties) throws IOException {
         ApiClient apiClient = null;
         if (StringUtils.isNotBlank(k8sProperties.getKubeConfig())) {
@@ -70,14 +72,14 @@ public class NativeK8sJobClient implements K8sJobClient {
                 apiClient = ClientBuilder.kubeconfig(kubeConfig).build();
             }
         } else {
-            apiClient = Config.defaultClient().setBasePath(k8sProperties.getUrl());
+            apiClient = Config.defaultClient().setBasePath(k8sProperties.getKubeUrl());
         }
         Verify.notNull(apiClient, "k8s api client");
         apiClient.setHttpClient(apiClient
                 .getHttpClient()
                 .newBuilder()
-                .readTimeout(60000, TimeUnit.MILLISECONDS)
-                .connectTimeout(60000, TimeUnit.MILLISECONDS)
+                .readTimeout(TIMEOUT_MILLS, TimeUnit.MILLISECONDS)
+                .connectTimeout(TIMEOUT_MILLS, TimeUnit.MILLISECONDS)
                 .pingInterval(1, TimeUnit.MINUTES)
                 .build());
 

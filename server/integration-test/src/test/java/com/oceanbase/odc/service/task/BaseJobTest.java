@@ -72,7 +72,7 @@ public abstract class BaseJobTest {
         JobConfigurationHolder.setJobConfiguration(jc);
 
         K8sProperties k8sProperties = new K8sProperties();
-        k8sProperties.setUrl(TestProperties.getProperty("odc.k8s.cluster.url"));
+        k8sProperties.setKubeUrl(TestProperties.getProperty("odc.k8s.cluster.url"));
         k8sJobClient = new NativeK8sJobClient(k8sProperties);
         imageName = "perl:5.34.0";
         cmd = Arrays.asList("perl", "-Mbignum=bpi", "-wle", "print bpi(2000)");

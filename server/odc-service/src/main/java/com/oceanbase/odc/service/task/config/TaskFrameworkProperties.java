@@ -44,7 +44,7 @@ public class TaskFrameworkProperties {
 
     @Data
     public static class K8sProperties {
-        private String url;
+        private String kubeUrl;
         private String namespace;
         private String kubeConfig;
     }

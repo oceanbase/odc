@@ -67,6 +67,4 @@ public class JobUtils {
         config.setId(1L);
         return config;
     }
-
-
 }

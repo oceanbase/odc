@@ -59,10 +59,9 @@ public class TaskFrameworkConfiguration {
 
     @Bean
     public HostUrlProvider hostUrlProvider(@Autowired TaskFrameworkProperties taskFrameworkProperties,
-        @Autowired HostProperties hostProperties) {
-        return  StringUtils.isBlank(taskFrameworkProperties.getOdcUrl()) ?
-            new IpBasedHostUrlProvider(hostProperties) :
-            new FixedHostUrlProvider(taskFrameworkProperties);
+            @Autowired HostProperties hostProperties) {
+        return StringUtils.isBlank(taskFrameworkProperties.getOdcUrl()) ? new IpBasedHostUrlProvider(hostProperties)
+                : new FixedHostUrlProvider(taskFrameworkProperties);
     }
 
     @Bean

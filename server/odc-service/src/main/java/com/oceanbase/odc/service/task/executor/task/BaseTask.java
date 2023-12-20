@@ -210,30 +210,12 @@ public abstract class BaseTask implements Task {
         return result;
     }
 
-
-    /**
-     * Deal with task init method
-     */
     protected abstract void onInit();
 
-
-    /**
-     * Deal with task run logic here
-     */
     protected abstract void onStart();
 
-
-
-    /**
-     * Deal with task run logic here
-     */
     protected abstract void onStop();
 
-    /**
-     * Deal with task stop logic here
-     *
-     * @param e exception
-     */
     protected abstract void onFail(Exception e);
 
 }

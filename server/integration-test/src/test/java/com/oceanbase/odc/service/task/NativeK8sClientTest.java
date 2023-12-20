@@ -48,7 +48,7 @@ public class NativeK8sClientTest {
     @BeforeClass
     public static void init() throws IOException {
         K8sProperties k8sProperties = new K8sProperties();
-        k8sProperties.setUrl(TestProperties.getProperty("odc.k8s.cluster.url"));
+        k8sProperties.setKubeUrl(TestProperties.getProperty("odc.k8s.cluster.url"));
         k8sClient = new NativeK8sJobClient(k8sProperties);
     }
 
