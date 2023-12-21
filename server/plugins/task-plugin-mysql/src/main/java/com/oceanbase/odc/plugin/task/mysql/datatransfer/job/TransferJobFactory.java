@@ -17,6 +17,7 @@
 package com.oceanbase.odc.plugin.task.mysql.datatransfer.job;
 
 import java.io.File;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.sql.Connection;
 import java.util.ArrayList;
@@ -74,12 +75,16 @@ public class TransferJobFactory {
             return inputs.stream()
                     .filter(url -> url.getFile().endsWith(Constants.DDL_SUFFIX))
                     .map(url -> {
-                        File schemaFile = new File(url.getFile());
-                        String filename = schemaFile.getName();
-                        String objectName = filename.substring(0, filename.indexOf(Constants.DDL_SUFFIX));
-                        ObjectResult object = new ObjectResult(transferConfig.getSchemaName(), objectName,
-                                schemaFile.getParentFile().getName().toUpperCase());
-                        return new SqlScriptImportJob(object, transferConfig, url, dataSource);
+                        try {
+                            File schemaFile = new File(url.toURI());
+                            String filename = schemaFile.getName();
+                            String objectName = filename.substring(0, filename.indexOf(Constants.DDL_SUFFIX));
+                            ObjectResult object = new ObjectResult(transferConfig.getSchemaName(), objectName,
+                                    schemaFile.getParentFile().getName().toUpperCase());
+                            return new SqlScriptImportJob(object, transferConfig, url, dataSource);
+                        } catch (URISyntaxException e) {
+                            throw new RuntimeException(e);
+                        }
                     })
                     .sorted(Comparator
                             .comparingInt(job -> ArrayUtils.indexOf(Constants.DEPENDENCIES, job.getObject().getType())))
@@ -112,7 +117,7 @@ public class TransferJobFactory {
          */
         if (transferConfig.getTransferType() == DataTransferType.IMPORT) {
             for (URL url : inputs) {
-                File file = new File(url.getFile());
+                File file = new File(url.toURI());
                 ObjectResult object;
                 if (transferConfig.isCompressed()) {
                     Matcher matcher = DataFile.FILE_PATTERN.matcher(file.getName());
@@ -163,7 +168,7 @@ public class TransferJobFactory {
                     columns = transferConfig.getColumns();
                 } else {
                     columns = new MySQLTableExtension().getDetail(conn, table.getSchema(), table.getName()).getColumns()
-                        .stream().map(DBTableColumn::getName).collect(Collectors.toList());
+                            .stream().map(DBTableColumn::getName).collect(Collectors.toList());
                 }
                 AbstractJob job = new DataXTransferJob(table, ConfigurationResolver
                         .buildJobConfigurationForExport(workingDir, transferConfig, jdbcUrl, table.getName(), columns),

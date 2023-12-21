@@ -17,6 +17,7 @@
 package com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax;
 
 import java.io.File;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -73,7 +74,7 @@ public class ConfigurationResolver {
      * </pre>
      */
     public static JobConfiguration buildJobConfigurationForImport(DataTransferConfig baseConfig, String jdbcUrl,
-            ObjectResult object, URL resource, List<DBTableColumn> columns) {
+            ObjectResult object, URL resource, List<DBTableColumn> columns) throws URISyntaxException {
         if (baseConfig.getDataTransferFormat() == DataTransferFormat.SQL) {
             throw new UnsupportedException("SQL files should not be imported by DataX!");
         }
@@ -112,7 +113,7 @@ public class ConfigurationResolver {
     }
 
     private static Parameter createTxtReaderParameter(DataTransferConfig baseConfig, URL input,
-            List<CsvColumnMapping> columnMappings) {
+            List<CsvColumnMapping> columnMappings) throws URISyntaxException {
 
         Parameter reader = new Parameter();
         TxtReaderPluginParameter pluginParameter = new TxtReaderPluginParameter();
@@ -123,7 +124,7 @@ public class ConfigurationResolver {
         pluginParameter.setEncoding(baseConfig.getEncoding().getAlias());
         pluginParameter.setFileFormat("csv");
         // path
-        pluginParameter.setPath(Collections.singletonList(input.getPath()));
+        pluginParameter.setPath(Collections.singletonList(input.toURI().getPath()));
         // column
         pluginParameter.setColumn(columnMappings.stream()
                 .map(mapping -> new Column(mapping.getSrcColumnPosition(), "string"))
