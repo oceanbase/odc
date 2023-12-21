@@ -62,6 +62,16 @@ public class OnlineSchemaChangeCompleteJob implements OdcJob {
     }
 
     @Override
+    public void before(JobExecutionContext context) {
+
+    }
+
+    @Override
+    public void after(JobExecutionContext context) {
+
+    }
+
+    @Override
     public void interrupt() {
         throw new UnsupportedException();
     }

@@ -26,6 +26,10 @@ public interface OdcJob {
 
     void execute(JobExecutionContext context);
 
+    void before(JobExecutionContext context);
+
+    void after(JobExecutionContext context);
+
     void interrupt();
 
 }

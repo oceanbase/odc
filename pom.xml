@@ -119,7 +119,7 @@
         <mina.version>2.1.6</mina.version>
 
         <!-- data-lifecycle-manager version -->
-        <data-lifecycle-manager.version>1.0.6</data-lifecycle-manager.version>
+        <data-lifecycle-manager.version>1.0.7</data-lifecycle-manager.version>
 
         <!-- plugin version -->
         <formatter-maven-plugin.version>2.11.0</formatter-maven-plugin.version>

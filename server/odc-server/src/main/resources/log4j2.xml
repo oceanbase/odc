@@ -488,6 +488,51 @@
             </Routes>
         </Routing>
 
+        <Routing name="ScheduleTaskInfoRoutingAppender">
+            <Routes pattern="${ctx:scheduleTaskId}">
+                <Route>
+                    <RollingFile name="InfoRolling-${ctx:scheduleTaskId}"
+                                 fileName="${LOG_DIRECTORY}/scheduleTask/${ctx:jobName}-${ctx:jobGroup}/${ctx:scheduleTaskId}/log.all"
+                                 filePattern="${LOG_DIRECTORY}/scheduleTask/${ctx:jobName}-${ctx:jobGroup}/${ctx:scheduleTaskId}/${date:yyyy-MM}/log-%d{yyyy-MM-dd}-%i.all.gz">
+                        <PatternLayout>
+                            <pattern>%d{yyyy-MM-dd HH:mm:ss} [%p] %m%n</pattern>
+                        </PatternLayout>
+                        <Filters>
+                            <!-- TRACE < DEBUG < INFO < WARN < ERROR < FATAL -->
+                            <ThresholdFilter level="INFO" onMatch="ACCEPT" onMismatch="DENY"/>
+                        </Filters>
+                        <Policies>
+                            <TimeBasedTriggeringPolicy interval="6" modulate="true"/>
+                            <SizeBasedTriggeringPolicy size="256 MB"/>
+                        </Policies>
+                    </RollingFile>
+                </Route>
+            </Routes>
+        </Routing>
+
+        <Routing name="ScheduleTaskWarnRoutingAppender">
+            <Routes pattern="${ctx:scheduleTaskId}">
+                <Route>
+                    <RollingFile name="WarnRolling-${ctx:scheduleTaskId}"
+                                 fileName="${LOG_DIRECTORY}/scheduleTask/${ctx:jobName}-${ctx:jobGroup}/${ctx:scheduleTaskId}/log.warn"
+                                 filePattern="${LOG_DIRECTORY}/scheduleTask/${ctx:jobName}-${ctx:jobGroup}/${ctx:scheduleTaskId}/${date:yyyy-MM}/log-%d{yyyy-MM-dd}-%i.warn.gz">
+                        <PatternLayout>
+                            <pattern>%d{yyyy-MM-dd HH:mm:ss} [%p] %m%n</pattern>
+                        </PatternLayout>
+                        <Filters>
+                            <!-- TRACE < DEBUG < INFO < WARN < ERROR < FATAL -->
+                            <ThresholdFilter level="ERROR" onMatch="DENY" onMismatch="NEUTRAL"/>
+                            <ThresholdFilter level="WARN" onMatch="ACCEPT" onMismatch="DENY"/>
+                        </Filters>
+                        <Policies>
+                            <TimeBasedTriggeringPolicy interval="6" modulate="true"/>
+                            <SizeBasedTriggeringPolicy size="256 MB"/>
+                        </Policies>
+                    </RollingFile>
+                </Route>
+            </Routes>
+        </Routing>
+
 
     </Appenders>
     <Loggers>
@@ -588,8 +633,9 @@
             <AppenderRef ref="WarnRoutingOnlineSchemaChangeAppender"/>
         </Logger>
 
-        <Logger name="com.oceanbase.tools.migrator" level="INFO">
-            <AppenderRef ref="OdcFileAppender"/>
+        <Logger name="com.oceanbase.tools.migrator" level="INFO" additivity="true">
+            <AppenderRef ref="ScheduleTaskInfoRoutingAppender"/>
+            <AppenderRef ref="ScheduleTaskWarnRoutingAppender"/>
         </Logger>
 
         <!-- ODC程序日志输出，输出级别 INFO -->

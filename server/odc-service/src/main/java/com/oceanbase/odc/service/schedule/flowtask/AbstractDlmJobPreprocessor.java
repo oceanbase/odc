@@ -87,10 +87,6 @@ public class AbstractDlmJobPreprocessor implements Preprocessor {
         if (datasource.getDialectType().isOracle()) {
             throw new UnsupportedException("DLM is not supported for Oracle data sources.");
         }
-        if (datasource.getDialectType().isOceanbase() && StringUtils.isEmpty(datasource.getClusterName())) {
-            throw new UnsupportedException(
-                    "DLM currently does not support tenant instances. Please configure the cluster information and try again.");
-        }
     }
 
     private void checkPrimaryKey(ConnectionSession connectionSession, String databaseName,

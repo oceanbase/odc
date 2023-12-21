@@ -21,6 +21,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import com.oceanbase.tools.migrator.common.enums.ShardingStrategy;
 import com.oceanbase.tools.migrator.core.IJobStore;
 
 import lombok.extern.slf4j.Slf4j;
@@ -44,6 +45,15 @@ public class DLMConfiguration {
     @Value("${odc.task.dlm.single-task-thread-pool-size:15}")
     private int singleTaskThreadPoolSize;
 
+    @Value("${odc.task.dlm.task-connection-query-timeout-seconds:180}")
+    private int taskConnectionQueryTimeout;
+
+    @Value("${odc.task.dlm.sharding-strategy:FIXED_LENGTH}")
+    private ShardingStrategy shardingStrategy;
+
+    @Value("${odc.task.dlm.default-scan-batch-size:10000}")
+    private int defaultScanBatchSize;
+
     @Bean
     public JobMetaFactory jobMetaFactory(IJobStore jobStore) {
         JobMetaFactory jobMetaFactory = new JobMetaFactory();
@@ -51,6 +61,9 @@ public class DLMConfiguration {
         jobMetaFactory.setExecutorService(Executors.newFixedThreadPool(dlmThreadPoolSize));
         jobMetaFactory.setSingleTaskThreadPoolSize(singleTaskThreadPoolSize);
         jobMetaFactory.setReadWriteRatio(readWriteRatio);
+        jobMetaFactory.setTaskConnectionQueryTimeout(taskConnectionQueryTimeout);
+        jobMetaFactory.setDefaultShardingStrategy(shardingStrategy);
+        jobMetaFactory.setDefaultScanBatchSize(defaultScanBatchSize);
         return jobMetaFactory;
     }
 

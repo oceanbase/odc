@@ -23,6 +23,7 @@ import com.oceanbase.tools.migrator.common.configure.LogicTableConfig;
 import com.oceanbase.tools.migrator.common.dto.HistoryJob;
 import com.oceanbase.tools.migrator.common.enums.JobStatus;
 import com.oceanbase.tools.migrator.common.enums.JobType;
+import com.oceanbase.tools.migrator.common.enums.ShardingStrategy;
 import com.oceanbase.tools.migrator.core.AbstractJobMetaFactory;
 import com.oceanbase.tools.migrator.core.JobReq;
 import com.oceanbase.tools.migrator.core.meta.ClusterMeta;
@@ -41,7 +42,13 @@ public class JobMetaFactory extends AbstractJobMetaFactory {
 
     private final SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
     private int singleTaskThreadPoolSize;
+
+    private int taskConnectionQueryTimeout;
     private double readWriteRatio;
+
+    private int defaultScanBatchSize;
+
+    private ShardingStrategy defaultShardingStrategy;
 
     public JobMeta create(DlmTask parameters) throws Exception {
         HistoryJob historyJob = new HistoryJob();
@@ -58,18 +65,23 @@ public class JobMetaFactory extends AbstractJobMetaFactory {
         LogicTableConfig logicTableConfig = parameters.getLogicTableConfig();
         logicTableConfig.setReaderTaskCount((int) (singleTaskThreadPoolSize * readWriteRatio / (1 + readWriteRatio)));
         logicTableConfig.setWriterTaskCount(singleTaskThreadPoolSize - logicTableConfig.getReaderTaskCount());
+        logicTableConfig.setGeneratorBatchSize(defaultScanBatchSize);
         DataSourceInfo sourceInfo = DataSourceInfoBuilder.build(parameters.getSourceDs());
         DataSourceInfo targetInfo = DataSourceInfoBuilder.build(parameters.getTargetDs());
         sourceInfo.setConnectionCount(2 * (logicTableConfig.getReaderTaskCount()
                 + parameters.getLogicTableConfig().getWriterTaskCount()));
         targetInfo.setConnectionCount(2 * (logicTableConfig.getReaderTaskCount()
                 + parameters.getLogicTableConfig().getWriterTaskCount()));
+        sourceInfo.setQueryTimeout(taskConnectionQueryTimeout);
+        targetInfo.setQueryTimeout(taskConnectionQueryTimeout);
         log.info("Begin to create dlm job,params={}", logicTableConfig);
         // ClusterMeta and TenantMeta used to calculate min limit size.
         JobReq req =
                 new JobReq(historyJob, parameters.getLogicTableConfig(), sourceInfo, targetInfo, new ClusterMeta(),
                         new ClusterMeta(), new TenantMeta(), new TenantMeta());
-        return super.create(req);
+        JobMeta jobMeta = super.create(req);
+        jobMeta.setShardingStrategy(defaultShardingStrategy);
+        return jobMeta;
     }
 
     public void setReadWriteRatio(double readWriteRatio) {
@@ -78,6 +90,18 @@ public class JobMetaFactory extends AbstractJobMetaFactory {
 
     public void setSingleTaskThreadPoolSize(int singleTaskThreadPoolSize) {
         this.singleTaskThreadPoolSize = singleTaskThreadPoolSize;
+    }
+
+    public void setTaskConnectionQueryTimeout(int taskConnectionQueryTimeout) {
+        this.taskConnectionQueryTimeout = taskConnectionQueryTimeout;
+    }
+
+    public void setDefaultShardingStrategy(ShardingStrategy defaultShardingStrategy) {
+        this.defaultShardingStrategy = defaultShardingStrategy;
+    }
+
+    public void setDefaultScanBatchSize(int defaultScanBatchSize) {
+        this.defaultScanBatchSize = defaultScanBatchSize;
     }
 
 }

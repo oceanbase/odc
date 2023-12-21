@@ -15,14 +15,19 @@
  */
 package com.oceanbase.odc.service.schedule.flowtask;
 
+import java.util.Arrays;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionFactory;
 import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
+import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.plugin.connect.api.InformationExtensionPoint;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
@@ -34,7 +39,9 @@ import com.oceanbase.odc.service.flow.processor.ScheduleTaskPreprocessor;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 import com.oceanbase.odc.service.schedule.ScheduleService;
+import com.oceanbase.odc.service.schedule.ScheduleTaskService;
 import com.oceanbase.odc.service.schedule.model.JobType;
+import com.oceanbase.odc.service.schedule.model.ScheduleStatus;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 
 import lombok.extern.slf4j.Slf4j;
@@ -52,6 +59,9 @@ public class DataArchivePreprocessor extends AbstractDlmJobPreprocessor {
 
     @Autowired
     private ScheduleService scheduleService;
+
+    @Autowired
+    private ScheduleTaskService scheduleTaskService;
 
     @Autowired
     private DatabaseService databaseService;
@@ -104,6 +114,15 @@ public class DataArchivePreprocessor extends AbstractDlmJobPreprocessor {
             if (parameters.getOperationType() == OperationType.UPDATE) {
                 parameters.setDescription(req.getDescription());
                 ScheduleEntity scheduleEntity = scheduleService.nullSafeGetById(parameters.getTaskId());
+                List<ScheduleTaskEntity> runningTasks = scheduleTaskService.listTaskByJobNameAndStatus(
+                        scheduleEntity.getId().toString(), Arrays.asList(TaskStatus.RUNNING, TaskStatus.PREPARING));
+                if (scheduleEntity.getStatus() != ScheduleStatus.PAUSE || !runningTasks.isEmpty()) {
+                    throw new IllegalStateException(
+                            String.format(
+                                    "The task can only be edited when it is paused and there are no active subtasks executing."
+                                            + "status=%s,subtaskCount=%s",
+                                    scheduleEntity.getStatus(), runningTasks.size()));
+                }
                 // update job limit config
                 limiterService.updateByOrderId(scheduleEntity.getId(), dataArchiveParameters.getRateLimit());
             }
