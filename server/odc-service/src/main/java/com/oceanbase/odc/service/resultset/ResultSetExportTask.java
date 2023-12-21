@@ -195,13 +195,13 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
 
         config.setQuerySql(parameter.getSql());
         config.setFileType(parameter.getFileFormat().name());
-        setMaskConfig(config, parameter);
+        setColumnConfig(config, parameter);
         config.setCursorFetchSize(dataTransferProperties.getCursorFetchSize());
         config.setUsePrepStmts(dataTransferProperties.isUseServerPrepStmts());
         return config;
     }
 
-    private void setMaskConfig(DataTransferConfig config, ResultSetExportTaskParameter parameter) {
+    private void setColumnConfig(DataTransferConfig config, ResultSetExportTaskParameter parameter) {
         List<String> columnNames = new ArrayList<>();
         config.setColumns(columnNames);
         HashMap<TableIdentity, Map<String, AbstractDataMasker>> maskConfigMap = new HashMap<>();
@@ -230,7 +230,9 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
             throw OBException.executeFailed(
                     "Query result metadata failed, please try again, message=" + ExceptionUtils.getRootCauseMessage(e));
         }
-
+        if (!needDataMasking(algorithms)) {
+            return;
+        }
         DataMaskerFactory maskerFactory = new DataMaskerFactory();
         for (String catalogName : catalog2TableColumns.keySet()) {
             Map<String, List<OrdinalColumn>> tableName2Columns = catalog2TableColumns.get(catalogName);
