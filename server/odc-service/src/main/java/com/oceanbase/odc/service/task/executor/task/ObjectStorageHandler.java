@@ -49,7 +49,8 @@ public class ObjectStorageHandler {
         this.cloudObjectStorageService = cloudObjectStorageService;
     }
 
-    public ObjectStorageHandler(CloudObjectStorageService cloudObjectStorageService, LocalFileOperator localFileOperator) {
+    public ObjectStorageHandler(CloudObjectStorageService cloudObjectStorageService,
+            LocalFileOperator localFileOperator) {
         this.localFileOperator = localFileOperator;
         this.cloudObjectStorageService = cloudObjectStorageService;
     }

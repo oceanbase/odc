@@ -206,13 +206,15 @@ public class FlowTaskInstanceService {
         if (taskFrameworkProperties.getRunMode().isK8s() && taskEntity.getJobId() != null) {
             JobEntity jobEntity = taskFrameworkService.find(taskEntity.getJobId());
             if (jobEntity != null) {
-                if (jobEntity.isFinished()) {
+                if (!jobEntity.isFinished()) {
+                    log.info("job: {} is not finished, try to get log from remote pod.", jobEntity.getId());
                     ExecutorInfo executorInfo = JsonUtils.fromJson(jobEntity.getExecutor(), ExecutorInfo.class);
                     return forwardRemote(executorInfo);
                 } else if (cloudObjectStorageService.supported() && jobEntity.getLogStorage() != null) {
+                    log.info("job: {} is finished, try to get log from local or oss.", jobEntity.getId());
                     ObjectMetadata om = JsonUtils.fromJson(jobEntity.getLogStorage(), ObjectMetadata.class);
                     ObjectStorageHandler objectStorageHandler =
-                        new ObjectStorageHandler(cloudObjectStorageService, localFileOperator);
+                            new ObjectStorageHandler(cloudObjectStorageService, localFileOperator);
                     return objectStorageHandler.loadObjectContentAsString(om);
                 }
             }

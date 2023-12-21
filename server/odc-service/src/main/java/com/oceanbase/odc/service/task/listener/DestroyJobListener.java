@@ -17,10 +17,8 @@
 package com.oceanbase.odc.service.task.listener;
 
 import com.oceanbase.odc.service.task.caller.JobException;
-import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.executor.task.TaskResult;
 import com.oceanbase.odc.service.task.schedule.JobScheduler;
-import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -46,7 +44,7 @@ public class DestroyJobListener extends TaskResultUploadListener {
                 jobScheduler.cancelJob(event.getTaskResult().getJobIdentity().getId());
             } catch (JobException e) {
                 log.warn("Job {} is finished, try to destroy job failed, occur error: ",
-                    taskResult.getJobIdentity().getId(), e);
+                        taskResult.getJobIdentity().getId(), e);
             }
         }
     }

@@ -57,7 +57,7 @@ import lombok.extern.slf4j.Slf4j;
 public class StdTaskFrameworkService implements TaskFrameworkService {
 
     @Autowired
-    private JobScheduler  jobScheduler;
+    private JobScheduler jobScheduler;
     @Autowired
     private JobRepository jobRepository;
 
@@ -88,7 +88,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         }
 
         if (taskResult.getProgress() == je.getProgressPercentage() && taskResult.getTaskStatus() == je.getStatus()
-            && !taskResult.isFinished()) {
+                && !taskResult.isFinished()) {
             log.warn("task progress is not changed, ignore upload result.{}", JsonUtils.toJson(taskResult));
             return;
         }

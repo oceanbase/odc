@@ -18,8 +18,6 @@ package com.oceanbase.odc.service.schedule.model;
 import org.quartz.JobKey;
 import org.quartz.TriggerKey;
 
-import com.oceanbase.odc.service.task.schedule.JobIdentity;
-
 /**
  * @author yaobin
  * @date 2023-06-13
@@ -37,11 +35,11 @@ public class QuartzKeyGenerator {
     }
 
     public static TriggerKey generateTriggerKey(Long jobId) {
-        return new TriggerKey(jobId+"");
+        return new TriggerKey(jobId + "");
     }
 
     public static JobKey generateJobKey(Long jobId) {
-        return new JobKey(jobId+"");
+        return new JobKey(jobId + "");
     }
 
 }

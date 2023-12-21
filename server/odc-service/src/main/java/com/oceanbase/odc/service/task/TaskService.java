@@ -315,10 +315,10 @@ public class TaskService {
     public Optional<TaskEntity> findByJobId(@NonNull Long jobId) {
         List<TaskEntity> entities = taskRepository.findByJobId(jobId);
         if (CollectionUtils.isNotEmpty(entities)) {
-            if(entities.size() > 1){
+            if (entities.size() > 1) {
                 throw new TaskRuntimeException(
-                    MessageFormat.format("Find TaskEntity by job id {0}, excepted size 1 but found {1}",
-                        jobId, entities.size()));
+                        MessageFormat.format("Find TaskEntity by job id {0}, excepted size 1 but found {1}",
+                                jobId, entities.size()));
             }
             return Optional.of(entities.get(0));
         }

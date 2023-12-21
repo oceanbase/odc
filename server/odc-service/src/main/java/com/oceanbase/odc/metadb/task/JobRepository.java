@@ -43,8 +43,8 @@ public interface JobRepository extends JpaRepository<JobEntity, Long>,
 
     @Transactional
     @Query("update JobEntity set "
-           + "logStorage=:#{#param.logStorage},finished=:#{#param.finished} "
-           + " where id=:#{#param.id}")
+            + "logStorage=:#{#param.logStorage},finished=:#{#param.finished} "
+            + " where id=:#{#param.id}")
     @Modifying
     void updateFinished(@Param("param") JobEntity entity);
 
