@@ -75,25 +75,27 @@ public class EnhancedJpaRepository<T, ID extends Serializable> extends SimpleJpa
         Preconditions.checkArgument(entities.stream().allMatch(e -> entityInformation.getId(e) == null),
                 "can't create entity, cause not new entities");
         return getJdbcTemplate().execute((ConnectionCallback<List<T>>) con -> {
-            PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
-            for (T item : entities) {
-                for (Entry<Integer, Function<T, Object>> e : valueGetter.entrySet()) {
-                    try {
-                        Object call = e.getValue().apply(item);
-                        ps.setObject(e.getKey(), call);
-                    } catch (Exception ex) {
-                        throw new RuntimeException(ex);
+            try (PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+                for (T item : entities) {
+                    for (Entry<Integer, Function<T, Object>> e : valueGetter.entrySet()) {
+                        try {
+                            Object call = e.getValue().apply(item);
+                            ps.setObject(e.getKey(), call);
+                        } catch (Exception ex) {
+                            throw new RuntimeException(ex);
+                        }
                     }
+                    ps.addBatch();
                 }
-                ps.addBatch();
+                ps.executeBatch();
+                try (ResultSet resultSet = ps.getGeneratedKeys()) {
+                    int i = 0;
+                    while (resultSet.next()) {
+                        idSetter.accept(entities.get(i++), getGeneratedId(resultSet));
+                    }
+                    return entities;
+                }
             }
-            ps.executeBatch();
-            ResultSet resultSet = ps.getGeneratedKeys();
-            int i = 0;
-            while (resultSet.next()) {
-                idSetter.accept(entities.get(i++), getGeneratedId(resultSet));
-            }
-            return entities;
         });
     }
 
