@@ -143,14 +143,14 @@ public abstract class BaseTask implements Task {
                 // when task execution is timeout then stop it.
                 stop();
             }
-            try {
-                if (isFinished() || getTaskStatus().isTerminated()) {
+            if (isFinished() || getTaskStatus().isTerminated()) {
+                scheduledExecutor.shutdown();
+            } else {
+                try {
                     reportTaskResult();
-                } else {
-                    scheduledExecutor.shutdown();
+                } catch (Exception e) {
+                    log.warn("Update task info failed, id: {}", getJobContext().getJobIdentity().getId(), e);
                 }
-            } catch (Exception e) {
-                log.warn("Update task info failed, id: {}", getJobContext().getJobIdentity().getId(), e);
             }
         }, 1, REPORT_TASK_INFO_INTERVAL_SECONDS, TimeUnit.SECONDS);
         log.info("Task monitor init success");
