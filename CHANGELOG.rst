@@ -67,6 +67,15 @@ Changes
 
 Fix
 ~~~
+- Fix(monitor): format druid log (#1251) [Ang]
+- Fix(schema-plugin): show partition name with identifiers (#1249)
+  [zhangxiao]
+- Fix(partition plan):failed to disable table partition plan (#1247)
+  [guowl3]
+- Fix(datasource): it occurs 'duplicate data source name' error when
+  creating a data source in team space (#1243) [pynzzZ]
+- Fix(rollback-plan): NPE when user input sql content is empty (#1242)
+  [XiaoYang]
 - Fix(web-framework): invalid csrf token result into Invalid session
   error message (#1233) [yizhou]
 - Fix(apply-project): failed to set mdc value (#1237) [XiaoYang]

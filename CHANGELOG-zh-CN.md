@@ -1,6 +1,6 @@
 # OceanBase Developer Center (ODC) CHANGELOG
 
-## 4.2.3 (2023-12-21)
+## 4.2.3 (2023-12-22)
 
 ### 功能变化
 
@@ -84,6 +84,10 @@ SQL 执行
 - OceanBase Oracle 模式下执行 SELECT ... ORDER BY 1 样式的语句时 ORDER BY 会失效
 - 禁用"SQL 窗口允许执行的 SQL 类型"规则不生效
 
+数据库对象管理
+
+- OceanBase MySQL 模式下左侧对象树上展示的表的分区等对象的名字带有反引号包围符
+
 结果集导出
 
 - 任务没有日志打印
@@ -101,6 +105,7 @@ DLM
 分区计划
 
 - 在 OceanBase 1.4.79 版本的 MySQL 模式下创建任务失败
+- 不设置分区策略的表依然会执行分区计划变更
 
 SQL 开发规范
 
