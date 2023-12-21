@@ -67,6 +67,8 @@ Changes
 
 Fix
 ~~~
+- Fix(ticket): project "pending approval" tickets shows other project's
+  "pending approval" tickets (#1260) [pynzzZ]
 - Fix(monitor): format druid log (#1251) [Ang]
 - Fix(schema-plugin): show partition name with identifiers (#1249)
   [zhangxiao]

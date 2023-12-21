@@ -4,71 +4,71 @@
 
 ### Feature
 
-data source
+Data source
 
 - Allow data sources to be bound to projects
-- Support OceanBase Sharding MySQL data source
--Supports cloning data sources
-- Support displaying data source status in the object tree in the team space
+- Supports OceanBase Sharding MySQL data source
+- Supports cloning data sources
+- Supports displaying data source status in the object tree in the team space
 
 Import and Export
 
--Supports import and export of native MySQL data sources
+- Supports import and export of native MySQL data sources
 - SYS account configuration is no longer provided in the import and export task configuration page of OceanBase data source.
 
 Database object management
 
-- OceanBase MySQL and native MySQL mode support GIS data types
+- OceanBase MySQL and native MySQL mode supports GIS data types
 - White screen gives high-risk operation prompts when creating or deleting indexes
 
-project
+Project
 
 - Added 2 built-in project roles: security administrator, participant; security administrator is allowed to manage sensitive columns of the project and participate in approval, and participants are allowed to participate in approval
 - Allow users to apply for project permissions
 - Prohibit deletion of users who are assigned to any project with the DBA or project OWNER role
 
-SQL development specifications
+SQL-Check
 
 - Optimized SQL interception interaction
-- Added problem locating function to support quick locating of specific problems in the original SQL
+- Added problem locating function to supports quick locating of specific problems in the original SQL
 
-Database connection session
+Connection session
 
 - Added an automatic reconnection mechanism to avoid errors and usability issues caused by session destruction when not used for a long time.
 
-zoning plan
+Partition plan
 
-- Support scheduled scheduling
+- Supports scheduled scheduling
 
 SQL execution
 
 - SQL fragment supports a maximum content size of 65535
-- Support Ctrl+Enter shortcut key to execute the current statement
+- Supports Ctrl+Enter shortcut key to execute the current statement
 
-Bastion host integration
+Bastion integration
 
--Support SQL Check
+- Supports SQL Check
 
 DLM
 
--Support log viewing
+- Supports log viewing
 - Added three new task parameter configurations: query timeout, shard size, and shard strategy
 - Optimized the performance of MYSQL 5.6
 - Optimized the performance of OceanBase data cleaning
 
-Full link diagnosis
+Full link trace
 
--Supports exporting Jaeger-compatible JSON files
+- Supports exporting Jaeger-compatible JSON files
 - Optimized visual effects
 - Added list view of results, supporting search and sorting
 
-work order
+Tickets
 
 - The project administrator can view all work orders under the project, and other roles can view the work orders they have approved.
 
 ### Fix
 
-data source
+Data source
 
 - Users can still create data sources when they leave the project and do not belong to any project or role
 - The "Execution Time" column in the database session in OceanBase MySQL and native MySQL modes is 0
@@ -102,12 +102,12 @@ DLM
 
 - The database connection pool is too small, causing task execution failure
 
-zoning plan
+Partition plan
 
 - Task creation failed in MySQL mode of OceanBase version 1.4.79
 - Tables that do not set a partition strategy will still perform partition plan changes
 
-SQL development specifications
+SQL-Check
 
 - The `alter table xxx drop index` statement cannot be recognized as a DROP INDEX statement
 
@@ -120,22 +120,22 @@ Data desensitization
 
 - When duplicate columns are scanned, adding sensitive columns will fail.
 
-project
+Project
 
 - After the user is granted "Personal Space" permission, he must log in again for it to take effect.
 - Transaction timeout occurred when synchronizing a large number of databases or schemas to the project
 - Unable to filter work orders by project dimension
 - Project OWNER can remove all users with DBA roles in the project
 
-Bastion host integration
+Bastion integration
 
 - Inactive connections are not cleaned up
 
-recycle bin
+Recycle bin
 
 - Unable to delete specific objects in Recycle Bin
 
-simulated data
+Mock data
 
 - Task takes up too much memory
 - Does not support ZHSGB232 encoding
@@ -143,15 +143,15 @@ simulated data
 - Unable to skip auto-incremented primary key columns
 - The bit type width displays incorrectly in OceanBase MySQL and native MySQL modes.
 
-Database change tasks
+Database change task
 
 - Memory overflow error occurs when uploading large files
 
-Full link diagnosis
+Full link trace
 
 - The memory overflow problem caused by adding the driver to the full-link diagnosis
 
-Shadow table synchronization
+Shadow table sync
 
 - After the work order is approved or rejected, the approver cannot view the task details
 
@@ -159,9 +159,10 @@ obclient integration
 
 - Repeated creation of operating system users with the same name results in error reports
 
-work order
+Tickets
 
 - Creating a work order takes too long
+- There is a "Pending Approval" work order for another project in the "Pending Approval" work order list
 
 Operation record
 
