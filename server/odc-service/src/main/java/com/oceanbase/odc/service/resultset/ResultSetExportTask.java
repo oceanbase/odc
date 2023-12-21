@@ -50,6 +50,7 @@ import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.core.shared.model.TableIdentity;
 import com.oceanbase.odc.core.sql.execute.SyncJdbcExecutor;
 import com.oceanbase.odc.plugin.task.api.datatransfer.DataTransferJob;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.ConnectionInfo;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.CsvConfig;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConstants;
@@ -190,8 +191,11 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
         }
         config.setCsvConfig(csvConfig);
 
-        config.setConnectionInfo(
-                ((ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(session)).toConnectionInfo());
+        ConnectionInfo connectionInfo =
+                ((ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(session)).toConnectionInfo();
+        connectionInfo.setSchema(parameter.getDatabase());
+        config.setConnectionInfo(connectionInfo);
+
 
         config.setQuerySql(parameter.getSql());
         config.setFileType(parameter.getFileFormat().name());
