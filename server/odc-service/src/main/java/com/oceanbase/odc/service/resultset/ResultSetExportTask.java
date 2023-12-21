@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.resultset;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Paths;
 import java.sql.ResultSet;
@@ -264,7 +265,7 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
         Verify.verify(result.getDataObjectsInfo().get(0).getStatus() == Status.SUCCESS, "Result export task failed!");
     }
 
-    private String getDumpFilePath(DataTransferTaskResult result, String extension) {
+    private String getDumpFilePath(DataTransferTaskResult result, String extension) throws IOException {
         List<URL> exportPaths = result.getDataObjectsInfo().get(0).getExportPaths();
         if (CollectionUtils.isEmpty(exportPaths)) {
             return getDumpFileDirectory() + getFileName(extension);
@@ -276,8 +277,12 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
         return parameter.getTableName() + ".0.0" + extension;
     }
 
-    private String getDumpFileDirectory() {
-        return workingDir.getPath() + "/data/" + parameter.getDatabase() + "/TABLE/";
+    private String getDumpFileDirectory() throws IOException {
+        File dir = Paths.get(workingDir.getPath(), "data", parameter.getDatabase(), "TABLE").toFile();
+        if (!dir.exists()) {
+            FileUtils.forceMkdir(dir);
+        }
+        return dir.getPath();
     }
 
     private boolean needDataMasking(List<MaskingAlgorithm> algorithms) {
