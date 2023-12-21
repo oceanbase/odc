@@ -50,7 +50,7 @@ import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.JobConte
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.parameter.GroovyTransformerParameter;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.parameter.MySQLReaderPluginParameter;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.parameter.MySQLWriterPluginParameter;
-import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.parameter.MySQLWriterPluginParameter.Connection;
+import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.parameter.MySQLWriterPluginParameter.DataXConnection;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.parameter.TxtPluginParameter.DataXCsvConfig;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.parameter.TxtReaderPluginParameter;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.parameter.TxtReaderPluginParameter.Column;
@@ -180,7 +180,7 @@ public class ConfigurationResolver {
         // connection
         pluginParameter.setUsername(baseConfig.getConnectionInfo().getUserNameForConnect());
         pluginParameter.setPassword(baseConfig.getConnectionInfo().getPassword());
-        MySQLReaderPluginParameter.Connection connection = new MySQLReaderPluginParameter.Connection(
+        MySQLReaderPluginParameter.DataXConnection connection = new MySQLReaderPluginParameter.DataXConnection(
                 new String[] {url});
         // querySql
         if (Objects.nonNull(baseConfig.getQuerySql())) {
@@ -204,7 +204,7 @@ public class ConfigurationResolver {
         // connection
         pluginParameter.setUsername(baseConfig.getConnectionInfo().getUserNameForConnect());
         pluginParameter.setPassword(baseConfig.getConnectionInfo().getPassword());
-        Connection connection = new Connection(url, new String[] {table});
+        DataXConnection connection = new DataXConnection(url, new String[] {table});
         pluginParameter.setConnection(Collections.singletonList(connection));
         // preSql
         List<String> preSql = Lists.newArrayList(Constants.DISABLE_FK);

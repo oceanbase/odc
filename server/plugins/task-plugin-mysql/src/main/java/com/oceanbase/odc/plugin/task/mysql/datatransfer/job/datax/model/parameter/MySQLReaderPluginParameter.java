@@ -31,12 +31,12 @@ public class MySQLReaderPluginParameter implements PluginParameter {
      * export all columns
      */
     private List<String> column = Collections.singletonList("*");
-    private List<Connection> connection;
+    private List<DataXConnection> connection;
     // TODO private String splitPk;
 
     @Data
     @AllArgsConstructor
-    public static class Connection {
+    public static class DataXConnection {
         private String[] jdbcUrl;
         private String[] table;
         /**
@@ -45,7 +45,7 @@ public class MySQLReaderPluginParameter implements PluginParameter {
          */
         private String[] querySql;
 
-        public Connection(String[] jdbcUrl) {
+        public DataXConnection(String[] jdbcUrl) {
             this.jdbcUrl = jdbcUrl;
         }
     }
