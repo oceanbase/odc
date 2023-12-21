@@ -448,8 +448,9 @@ public class FlowInstanceService {
             }
             // approving by current user
             specification =
-                    specification.and(FlowInstanceViewSpecs.leftJoinFlowInstanceApprovalView(
-                            resourceRoleIdentifiers, null, FlowNodeStatus.getExecutingStatuses()));
+                    specification.and(FlowInstanceViewSpecs.projectIdEquals(params.getProjectId()))
+                            .and(FlowInstanceViewSpecs.leftJoinFlowInstanceApprovalView(
+                                    resourceRoleIdentifiers, null, FlowNodeStatus.getExecutingStatuses()));
             return flowInstanceViewRepository.findAll(specification, pageable).map(FlowInstanceEntity::from);
         } else {
             throw new UnsupportedOperationException("Unsupported list flow instance query");
