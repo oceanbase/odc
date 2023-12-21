@@ -75,7 +75,7 @@ public class EnhancedJpaRepository<T, ID extends Serializable> extends SimpleJpa
         Preconditions.checkArgument(entities.stream().allMatch(e -> entityInformation.getId(e) == null),
                 "can't create entity, cause not new entities");
         return getJdbcTemplate().execute((ConnectionCallback<List<T>>) con -> {
-            try(PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)){
+            try (PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
                 for (T item : entities) {
                     for (Entry<Integer, Function<T, Object>> e : valueGetter.entrySet()) {
                         try {
