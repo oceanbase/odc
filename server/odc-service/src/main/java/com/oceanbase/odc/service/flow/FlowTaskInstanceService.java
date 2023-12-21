@@ -96,13 +96,13 @@ import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
 import com.oceanbase.odc.service.objectstorage.model.ObjectMetadata;
+import com.oceanbase.odc.service.objectstorage.operator.LocalFileOperator;
 import com.oceanbase.odc.service.partitionplan.PartitionPlanService;
 import com.oceanbase.odc.service.permissionapply.project.ApplyProjectResult;
 import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleResult;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
-import com.oceanbase.odc.service.task.enums.TaskRunModeEnum;
 import com.oceanbase.odc.service.task.executor.task.ObjectStorageHandler;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
@@ -163,6 +163,9 @@ public class FlowTaskInstanceService {
     @Autowired
     private TaskFrameworkService taskFrameworkService;
 
+    @Autowired
+    private LocalFileOperator localFileOperator;
+
     public FlowInstanceDetailResp executeTask(@NotNull Long id) throws IOException {
         List<FlowTaskInstance> instances =
                 filterTaskInstance(id, instance -> instance.getStatus() == FlowNodeStatus.PENDING);
@@ -206,13 +209,11 @@ public class FlowTaskInstanceService {
                 if (jobEntity.isFinished()) {
                     ExecutorInfo executorInfo = JsonUtils.fromJson(jobEntity.getExecutor(), ExecutorInfo.class);
                     return forwardRemote(executorInfo);
-                } else {
-                    if (cloudObjectStorageService.supported() && jobEntity.getLogStorage() != null) {
-                        ObjectMetadata om = JsonUtils.fromJson(jobEntity.getLogStorage(), ObjectMetadata.class);
-                        ObjectStorageHandler objectStorageHandler =
-                            new ObjectStorageHandler(cloudObjectStorageService, "/opt/odc/log");
-                        objectStorageHandler.loadObjectContentAsString(om);
-                    }
+                } else if (cloudObjectStorageService.supported() && jobEntity.getLogStorage() != null) {
+                    ObjectMetadata om = JsonUtils.fromJson(jobEntity.getLogStorage(), ObjectMetadata.class);
+                    ObjectStorageHandler objectStorageHandler =
+                        new ObjectStorageHandler(cloudObjectStorageService, localFileOperator);
+                    return objectStorageHandler.loadObjectContentAsString(om);
                 }
             }
         }
