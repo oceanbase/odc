@@ -33,4 +33,6 @@ public enum FileBucket {
     SSL,
 
     PRE_CHECK,
+
+    LOG
 }

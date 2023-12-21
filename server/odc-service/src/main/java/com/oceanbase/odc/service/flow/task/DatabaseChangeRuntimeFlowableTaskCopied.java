@@ -35,7 +35,6 @@ import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.connection.model.ConnectProperties;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
-import com.oceanbase.odc.service.flow.exception.ServiceTaskError;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeResult;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
@@ -98,30 +97,27 @@ public class DatabaseChangeRuntimeFlowableTaskCopied extends BaseODCFlowTaskDele
             throws JobException {
         this.execution = execution;
         DatabaseChangeResult result;
-        try {
-            log.info("Async task starts, taskId={}, activityId={}", taskId, execution.getCurrentActivityId());
+        log.info("Async task starts, taskId={}, activityId={}", taskId, execution.getCurrentActivityId());
 
-            JobDefinition jd = buildJobDefinition(execution);
-            Long jobId = jobScheduler.scheduleJobNow(jd);
-            jobEntity = taskFrameworkService.find(jobId);
-            try {
-                jobScheduler.await(jobId, FlowTaskUtil.getExecutionExpirationIntervalMillis(execution),
-                        TimeUnit.MILLISECONDS);
-            } catch (Exception e) {
-                log.warn("wait job finished, occur exception:", e);
-            }
-            jobEntity = taskFrameworkService.find(jobId);
-            result = JsonUtils.fromJson(jobEntity.getResultJson(), DatabaseChangeResult.class);
-            TaskStatus status = jobEntity.getStatus();
-            isSuccessful = status == TaskStatus.DONE;
-            isFailure = !isSuccessful;
-            log.info("Async task ends, taskId={}, activityId={}, returnVal={}, timeCost={}", taskId,
-                    execution.getCurrentActivityId(),
-                    result, System.currentTimeMillis() - getStartTimeMilliSeconds());
+        JobDefinition jd = buildJobDefinition(execution);
+        Long jobId = jobScheduler.scheduleJobNow(jd);
+        jobEntity = taskFrameworkService.find(jobId);
+        taskService.updateJobId(taskId, jobId);
+        try {
+            jobScheduler.await(jobId, FlowTaskUtil.getExecutionExpirationIntervalMillis(execution),
+                    TimeUnit.MILLISECONDS);
         } catch (Exception e) {
-            log.error("Error occurs while async task executing", e);
-            throw new ServiceTaskError(e);
+            log.warn("wait job finished, occur exception:", e);
         }
+        jobEntity = taskFrameworkService.find(jobId);
+        result = JsonUtils.fromJson(jobEntity.getResultJson(), DatabaseChangeResult.class);
+        TaskStatus status = jobEntity.getStatus();
+        isSuccessful = status == TaskStatus.DONE;
+        isFailure = !isSuccessful;
+        log.info("Async task ends, taskId={}, activityId={}, returnVal={}, timeCost={}", taskId,
+                execution.getCurrentActivityId(),
+                result, System.currentTimeMillis() - getStartTimeMilliSeconds());
+
         return result;
     }
 

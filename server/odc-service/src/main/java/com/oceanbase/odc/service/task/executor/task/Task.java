@@ -16,7 +16,8 @@
 
 package com.oceanbase.odc.service.task.executor.task;
 
-import com.oceanbase.odc.core.flow.model.FlowTaskResult;
+import java.io.Serializable;
+
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.executor.executor.TaskExecutor;
@@ -69,9 +70,7 @@ public interface Task {
 
     /**
      * Get task result
-     * 
-     * @return {@link FlowTaskResult} (The FlowTaskResult will be changed to TaskResult in the future)
      */
-    FlowTaskResult getTaskResult();
+    Serializable getTaskResult();
 
 }

@@ -16,20 +16,27 @@
 
 package com.oceanbase.odc.service.task.executor.task;
 
+import java.io.File;
 import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.core.task.TaskThreadFactory;
+import com.oceanbase.odc.service.common.util.OdcFileUtil;
+import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
+import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfiguration;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.constants.JobDataMapConstants;
+import com.oceanbase.odc.service.task.executor.logger.LogUtils;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
 import com.oceanbase.odc.service.task.util.JobUtils;
 
@@ -56,12 +63,15 @@ public abstract class BaseTask implements Task {
     private volatile boolean finished = false;
     private volatile long startTimeMilliSeconds;
 
+    private CloudObjectStorageService cloudObjectStorageService;
+
     @Override
     public void start(JobContext context) {
         this.startTimeMilliSeconds = System.currentTimeMillis();
         this.context = context;
         try {
             this.jobData = Collections.unmodifiableMap(getJobContext().getJobData());
+            initCloudObjectStorageService();
             this.reporter = new TaskReporter(context.getHostUrls());
             onInit();
             initTaskMonitor();
@@ -152,14 +162,43 @@ public abstract class BaseTask implements Task {
         DefaultTaskResult finalResult = buildCurrentResult();
         reportTaskResultWithRetry(finalResult, REPORT_RESULT_RETRY_TIMES, REPORT_RESULT_RETRY_INTERVAL_SECONDS);
 
-        // TODO: May solve log file here
-        //String logPath = JobUtils.getLogPath();
-
+        uploadLogFileToCloudStorage();
 
         // Report finish signal to task server
         finalResult.setFinished(true);
         reportTaskResultWithRetry(finalResult, REPORT_RESULT_RETRY_TIMES, REPORT_RESULT_RETRY_INTERVAL_SECONDS);
         this.finished = true;
+    }
+
+    private void uploadLogFileToCloudStorage() {
+        if (Objects.nonNull(getCloudObjectStorageService()) && getCloudObjectStorageService().supported()) {
+            String jobLogPath = LogUtils.getJobLogPath(getJobContext().getJobIdentity().getId());
+            String fileId = StringUtils.uuid();
+            File tempZipFile = new File(String.format("%s/%s.zip", jobLogPath, fileId));
+            try {
+                OdcFileUtil.zip(jobLogPath, String.format("%s/%s.zip", jobLogPath, fileId));
+                String objectName = getCloudObjectStorageService().uploadTemp(fileId + ".zip", tempZipFile);
+                String downloadUrl = getCloudObjectStorageService().getBucketName() + "/" + objectName;
+                log.info("upload async task result set zip file to OSS successfully, file name={}", fileId);
+            } catch (Exception exception) {
+                log.warn("upload async task result set zip file to OSS failed, file name={}", fileId);
+            } finally {
+                OdcFileUtil.deleteFiles(tempZipFile);
+            }
+        }
+    }
+
+    private void initCloudObjectStorageService() {
+        if (getJobData().get(JobDataMapConstants.OBJECT_STORAGE_CONFIGURATION) != null) {
+            ObjectStorageConfiguration storageConfig = JsonUtils.fromJson(
+                    getJobData().get(JobDataMapConstants.OBJECT_STORAGE_CONFIGURATION),
+                    ObjectStorageConfiguration.class);
+            this.cloudObjectStorageService = CloudObjectStorageServiceBuilder.build(storageConfig);
+        }
+    }
+
+    protected CloudObjectStorageService getCloudObjectStorageService() {
+        return cloudObjectStorageService;
     }
 
     private void reportTaskResult() {

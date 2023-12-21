@@ -33,13 +33,15 @@ public class ExecutorBizImpl implements ExecutorBiz {
     @Override
     public SuccessResponse<String> log(Long id, String logType) {
         log.info("Accept log request, task id = {}, logType = {}", id, logType);
+        OdcTaskLogLevel logTypeLevel = null;
         try {
-            OdcTaskLogLevel.valueOf(logType);
+            logTypeLevel = OdcTaskLogLevel.valueOf(logType);
         } catch (Exception e) {
             log.warn("logType {} is illegal.", logType);
             new SuccessResponse<>("logType " + logType + " is illegal.");
         }
 
-        return new SuccessResponse<>(LogUtils.getJobLogPath(id, logType));
+        String logFile = LogUtils.getJobLogFileWithPath(id, logTypeLevel);
+        return new SuccessResponse<>(LogUtils.getLogContent(logFile));
     }
 }

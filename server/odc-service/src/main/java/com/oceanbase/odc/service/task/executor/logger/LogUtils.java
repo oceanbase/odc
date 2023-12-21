@@ -25,6 +25,7 @@ import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.service.task.constants.JobEnvConstants;
+import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -40,17 +41,17 @@ public class LogUtils {
     private static final long MAX_LOG_BYTE_COUNT = 1024 * 1024;
     private static final String LOG_PATH_PATTERN = "%s/%s/task.%s";
 
-    public static String getLog(String filePath) {
+    public static String getLogContent(String file) {
 
-        if (!new File(filePath).exists()) {
-            return ErrorCodes.TaskLogNotFound.getLocalizedMessage(new Object[] {filePath});
+        if (!new File(file).exists()) {
+            return ErrorCodes.TaskLogNotFound.getLocalizedMessage(new Object[] {file});
         }
         LineIterator it = null;
         StringBuilder sb = new StringBuilder();
         int lineCount = 1;
         int byteCount = 0;
         try {
-            it = FileUtils.lineIterator(new File(filePath));
+            it = FileUtils.lineIterator(new File(file));
             while (it.hasNext()) {
                 if (lineCount > MAX_LOG_LINE_COUNT || byteCount > MAX_LOG_BYTE_COUNT) {
                     sb.append("Logs exceed max limitation (10000 rows or 1 MB), please download logs directly");
@@ -75,10 +76,18 @@ public class LogUtils {
         String logPath = SystemUtils.getEnvOrProperty(JobEnvConstants.LOG_DIRECTORY);
         return logPath == null ? "./log" : logPath;
     }
-    public static String getJobLogPath(Long jobId, String logType) {
+
+    public static String getJobLogFileWithPath(Long jobId, OdcTaskLogLevel logType) {
 
         // String filePath = String.format(LOG_PATH_PATTERN, JobUtils.getLogPath(), id, logType);
         // todo optimize log
-       return "/opt/odc/log/odc.log";
+        return "/opt/odc/log/odc.log";
+    }
+
+    public static String getJobLogPath(Long jobId) {
+
+        // String filePath = String.format(LOG_PATH_PATTERN, JobUtils.getLogPath(), id, logType);
+        // todo optimize log
+        return "/opt/odc/log";
     }
 }

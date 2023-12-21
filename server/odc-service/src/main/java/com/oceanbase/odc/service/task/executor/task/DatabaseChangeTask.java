@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.task.executor.task;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -39,7 +40,6 @@ import com.oceanbase.odc.common.util.CSVUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.datamasking.algorithm.Algorithm;
 import com.oceanbase.odc.core.datasource.ConnectionInitializer;
-import com.oceanbase.odc.core.flow.model.FlowTaskResult;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
@@ -70,7 +70,6 @@ import com.oceanbase.odc.service.datasecurity.util.DataMaskingUtil;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeResult;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
-import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfiguration;
 import com.oceanbase.odc.service.objectstorage.model.ObjectMetadata;
 import com.oceanbase.odc.service.session.OdcStatementCallBack;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
@@ -111,13 +110,12 @@ public class DatabaseChangeTask extends BaseTask {
 
     private boolean abort = false;
 
-    // todo  read from env passed by FlowTask
+    // todo read from env passed by FlowTask
     private long resultPreviewMaxSizeBytes = 5242880;
 
     @Getter
     protected long taskId;
 
-    private CloudObjectStorageService cloudObjectStorageService;
     // todo data masking
     private DataMaskingService maskingService;
 
@@ -125,10 +123,6 @@ public class DatabaseChangeTask extends BaseTask {
     protected void onInit() {
         log.info("Async task  start to run, task id:{}", this.getTaskId());
         log.info("Start read sql content, taskId={}", this.getTaskId());
-
-        ObjectStorageConfiguration storageConfig = JsonUtils.fromJson(
-                getJobData().get(JobDataMapConstants.OBJECT_STORAGE_CONFIGURATION), ObjectStorageConfiguration.class);
-        this.cloudObjectStorageService = CloudObjectStorageServiceBuilder.build(storageConfig);
         init();
     }
 
@@ -162,7 +156,7 @@ public class DatabaseChangeTask extends BaseTask {
     }
 
     @Override
-    public FlowTaskResult getTaskResult() {
+    public Serializable getTaskResult() {
         DatabaseChangeResult taskResult = new DatabaseChangeResult();
         taskResult.setFailCount(failCount);
         taskResult.setSuccessCount(successCount);
@@ -175,7 +169,7 @@ public class DatabaseChangeTask extends BaseTask {
         return taskResult;
     }
 
-    private void  setFileAttributeOnResult(DatabaseChangeResult result) {
+    private void setFileAttributeOnResult(DatabaseChangeResult result) {
         // read records from file
         if (StringUtils.isNotEmpty(result.getErrorRecordsFilePath())) {
             File errorRecords = new File(result.getErrorRecordsFilePath());
@@ -187,7 +181,7 @@ public class DatabaseChangeTask extends BaseTask {
                 } catch (IOException e) {
                     log.warn("Error occurs while reading records from file", e);
                     result.setRecords(Collections
-                        .singletonList("Error occurs while reading records from file " + e.getMessage()));
+                            .singletonList("Error occurs while reading records from file " + e.getMessage()));
                 }
             }
         } else {
@@ -195,7 +189,8 @@ public class DatabaseChangeTask extends BaseTask {
         }
         if (StringUtils.isNotEmpty(result.getJsonFileName())) {
             String jsonFileName = result.getJsonFileName();
-            File jsonFile = new File(FileManager.generateDir(FileBucket.ASYNC) + String.format("/%s.json", jsonFileName));
+            File jsonFile =
+                    new File(FileManager.generateDir(FileBucket.ASYNC) + String.format("/%s.json", jsonFileName));
             BasicFileAttributes attributes = null;
             try {
                 attributes = Files.readAttributes(jsonFile.toPath(), BasicFileAttributes.class);
@@ -258,7 +253,7 @@ public class DatabaseChangeTask extends BaseTask {
                 getJobData().get(JobDataMapConstants.OBJECT_METADATA), new TypeReference<List<ObjectMetadata>>() {});
 
         for (ObjectMetadata metadata : metadatas) {
-            String objectContentStr = new ObjectStorageHandler(this.cloudObjectStorageService)
+            String objectContentStr = new ObjectStorageHandler(getCloudObjectStorageService())
                     .loadObjectContentAsString(metadata);
             /**
              * remove UTF-8 BOM
@@ -290,7 +285,7 @@ public class DatabaseChangeTask extends BaseTask {
         }
         try {
             jsonFileName = writeJsonFile(fileDir, queryResultSet);
-            FileMeta fileMeta = writeZipFile(fileDir, queryResultSet, cloudObjectStorageService,
+            FileMeta fileMeta = writeZipFile(fileDir, queryResultSet, getCloudObjectStorageService(),
                     Long.parseLong(getJobData().get(JobDataMapConstants.FLOW_INSTANCE_ID)));
             zipFileDownloadUrl = fileMeta.getDownloadUrl();
             zipFileId = fileMeta.getFileId();

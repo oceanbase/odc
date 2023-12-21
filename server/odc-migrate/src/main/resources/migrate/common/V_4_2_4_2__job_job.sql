@@ -2,7 +2,6 @@ CREATE TABLE IF NOT EXISTS `job_job` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `job_class` varchar(256) NOT NULL COMMENT '任务执行的 Class 类名',
   `job_type` varchar(32) NOT NULL COMMENT '任务类型，可选值有: ASYNC,IMPORT,EXPORT,MOCKDATA',
-  `flow_instance_id` bigint(20) NOT NULL comment 'Process instance id, references flow_instance(id)',
   `status` varchar(16) NOT NULL COMMENT '任务运行状态，可选值有：PREPARING,RUNNING,FAILED,CANCELED,DONE',
   `schedule_times` int NOT NULL COMMENT '已调度次数',
   `execution_times` int NOT NULL COMMENT '已执行次数',
@@ -19,6 +18,7 @@ CREATE TABLE IF NOT EXISTS `job_job` (
   `organization_id` bigint  DEFAULT NULL COMMENT '所属组织 ID, references iam_organization(id)',
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
-  CONSTRAINT pk_job_schedule PRIMARY KEY (`id`),
-  KEY `key_job_flow_instance_id_job_type` (`flow_instance_id`,`job_type`)
+  CONSTRAINT pk_job_schedule PRIMARY KEY (`id`)
 ) COMMENT = '任务记录表';
+
+alter table `task_task` add column `job_id` bigint DEFAULT NULL COMMENT 'job id, references job_job(id)';

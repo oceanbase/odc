@@ -16,12 +16,13 @@
 
 package com.oceanbase.odc.service.task.service;
 
+import java.util.Optional;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.oceanbase.odc.common.json.JsonUtils;
-import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.service.flow.FlowInstanceService;
@@ -54,8 +55,10 @@ public class TaskTaskResultHandleService implements ResultHandleService {
     public void handle(TaskResult taskResult) {
         JobIdentity identity = taskResult.getJobIdentity();
         JobEntity jobEntity = stdTaskFrameworkService.find(identity.getId());
-        TaskEntity taskEntity = flowInstanceService.getTaskByFlowInstanceId(jobEntity.getFlowInstanceId());
-        if (taskEntity != null) {
+
+        Optional<TaskEntity> taskEntityOptional = taskService.findByJobId(jobEntity.getId());
+        if (taskEntityOptional.isPresent()) {
+            TaskEntity taskEntity = taskEntityOptional.get();
             taskEntity.setProgressPercentage(taskResult.getProgress());
             taskEntity.setStatus(taskResult.getTaskStatus());
             taskEntity.setResultJson(taskResult.getResultJson());

@@ -16,16 +16,11 @@
 
 package com.oceanbase.odc.metadb.task;
 
-import java.util.List;
-
-import org.junit.Assert;
-import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.oceanbase.odc.ServiceTestEnv;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.service.task.executor.sampletask.SampleTask;
-
 
 /**
  * @author yaobin
@@ -37,21 +32,14 @@ public class JobScheduleRepositoryTest extends ServiceTestEnv {
     @Autowired
     private JobScheduleRepository jobScheduleRepository;
 
-    @Test
     public void test_findJobByFlowInstanceIdAndJobType() {
         JobEntity je = createJobEntity();
-        List<JobEntity> queryResult =
-                jobScheduleRepository.findJobByFlowInstanceIdAndJobType(je.getFlowInstanceId(), je.getJobType());
-        Assert.assertNotNull(queryResult);
-        Assert.assertEquals(1, queryResult.size());
-        Assert.assertSame(je.getId(), queryResult.get(0).getId());
     }
 
 
     private JobEntity createJobEntity() {
         JobEntity entity = new JobEntity();
         entity.setJobClass(SampleTask.class.getCanonicalName());
-        entity.setFlowInstanceId(System.currentTimeMillis());
         entity.setJobType("SAMPLE");
         entity.setExecutionTimes(0);
         entity.setScheduleTimes(1);

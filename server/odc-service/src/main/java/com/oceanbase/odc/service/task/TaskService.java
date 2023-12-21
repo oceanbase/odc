@@ -17,10 +17,13 @@ package com.oceanbase.odc.service.task;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 import javax.validation.constraints.NotNull;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.LineIterator;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -306,6 +309,20 @@ public class TaskService {
         taskRepository.delete(taskEntity);
         log.info("Task has been deleted: taskId={}", id);
     }
+
+    public Optional<TaskEntity> findByJobId(@NonNull Long jobId) {
+        List<TaskEntity> entities = taskRepository.findByJobId(jobId);
+        if (CollectionUtils.isNotEmpty(entities)) {
+            return Optional.of(entities.get(0));
+        }
+        return Optional.empty();
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void updateJobId(Long id, Long jobId) {
+        taskRepository.updateJobId(id, jobId);
+    }
+
 
     private TaskEntity nullSafeFindById(Long id) {
         return taskRepository.findById(id)
