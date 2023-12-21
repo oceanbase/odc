@@ -801,6 +801,7 @@ public class ConnectionService {
         ConnectionEntity entity = new ConnectionEntity();
         entity.setOrganizationId(organizationId);
         entity.setName(name);
+        entity.setVisibleScope(ConnectionVisibleScope.ORGANIZATION);
         return repository.exists(Example.of(entity));
     }
 

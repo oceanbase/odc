@@ -290,7 +290,7 @@ public class OBMySQLGetDBTableByParser implements GetDBTableByParser {
             partitionOption.setPartitionsNum(num);
             for (int i = 0; i < num; i++) {
                 DBTablePartitionDefinition partitionDefinition = new DBTablePartitionDefinition();
-                partitionDefinition.setName(statement.getPartitionElements().get(i).getRelation());
+                partitionDefinition.setName(removeIdentifiers(statement.getPartitionElements().get(i).getRelation()));
                 partitionDefinition.setOrdinalPosition(i);
                 partitionDefinition.setType(DBTablePartitionType.HASH);
                 partitionDefinitions.add(partitionDefinition);
@@ -323,7 +323,7 @@ public class OBMySQLGetDBTableByParser implements GetDBTableByParser {
             partitionOption.setPartitionsNum(num);
             for (int i = 0; i < num; i++) {
                 DBTablePartitionDefinition partitionDefinition = new DBTablePartitionDefinition();
-                partitionDefinition.setName(statement.getPartitionElements().get(i).getRelation());
+                partitionDefinition.setName(removeIdentifiers(statement.getPartitionElements().get(i).getRelation()));
                 partitionDefinition.setOrdinalPosition(i);
                 partitionDefinition.setType(DBTablePartitionType.KEY);
                 partitionDefinitions.add(partitionDefinition);
@@ -361,7 +361,7 @@ public class OBMySQLGetDBTableByParser implements GetDBTableByParser {
                 DBTablePartitionDefinition partitionDefinition = new DBTablePartitionDefinition();
                 partitionDefinition.setOrdinalPosition(i);
                 partitionDefinition.setMaxValues(Collections.singletonList(element.getRangeExprs().get(0).getText()));
-                partitionDefinition.setName(element.getRelation());
+                partitionDefinition.setName(removeIdentifiers(element.getRelation()));
                 partitionDefinition.setType(DBTablePartitionType.RANGE);
                 partitionDefinitions.add(partitionDefinition);
             }
@@ -376,7 +376,7 @@ public class OBMySQLGetDBTableByParser implements GetDBTableByParser {
                 partitionDefinition.setOrdinalPosition(i);
                 partitionDefinition.setMaxValues(
                         element.getRangeExprs().stream().map(Expression::getText).collect(Collectors.toList()));
-                partitionDefinition.setName(element.getRelation());
+                partitionDefinition.setName(removeIdentifiers(element.getRelation()));
                 partitionDefinition.setType(DBTablePartitionType.RANGE_COLUMNS);
                 partitionDefinitions.add(partitionDefinition);
             }
@@ -405,7 +405,7 @@ public class OBMySQLGetDBTableByParser implements GetDBTableByParser {
                 List<List<String>> valuesList = new ArrayList<>();
                 element.getListExprs().forEach(item -> valuesList.add(Collections.singletonList(item.getText())));
                 partitionDefinition.setValuesList(valuesList);
-                partitionDefinition.setName(element.getRelation());
+                partitionDefinition.setName(removeIdentifiers(element.getRelation()));
                 partitionDefinition.setType(DBTablePartitionType.LIST);
                 partitionDefinitions.add(partitionDefinition);
             }
@@ -429,7 +429,7 @@ public class OBMySQLGetDBTableByParser implements GetDBTableByParser {
                     }
                 }
                 partitionDefinition.setValuesList(valuesList);
-                partitionDefinition.setName(element.getRelation());
+                partitionDefinition.setName(removeIdentifiers(element.getRelation()));
                 partitionDefinition.setType(DBTablePartitionType.LIST_COLUMNS);
                 partitionDefinitions.add(partitionDefinition);
             }

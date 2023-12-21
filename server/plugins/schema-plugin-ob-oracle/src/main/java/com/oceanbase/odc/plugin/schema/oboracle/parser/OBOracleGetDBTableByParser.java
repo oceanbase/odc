@@ -412,7 +412,7 @@ public class OBOracleGetDBTableByParser implements GetDBTableByParser {
             option.setPartitionsNum(num);
             for (int i = 0; i < num; i++) {
                 DBTablePartitionDefinition partitionDefinition = new DBTablePartitionDefinition();
-                partitionDefinition.setName(statement.getPartitionElements().get(i).getRelation());
+                partitionDefinition.setName(removeIdentifiers(statement.getPartitionElements().get(i).getRelation()));
                 partitionDefinition.setOrdinalPosition(i);
                 partitionDefinition.setType(DBTablePartitionType.HASH);
                 partition.getPartitionDefinitions().add(partitionDefinition);
@@ -444,7 +444,7 @@ public class OBOracleGetDBTableByParser implements GetDBTableByParser {
             partitionDefinition.setOrdinalPosition(i);
             partitionDefinition.setMaxValues(
                     element.getRangeExprs().stream().map(Expression::getText).collect(Collectors.toList()));
-            partitionDefinition.setName(element.getRelation());
+            partitionDefinition.setName(removeIdentifiers(element.getRelation()));
             partitionDefinition.setType(DBTablePartitionType.RANGE);
             partition.getPartitionDefinitions().add(partitionDefinition);
         }
@@ -465,7 +465,7 @@ public class OBOracleGetDBTableByParser implements GetDBTableByParser {
             List<List<String>> valuesList = new ArrayList<>();
             element.getListExprs().forEach(item -> valuesList.add(Collections.singletonList(item.getText())));
             partitionDefinition.setValuesList(valuesList);
-            partitionDefinition.setName(element.getRelation());
+            partitionDefinition.setName(removeIdentifiers(element.getRelation()));
             partitionDefinition.setType(DBTablePartitionType.LIST);
             partition.getPartitionDefinitions().add(partitionDefinition);
         }
