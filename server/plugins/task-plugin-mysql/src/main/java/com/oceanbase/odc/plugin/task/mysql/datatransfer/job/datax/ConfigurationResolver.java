@@ -181,12 +181,14 @@ public class ConfigurationResolver {
         pluginParameter.setUsername(baseConfig.getConnectionInfo().getUserNameForConnect());
         pluginParameter.setPassword(baseConfig.getConnectionInfo().getPassword());
         MySQLReaderPluginParameter.Connection connection = new MySQLReaderPluginParameter.Connection(
-                new String[] {url}, new String[] {table});
-        pluginParameter.setConnection(Collections.singletonList(connection));
+                new String[] {url});
         // querySql
         if (Objects.nonNull(baseConfig.getQuerySql())) {
-            pluginParameter.setQuerySql(Collections.singletonList(baseConfig.getQuerySql()));
+            connection.setQuerySql(new String[] {baseConfig.getQuerySql()});
+        } else {
+            connection.setTable(new String[] {table});
         }
+        pluginParameter.setConnection(Collections.singletonList(connection));
 
         return reader;
     }
