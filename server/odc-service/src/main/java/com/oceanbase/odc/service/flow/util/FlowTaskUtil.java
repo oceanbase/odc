@@ -312,7 +312,7 @@ public class FlowTaskUtil {
                         DBTableOptions tableOptions = schemaAccessor.getTableOptions(getSchemaName(execution),
                                 (String) table.get("tableName"));
                         String charset = tableOptions.getCharsetName();
-                        if (StringUtils.isBlank(charset) || StringUtils.startsWith(charset, "utf")) {
+                        if (StringUtils.isBlank(charset) || StringUtils.containsIgnoreCase(charset, "utf")) {
                             typeConfig.putIfAbsent("charset", "UTF_8");
                         } else {
                             typeConfig.putIfAbsent("charset", charset.toUpperCase());
