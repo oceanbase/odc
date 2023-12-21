@@ -195,25 +195,25 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
 
         config.setQuerySql(parameter.getSql());
         config.setFileType(parameter.getFileFormat().name());
-        config.setMaskConfig(getMaskConfig(parameter));
+        setMaskConfig(config, parameter);
         config.setCursorFetchSize(dataTransferProperties.getCursorFetchSize());
         config.setUsePrepStmts(dataTransferProperties.isUseServerPrepStmts());
         return config;
     }
 
-    private Map<TableIdentity, Map<String, AbstractDataMasker>> getMaskConfig(ResultSetExportTaskParameter parameter) {
+    private void setMaskConfig(DataTransferConfig config, ResultSetExportTaskParameter parameter) {
+        List<String> columnNames = new ArrayList<>();
+        config.setColumns(columnNames);
         HashMap<TableIdentity, Map<String, AbstractDataMasker>> maskConfigMap = new HashMap<>();
+        config.setMaskConfig(maskConfigMap);
         List<MaskingAlgorithm> algorithms = parameter.getRowDataMaskingAlgorithms();
-        if (!needDataMasking(algorithms)) {
-            return maskConfigMap;
-        }
         Map<String, Map<String, List<OrdinalColumn>>> catalog2TableColumns = new HashMap<>();
         try {
             SyncJdbcExecutor syncJdbcExecutor = session.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY);
             ResultSetMetaData rsMetaData =
                     syncJdbcExecutor.query(parameter.getSql(), pss -> pss.setMaxRows(10), ResultSet::getMetaData);
             if (rsMetaData == null) {
-                return maskConfigMap;
+                throw new UnexpectedException("Query rs metadata failed.");
             }
             int columnCount = rsMetaData.getColumnCount();
             for (int index = 1; index <= columnCount; index++) {
@@ -224,6 +224,7 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
                         catalog2TableColumns.computeIfAbsent(catalogName, k -> new HashMap<>());
                 List<OrdinalColumn> columns = table2Columns.computeIfAbsent(tableName, k -> new ArrayList<>());
                 columns.add(new OrdinalColumn(index - 1, columnName));
+                columnNames.add(columnName);
             }
         } catch (Exception e) {
             throw OBException.executeFailed(
@@ -249,7 +250,6 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
                 maskConfigMap.put(TableIdentity.of(catalogName, tableName), column2Masker);
             }
         }
-        return maskConfigMap;
     }
 
     private void validateSuccessful(DataTransferTaskResult result) {

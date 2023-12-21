@@ -87,6 +87,8 @@ public class DataTransferConfig implements TaskParameters, Serializable {
     private boolean usePrepStmts;
     @JsonIgnore
     private int cursorFetchSize;
+    @JsonIgnore
+    private List<String> columns;
 
     public boolean isCompressed() {
         return StringUtils.equalsIgnoreCase("ZIP", fileType);

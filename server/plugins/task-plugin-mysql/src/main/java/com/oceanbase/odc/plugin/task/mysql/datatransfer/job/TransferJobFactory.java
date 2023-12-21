@@ -22,6 +22,7 @@ import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 
@@ -157,10 +158,13 @@ public class TransferJobFactory {
                 /*
                  * when exporting data, table column names are needed for csv headers and insertion building
                  */
-                List<String> columns =
-                        new MySQLTableExtension().getDetail(conn, table.getSchema(), table.getName()).getColumns()
-                                .stream().map(DBTableColumn::getName).collect(Collectors.toList());
-
+                List<String> columns;
+                if (Objects.nonNull(transferConfig.getQuerySql())) {
+                    columns = transferConfig.getColumns();
+                } else {
+                    columns = new MySQLTableExtension().getDetail(conn, table.getSchema(), table.getName()).getColumns()
+                        .stream().map(DBTableColumn::getName).collect(Collectors.toList());
+                }
                 AbstractJob job = new DataXTransferJob(table, ConfigurationResolver
                         .buildJobConfigurationForExport(workingDir, transferConfig, jdbcUrl, table.getName(), columns),
                         workingDir, logDir);
