@@ -69,6 +69,7 @@ import com.oceanbase.odc.service.flow.task.OssTaskReferManager;
 import com.oceanbase.odc.service.flow.task.model.ResultSetExportResult;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
 import com.oceanbase.odc.service.plugin.TaskPluginUtil;
+import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
 import com.oceanbase.tools.loaddump.common.model.ObjectStatus.Status;
 
@@ -207,8 +208,8 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
     }
 
     private void setColumnConfig(DataTransferConfig config, ResultSetExportTaskParameter parameter) {
-        List<String> columnNames = new ArrayList<>();
-        config.setColumns(columnNames);
+        List<DBTableColumn> tableColumns = new ArrayList<>();
+        config.setColumns(tableColumns);
         HashMap<TableIdentity, Map<String, AbstractDataMasker>> maskConfigMap = new HashMap<>();
         config.setMaskConfig(maskConfigMap);
         List<MaskingAlgorithm> algorithms = parameter.getRowDataMaskingAlgorithms();
@@ -229,7 +230,11 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
                         catalog2TableColumns.computeIfAbsent(catalogName, k -> new HashMap<>());
                 List<OrdinalColumn> columns = table2Columns.computeIfAbsent(tableName, k -> new ArrayList<>());
                 columns.add(new OrdinalColumn(index - 1, columnName));
-                columnNames.add(columnName);
+                DBTableColumn column = new DBTableColumn();
+                column.setSchemaName(catalogName);
+                column.setTableName(tableName);
+                column.setName(columnName);
+                tableColumns.add(column);
             }
         } catch (Exception e) {
             throw OBException.executeFailed(
@@ -268,7 +273,7 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
     private String getDumpFilePath(DataTransferTaskResult result, String extension) throws IOException {
         List<URL> exportPaths = result.getDataObjectsInfo().get(0).getExportPaths();
         if (CollectionUtils.isEmpty(exportPaths)) {
-            return getDumpFileDirectory() + getFileName(extension);
+            return Paths.get(getDumpFileDirectory(), getFileName(extension)).toString();
         }
         return exportPaths.get(0).getFile();
     }

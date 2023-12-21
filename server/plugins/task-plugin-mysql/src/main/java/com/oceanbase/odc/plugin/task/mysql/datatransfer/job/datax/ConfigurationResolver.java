@@ -93,7 +93,7 @@ public class ConfigurationResolver {
     }
 
     public static JobConfiguration buildJobConfigurationForExport(File workingDir, DataTransferConfig baseConfig,
-            String jdbcUrl, String table, List<String> columns) {
+            String jdbcUrl, String table, List<DBTableColumn> columns) {
         JobConfiguration jobConfig = new JobConfiguration();
         JobContent jobContent = new JobContent();
 
@@ -101,12 +101,11 @@ public class ConfigurationResolver {
         jobConfig.getSetting().getErrorLimit().setRecord(errorRecordLimit);
 
         jobContent.setReader(createMySQLReaderParameter(baseConfig, jdbcUrl, table));
-        jobContent.setWriter(createTxtWriterParameter(workingDir, baseConfig, table, columns));
+        jobContent.setWriter(createTxtWriterParameter(workingDir, baseConfig, table,
+                columns.stream().map(DBTableColumn::getName).collect(Collectors.toList())));
         Map<TableIdentity, Map<String, AbstractDataMasker>> maskConfigs = baseConfig.getMaskConfig();
         if (MapUtils.isNotEmpty(maskConfigs)) {
-            jobContent.setTransformer(
-                    createTransformerParameters(
-                            maskConfigs.get(TableIdentity.of(baseConfig.getSchemaName(), table)), columns));
+            jobContent.setTransformer(createTransformerParameters(maskConfigs, columns));
         }
         jobConfig.setContent(new JobContent[] {jobContent});
         return jobConfig;
@@ -222,17 +221,14 @@ public class ConfigurationResolver {
         return writer;
     }
 
-    private static List<Parameter> createTransformerParameters(Map<String, AbstractDataMasker> field2Masker,
-            List<String> columns) {
-        if (MapUtils.isEmpty(field2Masker)) {
-            return null;
-        }
+    private static List<Parameter> createTransformerParameters(
+            Map<TableIdentity, Map<String, AbstractDataMasker>> maskConfigs, List<DBTableColumn> columns) {
         Parameter transformer = new Parameter();
         GroovyTransformerParameter pluginParameter = new GroovyTransformerParameter();
         transformer.setName(Constants.GROOVY_TRANSFORMER);
         transformer.setParameter(pluginParameter);
 
-        pluginParameter.setCode(GroovyMaskRuleGenerator.generate(field2Masker, columns));
+        pluginParameter.setCode(GroovyMaskRuleGenerator.generate(maskConfigs, columns));
 
         return Collections.singletonList(transformer);
     }

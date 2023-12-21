@@ -163,12 +163,12 @@ public class TransferJobFactory {
                 /*
                  * when exporting data, table column names are needed for csv headers and insertion building
                  */
-                List<String> columns;
+                List<DBTableColumn> columns;
                 if (Objects.nonNull(transferConfig.getQuerySql())) {
                     columns = transferConfig.getColumns();
                 } else {
-                    columns = new MySQLTableExtension().getDetail(conn, table.getSchema(), table.getName()).getColumns()
-                            .stream().map(DBTableColumn::getName).collect(Collectors.toList());
+                    columns = new MySQLTableExtension()
+                            .getDetail(conn, table.getSchema(), table.getName()).getColumns();
                 }
                 AbstractJob job = new DataXTransferJob(table, ConfigurationResolver
                         .buildJobConfigurationForExport(workingDir, transferConfig, jdbcUrl, table.getName(), columns),

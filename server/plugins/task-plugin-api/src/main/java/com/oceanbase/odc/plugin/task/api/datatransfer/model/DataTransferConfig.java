@@ -28,6 +28,7 @@ import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.datamasking.masker.AbstractDataMasker;
 import com.oceanbase.odc.core.flow.model.TaskParameters;
 import com.oceanbase.odc.core.shared.model.TableIdentity;
+import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 
 import lombok.Data;
 import lombok.ToString;
@@ -88,7 +89,7 @@ public class DataTransferConfig implements TaskParameters, Serializable {
     @JsonIgnore
     private int cursorFetchSize;
     @JsonIgnore
-    private List<String> columns;
+    private transient List<DBTableColumn> columns;
 
     public boolean isCompressed() {
         return StringUtils.equalsIgnoreCase("ZIP", fileType);
