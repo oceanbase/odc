@@ -82,7 +82,7 @@ subject_process = (strip |
 ## ``tag_filter_regexp`` is a regexp
 ## Tags that will be used for the changelog must match this regexp.
 # Match ODC release tag style
-tag_filter_regexp = r'^v([0-9]+\.[0-9]+\.[0-9]+)$'
+tag_filter_regexp = r'^v([0-9]+\.[0-9]+\.[0-9]+)(_[a-z0-9]+)?$'
 
 ## ``revs`` is a list of callable or a list of string
 ##
