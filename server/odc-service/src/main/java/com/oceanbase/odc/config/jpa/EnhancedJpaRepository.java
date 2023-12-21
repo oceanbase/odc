@@ -88,13 +88,13 @@ public class EnhancedJpaRepository<T, ID extends Serializable> extends SimpleJpa
                     ps.addBatch();
                 }
                 ps.executeBatch();
-                ResultSet resultSet = ps.getGeneratedKeys();
-                int i = 0;
-                while (resultSet.next()) {
-                    idSetter.accept(entities.get(i++), getGeneratedId(resultSet));
+                try (ResultSet resultSet = ps.getGeneratedKeys()) {
+                    int i = 0;
+                    while (resultSet.next()) {
+                        idSetter.accept(entities.get(i++), getGeneratedId(resultSet));
+                    }
+                    return entities;
                 }
-                resultSet.close();
-                return entities;
             }
         });
     }
