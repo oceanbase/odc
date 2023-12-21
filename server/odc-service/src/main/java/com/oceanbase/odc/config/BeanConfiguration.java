@@ -74,9 +74,8 @@ public class BeanConfiguration {
     public ObjectMapper objectMapper(SensitivePropertyHandler sensitivePropertyHandler) {
         CustomOutputSerializer customOutputSerializer = new CustomOutputSerializer()
                 .addSerializer(Internationalizable.class, new I18nOutputSerializer());
-        DialectTypeOutputSerializer dialectTypeOutputSerializer = new DialectTypeOutputSerializer();
         SimpleModule dialectTypeModule =
-                new SimpleModule().addSerializer(DialectType.class, dialectTypeOutputSerializer);
+                new SimpleModule().addSerializer(DialectType.class, new DialectTypeOutputSerializer());
         return JacksonFactory.unsafeJsonMapper()
                 .registerModule(JacksonModules.sensitiveInputHandling(sensitivePropertyHandler::decrypt))
                 .registerModule(JacksonModules.customOutputHandling(customOutputSerializer))
@@ -184,8 +183,10 @@ public class BeanConfiguration {
 
     /**
      * In order to adapt to the fact that there is no ODP_SHARDING_OB_MYSQL in DialectType of the
-     * front-end, ODP_SHARDING_OB_MYSQL is converted to OB_MYSQL during serialization.
+     * front-end, ODP_SHARDING_OB_MYSQL is converted to OB_MYSQL during serialization. Will be removed
+     * in the future
      */
+    @Deprecated
     private static class DialectTypeOutputSerializer extends JsonSerializer<DialectType> {
 
         @Override
@@ -197,6 +198,8 @@ public class BeanConfiguration {
                 } else {
                     jsonGenerator.writeString(dialectType.name());
                 }
+            } else {
+                jsonGenerator.writeNull();
             }
         }
     }
