@@ -143,11 +143,12 @@ public abstract class BaseTask implements Task {
                 // when task execution is timeout then stop it.
                 stop();
             }
-            if (isFinished() || getTaskStatus().isTerminated()) {
-                scheduledExecutor.shutdown();
-            }
             try {
-                reportTaskResult();
+                if (isFinished() || getTaskStatus().isTerminated()) {
+                    reportTaskResult();
+                } else {
+                    scheduledExecutor.shutdown();
+                }
             } catch (Exception e) {
                 log.warn("Update task info failed, id: {}", getJobContext().getJobIdentity().getId(), e);
             }
@@ -163,7 +164,6 @@ public abstract class BaseTask implements Task {
 
         log.info("Task id: {}, start to do remained work.", getJobId());
         uploadLogFileToCloudStorage(finalResult);
-
 
         log.info("Task id: {}, remained work be completed, report finished status.", getJobId());
         // Report finish signal to task server

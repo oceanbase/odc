@@ -87,7 +87,8 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
             return;
         }
 
-        if (taskResult.getProgress() == je.getProgressPercentage() && taskResult.getTaskStatus() == je.getStatus()) {
+        if (taskResult.getProgress() == je.getProgressPercentage() && taskResult.getTaskStatus() == je.getStatus()
+            && !taskResult.isFinished()) {
             log.warn("task progress is not changed, ignore upload result.{}", JsonUtils.toJson(taskResult));
             return;
         }
