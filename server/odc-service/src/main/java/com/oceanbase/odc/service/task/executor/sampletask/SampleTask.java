@@ -49,8 +49,6 @@ public class SampleTask extends BaseTask {
     private int totalSqlCount = 0;
 
     private FlowTaskResult result;
-    private TaskStatus tas;
-
     @Override
     protected void onInit() {
 

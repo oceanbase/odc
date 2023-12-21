@@ -202,11 +202,13 @@ public class FlowTaskInstanceService {
             Optional<JobEntity> jobEntity = taskFrameworkService.findJobByFlowInstanceIdAndJobType(id,
                 taskEntity.getTaskType().name());
             if(jobEntity.isPresent()) {
-                if (!taskEntity.getStatus().isTerminated()) {
-                    return forwardRemote(jobEntity.get());
+                if (jobEntity.get().isFinished()) {
+                    ExecutorInfo executorInfo = JsonUtils.fromJson(jobEntity.get().getExecutor(), ExecutorInfo.class);
+                    return forwardRemote(executorInfo);
                 } else {
                     // todo get from oss
-                    return null;
+                    ExecutorInfo executorInfo = JsonUtils.fromJson(jobEntity.get().getExecutor(), ExecutorInfo.class);
+                    return forwardRemote(executorInfo);
                 }
             }
         }
@@ -216,8 +218,7 @@ public class FlowTaskInstanceService {
              * 任务不在当前机器上，需要进行 {@code RPC} 转发获取
              */
             ExecutorInfo executorInfo = JsonUtils.fromJson(taskEntity.getExecutor(), ExecutorInfo.class);
-            DispatchResponse response = requestDispatcher.forward(executorInfo.getHost(), executorInfo.getPort());
-            return response.getContentByType(new TypeReference<SuccessResponse<String>>() {}).getData();
+            return forwardRemote(executorInfo);
         }
         if (taskEntity.getTaskType() == TaskType.MOCKDATA) {
             return getMockDataLog(taskEntity, level);
@@ -225,20 +226,8 @@ public class FlowTaskInstanceService {
         return taskService.getLog(taskEntity.getCreatorId(), taskEntity.getId() + "", taskEntity.getTaskType(), level);
     }
 
-    private String forwardRemote(TaskEntity taskEntity) throws IOException {
-        /**
-         * 任务不在当前机器上，需要进行 {@code RPC} 转发获取
-         */
-        ExecutorInfo executorInfo = JsonUtils.fromJson(taskEntity.getExecutor(), ExecutorInfo.class);
-        DispatchResponse response = requestDispatcher.forward(executorInfo.getHost(), executorInfo.getPort());
-        return response.getContentByType(new TypeReference<SuccessResponse<String>>() {}).getData();
-    }
+    private String forwardRemote(ExecutorInfo executorInfo) throws IOException {
 
-    private String forwardRemote(JobEntity jobEntity) throws IOException {
-        /**
-         * 任务不在当前机器上，需要进行 {@code RPC} 转发获取
-         */
-        ExecutorInfo executorInfo = JsonUtils.fromJson(jobEntity.getExecutor(), ExecutorInfo.class);
         DispatchResponse response = requestDispatcher.forward(executorInfo.getHost(), executorInfo.getPort());
         return response.getContentByType(new TypeReference<SuccessResponse<String>>() {}).getData();
     }
@@ -582,6 +571,9 @@ public class FlowTaskInstanceService {
     }
 
     private List<DatabaseChangeResult> getAsyncResult(@NonNull TaskEntity taskEntity) throws IOException {
+        if (taskFrameworkProperties.getRunMode() == TaskRunModeEnum.K8S) {
+            return getDatabaseChangeResults(taskEntity);
+        }
         if (!dispatchChecker.isTaskEntityOnThisMachine(taskEntity)) {
             /**
              * 任务不在当前机器上，需要进行 {@code RPC} 转发获取
@@ -624,6 +616,20 @@ public class FlowTaskInstanceService {
                 result.setJsonFileBytes(attributes.size());
             }
         }
+        if (cloudObjectStorageService.supported()) {
+            result.setZipFileDownloadUrl(databaseChangeOssUrlCache.get(taskEntity.getId()));
+        }
+        return Collections.singletonList(result);
+    }
+
+    private List<DatabaseChangeResult> getDatabaseChangeResults(TaskEntity taskEntity) {
+        List<DatabaseChangeResult> results = innerGetResult(taskEntity, DatabaseChangeResult.class);
+        if (CollectionUtils.isEmpty(results)) {
+            return Collections.emptyList();
+        }
+        Verify.singleton(results, "OdcAsyncTaskResults");
+
+        DatabaseChangeResult result = results.get(0);
         if (cloudObjectStorageService.supported()) {
             result.setZipFileDownloadUrl(databaseChangeOssUrlCache.get(taskEntity.getId()));
         }

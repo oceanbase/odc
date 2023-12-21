@@ -19,13 +19,17 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.FileUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.jdbc.core.StatementCallback;
@@ -105,7 +109,11 @@ public class DatabaseChangeTask extends BaseTask {
 
     private List<SqlExecuteResult> queryResultSet = new ArrayList<>();
     private Long startTimestamp = null;
+
     private boolean abort = false;
+
+    // todo  read from env passed by FlowTask
+    private long resultPreviewMaxSizeBytes = 5242880;
 
     @Getter
     protected long taskId;
@@ -164,7 +172,42 @@ public class DatabaseChangeTask extends BaseTask {
         taskResult.setJsonFileName(jsonFileName);
         taskResult.setContainQuery(isContainQuery);
         taskResult.setErrorRecordsFilePath(errorRecordsFilePath);
+        setFileAttributeOnResult(taskResult);
         return taskResult;
+    }
+
+    private void  setFileAttributeOnResult(DatabaseChangeResult result) {
+        // read records from file
+        if (StringUtils.isNotEmpty(result.getErrorRecordsFilePath())) {
+            File errorRecords = new File(result.getErrorRecordsFilePath());
+            if (!errorRecords.exists()) {
+                result.setRecords(Collections.singletonList("Execute result has been expired."));
+            } else {
+                try {
+                    result.setRecords(FileUtils.readLines(errorRecords));
+                } catch (IOException e) {
+                    log.warn("Error occurs while reading records from file", e);
+                    result.setRecords(Collections
+                        .singletonList("Error occurs while reading records from file " + e.getMessage()));
+                }
+            }
+        } else {
+            result.setRecords(Collections.emptyList());
+        }
+        if (StringUtils.isNotEmpty(result.getJsonFileName())) {
+            String jsonFileName = result.getJsonFileName();
+            File jsonFile = new File(FileManager.generateDir(FileBucket.ASYNC) + String.format("/%s.json", jsonFileName));
+            BasicFileAttributes attributes = null;
+            try {
+                attributes = Files.readAttributes(jsonFile.toPath(), BasicFileAttributes.class);
+                if (jsonFile.exists() && attributes.isRegularFile()) {
+                    result.setResultPreviewMaxSizeBytes(resultPreviewMaxSizeBytes);
+                    result.setJsonFileBytes(attributes.size());
+                }
+            } catch (IOException e) {
+                log.warn("Read json file {} attributes.", jsonFileName, e);
+            }
+        }
     }
 
     private void init() {

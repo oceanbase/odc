@@ -91,6 +91,9 @@ public class JobEntity implements Serializable {
     @Column(name = "progress_percentage")
     private double progressPercentage;
 
+    @Column(name = "finished")
+    private Integer finished;
+
     @Column(name = "description")
     private String description;
 
@@ -107,4 +110,8 @@ public class JobEntity implements Serializable {
     @Generated(GenerationTime.ALWAYS)
     @Column(name = "update_time", insertable = false, updatable = false)
     private Date updateTime;
+
+    public boolean isFinished() {
+        return 1 == finished;
+    }
 }

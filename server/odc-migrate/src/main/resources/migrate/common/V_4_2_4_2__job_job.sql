@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS `job_job` (
   `job_data_json` mediumtext DEFAULT NULL COMMENT '任务参数，不同任务由不同字段组成，为json格式',
   `result_json` mediumtext DEFAULT NULL COMMENT '任务执行结果',
   `progress_percentage` decimal(6,3) DEFAULT NULL COMMENT '任务完成百分比',
+  `finished`  tinyint(1) NOT NULL COMMENT '执行器中的任务完成所有工作, 1:是 0:否',
   `executor` varchar(128) DEFAULT NULL COMMENT '执行此任务的执行器信息',
   `description` varchar(1024) DEFAULT NULL COMMENT '描述信息',
   `creator_id` bigint DEFAULT NULL COMMENT '创建用户 ID, references iam_user(id)',

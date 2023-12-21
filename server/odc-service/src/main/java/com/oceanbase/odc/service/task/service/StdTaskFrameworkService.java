@@ -95,12 +95,13 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
             if (resultHandleServices != null) {
                 resultHandleServices.forEach(r -> r.handle(taskResult));
             }
+            if (publisher != null) {
+                taskResultPublisherExecutor.execute(() -> publisher.publishEvent(new TaskResultUploadEvent(taskResult)));
+            }
         } catch (Exception e) {
             log.warn("ResultHandlerService handle result occur error:", e);
         }
-        if (publisher != null) {
-            taskResultPublisherExecutor.execute(() -> publisher.publishEvent(new TaskResultUploadEvent(taskResult)));
-        }
+
     }
 
     @Override
@@ -114,6 +115,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         jse.setJobType(jd.getJobType());
         jse.setStatus(TaskStatus.PREPARING);
         jse.setFlowInstanceId(jd.getFlowInstanceId());
+        jse.setFinished(0);
         return jobScheduleRepository.save(jse);
     }
 
@@ -157,6 +159,9 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         jse.setStatus(taskResult.getTaskStatus());
         jse.setProgressPercentage(taskResult.getProgress());
         jse.setExecutor(JsonUtils.toJson(taskResult.getExecutorInfo()));
+        if (taskResult.isFinished()) {
+            jse.setFinished(1);
+        }
         jobScheduleRepository.update(jse);
     }
 

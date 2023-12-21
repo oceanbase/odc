@@ -234,7 +234,7 @@ public class EmbedServer {
             // write response
             FullHttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK,
                     Unpooled.copiedBuffer(responseJson, CharsetUtil.UTF_8)); // Unpooled.wrappedBuffer(responseJson)
-            response.headers().set(HttpHeaderNames.CONTENT_TYPE, "text/html;charset=UTF-8"); // HttpHeaderValues.TEXT_PLAIN.toString()
+            response.headers().set(HttpHeaderNames.CONTENT_TYPE, "application/json"); // HttpHeaderValues.TEXT_PLAIN.toString()
             response.headers().set(HttpHeaderNames.CONTENT_LENGTH, response.content().readableBytes());
             if (keepAlive) {
                 response.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.KEEP_ALIVE);
