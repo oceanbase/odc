@@ -14,7 +14,7 @@ Data source
 Import and Export
 
 - Supports import and export of native MySQL data sources
-- SYS account configuration is no longer provided in the import and export task configuration page of OceanBase data source.
+- SYS account configuration is no longer provided in the import and export task configuration page of OceanBase data source
 
 Database object management
 
@@ -34,7 +34,7 @@ SQL-Check
 
 Connection session
 
-- Added an automatic reconnection mechanism to avoid errors and usability issues caused by session destruction when not used for a long time.
+- Added an automatic reconnection mechanism to avoid errors and usability issues caused by session destruction when not used for a long time
 
 Partition plan
 
@@ -64,7 +64,7 @@ Full link trace
 
 Tickets
 
-- The project administrator can view all work orders under the project, and other roles can view the work orders they have approved.
+- The project administrator can view all work orders under the project, and other roles can view the work orders they have approved
 
 ### Fix
 
@@ -72,7 +72,7 @@ Data source
 
 - Users can still create data sources when they leave the project and do not belong to any project or role
 - The "Execution Time" column in the database session in OceanBase MySQL and native MySQL modes is 0
-- Modification of the time output format through the session variable management function in OceanBase Oracle mode does not take effect in the SQL execution window.
+- Modification of the time output format through the session variable management function in OceanBase Oracle mode does not take effect in the SQL execution window
 - Lowercase schema cannot be connected in OceanBase Oracle mode
 - Unable to connect to MySQL data source built by percona branch
 
@@ -80,13 +80,13 @@ SQL execution
 
 - Error thrown during SQL execution without internationalization
 - SQL with dblink cannot be executed in the team space
-- The desc statement cannot be executed in the team space if security rules allow it.
-- ORDER BY will be invalid when executing SELECT... ORDER BY 1 style statements in OceanBase Oracle mode.
+- The desc statement cannot be executed in the team space if security rules allow it
+- ORDER BY will be invalid when executing SELECT... ORDER BY 1 style statements in OceanBase Oracle mode
 - Disabling the "SQL types allowed to be executed in the SQL window" rule does not take effect
 
 Database object management
 
-- In OceanBase MySQL mode, the names of table partitions and other objects displayed on the left object tree are surrounded by backticks.
+- In OceanBase MySQL mode, the names of table partitions and other objects displayed on the left object tree are surrounded by backticks
 
 Result set export
 
@@ -95,8 +95,8 @@ Result set export
 
 PL object
 
-- During interactive function creation, the return value of the sys_refcursor type cannot be defined through the drop-down menu.
-- The PL parameter value in OceanBase MySQL mode does not escape single quotes.
+- During interactive function creation, the return value of the sys_refcursor type cannot be defined through the drop-down menu
+- The PL parameter value in OceanBase MySQL mode does not escape single quotes
 
 DLM
 
@@ -114,15 +114,15 @@ SQL-Check
 External approval integration
 
 - Unrecognized expression for data in indexed collection
-- The data in xml form returned by the external system will lose the root tag of the original xml during deserialization.
+- The data in xml form returned by the external system will lose the root tag of the original xml during deserialization
 
 Data desensitization
 
-- When duplicate columns are scanned, adding sensitive columns will fail.
+- When duplicate columns are scanned, adding sensitive columns will fail
 
 Project
 
-- After the user is granted "Personal Space" permission, he must log in again for it to take effect.
+- After the user is granted "Personal Space" permission, he must log in again for it to take effect
 - Transaction timeout occurred when synchronizing a large number of databases or schemas to the project
 - Unable to filter work orders by project dimension
 - Project OWNER can remove all users with DBA roles in the project
@@ -141,7 +141,7 @@ Mock data
 - Does not support ZHSGB232 encoding
 - OceanBase MySQL and native MySQL mode cannot generate tasks for bit types with a width below 8
 - Unable to skip auto-incremented primary key columns
-- The bit type width displays incorrectly in OceanBase MySQL and native MySQL modes.
+- The bit type width displays incorrectly in OceanBase MySQL and native MySQL modes
 
 Database change task
 
