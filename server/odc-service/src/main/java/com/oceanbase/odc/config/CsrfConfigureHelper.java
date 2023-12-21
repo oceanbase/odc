@@ -36,10 +36,12 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.access.AccessDeniedHandlerImpl;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfFilter;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
 import org.springframework.security.web.csrf.InvalidCsrfTokenException;
 import org.springframework.security.web.csrf.MissingCsrfTokenException;
+import org.springframework.security.web.session.SessionManagementFilter;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.LocaleResolver;
@@ -52,9 +54,11 @@ import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.service.common.response.OdcErrorResult;
 import com.oceanbase.odc.service.common.util.WebRequestUtils;
 import com.oceanbase.odc.service.common.util.WebResponseUtils;
-import com.oceanbase.odc.service.iam.auth.CustomInvalidSessionStrategy;
 
 /**
+ * we always disable csrf for HttpSecurity configuration, create CsrfFilter manually for avoid
+ * conflict with session management filter
+ * 
  * @author wenniu.ly
  * @date 2021/6/18
  */
@@ -68,20 +72,12 @@ public class CsrfConfigureHelper {
     private LocaleResolver localeResolver;
 
     public void configure(HttpSecurity http) throws Exception {
+        http.csrf().disable();
         if (commonSecurityProperties.isCsrfEnabled()) {
-            // @formatter:off
-            http.csrf()
-                .requireCsrfProtectionMatcher(requestMatcher())
-                .csrfTokenRepository(new OdcCsrfTokenRepository())
-            .and()
-                .exceptionHandling()
-                .accessDeniedHandler(accessDeniedHandler());
-            // @formatter:on
-        } else {
-            http.csrf().disable();
-            http.sessionManagement()
-                    .invalidSessionStrategy(
-                            new CustomInvalidSessionStrategy(commonSecurityProperties.getLoginPage(), localeResolver));
+            CsrfFilter csrfFilter = new CsrfFilter(new OdcCsrfTokenRepository());
+            csrfFilter.setRequireCsrfProtectionMatcher(requestMatcher());
+            csrfFilter.setAccessDeniedHandler(accessDeniedHandler());
+            http.addFilterAfter(csrfFilter, SessionManagementFilter.class);
         }
     }
 
