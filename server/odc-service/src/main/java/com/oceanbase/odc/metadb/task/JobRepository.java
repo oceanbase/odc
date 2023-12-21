@@ -44,11 +44,11 @@ public interface JobRepository extends JpaRepository<JobEntity, Long>,
 
     @Transactional
     @Query("update JobEntity set "
-            + "jobName=:#{#param.jobName},status=:#{#param.status},scheduleTimes=:#{#param.scheduleTimes},"
+            + "serial_number=:#{#param.serialNumber},status=:#{#param.status},scheduleTimes=:#{#param.scheduleTimes},"
             + "executionTimes=:#{#param.executionTimes}"
             + " where id=:#{#param.id}")
     @Modifying
-    void updateJobNameAndStatus(@Param("param") JobEntity entity);
+    void updateJobSerialNumberAndStatus(@Param("param") JobEntity entity);
 
 
     @Transactional
@@ -63,6 +63,6 @@ public interface JobRepository extends JpaRepository<JobEntity, Long>,
             + "description=:description"
             + " where id=:id")
     @Modifying
-    void updateDescription(@Param("id") Long id, @Param("status") String description);
+    void updateDescription(@Param("id") Long id, @Param("description") String description);
 
 }

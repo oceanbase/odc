@@ -96,7 +96,7 @@ public class StdJobScheduler implements JobScheduler {
             throw new JobException(e);
         }
         JobEntity jobEntity = configuration.getTaskFrameworkService().find(id);
-        configuration.getJobDispatcher().stop(JobIdentity.of(id, jobEntity.getJobName()));
+        configuration.getJobDispatcher().stop(JobIdentity.of(id, jobEntity.getSerialNumber()));
     }
 
     public void await(Long id, Long timeout, TimeUnit timeUnit) throws InterruptedException {

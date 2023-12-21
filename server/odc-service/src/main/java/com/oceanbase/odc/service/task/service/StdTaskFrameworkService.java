@@ -138,15 +138,15 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     }
 
     @Override
-    public void startSuccess(Long id, String jobName) {
+    public void startSuccess(Long id, String serialNumber) {
         JobEntity jobEntity = find(id);
         jobEntity.setStatus(TaskStatus.RUNNING);
-        jobEntity.setJobName(jobName);
+        jobEntity.setSerialNumber(serialNumber);
         // increment executionTimes
         jobEntity.setExecutionTimes(jobEntity.getExecutionTimes() + 1);
         // reset scheduleTimes to zero
         jobEntity.setScheduleTimes(0);
-        jobScheduleRepository.updateJobNameAndStatus(jobEntity);
+        jobScheduleRepository.updateJobSerialNumberAndStatus(jobEntity);
     }
 
     private void updateJobScheduleEntity(TaskResult taskResult) {

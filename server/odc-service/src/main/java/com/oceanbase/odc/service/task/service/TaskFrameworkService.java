@@ -39,7 +39,7 @@ public interface TaskFrameworkService {
 
     JobDefinition getJobDefinition(Long id);
 
-    void startSuccess(Long id, String jobName);
+    void startSuccess(Long id, String serialNumber);
 
     void updateScheduleTimes(Long id, Integer scheduleTimes);
 

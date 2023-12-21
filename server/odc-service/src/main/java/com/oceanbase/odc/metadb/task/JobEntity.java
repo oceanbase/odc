@@ -73,8 +73,8 @@ public class JobEntity implements Serializable {
     @Column(name = "execution_times", nullable = false)
     private Integer executionTimes;
 
-    @Column(name = "job_name")
-    private String jobName;
+    @Column(name = "serial_number")
+    private String serialNumber;
 
     @Column(name = "run_mode")
     private String runMode;
