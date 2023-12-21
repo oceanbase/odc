@@ -64,6 +64,7 @@ public class ScheduleTaskRepositoryTest extends ServiceTestEnv {
 
     @Test
     public void listByScheduleIdAndStatus() {
+        taskRepository.deleteAll();
         createScheduleTask();
         List<TaskStatus> statuses = new LinkedList<>();
         statuses.add(TaskStatus.RUNNING);
