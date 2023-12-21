@@ -73,9 +73,6 @@ public interface JobScheduleRepository extends JpaRepository<JobEntity, Long>,
     @Modifying
     void updateStatus(@Param("id") Long id, @Param("status") TaskStatus status);
 
-    @Query(value = "select e.id from JobEntity e where e.flowInstanceId=:flowInstanceId and e.jobType=:jobType")
-    List<JobEntity> findJobByFlowInstanceIdAndJobType(@Param("flowInstanceId") Long flowInstanceId,
-        @Param("jobType") String jobType);
-
+    List<JobEntity> findJobByFlowInstanceIdAndJobType(Long flowInstanceId, String jobType);
 
 }

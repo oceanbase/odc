@@ -246,7 +246,7 @@ public class FlowTaskInstanceService {
         }
         TaskEntity taskEntity = taskEntityOptional.get();
         if (taskEntity.getTaskType() == TaskType.ASYNC) {
-            return getAsyncResult(taskEntity);
+            return getAsyncResult(id,taskEntity);
         } else if (taskEntity.getTaskType() == TaskType.MOCKDATA) {
             return getMockDataResult(taskEntity);
         } else if (taskEntity.getTaskType() == TaskType.IMPORT) {
@@ -379,7 +379,7 @@ public class FlowTaskInstanceService {
                 targetFiles.add(uploadFile.get());
             }
         } else if (taskEntity.getTaskType() == TaskType.ASYNC) {
-            targetFiles = getAsyncResult(taskEntity).stream().map(value -> {
+            targetFiles = getAsyncResult(null, taskEntity).stream().map(value -> {
                 String zipFileId = value.getZipFileId();
                 String filePath = FileManager.generatePath(FileBucket.ASYNC, zipFileId) + ".zip";
                 return new File(filePath);
@@ -570,9 +570,13 @@ public class FlowTaskInstanceService {
                 }).collect(Collectors.toList()), false);
     }
 
-    private List<DatabaseChangeResult> getAsyncResult(@NonNull TaskEntity taskEntity) throws IOException {
-        if (taskFrameworkProperties.getRunMode() == TaskRunModeEnum.K8S) {
-            return getDatabaseChangeResults(taskEntity);
+    private List<DatabaseChangeResult> getAsyncResult(Long flowInstanceId, @NonNull TaskEntity taskEntity) throws IOException {
+        if (taskFrameworkProperties.getRunMode() == TaskRunModeEnum.K8S && flowInstanceId != null) {
+            Optional<JobEntity> job = taskFrameworkService.findJobByFlowInstanceIdAndJobType(
+                flowInstanceId, taskEntity.getTaskType().name());
+            if(job.isPresent()) {
+                return getDatabaseChangeResults(taskEntity);
+            }
         }
         if (!dispatchChecker.isTaskEntityOnThisMachine(taskEntity)) {
             /**

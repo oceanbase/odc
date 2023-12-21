@@ -73,16 +73,16 @@ public class JobEntity implements Serializable {
     @Column(name = "execution_times", nullable = false)
     private Integer executionTimes;
 
-    @Column(name = "job_name", nullable = false)
+    @Column(name = "job_name")
     private String jobName;
 
-    @Column(name = "run_mode", nullable = false)
+    @Column(name = "run_mode")
     private String runMode;
 
-    @Column(name = "job_data_json", nullable = false)
+    @Column(name = "job_data_json")
     private String jobDataJson;
 
-    @Column(name = "trigger_config_json", nullable = false)
+    @Column(name = "trigger_config_json")
     private String triggerConfigJson;
 
     @Column(name = "result_json")
@@ -97,10 +97,10 @@ public class JobEntity implements Serializable {
     @Column(name = "description")
     private String description;
 
-    @Column(name = "creator_id", updatable = false)
+    @Column(name = "creator_id")
     private Long creatorId;
 
-    @Column(name = "organization_id", nullable = false)
+    @Column(name = "organization_id")
     private Long organizationId;
 
     @Generated(GenerationTime.ALWAYS)
