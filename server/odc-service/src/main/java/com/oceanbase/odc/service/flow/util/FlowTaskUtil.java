@@ -311,10 +311,11 @@ public class FlowTaskUtil {
                         DBSchemaAccessor schemaAccessor = DBSchemaAccessors.create(session);
                         DBTableOptions tableOptions = schemaAccessor.getTableOptions(getSchemaName(execution),
                                 (String) table.get("tableName"));
-                        if (StringUtils.isNotBlank(tableOptions.getCharsetName())) {
-                            typeConfig.putIfAbsent("charset", tableOptions.getCharsetName().toUpperCase());
-                        } else {
+                        String charset = tableOptions.getCharsetName();
+                        if (StringUtils.isBlank(charset) || StringUtils.containsIgnoreCase(charset, "utf")) {
                             typeConfig.putIfAbsent("charset", "UTF_8");
+                        } else {
+                            typeConfig.putIfAbsent("charset", charset.toUpperCase());
                         }
                     }
                     MockDataTypeUtil.processTypeConfig(type, typeConfig);
