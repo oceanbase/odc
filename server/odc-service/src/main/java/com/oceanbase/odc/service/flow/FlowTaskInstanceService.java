@@ -95,6 +95,7 @@ import com.oceanbase.odc.service.flow.task.util.DatabaseChangeOssUrlCache;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
+import com.oceanbase.odc.service.objectstorage.model.ObjectMetadata;
 import com.oceanbase.odc.service.partitionplan.PartitionPlanService;
 import com.oceanbase.odc.service.permissionapply.project.ApplyProjectResult;
 import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleResult;
@@ -102,6 +103,7 @@ import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.enums.TaskRunModeEnum;
+import com.oceanbase.odc.service.task.executor.task.ObjectStorageHandler;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
@@ -199,15 +201,18 @@ public class FlowTaskInstanceService {
 
         // forward to target host when task is not be executed on this machine or running in k8s pod
         if (taskFrameworkProperties.getRunMode() == TaskRunModeEnum.K8S && taskEntity.getJobId() != null) {
-            JobEntity jobEntity = taskFrameworkService.find(taskEntity.getId());
+            JobEntity jobEntity = taskFrameworkService.find(taskEntity.getJobId());
             if (jobEntity != null) {
                 if (jobEntity.isFinished()) {
                     ExecutorInfo executorInfo = JsonUtils.fromJson(jobEntity.getExecutor(), ExecutorInfo.class);
                     return forwardRemote(executorInfo);
                 } else {
-                    // todo get from oss
-                    ExecutorInfo executorInfo = JsonUtils.fromJson(jobEntity.getExecutor(), ExecutorInfo.class);
-                    return forwardRemote(executorInfo);
+                    if (cloudObjectStorageService.supported() && jobEntity.getLogStorage() != null) {
+                        ObjectMetadata om = JsonUtils.fromJson(jobEntity.getLogStorage(), ObjectMetadata.class);
+                        ObjectStorageHandler objectStorageHandler =
+                            new ObjectStorageHandler(cloudObjectStorageService, "/opt/odc/log");
+                        objectStorageHandler.loadObjectContentAsString(om);
+                    }
                 }
             }
         }

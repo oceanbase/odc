@@ -34,6 +34,7 @@ import com.oceanbase.odc.core.task.TaskThreadFactory;
 import com.oceanbase.odc.service.common.util.OdcFileUtil;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
 import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfiguration;
+import com.oceanbase.odc.service.objectstorage.model.ObjectMetadata;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.constants.JobDataMapConstants;
 import com.oceanbase.odc.service.task.executor.logger.LogUtils;
@@ -162,7 +163,7 @@ public abstract class BaseTask implements Task {
         DefaultTaskResult finalResult = buildCurrentResult();
         reportTaskResultWithRetry(finalResult, REPORT_RESULT_RETRY_TIMES, REPORT_RESULT_RETRY_INTERVAL_SECONDS);
 
-        uploadLogFileToCloudStorage();
+        uploadLogFileToCloudStorage(finalResult);
 
         // Report finish signal to task server
         finalResult.setFinished(true);
@@ -170,21 +171,25 @@ public abstract class BaseTask implements Task {
         this.finished = true;
     }
 
-    private void uploadLogFileToCloudStorage() {
-        if (Objects.nonNull(getCloudObjectStorageService()) && getCloudObjectStorageService().supported()) {
-            String jobLogPath = LogUtils.getJobLogPath(getJobContext().getJobIdentity().getId());
-            String fileId = StringUtils.uuid();
-            File tempZipFile = new File(String.format("%s/%s.zip", jobLogPath, fileId));
-            try {
-                OdcFileUtil.zip(jobLogPath, String.format("%s/%s.zip", jobLogPath, fileId));
-                String objectName = getCloudObjectStorageService().uploadTemp(fileId + ".zip", tempZipFile);
-                String downloadUrl = getCloudObjectStorageService().getBucketName() + "/" + objectName;
-                log.info("upload async task result set zip file to OSS successfully, file name={}", fileId);
-            } catch (Exception exception) {
-                log.warn("upload async task result set zip file to OSS failed, file name={}", fileId);
-            } finally {
-                OdcFileUtil.deleteFiles(tempZipFile);
-            }
+    private void uploadLogFileToCloudStorage(DefaultTaskResult finalResult) {
+        if (Objects.isNull(getCloudObjectStorageService()) || !getCloudObjectStorageService().supported()) {
+            return;
+        }
+        String jobLogPath = LogUtils.getJobLogPath(getJobContext().getJobIdentity().getId());
+        String fileId = StringUtils.uuid();
+        File tempZipFile = new File(String.format("%s/%s.zip", jobLogPath, fileId));
+        try {
+            OdcFileUtil.zip(jobLogPath, String.format("%s/%s.zip", jobLogPath, fileId));
+            String objectName = getCloudObjectStorageService().uploadTemp(fileId + ".zip", tempZipFile);
+            ObjectMetadata logStorageInfo = new ObjectMetadata();
+            logStorageInfo.setBucketName(getCloudObjectStorageService().getBucketName());
+            logStorageInfo.setObjectId(objectName);
+            finalResult.setLogMetadata(logStorageInfo);
+            log.info("upload task log set zip file to OSS successfully, file name={}", fileId);
+        } catch (Exception exception) {
+            log.warn("upload task log set zip file to OSS failed, file name={}", fileId);
+        } finally {
+            OdcFileUtil.deleteFiles(tempZipFile);
         }
     }
 

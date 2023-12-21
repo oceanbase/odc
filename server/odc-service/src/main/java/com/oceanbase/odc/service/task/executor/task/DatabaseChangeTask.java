@@ -253,7 +253,7 @@ public class DatabaseChangeTask extends BaseTask {
                 getJobData().get(JobDataMapConstants.OBJECT_METADATA), new TypeReference<List<ObjectMetadata>>() {});
 
         for (ObjectMetadata metadata : metadatas) {
-            String objectContentStr = new ObjectStorageHandler(getCloudObjectStorageService())
+            String objectContentStr = new ObjectStorageHandler(getCloudObjectStorageService(), "/opt/odc/data")
                     .loadObjectContentAsString(metadata);
             /**
              * remove UTF-8 BOM

@@ -44,8 +44,8 @@ public class ObjectStorageHandler {
     private final LocalFileOperator localFileOperator;
     private final CloudObjectStorageService cloudObjectStorageService;
 
-    public ObjectStorageHandler(CloudObjectStorageService cloudObjectStorageService) {
-        this.localFileOperator = new LocalFileOperator("/opt/odc/data");
+    public ObjectStorageHandler(CloudObjectStorageService cloudObjectStorageService, String localDir) {
+        this.localFileOperator = new LocalFileOperator(localDir);
         this.cloudObjectStorageService = cloudObjectStorageService;
     }
 

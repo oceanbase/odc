@@ -16,6 +16,8 @@
 
 package com.oceanbase.odc.metadb.task;
 
+import org.junit.Assert;
+import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.oceanbase.odc.ServiceTestEnv;
@@ -27,13 +29,15 @@ import com.oceanbase.odc.service.task.executor.sampletask.SampleTask;
  * @date 2023-12-21
  * @since 4.2.4
  */
-public class JobScheduleRepositoryTest extends ServiceTestEnv {
+public class JobRepositoryTest extends ServiceTestEnv {
 
     @Autowired
-    private JobScheduleRepository jobScheduleRepository;
+    private JobRepository jobRepository;
 
-    public void test_findJobByFlowInstanceIdAndJobType() {
+    @Test
+    public void test_saveJob() {
         JobEntity je = createJobEntity();
+        Assert.assertNotNull(je);
     }
 
 
@@ -45,6 +49,6 @@ public class JobScheduleRepositoryTest extends ServiceTestEnv {
         entity.setScheduleTimes(1);
         entity.setStatus(TaskStatus.PREPARING);
         entity.setFinished(1);
-        return jobScheduleRepository.save(entity);
+        return jobRepository.save(entity);
     }
 }

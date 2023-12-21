@@ -33,7 +33,7 @@ import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.metadb.task.JobEntity;
-import com.oceanbase.odc.metadb.task.JobScheduleRepository;
+import com.oceanbase.odc.metadb.task.JobRepository;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.executor.executor.TaskRuntimeException;
 import com.oceanbase.odc.service.task.executor.task.Task;
@@ -57,9 +57,9 @@ import lombok.extern.slf4j.Slf4j;
 public class StdTaskFrameworkService implements TaskFrameworkService {
 
     @Autowired
-    private JobScheduler jobScheduler;
+    private JobScheduler  jobScheduler;
     @Autowired
-    private JobScheduleRepository jobScheduleRepository;
+    private JobRepository jobScheduleRepository;
 
     @Autowired(required = false)
     private List<ResultHandleService> resultHandleServices;
@@ -158,6 +158,9 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         if (taskResult.isFinished()) {
             jse.setFinished(1);
         }
+        if (taskResult.getLogMetadata() != null) {
+            jse.setLogStorage(JsonUtils.toJson(taskResult.getLogMetadata()));
+        }
         jobScheduleRepository.update(jse);
     }
 
@@ -167,8 +170,8 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     }
 
     @Override
-    public void updateStatus(Long id, TaskStatus status) {
-        jobScheduleRepository.updateStatus(id, status);
+    public void updateDescription(Long id, String description) {
+        jobScheduleRepository.updateDescription(id, description);
     }
 
     @Override

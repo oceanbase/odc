@@ -43,7 +43,7 @@ public interface TaskFrameworkService {
 
     void updateScheduleTimes(Long id, Integer scheduleTimes);
 
-    void updateStatus(Long id, TaskStatus status);
+    void updateDescription(Long id, String description);
 
     void update(JobEntity jobEntity);
 

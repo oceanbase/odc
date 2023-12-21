@@ -64,6 +64,9 @@ public class JobEntity implements Serializable {
     @Column(name = "executor")
     private String executor;
 
+    @Column(name = "log_storage")
+    private String logStorage;
+
     @Column(name = "schedule_times", nullable = false)
     private Integer scheduleTimes;
 

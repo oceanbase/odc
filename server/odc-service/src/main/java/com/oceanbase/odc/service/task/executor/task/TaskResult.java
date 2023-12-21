@@ -17,6 +17,7 @@
 package com.oceanbase.odc.service.task.executor.task;
 
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
+import com.oceanbase.odc.service.objectstorage.model.ObjectMetadata;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 
@@ -39,4 +40,5 @@ public interface TaskResult {
 
     boolean isFinished();
 
+    ObjectMetadata getLogMetadata();
 }
