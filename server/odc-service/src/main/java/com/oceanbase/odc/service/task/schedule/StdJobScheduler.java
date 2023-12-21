@@ -71,7 +71,7 @@ public class StdJobScheduler implements JobScheduler {
         JobEntity jobEntity = configuration.getTaskFrameworkService().save(jd);
         JobIdentity jobIdentity = JobIdentity.of(jobEntity.getId());
         Trigger trigger = TriggerBuilder.build(jobIdentity, jd, null);
-        JobKey jobKey = QuartzKeyGenerator.generateJobKey(jobIdentity);
+        JobKey jobKey = QuartzKeyGenerator.generateJobKey(jobEntity.getId());
         JobDetailImpl detail = new JobDetailImpl();
         detail.setKey(jobKey);
         detail.setJobClass(PrepareCallJob.class);
@@ -86,8 +86,7 @@ public class StdJobScheduler implements JobScheduler {
 
     @Override
     public void cancelJob(Long id) throws JobException {
-        JobIdentity jobIdentity = JobIdentity.of(id);
-        JobKey jobKey = QuartzKeyGenerator.generateJobKey(jobIdentity);
+        JobKey jobKey = QuartzKeyGenerator.generateJobKey(id);
         try {
             if (scheduler.checkExists(jobKey)) {
                 scheduler.deleteJob(jobKey);

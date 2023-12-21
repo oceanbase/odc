@@ -50,7 +50,7 @@ public class TriggerBuilder {
             config = new TriggerConfig();
             config.setTriggerStrategy(TriggerStrategy.START_NOW);
         }
-        return build(QuartzKeyGenerator.generateTriggerKey(jc.getJobIdentity()),
+        return build(QuartzKeyGenerator.generateTriggerKey(jc.getJobIdentity().getId()),
                 config, triData);
     }
 

@@ -78,5 +78,11 @@ public class DefaultJobCallerListener extends JobCallerListener {
     protected void stopSucceed(JobIdentity ji) {}
 
     @Override
-    protected void stopFailed(JobIdentity ji, Exception ex) {}
+    protected void stopFailed(JobIdentity ji, Exception ex) {
+        if (taskFrameworkService != null) {
+            String desc = "Try to cancel job failed.";
+            taskFrameworkService.updateDescription(ji.getId(), desc);
+            log.info("Stop job " + ji.getId() + " failed, error is: ", ex);
+        }
+    }
 }

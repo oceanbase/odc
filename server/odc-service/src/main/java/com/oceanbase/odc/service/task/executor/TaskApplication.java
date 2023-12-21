@@ -16,6 +16,7 @@
 
 package com.oceanbase.odc.service.task.executor;
 
+import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.service.task.caller.JobContext;
@@ -52,7 +53,7 @@ public class TaskApplication {
         try {
             JobContext context = jobContextProvider.provide();
             Task task = TaskFactory.create(context.getJobClass());
-            log.info("Task created, context: {}", context);
+            log.info("Task created {}.", JsonUtils.toJson(context.getJobIdentity()));
             taskExecutor.execute(task, context);
             ExitHelper.await();
         } catch (Exception e) {

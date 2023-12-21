@@ -135,7 +135,7 @@ public abstract class BaseTask implements Task {
 
     private void initTaskMonitor() {
         ThreadFactory threadFactory =
-                new TaskThreadFactory(("Task-Monitor-" + getJobContext().getJobIdentity().getId()));
+                new TaskThreadFactory(("Task-Monitor-" + getJobId()));
         ScheduledExecutorService scheduledExecutor = Executors.newSingleThreadScheduledExecutor(threadFactory);
         scheduledExecutor.scheduleAtFixedRate(() -> {
             // check task is timeout or not
@@ -157,25 +157,28 @@ public abstract class BaseTask implements Task {
 
     private void doFinal() {
         // Report final result
-        // onUpdate();
-        log.info("Task id: {}, finished with status: {}, start to report final result",
-                getJobContext().getJobIdentity().getId(), getTaskStatus());
+        log.info("Task id: {}, finished with status: {}, start to report final result", getJobId(), getTaskStatus());
         DefaultTaskResult finalResult = buildCurrentResult();
         reportTaskResultWithRetry(finalResult, REPORT_RESULT_RETRY_TIMES, REPORT_RESULT_RETRY_INTERVAL_SECONDS);
 
+        log.info("Task id: {}, start to do remained work.", getJobId());
         uploadLogFileToCloudStorage(finalResult);
 
+
+        log.info("Task id: {}, remained work be completed, report finished status.", getJobId());
         // Report finish signal to task server
         finalResult.setFinished(true);
         reportTaskResultWithRetry(finalResult, REPORT_RESULT_RETRY_TIMES, REPORT_RESULT_RETRY_INTERVAL_SECONDS);
         this.finished = true;
+        log.info("Task id: {} exit.", getJobId());
     }
 
     private void uploadLogFileToCloudStorage(DefaultTaskResult finalResult) {
         if (Objects.isNull(getCloudObjectStorageService()) || !getCloudObjectStorageService().supported()) {
             return;
         }
-        String jobLogPath = LogUtils.getJobLogPath(getJobContext().getJobIdentity().getId());
+        log.info("Task id: {}, try to upload log", getJobId());
+        String jobLogPath = LogUtils.getJobLogPath(getJobId());
         String fileId = StringUtils.uuid();
         File tempZipFile = new File(String.format("%s/%s.zip", jobLogPath, fileId));
         try {
@@ -237,7 +240,7 @@ public abstract class BaseTask implements Task {
                     Thread.sleep(intervalSeconds * 1000L);
                 }
             } catch (Exception e) {
-                log.warn("Report task result failed, taskId: {}", getJobContext().getJobIdentity().getId(), e);
+                log.warn("Report task result failed, taskId: {}", getJobId(), e);
             }
         }
     }
@@ -257,6 +260,10 @@ public abstract class BaseTask implements Task {
         ei.setJvmStartTime(SystemUtils.getJVMStartTime());
         result.setExecutorInfo(ei);
         return result;
+    }
+
+    private Long getJobId() {
+        return getJobContext().getJobIdentity().getId();
     }
 
     protected abstract void onInit();

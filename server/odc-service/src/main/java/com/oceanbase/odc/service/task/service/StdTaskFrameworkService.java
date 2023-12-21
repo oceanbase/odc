@@ -59,7 +59,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     @Autowired
     private JobScheduler  jobScheduler;
     @Autowired
-    private JobRepository jobScheduleRepository;
+    private JobRepository jobRepository;
 
     @Autowired(required = false)
     private List<ResultHandleService> resultHandleServices;
@@ -82,6 +82,11 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
             return;
         }
         JobEntity je = find(taskResult.getJobIdentity().getId());
+        if (je.isFinished()) {
+            log.warn("Job {} is finished, ignore result", je.getId());
+            return;
+        }
+
         if (taskResult.getProgress() == je.getProgressPercentage() && taskResult.getTaskStatus() == je.getStatus()) {
             log.warn("task progress is not changed, ignore upload result.{}", JsonUtils.toJson(taskResult));
             return;
@@ -112,13 +117,13 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         jse.setJobType(jd.getJobType());
         jse.setStatus(TaskStatus.PREPARING);
         jse.setFinished(0);
-        return jobScheduleRepository.save(jse);
+        return jobRepository.save(jse);
     }
 
 
     @Override
     public JobEntity find(Long id) {
-        return jobScheduleRepository.findById(id)
+        return jobRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException(ResourceType.ODC_TASK, "id", id));
     }
 
@@ -146,37 +151,32 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         jobEntity.setExecutionTimes(jobEntity.getExecutionTimes() + 1);
         // reset scheduleTimes to zero
         jobEntity.setScheduleTimes(0);
-        jobScheduleRepository.updateJobSerialNumberAndStatus(jobEntity);
+        jobRepository.updateJobSerialNumberAndStatus(jobEntity);
     }
 
     private void updateJobScheduleEntity(TaskResult taskResult) {
         JobEntity jse = find(taskResult.getJobIdentity().getId());
-        jse.setResultJson(taskResult.getResultJson());
-        jse.setStatus(taskResult.getTaskStatus());
-        jse.setProgressPercentage(taskResult.getProgress());
-        jse.setExecutor(JsonUtils.toJson(taskResult.getExecutorInfo()));
         if (taskResult.isFinished()) {
             jse.setFinished(1);
-        }
-        if (taskResult.getLogMetadata() != null) {
             jse.setLogStorage(JsonUtils.toJson(taskResult.getLogMetadata()));
+            jobRepository.updateFinished(jse);
+        } else {
+            jse.setResultJson(taskResult.getResultJson());
+            jse.setStatus(taskResult.getTaskStatus());
+            jse.setProgressPercentage(taskResult.getProgress());
+            jse.setExecutor(JsonUtils.toJson(taskResult.getExecutorInfo()));
+            jobRepository.update(jse);
         }
-        jobScheduleRepository.update(jse);
     }
 
     @Override
     public void updateScheduleTimes(Long id, Integer scheduleTimes) {
-        jobScheduleRepository.updateScheduleTimes(id, scheduleTimes);
+        jobRepository.updateScheduleTimes(id, scheduleTimes);
     }
 
     @Override
     public void updateDescription(Long id, String description) {
-        jobScheduleRepository.updateDescription(id, description);
-    }
-
-    @Override
-    public void update(JobEntity jobEntity) {
-        jobScheduleRepository.update(jobEntity);
+        jobRepository.updateDescription(id, description);
     }
 
 }

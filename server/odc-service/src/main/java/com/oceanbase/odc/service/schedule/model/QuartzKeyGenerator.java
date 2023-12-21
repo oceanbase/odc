@@ -36,12 +36,12 @@ public class QuartzKeyGenerator {
         return new JobKey(scheduleId + "", jobType.name());
     }
 
-    public static TriggerKey generateTriggerKey(JobIdentity ji) {
-        return new TriggerKey(ji.getId() + "", ji.getId() + "");
+    public static TriggerKey generateTriggerKey(Long jobId) {
+        return new TriggerKey(jobId+"");
     }
 
-    public static JobKey generateJobKey(JobIdentity ji) {
-        return new JobKey(ji.getId() + "", ji.getId() + "");
+    public static JobKey generateJobKey(Long jobId) {
+        return new JobKey(jobId+"");
     }
 
 }
