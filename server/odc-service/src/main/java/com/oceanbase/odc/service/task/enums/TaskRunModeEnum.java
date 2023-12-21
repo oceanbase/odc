@@ -30,5 +30,10 @@ public enum TaskRunModeEnum {
     /**
      * ODC job run by ODC server thread
      */
-    THREAD
+    THREAD;
+
+    public boolean isK8s() {
+        return this == K8S;
+    }
+
 }

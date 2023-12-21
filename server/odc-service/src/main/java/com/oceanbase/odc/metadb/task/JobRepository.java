@@ -44,7 +44,7 @@ public interface JobRepository extends JpaRepository<JobEntity, Long>,
 
     @Transactional
     @Query("update JobEntity set "
-            + "serial_number=:#{#param.serialNumber},status=:#{#param.status},scheduleTimes=:#{#param.scheduleTimes},"
+            + "serialNumber=:#{#param.serialNumber},status=:#{#param.status},scheduleTimes=:#{#param.scheduleTimes},"
             + "executionTimes=:#{#param.executionTimes}"
             + " where id=:#{#param.id}")
     @Modifying

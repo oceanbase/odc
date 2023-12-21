@@ -200,7 +200,7 @@ public class FlowTaskInstanceService {
         }
 
         // forward to target host when task is not be executed on this machine or running in k8s pod
-        if (taskFrameworkProperties.getRunMode() == TaskRunModeEnum.K8S && taskEntity.getJobId() != null) {
+        if (taskFrameworkProperties.getRunMode().isK8s() && taskEntity.getJobId() != null) {
             JobEntity jobEntity = taskFrameworkService.find(taskEntity.getJobId());
             if (jobEntity != null) {
                 if (jobEntity.isFinished()) {
@@ -575,7 +575,7 @@ public class FlowTaskInstanceService {
     }
 
     private List<DatabaseChangeResult> getAsyncResult(@NonNull TaskEntity taskEntity) throws IOException {
-        if (taskFrameworkProperties.getRunMode() == TaskRunModeEnum.K8S && taskEntity.getJobId() != null) {
+        if (taskFrameworkProperties.getRunMode().isK8s() && taskEntity.getJobId() != null) {
             JobEntity job = taskFrameworkService.find(taskEntity.getJobId());
             if (job != null) {
                 return getDatabaseChangeResults(taskEntity);

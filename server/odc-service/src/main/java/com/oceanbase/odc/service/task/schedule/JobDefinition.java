@@ -44,7 +44,4 @@ public interface JobDefinition {
      */
     Map<String, String> getJobData();
 
-    // todo remove
-    Long getFlowInstanceId();
-
 }
