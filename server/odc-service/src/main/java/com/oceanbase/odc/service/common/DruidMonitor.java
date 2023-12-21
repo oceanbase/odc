@@ -95,7 +95,7 @@ public class DruidMonitor implements InitializingBean {
                 AlarmUtils.alarm(DRUID_MONITOR_ERROR, e);
                 log.info("monitor error", e);
             }
-        }, 1, 1, TimeUnit.MINUTES);
+        }, 1, 2, TimeUnit.MINUTES);
     }
 
     public void doMonitor() {
