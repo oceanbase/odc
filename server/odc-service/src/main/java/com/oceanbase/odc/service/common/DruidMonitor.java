@@ -269,7 +269,7 @@ public class DruidMonitor implements InitializingBean {
         private Long batchSizeMax;
         private String url;
         private String name;
-        private String lastErrorTime;
+        private Object lastErrorTime;
         private Long readerOpenCount;
         private Long effectedRowCountMax;
         private String lastErrorClass;
@@ -398,7 +398,7 @@ public class DruidMonitor implements InitializingBean {
             vo.setFetchRowCountMax(default0((Long) map.get(DruidSQLStateConstants.FETCH_ROW_COUNT_MAX)));
             vo.setErrorCount(default0((Long) map.get(DruidSQLStateConstants.ERROR_COUNT)));
             vo.setBatchSizeMax(default0((Long) map.get(DruidSQLStateConstants.BATCH_SIZE_MAX)));
-            vo.setLastErrorTime((String) map.get(DruidSQLStateConstants.LAST_ERROR_TIME));
+            vo.setLastErrorTime(map.get(DruidSQLStateConstants.LAST_ERROR_TIME));
             vo.setReaderOpenCount(default0((Long) map.get(DruidSQLStateConstants.READER_OPEN_COUNT)));
             vo.setEffectedRowCountMax(default0((Long) map.get(DruidSQLStateConstants.EFFECTED_ROW_COUNT_MAX)));
             vo.setLastErrorClass((String) map.get(DruidSQLStateConstants.LAST_ERROR_CLASS));
