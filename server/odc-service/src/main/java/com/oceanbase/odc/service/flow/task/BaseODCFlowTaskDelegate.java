@@ -80,7 +80,7 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
     @Getter
     private volatile Long taskId;
     @Getter
-    private volatile long timeOutMilliSeconds;
+    private volatile long timeoutMillis;
     @Getter
     private volatile long startTimeMilliSeconds;
     private ScheduledExecutorService scheduleExecutor;
@@ -93,7 +93,7 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
 
     private void init(DelegateExecution execution) {
         this.taskId = FlowTaskUtil.getTaskId(execution);
-        this.timeOutMilliSeconds = FlowTaskUtil.getExecutionExpirationIntervalMillis(execution);
+        this.timeoutMillis = FlowTaskUtil.getExecutionExpirationIntervalMillis(execution);
         this.taskService.updateExecutorInfo(taskId, new ExecutorInfo(hostProperties));
         SecurityContextUtils.setCurrentUser(FlowTaskUtil.getTaskCreator(execution));
     }
@@ -158,7 +158,7 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
             throw new ServiceTaskError(e);
         }
         try {
-            taskLatch.await(timeOutMilliSeconds, TimeUnit.MILLISECONDS);
+            taskLatch.await(timeoutMillis, TimeUnit.MILLISECONDS);
             if (isCancelled()) {
                 throw new ServiceTaskCancelledException();
             }
@@ -194,7 +194,7 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
             }
         } catch (InterruptedException e) {
             log.warn("The task times out, an error will be thrown, taskId={}, startTime={}, timeoutMillis={}",
-                    taskId, new Date(this.startTimeMilliSeconds), timeOutMilliSeconds, e);
+                    taskId, new Date(this.startTimeMilliSeconds), timeoutMillis, e);
             try {
                 cancel(true);
             } catch (Exception e1) {
@@ -229,7 +229,7 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
      * Mark whether the task execution timed out
      */
     protected boolean isTimeout() {
-        return System.currentTimeMillis() - startTimeMilliSeconds > timeOutMilliSeconds;
+        return System.currentTimeMillis() - startTimeMilliSeconds > timeoutMillis;
     }
 
     /**

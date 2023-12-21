@@ -42,7 +42,7 @@ import com.oceanbase.odc.service.connection.model.OceanBaseAccessMode;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.MockProperties;
-import com.oceanbase.odc.service.flow.task.model.MockTaskConfig;
+import com.oceanbase.odc.service.flow.task.model.OdcMockTaskConfig;
 import com.oceanbase.odc.service.flow.task.model.RuntimeTaskConstants;
 import com.oceanbase.odc.service.flow.task.model.ShadowTableSyncTaskParameter;
 import com.oceanbase.odc.service.flow.task.util.MockDataTypeUtil;
@@ -51,15 +51,16 @@ import com.oceanbase.odc.service.integration.model.TemplateVariables;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanTaskParameters;
 import com.oceanbase.odc.service.permissionapply.project.ApplyProjectParameter;
+import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevelDescriber;
 import com.oceanbase.odc.service.resultset.ResultSetExportTaskParameter;
 import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleParameters;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
-import com.oceanbase.tools.datamocker.model.config.impl.DefaultColumnConfig;
-import com.oceanbase.tools.datamocker.model.config.impl.DefaultTableConfig;
-import com.oceanbase.tools.datamocker.model.config.impl.DefaultTaskConfig;
-import com.oceanbase.tools.datamocker.model.config.model.DataBaseConfig;
+import com.oceanbase.tools.datamocker.model.config.DataBaseConfig;
+import com.oceanbase.tools.datamocker.model.config.MockColumnConfig;
+import com.oceanbase.tools.datamocker.model.config.MockTableConfig;
+import com.oceanbase.tools.datamocker.model.config.MockTaskConfig;
 import com.oceanbase.tools.datamocker.model.enums.ObModeType;
 import com.oceanbase.tools.dbbrowser.model.DBTable.DBTableOptions;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
@@ -93,8 +94,8 @@ public class FlowTaskUtil {
                 () -> new VerifyException("DataTransferConfig is absent"));
     }
 
-    public static MockTaskConfig getMockParameter(@NonNull DelegateExecution execution) {
-        return internalGetParameter(execution, MockTaskConfig.class).orElseThrow(
+    public static OdcMockTaskConfig getMockParameter(@NonNull DelegateExecution execution) {
+        return internalGetParameter(execution, OdcMockTaskConfig.class).orElseThrow(
                 () -> new VerifyException("MockTaskConfig is absent"));
     }
 
@@ -162,7 +163,6 @@ public class FlowTaskUtil {
                 .orElseThrow(() -> new VerifyException("No interceptSqlStatus found in intercept flow"));
     }
 
-
     public static void setRiskLevel(@NonNull DelegateExecution delegateExecution, int riskLevel) {
         delegateExecution.setVariable(RuntimeTaskConstants.RISKLEVEL, riskLevel);
     }
@@ -171,7 +171,6 @@ public class FlowTaskUtil {
         return internalGet(delegateExecution.getVariable(RuntimeTaskConstants.RISKLEVEL), Integer.class).orElseThrow(
                 () -> new VerifyException("RiskLevel is absent"));
     }
-
 
     public static void setExecutionExpirationInterval(@NonNull Map<String, Object> variables, long interval,
             @NonNull TimeUnit timeUnit) {
@@ -270,13 +269,18 @@ public class FlowTaskUtil {
                 () -> new VerifyException("RiskLevelDescriber is absent"));
     }
 
-
     @SuppressWarnings("all")
-    public static DefaultTaskConfig generateMockConfig(@NonNull Long taskId, @NonNull DelegateExecution execution,
-            @NonNull Long timeOutMilliSeconds, @NonNull MockTaskConfig config, @NonNull MockProperties mockProperties) {
-        ConnectionConfig connectionConfig = getConnectionConfig(execution);
-        connectionConfig.setDefaultSchema(getSchemaName(execution));
-        ConnectionSession session = new DefaultConnectSessionFactory(connectionConfig).generateSession();
+    public static MockTaskConfig generateMockConfig(@NonNull Long taskId,
+            @NonNull DelegateExecution execution,
+            @NonNull Long timeoutMillis,
+            @NonNull OdcMockTaskConfig config,
+            @NonNull MockProperties mockProperties) {
+        ConnectionConfig conn = getConnectionConfig(execution);
+        conn.setDefaultSchema(getSchemaName(execution));
+        if (conn.getDialectType().isOracle()) {
+            conn.setDefaultSchema("\"" + getSchemaName(execution) + "\"");
+        }
+        ConnectionSession session = new DefaultConnectSessionFactory(conn).generateSession();
         try {
             String taskJson = config.getTaskDetail();
             PreConditions.notBlank(taskJson, "taskDetail");
@@ -296,10 +300,10 @@ public class FlowTaskUtil {
                         length--;
                         continue;
                     }
-                    String type =
-                            MockDataTypeUtil.getType(session.getDialectType(), typeConfig.get("columnType").toString());
+                    String type = MockDataTypeUtil.getType(
+                            session.getDialectType(), typeConfig.get("columnType").toString());
                     if (type == null) {
-                        throw new UnsupportedException(String.format("target data type %s has not been supported yet",
+                        throw new UnsupportedException(String.format("Data type %s has not been supported yet",
                                 typeConfig.get("columnType").toString()));
                     }
                     typeConfig.putIfAbsent("name", type);
@@ -314,57 +318,43 @@ public class FlowTaskUtil {
                         }
                     }
                     MockDataTypeUtil.processTypeConfig(type, typeConfig);
-                    if ("BIT".equalsIgnoreCase(typeConfig.get("columnType").toString())) {
-                        // 兼容性处理，mysql模式下的bit类型位宽度使用precision字段传递，不符合mock工具的设定，改用width传递
-                        if (typeConfig.get("highValue") != null) {
-                            typeConfig.put("width", typeConfig.get("highValue"));
-                        }
-                        typeConfig.put("highValue", null);
-                        typeConfig.put("lowValue", null);
-                    }
                 }
             }
-            DefaultTaskConfig taskConfig = mapper.readValue(mapper.writeValueAsString(map), DefaultTaskConfig.class);
-            taskConfig.setTaskName(config.getTaskName());
+            MockTaskConfig taskConfig = mapper.readValue(mapper.writeValueAsString(map), MockTaskConfig.class);
+            taskConfig.setLogDir(taskId + "");
             taskConfig.setDialectType(session.getDialectType().isMysql() ? ObModeType.OB_MYSQL : ObModeType.OB_ORACLE);
-            List<DefaultTableConfig> tableConfigList = taskConfig.tasks();
+            List<MockTableConfig> tableConfigList = taskConfig.getTables();
             PreConditions.notEmpty(tableConfigList, "tasks"); // table config list can not be null or empty
 
-            for (DefaultTableConfig tableConfig : tableConfigList) {
+            for (MockTableConfig tableConfig : tableConfigList) {
                 Verify.notGreaterThan(tableConfig.getTotalCount(), mockProperties.getMaxRowCount(), "MockTotalCount");
-                tableConfig.setTimeout(timeOutMilliSeconds);
-                tableConfig.setMaxRetainedCount(1);
+                tableConfig.setTimeoutMillis(timeoutMillis);
+                tableConfig.setConcurrent(mockProperties.getConcurrent());
                 tableConfig.setSchemaName(getSchemaName(execution));
+                tableConfig.setMaxSingleFileSizeInBytes(mockProperties.getMaxSingleFileSizeInBytes());
+                tableConfig.setMaxFileOutputSizeInBytes(mockProperties.getMaxFileOutputSizeInBytes());
 
-                List<DefaultColumnConfig> columnConfigs = tableConfig.columns();
+                List<MockColumnConfig> columnConfigs = tableConfig.getColumns();
                 Verify.verify(CollectionUtils.isNotEmpty(columnConfigs), "Columns may not be empty");
 
-                String filePath = String.format("%s/%s.sql",
-                        mockProperties.getDownloadPath(config.getId()).getAbsolutePath(), tableConfig.getTableName());
-                for (DefaultColumnConfig columnConfig : columnConfigs) {
+                for (MockColumnConfig columnConfig : columnConfigs) {
                     String columnType = columnConfig.getTypeConfig().getColumnType();
                     columnConfig.getTypeConfig()
                             .setColumnType(String.format("%s_%s", taskConfig.getDialectType().name(), columnType));
                 }
-                tableConfig.setLocation(filePath);
+                tableConfig.setOutputDir(String.format("%s/%s",
+                        mockProperties.getDownloadPath(config.getId()).getAbsolutePath(), tableConfig.getTableName()));
             }
-            taskConfig.setMinConnectionSize(mockProperties.getMinConnectionPoolSize());
-            taskConfig.setMaxConnectionSize(mockProperties.getMaxConnectionPoolSize());
-            taskConfig.setConnectionIncreasementStep(mockProperties.getConnectionPoolIncreaseStep());
-            taskConfig.setDbConfig(getDbConfig(connectionConfig, execution));
-            if (taskConfig.getTaskName() == null) {
-                String taskName =
-                        System.currentTimeMillis() + "-"
-                                + ConnectionSessionUtil.getUserOrSchemaString(connectionConfig.getUsername(),
-                                        connectionConfig.getDialectType())
-                                + "-" + connectionConfig.getName() + "-mocker";
-                taskConfig.setTaskName(taskName);
-                config.setTaskName(taskName);
-            }
+            taskConfig.setMaxConnectionSize(mockProperties.getMaxPoolSize());
+            DataBaseConfig dataBaseConfig = getDbConfig(conn, execution);
+            taskConfig.setDbConfig(dataBaseConfig);
+            DialectType type = conn.getDialectType();
+            taskConfig.setDriverClassName(ConnectionPluginUtil.getConnectionExtension(type).getDriverClassName());
+            taskConfig.setProtocolName(type.isOceanbase() ? "jdbc:oceanbase" : "jdbc:mysql");
             return taskConfig;
         } catch (Exception e) {
             log.warn("Error initializing mock data task, taskId={}", taskId, e);
-            throw new RuntimeException(e);
+            throw new IllegalStateException(e);
         } finally {
             session.expire();
         }
@@ -383,24 +373,25 @@ public class FlowTaskUtil {
         dbConfig.setPassword(config.getPassword());
         dbConfig.setPort(config.getPort());
         dbConfig.setTenant(config.getTenantName());
-        if (DialectType.OB_ORACLE.equals(config.getDialectType())
-                || DialectType.ORACLE.equals(config.getDialectType())) {
-            dbConfig.setUser(
-                    "\"" + ConnectionSessionUtil.getUserOrSchemaString(config.getUsername(), config.getDialectType())
-                            + "\"");
+        Map<String, String> connectParam = new HashMap<>();
+        connectParam.put("compatibleOjdbcVersion", "8");
+        dbConfig.setConnectParam(connectParam);
+        if (DialectType.OB_ORACLE.equals(config.getDialectType())) {
+            String uname = ConnectionSessionUtil.getUserOrSchemaString(
+                    config.getUsername(), DialectType.OB_ORACLE);
+            dbConfig.setUser("\"" + uname + "\"");
             dbConfig.setDefaultSchame("\"" + getSchemaName(execution) + "\"");
         } else if (Objects.nonNull(config.getDialectType()) && config.getDialectType().isMysql()) {
             dbConfig.setUser(config.getUsername());
             dbConfig.setDefaultSchame(config.getDefaultSchema());
         }
         OBTenantEndpoint endpoint = config.getEndpoint();
-        if (Objects.nonNull(endpoint) && OceanBaseAccessMode.IC_PROXY == endpoint.getAccessMode()) {
-            if (StringUtils.isNotBlank(endpoint.getProxyHost()) && Objects.nonNull(endpoint.getProxyPort())) {
-                Map<String, String> connectParam = new HashMap<>();
-                connectParam.put("socksProxyHost", endpoint.getProxyHost());
-                connectParam.put("socksProxyPort", endpoint.getProxyPort().toString());
-                dbConfig.setConnectParam(connectParam);
-            }
+        if (endpoint == null || OceanBaseAccessMode.IC_PROXY != endpoint.getAccessMode()) {
+            return dbConfig;
+        }
+        if (StringUtils.isNotBlank(endpoint.getProxyHost()) && Objects.nonNull(endpoint.getProxyPort())) {
+            connectParam.put("socksProxyHost", endpoint.getProxyHost());
+            connectParam.put("socksProxyPort", endpoint.getProxyPort().toString());
         }
         return dbConfig;
     }

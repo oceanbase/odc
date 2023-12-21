@@ -40,7 +40,7 @@
         <oceanbase-client.version>${env.OCEANBASE_CLIENT_VERSION}</oceanbase-client.version>
         <!--suppress UnresolvedMavenProperty -->
         <ob-loader-dumper.version>${env.OB_LOADER_DUMPER_VERSION}</ob-loader-dumper.version>
-        <ob-data-mocker.version>0.1.4</ob-data-mocker.version>
+        <ob-data-mocker.version>0.2.0</ob-data-mocker.version>
 
         <!-- dependency version -->
         <springframework.version>5.3.26</springframework.version>

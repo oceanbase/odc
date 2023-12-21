@@ -33,7 +33,7 @@ import lombok.Setter;
 @Setter
 @Getter
 @EqualsAndHashCode
-public class MockTaskConfig implements Serializable, TaskParameters {
+public class OdcMockTaskConfig implements Serializable, TaskParameters {
     /**
      * task id for data mock task
      */
