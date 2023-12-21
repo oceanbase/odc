@@ -49,6 +49,12 @@ public class ObjectStorageHandler {
         this.cloudObjectStorageService = cloudObjectStorageService;
     }
 
+    public ObjectStorageHandler(CloudObjectStorageService cloudObjectStorageService, LocalFileOperator localFileOperator) {
+        this.localFileOperator = localFileOperator;
+        this.cloudObjectStorageService = cloudObjectStorageService;
+    }
+
+
     public String loadObjectContentAsString(ObjectMetadata metadata) throws IOException {
         StorageObject storageObject = loadObject(metadata);
         return IOUtils.toString(storageObject.getContent(), StandardCharsets.UTF_8);
