@@ -26,6 +26,7 @@ import com.oceanbase.odc.common.util.VersionUtils;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
 import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTree;
 import com.oceanbase.tools.sqlparser.statement.Statement;
@@ -112,8 +113,11 @@ public class SqlRewriteUtil {
         StringBuilder result = new StringBuilder("select * from (");
         result.append(sql.endsWith(";") ? sql.substring(0, sql.length() - 1) : sql).append(")");
 
+        if (session.getDialectType() == DialectType.MYSQL) {
+            result.append(" as ").append(OdcConstants.ODC_INTERNAL_RESULT_SET);
+        }
         if (session.getDialectType().isMysql()) {
-            result.append(" as ").append(OdcConstants.ODC_INTERNAL_RESULT_SET).append(" limit ").append(maxRows);
+            result.append(" limit ").append(maxRows);
         } else {
             if (VersionUtils.isGreaterThanOrEqualsTo(ConnectionSessionUtil.getVersion(session), "2.2.50")) {
                 result.append(" fetch first ").append(maxRows).append(" rows only");
