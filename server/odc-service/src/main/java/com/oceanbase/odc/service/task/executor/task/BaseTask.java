@@ -193,7 +193,8 @@ public abstract class BaseTask implements Task {
             if( finalResult.getLogMetadata() == null){
                 finalResult.setLogMetadata(new HashMap<>());
             }
-            finalResult.getLogMetadata().put(OdcTaskLogLevel.INFO.getName(),logStorageInfo);
+            finalResult.getLogMetadata().put(OdcTaskLogLevel.WARN.getName(),logStorageInfo);
+            finalResult.getLogMetadata().put(OdcTaskLogLevel.ALL.getName(),logStorageInfo);
             log.info("upload task log to OSS successfully, file name={}", fileId);
         } catch (Exception exception) {
             log.warn("upload task log to OSS failed, file name={}", fileId);
