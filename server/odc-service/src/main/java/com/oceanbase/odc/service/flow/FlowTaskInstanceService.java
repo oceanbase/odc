@@ -38,6 +38,7 @@ import javax.validation.constraints.NotNull;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -215,7 +216,7 @@ public class FlowTaskInstanceService {
                     ObjectMetadata om = JsonUtils.fromJson(jobEntity.getLogStorage(), ObjectMetadata.class);
                     ObjectStorageHandler objectStorageHandler =
                             new ObjectStorageHandler(cloudObjectStorageService, localFileOperator);
-                    return objectStorageHandler.loadObjectContentAsString(om);
+                    return objectStorageHandler.loadObjectContentGetZipContent(om);
                 }
             }
         }

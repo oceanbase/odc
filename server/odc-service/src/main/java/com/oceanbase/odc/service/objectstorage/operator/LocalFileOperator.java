@@ -46,6 +46,7 @@ import com.oceanbase.odc.service.objectstorage.BufferedIterableInputStream;
 import com.oceanbase.odc.service.objectstorage.model.ObjectMetadata;
 import com.oceanbase.odc.service.objectstorage.util.ObjectStorageUtils;
 
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -63,6 +64,7 @@ public class LocalFileOperator {
 
     private final String fileSeparator = File.separator;
 
+    @Getter
     private final String localDir;
 
     private Path fileDirPath;
