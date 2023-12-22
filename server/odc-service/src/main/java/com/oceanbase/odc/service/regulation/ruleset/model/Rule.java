@@ -23,6 +23,7 @@ import java.util.Map;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import com.oceanbase.odc.common.i18n.Internationalizable;
+import com.oceanbase.odc.common.json.NormalDialectTypeOutput;
 import com.oceanbase.odc.core.authority.model.SecurityResource;
 import com.oceanbase.odc.core.shared.OrganizationIsolated;
 import com.oceanbase.odc.core.shared.constant.DialectType;
@@ -62,6 +63,7 @@ public class Rule implements SecurityResource, OrganizationIsolated, Serializabl
      * if type = SQL_CONSOLE, then appliedDialectTypes is always null which means applied to all
      * dialectTypes<br>
      */
+    @NormalDialectTypeOutput
     private List<DialectType> appliedDialectTypes;
 
     /**
