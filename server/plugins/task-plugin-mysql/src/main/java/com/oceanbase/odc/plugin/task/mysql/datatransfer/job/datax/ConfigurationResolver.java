@@ -165,7 +165,8 @@ public class ConfigurationResolver {
             pluginParameter.setCsvWriterConfig(getDataXCsvConfig(baseConfig));
             pluginParameter.setSkipHeader(baseConfig.getCsvConfig().isSkipHeader());
             pluginParameter.setNullFormat(baseConfig.getCsvConfig().isBlankToNull() ? "null" : "");
-            if (baseConfig.getCsvConfig().isSkipHeader()) {
+            if (baseConfig.getCsvConfig().isSkipHeader()
+                    && baseConfig.getDataTransferFormat() != DataTransferFormat.SQL) {
                 pluginParameter.setHeader(null);
             }
         }
