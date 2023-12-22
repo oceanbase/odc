@@ -77,7 +77,7 @@ public class ResultSetExportPreprocessor implements Preprocessor {
         BasicResult r = factory.buildAst(sql).getParseResult();
         Verify.verify(ParserUtil.getGeneralSqlType(r) == GeneralSqlType.DQL, "Invalid sql type, query must be DQL!");
 
-        parameter.setSql(sql);
+        parameter.setSql(sqls.get(0));
     }
 
 }
