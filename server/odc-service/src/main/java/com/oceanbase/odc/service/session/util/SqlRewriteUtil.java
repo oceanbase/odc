@@ -113,7 +113,7 @@ public class SqlRewriteUtil {
         result.append(sql.endsWith(";") ? sql.substring(0, sql.length() - 1) : sql).append(")");
 
         if (session.getDialectType().isMysql()) {
-            result.append(" limit ").append(maxRows);
+            result.append(" as ").append(OdcConstants.ODC_INTERNAL_RESULT_SET).append(" limit ").append(maxRows);
         } else {
             if (VersionUtils.isGreaterThanOrEqualsTo(ConnectionSessionUtil.getVersion(session), "2.2.50")) {
                 result.append(" fetch first ").append(maxRows).append(" rows only");
