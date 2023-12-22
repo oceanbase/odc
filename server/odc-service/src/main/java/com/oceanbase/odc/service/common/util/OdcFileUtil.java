@@ -290,6 +290,7 @@ public class OdcFileUtil {
     public static void unzip(File sourceZipFile, String targetDir) throws IOException {
         unzip(sourceZipFile.getPath(), targetDir);
     }
+
     /**
      * unzip file
      *
@@ -303,7 +304,7 @@ public class OdcFileUtil {
         if (!desDir.exists()) {
             boolean mkdirSuccess = desDir.mkdir();
             if (!mkdirSuccess) {
-                throw new IOException("Target directory " + sourceZipFile +  " is not exits, mkdir failed.");
+                throw new IOException("Target directory " + sourceZipFile + " is not exits, mkdir failed.");
             }
         }
         // read stream
@@ -321,7 +322,7 @@ public class OdcFileUtil {
                 mkdir(file.getParentFile());
                 // write to output stream
                 BufferedOutputStream bufferedOutputStream =
-                    new BufferedOutputStream(Files.newOutputStream(Paths.get(unzipFilePath)));
+                        new BufferedOutputStream(Files.newOutputStream(Paths.get(unzipFilePath)));
                 byte[] bytes = new byte[1024];
                 int readLen;
                 while ((readLen = zipInputStream.read(bytes)) != -1) {
