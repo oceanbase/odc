@@ -34,15 +34,19 @@ import org.springframework.session.web.http.CookieSerializer;
 import org.springframework.session.web.http.DefaultCookieSerializer;
 
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.BeanProperty;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.databind.ser.ContextualSerializer;
 import com.oceanbase.odc.common.i18n.I18nOutputSerializer;
 import com.oceanbase.odc.common.i18n.Internationalizable;
 import com.oceanbase.odc.common.json.JacksonFactory;
 import com.oceanbase.odc.common.json.JacksonModules;
 import com.oceanbase.odc.common.json.JacksonModules.CustomOutputSerializer;
+import com.oceanbase.odc.common.json.NormalDialectTypeOutput;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.service.connection.CloudMetadataClient;
@@ -187,7 +191,8 @@ public class BeanConfiguration {
      * in the future
      */
     @Deprecated
-    private static class DialectTypeOutputSerializer extends JsonSerializer<DialectType> {
+    private static class DialectTypeOutputSerializer extends JsonSerializer<DialectType> implements
+            ContextualSerializer {
 
         @Override
         public void serialize(DialectType dialectType, JsonGenerator jsonGenerator,
@@ -200,6 +205,32 @@ public class BeanConfiguration {
                 }
             } else {
                 jsonGenerator.writeNull();
+            }
+        }
+
+        @Override
+        public JsonSerializer<?> createContextual(SerializerProvider serializerProvider,
+                BeanProperty beanProperty)
+                throws JsonMappingException {
+            if (Objects.isNull(beanProperty)) {
+                return new JsonValueSerializer();
+            }
+            NormalDialectTypeOutput normalOutput = beanProperty.getAnnotation(NormalDialectTypeOutput.class);
+            if (Objects.isNull(normalOutput)) {
+                normalOutput = beanProperty.getContextAnnotation(NormalDialectTypeOutput.class);
+            }
+            return Objects.isNull(normalOutput) ? this : new JsonValueSerializer();
+        }
+
+        private static class JsonValueSerializer extends JsonSerializer<DialectType> {
+            @Override
+            public void serialize(DialectType dialectType, JsonGenerator jsonGenerator,
+                    SerializerProvider serializerProvider) throws IOException {
+                if (Objects.nonNull(dialectType)) {
+                    jsonGenerator.writeString(dialectType.name());
+                } else {
+                    jsonGenerator.writeNull();
+                }
             }
         }
     }

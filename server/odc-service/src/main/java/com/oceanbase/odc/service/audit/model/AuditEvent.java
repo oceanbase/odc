@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.audit.model;
 
 import java.util.Date;
 
+import com.oceanbase.odc.common.json.NormalDialectTypeOutput;
 import com.oceanbase.odc.core.shared.constant.AuditEventAction;
 import com.oceanbase.odc.core.shared.constant.AuditEventResult;
 import com.oceanbase.odc.core.shared.constant.AuditEventType;
@@ -106,6 +107,7 @@ public class AuditEvent {
     /**
      * Connection dialect type for this event; Null if not in connection
      */
+    @NormalDialectTypeOutput
     private DialectType connectionDialectType;
 
     /**

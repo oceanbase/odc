@@ -19,6 +19,7 @@ import java.util.List;
 
 import org.apache.commons.collections4.CollectionUtils;
 
+import com.oceanbase.odc.common.json.NormalDialectTypeOutput;
 import com.oceanbase.odc.core.flow.model.FlowTaskResult;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
@@ -51,6 +52,7 @@ public class MockDataTaskResult implements FlowTaskResult {
     private Long currentRecord;
     private Long totalGen;
     private String sessionName;
+    @NormalDialectTypeOutput
     private DialectType dbMode;
     @Deprecated
     private String internalTaskId;
