@@ -53,15 +53,15 @@ public class ResultSetExportPreprocessor implements Preprocessor {
         ConnectionConfig connectionConfig =
                 connectionService.getForConnectionSkipPermissionCheck(req.getConnectionId());
 
-        String sql = parameter.getSql();
-        preCheckSql(sql, connectionConfig.getDialectType());
+        preCheckSql(parameter, connectionConfig.getDialectType());
 
         PreConditions.validArgumentState(FILE_NAME_PATTERN.matcher(parameter.getFileName()).matches(),
                 ErrorCodes.BadArgument, null,
                 "File name must contain only letters, numbers, Chinese characters and \"._-\" ");
     }
 
-    private void preCheckSql(String sql, DialectType dialectType) {
+    private void preCheckSql(ResultSetExportTaskParameter parameter, DialectType dialectType) {
+        String sql = parameter.getSql();
         /*
          * verify single query
          */
@@ -76,6 +76,8 @@ public class ResultSetExportPreprocessor implements Preprocessor {
         }
         BasicResult r = factory.buildAst(sql).getParseResult();
         Verify.verify(ParserUtil.getGeneralSqlType(r) == GeneralSqlType.DQL, "Invalid sql type, query must be DQL!");
+
+        parameter.setSql(sqls.get(0));
     }
 
 }
