@@ -16,6 +16,8 @@
 
 package com.oceanbase.odc.service.task.executor.task;
 
+import java.util.Map;
+
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.service.objectstorage.model.ObjectMetadata;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
@@ -40,5 +42,5 @@ public interface TaskResult {
 
     boolean isFinished();
 
-    ObjectMetadata getLogMetadata();
+    Map<String, ObjectMetadata> getLogMetadata();
 }

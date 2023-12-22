@@ -19,6 +19,7 @@ package com.oceanbase.odc.service.task.executor.task;
 import java.io.File;
 import java.math.BigDecimal;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.Executors;
@@ -31,7 +32,6 @@ import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.core.task.TaskThreadFactory;
-import com.oceanbase.odc.service.common.util.OdcFileUtil;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
 import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfiguration;
 import com.oceanbase.odc.service.objectstorage.model.ObjectMetadata;
@@ -39,6 +39,7 @@ import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.constants.JobDataMapConstants;
 import com.oceanbase.odc.service.task.executor.logger.LogUtils;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
+import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
 import com.oceanbase.odc.service.task.util.JobUtils;
 
 import lombok.extern.slf4j.Slf4j;
@@ -177,23 +178,27 @@ public abstract class BaseTask implements Task {
         if (Objects.isNull(getCloudObjectStorageService()) || !getCloudObjectStorageService().supported()) {
             return;
         }
-        log.info("Task id: {}, try to upload log", getJobId());
-        String jobLogPath = LogUtils.getJobLogPath(getJobId());
+        log.info("Task id: {}, upload log", getJobId());
+        String jobLog = LogUtils.getJobLogFileWithPath(getJobId(), OdcTaskLogLevel.ALL);
         String fileId = StringUtils.uuid();
-        File tempZipFile = new File(String.format("%s/%s.zip", jobLogPath, fileId));
+        File jobLogFile = new File(jobLog);
+        if (!jobLogFile.exists()) {
+            return;
+        }
         try {
-            OdcFileUtil.zip(jobLogPath, String.format("%s/%s.zip", jobLogPath, fileId));
-            String objectName = getCloudObjectStorageService().uploadTemp(fileId + ".zip", tempZipFile);
+            String objectName = getCloudObjectStorageService().uploadTemp(fileId, jobLogFile);
             ObjectMetadata logStorageInfo = new ObjectMetadata();
             logStorageInfo.setBucketName(getCloudObjectStorageService().getBucketName());
             logStorageInfo.setObjectId(objectName);
-            finalResult.setLogMetadata(logStorageInfo);
-            log.info("upload task log set zip file to OSS successfully, file name={}", fileId);
+            if( finalResult.getLogMetadata() == null){
+                finalResult.setLogMetadata(new HashMap<>());
+            }
+            finalResult.getLogMetadata().put(OdcTaskLogLevel.INFO.getName(),logStorageInfo);
+            log.info("upload task log to OSS successfully, file name={}", fileId);
         } catch (Exception exception) {
-            log.warn("upload task log set zip file to OSS failed, file name={}", fileId);
-        } finally {
-            OdcFileUtil.deleteFiles(tempZipFile);
+            log.warn("upload task log to OSS failed, file name={}", fileId);
         }
+
     }
 
     private void initCloudObjectStorageService() {

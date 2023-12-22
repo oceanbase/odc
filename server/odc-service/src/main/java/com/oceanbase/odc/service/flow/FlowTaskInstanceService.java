@@ -25,6 +25,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -212,10 +213,13 @@ public class FlowTaskInstanceService {
                     return forwardRemote(executorInfo);
                 } else if (cloudObjectStorageService.supported() && jobEntity.getLogStorage() != null) {
                     log.info("job: {} is finished, try to get log from local or oss.", jobEntity.getId());
-                    ObjectMetadata om = JsonUtils.fromJson(jobEntity.getLogStorage(), ObjectMetadata.class);
+                    Map<String, ObjectMetadata> om = JsonUtils.fromJson(jobEntity.getLogStorage(),
+                        new TypeReference<Map<String, ObjectMetadata>>() {});
                     ObjectStorageHandler objectStorageHandler =
                             new ObjectStorageHandler(cloudObjectStorageService, localFileOperator);
-                    return objectStorageHandler.loadObjectContentGetZipContent(om);
+                        return om != null && om.containsKey(level.getName()) ?
+                            objectStorageHandler.loadObjectContentAsString(om.get(level.getName()))
+                            : "No log message";
                 }
             }
         }

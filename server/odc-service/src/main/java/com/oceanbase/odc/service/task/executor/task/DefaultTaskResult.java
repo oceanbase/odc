@@ -17,6 +17,7 @@
 package com.oceanbase.odc.service.task.executor.task;
 
 import java.io.Serializable;
+import java.util.Map;
 
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.service.objectstorage.model.ObjectMetadata;
@@ -45,6 +46,6 @@ public class DefaultTaskResult implements TaskResult, Serializable {
 
     private boolean finished;
 
-    private ObjectMetadata logMetadata;
+    private Map<String, ObjectMetadata> logMetadata;
 
 }
