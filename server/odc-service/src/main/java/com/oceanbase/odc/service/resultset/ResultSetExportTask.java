@@ -270,12 +270,12 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
         Verify.verify(result.getDataObjectsInfo().get(0).getStatus() == Status.SUCCESS, "Result export task failed!");
     }
 
-    private String getDumpFilePath(DataTransferTaskResult result, String extension) throws IOException {
+    private String getDumpFilePath(DataTransferTaskResult result, String extension) throws Exception {
         List<URL> exportPaths = result.getDataObjectsInfo().get(0).getExportPaths();
         if (CollectionUtils.isEmpty(exportPaths)) {
             return Paths.get(getDumpFileDirectory(), getFileName(extension)).toString();
         }
-        return exportPaths.get(0).getFile();
+        return exportPaths.get(0).toURI().getPath();
     }
 
     private String getFileName(String extension) {
