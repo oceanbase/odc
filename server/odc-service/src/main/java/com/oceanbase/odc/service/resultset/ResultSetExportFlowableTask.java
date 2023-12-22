@@ -97,7 +97,7 @@ public class ResultSetExportFlowableTask extends BaseODCFlowTaskDelegate<ResultS
     @Override
     protected void onTimeout(Long taskId, TaskService taskService) {
         log.warn("Result set export task timeout, taskId={}", taskId);
-        taskService.fail(taskId, context.progress(), "");
+        taskService.fail(taskId, context == null ? 0.0 : context.progress(), "");
     }
 
     @Override
@@ -118,12 +118,17 @@ public class ResultSetExportFlowableTask extends BaseODCFlowTaskDelegate<ResultS
 
     @Override
     protected boolean cancel(boolean mayInterruptIfRunning, Long taskId, TaskService taskService) {
-        context.cancel(mayInterruptIfRunning);
+        if (context != null) {
+            return context.cancel(mayInterruptIfRunning);
+        }
         return true;
     }
 
     @Override
     public boolean isCancelled() {
+        if (context == null) {
+            return false;
+        }
         return context.isCanceled();
     }
 
