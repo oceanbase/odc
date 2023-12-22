@@ -17,6 +17,7 @@
 package com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax;
 
 import java.io.File;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -49,7 +50,7 @@ import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.JobConte
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.parameter.GroovyTransformerParameter;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.parameter.MySQLReaderPluginParameter;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.parameter.MySQLWriterPluginParameter;
-import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.parameter.MySQLWriterPluginParameter.Connection;
+import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.parameter.MySQLWriterPluginParameter.DataXConnection;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.parameter.TxtPluginParameter.DataXCsvConfig;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.parameter.TxtReaderPluginParameter;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.parameter.TxtReaderPluginParameter.Column;
@@ -73,7 +74,7 @@ public class ConfigurationResolver {
      * </pre>
      */
     public static JobConfiguration buildJobConfigurationForImport(DataTransferConfig baseConfig, String jdbcUrl,
-            ObjectResult object, URL resource, List<DBTableColumn> columns) {
+            ObjectResult object, URL resource, List<DBTableColumn> columns) throws URISyntaxException {
         if (baseConfig.getDataTransferFormat() == DataTransferFormat.SQL) {
             throw new UnsupportedException("SQL files should not be imported by DataX!");
         }
@@ -92,7 +93,7 @@ public class ConfigurationResolver {
     }
 
     public static JobConfiguration buildJobConfigurationForExport(File workingDir, DataTransferConfig baseConfig,
-            String jdbcUrl, String table, List<String> columns) {
+            String jdbcUrl, String table, List<DBTableColumn> columns) {
         JobConfiguration jobConfig = new JobConfiguration();
         JobContent jobContent = new JobContent();
 
@@ -100,19 +101,18 @@ public class ConfigurationResolver {
         jobConfig.getSetting().getErrorLimit().setRecord(errorRecordLimit);
 
         jobContent.setReader(createMySQLReaderParameter(baseConfig, jdbcUrl, table));
-        jobContent.setWriter(createTxtWriterParameter(workingDir, baseConfig, table, columns));
+        jobContent.setWriter(createTxtWriterParameter(workingDir, baseConfig, table,
+                columns.stream().map(DBTableColumn::getName).collect(Collectors.toList())));
         Map<TableIdentity, Map<String, AbstractDataMasker>> maskConfigs = baseConfig.getMaskConfig();
         if (MapUtils.isNotEmpty(maskConfigs)) {
-            jobContent.setTransformer(
-                    createTransformerParameters(
-                            maskConfigs.get(TableIdentity.of(baseConfig.getSchemaName(), table)), columns));
+            jobContent.setTransformer(createTransformerParameters(maskConfigs, columns));
         }
         jobConfig.setContent(new JobContent[] {jobContent});
         return jobConfig;
     }
 
     private static Parameter createTxtReaderParameter(DataTransferConfig baseConfig, URL input,
-            List<CsvColumnMapping> columnMappings) {
+            List<CsvColumnMapping> columnMappings) throws URISyntaxException {
 
         Parameter reader = new Parameter();
         TxtReaderPluginParameter pluginParameter = new TxtReaderPluginParameter();
@@ -123,7 +123,7 @@ public class ConfigurationResolver {
         pluginParameter.setEncoding(baseConfig.getEncoding().getAlias());
         pluginParameter.setFileFormat("csv");
         // path
-        pluginParameter.setPath(Collections.singletonList(input.getPath()));
+        pluginParameter.setPath(Collections.singletonList(input.toURI().getPath()));
         // column
         pluginParameter.setColumn(columnMappings.stream()
                 .map(mapping -> new Column(mapping.getSrcColumnPosition(), "string"))
@@ -179,13 +179,15 @@ public class ConfigurationResolver {
         // connection
         pluginParameter.setUsername(baseConfig.getConnectionInfo().getUserNameForConnect());
         pluginParameter.setPassword(baseConfig.getConnectionInfo().getPassword());
-        MySQLReaderPluginParameter.Connection connection = new MySQLReaderPluginParameter.Connection(
-                new String[] {url}, new String[] {table});
-        pluginParameter.setConnection(Collections.singletonList(connection));
+        MySQLReaderPluginParameter.DataXConnection connection = new MySQLReaderPluginParameter.DataXConnection(
+                new String[] {url});
         // querySql
         if (Objects.nonNull(baseConfig.getQuerySql())) {
-            pluginParameter.setQuerySql(Collections.singletonList(baseConfig.getQuerySql()));
+            connection.setQuerySql(new String[] {baseConfig.getQuerySql()});
+        } else {
+            connection.setTable(new String[] {table});
         }
+        pluginParameter.setConnection(Collections.singletonList(connection));
 
         return reader;
     }
@@ -201,7 +203,7 @@ public class ConfigurationResolver {
         // connection
         pluginParameter.setUsername(baseConfig.getConnectionInfo().getUserNameForConnect());
         pluginParameter.setPassword(baseConfig.getConnectionInfo().getPassword());
-        Connection connection = new Connection(url, new String[] {table});
+        DataXConnection connection = new DataXConnection(url, new String[] {table});
         pluginParameter.setConnection(Collections.singletonList(connection));
         // preSql
         List<String> preSql = Lists.newArrayList(Constants.DISABLE_FK);
@@ -219,17 +221,14 @@ public class ConfigurationResolver {
         return writer;
     }
 
-    private static List<Parameter> createTransformerParameters(Map<String, AbstractDataMasker> field2Masker,
-            List<String> columns) {
-        if (MapUtils.isEmpty(field2Masker)) {
-            return null;
-        }
+    private static List<Parameter> createTransformerParameters(
+            Map<TableIdentity, Map<String, AbstractDataMasker>> maskConfigs, List<DBTableColumn> columns) {
         Parameter transformer = new Parameter();
         GroovyTransformerParameter pluginParameter = new GroovyTransformerParameter();
         transformer.setName(Constants.GROOVY_TRANSFORMER);
         transformer.setParameter(pluginParameter);
 
-        pluginParameter.setCode(GroovyMaskRuleGenerator.generate(field2Masker, columns));
+        pluginParameter.setCode(GroovyMaskRuleGenerator.generate(maskConfigs, columns));
 
         return Collections.singletonList(transformer);
     }

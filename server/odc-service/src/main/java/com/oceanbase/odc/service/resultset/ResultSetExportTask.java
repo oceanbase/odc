@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.resultset;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Paths;
 import java.sql.ResultSet;
@@ -50,6 +51,7 @@ import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.core.shared.model.TableIdentity;
 import com.oceanbase.odc.core.sql.execute.SyncJdbcExecutor;
 import com.oceanbase.odc.plugin.task.api.datatransfer.DataTransferJob;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.ConnectionInfo;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.CsvConfig;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConstants;
@@ -67,6 +69,7 @@ import com.oceanbase.odc.service.flow.task.OssTaskReferManager;
 import com.oceanbase.odc.service.flow.task.model.ResultSetExportResult;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
 import com.oceanbase.odc.service.plugin.TaskPluginUtil;
+import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
 import com.oceanbase.tools.loaddump.common.model.ObjectStatus.Status;
 
@@ -190,30 +193,33 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
         }
         config.setCsvConfig(csvConfig);
 
-        config.setConnectionInfo(
-                ((ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(session)).toConnectionInfo());
+        ConnectionInfo connectionInfo =
+                ((ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(session)).toConnectionInfo();
+        connectionInfo.setSchema(parameter.getDatabase());
+        config.setConnectionInfo(connectionInfo);
+
 
         config.setQuerySql(parameter.getSql());
         config.setFileType(parameter.getFileFormat().name());
-        config.setMaskConfig(getMaskConfig(parameter));
+        setColumnConfig(config, parameter);
         config.setCursorFetchSize(dataTransferProperties.getCursorFetchSize());
         config.setUsePrepStmts(dataTransferProperties.isUseServerPrepStmts());
         return config;
     }
 
-    private Map<TableIdentity, Map<String, AbstractDataMasker>> getMaskConfig(ResultSetExportTaskParameter parameter) {
+    private void setColumnConfig(DataTransferConfig config, ResultSetExportTaskParameter parameter) {
+        List<DBTableColumn> tableColumns = new ArrayList<>();
+        config.setColumns(tableColumns);
         HashMap<TableIdentity, Map<String, AbstractDataMasker>> maskConfigMap = new HashMap<>();
+        config.setMaskConfig(maskConfigMap);
         List<MaskingAlgorithm> algorithms = parameter.getRowDataMaskingAlgorithms();
-        if (!needDataMasking(algorithms)) {
-            return maskConfigMap;
-        }
         Map<String, Map<String, List<OrdinalColumn>>> catalog2TableColumns = new HashMap<>();
         try {
             SyncJdbcExecutor syncJdbcExecutor = session.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY);
             ResultSetMetaData rsMetaData =
                     syncJdbcExecutor.query(parameter.getSql(), pss -> pss.setMaxRows(10), ResultSet::getMetaData);
             if (rsMetaData == null) {
-                return maskConfigMap;
+                throw new UnexpectedException("Query rs metadata failed.");
             }
             int columnCount = rsMetaData.getColumnCount();
             for (int index = 1; index <= columnCount; index++) {
@@ -224,12 +230,19 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
                         catalog2TableColumns.computeIfAbsent(catalogName, k -> new HashMap<>());
                 List<OrdinalColumn> columns = table2Columns.computeIfAbsent(tableName, k -> new ArrayList<>());
                 columns.add(new OrdinalColumn(index - 1, columnName));
+                DBTableColumn column = new DBTableColumn();
+                column.setSchemaName(catalogName);
+                column.setTableName(tableName);
+                column.setName(columnName);
+                tableColumns.add(column);
             }
         } catch (Exception e) {
             throw OBException.executeFailed(
                     "Query result metadata failed, please try again, message=" + ExceptionUtils.getRootCauseMessage(e));
         }
-
+        if (!needDataMasking(algorithms)) {
+            return;
+        }
         DataMaskerFactory maskerFactory = new DataMaskerFactory();
         for (String catalogName : catalog2TableColumns.keySet()) {
             Map<String, List<OrdinalColumn>> tableName2Columns = catalog2TableColumns.get(catalogName);
@@ -249,7 +262,6 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
                 maskConfigMap.put(TableIdentity.of(catalogName, tableName), column2Masker);
             }
         }
-        return maskConfigMap;
     }
 
     private void validateSuccessful(DataTransferTaskResult result) {
@@ -258,10 +270,10 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
         Verify.verify(result.getDataObjectsInfo().get(0).getStatus() == Status.SUCCESS, "Result export task failed!");
     }
 
-    private String getDumpFilePath(DataTransferTaskResult result, String extension) {
+    private String getDumpFilePath(DataTransferTaskResult result, String extension) throws IOException {
         List<URL> exportPaths = result.getDataObjectsInfo().get(0).getExportPaths();
         if (CollectionUtils.isEmpty(exportPaths)) {
-            return getDumpFileDirectory() + getFileName(extension);
+            return Paths.get(getDumpFileDirectory(), getFileName(extension)).toString();
         }
         return exportPaths.get(0).getFile();
     }
@@ -270,8 +282,12 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
         return parameter.getTableName() + ".0.0" + extension;
     }
 
-    private String getDumpFileDirectory() {
-        return workingDir.getPath() + "/data/" + parameter.getDatabase() + "/TABLE/";
+    private String getDumpFileDirectory() throws IOException {
+        File dir = Paths.get(workingDir.getPath(), "data", parameter.getDatabase(), "TABLE").toFile();
+        if (!dir.exists()) {
+            FileUtils.forceMkdir(dir);
+        }
+        return dir.getPath();
     }
 
     private boolean needDataMasking(List<MaskingAlgorithm> algorithms) {

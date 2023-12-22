@@ -22,15 +22,17 @@ import java.net.URL;
 import java.text.MessageFormat;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
+
+import org.apache.commons.collections4.MapUtils;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.datamasking.masker.AbstractDataMasker;
+import com.oceanbase.odc.core.shared.model.TableIdentity;
+import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -46,15 +48,17 @@ public class GroovyMaskRuleGenerator {
      * 
      * TODO: get template and generate rule by algorithm
      */
-    public static String generate(Map<String, AbstractDataMasker> field2Masker, List<String> columns) {
+    public static String generate(Map<TableIdentity, Map<String, AbstractDataMasker>> maskConfigs,
+            List<DBTableColumn> columns) {
         StringBuilder ruleBuilder = new StringBuilder();
-
-        for (Entry<String, AbstractDataMasker> entry : field2Masker.entrySet()) {
-            String maskTemplate = MASKER_2_TEMPLATE_MAPPERS.getRule("mask");
-            int index = columns.indexOf(entry.getKey());
-            if (index == -1 || StringUtils.isEmpty(maskTemplate)) {
+        for (int index = 0; index < columns.size(); index++) {
+            DBTableColumn column = columns.get(index);
+            Map<String, AbstractDataMasker> field2Masker = maskConfigs.get(
+                    TableIdentity.of(column.getSchemaName(), column.getTableName()));
+            if (MapUtils.isEmpty(field2Masker) || !field2Masker.containsKey(column.name())) {
                 continue;
             }
+            String maskTemplate = MASKER_2_TEMPLATE_MAPPERS.getRule("mask");
             ruleBuilder.append(MessageFormat.format(maskTemplate, index, DEFAULT_FIVE_STARS)).append(LINE_BREAKER);
         }
 

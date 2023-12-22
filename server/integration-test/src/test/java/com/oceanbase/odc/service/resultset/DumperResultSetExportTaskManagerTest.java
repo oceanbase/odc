@@ -128,9 +128,9 @@ public class DumperResultSetExportTaskManagerTest extends ServiceTestEnv {
         CSVFormat csvFormat = new CSVFormat();
         csvFormat.setColumnDelimiter('"');
         req.setCsvFormat(csvFormat);
-        ResultSetExportTaskContext context = manager.start(mysqlConnecitonConfig, req, taskId);
-        await().atMost(30, SECONDS).until(context::isDone);
         try {
+            ResultSetExportTaskContext context = manager.start(mysqlConnecitonConfig, req, taskId);
+            await().atMost(30, SECONDS).until(context::isDone);
             context.get();
         } catch (Exception e) {
             Assert.assertTrue(e.getMessage().contains("doesn't exist"));

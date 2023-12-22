@@ -106,6 +106,7 @@ public class DumperResultSetExportTaskManager implements ResultSetExportTaskMana
             if (!workingDir.exists()) {
                 workingDir.mkdir();
             }
+            LOGGER.info("Result set export task starts, working directory:{}", workingDir);
             if (parameter.getFileFormat() != DataTransferFormat.SQL || parameter.getTableName() == null) {
                 parameter.setTableName(DEFAULT_FILE_PREFIX);
             }
