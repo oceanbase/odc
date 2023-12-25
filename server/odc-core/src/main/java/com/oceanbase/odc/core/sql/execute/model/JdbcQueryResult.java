@@ -50,7 +50,7 @@ public class JdbcQueryResult {
     public long addLine(@NonNull ResultSet resultSet) throws SQLException, IOException {
         List<Object> objects = mapper.mapRow(resultSet);
         rows.add(objects);
-        return objects.stream().mapToLong(o -> o.toString().getBytes().length).sum();
+        return objects.stream().mapToLong(o -> o == null ? 0 : o.toString().getBytes().length).sum();
     }
 
     public Object get(int rowIndex, int colIndex) {
