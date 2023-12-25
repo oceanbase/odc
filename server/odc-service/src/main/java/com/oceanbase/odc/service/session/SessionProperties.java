@@ -39,6 +39,12 @@ public class SessionProperties {
     private long resultSetMaxCachedSize = 1024 * 1024 * 1024L;
 
     /**
+     * The maximum size limit of the result set, with a default of -1, indicating no restriction
+     */
+    @Value(("${odc.session.sql-execute.result-set.max-query-size:-1}"))
+    private long resultSetMaxQuerySize = -1;
+
+    /**
      * 查询结果集最大行数，默认 100000
      */
     @Value("${odc.session.sql-execute.max-result-set-rows:100000}")

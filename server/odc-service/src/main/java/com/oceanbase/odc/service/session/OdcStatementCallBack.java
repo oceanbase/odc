@@ -128,6 +128,7 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
     private Integer dbmsoutputMaxRows = null;
     @Setter
     private Locale locale;
+    private Long maxQuerySize;
 
     public OdcStatementCallBack(@NonNull List<SqlTuple> sqls, @NonNull ConnectionSession connectionSession) {
         this(sqls, connectionSession, null, null);
@@ -223,6 +224,11 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
         return returnVal;
     }
 
+    public void setMaxQuerySize(@NonNull Long maxQuerySize) {
+        Verify.verify(maxQuerySize > 0, "The limit of query size must be a positive number.");
+        this.maxQuerySize = maxQuerySize;
+    }
+
     private void applyConnectionSettings(Statement statement) throws SQLException {
         if (statement.getConnection() instanceof OceanBaseConnection) {
             // init jdbc statistic collect
@@ -256,6 +262,7 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
         TraceWatch traceWatch = sqlTuple.getSqlWatch();
         if (isResultSet) {
             StopWatch stopWatch = StopWatch.createStarted();
+            long resultSetSize = 0;
             do {
                 try (ResultSet resultSet = statement.getResultSet()) {
                     JdbcQueryResult jdbcQueryResult = new JdbcQueryResult(resultSet.getMetaData(), rowDataMapper);
@@ -267,9 +274,14 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
                             maxCachedLines, maxCachedSize, cachePredicate);
                     long line = 0;
                     while (resultSet.next()) {
-                        jdbcQueryResult.addLine(resultSet);
+                        resultSetSize += jdbcQueryResult.addLine(resultSet);
                         virtualTable.addLine((line++), resultSet,
                                 new ResultSetCachedElementFactory(resultSet, binaryDataManager));
+                        if (maxQuerySize != null && resultSetSize > maxQuerySize) {
+                            log.info("The size of result set exceeds limit: {} bytes, it will be truncated.",
+                                    maxQuerySize);
+                            break;
+                        }
                     }
                     if (virtualTable.count() != 0) {
                         ConnectionSessionUtil.setQueryCache(connectionSession, virtualTable);

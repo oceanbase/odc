@@ -255,6 +255,9 @@ public class ConnectConsoleService {
         statementCallBack.setMaxCachedSize(sessionProperties.getResultSetMaxCachedSize());
         statementCallBack.setMaxCachedLines(sessionProperties.getResultSetMaxCachedLines());
         statementCallBack.setLocale(LocaleContextHolder.getLocale());
+        if (sessionProperties.getResultSetMaxQuerySize() > 0) {
+            statementCallBack.setMaxQuerySize(sessionProperties.getResultSetMaxQuerySize());
+        }
 
         Future<List<JdbcGeneralResult>> futureResult = connectionSession.getAsyncJdbcExecutor(
                 ConnectionSessionConstants.CONSOLE_DS_KEY).execute(statementCallBack);

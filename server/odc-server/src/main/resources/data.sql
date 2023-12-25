@@ -489,6 +489,9 @@ INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('o
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.session.sql-execute.result-set.max-cached-size',
  '1073741824', 'SQL 执行结果集缓存最大字节数，该配置主要影响大字段查看功能，若结果集规模太大可能超过此配置造成无法查看相关二进制数据') ON DUPLICATE KEY UPDATE `id`=`id`;
 
+INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.session.sql-execute.result-set.max-query-size',
+ '-1', 'SQL 执行结果集最大字节数，默认为 -1，表示不限制') ON DUPLICATE KEY UPDATE `id`=`id`;
+
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.session.sql-execute.max-result-set-rows',
    '-1', '结果集查询条数限制，默认为 -1，表示不限制') ON DUPLICATE KEY UPDATE `id`=`id`;
 
