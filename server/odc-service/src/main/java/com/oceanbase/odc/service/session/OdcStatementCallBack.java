@@ -59,8 +59,10 @@ import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
+import com.oceanbase.odc.core.shared.constant.LimitMetric;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.shared.exception.NotImplementedException;
+import com.oceanbase.odc.core.shared.exception.OverLimitException;
 import com.oceanbase.odc.core.shared.model.TraceSpan;
 import com.oceanbase.odc.core.sql.execute.SqlExecuteStages;
 import com.oceanbase.odc.core.sql.execute.cache.BinaryDataManager;
@@ -129,6 +131,7 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
     @Setter
     private Locale locale;
     private Long maxQuerySize;
+    private long resultSetSize = 0;
 
     public OdcStatementCallBack(@NonNull List<SqlTuple> sqls, @NonNull ConnectionSession connectionSession) {
         this(sqls, connectionSession, null, null);
@@ -262,7 +265,6 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
         TraceWatch traceWatch = sqlTuple.getSqlWatch();
         if (isResultSet) {
             StopWatch stopWatch = StopWatch.createStarted();
-            long resultSetSize = 0;
             do {
                 try (ResultSet resultSet = statement.getResultSet()) {
                     JdbcQueryResult jdbcQueryResult = new JdbcQueryResult(resultSet.getMetaData(), rowDataMapper);
@@ -274,14 +276,13 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
                             maxCachedLines, maxCachedSize, cachePredicate);
                     long line = 0;
                     while (resultSet.next()) {
+                        if (maxQuerySize != null && resultSetSize > maxQuerySize) {
+                            throw new OverLimitException(LimitMetric.TRANSACTION_QUERY_LIMIT, queryLimit.doubleValue(),
+                                    "result set size exceed limit, maximum was " + queryLimit + " bytes");
+                        }
                         resultSetSize += jdbcQueryResult.addLine(resultSet);
                         virtualTable.addLine((line++), resultSet,
                                 new ResultSetCachedElementFactory(resultSet, binaryDataManager));
-                        if (maxQuerySize != null && resultSetSize > maxQuerySize) {
-                            log.info("The size of result set exceeds limit: {} bytes, it will be truncated.",
-                                    maxQuerySize);
-                            break;
-                        }
                     }
                     if (virtualTable.count() != 0) {
                         ConnectionSessionUtil.setQueryCache(connectionSession, virtualTable);
