@@ -3,6 +3,7 @@
 update
   regulation_rule_applying rra
 set
+  rra.is_enabled = 1,
   rra.properties_json = '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.allow-sql-types.metadata.name}":["UPDATE", "DELETE", "INSERT", "SELECT", "CREATE", "DROP", "ALTER", "REPLACE", "SET", "USE_DB", "EXPLAIN", "SHOW", "HELP", "START_TRANS", "COMMIT", "ROLLBACK", "SORT", "DESC", "TRUNCATE", "OTHERS"]}'
 where
   rra.create_time = rra.update_time
