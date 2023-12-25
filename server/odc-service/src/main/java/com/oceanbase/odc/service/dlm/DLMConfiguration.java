@@ -15,8 +15,6 @@
  */
 package com.oceanbase.odc.service.dlm;
 
-import java.util.concurrent.Executors;
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -58,7 +56,6 @@ public class DLMConfiguration {
     public JobMetaFactory jobMetaFactory(IJobStore jobStore) {
         JobMetaFactory jobMetaFactory = new JobMetaFactory();
         jobMetaFactory.setJobStore(jobStore);
-        jobMetaFactory.setExecutorService(Executors.newFixedThreadPool(dlmThreadPoolSize));
         jobMetaFactory.setSingleTaskThreadPoolSize(singleTaskThreadPoolSize);
         jobMetaFactory.setReadWriteRatio(readWriteRatio);
         jobMetaFactory.setTaskConnectionQueryTimeout(taskConnectionQueryTimeout);
