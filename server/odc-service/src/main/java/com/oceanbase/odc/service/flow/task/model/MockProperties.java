@@ -33,8 +33,8 @@ public class MockProperties {
     private int maxPoolSize = 6;
     @Value("${odc.task.mockData.concurrent:1}")
     private int concurrent = 1;
-    @Value("${odc.task.mockData.maxRowCount:10000000}")
-    private long maxRowCount = 10000000;
+    @Value("${odc.task.mockData.maxRowCount:100000000}")
+    private long maxRowCount = 100000000;
     /**
      * 50 MB
      */
