@@ -36,7 +36,7 @@ public class JobIdentity {
     /**
      * job name
      */
-    private String name;
+    private String serialNumber;
 
     public static JobIdentity of(Long id) {
         return of(id, null);
@@ -45,7 +45,7 @@ public class JobIdentity {
     public static JobIdentity of(Long id, String name) {
         JobIdentity jobIdentity = new JobIdentity();
         jobIdentity.setId(id);
-        jobIdentity.setName(name);
+        jobIdentity.setSerialNumber(name);
         return jobIdentity;
     }
 

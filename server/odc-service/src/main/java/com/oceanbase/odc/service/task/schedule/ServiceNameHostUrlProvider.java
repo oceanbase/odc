@@ -14,26 +14,24 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.task.enums;
+package com.oceanbase.odc.service.task.schedule;
+
+import java.util.Collections;
+import java.util.List;
+
+import com.oceanbase.odc.common.util.SystemUtils;
+import com.oceanbase.odc.service.task.constants.JobEnvConstants;
 
 /**
  * @author yaobin
- * @date 2023-11-21
+ * @date 2023-12-01
  * @since 4.2.4
  */
-public enum TaskRunModeEnum {
+public class ServiceNameHostUrlProvider implements HostUrlProvider {
 
-    /**
-     * ODC job run by k8s job
-     */
-    K8S,
-    /**
-     * ODC job run by ODC server thread
-     */
-    THREAD;
-
-    public boolean isK8s() {
-        return this == K8S;
+    @Override
+    public List<String> hostUrl() {
+        return Collections.singletonList("http://" + SystemUtils.getEnvOrProperty(JobEnvConstants.ODC_SERVICE_HOST)
+                + ":" + SystemUtils.getEnvOrProperty(JobEnvConstants.ODC_SERVER_PORT));
     }
-
 }

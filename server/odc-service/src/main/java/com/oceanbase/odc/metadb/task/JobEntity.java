@@ -64,19 +64,25 @@ public class JobEntity implements Serializable {
     @Column(name = "executor")
     private String executor;
 
+    @Column(name = "log_storage")
+    private String logStorage;
+
     @Column(name = "schedule_times", nullable = false)
     private Integer scheduleTimes;
 
     @Column(name = "execution_times", nullable = false)
     private Integer executionTimes;
 
-    @Column(name = "job_name", nullable = false)
-    private String jobName;
+    @Column(name = "serial_number")
+    private String serialNumber;
 
-    @Column(name = "job_data_json", nullable = false)
+    @Column(name = "run_mode")
+    private String runMode;
+
+    @Column(name = "job_data_json")
     private String jobDataJson;
 
-    @Column(name = "trigger_config_json", nullable = false)
+    @Column(name = "trigger_config_json")
     private String triggerConfigJson;
 
     @Column(name = "result_json")
@@ -85,13 +91,16 @@ public class JobEntity implements Serializable {
     @Column(name = "progress_percentage")
     private double progressPercentage;
 
+    @Column(name = "finished")
+    private Integer finished;
+
     @Column(name = "description")
     private String description;
 
-    @Column(name = "creator_id", updatable = false)
+    @Column(name = "creator_id")
     private Long creatorId;
 
-    @Column(name = "organization_id", nullable = false)
+    @Column(name = "organization_id")
     private Long organizationId;
 
     @Generated(GenerationTime.ALWAYS)
@@ -101,4 +110,8 @@ public class JobEntity implements Serializable {
     @Generated(GenerationTime.ALWAYS)
     @Column(name = "update_time", insertable = false, updatable = false)
     private Date updateTime;
+
+    public boolean isFinished() {
+        return 1 == finished;
+    }
 }

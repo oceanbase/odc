@@ -56,11 +56,6 @@ public class JobUtils {
         return port != null ? Integer.parseInt(port) : 8989;
     }
 
-    public static String getLogPath() {
-        String logPath = SystemUtils.getEnvOrProperty(JobEnvConstants.LOG_DIRECTORY);
-        return logPath == null ? "./log" : logPath;
-    }
-
     public static ConnectionConfig getMetaDBConnectionConfig() {
         ConnectionConfig config = new ConnectionConfig();
         config.setHost(SystemUtils.getEnvOrProperty("DATABASE_HOST"));
@@ -72,6 +67,4 @@ public class JobUtils {
         config.setId(1L);
         return config;
     }
-
-
 }

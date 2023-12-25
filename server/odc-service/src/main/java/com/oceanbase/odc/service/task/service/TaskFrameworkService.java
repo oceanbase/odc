@@ -18,7 +18,6 @@ package com.oceanbase.odc.service.task.service;
 
 import org.springframework.transaction.annotation.Transactional;
 
-import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.task.executor.task.TaskResult;
 import com.oceanbase.odc.service.task.schedule.JobDefinition;
@@ -39,11 +38,9 @@ public interface TaskFrameworkService {
 
     JobDefinition getJobDefinition(Long id);
 
-    void startSuccess(Long id, String jobName);
+    void startSuccess(Long id, String serialNumber);
 
     void updateScheduleTimes(Long id, Integer scheduleTimes);
 
-    void updateStatus(Long id, TaskStatus status);
-
-    void update(JobEntity jobEntity);
+    void updateDescription(Long id, String description);
 }

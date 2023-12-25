@@ -16,6 +16,7 @@
 
 package com.oceanbase.odc.service.task.executor.sampletask;
 
+import java.io.Serializable;
 import java.util.Map;
 
 import org.springframework.jdbc.core.JdbcOperations;
@@ -49,7 +50,6 @@ public class SampleTask extends BaseTask {
     private int totalSqlCount = 0;
 
     private FlowTaskResult result;
-    private TaskStatus tas;
 
     @Override
     protected void onInit() {
@@ -106,11 +106,11 @@ public class SampleTask extends BaseTask {
 
     @Override
     public double getProgress() {
-        return executedSqlCount * 1.0 / totalSqlCount;
+        return executedSqlCount * 100.0 / totalSqlCount;
     }
 
     @Override
-    public FlowTaskResult getTaskResult() {
+    public Serializable getTaskResult() {
         return this.result;
     }
 

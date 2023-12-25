@@ -44,6 +44,4 @@ public interface JobDefinition {
      */
     Map<String, String> getJobData();
 
-
-
 }

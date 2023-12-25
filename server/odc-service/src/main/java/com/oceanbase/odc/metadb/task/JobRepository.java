@@ -24,15 +24,13 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import com.oceanbase.odc.core.shared.constant.TaskStatus;
-
 /**
  * @author yaobin
  * @date 2023-12-06
  * @since 4.2.4
  */
 @Repository
-public interface JobScheduleRepository extends JpaRepository<JobEntity, Long>,
+public interface JobRepository extends JpaRepository<JobEntity, Long>,
         JpaSpecificationExecutor<JobEntity> {
 
     @Transactional
@@ -45,11 +43,18 @@ public interface JobScheduleRepository extends JpaRepository<JobEntity, Long>,
 
     @Transactional
     @Query("update JobEntity set "
-            + "jobName=:#{#param.jobName},status=:#{#param.status},scheduleTimes=:#{#param.scheduleTimes},"
+            + "logStorage=:#{#param.logStorage},finished=:#{#param.finished} "
+            + " where id=:#{#param.id}")
+    @Modifying
+    void updateFinished(@Param("param") JobEntity entity);
+
+    @Transactional
+    @Query("update JobEntity set "
+            + "serialNumber=:#{#param.serialNumber},status=:#{#param.status},scheduleTimes=:#{#param.scheduleTimes},"
             + "executionTimes=:#{#param.executionTimes}"
             + " where id=:#{#param.id}")
     @Modifying
-    void updateJobNameAndStatus(@Param("param") JobEntity entity);
+    void updateJobSerialNumberAndStatus(@Param("param") JobEntity entity);
 
 
     @Transactional
@@ -61,9 +66,9 @@ public interface JobScheduleRepository extends JpaRepository<JobEntity, Long>,
 
     @Transactional
     @Query("update JobEntity set "
-            + "status=:status"
+            + "description=:description"
             + " where id=:id")
     @Modifying
-    void updateStatus(@Param("id") Long id, @Param("status") TaskStatus status);
+    void updateDescription(@Param("id") Long id, @Param("description") String description);
 
 }

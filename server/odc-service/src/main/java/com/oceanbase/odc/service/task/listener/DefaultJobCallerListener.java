@@ -48,7 +48,7 @@ public class DefaultJobCallerListener extends JobCallerListener {
     @Override
     protected void startSucceed(JobIdentity ji) {
         if (taskFrameworkService != null) {
-            taskFrameworkService.startSuccess(ji.getId(), ji.getName());
+            taskFrameworkService.startSuccess(ji.getId(), ji.getSerialNumber());
         }
     }
 
@@ -57,8 +57,8 @@ public class DefaultJobCallerListener extends JobCallerListener {
         if (taskFrameworkService != null) {
             JobEntity jobEntity = taskFrameworkService.find(ji.getId());
             if (jobEntity.getScheduleTimes() >= 5) {
-                jobEntity.setDescription("After retry 5 times to schedule job but failed.");
-                taskFrameworkService.update(jobEntity);
+                String desc = "After retry 5 times to schedule job but failed.";
+                taskFrameworkService.updateDescription(ji.getId(), desc);
                 return;
             }
 
@@ -78,5 +78,11 @@ public class DefaultJobCallerListener extends JobCallerListener {
     protected void stopSucceed(JobIdentity ji) {}
 
     @Override
-    protected void stopFailed(JobIdentity ji, Exception ex) {}
+    protected void stopFailed(JobIdentity ji, Exception ex) {
+        if (taskFrameworkService != null) {
+            String desc = "Try to cancel job failed.";
+            taskFrameworkService.updateDescription(ji.getId(), desc);
+            log.info("Stop job " + ji.getId() + " failed, error is: ", ex);
+        }
+    }
 }

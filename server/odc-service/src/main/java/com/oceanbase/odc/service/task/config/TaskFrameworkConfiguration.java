@@ -23,14 +23,16 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import com.oceanbase.odc.common.util.StringUtils;
+import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.service.common.model.HostProperties;
 import com.oceanbase.odc.service.task.caller.K8sJobClient;
 import com.oceanbase.odc.service.task.caller.NativeK8sJobClient;
+import com.oceanbase.odc.service.task.constants.JobEnvConstants;
 import com.oceanbase.odc.service.task.enums.TaskRunModeEnum;
 import com.oceanbase.odc.service.task.schedule.FixedHostUrlProvider;
 import com.oceanbase.odc.service.task.schedule.HostUrlProvider;
 import com.oceanbase.odc.service.task.schedule.IpBasedHostUrlProvider;
+import com.oceanbase.odc.service.task.schedule.ServiceNameHostUrlProvider;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -48,7 +50,8 @@ public class TaskFrameworkConfiguration {
     public K8sJobClient k8sJobClient(@Autowired TaskFrameworkProperties taskFrameworkProperties) {
         if (taskFrameworkProperties.getRunMode() == TaskRunModeEnum.K8S) {
             try {
-                log.info("k8s is not null {}", taskFrameworkProperties.getK8s());
+                log.info("k8s url is {}", taskFrameworkProperties.getK8s().getKubeUrl());
+                log.info("k8s namespace is {}", taskFrameworkProperties.getK8s().getNamespace());
                 return new NativeK8sJobClient(taskFrameworkProperties.getK8s());
             } catch (IOException e) {
                 log.warn("Create NativeK8sJobClient occur error", e);
@@ -60,8 +63,15 @@ public class TaskFrameworkConfiguration {
     @Bean
     public HostUrlProvider hostUrlProvider(@Autowired TaskFrameworkProperties taskFrameworkProperties,
             @Autowired HostProperties hostProperties) {
-        return StringUtils.isBlank(taskFrameworkProperties.getOdcUrl()) ? new IpBasedHostUrlProvider(hostProperties)
-                : new FixedHostUrlProvider(taskFrameworkProperties);
+        HostUrlProvider hostUrlProvider =
+                taskFrameworkProperties.getOdcUrl() != null ? new FixedHostUrlProvider(taskFrameworkProperties)
+                        : ((SystemUtils.getEnvOrProperty(JobEnvConstants.ODC_SERVICE_HOST) != null &&
+                                SystemUtils.getEnvOrProperty(JobEnvConstants.ODC_SERVER_PORT) != null)
+                                        ? new ServiceNameHostUrlProvider()
+                                        : new IpBasedHostUrlProvider(hostProperties));
+
+        log.info("Host Url Provider is {}", hostUrlProvider.getClass().getSimpleName());
+        return hostUrlProvider;
     }
 
     @Bean

@@ -162,4 +162,8 @@ public class TaskEntity {
     @Column(name = "database_id")
     private Long databaseId;
 
+
+    @Column(name = "job_id", nullable = false)
+    private Long jobId;
+
 }

@@ -16,20 +16,30 @@
 
 package com.oceanbase.odc.service.task.executor.task;
 
+import java.io.File;
+import java.math.BigDecimal;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.core.task.TaskThreadFactory;
+import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
+import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfiguration;
+import com.oceanbase.odc.service.objectstorage.model.ObjectMetadata;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.constants.JobDataMapConstants;
+import com.oceanbase.odc.service.task.executor.logger.LogUtils;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
+import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
 import com.oceanbase.odc.service.task.util.JobUtils;
 
 import lombok.extern.slf4j.Slf4j;
@@ -55,12 +65,15 @@ public abstract class BaseTask implements Task {
     private volatile boolean finished = false;
     private volatile long startTimeMilliSeconds;
 
+    private CloudObjectStorageService cloudObjectStorageService;
+
     @Override
     public void start(JobContext context) {
         this.startTimeMilliSeconds = System.currentTimeMillis();
         this.context = context;
         try {
             this.jobData = Collections.unmodifiableMap(getJobContext().getJobData());
+            initCloudObjectStorageService();
             this.reporter = new TaskReporter(context.getHostUrls());
             onInit();
             initTaskMonitor();
@@ -123,7 +136,7 @@ public abstract class BaseTask implements Task {
 
     private void initTaskMonitor() {
         ThreadFactory threadFactory =
-                new TaskThreadFactory(("Task-Monitor-" + getJobContext().getJobIdentity().getId()));
+                new TaskThreadFactory(("Task-Monitor-" + getJobId()));
         ScheduledExecutorService scheduledExecutor = Executors.newSingleThreadScheduledExecutor(threadFactory);
         scheduledExecutor.scheduleAtFixedRate(() -> {
             // check task is timeout or not
@@ -133,11 +146,12 @@ public abstract class BaseTask implements Task {
             }
             if (isFinished() || getTaskStatus().isTerminated()) {
                 scheduledExecutor.shutdown();
-            }
-            try {
-                reportTaskResult();
-            } catch (Exception e) {
-                log.warn("Update task info failed, id: {}", getJobContext().getJobIdentity().getId(), e);
+            } else {
+                try {
+                    reportTaskResult();
+                } catch (Exception e) {
+                    log.warn("Update task info failed, id: {}", getJobContext().getJobIdentity().getId(), e);
+                }
             }
         }, 1, REPORT_TASK_INFO_INTERVAL_SECONDS, TimeUnit.SECONDS);
         log.info("Task monitor init success");
@@ -145,30 +159,76 @@ public abstract class BaseTask implements Task {
 
     private void doFinal() {
         // Report final result
-        // onUpdate();
-        log.info("Task id: {}, finished with status: {}, start to report final result",
-                getJobContext().getJobIdentity().getId(), getTaskStatus());
+        log.info("Task id: {}, finished with status: {}, start to report final result", getJobId(), getTaskStatus());
         DefaultTaskResult finalResult = buildCurrentResult();
         reportTaskResultWithRetry(finalResult, REPORT_RESULT_RETRY_TIMES, REPORT_RESULT_RETRY_INTERVAL_SECONDS);
 
-        // TODO: May solve log file here
+        log.info("Task id: {}, start to do remained work.", getJobId());
+        uploadLogFileToCloudStorage(finalResult);
 
+        log.info("Task id: {}, remained work be completed, report finished status.", getJobId());
         // Report finish signal to task server
         finalResult.setFinished(true);
         reportTaskResultWithRetry(finalResult, REPORT_RESULT_RETRY_TIMES, REPORT_RESULT_RETRY_INTERVAL_SECONDS);
         this.finished = true;
+        log.info("Task id: {} exit.", getJobId());
+    }
+
+    private void uploadLogFileToCloudStorage(DefaultTaskResult finalResult) {
+        if (Objects.isNull(getCloudObjectStorageService()) || !getCloudObjectStorageService().supported()) {
+            return;
+        }
+        log.info("Task id: {}, upload log", getJobId());
+        String jobLog = LogUtils.getJobLogFileWithPath(getJobId(), OdcTaskLogLevel.ALL);
+        String fileId = StringUtils.uuid();
+        File jobLogFile = new File(jobLog);
+        if (!jobLogFile.exists()) {
+            return;
+        }
+        try {
+            String objectName = getCloudObjectStorageService().uploadTemp(fileId, jobLogFile);
+            ObjectMetadata logStorageInfo = new ObjectMetadata();
+            logStorageInfo.setBucketName(getCloudObjectStorageService().getBucketName());
+            logStorageInfo.setObjectId(objectName);
+            if( finalResult.getLogMetadata() == null){
+                finalResult.setLogMetadata(new HashMap<>());
+            }
+            finalResult.getLogMetadata().put(OdcTaskLogLevel.WARN.getName(),logStorageInfo);
+            finalResult.getLogMetadata().put(OdcTaskLogLevel.ALL.getName(),logStorageInfo);
+            log.info("upload task log to OSS successfully, file name={}", fileId);
+        } catch (Exception exception) {
+            log.warn("upload task log to OSS failed, file name={}", fileId);
+        }
+
+    }
+
+    private void initCloudObjectStorageService() {
+        if (getJobData().get(JobDataMapConstants.OBJECT_STORAGE_CONFIGURATION) != null) {
+            ObjectStorageConfiguration storageConfig = JsonUtils.fromJson(
+                    getJobData().get(JobDataMapConstants.OBJECT_STORAGE_CONFIGURATION),
+                    ObjectStorageConfiguration.class);
+            this.cloudObjectStorageService = CloudObjectStorageServiceBuilder.build(storageConfig);
+        }
+    }
+
+    protected CloudObjectStorageService getCloudObjectStorageService() {
+        return cloudObjectStorageService;
     }
 
     private void reportTaskResult() {
         double progress = getProgress();
+        if (new BigDecimal(progress).compareTo(new BigDecimal("100.0")) > 0) {
+            log.warn("progress value {} is illegal, bigger than 100.0", progress);
+            return;
+        }
         // onUpdate();
         if (getTaskStatus() == TaskStatus.DONE) {
-            progress = 1.0;
+            progress = 100.0;
         }
         reporter.report(buildCurrentResult());
         log.info("Report task info, id: {}, status: {}, progress: {}%, result: {}",
                 getJobContext().getJobIdentity().getId(),
-                getTaskStatus(), String.format("%.2f", progress * 100), getTaskResult());
+                getTaskStatus(), String.format("%.2f", progress), getTaskResult());
     }
 
     private void reportTaskResultWithRetry(TaskResult result, int retries, int intervalSeconds) {
@@ -186,7 +246,7 @@ public abstract class BaseTask implements Task {
                     Thread.sleep(intervalSeconds * 1000L);
                 }
             } catch (Exception e) {
-                log.warn("Report task result failed, taskId: {}", getJobContext().getJobIdentity().getId(), e);
+                log.warn("Report task result failed, taskId: {}", getJobId(), e);
             }
         }
     }
@@ -206,6 +266,10 @@ public abstract class BaseTask implements Task {
         ei.setJvmStartTime(SystemUtils.getJVMStartTime());
         result.setExecutorInfo(ei);
         return result;
+    }
+
+    private Long getJobId() {
+        return getJobContext().getJobIdentity().getId();
     }
 
     protected abstract void onInit();
