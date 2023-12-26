@@ -16,8 +16,15 @@
 
 package com.oceanbase.odc.service.task.caller;
 
+import com.oceanbase.odc.metadb.task.JobEntity;
+import com.oceanbase.odc.service.task.config.JobConfiguration;
+import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.constants.JobEnvConstants;
+import com.oceanbase.odc.service.task.schedule.DefaultExecutorIdentifier;
+import com.oceanbase.odc.service.task.schedule.ExecutorIdentifier;
+import com.oceanbase.odc.service.task.schedule.ExecutorIdentifierParser;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
+import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 import com.oceanbase.odc.service.task.util.JobUtils;
 
 /**
@@ -36,16 +43,28 @@ public class K8sJobCaller extends BaseJobCaller {
     }
 
     @Override
-    public String doStart(JobContext context) throws JobException {
+    public ExecutorIdentifier doStart(JobContext context) throws JobException {
         String jobName = JobUtils.generateJobName(context.getJobIdentity());
+
         podConfig.getPodParam().getEnvironments().put(JobEnvConstants.TASK_ALL_PARAMETERS, JobUtils.toJson(context));
 
-        return client.create(podConfig.getNamespace(), jobName, podConfig.getImage(),
+        String name = client.create(podConfig.getNamespace(), jobName, podConfig.getImage(),
                 podConfig.getCommand(), podConfig.getPodParam());
+
+        return DefaultExecutorIdentifier.builder().namespace(podConfig.getNamespace())
+                .executorName(name).build();
     }
 
     @Override
     public void doStop(JobIdentity ji) throws JobException {
-        client.delete(podConfig.getNamespace(), ji.getSerialNumber());
+
+        JobConfiguration jobConfiguration = JobConfigurationHolder.getJobConfiguration();
+        if (jobConfiguration != null && jobConfiguration.getTaskFrameworkService() != null) {
+            TaskFrameworkService taskFrameworkService = jobConfiguration.getTaskFrameworkService();
+            JobEntity jobEntity = taskFrameworkService.find(ji.getId());
+            String executorIdentifier = jobEntity.getExecutorIdentifier();
+            ExecutorIdentifier identifier = ExecutorIdentifierParser.parser(executorIdentifier);
+            client.delete(podConfig.getNamespace(), identifier.getExecutorName());
+        }
     }
 }

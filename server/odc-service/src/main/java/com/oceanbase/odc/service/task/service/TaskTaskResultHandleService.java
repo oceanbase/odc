@@ -60,9 +60,9 @@ public class TaskTaskResultHandleService implements ResultHandleService {
         if (taskEntityOptional.isPresent()) {
             TaskEntity taskEntity = taskEntityOptional.get();
             taskEntity.setProgressPercentage(taskResult.getProgress());
-            taskEntity.setStatus(taskResult.getTaskStatus());
+            taskEntity.setStatus(taskResult.getStatus().convertTaskStatus());
             taskEntity.setResultJson(taskResult.getResultJson());
-            taskEntity.setExecutor(JsonUtils.toJson(taskResult.getExecutorInfo()));
+            taskEntity.setExecutor(JsonUtils.toJson(taskResult.getExecutorEndpoint()));
             taskService.update(taskEntity);
             log.info("Update task {} successfully.", taskEntity.getId());
         }

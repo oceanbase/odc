@@ -29,12 +29,15 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.event.EventPublisher;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
+import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
-import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
+import com.oceanbase.odc.metadb.task.JobAttributeEntity;
+import com.oceanbase.odc.metadb.task.JobAttributeRepository;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.metadb.task.JobRepository;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
+import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.executor.executor.TaskRuntimeException;
 import com.oceanbase.odc.service.task.executor.task.Task;
 import com.oceanbase.odc.service.task.executor.task.TaskResult;
@@ -60,6 +63,8 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     private JobScheduler jobScheduler;
     @Autowired
     private JobRepository jobRepository;
+    @Autowired
+    private JobAttributeRepository jobAttributeRepository;
 
     @Autowired(required = false)
     private List<ResultHandleService> resultHandleServices;
@@ -82,13 +87,12 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
             return;
         }
         JobEntity je = find(taskResult.getJobIdentity().getId());
-        if (je.isFinished()) {
+        if (je.getStatus().isTerminated()) {
             log.warn("Job {} is finished, ignore result", je.getId());
             return;
         }
 
-        if (taskResult.getProgress() == je.getProgressPercentage() && taskResult.getTaskStatus() == je.getStatus()
-                && !taskResult.isFinished()) {
+        if (taskResult.getProgress() == je.getProgressPercentage() && taskResult.getStatus() == je.getStatus()) {
             log.warn("task progress is not changed, ignore upload result.{}", JsonUtils.toJson(taskResult));
             return;
         }
@@ -98,7 +102,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         }
         if (publisher != null) {
             taskResultPublisherExecutor
-                .execute(() -> publisher.publishEvent(new TaskResultUploadEvent(taskResult)));
+                    .execute(() -> publisher.publishEvent(new TaskResultUploadEvent(taskResult)));
         }
 
     }
@@ -107,13 +111,12 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     @Transactional(rollbackFor = Exception.class)
     public JobEntity save(JobDefinition jd) {
         JobEntity jse = new JobEntity();
-        jse.setJobDataJson(JsonUtils.toJson(jd.getJobData()));
-        jse.setScheduleTimes(0);
+        jse.setJobParametersJson(JsonUtils.toJson(jd.getJobParameters()));
         jse.setExecutionTimes(0);
         jse.setJobClass(jd.getJobClass().getCanonicalName());
         jse.setJobType(jd.getJobType());
-        jse.setStatus(TaskStatus.PREPARING);
-        jse.setFinished(0);
+        jse.setStatus(JobStatus.PREPARING);
+        jse.setRunMode(taskFrameworkProperties.getRunMode().name());
         return jobRepository.save(jse);
     }
 
@@ -135,40 +138,39 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
             throw new TaskRuntimeException(e);
         }
         return DefaultJobDefinition.builder()
-                .jobData(JsonUtils.fromJson(entity.getJobDataJson(), new TypeReference<Map<String, String>>() {}))
+                .jobParameters(
+                        JsonUtils.fromJson(entity.getJobParametersJson(), new TypeReference<Map<String, String>>() {}))
                 .jobClass(cl).build();
     }
 
     @Override
-    public void startSuccess(Long id, String serialNumber) {
+    public void startSuccess(Long id, String executorIdentifier) {
         JobEntity jobEntity = find(id);
-        jobEntity.setStatus(TaskStatus.RUNNING);
-        jobEntity.setSerialNumber(serialNumber);
+        jobEntity.setStatus(JobStatus.RUNNING);
+        jobEntity.setExecutorIdentifier(executorIdentifier);
         // increment executionTimes
         jobEntity.setExecutionTimes(jobEntity.getExecutionTimes() + 1);
-        // reset scheduleTimes to zero
-        jobEntity.setScheduleTimes(0);
-        jobRepository.updateJobSerialNumberAndStatus(jobEntity);
+        jobRepository.updateJobExecutorEndpointAndStatus(jobEntity);
     }
 
     private void updateJobScheduleEntity(TaskResult taskResult) {
         JobEntity jse = find(taskResult.getJobIdentity().getId());
-        if (taskResult.isFinished()) {
-            jse.setFinished(1);
-            jse.setLogStorage(JsonUtils.toJson(taskResult.getLogMetadata()));
-            jobRepository.updateFinished(jse);
-        } else {
-            jse.setResultJson(taskResult.getResultJson());
-            jse.setStatus(taskResult.getTaskStatus());
-            jse.setProgressPercentage(taskResult.getProgress());
-            jse.setExecutor(JsonUtils.toJson(taskResult.getExecutorInfo()));
-            jobRepository.update(jse);
-        }
-    }
+        jse.setResultJson(taskResult.getResultJson());
+        jse.setStatus(taskResult.getStatus());
+        jse.setProgressPercentage(taskResult.getProgress());
+        jse.setExecutorEndpoint(taskResult.getExecutorEndpoint());
+        jobRepository.update(jse);
 
-    @Override
-    public void updateScheduleTimes(Long id, Integer scheduleTimes) {
-        jobRepository.updateScheduleTimes(id, scheduleTimes);
+        if (taskResult.getLogMetadata() != null && taskResult.getStatus().isTerminated()) {
+            taskResult.getLogMetadata().forEach((k, v) -> {
+                JobAttributeEntity jobAttribute = new JobAttributeEntity();
+                jobAttribute.setJobId(jse.getId());
+                jobAttribute.setAttributeKey(k);
+                jobAttribute.setAttributeValue(v);
+                jobAttributeRepository.save(jobAttribute);
+            });
+
+        }
     }
 
     @Override
@@ -176,4 +178,15 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         jobRepository.updateDescription(id, description);
     }
 
+    @Override
+    public void updateStatus(Long id, JobStatus status) {
+        jobRepository.updateStatus(id, status.name());
+    }
+
+    @Override
+    public String findByJobIdAndAttributeKey(Long jobId, String attributeKey) {
+        JobAttributeEntity attributeEntity = jobAttributeRepository.findByJobIdAndAttributeKey(jobId, attributeKey);
+        Verify.notNull(attributeEntity, attributeKey);
+        return attributeEntity.getAttributeValue();
+    }
 }

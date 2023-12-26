@@ -20,8 +20,6 @@ import java.util.Date;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -30,19 +28,17 @@ import javax.persistence.Table;
 import org.hibernate.annotations.Generated;
 import org.hibernate.annotations.GenerationTime;
 
-import com.oceanbase.odc.service.task.enums.JobStatus;
-
 import lombok.Data;
 
 /**
  * @author yaobin
- * @date 2023-12-06
+ * @date 2023-12-25
  * @since 4.2.4
  */
 @Data
 @Entity
-@Table(name = "job_job")
-public class JobEntity implements Serializable {
+@Table(name = "job_attribute")
+public class JobAttributeEntity implements Serializable {
 
     private static final long serialVersionUID = 2744695847461276123L;
 
@@ -51,39 +47,14 @@ public class JobEntity implements Serializable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "job_Class", nullable = false)
-    private String jobClass;
+    @Column(name = "job_id", nullable = false)
+    private Long jobId;
 
-    @Column(name = "job_type", nullable = false)
-    private String jobType;
+    @Column(name = "attribute_key", nullable = false)
+    private String attributeKey;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false)
-    private JobStatus status;
-
-    @Column(name = "executor_endpoint")
-    private String executorEndpoint;
-
-    @Column(name = "execution_times", nullable = false)
-    private Integer executionTimes;
-
-    @Column(name = "executor_identifier")
-    private String executorIdentifier;
-
-    @Column(name = "run_mode")
-    private String runMode;
-
-    @Column(name = "job_parameters_json")
-    private String jobParametersJson;
-
-    @Column(name = "result_json")
-    private String resultJson;
-
-    @Column(name = "progress_percentage")
-    private double progressPercentage;
-
-    @Column(name = "description")
-    private String description;
+    @Column(name = "attribute_value", nullable = false)
+    private String attributeValue;
 
     @Column(name = "creator_id")
     private Long creatorId;

@@ -16,13 +16,9 @@
 
 package com.oceanbase.odc.service.task.listener;
 
-import com.oceanbase.odc.metadb.task.JobEntity;
-import com.oceanbase.odc.service.task.caller.JobContext;
-import com.oceanbase.odc.service.task.caller.JobException;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
-import com.oceanbase.odc.service.task.schedule.DefaultJobContextBuilder;
-import com.oceanbase.odc.service.task.schedule.JobDefinition;
+import com.oceanbase.odc.service.task.schedule.ExecutorIdentifier;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 import com.oceanbase.odc.service.task.schedule.JobScheduler;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
@@ -38,39 +34,24 @@ import lombok.extern.slf4j.Slf4j;
 public class DefaultJobCallerListener extends JobCallerListener {
 
     private final TaskFrameworkService taskFrameworkService;
-    private final JobConfiguration configuration;
 
     public DefaultJobCallerListener(JobScheduler jobScheduler) {
-        this.configuration = JobConfigurationHolder.getJobConfiguration();
+        JobConfiguration configuration = JobConfigurationHolder.getJobConfiguration();
         this.taskFrameworkService = configuration.getTaskFrameworkService();
     }
 
     @Override
-    protected void startSucceed(JobIdentity ji) {
+    protected void startSucceed(JobIdentity ji, ExecutorIdentifier identifier) {
         if (taskFrameworkService != null) {
-            taskFrameworkService.startSuccess(ji.getId(), ji.getSerialNumber());
+            taskFrameworkService.startSuccess(ji.getId(), identifier.toString());
         }
     }
 
     @Override
     protected void startFailed(JobIdentity ji, Exception ex) {
         if (taskFrameworkService != null) {
-            JobEntity jobEntity = taskFrameworkService.find(ji.getId());
-            if (jobEntity.getScheduleTimes() >= 5) {
-                String desc = "After retry 5 times to schedule job but failed.";
-                taskFrameworkService.updateDescription(ji.getId(), desc);
-                return;
-            }
-
-            log.info("Start job " + ji.getId() + " failed and retry again, error is: ", ex);
-            taskFrameworkService.updateScheduleTimes(ji.getId(), jobEntity.getScheduleTimes() + 1);
-            JobDefinition jd = taskFrameworkService.getJobDefinition(ji.getId());
-            JobContext jc = new DefaultJobContextBuilder().build(ji, jd);
-            try {
-                configuration.getJobDispatcher().start(jc);
-            } catch (JobException e) {
-                log.warn("Try start failed.", e);
-            }
+            String desc = "After retry 10 times to schedule job but failed.";
+            taskFrameworkService.updateDescription(ji.getId(), desc);
         }
     }
 

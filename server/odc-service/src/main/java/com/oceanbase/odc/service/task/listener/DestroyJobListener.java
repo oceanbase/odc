@@ -17,6 +17,7 @@
 package com.oceanbase.odc.service.task.listener;
 
 import com.oceanbase.odc.service.task.caller.JobException;
+import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.executor.task.TaskResult;
 import com.oceanbase.odc.service.task.schedule.JobScheduler;
 
@@ -39,7 +40,7 @@ public class DestroyJobListener extends TaskResultUploadListener {
     @Override
     public void onEvent(TaskResultUploadEvent event) {
         TaskResult taskResult = event.getTaskResult();
-        if (taskResult.isFinished()) {
+        if (taskResult.getStatus() == JobStatus.DONE || taskResult.getStatus() == JobStatus.FAILED) {
             try {
                 jobScheduler.cancelJob(event.getTaskResult().getJobIdentity().getId());
             } catch (JobException e) {

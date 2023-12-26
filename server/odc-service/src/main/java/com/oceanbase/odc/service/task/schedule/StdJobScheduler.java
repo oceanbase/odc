@@ -32,6 +32,7 @@ import com.oceanbase.odc.service.schedule.model.QuartzKeyGenerator;
 import com.oceanbase.odc.service.task.caller.JobException;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
+import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.executor.task.TaskResult;
 import com.oceanbase.odc.service.task.listener.DefaultJobCallerListener;
 import com.oceanbase.odc.service.task.listener.DestroyJobListener;
@@ -95,7 +96,9 @@ public class StdJobScheduler implements JobScheduler {
             throw new JobException(e);
         }
         JobEntity jobEntity = configuration.getTaskFrameworkService().find(id);
-        configuration.getJobDispatcher().stop(JobIdentity.of(id, jobEntity.getSerialNumber()));
+        configuration.getTaskFrameworkService().updateStatus(id, JobStatus.CANCELING);
+        configuration.getJobDispatcher().stop(JobIdentity.of(id));
+        configuration.getTaskFrameworkService().updateStatus(id, JobStatus.CANCELED);
     }
 
     public void await(Long id, Long timeout, TimeUnit timeUnit) throws InterruptedException {
@@ -108,7 +111,7 @@ public class StdJobScheduler implements JobScheduler {
                 if (jobIdentity.getId() != id) {
                     return;
                 }
-                if (taskResult.getTaskStatus().isTerminated()) {
+                if (taskResult.getStatus().isTerminated()) {
                     cd.countDown();
                 }
             }

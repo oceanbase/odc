@@ -14,43 +14,23 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.task.caller;
-
-import java.io.Serializable;
-import java.util.List;
-import java.util.Map;
-
-import com.oceanbase.odc.service.task.schedule.JobIdentity;
-
-import lombok.Data;
+package com.oceanbase.odc.service.task.schedule;
 
 /**
  * @author yaobin
- * @date 2023-11-15
+ * @date 2023-12-25
  * @since 4.2.4
  */
+public interface ExecutorIdentifier {
 
-@Data
-public class DefaultJobContext implements JobContext, Serializable {
+    String getSchema();
 
-    /**
-     * job identity
-     */
-    private JobIdentity jobIdentity;
+    String getHost();
 
-    /**
-     * job class
-     */
-    private String jobClass;
+    int getPort();
 
-    /**
-     * odc server host url list
-     */
-    private List<String> hostUrls;
+    String getNamespace();
 
-    /**
-     * task other data
-     */
-    private Map<String, String> jobParameters;
+    String getExecutorName();
 
 }

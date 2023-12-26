@@ -30,7 +30,6 @@ import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
-import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.connection.model.ConnectProperties;
@@ -44,6 +43,7 @@ import com.oceanbase.odc.service.objectstorage.model.ObjectMetadata;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.caller.JobException;
 import com.oceanbase.odc.service.task.constants.JobDataMapConstants;
+import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.executor.task.DatabaseChangeTask;
 import com.oceanbase.odc.service.task.schedule.DefaultJobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobDefinition;
@@ -89,7 +89,7 @@ public class DatabaseChangeRuntimeFlowableTaskCopied extends BaseODCFlowTaskDele
 
     @Override
     public boolean isCancelled() {
-        return jobEntity != null && jobEntity.getStatus() == TaskStatus.CANCELED;
+        return jobEntity != null && jobEntity.getStatus() == JobStatus.CANCELED;
     }
 
     @Override
@@ -111,8 +111,8 @@ public class DatabaseChangeRuntimeFlowableTaskCopied extends BaseODCFlowTaskDele
         }
         jobEntity = taskFrameworkService.find(jobId);
         result = JsonUtils.fromJson(jobEntity.getResultJson(), DatabaseChangeResult.class);
-        TaskStatus status = jobEntity.getStatus();
-        isSuccessful = status == TaskStatus.DONE;
+        JobStatus status = jobEntity.getStatus();
+        isSuccessful = status == JobStatus.DONE;
         isFailure = !isSuccessful;
         log.info("Async task ends, taskId={}, activityId={}, returnVal={}, timeCost={}", taskId,
                 execution.getCurrentActivityId(),
@@ -185,7 +185,7 @@ public class DatabaseChangeRuntimeFlowableTaskCopied extends BaseODCFlowTaskDele
 
         return DefaultJobDefinition.builder().jobClass(DatabaseChangeTask.class)
                 .jobType(TaskType.ASYNC.name())
-                .jobData(jobData)
+                .jobParameters(jobData)
                 .build();
     }
 

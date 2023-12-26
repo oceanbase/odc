@@ -48,7 +48,6 @@ import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.TaskErrorStrategy;
-import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.core.shared.exception.InternalServerError;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.core.sql.execute.model.JdbcGeneralResult;
@@ -76,6 +75,7 @@ import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.odc.service.session.initializer.ConsoleTimeoutInitializer;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.odc.service.task.constants.JobDataMapConstants;
+import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.tools.dbbrowser.parser.ParserUtil;
 import com.oceanbase.tools.dbbrowser.parser.constant.GeneralSqlType;
 
@@ -291,7 +291,7 @@ public class DatabaseChangeTask extends BaseTask {
             zipFileId = fileMeta.getFileId();
             writeFileSuccessCount++;
             log.info("Async task end up running, task id: {}", this.getTaskId());
-            updateStatus(TaskStatus.DONE);
+            updateStatus(JobStatus.DONE);
         } catch (Exception e) {
             writeFileFailCount++;
             log.warn("Write async task file failed, task id: {}, error message: {}", this.getTaskId(), e.getMessage());

@@ -17,6 +17,7 @@
 package com.oceanbase.odc.service.task.caller;
 
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
+import com.oceanbase.odc.service.task.schedule.ExecutorIdentifier;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 
 /**
@@ -27,7 +28,7 @@ import com.oceanbase.odc.service.task.schedule.JobIdentity;
 public class JvmJobCaller extends BaseJobCaller {
 
     @Override
-    protected String doStart(JobContext context) throws JobException {
+    protected ExecutorIdentifier doStart(JobContext context) throws JobException {
         throw new UnsupportedException();
     }
 

@@ -46,7 +46,7 @@ public class SampleTaskJobDefinitionBuilder {
         return DefaultJobDefinition.builder()
                 .jobClass(SampleTask.class)
                 .jobType("SAMPLE")
-                .jobData(jobData)
+                .jobParameters(jobData)
                 .build();
     }
 }

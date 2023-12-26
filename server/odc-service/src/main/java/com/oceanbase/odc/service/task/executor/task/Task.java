@@ -18,8 +18,8 @@ package com.oceanbase.odc.service.task.executor.task;
 
 import java.io.Serializable;
 
-import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.service.task.caller.JobContext;
+import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.executor.executor.TaskExecutor;
 
 /**
@@ -41,13 +41,6 @@ public interface Task {
     void stop();
 
     /**
-     * Check whether current task is finished
-     * 
-     * @return true if current task is finished
-     */
-    boolean isFinished();
-
-    /**
      * Get task progress, the progress should be between 0 and 1 (include 0 and 1)
      *
      * @return progress
@@ -64,9 +57,9 @@ public interface Task {
     /**
      * Get task status
      * 
-     * @return {@link TaskStatus}
+     * @return {@link JobStatus}
      */
-    TaskStatus getTaskStatus();
+    JobStatus getStatus();
 
     /**
      * Get task result

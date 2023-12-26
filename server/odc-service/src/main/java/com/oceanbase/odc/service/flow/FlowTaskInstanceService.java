@@ -25,7 +25,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -104,6 +103,7 @@ import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleResult;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
+import com.oceanbase.odc.service.task.constants.JobAttributeKeyConstants;
 import com.oceanbase.odc.service.task.executor.task.ObjectStorageHandler;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
@@ -207,18 +207,21 @@ public class FlowTaskInstanceService {
         if (taskFrameworkProperties.getRunMode().isK8s() && taskEntity.getJobId() != null) {
             JobEntity jobEntity = taskFrameworkService.find(taskEntity.getJobId());
             if (jobEntity != null) {
-                if (!jobEntity.isFinished()) {
+                if (!jobEntity.getStatus().isTerminated()) {
                     log.info("job: {} is not finished, try to get log from remote pod.", jobEntity.getId());
-                    ExecutorInfo executorInfo = JsonUtils.fromJson(jobEntity.getExecutor(), ExecutorInfo.class);
-                    return forwardRemote(executorInfo);
-                } else if (cloudObjectStorageService.supported() && jobEntity.getLogStorage() != null) {
+                    DispatchResponse response = requestDispatcher.forward(jobEntity.getExecutorEndpoint());
+                    return response.getContentByType(new TypeReference<SuccessResponse<String>>() {}).getData();
+                } else if (cloudObjectStorageService.supported()) {
+                    String objId = taskFrameworkService.findByJobIdAndAttributeKey(jobEntity.getId(),
+                            JobAttributeKeyConstants.LOG_ALL_OBJECT_ID);
+                    String bucketName = taskFrameworkService.findByJobIdAndAttributeKey(jobEntity.getId(),
+                            JobAttributeKeyConstants.OSS_BUCKET_NAME);
+
                     log.info("job: {} is finished, try to get log from local or oss.", jobEntity.getId());
-                    Map<String, ObjectMetadata> om = JsonUtils.fromJson(jobEntity.getLogStorage(),
-                        new TypeReference<Map<String, ObjectMetadata>>() {});
                     ObjectStorageHandler objectStorageHandler =
                             new ObjectStorageHandler(cloudObjectStorageService, localFileOperator);
-                        return om != null && om.containsKey(level.getName()) ?
-                            objectStorageHandler.loadObjectContentAsString(om.get(level.getName()))
+                    return objId != null ? objectStorageHandler.loadObjectContentAsString(
+                            ObjectMetadata.builder().bucketName(bucketName).objectId(objId).build())
                             : "No log message";
                 }
             }
@@ -229,7 +232,8 @@ public class FlowTaskInstanceService {
              * 任务不在当前机器上，需要进行 {@code RPC} 转发获取
              */
             ExecutorInfo executorInfo = JsonUtils.fromJson(taskEntity.getExecutor(), ExecutorInfo.class);
-            return forwardRemote(executorInfo);
+            DispatchResponse response = requestDispatcher.forward(executorInfo.getHost(), executorInfo.getPort());
+            return response.getContentByType(new TypeReference<SuccessResponse<String>>() {}).getData();
         }
         if (taskEntity.getTaskType() == TaskType.MOCKDATA) {
             return getMockDataLog(taskEntity, level);
@@ -237,11 +241,6 @@ public class FlowTaskInstanceService {
         return taskService.getLog(taskEntity.getCreatorId(), taskEntity.getId() + "", taskEntity.getTaskType(), level);
     }
 
-    private String forwardRemote(ExecutorInfo executorInfo) throws IOException {
-
-        DispatchResponse response = requestDispatcher.forward(executorInfo.getHost(), executorInfo.getPort());
-        return response.getContentByType(new TypeReference<SuccessResponse<String>>() {}).getData();
-    }
 
     public List<? extends FlowTaskResult> getResult(@NotNull Long id) throws IOException {
         TaskEntity task = flowInstanceService.getTaskByFlowInstanceId(id);

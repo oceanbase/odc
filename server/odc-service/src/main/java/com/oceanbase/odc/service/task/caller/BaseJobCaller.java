@@ -20,27 +20,50 @@ import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.enums.JobCallerAction;
 import com.oceanbase.odc.service.task.listener.JobCallerEvent;
+import com.oceanbase.odc.service.task.schedule.ExecutorIdentifier;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author yaobin
  * @date 2023-11-16
  * @since 4.2.4
  */
+@Slf4j
 public abstract class BaseJobCaller implements JobCaller {
 
+    private final static int TRY_CALL_TIMES = 10;
+
     @Override
-    public String start(JobContext context) throws JobException {
-        String serialNumber = null;
+    public void start(JobContext context) throws JobException {
         try {
-            serialNumber = doStart(context);
-            JobIdentity copyJi = JobIdentity.of(context.getJobIdentity().getId(), serialNumber);
-            publishEvent(new JobCallerEvent(copyJi, JobCallerAction.START, true, null));
-        } catch (JobException ex) {
+            ExecutorIdentifier executorIdentifier = retryStart(context);
+            publishEvent(new JobCallerEvent(context.getJobIdentity(), JobCallerAction.START, true,
+                    executorIdentifier, null));
+        } catch (Exception ex) {
             publishEvent(new JobCallerEvent(context.getJobIdentity(), JobCallerAction.START, false, ex));
         }
-        return serialNumber;
+    }
 
+    private ExecutorIdentifier retryStart(JobContext context) throws Exception {
+        ExecutorIdentifier executorIdentifier = null;
+        Exception finalExcept = null;
+        for (int i = 0; i < TRY_CALL_TIMES; i++) {
+            try {
+                executorIdentifier = doStart(context);
+                finalExcept = null;
+                break;
+            } catch (Exception e) {
+                log.warn("Start job {} failed and retry again, error is: ", context.getJobIdentity().getId(), e);
+                finalExcept = e;
+                Thread.sleep(1000);
+            }
+        }
+        if (finalExcept != null) {
+            throw finalExcept;
+        }
+        return executorIdentifier;
     }
 
     @Override
@@ -54,7 +77,7 @@ public abstract class BaseJobCaller implements JobCaller {
         }
     }
 
-    protected abstract String doStart(JobContext context) throws JobException;
+    protected abstract ExecutorIdentifier doStart(JobContext context) throws JobException;
 
     protected abstract void doStop(JobIdentity ji) throws JobException;
 

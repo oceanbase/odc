@@ -119,7 +119,7 @@ public class TaskApplicationTest extends BaseJobTest {
 
         return DefaultJobDefinition.builder().jobClass(DatabaseChangeTask.class)
                 .jobType(TaskType.ASYNC.name())
-                .jobData(jobData)
+                .jobParameters(jobData)
                 .build();
     }
 }
