@@ -8,6 +8,7 @@ NVS_VERSION="v1.6.0"
 NODE_VERSION="16.14.0"
 OSS_RETRY_TIMES=50
 OBCLIENT_VERSION=2_2_4
+OBCLIENT_VERSION_NUMBER=2.2.4
 
 ODC_FUNCTION_SCRIPT_SOURCE=$(readlink -f $0)
 
@@ -344,8 +345,8 @@ function oss_fetch_obclient() {
 # copy architecture matched obclient install package to `import/obclient.tar.gz`
 #
 function copy_obclient() {
-    local cpu_arch=$(get_cpu_arch)
-    local source_obclient_file_path="${ODC_DIR}/import/obclient_${cpu_arch}.tar.gz"
+    local source_directory_name=$(get_cpu_arch | grep -q x86 && echo "linux_x86" || echo "linux_arm64")
+    local source_obclient_file_path="${ODC_DIR}/build-resource/obclient/${OBCLIENT_VERSION_NUMBER}/${source_directory_name}/obclient.tar.gz"
     local target_obclient_file_path="${ODC_DIR}/import/obclient.tar.gz"
     if [[ -f "${source_obclient_file_path}" ]]; then
         echo "${source_obclient_file_path} exists, will copy to ${target_obclient_file_path} ..."
