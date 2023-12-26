@@ -34,7 +34,8 @@ public class ObjectStorageConfiguration {
      */
     private CloudProvider cloudProvider;
     private String region;
-    private String endpoint;
+    private String publicEndpoint;
+    private String internalEndpoint;
     private String accessKeyId;
     private String accessKeySecret;
     private String bucketName;
@@ -49,8 +50,8 @@ public class ObjectStorageConfiguration {
     /**
      * for aws s3, if endpoint not set, get by region
      */
-    public String getEndpoint() {
-        if (StringUtils.isBlank(endpoint) && StringUtils.isNotBlank(region)) {
+    public String getPublicEndpoint() {
+        if (StringUtils.isBlank(publicEndpoint) && StringUtils.isNotBlank(region)) {
             if (CloudProvider.AWS == cloudProvider) {
                 return RegionUtils.getRegion(region).getServiceEndpoint("s3");
             } else if (CloudProvider.ALIBABA_CLOUD == cloudProvider) {
@@ -63,7 +64,14 @@ public class ObjectStorageConfiguration {
                 }
             }
         }
-        return this.endpoint;
+        return this.publicEndpoint;
+    }
+
+    public String getInternalEndpoint() {
+        if (StringUtils.isBlank(internalEndpoint) || StringUtils.contains(internalEndpoint, "CHANGE_ME")) {
+            return getPublicEndpoint();
+        }
+        return this.internalEndpoint;
     }
 
     public enum CloudProvider {

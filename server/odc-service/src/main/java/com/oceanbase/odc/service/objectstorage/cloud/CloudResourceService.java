@@ -67,9 +67,9 @@ public class CloudResourceService {
         credential.setBucket(bucketName);
         ObjectStorageConfiguration objectStorageConfiguration =
                 cloudObjectStorageService.getObjectStorageConfiguration();
-        credential.setEndpoint(objectStorageConfiguration.getEndpoint());
+        credential.setEndpoint(objectStorageConfiguration.getPublicEndpoint());
         credential.setRegion(objectStorageConfiguration.getRegion());
-        credential.setBucketEndpoint(bucketName + "." + objectStorageConfiguration.getEndpoint());
+        credential.setBucketEndpoint(bucketName + "." + objectStorageConfiguration.getPublicEndpoint());
         log.info("Generate temp credential, req={}, filePath={}", req, credential.getFilePath());
         return credential;
     }

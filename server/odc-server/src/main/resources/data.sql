@@ -532,6 +532,9 @@ INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('o
  'CHANGE_ME', '云存储服务 RegionId') ON DUPLICATE KEY UPDATE `id`=`id`;
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.cloud.object-storage.endpoint',
  'CHANGE_ME', '云存储服务 Endpoint') ON DUPLICATE KEY UPDATE `id`=`id`;
+UPDATE config_system_configuration SET `key` = 'odc.cloud.object-storage.public-endpoint', `description`='云存储服务公网 Endpoint' WHERE `key`='odc.cloud.object-storage.endpoint';
+INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.cloud.object-storage.internal-endpoint',
+ 'CHANGE_ME', '云存储服务内网 Endpoint') ON DUPLICATE KEY UPDATE `id`=`id`;
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.cloud.object-storage.access-key-id',
  'CHANGE_ME', '云存储服务 accessKeyId') ON DUPLICATE KEY UPDATE `id`=`id`;
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.cloud.object-storage.access-key-secret',
@@ -715,3 +718,5 @@ INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES
 
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.task.pre-check.max-sql-content-bytes',
  '5242880', '预检查时所允许检查的 SQL 内容的最大长度，超过该上限将终止预检查并将检查结果置为最高风险等级。单位：字节，默认值：5242880（即 5MB），修改后重启生效') ON DUPLICATE KEY UPDATE `id`=`id`;
+
+
