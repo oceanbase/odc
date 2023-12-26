@@ -47,6 +47,7 @@ import com.oceanbase.odc.core.authority.util.PreAuthenticate;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
@@ -121,9 +122,11 @@ public class SensitiveColumnService {
     private VersionDiffConfigService versionDiffConfigService;
 
     private static final SensitiveColumnMapper mapper = SensitiveColumnMapper.INSTANCE;
+    private static final List<DialectType> UNSUPPORTED_DIALECTS = Collections.singletonList(DialectType.MYSQL);
 
     @Transactional(rollbackFor = Exception.class)
-    @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
+    @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA, SECURITY_ADMINISTRATOR"}, resourceType = "ODC_PROJECT",
+            indexOfIdParam = 0)
     public List<DatabaseWithAllColumns> listColumns(@NotNull Long projectId, @NotEmpty List<Long> databaseIds) {
         checkProjectDatabases(projectId, databaseIds);
         List<Database> databases = databaseService.listDatabasesByIds(databaseIds);
@@ -156,7 +159,8 @@ public class SensitiveColumnService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
+    @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA, SECURITY_ADMINISTRATOR"}, resourceType = "ODC_PROJECT",
+            indexOfIdParam = 0)
     public Boolean exists(@NotNull Long projectId, @NotNull SensitiveColumn column) {
         PreConditions.notNull(column.getDatabase(), "database");
         PreConditions.notEmpty(column.getTableName(), "tableName");
@@ -178,7 +182,8 @@ public class SensitiveColumnService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
+    @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA, SECURITY_ADMINISTRATOR"}, resourceType = "ODC_PROJECT",
+            indexOfIdParam = 0)
     public List<SensitiveColumn> batchCreate(@NotNull Long projectId,
             @NotEmpty @Valid List<SensitiveColumn> columns) {
         Set<Long> databaseIds =
@@ -200,6 +205,7 @@ public class SensitiveColumnService {
             entity.setCreatorId(userId);
             entity.setOrganizationId(organizationId);
             entities.add(entity);
+            exists.add(new SensitiveColumnMeta(entity));
         }
         repository.saveAll(entities);
         log.info("Sensitive columns has been created, id={}", entities.stream().map(SensitiveColumnEntity::getId)
@@ -208,7 +214,8 @@ public class SensitiveColumnService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
+    @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA, SECURITY_ADMINISTRATOR"}, resourceType = "ODC_PROJECT",
+            indexOfIdParam = 0)
     public SensitiveColumn detail(@NotNull Long projectId, @NotNull Long id) {
         SensitiveColumnEntity entity = nullSafeGet(id);
         checkProjectDatabases(projectId, Collections.singletonList(entity.getDatabaseId()));
@@ -234,7 +241,8 @@ public class SensitiveColumnService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
+    @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA, SECURITY_ADMINISTRATOR"}, resourceType = "ODC_PROJECT",
+            indexOfIdParam = 0)
     public List<SensitiveColumn> batchUpdate(@NotNull Long projectId, @NotEmpty List<Long> ids,
             @NotNull Long maskingAlgorithmId) {
         List<SensitiveColumnEntity> entities = batchNullSafeGet(new HashSet<>(ids));
@@ -251,7 +259,8 @@ public class SensitiveColumnService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
+    @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA, SECURITY_ADMINISTRATOR"}, resourceType = "ODC_PROJECT",
+            indexOfIdParam = 0)
     public List<SensitiveColumn> batchDelete(@NotNull Long projectId, @NotEmpty List<Long> ids) {
         List<SensitiveColumnEntity> entities = batchNullSafeGet(new HashSet<>(ids));
         Set<Long> databaseIds = entities.stream().map(SensitiveColumnEntity::getDatabaseId).collect(Collectors.toSet());
@@ -265,7 +274,8 @@ public class SensitiveColumnService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
+    @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA, SECURITY_ADMINISTRATOR"}, resourceType = "ODC_PROJECT",
+            indexOfIdParam = 0)
     public Page<SensitiveColumn> list(@NotNull Long projectId, @NotNull QuerySensitiveColumnParams params,
             Pageable pageable) {
         Set<Long> databaseIds = databaseService.listDatabaseIdsByProjectId(projectId);
@@ -306,7 +316,8 @@ public class SensitiveColumnService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
+    @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA, SECURITY_ADMINISTRATOR"}, resourceType = "ODC_PROJECT",
+            indexOfIdParam = 0)
     public SensitiveColumnStats stats(@NotNull Long projectId) {
         SensitiveColumnStats stats = new SensitiveColumnStats();
         Set<Long> databaseIds = databaseService.listDatabaseIdsByProjectId(projectId);
@@ -331,7 +342,8 @@ public class SensitiveColumnService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
+    @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA, SECURITY_ADMINISTRATOR"}, resourceType = "ODC_PROJECT",
+            indexOfIdParam = 0)
     public SensitiveColumn setEnabled(@NotNull Long projectId, @NotNull Long id, @NotNull Boolean enabled) {
         SensitiveColumnEntity entity = nullSafeGet(id);
         checkProjectDatabases(projectId, Collections.singleton(entity.getDatabaseId()));
@@ -345,7 +357,8 @@ public class SensitiveColumnService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
+    @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA, SECURITY_ADMINISTRATOR"}, resourceType = "ODC_PROJECT",
+            indexOfIdParam = 0)
     public SensitiveColumnScanningTaskInfo startScanning(@NotNull Long projectId,
             @NotNull @Valid SensitiveColumnScanningReq req) {
         Set<Long> databaseIds;
@@ -375,7 +388,8 @@ public class SensitiveColumnService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
+    @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA, SECURITY_ADMINISTRATOR"}, resourceType = "ODC_PROJECT",
+            indexOfIdParam = 0)
     public SensitiveColumnScanningTaskInfo getScanningResults(@NotNull Long projectId, @NotBlank String taskId) {
         SensitiveColumnScanningTaskInfo taskInfo = scanningTaskManager.get(taskId);
         if (!Objects.equals(taskInfo.getProjectId(), projectId)) {
@@ -457,7 +471,7 @@ public class SensitiveColumnService {
     private void checkProjectDatabases(@NotNull Long projectId, @NotEmpty Collection<Long> databaseIds) {
         Set<Long> founds = databaseService.listDatabaseIdsByProjectId(projectId);
         List<Long> notFounds = databaseIds.stream().filter(id -> !founds.contains(id)).collect(Collectors.toList());
-        if (notFounds.size() > 0) {
+        if (!notFounds.isEmpty()) {
             throw new NotFoundException(ResourceType.ODC_DATABASE, "id",
                     notFounds.stream().map(Object::toString).collect(Collectors.joining(", ")));
         }
@@ -466,7 +480,7 @@ public class SensitiveColumnService {
     private void checkoutSensitiveRules(@NotNull Long projectId, @NotEmpty Collection<SensitiveRule> rules) {
         List<Long> invalids = rules.stream().filter(rule -> !Objects.equals(rule.getProjectId(), projectId))
                 .map(SensitiveRule::id).collect(Collectors.toList());
-        if (invalids.size() > 0) {
+        if (!invalids.isEmpty()) {
             throw new NotFoundException(ResourceType.ODC_SENSITIVE_RULE, "id",
                     invalids.stream().map(Object::toString).collect(Collectors.joining(", ")));
         }

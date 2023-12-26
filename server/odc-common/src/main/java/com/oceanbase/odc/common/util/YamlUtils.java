@@ -19,10 +19,12 @@ import java.io.IOException;
 import java.lang.reflect.Type;
 import java.net.URL;
 import java.util.HashMap;
+import java.util.List;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.type.CollectionType;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.oceanbase.odc.common.json.JacksonFactory;
 
@@ -45,6 +47,20 @@ public class YamlUtils {
         }
         try {
             return OBJECT_MAPPER.readValue(url, valueTypeRef);
+        } catch (IOException ex) {
+            log.warn("failed to read yaml file, reason={}", ex.getMessage());
+            return null;
+        }
+    }
+
+    public static <T> List<T> fromYamlList(String srcPath, Class classType) {
+        URL url = ResourceUtils.class.getClassLoader().getResource(srcPath);
+        if (url == null) {
+            return null;
+        }
+        try {
+            CollectionType javaType = OBJECT_MAPPER.getTypeFactory().constructCollectionType(List.class, classType);
+            return OBJECT_MAPPER.readValue(url, javaType);
         } catch (IOException ex) {
             log.warn("failed to read yaml file, reason={}", ex.getMessage());
             return null;

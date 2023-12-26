@@ -16,6 +16,7 @@
 package com.oceanbase.odc.metadb.connection;
 
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -33,6 +34,10 @@ import com.oceanbase.odc.core.shared.constant.ConnectionVisibleScope;
 public interface ConnectionConfigRepository
         extends JpaRepository<ConnectionEntity, Long>, JpaSpecificationExecutor<ConnectionEntity> {
 
+    List<ConnectionEntity> findByUpdateTimeBefore(Date updateTime);
+
+    List<ConnectionEntity> findByUpdateTimeBeforeAndTemp(Date updateTime, Boolean temp);
+
     List<ConnectionEntity> findByOrganizationIdAndNameIn(Long organizationId, Collection<String> names);
 
     Optional<ConnectionEntity> findByVisibleScopeAndOwnerIdAndName(ConnectionVisibleScope visibleScope, Long ownerId,
@@ -42,12 +47,13 @@ public interface ConnectionConfigRepository
 
     List<ConnectionEntity> findByOrganizationId(Long organizationId);
 
+    List<ConnectionEntity> findByProjectId(Long projectId);
 
     @Transactional
     @Query(value = "select distinct(c_c.*) from `connect_connection` as c_c inner join `connect_database` as c_d "
             + "on c_c.id = c_d.connection_id where c_d.project_id = :projectId",
             nativeQuery = true)
-    List<ConnectionEntity> findByProjectId(@Param("projectId") Long projectId);
+    List<ConnectionEntity> findByDatabaseProjectId(@Param("projectId") Long projectId);
 
     @Transactional
     @Query(value = "select `id` from `connect_connection` where `host`=:host", nativeQuery = true)

@@ -80,7 +80,7 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
     @Getter
     private volatile Long taskId;
     @Getter
-    private volatile long timeOutMilliSeconds;
+    private volatile long timeoutMillis;
     @Getter
     private volatile long startTimeMilliSeconds;
     private ScheduledExecutorService scheduleExecutor;
@@ -93,7 +93,7 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
 
     private void init(DelegateExecution execution) {
         this.taskId = FlowTaskUtil.getTaskId(execution);
-        this.timeOutMilliSeconds = FlowTaskUtil.getExecutionExpirationIntervalMillis(execution);
+        this.timeoutMillis = FlowTaskUtil.getExecutionExpirationIntervalMillis(execution);
         this.taskService.updateExecutorInfo(taskId, new ExecutorInfo(hostProperties));
         SecurityContextUtils.setCurrentUser(FlowTaskUtil.getTaskCreator(execution));
     }
@@ -158,7 +158,7 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
             throw new ServiceTaskError(e);
         }
         try {
-            taskLatch.await(timeOutMilliSeconds, TimeUnit.MILLISECONDS);
+            taskLatch.await(timeoutMillis, TimeUnit.MILLISECONDS);
             if (isCancelled()) {
                 throw new ServiceTaskCancelledException();
             }
@@ -194,7 +194,7 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
             }
         } catch (InterruptedException e) {
             log.warn("The task times out, an error will be thrown, taskId={}, startTime={}, timeoutMillis={}",
-                    taskId, new Date(this.startTimeMilliSeconds), timeOutMilliSeconds, e);
+                    taskId, new Date(this.startTimeMilliSeconds), timeoutMillis, e);
             try {
                 cancel(true);
             } catch (Exception e1) {
@@ -229,7 +229,7 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
      * Mark whether the task execution timed out
      */
     protected boolean isTimeout() {
-        return System.currentTimeMillis() - startTimeMilliSeconds > timeOutMilliSeconds;
+        return System.currentTimeMillis() - startTimeMilliSeconds > timeoutMillis;
     }
 
     /**
@@ -249,15 +249,17 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
         if (notificationProperties.isEnabled()) {
             try {
                 TaskEntity taskEntity = taskService.detail(taskId);
-                ConnectionConfig connection =
-                        connectionService.internalGetSkipUserCheck(taskEntity.getConnectionId(), true);
                 EventLabels labels = EventUtils.buildEventLabels(taskEntity.getTaskType(), "failed",
                         taskEntity.getConnectionId());
                 Map<String, String> extend = new HashMap<>();
-                extend.put(EventLabelKeys.VARIABLE_KEY_CLUSTER_NAME, connection.getClusterName());
-                extend.put(EventLabelKeys.VARIABLE_KEY_TENANT_NAME, connection.getTenantName());
                 extend.put(EventLabelKeys.VARIABLE_KEY_TASK_ID, taskId + "");
                 extend.put(EventLabelKeys.VARIABLE_KEY_REGION, SystemUtils.getEnvOrProperty("OB_ARN_PARTITION"));
+                if (taskEntity.getConnectionId() != null) {
+                    ConnectionConfig connection = connectionService.internalGetSkipUserCheck(
+                            taskEntity.getConnectionId(), true, false);
+                    extend.put(EventLabelKeys.VARIABLE_KEY_CLUSTER_NAME, connection.getClusterName());
+                    extend.put(EventLabelKeys.VARIABLE_KEY_TENANT_NAME, connection.getTenantName());
+                }
                 labels.addLabels(extend);
                 broker.enqueueEvent(Event.builder()
                         .status(EventStatus.CREATED)
@@ -270,7 +272,6 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
                 log.warn("Failed to enqueue event.", e);
             }
         }
-
     }
 
     /**

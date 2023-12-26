@@ -42,9 +42,9 @@ import com.oceanbase.odc.core.shared.constant.AuditEventType;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.service.audit.model.AuditEvent;
 import com.oceanbase.odc.service.audit.model.AuditEventExportReq;
+import com.oceanbase.odc.service.audit.model.DownloadFormat;
 import com.oceanbase.odc.service.audit.model.QueryAuditEventParams;
 import com.oceanbase.odc.service.common.model.Stats;
-import com.oceanbase.odc.service.datatransfer.model.DataTransferFormat;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 
 public class AuditEventServiceTest extends ServiceTestEnv {
@@ -135,7 +135,7 @@ public class AuditEventServiceTest extends ServiceTestEnv {
     @Test
     public void testExportCSV_Success() throws IOException {
         AuditEventExportReq req = new AuditEventExportReq();
-        req.setFormat(DataTransferFormat.CSV);
+        req.setFormat(DownloadFormat.CSV);
         String downloadUrl = auditEventService.export(req);
         Assert.assertTrue(downloadUrl.startsWith("/api/v2/objectstorage/AUDIT/files/") && downloadUrl.endsWith(".csv"));
     }
@@ -143,7 +143,7 @@ public class AuditEventServiceTest extends ServiceTestEnv {
     @Test
     public void testExportExcel_Success() throws IOException {
         AuditEventExportReq req = new AuditEventExportReq();
-        req.setFormat(DataTransferFormat.EXCEL);
+        req.setFormat(DownloadFormat.EXCEL);
         String downloadUrl = auditEventService.export(req);
         Assert.assertTrue(
                 downloadUrl.startsWith("/api/v2/objectstorage/AUDIT/files/") && downloadUrl.endsWith(".xlsx"));

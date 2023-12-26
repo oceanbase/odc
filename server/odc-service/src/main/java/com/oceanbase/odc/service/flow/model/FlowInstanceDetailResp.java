@@ -29,6 +29,7 @@ import org.apache.commons.collections4.CollectionUtils;
 
 import com.oceanbase.odc.common.i18n.Internationalizable;
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.core.flow.model.TaskParameters;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
@@ -41,19 +42,20 @@ import com.oceanbase.odc.metadb.flow.FlowInstanceEntity;
 import com.oceanbase.odc.metadb.iam.RoleEntity;
 import com.oceanbase.odc.metadb.iam.UserEntity;
 import com.oceanbase.odc.metadb.task.TaskEntity;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
 import com.oceanbase.odc.service.common.model.InnerUser;
-import com.oceanbase.odc.service.datatransfer.model.DataTransferConfig;
 import com.oceanbase.odc.service.flow.instance.BaseFlowNodeInstance;
 import com.oceanbase.odc.service.flow.instance.FlowApprovalInstance;
 import com.oceanbase.odc.service.flow.instance.FlowInstance;
 import com.oceanbase.odc.service.flow.instance.FlowTaskInstance;
 import com.oceanbase.odc.service.flow.model.FlowNodeInstanceDetailResp.FlowNodeInstanceMapper;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
-import com.oceanbase.odc.service.flow.task.model.MockTaskConfig;
+import com.oceanbase.odc.service.flow.task.model.OdcMockTaskConfig;
 import com.oceanbase.odc.service.flow.task.model.ShadowTableSyncTaskParameter;
 import com.oceanbase.odc.service.flow.util.FlowInstanceUtil;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanTaskParameters;
+import com.oceanbase.odc.service.permissionapply.project.ApplyProjectParameter;
 import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevel;
 import com.oceanbase.odc.service.resultset.ResultSetExportTaskParameter;
 import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleParameters;
@@ -311,7 +313,7 @@ public class FlowInstanceDetailResp {
                     resp.setParameters(JsonUtils.fromJson(parameterJson, DataTransferConfig.class));
                     break;
                 case MOCKDATA:
-                    resp.setParameters(JsonUtils.fromJson(parameterJson, MockTaskConfig.class));
+                    resp.setParameters(JsonUtils.fromJson(parameterJson, OdcMockTaskConfig.class));
                     break;
                 case SHADOWTABLE_SYNC:
                     resp.setParameters(JsonUtils.fromJson(parameterJson, ShadowTableSyncTaskParameter.class));
@@ -327,6 +329,9 @@ public class FlowInstanceDetailResp {
                     break;
                 case EXPORT_RESULT_SET:
                     resp.setParameters(JsonUtils.fromJson(parameterJson, ResultSetExportTaskParameter.class));
+                    break;
+                case APPLY_PROJECT_PERMISSION:
+                    resp.setParameters(JsonUtils.fromJson(parameterJson, ApplyProjectParameter.class));
                     break;
                 default:
                     throw new UnsupportedException("Unsupported task type " + taskEntity.getTaskType());

@@ -15,7 +15,9 @@
  */
 package com.oceanbase.odc.config;
 
+import java.io.IOException;
 import java.util.List;
+import java.util.Objects;
 
 import javax.annotation.PostConstruct;
 import javax.validation.constraints.NotBlank;
@@ -31,12 +33,21 @@ import org.springframework.security.web.firewall.HttpFirewall;
 import org.springframework.session.web.http.CookieSerializer;
 import org.springframework.session.web.http.DefaultCookieSerializer;
 
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.BeanProperty;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.databind.ser.ContextualSerializer;
 import com.oceanbase.odc.common.i18n.I18nOutputSerializer;
 import com.oceanbase.odc.common.i18n.Internationalizable;
 import com.oceanbase.odc.common.json.JacksonFactory;
 import com.oceanbase.odc.common.json.JacksonModules;
 import com.oceanbase.odc.common.json.JacksonModules.CustomOutputSerializer;
+import com.oceanbase.odc.common.json.NormalDialectTypeOutput;
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.service.connection.CloudMetadataClient;
 import com.oceanbase.odc.service.connection.model.OBDatabaseUser;
@@ -67,9 +78,12 @@ public class BeanConfiguration {
     public ObjectMapper objectMapper(SensitivePropertyHandler sensitivePropertyHandler) {
         CustomOutputSerializer customOutputSerializer = new CustomOutputSerializer()
                 .addSerializer(Internationalizable.class, new I18nOutputSerializer());
+        SimpleModule dialectTypeModule =
+                new SimpleModule().addSerializer(DialectType.class, new DialectTypeOutputSerializer());
         return JacksonFactory.unsafeJsonMapper()
                 .registerModule(JacksonModules.sensitiveInputHandling(sensitivePropertyHandler::decrypt))
-                .registerModule(JacksonModules.customOutputHandling(customOutputSerializer));
+                .registerModule(JacksonModules.customOutputHandling(customOutputSerializer))
+                .registerModule(dialectTypeModule);
     }
 
     /**
@@ -168,6 +182,56 @@ public class BeanConfiguration {
         @Override
         public OBDatabaseUser getSysTenantUser(String instanceId) {
             throw new UnsupportedException("CloudMetadata not supported");
+        }
+    }
+
+    /**
+     * In order to adapt to the fact that there is no ODP_SHARDING_OB_MYSQL in DialectType of the
+     * front-end, ODP_SHARDING_OB_MYSQL is converted to OB_MYSQL during serialization. Will be removed
+     * in the future
+     */
+    @Deprecated
+    private static class DialectTypeOutputSerializer extends JsonSerializer<DialectType> implements
+            ContextualSerializer {
+
+        @Override
+        public void serialize(DialectType dialectType, JsonGenerator jsonGenerator,
+                SerializerProvider serializerProvider) throws IOException {
+            if (Objects.nonNull(dialectType)) {
+                if (dialectType.equals(DialectType.ODP_SHARDING_OB_MYSQL)) {
+                    jsonGenerator.writeString(DialectType.OB_MYSQL.name());
+                } else {
+                    jsonGenerator.writeString(dialectType.name());
+                }
+            } else {
+                jsonGenerator.writeNull();
+            }
+        }
+
+        @Override
+        public JsonSerializer<?> createContextual(SerializerProvider serializerProvider,
+                BeanProperty beanProperty)
+                throws JsonMappingException {
+            if (Objects.isNull(beanProperty)) {
+                return new JsonValueSerializer();
+            }
+            NormalDialectTypeOutput normalOutput = beanProperty.getAnnotation(NormalDialectTypeOutput.class);
+            if (Objects.isNull(normalOutput)) {
+                normalOutput = beanProperty.getContextAnnotation(NormalDialectTypeOutput.class);
+            }
+            return Objects.isNull(normalOutput) ? this : new JsonValueSerializer();
+        }
+
+        private static class JsonValueSerializer extends JsonSerializer<DialectType> {
+            @Override
+            public void serialize(DialectType dialectType, JsonGenerator jsonGenerator,
+                    SerializerProvider serializerProvider) throws IOException {
+                if (Objects.nonNull(dialectType)) {
+                    jsonGenerator.writeString(dialectType.name());
+                } else {
+                    jsonGenerator.writeNull();
+                }
+            }
         }
     }
 

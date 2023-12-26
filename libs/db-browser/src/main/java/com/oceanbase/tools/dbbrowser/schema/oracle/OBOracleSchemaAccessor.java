@@ -92,7 +92,9 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
     public DBDatabase getDatabase(String schemaName) {
         DBDatabase database = new DBDatabase();
         OracleSqlBuilder sb = new OracleSqlBuilder();
-        sb.append("SELECT USERNAME, USERID from ALL_USERS WHERE USERNAME = ").value(schemaName);
+        sb.append("SELECT USERNAME, USERID from ")
+                .append(dataDictTableNames.USERS())
+                .append(" WHERE USERNAME = ").value(schemaName);
         jdbcOperations.query(sb.toString(), rs -> {
             database.setId(rs.getString("USERID"));
             database.setName(rs.getString("USERNAME"));
@@ -111,7 +113,7 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
     @Override
     public List<DBDatabase> listDatabases() {
         List<DBDatabase> databases = new ArrayList<>();
-        String sql = "SELECT USERNAME from ALL_USERS;";
+        String sql = "SELECT USERNAME from " + dataDictTableNames.USERS();
         jdbcOperations.query(sql, rs -> {
             DBDatabase database = new DBDatabase();
             String userName = rs.getString("USERNAME");
@@ -343,9 +345,9 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
         OracleSqlBuilder sb = new OracleSqlBuilder();
         sb.append("select s.* , o.created, o.last_ddl_time, o.status from");
         sb.append(" (select * from ");
-        sb.identifier(dataDictTableNames.OBJECTS());
+        sb.append(dataDictTableNames.OBJECTS());
         sb.append(" where object_type='FUNCTION') o right join ");
-        sb.identifier(dataDictTableNames.SOURCE());
+        sb.append(dataDictTableNames.SOURCE());
         sb.append(" s on s.name = o.object_name and s.owner = o.owner and s.type = o.object_type");
         sb.append(" where s.owner=");
         sb.value(schemaName);
@@ -675,9 +677,9 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
                 .append(",s.FIRE_ONCE")
                 .append(",s.APPLY_SERVER_ONLY")
                 .append(",o.STATUS")
-                .append(" FROM (SELECT * FROM ").identifier(dataDictTableNames.OBJECTS())
+                .append(" FROM (SELECT * FROM ").append(dataDictTableNames.OBJECTS())
                 .append(" WHERE OBJECT_TYPE='TRIGGER') o")
-                .append(" RIGHT JOIN ").identifier(dataDictTableNames.TRIGGERS())
+                .append(" RIGHT JOIN ").append(dataDictTableNames.TRIGGERS())
                 .append(" s ON o.OBJECT_NAME=s.TRIGGER_NAME AND o.OWNER=s.OWNER")
                 .append(" WHERE s.OWNER=").value(schemaName).append(" AND s.TRIGGER_NAME=").value(triggerName);
         Map<String, String> map = jdbcOperations.queryForObject(sb.toString(), (rs, rowNum) -> {

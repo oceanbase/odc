@@ -25,15 +25,17 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.As;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
+import com.oceanbase.odc.core.flow.model.TaskParameters;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.TaskType;
-import com.oceanbase.odc.service.datatransfer.model.DataTransferConfig;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
 import com.oceanbase.odc.service.flow.processor.CreateFlowInstanceProcessAspect;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
-import com.oceanbase.odc.service.flow.task.model.MockTaskConfig;
+import com.oceanbase.odc.service.flow.task.model.OdcMockTaskConfig;
 import com.oceanbase.odc.service.flow.task.model.ShadowTableSyncTaskParameter;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanTaskParameters;
+import com.oceanbase.odc.service.permissionapply.project.ApplyProjectParameter;
 import com.oceanbase.odc.service.resultset.ResultSetExportTaskParameter;
 import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleParameters;
 
@@ -50,7 +52,6 @@ public class CreateFlowInstanceReq {
     /**
      * Database id
      */
-    @NotNull
     private Long databaseId;
     /**
      * Task type
@@ -80,14 +81,15 @@ public class CreateFlowInstanceReq {
     @NotNull
     @JsonTypeInfo(use = Id.NAME, include = As.EXTERNAL_PROPERTY, property = "taskType")
     @JsonSubTypes(value = {
-            @JsonSubTypes.Type(value = MockTaskConfig.class, name = "MOCKDATA"),
+            @JsonSubTypes.Type(value = OdcMockTaskConfig.class, name = "MOCKDATA"),
             @JsonSubTypes.Type(value = DataTransferConfig.class, names = {"EXPORT", "IMPORT"}),
             @JsonSubTypes.Type(value = DatabaseChangeParameters.class, names = {"ASYNC"}),
             @JsonSubTypes.Type(value = PartitionPlanTaskParameters.class, name = "PARTITION_PLAN"),
             @JsonSubTypes.Type(value = ShadowTableSyncTaskParameter.class, name = "SHADOWTABLE_SYNC"),
             @JsonSubTypes.Type(value = AlterScheduleParameters.class, name = "ALTER_SCHEDULE"),
             @JsonSubTypes.Type(value = OnlineSchemaChangeParameters.class, name = "ONLINE_SCHEMA_CHANGE"),
-            @JsonSubTypes.Type(value = ResultSetExportTaskParameter.class, name = "EXPORT_RESULT_SET")
+            @JsonSubTypes.Type(value = ResultSetExportTaskParameter.class, name = "EXPORT_RESULT_SET"),
+            @JsonSubTypes.Type(value = ApplyProjectParameter.class, name = "APPLY_PROJECT_PERMISSION")
     })
     private TaskParameters parameters;
 

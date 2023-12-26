@@ -17,7 +17,6 @@
 package com.oceanbase.odc.service.dlm;
 
 import com.oceanbase.odc.common.util.StringUtils;
-import com.oceanbase.odc.core.shared.constant.ConnectionAccountType;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.session.factory.OBConsoleDataSourceFactory;
@@ -53,11 +52,10 @@ public class DataSourceInfoBuilder {
                 dataSourceInfo
                         .setObProxy(String.format("%s:%s", connectionConfig.getHost(), connectionConfig.getPort()));
                 dataSourceInfo
-                        .setFullUserName(
-                                OBConsoleDataSourceFactory.getUsername(connectionConfig, ConnectionAccountType.MAIN));
+                        .setFullUserName(OBConsoleDataSourceFactory.getUsername(connectionConfig));
                 dataSourceInfo.setDbType(DataBaseType.OCEANBASEV10.name());
                 dataSourceInfo.setSysUser(connectionConfig.getSysTenantUsername());
-                dataSourceInfo.setUserLocalProxy(false);
+                dataSourceInfo.setClusterName(connectionConfig.getClusterName());
                 if (StringUtils.isNotEmpty(connectionConfig.getSysTenantPassword())) {
                     try {
                         dataSourceInfo.setSysPassword(EncryptUtils.encode(connectionConfig.getSysTenantPassword()));

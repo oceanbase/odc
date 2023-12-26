@@ -35,6 +35,7 @@ import org.springframework.validation.annotation.Validated;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
+import com.oceanbase.odc.core.flow.model.FlowTaskResult;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
@@ -48,7 +49,6 @@ import com.oceanbase.odc.metadb.task.TaskSpecs;
 import com.oceanbase.odc.service.common.model.HostProperties;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
 import com.oceanbase.odc.service.flow.model.QueryTaskInstanceParams;
-import com.oceanbase.odc.service.flow.task.model.FlowTaskResult;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
@@ -88,6 +88,7 @@ public class TaskService {
     private static final String ONLINE_SCHEMA_CHANGE_LOG_PATH_PATTERN =
             "%s/onlineschemachange/%d/%s/onlineschemachange.%s";
     private static final String EXPORT_RESULT_SET_LOG_PATH_PATTERN = "%s/result-set-export/%s/ob-loader-dumper.%s";
+    private static final String APPLY_PROJECT_LOG_PATH_PATTERN = "%s/apply-project/%d/%s/apply-project-task.%s";
 
     @Autowired
     public TaskService(@Value("${odc.log.directory:./log}") String baseTaskLogDir) {
@@ -199,6 +200,10 @@ public class TaskService {
                 break;
             case EXPORT_RESULT_SET:
                 filePath = String.format(EXPORT_RESULT_SET_LOG_PATH_PATTERN, logFilePrefix, taskId,
+                        logLevel.name().toLowerCase());
+                break;
+            case APPLY_PROJECT_PERMISSION:
+                filePath = String.format(APPLY_PROJECT_LOG_PATH_PATTERN, logFilePrefix, userId, taskId,
                         logLevel.name().toLowerCase());
                 break;
             default:

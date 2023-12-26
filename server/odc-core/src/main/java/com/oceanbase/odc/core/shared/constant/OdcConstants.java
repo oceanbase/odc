@@ -28,7 +28,7 @@ public class OdcConstants {
     public static final String ADMIN_ACCOUNT_NAME = "admin";
     public static final List<String> RESERVED_ACCOUNT_NAMES = Collections.singletonList(ADMIN_ACCOUNT_NAME);
     public static final String ADMIN_ROLE_NAME = "system_admin";
-
+    public static final Long DEFAULT_ADMIN_USER_ID = 1L;
     public static final Long DEFAULT_ORGANIZATION_ID = 1L;
     /**
      * Constant Package Name for Odc Usage
@@ -62,6 +62,7 @@ public class OdcConstants {
     public static final String DB_VARIABLE_TYPE_ENUM = "enum";
     public static final String UNKNOWN = "UNKNOWN";
     public static final String ODC_INTERNAL_ROWID = "__ODC_INTERNAL_ROWID__";
+    public static final String ODC_INTERNAL_RESULT_SET = "__ODC_INTERNAL_RESULT_SET__";
     public static final String ROWID = "ROWID";
     public static final String PRIMARY_KEY_NAME = "PRIMARY";
 

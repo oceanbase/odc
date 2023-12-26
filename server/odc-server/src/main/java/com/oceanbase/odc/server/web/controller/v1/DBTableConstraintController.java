@@ -53,16 +53,15 @@ public class DBTableConstraintController {
     public OdcResult<List<DBTableConstraint>> list(@PathVariable String sid) {
         // sid:1-1:d:db1:t:tb1
         ResourceIdentifier i = ResourceIDParser.parse(sid);
-        ConnectionSession session = sessionService.nullSafeGet(i.getSid());
+        ConnectionSession session = sessionService.nullSafeGet(i.getSid(), true);
         return OdcResult.ok(this.constraintService.list(session, i.getDatabase(), i.getTable()));
     }
 
     @ApiOperation(value = "getDeleteSql", notes = "获取删除约束的sql，sid示例：sid:1000-1:d:db1:t:tb1")
     @RequestMapping(value = "/getDeleteSql/{sid:.*}", method = RequestMethod.PATCH)
     public OdcResult<ResourceSql> getDeleteSql(@PathVariable String sid, @RequestBody DBTableConstraint constraint) {
-        String sql =
-                this.constraintService.getDeleteSql(sessionService.nullSafeGet(SidUtils.getSessionId(sid)), constraint);
-        return OdcResult.ok(ResourceSql.ofSql(sql));
+        return OdcResult.ok(ResourceSql.ofSql(this.constraintService.getDeleteSql(
+                sessionService.nullSafeGet(SidUtils.getSessionId(sid), true), constraint)));
     }
 
 }

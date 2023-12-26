@@ -166,6 +166,7 @@ public enum ErrorCodes implements ErrorCode {
     OscSqlTypeInconsistent,
     NoUniqueKeyExists,
     OscNotEnabled,
+    OscLockUserRequired,
     OscUnsupportedForeignKeyTable,
     OscColumnNameInconsistent,
     OscDataCheckInconsistent,
@@ -180,6 +181,7 @@ public enum ErrorCodes implements ErrorCode {
     BuiltInResourceNotAvailable,
     ResourceCreating,
     ResourceModifying,
+    ResourceSynchronizing,
 
     // Integration
     EnableSqlInterceptorNotAllowed,
@@ -212,6 +214,7 @@ public enum ErrorCodes implements ErrorCode {
     ObInvalidPartType,
     ObPartTypeNotSupported,
     ObBasicTypeColumnRequired,
+    ObUpdateKeyRequired,
     ObProcedureExecuteRequireValueForInParam,
     ObAccessDenied,
     ObMysqlAccessDenied,
@@ -224,6 +227,8 @@ public enum ErrorCodes implements ErrorCode {
     ObGetExecuteDetailFailed,
     ObGetPlanExplainFailed,
     ObGetPlanExplainEmpty,
+    ObGetFullLinkTraceFailed,
+    ObFullLinkTraceNotSupported,
 
     ObPreCheckDdlFailed,
     ObCopySchemaFailed,

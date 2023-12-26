@@ -23,6 +23,7 @@ import java.util.Set;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.web.PageableDefault;
@@ -36,6 +37,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.core.shared.constant.OdcConstants;
 import com.oceanbase.odc.service.common.model.Stats;
 import com.oceanbase.odc.service.common.response.ListResponse;
 import com.oceanbase.odc.service.common.response.PaginatedResponse;
@@ -47,6 +49,7 @@ import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.ConnectionStatusManager.CheckState;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
+import com.oceanbase.odc.service.connection.database.model.DatabaseUser;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.model.ConnectionPreviewBatchImportResp;
 import com.oceanbase.odc.service.connection.model.GenerateConnectionStringReq;
@@ -74,10 +77,16 @@ public class DataSourceController {
     @Autowired
     private ConnectionBatchImportPreviewer connectionBatchImportPreviewer;
 
+    @Value("${odc.integration.bastion.enabled:false}")
+    private boolean bastionEnabled;
+
     @ApiOperation(value = "createDataSource", notes = "Create a datasource")
     @RequestMapping(value = "/datasources", method = RequestMethod.POST)
-    public SuccessResponse<ConnectionConfig> createDataSource(@RequestBody ConnectionConfig connectionConfig) {
-        return Responses.success(connectionService.create(connectionConfig));
+    public SuccessResponse<ConnectionConfig> createDataSource(@RequestBody ConnectionConfig config) {
+        if (bastionEnabled) {
+            return Responses.success(connectionService.create(config, OdcConstants.DEFAULT_ADMIN_USER_ID, true));
+        }
+        return Responses.success(connectionService.create(config));
     }
 
     @ApiOperation(value = "deleteDataSource", notes = "Delete a datasource")
@@ -96,7 +105,7 @@ public class DataSourceController {
     @ApiOperation(value = "updateDataSource", notes = "Update a datasource")
     @RequestMapping(value = "/datasources/{id:[\\d]+}", method = RequestMethod.PUT)
     public SuccessResponse<ConnectionConfig> updateDataSource(@PathVariable Long id,
-            @RequestBody ConnectionConfig connectionConfig) {
+            @RequestBody ConnectionConfig connectionConfig) throws InterruptedException {
         return Responses.success(connectionService.update(id, connectionConfig));
     }
 
@@ -200,4 +209,11 @@ public class DataSourceController {
     public SuccessResponse<Boolean> syncDataSource(@PathVariable Long id) throws InterruptedException {
         return Responses.success(databaseService.syncDataSourceSchemas(id));
     }
+
+    @ApiOperation(value = "listUsers", notes = "list users in datasource")
+    @RequestMapping(value = "/datasources/{id:[\\d]+}/users", method = RequestMethod.GET)
+    public PaginatedResponse<DatabaseUser> listUsers(@PathVariable Long id) {
+        return Responses.paginated(databaseService.listUserForOsc(id));
+    }
+
 }

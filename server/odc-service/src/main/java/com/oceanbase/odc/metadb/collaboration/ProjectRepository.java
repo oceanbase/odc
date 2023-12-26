@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.metadb.collaboration;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -22,4 +24,11 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 public interface ProjectRepository extends JpaRepository<ProjectEntity, Long>, JpaSpecificationExecutor<ProjectEntity> {
     Optional<ProjectEntity> findByIdAndOrganizationId(Long id, Long organizationId);
+
+    Optional<ProjectEntity> findByNameAndOrganizationId(String name, Long organizationId);
+
+    List<ProjectEntity> findByIdIn(Collection<Long> ids);
+
+    List<ProjectEntity> findAllByOrganizationId(Long organizationId);
+
 }

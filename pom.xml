@@ -9,7 +9,7 @@
     <packaging>pom</packaging>
     <name>OceanBase Developer Center</name>
     <url>https://github.com/oceanbase/odc</url>
-    <version>4.2.2-SNAPSHOT</version>
+    <version>4.2.3-SNAPSHOT</version>
     <modules>
         <module>server/3rd-party/Libinjection</module>
         <module>server/odc-test</module>
@@ -40,11 +40,11 @@
         <oceanbase-client.version>${env.OCEANBASE_CLIENT_VERSION}</oceanbase-client.version>
         <!--suppress UnresolvedMavenProperty -->
         <ob-loader-dumper.version>${env.OB_LOADER_DUMPER_VERSION}</ob-loader-dumper.version>
-        <ob-data-mocker.version>0.1.4</ob-data-mocker.version>
+        <ob-data-mocker.version>0.2.1</ob-data-mocker.version>
 
         <!-- dependency version -->
         <springframework.version>5.3.26</springframework.version>
-        <spring-security.version>5.7.5</spring-security.version>
+        <spring-security.version>5.7.10</spring-security.version>
         <spring-security-oauth2-client.version>5.7.5</spring-security-oauth2-client.version>
         <spring-integration.version>5.5.18</spring-integration.version>
         <springboot.version>2.7.12</springboot.version>
@@ -59,7 +59,7 @@
         <spring-cloud-starter-bootstrap.version>3.1.0</spring-cloud-starter-bootstrap.version>
         <jasypt-spring-boot-starter.version>3.0.4</jasypt-spring-boot-starter.version>
         <thymeleaf-spring5.version>3.0.13.RELEASE</thymeleaf-spring5.version>
-        <hutool.version>5.8.12</hutool.version>
+        <hutool.version>5.8.23</hutool.version>
         <spring-session-jdbc.version>2.2.1.RELEASE</spring-session-jdbc.version>
         <h2.version>1.4.200</h2.version>
         <commons-text.version>1.10.0</commons-text.version>
@@ -83,6 +83,7 @@
         <org.mapstruct.version>1.4.2.Final</org.mapstruct.version>
         <lombok.version>1.18.10</lombok.version>
         <druid.version>1.2.18</druid.version>
+        <hikari.version>4.0.3</hikari.version>
         <fastjson.version>1.2.83_noneautotype</fastjson.version>
         <mockito.version>3.11.2</mockito.version>
         <moco.version>1.4.0</moco.version>
@@ -92,14 +93,16 @@
         <alipay.sdk.version>4.20.19.ALL</alipay.sdk.version>
         <bucket4j-core.version>4.10.0</bucket4j-core.version>
         <springfox-swagger-ui.version>2.10.0</springfox-swagger-ui.version>
-        <db-browser.version>1.0.3</db-browser.version>
+        <db-browser.version>1.0.4</db-browser.version>
         <ob-sql-parser.version>1.2.0</ob-sql-parser.version>
-        <pf4j.version>3.9.0</pf4j.version>
+        <pf4j.version>3.10.0</pf4j.version>
         <bcpkix-jdk15on.version>1.64</bcpkix-jdk15on.version>
         <alibaba-dingtalk-service-sdk.version>2.0.0</alibaba-dingtalk-service-sdk.version>
         <org.apache.tika.version>2.7.0</org.apache.tika.version>
         <fasterxml.woodstox.version>6.4.0</fasterxml.woodstox.version>
         <groovy-all.version>2.4.7</groovy-all.version>
+        <org.locationtech.jts.version>1.16.1</org.locationtech.jts.version>
+        <org.json.version>20230618</org.json.version>
 
         <!-- aliyun-sdk version -->
         <aliyun-sdk.version>4.6.2</aliyun-sdk.version>
@@ -111,12 +114,12 @@
         <jettison.version>1.5.4</jettison.version>
         <!-- ob-loader-dumper involved -->
         <hadoop-common.version>3.3.4</hadoop-common.version>
-        <netty.version>4.1.85.Final</netty.version>
+        <netty.version>4.1.94.Final</netty.version>
         <obkv-table-client.version>1.2.1</obkv-table-client.version>
         <mina.version>2.1.6</mina.version>
 
         <!-- data-lifecycle-manager version -->
-        <data-lifecycle-manager.version>1.0.6</data-lifecycle-manager.version>
+        <data-lifecycle-manager.version>1.0.8</data-lifecycle-manager.version>
 
         <!-- plugin version -->
         <formatter-maven-plugin.version>2.11.0</formatter-maven-plugin.version>
@@ -136,6 +139,7 @@
         <mysql.jdbc.version>8.0.30</mysql.jdbc.version>
 
         <micrometer-core.version>1.8.0</micrometer-core.version>
+        <mariadb-java-client.version>2.7.11</mariadb-java-client.version>
     </properties>
 
     <dependencyManagement>
@@ -267,6 +271,11 @@
             <dependency>
                 <groupId>com.oceanbase</groupId>
                 <artifactId>schema-plugin-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.oceanbase</groupId>
+                <artifactId>task-plugin-api</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -519,11 +528,6 @@
                 <version>${jackson.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.fasterxml.jackson.dataformat</groupId>
-                <artifactId>jackson-dataformat-xml</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>com.jayway.jsonpath</groupId>
                 <artifactId>json-path</artifactId>
                 <version>${json-path.version}</version>
@@ -630,6 +634,13 @@
                 <version>${druid.version}</version>
             </dependency>
 
+            <!-- Hikari -->
+            <dependency>
+                <groupId>com.zaxxer</groupId>
+                <artifactId>HikariCP</artifactId>
+                <version>${hikari.version}</version>
+            </dependency>
+
             <!-- fastjson低版本有漏洞-->
             <dependency>
                 <groupId>com.alibaba</groupId>
@@ -728,12 +739,16 @@
                 <artifactId>tika-core</artifactId>
                 <version>${org.apache.tika.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.locationtech.jts</groupId>
+                <artifactId>jts-core</artifactId>
+                <version>${org.locationtech.jts.version}</version>
+            </dependency>
 
             <dependency>
                 <groupId>org.json</groupId>
                 <artifactId>json</artifactId>
-                <!-- upgrade to avoid vulnerability issues, version >= 20180130 -->
-                <version>20180813</version>
+                <version>${org.json.version}</version>
             </dependency>
 
             <dependency>
@@ -998,6 +1013,10 @@
                         <groupId>org.mockito</groupId>
                         <artifactId>mockito-junit-jupiter</artifactId>
                     </exclusion>
+                    <exclusion>
+                        <groupId>com.vaadin.external.google</groupId>
+                        <artifactId>android-json</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
             <dependency>
@@ -1075,6 +1094,12 @@
                 <groupId>mysql</groupId>
                 <artifactId>mysql-connector-java</artifactId>
                 <version>${mysql.jdbc.version}</version>
+            </dependency>
+            <!-- https://mvnrepository.com/artifact/org.mariadb.jdbc/mariadb-java-client -->
+            <dependency>
+                <groupId>org.mariadb.jdbc</groupId>
+                <artifactId>mariadb-java-client</artifactId>
+                <version>${mariadb-java-client.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

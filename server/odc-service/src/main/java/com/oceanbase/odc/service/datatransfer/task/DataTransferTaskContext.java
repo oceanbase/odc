@@ -13,121 +13,72 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.oceanbase.odc.service.datatransfer.task;
 
-import java.util.Collections;
-import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.stream.Collectors;
 
-import org.apache.commons.lang.StringUtils;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferTaskResult;
 
-import com.oceanbase.odc.core.shared.Verify;
-import com.oceanbase.odc.service.flow.task.model.DataTransferTaskResult;
-import com.oceanbase.tools.loaddump.common.enums.ObjectType;
-import com.oceanbase.tools.loaddump.common.model.ObjectStatus;
-import com.oceanbase.tools.loaddump.common.model.Summary;
-import com.oceanbase.tools.loaddump.context.TaskContext;
-
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NonNull;
-
-/**
- * {@link DataTransferTaskContext}
- *
- * @author yh263208
- * @date 2022-07-05 17:50
- * @since ODC_release_3.4.0
- */
-@Getter
 public class DataTransferTaskContext implements Future<DataTransferTaskResult> {
+    private final Future<DataTransferTaskResult> controlFuture;
+    private final DataTransferTask task;
 
-    @Getter(AccessLevel.NONE)
-    private final Future<DataTransferTaskResult> handle;
-    volatile TaskContext dataContext;
-    volatile TaskContext schemaContext;
+    public DataTransferTaskContext(Future<DataTransferTaskResult> controlFuture, DataTransferTask task) {
+        this.controlFuture = controlFuture;
+        this.task = task;
+    }
 
-    DataTransferTaskContext(@NonNull Future<DataTransferTaskResult> handle) {
-        this.handle = handle;
+    public DataTransferTaskResult getStatus() {
+        if (task.getJob() == null) {
+            return new DataTransferTaskResult();
+        }
+        return new DataTransferTaskResult(task.getJob().getDataObjectsStatus(),
+                task.getJob().getSchemaObjectsStatus());
+    }
+
+    public double getProgress() {
+        if (task.getJob() == null) {
+            return 0.0;
+        }
+        return task.getJob().getProgress();
     }
 
     @Override
     public boolean cancel(boolean mayInterruptIfRunning) {
-        return handle.cancel(mayInterruptIfRunning);
+        boolean canceled = true;
+        if (task.getJob() != null) {
+            canceled = task.getJob().cancel(mayInterruptIfRunning);
+        }
+        return canceled && controlFuture.cancel(mayInterruptIfRunning);
     }
 
     @Override
     public boolean isCancelled() {
-        return handle.isCancelled();
+        boolean isCanceled = true;
+        if (task.getJob() != null) {
+            isCanceled = task.getJob().isCanceled();
+        }
+        return isCanceled && controlFuture.isCancelled();
     }
 
     @Override
     public boolean isDone() {
-        return handle.isDone();
+        return controlFuture.isDone();
     }
 
     @Override
-    public DataTransferTaskResult get() throws InterruptedException, ExecutionException {
-        return handle.get();
+    public DataTransferTaskResult get() throws ExecutionException, InterruptedException {
+        return controlFuture.get();
     }
 
     @Override
     public DataTransferTaskResult get(long timeout, TimeUnit unit)
-            throws InterruptedException, ExecutionException, TimeoutException {
-        return handle.get(timeout, unit);
-    }
-
-    public double getProgress() {
-        double returnVal = 0.0;
-        int totalTaskCount = 0;
-        if (this.schemaContext != null) {
-            totalTaskCount++;
-            returnVal += this.schemaContext.getProgress().getProgress();
-        }
-        if (this.dataContext != null) {
-            totalTaskCount++;
-            returnVal += this.dataContext.getProgress().getProgress();
-        }
-        if (totalTaskCount <= 0) {
-            return 0.0;
-        }
-        return returnVal / totalTaskCount;
-    }
-
-    public List<ObjectStatus> getSchemaObjectsInfo() {
-        if (schemaContext == null) {
-            return Collections.emptyList();
-        }
-        Summary summary = schemaContext.getSummary();
-        Verify.notNull(summary, "Schema summary");
-        /**
-         * 导入导出组件在某些场景下（例如停止任务），会出现 {@link ObjectStatus#getName()} 为 {@code null}
-         * 的场景，这会造成前端显示错误。在这里过滤掉这个异常值。
-         */
-        return summary.getObjectStatusList().stream().filter(s -> s.getName() != null)
-                .peek(status -> {
-                    if (StringUtils.isNotBlank(status.getType())) {
-                        status.setType(ObjectType.valueOfName(status.getType()).name());
-                    }
-                }).collect(Collectors.toList());
-    }
-
-    public List<ObjectStatus> getDataObjectsInfo() {
-        if (dataContext == null) {
-            return Collections.emptyList();
-        }
-        Summary summary = dataContext.getSummary();
-        Verify.notNull(summary, "Data summary");
-        return summary.getObjectStatusList().stream().filter(s -> s.getName() != null)
-                .peek(status -> {
-                    if (StringUtils.isNotBlank(status.getType())) {
-                        status.setType(ObjectType.valueOfName(status.getType()).name());
-                    }
-                }).collect(Collectors.toList());
+            throws ExecutionException, InterruptedException, TimeoutException {
+        return controlFuture.get(timeout, unit);
     }
 
 }

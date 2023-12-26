@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>plugin-parent</artifactId>
+        <groupId>com.oceanbase</groupId>
+        <version>4.2.3-SNAPSHOT</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>task-plugin-ob-oracle</artifactId>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.oceanbase</groupId>
+            <artifactId>task-plugin-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.oceanbase</groupId>
+            <artifactId>task-plugin-ob-mysql</artifactId>
+        </dependency>
+    </dependencies>
+
+    <properties>
+        <root-project.basedir>${project.parent.parent.basedir}</root-project.basedir>
+        <plugin.class>com.oceanbase.odc.plugin.task.oboracle.OBOracleTaskPlugin</plugin.class>
+        <plugin.dependencies>task-plugin-ob-mysql</plugin.dependencies>
+    </properties>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

@@ -19,12 +19,15 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.apache.commons.collections4.CollectionUtils;
 
 import com.oceanbase.odc.service.dlm.model.OffsetConfig;
 
@@ -58,6 +61,9 @@ public class DataArchiveConditionUtil {
     }
 
     private static Map<String, String> getVariablesMap(List<OffsetConfig> variables) {
+        if (CollectionUtils.isEmpty(variables)) {
+            return Collections.emptyMap();
+        }
         Map<String, String> map = new HashMap<>();
         variables.forEach(obj -> {
             if (map.containsKey(obj.getName())) {

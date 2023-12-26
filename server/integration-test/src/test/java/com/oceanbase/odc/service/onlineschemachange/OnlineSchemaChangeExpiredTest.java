@@ -21,7 +21,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.quartz.JobKey;
 import org.quartz.SchedulerException;
@@ -49,7 +48,6 @@ import lombok.extern.slf4j.Slf4j;
 public class OnlineSchemaChangeExpiredTest extends OBMySqlOscTestEnv {
 
     @Test
-    @Ignore("TODO: fix this test")
     public void test_osc_task_expired_after_seconds() {
 
         createTableForMultiTask();
@@ -57,7 +55,7 @@ public class OnlineSchemaChangeExpiredTest extends OBMySqlOscTestEnv {
             OnlineSchemaChangeParameters changeParameters = getOnlineSchemaChangeParameters();
             ScheduleEntity schedule = getScheduleEntity(config, changeParameters);
             List<OnlineSchemaChangeScheduleTaskParameters> subTaskParameters =
-                    changeParameters.generateSubTaskParameters(config, config.defaultSchema());
+                    changeParameters.generateSubTaskParameters(config, config.getDefaultSchema());
             List<ScheduleTaskEntity> taskEntities = new ArrayList<>();
             subTaskParameters.forEach(
                     taskParameter -> taskEntities.add(getScheduleTaskEntity(schedule.getId(), taskParameter)));

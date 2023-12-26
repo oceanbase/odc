@@ -35,6 +35,14 @@ public class CompileResult {
     private DBPLObjectIdentity identity;
     private String errorMessage;
 
+    public boolean getStatus() {
+        return this.successful;
+    }
+
+    public String getTrack() {
+        return this.errorMessage;
+    }
+
     public Map<String, String> getPLIdentity() {
         if (this.identity == null) {
             return null;

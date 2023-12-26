@@ -19,6 +19,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Optional;
@@ -36,17 +37,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 
+import com.oceanbase.odc.common.util.SystemUtils;
+import com.oceanbase.odc.core.authority.SecurityManager;
 import com.oceanbase.odc.core.authority.exception.AccessDeniedException;
-import com.oceanbase.odc.core.authority.util.Authenticated;
-import com.oceanbase.odc.core.authority.util.PreAuthenticate;
+import com.oceanbase.odc.core.authority.model.DefaultSecurityResource;
+import com.oceanbase.odc.core.authority.permission.Permission;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionRepository;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.session.DefaultConnectionSessionManager;
-import com.oceanbase.odc.core.session.InMemorySessionRepository;
+import com.oceanbase.odc.core.session.InMemoryConnectionSessionRepository;
 import com.oceanbase.odc.core.shared.PreConditions;
-import com.oceanbase.odc.core.shared.constant.ConnectionAccountType;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.LimitMetric;
@@ -73,9 +75,9 @@ import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectProperties;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.model.ConnectionTestResult;
+import com.oceanbase.odc.service.connection.model.CreateSessionReq;
 import com.oceanbase.odc.service.connection.model.CreateSessionResp;
 import com.oceanbase.odc.service.connection.model.DBSessionResp;
-import com.oceanbase.odc.service.datasecurity.accessor.DatasourceColumnAccessor;
 import com.oceanbase.odc.service.db.DBCharsetService;
 import com.oceanbase.odc.service.db.session.DBSessionService;
 import com.oceanbase.odc.service.feature.VersionDiffConfigService;
@@ -84,6 +86,7 @@ import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.auth.AuthorizationFacade;
 import com.oceanbase.odc.service.lab.model.LabProperties;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
+import com.oceanbase.odc.service.session.factory.DefaultConnectSessionIdGenerator;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -97,7 +100,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Validated
 @SkipAuthorize("personal resource")
-@Authenticated
 public class ConnectSessionService {
 
     @Autowired
@@ -134,12 +136,14 @@ public class ConnectSessionService {
     private EnvironmentRepository environmentRepository;
     @Autowired
     private HorizontalDataPermissionValidator horizontalDataPermissionValidator;
+    @Autowired
+    private SecurityManager securityManager;
 
     @PostConstruct
     public void init() {
         log.info("Start to initialize the connection session module");
         this.monitorTaskManager = new ExecuteMonitorTaskManager();
-        ConnectionSessionRepository repository = new InMemorySessionRepository();
+        ConnectionSessionRepository repository = new InMemoryConnectionSessionRepository();
         this.connectionSessionManager = new DefaultConnectionSessionManager(
                 new DefaultTaskManager("connection-session-management"), repository);
         this.connectionSessionManager.addListener(new SessionLimitListener(limitService));
@@ -177,7 +181,6 @@ public class ConnectSessionService {
         }
     }
 
-    @PreAuthenticate(actions = "update", resourceType = "ODC_CONNECTION", indexOfIdParam = 0)
     public CreateSessionResp createByDataSourceId(@NotNull Long dataSourceId) {
         ConnectionSession session = create(dataSourceId, null);
         return CreateSessionResp.builder()
@@ -191,12 +194,7 @@ public class ConnectSessionService {
 
     @SkipAuthorize("check permission internally")
     public CreateSessionResp createByDatabaseId(@NotNull Long databaseId) {
-        Database database = databaseService.detail(databaseId);
-        if (Objects.isNull(database.getProject())
-                && authenticationFacade.currentUser().getOrganizationType() == OrganizationType.TEAM) {
-            throw new AccessDeniedException();
-        }
-        ConnectionSession session = create(database.getDataSource().getId(), database.getName());
+        ConnectionSession session = create(null, databaseId);
         return CreateSessionResp.builder()
                 .sessionId(session.getId())
                 .supports(configService.getSupportFeatures(session))
@@ -206,42 +204,69 @@ public class ConnectSessionService {
                 .build();
     }
 
-    @SkipAuthorize("only for unit test")
-    protected ConnectionSession createForTest(@NotNull Long dataSourceId, String schemaName) {
-        return create(dataSourceId, schemaName);
+    @SkipAuthorize("check permission internally")
+    public ConnectionSession create(Long dataSourceId, Long databaseId) {
+        return create(new CreateSessionReq(dataSourceId, databaseId, null));
     }
 
-    private ConnectionSession create(@NotNull Long dataSourceId, String schemaName) {
+    @SkipAuthorize("check permission internally")
+    public ConnectionSession create(@NotNull CreateSessionReq req) {
+        Long dataSourceId;
+        String schemaName;
+        if (req.getDbId() != null) {
+            // create session by database id
+            Database database = databaseService.detail(req.getDbId());
+            if (Objects.isNull(database.getProject())
+                    && authenticationFacade.currentUser().getOrganizationType() == OrganizationType.TEAM) {
+                throw new AccessDeniedException();
+            }
+            schemaName = database.getName();
+            dataSourceId = database.getDataSource().getId();
+        } else {
+            // create session by datasource id
+            PreConditions.notNull(req.getDsId(), "DatasourceId");
+            Permission requiredPermission = this.securityManager.getPermissionByActions(
+                    new DefaultSecurityResource(req.getDsId().toString(), ResourceType.ODC_CONNECTION.name()),
+                    Collections.singletonList("update"));
+            this.securityManager.checkPermission(requiredPermission);
+            schemaName = null;
+            dataSourceId = req.getDsId();
+        }
         preCheckSessionLimit();
-
         ConnectionConfig connection = connectionService.getForConnectionSkipPermissionCheck(dataSourceId);
+        if (StringUtils.isNotBlank(schemaName) && connection.getDialectType().isOracle()) {
+            schemaName = com.oceanbase.odc.common.util.StringUtils.quoteOracleIdentifier(schemaName);
+        }
         horizontalDataPermissionValidator.checkCurrentOrganization(connection);
-        log.info("Begin to create session, connection id={}, name={}", connection.id(), connection.getName());
+        log.info("Begin to create session, connectionId={}, name={}", connection.id(), connection.getName());
         Set<String> actions = authorizationFacade.getAllPermittedActions(authenticationFacade.currentUser(),
                 ResourceType.ODC_CONNECTION, "" + dataSourceId);
         connection.setPermittedActions(actions);
-        ConnectionTestResult result = connectionTesting.test(connection, ConnectionAccountType.MAIN);
+        ConnectionTestResult result = connectionTesting.test(connection);
         if (!result.isActive() && result.getErrorCode() != ErrorCodes.ConnectionInitScriptFailed) {
             throw new VerifyException(result.getErrorMessage());
         }
         UserConfig userConfig = userConfigFacade.queryByCache(authenticationFacade.currentUserId());
         SqlExecuteTaskManagerFactory factory =
                 new SqlExecuteTaskManagerFactory(this.monitorTaskManager, "console", 1);
+        if (StringUtils.isNotEmpty(schemaName)) {
+            connection.setDefaultSchema(schemaName);
+        }
         DefaultConnectSessionFactory sessionFactory = new DefaultConnectSessionFactory(
-                connection, ConnectionAccountType.MAIN, getAutoCommit(connection, userConfig), factory);
+                connection, getAutoCommit(connection, userConfig), factory);
+        DefaultConnectSessionIdGenerator idGenerator = new DefaultConnectSessionIdGenerator();
+        idGenerator.setDatabaseId(req.getDbId());
+        idGenerator.setFixRealId(StringUtils.isBlank(req.getRealId()) ? null : req.getRealId());
+        sessionFactory.setIdGenerator(idGenerator);
         long timeoutMillis = TimeUnit.MILLISECONDS.convert(sessionProperties.getTimeoutMins(), TimeUnit.MINUTES);
         timeoutMillis = timeoutMillis + this.connectionSessionManager.getScanIntervalMillis();
         sessionFactory.setSessionTimeoutMillis(timeoutMillis);
         ConnectionSession session = connectionSessionManager.start(sessionFactory);
+        if (session == null) {
+            throw new BadRequestException("Failed to create a session");
+        }
         try {
             initSession(session, connection, userConfig);
-            ConnectionSessionUtil.setPermittedActions(session, actions);
-            ConnectionSessionUtil.setConnectionAccountType(session, ConnectionAccountType.MAIN);
-            DatasourceColumnAccessor accessor = new DatasourceColumnAccessor(session);
-            ConnectionSessionUtil.setColumnAccessor(session, accessor);
-            if (StringUtils.isNotEmpty(schemaName)) {
-                ConnectionSessionUtil.setCurrentSchema(session, schemaName);
-            }
             log.info("Connect session created, connectionId={}, session={}", dataSourceId, session);
             return session;
         } catch (Exception e) {
@@ -278,14 +303,23 @@ public class ConnectSessionService {
     }
 
     public ConnectionSession nullSafeGet(@NotNull String sessionId) {
+        return nullSafeGet(sessionId, false);
+    }
+
+    public ConnectionSession nullSafeGet(@NotNull String sessionId, boolean autoCreate) {
         ConnectionSession session = connectionSessionManager.getSession(sessionId);
         if (session == null) {
-            throw new NotFoundException(ResourceType.ODC_SESSION, "ID", sessionId);
+            CreateSessionReq req = new DefaultConnectSessionIdGenerator().getKeyFromId(sessionId);
+            if (!autoCreate || !StringUtils.equals(req.getFrom(), SystemUtils.getHostName())) {
+                throw new NotFoundException(ResourceType.ODC_SESSION, "ID", sessionId);
+            }
+            session = create(req);
+            ConnectionSessionUtil.setConsoleSessionResetFlag(session, true);
+            return session;
         }
         if (!Objects.equals(ConnectionSessionUtil.getUserId(session), authenticationFacade.currentUserId())) {
             throw new NotFoundException(ResourceType.ODC_SESSION, "ID", sessionId);
         }
-        checkPermission(session);
         connectionSessionManager.cancelExpire(session);
         return session;
     }
@@ -304,8 +338,8 @@ public class ConnectSessionService {
      */
     public String uploadFile(@NotNull String sessionId, @NotNull InputStream inputStream) throws IOException {
         ConnectionSession connectionSession = nullSafeGet(sessionId);
-        String fileName =
-                String.format("%s_%d_user_defined_file.data", connectionSession.getId(), System.currentTimeMillis());
+        String key = ConnectionSessionUtil.getUniqueIdentifier(connectionSession);
+        String fileName = String.format("%s_%d_user_defined_file.data", key, System.currentTimeMillis());
         File uploadDir = ConnectionSessionUtil.getSessionUploadDir(connectionSession);
         if (!uploadDir.exists() || uploadDir.isFile()) {
             log.warn("The upload directory does not exist or the directory is a file, file={}", uploadDir);
@@ -327,7 +361,7 @@ public class ConnectSessionService {
     }
 
     public DBSessionResp currentDBSession(@NotNull String sessionId) {
-        ConnectionSession connectionSession = nullSafeGet(SidUtils.getSessionId(sessionId));
+        ConnectionSession connectionSession = nullSafeGet(SidUtils.getSessionId(sessionId), true);
         return DBSessionResp.builder()
                 .settings(settingsService.getSessionSettings(connectionSession))
                 .session(dbSessionService.currentSession(connectionSession))
@@ -349,10 +383,8 @@ public class ConnectSessionService {
 
         ConnectionSessionUtil.setQueryLimit(connectionSession, userConfig.getDefaultQueryLimit());
         ConnectionSessionUtil.setUserId(connectionSession, authenticationFacade.currentUserId());
-        ConnectionSessionUtil.setConnectionConfig(connectionSession, connectionConfig);
         if (connectionSession.getDialectType() == DialectType.OB_ORACLE) {
             ConnectionSessionUtil.initConsoleSessionTimeZone(connectionSession, connectProperties.getDefaultTimeZone());
-            log.info("Init time zone completed.");
         }
         Long envId = connectionConfig.getEnvironmentId();
         if (envId != null) {
@@ -361,14 +393,6 @@ public class ConnectSessionService {
                 ConnectionSessionUtil.setRuleSetId(connectionSession, optional.get().getRulesetId());
             }
         }
-    }
-
-    private void checkPermission(ConnectionSession session) {
-        // Only allow access to sessions created by the user himself/herself
-        if (ConnectionSessionUtil.getUserId(session) == authenticationFacade.currentUserId()) {
-            return;
-        }
-        throw new BadRequestException(ErrorCodes.UnauthorizedSessionAccess, null, "Unauthorized");
     }
 
     private ConnectionSession getWithCreatorCheck(@NonNull String sessionId) {

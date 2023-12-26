@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.onlineschemachange.model;
 
+import com.oceanbase.odc.common.json.NormalDialectTypeOutput;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 
 import lombok.AllArgsConstructor;
@@ -32,6 +33,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class OnlineSchemaChangeScheduleTaskResult {
+    @NormalDialectTypeOutput
     private DialectType dialectType;
 
     /**
@@ -104,6 +106,17 @@ public class OnlineSchemaChangeScheduleTaskResult {
      * new table ddl
      */
     private String newTableDdl;
+
+    /**
+     * enable open manual swap table entry point
+     */
+    private boolean manualSwapTableEnabled;
+
+    /**
+     * manual start swap table
+     */
+    private boolean manualSwapTableStarted;
+
 
     public OnlineSchemaChangeScheduleTaskResult(OnlineSchemaChangeScheduleTaskParameters taskParam) {
         this.originTableName = taskParam.getOriginTableName();

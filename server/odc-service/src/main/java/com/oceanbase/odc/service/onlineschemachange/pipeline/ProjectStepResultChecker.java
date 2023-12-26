@@ -131,6 +131,9 @@ public class ProjectStepResultChecker {
             checkerResult.setPreCheckResult(PrecheckResult.FAILED);
             checkerResult.setErrorMsg(precheckStep.getExtraInfo().getErrorMsg());
         }
+        if (precheckStep.getStatus() == OmsStepStatus.FINISHED) {
+            checkerResult.setPreCheckResult(PrecheckResult.FINISHED);
+        }
         if (precheckStep.getProgress() != null) {
             checkerResult.setPrecheckProgressPercentage(precheckStep.getProgress());
         }

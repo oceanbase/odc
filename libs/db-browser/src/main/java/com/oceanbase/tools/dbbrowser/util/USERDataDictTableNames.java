@@ -18,7 +18,7 @@ package com.oceanbase.tools.dbbrowser.util;
 public class USERDataDictTableNames extends AbstractOracleDataDictTableNames {
     @Override
     public String prefix() {
-        return "USER_";
+        return SCHEMA_NAME + ".USER_";
     }
 
     @Override

@@ -15,20 +15,20 @@
  */
 package com.oceanbase.odc.metadb.flow;
 
-import java.util.Collection;
-import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 
 import javax.transaction.Transactional;
 
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import com.oceanbase.odc.common.jpa.InsertSqlTemplateBuilder;
+import com.oceanbase.odc.config.jpa.OdcJpaRepository;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
 import com.oceanbase.odc.service.flow.model.FlowNodeType;
@@ -40,7 +40,7 @@ import com.oceanbase.odc.service.flow.model.FlowNodeType;
  * @date 2022-02-15 11:44
  * @since ODC_release_3.3.0
  */
-public interface ServiceTaskInstanceRepository extends JpaRepository<ServiceTaskInstanceEntity, Long>,
+public interface ServiceTaskInstanceRepository extends OdcJpaRepository<ServiceTaskInstanceEntity, Long>,
         JpaSpecificationExecutor<ServiceTaskInstanceEntity> {
 
     @Transactional
@@ -76,29 +76,40 @@ public interface ServiceTaskInstanceRepository extends JpaRepository<ServiceTask
 
     Optional<ServiceTaskInstanceEntity> findByFlowInstanceId(Long flowInstanceId);
 
-    @Query(value = "select nt.flow_instance_id from flow_instance_node_task nt inner join task_task tt on "
-            + "nt.task_task_id=tt.id where tt.connection_id in (:connectionIds) and "
-            + "(nt.create_time between :startTime and :endTime)",
-            nativeQuery = true)
-    List<Long> findIdByConnectionIdsAndPeriod(@Param("connectionIds") Collection<Long> connectionIds,
-            @Param("startTime") Date startTime, @Param("endTime") Date endTime);
-
-    @Query(value = "select nt.flow_instance_id from flow_instance_node_task nt inner join task_task tt on "
-            + "nt.task_task_id=tt.id where tt.database_name like %:databaseName% and "
-            + "(nt.create_time between :startTime and :endTime)",
-            nativeQuery = true)
-    List<Long> findIdByDatabaseNameLikeAndPeriod(@Param("databaseName") String databaseName,
-            @Param("startTime") Date startTime, @Param("endTime") Date endTime);
-
-    @Query(value = "select nt.flow_instance_id from flow_instance_node_task nt where nt.task_type=:taskType and "
-            + "(nt.create_time between :startTime and :endTime)", nativeQuery = true)
-    List<Long> findIdByTaskTypeAndPeriod(@Param("taskType") String taskType, @Param("startTime") Date startTime,
-            @Param("endTime") Date endTime);
-
     @Query(value = "select b.* from flow_instance a left join flow_instance_node_task b "
             + "on a.id = b.flow_instance_id "
             + "where a.parent_instance_id=:id and b.task_type=:#{#type.name()}", nativeQuery = true)
     List<ServiceTaskInstanceEntity> findByScheduleIdAndTaskType(@Param("id") Long scheduleId,
             @Param("type") TaskType type);
+
+    default List<ServiceTaskInstanceEntity> batchCreate(List<ServiceTaskInstanceEntity> entities) {
+        String sql = InsertSqlTemplateBuilder.from("flow_instance_node_task")
+                .field(ServiceTaskInstanceEntity_.organizationId)
+                .field("task_task_id")
+                .field("task_execution_strategy")
+                .field(ServiceTaskInstanceEntity_.taskType)
+                .field("wait_execution_expire_interval_seconds")
+                .field(ServiceTaskInstanceEntity_.status)
+                .field("is_start_endpoint")
+                .field("is_end_endpoint")
+                .field(ServiceTaskInstanceEntity_.flowInstanceId)
+                .field(ServiceTaskInstanceEntity_.executionTime)
+                .build();
+
+        List<Function<ServiceTaskInstanceEntity, Object>> getter = valueGetterBuilder().add(
+                ServiceTaskInstanceEntity::getOrganizationId)
+                .add(ServiceTaskInstanceEntity::getTargetTaskId)
+                .add((ServiceTaskInstanceEntity e) -> e.getStrategy().name())
+                .add((ServiceTaskInstanceEntity entity) -> entity.getTaskType().name())
+                .add(ServiceTaskInstanceEntity::getWaitExecExpireIntervalSeconds)
+                .add((ServiceTaskInstanceEntity entity) -> entity.getStatus().name())
+                .add(ServiceTaskInstanceEntity::isStartEndpoint)
+                .add(ServiceTaskInstanceEntity::isEndEndpoint)
+                .add(ServiceTaskInstanceEntity::getFlowInstanceId)
+                .add(ServiceTaskInstanceEntity::getExecutionTime)
+                .build();
+
+        return batchCreate(entities, sql, getter, ServiceTaskInstanceEntity::setId);
+    }
 
 }

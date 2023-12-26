@@ -19,7 +19,9 @@ import java.io.StringReader;
 import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -61,6 +63,7 @@ import com.oceanbase.tools.sqlparser.statement.createtable.RangePartitionElement
 import com.oceanbase.tools.sqlparser.statement.createtable.TableElement;
 import com.oceanbase.tools.sqlparser.statement.expression.RelationReference;
 
+import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
@@ -71,6 +74,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class OBOracleGetDBTableByParser implements GetDBTableByParser {
+    @Getter
     private final CreateTable createTableStmt;
     private final Connection connection;
     private final String schemaName;
@@ -78,6 +82,8 @@ public class OBOracleGetDBTableByParser implements GetDBTableByParser {
     private final char ORACLE_IDENTIFIER_WRAP_CHAR = '"';
     private List<DBTableConstraint> constraints = new ArrayList<>();
     private List<DBTableIndex> indexes = new ArrayList<>();
+    @Getter
+    private Map<String, String> indexName2Ddl = new HashMap<>();
 
     public OBOracleGetDBTableByParser(@NonNull Connection connection, @NonNull String schemaName,
             @NonNull String tableName) {
@@ -309,7 +315,9 @@ public class OBOracleGetDBTableByParser implements GetDBTableByParser {
                 String getIndexDDLSql = "SELECT dbms_metadata.get_ddl('INDEX', '" + idx.getName() + "', '" + schemaName
                         + "') as DDL from dual";
                 JdbcOperationsUtil.getJdbcOperations(connection).query(getIndexDDLSql, (rs) -> {
-                    CreateIndex createIndexStmt = parseIndexDDL(rs.getString("DDL"));
+                    String idxDDL = rs.getString("DDL");
+                    this.indexName2Ddl.put(idx.getName(), idxDDL);
+                    CreateIndex createIndexStmt = parseIndexDDL(idxDDL);
                     idx.setGlobal(
                             Objects.nonNull(createIndexStmt.getIndexOptions()) ? createIndexStmt.getIndexOptions()
                                     .getGlobal()
@@ -404,7 +412,7 @@ public class OBOracleGetDBTableByParser implements GetDBTableByParser {
             option.setPartitionsNum(num);
             for (int i = 0; i < num; i++) {
                 DBTablePartitionDefinition partitionDefinition = new DBTablePartitionDefinition();
-                partitionDefinition.setName(statement.getPartitionElements().get(i).getRelation());
+                partitionDefinition.setName(removeIdentifiers(statement.getPartitionElements().get(i).getRelation()));
                 partitionDefinition.setOrdinalPosition(i);
                 partitionDefinition.setType(DBTablePartitionType.HASH);
                 partition.getPartitionDefinitions().add(partitionDefinition);
@@ -436,7 +444,7 @@ public class OBOracleGetDBTableByParser implements GetDBTableByParser {
             partitionDefinition.setOrdinalPosition(i);
             partitionDefinition.setMaxValues(
                     element.getRangeExprs().stream().map(Expression::getText).collect(Collectors.toList()));
-            partitionDefinition.setName(element.getRelation());
+            partitionDefinition.setName(removeIdentifiers(element.getRelation()));
             partitionDefinition.setType(DBTablePartitionType.RANGE);
             partition.getPartitionDefinitions().add(partitionDefinition);
         }
@@ -457,7 +465,7 @@ public class OBOracleGetDBTableByParser implements GetDBTableByParser {
             List<List<String>> valuesList = new ArrayList<>();
             element.getListExprs().forEach(item -> valuesList.add(Collections.singletonList(item.getText())));
             partitionDefinition.setValuesList(valuesList);
-            partitionDefinition.setName(element.getRelation());
+            partitionDefinition.setName(removeIdentifiers(element.getRelation()));
             partitionDefinition.setType(DBTablePartitionType.LIST);
             partition.getPartitionDefinitions().add(partitionDefinition);
         }

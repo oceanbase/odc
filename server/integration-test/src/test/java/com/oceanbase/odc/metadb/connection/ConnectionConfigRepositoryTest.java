@@ -17,6 +17,7 @@ package com.oceanbase.odc.metadb.connection;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -50,6 +51,42 @@ public class ConnectionConfigRepositoryTest extends ServiceTestEnv {
     @Before
     public void setUp() throws Exception {
         repository.deleteAll();
+    }
+
+    @Test
+    public void test_findByUpdateTimeBefore_return1() {
+        ConnectionEntity connection = createEntity(ConnectionVisibleScope.PRIVATE);
+        repository.save(connection);
+        List<ConnectionEntity> entities = repository.findByUpdateTimeBefore(new Date(new Date().getTime() + 5 * 1000L));
+        Assert.assertEquals(1, entities.size());
+    }
+
+    @Test
+    public void test_findByUpdateTimeBefore_return0() {
+        ConnectionEntity connection = createEntity(ConnectionVisibleScope.PRIVATE);
+        repository.save(connection);
+        List<ConnectionEntity> entities = repository.findByUpdateTimeBefore(new Date(new Date().getTime() - 5 * 1000L));
+        Assert.assertEquals(0, entities.size());
+    }
+
+    @Test
+    public void test_findByUpdateTimeBeforeAndTemp_return1() {
+        ConnectionEntity connection = createEntity(ConnectionVisibleScope.PRIVATE);
+        connection.setTemp(true);
+        repository.save(connection);
+        List<ConnectionEntity> entities =
+                repository.findByUpdateTimeBeforeAndTemp(new Date(new Date().getTime() + 5 * 1000L), true);
+        Assert.assertEquals(1, entities.size());
+    }
+
+    @Test
+    public void test_findByUpdateTimeBeforeAndTemp_return0() {
+        ConnectionEntity connection = createEntity(ConnectionVisibleScope.PRIVATE);
+        connection.setTemp(true);
+        repository.save(connection);
+        List<ConnectionEntity> entities =
+                repository.findByUpdateTimeBeforeAndTemp(new Date(new Date().getTime() + 5 * 1000L), false);
+        Assert.assertEquals(0, entities.size());
     }
 
     @Test

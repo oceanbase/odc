@@ -16,20 +16,20 @@
 
 package com.oceanbase.odc.service.session.util;
 
-import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import org.antlr.v4.runtime.tree.ParseTree;
+import java.util.stream.Stream;
 
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.constant.DialectType;
-import com.oceanbase.tools.sqlparser.OBMySQLParser;
-import com.oceanbase.tools.sqlparser.OBOracleSQLParser;
+import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
+import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTree;
+import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTreeFactories;
+import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTreeFactory;
 import com.oceanbase.tools.sqlparser.adapter.mysql.MySQLFromReferenceFactory;
 import com.oceanbase.tools.sqlparser.adapter.oracle.OracleFromReferenceFactory;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Create_database_stmtContext;
@@ -51,51 +51,61 @@ import lombok.Getter;
  */
 public class SchemaExtractor {
 
-    public static Set<String> listSchemaNames(List<String> sqls, DialectType dialectType) {
-        Set<String> databaseNames = new HashSet<>();
-        for (String sql : sqls) {
-            if (dialectType.isMysql()) {
-                OBMySQLParser sqlParser = new OBMySQLParser();
-                try {
-                    ParseTree root = sqlParser.buildAst(new StringReader(sql));
-                    OBMySQLRelationFactorVisitor visitor =
-                            new OBMySQLRelationFactorVisitor();
-                    visitor.visit(root);
-                    List<RelationFactor> relationFactorList = visitor.getRelationFactorList();
-                    databaseNames
-                            .addAll(relationFactorList.stream().map(
-                                    relationFactor -> StringUtils.unquoteMySqlIdentifier(relationFactor.getSchema()))
-                                    .filter(Objects::nonNull)
-                                    .collect(Collectors.toSet()));
-                } catch (Exception ex) {
-                    // just eat exception due to parse failed
+    public static Set<String> listSchemaNames(DialectType dialectType, List<SqlTuple> sqlTuples) {
+        return sqlTuples.stream().flatMap(sqlTuple -> {
+            try {
+                AbstractSyntaxTree ast = sqlTuple.getAst();
+                if (ast == null) {
+                    sqlTuple.initAst(AbstractSyntaxTreeFactories.getAstFactory(dialectType, 0));
+                    ast = sqlTuple.getAst();
                 }
-
-            } else if (dialectType.isOracle()) {
-                OBOracleSQLParser sqlParser = new OBOracleSQLParser();
-                try {
-                    ParseTree root = sqlParser.buildAst(new StringReader(sql));
-                    OBOracleRelationFactorVisitor visitor =
-                            new OBOracleRelationFactorVisitor();
-                    visitor.visit(root);
-                    List<RelationFactor> relationFactorList = visitor.getRelationFactorList();
-                    databaseNames
-                            .addAll(relationFactorList.stream().map(relationFactor -> {
-                                String schema = relationFactor.getSchema();
-                                if (StringUtils.startsWith(schema, "\"") && StringUtils.endsWith(schema, "\"")) {
-                                    schema = StringUtils.unquoteOracleIdentifier(schema);
-                                } else {
-                                    schema = StringUtils.upperCase(schema);
-                                }
-                                return schema;
-                            }).filter(Objects::nonNull)
-                                    .collect(Collectors.toSet()));
-                } catch (Exception ex) {
-                    // just eat exception due to parse failed
-                }
+                return listSchemaNames(ast, dialectType).stream();
+            } catch (Exception e) {
+                // just eat exception due to parse failed
+                return Stream.empty();
             }
+        }).collect(Collectors.toSet());
+    }
+
+    public static Set<String> listSchemaNames(List<String> sqls, DialectType dialectType) {
+        AbstractSyntaxTreeFactory factory = AbstractSyntaxTreeFactories.getAstFactory(dialectType, 0);
+        if (factory == null) {
+            return new HashSet<>();
         }
-        return databaseNames;
+        return sqls.stream().flatMap(sql -> {
+            try {
+                return listSchemaNames(factory.buildAst(sql), dialectType).stream();
+            } catch (Exception e) {
+                // just eat exception due to parse failed
+                return Stream.empty();
+            }
+        }).collect(Collectors.toSet());
+    }
+
+    private static Set<String> listSchemaNames(AbstractSyntaxTree ast, DialectType dialectType) {
+        if (dialectType.isMysql()) {
+            OBMySQLRelationFactorVisitor visitor = new OBMySQLRelationFactorVisitor();
+            visitor.visit(ast.getRoot());
+            List<RelationFactor> relationFactorList = visitor.getRelationFactorList();
+            return relationFactorList.stream()
+                    .filter(r -> StringUtils.isBlank(r.getUserVariable()))
+                    .map(r -> StringUtils.unquoteMySqlIdentifier(r.getSchema()))
+                    .filter(Objects::nonNull).collect(Collectors.toSet());
+        } else if (dialectType.isOracle()) {
+            OBOracleRelationFactorVisitor visitor = new OBOracleRelationFactorVisitor();
+            visitor.visit(ast.getRoot());
+            List<RelationFactor> relationFactorList = visitor.getRelationFactorList();
+            return relationFactorList.stream()
+                    .filter(r -> StringUtils.isBlank(r.getUserVariable()))
+                    .map(r -> {
+                        String schema = r.getSchema();
+                        if (StringUtils.startsWith(schema, "\"") && StringUtils.endsWith(schema, "\"")) {
+                            return StringUtils.unquoteOracleIdentifier(schema);
+                        }
+                        return StringUtils.upperCase(schema);
+                    }).filter(Objects::nonNull).collect(Collectors.toSet());
+        }
+        return new HashSet<>();
     }
 
     private static class OBMySQLRelationFactorVisitor extends OBParserBaseVisitor<RelationFactor> {
@@ -171,6 +181,5 @@ public class SchemaExtractor {
             return null;
         }
     }
-
 
 }

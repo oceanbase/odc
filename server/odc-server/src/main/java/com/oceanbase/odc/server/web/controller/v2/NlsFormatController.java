@@ -55,7 +55,7 @@ public class NlsFormatController {
     @ApiOperation(value = "format", notes = "格式化时间")
     @RequestMapping(value = "/sessions/{sessionId}/format", method = RequestMethod.POST)
     public SuccessResponse<String> createSession(@PathVariable String sessionId, @RequestBody NlsFormatReq req) {
-        return Responses.single(nlsFormatService.format(sessionService.nullSafeGet(sessionId), req));
+        return Responses.single(nlsFormatService.format(sessionService.nullSafeGet(sessionId, true), req));
     }
 
 }

@@ -15,8 +15,10 @@
  */
 package com.oceanbase.odc.server.web.websocket;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -42,6 +44,7 @@ import javax.websocket.Session;
 import javax.websocket.server.PathParam;
 import javax.websocket.server.ServerEndpoint;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -106,6 +109,9 @@ public class WebSocketServer {
 
     @Autowired
     private ConnectionConfigProvider connectionConfigProvider;
+
+    @Value("${odc.server.obclient.command-black-list:}")
+    private List<String> obclientCommandBlackList;
     /**
      * obclient可执行文件路径
      */
@@ -214,7 +220,7 @@ public class WebSocketServer {
         ConnectionSession connectionSession = sessionService.nullSafeGet(SidUtils.getSessionId(resourceId));
         boolean supportSetGBK = isSupportSetGBK(connectionSession);
         String schema = MoreObjects.firstNonNull(ConnectionSessionUtil.getCurrentSchema(connectionSession),
-                connectionConfig.defaultSchema());
+                connectionConfig.getDefaultSchema());
 
         String[] cmds = generateCmd(connectionConfig, supportSetGBK, schema);
 
@@ -275,6 +281,10 @@ public class WebSocketServer {
             obclientCmd.add("--init-command");
             obclientCmd.add("set names gbk");
         }
+        if (CollectionUtils.isNotEmpty(obclientCommandBlackList)) {
+            obclientCmd.add("--ob-disable_commands");
+            obclientCmd.add(String.join(",", obclientCommandBlackList));
+        }
         String password = connectionConfig.getPassword();
         if (StringUtils.isNotBlank(password)) {
             obclientCmd.add(String.format("-p%s", ShellUtils.escape(password)));
@@ -282,19 +292,31 @@ public class WebSocketServer {
         return obclientCmd;
     }
 
-    private void addOsUser(String userId) throws IOException, InterruptedException {
-        Process process = new ProcessBuilder().command("bash", "-c", "useradd ".concat(getOsUserName(userId))).start();
-        if (process.waitFor(10, TimeUnit.SECONDS)) {
-            // exitValue() == 0 means add user successfully, exitValue() == 9 means user already exists, we
-            // would return silently
-            if (process.exitValue() == 0 || process.exitValue() == 9) {
-                log.info("create os user successfully, name={}", getOsUserName(userId));
+    private synchronized void addOsUser(String userId) throws IOException, InterruptedException {
+        String osUserName = getOsUserName(userId);
+        Process userExists = new ProcessBuilder()
+                .command("grep", "-c", "^" + osUserName + ":", "/etc/passwd").start();
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(userExists.getInputStream()))) {
+            String line = reader.readLine();
+            if (StringUtils.equals(line, "1")) {
+                log.info("user {} already exists", osUserName);
                 return;
             }
         }
-        String output = IOUtils.toString(process.getInputStream(), StandardCharsets.UTF_8);
-        log.warn("create os user failed, exitValue={}, output={}", process.exitValue(), output);
-        throw new RuntimeException("create os user failed, exitVal=" + process.exitValue() + ", output=" + output);
+        Process userAdd = new ProcessBuilder()
+                .redirectErrorStream(true).command("bash", "-c", "useradd ".concat(osUserName)).start();
+        if (userAdd.waitFor(10, TimeUnit.SECONDS)) {
+            // exitValue() == 0 means add user successfully, exitValue() == 9 means user already exists, we
+            // would return silently
+            if (userAdd.exitValue() == 0 || userAdd.exitValue() == 9) {
+                log.info("create os user successfully, name={}", osUserName);
+                return;
+            }
+        }
+
+        String output = IOUtils.toString(userAdd.getInputStream(), StandardCharsets.UTF_8);
+        log.warn("create os user failed, exitValue={}, output={}", userAdd.exitValue(), output);
+        throw new RuntimeException("create os user failed, exitVal=" + userAdd.exitValue() + ", output=" + output);
     }
 
     private String getDbUser(ConnectionConfig connectionConfig) {

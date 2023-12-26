@@ -35,6 +35,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.oceanbase.odc.core.flow.model.FlowTaskResult;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
@@ -53,7 +54,6 @@ import com.oceanbase.odc.service.flow.model.FlowInstanceApprovalReq;
 import com.oceanbase.odc.service.flow.model.FlowInstanceDetailResp;
 import com.oceanbase.odc.service.flow.model.FlowMetaInfo;
 import com.oceanbase.odc.service.flow.model.QueryFlowInstanceParams;
-import com.oceanbase.odc.service.flow.task.model.FlowTaskResult;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
@@ -105,6 +105,7 @@ public class FlowInstanceController {
             @RequestParam(required = false, name = "endTime") Date endTime,
             @RequestParam(name = "createdByCurrentUser") Boolean createdByCurrentUser,
             @RequestParam(name = "approveByCurrentUser") Boolean approveByCurrentUser,
+            @RequestParam(required = false, name = "containsAll", defaultValue = "false") Boolean containsAll,
             @RequestParam(required = false, name = "parentInstanceId") Long parentInstanceId,
             @RequestParam(required = false, name = "projectId") Long projectId) {
         QueryFlowInstanceParams params = QueryFlowInstanceParams.builder()
@@ -118,6 +119,7 @@ public class FlowInstanceController {
                 .endTime(endTime)
                 .createdByCurrentUser(createdByCurrentUser)
                 .approveByCurrentUser(approveByCurrentUser)
+                .containsAll(containsAll)
                 .parentInstanceId(parentInstanceId)
                 .projectId(projectId)
                 .build();

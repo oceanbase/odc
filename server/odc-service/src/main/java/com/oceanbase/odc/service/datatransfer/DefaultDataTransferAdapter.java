@@ -22,12 +22,10 @@ import java.io.IOException;
 import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import com.oceanbase.odc.service.datatransfer.model.DataTransferConfig;
-import com.oceanbase.odc.service.datatransfer.task.DataTransferTaskContext;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferTaskResult;
 import com.oceanbase.odc.service.flow.task.OssTaskReferManager;
-import com.oceanbase.odc.service.flow.task.model.DataTransferTaskResult;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
-import com.oceanbase.tools.loaddump.common.model.BaseParameter;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -45,14 +43,13 @@ public class DefaultDataTransferAdapter implements DataTransferAdapter {
     }
 
     @Override
-    public File preHandleWorkDir(DataTransferConfig transferConfig,
-            String bucket, File workDir) {
+    public File preHandleWorkDir(DataTransferConfig config, String bucket, File workDir) throws IOException {
         return workDir;
     }
 
     @Override
-    public void afterHandle(BaseParameter parameter, DataTransferTaskContext context,
-            DataTransferTaskResult result, File exportFile) throws IOException {
+    public void afterHandle(DataTransferConfig config, DataTransferTaskResult result, File exportFile)
+            throws IOException {
         if (!cloudObjectStorageService.supported()) {
             return;
         }

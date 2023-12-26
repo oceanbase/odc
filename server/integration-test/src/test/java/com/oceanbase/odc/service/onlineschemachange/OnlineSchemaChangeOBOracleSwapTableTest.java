@@ -95,7 +95,7 @@ public class OnlineSchemaChangeOBOracleSwapTableTest extends OBOracleOscTestEnv 
 
             ScheduleEntity scheduleEntity = getScheduleEntity(config, changeParameters);
             List<OnlineSchemaChangeScheduleTaskParameters> subTaskParameters =
-                    changeParameters.generateSubTaskParameters(config, config.defaultSchema());
+                    changeParameters.generateSubTaskParameters(config, config.getDefaultSchema());
 
             Assert.assertEquals(1, subTaskParameters.size());
             OnlineSchemaChangeScheduleTaskParameters taskParameters = subTaskParameters.get(0);

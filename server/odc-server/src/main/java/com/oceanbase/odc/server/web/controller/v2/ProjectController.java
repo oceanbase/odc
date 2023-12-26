@@ -82,6 +82,13 @@ public class ProjectController {
         return Responses.paginated(projectService.list(params, pageable));
     }
 
+    @ApiOperation(value = "listBasicProjects", notes = "List all basic projects")
+    @RequestMapping(value = "/projects/basic", method = RequestMethod.GET)
+    public ListResponse<Project> listBasicProjects(
+            @RequestParam(required = false, name = "archived") Boolean archived) {
+        return Responses.list(projectService.listBasicInfoForApply(archived));
+    }
+
     @ApiOperation(value = "updateProject", notes = "Update a project")
     @RequestMapping(value = "/projects/{id:[\\d]+}", method = RequestMethod.PUT)
     public SuccessResponse<Project> updateProject(@PathVariable Long id,
@@ -118,7 +125,7 @@ public class ProjectController {
     @ApiOperation(value = "archiveProject", notes = "Archive a project")
     @RequestMapping(value = "/projects/{id:[\\d]+}/setArchived", method = RequestMethod.POST)
     public SuccessResponse<Project> setArchived(@PathVariable Long id,
-            @RequestBody @Valid SetArchivedReq setArchivedReq) {
+            @RequestBody @Valid SetArchivedReq setArchivedReq) throws InterruptedException {
         return Responses.success(projectService.setArchived(id, setArchivedReq));
     }
 

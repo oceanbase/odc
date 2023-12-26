@@ -17,6 +17,7 @@ package com.oceanbase.odc.metadb.regulation.ruleset;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 import javax.persistence.Column;
 import javax.persistence.Convert;
@@ -77,4 +78,23 @@ public class RuleApplyingEntity {
 
     @Column(name = "properties_json", nullable = false)
     private String propertiesJson;
+
+    public static RuleApplyingEntity merge(DefaultRuleApplyingEntity defaultRuleApplyingEntity,
+            Optional<RuleApplyingEntity> ruleApplyingEntityOpt) {
+        RuleApplyingEntity entity = new RuleApplyingEntity();
+        if (!ruleApplyingEntityOpt.isPresent()) {
+            entity.setId(defaultRuleApplyingEntity.getId());
+            entity.setEnabled(defaultRuleApplyingEntity.getEnabled());
+            entity.setRuleMetadataId(defaultRuleApplyingEntity.getRuleMetadataId());
+            entity.setAppliedDialectTypes(defaultRuleApplyingEntity.getAppliedDialectTypes());
+            entity.setPropertiesJson(defaultRuleApplyingEntity.getPropertiesJson());
+            entity.setLevel(defaultRuleApplyingEntity.getLevel());
+            entity.setCreateTime(defaultRuleApplyingEntity.getCreateTime());
+            entity.setUpdateTime(defaultRuleApplyingEntity.getUpdateTime());
+            return entity;
+        }
+        entity = ruleApplyingEntityOpt.get();
+        entity.setId(defaultRuleApplyingEntity.getId());
+        return entity;
+    }
 }

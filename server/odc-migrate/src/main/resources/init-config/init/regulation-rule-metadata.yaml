@@ -12,6 +12,8 @@
         value: OB_ORACLE
       - label: SUPPORTED_DIALECT_TYPE
         value: MYSQL
+      - label: SUPPORTED_DIALECT_TYPE
+        value: ODP_SHARDING_OB_MYSQL
 - id: 2
   name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.not-allowed-export-resultset.name}
   description: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.not-allowed-export-resultset.description}
@@ -28,6 +30,8 @@
         value: OB_ORACLE
       - label: SUPPORTED_DIALECT_TYPE
         value: MYSQL
+      - label: SUPPORTED_DIALECT_TYPE
+        value: ODP_SHARDING_OB_MYSQL
 - id: 3
   name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.max-return-rows.name}
   description: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.max-return-rows.description}
@@ -42,6 +46,8 @@
         value: OB_ORACLE
       - label: SUPPORTED_DIALECT_TYPE
         value: MYSQL
+      - label: SUPPORTED_DIALECT_TYPE
+        value: ODP_SHARDING_OB_MYSQL
   propertyMetadatas:
       - name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.max-return-rows.metadata.name}
         description: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.max-return-rows.metadata.description}
@@ -65,6 +71,8 @@
         value: OB_ORACLE
       - label: SUPPORTED_DIALECT_TYPE
         value: MYSQL
+      - label: SUPPORTED_DIALECT_TYPE
+        value: ODP_SHARDING_OB_MYSQL
   propertyMetadatas:
       - name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.allow-sql-types.metadata.name}
         description: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.allow-sql-types.metadata.description}
@@ -128,6 +136,8 @@
         value: OB_ORACLE
       - label: SUPPORTED_DIALECT_TYPE
         value: MYSQL
+      - label: SUPPORTED_DIALECT_TYPE
+        value: ODP_SHARDING_OB_MYSQL
   propertyMetadatas:
       - name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.max-execute-sqls.metadata.name}
         description: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.max-execute-sqls.metadata.description}
@@ -153,6 +163,8 @@
         value: OB_ORACLE
       - label: SUPPORTED_DIALECT_TYPE
         value: MYSQL
+      - label: SUPPORTED_DIALECT_TYPE
+        value: ODP_SHARDING_OB_MYSQL
 
 - id: 7
   name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.index-column-calculation.name}
@@ -170,6 +182,8 @@
         value: OB_ORACLE
       - label: SUPPORTED_DIALECT_TYPE
         value: MYSQL
+      - label: SUPPORTED_DIALECT_TYPE
+        value: ODP_SHARDING_OB_MYSQL
 - id: 8
   name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.index-column-fuzzy-match.name}
   description: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.index-column-fuzzy-match.description}
@@ -192,6 +206,8 @@
         value: OB_ORACLE
       - label: SUPPORTED_DIALECT_TYPE
         value: MYSQL
+      - label: SUPPORTED_DIALECT_TYPE
+        value: ODP_SHARDING_OB_MYSQL
 - id: 9
   name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.no-not-null-exists-not-in.name}
   description: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.no-not-null-exists-not-in.description}
@@ -214,6 +230,8 @@
         value: OB_ORACLE
       - label: SUPPORTED_DIALECT_TYPE
         value: MYSQL
+      - label: SUPPORTED_DIALECT_TYPE
+        value: ODP_SHARDING_OB_MYSQL
 - id: 10
   name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.no-specific-column-exists.name}
   description: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.no-specific-column-exists.description}
@@ -230,6 +248,8 @@
         value: OB_ORACLE
       - label: SUPPORTED_DIALECT_TYPE
         value: MYSQL
+      - label: SUPPORTED_DIALECT_TYPE
+        value: ODP_SHARDING_OB_MYSQL
 - id: 11
   name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.no-valid-where-clause.name}
   description: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.no-valid-where-clause.description}
@@ -248,6 +268,8 @@
         value: OB_ORACLE
       - label: SUPPORTED_DIALECT_TYPE
         value: MYSQL
+      - label: SUPPORTED_DIALECT_TYPE
+        value: ODP_SHARDING_OB_MYSQL
 - id: 12
   name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.no-where-clause-exists.name}
   description: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.no-where-clause-exists.description}
@@ -266,6 +288,8 @@
         value: OB_ORACLE
       - label: SUPPORTED_DIALECT_TYPE
         value: MYSQL
+      - label: SUPPORTED_DIALECT_TYPE
+        value: ODP_SHARDING_OB_MYSQL
 - id: 13
   name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-in-expr.name}
   description: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-in-expr.description}
@@ -288,6 +312,8 @@
         value: OB_ORACLE
       - label: SUPPORTED_DIALECT_TYPE
         value: MYSQL
+      - label: SUPPORTED_DIALECT_TYPE
+        value: ODP_SHARDING_OB_MYSQL
   propertyMetadatas: 
       - name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-in-expr.max-in-expr-count}
         description: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-in-expr.max-in-expr-count.description}
@@ -311,6 +337,8 @@
         value: OB_ORACLE
       - label: SUPPORTED_DIALECT_TYPE
         value: MYSQL
+      - label: SUPPORTED_DIALECT_TYPE
+        value: ODP_SHARDING_OB_MYSQL
   propertyMetadatas: 
       - name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-table-join.max-join-table-count}
         description: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-table-join.max-join-table-count.description}
@@ -334,6 +362,8 @@
         value: OB_ORACLE
       - label: SUPPORTED_DIALECT_TYPE
         value: MYSQL
+      - label: SUPPORTED_DIALECT_TYPE
+        value: ODP_SHARDING_OB_MYSQL
   propertyMetadatas: 
       - name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-index-keys.max-index-count}
         description: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-index-keys.max-index-count.description}
@@ -361,6 +391,8 @@
         value: OB_ORACLE
       - label: SUPPORTED_DIALECT_TYPE
         value: MYSQL
+      - label: SUPPORTED_DIALECT_TYPE
+        value: ODP_SHARDING_OB_MYSQL
   propertyMetadatas: 
       - name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-column-refs-in-index.max-column-ref-count}
         description: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-column-refs-in-index.max-column-ref-count.description}
@@ -382,6 +414,8 @@
         value: OB_MYSQL
       - label: SUPPORTED_DIALECT_TYPE
         value: OB_ORACLE
+      - label: SUPPORTED_DIALECT_TYPE
+        value: ODP_SHARDING_OB_MYSQL
 - id: 18
   name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-columns.name}
   description: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-columns.description}
@@ -398,6 +432,8 @@
         value: OB_ORACLE
       - label: SUPPORTED_DIALECT_TYPE
         value: MYSQL
+      - label: SUPPORTED_DIALECT_TYPE
+        value: ODP_SHARDING_OB_MYSQL
   propertyMetadatas: 
       - name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-columns.max-column-definition-count}
         description: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-columns.max-column-definition-count.description}
@@ -423,6 +459,8 @@
         value: OB_ORACLE
       - label: SUPPORTED_DIALECT_TYPE
         value: MYSQL
+      - label: SUPPORTED_DIALECT_TYPE
+        value: ODP_SHARDING_OB_MYSQL
   propertyMetadatas: 
       - name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-long-char-length.max-char-length}
         description: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-long-char-length.max-char-length.description}
@@ -448,6 +486,8 @@
         value: OB_ORACLE
       - label: SUPPORTED_DIALECT_TYPE
         value: MYSQL
+      - label: SUPPORTED_DIALECT_TYPE
+        value: ODP_SHARDING_OB_MYSQL
 - id: 21
   name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.no-primary-key-exists.name}
   description: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.no-primary-key-exists.description}
@@ -464,6 +504,8 @@
         value: OB_ORACLE
       - label: SUPPORTED_DIALECT_TYPE
         value: MYSQL
+      - label: SUPPORTED_DIALECT_TYPE
+        value: ODP_SHARDING_OB_MYSQL
 - id: 22
   name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.no-table-comment-exists.name}
   description: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.no-table-comment-exists.description}
@@ -480,6 +522,8 @@
         value: OB_ORACLE
       - label: SUPPORTED_DIALECT_TYPE
         value: MYSQL
+      - label: SUPPORTED_DIALECT_TYPE
+        value: ODP_SHARDING_OB_MYSQL
 - id: 23
   name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.table-name-in-black-list.name}
   description: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.table-name-in-black-list.description}
@@ -498,6 +542,8 @@
         value: OB_ORACLE
       - label: SUPPORTED_DIALECT_TYPE
         value: MYSQL
+      - label: SUPPORTED_DIALECT_TYPE
+        value: ODP_SHARDING_OB_MYSQL
   propertyMetadatas: 
       - name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.table-name-in-black-list.black-list}
         description: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.table-name-in-black-list.black-list.description}
@@ -519,6 +565,8 @@
         value: OB_MYSQL
       - label: SUPPORTED_DIALECT_TYPE
         value: MYSQL
+      - label: SUPPORTED_DIALECT_TYPE
+        value: ODP_SHARDING_OB_MYSQL
   propertyMetadatas: 
       - name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-table-charset.allowed-charsets}
         description: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-table-charset.allowed-charsets.description}
@@ -540,6 +588,8 @@
         value: OB_MYSQL
       - label: SUPPORTED_DIALECT_TYPE
         value: MYSQL
+      - label: SUPPORTED_DIALECT_TYPE
+        value: ODP_SHARDING_OB_MYSQL
   propertyMetadatas: 
       - name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-table-collation.allowed-collations}
         description: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-table-collation.allowed-collations.description}
@@ -563,6 +613,8 @@
         value: OB_ORACLE
       - label: SUPPORTED_DIALECT_TYPE
         value: MYSQL
+      - label: SUPPORTED_DIALECT_TYPE
+        value: ODP_SHARDING_OB_MYSQL
   propertyMetadatas: 
       - name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-pk-datatypes.allowed-datatypes}
         description: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-pk-datatypes.allowed-datatypes.description}
@@ -570,6 +622,7 @@
         componentType: SELECT_TAGS
         defaultValues:
             - int
+            - varchar
             - varchar2
             - number
             - float
@@ -588,6 +641,8 @@
         value: OB_MYSQL
       - label: SUPPORTED_DIALECT_TYPE
         value: MYSQL
+      - label: SUPPORTED_DIALECT_TYPE
+        value: ODP_SHARDING_OB_MYSQL
 - id: 28
   name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-column-refs-in-primary-key.name}
   description: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-column-refs-in-primary-key.description}
@@ -606,6 +661,8 @@
         value: OB_ORACLE
       - label: SUPPORTED_DIALECT_TYPE
         value: MYSQL
+      - label: SUPPORTED_DIALECT_TYPE
+        value: ODP_SHARDING_OB_MYSQL
   propertyMetadatas: 
       - name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-column-refs-in-primary-key.max-column-ref-count}
         description: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-column-refs-in-primary-key.max-column-ref-count.description}
@@ -633,6 +690,8 @@
         value: OB_ORACLE
       - label: SUPPORTED_DIALECT_TYPE
         value: MYSQL
+      - label: SUPPORTED_DIALECT_TYPE
+        value: ODP_SHARDING_OB_MYSQL
   propertyMetadatas: 
       - name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-index-naming.name-pattern}
         description: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-index-naming.name-pattern.description}
@@ -658,6 +717,8 @@
         value: OB_ORACLE
       - label: SUPPORTED_DIALECT_TYPE
         value: MYSQL
+      - label: SUPPORTED_DIALECT_TYPE
+        value: ODP_SHARDING_OB_MYSQL
   propertyMetadatas: 
       - name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-unique-index-naming.name-pattern}
         description: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-unique-index-naming.name-pattern.description}
@@ -681,6 +742,8 @@
         value: OB_ORACLE
       - label: SUPPORTED_DIALECT_TYPE
         value: MYSQL
+      - label: SUPPORTED_DIALECT_TYPE
+        value: ODP_SHARDING_OB_MYSQL
 - id: 32
   name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.zerofill-exists.name}
   description: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.zerofill-exists.description}
@@ -697,6 +760,8 @@
         value: OB_MYSQL
       - label: SUPPORTED_DIALECT_TYPE
         value: MYSQL
+      - label: SUPPORTED_DIALECT_TYPE
+        value: ODP_SHARDING_OB_MYSQL
 - id: 33
   name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.column-charset-exists.name}
   description: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.column-charset-exists.description}
@@ -715,6 +780,8 @@
         value: OB_ORACLE
       - label: SUPPORTED_DIALECT_TYPE
         value: MYSQL
+      - label: SUPPORTED_DIALECT_TYPE
+        value: ODP_SHARDING_OB_MYSQL
 - id: 34
   name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.column-collation-exists.name}
   description: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.column-collation-exists.description}
@@ -733,6 +800,8 @@
         value: OB_ORACLE
       - label: SUPPORTED_DIALECT_TYPE
         value: MYSQL
+      - label: SUPPORTED_DIALECT_TYPE
+        value: ODP_SHARDING_OB_MYSQL
 - id: 35
   name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.column-is-nullable.name}
   description: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.column-is-nullable.description}
@@ -751,6 +820,8 @@
         value: OB_ORACLE
       - label: SUPPORTED_DIALECT_TYPE
         value: MYSQL
+      - label: SUPPORTED_DIALECT_TYPE
+        value: ODP_SHARDING_OB_MYSQL
   propertyMetadatas: 
       - name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.column-is-nullable.nullable-datatype-list}
         description: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.column-is-nullable.nullable-datatype-list.description}
@@ -774,6 +845,8 @@
         value: OB_ORACLE
       - label: SUPPORTED_DIALECT_TYPE
         value: MYSQL
+      - label: SUPPORTED_DIALECT_TYPE
+        value: ODP_SHARDING_OB_MYSQL
   propertyMetadatas: 
       - name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.no-default-value-exists.no-default-value-datatype-list}
         description: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.no-default-value-exists.no-default-value-datatype-list.description}
@@ -797,6 +870,8 @@
         value: OB_ORACLE
       - label: SUPPORTED_DIALECT_TYPE
         value: MYSQL
+      - label: SUPPORTED_DIALECT_TYPE
+        value: ODP_SHARDING_OB_MYSQL
 - id: 38
   name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.column-name-in-black-list.name}
   description: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.column-name-in-black-list.description}
@@ -815,6 +890,8 @@
         value: OB_ORACLE
       - label: SUPPORTED_DIALECT_TYPE
         value: MYSQL
+      - label: SUPPORTED_DIALECT_TYPE
+        value: ODP_SHARDING_OB_MYSQL
   propertyMetadatas: 
       - name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.column-name-in-black-list.black-list}
         description: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.column-name-in-black-list.black-list.description}
@@ -900,6 +977,8 @@
         value: OB_MYSQL
       - label: SUPPORTED_DIALECT_TYPE
         value: MYSQL
+      - label: SUPPORTED_DIALECT_TYPE
+        value: ODP_SHARDING_OB_MYSQL
   propertyMetadatas: 
       - name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-table-auto-increment.init-value}
         description: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-table-auto-increment.init-value.description}
@@ -923,6 +1002,8 @@
         value: OB_ORACLE
       - label: SUPPORTED_DIALECT_TYPE
         value: MYSQL
+      - label: SUPPORTED_DIALECT_TYPE
+        value: ODP_SHARDING_OB_MYSQL
 - id: 43
   name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.missing-required-columns.name}
   description: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.missing-required-columns.description}
@@ -939,6 +1020,8 @@
         value: OB_ORACLE
       - label: SUPPORTED_DIALECT_TYPE
         value: MYSQL
+      - label: SUPPORTED_DIALECT_TYPE
+        value: ODP_SHARDING_OB_MYSQL
   propertyMetadatas: 
       - name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.missing-required-columns.column-names}
         description: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.missing-required-columns.column-names.description}
@@ -960,6 +1043,8 @@
         value: OB_MYSQL
       - label: SUPPORTED_DIALECT_TYPE
         value: MYSQL
+      - label: SUPPORTED_DIALECT_TYPE
+        value: ODP_SHARDING_OB_MYSQL
 - id: 45
   name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-alter-statement.name}
   description: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-alter-statement.description}
@@ -976,6 +1061,8 @@
         value: OB_ORACLE
       - label: SUPPORTED_DIALECT_TYPE
         value: MYSQL
+      - label: SUPPORTED_DIALECT_TYPE
+        value: ODP_SHARDING_OB_MYSQL
   propertyMetadatas: 
       - name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-alter-statement.max-alter-count}
         description: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.too-many-alter-statement.max-alter-count.description}
@@ -1001,6 +1088,8 @@
         value: OB_ORACLE
       - label: SUPPORTED_DIALECT_TYPE
         value: MYSQL
+      - label: SUPPORTED_DIALECT_TYPE
+        value: ODP_SHARDING_OB_MYSQL
 - id: 47
   name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-pk-naming.name}
   description: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-pk-naming.description}
@@ -1019,6 +1108,8 @@
         value: OB_ORACLE
       - label: SUPPORTED_DIALECT_TYPE
         value: MYSQL
+      - label: SUPPORTED_DIALECT_TYPE
+        value: ODP_SHARDING_OB_MYSQL
   propertyMetadatas: 
       - name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-pk-naming.name-pattern}
         description: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-pk-naming.name-pattern.description}
@@ -1042,6 +1133,8 @@
         value: OB_ORACLE
       - label: SUPPORTED_DIALECT_TYPE
         value: MYSQL
+      - label: SUPPORTED_DIALECT_TYPE
+        value: ODP_SHARDING_OB_MYSQL
   propertyMetadatas: 
       - name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.prohibited-datatype-exists.datatype-names}
         description: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.prohibited-datatype-exists.datatype-names.description}
@@ -1067,6 +1160,8 @@
         value: OB_ORACLE
       - label: SUPPORTED_DIALECT_TYPE
         value: MYSQL
+      - label: SUPPORTED_DIALECT_TYPE
+        value: ODP_SHARDING_OB_MYSQL
   propertyMetadatas: 
       - name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-index-datatypes.allowed-datatypes}
         description: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-index-datatypes.allowed-datatypes.description}
@@ -1096,6 +1191,8 @@
         value: OB_ORACLE
       - label: SUPPORTED_DIALECT_TYPE
         value: MYSQL
+      - label: SUPPORTED_DIALECT_TYPE
+        value: ODP_SHARDING_OB_MYSQL
 - id: 51
   name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.not-allowed-create-pl.name}
   description: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.not-allowed-create-pl.description}
@@ -1112,6 +1209,8 @@
         value: OB_ORACLE
       - label: SUPPORTED_DIALECT_TYPE
         value: MYSQL
+      - label: SUPPORTED_DIALECT_TYPE
+        value: ODP_SHARDING_OB_MYSQL
 - id: 52
   name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.external-sql-interceptor.name}
   description: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.external-sql-interceptor.description}
@@ -1128,6 +1227,8 @@
         value: OB_ORACLE
       - label: SUPPORTED_DIALECT_TYPE
         value: MYSQL
+      - label: SUPPORTED_DIALECT_TYPE
+        value: ODP_SHARDING_OB_MYSQL
   propertyMetadatas:
       - name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.external-sql-interceptor.metadata.name}
         description: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.external-sql-interceptor.metadata.description}
@@ -1149,6 +1250,8 @@
         value: OB_ORACLE
       - label: SUPPORTED_DIALECT_TYPE
         value: MYSQL
+      - label: SUPPORTED_DIALECT_TYPE
+        value: ODP_SHARDING_OB_MYSQL
   propertyMetadatas:
       - name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-drop-object-types.allowed-object-types}
         description: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-drop-object-types.allowed-object-types.description}
@@ -1180,3 +1283,50 @@
             - TYPE BODY
             - TYPE
             - DATABASE
+            - COLUMN
+            - CONSTRAINT
+            - PARTITION
+            - SUBPARTITION
+- id: 54
+  name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.no-primary-key-name-exists.name}
+  description: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.no-primary-key-name-exists.description}
+  type: SQL_CHECK
+  builtIn: 1
+  labels:
+      - label: SUB_TYPE
+        value: DDL
+      - label: SUB_TYPE
+        value: TABLE
+      - label: SUB_TYPE
+        value: ALTER
+      - label: SUPPORTED_DIALECT_TYPE
+        value: MYSQL
+      - label: SUPPORTED_DIALECT_TYPE
+        value: OB_MYSQL
+      - label: SUPPORTED_DIALECT_TYPE
+        value: OB_ORACLE
+      - label: SUPPORTED_DIALECT_TYPE
+        value: ODP_SHARDING_OB_MYSQL
+- id: 55
+  name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-auto-increment-datatypes.name}
+  description: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-auto-increment-datatypes.description}
+  type: SQL_CHECK
+  builtIn: 1
+  labels:
+      - label: SUB_TYPE
+        value: DDL
+      - label: SUB_TYPE
+        value: TABLE
+      - label: SUB_TYPE
+        value: ALTER
+      - label: SUPPORTED_DIALECT_TYPE
+        value: OB_MYSQL
+      - label: SUPPORTED_DIALECT_TYPE
+        value: ODP_SHARDING_OB_MYSQL
+  propertyMetadatas:
+      - name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-auto-increment-datatypes.allowed-datatypes}
+        description: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-auto-increment-datatypes.allowed-datatypes.description}
+        type: STRING_LIST
+        componentType: SELECT_TAGS
+        defaultValues:
+            - bigint

@@ -18,6 +18,7 @@ package com.oceanbase.odc.metadb.flow;
 
 import java.util.Collection;
 import java.util.Date;
+import java.util.Objects;
 import java.util.Set;
 
 import javax.persistence.criteria.Join;
@@ -30,6 +31,7 @@ import org.springframework.data.jpa.domain.Specification;
 import com.oceanbase.odc.common.jpa.SpecificationUtil;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.constant.TaskType;
+import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
 
 /**
  * {@link FlowInstanceViewEntity}
@@ -48,6 +50,8 @@ public class FlowInstanceViewSpecs {
     private static final String FLOW_INSTANCE_VIEW_TASK_TYPE = "taskType";
     private static final String FLOW_INSTANCE_VIEW_2_FLOW_INSTANCE_APPROVAL_VIEW = "approvals";
     private static final String FLOW_INSTANCE_APPROVAL_VIEW_ROLE_IDENTIFIER = "resourceRoleIdentifier";
+    private static final String FLOW_INSTANCE_APPROVAL_VIEW_STATUS = "status";
+
 
     public static Specification<FlowInstanceViewEntity> idEquals(Long id) {
         return SpecificationUtil.columnEqual(FLOW_INSTANCE_VIEW_ID_NAME, id);
@@ -81,22 +85,32 @@ public class FlowInstanceViewSpecs {
         return SpecificationUtil.columnEqual(FLOW_INSTANCE_VIEW_PROJECT_ID, projectId);
     }
 
+    public static Specification<FlowInstanceViewEntity> projectIdIn(Set<Long> projectIds) {
+        return SpecificationUtil.columnIn(FLOW_INSTANCE_VIEW_PROJECT_ID, projectIds);
+    }
+
+
     public static Specification<FlowInstanceViewEntity> taskTypeEquals(TaskType taskType) {
         return SpecificationUtil.columnEqual(FLOW_INSTANCE_VIEW_TASK_TYPE, taskType);
     }
 
+    public static Specification<FlowInstanceViewEntity> taskTypeIn(Collection<TaskType> taskTypes) {
+        return SpecificationUtil.columnIn(FLOW_INSTANCE_VIEW_TASK_TYPE, taskTypes);
+    }
+
     public static Specification<FlowInstanceViewEntity> leftJoinFlowInstanceApprovalView(
-            @NotNull Set<String> resourceRoleIdentifiers, Long creatorId) {
+            @NotNull Set<String> resourceRoleIdentifiers, Long creatorId, Set<FlowNodeStatus> statusList) {
         return (root, query, builder) -> {
             Join<FlowInstanceViewEntity, FlowInstanceApprovalViewEntity> join =
                     root.join(FLOW_INSTANCE_VIEW_2_FLOW_INSTANCE_APPROVAL_VIEW, JoinType.LEFT);
             query.distinct(true);
-            Predicate predicate1 = join.get(FLOW_INSTANCE_APPROVAL_VIEW_ROLE_IDENTIFIER).in(resourceRoleIdentifiers);
-            if (creatorId == null) {
-                return predicate1;
+            Predicate rolePredicate = join.get(FLOW_INSTANCE_APPROVAL_VIEW_ROLE_IDENTIFIER).in(resourceRoleIdentifiers);
+            Predicate statusPredicate = join.get(FLOW_INSTANCE_APPROVAL_VIEW_STATUS).in(statusList);
+            if (Objects.isNull(creatorId)) {
+                return builder.and(rolePredicate, statusPredicate);
             }
-            Predicate predicate2 = builder.equal(root.get(FLOW_INSTANCE_VIEW_CREATOR_ID_NAME), creatorId);
-            return builder.or(predicate1, predicate2);
+            Predicate creatorPredicate = builder.equal(root.get(FLOW_INSTANCE_VIEW_CREATOR_ID_NAME), creatorId);
+            return builder.or(builder.and(rolePredicate, statusPredicate), creatorPredicate);
         };
     }
 

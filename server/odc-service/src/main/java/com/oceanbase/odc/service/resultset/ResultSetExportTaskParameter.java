@@ -15,14 +15,15 @@
  */
 package com.oceanbase.odc.service.resultset;
 
+import java.io.Serializable;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.oceanbase.odc.core.flow.model.TaskParameters;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferFormat;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.EncodingType;
 import com.oceanbase.odc.service.datasecurity.model.MaskingAlgorithm;
-import com.oceanbase.odc.service.datatransfer.model.DataTransferFormat;
-import com.oceanbase.odc.service.datatransfer.model.EncodingType;
-import com.oceanbase.odc.service.flow.model.TaskParameters;
 
 import lombok.Data;
 
@@ -32,7 +33,7 @@ import lombok.Data;
  * @Description: [result set export DTO]
  */
 @Data
-public class ResultSetExportTaskParameter implements TaskParameters {
+public class ResultSetExportTaskParameter implements Serializable, TaskParameters {
     private String sql;
     private String fileName;
     private DataTransferFormat fileFormat;
@@ -55,8 +56,8 @@ public class ResultSetExportTaskParameter implements TaskParameters {
         boolean isContainColumnHeader = true;
         @JsonProperty("isTransferEmptyString")
         boolean isTransferEmptyString = true;
-        String columnSeparator = ",";
-        String columnDelimiter = "\"";
+        char columnSeparator = ',';
+        char columnDelimiter = '"';
         String lineSeparator = "\r\n";
     }
 }

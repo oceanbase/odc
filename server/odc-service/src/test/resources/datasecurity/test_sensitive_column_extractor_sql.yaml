@@ -237,7 +237,7 @@ mysql:
     FROM
       test_data_masking_1 t1
     WHERE
-      t.id = (
+      t1.id = (
         SELECT
           id
         FROM
@@ -245,7 +245,7 @@ mysql:
         LIMIT
           1
       )
-      OR t.name IN (
+      OR t1.name IN (
         SELECT
           name
         FROM

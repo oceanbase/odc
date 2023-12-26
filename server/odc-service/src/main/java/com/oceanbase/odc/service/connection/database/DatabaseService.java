@@ -33,24 +33,28 @@ import java.util.concurrent.locks.Lock;
 import java.util.stream.Collectors;
 
 import javax.sql.DataSource;
+import javax.validation.Valid;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.integration.jdbc.lock.JdbcLockRegistry;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.CollectionUtils;
 import org.springframework.validation.annotation.Validated;
 
 import com.oceanbase.odc.core.authority.util.Authenticated;
 import com.oceanbase.odc.core.authority.util.PreAuthenticate;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
-import com.oceanbase.odc.core.shared.constant.ConnectionAccountType;
+import com.oceanbase.odc.core.session.ConnectionSession;
+import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
@@ -59,7 +63,6 @@ import com.oceanbase.odc.core.shared.exception.AccessDeniedException;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.shared.exception.ConflictException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
-import com.oceanbase.odc.metadb.connection.ConnectionConfigRepository;
 import com.oceanbase.odc.metadb.connection.DatabaseEntity;
 import com.oceanbase.odc.metadb.connection.DatabaseRepository;
 import com.oceanbase.odc.metadb.connection.DatabaseSpecs;
@@ -71,18 +74,23 @@ import com.oceanbase.odc.service.collaboration.project.model.QueryProjectParams;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.model.CreateDatabaseReq;
 import com.oceanbase.odc.service.connection.database.model.Database;
+import com.oceanbase.odc.service.connection.database.model.DatabaseSyncProperties;
 import com.oceanbase.odc.service.connection.database.model.DatabaseSyncStatus;
+import com.oceanbase.odc.service.connection.database.model.DatabaseUser;
 import com.oceanbase.odc.service.connection.database.model.DeleteDatabasesReq;
 import com.oceanbase.odc.service.connection.database.model.QueryDatabaseParams;
 import com.oceanbase.odc.service.connection.database.model.TransferDatabasesReq;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
-import com.oceanbase.odc.service.db.DBIdentitiesService;
 import com.oceanbase.odc.service.db.DBSchemaService;
 import com.oceanbase.odc.service.iam.HorizontalDataPermissionValidator;
 import com.oceanbase.odc.service.iam.OrganizationService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
-import com.oceanbase.odc.service.iam.auth.AuthorizationFacade;
+import com.oceanbase.odc.service.onlineschemachange.ddl.DBUser;
+import com.oceanbase.odc.service.onlineschemachange.ddl.OscDBAccessor;
+import com.oceanbase.odc.service.onlineschemachange.ddl.OscDBAccessorFactory;
+import com.oceanbase.odc.service.onlineschemachange.rename.OscDBUserUtil;
 import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
+import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.odc.service.session.factory.OBConsoleDataSourceFactory;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.tools.dbbrowser.model.DBDatabase;
@@ -116,16 +124,10 @@ public class DatabaseService {
     private ConnectionService connectionService;
 
     @Autowired
-    private AuthorizationFacade authorizationFacade;
-
-    @Autowired
     private AuthenticationFacade authenticationFacade;
 
     @Autowired
     private DBSchemaService dbSchemaService;
-
-    @Autowired
-    private DBIdentitiesService dbIdentitiesService;
 
     @Autowired
     private JdbcLockRegistry jdbcLockRegistry;
@@ -134,17 +136,21 @@ public class DatabaseService {
     private HorizontalDataPermissionValidator horizontalDataPermissionValidator;
 
     @Autowired
-    private ConnectionConfigRepository connectionConfigRepository;
-
-    @Autowired
     private DataSource dataSource;
 
     @Autowired
     private OrganizationService organizationService;
 
+    @Autowired
+    private DatabaseSyncProperties databaseSyncProperties;
+
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("internal authenticated")
     public Database detail(@NonNull Long id) {
+        return getDatabase(id);
+    }
+
+    private Database getDatabase(Long id) {
         Database database = entityToModel(databaseRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException(ResourceType.ODC_DATABASE, "id", id)));
         if (!projectService.checkPermission(database.getProject().getId(),
@@ -243,13 +249,14 @@ public class DatabaseService {
 
     @SkipAuthorize("internal authenticated")
     public Database create(@NonNull CreateDatabaseReq req) {
-        if (!projectService.checkPermission(req.getProjectId(), ResourceRoleName.all())
+        ConnectionConfig connection = connectionService.getForConnectionSkipPermissionCheck(req.getDataSourceId());
+        if ((connection.getProjectId() != null && !connection.getProjectId().equals(req.getProjectId()))
+                || !projectService.checkPermission(req.getProjectId(),
+                        Arrays.asList(ResourceRoleName.OWNER, ResourceRoleName.DBA, ResourceRoleName.DEVELOPER))
                 || !connectionService.checkPermission(req.getDataSourceId(), Collections.singletonList("update"))) {
             throw new AccessDeniedException();
         }
-        ConnectionConfig connection = connectionService.getForConnectionSkipPermissionCheck(req.getDataSourceId());
-        DataSource dataSource = new OBConsoleDataSourceFactory(
-                connection, ConnectionAccountType.MAIN, true, false).getDataSource();
+        DataSource dataSource = new OBConsoleDataSourceFactory(connection, true, false).getDataSource();
         try (Connection conn = dataSource.getConnection()) {
             createDatabase(req, conn, connection);
             DBDatabase dbDatabase = dbSchemaService.detail(connection.getDialectType(), conn, req.getName());
@@ -312,26 +319,11 @@ public class DatabaseService {
 
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("internal authenticated")
-    public boolean transfer(@NonNull TransferDatabasesReq req) {
-        if (!projectService.checkPermission(req.getProjectId(),
-                Arrays.asList(ResourceRoleName.DBA, ResourceRoleName.OWNER))) {
-            throw new AccessDeniedException();
-        }
+    public boolean transfer(@NonNull @Valid TransferDatabasesReq req) {
         List<DatabaseEntity> entities = databaseRepository.findAllById(req.getDatabaseIds());
-        List<DatabaseEntity> transferred = entities.stream().map(database -> {
-            /**
-             * current user should be source project's OWNER/DBA, and should have update permission on this
-             * DataSource
-             */
-            if (!projectService.checkPermission(database.getProjectId(),
-                    Arrays.asList(ResourceRoleName.DBA, ResourceRoleName.OWNER))
-                    || !connectionService.checkPermission(database.getConnectionId(), Arrays.asList("update"))) {
-                throw new AccessDeniedException();
-            }
-            database.setProjectId(req.getProjectId());
-            return database;
-        }).collect(Collectors.toList());
-        databaseRepository.saveAll(transferred);
+        checkTransferable(entities, req.getProjectId());
+        databaseRepository.setProjectIdByIdIn(req.getProjectId(), entities.stream().map(DatabaseEntity::getId)
+                .collect(Collectors.toSet()));
         return true;
     }
 
@@ -360,9 +352,10 @@ public class DatabaseService {
 
     @SkipAuthorize("internal usage")
     public Boolean internalSyncDataSourceSchemas(@NonNull Long dataSourceId) throws InterruptedException {
-        Lock lock = jdbcLockRegistry.obtain(getLockKey(dataSourceId));
+        Lock lock = jdbcLockRegistry.obtain(connectionService.getUpdateDsSchemaLockKey(dataSourceId));
         if (!lock.tryLock(3, TimeUnit.SECONDS)) {
-            throw new ConflictException(ErrorCodes.ResourceModifying, "Can not acquire jdbc lock");
+            throw new ConflictException(ErrorCodes.ResourceSynchronizing,
+                    new Object[] {ResourceType.ODC_DATABASE.getLocalizedMessage()}, "Can not acquire jdbc lock");
         }
         try {
             ConnectionConfig connection = connectionService.getForConnectionSkipPermissionCheck(dataSourceId);
@@ -384,8 +377,9 @@ public class DatabaseService {
     }
 
     private void syncTeamDataSources(ConnectionConfig connection) {
-        DataSource teamDataSource = new OBConsoleDataSourceFactory(
-                connection, ConnectionAccountType.MAIN, true, false).getDataSource();
+        Long currentProjectId = connection.getProjectId();
+        List<String> blockedDatabaseNames = listBlockedDatabaseNames(connection.getDialectType());
+        DataSource teamDataSource = new OBConsoleDataSourceFactory(connection, true, false).getDataSource();
         try (Connection conn = teamDataSource.getConnection()) {
             List<DatabaseEntity> latestDatabases = dbSchemaService.listDatabases(connection.getDialectType(), conn)
                     .stream().map(database -> {
@@ -400,7 +394,11 @@ public class DatabaseService {
                         entity.setEnvironmentId(connection.getEnvironmentId());
                         entity.setConnectionId(connection.getId());
                         entity.setSyncStatus(DatabaseSyncStatus.SUCCEEDED);
-                        entity.setProjectId(null);
+                        entity.setProjectId(currentProjectId);
+                        if (databaseSyncProperties.isBlockInternalDatabase()
+                                && blockedDatabaseNames.contains(database.getName())) {
+                            entity.setProjectId(null);
+                        }
                         return entity;
                     }).collect(Collectors.toList());
             Map<String, List<DatabaseEntity>> latestDatabaseName2Database =
@@ -431,37 +429,34 @@ public class DatabaseService {
                     }).collect(Collectors.toList());
 
             JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
-            if (org.apache.commons.collections4.CollectionUtils.isNotEmpty(toAdd)) {
+            if (CollectionUtils.isNotEmpty(toAdd)) {
                 jdbcTemplate.batchUpdate(
                         "insert into connect_database(database_id, organization_id, name, project_id, connection_id, environment_id, sync_status, charset_name, collation_name, table_count, is_existed) values(?,?,?,?,?,?,?,?,?,?,?)",
                         toAdd);
             }
-            List<Object[]> toDelete =
-                    existedDatabasesInDb.stream()
-                            .filter(database -> !latestDatabaseNames.contains(database.getName()))
-                            .map(database -> new Object[] {database.getId()})
-                            .collect(Collectors.toList());
+            List<Object[]> toDelete = existedDatabasesInDb.stream()
+                    .filter(database -> !latestDatabaseNames.contains(database.getName()))
+                    .map(database -> new Object[] {getProjectId(database, currentProjectId, blockedDatabaseNames),
+                            database.getId()})
+                    .collect(Collectors.toList());
             /**
              * just set existed to false if the database has been dropped instead of deleting it directly
              */
             if (!CollectionUtils.isEmpty(toDelete)) {
-                String deleteSql =
-                        "update connect_database set is_existed = 0 where id = ?";
+                String deleteSql = "update connect_database set is_existed = 0, project_id=? where id = ?";
                 jdbcTemplate.batchUpdate(deleteSql, toDelete);
             }
-
             List<Object[]> toUpdate = existedDatabasesInDb.stream()
                     .filter(database -> latestDatabaseNames.contains(database.getName()))
                     .map(database -> {
                         DatabaseEntity latest = latestDatabaseName2Database.get(database.getName()).get(0);
                         return new Object[] {latest.getTableCount(), latest.getCollationName(), latest.getCharsetName(),
-                                database.getId()};
+                                getProjectId(database, currentProjectId, blockedDatabaseNames), database.getId()};
                     })
                     .collect(Collectors.toList());
-
-            if (org.apache.commons.collections4.CollectionUtils.isNotEmpty(toUpdate)) {
+            if (CollectionUtils.isNotEmpty(toUpdate)) {
                 String update =
-                        "update connect_database set table_count=?, collation_name=?, charset_name=? where id = ?";
+                        "update connect_database set table_count=?, collation_name=?, charset_name=?, project_id=? where id = ?";
                 jdbcTemplate.batchUpdate(update, toUpdate);
             }
         } catch (SQLException e) {
@@ -477,9 +472,21 @@ public class DatabaseService {
         }
     }
 
+    private Long getProjectId(DatabaseEntity database, Long currentProjectId, List<String> blockedDatabaseNames) {
+        Long projectId;
+        if (currentProjectId != null) {
+            projectId = currentProjectId;
+            if (databaseSyncProperties.isBlockInternalDatabase() && blockedDatabaseNames.contains(database.getName())) {
+                projectId = database.getProjectId();
+            }
+        } else {
+            projectId = database.getProjectId();
+        }
+        return projectId;
+    }
+
     private void syncIndividualDataSources(ConnectionConfig connection) {
-        DataSource individualDataSource = new OBConsoleDataSourceFactory(
-                connection, ConnectionAccountType.MAIN, true, false).getDataSource();
+        DataSource individualDataSource = new OBConsoleDataSourceFactory(connection, true, false).getDataSource();
         try (Connection conn = individualDataSource.getConnection()) {
             Set<String> latestDatabaseNames = dbSchemaService.showDatabases(connection.getDialectType(), conn);
             List<DatabaseEntity> existedDatabasesInDb =
@@ -502,7 +509,7 @@ public class DatabaseService {
                     .collect(Collectors.toList());
 
             JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
-            if (org.apache.commons.collections4.CollectionUtils.isNotEmpty(toAdd)) {
+            if (CollectionUtils.isNotEmpty(toAdd)) {
                 jdbcTemplate.batchUpdate(
                         "insert into connect_database(database_id, organization_id, name, connection_id, environment_id, sync_status) values(?,?,?,?,?,?)",
                         toAdd);
@@ -553,6 +560,41 @@ public class DatabaseService {
                 .collect(Collectors.toSet());
     }
 
+    @SkipAuthorize("internal authorized")
+    public Page<DatabaseUser> listUserForOsc(Long dataSourceId) {
+        ConnectionConfig config = connectionService.getForConnectionSkipPermissionCheck(dataSourceId);
+        horizontalDataPermissionValidator.checkCurrentOrganization(config);
+        DefaultConnectSessionFactory factory = new DefaultConnectSessionFactory(config);
+        ConnectionSession connSession = factory.generateSession();
+        try {
+            OscDBAccessor dbSchemaAccessor = new OscDBAccessorFactory().generate(connSession);
+            List<DBUser> dbUsers = dbSchemaAccessor.listUsers(null);
+            Set<String> whiteUsers = OscDBUserUtil.getLockUserWhiteList(config);
+
+            return new PageImpl<>(dbUsers.stream()
+                    .filter(u -> !whiteUsers.contains(u.getName()))
+                    .map(d -> DatabaseUser.builder().name(d.getNameWithHost()).build())
+                    .collect(Collectors.toList()));
+        } finally {
+            connSession.expire();
+        }
+    }
+
+    @SkipAuthorize("odc internal usage")
+    public List<String> listBlockedDatabaseNames(DialectType dialectType) {
+        List<String> names = new ArrayList<>();
+        if (dialectType.isOracle()) {
+            names.add("SYS");
+        }
+        if (dialectType.isMysql()) {
+            names.addAll(Arrays.asList("mysql", "information_schema", "test"));
+        }
+        if (dialectType.isOBMysql()) {
+            names.add("oceanbase");
+        }
+        return names;
+    }
+
     private void checkPermission(Long projectId, Long dataSourceId) {
         if (Objects.isNull(projectId) && Objects.isNull(dataSourceId)) {
             throw new AccessDeniedException("invalid projectId or dataSourceId");
@@ -569,6 +611,41 @@ public class DatabaseService {
         if (!isProjectMember && !canUpdateDataSource) {
             throw new AccessDeniedException("invalid projectId or dataSourceId");
         }
+    }
+
+    private void checkTransferable(@NonNull Collection<DatabaseEntity> databases, Long newProjectId) {
+        if (CollectionUtils.isEmpty(databases)) {
+            return;
+        }
+        PreConditions.validArgumentState(
+                projectService.checkPermission(newProjectId,
+                        Arrays.asList(ResourceRoleName.DBA, ResourceRoleName.OWNER)),
+                ErrorCodes.AccessDenied, null, "Only project's OWNER/DBA can transfer databases");
+        List<Long> projectIds = databases.stream().map(DatabaseEntity::getProjectId).collect(Collectors.toList());
+        List<Long> connectionIds = databases.stream().map(DatabaseEntity::getConnectionId).collect(Collectors.toList());
+        PreConditions.validArgumentState(
+                projectService.checkPermission(projectIds, Arrays.asList(ResourceRoleName.DBA, ResourceRoleName.OWNER)),
+                ErrorCodes.AccessDenied, null, "Only project's OWNER/DBA can transfer databases");
+        PreConditions.validArgumentState(
+                connectionService.checkPermission(connectionIds, Collections.singletonList("update")),
+                ErrorCodes.AccessDenied, null, "Lack of update permission on current datasource");
+        Map<Long, ConnectionConfig> id2Conn = connectionService.innerListByIds(connectionIds).stream()
+                .collect(Collectors.toMap(ConnectionConfig::getId, c -> c, (c1, c2) -> c2));
+        if (databaseSyncProperties.isBlockInternalDatabase()) {
+            connectionIds = databases.stream().filter(database -> {
+                ConnectionConfig connection = id2Conn.get(database.getConnectionId());
+                return connection != null
+                        && !listBlockedDatabaseNames(connection.getDialectType()).contains(database.getName());
+            }).map(DatabaseEntity::getConnectionId).collect(Collectors.toList());
+        }
+        connectionIds.forEach(c -> {
+            ConnectionConfig connection = id2Conn.get(c);
+            if (connection == null) {
+                throw new NotFoundException(ResourceType.ODC_CONNECTION, "id", c);
+            }
+            PreConditions.validArgumentState(connection.getProjectId() == null, ErrorCodes.AccessDenied, null,
+                    "Cannot transfer databases in datasource which is bound to project");
+        });
     }
 
     private Page<Database> entitiesToModels(Page<DatabaseEntity> entities) {
@@ -601,10 +678,6 @@ public class DatabaseService {
         model.setDataSource(connectionService.getForConnectionSkipPermissionCheck(entity.getConnectionId()));
         model.setEnvironment(environmentService.detailSkipPermissionCheck(model.getDataSource().getEnvironmentId()));
         return model;
-    }
-
-    private String getLockKey(@NonNull Long connectionId) {
-        return "DataSource_" + connectionId;
     }
 
     private void createDatabase(CreateDatabaseReq req, Connection conn, ConnectionConfig connection) {

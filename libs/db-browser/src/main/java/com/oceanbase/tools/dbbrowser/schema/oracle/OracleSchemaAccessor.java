@@ -109,7 +109,7 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
     public List<String> showDatabases() {
         OracleSqlBuilder sb = new OracleSqlBuilder();
         sb.append("select USERNAME from ");
-        sb.identifier(dataDictTableNames.USERS());
+        sb.append(dataDictTableNames.USERS());
 
         List<String> users = jdbcOperations.queryForList(sb.toString(), String.class);
         return users.stream().filter(user -> !ESCAPE_USER_SET.contains(user)).collect(Collectors.toList());
@@ -137,7 +137,7 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
     public List<DBObjectIdentity> listUsers() {
         OracleSqlBuilder sb = new OracleSqlBuilder();
         sb.append("SELECT USERNAME FROM ");
-        sb.identifier(dataDictTableNames.USERS());
+        sb.append(dataDictTableNames.USERS());
         return jdbcOperations.query(sb.toString(), (rs, rowNum) -> {
             DBObjectIdentity dbUser = new DBObjectIdentity();
             dbUser.setName(rs.getString(1));
@@ -185,7 +185,7 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
     public List<DBObjectIdentity> listViews(String schemaName) {
         OracleSqlBuilder sb = new OracleSqlBuilder();
         sb.append("select OWNER as schema_name, 'VIEW' as type, view_name as name from ");
-        sb.identifier(dataDictTableNames.VIEWS());
+        sb.append(dataDictTableNames.VIEWS());
         sb.append(" where owner=");
         sb.value(schemaName);
         sb.append(" order by view_name asc");
@@ -223,8 +223,11 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
         if (!StringUtils.equalsIgnoreCase("SYS", schemaName)) {
             return Collections.emptyList();
         }
-        String sql = "select VIEW_NAME from SYS.ALL_VIEWS where OWNER='SYS' ORDER BY VIEW_NAME";
-        return jdbcOperations.queryForList(sql, String.class);
+        OracleSqlBuilder sb = new OracleSqlBuilder();
+        sb.append("select VIEW_NAME from ")
+                .append(dataDictTableNames.VIEWS())
+                .append(" where OWNER='SYS' ORDER BY VIEW_NAME");
+        return jdbcOperations.queryForList(sb.toString(), String.class);
     }
 
     @Override

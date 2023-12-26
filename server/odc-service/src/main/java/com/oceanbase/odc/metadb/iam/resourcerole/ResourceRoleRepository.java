@@ -15,19 +15,16 @@
  */
 package com.oceanbase.odc.metadb.iam.resourcerole;
 
-import java.util.Optional;
+import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
-import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 
 public interface ResourceRoleRepository
         extends JpaRepository<ResourceRoleEntity, Long>, JpaSpecificationExecutor<ResourceRoleEntity> {
 
-
-    Optional<ResourceRoleEntity> findByResourceTypeAndRoleName(ResourceType resourceType,
-            ResourceRoleName resourceRole);
+    List<ResourceRoleEntity> findByResourceType(ResourceType resourceType);
 
 }

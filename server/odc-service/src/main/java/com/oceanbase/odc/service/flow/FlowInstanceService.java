@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.flow;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -31,7 +32,6 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
@@ -60,12 +60,15 @@ import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.lang.Holder;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
+import com.oceanbase.odc.core.flow.model.TaskParameters;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.constant.LimitMetric;
+import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.TaskType;
+import com.oceanbase.odc.core.shared.exception.AccessDeniedException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.core.shared.exception.OverLimitException;
 import com.oceanbase.odc.core.shared.exception.VerifyException;
@@ -82,6 +85,8 @@ import com.oceanbase.odc.metadb.flow.UserTaskInstanceEntity;
 import com.oceanbase.odc.metadb.flow.UserTaskInstanceRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.metadb.task.TaskEntity;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
+import com.oceanbase.odc.service.collaboration.project.ProjectService;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.odc.service.config.SystemConfigService;
@@ -89,7 +94,6 @@ import com.oceanbase.odc.service.config.model.Configuration;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
-import com.oceanbase.odc.service.datatransfer.model.DataTransferConfig;
 import com.oceanbase.odc.service.dispatch.DispatchResponse;
 import com.oceanbase.odc.service.dispatch.RequestDispatcher;
 import com.oceanbase.odc.service.dispatch.TaskDispatchChecker;
@@ -111,7 +115,6 @@ import com.oceanbase.odc.service.flow.model.FlowNodeInstanceDetailResp.FlowNodeI
 import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
 import com.oceanbase.odc.service.flow.model.FlowNodeType;
 import com.oceanbase.odc.service.flow.model.QueryFlowInstanceParams;
-import com.oceanbase.odc.service.flow.model.TaskParameters;
 import com.oceanbase.odc.service.flow.processor.EnablePreprocess;
 import com.oceanbase.odc.service.flow.task.BaseRuntimeFlowableDelegate;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
@@ -120,6 +123,7 @@ import com.oceanbase.odc.service.flow.task.model.RuntimeTaskConstants;
 import com.oceanbase.odc.service.flow.task.model.ShadowTableSyncTaskParameter;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
 import com.oceanbase.odc.service.iam.HorizontalDataPermissionValidator;
+import com.oceanbase.odc.service.iam.ResourceRoleService;
 import com.oceanbase.odc.service.iam.UserService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.model.User;
@@ -207,6 +211,10 @@ public class FlowInstanceService {
     private DatabaseService databaseService;
     @Autowired
     private FlowInstanceViewRepository flowInstanceViewRepository;
+    @Autowired
+    private ProjectService projectService;
+    @Autowired
+    private ResourceRoleService resourceRoleService;
 
     private final List<Consumer<DataTransferTaskInitEvent>> dataTransferTaskInitHooks = new ArrayList<>();
     private final List<Consumer<ShadowTableComparingUpdateEvent>> shadowTableComparingTaskHooks = new ArrayList<>();
@@ -282,7 +290,10 @@ public class FlowInstanceService {
         }
         List<RiskLevel> riskLevels = riskLevelService.list();
         Verify.notEmpty(riskLevels, "riskLevels");
-        ConnectionConfig conn = connectionService.getForConnectionSkipPermissionCheck(createReq.getConnectionId());
+        ConnectionConfig conn = null;
+        if (Objects.nonNull(createReq.getConnectionId())) {
+            conn = connectionService.getForConnectionSkipPermissionCheck(createReq.getConnectionId());
+        }
         return Collections.singletonList(buildFlowInstance(riskLevels, createReq, conn));
     }
 
@@ -302,6 +313,11 @@ public class FlowInstanceService {
     }
 
     public Page<FlowInstanceEntity> listAll(@NotNull Pageable pageable, @NotNull QueryFlowInstanceParams params) {
+        if (Objects.nonNull(params.getProjectId())) {
+            if (!projectService.checkPermission(params.getProjectId(), ResourceRoleName.all())) {
+                throw new AccessDeniedException();
+            }
+        }
         if (params.getParentInstanceId() != null) {
             // TODO 4.1.3 自动运行模块改造完成后剥离
             Set<Long> flowInstanceIds =
@@ -348,81 +364,101 @@ public class FlowInstanceService {
         Specification<FlowInstanceViewEntity> specification = Specification
                 .where(FlowInstanceViewSpecs.creatorIdIn(creatorIds))
                 .and(FlowInstanceViewSpecs.organizationIdEquals(authenticationFacade.currentOrganizationId()))
-                .and(FlowInstanceViewSpecs.taskTypeEquals(params.getType()))
-                .and(FlowInstanceViewSpecs.projectIdEquals(params.getProjectId()))
                 .and(FlowInstanceViewSpecs.statusIn(params.getStatuses()))
                 .and(FlowInstanceViewSpecs.createTimeLate(params.getStartTime()))
                 .and(FlowInstanceViewSpecs.createTimeBefore(params.getEndTime()))
                 .and(FlowInstanceViewSpecs.idEquals(targetId));
+        if (params.getType() != null) {
+            specification = specification.and(FlowInstanceViewSpecs.taskTypeEquals(params.getType()));
+        } else {
+            // Task type which will be filtered independently
+            List<TaskType> types = Arrays.asList(
+                    TaskType.EXPORT,
+                    TaskType.IMPORT,
+                    TaskType.MOCKDATA,
+                    TaskType.ASYNC,
+                    TaskType.SHADOWTABLE_SYNC,
+                    TaskType.PARTITION_PLAN,
+                    TaskType.ONLINE_SCHEMA_CHANGE,
+                    TaskType.ALTER_SCHEDULE,
+                    TaskType.EXPORT_RESULT_SET,
+                    TaskType.APPLY_PROJECT_PERMISSION);
+            specification = specification.and(FlowInstanceViewSpecs.taskTypeIn(types));
+        }
 
         Set<String> resourceRoleIdentifiers = userService.getCurrentUserResourceRoleIdentifiers();
-        if (params.getApproveByCurrentUser() && params.getCreatedByCurrentUser()) {
+        if (params.getContainsAll()) {
+            // does not join any project
             if (CollectionUtils.isEmpty(resourceRoleIdentifiers)) {
                 specification =
                         specification.and(FlowInstanceViewSpecs.creatorIdEquals(authenticationFacade.currentUserId()));
                 return flowInstanceViewRepository.findAll(specification, pageable).map(FlowInstanceEntity::from);
             }
-            specification =
-                    specification.and(FlowInstanceViewSpecs.leftJoinFlowInstanceApprovalView(
-                            resourceRoleIdentifiers, authenticationFacade.currentUserId()));
+            // find by project id
+            if (Objects.nonNull(params.getProjectId())) {
+                specification = specification.and(FlowInstanceViewSpecs.projectIdEquals(params.getProjectId()));
+                // if other project roles, show current user's created, waiting for approval and approved/rejected
+                // tickets
+                if (!projectService.checkPermission(params.getProjectId(), Arrays.asList(ResourceRoleName.OWNER))) {
+
+                    specification = specification.and(FlowInstanceViewSpecs.leftJoinFlowInstanceApprovalView(
+                            resourceRoleIdentifiers, authenticationFacade.currentUserId(),
+                            FlowNodeStatus.getExecutingAndFinalStatuses()));
+                }
+                // if project owner, show all tickets of the project
+            } else {
+                // find tickets related to all projects that the current user joins in
+                Map<Long, Set<ResourceRoleName>> currentUserProjectId2ResourceRoleNames =
+                        resourceRoleService.getProjectId2ResourceRoleNames();
+                Set<Long> ownerProjectIds = currentUserProjectId2ResourceRoleNames.entrySet().stream()
+                        .filter(entry -> entry.getValue().contains(ResourceRoleName.OWNER))
+                        .map(Map.Entry::getKey)
+                        .collect(Collectors.toSet());
+                Set<Long> otherRoleProjectIds = new HashSet<>(currentUserProjectId2ResourceRoleNames.keySet());
+                otherRoleProjectIds.removeAll(ownerProjectIds);
+
+
+                Specification<FlowInstanceViewEntity> ownerSpecification =
+                        Specification.where(FlowInstanceViewSpecs.projectIdIn(ownerProjectIds));
+
+                Specification<FlowInstanceViewEntity> otherRoleSpecification =
+                        Specification.where(FlowInstanceViewSpecs.projectIdIn(otherRoleProjectIds))
+                                .and(FlowInstanceViewSpecs.leftJoinFlowInstanceApprovalView(
+                                        resourceRoleIdentifiers, authenticationFacade.currentUserId(),
+                                        FlowNodeStatus.getExecutingAndFinalStatuses()));
+
+                if (CollectionUtils.isEmpty(ownerProjectIds)) {
+                    specification = specification.and(otherRoleSpecification);
+                } else if (CollectionUtils.isEmpty(otherRoleProjectIds)) {
+                    specification = specification.and(ownerSpecification);
+                } else {
+                    specification = specification.and(ownerSpecification.or(otherRoleSpecification));
+                }
+            }
             return flowInstanceViewRepository.findAll(specification, pageable).map(FlowInstanceEntity::from);
-        } else if (!params.getApproveByCurrentUser() && params.getCreatedByCurrentUser()) {
-            // 我发起的
-            specification =
-                    specification.and(FlowInstanceViewSpecs.creatorIdEquals(authenticationFacade.currentUserId()));
+        }
+        if (!params.getApproveByCurrentUser() && params.getCreatedByCurrentUser()) {
+            // created by current user
+            specification = specification.and(FlowInstanceViewSpecs.projectIdEquals(params.getProjectId()))
+                    .and(FlowInstanceViewSpecs.creatorIdEquals(authenticationFacade.currentUserId()));
             return flowInstanceViewRepository.findAll(specification, pageable).map(FlowInstanceEntity::from);
         } else if (params.getApproveByCurrentUser() && !params.getCreatedByCurrentUser()) {
-            // 待我审批
             if (CollectionUtils.isEmpty(resourceRoleIdentifiers)) {
                 return Page.empty();
             }
+            // approving by current user
             specification =
-                    specification.and(FlowInstanceViewSpecs.leftJoinFlowInstanceApprovalView(
-                            resourceRoleIdentifiers, null));
+                    specification.and(FlowInstanceViewSpecs.projectIdEquals(params.getProjectId()))
+                            .and(FlowInstanceViewSpecs.leftJoinFlowInstanceApprovalView(
+                                    resourceRoleIdentifiers, null, FlowNodeStatus.getExecutingStatuses()));
             return flowInstanceViewRepository.findAll(specification, pageable).map(FlowInstanceEntity::from);
         } else {
             throw new UnsupportedOperationException("Unsupported list flow instance query");
         }
     }
 
-    public List<FlowInstanceEntity> listByTaskTypeAndApproveUserId(TaskType taskType,
-            Long organizationId, Long approveUserId) {
-        return listByTaskTypeAndApproveUserId(taskType, organizationId, approveUserId,
-                entity -> entity.getStatus() == FlowNodeStatus.EXECUTING);
-    }
-
     public List<FlowInstanceEntity> listByIds(@NonNull Collection<Long> ids) {
         return flowInstanceRepository.findByIdIn(ids);
-    }
-
-    public List<FlowInstanceEntity> listByTaskTypeAndApproveUserId(TaskType taskType,
-            Long organizationId, Long approveUserId, Predicate<? super UserTaskInstanceEntity> predicate) {
-        Set<Long> flowInstanceIds = new HashSet<>();
-        if (Objects.nonNull(approveUserId)) {
-            Set<Long> approvableFlowInstanceIds =
-                    approvalPermissionService.getApprovableApprovalInstances(approveUserId)
-                            .stream().filter(predicate)
-                            .map(UserTaskInstanceEntity::getFlowInstanceId).collect(Collectors.toSet());
-            flowInstanceIds.addAll(approvableFlowInstanceIds);
-        }
-        if (flowInstanceIds.isEmpty()) {
-            return Collections.emptyList();
-        }
-        if (Objects.nonNull(taskType)) {
-            Specification<ServiceTaskInstanceEntity> instanceSpecification =
-                    Specification.where(ServiceTaskInstanceSpecs.taskTypeEquals(taskType))
-                            .and(ServiceTaskInstanceSpecs.flowInstanceIdIn(flowInstanceIds));
-            List<Long> targetFlowInstanceIds = serviceTaskRepository.findAll(instanceSpecification).stream()
-                    .map(ServiceTaskInstanceEntity::getFlowInstanceId).collect(Collectors.toList());
-            flowInstanceIds.retainAll(targetFlowInstanceIds);
-        }
-        if (flowInstanceIds.isEmpty()) {
-            return Collections.emptyList();
-        }
-        Specification<FlowInstanceEntity> specification = Specification
-                .where(FlowInstanceSpecs.idIn(flowInstanceIds))
-                .and(FlowInstanceSpecs.organizationIdEquals(organizationId));
-        return flowInstanceRepository.findAll(specification);
     }
 
     public FlowInstanceDetailResp detail(@NotNull Long id) {
@@ -618,8 +654,7 @@ public class FlowInstanceService {
         Verify.notNull(taskEntity.getId(), "TaskId can not be null");
         FlowInstance flowInstance = flowFactory.generateFlowInstance(generateFlowInstanceName(flowInstanceReq),
                 flowInstanceReq.getParentFlowInstanceId(),
-                flowInstanceReq.getProjectId(),
-                flowInstanceReq.getDescription());
+                flowInstanceReq.getProjectId(), flowInstanceReq.getDescription());
         Verify.notNull(flowInstance.getId(), "FlowInstance id can not be null");
         ExecutionStrategyConfig strategyConfig = ExecutionStrategyConfig.from(flowInstanceReq,
                 ExecutionStrategyConfig.INVALID_EXPIRE_INTERVAL_SECOND);
@@ -632,7 +667,6 @@ public class FlowInstanceService {
                     flowFactory.generateFlowTaskInstance(flowInstance.getId(), !addRollbackPlanNode, true, taskType,
                             strategyConfig);
             taskInstance.setTargetTaskId(taskEntity.getId());
-            taskInstance.update();
             if (addRollbackPlanNode) {
                 FlowTaskInstance rollbackPlanInstance =
                         flowFactory.generateFlowTaskInstance(flowInstance.getId(), true, false,
@@ -669,7 +703,6 @@ public class FlowInstanceService {
             CreateFlowInstanceReq flowInstanceReq, ConnectionConfig connectionConfig) {
         log.info("Start creating flow instance, flowInstanceReq={}", flowInstanceReq);
         CreateFlowInstanceReq preCheckReq = new CreateFlowInstanceReq();
-        preCheckReq.setConnectionId(flowInstanceReq.getConnectionId());
         preCheckReq.setTaskType(TaskType.PRE_CHECK);
         preCheckReq.setConnectionId(flowInstanceReq.getConnectionId());
         preCheckReq.setDatabaseId(flowInstanceReq.getDatabaseId());
@@ -690,7 +723,6 @@ public class FlowInstanceService {
                     false, TaskType.PRE_CHECK,
                     ExecutionStrategyConfig.autoStrategy());
             riskDetectInstance.setTargetTaskId(preCheckTaskEntity.getId());
-            riskDetectInstance.update();
             FlowGatewayInstance riskLevelGateway =
                     flowFactory.generateFlowGatewayInstance(flowInstance.getId(), false, true);
             FlowInstanceConfigurer startConfigurer =
@@ -755,8 +787,7 @@ public class FlowInstanceService {
                     nodeConfig.getAutoApproval(), approvalFlowConfig.getApprovalExpirationIntervalSeconds(),
                     nodeConfig.getExternalApprovalId());
             if (Objects.nonNull(resourceRoleId)) {
-                approvalPermissionService.setCandidateResourceRole(approvalInstance.getId(),
-                        StringUtils.join(flowInstanceReq.getProjectId(), ":", resourceRoleId));
+                approvalInstance.setCandidate(StringUtils.join(flowInstanceReq.getProjectId(), ":", resourceRoleId));
             }
             FlowGatewayInstance approvalGatewayInstance =
                     flowFactory.generateFlowGatewayInstance(flowInstance.getId(), false, true);
@@ -769,7 +800,6 @@ public class FlowInstanceService {
                 FlowTaskInstance taskInstance = flowFactory.generateFlowTaskInstance(flowInstance.getId(), false, true,
                         taskType, strategyConfig);
                 taskInstance.setTargetTaskId(targetTaskId);
-                taskInstance.update();
                 FlowInstanceConfigurer taskConfigurer;
                 if (taskType == TaskType.ASYNC
                         && Boolean.TRUE.equals(((DatabaseChangeParameters) parameters).getGenerateRollbackPlan())) {

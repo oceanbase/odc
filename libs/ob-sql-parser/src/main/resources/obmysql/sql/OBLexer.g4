@@ -3130,10 +3130,6 @@ DUMPFILE
     : D U M P F I L E
     ;
 
-COM
-    : C O M
-    ;
-
 COMPRESSED
     : C O M P R E S S E D
     ;

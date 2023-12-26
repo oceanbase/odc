@@ -38,6 +38,7 @@ public class OscFactoryWrapperGenerator {
             throw new UnsupportedException(ErrorCodes.Unsupported, new Object[] {dialectType.name()},
                     "unsupported dialect type");
         }
+        oscFactoryWrapper.setOscDBAccessorFactory(new OscDBAccessorFactory());
         return oscFactoryWrapper;
     }
 }

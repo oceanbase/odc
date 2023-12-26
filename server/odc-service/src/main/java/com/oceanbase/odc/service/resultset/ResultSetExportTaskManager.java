@@ -15,7 +15,7 @@
  */
 package com.oceanbase.odc.service.resultset;
 
-import com.oceanbase.odc.core.session.ConnectionSession;
+import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 
 /**
  * @Author: Lebie
@@ -28,7 +28,7 @@ public interface ResultSetExportTaskManager {
      *
      * @return ResultSetExportTaskInfo
      */
-    ResultSetExportTaskContext start(ConnectionSession session, ResultSetExportTaskParameter taskReq, String userId,
+    ResultSetExportTaskContext start(ConnectionConfig connectionConfig, ResultSetExportTaskParameter taskReq,
             String taskId);
 
 }

@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.onlineschemachange.rename;
 
+import java.util.List;
+
 import com.oceanbase.odc.service.onlineschemachange.model.OriginTableCleanStrategy;
 
 import lombok.Builder;
@@ -40,4 +42,6 @@ public class RenameTableParameters {
     private Integer lockTableTimeOutSeconds;
 
     private OriginTableCleanStrategy originTableCleanStrategy;
+
+    private List<String> lockUsers;
 }

@@ -37,7 +37,7 @@ public class PluginService {
     private static final PluginManager PLUGIN_MANAGER;
     private static final OdcPluginManager<DialectType> CONNECTION_PLUGIN_MANAGER;
     private static final OdcPluginManager<DialectType> SCHEMA_PLUGIN_MANAGER;
-
+    private static final OdcPluginManager<DialectType> TASK_PLUGIN_MANAGER;
 
     static {
         PluginProperties properties = new PluginProperties();
@@ -51,6 +51,7 @@ public class PluginService {
         PLUGIN_MANAGER.startPlugins();
         CONNECTION_PLUGIN_MANAGER = createConnectPluginManager();
         SCHEMA_PLUGIN_MANAGER = createSchemaPluginManager();
+        TASK_PLUGIN_MANAGER = createTaskPluginManager();
     }
 
     public PluginManager getPluginManager() {
@@ -65,6 +66,10 @@ public class PluginService {
         return SCHEMA_PLUGIN_MANAGER;
     }
 
+    public OdcPluginManager<DialectType> getTaskPluginManager() {
+        return TASK_PLUGIN_MANAGER;
+    }
+
     private static OdcPluginManager<DialectType> createConnectPluginManager() {
         ConnectPluginFinder finder = new ConnectPluginFinder(PLUGIN_MANAGER);
         return new OdcPluginManager<>(PLUGIN_MANAGER, finder);
@@ -72,6 +77,11 @@ public class PluginService {
 
     private static OdcPluginManager<DialectType> createSchemaPluginManager() {
         SchemaPluginFinder finder = new SchemaPluginFinder(PLUGIN_MANAGER);
+        return new OdcPluginManager<>(PLUGIN_MANAGER, finder);
+    }
+
+    private static OdcPluginManager<DialectType> createTaskPluginManager() {
+        TaskPluginFinder finder = new TaskPluginFinder(PLUGIN_MANAGER);
         return new OdcPluginManager<>(PLUGIN_MANAGER, finder);
     }
 

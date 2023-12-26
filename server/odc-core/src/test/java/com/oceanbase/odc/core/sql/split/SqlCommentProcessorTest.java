@@ -20,39 +20,75 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.StringWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
+import org.apache.commons.collections4.IteratorUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
+import com.oceanbase.odc.common.util.YamlUtils;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 
 public class SqlCommentProcessorTest {
 
     @Test
-    public void testMysqlMode() throws IOException {
+    public void testOffsetString_Mysql() throws IOException {
         String line = getSqlFromFile("sql/split/comment-processor-mysql-test.sql");
         SqlCommentProcessor processor = new SqlCommentProcessor(DialectType.OB_MYSQL, false, false, false);
-        List<String> sqls = getSqlWithoutComment(processor, line);
-        List<String> rawList =
-                getVerifySqlFromFile("sql/split/comment-processor-mysql-verify.sql", processor.getDelimiter());
-        Assert.assertEquals(rawList.size(), sqls.size());
-        for (int i = 0; i < sqls.size(); i++) {
-            Assert.assertEquals(rawList.get(i), String.format("%s%s%s", sqls.get(i), processor.getDelimiter(), "\n"));
+        StringBuffer builder = new StringBuffer();
+        List<OffsetString> actual = processor.split(builder, line);
+        List<OffsetString> expected = getSqls("sql/split/comment-processor-mysql-verify.yml");
+        Assert.assertEquals(expected.size(), actual.size());
+        for (int i = 0; i < expected.size(); i++) {
+            Assert.assertEquals(expected.get(i), actual.get(i));
         }
     }
 
     @Test
-    public void testOracleMode() throws IOException {
+    public void testIterator_MysqlMode() throws Exception {
+        List<OffsetString> actual;
+        try (InputStream in =
+                this.getClass().getClassLoader().getResourceAsStream("sql/split/comment-processor-mysql-test.sql")) {
+            SqlStatementIterator iterator = SqlCommentProcessor.iterator(in, StandardCharsets.UTF_8,
+                    new SqlCommentProcessor(DialectType.OB_MYSQL, false, false, false));
+            actual = IteratorUtils.toList(iterator);
+        }
+        List<OffsetString> expected = getSqls("sql/split/comment-processor-mysql-verify.yml");
+        Assert.assertEquals(expected.size(), actual.size());
+        for (int i = 0; i < actual.size(); i++) {
+            Assert.assertEquals(expected.get(i), actual.get(i));
+        }
+    }
+
+    @Test
+    public void testOffsetString_Oracle() throws IOException {
         String line = getSqlFromFile("sql/split/comment-processor-oracle-test.sql");
         SqlCommentProcessor processor = new SqlCommentProcessor(DialectType.OB_ORACLE, false, false, false);
-        List<String> sqls = getSqlWithoutComment(processor, line);
-        List<String> rawList =
-                getVerifySqlFromFile("sql/split/comment-processor-oracle-verify.sql", processor.getDelimiter());
-        Assert.assertEquals(rawList.size(), sqls.size());
-        for (int i = 0; i < sqls.size(); i++) {
-            Assert.assertEquals(rawList.get(i), String.format("%s%s%s", sqls.get(i), processor.getDelimiter(), "\n"));
+        StringBuffer builder = new StringBuffer();
+        List<OffsetString> actual = processor.split(builder, line);
+        List<OffsetString> expected = getSqls("sql/split/comment-processor-oracle-verify.yml");
+        Assert.assertEquals(expected.size(), actual.size());
+        for (int i = 0; i < expected.size(); i++) {
+            Assert.assertEquals(expected.get(i), actual.get(i));
+        }
+    }
+
+    @Test
+    public void testIterator_OracleMode() throws Exception {
+        List<OffsetString> actual;
+        try (InputStream in =
+                this.getClass().getClassLoader().getResourceAsStream("sql/split/comment-processor-oracle-test.sql")) {
+            SqlStatementIterator iterator = SqlCommentProcessor.iterator(in, StandardCharsets.UTF_8,
+                    new SqlCommentProcessor(DialectType.OB_ORACLE, false, false, false));
+            actual = IteratorUtils.toList(iterator);
+        }
+        List<OffsetString> expected = getSqls("sql/split/comment-processor-oracle-verify.yml");
+        Assert.assertEquals(expected.size(), actual.size());
+        for (int i = 0; i < actual.size(); i++) {
+            Assert.assertEquals(expected.get(i), actual.get(i));
         }
     }
 
@@ -69,7 +105,9 @@ public class SqlCommentProcessorTest {
         SqlCommentProcessor processor = new SqlCommentProcessor(DialectType.OB_ORACLE, true, true);
         processor.setDelimiter("/");
         StringBuffer buffer = new StringBuffer();
-        List<String> actual = processor.split(buffer, String.join("/", sqls) + "/");
+        List<String> actual =
+                processor.split(buffer, String.join("/", sqls) + "/").stream().map(OffsetString::getStr).collect(
+                        Collectors.toList());
         Assert.assertEquals(sqls, actual);
     }
 
@@ -116,14 +154,10 @@ public class SqlCommentProcessorTest {
         SqlCommentProcessor processor = new SqlCommentProcessor(DialectType.OB_ORACLE, true, true);
         processor.setDelimiter("/");
         StringBuffer buffer = new StringBuffer();
-        List<String> actual = processor.split(buffer, String.join("/", sqls) + "/");
+        List<String> actual =
+                processor.split(buffer, String.join("/", sqls) + "/").stream().map(OffsetString::getStr).collect(
+                        Collectors.toList());
         Assert.assertEquals(sqls, actual);
-    }
-
-    @Test
-    public void sqlCommentUtilTest() throws IOException {
-        testMysqlMode();
-        testOracleMode();
     }
 
     private String getSqlFromFile(String fileName) throws IOException {
@@ -142,32 +176,8 @@ public class SqlCommentProcessorTest {
         return writer.getBuffer().toString();
     }
 
-    private List<String> getSqlWithoutComment(SqlCommentProcessor processor, String sqlText) {
-        StringBuffer builder = new StringBuffer();
-        List<String> sqls = processor.split(builder, sqlText);
-        Assert.assertEquals(0, builder.toString().trim().length());
-        return sqls;
-    }
-
-    private List<String> getVerifySqlFromFile(String fileName, String delimiter) throws IOException {
-        InputStream input = this.getClass().getClassLoader().getResourceAsStream(fileName);
-        assert input != null;
-        BufferedReader reader = new BufferedReader(new InputStreamReader(input));
-        StringBuilder rawBuffer = new StringBuilder();
-        List<String> rawList = new ArrayList<>();
-        String raw = reader.readLine();
-        while (raw != null) {
-            rawBuffer.append(raw);
-            if (raw.trim().endsWith(delimiter)) {
-                rawList.add(String.format("%s\n", rawBuffer.toString()));
-                rawBuffer.setLength(0);
-            } else {
-                rawBuffer.append('\n');
-            }
-            raw = reader.readLine();
-        }
-        reader.close();
-        return rawList;
+    private List<OffsetString> getSqls(String fileName) {
+        return YamlUtils.fromYamlList(fileName, OffsetString.class);
     }
 
 }

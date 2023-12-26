@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.core.session;
 
+import lombok.NonNull;
+
 /**
  * {@link ConnectionSession} id generator, used to generate unique id
  *
@@ -22,13 +24,21 @@ package com.oceanbase.odc.core.session;
  * @date 2021-11-15 16:04
  * @since ODC_release_3.2.2
  */
-public interface ConnectionSessionIdGenerator {
+public interface ConnectionSessionIdGenerator<T> {
     /**
      * Generate method, used to generate an unique id
      *
      * @return Generated Id
      */
-    String generateId();
+    String generateId(T key);
+
+    /**
+     * get the key from {@link ConnectionSession}
+     *
+     * @param id id of {@link ConnectionSession}
+     * @return key
+     */
+    T getKeyFromId(@NonNull String id);
 
 }
 

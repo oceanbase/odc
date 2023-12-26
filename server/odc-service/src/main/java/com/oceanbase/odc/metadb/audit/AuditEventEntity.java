@@ -77,6 +77,18 @@ public class AuditEventEntity {
     private AuditEventAction action;
 
     /**
+     * Database id for this event
+     */
+    @Column(name = "database_id")
+    private Long databaseId;
+
+    /**
+     * Database name for this event; Null if not in connection
+     */
+    @Column(name = "database_name")
+    private String databaseName;
+
+    /**
      * Connection id for this event; Null if not in connection
      */
     @Column(name = "connection_id")

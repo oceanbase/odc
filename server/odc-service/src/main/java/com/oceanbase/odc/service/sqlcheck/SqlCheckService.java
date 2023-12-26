@@ -38,14 +38,15 @@ import com.oceanbase.odc.core.datasource.SingleConnectionDataSource;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
-import com.oceanbase.odc.core.shared.constant.ConnectionAccountType;
 import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.core.sql.split.OffsetString;
 import com.oceanbase.odc.service.collaboration.environment.EnvironmentService;
 import com.oceanbase.odc.service.collaboration.environment.model.Environment;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.regulation.ruleset.RuleService;
 import com.oceanbase.odc.service.regulation.ruleset.model.QueryRuleMetadataParams;
 import com.oceanbase.odc.service.regulation.ruleset.model.Rule;
+import com.oceanbase.odc.service.regulation.ruleset.model.Rule.RuleViolation;
 import com.oceanbase.odc.service.regulation.ruleset.model.RuleMetadata;
 import com.oceanbase.odc.service.regulation.ruleset.model.RuleType;
 import com.oceanbase.odc.service.session.factory.OBConsoleDataSourceFactory;
@@ -93,14 +94,13 @@ public class SqlCheckService {
     }
 
     public List<CheckViolation> check(@NotNull Long environmentId, @NonNull String databaseName,
-            @NotNull List<String> sqls, @NotNull ConnectionConfig config) {
+            @NotNull List<OffsetString> sqls, @NotNull ConnectionConfig config) {
         if (CollectionUtils.isEmpty(sqls)) {
             return Collections.emptyList();
         }
         Environment env = this.environmentService.detail(environmentId);
         List<Rule> rules = this.ruleService.list(env.getRulesetId(), QueryRuleMetadataParams.builder().build());
-        OBConsoleDataSourceFactory factory =
-                new OBConsoleDataSourceFactory(config, ConnectionAccountType.MAIN, true, false);
+        OBConsoleDataSourceFactory factory = new OBConsoleDataSourceFactory(config, true, false);
         factory.resetSchema(origin -> databaseName);
         SqlCheckContext checkContext = new SqlCheckContext((long) sqls.size());
         try (SingleConnectionDataSource dataSource = (SingleConnectionDataSource) factory.getDataSource()) {
@@ -108,7 +108,7 @@ public class SqlCheckService {
             List<SqlCheckRule> checkRules = getRules(rules, config.getDialectType(), jdbc);
             DefaultSqlChecker sqlChecker = new DefaultSqlChecker(config.getDialectType(), null, checkRules);
             List<CheckViolation> checkViolations = new ArrayList<>();
-            for (String sql : sqls) {
+            for (OffsetString sql : sqls) {
                 List<CheckViolation> violations = sqlChecker.check(Collections.singletonList(sql), checkContext);
                 fullFillRiskLevel(rules, violations);
                 checkViolations.addAll(violations);
@@ -127,6 +127,7 @@ public class SqlCheckService {
         if (CollectionUtils.isEmpty(rules)) {
             return Collections.emptyList();
         }
+        List<SqlCheckRuleFactory> candidates = SqlCheckRules.getAllFactories(dialectType, jdbc);
         return rules.stream().filter(rule -> {
             RuleMetadata metadata = rule.getMetadata();
             if (metadata == null || !Boolean.TRUE.equals(rule.getEnabled())) {
@@ -135,7 +136,7 @@ public class SqlCheckService {
             return Objects.equals(metadata.getType(), RuleType.SQL_CHECK);
         }).map(rule -> {
             try {
-                return SqlCheckRules.createByRule(jdbc, dialectType, rule);
+                return SqlCheckRules.createByRule(candidates, dialectType, rule);
             } catch (Exception e) {
                 return null;
             }
@@ -152,7 +153,10 @@ public class SqlCheckService {
             Rule rule = name2RuleMap.getOrDefault(name, null);
             if (Objects.nonNull(rule)) {
                 c.setLevel(rule.getLevel());
-                violatedRules.add(rule);
+                Rule newRule = new Rule();
+                newRule.setLevel(rule.getLevel());
+                newRule.setViolation(RuleViolation.fromCheckViolation(c));
+                violatedRules.add(newRule);
             }
         });
         return violatedRules;

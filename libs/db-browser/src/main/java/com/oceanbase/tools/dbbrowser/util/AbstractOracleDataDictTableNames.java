@@ -16,6 +16,8 @@
 package com.oceanbase.tools.dbbrowser.util;
 
 abstract class AbstractOracleDataDictTableNames implements OracleDataDictTableNames {
+    protected final String SCHEMA_NAME = "SYS";
+
     @Override
     public String TABLES() {
         return prefix() + "TABLES";

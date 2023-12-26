@@ -16,8 +16,10 @@
 package com.oceanbase.odc.service.rollbackplan.model;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.core.sql.split.OffsetString;
 import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
 
 import lombok.EqualsAndHashCode;
@@ -88,6 +90,8 @@ public class RollbackPlan {
     }
 
     private String removeCommentsForSingleSql(String singleSql) {
-        return SqlCommentProcessor.removeSqlComments(singleSql, ";", dialectType, false).get(0);
+        return SqlCommentProcessor.removeSqlComments(singleSql, ";", dialectType, false).stream()
+                .map(OffsetString::getStr).collect(Collectors.toList())
+                .get(0);
     }
 }

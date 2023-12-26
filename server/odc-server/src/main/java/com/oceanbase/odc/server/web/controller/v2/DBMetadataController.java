@@ -45,7 +45,7 @@ public class DBMetadataController {
     @GetMapping(value = {"/{sessionId}/metadata/identities"})
     public ListResponse<SchemaIdentities> listIdentities(@PathVariable String sessionId,
             @RequestParam(required = false, name = "type") List<DBObjectType> types) {
-        ConnectionSession session = sessionService.nullSafeGet(SidUtils.getSessionId(sessionId));
+        ConnectionSession session = sessionService.nullSafeGet(SidUtils.getSessionId(sessionId), true);
         return Responses.list(identitiesService.list(session, types));
     }
 

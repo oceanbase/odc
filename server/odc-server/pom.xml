@@ -6,7 +6,7 @@
     <parent>
         <groupId>com.oceanbase</groupId>
         <artifactId>odc-parent</artifactId>
-        <version>4.2.2-SNAPSHOT</version>
+        <version>4.2.3-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
     <artifactId>odc-server</artifactId>
@@ -290,7 +290,8 @@
                     </preinstallScriptlet>
                     <postinstallScriptlet>
                         <script>tar -xvzf ${rpm.rootdir}/bin/obclient.tar.gz -C ${rpm.rootdir} &amp;&amp;
-                            rm -f ${rpm.rootdir}/bin/obclient.tar.gz
+                            rm -f ${rpm.rootdir}/bin/obclient.tar.gz &amp;&amp;
+                            ln -s ${rpm.rootdir}/obclient/lib/libncurses.so.5 /usr/lib64/libncurses.so.5
                         </script>
                     </postinstallScriptlet>
                 </configuration>

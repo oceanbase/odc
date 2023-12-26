@@ -15,22 +15,22 @@
  */
 package com.oceanbase.odc.service.datatransfer;
 
-import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.jdbc.core.ConnectionCallback;
 
 import com.oceanbase.odc.core.session.ConnectionSession;
-import com.oceanbase.odc.core.session.ConnectionSessionUtil;
+import com.oceanbase.odc.core.session.ConnectionSessionConstants;
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
-import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
+import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
-import com.oceanbase.tools.dbbrowser.model.DBPLObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBSynonymType;
-import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
 
 import lombok.NonNull;
@@ -47,20 +47,19 @@ import lombok.extern.slf4j.Slf4j;
 public class DBObjectNameAccessor implements AutoCloseable {
 
     private final String schema;
-    private final DBSchemaAccessor accessor;
     private final ConnectionSession session;
+    private final DialectType dialectType;
 
-    private DBObjectNameAccessor(@NonNull DBSchemaAccessor accessor, @NonNull ConnectionSession session,
+    private DBObjectNameAccessor(@NonNull ConnectionSession session,
             @NonNull String schema) {
         this.schema = schema;
-        this.accessor = accessor;
         this.session = session;
+        this.dialectType = session.getDialectType();
     }
 
     public static DBObjectNameAccessor getInstance(@NonNull ConnectionConfig connection, @NonNull String schema) {
         ConnectionSession session = new DefaultConnectSessionFactory(connection).generateSession();
-        DBSchemaAccessor accessor = DBSchemaAccessors.create(session);
-        return new DBObjectNameAccessor(accessor, session, schema);
+        return new DBObjectNameAccessor(session, schema);
     }
 
     public Set<String> getObjectNames(@NonNull ObjectType objectType) {
@@ -85,93 +84,96 @@ public class DBObjectNameAccessor implements AutoCloseable {
                 return getPackageNames();
             case PACKAGE_BODY:
                 return getPackageBodyNames();
+            case TYPE:
+                return getTypeNames();
             default:
                 throw new UnsupportedOperationException("Unsupported object type " + objectType);
         }
     }
 
     public Set<String> getTableNames() {
-        return accessor.showTables(schema).stream()
-                .filter(name -> !StringUtils.endsWithIgnoreCase(name, OdcConstants.VALIDATE_DDL_TABLE_POSTFIX))
-                .collect(Collectors.toSet());
+        return queryNames(conn -> SchemaPluginUtil.getTableExtension(dialectType)
+                .list(conn, schema)).stream()
+                        .map(DBObjectIdentity::getName)
+                        .filter(name -> !StringUtils.endsWithIgnoreCase(name, OdcConstants.VALIDATE_DDL_TABLE_POSTFIX))
+                        .collect(Collectors.toSet());
     }
 
     public Set<String> getViewNames() {
-        return accessor.listViews(schema).stream().map(DBObjectIdentity::getName).collect(Collectors.toSet());
+        return queryNames(conn -> SchemaPluginUtil.getViewExtension(dialectType)
+                .list(conn, schema)).stream()
+                        .map(DBObjectIdentity::getName)
+                        .collect(Collectors.toSet());
     }
 
     public Set<String> getTriggerNames() {
-        if (session.getDialectType().isMysql()) {
-            return Collections.emptySet();
-        }
-        return accessor.listTriggers(schema).stream().map(DBObjectIdentity::getName).collect(Collectors.toSet());
+        return queryNames(conn -> SchemaPluginUtil.getTriggerExtension(dialectType)
+                .list(conn, schema)).stream()
+                        .map(DBObjectIdentity::getName)
+                        .collect(Collectors.toSet());
     }
 
     public Set<String> getFunctionNames() {
-        try {
-            return accessor.listFunctions(schema).stream().map(DBObjectIdentity::getName).collect(Collectors.toSet());
-        } catch (UnsupportedOperationException e) {
-            return Collections.emptySet();
-        }
+        return queryNames(conn -> SchemaPluginUtil.getFunctionExtension(dialectType)
+                .list(conn, schema)).stream()
+                        .map(DBObjectIdentity::getName)
+                        .collect(Collectors.toSet());
     }
 
     public Set<String> getProcedureNames() {
-        try {
-            return accessor.listProcedures(schema).stream().map(DBObjectIdentity::getName).collect(Collectors.toSet());
-        } catch (UnsupportedOperationException e) {
-            return Collections.emptySet();
-        }
+        return queryNames(conn -> SchemaPluginUtil.getProcedureExtension(dialectType)
+                .list(conn, schema)).stream()
+                        .map(DBObjectIdentity::getName)
+                        .collect(Collectors.toSet());
     }
 
     public Set<String> getSequenceNames() {
-        try {
-            return accessor.listSequences(schema).stream().map(DBObjectIdentity::getName).collect(Collectors.toSet());
-        } catch (UnsupportedOperationException e) {
-            return Collections.emptySet();
-        }
+        return queryNames(conn -> SchemaPluginUtil.getSequenceExtension(dialectType)
+                .list(conn, schema)).stream()
+                        .map(DBObjectIdentity::getName)
+                        .collect(Collectors.toSet());
     }
 
     public Set<String> getSynonymNames() {
-        if (session.getDialectType().isMysql()) {
-            return Collections.emptySet();
-        }
-        return accessor.listSynonyms(schema, DBSynonymType.COMMON).stream().map(DBObjectIdentity::getName)
-                .collect(Collectors.toSet());
+        return queryNames(conn -> SchemaPluginUtil.getSynonymExtension(dialectType)
+                .list(conn, schema, DBSynonymType.COMMON)).stream()
+                        .map(DBObjectIdentity::getName)
+                        .collect(Collectors.toSet());
     }
 
     public Set<String> getPublicSynonymNames() {
-        if (session.getDialectType().isMysql()) {
-            return Collections.emptySet();
-        }
-        return accessor.listSynonyms(schema, DBSynonymType.PUBLIC).stream().map(DBObjectIdentity::getName)
-                .collect(Collectors.toSet());
+        return queryNames(conn -> SchemaPluginUtil.getSynonymExtension(dialectType)
+                .list(conn, schema, DBSynonymType.PUBLIC)).stream()
+                        .map(DBObjectIdentity::getName)
+                        .collect(Collectors.toSet());
     }
 
     public Set<String> getPackageNames() {
-        if (session.getDialectType().isMysql()) {
-            return Collections.emptySet();
-        }
-        return accessor.listPackages(schema).stream()
-                .filter(i -> !StringUtils.equalsIgnoreCase(i.getName(), OdcConstants.PL_DEBUG_PACKAGE))
-                .filter(e -> e.getType().name().equals(ObjectType.PACKAGE.name()))
-                .map(DBObjectIdentity::getName).collect(Collectors.toSet());
+        return queryNames(conn -> SchemaPluginUtil.getPackageExtension(dialectType)
+                .list(conn, schema)).stream()
+                        .map(DBObjectIdentity::getName)
+                        .filter(name -> !StringUtils.equalsIgnoreCase(name, OdcConstants.PL_DEBUG_PACKAGE))
+                        .collect(Collectors.toSet());
     }
 
     public Set<String> getPackageBodyNames() {
-        if (session.getDialectType().isMysql()) {
-            return Collections.emptySet();
-        }
-        return accessor.listPackageBodies(schema).stream()
-                .map(DBObjectIdentity::getName)
-                .filter(name -> !StringUtils.equalsIgnoreCase(name, OdcConstants.PL_DEBUG_PACKAGE))
-                .collect(Collectors.toSet());
+        return queryNames(conn -> SchemaPluginUtil.getPackageExtension(dialectType)
+                .listPackageBodies(conn, schema)).stream()
+                        .map(DBObjectIdentity::getName)
+                        .filter(name -> !StringUtils.equalsIgnoreCase(name, OdcConstants.PL_DEBUG_PACKAGE))
+                        .collect(Collectors.toSet());
     }
 
     public Set<String> getTypeNames() {
-        if (session.getDialectType().isMysql()) {
-            return Collections.emptySet();
-        }
-        return accessor.listTypes(schema).stream().map(DBPLObjectIdentity::getName).collect(Collectors.toSet());
+        return queryNames(conn -> SchemaPluginUtil.getTypeExtension(dialectType)
+                .list(conn, schema)).stream()
+                        .map(DBObjectIdentity::getName)
+                        .collect(Collectors.toSet());
+    }
+
+    private <T extends DBObjectIdentity> List<T> queryNames(ConnectionCallback<List<T>> consumer) {
+        return session.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY)
+                .execute(consumer);
     }
 
     @Override
@@ -179,7 +181,4 @@ public class DBObjectNameAccessor implements AutoCloseable {
         this.session.expire();
     }
 
-    public String getDBVersion() {
-        return ConnectionSessionUtil.getVersion(session);
-    }
 }

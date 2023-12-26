@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.PreparedStatementCallback;
 import org.springframework.jdbc.core.PreparedStatementCreator;
@@ -161,6 +162,11 @@ public class TestConnectionSession implements ConnectionSession {
         @Override
         public <T> Future<T> execute(PreparedStatementCreator creator, PreparedStatementCallback<T> statementCallback) {
             return FutureResult.successResult(getJdbcTemplate().execute(creator, statementCallback));
+        }
+
+        @Override
+        public <T> Future<T> execute(ConnectionCallback<T> action) {
+            return FutureResult.successResult(getJdbcTemplate().execute(action));
         }
 
         synchronized JdbcTemplate getJdbcTemplate() {

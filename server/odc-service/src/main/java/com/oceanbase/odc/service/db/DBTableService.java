@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.db;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import javax.validation.constraints.NotBlank;
@@ -26,6 +27,7 @@ import javax.validation.constraints.NotNull;
 
 import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.stereotype.Service;
@@ -34,15 +36,20 @@ import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.core.shared.model.TableIdentity;
+import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTreeFactories;
+import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTreeFactory;
+import com.oceanbase.odc.core.sql.parser.DropStatement;
 import com.oceanbase.odc.plugin.schema.api.TableExtensionPoint;
 import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.db.model.GenerateTableDDLResp;
 import com.oceanbase.odc.service.db.model.GenerateUpdateTableDDLReq;
+import com.oceanbase.odc.service.db.model.UpdateTableDdlCheck;
 import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
 import com.oceanbase.odc.service.session.ConnectConsoleService;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
@@ -52,6 +59,10 @@ import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
 import com.oceanbase.tools.dbbrowser.model.DBTableIndex;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
+import com.oceanbase.tools.sqlparser.statement.Statement;
+import com.oceanbase.tools.sqlparser.statement.alter.table.AlterTable;
+import com.oceanbase.tools.sqlparser.statement.alter.table.AlterTableAction;
+import com.oceanbase.tools.sqlparser.statement.createindex.CreateIndex;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -165,7 +176,51 @@ public class DBTableService {
                 .sql(ddl)
                 .currentIdentity(TableIdentity.of(req.getCurrent().getSchemaName(), req.getCurrent().getName()))
                 .previousIdentity(TableIdentity.of(req.getPrevious().getSchemaName(), req.getPrevious().getName()))
+                .tip(checkUpdateDDL(session.getDialectType(), ddl))
                 .build();
+    }
+
+    private String checkUpdateDDL(DialectType dialectType, String ddl) {
+        boolean createIndex = false;
+        boolean dropIndex = false;
+        for (String s : SqlUtils.split(dialectType, ddl, ";")) {
+            Statement stmt = parseSingleSql(dialectType, s);
+            if (stmt == null) {
+                continue;
+            }
+            if (stmt instanceof CreateIndex) {
+                createIndex = true;
+            } else if (stmt instanceof DropStatement && ((DropStatement) stmt).getObjectType().equals("INDEX")) {
+                dropIndex = true;
+            } else if (stmt instanceof AlterTable) {
+                for (AlterTableAction tableAction : ((AlterTable) stmt).getAlterTableActions()) {
+                    if (Objects.nonNull(tableAction.getAddIndex())) {
+                        createIndex = true;
+                    } else if (Objects.nonNull(tableAction.getDropIndexName())) {
+                        dropIndex = true;
+                    }
+                }
+            }
+        }
+        if (dropIndex && createIndex) {
+            return UpdateTableDdlCheck.DROP_AND_CREATE_INDEX.getLocalizedMessage();
+        } else if (dropIndex) {
+            return UpdateTableDdlCheck.DROP_INDEX.getLocalizedMessage();
+        } else if (createIndex) {
+            return UpdateTableDdlCheck.CREATE_INDEX.getLocalizedMessage();
+        }
+        return null;
+    }
+
+    private Statement parseSingleSql(DialectType dialectType, String sql) {
+        try {
+            AbstractSyntaxTreeFactory factory = AbstractSyntaxTreeFactories.getAstFactory(dialectType, 0);
+            Validate.notNull(factory, "AbstractSyntaxTreeFactory can not be null");
+            return factory.buildAst(sql).getStatement();
+        } catch (Exception e) {
+            log.warn("parse generated update table sql failed, sql={}, error={}", sql, e.getMessage());
+            return null;
+        }
     }
 
     public Boolean isLowerCaseTableName(@NotNull ConnectionSession connectionSession) {

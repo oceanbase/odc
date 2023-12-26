@@ -71,6 +71,7 @@ import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.Cipher;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
+import com.oceanbase.odc.core.shared.constant.OdcConstants;
 import com.oceanbase.odc.core.shared.constant.PermissionType;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
@@ -185,6 +186,7 @@ public class UserService {
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private final List<Consumer<PasswordChangeEvent>> postPasswordChangeHooks = new ArrayList<>();
     private final List<Consumer<UserDeleteEvent>> postUserDeleteHooks = new ArrayList<>();
+    private final List<Consumer<UserDeleteEvent>> preUserDeleteHooks = new ArrayList<>();
     private static final int FAILED_LOGIN_ATTEMPT_TIMES = 5;
     private static final long WITHOUT_ROLE_ID = 0L;
     /**
@@ -192,7 +194,6 @@ public class UserService {
      * 10 * 60 * 1000L
      */
     private static final long FAILED_LOGIN_ATTEMPT_LOCK_TIMEOUT = 10 * 60 * 1000L;
-    private static final long ODC_ADMIN_USER_ID = 1L;
     private static final LoadingCache<Long, FailedLoginAttemptLimiter> userIdChangePasswordAttamptCache =
             Caffeine.newBuilder().maximumSize(1000).expireAfterWrite(Duration.ofHours(1L))
                     .build(key -> new FailedLoginAttemptLimiter(FAILED_LOGIN_ATTEMPT_TIMES,
@@ -226,7 +227,7 @@ public class UserService {
                 userRoleEntity.setUserId(userId);
                 userRoleEntity.setRoleId(roleId);
                 userRoleEntity.setOrganizationId(organizationId);
-                userRoleEntity.setCreatorId(ODC_ADMIN_USER_ID);
+                userRoleEntity.setCreatorId(OdcConstants.DEFAULT_ADMIN_USER_ID);
                 userRoleRepository.saveAndFlush(userRoleEntity);
 
                 roleIds.add(roleId);
@@ -296,7 +297,7 @@ public class UserService {
         userEntity.setEnabled(true);
         userEntity.setCipher(Cipher.BCRYPT);
         userEntity.setActive(true);
-        userEntity.setCreatorId(ODC_ADMIN_USER_ID);
+        userEntity.setCreatorId(OdcConstants.DEFAULT_ADMIN_USER_ID);
         userEntity.setBuiltIn(false);
         userEntity.setOrganizationId(organizationId);
         userEntity.setDescription("Auto generated user");
@@ -378,12 +379,19 @@ public class UserService {
                     "Operation on admin account is not allowed");
         }
         permissionValidator.checkCurrentOrganization(new User(userEntity));
+
+        UserDeleteEvent event = new UserDeleteEvent();
+        event.setUserId(id);
+        event.setOrganizationId(authenticationFacade.currentOrganizationId());
+        for (Consumer<UserDeleteEvent> hook : preUserDeleteHooks) {
+            hook.accept(event);
+        }
+
         userRepository.deleteById(id);
         userRoleRepository.deleteByUserId(id);
         deleteRelatedPermissions(id);
         permissionService.deleteResourceRelatedPermissions(id, ResourceType.ODC_USER, PermissionType.SYSTEM);
-        UserDeleteEvent event = new UserDeleteEvent();
-        event.setUserId(id);
+
         for (Consumer<UserDeleteEvent> hook : postUserDeleteHooks) {
             hook.accept(event);
         }
@@ -440,10 +448,9 @@ public class UserService {
 
     public Set<String> getCurrentUserResourceRoleIdentifiers() {
         long currentUserId = authenticationFacade.currentUserId();
-        return resourceRoleService.getResourceRoleIdentifiersByUserId(currentUserId);
+        long currentOrganizationId = authenticationFacade.currentOrganizationId();
+        return resourceRoleService.getResourceRoleIdentifiersByUserId(currentOrganizationId, currentUserId);
     }
-
-
 
     @SkipAuthorize("odc internal usage")
     public Set<Long> getUserRoleIds(Long userId) {
@@ -801,7 +808,8 @@ public class UserService {
         Boolean validateResult = attemptLimiter.attempt(
                 () -> passwordEncoder.matches(changePasswordReq.getCurrentPassword(), userEntity.getPassword()));
         PreConditions.validRequestState(validateResult, ErrorCodes.UserWrongPasswordOrNotFound,
-                new Object[] {attemptLimiter.getRemainAttempt()}, "currentPassword is not correct");
+                new Object[] {attemptLimiter.getRemainAttempt() < 0 ? "unlimited" : attemptLimiter.getRemainAttempt()},
+                "currentPassword is not correct");
 
         userEntity.setPassword(encodePassword(changePasswordReq.getNewPassword()));
         userEntity.setActive(true);
@@ -825,6 +833,11 @@ public class UserService {
     @SkipAuthorize("odc internal usage")
     public void addPostUserDeleteHook(Consumer<UserDeleteEvent> hook) {
         postUserDeleteHooks.add(hook);
+    }
+
+    @SkipAuthorize("odc internal usage")
+    public void addPreUserDeleteHook(Consumer<UserDeleteEvent> hook) {
+        preUserDeleteHooks.add(hook);
     }
 
     /**
@@ -898,6 +911,7 @@ public class UserService {
     }
     @Data
     public static class UserDeleteEvent {
+        private Long organizationId;
         private Long userId;
     }
 
