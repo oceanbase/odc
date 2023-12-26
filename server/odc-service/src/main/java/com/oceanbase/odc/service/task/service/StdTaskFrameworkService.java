@@ -150,7 +150,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         jobEntity.setExecutorIdentifier(executorIdentifier);
         // increment executionTimes
         jobEntity.setExecutionTimes(jobEntity.getExecutionTimes() + 1);
-        jobRepository.updateJobExecutorEndpointAndStatus(jobEntity);
+        jobRepository.updateJobExecutorIdentifierAndStatus(jobEntity);
     }
 
     private void updateJobScheduleEntity(TaskResult taskResult) {

@@ -35,7 +35,7 @@ public interface JobRepository extends JpaRepository<JobEntity, Long>,
 
     @Transactional
     @Query("update JobEntity set "
-            + "executor=:#{#param.executor},status=:#{#param.status},"
+            + "executorEndpoint=:#{#param.executorEndpoint},status=:#{#param.status},"
             + "progressPercentage=:#{#param.progressPercentage},resultJson=:#{#param.resultJson}"
             + " where id=:#{#param.id}")
     @Modifying
@@ -43,11 +43,11 @@ public interface JobRepository extends JpaRepository<JobEntity, Long>,
 
     @Transactional
     @Query("update JobEntity set "
-            + "executorEndpoint=:#{#param.executorEndpoint},status=:#{#param.status},"
+            + "executorIdentifier=:#{#param.executorIdentifier},status=:#{#param.status},"
             + "executionTimes=:#{#param.executionTimes}"
             + " where id=:#{#param.id}")
     @Modifying
-    void updateJobExecutorEndpointAndStatus(@Param("param") JobEntity entity);
+    void updateJobExecutorIdentifierAndStatus(@Param("param") JobEntity entity);
 
     @Transactional
     @Query("update JobEntity set "

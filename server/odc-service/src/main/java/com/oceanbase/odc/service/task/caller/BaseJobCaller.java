@@ -57,7 +57,7 @@ public abstract class BaseJobCaller implements JobCaller {
             } catch (Exception e) {
                 log.warn("Start job {} failed and retry again, error is: ", context.getJobIdentity().getId(), e);
                 finalExcept = e;
-                Thread.sleep(1000);
+                Thread.sleep(1000 * 3);
             }
         }
         if (finalExcept != null) {

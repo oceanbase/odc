@@ -23,6 +23,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.service.common.model.HostProperties;
 import com.oceanbase.odc.service.task.caller.K8sJobClient;
@@ -64,9 +65,9 @@ public class TaskFrameworkConfiguration {
     public HostUrlProvider hostUrlProvider(@Autowired TaskFrameworkProperties taskFrameworkProperties,
             @Autowired HostProperties hostProperties) {
         HostUrlProvider hostUrlProvider =
-                taskFrameworkProperties.getOdcUrl() != null ? new FixedHostUrlProvider(taskFrameworkProperties)
-                        : ((SystemUtils.getEnvOrProperty(JobEnvConstants.ODC_SERVICE_HOST) != null &&
-                                SystemUtils.getEnvOrProperty(JobEnvConstants.ODC_SERVER_PORT) != null)
+            StringUtils.isNotBlank(taskFrameworkProperties.getOdcUrl()) ? new FixedHostUrlProvider(taskFrameworkProperties)
+                        : ((StringUtils.isNotBlank(SystemUtils.getEnvOrProperty(JobEnvConstants.ODC_SERVICE_HOST)) &&
+                            StringUtils.isNotBlank(SystemUtils.getEnvOrProperty(JobEnvConstants.ODC_SERVER_PORT)))
                                         ? new ServiceNameHostUrlProvider()
                                         : new IpBasedHostUrlProvider(hostProperties));
 
