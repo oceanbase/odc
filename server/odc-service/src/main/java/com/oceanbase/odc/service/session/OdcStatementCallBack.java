@@ -278,7 +278,7 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
                     while (resultSet.next()) {
                         if (maxQuerySize != null && resultSetSize > maxQuerySize) {
                             throw new OverLimitException(LimitMetric.TRANSACTION_QUERY_LIMIT, queryLimit.doubleValue(),
-                                    "result set size exceed limit, maximum was " + queryLimit + " bytes");
+                                    "result set size exceed limit, maximum was " + maxQuerySize + " bytes");
                         }
                         resultSetSize += jdbcQueryResult.addLine(resultSet);
                         virtualTable.addLine((line++), resultSet,
