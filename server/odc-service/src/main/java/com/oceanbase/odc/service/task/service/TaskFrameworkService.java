@@ -41,9 +41,13 @@ public interface TaskFrameworkService {
 
     void startSuccess(Long id, String executorIdentifier);
 
+    void stopSuccess(Long id);
+
     void updateDescription(Long id, String description);
 
     void updateStatus(Long id, JobStatus status);
 
     String findByJobIdAndAttributeKey(Long jobId, String attributeKey);
+
+    boolean isJobFinished(Long id);
 }

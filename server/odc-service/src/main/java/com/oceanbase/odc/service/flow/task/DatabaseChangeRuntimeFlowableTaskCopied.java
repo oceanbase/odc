@@ -64,7 +64,7 @@ public class DatabaseChangeRuntimeFlowableTaskCopied extends BaseODCFlowTaskDele
     private volatile JobEntity jobEntity;
     private volatile boolean isSuccessful = false;
     private volatile boolean isFailure = false;
-    private volatile DelegateExecution execution;
+    private volatile boolean isCanceled = false;
     @Autowired
     private ObjectStorageFacade objectStorageFacade;
     @Autowired
@@ -80,6 +80,8 @@ public class DatabaseChangeRuntimeFlowableTaskCopied extends BaseODCFlowTaskDele
     public boolean cancel(boolean mayInterruptIfRunning, Long taskId, TaskService taskService) {
         try {
             jobScheduler.cancelJob(jobEntity.getId());
+            taskService.cancel(taskId);
+            isCanceled = true;
         } catch (JobException e) {
             log.warn("cancel job failed.", e);
             return false;
@@ -89,13 +91,12 @@ public class DatabaseChangeRuntimeFlowableTaskCopied extends BaseODCFlowTaskDele
 
     @Override
     public boolean isCancelled() {
-        return jobEntity != null && jobEntity.getStatus() == JobStatus.CANCELED;
+        return isCanceled;
     }
 
     @Override
     protected DatabaseChangeResult start(Long taskId, TaskService taskService, DelegateExecution execution)
             throws JobException {
-        this.execution = execution;
         DatabaseChangeResult result;
         log.info("Async task starts, taskId={}, activityId={}", taskId, execution.getCurrentActivityId());
 
@@ -104,7 +105,7 @@ public class DatabaseChangeRuntimeFlowableTaskCopied extends BaseODCFlowTaskDele
         jobEntity = taskFrameworkService.find(jobId);
         taskService.updateJobId(taskId, jobId);
         try {
-            jobScheduler.await(jobId, FlowTaskUtil.getExecutionExpirationIntervalMillis(execution),
+            jobScheduler.await(jobId, FlowTaskUtil.getExecutionExpirationIntervalMillis(execution).intValue(),
                     TimeUnit.MILLISECONDS);
         } catch (Exception e) {
             log.warn("wait job finished, occur exception:", e);

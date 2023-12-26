@@ -54,7 +54,7 @@ public interface JobScheduler {
      * @param timeUnit await time uit
      * @throws InterruptedException throws InterruptedException if await be interrupted
      */
-    void await(Long id, Long timeout, TimeUnit timeUnit) throws InterruptedException;
+    void await(Long id, Integer timeout, TimeUnit timeUnit) throws InterruptedException;
 
     /**
      * get job execution event publisher

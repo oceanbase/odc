@@ -24,6 +24,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import com.oceanbase.odc.service.task.enums.JobStatus;
+
 /**
  * @author yaobin
  * @date 2023-12-06
@@ -61,6 +63,6 @@ public interface JobRepository extends JpaRepository<JobEntity, Long>,
             + "status=:status"
             + " where id=:id")
     @Modifying
-    void updateStatus(@Param("id") Long id, @Param("status") String status);
+    void updateStatus(@Param("id") Long id, @Param("status") JobStatus status);
 
 }

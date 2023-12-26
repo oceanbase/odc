@@ -56,7 +56,11 @@ public class DefaultJobCallerListener extends JobCallerListener {
     }
 
     @Override
-    protected void stopSucceed(JobIdentity ji) {}
+    protected void stopSucceed(JobIdentity ji) {
+        if (taskFrameworkService != null) {
+            taskFrameworkService.stopSuccess(ji.getId());
+        }
+    }
 
     @Override
     protected void stopFailed(JobIdentity ji, Exception ex) {

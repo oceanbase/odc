@@ -27,11 +27,14 @@ import com.oceanbase.odc.service.task.schedule.JobIdentity;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 import com.oceanbase.odc.service.task.util.JobUtils;
 
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * @author yaobin
  * @date 2023-11-15
  * @since 4.2.4
  */
+@Slf4j
 public class K8sJobCaller extends BaseJobCaller {
 
     private final K8sJobClient client;
@@ -64,7 +67,10 @@ public class K8sJobCaller extends BaseJobCaller {
             JobEntity jobEntity = taskFrameworkService.find(ji.getId());
             String executorIdentifier = jobEntity.getExecutorIdentifier();
             ExecutorIdentifier identifier = ExecutorIdentifierParser.parser(executorIdentifier);
+
+            log.info("Preparing stop job {}, executor name {}.", ji.getId(), identifier.getExecutorName());
             client.delete(podConfig.getNamespace(), identifier.getExecutorName());
+            log.info("Stop job {} successfully, executor name {}.", ji.getId(), identifier.getExecutorName());
         }
     }
 }

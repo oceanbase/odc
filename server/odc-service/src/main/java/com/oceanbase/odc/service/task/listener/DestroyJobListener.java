@@ -41,10 +41,13 @@ public class DestroyJobListener extends TaskResultUploadListener {
     public void onEvent(TaskResultUploadEvent event) {
         TaskResult taskResult = event.getTaskResult();
         if (taskResult.getStatus() == JobStatus.DONE || taskResult.getStatus() == JobStatus.FAILED) {
+            log.info("Accept job {} is finished by status {}, and try to destroy job.",
+                taskResult.getJobIdentity().getId(), taskResult.getStatus());
             try {
                 jobScheduler.cancelJob(event.getTaskResult().getJobIdentity().getId());
+                log.info("Destroy job {} successfully.", taskResult.getJobIdentity().getId());
             } catch (JobException e) {
-                log.warn("Job {} is finished, try to destroy job failed, occur error: ",
+                log.warn("Job {} is finished, destroy job failed, occur error: ",
                         taskResult.getJobIdentity().getId(), e);
             }
         }
