@@ -428,8 +428,7 @@ public class FlowTaskInstanceService {
             List<DataTransferTaskResult> taskResults = getDataTransferResult(taskEntity);
             Verify.singleton(taskResults, "DataTransferTaskResult");
 
-            DataTransferTaskResult taskResult = taskResults.get(0);
-            String objectName = ossTaskReferManager.get(taskResult.getExportZipFilePath());
+            String objectName = taskResults.get(0).getExportZipFilePath();
             PreConditions.validExists(ResourceType.ODC_FILE, "taskId", taskEntity.getId(),
                     () -> StringUtils.isNotBlank(objectName));
             URL url = generatePresignedUrl(objectName, expirationSecs);
