@@ -18,15 +18,17 @@ package com.oceanbase.odc.metadb.flow;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
 
 import javax.transaction.Transactional;
 
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import com.oceanbase.odc.common.jpa.InsertSqlTemplateBuilder;
+import com.oceanbase.odc.config.jpa.OdcJpaRepository;
 import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
 import com.oceanbase.odc.service.flow.model.FlowNodeType;
 
@@ -38,7 +40,7 @@ import com.oceanbase.odc.service.flow.model.FlowNodeType;
  * @since ODC_release_3.3.0
  */
 public interface UserTaskInstanceRepository
-        extends JpaRepository<UserTaskInstanceEntity, Long>, JpaSpecificationExecutor<UserTaskInstanceEntity> {
+        extends OdcJpaRepository<UserTaskInstanceEntity, Long>, JpaSpecificationExecutor<UserTaskInstanceEntity> {
 
     List<UserTaskInstanceEntity> findByStatus(FlowNodeStatus status);
 
@@ -107,10 +109,47 @@ public interface UserTaskInstanceRepository
     @Query(value = "select wait_for_confirm from flow_instance_node_approval where id =:id limit 1", nativeQuery = true)
     Boolean findConfirmById(@Param("id") Long id);
 
-    @Query(value = "SELECT * FROM flow_instance_node_approval WHERE flow_instance_id in (:flowInstanceIds) and status=:#{#status.name()}",
+    @Query(value = "SELECT * FROM flow_instance_node_approval WHERE flow_instance_id in (:flowInstanceIds) and status in (:status)",
             nativeQuery = true)
     List<UserTaskInstanceEntity> findApprovalInstanceIdByFlowInstanceIdAndStatus(
-            @Param("flowInstanceIds") Collection<Long> flowInstanceIds, @Param("status") FlowNodeStatus status);
+            @Param("flowInstanceIds") Collection<Long> flowInstanceIds, @Param("status") Collection<String> status);
 
+    default List<UserTaskInstanceEntity> batchCreate(List<UserTaskInstanceEntity> entities) {
+        String sql = InsertSqlTemplateBuilder.from("flow_instance_node_approval")
+                .field(UserTaskInstanceEntity_.organizationId)
+                .field(UserTaskInstanceEntity_.userTaskId)
+                .field(UserTaskInstanceEntity_.status)
+                .field(UserTaskInstanceEntity_.operatorId)
+                .field(UserTaskInstanceEntity_.comment)
+                .field("approval_expire_interval_seconds")
+                .field("is_approved")
+                .field("is_start_endpoint")
+                .field("is_end_endpoint")
+                .field(UserTaskInstanceEntity_.flowInstanceId)
+                .field("is_auto_approve")
+                .field(UserTaskInstanceEntity_.waitForConfirm)
+                .field(UserTaskInstanceEntity_.externalFlowInstanceId)
+                .field(UserTaskInstanceEntity_.externalApprovalId)
+                .build();
+
+        List<Function<UserTaskInstanceEntity, Object>> getter = valueGetterBuilder().add(
+                UserTaskInstanceEntity::getOrganizationId)
+                .add(UserTaskInstanceEntity::getUserTaskId)
+                .add((UserTaskInstanceEntity e) -> e.getStatus().name())
+                .add(UserTaskInstanceEntity::getOperatorId)
+                .add(UserTaskInstanceEntity::getComment)
+                .add(UserTaskInstanceEntity::getExpireIntervalSeconds)
+                .add(UserTaskInstanceEntity::isApproved)
+                .add(UserTaskInstanceEntity::isStartEndpoint)
+                .add(UserTaskInstanceEntity::isEndEndpoint)
+                .add(UserTaskInstanceEntity::getFlowInstanceId)
+                .add(UserTaskInstanceEntity::isAutoApprove)
+                .add(UserTaskInstanceEntity::getWaitForConfirm)
+                .add(UserTaskInstanceEntity::getExternalFlowInstanceId)
+                .add(UserTaskInstanceEntity::getExternalApprovalId)
+                .build();
+
+        return batchCreate(entities, sql, getter, UserTaskInstanceEntity::setId);
+    }
 
 }

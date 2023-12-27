@@ -31,11 +31,11 @@ public class MySQLWriterPluginParameter implements PluginParameter {
     private List<String> preSql;
     private List<String> postSql;
     private List<String> session;
-    private List<Connection> connection;
+    private List<DataXConnection> connection;
 
     @Data
     @AllArgsConstructor
-    public static class Connection {
+    public static class DataXConnection {
         String jdbcUrl;
         String[] table;
     }

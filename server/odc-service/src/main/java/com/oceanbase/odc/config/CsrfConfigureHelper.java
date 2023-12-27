@@ -36,12 +36,15 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.access.AccessDeniedHandlerImpl;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfFilter;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
 import org.springframework.security.web.csrf.InvalidCsrfTokenException;
 import org.springframework.security.web.csrf.MissingCsrfTokenException;
+import org.springframework.security.web.session.SessionManagementFilter;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.stereotype.Component;
+import org.springframework.web.servlet.LocaleResolver;
 
 import com.google.common.net.InetAddresses;
 import com.oceanbase.odc.common.trace.TraceContextHolder;
@@ -53,28 +56,28 @@ import com.oceanbase.odc.service.common.util.WebRequestUtils;
 import com.oceanbase.odc.service.common.util.WebResponseUtils;
 
 /**
+ * we always disable csrf for HttpSecurity configuration, create CsrfFilter manually for avoid
+ * conflict with session management filter
+ * 
  * @author wenniu.ly
  * @date 2021/6/18
  */
-
 @Component
 public class CsrfConfigureHelper {
 
     @Autowired
     private CommonSecurityProperties commonSecurityProperties;
 
+    @Autowired
+    private LocaleResolver localeResolver;
+
     public void configure(HttpSecurity http) throws Exception {
+        http.csrf().disable();
         if (commonSecurityProperties.isCsrfEnabled()) {
-            // @formatter:off
-            http.exceptionHandling()
-                    .accessDeniedHandler(accessDeniedHandler())
-                .and()
-                    .csrf()
-                    .requireCsrfProtectionMatcher(requestMatcher())
-                    .csrfTokenRepository(new OdcCsrfTokenRepository());
-            // @formatter:on
-        } else {
-            http.csrf().disable();
+            CsrfFilter csrfFilter = new CsrfFilter(new OdcCsrfTokenRepository());
+            csrfFilter.setRequireCsrfProtectionMatcher(requestMatcher());
+            csrfFilter.setAccessDeniedHandler(accessDeniedHandler());
+            http.addFilterAfter(csrfFilter, SessionManagementFilter.class);
         }
     }
 

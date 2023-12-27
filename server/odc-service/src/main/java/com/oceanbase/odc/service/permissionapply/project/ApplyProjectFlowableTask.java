@@ -68,11 +68,13 @@ public class ApplyProjectFlowableTask extends BaseODCFlowTaskDelegate<ApplyProje
 
     private volatile boolean success = false;
     private volatile boolean failure = false;
+    private Long taskCreatorId;
 
     @Override
     protected ApplyProjectResult start(Long taskId, TaskService taskService, DelegateExecution execution)
             throws Exception {
-        TaskContextHolder.trace(FlowTaskUtil.getTaskCreator(execution).getId(), taskId);
+        this.taskCreatorId = FlowTaskUtil.getTaskCreator(execution).getId();
+        TaskContextHolder.trace(this.taskCreatorId, taskId);
         ApplyProjectResult result = new ApplyProjectResult();
         log.info("Apply project task starts, taskId={}, activityId={}", taskId, execution.getCurrentActivityId());
         try {
@@ -160,20 +162,26 @@ public class ApplyProjectFlowableTask extends BaseODCFlowTaskDelegate<ApplyProje
 
     @Override
     protected void onFailure(Long taskId, TaskService taskService) {
+        TaskContextHolder.trace(getTaskCreatorId(taskId, taskService), taskId);
         log.warn("Apply project task failed, taskId={}", taskId);
+        TaskContextHolder.clear();
         super.onFailure(taskId, taskService);
     }
 
     @Override
     protected void onSuccessful(Long taskId, TaskService taskService) {
+        TaskContextHolder.trace(getTaskCreatorId(taskId, taskService), taskId);
         log.info("Apply project task succeed, taskId={}", taskId);
+        TaskContextHolder.clear();
         updateFlowInstanceStatus(FlowStatus.EXECUTION_SUCCEEDED);
         super.onSuccessful(taskId, taskService);
     }
 
     @Override
     protected void onTimeout(Long taskId, TaskService taskService) {
+        TaskContextHolder.trace(getTaskCreatorId(taskId, taskService), taskId);
         log.warn("Apply project permission task timeout, taskId={}", taskId);
+        TaskContextHolder.clear();
     }
 
     @Override
@@ -189,4 +197,12 @@ public class ApplyProjectFlowableTask extends BaseODCFlowTaskDelegate<ApplyProje
     public boolean isCancelled() {
         return false;
     }
+
+    private long getTaskCreatorId(Long taskId, TaskService taskService) {
+        if (this.taskCreatorId != null) {
+            return this.taskCreatorId;
+        }
+        return taskService.detail(taskId).getCreatorId();
+    }
+
 }

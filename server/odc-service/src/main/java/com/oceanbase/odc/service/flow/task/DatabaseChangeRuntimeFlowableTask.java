@@ -63,11 +63,11 @@ public class DatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDelegate<D
     @Autowired
     private CloudObjectStorageService cloudObjectStorageService;
     @Autowired
-    private ObjectStorageFacade objectStorageFacade;
-    @Autowired
     private ConnectProperties connectProperties;
     @Autowired
     private DataMaskingService maskingService;
+    @Autowired
+    private ObjectStorageFacade objectStorageFacade;
     @Autowired
     private DBSessionManageFacade sessionManageFacade;
 
@@ -163,7 +163,7 @@ public class DatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDelegate<D
         if (Objects.nonNull(asyncTaskThread)) {
             double progress = asyncTaskThread.getProgressPercentage();
             taskService.updateProgress(taskId, progress);
-            if (System.currentTimeMillis() - asyncTaskThread.getStartTimestamp() > getTimeOutMilliSeconds()) {
+            if (System.currentTimeMillis() - asyncTaskThread.getStartTimestamp() > getTimeoutMillis()) {
                 asyncTaskThread.stopTaskAndKillQuery(sessionManageFacade);
             }
         }

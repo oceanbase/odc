@@ -18,6 +18,7 @@ package com.oceanbase.odc.metadb.connection;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
@@ -54,6 +55,11 @@ public interface DatabaseRepository extends JpaRepository<DatabaseEntity, Long>,
     @Transactional
     @Query(value = "update connect_database t set t.is_existed = :existed where t.id in (:ids)", nativeQuery = true)
     int setExistedByIdIn(@Param("existed") Boolean existed, @Param("ids") Collection<Long> ids);
+
+    @Transactional
+    @Query(value = "update `connect_database` t set t.project_id = :projectId where t.id in (:ids)", nativeQuery = true)
+    @Modifying
+    int setProjectIdByIdIn(@Param("projectId") Long projectId, @Param("ids") Set<Long> ids);
 
     @Modifying
     @Transactional

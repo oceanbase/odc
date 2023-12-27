@@ -20,7 +20,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -70,6 +69,7 @@ import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.ConnectionStatus;
 import com.oceanbase.odc.core.shared.constant.ConnectionVisibleScope;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
+import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.constant.PermissionType;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
@@ -396,6 +396,7 @@ public class ConnectionService {
                 ConnectionConfig c = new ConnectionConfig();
                 c.setId(e.getId());
                 c.setName(e.getName());
+                c.setType(e.getType());
                 return c;
             }).collect(Collectors.toList());
         } else {
@@ -423,6 +424,28 @@ public class ConnectionService {
         Map<Long, ConnectionConfig> connMap =
                 entitiesToModels(repository.findAll(spec), currentOrganizationId(), false, false).stream()
                         .collect(Collectors.toMap(ConnectionConfig::getId, c -> c));
+
+        if (authenticationFacade.currentOrganization().getType() == OrganizationType.INDIVIDUAL) {
+            return getIndividualSpaceStatus(ids, connMap);
+        } else {
+            return getTeamSpaceStatus(ids, connMap, user);
+        }
+    }
+
+    private Map<Long, CheckState> getIndividualSpaceStatus(Set<Long> ids, Map<Long, ConnectionConfig> connMap) {
+        Map<Long, CheckState> connId2State = new HashMap<>();
+        for (Long connId : ids) {
+            ConnectionConfig conn = connMap.get(connId);
+            if (conn == null) {
+                connId2State.put(connId, CheckState.of(ConnectionStatus.UNKNOWN));
+            } else {
+                connId2State.put(connId, this.statusManager.getAndRefreshStatus(conn));
+            }
+        }
+        return connId2State;
+    }
+
+    private Map<Long, CheckState> getTeamSpaceStatus(Set<Long> ids, Map<Long, ConnectionConfig> connMap, User user) {
         Map<SecurityResource, Set<String>> res2Actions = authorizationFacade.getRelatedResourcesAndActions(user)
                 .entrySet().stream().collect(Collectors.toMap(e -> {
                     SecurityResource s = e.getKey();
@@ -431,33 +454,28 @@ public class ConnectionService {
         List<Permission> granted = res2Actions.entrySet().stream()
                 .map(e -> securityManager.getPermissionByActions(e.getKey(), e.getValue()))
                 .collect(Collectors.toList());
+        Set<Long> projectRelatedConnectionIds = databaseService.statsConnectionConfig().stream()
+                .map(ConnectionConfig::getId).collect(Collectors.toSet());
         Map<Long, CheckState> connId2State = new HashMap<>();
         for (Long connId : ids) {
             ConnectionConfig conn = connMap.get(connId);
             if (conn == null) {
-                // 没有找到对应的连接，可能是非法的 connId，保险起见将状态设置为 unknown
+                // may invalid connection id, set the status to UNKNOWN
                 connId2State.put(connId, CheckState.of(ConnectionStatus.UNKNOWN));
                 continue;
             }
-            boolean grant;
-            String connIdStr = connId + "";
-            Permission p = new ConnectionPermission(connIdStr, ResourcePermission.READ);
-            grant = granted.stream().anyMatch(g -> g.implies(p));
-            SecurityResource allKey = new DefaultSecurityResource("ODC_CONNECTION");
-            Set<String> actions = res2Actions.getOrDefault(allKey, new HashSet<>());
-            SecurityResource thisKey = new DefaultSecurityResource(connIdStr, "ODC_CONNECTION");
-            actions.addAll(res2Actions.getOrDefault(thisKey, new HashSet<>()));
-            conn.setPermittedActions(actions);
-            if (!grant) {
-                // 不具备 connId 对应连接的读权限，此时需要将连接状态置为 unknown 避免越权
-                connId2State.put(connId, CheckState.of(ConnectionStatus.UNKNOWN));
-            } else {
-                // 有权限，从 statusManager 中获取
+            Permission p = new ConnectionPermission(connId + "", ResourcePermission.READ);
+            boolean hasReadPermission = granted.stream().anyMatch(g -> g.implies(p));
+            boolean joinedProject = projectRelatedConnectionIds.contains(connId);
+            if (hasReadPermission || joinedProject) {
                 connId2State.put(connId, this.statusManager.getAndRefreshStatus(conn));
+            } else {
+                connId2State.put(connId, CheckState.of(ConnectionStatus.UNKNOWN));
             }
         }
         return connId2State;
     }
+
 
     @SkipAuthorize("odc internal usage")
     public List<ConnectionConfig> batchNullSafeGet(@NonNull Collection<Long> ids) {
@@ -576,7 +594,7 @@ public class ConnectionService {
             log.info("Connection updated, connection={}", updated);
             if (saved.getProjectId() != null && updated.getProjectId() == null) {
                 // Remove databases from project when unbind project from connection
-                updateDatabaseProjectId(id, null);
+                updateDatabaseProjectId(savedEntity, null, false);
             }
             transactionManager.commit(transactionStatus);
         } catch (Exception e) {
@@ -588,23 +606,30 @@ public class ConnectionService {
     }
 
     @SkipAuthorize("odc internal usage")
-    public void updateDatabaseProjectId(Collection<Long> connectionIds, Long projectId) throws InterruptedException {
+    public void updateDatabaseProjectId(Collection<ConnectionEntity> connectionIds, Long projectId,
+            boolean blockInternalDatabase) throws InterruptedException {
         if (CollectionUtils.isEmpty(connectionIds)) {
             return;
         }
-        for (Long connectionId : connectionIds) {
-            updateDatabaseProjectId(connectionId, projectId);
+        for (ConnectionEntity entity : connectionIds) {
+            updateDatabaseProjectId(entity, projectId, blockInternalDatabase);
         }
     }
 
-    private void updateDatabaseProjectId(Long connectionId, Long projectId) throws InterruptedException {
-        Lock lock = jdbcLockRegistry.obtain(getUpdateDsSchemaLockKey(connectionId));
+    private void updateDatabaseProjectId(ConnectionEntity entity, Long projectId, boolean blockInternalDatabase)
+            throws InterruptedException {
+        Lock lock = jdbcLockRegistry.obtain(getUpdateDsSchemaLockKey(entity.getId()));
         if (!lock.tryLock(3, TimeUnit.SECONDS)) {
             throw new ConflictException(ErrorCodes.ResourceModifying, "Can not acquire jdbc lock");
         }
         try {
-            List<DatabaseEntity> entities = databaseRepository.findByConnectionId(connectionId);
-            entities.forEach(e -> e.setProjectId(projectId));
+            List<DatabaseEntity> entities = databaseRepository.findByConnectionId(entity.getId());
+            List<String> blockDatabaseNames = databaseService.listBlockedDatabaseNames(entity.getDialectType());
+            entities.forEach(e -> {
+                if (!blockInternalDatabase || !blockDatabaseNames.contains(e.getName())) {
+                    e.setProjectId(projectId);
+                }
+            });
             databaseRepository.saveAll(entities);
         } finally {
             lock.unlock();
@@ -776,6 +801,7 @@ public class ConnectionService {
         ConnectionEntity entity = new ConnectionEntity();
         entity.setOrganizationId(organizationId);
         entity.setName(name);
+        entity.setVisibleScope(ConnectionVisibleScope.ORGANIZATION);
         return repository.exists(Example.of(entity));
     }
 

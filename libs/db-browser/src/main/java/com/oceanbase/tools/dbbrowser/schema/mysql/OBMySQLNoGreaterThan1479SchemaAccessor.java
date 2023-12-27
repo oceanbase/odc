@@ -135,10 +135,7 @@ public class OBMySQLNoGreaterThan1479SchemaAccessor extends BaseOBMySQLLessThan2
             partitionDefinition.setOrdinalPosition(rs.getInt("part_id"));
             partitionDefinition.setType(DBTablePartitionType.fromValue(rs.getString("partition_method")));
             String description = null;
-            if (partitionDefinition.getType() == DBTablePartitionType.LIST
-                    || partitionDefinition.getType() == DBTablePartitionType.LIST_COLUMNS) {
-                description = rs.getString("list_val");
-            } else if (partitionDefinition.getType() == DBTablePartitionType.RANGE
+            if (partitionDefinition.getType() == DBTablePartitionType.RANGE
                     || partitionDefinition.getType() == DBTablePartitionType.RANGE_COLUMNS) {
                 description = rs.getString("high_bound_val");
             }
@@ -159,7 +156,6 @@ public class OBMySQLNoGreaterThan1479SchemaAccessor extends BaseOBMySQLLessThan2
                     subPartitionOption.setExpression(subPartExpression);
                 } else {
                     subPartitionOption.setColumnNames(Arrays.asList(subPartExpression.split(",")));
-
                 }
             } else {
                 partition.setWarning("Only support HASH/KEY subpartition currently, please check comparing ddl");

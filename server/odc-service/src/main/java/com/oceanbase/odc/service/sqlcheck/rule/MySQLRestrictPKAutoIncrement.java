@@ -125,7 +125,8 @@ public class MySQLRestrictPKAutoIncrement implements SqlCheckRule {
     }
 
     private CreateTable getTable(String schema, String tableName, SqlCheckContext context) {
-        List<CreateTable> tables = context.getAllCheckedStatements(CreateTable.class);
+        List<CreateTable> tables = context.getAllCheckedStatements(CreateTable.class).stream().map(p -> p.left)
+                .collect(Collectors.toList());;
         if (CollectionUtils.isEmpty(tables)) {
             return getTableFromRemote(jdbcOperations, schema, tableName);
         }

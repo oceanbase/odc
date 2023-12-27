@@ -65,9 +65,10 @@ public class TaskFrameworkConfiguration {
     public HostUrlProvider hostUrlProvider(@Autowired TaskFrameworkProperties taskFrameworkProperties,
             @Autowired HostProperties hostProperties) {
         HostUrlProvider hostUrlProvider =
-            StringUtils.isNotBlank(taskFrameworkProperties.getOdcUrl()) ? new FixedHostUrlProvider(taskFrameworkProperties)
+                StringUtils.isNotBlank(taskFrameworkProperties.getOdcUrl())
+                        ? new FixedHostUrlProvider(taskFrameworkProperties)
                         : ((StringUtils.isNotBlank(SystemUtils.getEnvOrProperty(JobEnvConstants.ODC_SERVICE_HOST)) &&
-                            StringUtils.isNotBlank(SystemUtils.getEnvOrProperty(JobEnvConstants.ODC_SERVER_PORT)))
+                                StringUtils.isNotBlank(SystemUtils.getEnvOrProperty(JobEnvConstants.ODC_SERVER_PORT)))
                                         ? new ServiceNameHostUrlProvider()
                                         : new IpBasedHostUrlProvider(hostProperties));
 

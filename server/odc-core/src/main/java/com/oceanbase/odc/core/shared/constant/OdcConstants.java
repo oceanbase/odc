@@ -62,6 +62,7 @@ public class OdcConstants {
     public static final String DB_VARIABLE_TYPE_ENUM = "enum";
     public static final String UNKNOWN = "UNKNOWN";
     public static final String ODC_INTERNAL_ROWID = "__ODC_INTERNAL_ROWID__";
+    public static final String ODC_INTERNAL_RESULT_SET = "__ODC_INTERNAL_RESULT_SET__";
     public static final String ROWID = "ROWID";
     public static final String PRIMARY_KEY_NAME = "PRIMARY";
 

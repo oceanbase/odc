@@ -64,7 +64,7 @@ public class NoIndexNameExists implements SqlCheckRule {
                 if (c.getConstraintName() != null || c.getIndexName() != null) {
                     return false;
                 }
-                return c.isPrimaryKey() || c.isUniqueKey();
+                return c.isUniqueKey();
             }).collect(Collectors.toList()));
             return statements.stream().map(s -> SqlCheckUtil.buildViolation(
                     statement.getText(), s, getType(), new Object[] {})).collect(Collectors.toList());
@@ -76,7 +76,7 @@ public class NoIndexNameExists implements SqlCheckRule {
                 if (c == null || c.getConstraintName() != null || c.getIndexName() != null) {
                     return false;
                 }
-                return c.isPrimaryKey() || c.isUniqueKey();
+                return c.isUniqueKey();
             }).collect(Collectors.toList()));
             statements.addAll(alterTable.getAlterTableActions().stream().filter(alterTableAction -> {
                 OutOfLineIndex i = alterTableAction.getAddIndex();
@@ -101,14 +101,12 @@ public class NoIndexNameExists implements SqlCheckRule {
                 return false;
             }
             return CollectionUtils.isNotEmpty(ca.getConstraints());
-        })
-                .flatMap(d -> d.getColumnAttributes().getConstraints().stream())
-                .filter(c -> {
-                    if (c.getConstraintName() != null) {
-                        return false;
-                    }
-                    return c.isUniqueKey() || c.isPrimaryKey();
-                }).collect(Collectors.toList());
+        }).flatMap(d -> d.getColumnAttributes().getConstraints().stream()).filter(c -> {
+            if (c.getConstraintName() != null) {
+                return false;
+            }
+            return c.isUniqueKey();
+        }).collect(Collectors.toList());
     }
 
 }
