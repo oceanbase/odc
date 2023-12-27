@@ -416,7 +416,7 @@ public class FlowTaskInstanceService {
             List<MockDataTaskResult> details = getMockDataResult(taskEntity);
             Verify.singleton(details, "MockDataDetail");
 
-            String objectName = ossTaskReferManager.get(taskEntity.getId() + "");
+            String objectName = details.get(0).getObjectName();
             PreConditions.validExists(ResourceType.ODC_FILE, "taskId", taskEntity.getId(),
                     () -> StringUtils.isNotBlank(objectName));
             URL url = generatePresignedUrl(objectName, expirationSecs);
