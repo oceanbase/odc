@@ -40,6 +40,7 @@ public interface ProjectOpenApiService {
      * @return
      */
     List<ProjectVO> listProjects(ListProjectRequest request);
+
     /**
      * 创建项目
      *
