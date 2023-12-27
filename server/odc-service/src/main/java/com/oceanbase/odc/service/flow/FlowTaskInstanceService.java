@@ -416,7 +416,7 @@ public class FlowTaskInstanceService {
             List<MockDataTaskResult> details = getMockDataResult(taskEntity);
             Verify.singleton(details, "MockDataDetail");
 
-            String objectName = ossTaskReferManager.get(taskEntity.getId() + "");
+            String objectName = details.get(0).getObjectName();
             PreConditions.validExists(ResourceType.ODC_FILE, "taskId", taskEntity.getId(),
                     () -> StringUtils.isNotBlank(objectName));
             URL url = generatePresignedUrl(objectName, expirationSecs);
@@ -428,8 +428,7 @@ public class FlowTaskInstanceService {
             List<DataTransferTaskResult> taskResults = getDataTransferResult(taskEntity);
             Verify.singleton(taskResults, "DataTransferTaskResult");
 
-            DataTransferTaskResult taskResult = taskResults.get(0);
-            String objectName = ossTaskReferManager.get(taskResult.getExportZipFilePath());
+            String objectName = taskResults.get(0).getExportZipFilePath();
             PreConditions.validExists(ResourceType.ODC_FILE, "taskId", taskEntity.getId(),
                     () -> StringUtils.isNotBlank(objectName));
             URL url = generatePresignedUrl(objectName, expirationSecs);
@@ -440,7 +439,7 @@ public class FlowTaskInstanceService {
         } else if (taskEntity.getTaskType() == TaskType.EXPORT_RESULT_SET) {
             List<ResultSetExportResult> results = getResultSetExportResult(taskEntity);
             Verify.singleton(results, "ResultSetExportResult");
-            String objectName = ossTaskReferManager.get(results.get(0).getFileName());
+            String objectName = results.get(0).getFileName();
             PreConditions.validExists(ResourceType.ODC_FILE, "taskId", taskEntity.getId(),
                     () -> StringUtils.isNotBlank(objectName));
             return Collections.singletonList(generatePresignedUrl(objectName, expirationSecs));
