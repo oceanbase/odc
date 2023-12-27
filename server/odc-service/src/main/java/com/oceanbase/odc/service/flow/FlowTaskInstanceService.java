@@ -439,7 +439,7 @@ public class FlowTaskInstanceService {
         } else if (taskEntity.getTaskType() == TaskType.EXPORT_RESULT_SET) {
             List<ResultSetExportResult> results = getResultSetExportResult(taskEntity);
             Verify.singleton(results, "ResultSetExportResult");
-            String objectName = ossTaskReferManager.get(results.get(0).getFileName());
+            String objectName = results.get(0).getFileName();
             PreConditions.validExists(ResourceType.ODC_FILE, "taskId", taskEntity.getId(),
                     () -> StringUtils.isNotBlank(objectName));
             return Collections.singletonList(generatePresignedUrl(objectName, expirationSecs));
