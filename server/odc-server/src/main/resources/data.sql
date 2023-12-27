@@ -532,6 +532,10 @@ INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('o
  'CHANGE_ME', '云存储服务 RegionId') ON DUPLICATE KEY UPDATE `id`=`id`;
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.cloud.object-storage.endpoint',
  'CHANGE_ME', '云存储服务 Endpoint') ON DUPLICATE KEY UPDATE `id`=`id`;
+INSERT INTO config_system_configuration(`key`, `value`, `description`) (SELECT 'odc.cloud.object-storage.public-endpoint', `value`, '云存储服务公网 Endpoint' FROM config_system_configuration WHERE `key`='odc.cloud.object-storage.endpoint')
+ ON DUPLICATE KEY UPDATE `id`=`id`;
+INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.cloud.object-storage.internal-endpoint',
+ 'CHANGE_ME', '云存储服务内网 Endpoint') ON DUPLICATE KEY UPDATE `id`=`id`;
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.cloud.object-storage.access-key-id',
  'CHANGE_ME', '云存储服务 accessKeyId') ON DUPLICATE KEY UPDATE `id`=`id`;
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.cloud.object-storage.access-key-secret',
