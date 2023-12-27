@@ -49,9 +49,9 @@ public class ProjectOpenApiServiceImpl implements ProjectOpenApiService {
     @Override
     public List<ProjectVO> listProjects(ListProjectRequest request) {
         ClientRequestParams params = new ClientRequestParams()
-            .setRequest(request)
-            .setAction("ListProjects")
-            .setTypeReference(new TypeReference<OmsApiReturnResult<List<ProjectVO>>>() {});
+                .setRequest(request)
+                .setAction("ListProjects")
+                .setTypeReference(new TypeReference<OmsApiReturnResult<List<ProjectVO>>>() {});
 
         return omsClient.postOmsInterface(params);
     }

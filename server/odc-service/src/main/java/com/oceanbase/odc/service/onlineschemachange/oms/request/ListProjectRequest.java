@@ -23,7 +23,6 @@ import javax.validation.constraints.Min;
 import org.hibernate.validator.constraints.Range;
 
 import com.oceanbase.odc.service.onlineschemachange.oms.annotation.OmsEnumsCheck;
-import com.oceanbase.odc.service.onlineschemachange.oms.enums.OmsOceanBaseType;
 import com.oceanbase.odc.service.onlineschemachange.oms.enums.ProjectTypeEnum;
 
 import lombok.Data;
@@ -36,16 +35,19 @@ import lombok.Data;
 @Data
 public class ListProjectRequest extends BaseOmsRequest {
 
-    /**
-     * project type : MIGRATION or TRANSFER
-     */
-    @OmsEnumsCheck(fieldName = "types", enumClass = ProjectTypeEnum.class)
+    @OmsEnumsCheck(fieldName = "type", enumClass = ProjectTypeEnum.class)
     private String type;
 
     private String status;
 
+    /**
+     * reference OmsDialectType
+     */
     private List<String> SourceEndpointTypes;
 
+    /**
+     * reference OmsDialectType
+     */
     private List<String> SinkEndpointTypes;
 
     @Min(1)
