@@ -19,10 +19,12 @@ import java.util.List;
 
 import com.oceanbase.odc.service.onlineschemachange.oms.request.CreateProjectRequest;
 import com.oceanbase.odc.service.onlineschemachange.oms.request.ListProjectFullVerifyResultRequest;
+import com.oceanbase.odc.service.onlineschemachange.oms.request.ListProjectRequest;
 import com.oceanbase.odc.service.onlineschemachange.oms.request.ProjectControlRequest;
 import com.oceanbase.odc.service.onlineschemachange.oms.response.ProjectFullVerifyResultResponse;
 import com.oceanbase.odc.service.onlineschemachange.oms.response.ProjectProgressResponse;
 import com.oceanbase.odc.service.onlineschemachange.oms.response.ProjectStepVO;
+import com.oceanbase.odc.service.onlineschemachange.oms.response.ProjectVO;
 
 /**
  * @author yaobin
@@ -30,6 +32,14 @@ import com.oceanbase.odc.service.onlineschemachange.oms.response.ProjectStepVO;
  * @since 4.2.0
  */
 public interface ProjectOpenApiService {
+
+    /**
+     * 查询项目
+     *
+     * @param request
+     * @return
+     */
+    List<ProjectVO> listProjects(ListProjectRequest request);
     /**
      * 创建项目
      *

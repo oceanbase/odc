@@ -101,7 +101,7 @@ public abstract class BaseCreateOmsProjectValve extends BaseValve {
         PreConditions.notNull(omsDsId, "Oms datasource id");
 
         CreateProjectRequest createProjectRequest = getCreateProjectRequest(omsDsId,
-                context.getSchedule().getId(), context.getTaskParameter());
+                context.getSchedule().getId(), context.getTaskParameter(),dataSourceRequest.getType() );
 
         String projectId = projectOpenApiService.createProject(createProjectRequest);
 
@@ -152,9 +152,9 @@ public abstract class BaseCreateOmsProjectValve extends BaseValve {
     }
 
     private CreateProjectRequest getCreateProjectRequest(String omsDsId, Long scheduleId,
-            OnlineSchemaChangeScheduleTaskParameters oscScheduleTaskParameters) {
+            OnlineSchemaChangeScheduleTaskParameters oscScheduleTaskParameters, String omsDatabaseType) {
         CreateProjectRequest request = new CreateProjectRequest();
-        doCreateProjectRequest(omsDsId, scheduleId, oscScheduleTaskParameters, request);
+        doCreateProjectRequest(omsDsId, scheduleId, oscScheduleTaskParameters, request, omsDatabaseType);
         if (oscProperties.isEnableFullVerify()) {
             request.setEnableFullVerify(oscProperties.isEnableFullVerify());
         }
@@ -214,5 +214,6 @@ public abstract class BaseCreateOmsProjectValve extends BaseValve {
             CreateOceanBaseDataSourceRequest request, OmsException ex);
 
     protected abstract void doCreateProjectRequest(String omsDsId, Long scheduleId,
-            OnlineSchemaChangeScheduleTaskParameters oscScheduleTaskParameters, CreateProjectRequest request);
+            OnlineSchemaChangeScheduleTaskParameters oscScheduleTaskParameters, CreateProjectRequest request,
+        String omsDatabaseType);
 }

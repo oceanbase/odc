@@ -34,6 +34,10 @@ import lombok.EqualsAndHashCode;
 public class CreateProjectRequest extends BaseOmsRequest {
 
     /**
+     * 项目 id
+     */
+    private String id;
+    /**
      * 名称,不能包含空格
      */
     private String name = "odc_" + UUID.randomUUID().toString().replace("-", "");
