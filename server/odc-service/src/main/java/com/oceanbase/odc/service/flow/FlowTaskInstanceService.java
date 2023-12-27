@@ -565,12 +565,13 @@ public class FlowTaskInstanceService {
             result.setRecords(Collections.emptyList());
         }
         if (StringUtils.isNotEmpty(result.getJsonFileName())) {
-            String jsonFileName = result.getJsonFileName();
-            File jsonFile = new File(String.format("%s/ASYNC/%s.json", FileManager.basePath, jsonFileName));
-            BasicFileAttributes attributes = Files.readAttributes(jsonFile.toPath(), BasicFileAttributes.class);
-            if (jsonFile.exists() && attributes.isRegularFile()) {
-                result.setResultPreviewMaxSizeBytes(resultPreviewMaxSizeBytes);
-                result.setJsonFileBytes(attributes.size());
+            File jsonFile = new File(String.format("%s/ASYNC/%s.json", FileManager.basePath, result.getJsonFileName()));
+            if (jsonFile.exists()) {
+                BasicFileAttributes attributes = Files.readAttributes(jsonFile.toPath(), BasicFileAttributes.class);
+                if (attributes.isRegularFile()) {
+                    result.setResultPreviewMaxSizeBytes(resultPreviewMaxSizeBytes);
+                    result.setJsonFileBytes(attributes.size());
+                }
             }
         }
         if (cloudObjectStorageService.supported()) {
