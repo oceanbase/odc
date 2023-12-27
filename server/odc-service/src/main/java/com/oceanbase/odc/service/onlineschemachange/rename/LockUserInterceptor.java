@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.onlineschemachange.rename;
 
 import java.util.List;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.jdbc.core.JdbcOperations;
@@ -25,6 +26,10 @@ import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.shared.model.OdcDBSession;
+import com.oceanbase.odc.service.onlineschemachange.ddl.DBAccountLockType;
+import com.oceanbase.odc.service.onlineschemachange.ddl.DBUser;
+import com.oceanbase.odc.service.onlineschemachange.ddl.OscDBAccessor;
+import com.oceanbase.odc.service.onlineschemachange.ddl.OscDBAccessorFactory;
 import com.oceanbase.odc.service.session.DBSessionManageFacade;
 
 import lombok.extern.slf4j.Slf4j;
@@ -41,6 +46,7 @@ public class LockUserInterceptor implements RenameTableInterceptor {
     private final ConnectionSession connSession;
 
     private final JdbcOperations jdbcOperations;
+    private List<String> shouldBeLockedUsers;
 
     protected LockUserInterceptor(ConnectionSession connSession,
             DBSessionManageFacade dbSessionManageFacade) {
@@ -54,15 +60,28 @@ public class LockUserInterceptor implements RenameTableInterceptor {
         if (CollectionUtils.isEmpty(parameters.getLockUsers())) {
             return;
         }
-        lockUserAndKillSession(parameters.getLockTableTimeOutSeconds(), parameters.getLockUsers());
+
+        OscDBAccessor oscDBAccessor = new OscDBAccessorFactory().generate(connSession);
+        // filter users is unlocked and to lock them
+        shouldBeLockedUsers = oscDBAccessor.listUsers(parameters.getLockUsers())
+                .stream().filter(dbUser -> dbUser.getAccountLocked() == DBAccountLockType.UNLOCKED)
+                .map(DBUser::getNameWithHost)
+                .collect(Collectors.toList());
+
+        if (CollectionUtils.isEmpty(shouldBeLockedUsers)) {
+            return;
+        }
+        lockUserAndKillSession(parameters.getLockTableTimeOutSeconds(), shouldBeLockedUsers);
     }
 
     @Override
     public void postRenamed(RenameTableParameters parameters) {
-        if (CollectionUtils.isEmpty(parameters.getLockUsers())) {
+        if (CollectionUtils.isEmpty(shouldBeLockedUsers)) {
             return;
         }
-        batchExecuteUnlockUser(parameters.getLockUsers());
+
+        // unlock users than be locked in preRename
+        batchExecuteUnlockUser(shouldBeLockedUsers);
     }
 
     @Override

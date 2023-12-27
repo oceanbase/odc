@@ -88,6 +88,8 @@ public class SensitiveColumnScanningTask implements Callable<Void> {
                     column.setSensitiveRuleId(recognizer.sensitiveRuleId());
                     column.setLevel(recognizer.sensitiveLevel());
                     sensitiveColumns.add(column);
+                    existsSensitiveColumns
+                            .add(new SensitiveColumnMeta(database.getId(), objectName, dbTableColumn.getName()));
                 }
             }
             taskInfo.addSensitiveColumns(sensitiveColumns);

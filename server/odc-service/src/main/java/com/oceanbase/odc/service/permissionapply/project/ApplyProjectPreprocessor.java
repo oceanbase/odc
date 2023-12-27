@@ -61,7 +61,7 @@ public class ApplyProjectPreprocessor implements Preprocessor {
         ApplyProjectParameter parameter = (ApplyProjectParameter) req.getParameters();
         Verify.notNull(parameter.getProject(), "project");
         Verify.notEmpty(parameter.getResourceRoles(), "resourceRole");
-        Verify.notBlank(parameter.getApplyReason(), "applyReason");
+        Verify.notNull(parameter.getApplyReason(), "applyReason");
         ProjectEntity projectEntity = checkProjectExistAndValid(parameter.getProject().getId());
         List<ResourceRoleEntity> resourceRoleEntities = checkResourceRoleExist(
                 parameter.getResourceRoles().stream().map(ApplyResourceRole::getId).collect(Collectors.toList()));
@@ -74,8 +74,11 @@ public class ApplyProjectPreprocessor implements Preprocessor {
         req.setProjectName(projectEntity.getName());
         Locale locale = LocaleContextHolder.getLocale();
         String i18nKey = "com.oceanbase.odc.builtin-resource.permission-apply.project.description";
-        req.setDescription(I18n.translate(i18nKey, new Object[] {projectEntity.getName(),
-                resourceRoleEntities.stream().map(r -> r.getRoleName().name()).collect(Collectors.joining(","))},
+        req.setDescription(I18n.translate(
+                i18nKey,
+                new Object[] {projectEntity.getName(),
+                        resourceRoleEntities.stream().map(r -> r.getRoleName().getLocalizedMessage())
+                                .collect(Collectors.joining(","))},
                 locale));
     }
 

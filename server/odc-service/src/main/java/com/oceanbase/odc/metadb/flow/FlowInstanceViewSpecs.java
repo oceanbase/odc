@@ -110,7 +110,7 @@ public class FlowInstanceViewSpecs {
                 return builder.and(rolePredicate, statusPredicate);
             }
             Predicate creatorPredicate = builder.equal(root.get(FLOW_INSTANCE_VIEW_CREATOR_ID_NAME), creatorId);
-            return builder.and(builder.or(rolePredicate, creatorPredicate), statusPredicate);
+            return builder.or(builder.and(rolePredicate, statusPredicate), creatorPredicate);
         };
     }
 

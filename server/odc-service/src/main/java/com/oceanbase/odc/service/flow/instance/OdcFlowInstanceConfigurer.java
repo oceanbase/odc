@@ -52,8 +52,8 @@ public class OdcFlowInstanceConfigurer extends FlowInstanceConfigurer {
      */
     protected OdcFlowInstanceConfigurer(@NonNull OdcFlowInstance flowInstance,
             @NonNull FlowableProcessBuilder targetProcessBuilder, @NonNull FlowableAdaptor flowableAdaptor,
-            @NonNull ProcessNodeBuilderAccessor accessor, boolean setActivityIdAndName) {
-        super(flowInstance, targetProcessBuilder, flowableAdaptor, accessor, setActivityIdAndName);
+            @NonNull ProcessNodeBuilderAccessor accessor) {
+        super(flowInstance, targetProcessBuilder, flowableAdaptor, accessor);
     }
 
     /**
@@ -63,9 +63,8 @@ public class OdcFlowInstanceConfigurer extends FlowInstanceConfigurer {
      */
     protected OdcFlowInstanceConfigurer(@NonNull OdcFlowInstance flowInstance,
             @NonNull FlowableProcessBuilder targetProcessBuilder, @NonNull ExecutionConfigurer targetExecution,
-            @NonNull FlowableAdaptor flowableAdaptor, @NonNull ProcessNodeBuilderAccessor accessor,
-            boolean setActivityIdAndName) {
-        super(flowInstance, targetProcessBuilder, targetExecution, flowableAdaptor, accessor, setActivityIdAndName);
+            @NonNull FlowableAdaptor flowableAdaptor, @NonNull ProcessNodeBuilderAccessor accessor) {
+        super(flowInstance, targetProcessBuilder, targetExecution, flowableAdaptor, accessor);
     }
 
     @Override

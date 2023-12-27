@@ -24,6 +24,8 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.oceanbase.odc.core.alarm.AlarmEventNames;
+import com.oceanbase.odc.core.alarm.AlarmUtils;
 import com.oceanbase.odc.service.common.response.OdcResult;
 import com.oceanbase.odc.service.connection.model.MultiSessionsReq;
 import com.oceanbase.odc.service.monitor.MemUnitType;
@@ -55,6 +57,7 @@ public class HeartbeatController {
     public OdcResult<Boolean> isHealthy() {
         OdcResult<Boolean> result = new OdcResult<>();
         result.setData(true);
+        AlarmUtils.info(AlarmEventNames.IS_HEALTHY, "OK");
         return result;
     }
 

@@ -1,0 +1,201 @@
+- str: insert into t_strings (c1,c2) values ('()', '''''"`\p')
+  offset: 0
+- str: "select * from table where name='David'  "
+  offset: 70
+- str: select count(*) from table where name='da/*v--i;#d'
+  offset: 192
+- str: select /*+INDEX(t@SELECT$1 t_c1) INDEX(t@SEL$2 PRIMARY)*/ * from t (select * from t where c2='David/*!Marry*/') as ta where c1='Ann'
+  offset: 292
+- str: update table set name='David' where id='Marry'
+  offset: 425
+- str: select name from table where name='Bom'
+  offset: 473
+- str: select * from table \p
+  offset: 562
+- str: select * from table where name='Ma--rry'
+  offset: 651
+- str: select table_name from table where name=`'filedname#field'`
+  offset: 718
+- str: select Q'[sadas'asaa]' from dual
+  offset: 794
+- str: select 'aaaaa' from dual
+  offset: 828
+- str: |-
+    CREATE TABLE EMP
+    (
+        EMPNO       BIGINT  PRIMARY KEY AUTO_INCREMENT,
+        ENAME       VARCHAR(10),
+        JOB         VARCHAR(9),
+        MGR         INT,
+        HIREDATE    DATETIME,
+        SAL         DECIMAL(7,2),
+        COMM        DECIMAL(7,2),
+        NOdept      BIGINT
+
+
+
+    )ENGINE=INNODB DEFAULT CHARSET='utf8mb4'
+  offset: 854
+- str: set define off
+  offset: 1499
+- str: |-
+    CREATE OR REPLACE PROCEDURE "TEST"."PROC_TEST" ()
+    begin
+    declare a int default 5
+  offset: 1518
+- str: declare b int default 6
+  offset: 1599
+- str: declare c int default 0
+  offset: 1624
+- str: set c=a+b
+  offset: 1649
+- str: select c as num
+  offset: 1660
+- str: end
+  offset: 1677
+- str: |-
+    SELECT last_name, salary + NVL(commission_pct, 0),
+       job_id, e.department_id
+
+
+      FROM employees e, departments d
+
+      WHERE e.department_id = d.department_id
+        AND salary + NVL(commission_pct,0) >
+       (SELECT salary + NVL(commission_pct,0)
+
+          FROM employees
+          WHERE last_name = 'Pataballa')
+
+  offset: 1684
+- str: |
+    SELECT last_name,
+        salary + NVL(commission_pct, 0),
+        job_id,
+        e.department_id
+      FROM employees e,
+           departments d
+      WHERE e.department_id = d.department_id
+        AND salary + NVL(commission_pct, 0) >
+
+          (SELECT salary + NVL(commission_pct,0)
+        FROM employees
+        WHERE last_name = 'Pataballa')
+
+  offset: 2195
+- str: |-
+    SELECT /*+ ORDERED INDEX (b, jl_br_balances_n1) USE_NL (j b)
+               USE_NL (glcc glf) USE_MERGE (gp gsb) */
+     b.application_id ,
+     b.set_of_books_id ,
+     b.personnel_id,
+     p.vendor_id Personnel,
+     p.segment1 PersonnelNumber,
+     p.vendor_name Name
+    FROM  jl_br_journals j,
+          jl_br_balances b,
+          gl_code_combinations glcc,
+          fnd_flex_values_vl glf,
+          gl_periods gp,
+          gl_sets_of_books gsb,
+          po_vendors p
+  offset: 2663
+- str: |-
+    SELECT --+ LEADING(e2 e1) USE_NL(e1) INDEX(e1 emp_emp_id_pk) USE_MERGE(j) FULL(j)
+        e1.first_name, e1.last_name, j.job_id, sum(e2.salary) total_sal
+      FROM employees e1, employees e2, job_history j
+      WHERE e1.employee_id = e2.manager_id
+        AND e1.employee_id = j.employee_id
+        AND e1.hire_date = j.start_date
+      GROUP BY e1.first_name, e1.last_name, j.job_id
+      ORDER BY total_sal
+  offset: 3087
+- str: |-
+    SELECT
+    /*+ JOIN_PREFIX(t2, t5@subq2, t4@subq1)
+        JOIN_ORDER(t4@subq1, t3)
+        JOIN_SUFFIX(t1) */
+    COUNT(*) FROM t1 JOIN t2 JOIN t3
+               WHERE t1.f1 IN (SELECT /*+ QB_NAME(subq1) */ f1 FROM t4)
+                 AND t2.f1 IN (SELECT /*+ QB_NAME(subq2) */ f1 FROM t5)
+  offset: 3472
+- str: |-
+    SELECT /*+ INDEX_MERGE(t1 f3, PRIMARY) */ f2 FROM t1
+      WHERE f1 = 'o' AND f2 = f3 AND f3 <= 4
+  offset: 3742
+- str: SELECT /*+ MRR(t1) */ * FROM t1 WHERE f2 <= 3 AND 3 <= f3
+  offset: 3837
+- str: |-
+    SELECT /*+ NO_RANGE_OPTIMIZATION(t3 PRIMARY, f2_idx) */ f1
+      FROM t3 WHERE f1 > 30 AND f1 < 33
+  offset: 3896
+- str: |-
+    INSERT INTO t3(f1, f2, f3)
+      (SELECT /*+ NO_ICP(t2) */ t2.f1, t2.f2, t2.f3 FROM t1,t2
+       WHERE t1.f1=t2.f1 AND t2.f2 BETWEEN t1.f1
+       AND t1.f2 AND t2.f2 + 1 >= t1.f1 + 1)
+  offset: 3992
+- str: |-
+    SELECT /*+ SKIP_SCAN(t1 PRIMARY) */ f1, f2
+      FROM t1 WHERE f2 > 40
+  offset: 4165
+- str: select 'name''--' from dual
+  offset: 4233
+- str: |-
+    CREATE PACKAGE PL_DEBUG_PACKAGE AS PROCEDURE set_breakpoint(
+    name IN VARCHAR2,
+    line# IN BINARY_INTEGER,
+    breakpoint# OUT BINARY_INTEGER,
+    result OUT BINARY_INTEGER)
+  offset: 4274
+- str: |-
+    PROCEDURE set_breakpoint_anonymous(
+    line# IN BINARY_INTEGER,
+    breakpoint# OUT BINARY_INTEGER,
+    result OUT BINARY_INTEGER)
+  offset: 4438
+- str: PROCEDURE show_breakpoints(listing in out varchar2)
+  offset: 4559
+- str: PROCEDURE print_backtrace(listing IN OUT VARCHAR, status OUT BINARY_INTEGER)
+  offset: 4612
+- str: PROCEDURE cnt_next_line(result OUT BINARY_INTEGER, message OUT VARCHAR2)
+  offset: 4690
+- str: PROCEDURE cnt_next_breakpoint(result OUT BINARY_INTEGER, message OUT VARCHAR2)
+  offset: 4764
+- str: PROCEDURE cnt_step_in(result OUT BINARY_INTEGER, message OUT VARCHAR2)
+  offset: 4844
+- str: PROCEDURE cnt_abort(result OUT BINARY_INTEGER, message OUT VARCHAR2)
+  offset: 4916
+- str: PROCEDURE cnt_step_out(result OUT BINARY_INTEGER, message OUT VARCHAR2)
+  offset: 4986
+- str: PROCEDURE get_values(scalar_values OUT VARCHAR2, result OUT BINARY_INTEGER)
+  offset: 5059
+- str: |-
+    PROCEDURE get_value(variable_name VARCHAR2,
+    frame# BINARY_INTEGER,
+    value OUT VARCHAR2,
+    result OUT BINARY_INTEGER)
+  offset: 5136
+- str: |-
+    PROCEDURE get_runtime_info(
+    status OUT BINARY_INTEGER,
+    result OUT BINARY_INTEGER)
+  offset: 5251
+- str: |-
+    PROCEDURE get_line(
+    line OUT VARCHAR2, status OUT INTEGER)
+  offset: 5334
+- str: END PL_DEBUG_PACKAGE
+  offset: 5394
+- str: "select '$$' from dual "
+  offset: 5430
+- str: "select ';' from dual   "
+  offset: 5471
+- str: select '; second' from dual
+  offset: 5496
+- str: select 'delimiter00;12@' from dual
+  offset: 5542
+- str: "select 'comment after' from dual "
+  offset: 5617
+- str: select 'comment after ;' from dual
+  offset: 5693

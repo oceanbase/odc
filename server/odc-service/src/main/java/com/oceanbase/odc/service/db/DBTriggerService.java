@@ -27,7 +27,6 @@ import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.plugin.schema.api.TriggerExtensionPoint;
-import com.oceanbase.odc.service.common.model.OdcSqlExecuteResult;
 import com.oceanbase.odc.service.db.model.DBTriggerReq;
 import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
 import com.oceanbase.odc.service.session.ConnectConsoleService;
@@ -89,11 +88,6 @@ public class DBTriggerService {
                 ConnectionSessionConstants.BACKEND_DS_KEY)
                 .execute((ConnectionCallback<String>) con -> getTriggerExtensionPoint(session)
                         .generateCreateTemplate(unit));
-    }
-
-    public OdcSqlExecuteResult compile(@NonNull ConnectionSession session,
-            @NonNull String triggerName) {
-        throw new UnsupportedOperationException("Not supported yet");
     }
 
     private TriggerExtensionPoint getTriggerExtensionPoint(@NonNull ConnectionSession session) {

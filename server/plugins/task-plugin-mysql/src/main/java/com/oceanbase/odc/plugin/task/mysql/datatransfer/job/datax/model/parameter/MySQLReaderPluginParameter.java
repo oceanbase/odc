@@ -31,19 +31,23 @@ public class MySQLReaderPluginParameter implements PluginParameter {
      * export all columns
      */
     private List<String> column = Collections.singletonList("*");
-    private List<Connection> connection;
+    private List<DataXConnection> connection;
     // TODO private String splitPk;
-    /**
-     * must be singleton. If this field is specified, the DataX will ignore the other configurations
-     * such as table and column, and directly use the content of this configuration to filter the data.
-     */
-    private List<String> querySql;
 
     @Data
     @AllArgsConstructor
-    public static class Connection {
+    public static class DataXConnection {
         private String[] jdbcUrl;
         private String[] table;
+        /**
+         * must be singleton. If this field is specified, the DataX will ignore the other configurations
+         * such as table and column, and directly use the content of this configuration to filter the data.
+         */
+        private String[] querySql;
+
+        public DataXConnection(String[] jdbcUrl) {
+            this.jdbcUrl = jdbcUrl;
+        }
     }
 
 }

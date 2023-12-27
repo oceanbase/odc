@@ -38,9 +38,10 @@ import lombok.ToString;
 @Setter
 @ToString
 @NoArgsConstructor
-@EqualsAndHashCode(callSuper = false)
+@EqualsAndHashCode(callSuper = false, exclude = {"offset"})
 public class CheckViolation implements Translatable {
 
+    private Integer offset;
     private String text;
     private int row;
     private int col;
@@ -62,6 +63,22 @@ public class CheckViolation implements Translatable {
         this.start = start;
         this.stop = stop;
         this.type = type;
+        this.args = args;
+    }
+
+    public CheckViolation(@NonNull String text, int row, int col,
+            int start, int stop, @NonNull SqlCheckRuleType type, Integer offset, @NonNull Object[] args) {
+        Validate.isTrue(row >= 0, "Row can not be negative");
+        Validate.isTrue(col >= 0, "Col can not be negative");
+        Validate.isTrue(start >= 0, "Start can not be negative");
+        Validate.isTrue(stop >= 0, "Stop can not be negative");
+        this.text = text;
+        this.row = row;
+        this.col = col;
+        this.start = start;
+        this.stop = stop;
+        this.type = type;
+        this.offset = offset;
         this.args = args;
     }
 
