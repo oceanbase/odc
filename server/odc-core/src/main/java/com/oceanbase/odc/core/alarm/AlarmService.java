@@ -16,6 +16,8 @@
 
 package com.oceanbase.odc.core.alarm;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -35,10 +37,9 @@ class AlarmService {
     public AlarmService() {
         ServiceLoader<AlarmEventListener> load = ServiceLoader.load(AlarmEventListener.class);
         Iterator<AlarmEventListener> iterator = load.iterator();
-        log.info("AlarmEventListener has next:" + iterator.hasNext());
         while (iterator.hasNext()) {
             AlarmEventListener next = iterator.next();
-            log.info("AlarmEventListener:" + next.getClass().getName() + "have been loaded");
+            log.debug("AlarmEventListener:" + next.getClass().getName() + "have been loaded");
             listeners.add(next);
         }
     }
@@ -70,21 +71,21 @@ class AlarmService {
                 if (e == null) {
                     log.info(msg);
                 } else {
-                    log.info(msg, e);
+                    log.info(msg + "stack:" + getInlineStack(e));
                 }
                 break;
             case WARN:
                 if (e == null) {
                     log.warn(msg);
                 } else {
-                    log.warn(msg, e);
+                    log.warn(msg + "stack:" + getInlineStack(e));
                 }
                 break;
             case ERROR:
                 if (e == null) {
                     log.error(msg);
                 } else {
-                    log.error(msg, e);
+                    log.error(msg + "stack:" + getInlineStack(e));
                 }
                 break;
             default:
@@ -95,5 +96,15 @@ class AlarmService {
 
     private void doPublish(AlarmEvent alarmEvent) {
         listeners.forEach(l -> l.alarm(alarmEvent));
+    }
+
+
+    private String getInlineStack(Throwable throwable) {
+        StringWriter stringWriter = new StringWriter();
+        PrintWriter printWriter = new PrintWriter(stringWriter);
+        throwable.printStackTrace(printWriter);
+        String stackTrace = stringWriter.toString();
+        stackTrace = stackTrace.replace("\n", " ").replace("\r", " ").replace("\t", " ");
+        return stackTrace;
     }
 }

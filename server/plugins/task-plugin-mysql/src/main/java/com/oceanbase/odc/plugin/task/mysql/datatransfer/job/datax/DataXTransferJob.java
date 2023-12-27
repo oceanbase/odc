@@ -60,7 +60,7 @@ public class DataXTransferJob extends AbstractJob {
     private static final Pattern LOG_DIRTY_RECORD_PATTERN =
             Pattern.compile("^.+exception.+record.+type.+$");
     private static final Pattern DATA_FILE_PATTERN =
-            Pattern.compile("(^\"?(.+)\"?.(sql|csv|dat|txt))__(.+)$", Pattern.CASE_INSENSITIVE);
+            Pattern.compile("(^\"?(.+)\"?.(sql|csv|dat|txt|xlsx))__(.+)$", Pattern.CASE_INSENSITIVE);
 
     private final JobConfiguration jobConfig;
     private final File workingDir;

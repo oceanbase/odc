@@ -47,6 +47,7 @@ import com.oceanbase.odc.metadb.flow.GateWayInstanceRepository;
 import com.oceanbase.odc.metadb.flow.NodeInstanceEntityRepository;
 import com.oceanbase.odc.metadb.flow.SequenceInstanceRepository;
 import com.oceanbase.odc.metadb.flow.ServiceTaskInstanceRepository;
+import com.oceanbase.odc.metadb.flow.UserTaskInstanceCandidateRepository;
 import com.oceanbase.odc.metadb.flow.UserTaskInstanceRepository;
 import com.oceanbase.odc.service.flow.instance.BaseFlowNodeInstance;
 import com.oceanbase.odc.service.flow.instance.FlowApprovalInstance;
@@ -93,6 +94,8 @@ public class FlowInstanceTest extends ServiceTestEnv {
     private UserTaskInstanceRepository userTaskInstanceRepository;
     @Autowired
     private GateWayInstanceRepository gateWayInstanceRepository;
+    @Autowired
+    private UserTaskInstanceCandidateRepository userTaskInstanceCandidateRepository;
 
     @Before
     public void setUp() {
@@ -284,22 +287,23 @@ public class FlowInstanceTest extends ServiceTestEnv {
     }
 
     private FlowInstance createFlowInstance(String name) {
-        return new FlowInstance(name, flowableAdaptor, authenticationFacade,
-                flowInstanceRepository, runtimeService, repositoryService);
+        return new FlowInstance(name, flowableAdaptor, authenticationFacade, flowInstanceRepository,
+                nodeRepository, sequenceRepository, gateWayInstanceRepository, serviceTaskRepository,
+                userTaskInstanceRepository, userTaskInstanceCandidateRepository, runtimeService, repositoryService);
     }
 
     private FlowTaskInstance createTaskInstance(Long flowInstanceId, TaskType taskType,
             ExecutionStrategyConfig config, boolean endEndPoint) {
-        return new FlowTaskInstance(taskType, authenticationFacade.currentOrganizationId(), flowInstanceId,
-                config, false, endEndPoint, type -> TestFlowRuntimeTaskImpl.class, flowableAdaptor,
+        return new FlowTaskInstance(taskType, authenticationFacade.currentOrganizationId(),
+                flowInstanceId, config, false, endEndPoint, type -> TestFlowRuntimeTaskImpl.class, flowableAdaptor,
                 new LocalEventPublisher(), taskService, nodeRepository, sequenceRepository, serviceTaskRepository);
     }
 
     private FlowApprovalInstance createApprovalInstance(Long flowInstanceId, Integer expireIntervalSeconds) {
-        return new FlowApprovalInstance(authenticationFacade.currentOrganizationId(), flowInstanceId, null,
-                expireIntervalSeconds, false, false, false, flowableAdaptor, taskService, formService,
-                new LocalEventPublisher(), authenticationFacade, nodeRepository, sequenceRepository,
-                userTaskInstanceRepository);
+        return new FlowApprovalInstance(authenticationFacade.currentOrganizationId(),
+                flowInstanceId, null, expireIntervalSeconds, false, false, false, flowableAdaptor, taskService,
+                formService, new LocalEventPublisher(), authenticationFacade, nodeRepository, sequenceRepository,
+                userTaskInstanceRepository, userTaskInstanceCandidateRepository);
     }
 
     private FlowGatewayInstance createGatewayInstance(Long flowInstanceId, boolean startEndPoint, boolean endEndPoint) {

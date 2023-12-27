@@ -17,22 +17,27 @@
 package com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax;
 
 import java.io.File;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Lists;
 import com.oceanbase.odc.common.util.StringUtils;
+import com.oceanbase.odc.core.datamasking.masker.AbstractDataMasker;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
+import com.oceanbase.odc.core.shared.model.TableIdentity;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.CsvColumnMapping;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.CsvConfig;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
@@ -42,9 +47,10 @@ import com.oceanbase.odc.plugin.task.mysql.datatransfer.common.Constants;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.JobConfiguration;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.JobContent;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.JobContent.Parameter;
+import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.parameter.GroovyTransformerParameter;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.parameter.MySQLReaderPluginParameter;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.parameter.MySQLWriterPluginParameter;
-import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.parameter.MySQLWriterPluginParameter.Connection;
+import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.parameter.MySQLWriterPluginParameter.DataXConnection;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.parameter.TxtPluginParameter.DataXCsvConfig;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.parameter.TxtReaderPluginParameter;
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.parameter.TxtReaderPluginParameter.Column;
@@ -68,7 +74,7 @@ public class ConfigurationResolver {
      * </pre>
      */
     public static JobConfiguration buildJobConfigurationForImport(DataTransferConfig baseConfig, String jdbcUrl,
-            ObjectResult object, URL resource, List<DBTableColumn> columns) {
+            ObjectResult object, URL resource, List<DBTableColumn> columns) throws URISyntaxException {
         if (baseConfig.getDataTransferFormat() == DataTransferFormat.SQL) {
             throw new UnsupportedException("SQL files should not be imported by DataX!");
         }
@@ -87,7 +93,7 @@ public class ConfigurationResolver {
     }
 
     public static JobConfiguration buildJobConfigurationForExport(File workingDir, DataTransferConfig baseConfig,
-            String jdbcUrl, String table, List<String> columns) {
+            String jdbcUrl, String table, List<DBTableColumn> columns) {
         JobConfiguration jobConfig = new JobConfiguration();
         JobContent jobContent = new JobContent();
 
@@ -95,13 +101,18 @@ public class ConfigurationResolver {
         jobConfig.getSetting().getErrorLimit().setRecord(errorRecordLimit);
 
         jobContent.setReader(createMySQLReaderParameter(baseConfig, jdbcUrl, table));
-        jobContent.setWriter(createTxtWriterParameter(workingDir, baseConfig, table, columns));
+        jobContent.setWriter(createTxtWriterParameter(workingDir, baseConfig, table,
+                columns.stream().map(DBTableColumn::getName).collect(Collectors.toList())));
+        Map<TableIdentity, Map<String, AbstractDataMasker>> maskConfigs = baseConfig.getMaskConfig();
+        if (MapUtils.isNotEmpty(maskConfigs)) {
+            jobContent.setTransformer(createTransformerParameters(maskConfigs, columns));
+        }
         jobConfig.setContent(new JobContent[] {jobContent});
         return jobConfig;
     }
 
     private static Parameter createTxtReaderParameter(DataTransferConfig baseConfig, URL input,
-            List<CsvColumnMapping> columnMappings) {
+            List<CsvColumnMapping> columnMappings) throws URISyntaxException {
 
         Parameter reader = new Parameter();
         TxtReaderPluginParameter pluginParameter = new TxtReaderPluginParameter();
@@ -112,7 +123,7 @@ public class ConfigurationResolver {
         pluginParameter.setEncoding(baseConfig.getEncoding().getAlias());
         pluginParameter.setFileFormat("csv");
         // path
-        pluginParameter.setPath(Collections.singletonList(input.getPath()));
+        pluginParameter.setPath(Collections.singletonList(input.toURI().getPath()));
         // column
         pluginParameter.setColumn(columnMappings.stream()
                 .map(mapping -> new Column(mapping.getSrcColumnPosition(), "string"))
@@ -154,6 +165,10 @@ public class ConfigurationResolver {
             pluginParameter.setCsvWriterConfig(getDataXCsvConfig(baseConfig));
             pluginParameter.setSkipHeader(baseConfig.getCsvConfig().isSkipHeader());
             pluginParameter.setNullFormat(baseConfig.getCsvConfig().isBlankToNull() ? "null" : "");
+            if (baseConfig.getCsvConfig().isSkipHeader()
+                    && baseConfig.getDataTransferFormat() != DataTransferFormat.SQL) {
+                pluginParameter.setHeader(null);
+            }
         }
 
         return writer;
@@ -168,13 +183,15 @@ public class ConfigurationResolver {
         // connection
         pluginParameter.setUsername(baseConfig.getConnectionInfo().getUserNameForConnect());
         pluginParameter.setPassword(baseConfig.getConnectionInfo().getPassword());
-        MySQLReaderPluginParameter.Connection connection = new MySQLReaderPluginParameter.Connection(
-                new String[] {url}, new String[] {table});
-        pluginParameter.setConnection(Collections.singletonList(connection));
+        MySQLReaderPluginParameter.DataXConnection connection = new MySQLReaderPluginParameter.DataXConnection(
+                new String[] {url});
         // querySql
         if (Objects.nonNull(baseConfig.getQuerySql())) {
-            pluginParameter.setQuerySql(Collections.singletonList(baseConfig.getQuerySql()));
+            connection.setQuerySql(new String[] {baseConfig.getQuerySql()});
+        } else {
+            connection.setTable(new String[] {table});
         }
+        pluginParameter.setConnection(Collections.singletonList(connection));
 
         return reader;
     }
@@ -190,7 +207,7 @@ public class ConfigurationResolver {
         // connection
         pluginParameter.setUsername(baseConfig.getConnectionInfo().getUserNameForConnect());
         pluginParameter.setPassword(baseConfig.getConnectionInfo().getPassword());
-        Connection connection = new Connection(url, new String[] {table});
+        DataXConnection connection = new DataXConnection(url, new String[] {table});
         pluginParameter.setConnection(Collections.singletonList(connection));
         // preSql
         List<String> preSql = Lists.newArrayList(Constants.DISABLE_FK);
@@ -206,6 +223,18 @@ public class ConfigurationResolver {
                 .collect(Collectors.toList()));
 
         return writer;
+    }
+
+    private static List<Parameter> createTransformerParameters(
+            Map<TableIdentity, Map<String, AbstractDataMasker>> maskConfigs, List<DBTableColumn> columns) {
+        Parameter transformer = new Parameter();
+        GroovyTransformerParameter pluginParameter = new GroovyTransformerParameter();
+        transformer.setName(Constants.GROOVY_TRANSFORMER);
+        transformer.setParameter(pluginParameter);
+
+        pluginParameter.setCode(GroovyMaskRuleGenerator.generate(maskConfigs, columns));
+
+        return Collections.singletonList(transformer);
     }
 
     private static DataXCsvConfig getDataXCsvConfig(DataTransferConfig baseConfig) {

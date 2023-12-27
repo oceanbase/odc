@@ -38,7 +38,7 @@
       - 'OB_ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
-  propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.allow-sql-types.metadata.name}":["SELECT"]}'
+  propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.allow-sql-types.metadata.name}":["SELECT", "EXPLAIN", "SHOW", "HELP", "START_TRANS", "COMMIT", "ROLLBACK", "SORT", "DESC"]}'
 - enabled: 1
   level: 1
   rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-default-ruleset.name}
@@ -119,8 +119,8 @@
       - 'OB_ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
-  propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.max-return-rows.metadata.name}":10000}'
-- enabled: 0
+  propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.max-return-rows.metadata.name}":100000}'
+- enabled: 1
   level: 1
   rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-dev-ruleset.name}
   ruleName: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.allow-sql-types.name}
@@ -129,7 +129,7 @@
       - 'OB_ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
-  propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.allow-sql-types.metadata.name}":["UPDATE","DELETE","INSERT","SELECT","CREATE","DROP","ALTER"]}'
+  propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.allow-sql-types.metadata.name}":["UPDATE", "DELETE", "INSERT", "SELECT", "CREATE", "DROP", "ALTER", "REPLACE", "SET", "USE_DB", "EXPLAIN", "SHOW", "HELP", "START_TRANS", "COMMIT", "ROLLBACK", "SORT", "DESC", "TRUNCATE", "OTHERS"]}'
 - enabled: 1
   level: 1
   rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-dev-ruleset.name}
@@ -200,7 +200,7 @@
       - 'OB_ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
-  propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.max-return-rows.metadata.name}":10000}'
+  propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.max-return-rows.metadata.name}":100000}'
 - enabled: 1
   level: 1
   rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-sit-ruleset.name}
@@ -291,7 +291,7 @@
       - 'OB_ORACLE'
       - 'MYSQL'
       - 'ODP_SHARDING_OB_MYSQL'
-  propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.allow-sql-types.metadata.name}":["SELECT"]}'
+  propertiesJson: '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.allow-sql-types.metadata.name}":["SELECT", "EXPLAIN", "SHOW", "HELP", "START_TRANS", "COMMIT", "ROLLBACK", "SORT", "DESC"]}'
 - enabled: 1
   level: 1
   rulesetName: ${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-prod-ruleset.name}

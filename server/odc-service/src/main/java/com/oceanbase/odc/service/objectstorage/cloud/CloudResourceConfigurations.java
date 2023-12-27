@@ -82,13 +82,14 @@ public class CloudResourceConfigurations {
 
     CloudClient createAlibabaCloudClient(ObjectStorageConfiguration configuration)
             throws ClientException {
-        String endpoint = configuration.getEndpoint();
+        String internalEndpoint = configuration.getInternalEndpoint();
         String accessKeyId = configuration.getAccessKeyId();
         String accessKeySecret = configuration.getAccessKeySecret();
         com.aliyun.oss.ClientBuilderConfiguration clientBuilderConfiguration =
                 new com.aliyun.oss.ClientBuilderConfiguration();
         clientBuilderConfiguration.setProtocol(com.aliyun.oss.common.comm.Protocol.HTTPS);
-        OSS oss = new OSSClientBuilder().build(endpoint, accessKeyId, accessKeySecret, clientBuilderConfiguration);
+        OSS oss = new OSSClientBuilder().build(internalEndpoint, accessKeyId, accessKeySecret,
+                clientBuilderConfiguration);
 
         // 添加endpoint（直接使用STS endpoint，前两个参数留空，无需添加region ID）
         // 构造default profile（参数留空，无需添加region ID）

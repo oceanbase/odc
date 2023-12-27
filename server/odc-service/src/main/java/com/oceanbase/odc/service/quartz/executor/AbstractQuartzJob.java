@@ -50,10 +50,13 @@ public abstract class AbstractQuartzJob implements InterruptableJob {
         log.info("Start to run new job,jobKey={}", context.getJobDetail().getKey());
         try {
             odcJob = getOdcJob(context);
+            odcJob.before(context);
             run(context);
         } catch (Exception e) {
             log.warn("Job execute failed,job key={},fire time={}.",
                     context.getJobDetail().getKey(), context.getFireTime(), e);
+        } finally {
+            odcJob.after(context);
         }
 
         log.info("Job done,jobKey={}", context.getJobDetail().getKey());

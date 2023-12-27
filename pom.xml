@@ -40,7 +40,7 @@
         <oceanbase-client.version>${env.OCEANBASE_CLIENT_VERSION}</oceanbase-client.version>
         <!--suppress UnresolvedMavenProperty -->
         <ob-loader-dumper.version>${env.OB_LOADER_DUMPER_VERSION}</ob-loader-dumper.version>
-        <ob-data-mocker.version>0.1.4</ob-data-mocker.version>
+        <ob-data-mocker.version>0.2.1</ob-data-mocker.version>
 
         <!-- dependency version -->
         <springframework.version>5.3.26</springframework.version>
@@ -119,7 +119,7 @@
         <mina.version>2.1.6</mina.version>
 
         <!-- data-lifecycle-manager version -->
-        <data-lifecycle-manager.version>1.0.6</data-lifecycle-manager.version>
+        <data-lifecycle-manager.version>1.0.8</data-lifecycle-manager.version>
 
         <!-- plugin version -->
         <formatter-maven-plugin.version>2.11.0</formatter-maven-plugin.version>

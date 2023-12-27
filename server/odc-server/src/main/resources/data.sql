@@ -532,6 +532,10 @@ INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('o
  'CHANGE_ME', '云存储服务 RegionId') ON DUPLICATE KEY UPDATE `id`=`id`;
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.cloud.object-storage.endpoint',
  'CHANGE_ME', '云存储服务 Endpoint') ON DUPLICATE KEY UPDATE `id`=`id`;
+INSERT INTO config_system_configuration(`key`, `value`, `description`) (SELECT 'odc.cloud.object-storage.public-endpoint', `value`, '云存储服务公网 Endpoint' FROM config_system_configuration WHERE `key`='odc.cloud.object-storage.endpoint')
+ ON DUPLICATE KEY UPDATE `id`=`id`;
+INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.cloud.object-storage.internal-endpoint',
+ 'CHANGE_ME', '云存储服务内网 Endpoint') ON DUPLICATE KEY UPDATE `id`=`id`;
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.cloud.object-storage.access-key-id',
  'CHANGE_ME', '云存储服务 accessKeyId') ON DUPLICATE KEY UPDATE `id`=`id`;
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.cloud.object-storage.access-key-secret',
@@ -684,6 +688,9 @@ INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task.dlm.single-task-thread-pool-size', '12', 'DLM 单个任务可用线程数' ) ON DUPLICATE KEY UPDATE `id` = `id`;
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task.dlm.thread-pool-size', '100', '单个 POD 中 DLM 任务线程池大小' ) ON DUPLICATE KEY UPDATE `id` = `id`;
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task.dlm.support-breakpoint-recovery', 'true', 'DLM 任务是否开启断点恢复' ) ON DUPLICATE KEY UPDATE `id` = `id`;
+INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task.dlm.task-connection-query-timeout-seconds', '180', 'DLM 任务 SQL 超时时间' ) ON DUPLICATE KEY UPDATE `id` = `id`;
+INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task.dlm.sharding-strategy', 'FIXED_LENGTH', 'DLM 分片策略，默认值 FIXED_LENGTH 表示均匀分片，适合小规格实例。使用 MATCH 策略时将出现少量慢 SQL，整体性能会有较大提升，适合大规格实例。' ) ON DUPLICATE KEY UPDATE `id` = `id`;
+INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task.dlm.default-scan-batch-size', '10000', 'DLM 分片大小，默认值 10000 表示分片 SQL 每次会扫描 10000 个主键' ) ON DUPLICATE KEY UPDATE `id` = `id`;
 
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task.datatransfer.use-server-prep-stmts', 'true', '导入导出是否开启 ps 协议，默认为开启' ) ON DUPLICATE KEY UPDATE `id` = `id`;
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task.datatransfer.cursor-fetch-size', '20', '导出时游标的 fetch size，默认为 20，最大值为 1000' ) ON DUPLICATE KEY UPDATE `id` = `id`;
@@ -709,3 +716,6 @@ INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES
 
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.connect.database.sync.block-internal-database', 'true',
  'Whether block internal databases during synchronizing databases when the datasource is bound to a project. Default true.') ON DUPLICATE KEY UPDATE `id`=`id`;
+
+INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.task.pre-check.max-sql-content-bytes',
+ '5242880', '预检查时所允许检查的 SQL 内容的最大长度，超过该上限将终止预检查并将检查结果置为最高风险等级。单位：字节，默认值：5242880（即 5MB），修改后重启生效') ON DUPLICATE KEY UPDATE `id`=`id`;

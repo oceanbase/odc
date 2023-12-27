@@ -47,6 +47,7 @@ import com.oceanbase.odc.core.authority.util.PreAuthenticate;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
@@ -121,6 +122,7 @@ public class SensitiveColumnService {
     private VersionDiffConfigService versionDiffConfigService;
 
     private static final SensitiveColumnMapper mapper = SensitiveColumnMapper.INSTANCE;
+    private static final List<DialectType> UNSUPPORTED_DIALECTS = Collections.singletonList(DialectType.MYSQL);
 
     @Transactional(rollbackFor = Exception.class)
     @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA, SECURITY_ADMINISTRATOR"}, resourceType = "ODC_PROJECT",
@@ -203,6 +205,7 @@ public class SensitiveColumnService {
             entity.setCreatorId(userId);
             entity.setOrganizationId(organizationId);
             entities.add(entity);
+            exists.add(new SensitiveColumnMeta(entity));
         }
         repository.saveAll(entities);
         log.info("Sensitive columns has been created, id={}", entities.stream().map(SensitiveColumnEntity::getId)
@@ -468,7 +471,7 @@ public class SensitiveColumnService {
     private void checkProjectDatabases(@NotNull Long projectId, @NotEmpty Collection<Long> databaseIds) {
         Set<Long> founds = databaseService.listDatabaseIdsByProjectId(projectId);
         List<Long> notFounds = databaseIds.stream().filter(id -> !founds.contains(id)).collect(Collectors.toList());
-        if (notFounds.size() > 0) {
+        if (!notFounds.isEmpty()) {
             throw new NotFoundException(ResourceType.ODC_DATABASE, "id",
                     notFounds.stream().map(Object::toString).collect(Collectors.joining(", ")));
         }
@@ -477,7 +480,7 @@ public class SensitiveColumnService {
     private void checkoutSensitiveRules(@NotNull Long projectId, @NotEmpty Collection<SensitiveRule> rules) {
         List<Long> invalids = rules.stream().filter(rule -> !Objects.equals(rule.getProjectId(), projectId))
                 .map(SensitiveRule::id).collect(Collectors.toList());
-        if (invalids.size() > 0) {
+        if (!invalids.isEmpty()) {
             throw new NotFoundException(ResourceType.ODC_SENSITIVE_RULE, "id",
                     invalids.stream().map(Object::toString).collect(Collectors.joining(", ")));
         }

@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.metadb.schedule;
 
+import java.util.List;
+
 import javax.transaction.Transactional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -34,6 +36,8 @@ import com.oceanbase.odc.core.shared.constant.TaskStatus;
 @Repository
 public interface ScheduleTaskRepository extends JpaRepository<ScheduleTaskEntity, Long>,
         JpaSpecificationExecutor<ScheduleTaskEntity> {
+
+    List<ScheduleTaskEntity> findByJobNameAndStatusIn(String jobName, List<TaskStatus> statuses);
 
     @Transactional
     @Modifying

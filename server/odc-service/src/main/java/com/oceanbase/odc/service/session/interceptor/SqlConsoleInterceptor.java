@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -68,11 +69,28 @@ public class SqlConsoleInterceptor extends BaseTimeConsumingInterceptor {
     @Autowired
     private SqlConsoleRuleService sqlConsoleRuleService;
 
+    public final static String NEED_SQL_CONSOLE_CHECK = "NEED_SQL_CONSOLE_CHECK";
+    public final static String SQL_CONSOLE_INTERCEPTED = "SQL_CONSOLE_INTERCEPTED";
+
     @Override
     public boolean doPreHandle(@NonNull SqlAsyncExecuteReq request, @NonNull SqlAsyncExecuteResp response,
             @NonNull ConnectionSession session, @NonNull Map<String, Object> context) {
+        boolean sqlConsoleIntercepted = handle(request, response, session, context);
+        context.put(SQL_CONSOLE_INTERCEPTED, sqlConsoleIntercepted);
+        if (Objects.nonNull(context.get(SqlCheckInterceptor.SQL_CHECK_INTERCEPTED))) {
+            return sqlConsoleIntercepted && (Boolean) context.get(SqlCheckInterceptor.SQL_CHECK_INTERCEPTED);
+        } else {
+            return true;
+        }
+    }
+
+    private boolean handle(@NonNull SqlAsyncExecuteReq request, @NonNull SqlAsyncExecuteResp response,
+            @NonNull ConnectionSession session, @NonNull Map<String, Object> context) {
         Long ruleSetId = ConnectionSessionUtil.getRuleSetId(session);
         if (Objects.isNull(ruleSetId) || isIndividualTeam()) {
+            return true;
+        }
+        if (Objects.equals(Boolean.FALSE, context.get(NEED_SQL_CONSOLE_CHECK))) {
             return true;
         }
 
@@ -87,21 +105,21 @@ public class SqlConsoleInterceptor extends BaseTimeConsumingInterceptor {
 
         List<SqlTuple> sqlTuples = response.getSqls().stream().map(SqlTuplesWithViolation::getSqlTuple)
                 .collect(Collectors.toList());
-        Optional<Integer> maxSqls = sqlConsoleRuleService.getProperties(ruleSetId, SqlConsoleRules.MAX_EXECUTE_SQLS,
+        Optional<Integer> maxSqlSize = sqlConsoleRuleService.getProperties(ruleSetId, SqlConsoleRules.MAX_EXECUTE_SQLS,
                 session.getDialectType(), Integer.class);
-        if (maxSqls.isPresent()) {
-            if (sqlTuples.size() > maxSqls.get()) {
+        AtomicReference<Rule> maxSqlSizeRule = new AtomicReference<>();
+        if (maxSqlSize.isPresent()) {
+            if (sqlTuples.size() > maxSqlSize.get()) {
                 ruleService.getByRulesetIdAndName(ruleSetId, SqlConsoleRules.MAX_EXECUTE_SQLS.getRuleName())
                         .ifPresent(rule -> {
-                            Rule violationRule = new Rule();
+                            maxSqlSizeRule.set(new Rule());
                             RuleViolation violation = new RuleViolation();
                             violation.setLevel(rule.getLevel());
                             violation.setLocalizedMessage(SqlConsoleRules.MAX_EXECUTE_SQLS
                                     .getLocalizedMessage(new Object[] {rule.getProperties()
                                             .get(rule.getMetadata().getPropertyMetadatas().get(0).getName())
                                             .toString()}));
-                            violationRule.setViolation(violation);
-                            response.getViolatedRules().add(violationRule);
+                            maxSqlSizeRule.get().setViolation(violation);
                         });
                 allowExecute.set(false);
             }
@@ -115,8 +133,17 @@ public class SqlConsoleInterceptor extends BaseTimeConsumingInterceptor {
         Optional<List<String>> allowSqlTypesOpt = sqlConsoleRuleService.getListProperties(ruleSetId,
                 SqlConsoleRules.ALLOW_SQL_TYPES, session.getDialectType(), String.class);
 
-        for (SqlTuplesWithViolation item : response.getSqls()) {
+        for (int i = 0; i < response.getSqls().size(); i++) {
+            SqlTuplesWithViolation item = response.getSqls().get(i);
             List<Rule> violatedRules = item.getViolatedRules();
+            if (Objects.nonNull(maxSqlSizeRule.get()) && i == maxSqlSize.get()) {
+                if (Objects.nonNull(maxSqlSizeRule.get().getViolation())) {
+                    maxSqlSizeRule.get().getViolation().setOffset(item.getSqlTuple().getOffset());
+                    maxSqlSizeRule.get().getViolation().setStart(0);
+                    maxSqlSizeRule.get().getViolation().setStop(item.getSqlTuple().getOriginalSql().length());
+                    violatedRules.add(maxSqlSizeRule.get());
+                }
+            }
             BasicResult parseResult = sqlId2BasicResult.get(item.getSqlTuple().getSqlId());
             if (parseResult.isPlDdl() && forbiddenToCreatePl) {
                 ruleService.getByRulesetIdAndName(ruleSetId, SqlConsoleRules.NOT_ALLOWED_CREATE_PL.getRuleName())

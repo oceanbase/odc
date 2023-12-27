@@ -15,6 +15,12 @@
  */
 package com.oceanbase.odc.service.flow.instance;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.apache.commons.collections4.CollectionUtils;
+
 import com.oceanbase.odc.core.flow.model.FlowableElementType;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
@@ -62,10 +68,6 @@ public class FlowGatewayInstance extends BaseFlowNodeInstance {
                 nodeRepository, sequenceRepository);
         this.gateWayInstanceRepository = gatewayInstanceRepository;
         alloc();
-        create();
-        Verify.notNull(getId(), "id");
-        Verify.notNull(getCreateTime(), "CreateTime");
-        Verify.notNull(getUpdateTime(), "UpdateTime");
     }
 
     @Override
@@ -73,15 +75,26 @@ public class FlowGatewayInstance extends BaseFlowNodeInstance {
         return FlowableElementType.EXCLUSIVE_GATEWAY;
     }
 
+    public static List<FlowGatewayInstance> batchCreate(List<FlowGatewayInstance> instances,
+            @NonNull GateWayInstanceRepository gateWayInstanceRepository) {
+        if (CollectionUtils.isEmpty(instances)) {
+            return Collections.emptyList();
+        }
+        List<GateWayInstanceEntity> entities = instances.stream()
+                .map(FlowGatewayInstance::mapToGatewayEntity).collect(Collectors.toList());
+        entities = gateWayInstanceRepository.batchCreate(entities);
+        for (int i = 0; i < instances.size(); i++) {
+            instances.get(i).setId(entities.get(i).getId());
+            instances.get(i).createTime = entities.get(i).getCreateTime();
+            instances.get(i).updateTime = entities.get(i).getUpdateTime();
+        }
+        return instances;
+    }
+
     @Override
-    protected void create() {
+    public void create() {
         validNotExists();
-        GateWayInstanceEntity entity = new GateWayInstanceEntity();
-        entity.setOrganizationId(getOrganizationId());
-        entity.setStatus(getStatus());
-        entity.setStartEndpoint(isStartEndpoint());
-        entity.setEndEndpoint(isEndEndPoint());
-        entity.setFlowInstanceId(getFlowInstanceId());
+        GateWayInstanceEntity entity = mapToGatewayEntity(this);
         entity = gateWayInstanceRepository.save(entity);
         Verify.notNull(entity.getId(), "id");
         Verify.notNull(entity.getCreateTime(), "CreateTime");
@@ -119,6 +132,16 @@ public class FlowGatewayInstance extends BaseFlowNodeInstance {
     @Override
     public String resourceType() {
         return ResourceType.ODC_FLOW_GATEWAY_INSTANCE.name();
+    }
+
+    private static GateWayInstanceEntity mapToGatewayEntity(FlowGatewayInstance instance) {
+        GateWayInstanceEntity entity = new GateWayInstanceEntity();
+        entity.setOrganizationId(instance.getOrganizationId());
+        entity.setStatus(instance.getStatus());
+        entity.setStartEndpoint(instance.isStartEndpoint());
+        entity.setEndEndpoint(instance.isEndEndPoint());
+        entity.setFlowInstanceId(instance.getFlowInstanceId());
+        return entity;
     }
 
 }

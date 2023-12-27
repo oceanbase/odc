@@ -16,6 +16,8 @@
 
 package com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model;
 
+import java.util.List;
+
 import com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model.parameter.PluginParameter;
 
 import lombok.Data;
@@ -24,6 +26,7 @@ import lombok.Data;
 public class JobContent {
     private Parameter reader;
     private Parameter writer;
+    private List<Parameter> transformer;
 
     @Data
     public static class Parameter {
