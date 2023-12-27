@@ -16,7 +16,6 @@
 
 package com.oceanbase.odc.service.task.schedule;
 
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import org.quartz.JobKey;
@@ -25,6 +24,7 @@ import org.quartz.SchedulerException;
 import org.quartz.Trigger;
 import org.quartz.impl.JobDetailImpl;
 
+import com.oceanbase.odc.common.concurrent.Await;
 import com.oceanbase.odc.common.event.EventPublisher;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.metadb.task.JobEntity;
@@ -32,17 +32,18 @@ import com.oceanbase.odc.service.schedule.model.QuartzKeyGenerator;
 import com.oceanbase.odc.service.task.caller.JobException;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
-import com.oceanbase.odc.service.task.executor.task.TaskResult;
+import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.listener.DefaultJobCallerListener;
 import com.oceanbase.odc.service.task.listener.DestroyJobListener;
-import com.oceanbase.odc.service.task.listener.TaskResultUploadEvent;
-import com.oceanbase.odc.service.task.listener.TaskResultUploadListener;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author yaobin
  * @date 2023-11-23
  * @since 4.2.4
  */
+@Slf4j
 public class StdJobScheduler implements JobScheduler {
 
     private final Scheduler scheduler;
@@ -86,6 +87,11 @@ public class StdJobScheduler implements JobScheduler {
 
     @Override
     public void cancelJob(Long id) throws JobException {
+        JobEntity jobEntity = configuration.getTaskFrameworkService().find(id);
+        if (jobEntity.getStatus() == JobStatus.CANCELING || jobEntity.getStatus().isTerminated()) {
+            log.warn("Job {} status is {},can not be cancelled.", id, jobEntity.getStatus().name());
+            return;
+        }
         JobKey jobKey = QuartzKeyGenerator.generateJobKey(id);
         try {
             if (scheduler.checkExists(jobKey)) {
@@ -94,27 +100,17 @@ public class StdJobScheduler implements JobScheduler {
         } catch (SchedulerException e) {
             throw new JobException(e);
         }
-        JobEntity jobEntity = configuration.getTaskFrameworkService().find(id);
-        configuration.getJobDispatcher().stop(JobIdentity.of(id, jobEntity.getSerialNumber()));
+
+
+        configuration.getTaskFrameworkService().updateStatus(id, JobStatus.CANCELING);
+        configuration.getJobDispatcher().stop(JobIdentity.of(id));
     }
 
-    public void await(Long id, Long timeout, TimeUnit timeUnit) throws InterruptedException {
-        CountDownLatch cd = new CountDownLatch(1);
-        getEventPublisher().addEventListener(new TaskResultUploadListener() {
-            @Override
-            public void onEvent(TaskResultUploadEvent event) {
-                TaskResult taskResult = event.getTaskResult();
-                JobIdentity jobIdentity = taskResult.getJobIdentity();
-                if (jobIdentity.getId() != id) {
-                    return;
-                }
-                if (taskResult.getTaskStatus().isTerminated()) {
-                    cd.countDown();
-                }
-            }
-        });
-        cd.await(timeout, timeUnit);
-
+    @Override
+    public void await(Long id, Integer timeout, TimeUnit timeUnit) throws InterruptedException {
+        Await.await().timeUnit(timeUnit).timeout(timeout).period(10).periodTimeUnit(TimeUnit.SECONDS)
+                .until(() -> configuration.getTaskFrameworkService().isJobFinished(id))
+                .build().start();
     }
 
     @Override

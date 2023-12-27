@@ -19,9 +19,7 @@ package com.oceanbase.odc.service.task.executor.task;
 import java.io.Serializable;
 import java.util.Map;
 
-import com.oceanbase.odc.core.shared.constant.TaskStatus;
-import com.oceanbase.odc.service.objectstorage.model.ObjectMetadata;
-import com.oceanbase.odc.service.task.model.ExecutorInfo;
+import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 
 import lombok.Data;
@@ -36,16 +34,14 @@ public class DefaultTaskResult implements TaskResult, Serializable {
 
     private JobIdentity jobIdentity;
 
-    private TaskStatus taskStatus;
+    private JobStatus status;
 
     private String resultJson;
 
-    private ExecutorInfo executorInfo;
+    private String executorEndpoint;
 
     private double progress;
 
-    private boolean finished;
-
-    private Map<String, ObjectMetadata> logMetadata;
+    private Map<String, String> logMetadata;
 
 }

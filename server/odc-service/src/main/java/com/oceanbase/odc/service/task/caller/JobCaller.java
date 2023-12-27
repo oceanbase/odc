@@ -33,7 +33,7 @@ public interface JobCaller {
      * @param context job context
      * @throws JobException throws JobException when start job failed
      */
-    String start(JobContext context) throws JobException;
+    void start(JobContext context) throws JobException;
 
     /**
      * stop a odc job

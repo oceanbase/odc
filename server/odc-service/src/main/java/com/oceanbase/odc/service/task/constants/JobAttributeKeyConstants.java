@@ -14,43 +14,20 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.task.caller;
+package com.oceanbase.odc.service.task.constants;
 
-import java.io.Serializable;
-import java.util.List;
-import java.util.Map;
-
-import com.oceanbase.odc.service.task.schedule.JobIdentity;
-
-import lombok.Data;
+import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
 
 /**
  * @author yaobin
- * @date 2023-11-15
+ * @date 2023-12-25
  * @since 4.2.4
  */
+public class JobAttributeKeyConstants {
 
-@Data
-public class DefaultJobContext implements JobContext, Serializable {
+    public static final String LOG_ALL_OBJECT_ID = OdcTaskLogLevel.ALL.name();
 
-    /**
-     * job identity
-     */
-    private JobIdentity jobIdentity;
+    public static final String LOG_WARN_OBJECT_ID = OdcTaskLogLevel.WARN.name();
 
-    /**
-     * job class
-     */
-    private String jobClass;
-
-    /**
-     * odc server host url list
-     */
-    private List<String> hostUrls;
-
-    /**
-     * task other data
-     */
-    private Map<String, String> jobParameters;
-
+    public static final String OSS_BUCKET_NAME = "OSS_BUCKET_NAME";
 }

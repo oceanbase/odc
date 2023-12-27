@@ -35,6 +35,6 @@ public class DefaultJobDefinition implements JobDefinition {
 
     private String jobType;
 
-    private Map<String, String> jobData;
+    private Map<String, String> jobParameters;
 
 }

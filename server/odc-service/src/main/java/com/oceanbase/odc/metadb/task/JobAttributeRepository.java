@@ -13,44 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.oceanbase.odc.metadb.task;
 
-package com.oceanbase.odc.service.task.caller;
-
-import java.io.Serializable;
-import java.util.List;
-import java.util.Map;
-
-import com.oceanbase.odc.service.task.schedule.JobIdentity;
-
-import lombok.Data;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.stereotype.Repository;
 
 /**
  * @author yaobin
- * @date 2023-11-15
+ * @date 2023-12-06
  * @since 4.2.4
  */
+@Repository
+public interface JobAttributeRepository extends JpaRepository<JobAttributeEntity, Long>,
+        JpaSpecificationExecutor<JobAttributeEntity> {
 
-@Data
-public class DefaultJobContext implements JobContext, Serializable {
-
-    /**
-     * job identity
-     */
-    private JobIdentity jobIdentity;
-
-    /**
-     * job class
-     */
-    private String jobClass;
-
-    /**
-     * odc server host url list
-     */
-    private List<String> hostUrls;
-
-    /**
-     * task other data
-     */
-    private Map<String, String> jobParameters;
-
+    JobAttributeEntity findByJobIdAndAttributeKey(Long jobId, String attributeKey);
 }

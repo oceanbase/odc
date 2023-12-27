@@ -24,6 +24,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import com.oceanbase.odc.service.task.enums.JobStatus;
+
 /**
  * @author yaobin
  * @date 2023-12-06
@@ -35,7 +37,7 @@ public interface JobRepository extends JpaRepository<JobEntity, Long>,
 
     @Transactional
     @Query("update JobEntity set "
-            + "executor=:#{#param.executor},status=:#{#param.status},"
+            + "executorEndpoint=:#{#param.executorEndpoint},status=:#{#param.status},"
             + "progressPercentage=:#{#param.progressPercentage},resultJson=:#{#param.resultJson}"
             + " where id=:#{#param.id}")
     @Modifying
@@ -43,26 +45,11 @@ public interface JobRepository extends JpaRepository<JobEntity, Long>,
 
     @Transactional
     @Query("update JobEntity set "
-            + "logStorage=:#{#param.logStorage},finished=:#{#param.finished} "
-            + " where id=:#{#param.id}")
-    @Modifying
-    void updateFinished(@Param("param") JobEntity entity);
-
-    @Transactional
-    @Query("update JobEntity set "
-            + "serialNumber=:#{#param.serialNumber},status=:#{#param.status},scheduleTimes=:#{#param.scheduleTimes},"
+            + "executorIdentifier=:#{#param.executorIdentifier},status=:#{#param.status},"
             + "executionTimes=:#{#param.executionTimes}"
             + " where id=:#{#param.id}")
     @Modifying
-    void updateJobSerialNumberAndStatus(@Param("param") JobEntity entity);
-
-
-    @Transactional
-    @Query("update JobEntity set "
-            + "scheduleTimes=:scheduleTimes"
-            + " where id=:id")
-    @Modifying
-    void updateScheduleTimes(@Param("id") Long id, @Param("scheduleTimes") Integer scheduleTimes);
+    void updateJobExecutorIdentifierAndStatus(@Param("param") JobEntity entity);
 
     @Transactional
     @Query("update JobEntity set "
@@ -70,5 +57,12 @@ public interface JobRepository extends JpaRepository<JobEntity, Long>,
             + " where id=:id")
     @Modifying
     void updateDescription(@Param("id") Long id, @Param("description") String description);
+
+    @Transactional
+    @Query("update JobEntity set "
+            + "status=:status"
+            + " where id=:id")
+    @Modifying
+    void updateStatus(@Param("id") Long id, @Param("status") JobStatus status);
 
 }

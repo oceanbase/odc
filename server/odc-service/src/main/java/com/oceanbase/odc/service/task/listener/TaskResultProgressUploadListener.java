@@ -49,7 +49,7 @@ public class TaskResultProgressUploadListener extends TaskResultUploadListener {
         }
         TaskEntity taskEntity = taskService.detail(taskTaskId);
         taskEntity.setProgressPercentage(taskResult.getProgress() * 100);
-        taskEntity.setStatus(taskResult.getTaskStatus());
+        taskEntity.setStatus(taskResult.getStatus().convertTaskStatus());
         taskEntity.setResultJson(taskResult.getResultJson());
         taskService.update(taskEntity);
     }

@@ -38,10 +38,10 @@ import com.oceanbase.odc.service.task.schedule.JobIdentity;
 public class ImmediateJobDispatcher implements JobDispatcher {
 
     @Override
-    public String start(JobContext context) throws JobException {
+    public void start(JobContext context) throws JobException {
 
         JobCaller jobCaller = getJobCaller(JobConfigurationHolder.getJobConfiguration());
-        return jobCaller.start(context);
+        jobCaller.start(context);
     }
 
     @Override

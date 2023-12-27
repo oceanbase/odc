@@ -42,6 +42,6 @@ public interface JobDefinition {
     /**
      * job data
      */
-    Map<String, String> getJobData();
+    Map<String, String> getJobParameters();
 
 }

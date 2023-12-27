@@ -18,9 +18,7 @@ package com.oceanbase.odc.service.task.executor.task;
 
 import java.util.Map;
 
-import com.oceanbase.odc.core.shared.constant.TaskStatus;
-import com.oceanbase.odc.service.objectstorage.model.ObjectMetadata;
-import com.oceanbase.odc.service.task.model.ExecutorInfo;
+import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 
 /**
@@ -32,15 +30,13 @@ public interface TaskResult {
 
     JobIdentity getJobIdentity();
 
-    TaskStatus getTaskStatus();
+    JobStatus getStatus();
 
     String getResultJson();
 
-    ExecutorInfo getExecutorInfo();
+    String getExecutorEndpoint();
 
     double getProgress();
 
-    boolean isFinished();
-
-    Map<String, ObjectMetadata> getLogMetadata();
+    Map<String, String> getLogMetadata();
 }

@@ -89,9 +89,9 @@ public class JobCallerTest extends BaseJobTest {
                 .build(connectionConfig, connectionConfig.getDefaultSchema(), sqls);
         JobContext jc = new DefaultJobContextBuilder().build(jobIdentity, jd);
 
-        String name = jobCaller.start(jc);
+        jobCaller.start(jc);
         Thread.sleep(600000);
-        JobIdentity newJi = JobIdentity.of(exceptedTaskId, name);
+        JobIdentity newJi = JobIdentity.of(exceptedTaskId);
         jobCaller.stop(newJi);
     }
 

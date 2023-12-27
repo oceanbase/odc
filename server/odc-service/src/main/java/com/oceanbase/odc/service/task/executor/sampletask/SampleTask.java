@@ -26,10 +26,10 @@ import com.oceanbase.odc.core.flow.model.FlowTaskResult;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.shared.Verify;
-import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.odc.service.task.constants.JobDataMapConstants;
+import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.executor.task.BaseTask;
 
 import lombok.extern.slf4j.Slf4j;
@@ -58,8 +58,8 @@ public class SampleTask extends BaseTask {
 
     @Override
     protected void onStart() {
-        updateStatus(TaskStatus.RUNNING);
-        Map<String, String> dataMap = getJobContext().getJobData();
+        updateStatus(JobStatus.RUNNING);
+        Map<String, String> dataMap = getJobContext().getJobParameters();
 
         this.parameter =
                 JsonUtils.fromJson(dataMap.get(JobDataMapConstants.META_DB_TASK_PARAMETER), SampleTaskParameter.class);
@@ -81,7 +81,7 @@ public class SampleTask extends BaseTask {
                 Thread.sleep(500); // Simulate long execution time of SQL.
             }
             this.result = SampleTaskResult.success();
-            updateStatus(TaskStatus.DONE);
+            updateStatus(JobStatus.DONE);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         } finally {

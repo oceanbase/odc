@@ -33,7 +33,7 @@ public class DefaultJobContextBuilder implements JobContextBuilder {
         DefaultJobContext jobContext = new DefaultJobContext();
         jobContext.setJobIdentity(ji);
         jobContext.setJobClass(jd.getJobClass().getCanonicalName());
-        jobContext.setJobData(jd.getJobData());
+        jobContext.setJobParameters(jd.getJobParameters());
         jobContext.setHostUrls(configuration.getHostUrlProvider().hostUrl());
         return jobContext;
     }

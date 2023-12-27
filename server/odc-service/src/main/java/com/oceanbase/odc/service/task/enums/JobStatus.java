@@ -13,44 +13,37 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.oceanbase.odc.service.task.enums;
 
-package com.oceanbase.odc.service.task.caller;
-
-import java.io.Serializable;
-import java.util.List;
-import java.util.Map;
-
-import com.oceanbase.odc.service.task.schedule.JobIdentity;
-
-import lombok.Data;
+import com.oceanbase.odc.core.shared.constant.TaskStatus;
 
 /**
  * @author yaobin
- * @date 2023-11-15
+ * @date 2023-12-25
  * @since 4.2.4
  */
+public enum JobStatus {
+    PREPARING,
+    RUNNING,
+    FAILED,
+    RETRYING,
+    CANCELING,
+    CANCELED,
+    DONE;
 
-@Data
-public class DefaultJobContext implements JobContext, Serializable {
+    public boolean isTerminated() {
+        return JobStatus.CANCELED == this || JobStatus.FAILED == this || JobStatus.DONE == this;
+    }
 
-    /**
-     * job identity
-     */
-    private JobIdentity jobIdentity;
+    public TaskStatus convertTaskStatus() {
 
-    /**
-     * job class
-     */
-    private String jobClass;
-
-    /**
-     * odc server host url list
-     */
-    private List<String> hostUrls;
-
-    /**
-     * task other data
-     */
-    private Map<String, String> jobParameters;
+        if (RETRYING == this) {
+            return TaskStatus.RUNNING;
+        }
+        if (CANCELING == this) {
+            return TaskStatus.CANCELED;
+        }
+        return TaskStatus.valueOf(this.name());
+    }
 
 }
