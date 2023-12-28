@@ -46,12 +46,12 @@ public class ListProjectRequest extends BaseOmsRequest {
     /**
      * reference OmsDialectType
      */
-    private List<String> SourceEndpointTypes;
+    private List<String> sourceEndpointTypes;
 
     /**
      * reference OmsDialectType
      */
-    private List<String> SinkEndpointTypes;
+    private List<String> sinkEndpointTypes;
 
     @Min(1)
     private Integer pageNumber = 1;
