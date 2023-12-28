@@ -27,6 +27,7 @@ import com.oceanbase.odc.service.task.constants.JobDataMapConstants;
 import com.oceanbase.odc.service.task.executor.task.DataArchiveTask;
 import com.oceanbase.odc.service.task.schedule.DefaultJobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobDefinition;
+import com.oceanbase.odc.service.task.util.JobUtils;
 import com.oceanbase.tools.migrator.common.configure.DataSourceInfo;
 import com.oceanbase.tools.migrator.common.configure.LogicTableConfig;
 import com.oceanbase.tools.migrator.common.dto.HistoryJob;
@@ -76,9 +77,11 @@ public class JobMetaFactory extends AbstractJobMetaFactory {
             }
         });
         Map<String, String> jobParameters = new HashMap<>();
-        jobParameters.put(JobDataMapConstants.META_DB_TASK_PARAMETER, JsonUtils.toJson(jobReqs));
-        return DefaultJobDefinition.builder().jobClass(DataArchiveTask.class).jobParameters(
-                jobParameters).build();
+        jobParameters.put(JobDataMapConstants.META_DB_TASK_PARAMETER, JobUtils.toJson(jobReqs));
+        return DefaultJobDefinition.builder().jobClass(DataArchiveTask.class)
+            .jobParameters(jobParameters)
+            .jobType(com.oceanbase.odc.service.schedule.model.JobType.DATA_ARCHIVE.name())
+            .build();
     }
 
     public JobReq buildJobReq(DlmTask parameters) {

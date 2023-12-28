@@ -44,7 +44,7 @@ public class CloudDataArchiveJob extends DataArchiveJob {
         ScheduleTaskEntity taskEntity = (ScheduleTaskEntity) context.getResult();
 
         List<DlmTask> taskUnits = getTaskUnits(taskEntity);
-
+        taskUnits.forEach(super::initTask);
         JobMetaFactory jobMetaFactory = SpringContextUtil.getBean(JobMetaFactory.class);
         JobDefinition jobDefinition = jobMetaFactory.createJobDefinition(taskUnits);
         JobScheduler jobScheduler = SpringContextUtil.getBean(JobScheduler.class);
