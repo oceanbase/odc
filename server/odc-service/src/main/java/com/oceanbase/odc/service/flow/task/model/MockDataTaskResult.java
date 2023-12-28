@@ -15,14 +15,11 @@
  */
 package com.oceanbase.odc.service.flow.task.model;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
 
+import com.oceanbase.odc.common.json.NormalDialectTypeOutput;
 import com.oceanbase.odc.core.flow.model.FlowTaskResult;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
@@ -44,6 +41,8 @@ import lombok.Setter;
 @Getter
 @Setter
 public class MockDataTaskResult implements FlowTaskResult {
+
+    @Deprecated
     private String taskName;
     private MockTaskStatus taskStatus;
     private Long writeCount;
@@ -53,51 +52,31 @@ public class MockDataTaskResult implements FlowTaskResult {
     private Long currentRecord;
     private Long totalGen;
     private String sessionName;
+    private String objectName;
+    @NormalDialectTypeOutput
     private DialectType dbMode;
+    @Deprecated
     private String internalTaskId;
+    @Deprecated
     private List<String> tableTaskIds;
 
     public MockDataTaskResult() {}
 
     public MockDataTaskResult(@NonNull ConnectionConfig connectionConfig, @NonNull MockContext context) {
-        this.taskName = context.getTaskName();
         List<TableTaskContext> tableTaskContexts = context.getTables();
         if (CollectionUtils.isNotEmpty(tableTaskContexts)) {
             TableTaskContext tableTaskContext = tableTaskContexts.get(0);
             this.taskStatus = tableTaskContext.getStatus();
-            this.writeCount = calculateGenCount(tableTaskContext);
-            this.currentRecord = tableTaskContext.getCurrentRecordNum();
-            this.totalGen = tableTaskContext.getTotalDataGenerateCount();
+            this.writeCount = tableTaskContext.getTotalWriteCount();
+            this.totalGen = tableTaskContext.getTotalGenerateCount();
         }
         this.sessionName = connectionConfig.getName();
         this.dbMode = connectionConfig.getDialectType();
-        this.internalTaskId = context.getTaskId();
-        this.tableTaskIds =
-                context.getTables().stream().map(TableTaskContext::getTableTaskId).collect(Collectors.toList());
     }
 
-    public MockDataTaskResult(@NonNull ConnectionConfig connectionConfig, @NonNull String internalTaskId) {
+    public MockDataTaskResult(@NonNull ConnectionConfig connectionConfig) {
         this.sessionName = connectionConfig.getName();
         this.dbMode = connectionConfig.getDialectType();
-        this.internalTaskId = internalTaskId;
-    }
-
-    private long calculateGenCount(TableTaskContext tableTaskContext) {
-        Map<String, Long> writeInfo = tableTaskContext.getWriterName2writeCount();
-        if (writeInfo != null && writeInfo.size() != 0) {
-            Set<String> keySet = writeInfo.keySet();
-            if (keySet.size() != 0) {
-                Long initVal = writeInfo.getOrDefault(new ArrayList<>(keySet).get(0), -100L);
-                for (String key : keySet) {
-                    Long writeRecord = writeInfo.get(key);
-                    if (!initVal.equals(writeRecord)) {
-                        initVal = 0L;
-                    }
-                }
-                return initVal;
-            }
-        }
-        return 0;
     }
 
 }

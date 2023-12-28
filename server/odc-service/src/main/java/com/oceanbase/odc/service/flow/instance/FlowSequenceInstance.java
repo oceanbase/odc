@@ -31,6 +31,7 @@ import lombok.ToString;
 @ToString
 @EqualsAndHashCode
 public class FlowSequenceInstance {
+
     private final FlowNodeInstanceKey source;
     private final FlowNodeInstanceKey target;
 

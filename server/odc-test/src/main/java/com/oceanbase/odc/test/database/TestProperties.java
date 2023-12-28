@@ -51,6 +51,9 @@ public class TestProperties {
     }
 
     public static String getProperty(String key) {
+        if (key == null) {
+            return null;
+        }
         String property = properties.get(key);
         if (StringUtils.isNotBlank(property)) {
             return property;

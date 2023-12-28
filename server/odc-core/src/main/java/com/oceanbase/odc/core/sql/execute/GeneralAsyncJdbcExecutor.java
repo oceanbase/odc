@@ -19,6 +19,7 @@ import java.util.concurrent.Future;
 
 import javax.sql.DataSource;
 
+import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.PreparedStatementCallback;
 import org.springframework.jdbc.core.PreparedStatementCreator;
 import org.springframework.jdbc.core.StatementCallback;
@@ -57,15 +58,21 @@ public class GeneralAsyncJdbcExecutor implements AsyncJdbcExecutor {
 
     @Override
     public <T> Future<T> execute(StatementCallback<T> statementCallback) {
-        return taskManager.submit(new StmtCallBackBasedTask<>(this.dataSource,
-                dataSourceFactory, statementCallback, sessionOperations));
+        return this.taskManager.submit(new StmtCallBackBasedTask<>(this.dataSource,
+                this.dataSourceFactory, statementCallback, this.sessionOperations));
     }
 
     @Override
     public <T> Future<T> execute(PreparedStatementCreator creator,
             PreparedStatementCallback<T> statementCallback) {
-        return taskManager.submit(new PreparedStmtCallBackBasedTask<>(this.dataSource,
-                dataSourceFactory, creator, statementCallback, sessionOperations));
+        return this.taskManager.submit(new PreparedStmtCallBackBasedTask<>(this.dataSource,
+                this.dataSourceFactory, creator, statementCallback, this.sessionOperations));
+    }
+
+    @Override
+    public <T> Future<T> execute(ConnectionCallback<T> action) {
+        return this.taskManager.submit(new ConnectionCallBackBasedTask<>(this.dataSource,
+                this.dataSourceFactory, action, this.sessionOperations));
     }
 
 }

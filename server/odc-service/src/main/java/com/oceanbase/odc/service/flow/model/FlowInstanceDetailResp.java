@@ -50,7 +50,7 @@ import com.oceanbase.odc.service.flow.instance.FlowInstance;
 import com.oceanbase.odc.service.flow.instance.FlowTaskInstance;
 import com.oceanbase.odc.service.flow.model.FlowNodeInstanceDetailResp.FlowNodeInstanceMapper;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
-import com.oceanbase.odc.service.flow.task.model.MockTaskConfig;
+import com.oceanbase.odc.service.flow.task.model.OdcMockTaskConfig;
 import com.oceanbase.odc.service.flow.task.model.ShadowTableSyncTaskParameter;
 import com.oceanbase.odc.service.flow.util.FlowInstanceUtil;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
@@ -313,7 +313,7 @@ public class FlowInstanceDetailResp {
                     resp.setParameters(JsonUtils.fromJson(parameterJson, DataTransferConfig.class));
                     break;
                 case MOCKDATA:
-                    resp.setParameters(JsonUtils.fromJson(parameterJson, MockTaskConfig.class));
+                    resp.setParameters(JsonUtils.fromJson(parameterJson, OdcMockTaskConfig.class));
                     break;
                 case SHADOWTABLE_SYNC:
                     resp.setParameters(JsonUtils.fromJson(parameterJson, ShadowTableSyncTaskParameter.class));

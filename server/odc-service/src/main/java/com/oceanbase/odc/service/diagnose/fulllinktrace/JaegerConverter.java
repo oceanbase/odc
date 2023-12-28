@@ -115,6 +115,7 @@ public class JaegerConverter implements ThirdPartyTraceConverter {
         private List<Map<String, Object>> warnings = null;
     }
 
+    @Getter
     private static class Process {
         String serviceName;
         List<Tag> tags;
@@ -125,6 +126,7 @@ public class JaegerConverter implements ThirdPartyTraceConverter {
         }
     }
 
+    @Getter
     private static class Tag {
         String key;
         String type = "string";
@@ -136,6 +138,7 @@ public class JaegerConverter implements ThirdPartyTraceConverter {
         }
     }
 
+    @Getter
     private static class Reference {
         String refType = "CHILD_OF";
         String traceID;

@@ -147,7 +147,7 @@ public class MysqlModeSqlParserListener extends OBParserBaseListener implements 
 
     /**
      * Keep the grammer nodes for entering limit clause for future refactor about limit judgement
-     * 
+     *
      * @param ctx
      */
     @Override
@@ -248,7 +248,6 @@ public class MysqlModeSqlParserListener extends OBParserBaseListener implements 
         setSqlType(SqlType.SET);
     }
 
-
     @Override
     public void enterUpdate_stmt(Update_stmtContext ctx) {
         setSqlType(SqlType.UPDATE);
@@ -256,7 +255,11 @@ public class MysqlModeSqlParserListener extends OBParserBaseListener implements 
 
     @Override
     public void enterExplain_stmt(Explain_stmtContext ctx) {
-        setSqlType(SqlType.EXPLAIN);
+        if (ctx.explain_or_desc().EXPLAIN() != null) {
+            setSqlType(SqlType.EXPLAIN);
+        } else {
+            setSqlType(SqlType.DESC);
+        }
     }
 
     // TODO: extract table name into ObDbTableNames

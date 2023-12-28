@@ -194,9 +194,6 @@ public class FlowTaskInstanceService {
             DispatchResponse response = requestDispatcher.forward(executorInfo.getHost(), executorInfo.getPort());
             return response.getContentByType(new TypeReference<SuccessResponse<String>>() {}).getData();
         }
-        if (taskEntity.getTaskType() == TaskType.MOCKDATA) {
-            return getMockDataLog(taskEntity, level);
-        }
         return taskService.getLog(taskEntity.getCreatorId(), taskEntity.getId() + "", taskEntity.getTaskType(), level);
     }
 
@@ -419,11 +416,7 @@ public class FlowTaskInstanceService {
             List<MockDataTaskResult> details = getMockDataResult(taskEntity);
             Verify.singleton(details, "MockDataDetail");
 
-            MockDataTaskResult detail = details.get(0);
-            List<String> tableTaskIds = detail.getTableTaskIds();
-            Verify.singleton(tableTaskIds, "TableTasks has be to single");
-
-            String objectName = ossTaskReferManager.get(tableTaskIds.get(0));
+            String objectName = details.get(0).getObjectName();
             PreConditions.validExists(ResourceType.ODC_FILE, "taskId", taskEntity.getId(),
                     () -> StringUtils.isNotBlank(objectName));
             URL url = generatePresignedUrl(objectName, expirationSecs);
@@ -435,8 +428,7 @@ public class FlowTaskInstanceService {
             List<DataTransferTaskResult> taskResults = getDataTransferResult(taskEntity);
             Verify.singleton(taskResults, "DataTransferTaskResult");
 
-            DataTransferTaskResult taskResult = taskResults.get(0);
-            String objectName = ossTaskReferManager.get(taskResult.getExportZipFilePath());
+            String objectName = taskResults.get(0).getExportZipFilePath();
             PreConditions.validExists(ResourceType.ODC_FILE, "taskId", taskEntity.getId(),
                     () -> StringUtils.isNotBlank(objectName));
             URL url = generatePresignedUrl(objectName, expirationSecs);
@@ -447,7 +439,7 @@ public class FlowTaskInstanceService {
         } else if (taskEntity.getTaskType() == TaskType.EXPORT_RESULT_SET) {
             List<ResultSetExportResult> results = getResultSetExportResult(taskEntity);
             Verify.singleton(results, "ResultSetExportResult");
-            String objectName = ossTaskReferManager.get(results.get(0).getFileName());
+            String objectName = results.get(0).getFileName();
             PreConditions.validExists(ResourceType.ODC_FILE, "taskId", taskEntity.getId(),
                     () -> StringUtils.isNotBlank(objectName));
             return Collections.singletonList(generatePresignedUrl(objectName, expirationSecs));
@@ -573,12 +565,13 @@ public class FlowTaskInstanceService {
             result.setRecords(Collections.emptyList());
         }
         if (StringUtils.isNotEmpty(result.getJsonFileName())) {
-            String jsonFileName = result.getJsonFileName();
-            File jsonFile = new File(String.format("%s/ASYNC/%s.json", FileManager.basePath, jsonFileName));
-            BasicFileAttributes attributes = Files.readAttributes(jsonFile.toPath(), BasicFileAttributes.class);
-            if (jsonFile.exists() && attributes.isRegularFile()) {
-                result.setResultPreviewMaxSizeBytes(resultPreviewMaxSizeBytes);
-                result.setJsonFileBytes(attributes.size());
+            File jsonFile = new File(String.format("%s/ASYNC/%s.json", FileManager.basePath, result.getJsonFileName()));
+            if (jsonFile.exists()) {
+                BasicFileAttributes attributes = Files.readAttributes(jsonFile.toPath(), BasicFileAttributes.class);
+                if (attributes.isRegularFile()) {
+                    result.setResultPreviewMaxSizeBytes(resultPreviewMaxSizeBytes);
+                    result.setJsonFileBytes(attributes.size());
+                }
             }
         }
         if (cloudObjectStorageService.supported()) {
@@ -634,14 +627,6 @@ public class FlowTaskInstanceService {
             return Collections.emptyList();
         }
         return Collections.singletonList(detail);
-    }
-
-    private String getMockDataLog(TaskEntity taskEntity, OdcTaskLogLevel level) throws IOException {
-        List<MockDataTaskResult> details = getMockDataResult(taskEntity);
-        Verify.singleton(details, "MockDataDetail");
-
-        MockDataTaskResult detail = details.get(0);
-        return taskService.getLog(taskEntity.getCreatorId(), detail.getInternalTaskId(), TaskType.MOCKDATA, level);
     }
 
     private Optional<TaskEntity> getCompleteTaskEntity(@NonNull Long flowInstanceId) {

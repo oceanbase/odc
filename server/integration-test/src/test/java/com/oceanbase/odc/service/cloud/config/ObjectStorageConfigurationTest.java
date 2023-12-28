@@ -28,7 +28,7 @@ public class ObjectStorageConfigurationTest {
         ObjectStorageConfiguration properties = new ObjectStorageConfiguration();
         properties.setCloudProvider(CloudProvider.AWS);
         properties.setRegion("cn-northwest-1");
-        String endpoint = properties.getEndpoint();
+        String endpoint = properties.getPublicEndpoint();
         Assert.assertEquals("s3.cn-northwest-1.amazonaws.com.cn", endpoint);
     }
 
@@ -37,7 +37,7 @@ public class ObjectStorageConfigurationTest {
         ObjectStorageConfiguration properties = new ObjectStorageConfiguration();
         properties.setCloudProvider(CloudProvider.ALIBABA_CLOUD);
         properties.setRegion("cn-hangzhou");
-        String endpoint = properties.getEndpoint();
+        String endpoint = properties.getPublicEndpoint();
         Assert.assertEquals("oss-cn-hangzhou.aliyuncs.com", endpoint);
     }
 }

@@ -138,7 +138,7 @@ public class PlaySiteSecurityConfiguration extends WebSecurityConfigurerAdapter 
                 .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
                 .sessionFixation()
                 .migrateSession()
-                .invalidSessionStrategy(new CustomInvalidSessionStrategy(LOGIN_PAGE,localeResolver));
+                .invalidSessionStrategy(new CustomInvalidSessionStrategy(commonSecurityProperties.getLoginPage(), localeResolver));
         // @formatter:on        
         csrfConfigureHelper.configure(http);
 

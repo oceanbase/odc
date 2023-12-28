@@ -47,6 +47,8 @@ public class RiskLevelDescriber implements Serializable {
 
     private String taskType;
 
+    private boolean overLimit;
+
     public String describe(ConditionExpression expression) {
         if (expression == ConditionExpression.ENVIRONMENT_ID) {
             return StringUtils.isEmpty(this.environmentId) ? StringUtils.EMPTY : this.environmentId;

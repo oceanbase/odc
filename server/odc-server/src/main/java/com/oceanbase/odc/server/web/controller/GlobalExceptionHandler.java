@@ -45,6 +45,8 @@ import com.oceanbase.odc.common.trace.TraceContextHolder;
 import com.oceanbase.odc.common.util.ExceptionUtils;
 import com.oceanbase.odc.common.util.LogUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
+import com.oceanbase.odc.core.alarm.AlarmEventNames;
+import com.oceanbase.odc.core.alarm.AlarmUtils;
 import com.oceanbase.odc.core.shared.constant.ErrorCode;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.HttpException;
@@ -206,6 +208,7 @@ public class GlobalExceptionHandler {
         OdcErrorResult result = initErrorResult(ErrorCodes.Unexpected, e.getMessage());
         result.setHttpStatus(HttpStatus.INTERNAL_SERVER_ERROR);
         logTraceInfo(result, e, handlerMethod);
+        AlarmUtils.warn(AlarmEventNames.UNKNOWN_API_EXCEPTION, buildAlarmContent(handlerMethod, e));
         logExceptionStack(e);
         return result;
     }
@@ -219,6 +222,7 @@ public class GlobalExceptionHandler {
         result.setErrMsg(e.getMessage());
         logTraceInfo(result, e, handlerMethod);
         logExceptionStack(e);
+        AlarmUtils.warn(AlarmEventNames.UNKNOWN_API_EXCEPTION, buildAlarmContent(handlerMethod, e));
         return result;
     }
 
@@ -233,6 +237,7 @@ public class GlobalExceptionHandler {
         result.setHttpStatus(HttpStatus.INTERNAL_SERVER_ERROR);
         result.setErrMsg(e.getMessage());
         log.error("ODC_FATAL_ERROR: ", e);
+        AlarmUtils.warn(AlarmEventNames.UNKNOWN_API_EXCEPTION, buildAlarmContent(handlerMethod, e));
         logTraceInfo(result, e, handlerMethod);
         return result;
     }
@@ -284,6 +289,10 @@ public class GlobalExceptionHandler {
         result.setTimestamp(OffsetDateTime.ofInstant(
                 Instant.ofEpochMilli(TraceContextHolder.getStartEpochMilli()), ZoneId.systemDefault()));
         return result;
+    }
+
+    private String buildAlarmContent(HandlerMethod handlerMethod, Throwable e) {
+        return "method=" + handlerMethod.getMethod().getName() + "msg=" + e.getMessage();
     }
 
 }

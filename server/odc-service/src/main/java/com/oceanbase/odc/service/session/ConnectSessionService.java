@@ -54,6 +54,7 @@ import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.LimitMetric;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
+import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.shared.exception.InternalServerError;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.core.shared.exception.OverLimitException;
@@ -233,6 +234,9 @@ public class ConnectSessionService {
         }
         preCheckSessionLimit();
         ConnectionConfig connection = connectionService.getForConnectionSkipPermissionCheck(dataSourceId);
+        if (StringUtils.isNotBlank(schemaName) && connection.getDialectType().isOracle()) {
+            schemaName = com.oceanbase.odc.common.util.StringUtils.quoteOracleIdentifier(schemaName);
+        }
         horizontalDataPermissionValidator.checkCurrentOrganization(connection);
         log.info("Begin to create session, connectionId={}, name={}", connection.id(), connection.getName());
         Set<String> actions = authorizationFacade.getAllPermittedActions(authenticationFacade.currentUser(),
@@ -258,6 +262,9 @@ public class ConnectSessionService {
         timeoutMillis = timeoutMillis + this.connectionSessionManager.getScanIntervalMillis();
         sessionFactory.setSessionTimeoutMillis(timeoutMillis);
         ConnectionSession session = connectionSessionManager.start(sessionFactory);
+        if (session == null) {
+            throw new BadRequestException("Failed to create a session");
+        }
         try {
             initSession(session, connection, userConfig);
             log.info("Connect session created, connectionId={}, session={}", dataSourceId, session);

@@ -19,15 +19,12 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 import javax.annotation.PostConstruct;
 
 import org.springframework.beans.factory.ListableBeanFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.Ordered;
-import org.springframework.core.annotation.AnnotationUtils;
-import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Service;
 
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
@@ -59,10 +56,7 @@ public class SqlExecuteInterceptorService {
     public void init() {
         Map<String, SqlExecuteInterceptor> beans = factory.getBeansOfType(SqlExecuteInterceptor.class);
         List<SqlExecuteInterceptor> implementations = new ArrayList<>(beans.values());
-        implementations.sort(Comparator.comparingInt(o -> {
-            Order order = AnnotationUtils.findAnnotation(o.getClass(), Order.class);
-            return Objects.isNull(order) ? Ordered.LOWEST_PRECEDENCE : order.value();
-        }));
+        implementations.sort(Comparator.comparingInt(Ordered::getOrder));
         this.interceptors = implementations;
     }
 

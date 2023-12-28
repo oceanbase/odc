@@ -28,7 +28,13 @@ public interface RuleApplyingRepository extends JpaRepository<RuleApplyingEntity
         JpaSpecificationExecutor<RuleApplyingEntity> {
     List<RuleApplyingEntity> findByRulesetId(Long rulesetId);
 
+    List<RuleApplyingEntity> findByOrganizationIdAndRulesetId(Long organizationId, Long rulesetId);
+
+
     Optional<RuleApplyingEntity> findByOrganizationIdAndId(Long organizationId, Long id);
+
+    Optional<RuleApplyingEntity> findByOrganizationIdAndRulesetIdAndRuleMetadataId(Long organizationId, Long rulesetId,
+            Long ruleMetadataId);
 
     @Transactional
     @Query(value = "select ra.* from regulation_rule_applying as ra where ra.organization_id = :organizationId and "

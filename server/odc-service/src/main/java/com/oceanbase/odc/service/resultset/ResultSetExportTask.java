@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.resultset;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Paths;
 import java.sql.ResultSet;
@@ -50,6 +51,7 @@ import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.core.shared.model.TableIdentity;
 import com.oceanbase.odc.core.sql.execute.SyncJdbcExecutor;
 import com.oceanbase.odc.plugin.task.api.datatransfer.DataTransferJob;
+import com.oceanbase.odc.plugin.task.api.datatransfer.model.ConnectionInfo;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.CsvConfig;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConstants;
@@ -58,15 +60,14 @@ import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferObject;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferTaskResult;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferType;
 import com.oceanbase.odc.service.common.util.FileConvertUtils;
-import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.datasecurity.model.MaskingAlgorithm;
 import com.oceanbase.odc.service.datasecurity.util.MaskingAlgorithmUtil;
 import com.oceanbase.odc.service.datatransfer.model.DataTransferProperties;
-import com.oceanbase.odc.service.flow.task.OssTaskReferManager;
 import com.oceanbase.odc.service.flow.task.model.ResultSetExportResult;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
 import com.oceanbase.odc.service.plugin.TaskPluginUtil;
+import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
 import com.oceanbase.tools.loaddump.common.model.ObjectStatus.Status;
 
@@ -119,7 +120,9 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
             DataTransferTaskResult result = job.call();
             validateSuccessful(result);
 
-            String localResultSetFilePath = getDumpFilePath(result, parameter.getFileFormat().getExtension());
+            String localResultSetFilePath = getDumpFilePath(result,
+                    parameter.getFileFormat() == DataTransferFormat.SQL ? DataTransferFormat.SQL.getExtension()
+                            : DataTransferFormat.CSV.getExtension());
             /*
              * 对于空结果集，OBDumper 不生成文件，ODC 需要生成一个空文件以免报错
              */
@@ -132,7 +135,7 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
              * OBDumper 不支持 excel 导出，需要先生成 csv, 然后使用工具类转换成 xlsx
              */
             if (DataTransferFormat.EXCEL == parameter.getFileFormat()) {
-                String excelFilePath = getDumpFileDirectory() + DataTransferFormat.EXCEL.getExtension();
+                String excelFilePath = getDumpFileDirectory() + getFileName(DataTransferFormat.EXCEL.getExtension());
                 try {
                     FileConvertUtils.convertCsvToXls(localResultSetFilePath, excelFilePath,
                             parameter.isSaveSql() ? Collections.singletonList(parameter.getSql()) : null);
@@ -144,7 +147,9 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
             }
 
             try {
-                handleExportFile(origin);
+                String returnVal = handleExportFile(origin);
+                LOGGER.info("ResultSetExportTask has been executed successfully");
+                return ResultSetExportResult.succeed(returnVal);
             } catch (Exception e) {
                 LOGGER.warn("Post processing export file failed.");
                 throw e;
@@ -153,8 +158,6 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
             LOGGER.warn("ResultSetExportTask failed.", e);
             throw e;
         }
-        LOGGER.info("ResultSetExportTask has been executed successfully");
-        return ResultSetExportResult.succeed(fileName);
     }
 
     private DataTransferConfig convertParam2TransferConfig(ResultSetExportTaskParameter parameter) {
@@ -188,30 +191,33 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
         }
         config.setCsvConfig(csvConfig);
 
-        config.setConnectionInfo(
-                ((ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(session)).toConnectionInfo());
+        ConnectionInfo connectionInfo =
+                ((ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(session)).toConnectionInfo();
+        connectionInfo.setSchema(parameter.getDatabase());
+        config.setConnectionInfo(connectionInfo);
+
 
         config.setQuerySql(parameter.getSql());
         config.setFileType(parameter.getFileFormat().name());
-        config.setMaskConfig(getMaskConfig(parameter));
+        setColumnConfig(config, parameter);
         config.setCursorFetchSize(dataTransferProperties.getCursorFetchSize());
         config.setUsePrepStmts(dataTransferProperties.isUseServerPrepStmts());
         return config;
     }
 
-    private Map<TableIdentity, Map<String, AbstractDataMasker>> getMaskConfig(ResultSetExportTaskParameter parameter) {
+    private void setColumnConfig(DataTransferConfig config, ResultSetExportTaskParameter parameter) {
+        List<DBTableColumn> tableColumns = new ArrayList<>();
+        config.setColumns(tableColumns);
         HashMap<TableIdentity, Map<String, AbstractDataMasker>> maskConfigMap = new HashMap<>();
+        config.setMaskConfig(maskConfigMap);
         List<MaskingAlgorithm> algorithms = parameter.getRowDataMaskingAlgorithms();
-        if (!needDataMasking(algorithms)) {
-            return maskConfigMap;
-        }
         Map<String, Map<String, List<OrdinalColumn>>> catalog2TableColumns = new HashMap<>();
         try {
             SyncJdbcExecutor syncJdbcExecutor = session.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY);
             ResultSetMetaData rsMetaData =
                     syncJdbcExecutor.query(parameter.getSql(), pss -> pss.setMaxRows(10), ResultSet::getMetaData);
             if (rsMetaData == null) {
-                return maskConfigMap;
+                throw new UnexpectedException("Query rs metadata failed.");
             }
             int columnCount = rsMetaData.getColumnCount();
             for (int index = 1; index <= columnCount; index++) {
@@ -222,12 +228,19 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
                         catalog2TableColumns.computeIfAbsent(catalogName, k -> new HashMap<>());
                 List<OrdinalColumn> columns = table2Columns.computeIfAbsent(tableName, k -> new ArrayList<>());
                 columns.add(new OrdinalColumn(index - 1, columnName));
+                DBTableColumn column = new DBTableColumn();
+                column.setSchemaName(catalogName);
+                column.setTableName(tableName);
+                column.setName(columnName);
+                tableColumns.add(column);
             }
         } catch (Exception e) {
             throw OBException.executeFailed(
                     "Query result metadata failed, please try again, message=" + ExceptionUtils.getRootCauseMessage(e));
         }
-
+        if (!needDataMasking(algorithms)) {
+            return;
+        }
         DataMaskerFactory maskerFactory = new DataMaskerFactory();
         for (String catalogName : catalog2TableColumns.keySet()) {
             Map<String, List<OrdinalColumn>> tableName2Columns = catalog2TableColumns.get(catalogName);
@@ -247,7 +260,6 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
                 maskConfigMap.put(TableIdentity.of(catalogName, tableName), column2Masker);
             }
         }
-        return maskConfigMap;
     }
 
     private void validateSuccessful(DataTransferTaskResult result) {
@@ -256,20 +268,24 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
         Verify.verify(result.getDataObjectsInfo().get(0).getStatus() == Status.SUCCESS, "Result export task failed!");
     }
 
-    private String getDumpFilePath(DataTransferTaskResult result, String extension) {
+    private String getDumpFilePath(DataTransferTaskResult result, String extension) throws Exception {
         List<URL> exportPaths = result.getDataObjectsInfo().get(0).getExportPaths();
         if (CollectionUtils.isEmpty(exportPaths)) {
-            return getDumpFileDirectory() + getFileName(extension);
+            return Paths.get(getDumpFileDirectory(), getFileName(extension)).toString();
         }
-        return exportPaths.get(0).getFile();
+        return exportPaths.get(0).toURI().getPath();
     }
 
     private String getFileName(String extension) {
         return parameter.getTableName() + ".0.0" + extension;
     }
 
-    private String getDumpFileDirectory() {
-        return workingDir.getPath() + "/data/" + parameter.getDatabase() + "/TABLE/";
+    private String getDumpFileDirectory() throws IOException {
+        File dir = Paths.get(workingDir.getPath(), "data", parameter.getDatabase(), "TABLE").toFile();
+        if (!dir.exists()) {
+            FileUtils.forceMkdir(dir);
+        }
+        return dir.getPath();
     }
 
     private boolean needDataMasking(List<MaskingAlgorithm> algorithms) {
@@ -284,12 +300,11 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
         return false;
     }
 
-    private void handleExportFile(File origin) throws Exception {
+    private String handleExportFile(File origin) throws Exception {
         try {
             if (cloudObjectStorageService.supported()) {
                 try {
-                    String objectName = cloudObjectStorageService.uploadTemp(fileName, origin);
-                    ((OssTaskReferManager) SpringContextUtil.getBean("ossTaskReferManager")).put(fileName, objectName);
+                    return cloudObjectStorageService.uploadTemp(fileName, origin);
                 } catch (Exception e) {
                     throw new UnexpectedException("upload result set export file to Object Storage failed", e);
                 }
@@ -299,6 +314,7 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
                     FileUtils.deleteQuietly(dest);
                 }
                 FileUtils.moveFile(origin, dest);
+                return dest.getName();
             }
         } finally {
             FileUtils.deleteQuietly(origin);

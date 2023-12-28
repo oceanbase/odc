@@ -38,7 +38,7 @@ import com.oceanbase.odc.metadb.task.TaskRepository;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
 import com.oceanbase.odc.service.flow.model.QueryTaskInstanceParams;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
-import com.oceanbase.odc.service.flow.task.model.MockTaskConfig;
+import com.oceanbase.odc.service.flow.task.model.OdcMockTaskConfig;
 
 /**
  * @author wenniu.ly
@@ -156,7 +156,7 @@ public class TaskServiceTest extends ServiceTestEnv {
         CreateFlowInstanceReq req = new CreateFlowInstanceReq();
         req.setConnectionId(2L);
         req.setDatabaseName("test_database");
-        req.setParameters(new MockTaskConfig());
+        req.setParameters(new OdcMockTaskConfig());
         req.setTaskType(TaskType.ASYNC);
         req.setDescription("test_task");
         return req;

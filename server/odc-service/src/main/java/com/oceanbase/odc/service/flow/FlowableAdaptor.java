@@ -22,6 +22,8 @@ import org.flowable.engine.runtime.Execution;
 import org.flowable.engine.runtime.ProcessInstance;
 import org.flowable.task.service.delegate.DelegateTask;
 
+import com.oceanbase.odc.common.lang.Pair;
+import com.oceanbase.odc.core.flow.builder.TimerBoundaryEventBuilder;
 import com.oceanbase.odc.core.flow.model.FlowableElement;
 import com.oceanbase.odc.core.flow.model.FlowableElementType;
 import com.oceanbase.odc.service.flow.instance.BaseFlowNodeInstance;
@@ -116,14 +118,12 @@ public interface FlowableAdaptor {
             @NonNull Long flowInstanceId);
 
     /**
-     * Bind events to specific node instances, for example, the
-     * {@link com.oceanbase.odc.flow.engine.builder.TimerBoundaryEventBuilder} is bound to the
+     * Bind events to node instances, for example, the {@link TimerBoundaryEventBuilder} is bound to the
      * {@link FlowApprovalInstance}
      *
-     * @param flowableElement
-     * @param instance
+     * @param elements
      */
-    void setFlowableElement(@NonNull BaseFlowNodeInstance instance, @NonNull FlowableElement flowableElement);
+    void setFlowableElements(@NonNull List<Pair<BaseFlowNodeInstance, FlowableElement>> elements);
 
     /**
      * Bind the {@link FlowInstance#getId()} to the {@link ProcessInstance#getId()}
