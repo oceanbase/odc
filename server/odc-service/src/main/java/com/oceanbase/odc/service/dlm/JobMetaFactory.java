@@ -21,7 +21,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.service.dlm.model.DlmTask;
 import com.oceanbase.odc.service.task.constants.JobDataMapConstants;
 import com.oceanbase.odc.service.task.executor.task.DataArchiveTask;
@@ -87,9 +86,9 @@ public class JobMetaFactory extends AbstractJobMetaFactory {
         Map<String, String> jobParameters = new HashMap<>();
         jobParameters.put(JobDataMapConstants.META_DB_TASK_PARAMETER, JobUtils.toJson(jobReqs));
         return DefaultJobDefinition.builder().jobClass(DataArchiveTask.class)
-            .jobParameters(jobParameters)
-            .jobType(com.oceanbase.odc.service.schedule.model.JobType.DATA_ARCHIVE.name())
-            .build();
+                .jobParameters(jobParameters)
+                .jobType(com.oceanbase.odc.service.schedule.model.JobType.DATA_ARCHIVE.name())
+                .build();
     }
 
     public JobReq buildJobReq(DlmTask parameters) {
