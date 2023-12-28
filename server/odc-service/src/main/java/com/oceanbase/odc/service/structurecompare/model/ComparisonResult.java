@@ -13,24 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.plugin.schema.mysql;
 
-import java.sql.Connection;
-
-import org.pf4j.Extension;
-
-import com.oceanbase.odc.plugin.schema.obmysql.OBMySQLDatabaseExtension;
-import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
+package com.oceanbase.odc.service.structurecompare.model;
 
 /**
  * @author jingtian
- * @date 2023/6/29
- * @since 4.2.0
+ * @date 2023/12/19
+ * @since ODC_release_4.2.4
  */
-@Extension
-public class MySQLDatabaseExtension extends OBMySQLDatabaseExtension {
-    @Override
-    protected DBSchemaAccessor getSchemaAccessor(Connection connection) {
-        return new MySQLSchemaBrowserExtension().getDBSchemaAccessor(connection);
-    }
+public enum ComparisonResult {
+    ONLY_IN_SOURCE,
+    ONLY_IN_TARGET,
+    CONSISTENT,
+    INCONSISTENT,
+    MISSING_IN_SOURCE,
+    UNSUPPORTED
 }

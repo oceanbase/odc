@@ -13,24 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.plugin.schema.mysql;
+package com.oceanbase.odc.plugin.schema.oboracle;
 
 import java.sql.Connection;
 
 import org.pf4j.Extension;
 
-import com.oceanbase.odc.plugin.schema.obmysql.OBMySQLDatabaseExtension;
+import com.oceanbase.odc.plugin.schema.api.SchemaBrowserExtensionPoint;
+import com.oceanbase.odc.plugin.schema.oboracle.utils.DBAccessorUtil;
+import com.oceanbase.tools.dbbrowser.editor.DBTableEditor;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 
 /**
  * @author jingtian
- * @date 2023/6/29
- * @since 4.2.0
+ * @date 2024/1/5
+ * @since ODC_release_4.2.4
  */
 @Extension
-public class MySQLDatabaseExtension extends OBMySQLDatabaseExtension {
+public class OBOracleSchemaBrowserExtension implements SchemaBrowserExtensionPoint {
     @Override
-    protected DBSchemaAccessor getSchemaAccessor(Connection connection) {
-        return new MySQLSchemaBrowserExtension().getDBSchemaAccessor(connection);
+    public DBSchemaAccessor getDBSchemaAccessor(Connection connection) {
+        return DBAccessorUtil.getSchemaAccessor(connection);
+    }
+
+    @Override
+    public DBTableEditor getDBTableEditor(Connection connection) {
+        return DBAccessorUtil.getTableEditor(connection);
     }
 }

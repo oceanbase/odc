@@ -63,7 +63,9 @@ public class MySQLTableEditorTest {
         String ddl =
                 tableEditor.generateUpdateObjectDDL(DBObjectUtilsTest.getOldTable(), DBObjectUtilsTest.getNewTable());
         Assert.assertEquals(
-                "ALTER TABLE `old_table` RENAME TO `whatever_table`;\n",
+                "ALTER TABLE `old_table` RENAME TO `whatever_table`;\n"
+                        + "ALTER TABLE `whatever_schema`.`whatever_table` CHARACTER SET = utf8mb4;\n"
+                        + "ALTER TABLE `whatever_schema`.`whatever_table` COLLATE = utf8mb4_bin;\n",
                 ddl);
     }
 
