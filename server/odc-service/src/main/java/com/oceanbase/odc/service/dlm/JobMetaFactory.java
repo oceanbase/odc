@@ -16,8 +16,17 @@
 package com.oceanbase.odc.service.dlm;
 
 import java.text.SimpleDateFormat;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
+import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.service.dlm.model.DlmTask;
+import com.oceanbase.odc.service.task.constants.JobDataMapConstants;
+import com.oceanbase.odc.service.task.executor.task.DataArchiveTask;
+import com.oceanbase.odc.service.task.schedule.DefaultJobDefinition;
+import com.oceanbase.odc.service.task.schedule.JobDefinition;
 import com.oceanbase.tools.migrator.common.configure.DataSourceInfo;
 import com.oceanbase.tools.migrator.common.configure.LogicTableConfig;
 import com.oceanbase.tools.migrator.common.dto.HistoryJob;
@@ -51,6 +60,28 @@ public class JobMetaFactory extends AbstractJobMetaFactory {
     private ShardingStrategy defaultShardingStrategy;
 
     public JobMeta create(DlmTask parameters) throws Exception {
+        JobReq req = buildJobReq(parameters);
+        JobMeta jobMeta = super.create(req);
+        jobMeta.setShardingStrategy(defaultShardingStrategy);
+        return jobMeta;
+    }
+
+    public JobDefinition createJobDefinition(List<DlmTask> tasks) {
+        List<JobReq> jobReqs = new LinkedList<>();
+        tasks.forEach(task -> {
+            try {
+                jobReqs.add(buildJobReq(task));
+            } catch (Exception e) {
+                log.error("Failed to build job req,taskId={}", task.getId(), e);
+            }
+        });
+        Map<String, String> jobParameters = new HashMap<>();
+        jobParameters.put(JobDataMapConstants.META_DB_TASK_PARAMETER, JsonUtils.toJson(jobReqs));
+        return DefaultJobDefinition.builder().jobClass(DataArchiveTask.class).jobParameters(
+                jobParameters).build();
+    }
+
+    public JobReq buildJobReq(DlmTask parameters) {
         HistoryJob historyJob = new HistoryJob();
         historyJob.setId(parameters.getId());
         historyJob.setJobType(JobType.MIGRATE);
@@ -76,12 +107,8 @@ public class JobMetaFactory extends AbstractJobMetaFactory {
         targetInfo.setQueryTimeout(taskConnectionQueryTimeout);
         log.info("Begin to create dlm job,params={}", logicTableConfig);
         // ClusterMeta and TenantMeta used to calculate min limit size.
-        JobReq req =
-                new JobReq(historyJob, parameters.getLogicTableConfig(), sourceInfo, targetInfo, new ClusterMeta(),
-                        new ClusterMeta(), new TenantMeta(), new TenantMeta());
-        JobMeta jobMeta = super.create(req);
-        jobMeta.setShardingStrategy(defaultShardingStrategy);
-        return jobMeta;
+        return new JobReq(historyJob, parameters.getLogicTableConfig(), sourceInfo, targetInfo, new ClusterMeta(),
+                new ClusterMeta(), new TenantMeta(), new TenantMeta());
     }
 
     public void setReadWriteRatio(double readWriteRatio) {
