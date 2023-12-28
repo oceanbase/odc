@@ -27,7 +27,7 @@ import lombok.Data;
  */
 @Data
 @JsonFormat(with = Feature.ACCEPT_CASE_INSENSITIVE_PROPERTIES)
-public class ProjectVO {
+public class ProjectResponse {
     /**
      * 项目 ID
      */
@@ -37,4 +37,14 @@ public class ProjectVO {
      * 传输实例的 ID
      */
     private String workerGradeId;
+
+    /**
+     * 项目状态
+     */
+    private String status;
+
+    /**
+     * 项目类型
+     */
+    private String type;
 }

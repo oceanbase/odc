@@ -23,8 +23,8 @@ import com.oceanbase.odc.service.onlineschemachange.oms.request.ListProjectReque
 import com.oceanbase.odc.service.onlineschemachange.oms.request.ProjectControlRequest;
 import com.oceanbase.odc.service.onlineschemachange.oms.response.ProjectFullVerifyResultResponse;
 import com.oceanbase.odc.service.onlineschemachange.oms.response.ProjectProgressResponse;
+import com.oceanbase.odc.service.onlineschemachange.oms.response.ProjectResponse;
 import com.oceanbase.odc.service.onlineschemachange.oms.response.ProjectStepVO;
-import com.oceanbase.odc.service.onlineschemachange.oms.response.ProjectVO;
 
 /**
  * @author yaobin
@@ -39,7 +39,7 @@ public interface ProjectOpenApiService {
      * @param request
      * @return
      */
-    List<ProjectVO> listProjects(ListProjectRequest request);
+    List<ProjectResponse> listProjects(ListProjectRequest request);
 
     /**
      * 创建项目

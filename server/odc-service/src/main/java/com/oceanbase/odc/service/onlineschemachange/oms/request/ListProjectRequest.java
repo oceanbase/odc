@@ -38,7 +38,7 @@ public class ListProjectRequest extends BaseOmsRequest {
     @OmsEnumsCheck(fieldName = "type", enumClass = ProjectTypeEnum.class)
     private String type;
 
-    private String status;
+    private List<String> status;
 
     /**
      * reference OmsDialectType
