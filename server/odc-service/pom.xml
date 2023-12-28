@@ -29,6 +29,21 @@
                 <systemPath>${project.basedir}/../../import/purejavacomm-0.0.11.1.jar</systemPath>
             </dependency>
             <dependency>
+                <groupId>com.oceanbase</groupId>
+                <artifactId>data-lifecycle-manager</artifactId>
+                <version>1.0.9-SNAPSHOT</version>
+                <!--for test-->
+                <scope>system</scope>
+                <systemPath>${project.basedir}/../../import/data-lifecycle-manager-1.0.9-SNAPSHOT.jar</systemPath>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-log4j12</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
+            <dependency>
                 <groupId>org.jetbrains</groupId>
                 <artifactId>annotations</artifactId>
                 <version>16.0.2</version>

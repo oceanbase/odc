@@ -85,6 +85,7 @@ public class TaskApplicationTest extends BaseJobTest {
         new TaskApplication().run(null);
     }
 
+
     private void mainMethodExit(int waitMills) {
         new Thread(() -> {
             try {
@@ -122,4 +123,6 @@ public class TaskApplicationTest extends BaseJobTest {
                 .jobParameters(jobData)
                 .build();
     }
+
+
 }

@@ -67,6 +67,14 @@ public class JobMetaFactory extends AbstractJobMetaFactory {
         return jobMeta;
     }
 
+    public JobMeta createForTaskFramework(DlmTask parameters) throws Exception {
+        JobReq req = buildJobReq(parameters);
+
+        JobMeta jobMeta = super.create(req);
+        jobMeta.setShardingStrategy(defaultShardingStrategy);
+        return jobMeta;
+    }
+
     public JobDefinition createJobDefinition(List<DlmTask> tasks) {
         List<JobReq> jobReqs = new LinkedList<>();
         tasks.forEach(task -> {
