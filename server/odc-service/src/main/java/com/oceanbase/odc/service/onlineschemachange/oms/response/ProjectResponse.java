@@ -22,8 +22,8 @@ import lombok.Data;
 
 /**
  * @author yaobin
- * @date 2023-06-03
- * @since 4.2.0
+ * @date 2023-12-27
+ * @since 4.2.3
  */
 @Data
 @JsonFormat(with = Feature.ACCEPT_CASE_INSENSITIVE_PROPERTIES)

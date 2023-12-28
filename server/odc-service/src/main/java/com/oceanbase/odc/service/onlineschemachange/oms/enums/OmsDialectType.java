@@ -19,8 +19,8 @@ import com.oceanbase.odc.core.shared.constant.DialectType;
 
 /**
  * @author yaobin
- * @date 2023-06-01
- * @since 4.2.0
+ * @date 2023-12-27
+ * @since 4.2.3
  */
 public enum OmsDialectType {
     /**
