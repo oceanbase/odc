@@ -23,6 +23,7 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -118,6 +119,9 @@ public class OBMySQLConnectionExtension implements ConnectionExtensionPoint {
 
     protected Map<String, String> appendDefaultJdbcUrlParameters(Map<String, String> jdbcUrlParams) {
         // there is a bug of oceanbase-client 2.4.7.1, setting this to true may cause OOM exception
+        if (Objects.isNull(jdbcUrlParams)) {
+            jdbcUrlParams = new HashMap<>();
+        }
         jdbcUrlParams.put("enableFullLinkTrace", "false");
         return jdbcUrlParams;
     }
