@@ -22,8 +22,10 @@ import java.util.Map;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.service.dlm.CloudJobStore;
 import com.oceanbase.odc.service.dlm.JobMetaFactory;
 import com.oceanbase.odc.service.task.constants.JobDataMapConstants;
+import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.tools.migrator.core.JobReq;
 import com.oceanbase.tools.migrator.core.meta.JobMeta;
 import com.oceanbase.tools.migrator.job.MigrateJob;
@@ -39,6 +41,7 @@ import lombok.extern.slf4j.Slf4j;
 public class DataArchiveTask extends BaseTask {
 
     private MigrateJob migrateJob;
+    private long percent = 0;
 
     @Override
     protected void onInit() {
@@ -51,12 +54,14 @@ public class DataArchiveTask extends BaseTask {
         List<JobReq> jobReqs = JsonUtils.fromJson(jobData.get(JobDataMapConstants.META_DB_TASK_PARAMETER),
                 new TypeReference<List<JobReq>>() {});
         JobMetaFactory jobMetaFactory = new JobMetaFactory();
+        jobMetaFactory.setJobStore(new CloudJobStore());
         for (JobReq jobReq : jobReqs) {
             JobMeta jobMeta = null;
             try {
                 jobMeta = jobMetaFactory.create(jobReq);
             } catch (Exception e) {
                 log.warn("DataArchiveTask create jobMeta failed,jobId={}", jobReq.getHistoryJob().getId(), e);
+                throw new RuntimeException(e);
             }
             migrateJob = new MigrateJob();
             migrateJob.setJobMeta(jobMeta);
@@ -66,6 +71,8 @@ public class DataArchiveTask extends BaseTask {
                 log.warn("DataArchiveTask run failed,jobId={}", jobMeta.getJobId(), e);
             }
         }
+        updateStatus(JobStatus.DONE);
+        percent = 100;
     }
 
     @Override
@@ -80,7 +87,7 @@ public class DataArchiveTask extends BaseTask {
 
     @Override
     public double getProgress() {
-        return 0;
+        return percent;
     }
 
     @Override
