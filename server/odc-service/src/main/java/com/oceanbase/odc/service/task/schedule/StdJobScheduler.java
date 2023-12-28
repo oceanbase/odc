@@ -88,7 +88,7 @@ public class StdJobScheduler implements JobScheduler {
     @Override
     public void cancelJob(Long id) throws JobException {
         JobEntity jobEntity = configuration.getTaskFrameworkService().find(id);
-        if (jobEntity.getStatus() == JobStatus.CANCELING || jobEntity.getStatus().isTerminated()) {
+        if (jobEntity.getStatus() == JobStatus.CANCELING || jobEntity.getStatus() == JobStatus.CANCELED) {
             log.warn("Job {} status is {},can not be cancelled.", id, jobEntity.getStatus().name());
             return;
         }
