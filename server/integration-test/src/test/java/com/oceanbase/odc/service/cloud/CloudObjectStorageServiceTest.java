@@ -23,7 +23,7 @@ import com.oceanbase.odc.service.objectstorage.cloud.client.NullCloudClient;
 
 public class CloudObjectStorageServiceTest {
     private CloudObjectStorageService service =
-            new CloudObjectStorageService(new NullCloudClient(), () -> null);
+            new CloudObjectStorageService(new NullCloudClient(), new NullCloudClient(), () -> null);
 
     @Test
     public void calculatePartSize_LessThanPartCount_MINSIZE() {
