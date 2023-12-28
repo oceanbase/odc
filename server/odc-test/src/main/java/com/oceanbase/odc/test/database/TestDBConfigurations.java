@@ -87,6 +87,7 @@ public class TestDBConfigurations {
 
     private Properties getTestDBProperties(TestDBType type) {
         Properties properties = new Properties();
+        properties.setProperty(TestDBConfiguration.DB_TYPE_KEY, type.toString());
         if (TestDBType.ORACLE.name().equals(type.toString())) {
             properties.setProperty(TestDBConfiguration.DB_ORACLE_HOST_KEY,
                     TestProperties.getProperty(type.commandlineKey[0]));
@@ -114,7 +115,6 @@ public class TestDBConfigurations {
             if (sysUserPasswordKey != null) {
                 properties.setProperty(TestDBConfiguration.DB_SYS_PASSWORD_KEY, sysUserPasswordKey);
             }
-            properties.setProperty(TestDBConfiguration.DB_TYPE_KEY, type.toString());
         }
         return properties;
     }
