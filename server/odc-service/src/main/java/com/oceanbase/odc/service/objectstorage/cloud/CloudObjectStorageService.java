@@ -84,14 +84,18 @@ public class CloudObjectStorageService {
     private final File tempDirectory = new File(
             CloudObjectStorageConstants.TEMP_DIR);
 
-    private CloudObjectStorage cloudObjectStorage;
+    private CloudObjectStorage publicEndpointCloudObjectStorage;
+    private CloudObjectStorage internalEndpointCloudObjectStorage;
     private ObjectStorageConfiguration objectStorageConfiguration;
 
-    public CloudObjectStorageService(@Autowired @Qualifier("cloudClient") CloudObjectStorage cloudObjectStorage,
+    public CloudObjectStorageService(
+            @Autowired @Qualifier("publicEndpointCloudClient") CloudObjectStorage publicEndpointCloudObjectStorage,
+            @Autowired @Qualifier("internalEndpointCloudClient") CloudObjectStorage internalEndpointCloudObjectStorage,
             CloudEnvConfigurations cloudEnvConfigurations) {
-        this.cloudObjectStorage = cloudObjectStorage;
+        this.publicEndpointCloudObjectStorage = publicEndpointCloudObjectStorage;
+        this.internalEndpointCloudObjectStorage = internalEndpointCloudObjectStorage;
         this.objectStorageConfiguration = cloudEnvConfigurations.getObjectStorageConfiguration();
-        if (this.cloudObjectStorage.supported()) {
+        if (this.publicEndpointCloudObjectStorage.supported()) {
             validateBucket();
             createTempDirectory();
             log.info("Cloud object storage initialized");
@@ -101,7 +105,7 @@ public class CloudObjectStorageService {
     }
 
     public boolean supported() {
-        return cloudObjectStorage.supported();
+        return publicEndpointCloudObjectStorage.supported();
     }
 
     public String getBucketName() {
@@ -167,9 +171,10 @@ public class CloudObjectStorageService {
 
     public URL generateDownloadUrl(@NotBlank String objectName, Long expirationSeconds) throws IOException {
         verifySupported();
-        ObjectMetadata objectMetadata = cloudObjectStorage.getObjectMetadata(getBucketName(), objectName);
+        ObjectMetadata objectMetadata = publicEndpointCloudObjectStorage.getObjectMetadata(getBucketName(), objectName);
         Date expirationTime = calcExpirationTime(expirationSeconds, objectMetadata.getContentLength());
-        URL presignedUrl = cloudObjectStorage.generatePresignedUrl(getBucketName(), objectName, expirationTime);
+        URL presignedUrl =
+                publicEndpointCloudObjectStorage.generatePresignedUrl(getBucketName(), objectName, expirationTime);
         log.info("generate temporary download Url successfully, expirationTime={}, objectName={}, presignedUrl={}",
                 expirationTime, objectName, presignedUrl);
         return presignedUrl;
@@ -178,7 +183,8 @@ public class CloudObjectStorageService {
     public URL generateUploadUrl(@NotBlank String objectName) {
         verifySupported();
         Date expirationTime = new Date(System.currentTimeMillis() + PRESIGNED_UPLOAD_URL_EXPIRATION_SECONDS * 1000);
-        URL presignedUrl = cloudObjectStorage.generatePresignedPutUrl(getBucketName(), objectName, expirationTime);
+        URL presignedUrl =
+                publicEndpointCloudObjectStorage.generatePresignedPutUrl(getBucketName(), objectName, expirationTime);
         log.info("generate temporary upload Url successfully, expirationTime={}, objectName={}, presignedUrl={}",
                 expirationTime, objectName, presignedUrl);
         return presignedUrl;
@@ -192,12 +198,12 @@ public class CloudObjectStorageService {
      * @throws IOException 目标对象不存在或读取内容失败
      */
     public byte[] readContent(@NotBlank String objectName) throws IOException {
-        boolean exist = cloudObjectStorage.doesObjectExist(getBucketName(), objectName);
+        boolean exist = internalEndpointCloudObjectStorage.doesObjectExist(getBucketName(), objectName);
         if (!exist) {
             throw new FileNotFoundException("File dose not exist, object name " + objectName);
         }
         try (InputStream inputStream =
-                cloudObjectStorage.getObject(getBucketName(), objectName).getObjectContent()) {
+                internalEndpointCloudObjectStorage.getObject(getBucketName(), objectName).getObjectContent()) {
             return StreamUtils.copyToByteArray(inputStream);
         } catch (Exception exception) {
             log.warn("Read content failed, objectName={}", objectName, exception);
@@ -230,7 +236,7 @@ public class CloudObjectStorageService {
         DeleteObjectsRequest request = new DeleteObjectsRequest();
         request.setBucketName(getBucketName());
         request.setKeys(objectNames);
-        DeleteObjectsResult result = cloudObjectStorage.deleteObjects(request);
+        DeleteObjectsResult result = internalEndpointCloudObjectStorage.deleteObjects(request);
         List<String> deletedObjects = result.getDeletedObjects();
         log.info("Delete files success, tryDeleteObjectName={}, deletedObjectNames={}",
                 objectNames, deletedObjects);
@@ -248,7 +254,7 @@ public class CloudObjectStorageService {
         String absolute = tempDirectory.getAbsolutePath() + "/" + UUID.randomUUID() + ".tmp";
         File targetFile = new File(absolute);
         GetObjectRequest request = new GetObjectRequest(getBucketName(), objectName);
-        cloudObjectStorage.getObject(request, targetFile);
+        internalEndpointCloudObjectStorage.getObject(request, targetFile);
         return targetFile;
     }
 
@@ -305,7 +311,8 @@ public class CloudObjectStorageService {
         BinarySize criticalSize = BinarySizeUnit.MB.of(CloudObjectStorageConstants.CRITICAL_FILE_SIZE_IN_MB);
         if (fileSize.compareTo(criticalSize) < 0) {
             log.debug("Use putObject method to upload, fileSize={}", fileSize);
-            PutObjectResult result = cloudObjectStorage.putObject(getBucketName(), objectName, file, metadata);
+            PutObjectResult result =
+                    internalEndpointCloudObjectStorage.putObject(getBucketName(), objectName, file, metadata);
             log.info("Simple upload process is completed, fileSize={}, durationMS={} ms, result={}", fileSize,
                     System.currentTimeMillis() - startTime, result);
         } else {
@@ -330,7 +337,7 @@ public class CloudObjectStorageService {
         InitiateMultipartUploadRequest initiateMultipartUploadRequest =
                 new InitiateMultipartUploadRequest(bucketName, objectName, metadata);
         InitiateMultipartUploadResult initiateMultipartUploadResult =
-                cloudObjectStorage.initiateMultipartUpload(initiateMultipartUploadRequest);
+                internalEndpointCloudObjectStorage.initiateMultipartUpload(initiateMultipartUploadRequest);
         String uploadId = initiateMultipartUploadResult.getUploadId();
         List<PartETag> partTags = new ArrayList<>();
         int partCount = (int) (fileLength / partSize);
@@ -350,14 +357,14 @@ public class CloudObjectStorageService {
                 uploadPartRequest.setInputStream(input);
                 uploadPartRequest.setPartSize(curPartSize);
                 uploadPartRequest.setPartNumber(i + 1);
-                UploadPartResult uploadPartResult = cloudObjectStorage.uploadPart(uploadPartRequest);
+                UploadPartResult uploadPartResult = internalEndpointCloudObjectStorage.uploadPart(uploadPartRequest);
                 partTags.add(uploadPartResult.getPartETag());
             }
         }
         CompleteMultipartUploadRequest completeMultipartUploadRequest =
                 new CompleteMultipartUploadRequest(bucketName, objectName, uploadId, partTags);
         CompleteMultipartUploadResult completeMultipartUploadResult =
-                cloudObjectStorage.completeMultipartUpload(completeMultipartUploadRequest);
+                internalEndpointCloudObjectStorage.completeMultipartUpload(completeMultipartUploadRequest);
         log.info("Complete multipart upload, result={}", completeMultipartUploadResult);
         return completeMultipartUploadResult;
     }
@@ -382,12 +389,12 @@ public class CloudObjectStorageService {
             return;
         }
         String bucketName = getBucketName();
-        boolean isExist = cloudObjectStorage.doesBucketExist(bucketName);
+        boolean isExist = publicEndpointCloudObjectStorage.doesBucketExist(bucketName);
         Verify.verify(isExist, String.format("object storage bucket '%s' not exists", bucketName));
 
         String region = objectStorageConfiguration.getRegion();
         if (StringUtils.isNotEmpty(region)) {
-            String location = cloudObjectStorage.getBucketLocation(bucketName);
+            String location = publicEndpointCloudObjectStorage.getBucketLocation(bucketName);
             Verify.verify(StringUtils.equals(region, location) || StringUtils.endsWith(location, region),
                     "object storage bucket region does not match location, location=" + location + ", region="
                             + region);
