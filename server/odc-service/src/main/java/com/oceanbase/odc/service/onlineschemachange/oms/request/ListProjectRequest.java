@@ -30,7 +30,7 @@ import lombok.Data;
 /**
  * @author yaobin
  * @date 2023-12-27
- * @since 4.2.4
+ * @since 4.2.3
  */
 @Data
 public class ListProjectRequest extends BaseOmsRequest {
@@ -38,6 +38,9 @@ public class ListProjectRequest extends BaseOmsRequest {
     @OmsEnumsCheck(fieldName = "type", enumClass = ProjectTypeEnum.class)
     private String type;
 
+    /**
+     * project status
+     */
     private List<String> status;
 
     /**
