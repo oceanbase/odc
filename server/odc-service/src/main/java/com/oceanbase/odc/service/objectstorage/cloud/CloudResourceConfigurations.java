@@ -60,16 +60,19 @@ public class CloudResourceConfigurations {
         return new DefaultCloudEnvConfigurations(cloudObjectStorageProperties);
     }
 
-    @Bean
+    @Bean("publicEndpointCloudClient")
     @RefreshScope
-    public CloudClient cloudClient(@Autowired CloudEnvConfigurations cloudEnvConfigurations) {
+    public CloudClient publicEndpointCloudClient(@Autowired CloudEnvConfigurations cloudEnvConfigurations) {
         ObjectStorageConfiguration objectStorageConfiguration = cloudEnvConfigurations.getObjectStorageConfiguration();
         CloudProvider cloudProvider = objectStorageConfiguration.getCloudProvider();
-        log.info("recreate cloud client, ak=" + objectStorageConfiguration.getAccessKeyId());
+        log.info("recreate public endpoint cloud client, ak=" + objectStorageConfiguration.getAccessKeyId());
         switch (cloudProvider) {
             case ALIBABA_CLOUD:
                 try {
-                    return createAlibabaCloudClient(objectStorageConfiguration);
+                    return createAlibabaCloudClient(objectStorageConfiguration, createOssClient(
+                            objectStorageConfiguration.getAccessKeyId(),
+                            objectStorageConfiguration.getAccessKeySecret(),
+                            objectStorageConfiguration.getPublicEndpoint()));
                 } catch (ClientException e) {
                     throw new RuntimeException("Create Alibaba Cloud Client failed", e);
                 }
@@ -80,16 +83,33 @@ public class CloudResourceConfigurations {
         }
     }
 
-    CloudClient createAlibabaCloudClient(ObjectStorageConfiguration configuration)
+    @Bean("internalEndpointCloudClient")
+    @RefreshScope
+    public CloudClient internalEndpointCloudClient(@Autowired CloudEnvConfigurations cloudEnvConfigurations) {
+        ObjectStorageConfiguration objectStorageConfiguration = cloudEnvConfigurations.getObjectStorageConfiguration();
+        CloudProvider cloudProvider = objectStorageConfiguration.getCloudProvider();
+        log.info("recreate internal endpoint cloud client, ak=" + objectStorageConfiguration.getAccessKeyId());
+        switch (cloudProvider) {
+            case ALIBABA_CLOUD:
+                try {
+                    return createAlibabaCloudClient(objectStorageConfiguration, createOssClient(
+                            objectStorageConfiguration.getAccessKeyId(),
+                            objectStorageConfiguration.getAccessKeySecret(),
+                            objectStorageConfiguration.getInternalEndpoint()));
+                } catch (ClientException e) {
+                    throw new RuntimeException("Create Alibaba Cloud Client failed", e);
+                }
+            case AWS:
+                return createAmazonCloudClient(objectStorageConfiguration);
+            default:
+                return new NullCloudClient();
+        }
+    }
+
+    CloudClient createAlibabaCloudClient(ObjectStorageConfiguration configuration, OSS oss)
             throws ClientException {
-        String internalEndpoint = configuration.getInternalEndpoint();
         String accessKeyId = configuration.getAccessKeyId();
         String accessKeySecret = configuration.getAccessKeySecret();
-        com.aliyun.oss.ClientBuilderConfiguration clientBuilderConfiguration =
-                new com.aliyun.oss.ClientBuilderConfiguration();
-        clientBuilderConfiguration.setProtocol(com.aliyun.oss.common.comm.Protocol.HTTPS);
-        OSS oss = new OSSClientBuilder().build(internalEndpoint, accessKeyId, accessKeySecret,
-                clientBuilderConfiguration);
 
         // 添加endpoint（直接使用STS endpoint，前两个参数留空，无需添加region ID）
         // 构造default profile（参数留空，无需添加region ID）
@@ -121,6 +141,14 @@ public class CloudResourceConfigurations {
         String roleSessionName = configuration.getRoleSessionName();
         String roleArn = configuration.getRoleArn();
         return new AmazonCloudClient(s3, sts, roleSessionName, roleArn);
+    }
+
+    private OSS createOssClient(String ak, String sk, String endpoint) {
+        com.aliyun.oss.ClientBuilderConfiguration clientBuilderConfiguration =
+                new com.aliyun.oss.ClientBuilderConfiguration();
+        clientBuilderConfiguration.setProtocol(com.aliyun.oss.common.comm.Protocol.HTTPS);
+        OSS oss = new OSSClientBuilder().build(endpoint, ak, sk, clientBuilderConfiguration);
+        return oss;
     }
 
 }
