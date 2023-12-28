@@ -69,6 +69,7 @@ public class OdcSchemaStructureComparator implements DBStructureComparator {
     private DialectType targetDialectType;
     private Map<String, DBTable> sourceTableMapping = new HashMap<>();
     private Map<String, DBTable> targetTableMapping = new HashMap<>();
+    private final String DEFAULT_SQL_DELIMITER = ";";
 
     public OdcSchemaStructureComparator(@NonNull ConnectionSession sourceConnectionSession,
             @NonNull ConnectionSession targetConnectionSession) {
@@ -86,6 +87,9 @@ public class OdcSchemaStructureComparator implements DBStructureComparator {
     public List<DBObjectComparisonResult> compareTables() {
         List<DBObjectComparisonResult> returnVal = new LinkedList<>();
         initTableMapping();
+        if (this.sourceTableMapping.isEmpty() && this.targetTableMapping.isEmpty()) {
+            return returnVal;
+        }
 
         List<String> toCreatedNames = new ArrayList<>();
         List<String> toComparedNames = new ArrayList<>();
@@ -124,6 +128,9 @@ public class OdcSchemaStructureComparator implements DBStructureComparator {
     public List<DBObjectComparisonResult> compareTables(List<String> tableNames) {
         List<DBObjectComparisonResult> returnVal = new LinkedList<>();
         initTableMapping();
+        if (tableNames.isEmpty()) {
+            return returnVal;
+        }
 
         tableNames.forEach(name -> {
             DBObjectComparisonResult result =
@@ -151,8 +158,11 @@ public class OdcSchemaStructureComparator implements DBStructureComparator {
 
     private List<DBObjectComparisonResult> buildCreatedTableResults(List<String> toCreate,
             Map<String, DBTable> sourceTableMapping, String sourceSchemaName, String targetSchemaName) {
-        toCreate = getTableNamesByDependencyOrder(toCreate, sourceTableMapping, sourceSchemaName);
         List<DBObjectComparisonResult> returnVal = new LinkedList<>();
+        if (toCreate.isEmpty()) {
+            return returnVal;
+        }
+        toCreate = getTableNamesByDependencyOrder(toCreate, sourceTableMapping, sourceSchemaName);
 
         toCreate.forEach(name -> {
             DBObjectComparisonResult result =
@@ -172,10 +182,13 @@ public class OdcSchemaStructureComparator implements DBStructureComparator {
     private List<DBObjectComparisonResult> buildDroppedTableResults(List<String> toDrop,
             Map<String, DBTable> targetTableMapping,
             String sourceSchemaName, String targetSchemaName) {
+        List<DBObjectComparisonResult> returnVal = new LinkedList<>();
+        if (toDrop.isEmpty()) {
+            return returnVal;
+        }
         toDrop = getTableNamesByDependencyOrder(toDrop, targetTableMapping, targetSchemaName);
         Collections.reverse(toDrop);
 
-        List<DBObjectComparisonResult> returnVal = new LinkedList<>();
         toDrop.forEach(name -> {
             DBObjectComparisonResult result =
                     new DBObjectComparisonResult(DBObjectType.TABLE, name, sourceSchemaName, targetSchemaName);
@@ -263,7 +276,8 @@ public class OdcSchemaStructureComparator implements DBStructureComparator {
                         this.sourceSchemaName, this.targetSchemaName);
                 result.setComparisonResult(ComparisonResult.ONLY_IN_TARGET);
                 result.setChangeScript(
-                        this.targetTableEditor.getColumnEditor().generateDropObjectDDL(tarColMapping.get(tarColName)));
+                        appendDelimiterIfNotExist(this.targetTableEditor.getColumnEditor()
+                                .generateDropObjectDDL(tarColMapping.get(tarColName))));
                 returnVal.add(result);
             }
         });
@@ -280,14 +294,15 @@ public class OdcSchemaStructureComparator implements DBStructureComparator {
                 if (!ddl.isEmpty()) {
                     // column to be updated
                     result.setComparisonResult(ComparisonResult.INCONSISTENT);
-                    result.setChangeScript(ddl);
+                    result.setChangeScript(appendDelimiterIfNotExist(ddl));
                 } else {
                     result.setComparisonResult(ComparisonResult.CONSISTENT);
                 }
             } else {
                 // column to be created
                 result.setComparisonResult(ComparisonResult.ONLY_IN_SOURCE);
-                result.setChangeScript(this.targetTableEditor.getColumnEditor().generateCreateObjectDDL(copiedSrcCol));
+                result.setChangeScript(appendDelimiterIfNotExist(
+                        this.targetTableEditor.getColumnEditor().generateCreateObjectDDL(copiedSrcCol)));
             }
             returnVal.add(result);
         });
@@ -316,7 +331,8 @@ public class OdcSchemaStructureComparator implements DBStructureComparator {
                         this.sourceSchemaName, this.targetSchemaName);
                 result.setComparisonResult(ComparisonResult.ONLY_IN_TARGET);
                 result.setChangeScript(
-                        this.targetTableEditor.getIndexEditor().generateDropObjectDDL(tarIdxMapping.get(tarIdxName)));
+                        appendDelimiterIfNotExist(this.targetTableEditor.getIndexEditor()
+                                .generateDropObjectDDL(tarIdxMapping.get(tarIdxName))));
                 returnVal.add(result);
             }
         });
@@ -333,14 +349,15 @@ public class OdcSchemaStructureComparator implements DBStructureComparator {
                 if (!ddl.isEmpty()) {
                     // index to be updated
                     result.setComparisonResult(ComparisonResult.INCONSISTENT);
-                    result.setChangeScript(ddl);
+                    result.setChangeScript(appendDelimiterIfNotExist(ddl));
                 } else {
                     result.setComparisonResult(ComparisonResult.CONSISTENT);
                 }
             } else {
                 // index to be created
                 result.setComparisonResult(ComparisonResult.ONLY_IN_SOURCE);
-                result.setChangeScript(this.targetTableEditor.getIndexEditor().generateCreateObjectDDL(copiedSrcIdx));
+                result.setChangeScript(appendDelimiterIfNotExist(
+                        this.targetTableEditor.getIndexEditor().generateCreateObjectDDL(copiedSrcIdx)));
             }
             returnVal.add(result);
         });
@@ -368,8 +385,8 @@ public class OdcSchemaStructureComparator implements DBStructureComparator {
                 DBObjectComparisonResult result = new DBObjectComparisonResult(DBObjectType.CONSTRAINT, tarConsName,
                         this.sourceSchemaName, this.targetSchemaName);
                 result.setComparisonResult(ComparisonResult.ONLY_IN_TARGET);
-                result.setChangeScript(this.targetTableEditor.getConstraintEditor()
-                        .generateDropObjectDDL(tarConsMapping.get(tarConsName)));
+                result.setChangeScript(appendDelimiterIfNotExist(this.targetTableEditor.getConstraintEditor()
+                        .generateDropObjectDDL(tarConsMapping.get(tarConsName))));
                 returnVal.add(result);
             }
         });
@@ -386,7 +403,7 @@ public class OdcSchemaStructureComparator implements DBStructureComparator {
                 if (!ddl.isEmpty()) {
                     // constraint to be updated
                     result.setComparisonResult(ComparisonResult.INCONSISTENT);
-                    result.setChangeScript(ddl);
+                    result.setChangeScript(appendDelimiterIfNotExist(ddl));
                 } else {
                     result.setComparisonResult(ComparisonResult.CONSISTENT);
                 }
@@ -394,7 +411,8 @@ public class OdcSchemaStructureComparator implements DBStructureComparator {
                 // constraint to be created
                 result.setComparisonResult(ComparisonResult.ONLY_IN_SOURCE);
                 result.setChangeScript(
-                        this.targetTableEditor.getConstraintEditor().generateCreateObjectDDL(copiedSrcCons));
+                        appendDelimiterIfNotExist(
+                                this.targetTableEditor.getConstraintEditor().generateCreateObjectDDL(copiedSrcCons)));
             }
             returnVal.add(result);
         });
@@ -411,7 +429,8 @@ public class OdcSchemaStructureComparator implements DBStructureComparator {
         } else if (Objects.isNull(srcPartition)) {
             // partition to be dropped
             result.setComparisonResult(ComparisonResult.ONLY_IN_TARGET);
-            result.setChangeScript(this.targetTableEditor.getPartitionEditor().generateDropObjectDDL(tgtPartition));
+            result.setChangeScript(appendDelimiterIfNotExist(
+                    this.targetTableEditor.getPartitionEditor().generateDropObjectDDL(tgtPartition)));
         } else if (Objects.isNull(tgtPartition)) {
             // partition to be created
             result.setComparisonResult(ComparisonResult.ONLY_IN_SOURCE);
@@ -419,7 +438,8 @@ public class OdcSchemaStructureComparator implements DBStructureComparator {
             BeanUtils.copyProperties(srcPartition, copiedSrcPartition);
             copiedSrcPartition.setSchemaName(this.targetSchemaName);
             result.setChangeScript(
-                    this.targetTableEditor.getPartitionEditor().generateCreateObjectDDL(copiedSrcPartition));
+                    appendDelimiterIfNotExist(
+                            this.targetTableEditor.getPartitionEditor().generateCreateObjectDDL(copiedSrcPartition)));
         } else {
             DBTablePartition copiedSrcPartition = new DBTablePartition();
             BeanUtils.copyProperties(srcPartition, copiedSrcPartition);
@@ -431,7 +451,7 @@ public class OdcSchemaStructureComparator implements DBStructureComparator {
             } else {
                 // partition to be updated
                 result.setComparisonResult(ComparisonResult.INCONSISTENT);
-                result.setChangeScript(ddl);
+                result.setChangeScript(appendDelimiterIfNotExist(ddl));
             }
         }
         return result;
@@ -462,7 +482,6 @@ public class OdcSchemaStructureComparator implements DBStructureComparator {
             inDegree.putIfAbsent(tableName, 0);
         });
 
-        // Topological sort
         List<String> tabNamesByDependencyOrder = new ArrayList<>();
         Queue<String> queue = new LinkedList<>();
 
@@ -473,11 +492,11 @@ public class OdcSchemaStructureComparator implements DBStructureComparator {
             }
         }
 
+        // Topological sort
         while (!queue.isEmpty()) {
             String currentTable = queue.poll();
             tabNamesByDependencyOrder.add(currentTable);
 
-            // Decrease the in-degree of all dependent tables
             for (String dependentTable : dependencyGraph.get(currentTable)) {
                 int updatedInDegree = inDegree.get(dependentTable) - 1;
                 inDegree.put(dependentTable, updatedInDegree);
@@ -542,5 +561,13 @@ public class OdcSchemaStructureComparator implements DBStructureComparator {
         } else {
             return new OracleSqlBuilder();
         }
+    }
+
+    private String appendDelimiterIfNotExist(String sql) {
+        String returnVal = sql.trim();
+        if (!returnVal.endsWith(DEFAULT_SQL_DELIMITER)) {
+            return returnVal + DEFAULT_SQL_DELIMITER + "\n";
+        }
+        return sql;
     }
 }

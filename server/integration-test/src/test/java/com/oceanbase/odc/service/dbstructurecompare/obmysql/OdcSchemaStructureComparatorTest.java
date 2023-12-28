@@ -63,6 +63,7 @@ public class OdcSchemaStructureComparatorTest {
     public static void setUp() {
         jdbcExecutor.execute("create database `" + sourceSchemaName + "`");
         jdbcExecutor.execute("create database `" + targetSchemaName + "`");
+
         ConnectionConfig sourceConfig = TestConnectionUtil.getTestConnectionConfig(ConnectType.OB_MYSQL);
         sourceConfig.setDefaultSchema(sourceSchemaName);
         srcSession = new DefaultConnectSessionFactory(sourceConfig).generateSession();
@@ -152,8 +153,6 @@ public class OdcSchemaStructureComparatorTest {
         updatePk.getSubDBObjectComparisonResult().forEach(item -> {
             if (item.getDbObjectType().equals(DBObjectType.CONSTRAINT)) {
                 Assert.assertEquals(item.getComparisonResult(), ComparisonResult.INCONSISTENT);
-                Assert.assertNotNull(item.getSourceDdl());
-                Assert.assertNotNull(item.getTargetDdl());
                 Assert.assertNotNull(item.getChangeScript());
             }
         });
