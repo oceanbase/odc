@@ -54,7 +54,7 @@ public class CustomInvalidSessionStrategy implements InvalidSessionStrategy {
             throws IOException, ServletException {
         log.info("Session invalid for uri={}", httpServletRequest.getRequestURI());
         if (httpServletRequest.getRequestURI().startsWith(DATA_URI_PREFIX)) {
-            BadRequestException exception = new BadRequestException("Invalid Session");
+            BadRequestException exception = new BadRequestException("Invalid Http Session");
             WebResponseUtils.writeBackLoginExpiredJson(httpServletRequest, httpServletResponse, exception,
                     this.localeResolver);
         } else {

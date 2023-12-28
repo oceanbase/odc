@@ -62,7 +62,6 @@ import com.oceanbase.odc.metadb.regulation.risklevel.RiskLevelRepository;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.metadb.task.TaskRepository;
 import com.oceanbase.odc.metadb.task.TaskSpecs;
-import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.flow.ApprovalPermissionService;
 import com.oceanbase.odc.service.flow.instance.FlowInstance;
 import com.oceanbase.odc.service.flow.model.FlowInstanceDetailResp;
@@ -71,6 +70,7 @@ import com.oceanbase.odc.service.flow.model.FlowNodeInstanceDetailResp;
 import com.oceanbase.odc.service.flow.model.FlowNodeInstanceDetailResp.FlowNodeInstanceMapper;
 import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
 import com.oceanbase.odc.service.flow.model.FlowTaskExecutionStrategy;
+import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.integration.IntegrationService;
 import com.oceanbase.odc.service.integration.client.ApprovalClient;
 import com.oceanbase.odc.service.integration.model.ApprovalProperties;
@@ -119,13 +119,12 @@ public class FlowResponseMapperFactory {
     private FlowInstanceRepository flowInstanceRepository;
     @Autowired
     private UserResourceRoleRepository userResourceRoleRepository;
-
-    @Autowired
-    private DatabaseService databaseService;
     @Autowired
     private RiskLevelRepository riskLevelRepository;
-    private final RiskLevelMapper riskLevelMapper = RiskLevelMapper.INSTANCE;
+    @Autowired
+    private AuthenticationFacade authenticationFacade;
 
+    private final RiskLevelMapper riskLevelMapper = RiskLevelMapper.INSTANCE;
 
     public FlowNodeInstanceMapper generateNodeMapperByInstances(@NonNull Collection<FlowInstance> flowInstances) {
         return generateNodeMapper(getLongSet(flowInstances, FlowInstance::getId),
@@ -345,10 +344,11 @@ public class FlowResponseMapperFactory {
     }
 
     public Map<Long, List<RoleEntity>> getUserId2Roles(@NonNull Collection<Long> userIds) {
-        Map<Long, Set<Long>> userId2RoleIds = userRoleRepository.findByUserIdIn(userIds).stream()
+        Map<Long, Set<Long>> userId2RoleIds = userRoleRepository
+                .findByOrganizationIdAndUserIdIn(authenticationFacade.currentOrganizationId(), userIds).stream()
                 .collect(Collectors.groupingBy(UserRoleEntity::getUserId)).entrySet().stream()
-                .collect(Collectors.toMap(Entry::getKey, entry -> entry.getValue().stream()
-                        .map(UserRoleEntity::getRoleId).collect(Collectors.toSet())));
+                .collect(Collectors.toMap(Entry::getKey,
+                        entry -> entry.getValue().stream().map(UserRoleEntity::getRoleId).collect(Collectors.toSet())));
         Set<Long> roleIds = userId2RoleIds.entrySet().stream().flatMap(
                 (Function<Entry<Long, Set<Long>>, Stream<Long>>) entry -> entry.getValue().stream())
                 .collect(Collectors.toSet());

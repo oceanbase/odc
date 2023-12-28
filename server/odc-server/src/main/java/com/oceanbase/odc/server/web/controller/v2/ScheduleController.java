@@ -42,6 +42,7 @@ import com.oceanbase.odc.service.schedule.model.QueryScheduleParams;
 import com.oceanbase.odc.service.schedule.model.ScheduleDetailResp;
 import com.oceanbase.odc.service.schedule.model.ScheduleStatus;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskResp;
+import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
 
 import io.swagger.annotations.ApiOperation;
 
@@ -138,6 +139,14 @@ public class ScheduleController {
     @RequestMapping(value = "/schedules/{scheduleId:[\\d]+}/tasks/{taskId:[\\d]+}/rollback", method = RequestMethod.PUT)
     public SuccessResponse<ScheduleTaskResp> rollbackTask(@PathVariable Long scheduleId, @PathVariable Long taskId) {
         return Responses.single(scheduleService.rollbackTask(scheduleId, taskId));
+    }
+
+
+    @ApiOperation(value = "GetScheduleTaskLog", notes = "获取计划任务日志")
+    @RequestMapping(value = "/schedules/{scheduleId:[\\d]+}/tasks/{taskId:[\\d]+}/log", method = RequestMethod.GET)
+    public SuccessResponse<String> getScheduleTaskLog(@PathVariable Long scheduleId, @PathVariable Long taskId,
+            @RequestParam OdcTaskLogLevel logType) {
+        return Responses.single(scheduleService.getLog(scheduleId, taskId, logType));
     }
 
 }

@@ -24,8 +24,10 @@ import lombok.NonNull;
  */
 public enum TestDBType {
 
-    OB_MYSQL("4.1.0.2", new String[] {"odc.ob.default.mysql.commandline"}, null, null),
-    OB_ORACLE("4.1.0.2", new String[] {"odc.ob.default.oracle.commandline"}, null, null),
+    OB_MYSQL("4.1.0.2", new String[] {"odc.ob.default.mysql.commandline"}, "odc.ob.default.mysql.sysUsername",
+            "odc.ob.default.mysql.sysPassword"),
+    OB_ORACLE("4.1.0.2", new String[] {"odc.ob.default.oracle.commandline"}, "odc.ob.default.oracle.sysUsername",
+            "odc.ob.default.oracle.sysPassword"),
     MYSQL("5.7", new String[] {"odc.mysql.default.commandline"}, null, null),
     ORACLE("11g", new String[] {"odc.oracle.default.host", "odc.oracle.default.port", "odc.oracle.default.username",
             "odc.oracle.default.password", "odc.oracle.default.sid", "odc.oracle.default.serviceName",

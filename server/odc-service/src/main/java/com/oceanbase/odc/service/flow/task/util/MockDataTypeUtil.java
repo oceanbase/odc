@@ -71,6 +71,7 @@ public class MockDataTypeUtil {
         TYPE_MAP.put("MYSQL_NUMBER_UNSIGNED", "DIGIT");
         TYPE_MAP.put("MYSQL_DOUBLE", "DIGIT");
         TYPE_MAP.put("MYSQL_DOUBLE_UNSIGNED", "DIGIT");
+        TYPE_MAP.put("MYSQL_BIT", "DIGIT");
 
         TYPE_MAP.put("MYSQL_CHAR", "CHAR");
         TYPE_MAP.put("MYSQL_VARCHAR", "CHAR");
@@ -85,7 +86,6 @@ public class MockDataTypeUtil {
         TYPE_MAP.put("MYSQL_LONGBLOB", "BYTE");
         TYPE_MAP.put("MYSQL_BINARY", "BYTE");
         TYPE_MAP.put("MYSQL_VARBINARY", "BYTE");
-        TYPE_MAP.put("MYSQL_BIT", "BYTE");
 
         TYPE_MAP.put("MYSQL_DATE", "DATE");
         TYPE_MAP.put("MYSQL_YEAR", "DATE");
@@ -95,13 +95,6 @@ public class MockDataTypeUtil {
         TYPE_MAP.put("MYSQL_DATETIME", "TIMESTAMP");
     }
 
-    /**
-     * 获取数据类型的大类
-     *
-     * @param dialectType 方言类型
-     * @param dataType 数据类型
-     * @return 返回大类类型
-     */
     public static String getType(DialectType dialectType, String dataType) {
         if (dialectType == null || dataType == null) {
             return null;
@@ -112,8 +105,7 @@ public class MockDataTypeUtil {
         } else if (DialectType.OB_ORACLE.equals(dialectType)) {
             key = String.format("%s_%s", DialectType.OB_ORACLE, dataType);
         } else {
-            throw new UnsupportedException(
-                    String.format("mock data for dialect type: %s has not been supported yet", dialectType));
+            throw new UnsupportedException(String.format("Dialect type %s has not been supported yet", dialectType));
         }
         return TYPE_MAP.get(key);
     }

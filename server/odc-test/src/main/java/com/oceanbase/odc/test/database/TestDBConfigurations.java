@@ -87,7 +87,6 @@ public class TestDBConfigurations {
 
     private Properties getTestDBProperties(TestDBType type) {
         Properties properties = new Properties();
-        properties.setProperty(TestDBConfiguration.DB_TYPE_KEY, type.toString());
         if (TestDBType.ORACLE.name().equals(type.toString())) {
             properties.setProperty(TestDBConfiguration.DB_ORACLE_HOST_KEY,
                     TestProperties.getProperty(type.commandlineKey[0]));
@@ -107,6 +106,15 @@ public class TestDBConfigurations {
         } else {
             properties.setProperty(TestDBConfiguration.DB_COMMANDLINE_KEY,
                     TestProperties.getProperty(type.commandlineKey[0]));
+            String sysUserNameKey = TestProperties.getProperty(type.sysUserNameKey);
+            if (sysUserNameKey != null) {
+                properties.setProperty(TestDBConfiguration.DB_SYS_USERNAME_KEY, sysUserNameKey);
+            }
+            String sysUserPasswordKey = TestProperties.getProperty(type.sysUserPasswordKey);
+            if (sysUserPasswordKey != null) {
+                properties.setProperty(TestDBConfiguration.DB_SYS_PASSWORD_KEY, sysUserPasswordKey);
+            }
+            properties.setProperty(TestDBConfiguration.DB_TYPE_KEY, type.toString());
         }
         return properties;
     }

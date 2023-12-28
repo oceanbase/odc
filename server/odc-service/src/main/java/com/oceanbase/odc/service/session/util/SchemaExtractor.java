@@ -88,19 +88,22 @@ public class SchemaExtractor {
             visitor.visit(ast.getRoot());
             List<RelationFactor> relationFactorList = visitor.getRelationFactorList();
             return relationFactorList.stream()
+                    .filter(r -> StringUtils.isBlank(r.getUserVariable()))
                     .map(r -> StringUtils.unquoteMySqlIdentifier(r.getSchema()))
                     .filter(Objects::nonNull).collect(Collectors.toSet());
         } else if (dialectType.isOracle()) {
             OBOracleRelationFactorVisitor visitor = new OBOracleRelationFactorVisitor();
             visitor.visit(ast.getRoot());
             List<RelationFactor> relationFactorList = visitor.getRelationFactorList();
-            return relationFactorList.stream().map(r -> {
-                String schema = r.getSchema();
-                if (StringUtils.startsWith(schema, "\"") && StringUtils.endsWith(schema, "\"")) {
-                    return StringUtils.unquoteOracleIdentifier(schema);
-                }
-                return StringUtils.upperCase(schema);
-            }).filter(Objects::nonNull).collect(Collectors.toSet());
+            return relationFactorList.stream()
+                    .filter(r -> StringUtils.isBlank(r.getUserVariable()))
+                    .map(r -> {
+                        String schema = r.getSchema();
+                        if (StringUtils.startsWith(schema, "\"") && StringUtils.endsWith(schema, "\"")) {
+                            return StringUtils.unquoteOracleIdentifier(schema);
+                        }
+                        return StringUtils.upperCase(schema);
+                    }).filter(Objects::nonNull).collect(Collectors.toSet());
         }
         return new HashSet<>();
     }

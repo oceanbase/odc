@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.regulation.ruleset.model;
 import java.util.List;
 
 import com.oceanbase.odc.common.i18n.Internationalizable;
+import com.oceanbase.odc.common.json.NormalDialectTypeOutput;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 
 import lombok.Data;
@@ -53,6 +54,7 @@ public class RuleMetadata {
      * if type = SQL_CONSOLE, then appliedDialectTypes is always null which means it could be applied to
      * all dialectTypes<br>
      */
+    @NormalDialectTypeOutput
     private List<DialectType> supportedDialectTypes;
 
 

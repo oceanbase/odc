@@ -30,9 +30,13 @@ import lombok.Data;
  */
 @Data
 public class PreCheckTaskResult implements FlowTaskResult {
+
+    private boolean overLimit;
+
     private ExecutorInfo executorInfo;
 
     private SqlCheckTaskResult sqlCheckResult;
 
     private DatabasePermissionCheckResult permissionCheckResult;
+
 }

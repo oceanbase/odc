@@ -34,6 +34,7 @@ import com.oceanbase.odc.core.sql.execute.model.SqlExecuteStatus;
 import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
 import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTree;
 import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTreeFactories;
+import com.oceanbase.odc.core.sql.split.OffsetString;
 import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
 import com.oceanbase.odc.service.session.model.SqlAsyncExecuteReq;
 import com.oceanbase.odc.service.session.model.SqlAsyncExecuteResp;
@@ -77,7 +78,9 @@ public class NlsFormatInterceptor extends BaseTimeConsumingInterceptor {
         if (response.getStatus() != SqlExecuteStatus.SUCCESS || dialect != DialectType.OB_ORACLE) {
             return;
         }
-        List<String> sqls = SqlCommentProcessor.removeSqlComments(response.getOriginSql(), ";", dialect, false);
+        List<String> sqls =
+                SqlCommentProcessor.removeSqlComments(response.getOriginSql(), ";", dialect, false).stream().map(
+                        OffsetString::getStr).collect(Collectors.toList());
         if (CollectionUtils.isEmpty(sqls) || sqls.size() != 1) {
             log.warn("Sql is empty or multi sql exists, sql={}", response.getOriginSql());
             return;
@@ -86,7 +89,17 @@ public class NlsFormatInterceptor extends BaseTimeConsumingInterceptor {
         if (!StringUtils.startsWithIgnoreCase(sql, "set") && !startWithAlterSession(sql)) {
             return;
         }
-        getVariableAssigns(response.getSqlTuple(), dialect).stream().filter(VariableAssign::isSession).forEach(v -> {
+        setNlsFormat(session, response.getSqlTuple());
+    }
+
+    @Override
+    protected String getExecuteStageName() {
+        return SqlExecuteStages.SET_NLS_FORMAT;
+    }
+
+    public static void setNlsFormat(@NonNull ConnectionSession session, @NonNull SqlTuple sqlTuple) {
+        DialectType dialectType = session.getDialectType();
+        getVariableAssigns(sqlTuple, dialectType).stream().filter(VariableAssign::isSession).forEach(v -> {
             String value = getNlsFormatValue(v.getValue());
             if (value == null) {
                 return;
@@ -99,11 +112,6 @@ public class NlsFormatInterceptor extends BaseTimeConsumingInterceptor {
                 ConnectionSessionUtil.setNlsTimestampTZFormat(session, value);
             }
         });
-    }
-
-    @Override
-    protected String getExecuteStageName() {
-        return SqlExecuteStages.SET_NLS_FORMAT;
     }
 
     private boolean startWithAlterSession(String sql) {
@@ -124,7 +132,7 @@ public class NlsFormatInterceptor extends BaseTimeConsumingInterceptor {
         return j >= chars.length;
     }
 
-    private String getNlsFormatValue(Expression value) {
+    private static String getNlsFormatValue(Expression value) {
         if (!(value instanceof ConstExpression)) {
             return null;
         }
@@ -132,7 +140,7 @@ public class NlsFormatInterceptor extends BaseTimeConsumingInterceptor {
         return StringUtils.unwrap(e.getExprConst(), "'");
     }
 
-    private List<VariableAssign> getVariableAssigns(SqlTuple sqlTuple, DialectType dialect) {
+    private static List<VariableAssign> getVariableAssigns(SqlTuple sqlTuple, DialectType dialect) {
         try {
             AbstractSyntaxTree ast = sqlTuple.getAst();
             if (ast == null) {
