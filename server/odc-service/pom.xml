@@ -64,6 +64,17 @@
         </dependencies>
     </dependencyManagement>
     <dependencies>
+        <!--for test-->
+        <dependency>
+            <groupId>com.oceanbase</groupId>
+            <artifactId>ob-partition-calculator</artifactId>
+            <version>1.8.0-RELEASE</version>
+        </dependency>
+        <dependency>
+            <groupId>commons-dbutils</groupId>
+            <artifactId>commons-dbutils</artifactId>
+            <version>1.7</version>
+        </dependency>
         <dependency>
             <groupId>com.oceanbase</groupId>
             <artifactId>data-lifecycle-manager</artifactId>

@@ -82,6 +82,32 @@ public class CloudJobStore implements IJobStore {
 
     @Override
     public void updateLimiter(JobMeta jobMeta) throws SQLException {
+        jobMeta.getSourceCluster().setReadSizeLimit(1024*1024);
+        jobMeta.getSourceCluster().setWriteSizeLimit(1024*1024);
+        jobMeta.getSourceCluster().setReadUsedQuota(1);
+        jobMeta.getSourceCluster().setWriteUsedQuota(1);
+
+        jobMeta.getTargetCluster().setReadSizeLimit(1024*1024);
+        jobMeta.getTargetCluster().setWriteSizeLimit(1024*1024);
+        jobMeta.getTargetCluster().setReadUsedQuota(1);
+        jobMeta.getTargetCluster().setWriteUsedQuota(1);
+
+        jobMeta.getSourceTenant().setReadSizeLimit(1024*1024);
+        jobMeta.getSourceTenant().setWriteSizeLimit(1024*1024);
+        jobMeta.getSourceTenant().setReadUsedQuota(1);
+        jobMeta.getSourceTenant().setWriteUsedQuota(1);
+
+        jobMeta.getTargetTenant().setReadSizeLimit(1024*1024);
+        jobMeta.getTargetTenant().setWriteSizeLimit(1024*1024);
+        jobMeta.getTargetTenant().setReadUsedQuota(1);
+        jobMeta.getTargetTenant().setWriteUsedQuota(1);
+
+
+        jobMeta.getSourceTableMeta().setReadRowCountLimit(10000);
+        jobMeta.getSourceTableMeta().setWriteRowCountLimit(10000);
+
+        jobMeta.getTargetTableMeta().setReadRowCountLimit(10000);
+        jobMeta.getTargetTableMeta().setWriteRowCountLimit(10000);
 
     }
 }

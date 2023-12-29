@@ -59,7 +59,7 @@ public class DataArchiveTask extends BaseTask {
             JobMeta jobMeta = null;
             try {
                 jobMeta = jobMetaFactory.create(jobReq);
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 log.warn("DataArchiveTask create jobMeta failed,jobId={}", jobReq.getHistoryJob().getId(), e);
                 throw new RuntimeException(e);
             }
@@ -67,7 +67,7 @@ public class DataArchiveTask extends BaseTask {
             migrateJob.setJobMeta(jobMeta);
             try {
                 migrateJob.run();
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 log.warn("DataArchiveTask run failed,jobId={}", jobMeta.getJobId(), e);
             }
         }

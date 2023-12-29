@@ -58,7 +58,7 @@ public class TaskReporter {
                             JsonUtils.toJson(response));
                     return true;
                 }
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 log.warn(MessageFormat.format("Report to host {0} failed, result is {1}, error is: ", host,
                         JsonUtils.toJson(result)), e);
             }

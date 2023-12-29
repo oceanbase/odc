@@ -142,7 +142,7 @@ public abstract class BaseTask implements Task {
             } else {
                 try {
                     reportTaskResult();
-                } catch (Exception e) {
+                } catch (Throwable e) {
                     log.warn("Update task info failed, id: {}", getJobContext().getJobIdentity().getId(), e);
                 }
             }
