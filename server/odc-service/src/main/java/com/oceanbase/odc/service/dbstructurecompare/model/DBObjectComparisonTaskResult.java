@@ -27,7 +27,7 @@ import lombok.Data;
  * @since ODC_release_4.2.4
  */
 @Data
-public class DBObjectStructureComparisonResult {
+public class DBObjectComparisonTaskResult {
     /**
      * Refer to structure_comparison.id
      */

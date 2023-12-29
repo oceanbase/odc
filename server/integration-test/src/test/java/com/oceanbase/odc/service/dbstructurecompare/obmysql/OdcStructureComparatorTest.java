@@ -32,7 +32,7 @@ import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.sql.execute.SyncJdbcExecutor;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
-import com.oceanbase.odc.service.dbstructurecompare.OdcSchemaStructureComparator;
+import com.oceanbase.odc.service.dbstructurecompare.OdcStructureComparator;
 import com.oceanbase.odc.service.dbstructurecompare.model.ComparisonResult;
 import com.oceanbase.odc.service.dbstructurecompare.model.DBObjectComparisonResult;
 import com.oceanbase.odc.service.rollbackplan.TestUtils;
@@ -44,7 +44,7 @@ import com.oceanbase.tools.dbbrowser.model.DBObjectType;
  * @date 2023/12/26
  * @since ODC_release_4.2.4
  */
-public class OdcSchemaStructureComparatorTest {
+public class OdcStructureComparatorTest {
     private static final String BASE_PATH = "src/test/resources/dbstructurecompare/";
     private static String sourceSchemaDdl = TestUtils.loadAsString(BASE_PATH + "source_schema_ddl.sql");
     private static String targetSchemaDdl = TestUtils.loadAsString(BASE_PATH + "target_schema_ddl.sql");
@@ -79,7 +79,7 @@ public class OdcSchemaStructureComparatorTest {
         tgtJdbcExecutor.execute(targetDrop);
         tgtJdbcExecutor.execute(targetSchemaDdl);
 
-        OdcSchemaStructureComparator comparator = new OdcSchemaStructureComparator(srcSession, tgtSession);
+        OdcStructureComparator comparator = new OdcStructureComparator(srcSession, tgtSession);
         results = comparator.compareTables();
     }
 
@@ -253,7 +253,7 @@ public class OdcSchemaStructureComparatorTest {
 
     @Test
     public void compare_specified_tables() {
-        OdcSchemaStructureComparator comparator = new OdcSchemaStructureComparator(srcSession, tgtSession);
+        OdcStructureComparator comparator = new OdcStructureComparator(srcSession, tgtSession);
         List<DBObjectComparisonResult> results =
                 comparator.compareTables(Arrays.asList("update_column", "update_index"));
         Assert.assertEquals(results.size(), 2);

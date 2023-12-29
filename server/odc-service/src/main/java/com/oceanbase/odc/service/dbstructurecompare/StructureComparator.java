@@ -25,7 +25,7 @@ import com.oceanbase.odc.service.dbstructurecompare.model.DBObjectComparisonResu
  * @date 2023/12/26
  * @since ODC_release_4.2.4
  */
-public interface DBStructureComparator {
+public interface StructureComparator {
 
     /**
      * Compare all the TABLE definition between source database and target database.

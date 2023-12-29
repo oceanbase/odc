@@ -21,7 +21,7 @@ import java.util.List;
 import com.oceanbase.odc.core.flow.model.FlowTaskResult;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.metadb.task.TaskEntity;
-import com.oceanbase.odc.service.dbstructurecompare.model.DBObjectStructureComparisonResult;
+import com.oceanbase.odc.service.dbstructurecompare.model.DBObjectComparisonTaskResult;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 
 import lombok.Data;
@@ -42,7 +42,7 @@ public class StructureComparisonTaskResult implements FlowTaskResult {
 
     private class Comparing {
         /**
-         * Refer to {@link DBObjectStructureComparisonResult#getId()}
+         * Refer to {@link DBObjectComparisonTaskResult#getId()}
          */
         private Long structureComparisonId;
         private DBObjectType dbObjectType;

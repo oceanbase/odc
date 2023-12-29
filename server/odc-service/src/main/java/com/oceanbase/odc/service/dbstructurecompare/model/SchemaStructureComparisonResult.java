@@ -26,13 +26,14 @@ import com.oceanbase.tools.dbbrowser.model.DBObjectType;
  * @since
  */
 public class SchemaStructureComparisonResult {
+    private Long taskId;
     private List<ComparisonResult> comparisonResults;
     private String totalChangeScript;
     private String storageObjectId;
 
     private class ComparisonResult {
         /**
-         * Refer to {@link DBObjectStructureComparisonResult#getId()}
+         * Refer to {@link DBObjectComparisonTaskResult#getId()}
          */
         private Long structureComparisonId;
         private DBObjectType dbObjectType;

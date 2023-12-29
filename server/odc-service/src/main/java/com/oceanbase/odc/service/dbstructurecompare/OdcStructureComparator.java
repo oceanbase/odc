@@ -60,7 +60,7 @@ import lombok.extern.slf4j.Slf4j;
  * @since ODC_release_4.2.4
  */
 @Slf4j
-public class OdcSchemaStructureComparator implements DBStructureComparator {
+public class OdcStructureComparator implements StructureComparator {
     private String sourceSchemaName;
     private String targetSchemaName;
     private DBSchemaAccessor targetAccessor;
@@ -71,7 +71,7 @@ public class OdcSchemaStructureComparator implements DBStructureComparator {
     private Map<String, DBTable> targetTableMapping = new HashMap<>();
     private final String DEFAULT_SQL_DELIMITER = ";";
 
-    public OdcSchemaStructureComparator(@NonNull ConnectionSession sourceConnectionSession,
+    public OdcStructureComparator(@NonNull ConnectionSession sourceConnectionSession,
             @NonNull ConnectionSession targetConnectionSession) {
         this.sourceAccessor = DBSchemaAccessors.create(sourceConnectionSession);
         this.targetAccessor = DBSchemaAccessors.create(targetConnectionSession);
