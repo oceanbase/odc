@@ -16,27 +16,16 @@
 
 package com.oceanbase.odc.service.dbstructurecompare.model;
 
-import com.oceanbase.odc.service.dbstructurecompare.model.SchemaStructureComparisonResult.OperationType;
-
-import lombok.Getter;
-
 /**
  * @author jingtian
  * @date 2023/12/19
  * @since ODC_release_4.2.4
  */
 public enum ComparisonResult {
-    ONLY_IN_SOURCE(OperationType.CREATE),
-    ONLY_IN_TARGET(OperationType.DROP),
-    CONSISTENT(OperationType.NO_ACTION),
-    INCONSISTENT(OperationType.UPDATE),
-    MISSING_IN_SOURCE(OperationType.SKIP),
-    UNSUPPORTED(OperationType.UNSUPPORTED);
-
-    @Getter
-    private OperationType operationType;
-
-    private ComparisonResult(OperationType operationType) {
-        this.operationType = operationType;
-    }
+    ONLY_IN_SOURCE,
+    ONLY_IN_TARGET,
+    CONSISTENT,
+    INCONSISTENT,
+    MISSING_IN_SOURCE,
+    UNSUPPORTED
 }
