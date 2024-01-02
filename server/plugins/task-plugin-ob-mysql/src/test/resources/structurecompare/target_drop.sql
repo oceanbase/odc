@@ -1,0 +1,10 @@
+drop table if exists `fk_only_in_target`;
+drop table if exists `fk_dependency_only_in_target1`;
+drop table if exists `fk_dependency_only_in_target2`;
+drop table if exists `primary_key_test`;
+drop table if exists `update_column`;
+drop table if exists `update_index`;
+drop table if exists `update_constraint`;
+drop table if exists `update_partition1`;
+drop table if exists `update_partition2`;
+drop table if exists `update_options`;

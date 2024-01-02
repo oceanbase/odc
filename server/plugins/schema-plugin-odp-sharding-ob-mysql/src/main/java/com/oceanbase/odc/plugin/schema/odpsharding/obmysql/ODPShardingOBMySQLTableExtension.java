@@ -21,8 +21,12 @@ import org.pf4j.Extension;
 
 import com.oceanbase.odc.common.util.JdbcOperationsUtil;
 import com.oceanbase.odc.plugin.schema.obmysql.OBMySQLTableExtension;
-import com.oceanbase.tools.dbbrowser.editor.DBTablePartitionEditor;
+import com.oceanbase.tools.dbbrowser.editor.DBTableEditor;
+import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLColumnEditor;
+import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLConstraintEditor;
 import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLDBTablePartitionEditor;
+import com.oceanbase.tools.dbbrowser.editor.mysql.OBMySQLIndexEditor;
+import com.oceanbase.tools.dbbrowser.editor.mysql.OBMySQLTableEditor;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 import com.oceanbase.tools.dbbrowser.schema.mysql.ODPOBMySQLSchemaAccessor;
@@ -61,7 +65,8 @@ public class ODPShardingOBMySQLTableExtension extends OBMySQLTableExtension {
     }
 
     @Override
-    protected DBTablePartitionEditor getDBTablePartitionEditor(Connection connection) {
-        return new MySQLDBTablePartitionEditor();
+    protected DBTableEditor getTableEditor(Connection connection) {
+        return new OBMySQLTableEditor(new OBMySQLIndexEditor(), new MySQLColumnEditor(), new MySQLConstraintEditor(),
+                new MySQLDBTablePartitionEditor());
     }
 }

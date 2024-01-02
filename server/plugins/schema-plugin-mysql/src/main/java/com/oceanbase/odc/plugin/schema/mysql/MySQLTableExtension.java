@@ -20,16 +20,11 @@ import java.sql.Connection;
 import org.pf4j.Extension;
 
 import com.oceanbase.odc.common.util.JdbcOperationsUtil;
+import com.oceanbase.odc.plugin.schema.mysql.utils.DBAccessorUtil;
 import com.oceanbase.odc.plugin.schema.obmysql.OBMySQLTableExtension;
 import com.oceanbase.tools.dbbrowser.editor.DBTableEditor;
-import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLColumnEditor;
-import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLConstraintEditor;
-import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLDBTablePartitionEditor;
-import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLNoGreaterThan5740IndexEditor;
-import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLTableEditor;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
-import com.oceanbase.tools.dbbrowser.schema.mysql.MySQLNoGreaterThan5740SchemaAccessor;
 import com.oceanbase.tools.dbbrowser.stats.DBStatsAccessor;
 import com.oceanbase.tools.dbbrowser.stats.mysql.MySQLNoGreaterThan5740StatsAccessor;
 
@@ -61,14 +56,12 @@ public class MySQLTableExtension extends OBMySQLTableExtension {
 
     @Override
     protected DBTableEditor getTableEditor(@NonNull Connection connection) {
-        return new MySQLTableEditor(new MySQLNoGreaterThan5740IndexEditor(), new MySQLColumnEditor(),
-                new MySQLConstraintEditor(),
-                new MySQLDBTablePartitionEditor());
+        return DBAccessorUtil.getTableEditor(connection);
     }
 
     @Override
     protected DBSchemaAccessor getSchemaAccessor(Connection connection) {
-        return new MySQLNoGreaterThan5740SchemaAccessor(JdbcOperationsUtil.getJdbcOperations(connection));
+        return DBAccessorUtil.getSchemaAccessor(connection);
     }
 
     @Override
