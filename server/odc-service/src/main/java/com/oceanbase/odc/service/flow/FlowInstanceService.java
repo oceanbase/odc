@@ -611,7 +611,10 @@ public class FlowInstanceService {
                 optional.orElseThrow(() -> new NotFoundException(ResourceType.ODC_FLOW_INSTANCE, "id", flowInstanceId));
         try {
             if (!skipAuth) {
-                if (!Objects.equals(authenticationFacade.currentUserId(), flowInstance.getCreatorId())) {
+                boolean isProjectOwner = flowInstance.getProjectId() != null && projectService.checkPermission(
+                        flowInstance.getProjectId(), Collections.singletonList(ResourceRoleName.OWNER));
+                if (!Objects.equals(authenticationFacade.currentUserId(), flowInstance.getCreatorId())
+                        && !isProjectOwner) {
                     List<UserTaskInstanceEntity> entities = approvalPermissionService.getApprovableApprovalInstances();
                     Set<Long> flowInstanceIds = entities.stream().map(UserTaskInstanceEntity::getFlowInstanceId)
                             .collect(Collectors.toSet());
