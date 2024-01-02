@@ -94,8 +94,9 @@ public class AbstractDlmJobPreprocessor implements Preprocessor {
         SyncJdbcExecutor syncJdbcExecutor = connectionSession.getSyncJdbcExecutor(
                 ConnectionSessionConstants.CONSOLE_DS_KEY);
         SqlBuilder sqlBuilder = new MySQLSqlBuilder();
-        sqlBuilder.append("SELECT TABLE_NAME from STATISTICS where NON_UNIQUE = 0 AND NULLABLE != 'YES' ");
-        sqlBuilder.append(String.format("TABLE_SCHEMA='%s' GROUP BY TABLE_NAME", databaseName));
+        sqlBuilder.append(
+                "SELECT TABLE_NAME from INFORMATION_SCHEMA.STATISTICS where NON_UNIQUE = 0 AND NULLABLE != 'YES' ");
+        sqlBuilder.append(String.format("AND TABLE_SCHEMA='%s' GROUP BY TABLE_NAME", databaseName));
         HashSet<String> tableNames =
                 new HashSet<>(syncJdbcExecutor.query(sqlBuilder.toString(), (rs, num) -> rs.getString(1)));
         tables.forEach(tableConfig -> {
