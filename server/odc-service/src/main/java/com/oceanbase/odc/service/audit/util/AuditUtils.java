@@ -74,6 +74,9 @@ public class AuditUtils {
                 case APPLY_PROJECT_PERMISSION:
                     type = AuditEventType.APPLY_PROJECT_PERMISSION;
                     break;
+                case APPLY_DATABASE_PERMISSION:
+                    type = AuditEventType.APPLY_DATABASE_PERMISSION;
+                    break;
                 default:
                     type = AuditEventType.UNKNOWN_TASK_TYPE;
             }
@@ -171,6 +174,8 @@ public class AuditUtils {
                     return AuditEventAction.CREATE_ONLINE_SCHEMA_CHANGE_TASK;
                 case APPLY_PROJECT_PERMISSION:
                     return AuditEventAction.CREATE_APPLY_PROJECT_PERMISSION_TASK;
+                case APPLY_DATABASE_PERMISSION:
+                    return AuditEventAction.CREATE_APPLY_DATABASE_PERMISSION_TASK;
             }
         }
         if (action == AuditEventAction.STOP_TASK) {
@@ -195,6 +200,8 @@ public class AuditUtils {
                     return AuditEventAction.STOP_ONLINE_SCHEMA_CHANGE_TASK;
                 case APPLY_PROJECT_PERMISSION:
                     return AuditEventAction.STOP_APPLY_PROJECT_PERMISSION_TASK;
+                case APPLY_DATABASE_PERMISSION:
+                    return AuditEventAction.STOP_APPLY_DATABASE_PERMISSION_TASK;
             }
         }
         if (action == AuditEventAction.EXECUTE_TASK) {
@@ -243,6 +250,8 @@ public class AuditUtils {
                     return AuditEventAction.APPROVE_ONLINE_SCHEMA_CHANGE_TASK;
                 case APPLY_PROJECT_PERMISSION:
                     return AuditEventAction.APPROVE_APPLY_PROJECT_PERMISSION_TASK;
+                case APPLY_DATABASE_PERMISSION:
+                    return AuditEventAction.APPROVE_APPLY_DATABASE_PERMISSION_TASK;
             }
         }
         if (action == AuditEventAction.REJECT) {
@@ -269,6 +278,8 @@ public class AuditUtils {
                     return AuditEventAction.REJECT_ONLINE_SCHEMA_CHANGE_TASK;
                 case APPLY_PROJECT_PERMISSION:
                     return AuditEventAction.REJECT_APPLY_PROJECT_PERMISSION_TASK;
+                case APPLY_DATABASE_PERMISSION:
+                    return AuditEventAction.REJECT_APPLY_DATABASE_PERMISSION_TASK;
             }
         }
         // 如果不是流程相关的 action，则返回原值

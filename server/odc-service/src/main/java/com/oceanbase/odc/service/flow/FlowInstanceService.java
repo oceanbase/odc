@@ -382,7 +382,8 @@ public class FlowInstanceService {
                     TaskType.ONLINE_SCHEMA_CHANGE,
                     TaskType.ALTER_SCHEDULE,
                     TaskType.EXPORT_RESULT_SET,
-                    TaskType.APPLY_PROJECT_PERMISSION);
+                    TaskType.APPLY_PROJECT_PERMISSION,
+                    TaskType.APPLY_DATABASE_PERMISSION);
             specification = specification.and(FlowInstanceViewSpecs.taskTypeIn(types));
         }
 

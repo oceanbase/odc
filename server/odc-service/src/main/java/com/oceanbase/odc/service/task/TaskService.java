@@ -89,6 +89,7 @@ public class TaskService {
             "%s/onlineschemachange/%d/%s/onlineschemachange.%s";
     private static final String EXPORT_RESULT_SET_LOG_PATH_PATTERN = "%s/result-set-export/%s/ob-loader-dumper.%s";
     private static final String APPLY_PROJECT_LOG_PATH_PATTERN = "%s/apply-project/%d/%s/apply-project-task.%s";
+    private static final String APPLY_DATABASE_LOG_PATH_PATTERN = "%s/apply-database/%d/%s/apply-database-task.%s";
 
     @Autowired
     public TaskService(@Value("${odc.log.directory:./log}") String baseTaskLogDir) {
@@ -204,6 +205,10 @@ public class TaskService {
                 break;
             case APPLY_PROJECT_PERMISSION:
                 filePath = String.format(APPLY_PROJECT_LOG_PATH_PATTERN, logFilePrefix, userId, taskId,
+                        logLevel.name().toLowerCase());
+                break;
+            case APPLY_DATABASE_PERMISSION:
+                filePath = String.format(APPLY_DATABASE_LOG_PATH_PATTERN, logFilePrefix, userId, taskId,
                         logLevel.name().toLowerCase());
                 break;
             default:

@@ -40,7 +40,7 @@ public class DatabasePermissionTest {
     @Test
     public void construct_databasePermission_allAction_1() {
         ResourcePermission permission =
-                new DatabasePermission("1", "apply,create,read,update,delete,query,alter,export");
+                new DatabasePermission("1", "apply,create,read,update,delete,query,change,export");
         Assert.assertEquals(DatabasePermission.ALL, permission.getMask());
     }
 
@@ -80,7 +80,7 @@ public class DatabasePermissionTest {
     @Test
     public void implies_databasePermissionWithWildChar_impliesTrue() {
         ResourcePermission permission =
-                new DatabasePermission("1", "apply,create,read,update,delete,query,alter,export");
+                new DatabasePermission("1", "apply,create,read,update,delete,query,change,export");
         ResourcePermission permission1 = new DatabasePermission("1", "*");
         Assert.assertTrue(permission.implies(permission1));
     }

@@ -35,14 +35,14 @@ import com.oceanbase.odc.core.shared.constant.ResourceType;
 public class DatabasePermission extends ResourcePermission {
 
     private static final String DATABASE_QUERY_ACTION = "query";
-    private static final String DATABASE_ALTER_ACTION = "alter";
+    private static final String DATABASE_CHANGE_ACTION = "change";
     private static final String DATABASE_EXPORT_ACTION = "export";
 
     private static final int QUERY = 0x80;
-    private static final int ALTER = 0x100;
+    private static final int CHANGE = 0x100;
     private static final int EXPORT = 0x200;
 
-    public static final int ALL = ResourcePermission.ALL | QUERY | ALTER | EXPORT;
+    public static final int ALL = ResourcePermission.ALL | QUERY | CHANGE | EXPORT;
 
     public DatabasePermission(String resourceId, String action) {
         super(resourceId, ResourceType.ODC_DATABASE.name(), action);
@@ -66,8 +66,8 @@ public class DatabasePermission extends ResourcePermission {
         for (String actionItem : actionList) {
             if (DATABASE_QUERY_ACTION.equalsIgnoreCase(actionItem)) {
                 mask |= QUERY;
-            } else if (DATABASE_ALTER_ACTION.equalsIgnoreCase(actionItem)) {
-                mask |= ALTER;
+            } else if (DATABASE_CHANGE_ACTION.equalsIgnoreCase(actionItem)) {
+                mask |= CHANGE;
             } else if (DATABASE_EXPORT_ACTION.equalsIgnoreCase(actionItem)) {
                 mask |= EXPORT;
             } else if ("*".equals(actionItem)) {
@@ -90,7 +90,7 @@ public class DatabasePermission extends ResourcePermission {
 
     public static Set<String> getAllActions() {
         Set<String> returnVal = ResourcePermission.getAllActions();
-        returnVal.addAll(Arrays.asList(DATABASE_QUERY_ACTION, DATABASE_ALTER_ACTION, DATABASE_EXPORT_ACTION));
+        returnVal.addAll(Arrays.asList(DATABASE_QUERY_ACTION, DATABASE_CHANGE_ACTION, DATABASE_EXPORT_ACTION));
         return returnVal;
     }
 
@@ -114,8 +114,8 @@ public class DatabasePermission extends ResourcePermission {
         if ((mask & QUERY) == QUERY) {
             actionList.add(DATABASE_QUERY_ACTION);
         }
-        if ((mask & ALTER) == ALTER) {
-            actionList.add(DATABASE_ALTER_ACTION);
+        if ((mask & CHANGE) == CHANGE) {
+            actionList.add(DATABASE_CHANGE_ACTION);
         }
         if ((mask & EXPORT) == EXPORT) {
             actionList.add(DATABASE_EXPORT_ACTION);

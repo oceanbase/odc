@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.core.shared.constant;
+package com.oceanbase.odc.service.permissionapply.database;
 
 import java.util.Locale;
 
@@ -21,67 +21,21 @@ import org.springframework.context.i18n.LocaleContextHolder;
 
 import com.oceanbase.odc.common.i18n.Translatable;
 
-public enum AuditEventType implements Translatable {
-    PERSONAL_CONFIGURATION,
+/**
+ * @author gaoda.xy
+ * @date 2024/1/3 14:04
+ */
+public enum DatabasePermissionType implements Translatable {
 
-    PASSWORD_MANAGEMENT,
+    QUERY("query"),
+    CHANGE("change"),
+    EXPORT("export");
 
-    CONNECTION_MANAGEMENT,
+    private final String action;
 
-    SCRIPT_MANAGEMENT,
-
-    DATABASE_OPERATION,
-
-    ORGANIZATION_CONFIGURATION,
-
-    RESOURCE_GROUP_MANAGEMENT,
-
-    MEMBER_MANAGEMENT,
-
-    AUDIT_EVENT,
-
-    FLOW_CONFIG,
-
-    ASYNC,
-
-    MOCKDATA,
-
-    IMPORT,
-
-    EXPORT,
-
-    EXPORT_RESULT_SET,
-
-    SHADOWTABLE_SYNC,
-
-    PARTITION_PLAN,
-
-    ALTER_SCHEDULE,
-
-    ONLINE_SCHEMA_CHANGE,
-
-    APPLY_PROJECT_PERMISSION,
-
-    APPLY_DATABASE_PERMISSION,
-
-    DATA_MASKING_RULE,
-
-    DATA_MASKING_POLICY,
-
-    PERMISSION_APPLY,
-
-    UNKNOWN_TASK_TYPE,
-
-    DATABASE_MANAGEMENT,
-
-    DATASOURCE_MANAGEMENT,
-
-    PROJECT_MANAGEMENT,
-
-    SQL_SECURITY_RULE_MANAGEMENT
-
-    ;
-
+    DatabasePermissionType(String action) {
+        this.action = action;
+    }
 
     @Override
     public String code() {
@@ -92,4 +46,5 @@ public enum AuditEventType implements Translatable {
         Locale locale = LocaleContextHolder.getLocale();
         return translate(null, locale);
     }
+
 }
