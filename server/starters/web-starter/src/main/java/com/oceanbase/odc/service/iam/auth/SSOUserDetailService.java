@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.iam.auth.oauth2;
+package com.oceanbase.odc.service.iam.auth;
 
 import static com.oceanbase.odc.core.shared.constant.ResourceType.ODC_ORGANIZATION;
 import static com.oceanbase.odc.service.automation.model.TriggerEvent.OAUTH_2_FIRST_TIME_LOGIN;
@@ -47,6 +47,7 @@ import com.oceanbase.odc.service.automation.model.TriggerEvent;
 import com.oceanbase.odc.service.common.util.ConditionalOnProperty;
 import com.oceanbase.odc.service.iam.UserOrganizationService;
 import com.oceanbase.odc.service.iam.UserService;
+import com.oceanbase.odc.service.iam.auth.oauth2.MappingResult;
 import com.oceanbase.odc.service.iam.model.User;
 
 import lombok.NonNull;
@@ -61,7 +62,7 @@ import lombok.extern.slf4j.Slf4j;
 @ConditionalOnProperty(value = "odc.iam.auth.type", havingValues = {"local"})
 @Slf4j
 @SkipAuthorize("odc internal usage")
-public class OAuth2UserDetailService {
+public class SSOUserDetailService {
     private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
 
     @Autowired
