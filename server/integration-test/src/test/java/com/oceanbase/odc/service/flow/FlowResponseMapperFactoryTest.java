@@ -41,7 +41,6 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import com.oceanbase.odc.ServiceTestEnv;
 import com.oceanbase.odc.common.event.EventPublisher;
 import com.oceanbase.odc.core.shared.constant.TaskType;
-import com.oceanbase.odc.metadb.connection.ConnectionEntity;
 import com.oceanbase.odc.metadb.flow.FlowInstanceEntity;
 import com.oceanbase.odc.metadb.flow.FlowInstanceRepository;
 import com.oceanbase.odc.metadb.flow.GateWayInstanceRepository;
@@ -139,7 +138,6 @@ public class FlowResponseMapperFactoryTest extends ServiceTestEnv {
         FlowInstanceEntity instanceEntity = createFlowInstanceEntity();
         FlowInstanceMapper mapper = FlowInstanceDetailResp.mapper()
                 .withApprovable(id -> false)
-                .withGetConnectionById(id -> TestRandom.nextObject(ConnectionEntity.class))
                 .withGetTaskByFlowInstanceId(id -> Collections.singleton(TestRandom.nextObject(TaskEntity.class)))
                 .withGetUserById(id -> TestRandom.nextObject(UserEntity.class))
                 .withGetExecutionStrategyByFlowInstanceId(

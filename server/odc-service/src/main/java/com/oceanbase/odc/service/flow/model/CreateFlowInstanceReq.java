@@ -33,6 +33,7 @@ import com.oceanbase.odc.service.flow.processor.CreateFlowInstanceProcessAspect;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.OdcMockTaskConfig;
 import com.oceanbase.odc.service.flow.task.model.ShadowTableSyncTaskParameter;
+import com.oceanbase.odc.service.flow.task.model.StructureComparisonParameter;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanTaskParameters;
 import com.oceanbase.odc.service.permissionapply.project.ApplyProjectParameter;
@@ -89,7 +90,8 @@ public class CreateFlowInstanceReq {
             @JsonSubTypes.Type(value = AlterScheduleParameters.class, name = "ALTER_SCHEDULE"),
             @JsonSubTypes.Type(value = OnlineSchemaChangeParameters.class, name = "ONLINE_SCHEMA_CHANGE"),
             @JsonSubTypes.Type(value = ResultSetExportTaskParameter.class, name = "EXPORT_RESULT_SET"),
-            @JsonSubTypes.Type(value = ApplyProjectParameter.class, name = "APPLY_PROJECT_PERMISSION")
+            @JsonSubTypes.Type(value = ApplyProjectParameter.class, name = "APPLY_PROJECT_PERMISSION"),
+            @JsonSubTypes.Type(value = StructureComparisonParameter.class, name = "STRUCTURE_COMPARISON")
     })
     private TaskParameters parameters;
 
