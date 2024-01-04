@@ -13,13 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.permissionapply.database;
+package com.oceanbase.odc.service.permission.database.model;
 
 import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
 
 import com.oceanbase.odc.core.flow.model.TaskParameters;
+import com.oceanbase.odc.service.collaboration.project.model.Project;
 import com.oceanbase.odc.service.connection.database.model.Database;
 
 import lombok.Data;
@@ -32,14 +33,13 @@ import lombok.Data;
 public class ApplyDatabaseParameter implements Serializable, TaskParameters {
 
     /**
-     * Project ID, required
+     * ID of project, required
      */
     private Long projectId;
     /**
-     * Databases to be applied for, the front-end only transfer the id field and the back-end will
-     * return more field value, required
+     * ID of databases to be applied for, required
      */
-    private List<Database> databases;
+    private List<Long> databaseIds;
     /**
      * Permission types to be applied for, required
      */
@@ -55,10 +55,14 @@ public class ApplyDatabaseParameter implements Serializable, TaskParameters {
     /**
      * Creator ID, filled in by the back-end
      */
-    private Long userId;
+    private Long creatorId;
     /**
-     * Project name, filled in by the back-end
+     * Project details, filled in by the back-end
      */
-    private String projectName;
+    private Project project;
+    /**
+     * Database details, filled in by the back-end
+     */
+    private List<Database> databases;
 
 }

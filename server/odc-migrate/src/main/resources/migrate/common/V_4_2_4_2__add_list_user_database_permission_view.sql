@@ -12,8 +12,8 @@ select
   c_d.`project_id` as `project_id`,
   c_d.`id` as `database_id`,
   c_d.`name` as `database_name`,
-  c_c.`id` as `connection_id`,
-  c_c.`name` as `connection_name`,
+  c_c.`id` as `datasource_id`,
+  c_c.`name` as `datasource_name`,
   c_e.`id` as `environment_id`,
   c_e.`name` as `environment_name`
 from

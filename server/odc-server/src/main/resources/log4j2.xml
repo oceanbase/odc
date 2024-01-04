@@ -652,13 +652,13 @@
         </Logger>
 
         <!-- 申请项目权限任务日志输出 -->
-        <Logger name="com.oceanbase.odc.service.permissionapply.project.ApplyProjectFlowableTask" level="INFO" additivity="true">
+        <Logger name="com.oceanbase.odc.service.permission.project.ApplyProjectFlowableTask" level="INFO" additivity="true">
             <AppenderRef ref="AllRoutingApplyProjectAppender"/>
             <AppenderRef ref="WarnRoutingApplyProjectAppender"/>
         </Logger>
 
         <!-- 申请数据库权限任务日志输出 -->
-        <Logger name="com.oceanbase.odc.service.permissionapply.database.ApplyDatabaseFlowableTask" level="INFO" additivity="true">
+        <Logger name="com.oceanbase.odc.service.permission.database.ApplyDatabaseFlowableTask" level="INFO" additivity="true">
             <AppenderRef ref="AllRoutingApplyDatabaseAppender"/>
             <AppenderRef ref="WarnRoutingApplyDatabaseAppender"/>
         </Logger>

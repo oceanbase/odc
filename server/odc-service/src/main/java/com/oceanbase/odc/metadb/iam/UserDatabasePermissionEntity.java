@@ -17,7 +17,13 @@ package com.oceanbase.odc.metadb.iam;
 
 import java.util.Date;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
 import javax.persistence.Table;
 
 import com.oceanbase.odc.core.shared.constant.PermissionSourceType;
@@ -35,36 +41,55 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(exclude = {"createTime"})
 public class UserDatabasePermissionEntity {
 
+    @Id
+    @Column(name = "id", nullable = false, updatable = false)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "user_id")
     private Long userId;
 
+    @Column(name = "action")
     private String action;
 
+    @Column(name = "source_type")
+    @Enumerated(value = EnumType.STRING)
     private PermissionSourceType sourceType;
 
+    @Column(name = "ticket_id")
     private Long ticketId;
 
+    @Column(name = "create_time", nullable = false, updatable = false)
     private Date createTime;
 
+    @Column(name = "expire_time", nullable = false, updatable = false)
     private Date expireTime;
 
+    @Column(name = "creator_id")
     private Long creatorId;
 
+    @Column(name = "organization_id")
     private Long organizationId;
 
+    @Column(name = "project_id")
     private Long projectId;
 
+    @Column(name = "database_id")
     private Long databaseId;
 
+    @Column(name = "database_name")
     private String databaseName;
 
-    private Long connectionId;
+    @Column(name = "datasource_id")
+    private Long datasourceId;
 
-    private String connectionName;
+    @Column(name = "datasource_name")
+    private String datasourceName;
 
+    @Column(name = "environment_id")
     private Long environmentId;
 
+    @Column(name = "environment_name")
     private String environmentName;
 
 }
