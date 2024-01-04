@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 OceanBase.
+ * Copyright (c) 2024 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,31 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.oceanbase.odc.service.notification.model;
 
-import java.util.Date;
 import java.util.List;
 
-import lombok.Data;
-
 /**
- * @Author: Lebie
- * @Date: 2023/3/20 14:50
- * @Description: []
+ * @author liuyizhuo.lyz
+ * @date 2024/1/4
  */
-@Data
-public class NotificationPolicy {
+public class WeComChannelConfig extends BaseChannelConfig {
 
-    private long id;
-    private Date createTime;
-    private Date updateTime;
-    private Long creatorId;
-    private Long organizationId;
-    private Long projectId;
-    private String matchExpression;
-    private boolean enabled;
-    private List<Channel> channels;
-    private Long eventMetadataId;
-    private String eventName;
+    private String webhook;
+
+    private List<Long> atMobiles;
 
 }

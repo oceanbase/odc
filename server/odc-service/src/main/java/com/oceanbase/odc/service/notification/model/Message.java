@@ -15,7 +15,7 @@
  */
 package com.oceanbase.odc.service.notification.model;
 
-import java.util.List;
+import java.util.Date;
 
 import com.oceanbase.odc.metadb.notification.MessageEntity;
 
@@ -37,16 +37,19 @@ public class Message {
     private Long id;
     private String title;
     private String content;
-    private List<String> toRecipients;
-    private List<String> ccRecipients;
     private Long eventId;
-    private Long channelId;
     private MessageSendingStatus status;
     private Integer retryTimes;
     private Integer maxRetryTimes;
     private Long creatorId;
     private Long organizationId;
-
+    private Long projectId;
+    private String errorMessage;
+    private Date createTime;
+    private Date updateTime;
+    private Date eventTriggerTime;
+    private Date lastSentTime;
+    private Channel channel;
 
 
     public MessageEntity toEntity() {
@@ -57,10 +60,8 @@ public class Message {
         entity.setCreatorId(this.getCreatorId());
         entity.setOrganizationId(this.getOrganizationId());
         entity.setEventId(this.getEventId());
-        entity.setChannelId(this.getChannelId());
+        entity.setChannelId(this.channel.getId());
         entity.setStatus(this.getStatus());
-        entity.setToRecipients(this.getToRecipients());
-        entity.setCcRecipients(this.getCcRecipients());
         entity.setRetryTimes(this.getRetryTimes());
         entity.setMaxRetryTimes(this.getMaxRetryTimes());
         return entity;
@@ -71,10 +72,7 @@ public class Message {
         message.setId(entity.getId());
         message.setContent(entity.getContent());
         message.setTitle(entity.getTitle());
-        message.setCcRecipients(entity.getCcRecipients());
-        message.setToRecipients(entity.getToRecipients());
         message.setStatus(entity.getStatus());
-        message.setChannelId(entity.getChannelId());
         message.setCreatorId(entity.getCreatorId());
         message.setOrganizationId(entity.getOrganizationId());
         message.setRetryTimes(entity.getRetryTimes());

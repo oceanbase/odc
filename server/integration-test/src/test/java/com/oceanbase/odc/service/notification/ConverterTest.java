@@ -135,7 +135,7 @@ public class ConverterTest extends ServiceTestEnv {
     private ChannelEntity getChannelEntity() {
         ChannelEntity entity = new ChannelEntity();
         entity.setId(1L);
-        entity.setType(ChannelType.DingTalkGroupBot);
+        entity.setType(ChannelType.DingTalk);
         entity.setName("testChannel");
         entity.setCreatorId(USER_ID);
         entity.setOrganizationId(ORGANIZATION_ID);

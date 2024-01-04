@@ -60,6 +60,10 @@ public class NotificationPolicyEntity {
     private String titleTemplate;
     @Column(name = "content_template", nullable = false)
     private String contentTemplate;
+    @Column(name = "project_id", nullable = false)
+    private Long projectId;
+    @Column(name = "event_metadata_id", nullable = false)
+    private Long eventMetadataId;
     @Column(name = "match_expression_json", nullable = false)
     private String matchExpression;
     @Convert(converter = ListConverter.class)
@@ -68,4 +72,6 @@ public class NotificationPolicyEntity {
     @Convert(converter = ListConverter.class)
     @Column(name = "cc_recipients")
     private List<String> ccRecipients;
+    @Column(name = "is_enabled", nullable = false)
+    private boolean isEnabled;
 }

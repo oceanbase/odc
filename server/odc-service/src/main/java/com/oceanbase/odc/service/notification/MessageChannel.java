@@ -13,24 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.notification.model;
+package com.oceanbase.odc.service.notification;
 
-import java.util.Map;
-
-import lombok.Data;
+import com.oceanbase.odc.service.notification.model.ChannelType;
+import com.oceanbase.odc.service.notification.model.Message;
 
 /**
- * @Author: Lebie
- * @Date: 2023/3/20 14:49
- * @Description: []
+ * @author liuyizhuo.lyz
+ * @date 2024/1/4
  */
-@Data
-public class ChannelConfig {
-    private Long id;
+public interface MessageChannel {
+    ChannelType type();
 
-    private String name;
-
-    private ChannelType type;
-
-    private Map<String, String> properties;
+    boolean send(Message message);
 }

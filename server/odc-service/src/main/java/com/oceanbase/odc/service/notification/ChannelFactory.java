@@ -15,14 +15,11 @@
  */
 package com.oceanbase.odc.service.notification;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.exception.NotImplementedException;
-import com.oceanbase.odc.metadb.iam.UserRepository;
-import com.oceanbase.odc.service.notification.model.ChannelConfig;
-import com.oceanbase.odc.service.notification.model.ChannelType;
+import com.oceanbase.odc.service.notification.model.Channel;
 
 /**
  * @Author: Lebie
@@ -32,14 +29,13 @@ import com.oceanbase.odc.service.notification.model.ChannelType;
 @Service
 @SkipAuthorize("odc internal usage")
 public class ChannelFactory {
-    @Autowired
-    private UserRepository userRepository;
 
-    public Channel generate(ChannelConfig channelConfig) {
-        if (channelConfig.getType() == ChannelType.DingTalkGroupBot) {
-            return new DingTalkBotChannel(channelConfig, userRepository);
-        } else {
-            throw new NotImplementedException();
+    public MessageChannel generate(Channel channel) {
+        switch (channel.getType()) {
+            case DingTalk:
+                return new DingTalkBotChannel(channel);
+            default:
+                throw new NotImplementedException();
         }
     }
 }

@@ -13,31 +13,39 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.oceanbase.odc.service.notification.model;
 
-import java.util.Date;
-import java.util.List;
+import java.util.Locale;
+
+import org.springframework.context.i18n.LocaleContextHolder;
+
+import com.fasterxml.jackson.annotation.JsonSetter;
 
 import lombok.Data;
 
 /**
- * @Author: Lebie
- * @Date: 2023/3/20 14:50
- * @Description: []
+ * @author liuyizhuo.lyz
+ * @date 2024/1/4
  */
 @Data
-public class NotificationPolicy {
+public class BaseChannelConfig {
 
-    private long id;
-    private Date createTime;
-    private Date updateTime;
-    private Long creatorId;
-    private Long organizationId;
-    private Long projectId;
-    private String matchExpression;
-    private boolean enabled;
-    private List<Channel> channels;
-    private Long eventMetadataId;
-    private String eventName;
+    private Locale language;
+
+    private String titleTemplate;
+
+    private String contentTemplate;
+
+    private RateLimitConfig rateLimitConfig;
+
+    @JsonSetter("language")
+    public void setLanguage(String language) {
+        try {
+            this.language = Locale.forLanguageTag(language);
+        } catch (Exception e) {
+            this.language = LocaleContextHolder.getLocale();
+        }
+    }
 
 }
