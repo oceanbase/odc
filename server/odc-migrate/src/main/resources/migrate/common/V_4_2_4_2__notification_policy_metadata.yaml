@@ -1,0 +1,991 @@
+kind: resource
+version: v2
+templates:
+  - metadata:
+      allow_duplicate: false
+      table_name: notification_policy_metadata
+      specs:
+        - column_name: id
+          default_value: 1
+          data_type: java.lang.Long
+        - column_name: event_category
+          value: "TASK"
+        - column_name: event_name
+          value: "${com.oceanbase.odc.TaskType.ASYNC}-${com.oceanbase.odc.TaskStatus.EXECUTION_SUCCEEDED}"
+        - column_name: match_expression_json
+          value: "{\"taskType\":\"ASYNC\",\"taskStatus\":\"EXECUTION_SUCCEEDED\"}"
+  - metadata:
+      allow_duplicate: false
+      table_name: notification_event_metadata
+      specs:
+        - column_name: id
+          default_value: 2
+          data_type: java.lang.Long
+        - column_name: event_category
+          value: "TASK"
+        - column_name: event_name
+          value: "${com.oceanbase.odc.TaskType.ASYNC}-${com.oceanbase.odc.TaskStatus.EXECUTION_FAILED}"
+        - column_name: match_expression_json
+          value: "{\"taskType\":\"ASYNC\",\"taskStatus\":\"EXECUTION_FAILED\"}"
+  - metadata:
+      allow_duplicate: false
+      table_name: notification_event_metadata
+      specs:
+        - column_name: id
+          default_value: 3
+          data_type: java.lang.Long
+        - column_name: event_category
+          value: "TASK"
+        - column_name: event_name
+          value: "${com.oceanbase.odc.TaskType.ASYNC}-${com.oceanbase.odc.TaskStatus.EXECUTION_TIMEOUT}"
+        - column_name: match_expression_json
+          value: "{\"taskType\":\"ASYNC\",\"taskStatus\":\"EXECUTION_TIMEOUT\"}"
+  - metadata:
+      allow_duplicate: false
+      table_name: notification_event_metadata
+      specs:
+        - column_name: id
+          default_value: 4
+          data_type: java.lang.Long
+        - column_name: event_category
+          value: "TASK"
+        - column_name: event_name
+          value: "${com.oceanbase.odc.TaskType.ASYNC}-${com.oceanbase.odc.TaskStatus.PENDING_APPROVAL}"
+        - column_name: match_expression_json
+          value: "{\"taskType\":\"ASYNC\",\"taskStatus\":\"PENDING_APPROVAL\"}"
+  - metadata:
+      allow_duplicate: false
+      table_name: notification_event_metadata
+      specs:
+        - column_name: id
+          default_value: 5
+          data_type: java.lang.Long
+        - column_name: event_category
+          value: "TASK"
+        - column_name: event_name
+          value: "${com.oceanbase.odc.TaskType.ASYNC}-${com.oceanbase.odc.TaskStatus.APPROVED}"
+        - column_name: match_expression_json
+          value: "{\"taskType\":\"ASYNC\",\"taskStatus\":\"APPROVED\"}"
+  - metadata:
+      allow_duplicate: false
+      table_name: notification_event_metadata
+      specs:
+        - column_name: id
+          default_value: 6
+          data_type: java.lang.Long
+        - column_name: event_category
+          value: "TASK"
+        - column_name: event_name
+          value: "${com.oceanbase.odc.TaskType.ASYNC}-${com.oceanbase.odc.TaskStatus.APPROVAL_REJECTION}"
+        - column_name: match_expression_json
+          value: "{\"taskType\":\"ASYNC\",\"taskStatus\":\"APPROVAL_REJECTION\"}"
+  - metadata:
+      allow_duplicate: false
+      table_name: notification_event_metadata
+      specs:
+        - column_name: id
+          default_value: 7
+          data_type: java.lang.Long
+        - column_name: event_category
+          value: "TASK"
+        - column_name: event_name
+          value: "${com.oceanbase.odc.TaskType.IMPORT}-${com.oceanbase.odc.TaskStatus.EXECUTION_SUCCEEDED}"
+        - column_name: match_expression_json
+          value: "{\"taskType\":\"IMPORT\",\"taskStatus\":\"EXECUTION_SUCCEEDED\"}"
+  - metadata:
+      allow_duplicate: false
+      table_name: notification_event_metadata
+      specs:
+        - column_name: id
+          default_value: 8
+          data_type: java.lang.Long
+        - column_name: event_category
+          value: "TASK"
+        - column_name: event_name
+          value: "${com.oceanbase.odc.TaskType.IMPORT}-${com.oceanbase.odc.TaskStatus.EXECUTION_FAILED}"
+        - column_name: match_expression_json
+          value: "{\"taskType\":\"IMPORT\",\"taskStatus\":\"EXECUTION_FAILED\"}"
+  - metadata:
+      allow_duplicate: false
+      table_name: notification_event_metadata
+      specs:
+        - column_name: id
+          default_value: 9
+          data_type: java.lang.Long
+        - column_name: event_category
+          value: "TASK"
+        - column_name: event_name
+          value: "${com.oceanbase.odc.TaskType.IMPORT}-${com.oceanbase.odc.TaskStatus.EXECUTION_TIMEOUT}"
+        - column_name: match_expression_json
+          value: "{\"taskType\":\"IMPORT\",\"taskStatus\":\"EXECUTION_TIMEOUT\"}"
+  - metadata:
+      allow_duplicate: false
+      table_name: notification_event_metadata
+      specs:
+        - column_name: id
+          default_value: 10
+          data_type: java.lang.Long
+        - column_name: event_category
+          value: "TASK"
+        - column_name: event_name
+          value: "${com.oceanbase.odc.TaskType.IMPORT}-${com.oceanbase.odc.TaskStatus.PENDING_APPROVAL}"
+        - column_name: match_expression_json
+          value: "{\"taskType\":\"IMPORT\",\"taskStatus\":\"PENDING_APPROVAL\"}"
+  - metadata:
+      allow_duplicate: false
+      table_name: notification_event_metadata
+      specs:
+        - column_name: id
+          default_value: 11
+          data_type: java.lang.Long
+        - column_name: event_category
+          value: "TASK"
+        - column_name: event_name
+          value: "${com.oceanbase.odc.TaskType.IMPORT}-${com.oceanbase.odc.TaskStatus.APPROVED}"
+        - column_name: match_expression_json
+          value: "{\"taskType\":\"IMPORT\",\"taskStatus\":\"APPROVED\"}"
+  - metadata:
+      allow_duplicate: false
+      table_name: notification_event_metadata
+      specs:
+        - column_name: id
+          default_value: 12
+          data_type: java.lang.Long
+        - column_name: event_category
+          value: "TASK"
+        - column_name: event_name
+          value: "${com.oceanbase.odc.TaskType.IMPORT}-${com.oceanbase.odc.TaskStatus.APPROVAL_REJECTION}"
+        - column_name: match_expression_json
+          value: "{\"taskType\":\"IMPORT\",\"taskStatus\":\"APPROVAL_REJECTION\"}"
+  - metadata:
+      allow_duplicate: false
+      table_name: notification_event_metadata
+      specs:
+        - column_name: id
+          default_value: 13
+          data_type: java.lang.Long
+        - column_name: event_category
+          value: "TASK"
+        - column_name: event_name
+          value: "${com.oceanbase.odc.TaskType.EXPORT}-${com.oceanbase.odc.TaskStatus.EXECUTION_SUCCEEDED}"
+        - column_name: match_expression_json
+          value: "{\"taskType\":\"EXPORT\",\"taskStatus\":\"EXECUTION_SUCCEEDED\"}"
+  - metadata:
+      allow_duplicate: false
+      table_name: notification_event_metadata
+      specs:
+        - column_name: id
+          default_value: 14
+          data_type: java.lang.Long
+        - column_name: event_category
+          value: "TASK"
+        - column_name: event_name
+          value: "${com.oceanbase.odc.TaskType.EXPORT}-${com.oceanbase.odc.TaskStatus.EXECUTION_FAILED}"
+        - column_name: match_expression_json
+          value: "{\"taskType\":\"EXPORT\",\"taskStatus\":\"EXECUTION_FAILED\"}"
+  - metadata:
+      allow_duplicate: false
+      table_name: notification_event_metadata
+      specs:
+        - column_name: id
+          default_value: 15
+          data_type: java.lang.Long
+        - column_name: event_category
+          value: "TASK"
+        - column_name: event_name
+          value: "${com.oceanbase.odc.TaskType.EXPORT}-${com.oceanbase.odc.TaskStatus.EXECUTION_TIMEOUT}"
+        - column_name: match_expression_json
+          value: "{\"taskType\":\"EXPORT\",\"taskStatus\":\"EXECUTION_TIMEOUT\"}"
+  - metadata:
+      allow_duplicate: false
+      table_name: notification_event_metadata
+      specs:
+        - column_name: id
+          default_value: 16
+          data_type: java.lang.Long
+        - column_name: event_category
+          value: "TASK"
+        - column_name: event_name
+          value: "${com.oceanbase.odc.TaskType.EXPORT}-${com.oceanbase.odc.TaskStatus.PENDING_APPROVAL}"
+        - column_name: match_expression_json
+          value: "{\"taskType\":\"EXPORT\",\"taskStatus\":\"PENDING_APPROVAL\"}"
+  - metadata:
+      allow_duplicate: false
+      table_name: notification_event_metadata
+      specs:
+        - column_name: id
+          default_value: 17
+          data_type: java.lang.Long
+        - column_name: event_category
+          value: "TASK"
+        - column_name: event_name
+          value: "${com.oceanbase.odc.TaskType.EXPORT}-${com.oceanbase.odc.TaskStatus.APPROVED}"
+        - column_name: match_expression_json
+          value: "{\"taskType\":\"EXPORT\",\"taskStatus\":\"APPROVED\"}"
+  - metadata:
+      allow_duplicate: false
+      table_name: notification_event_metadata
+      specs:
+        - column_name: id
+          default_value: 18
+          data_type: java.lang.Long
+        - column_name: event_category
+          value: "TASK"
+        - column_name: event_name
+          value: "${com.oceanbase.odc.TaskType.EXPORT}-${com.oceanbase.odc.TaskStatus.APPROVAL_REJECTION}"
+        - column_name: match_expression_json
+          value: "{\"taskType\":\"EXPORT\",\"taskStatus\":\"APPROVAL_REJECTION\"}"
+  - metadata:
+      allow_duplicate: false
+      table_name: notification_event_metadata
+      specs:
+        - column_name: id
+          default_value: 19
+          data_type: java.lang.Long
+        - column_name: event_category
+          value: "TASK"
+        - column_name: event_name
+          value: "${com.oceanbase.odc.TaskType.MOCKDATA}-${com.oceanbase.odc.TaskStatus.EXECUTION_SUCCEEDED}"
+        - column_name: match_expression_json
+          value: "{\"taskType\":\"MOCKDATA\",\"taskStatus\":\"EXECUTION_SUCCEEDED\"}"
+  - metadata:
+      allow_duplicate: false
+      table_name: notification_event_metadata
+      specs:
+        - column_name: id
+          default_value: 20
+          data_type: java.lang.Long
+        - column_name: event_category
+          value: "TASK"
+        - column_name: event_name
+          value: "${com.oceanbase.odc.TaskType.MOCKDATA}-${com.oceanbase.odc.TaskStatus.EXECUTION_FAILED}"
+        - column_name: match_expression_json
+          value: "{\"taskType\":\"MOCKDATA\",\"taskStatus\":\"EXECUTION_FAILED\"}"
+  - metadata:
+      allow_duplicate: false
+      table_name: notification_event_metadata
+      specs:
+        - column_name: id
+          default_value: 21
+          data_type: java.lang.Long
+        - column_name: event_category
+          value: "TASK"
+        - column_name: event_name
+          value: "${com.oceanbase.odc.TaskType.MOCKDATA}-${com.oceanbase.odc.TaskStatus.EXECUTION_TIMEOUT}"
+        - column_name: match_expression_json
+          value: "{\"taskType\":\"MOCKDATA\",\"taskStatus\":\"EXECUTION_TIMEOUT\"}"
+  - metadata:
+      allow_duplicate: false
+      table_name: notification_event_metadata
+      specs:
+        - column_name: id
+          default_value: 22
+          data_type: java.lang.Long
+        - column_name: event_category
+          value: "TASK"
+        - column_name: event_name
+          value: "${com.oceanbase.odc.TaskType.MOCKDATA}-${com.oceanbase.odc.TaskStatus.PENDING_APPROVAL}"
+        - column_name: match_expression_json
+          value: "{\"taskType\":\"MOCKDATA\",\"taskStatus\":\"PENDING_APPROVAL\"}"
+  - metadata:
+      allow_duplicate: false
+      table_name: notification_event_metadata
+      specs:
+        - column_name: id
+          default_value: 23
+          data_type: java.lang.Long
+        - column_name: event_category
+          value: "TASK"
+        - column_name: event_name
+          value: "${com.oceanbase.odc.TaskType.MOCKDATA}-${com.oceanbase.odc.TaskStatus.APPROVED}"
+        - column_name: match_expression_json
+          value: "{\"taskType\":\"MOCKDATA\",\"taskStatus\":\"APPROVED\"}"
+  - metadata:
+      allow_duplicate: false
+      table_name: notification_event_metadata
+      specs:
+        - column_name: id
+          default_value: 24
+          data_type: java.lang.Long
+        - column_name: event_category
+          value: "TASK"
+        - column_name: event_name
+          value: "${com.oceanbase.odc.TaskType.MOCKDATA}-${com.oceanbase.odc.TaskStatus.APPROVAL_REJECTION}"
+        - column_name: match_expression_json
+          value: "{\"taskType\":\"MOCKDATA\",\"taskStatus\":\"APPROVAL_REJECTION\"}"
+  - metadata:
+      allow_duplicate: false
+      table_name: notification_event_metadata
+      specs:
+        - column_name: id
+          default_value: 25
+          data_type: java.lang.Long
+        - column_name: event_category
+          value: "TASK"
+        - column_name: event_name
+          value: "${com.oceanbase.odc.TaskType.SHADOWTABLE_SYNC}-${com.oceanbase.odc.TaskStatus.EXECUTION_SUCCEEDED}"
+        - column_name: match_expression_json
+          value: "{\"taskType\":\"SHADOWTABLE_SYNC\",\"taskStatus\":\"EXECUTION_SUCCEEDED\"}"
+  - metadata:
+      allow_duplicate: false
+      table_name: notification_event_metadata
+      specs:
+        - column_name: id
+          default_value: 26
+          data_type: java.lang.Long
+        - column_name: event_category
+          value: "TASK"
+        - column_name: event_name
+          value: "${com.oceanbase.odc.TaskType.SHADOWTABLE_SYNC}-${com.oceanbase.odc.TaskStatus.EXECUTION_FAILED}"
+        - column_name: match_expression_json
+          value: "{\"taskType\":\"SHADOWTABLE_SYNC\",\"taskStatus\":\"EXECUTION_FAILED\"}"
+  - metadata:
+      allow_duplicate: false
+      table_name: notification_event_metadata
+      specs:
+        - column_name: id
+          default_value: 27
+          data_type: java.lang.Long
+        - column_name: event_category
+          value: "TASK"
+        - column_name: event_name
+          value: "${com.oceanbase.odc.TaskType.SHADOWTABLE_SYNC}-${com.oceanbase.odc.TaskStatus.EXECUTION_TIMEOUT}"
+        - column_name: match_expression_json
+          value: "{\"taskType\":\"SHADOWTABLE_SYNC\",\"taskStatus\":\"EXECUTION_TIMEOUT\"}"
+  - metadata:
+      allow_duplicate: false
+      table_name: notification_event_metadata
+      specs:
+        - column_name: id
+          default_value: 28
+          data_type: java.lang.Long
+        - column_name: event_category
+          value: "TASK"
+        - column_name: event_name
+          value: "${com.oceanbase.odc.TaskType.SHADOWTABLE_SYNC}-${com.oceanbase.odc.TaskStatus.PENDING_APPROVAL}"
+        - column_name: match_expression_json
+          value: "{\"taskType\":\"SHADOWTABLE_SYNC\",\"taskStatus\":\"PENDING_APPROVAL\"}"
+  - metadata:
+      allow_duplicate: false
+      table_name: notification_event_metadata
+      specs:
+        - column_name: id
+          default_value: 29
+          data_type: java.lang.Long
+        - column_name: event_category
+          value: "TASK"
+        - column_name: event_name
+          value: "${com.oceanbase.odc.TaskType.SHADOWTABLE_SYNC}-${com.oceanbase.odc.TaskStatus.APPROVED}"
+        - column_name: match_expression_json
+          value: "{\"taskType\":\"SHADOWTABLE_SYNC\",\"taskStatus\":\"APPROVED\"}"
+  - metadata:
+      allow_duplicate: false
+      table_name: notification_event_metadata
+      specs:
+        - column_name: id
+          default_value: 30
+          data_type: java.lang.Long
+        - column_name: event_category
+          value: "TASK"
+        - column_name: event_name
+          value: "${com.oceanbase.odc.TaskType.SHADOWTABLE_SYNC}-${com.oceanbase.odc.TaskStatus.APPROVAL_REJECTION}"
+        - column_name: match_expression_json
+          value: "{\"taskType\":\"SHADOWTABLE_SYNC\",\"taskStatus\":\"APPROVAL_REJECTION\"}"
+  - metadata:
+      allow_duplicate: false
+      table_name: notification_event_metadata
+      specs:
+        - column_name: id
+          default_value: 31
+          data_type: java.lang.Long
+        - column_name: event_category
+          value: "TASK"
+        - column_name: event_name
+          value: "${com.oceanbase.odc.TaskType.ONLINE_SCHEMA_CHANGE}-${com.oceanbase.odc.TaskStatus.EXECUTION_SUCCEEDED}"
+        - column_name: match_expression_json
+          value: "{\"taskType\":\"ONLINE_SCHEMA_CHANGE\",\"taskStatus\":\"EXECUTION_SUCCEEDED\"}"
+  - metadata:
+      allow_duplicate: false
+      table_name: notification_event_metadata
+      specs:
+        - column_name: id
+          default_value: 32
+          data_type: java.lang.Long
+        - column_name: event_category
+          value: "TASK"
+        - column_name: event_name
+          value: "${com.oceanbase.odc.TaskType.ONLINE_SCHEMA_CHANGE}-${com.oceanbase.odc.TaskStatus.EXECUTION_FAILED}"
+        - column_name: match_expression_json
+          value: "{\"taskType\":\"ONLINE_SCHEMA_CHANGE\",\"taskStatus\":\"EXECUTION_FAILED\"}"
+  - metadata:
+      allow_duplicate: false
+      table_name: notification_event_metadata
+      specs:
+        - column_name: id
+          default_value: 33
+          data_type: java.lang.Long
+        - column_name: event_category
+          value: "TASK"
+        - column_name: event_name
+          value: "${com.oceanbase.odc.TaskType.ONLINE_SCHEMA_CHANGE}-${com.oceanbase.odc.TaskStatus.EXECUTION_TIMEOUT}"
+        - column_name: match_expression_json
+          value: "{\"taskType\":\"ONLINE_SCHEMA_CHANGE\",\"taskStatus\":\"EXECUTION_TIMEOUT\"}"
+  - metadata:
+      allow_duplicate: false
+      table_name: notification_event_metadata
+      specs:
+        - column_name: id
+          default_value: 34
+          data_type: java.lang.Long
+        - column_name: event_category
+          value: "TASK"
+        - column_name: event_name
+          value: "${com.oceanbase.odc.TaskType.ONLINE_SCHEMA_CHANGE}-${com.oceanbase.odc.TaskStatus.PENDING_APPROVAL}"
+        - column_name: match_expression_json
+          value: "{\"taskType\":\"ONLINE_SCHEMA_CHANGE\",\"taskStatus\":\"PENDING_APPROVAL\"}"
+  - metadata:
+      allow_duplicate: false
+      table_name: notification_event_metadata
+      specs:
+        - column_name: id
+          default_value: 35
+          data_type: java.lang.Long
+        - column_name: event_category
+          value: "TASK"
+        - column_name: event_name
+          value: "${com.oceanbase.odc.TaskType.ONLINE_SCHEMA_CHANGE}-${com.oceanbase.odc.TaskStatus.APPROVED}"
+        - column_name: match_expression_json
+          value: "{\"taskType\":\"ONLINE_SCHEMA_CHANGE\",\"taskStatus\":\"APPROVED\"}"
+  - metadata:
+      allow_duplicate: false
+      table_name: notification_event_metadata
+      specs:
+        - column_name: id
+          default_value: 36
+          data_type: java.lang.Long
+        - column_name: event_category
+          value: "TASK"
+        - column_name: event_name
+          value: "${com.oceanbase.odc.TaskType.ONLINE_SCHEMA_CHANGE}-${com.oceanbase.odc.TaskStatus.APPROVAL_REJECTION}"
+        - column_name: match_expression_json
+          value: "{\"taskType\":\"ONLINE_SCHEMA_CHANGE\",\"taskStatus\":\"APPROVAL_REJECTION\"}"
+  - metadata:
+      allow_duplicate: false
+      table_name: notification_event_metadata
+      specs:
+        - column_name: id
+          default_value: 37
+          data_type: java.lang.Long
+        - column_name: event_category
+          value: "TASK"
+        - column_name: event_name
+          value: "${com.oceanbase.odc.TaskType.EXPORT_RESULT_SET}-${com.oceanbase.odc.TaskStatus.EXECUTION_SUCCEEDED}"
+        - column_name: match_expression_json
+          value: "{\"taskType\":\"EXPORT_RESULT_SET\",\"taskStatus\":\"EXECUTION_SUCCEEDED\"}"
+  - metadata:
+      allow_duplicate: false
+      table_name: notification_event_metadata
+      specs:
+        - column_name: id
+          default_value: 38
+          data_type: java.lang.Long
+        - column_name: event_category
+          value: "TASK"
+        - column_name: event_name
+          value: "${com.oceanbase.odc.TaskType.EXPORT_RESULT_SET}-${com.oceanbase.odc.TaskStatus.EXECUTION_FAILED}"
+        - column_name: match_expression_json
+          value: "{\"taskType\":\"EXPORT_RESULT_SET\",\"taskStatus\":\"EXECUTION_FAILED\"}"
+  - metadata:
+      allow_duplicate: false
+      table_name: notification_event_metadata
+      specs:
+        - column_name: id
+          default_value: 39
+          data_type: java.lang.Long
+        - column_name: event_category
+          value: "TASK"
+        - column_name: event_name
+          value: "${com.oceanbase.odc.TaskType.EXPORT_RESULT_SET}-${com.oceanbase.odc.TaskStatus.EXECUTION_TIMEOUT}"
+        - column_name: match_expression_json
+          value: "{\"taskType\":\"EXPORT_RESULT_SET\",\"taskStatus\":\"EXECUTION_TIMEOUT\"}"
+  - metadata:
+      allow_duplicate: false
+      table_name: notification_event_metadata
+      specs:
+        - column_name: id
+          default_value: 40
+          data_type: java.lang.Long
+        - column_name: event_category
+          value: "TASK"
+        - column_name: event_name
+          value: "${com.oceanbase.odc.TaskType.EXPORT_RESULT_SET}-${com.oceanbase.odc.TaskStatus.PENDING_APPROVAL}"
+        - column_name: match_expression_json
+          value: "{\"taskType\":\"EXPORT_RESULT_SET\",\"taskStatus\":\"PENDING_APPROVAL\"}"
+  - metadata:
+      allow_duplicate: false
+      table_name: notification_event_metadata
+      specs:
+        - column_name: id
+          default_value: 41
+          data_type: java.lang.Long
+        - column_name: event_category
+          value: "TASK"
+        - column_name: event_name
+          value: "${com.oceanbase.odc.TaskType.EXPORT_RESULT_SET}-${com.oceanbase.odc.TaskStatus.APPROVED}"
+        - column_name: match_expression_json
+          value: "{\"taskType\":\"EXPORT_RESULT_SET\",\"taskStatus\":\"APPROVED\"}"
+  - metadata:
+      allow_duplicate: false
+      table_name: notification_event_metadata
+      specs:
+        - column_name: id
+          default_value: 42
+          data_type: java.lang.Long
+        - column_name: event_category
+          value: "TASK"
+        - column_name: event_name
+          value: "${com.oceanbase.odc.TaskType.EXPORT_RESULT_SET}-${com.oceanbase.odc.TaskStatus.APPROVAL_REJECTION}"
+        - column_name: match_expression_json
+          value: "{\"taskType\":\"EXPORT_RESULT_SET\",\"taskStatus\":\"APPROVAL_REJECTION\"}"
+  - metadata:
+      allow_duplicate: false
+      table_name: notification_event_metadata
+      specs:
+        - column_name: id
+          default_value: 43
+          data_type: java.lang.Long
+        - column_name: event_category
+          value: "TASK"
+        - column_name: event_name
+          value: "${com.oceanbase.odc.TaskType.SQL_PLAN}-${com.oceanbase.odc.TaskStatus.EXECUTION_SUCCEEDED}"
+        - column_name: match_expression_json
+          value: "{\"taskType\":\"SQL_PLAN\",\"taskStatus\":\"EXECUTION_SUCCEEDED\"}"
+  - metadata:
+      allow_duplicate: false
+      table_name: notification_event_metadata
+      specs:
+        - column_name: id
+          default_value: 44
+          data_type: java.lang.Long
+        - column_name: event_category
+          value: "TASK"
+        - column_name: event_name
+          value: "${com.oceanbase.odc.TaskType.SQL_PLAN}-${com.oceanbase.odc.TaskStatus.EXECUTION_FAILED}"
+        - column_name: match_expression_json
+          value: "{\"taskType\":\"SQL_PLAN\",\"taskStatus\":\"EXECUTION_FAILED\"}"
+  - metadata:
+      allow_duplicate: false
+      table_name: notification_event_metadata
+      specs:
+        - column_name: id
+          default_value: 45
+          data_type: java.lang.Long
+        - column_name: event_category
+          value: "TASK"
+        - column_name: event_name
+          value: "${com.oceanbase.odc.TaskType.SQL_PLAN}-${com.oceanbase.odc.TaskStatus.EXECUTION_TIMEOUT}"
+        - column_name: match_expression_json
+          value: "{\"taskType\":\"SQL_PLAN\",\"taskStatus\":\"EXECUTION_TIMEOUT\"}"
+  - metadata:
+      allow_duplicate: false
+      table_name: notification_event_metadata
+      specs:
+        - column_name: id
+          default_value: 46
+          data_type: java.lang.Long
+        - column_name: event_category
+          value: "TASK"
+        - column_name: event_name
+          value: "${com.oceanbase.odc.TaskType.SQL_PLAN}-${com.oceanbase.odc.TaskStatus.PENDING_APPROVAL}"
+        - column_name: match_expression_json
+          value: "{\"taskType\":\"SQL_PLAN\",\"taskStatus\":\"PENDING_APPROVAL\"}"
+  - metadata:
+      allow_duplicate: false
+      table_name: notification_event_metadata
+      specs:
+        - column_name: id
+          default_value: 47
+          data_type: java.lang.Long
+        - column_name: event_category
+          value: "TASK"
+        - column_name: event_name
+          value: "${com.oceanbase.odc.TaskType.SQL_PLAN}-${com.oceanbase.odc.TaskStatus.APPROVED}"
+        - column_name: match_expression_json
+          value: "{\"taskType\":\"SQL_PLAN\",\"taskStatus\":\"APPROVED\"}"
+  - metadata:
+      allow_duplicate: false
+      table_name: notification_event_metadata
+      specs:
+        - column_name: id
+          default_value: 48
+          data_type: java.lang.Long
+        - column_name: event_category
+          value: "TASK"
+        - column_name: event_name
+          value: "${com.oceanbase.odc.TaskType.SQL_PLAN}-${com.oceanbase.odc.TaskStatus.APPROVAL_REJECTION}"
+        - column_name: match_expression_json
+          value: "{\"taskType\":\"SQL_PLAN\",\"taskStatus\":\"APPROVAL_REJECTION\"}"
+  - metadata:
+      allow_duplicate: false
+      table_name: notification_event_metadata
+      specs:
+        - column_name: id
+          default_value: 49
+          data_type: java.lang.Long
+        - column_name: event_category
+          value: "TASK"
+        - column_name: event_name
+          value: "${com.oceanbase.odc.TaskType.PARTITION_PLAN}-${com.oceanbase.odc.TaskStatus.EXECUTION_SUCCEEDED}"
+        - column_name: match_expression_json
+          value: "{\"taskType\":\"PARTITION_PLAN\",\"taskStatus\":\"EXECUTION_SUCCEEDED\"}"
+  - metadata:
+      allow_duplicate: false
+      table_name: notification_event_metadata
+      specs:
+        - column_name: id
+          default_value: 50
+          data_type: java.lang.Long
+        - column_name: event_category
+          value: "TASK"
+        - column_name: event_name
+          value: "${com.oceanbase.odc.TaskType.PARTITION_PLAN}-${com.oceanbase.odc.TaskStatus.EXECUTION_FAILED}"
+        - column_name: match_expression_json
+          value: "{\"taskType\":\"PARTITION_PLAN\",\"taskStatus\":\"EXECUTION_FAILED\"}"
+  - metadata:
+      allow_duplicate: false
+      table_name: notification_event_metadata
+      specs:
+        - column_name: id
+          default_value: 51
+          data_type: java.lang.Long
+        - column_name: event_category
+          value: "TASK"
+        - column_name: event_name
+          value: "${com.oceanbase.odc.TaskType.PARTITION_PLAN}-${com.oceanbase.odc.TaskStatus.EXECUTION_TIMEOUT}"
+        - column_name: match_expression_json
+          value: "{\"taskType\":\"PARTITION_PLAN\",\"taskStatus\":\"EXECUTION_TIMEOUT\"}"
+  - metadata:
+      allow_duplicate: false
+      table_name: notification_event_metadata
+      specs:
+        - column_name: id
+          default_value: 52
+          data_type: java.lang.Long
+        - column_name: event_category
+          value: "TASK"
+        - column_name: event_name
+          value: "${com.oceanbase.odc.TaskType.PARTITION_PLAN}-${com.oceanbase.odc.TaskStatus.PENDING_APPROVAL}"
+        - column_name: match_expression_json
+          value: "{\"taskType\":\"PARTITION_PLAN\",\"taskStatus\":\"PENDING_APPROVAL\"}"
+  - metadata:
+      allow_duplicate: false
+      table_name: notification_event_metadata
+      specs:
+        - column_name: id
+          default_value: 53
+          data_type: java.lang.Long
+        - column_name: event_category
+          value: "TASK"
+        - column_name: event_name
+          value: "${com.oceanbase.odc.TaskType.PARTITION_PLAN}-${com.oceanbase.odc.TaskStatus.APPROVED}"
+        - column_name: match_expression_json
+          value: "{\"taskType\":\"PARTITION_PLAN\",\"taskStatus\":\"APPROVED\"}"
+  - metadata:
+      allow_duplicate: false
+      table_name: notification_event_metadata
+      specs:
+        - column_name: id
+          default_value: 54
+          data_type: java.lang.Long
+        - column_name: event_category
+          value: "TASK"
+        - column_name: event_name
+          value: "${com.oceanbase.odc.TaskType.PARTITION_PLAN}-${com.oceanbase.odc.TaskStatus.APPROVAL_REJECTION}"
+        - column_name: match_expression_json
+          value: "{\"taskType\":\"PARTITION_PLAN\",\"taskStatus\":\"APPROVAL_REJECTION\"}"
+  - metadata:
+      allow_duplicate: false
+      table_name: notification_event_metadata
+      specs:
+        - column_name: id
+          default_value: 55
+          data_type: java.lang.Long
+        - column_name: event_category
+          value: "TASK"
+        - column_name: event_name
+          value: "${com.oceanbase.odc.TaskType.DATA_ARCHIVE}-${com.oceanbase.odc.TaskStatus.EXECUTION_SUCCEEDED}"
+        - column_name: match_expression_json
+          value: "{\"taskType\":\"DATA_ARCHIVE\",\"taskStatus\":\"EXECUTION_SUCCEEDED\"}"
+  - metadata:
+      allow_duplicate: false
+      table_name: notification_event_metadata
+      specs:
+        - column_name: id
+          default_value: 56
+          data_type: java.lang.Long
+        - column_name: event_category
+          value: "TASK"
+        - column_name: event_name
+          value: "${com.oceanbase.odc.TaskType.DATA_ARCHIVE}-${com.oceanbase.odc.TaskStatus.EXECUTION_FAILED}"
+        - column_name: match_expression_json
+          value: "{\"taskType\":\"DATA_ARCHIVE\",\"taskStatus\":\"EXECUTION_FAILED\"}"
+  - metadata:
+      allow_duplicate: false
+      table_name: notification_event_metadata
+      specs:
+        - column_name: id
+          default_value: 57
+          data_type: java.lang.Long
+        - column_name: event_category
+          value: "TASK"
+        - column_name: event_name
+          value: "${com.oceanbase.odc.TaskType.DATA_ARCHIVE}-${com.oceanbase.odc.TaskStatus.EXECUTION_TIMEOUT}"
+        - column_name: match_expression_json
+          value: "{\"taskType\":\"DATA_ARCHIVE\",\"taskStatus\":\"EXECUTION_TIMEOUT\"}"
+  - metadata:
+      allow_duplicate: false
+      table_name: notification_event_metadata
+      specs:
+        - column_name: id
+          default_value: 58
+          data_type: java.lang.Long
+        - column_name: event_category
+          value: "TASK"
+        - column_name: event_name
+          value: "${com.oceanbase.odc.TaskType.DATA_ARCHIVE}-${com.oceanbase.odc.TaskStatus.PENDING_APPROVAL}"
+        - column_name: match_expression_json
+          value: "{\"taskType\":\"DATA_ARCHIVE\",\"taskStatus\":\"PENDING_APPROVAL\"}"
+  - metadata:
+      allow_duplicate: false
+      table_name: notification_event_metadata
+      specs:
+        - column_name: id
+          default_value: 59
+          data_type: java.lang.Long
+        - column_name: event_category
+          value: "TASK"
+        - column_name: event_name
+          value: "${com.oceanbase.odc.TaskType.DATA_ARCHIVE}-${com.oceanbase.odc.TaskStatus.APPROVED}"
+        - column_name: match_expression_json
+          value: "{\"taskType\":\"DATA_ARCHIVE\",\"taskStatus\":\"APPROVED\"}"
+  - metadata:
+      allow_duplicate: false
+      table_name: notification_event_metadata
+      specs:
+        - column_name: id
+          default_value: 60
+          data_type: java.lang.Long
+        - column_name: event_category
+          value: "TASK"
+        - column_name: event_name
+          value: "${com.oceanbase.odc.TaskType.DATA_ARCHIVE}-${com.oceanbase.odc.TaskStatus.APPROVAL_REJECTION}"
+        - column_name: match_expression_json
+          value: "{\"taskType\":\"DATA_ARCHIVE\",\"taskStatus\":\"APPROVAL_REJECTION\"}"
+  - metadata:
+      allow_duplicate: false
+      table_name: notification_event_metadata
+      specs:
+        - column_name: id
+          default_value: 61
+          data_type: java.lang.Long
+        - column_name: event_category
+          value: "TASK"
+        - column_name: event_name
+          value: "${com.oceanbase.odc.TaskType.DATA_ARCHIVE}-${com.oceanbase.odc.TaskStatus.SCHEDULING_FAILED}"
+        - column_name: match_expression_json
+          value: "{\"taskType\":\"DATA_ARCHIVE\",\"taskStatus\":\"SCHEDULING_FAILED\"}"
+  - metadata:
+      allow_duplicate: false
+      table_name: notification_event_metadata
+      specs:
+        - column_name: id
+          default_value: 62
+          data_type: java.lang.Long
+        - column_name: event_category
+          value: "TASK"
+        - column_name: event_name
+          value: "${com.oceanbase.odc.TaskType.DATA_ARCHIVE}-${com.oceanbase.odc.TaskStatus.SCHEDULING_TIMEOUT}"
+        - column_name: match_expression_json
+          value: "{\"taskType\":\"DATA_ARCHIVE\",\"taskStatus\":\"SCHEDULING_TIMEOUT\"}"
+  - metadata:
+      allow_duplicate: false
+      table_name: notification_event_metadata
+      specs:
+        - column_name: id
+          default_value: 63
+          data_type: java.lang.Long
+        - column_name: event_category
+          value: "TASK"
+        - column_name: event_name
+          value: "${com.oceanbase.odc.TaskType.DATA_DELETE}-${com.oceanbase.odc.TaskStatus.EXECUTION_SUCCEEDED}"
+        - column_name: match_expression_json
+          value: "{\"taskType\":\"DATA_DELETE\",\"taskStatus\":\"EXECUTION_SUCCEEDED\"}"
+  - metadata:
+      allow_duplicate: false
+      table_name: notification_event_metadata
+      specs:
+        - column_name: id
+          default_value: 64
+          data_type: java.lang.Long
+        - column_name: event_category
+          value: "TASK"
+        - column_name: event_name
+          value: "${com.oceanbase.odc.TaskType.DATA_DELETE}-${com.oceanbase.odc.TaskStatus.EXECUTION_FAILED}"
+        - column_name: match_expression_json
+          value: "{\"taskType\":\"DATA_DELETE\",\"taskStatus\":\"EXECUTION_FAILED\"}"
+  - metadata:
+      allow_duplicate: false
+      table_name: notification_event_metadata
+      specs:
+        - column_name: id
+          default_value: 65
+          data_type: java.lang.Long
+        - column_name: event_category
+          value: "TASK"
+        - column_name: event_name
+          value: "${com.oceanbase.odc.TaskType.DATA_DELETE}-${com.oceanbase.odc.TaskStatus.EXECUTION_TIMEOUT}"
+        - column_name: match_expression_json
+          value: "{\"taskType\":\"DATA_DELETE\",\"taskStatus\":\"EXECUTION_TIMEOUT\"}"
+  - metadata:
+      allow_duplicate: false
+      table_name: notification_event_metadata
+      specs:
+        - column_name: id
+          default_value: 66
+          data_type: java.lang.Long
+        - column_name: event_category
+          value: "TASK"
+        - column_name: event_name
+          value: "${com.oceanbase.odc.TaskType.DATA_DELETE}-${com.oceanbase.odc.TaskStatus.PENDING_APPROVAL}"
+        - column_name: match_expression_json
+          value: "{\"taskType\":\"DATA_DELETE\",\"taskStatus\":\"PENDING_APPROVAL\"}"
+  - metadata:
+      allow_duplicate: false
+      table_name: notification_event_metadata
+      specs:
+        - column_name: id
+          default_value: 67
+          data_type: java.lang.Long
+        - column_name: event_category
+          value: "TASK"
+        - column_name: event_name
+          value: "${com.oceanbase.odc.TaskType.DATA_DELETE}-${com.oceanbase.odc.TaskStatus.APPROVED}"
+        - column_name: match_expression_json
+          value: "{\"taskType\":\"DATA_DELETE\",\"taskStatus\":\"APPROVED\"}"
+  - metadata:
+      allow_duplicate: false
+      table_name: notification_event_metadata
+      specs:
+        - column_name: id
+          default_value: 68
+          data_type: java.lang.Long
+        - column_name: event_category
+          value: "TASK"
+        - column_name: event_name
+          value: "${com.oceanbase.odc.TaskType.DATA_DELETE}-${com.oceanbase.odc.TaskStatus.APPROVAL_REJECTION}"
+        - column_name: match_expression_json
+          value: "{\"taskType\":\"DATA_DELETE\",\"taskStatus\":\"APPROVAL_REJECTION\"}"
+  - metadata:
+      allow_duplicate: false
+      table_name: notification_event_metadata
+      specs:
+        - column_name: id
+          default_value: 69
+          data_type: java.lang.Long
+        - column_name: event_category
+          value: "TASK"
+        - column_name: event_name
+          value: "${com.oceanbase.odc.TaskType.DATA_DELETE}-${com.oceanbase.odc.TaskStatus.SCHEDULING_FAILED}"
+        - column_name: match_expression_json
+          value: "{\"taskType\":\"DATA_DELETE\",\"taskStatus\":\"SCHEDULING_FAILED\"}"
+  - metadata:
+      allow_duplicate: false
+      table_name: notification_event_metadata
+      specs:
+        - column_name: id
+          default_value: 70
+          data_type: java.lang.Long
+        - column_name: event_category
+          value: "TASK"
+        - column_name: event_name
+          value: "${com.oceanbase.odc.TaskType.DATA_DELETE}-${com.oceanbase.odc.TaskStatus.SCHEDULING_TIMEOUT}"
+        - column_name: match_expression_json
+          value: "{\"taskType\":\"DATA_DELETE\",\"taskStatus\":\"SCHEDULING_TIMEOUT\"}"
+  - metadata:
+      allow_duplicate: false
+      table_name: notification_event_metadata
+      specs:
+        - column_name: id
+          default_value: 71
+          data_type: java.lang.Long
+        - column_name: event_category
+          value: "TASK"
+        - column_name: event_name
+          value: "${com.oceanbase.odc.TaskType.APPLY_PROJECT_PERMISSION}-${com.oceanbase.odc.TaskStatus.EXECUTION_SUCCEEDED}"
+        - column_name: match_expression_json
+          value: "{\"taskType\":\"APPLY_PROJECT_PERMISSION\",\"taskStatus\":\"EXECUTION_SUCCEEDED\"}"
+  - metadata:
+      allow_duplicate: false
+      table_name: notification_event_metadata
+      specs:
+        - column_name: id
+          default_value: 72
+          data_type: java.lang.Long
+        - column_name: event_category
+          value: "TASK"
+        - column_name: event_name
+          value: "${com.oceanbase.odc.TaskType.APPLY_PROJECT_PERMISSION}-${com.oceanbase.odc.TaskStatus.EXECUTION_FAILED}"
+        - column_name: match_expression_json
+          value: "{\"taskType\":\"APPLY_PROJECT_PERMISSION\",\"taskStatus\":\"EXECUTION_FAILED\"}"
+  - metadata:
+      allow_duplicate: false
+      table_name: notification_event_metadata
+      specs:
+        - column_name: id
+          default_value: 73
+          data_type: java.lang.Long
+        - column_name: event_category
+          value: "TASK"
+        - column_name: event_name
+          value: "${com.oceanbase.odc.TaskType.APPLY_PROJECT_PERMISSION}-${com.oceanbase.odc.TaskStatus.EXECUTION_TIMEOUT}"
+        - column_name: match_expression_json
+          value: "{\"taskType\":\"APPLY_PROJECT_PERMISSION\",\"taskStatus\":\"EXECUTION_TIMEOUT\"}"
+  - metadata:
+      allow_duplicate: false
+      table_name: notification_event_metadata
+      specs:
+        - column_name: id
+          default_value: 74
+          data_type: java.lang.Long
+        - column_name: event_category
+          value: "TASK"
+        - column_name: event_name
+          value: "${com.oceanbase.odc.TaskType.APPLY_PROJECT_PERMISSION}-${com.oceanbase.odc.TaskStatus.PENDING_APPROVAL}"
+        - column_name: match_expression_json
+          value: "{\"taskType\":\"APPLY_PROJECT_PERMISSION\",\"taskStatus\":\"PENDING_APPROVAL\"}"
+  - metadata:
+      allow_duplicate: false
+      table_name: notification_event_metadata
+      specs:
+        - column_name: id
+          default_value: 75
+          data_type: java.lang.Long
+        - column_name: event_category
+          value: "TASK"
+        - column_name: event_name
+          value: "${com.oceanbase.odc.TaskType.APPLY_PROJECT_PERMISSION}-${com.oceanbase.odc.TaskStatus.APPROVED}"
+        - column_name: match_expression_json
+          value: "{\"taskType\":\"APPLY_PROJECT_PERMISSION\",\"taskStatus\":\"APPROVED\"}"
+  - metadata:
+      allow_duplicate: false
+      table_name: notification_event_metadata
+      specs:
+        - column_name: id
+          default_value: 76
+          data_type: java.lang.Long
+        - column_name: event_category
+          value: "TASK"
+        - column_name: event_name
+          value: "${com.oceanbase.odc.TaskType.APPLY_PROJECT_PERMISSION}-${com.oceanbase.odc.TaskStatus.APPROVAL_REJECTION}"
+        - column_name: match_expression_json
+          value: "{\"taskType\":\"APPLY_PROJECT_PERMISSION\",\"taskStatus\":\"APPROVAL_REJECTION\"}"
