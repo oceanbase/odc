@@ -12,14 +12,14 @@ ALTER TABLE `notification_policy` MODIFY `title_template` text DEFAULT NULL comm
 ALTER TABLE `notification_policy` MODIFY `content_template` text DEFAULT NULL comment 'deprecated';
 ALTER TABLE `notification_policy` MODIFY `to_recipients` varchar(2048) DEFAULT NULL comment 'deprecated';
 ALTER TABLE `notification_policy` MODIFY `cc_recipients` varchar(2048) DEFAULT NULL comment 'deprecated';
-ALTER TABLE `notification_policy` DROP KEY `uk_notification_policy_organization_id_match_expression`;
+ALTER TABLE `notification_policy` DROP INDEX `uk_notification_policy_organization_id_match_expression`;
 ALTER TABLE `notification_policy` ADD COLUMN `is_enabled` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'Flag bit, mark whether the triggered rule is enabled';
 ALTER TABLE `notification_policy` ADD COLUMN `project_id` bigint(20) NOT NULL comment 'project id, references collaboration_project.id';
 ALTER TABLE `notification_policy` ADD COLUMN `event_metadata_id` bigint(20) NOT NULL comment 'notification event metadata id, reference to notification_event_metadata.id';
 ALTER TABLE `notification_policy` ADD KEY `notification_policy_project_id` (`project_id`);
 
 ALTER TABLE `notification_event` ADD COLUMN `project_id` bigint(20) NOT NULL comment 'project id, references collaboration_project.id';
-ALTER TABLE `notification_event` DROP KEY `idx_notification_event_org_id_status`;
+ALTER TABLE `notification_event` DROP INDEX `idx_notification_event_org_id_status`;
 
 ALTER TABLE `notification_message` ADD COLUMN `project_id` bigint(20) NOT NULL comment 'project id, references collaboration_project.id';
 ALTER TABLE `notification_message` ADD COLUMN `error_message` text DEFAULT NULL comment 'error message';
@@ -27,11 +27,11 @@ ALTER TABLE `notification_message` ADD COLUMN `event_trigger_time` datetime NOT 
 ALTER TABLE `notification_message` ADD COLUMN `last_sent_time` datetime DEFAULT NULL comment 'the last attempt to send current message';
 ALTER TABLE `notification_message` MODIFY `to_recipients` varchar(2048) DEFAULT NULL comment 'deprecated';
 ALTER TABLE `notification_message` MODIFY `cc_recipients` varchar(2048) DEFAULT NULL comment 'deprecated';
-ALTER TABLE `notification_message` DROP KEY `idx_notification_message`;
+ALTER TABLE `notification_message` DROP INDEX `idx_notification_message`;
 ALTER TABLE `notification_message` ADD KEY `notification_message_channel_id`(`channel_id`);
 ALTER TABLE `notification_message` ADD KEY `notification_message_project_id`(`project_id`);
 
-ALTER TABLE `notification_policy_channel_relation` DROP KEY `idx_notification_policy_channel_relation_org_id_policy_id`;
+ALTER TABLE `notification_policy_channel_relation` DROP INDEX `idx_notification_policy_channel_relation_org_id_policy_id`;
 ALTER TABLE `notification_policy_channel_relation` ADD KEY `idx_notification_policy_id`(`notification_policy_id`);
 
 CREATE TABLE IF NOT EXISTS `notification_policy_metadata`(
