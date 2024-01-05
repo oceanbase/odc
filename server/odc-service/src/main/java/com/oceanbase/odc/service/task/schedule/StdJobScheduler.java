@@ -58,7 +58,7 @@ public class StdJobScheduler implements JobScheduler {
         PreConditions.notNull(configuration.getTaskFrameworkService(), "task framework service");
         JobConfigurationHolder.setJobConfiguration(configuration);
 
-        getEventPublisher().addEventListener(new DestroyJobListener(this));
+        getEventPublisher().addEventListener(new DestroyJobListener(this, configuration));
         getEventPublisher().addEventListener(new DefaultJobCallerListener(this));
     }
 
@@ -103,7 +103,10 @@ public class StdJobScheduler implements JobScheduler {
 
 
         configuration.getTaskFrameworkService().updateStatus(id, JobStatus.CANCELING);
+        log.info("Update job {} status to {}", id, JobStatus.CANCELING.name());
         configuration.getJobDispatcher().stop(JobIdentity.of(id));
+        configuration.getTaskFrameworkService().updateStatus(id, JobStatus.CANCELED);
+        log.info("Update job {} status to {}", id, JobStatus.CANCELED.name());
     }
 
     @Override
