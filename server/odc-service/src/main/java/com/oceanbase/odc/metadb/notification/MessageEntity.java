@@ -66,13 +66,11 @@ public class MessageEntity {
     @Column(name = "content", nullable = false, updatable = false)
     private String content;
     @Convert(converter = JsonListConverter.class)
-    @Column(name = "to_recipients", nullable = false, updatable = false)
+    @Column(name = "to_recipients",  updatable = false)
     private List<String> toRecipients;
     @Convert(converter = JsonListConverter.class)
-    @Column(name = "cc_recipients", nullable = false, updatable = false)
+    @Column(name = "cc_recipients", updatable = false)
     private List<String> ccRecipients;
-    @Column(name = "event_id", nullable = false, updatable = false)
-    private Long eventId;
     @Column(name = "channel_id", nullable = false, updatable = false)
     private Long channelId;
     @Enumerated(value = EnumType.STRING)
@@ -84,8 +82,6 @@ public class MessageEntity {
     private Integer maxRetryTimes;
     @Column(name = "error_message")
     private String errorMessage;
-    @Column(name = "event_trigger_time", nullable = false, updatable = false)
-    private Date eventTriggerTime;
     @Column(name = "last_sent_time")
     private Date lastSentTime;
 }

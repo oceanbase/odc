@@ -37,7 +37,9 @@ public class NotificationPolicy {
     private String matchExpression;
     private boolean enabled;
     private List<Channel> channels;
-    private Long eventMetadataId;
+    private Long policyMetadataId;
     private String eventName;
+    private List<String> toUsers;
+    private List<String> ccUsers;
 
 }

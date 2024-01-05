@@ -1,45 +1,96 @@
-TRUNCATE TABLE `notification_event`;
-TRUNCATE TABLE `notification_channel`;
-TRUNCATE TABLE `notification_policy`;
-TRUNCATE TABLE `notification_message`;
-TRUNCATE TABLE `notification_policy_channel_relation`;
+DROP TABLE IF EXISTS `notification_channel`;
+CREATE TABLE `notification_channel` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `creator_id` bigint(20) NOT NULL COMMENT 'creator user id, references iam_user.id',
+  `organization_id` bigint(20) NOT NULL COMMENT 'organization id, references iam_organization.id',
+  `name` varchar(128) NOT NULL COMMENT 'channel name',
+  `type` varchar(128) NOT NULL COMMENT 'channel type, may DingTalkGroupBot, SMS, etc.',
+  `project_id` bigint(20) NOT NULL COMMENT 'project id, references collaboration_project.id',
+  `description` varchar(512) DEFAULT NULL COMMENT 'description',
+  PRIMARY KEY (`id`),
+  KEY `notification_channel_project_id` (`project_id`)
+) COMMENT = 'notification channel configs';
 
-ALTER TABLE `notification_channel` ADD COLUMN `project_id` bigint(20) NOT NULL comment 'project id, references collaboration_project.id';
-ALTER TABLE `notification_channel` ADD COLUMN `description` varchar(512) DEFAULT NULL COMMENT 'description';
-ALTER TABLE `notification_channel` ADD KEY `notification_channel_project_id` (`project_id`);
-
-ALTER TABLE `notification_policy` MODIFY `title_template` text DEFAULT NULL comment 'deprecated';
-ALTER TABLE `notification_policy` MODIFY `content_template` text DEFAULT NULL comment 'deprecated';
-ALTER TABLE `notification_policy` MODIFY `to_recipients` varchar(2048) DEFAULT NULL comment 'deprecated';
-ALTER TABLE `notification_policy` MODIFY `cc_recipients` varchar(2048) DEFAULT NULL comment 'deprecated';
-ALTER TABLE `notification_policy` DROP INDEX `uk_notification_policy_organization_id_match_expression`;
-ALTER TABLE `notification_policy` ADD COLUMN `is_enabled` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'Flag bit, mark whether the triggered rule is enabled';
-ALTER TABLE `notification_policy` ADD COLUMN `project_id` bigint(20) NOT NULL comment 'project id, references collaboration_project.id';
-ALTER TABLE `notification_policy` ADD COLUMN `event_metadata_id` bigint(20) NOT NULL comment 'notification event metadata id, reference to notification_event_metadata.id';
-ALTER TABLE `notification_policy` ADD KEY `notification_policy_project_id` (`project_id`);
-
-ALTER TABLE `notification_event` ADD COLUMN `project_id` bigint(20) NOT NULL comment 'project id, references collaboration_project.id';
-ALTER TABLE `notification_event` DROP INDEX `idx_notification_event_org_id_status`;
-
-ALTER TABLE `notification_message` ADD COLUMN `project_id` bigint(20) NOT NULL comment 'project id, references collaboration_project.id';
-ALTER TABLE `notification_message` ADD COLUMN `error_message` text DEFAULT NULL comment 'error message';
-ALTER TABLE `notification_message` ADD COLUMN `event_trigger_time` datetime NOT NULL comment 'time when the event triggered';
-ALTER TABLE `notification_message` ADD COLUMN `last_sent_time` datetime DEFAULT NULL comment 'the last attempt to send current message';
-ALTER TABLE `notification_message` MODIFY `to_recipients` varchar(2048) DEFAULT NULL comment 'deprecated';
-ALTER TABLE `notification_message` MODIFY `cc_recipients` varchar(2048) DEFAULT NULL comment 'deprecated';
-ALTER TABLE `notification_message` DROP INDEX `idx_notification_message`;
-ALTER TABLE `notification_message` ADD KEY `notification_message_channel_id`(`channel_id`);
-ALTER TABLE `notification_message` ADD KEY `notification_message_project_id`(`project_id`);
-
-ALTER TABLE `notification_policy_channel_relation` DROP INDEX `idx_notification_policy_channel_relation_org_id_policy_id`;
-ALTER TABLE `notification_policy_channel_relation` ADD KEY `idx_notification_policy_id`(`notification_policy_id`);
+DROP TABLE IF EXISTS `notification_policy`;
+CREATE TABLE IF NOT EXISTS `notification_policy`(
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON update CURRENT_TIMESTAMP,
+  `creator_id` bigint(20) NOT NULL comment 'creator user id, references iam_user.id',
+  `organization_id` bigint(20) NOT NULL comment 'organization id, references iam_organization.id',
+  `title_template` text DEFAULT NULL comment 'notification message title template, which could contains variables',
+  `content_template` text DEFAULT NULL comment 'notification message content template, which could contains variables',
+  `match_expression_json` varchar(2048) NOT NULL comment 'indicate if a event matches the expression, json string',
+  `to_users` varchar(2048) DEFAULT NULL comment 'odc users who will receive this message',
+  `cc_users` varchar(2048) DEFAULT NULL comment 'odc users who will receive this message by copy',
+  `is_enabled` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'Flag bit, mark whether the triggered rule is enabled',
+  `project_id` bigint(20) NOT NULL COMMENT 'project id, references collaboration_project.id',
+  `policy_metadata_id` bigint(20) NOT NULL COMMENT 'notification policy metadata id, reference to notification_policy_metadata.id',
+  CONSTRAINT pk_notification_policy_id PRIMARY KEY (`id`),
+  KEY `notification_policy_project_id` (`project_id`)
+) COMMENT = 'notification policy';
 
 CREATE TABLE IF NOT EXISTS `notification_policy_metadata`(
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON update CURRENT_TIMESTAMP,
-  `event_category` varchar(128) NOT NULL comment 'notification event category, such as task',
+  `event_category` varchar(128) NOT NULL comment 'notification event category, such as TASK',
   `event_name` varchar(128) NOT NULL comment 'notification event name',
   `match_expression_json` varchar(2048) comment 'indicate if a event matches the expression, json string',
-  CONSTRAINT `pk_notification_event_metadata_id` PRIMARY KEY (`id`)
+  CONSTRAINT `pk_notification_policy_metadata_id` PRIMARY KEY (`id`)
 ) comment = 'notification policy metadata';
+
+DROP TABLE IF EXISTS `notification_event`;
+CREATE TABLE IF NOT EXISTS `notification_event`(
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON update CURRENT_TIMESTAMP,
+  `creator_id` bigint(20) NOT NULL comment 'creator user id, references iam_user.id',
+  `organization_id` bigint(20) NOT NULL comment 'organization id, references iam_organization.id',
+  `project_id` bigint(20) NOT NULL comment 'project id, references collaboration_project.id',
+  `trigger_time` datetime NOT NULL comment 'time when the event triggered',
+  `status` varchar(128) NOT NULL comment 'status enum, may CREATED, THROWN, CONVERTED, etc.',
+  CONSTRAINT pk_notification_event_id PRIMARY KEY (`id`),
+  KEY `notification_event_status_time`(`status`, `trigger_time`)
+) comment = 'notification events';
+
+DROP TABLE IF EXISTS `notification_message`;
+CREATE TABLE `notification_message` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `creator_id` bigint(20) NOT NULL COMMENT 'creator user id, references iam_user.id',
+  `organization_id` bigint(20) NOT NULL COMMENT 'organization id, references iam_organization.id',
+  `title` varchar(512) NOT NULL COMMENT 'message title',
+  `content` text NOT NULL COMMENT 'message content',
+  `channel_id` bigint(20) NOT NULL COMMENT 'channel id, reference to notification_channel.id',
+  `status` varchar(128) NOT NULL COMMENT 'MessageSendingStatus enum, may CREATED, SENT_SUCCESSFULLY, SENT_FAILED, SENDING, etc.',
+  `retry_times` bigint(20) NOT NULL COMMENT 'descirbe how many times spent on resending this message',
+  `max_retry_times` bigint(20) NOT NULL COMMENT 'descirbe max times of resending this message',
+  `project_id` bigint(20) NOT NULL COMMENT 'project id, references collaboration_project.id',
+  `error_message` text DEFAULT NULL COMMENT 'error message',
+  `last_sent_time` datetime DEFAULT NULL COMMENT 'the last attempt to send current message',
+  `to_recipients` varchar(2048) DEFAULT NULL comment 'odc users who will receive this message',
+  `cc_recipients` varchar(2048) DEFAULT NULL comment 'odc users who will receive this message by copy',
+  PRIMARY KEY (`id`),
+  KEY `idx_status_retry_times_max_retry_times` (`status`, `retry_times`, `max_retry_times`),
+  KEY `notification_message_channel_id` (`channel_id`),
+  KEY `notification_message_project_id` (`project_id`)
+) COMMENT = 'notification message';
+
+DROP TABLE IF EXISTS `notification_policy_channel_relation`;
+
+CREATE TABLE IF NOT EXISTS `notification_policy_channel_relation`(
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON update CURRENT_TIMESTAMP,
+  `creator_id` bigint(20) NOT NULL comment 'creator user id, references iam_user.id',
+  `organization_id` bigint(20) NOT NULL comment 'organization id, references iam_organization.id',
+  `notification_policy_id` bigint(20) NOT NULL comment 'notification policy id, reference to notification_policy.id',
+  `channel_id` bigint(20) NOT NULL comment 'channel config id, reference to notification_channel.id',
+  CONSTRAINT pk_notification_policy_channel_relation_id PRIMARY KEY (`id`),
+  CONSTRAINT uk_notification_policy_channel_relation_policy_id_channel_id UNIQUE KEY(`organization_id`,`notification_policy_id`, `channel_id`),
+	KEY `idx_notification_policy_id`(`notification_policy_id`)
+) comment = 'notification policy and channel config relations';

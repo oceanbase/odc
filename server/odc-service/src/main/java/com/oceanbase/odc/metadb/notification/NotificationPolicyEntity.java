@@ -56,22 +56,22 @@ public class NotificationPolicyEntity {
     private Long creatorId;
     @Column(name = "organization_id", nullable = false)
     private Long organizationId;
-    @Column(name = "title_template", nullable = false)
+    @Column(name = "title_template")
     private String titleTemplate;
-    @Column(name = "content_template", nullable = false)
+    @Column(name = "content_template")
     private String contentTemplate;
     @Column(name = "project_id", nullable = false)
     private Long projectId;
-    @Column(name = "event_metadata_id", nullable = false)
-    private Long eventMetadataId;
+    @Column(name = "policy_metadata_id", nullable = false)
+    private Long policyMetadataId;
     @Column(name = "match_expression_json", nullable = false)
     private String matchExpression;
     @Convert(converter = ListConverter.class)
-    @Column(name = "to_recipients", nullable = false)
-    private List<String> toRecipients;
+    @Column(name = "to_users")
+    private List<String> toUsers;
     @Convert(converter = ListConverter.class)
-    @Column(name = "cc_recipients")
-    private List<String> ccRecipients;
+    @Column(name = "cc_users")
+    private List<String> ccUsers;
     @Column(name = "is_enabled", nullable = false)
-    private boolean isEnabled;
+    private boolean enabled;
 }

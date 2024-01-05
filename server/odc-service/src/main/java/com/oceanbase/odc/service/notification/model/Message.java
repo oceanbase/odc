@@ -37,7 +37,6 @@ public class Message {
     private Long id;
     private String title;
     private String content;
-    private Long eventId;
     private MessageSendingStatus status;
     private Integer retryTimes;
     private Integer maxRetryTimes;
@@ -47,7 +46,6 @@ public class Message {
     private String errorMessage;
     private Date createTime;
     private Date updateTime;
-    private Date eventTriggerTime;
     private Date lastSentTime;
     private Channel channel;
 
@@ -59,7 +57,6 @@ public class Message {
         entity.setContent(this.getContent());
         entity.setCreatorId(this.getCreatorId());
         entity.setOrganizationId(this.getOrganizationId());
-        entity.setEventId(this.getEventId());
         entity.setChannelId(this.channel.getId());
         entity.setStatus(this.getStatus());
         entity.setRetryTimes(this.getRetryTimes());
@@ -76,7 +73,6 @@ public class Message {
         message.setCreatorId(entity.getCreatorId());
         message.setOrganizationId(entity.getOrganizationId());
         message.setRetryTimes(entity.getRetryTimes());
-        message.setEventId(entity.getEventId());
         message.setMaxRetryTimes(entity.getMaxRetryTimes());
         return message;
     }
