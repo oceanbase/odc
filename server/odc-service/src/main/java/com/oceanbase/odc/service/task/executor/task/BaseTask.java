@@ -35,6 +35,7 @@ import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
 import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfiguration;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.constants.JobAttributeKeyConstants;
+import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.constants.JobDataMapConstants;
 import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.executor.logger.LogUtils;
@@ -50,7 +51,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public abstract class BaseTask implements Task {
 
-    private static final int REPORT_TASK_INFO_INTERVAL_SECONDS = 5;
     private static final int REPORT_RESULT_RETRY_TIMES = 10;
     private static final int REPORT_RESULT_RETRY_INTERVAL_SECONDS = 10;
     private static final int DEFAULT_TASK_TIMEOUT_MILLI_SECONDS = 48 * 60 * 60 * 1000;
@@ -146,7 +146,7 @@ public abstract class BaseTask implements Task {
                     log.warn("Update task info failed, id: {}", getJobContext().getJobIdentity().getId(), e);
                 }
             }
-        }, 1, REPORT_TASK_INFO_INTERVAL_SECONDS, TimeUnit.SECONDS);
+        }, 1, JobConstants.REPORT_TASK_INFO_INTERVAL_SECONDS, TimeUnit.SECONDS);
         log.info("Task monitor init success");
     }
 

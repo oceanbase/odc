@@ -33,12 +33,10 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public abstract class BaseJobCaller implements JobCaller {
 
-    private final static int TRY_CALL_TIMES = 10;
-
     @Override
     public void start(JobContext context) throws JobException {
         try {
-            ExecutorIdentifier executorIdentifier = retryStart(context);
+            ExecutorIdentifier executorIdentifier = tryStart(context);
             publishEvent(new JobCallerEvent(context.getJobIdentity(), JobCallerAction.START, true,
                     executorIdentifier, null));
         } catch (Exception ex) {
@@ -46,24 +44,13 @@ public abstract class BaseJobCaller implements JobCaller {
         }
     }
 
-    private ExecutorIdentifier retryStart(JobContext context) throws Exception {
-        ExecutorIdentifier executorIdentifier = null;
-        Exception finalExcept = null;
-        for (int i = 0; i < TRY_CALL_TIMES; i++) {
-            try {
-                executorIdentifier = doStart(context);
-                finalExcept = null;
-                break;
-            } catch (Exception e) {
-                log.warn("Start job {} failed and retry again, error is: ", context.getJobIdentity().getId(), e);
-                finalExcept = e;
-                Thread.sleep(1000 * 3);
-            }
+    private ExecutorIdentifier tryStart(JobContext context) throws Exception {
+        try {
+            return doStart(context);
+        } catch (Exception e) {
+            log.warn("Start job {} failed and retry again, error is: ", context.getJobIdentity().getId(), e);
+            throw e;
         }
-        if (finalExcept != null) {
-            throw finalExcept;
-        }
-        return executorIdentifier;
     }
 
     @Override

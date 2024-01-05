@@ -91,6 +91,15 @@ public class JobEntity implements Serializable {
     @Column(name = "organization_id")
     private Long organizationId;
 
+    @Column(name = "started_time")
+    private Date startedTime;
+
+    @Column(name = "finished_time")
+    private Date finishedTime;
+
+    @Column(name = "last_report_time")
+    private Date lastReportTime;
+
     @Generated(GenerationTime.ALWAYS)
     @Column(name = "create_time", insertable = false, updatable = false)
     private Date createTime;

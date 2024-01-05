@@ -12,10 +12,14 @@ CREATE TABLE IF NOT EXISTS `job_job` (
   `executor_endpoint` varchar(128) DEFAULT NULL COMMENT '执行此任务的执行器信息',
   `description` varchar(1024) DEFAULT NULL COMMENT '描述信息',
   `creator_id` bigint DEFAULT NULL COMMENT '创建用户 ID, references iam_user(id)',
-  `organization_id` bigint  DEFAULT NULL COMMENT '所属组织 ID, references iam_organization(id)',
+  `organization_id` bigint DEFAULT NULL COMMENT '所属组织 ID, references iam_organization(id)',
+  `started_time` datetime DEFAULT NULL COMMENT '执行开始时间',
+  `finished_time` datetime DEFAULT NULL COMMENT '执行结束时间',
+  `last_report_time` datetime DEFAULT NULL COMMENT '最后上报时间',
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
-  CONSTRAINT pk_job_schedule PRIMARY KEY (`id`)
+  CONSTRAINT pk_job_schedule PRIMARY KEY (`id`),
+  INDEX `idx_job_job_status` (`status`)
 ) COMMENT = '任务表';
 
 

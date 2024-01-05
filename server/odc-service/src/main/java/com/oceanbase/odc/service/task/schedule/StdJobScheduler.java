@@ -18,17 +18,20 @@ package com.oceanbase.odc.service.task.schedule;
 
 import java.util.concurrent.TimeUnit;
 
+import org.quartz.JobBuilder;
+import org.quartz.JobDetail;
 import org.quartz.JobKey;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.Trigger;
-import org.quartz.impl.JobDetailImpl;
+import org.quartz.TriggerKey;
 
 import com.oceanbase.odc.common.concurrent.Await;
 import com.oceanbase.odc.common.event.EventPublisher;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.metadb.task.JobEntity;
-import com.oceanbase.odc.service.schedule.model.QuartzKeyGenerator;
+import com.oceanbase.odc.service.schedule.model.TriggerConfig;
+import com.oceanbase.odc.service.schedule.model.TriggerStrategy;
 import com.oceanbase.odc.service.task.caller.JobException;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
@@ -60,28 +63,21 @@ public class StdJobScheduler implements JobScheduler {
 
         getEventPublisher().addEventListener(new DestroyJobListener(this));
         getEventPublisher().addEventListener(new DefaultJobCallerListener(this));
+        initExpiredCheckJob();
+        initStartPreparingJob();
     }
 
+
     @Override
-    public Long scheduleJobNow(JobDefinition jd) throws JobException {
+    public Long scheduleJobNow(JobDefinition jd) {
         PreConditions.notNull(jd, "job definition");
+        PreConditions.notNull(jd.getJobType(), "job type");
+        PreConditions.notNull(jd.getJobClass(), "job class");
         return scheduleJob(jd);
     }
 
-    private Long scheduleJob(JobDefinition jd) throws JobException {
+    private Long scheduleJob(JobDefinition jd) {
         JobEntity jobEntity = configuration.getTaskFrameworkService().save(jd);
-        JobIdentity jobIdentity = JobIdentity.of(jobEntity.getId());
-        Trigger trigger = TriggerBuilder.build(jobIdentity, jd, null);
-        JobKey jobKey = QuartzKeyGenerator.generateJobKey(jobEntity.getId());
-        JobDetailImpl detail = new JobDetailImpl();
-        detail.setKey(jobKey);
-        detail.setJobClass(PrepareCallJob.class);
-
-        try {
-            scheduler.scheduleJob(detail, trigger);
-        } catch (SchedulerException e) {
-            throw new JobException("add and schedule job failed:", e);
-        }
         return jobEntity.getId();
     }
 
@@ -92,18 +88,9 @@ public class StdJobScheduler implements JobScheduler {
             log.warn("Job {} status is {},can not be cancelled.", id, jobEntity.getStatus().name());
             return;
         }
-        JobKey jobKey = QuartzKeyGenerator.generateJobKey(id);
-        try {
-            if (scheduler.checkExists(jobKey)) {
-                scheduler.deleteJob(jobKey);
-            }
-        } catch (SchedulerException e) {
-            throw new JobException(e);
-        }
-
-
         configuration.getTaskFrameworkService().updateStatus(id, JobStatus.CANCELING);
         configuration.getJobDispatcher().stop(JobIdentity.of(id));
+        configuration.getTaskFrameworkService().updateStatus(id, JobStatus.CANCELED);
     }
 
     @Override
@@ -117,4 +104,47 @@ public class StdJobScheduler implements JobScheduler {
     public EventPublisher getEventPublisher() {
         return configuration.getEventPublisher();
     }
+
+    private void initExpiredCheckJob() {
+        String key = "CheckExpiredJob";
+        String group = "CheckExpiredJobGroup";
+
+        TriggerConfig config = new TriggerConfig();
+        config.setTriggerStrategy(TriggerStrategy.CRON);
+        config.setCronExpression("* 0/1 * * * ?");
+
+        try {
+            Trigger trigger = TriggerBuilder.build(TriggerKey.triggerKey(key, group), config, null);
+            JobDetail detail = JobBuilder.newJob(CheckExpiredJob.class)
+                .withIdentity(JobKey.jobKey(key,group))
+                .build();
+            scheduler.scheduleJob(detail, trigger);
+        } catch (JobException e) {
+            log.warn("build trigger failed:", e);
+        } catch (SchedulerException e) {
+            log.warn("schedule job failed:", e);
+        }
+    }
+
+    private void initStartPreparingJob() {
+        String key = "startPreparingJob";
+        String group = "startPreparingJobGroup";
+
+        TriggerConfig config = new TriggerConfig();
+        config.setTriggerStrategy(TriggerStrategy.CRON);
+        config.setCronExpression("0/30 * * * * ?");
+
+        try {
+            Trigger trigger = TriggerBuilder.build(TriggerKey.triggerKey(key, group), config, null);
+            JobDetail detail = JobBuilder.newJob(StartPreparingJob.class)
+                .withIdentity(JobKey.jobKey(key,group))
+                .build();
+            scheduler.scheduleJob(detail, trigger);
+        } catch (JobException e) {
+            log.warn("build trigger failed:", e);
+        } catch (SchedulerException e) {
+            log.warn("schedule job failed:", e);
+        }
+    }
+
 }

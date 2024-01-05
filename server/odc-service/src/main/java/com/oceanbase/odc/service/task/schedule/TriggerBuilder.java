@@ -41,7 +41,7 @@ import com.oceanbase.odc.service.task.constants.JobConstants;
  */
 public class TriggerBuilder {
 
-    public static Trigger build(JobIdentity ji, JobDefinition jd, TriggerConfig config) throws JobException {
+    private static Trigger build(JobIdentity ji, JobDefinition jd, TriggerConfig config) throws JobException {
         JobDataMap triData = new JobDataMap();
         JobContext jc = new DefaultJobContextBuilder().build(ji, jd);
         triData.put(JobConstants.QUARTZ_DATA_MAP_JOB_CONTEXT, JsonUtils.toJson(jc));
@@ -54,7 +54,7 @@ public class TriggerBuilder {
                 config, triData);
     }
 
-    private static Trigger build(TriggerKey key, TriggerConfig config, JobDataMap triggerDataMap) throws JobException {
+    public static Trigger build(TriggerKey key, TriggerConfig config, JobDataMap triggerDataMap) throws JobException {
         switch (config.getTriggerStrategy()) {
             case START_NOW:
                 return org.quartz.TriggerBuilder
