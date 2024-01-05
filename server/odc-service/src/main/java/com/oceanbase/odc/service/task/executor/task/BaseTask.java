@@ -77,7 +77,7 @@ public abstract class BaseTask implements Task {
             initTaskMonitor();
             onStart();
         } catch (Exception e) {
-            log.info("Task failed, id: {}, details: {}", context.getJobIdentity().getId(), e);
+            log.warn("Task failed, id: {}, details:", context.getJobIdentity().getId(), e);
             updateStatus(JobStatus.FAILED);
             onFail(e);
         } finally {
@@ -142,7 +142,7 @@ public abstract class BaseTask implements Task {
             } else {
                 try {
                     reportTaskResult();
-                } catch (Exception e) {
+                } catch (Throwable e) {
                     log.warn("Update task info failed, id: {}", getJobContext().getJobIdentity().getId(), e);
                 }
             }

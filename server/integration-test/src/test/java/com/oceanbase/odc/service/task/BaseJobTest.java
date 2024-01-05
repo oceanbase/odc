@@ -17,9 +17,13 @@
 package com.oceanbase.odc.service.task;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.Arrays;
 import java.util.List;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.LoggerContext;
 import org.junit.BeforeClass;
 import org.mockito.Mockito;
 
@@ -53,7 +57,13 @@ public abstract class BaseJobTest {
     protected static List<String> cmd;
 
     @BeforeClass
-    public static void init() throws IOException {
+    public static void init() throws IOException, URISyntaxException {
+        LoggerContext context = (org.apache.logging.log4j.core.LoggerContext) LogManager.getContext(false);
+
+        URL resource = BaseJobTest.class.getClassLoader().getResource("log4j2-task-executor.xml");
+        // this will force a reconfiguration
+        context.setConfigLocation(resource.toURI());
+
         TestDBConfiguration tdc = TestDBConfigurations.getInstance().getTestOBMysqlConfiguration();
         System.setProperty("DATABASE_HOST", tdc.getHost());
         System.setProperty("DATABASE_PORT", tdc.getPort() + "");

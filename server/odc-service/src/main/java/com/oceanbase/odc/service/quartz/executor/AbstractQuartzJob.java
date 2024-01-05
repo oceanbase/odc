@@ -22,8 +22,8 @@ import org.quartz.JobKey;
 import org.quartz.UnableToInterruptJobException;
 
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
+import com.oceanbase.odc.service.schedule.job.CloudDataArchiveJob;
 import com.oceanbase.odc.service.schedule.job.DataArchiveDeleteJob;
-import com.oceanbase.odc.service.schedule.job.DataArchiveJob;
 import com.oceanbase.odc.service.schedule.job.DataArchiveRollbackJob;
 import com.oceanbase.odc.service.schedule.job.DataDeleteJob;
 import com.oceanbase.odc.service.schedule.job.OdcJob;
@@ -74,7 +74,7 @@ public abstract class AbstractQuartzJob implements InterruptableJob {
             case SQL_PLAN:
                 return new SqlPlanJob();
             case DATA_ARCHIVE:
-                return new DataArchiveJob();
+                return new CloudDataArchiveJob();
             case DATA_ARCHIVE_DELETE:
                 return new DataArchiveDeleteJob();
             case DATA_ARCHIVE_ROLLBACK:
