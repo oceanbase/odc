@@ -46,6 +46,7 @@ public class DataSourceInfoBuilder {
                 dataSourceInfo.setPort(connectionConfig.getPort());
                 dataSourceInfo.setFullUserName(connectionConfig.getUsername());
                 dataSourceInfo.setDbType(DataBaseType.MYSQL);
+                dataSourceInfo.setDataBaseType(DataBaseType.MYSQL);
                 break;
             }
             case OB_MYSQL: {
@@ -54,6 +55,7 @@ public class DataSourceInfoBuilder {
                 dataSourceInfo
                         .setFullUserName(OBConsoleDataSourceFactory.getUsername(connectionConfig));
                 dataSourceInfo.setDbType(DataBaseType.OCEANBASEV10);
+                dataSourceInfo.setDataBaseType(DataBaseType.OCEANBASEV10);
                 dataSourceInfo.setSysUser(connectionConfig.getSysTenantUsername());
                 dataSourceInfo.setClusterName(connectionConfig.getClusterName());
                 if (StringUtils.isNotEmpty(connectionConfig.getSysTenantPassword())) {
