@@ -88,7 +88,7 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
     private volatile long creatorId;
     private volatile long organizationId;
     private volatile boolean continueOnError;
-    private volatile double    percentage;
+    private volatile double percentage;
     private volatile Set<Long> lastManualSwapTableEnableTasks = new HashSet<>();
 
     @Override
@@ -169,22 +169,22 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
             TaskEntity flowTask = taskService.detail(taskId);
             TaskStatus dbStatus = flowTask.getStatus();
 
-            Set<Long> currentManualSwapTableEnableTasks  = new HashSet<>();
+            Set<Long> currentManualSwapTableEnableTasks = new HashSet<>();
             for (ScheduleTaskEntity task : tasks) {
                 OnlineSchemaChangeScheduleTaskResult result = JsonUtils.fromJson(task.getResultJson(),
-                    OnlineSchemaChangeScheduleTaskResult.class);
-                if(result.isManualSwapTableEnabled()){
+                        OnlineSchemaChangeScheduleTaskResult.class);
+                if (result.isManualSwapTableEnabled()) {
                     currentManualSwapTableEnableTasks.add(task.getId());
                 }
             }
 
-            boolean manualSwapTableTasksChanged
-                = !CollectionUtils.isEqualCollection(currentManualSwapTableEnableTasks, lastManualSwapTableEnableTasks);
+            boolean manualSwapTableTasksChanged = !CollectionUtils.isEqualCollection(currentManualSwapTableEnableTasks,
+                    lastManualSwapTableEnableTasks);
             if (manualSwapTableTasksChanged) {
                 lastManualSwapTableEnableTasks = currentManualSwapTableEnableTasks;
             }
 
-            if (currentPercentage > this.percentage || dbStatus != this.status || manualSwapTableTasksChanged ) {
+            if (currentPercentage > this.percentage || dbStatus != this.status || manualSwapTableTasksChanged) {
                 flowTask.setResultJson(JsonUtils.toJson(new OnlineSchemaChangeTaskResult(tasks.getContent())));
                 flowTask.setStatus(this.status);
                 flowTask.setProgressPercentage(Math.min(currentPercentage, 100));
