@@ -89,7 +89,7 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
     private volatile long organizationId;
     private volatile boolean continueOnError;
     private volatile double    percentage;
-    private volatile Set<Long> manualSwapTableStartedScheduleTasks = new HashSet<>();
+    private volatile Set<Long> lastManualSwapTableEnableTasks = new HashSet<>();
 
     @Override
     protected Void start(Long taskId, TaskService taskService, DelegateExecution execution) throws Exception {
@@ -169,19 +169,19 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
             TaskEntity flowTask = taskService.detail(taskId);
             TaskStatus dbStatus = flowTask.getStatus();
 
-            Set<Long> currentManualSwapTableTasks  = new HashSet<>();
+            Set<Long> currentManualSwapTableEnableTasks  = new HashSet<>();
             for (ScheduleTaskEntity task : tasks) {
                 OnlineSchemaChangeScheduleTaskResult result = JsonUtils.fromJson(task.getResultJson(),
                     OnlineSchemaChangeScheduleTaskResult.class);
-                if(result.isManualSwapTableStarted()){
-                    currentManualSwapTableTasks.add(task.getId());
+                if(result.isManualSwapTableEnabled()){
+                    currentManualSwapTableEnableTasks.add(task.getId());
                 }
             }
 
             boolean manualSwapTableTasksChanged
-                = !CollectionUtils.isEqualCollection(currentManualSwapTableTasks, manualSwapTableStartedScheduleTasks);
+                = !CollectionUtils.isEqualCollection(currentManualSwapTableEnableTasks, lastManualSwapTableEnableTasks);
             if (manualSwapTableTasksChanged) {
-                manualSwapTableStartedScheduleTasks = currentManualSwapTableTasks;
+                lastManualSwapTableEnableTasks = currentManualSwapTableEnableTasks;
             }
 
             if (currentPercentage > this.percentage || dbStatus != this.status || manualSwapTableTasksChanged ) {
