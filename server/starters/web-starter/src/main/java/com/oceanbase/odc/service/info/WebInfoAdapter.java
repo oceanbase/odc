@@ -98,6 +98,15 @@ public class WebInfoAdapter implements InfoAdapter {
     }
 
     @Override
+    public String ssoLoginType() {
+        SSOIntegrationConfig sSoIntegrationConfig = integrationService.getSSoIntegrationConfig();
+        if (sSoIntegrationConfig == null) {
+            return "";
+        }
+        return sSoIntegrationConfig.getType();
+    }
+
+    @Override
     public String getSupportGroupQRCodeUrl() {
         return supportGroupQRCodeUrl;
     }

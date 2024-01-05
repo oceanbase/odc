@@ -36,4 +36,8 @@ public interface InfoAdapter {
     default String ssoLoginName() {
         return "";
     }
+
+    default String ssoLoginType() {
+        return "";
+    }
 }
