@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.task.schedule;
 
 import java.util.concurrent.TimeUnit;
 
+import org.quartz.Job;
 import org.quartz.JobBuilder;
 import org.quartz.JobDetail;
 import org.quartz.JobKey;
@@ -63,8 +64,7 @@ public class StdJobScheduler implements JobScheduler {
 
         getEventPublisher().addEventListener(new DestroyJobListener(this));
         getEventPublisher().addEventListener(new DefaultJobCallerListener(this));
-        initExpiredCheckJob();
-        initStartPreparingJob();
+        initDaemonJob();
     }
 
 
@@ -105,46 +105,43 @@ public class StdJobScheduler implements JobScheduler {
         return configuration.getEventPublisher();
     }
 
+    private void initDaemonJob() {
+        initExpiredCheckJob();
+        initStartPreparingJob();
+    }
+
+
+
     private void initExpiredCheckJob() {
-        String key = "CheckExpiredJob";
-        String group = "CheckExpiredJobGroup";
-
-        TriggerConfig config = new TriggerConfig();
-        config.setTriggerStrategy(TriggerStrategy.CRON);
-        config.setCronExpression("* 0/1 * * * ?");
-
-        try {
-            Trigger trigger = TriggerBuilder.build(TriggerKey.triggerKey(key, group), config, null);
-            JobDetail detail = JobBuilder.newJob(CheckExpiredJob.class)
-                .withIdentity(JobKey.jobKey(key,group))
-                .build();
-            scheduler.scheduleJob(detail, trigger);
-        } catch (JobException e) {
-            log.warn("build trigger failed:", e);
-        } catch (SchedulerException e) {
-            log.warn("schedule job failed:", e);
-        }
+        initCronJob("CheckExpiredJob", "CheckExpiredJobGroup",
+                "* 0/1 * * * ?", CheckRunningExpiredJob.class);
     }
 
     private void initStartPreparingJob() {
-        String key = "startPreparingJob";
-        String group = "startPreparingJobGroup";
+        initCronJob("startPreparingJob", "startPreparingJobGroup",
+                "0/3 * * * * ?", StartPreparingJob.class);
+    }
 
+
+    private void initCronJob(String key, String group, String cronExpression, Class<? extends Job> jobClass) {
         TriggerConfig config = new TriggerConfig();
         config.setTriggerStrategy(TriggerStrategy.CRON);
-        config.setCronExpression("0/30 * * * * ?");
-
+        config.setCronExpression(cronExpression);
         try {
-            Trigger trigger = TriggerBuilder.build(TriggerKey.triggerKey(key, group), config, null);
-            JobDetail detail = JobBuilder.newJob(StartPreparingJob.class)
-                .withIdentity(JobKey.jobKey(key,group))
-                .build();
+            TriggerKey triggerKey = TriggerKey.triggerKey(key, group);
+            JobKey jobKey = JobKey.jobKey(key, group);
+            Trigger trigger = TriggerBuilder.build(triggerKey, config);
+            JobDetail detail = JobBuilder.newJob(jobClass)
+                    .withIdentity(JobKey.jobKey(key, group))
+                    .build();
+            if (scheduler.checkExists(triggerKey)) {
+                scheduler.deleteJob(jobKey);
+            }
             scheduler.scheduleJob(detail, trigger);
         } catch (JobException e) {
-            log.warn("build trigger failed:", e);
+            log.warn("build trigger {} failed:", key, e);
         } catch (SchedulerException e) {
             log.warn("schedule job failed:", e);
         }
     }
-
 }

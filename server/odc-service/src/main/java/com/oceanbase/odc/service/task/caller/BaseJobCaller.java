@@ -41,6 +41,7 @@ public abstract class BaseJobCaller implements JobCaller {
                     executorIdentifier, null));
         } catch (Exception ex) {
             publishEvent(new JobCallerEvent(context.getJobIdentity(), JobCallerAction.START, false, ex));
+            throw new JobException(ex);
         }
     }
 

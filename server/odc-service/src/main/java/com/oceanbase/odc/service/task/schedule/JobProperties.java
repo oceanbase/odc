@@ -15,28 +15,19 @@
  */
 package com.oceanbase.odc.service.task.schedule;
 
-import java.util.Map;
-
-import com.oceanbase.odc.service.task.executor.task.Task;
-
-import lombok.Builder;
 import lombok.Data;
 
 /**
  * @author yaobin
- * @date 2023-11-23
+ * @date 2024-01-05
  * @since 4.2.4
  */
 @Data
-@Builder
-public class DefaultJobDefinition implements JobDefinition {
+public class JobProperties {
 
-    private Class<? extends Task> jobClass;
+    private boolean enableRetryAfterExpired;
 
-    private String jobType;
+    private int maxRetryTimesAfterExpired;
 
-    private Map<String, String> jobParameters;
-
-    private JobProperties jobProperties;
-
+    private int checkExpiredPeriodSeconds;
 }

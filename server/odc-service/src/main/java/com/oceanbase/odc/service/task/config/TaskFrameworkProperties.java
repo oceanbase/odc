@@ -42,6 +42,18 @@ public class TaskFrameworkProperties {
     @NestedConfigurationProperty
     private K8sProperties k8s = new K8sProperties();
 
+    // job will be expired after this duration
+    private int jobExpiredDurationSeconds = 5 * 60;
+
+    // single fetch job rows for schedule
+    private int singleFetchJobRowsForSchedule = 100;
+
+    // single fetch job rows to check there is expired or not
+    private int singleFetchJobRowsForCheckExpired = 100;
+
+    // max fetch job rows to check there is expired between once job schedule
+    private int maxFetchJobRowsForCheckExpired = 2000;
+
     @Data
     public static class K8sProperties {
         private String kubeUrl;

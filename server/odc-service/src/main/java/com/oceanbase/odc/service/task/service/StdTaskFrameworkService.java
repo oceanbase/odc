@@ -16,6 +16,7 @@
 
 package com.oceanbase.odc.service.task.service;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -46,7 +47,6 @@ import com.oceanbase.odc.service.task.executor.task.TaskResult;
 import com.oceanbase.odc.service.task.listener.TaskResultUploadEvent;
 import com.oceanbase.odc.service.task.schedule.DefaultJobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobDefinition;
-import com.oceanbase.odc.service.task.schedule.JobScheduler;
 import com.oceanbase.odc.service.task.util.JobDateUtils;
 
 import lombok.Setter;
@@ -62,8 +62,6 @@ import lombok.extern.slf4j.Slf4j;
 @SkipAuthorize("odc internal usage")
 public class StdTaskFrameworkService implements TaskFrameworkService {
 
-    @Autowired
-    private JobScheduler jobScheduler;
     @Autowired
     private JobRepository jobRepository;
     @Autowired
@@ -135,11 +133,17 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     }
 
     @Override
-    public List<JobEntity> find(JobStatus status, int offset, int limit) {
-        return entityManager.createQuery("SELECT j FROM  JobEntity j WHERE j.status= :status", JobEntity.class)
+    public List<JobEntity> find(List<JobStatus> status, int offset, int limit) {
+        return entityManager.createQuery("from JobEntity where status in (:status)"
+                + " order by createTime asc", JobEntity.class)
                 .setParameter("status", status)
                 .setFirstResult(offset)
                 .setMaxResults(limit).getResultList();
+    }
+
+    @Override
+    public List<JobEntity> find(JobStatus status, int offset, int limit) {
+        return find(Collections.singletonList(status), offset, limit);
     }
 
     @SuppressWarnings("unchecked")

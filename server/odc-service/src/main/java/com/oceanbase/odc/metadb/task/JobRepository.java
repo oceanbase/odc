@@ -18,8 +18,6 @@ package com.oceanbase.odc.metadb.task;
 import java.util.List;
 import java.util.Set;
 
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
 import javax.transaction.Transactional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -44,7 +42,7 @@ public interface JobRepository extends JpaRepository<JobEntity, Long>,
     @Query("update JobEntity set "
             + "executorEndpoint=:#{#param.executorEndpoint},status=:#{#param.status},"
             + "progressPercentage=:#{#param.progressPercentage},resultJson=:#{#param.resultJson},"
-            + "finished_time=:#{#param.finishedTime},last_report_time=:#{#param.lastReportTime}"
+            + "finishedTime=:#{#param.finishedTime},lastReportTime=:#{#param.lastReportTime}"
             + " where id=:#{#param.id}")
     @Modifying
     int update(@Param("param") JobEntity entity);

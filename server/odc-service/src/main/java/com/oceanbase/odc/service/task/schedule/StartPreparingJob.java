@@ -17,21 +17,17 @@
 package com.oceanbase.odc.service.task.schedule;
 
 import java.util.List;
-import java.util.Map;
 
+import org.quartz.DisallowConcurrentExecution;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.metadb.task.JobEntity;
-import com.oceanbase.odc.service.task.caller.DefaultJobContext;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.caller.JobException;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
-import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 
@@ -43,26 +39,23 @@ import lombok.extern.slf4j.Slf4j;
  * @since 4.2.4
  */
 @Slf4j
+@DisallowConcurrentExecution
 public class StartPreparingJob implements Job {
 
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {
-
         JobConfiguration configuration = JobConfigurationHolder.getJobConfiguration();
-
+        if (configuration == null) {
+            log.debug("configuration is null, abort continue execute");
+            return;
+        }
         // scan preparing job
         TaskFrameworkService taskFrameworkService = configuration.getTaskFrameworkService();
-
         List<JobEntity> jobs = taskFrameworkService.find(JobStatus.PREPARING, 0, 100);
         jobs.forEach(a -> {
             try {
-                DefaultJobContext jobContext = new DefaultJobContext();
-                jobContext.setJobIdentity(JobIdentity.of(a.getId()));
-                jobContext.setJobClass(a.getJobClass());
-                jobContext.setJobParameters(JsonUtils.fromJson(a.getJobParametersJson(),
-                        new TypeReference<Map<String, String>>() {}));
-                jobContext.setHostUrls(configuration.getHostUrlProvider().hostUrl());
-                JobConfigurationHolder.getJobConfiguration().getJobDispatcher().start(jobContext);
+                JobContext jc = new DefaultJobContextBuilder().build(a, configuration.getHostUrlProvider());
+                configuration.getJobDispatcher().start(jc);
             } catch (JobException e) {
                 log.warn("try to start job {} failed: ", a.getId(), e);
             }

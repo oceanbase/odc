@@ -49,10 +49,7 @@ public class DefaultJobCallerListener extends JobCallerListener {
 
     @Override
     protected void startFailed(JobIdentity ji, Exception ex) {
-        if (taskFrameworkService != null) {
-            String desc = "After retry 10 times to schedule job but failed.";
-            taskFrameworkService.updateDescription(ji.getId(), desc);
-        }
+
     }
 
     @Override
