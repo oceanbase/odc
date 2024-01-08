@@ -25,10 +25,12 @@ import com.oceanbase.odc.service.onlineschemachange.oms.client.ClientRequestPara
 import com.oceanbase.odc.service.onlineschemachange.oms.client.OmsClient;
 import com.oceanbase.odc.service.onlineschemachange.oms.request.CreateProjectRequest;
 import com.oceanbase.odc.service.onlineschemachange.oms.request.ListProjectFullVerifyResultRequest;
+import com.oceanbase.odc.service.onlineschemachange.oms.request.ListProjectRequest;
 import com.oceanbase.odc.service.onlineschemachange.oms.request.OmsApiReturnResult;
 import com.oceanbase.odc.service.onlineschemachange.oms.request.ProjectControlRequest;
 import com.oceanbase.odc.service.onlineschemachange.oms.response.ProjectFullVerifyResultResponse;
 import com.oceanbase.odc.service.onlineschemachange.oms.response.ProjectProgressResponse;
+import com.oceanbase.odc.service.onlineschemachange.oms.response.ProjectResponse;
 import com.oceanbase.odc.service.onlineschemachange.oms.response.ProjectStepVO;
 
 /**
@@ -42,6 +44,16 @@ public class ProjectOpenApiServiceImpl implements ProjectOpenApiService {
 
     public ProjectOpenApiServiceImpl(@Autowired OmsClient omsClient) {
         this.omsClient = omsClient;
+    }
+
+    @Override
+    public List<ProjectResponse> listProjects(ListProjectRequest request) {
+        ClientRequestParams params = new ClientRequestParams()
+                .setRequest(request)
+                .setAction("ListProjects")
+                .setTypeReference(new TypeReference<OmsApiReturnResult<List<ProjectResponse>>>() {});
+
+        return omsClient.postOmsInterface(params);
     }
 
     @Override
