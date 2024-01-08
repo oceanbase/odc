@@ -25,9 +25,18 @@ import lombok.Data;
 @Data
 public class JobProperties {
 
-    private boolean enableRetryAfterExpired;
+    /**
+     * job enable retry when task is expired
+     */
+    private boolean enableRetryAfterReportTimeout;
 
-    private int maxRetryTimesAfterExpired;
+    /**
+     * job retry max times
+     */
+    private Integer maxRetryTimesAfterReportTimeout;
 
-    private int checkExpiredPeriodSeconds;
+    /**
+     * job expired after seconds when job status is preparing and no resources to schedule job
+     */
+    private Integer jobExpiredAfterSeconds;
 }

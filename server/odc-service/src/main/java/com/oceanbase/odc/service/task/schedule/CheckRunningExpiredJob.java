@@ -58,7 +58,7 @@ public class CheckRunningExpiredJob implements Job {
         // scan preparing and running job
         List<JobEntity> jobs;
         int offset = 0;
-        int limit = taskFrameworkProperties.getSingleFetchJobRowsForCheckExpired();
+        int limit = taskFrameworkProperties.getSingleFetchJobRowsForCheckReportTimeout();
         do {
             // check timeout job
             jobs = getConfiguration().getTaskFrameworkService()
@@ -70,7 +70,7 @@ public class CheckRunningExpiredJob implements Job {
     }
 
     private void checkJob(JobEntity a) {
-        if (!checkJobIsExpired(a)) {
+        if (!checkJobReportTimeout(a)) {
             return;
         }
         if (checkRetryNeeded(a)) {
@@ -88,14 +88,14 @@ public class CheckRunningExpiredJob implements Job {
                 getConfiguration().getJobDispatcher().stop(JobIdentity.of(a.getId()));
                 getConfiguration().getTaskFrameworkService().updateStatus(a.getId(), JobStatus.FAILED);
                 getConfiguration().getTaskFrameworkService()
-                        .updateDescription(a.getId(), "time out and set task failed.");
+                        .updateDescription(a.getId(), "Report timeout and job failed.");
             } catch (Throwable e) {
                 log.warn("try to stop job {} failed: ", a.getId(), e);
             }
         }
     }
 
-    private boolean checkJobIsExpired(JobEntity a) {
+    private boolean checkJobReportTimeout(JobEntity a) {
         long baseTime = (a.getLastReportTime() != null ? a.getLastReportTime()
                 : (a.getStartedTime() != null ? a.getStartedTime() : a.getCreateTime())).getTime();
         return JobDateUtils.getCurrentDate().getTime() - baseTime > TimeUnit.MILLISECONDS.convert(
@@ -104,10 +104,14 @@ public class CheckRunningExpiredJob implements Job {
 
     private boolean checkRetryNeeded(JobEntity je) {
         JobProperties jobProperties = JsonUtils.fromJson(je.getJobPropertiesJson(), JobProperties.class);
-        if (jobProperties == null || !jobProperties.isEnableRetryAfterExpired()) {
+        if (jobProperties == null || !jobProperties.isEnableRetryAfterReportTimeout()) {
             return false;
         }
-        return jobProperties.getMaxRetryTimesAfterExpired() - je.getExecutionTimes() > 0;
+        int maxRetryTimes = jobProperties.getMaxRetryTimesAfterReportTimeout() != null
+                ? jobProperties.getMaxRetryTimesAfterReportTimeout()
+                : getConfiguration().getTaskFrameworkProperties().getMaxRetryTimesAfterReportTimeout();
+
+        return maxRetryTimes - je.getExecutionTimes() > 0;
     }
 
     private JobConfiguration getConfiguration() {

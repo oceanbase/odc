@@ -96,11 +96,6 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
             return;
         }
 
-        // if (taskResult.getProgress() == je.getProgressPercentage() && taskResult.getStatus() ==
-        // je.getStatus()) {
-        // log.warn("task progress is not changed, ignore upload result.{}", JsonUtils.toJson(taskResult));
-        // return;
-        // }
         updateJobScheduleEntity(taskResult);
         if (resultHandleServices != null) {
             resultHandleServices.forEach(r -> r.handle(taskResult));
