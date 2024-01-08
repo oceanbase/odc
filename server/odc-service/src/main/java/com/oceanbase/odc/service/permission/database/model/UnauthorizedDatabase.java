@@ -20,15 +20,16 @@ import java.util.List;
 import com.oceanbase.odc.service.connection.database.model.Database;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 /**
  * @author gaoda.xy
  * @date 2024/1/4 17:12
  */
 @Data
-public class UnauthorizedDatabase {
+@EqualsAndHashCode(callSuper = true)
+public class UnauthorizedDatabase extends Database {
 
-    private Database database;
     private List<DatabasePermissionType> unauthorizedPermissionTypes;
 
 }

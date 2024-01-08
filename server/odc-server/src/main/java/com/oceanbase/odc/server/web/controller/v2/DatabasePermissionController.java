@@ -47,7 +47,7 @@ import io.swagger.annotations.ApiOperation;
  * @date 2024/1/4 10:15
  */
 @RestController
-@RequestMapping("api/v2/collaboration/projects/{projectId:[\\d]+}/databasePermissions")
+@RequestMapping("/api/v2/collaboration/projects/{projectId:[\\d]+}/databasePermissions")
 public class DatabasePermissionController {
 
     @Autowired
