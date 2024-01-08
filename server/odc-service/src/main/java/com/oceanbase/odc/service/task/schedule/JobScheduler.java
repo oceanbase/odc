@@ -34,9 +34,8 @@ public interface JobScheduler {
      *
      * @param jd define a job
      * @return job id
-     * @throws JobException throw JobException if schedule job failed
      */
-    Long scheduleJobNow(JobDefinition jd) throws JobException;
+    Long scheduleJobNow(JobDefinition jd);
 
     /**
      * cancel job

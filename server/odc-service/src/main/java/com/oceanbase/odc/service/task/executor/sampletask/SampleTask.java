@@ -95,7 +95,7 @@ public class SampleTask extends BaseTask {
     }
 
     @Override
-    protected void onFail(Exception e) {
+    protected void onFail(Throwable e) {
         this.result = SampleTaskResult.fail();
     }
 

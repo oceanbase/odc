@@ -15,28 +15,28 @@
  */
 package com.oceanbase.odc.service.task.schedule;
 
-import java.util.Map;
-
-import com.oceanbase.odc.service.task.executor.task.Task;
-
-import lombok.Builder;
 import lombok.Data;
 
 /**
  * @author yaobin
- * @date 2023-11-23
+ * @date 2024-01-05
  * @since 4.2.4
  */
 @Data
-@Builder
-public class DefaultJobDefinition implements JobDefinition {
+public class JobProperties {
 
-    private Class<? extends Task> jobClass;
+    /**
+     * job enable retry when task is expired
+     */
+    private boolean enableRetryAfterReportTimeout;
 
-    private String jobType;
+    /**
+     * job retry max times
+     */
+    private Integer maxRetryTimesAfterReportTimeout;
 
-    private Map<String, String> jobParameters;
-
-    private JobProperties jobProperties;
-
+    /**
+     * job expired after seconds when job status is preparing and no resources to schedule job
+     */
+    private Integer jobExpiredAfterSeconds;
 }

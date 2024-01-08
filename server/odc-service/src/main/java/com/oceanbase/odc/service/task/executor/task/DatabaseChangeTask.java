@@ -137,7 +137,7 @@ public class DatabaseChangeTask extends BaseTask {
     }
 
     @Override
-    protected void onFail(Exception e) {
+    protected void onFail(Throwable e) {
         expireConnectionSession();
     }
 

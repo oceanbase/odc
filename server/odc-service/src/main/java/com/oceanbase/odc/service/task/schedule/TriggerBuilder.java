@@ -19,20 +19,14 @@ package com.oceanbase.odc.service.task.schedule;
 import java.text.ParseException;
 
 import org.quartz.CronScheduleBuilder;
-import org.quartz.JobDataMap;
 import org.quartz.SimpleScheduleBuilder;
 import org.quartz.Trigger;
 import org.quartz.TriggerKey;
 
-import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.service.quartz.util.QuartzCronExpressionUtils;
-import com.oceanbase.odc.service.schedule.model.QuartzKeyGenerator;
 import com.oceanbase.odc.service.schedule.model.TriggerConfig;
-import com.oceanbase.odc.service.schedule.model.TriggerStrategy;
-import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.caller.JobException;
-import com.oceanbase.odc.service.task.constants.JobConstants;
 
 /**
  * @author yaobin
@@ -41,31 +35,18 @@ import com.oceanbase.odc.service.task.constants.JobConstants;
  */
 public class TriggerBuilder {
 
-    public static Trigger build(JobIdentity ji, JobDefinition jd, TriggerConfig config) throws JobException {
-        JobDataMap triData = new JobDataMap();
-        JobContext jc = new DefaultJobContextBuilder().build(ji, jd);
-        triData.put(JobConstants.QUARTZ_DATA_MAP_JOB_CONTEXT, JsonUtils.toJson(jc));
-
-        if (config == null) {
-            config = new TriggerConfig();
-            config.setTriggerStrategy(TriggerStrategy.START_NOW);
-        }
-        return build(QuartzKeyGenerator.generateTriggerKey(jc.getJobIdentity().getId()),
-                config, triData);
-    }
-
-    private static Trigger build(TriggerKey key, TriggerConfig config, JobDataMap triggerDataMap) throws JobException {
+    public static Trigger build(TriggerKey key, TriggerConfig config) throws JobException {
         switch (config.getTriggerStrategy()) {
             case START_NOW:
                 return org.quartz.TriggerBuilder
                         .newTrigger().withIdentity(key).withSchedule(SimpleScheduleBuilder
                                 .simpleSchedule().withRepeatCount(0).withMisfireHandlingInstructionFireNow())
-                        .startNow().usingJobData(triggerDataMap).build();
+                        .startNow().build();
             case START_AT:
                 return org.quartz.TriggerBuilder.newTrigger().withIdentity(key)
                         .withSchedule(SimpleScheduleBuilder.simpleSchedule().withRepeatCount(0)
                                 .withMisfireHandlingInstructionFireNow())
-                        .startAt(config.getStartAt()).usingJobData(triggerDataMap).build();
+                        .startAt(config.getStartAt()).build();
             case CRON:
             case DAY:
             case MONTH:
@@ -80,10 +61,11 @@ public class TriggerBuilder {
                     throw new JobException("Invalid cron expression,create quartz job failed.", e);
                 }
 
-                CronScheduleBuilder cronScheduleBuilder = CronScheduleBuilder.cronSchedule(cron);
+                CronScheduleBuilder cronScheduleBuilder = CronScheduleBuilder.cronSchedule(cron)
+                        .withMisfireHandlingInstructionDoNothing();
 
                 return org.quartz.TriggerBuilder.newTrigger().withIdentity(key)
-                        .withSchedule(cronScheduleBuilder).usingJobData(triggerDataMap).build();
+                        .withSchedule(cronScheduleBuilder).build();
 
             }
             default:

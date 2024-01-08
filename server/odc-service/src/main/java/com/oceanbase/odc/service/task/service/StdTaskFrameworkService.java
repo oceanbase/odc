@@ -16,8 +16,11 @@
 
 package com.oceanbase.odc.service.task.service;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+
+import javax.persistence.EntityManager;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -44,7 +47,7 @@ import com.oceanbase.odc.service.task.executor.task.TaskResult;
 import com.oceanbase.odc.service.task.listener.TaskResultUploadEvent;
 import com.oceanbase.odc.service.task.schedule.DefaultJobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobDefinition;
-import com.oceanbase.odc.service.task.schedule.JobScheduler;
+import com.oceanbase.odc.service.task.util.JobDateUtils;
 
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -59,8 +62,6 @@ import lombok.extern.slf4j.Slf4j;
 @SkipAuthorize("odc internal usage")
 public class StdTaskFrameworkService implements TaskFrameworkService {
 
-    @Autowired
-    private JobScheduler jobScheduler;
     @Autowired
     private JobRepository jobRepository;
     @Autowired
@@ -79,6 +80,9 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     @Autowired
     private TaskFrameworkProperties taskFrameworkProperties;
 
+    @Autowired
+    private EntityManager entityManager;
+
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void handleResult(TaskResult taskResult) {
@@ -92,10 +96,6 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
             return;
         }
 
-        if (taskResult.getProgress() == je.getProgressPercentage() && taskResult.getStatus() == je.getStatus()) {
-            log.warn("task progress is not changed, ignore upload result.{}", JsonUtils.toJson(taskResult));
-            return;
-        }
         updateJobScheduleEntity(taskResult);
         if (resultHandleServices != null) {
             resultHandleServices.forEach(r -> r.handle(taskResult));
@@ -127,6 +127,20 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
                 .orElseThrow(() -> new NotFoundException(ResourceType.ODC_TASK, "id", id));
     }
 
+    @Override
+    public List<JobEntity> find(List<JobStatus> status, int offset, int limit) {
+        return entityManager.createQuery("from JobEntity where status in (:status)"
+                + " order by createTime asc", JobEntity.class)
+                .setParameter("status", status)
+                .setFirstResult(offset)
+                .setMaxResults(limit).getResultList();
+    }
+
+    @Override
+    public List<JobEntity> find(JobStatus status, int offset, int limit) {
+        return find(Collections.singletonList(status), offset, limit);
+    }
+
     @SuppressWarnings("unchecked")
     @Override
     public JobDefinition getJobDefinition(Long id) {
@@ -150,6 +164,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         jobEntity.setExecutorIdentifier(executorIdentifier);
         // increment executionTimes
         jobEntity.setExecutionTimes(jobEntity.getExecutionTimes() + 1);
+        jobEntity.setStartedTime(JobDateUtils.getCurrentDate());
         jobRepository.updateJobExecutorIdentifierAndStatus(jobEntity);
     }
 
@@ -165,6 +180,10 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         jse.setStatus(taskResult.getStatus());
         jse.setProgressPercentage(taskResult.getProgress());
         jse.setExecutorEndpoint(taskResult.getExecutorEndpoint());
+        jse.setLastReportTime(JobDateUtils.getCurrentDate());
+        if (taskResult.getStatus() != null && taskResult.getStatus().isTerminated()) {
+            jse.setFinishedTime(JobDateUtils.getCurrentDate());
+        }
         jobRepository.update(jse);
 
         if (taskResult.getLogMetadata() != null && taskResult.getStatus().isTerminated()) {

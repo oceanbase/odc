@@ -23,7 +23,7 @@ package com.oceanbase.odc.service.task.config;
  */
 public class JobConfigurationHolder {
 
-    private static JobConfiguration configuration;
+    private static volatile JobConfiguration configuration;
 
     public static JobConfiguration getJobConfiguration() {
         return configuration;

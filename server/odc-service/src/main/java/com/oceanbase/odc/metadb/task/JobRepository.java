@@ -15,6 +15,9 @@
  */
 package com.oceanbase.odc.metadb.task;
 
+import java.util.List;
+import java.util.Set;
+
 import javax.transaction.Transactional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -38,7 +41,8 @@ public interface JobRepository extends JpaRepository<JobEntity, Long>,
     @Transactional
     @Query("update JobEntity set "
             + "executorEndpoint=:#{#param.executorEndpoint},status=:#{#param.status},"
-            + "progressPercentage=:#{#param.progressPercentage},resultJson=:#{#param.resultJson}"
+            + "progressPercentage=:#{#param.progressPercentage},resultJson=:#{#param.resultJson},"
+            + "finishedTime=:#{#param.finishedTime},lastReportTime=:#{#param.lastReportTime}"
             + " where id=:#{#param.id}")
     @Modifying
     int update(@Param("param") JobEntity entity);
@@ -46,7 +50,8 @@ public interface JobRepository extends JpaRepository<JobEntity, Long>,
     @Transactional
     @Query("update JobEntity set "
             + "executorIdentifier=:#{#param.executorIdentifier},status=:#{#param.status},"
-            + "executionTimes=:#{#param.executionTimes}"
+            + "executionTimes=:#{#param.executionTimes},"
+            + "startedTime=:#{#param.startedTime}"
             + " where id=:#{#param.id}")
     @Modifying
     void updateJobExecutorIdentifierAndStatus(@Param("param") JobEntity entity);
@@ -64,5 +69,8 @@ public interface JobRepository extends JpaRepository<JobEntity, Long>,
             + " where id=:id")
     @Modifying
     void updateStatus(@Param("id") Long id, @Param("status") JobStatus status);
+
+
+    List<TaskEntity> findByIdIn(Set<Long> taskIds);
 
 }

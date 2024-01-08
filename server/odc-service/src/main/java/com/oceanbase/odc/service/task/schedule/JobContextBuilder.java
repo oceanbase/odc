@@ -16,6 +16,7 @@
 
 package com.oceanbase.odc.service.task.schedule;
 
+import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.task.caller.JobContext;
 
 /**
@@ -26,4 +27,6 @@ import com.oceanbase.odc.service.task.caller.JobContext;
 public interface JobContextBuilder {
 
     JobContext build(JobIdentity ji, JobDefinition jd);
+
+    JobContext build(JobEntity jobEntity, HostUrlProvider hostUrlProvider);
 }
