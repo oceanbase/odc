@@ -42,5 +42,5 @@ public class QueryDatabaseParams {
 
     private Boolean containsUnassigned;
 
-    private Boolean includePermittedAction;
+    private Boolean includesPermittedAction;
 }

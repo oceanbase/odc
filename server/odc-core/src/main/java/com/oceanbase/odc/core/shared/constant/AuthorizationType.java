@@ -19,7 +19,7 @@ package com.oceanbase.odc.core.shared.constant;
  * @author gaoda.xy
  * @date 2024/1/2 19:45
  */
-public enum PermissionSourceType {
+public enum AuthorizationType {
 
     /**
      * Permissions obtained through administrator user authorization

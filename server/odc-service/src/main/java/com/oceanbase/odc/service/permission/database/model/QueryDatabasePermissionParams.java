@@ -17,7 +17,7 @@ package com.oceanbase.odc.service.permission.database.model;
 
 import java.util.List;
 
-import com.oceanbase.odc.core.shared.constant.PermissionSourceType;
+import com.oceanbase.odc.core.shared.constant.AuthorizationType;
 
 import lombok.Builder;
 import lombok.Data;
@@ -34,9 +34,9 @@ public class QueryDatabasePermissionParams {
     private String fuzzyDatabaseName;
     private String fuzzyDatasourceName;
     private List<Long> environmentIds;
-    private List<DatabasePermissionType> permissionTypes;
-    private List<PermissionSourceType> sourceTypes;
+    private List<DatabasePermissionType> types;
+    private List<AuthorizationType> authorizationTypes;
     private Boolean expired;
-    private Boolean expiredSoon;
+    private Boolean expiring;
 
 }

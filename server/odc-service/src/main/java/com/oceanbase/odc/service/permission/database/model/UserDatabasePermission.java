@@ -19,7 +19,7 @@ import java.util.Date;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonProperty.Access;
-import com.oceanbase.odc.core.shared.constant.PermissionSourceType;
+import com.oceanbase.odc.core.shared.constant.AuthorizationType;
 
 import lombok.Data;
 
@@ -28,7 +28,7 @@ import lombok.Data;
  * @date 2024/1/4 11:31
  */
 @Data
-public class DatabasePermissionModel {
+public class UserDatabasePermission {
 
     @JsonProperty(access = Access.READ_ONLY)
     private Long id;
@@ -37,10 +37,10 @@ public class DatabasePermissionModel {
     private Long userId;
 
     @JsonProperty(access = Access.READ_ONLY)
-    private DatabasePermissionType permissionType;
+    private DatabasePermissionType type;
 
     @JsonProperty(access = Access.READ_ONLY)
-    private PermissionSourceType sourceType;
+    private AuthorizationType authorizationType;
 
     @JsonProperty(access = Access.READ_ONLY)
     private Long ticketId;
@@ -67,10 +67,10 @@ public class DatabasePermissionModel {
     private String databaseName;
 
     @JsonProperty(access = Access.READ_ONLY)
-    private Long datasourceId;
+    private Long dataSourceId;
 
     @JsonProperty(access = Access.READ_ONLY)
-    private String datasourceName;
+    private String dataSourceName;
 
     @JsonProperty(access = Access.READ_ONLY)
     private Long environmentId;

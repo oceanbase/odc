@@ -30,8 +30,8 @@ import com.oceanbase.odc.core.authority.util.Authenticated;
 import com.oceanbase.odc.core.authority.util.PreAuthenticate;
 import com.oceanbase.odc.core.shared.exception.NotImplementedException;
 import com.oceanbase.odc.service.permission.database.model.CreateDatabasePermissionReq;
-import com.oceanbase.odc.service.permission.database.model.DatabasePermissionModel;
 import com.oceanbase.odc.service.permission.database.model.QueryDatabasePermissionParams;
+import com.oceanbase.odc.service.permission.database.model.UserDatabasePermission;
 
 /**
  * @author gaoda.xy
@@ -45,28 +45,28 @@ public class DatabasePermissionService {
     @Transactional(rollbackFor = Exception.class)
     @PreAuthenticate(hasAnyResourceRole = {"OWNER", "DBA", "DEVELOPER", "SECURITY_ADMINISTRATOR", "PARTICIPANT"},
             resourceType = "ODC_PROJECT", indexOfIdParam = 0)
-    public Page<DatabasePermissionModel> list(@NotNull Long projectId, @NotNull QueryDatabasePermissionParams params,
+    public Page<UserDatabasePermission> list(@NotNull Long projectId, @NotNull QueryDatabasePermissionParams params,
             Pageable pageable) {
         throw new NotImplementedException();
     }
 
     @Transactional(rollbackFor = Exception.class)
     @PreAuthenticate(hasAnyResourceRole = {"OWNER", "DBA"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
-    public List<DatabasePermissionModel> create(@NotNull Long projectId,
+    public List<UserDatabasePermission> create(@NotNull Long projectId,
             @NotNull @Valid CreateDatabasePermissionReq req) {
         throw new NotImplementedException();
     }
 
     @Transactional(rollbackFor = Exception.class)
     @PreAuthenticate(hasAnyResourceRole = {"OWNER", "DBA"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
-    public DatabasePermissionModel reclaim(@NotNull Long projectId, @NotNull Long permissionId) {
+    public UserDatabasePermission revoke(@NotNull Long projectId, @NotNull Long permissionId) {
         throw new NotImplementedException();
     }
 
     @Transactional(rollbackFor = Exception.class)
     @PreAuthenticate(hasAnyResourceRole = {"OWNER", "DBA", "DEVELOPER", "SECURITY_ADMINISTRATOR", "PARTICIPANT"},
             resourceType = "ODC_PROJECT", indexOfIdParam = 0)
-    public DatabasePermissionModel release(@NotNull Long projectId, @NotNull Long permissionId) {
+    public UserDatabasePermission release(@NotNull Long projectId, @NotNull Long permissionId) {
         throw new NotImplementedException();
     }
 
