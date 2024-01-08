@@ -12,8 +12,8 @@ templates:
         value: "TASK"
       - column_name: event_name
         value: "${com.oceanbase.odc.TaskType.ASYNC}-${com.oceanbase.odc.TaskStatus.EXECUTION_SUCCEEDED}"
-      - column_name: match_expression_json
-        value: "{\"taskType\":\"ASYNC\",\"taskStatus\":\"EXECUTION_SUCCEEDED\"}"
+      - column_name: match_expression
+        value: "taskType.equals('ASYNC') && taskStatus.equals('EXECUTION_SUCCEEDED')"
   - metadata:
       allow_duplicate: false
       table_name: notification_policy_metadata
@@ -25,8 +25,8 @@ templates:
         value: "TASK"
       - column_name: event_name
         value: "${com.oceanbase.odc.TaskType.ASYNC}-${com.oceanbase.odc.TaskStatus.EXECUTION_FAILED}"
-      - column_name: match_expression_json
-        value: "{\"taskType\":\"ASYNC\",\"taskStatus\":\"EXECUTION_FAILED\"}"
+      - column_name: match_expression
+        value: "taskType.equals('ASYNC') && taskStatus.equals('EXECUTION_FAILED')"
   - metadata:
       allow_duplicate: false
       table_name: notification_policy_metadata
@@ -38,8 +38,8 @@ templates:
         value: "TASK"
       - column_name: event_name
         value: "${com.oceanbase.odc.TaskType.ASYNC}-${com.oceanbase.odc.TaskStatus.EXECUTION_TIMEOUT}"
-      - column_name: match_expression_json
-        value: "{\"taskType\":\"ASYNC\",\"taskStatus\":\"EXECUTION_TIMEOUT\"}"
+      - column_name: match_expression
+        value: "taskType.equals('ASYNC') && taskStatus.equals('EXECUTION_TIMEOUT')"
   - metadata:
       allow_duplicate: false
       table_name: notification_policy_metadata
@@ -51,8 +51,8 @@ templates:
         value: "TASK"
       - column_name: event_name
         value: "${com.oceanbase.odc.TaskType.ASYNC}-${com.oceanbase.odc.TaskStatus.PENDING_APPROVAL}"
-      - column_name: match_expression_json
-        value: "{\"taskType\":\"ASYNC\",\"taskStatus\":\"PENDING_APPROVAL\"}"
+      - column_name: match_expression
+        value: "taskType.equals('ASYNC') && taskStatus.equals('PENDING_APPROVAL')"
   - metadata:
       allow_duplicate: false
       table_name: notification_policy_metadata
@@ -64,8 +64,8 @@ templates:
         value: "TASK"
       - column_name: event_name
         value: "${com.oceanbase.odc.TaskType.ASYNC}-${com.oceanbase.odc.TaskStatus.APPROVED}"
-      - column_name: match_expression_json
-        value: "{\"taskType\":\"ASYNC\",\"taskStatus\":\"APPROVED\"}"
+      - column_name: match_expression
+        value: "taskType.equals('ASYNC') && taskStatus.equals('APPROVED')"
   - metadata:
       allow_duplicate: false
       table_name: notification_policy_metadata
@@ -76,9 +76,9 @@ templates:
       - column_name: event_category
         value: "TASK"
       - column_name: event_name
-        value: "${com.oceanbase.odc.TaskType.ASYNC}-${com.oceanbase.odc.TaskStatus.APPORVAL_REJECTION}"
-      - column_name: match_expression_json
-        value: "{\"taskType\":\"ASYNC\",\"taskStatus\":\"APPORVAL_REJECTION\"}"
+        value: "${com.oceanbase.odc.TaskType.ASYNC}-${com.oceanbase.odc.TaskStatus.APPROVAL_REJECTION}"
+      - column_name: match_expression
+        value: "taskType.equals('ASYNC') && taskStatus.equals('APPROVAL_REJECTION')"
   - metadata:
       allow_duplicate: false
       table_name: notification_policy_metadata
@@ -90,8 +90,8 @@ templates:
         value: "TASK"
       - column_name: event_name
         value: "${com.oceanbase.odc.TaskType.IMPORT}-${com.oceanbase.odc.TaskStatus.EXECUTION_SUCCEEDED}"
-      - column_name: match_expression_json
-        value: "{\"taskType\":\"IMPORT\",\"taskStatus\":\"EXECUTION_SUCCEEDED\"}"
+      - column_name: match_expression
+        value: "taskType.equals('IMPORT') && taskStatus.equals('EXECUTION_SUCCEEDED')"
   - metadata:
       allow_duplicate: false
       table_name: notification_policy_metadata
@@ -103,8 +103,8 @@ templates:
         value: "TASK"
       - column_name: event_name
         value: "${com.oceanbase.odc.TaskType.IMPORT}-${com.oceanbase.odc.TaskStatus.EXECUTION_FAILED}"
-      - column_name: match_expression_json
-        value: "{\"taskType\":\"IMPORT\",\"taskStatus\":\"EXECUTION_FAILED\"}"
+      - column_name: match_expression
+        value: "taskType.equals('IMPORT') && taskStatus.equals('EXECUTION_FAILED')"
   - metadata:
       allow_duplicate: false
       table_name: notification_policy_metadata
@@ -116,8 +116,8 @@ templates:
         value: "TASK"
       - column_name: event_name
         value: "${com.oceanbase.odc.TaskType.IMPORT}-${com.oceanbase.odc.TaskStatus.EXECUTION_TIMEOUT}"
-      - column_name: match_expression_json
-        value: "{\"taskType\":\"IMPORT\",\"taskStatus\":\"EXECUTION_TIMEOUT\"}"
+      - column_name: match_expression
+        value: "taskType.equals('IMPORT') && taskStatus.equals('EXECUTION_TIMEOUT')"
   - metadata:
       allow_duplicate: false
       table_name: notification_policy_metadata
@@ -129,8 +129,8 @@ templates:
         value: "TASK"
       - column_name: event_name
         value: "${com.oceanbase.odc.TaskType.IMPORT}-${com.oceanbase.odc.TaskStatus.PENDING_APPROVAL}"
-      - column_name: match_expression_json
-        value: "{\"taskType\":\"IMPORT\",\"taskStatus\":\"PENDING_APPROVAL\"}"
+      - column_name: match_expression
+        value: "taskType.equals('IMPORT') && taskStatus.equals('PENDING_APPROVAL')"
   - metadata:
       allow_duplicate: false
       table_name: notification_policy_metadata
@@ -142,8 +142,8 @@ templates:
         value: "TASK"
       - column_name: event_name
         value: "${com.oceanbase.odc.TaskType.IMPORT}-${com.oceanbase.odc.TaskStatus.APPROVED}"
-      - column_name: match_expression_json
-        value: "{\"taskType\":\"IMPORT\",\"taskStatus\":\"APPROVED\"}"
+      - column_name: match_expression
+        value: "taskType.equals('IMPORT') && taskStatus.equals('APPROVED')"
   - metadata:
       allow_duplicate: false
       table_name: notification_policy_metadata
@@ -154,9 +154,9 @@ templates:
       - column_name: event_category
         value: "TASK"
       - column_name: event_name
-        value: "${com.oceanbase.odc.TaskType.IMPORT}-${com.oceanbase.odc.TaskStatus.APPORVAL_REJECTION}"
-      - column_name: match_expression_json
-        value: "{\"taskType\":\"IMPORT\",\"taskStatus\":\"APPORVAL_REJECTION\"}"
+        value: "${com.oceanbase.odc.TaskType.IMPORT}-${com.oceanbase.odc.TaskStatus.APPROVAL_REJECTION}"
+      - column_name: match_expression
+        value: "taskType.equals('IMPORT') && taskStatus.equals('APPROVAL_REJECTION')"
   - metadata:
       allow_duplicate: false
       table_name: notification_policy_metadata
@@ -168,8 +168,8 @@ templates:
         value: "TASK"
       - column_name: event_name
         value: "${com.oceanbase.odc.TaskType.EXPORT}-${com.oceanbase.odc.TaskStatus.EXECUTION_SUCCEEDED}"
-      - column_name: match_expression_json
-        value: "{\"taskType\":\"EXPORT\",\"taskStatus\":\"EXECUTION_SUCCEEDED\"}"
+      - column_name: match_expression
+        value: "taskType.equals('EXPORT') && taskStatus.equals('EXECUTION_SUCCEEDED')"
   - metadata:
       allow_duplicate: false
       table_name: notification_policy_metadata
@@ -181,8 +181,8 @@ templates:
         value: "TASK"
       - column_name: event_name
         value: "${com.oceanbase.odc.TaskType.EXPORT}-${com.oceanbase.odc.TaskStatus.EXECUTION_FAILED}"
-      - column_name: match_expression_json
-        value: "{\"taskType\":\"EXPORT\",\"taskStatus\":\"EXECUTION_FAILED\"}"
+      - column_name: match_expression
+        value: "taskType.equals('EXPORT') && taskStatus.equals('EXECUTION_FAILED')"
   - metadata:
       allow_duplicate: false
       table_name: notification_policy_metadata
@@ -194,8 +194,8 @@ templates:
         value: "TASK"
       - column_name: event_name
         value: "${com.oceanbase.odc.TaskType.EXPORT}-${com.oceanbase.odc.TaskStatus.EXECUTION_TIMEOUT}"
-      - column_name: match_expression_json
-        value: "{\"taskType\":\"EXPORT\",\"taskStatus\":\"EXECUTION_TIMEOUT\"}"
+      - column_name: match_expression
+        value: "taskType.equals('EXPORT') && taskStatus.equals('EXECUTION_TIMEOUT')"
   - metadata:
       allow_duplicate: false
       table_name: notification_policy_metadata
@@ -207,8 +207,8 @@ templates:
         value: "TASK"
       - column_name: event_name
         value: "${com.oceanbase.odc.TaskType.EXPORT}-${com.oceanbase.odc.TaskStatus.PENDING_APPROVAL}"
-      - column_name: match_expression_json
-        value: "{\"taskType\":\"EXPORT\",\"taskStatus\":\"PENDING_APPROVAL\"}"
+      - column_name: match_expression
+        value: "taskType.equals('EXPORT') && taskStatus.equals('PENDING_APPROVAL')"
   - metadata:
       allow_duplicate: false
       table_name: notification_policy_metadata
@@ -220,8 +220,8 @@ templates:
         value: "TASK"
       - column_name: event_name
         value: "${com.oceanbase.odc.TaskType.EXPORT}-${com.oceanbase.odc.TaskStatus.APPROVED}"
-      - column_name: match_expression_json
-        value: "{\"taskType\":\"EXPORT\",\"taskStatus\":\"APPROVED\"}"
+      - column_name: match_expression
+        value: "taskType.equals('EXPORT') && taskStatus.equals('APPROVED')"
   - metadata:
       allow_duplicate: false
       table_name: notification_policy_metadata
@@ -232,9 +232,9 @@ templates:
       - column_name: event_category
         value: "TASK"
       - column_name: event_name
-        value: "${com.oceanbase.odc.TaskType.EXPORT}-${com.oceanbase.odc.TaskStatus.APPORVAL_REJECTION}"
-      - column_name: match_expression_json
-        value: "{\"taskType\":\"EXPORT\",\"taskStatus\":\"APPORVAL_REJECTION\"}"
+        value: "${com.oceanbase.odc.TaskType.EXPORT}-${com.oceanbase.odc.TaskStatus.APPROVAL_REJECTION}"
+      - column_name: match_expression
+        value: "taskType.equals('EXPORT') && taskStatus.equals('APPROVAL_REJECTION')"
   - metadata:
       allow_duplicate: false
       table_name: notification_policy_metadata
@@ -246,8 +246,8 @@ templates:
         value: "TASK"
       - column_name: event_name
         value: "${com.oceanbase.odc.TaskType.MOCKDATA}-${com.oceanbase.odc.TaskStatus.EXECUTION_SUCCEEDED}"
-      - column_name: match_expression_json
-        value: "{\"taskType\":\"MOCKDATA\",\"taskStatus\":\"EXECUTION_SUCCEEDED\"}"
+      - column_name: match_expression
+        value: "taskType.equals('MOCKDATA') && taskStatus.equals('EXECUTION_SUCCEEDED')"
   - metadata:
       allow_duplicate: false
       table_name: notification_policy_metadata
@@ -259,8 +259,8 @@ templates:
         value: "TASK"
       - column_name: event_name
         value: "${com.oceanbase.odc.TaskType.MOCKDATA}-${com.oceanbase.odc.TaskStatus.EXECUTION_FAILED}"
-      - column_name: match_expression_json
-        value: "{\"taskType\":\"MOCKDATA\",\"taskStatus\":\"EXECUTION_FAILED\"}"
+      - column_name: match_expression
+        value: "taskType.equals('MOCKDATA') && taskStatus.equals('EXECUTION_FAILED')"
   - metadata:
       allow_duplicate: false
       table_name: notification_policy_metadata
@@ -272,8 +272,8 @@ templates:
         value: "TASK"
       - column_name: event_name
         value: "${com.oceanbase.odc.TaskType.MOCKDATA}-${com.oceanbase.odc.TaskStatus.EXECUTION_TIMEOUT}"
-      - column_name: match_expression_json
-        value: "{\"taskType\":\"MOCKDATA\",\"taskStatus\":\"EXECUTION_TIMEOUT\"}"
+      - column_name: match_expression
+        value: "taskType.equals('MOCKDATA') && taskStatus.equals('EXECUTION_TIMEOUT')"
   - metadata:
       allow_duplicate: false
       table_name: notification_policy_metadata
@@ -285,8 +285,8 @@ templates:
         value: "TASK"
       - column_name: event_name
         value: "${com.oceanbase.odc.TaskType.MOCKDATA}-${com.oceanbase.odc.TaskStatus.PENDING_APPROVAL}"
-      - column_name: match_expression_json
-        value: "{\"taskType\":\"MOCKDATA\",\"taskStatus\":\"PENDING_APPROVAL\"}"
+      - column_name: match_expression
+        value: "taskType.equals('MOCKDATA') && taskStatus.equals('PENDING_APPROVAL')"
   - metadata:
       allow_duplicate: false
       table_name: notification_policy_metadata
@@ -298,8 +298,8 @@ templates:
         value: "TASK"
       - column_name: event_name
         value: "${com.oceanbase.odc.TaskType.MOCKDATA}-${com.oceanbase.odc.TaskStatus.APPROVED}"
-      - column_name: match_expression_json
-        value: "{\"taskType\":\"MOCKDATA\",\"taskStatus\":\"APPROVED\"}"
+      - column_name: match_expression
+        value: "taskType.equals('MOCKDATA') && taskStatus.equals('APPROVED')"
   - metadata:
       allow_duplicate: false
       table_name: notification_policy_metadata
@@ -310,9 +310,9 @@ templates:
       - column_name: event_category
         value: "TASK"
       - column_name: event_name
-        value: "${com.oceanbase.odc.TaskType.MOCKDATA}-${com.oceanbase.odc.TaskStatus.APPORVAL_REJECTION}"
-      - column_name: match_expression_json
-        value: "{\"taskType\":\"MOCKDATA\",\"taskStatus\":\"APPORVAL_REJECTION\"}"
+        value: "${com.oceanbase.odc.TaskType.MOCKDATA}-${com.oceanbase.odc.TaskStatus.APPROVAL_REJECTION}"
+      - column_name: match_expression
+        value: "taskType.equals('MOCKDATA') && taskStatus.equals('APPROVAL_REJECTION')"
   - metadata:
       allow_duplicate: false
       table_name: notification_policy_metadata
@@ -324,8 +324,8 @@ templates:
         value: "TASK"
       - column_name: event_name
         value: "${com.oceanbase.odc.TaskType.SHADOWTABLE_SYNC}-${com.oceanbase.odc.TaskStatus.EXECUTION_SUCCEEDED}"
-      - column_name: match_expression_json
-        value: "{\"taskType\":\"SHADOWTABLE_SYNC\",\"taskStatus\":\"EXECUTION_SUCCEEDED\"}"
+      - column_name: match_expression
+        value: "taskType.equals('SHADOWTABLE_SYNC') && taskStatus.equals('EXECUTION_SUCCEEDED')"
   - metadata:
       allow_duplicate: false
       table_name: notification_policy_metadata
@@ -337,8 +337,8 @@ templates:
         value: "TASK"
       - column_name: event_name
         value: "${com.oceanbase.odc.TaskType.SHADOWTABLE_SYNC}-${com.oceanbase.odc.TaskStatus.EXECUTION_FAILED}"
-      - column_name: match_expression_json
-        value: "{\"taskType\":\"SHADOWTABLE_SYNC\",\"taskStatus\":\"EXECUTION_FAILED\"}"
+      - column_name: match_expression
+        value: "taskType.equals('SHADOWTABLE_SYNC') && taskStatus.equals('EXECUTION_FAILED')"
   - metadata:
       allow_duplicate: false
       table_name: notification_policy_metadata
@@ -350,8 +350,8 @@ templates:
         value: "TASK"
       - column_name: event_name
         value: "${com.oceanbase.odc.TaskType.SHADOWTABLE_SYNC}-${com.oceanbase.odc.TaskStatus.EXECUTION_TIMEOUT}"
-      - column_name: match_expression_json
-        value: "{\"taskType\":\"SHADOWTABLE_SYNC\",\"taskStatus\":\"EXECUTION_TIMEOUT\"}"
+      - column_name: match_expression
+        value: "taskType.equals('SHADOWTABLE_SYNC') && taskStatus.equals('EXECUTION_TIMEOUT')"
   - metadata:
       allow_duplicate: false
       table_name: notification_policy_metadata
@@ -363,8 +363,8 @@ templates:
         value: "TASK"
       - column_name: event_name
         value: "${com.oceanbase.odc.TaskType.SHADOWTABLE_SYNC}-${com.oceanbase.odc.TaskStatus.PENDING_APPROVAL}"
-      - column_name: match_expression_json
-        value: "{\"taskType\":\"SHADOWTABLE_SYNC\",\"taskStatus\":\"PENDING_APPROVAL\"}"
+      - column_name: match_expression
+        value: "taskType.equals('SHADOWTABLE_SYNC') && taskStatus.equals('PENDING_APPROVAL')"
   - metadata:
       allow_duplicate: false
       table_name: notification_policy_metadata
@@ -376,8 +376,8 @@ templates:
         value: "TASK"
       - column_name: event_name
         value: "${com.oceanbase.odc.TaskType.SHADOWTABLE_SYNC}-${com.oceanbase.odc.TaskStatus.APPROVED}"
-      - column_name: match_expression_json
-        value: "{\"taskType\":\"SHADOWTABLE_SYNC\",\"taskStatus\":\"APPROVED\"}"
+      - column_name: match_expression
+        value: "taskType.equals('SHADOWTABLE_SYNC') && taskStatus.equals('APPROVED')"
   - metadata:
       allow_duplicate: false
       table_name: notification_policy_metadata
@@ -388,9 +388,9 @@ templates:
       - column_name: event_category
         value: "TASK"
       - column_name: event_name
-        value: "${com.oceanbase.odc.TaskType.SHADOWTABLE_SYNC}-${com.oceanbase.odc.TaskStatus.APPORVAL_REJECTION}"
-      - column_name: match_expression_json
-        value: "{\"taskType\":\"SHADOWTABLE_SYNC\",\"taskStatus\":\"APPORVAL_REJECTION\"}"
+        value: "${com.oceanbase.odc.TaskType.SHADOWTABLE_SYNC}-${com.oceanbase.odc.TaskStatus.APPROVAL_REJECTION}"
+      - column_name: match_expression
+        value: "taskType.equals('SHADOWTABLE_SYNC') && taskStatus.equals('APPROVAL_REJECTION')"
   - metadata:
       allow_duplicate: false
       table_name: notification_policy_metadata
@@ -402,8 +402,8 @@ templates:
         value: "TASK"
       - column_name: event_name
         value: "${com.oceanbase.odc.TaskType.ONLINE_SCHEMA_CHANGE}-${com.oceanbase.odc.TaskStatus.EXECUTION_SUCCEEDED}"
-      - column_name: match_expression_json
-        value: "{\"taskType\":\"ONLINE_SCHEMA_CHANGE\",\"taskStatus\":\"EXECUTION_SUCCEEDED\"}"
+      - column_name: match_expression
+        value: "taskType.equals('ONLINE_SCHEMA_CHANGE') && taskStatus.equals('EXECUTION_SUCCEEDED')"
   - metadata:
       allow_duplicate: false
       table_name: notification_policy_metadata
@@ -415,8 +415,8 @@ templates:
         value: "TASK"
       - column_name: event_name
         value: "${com.oceanbase.odc.TaskType.ONLINE_SCHEMA_CHANGE}-${com.oceanbase.odc.TaskStatus.EXECUTION_FAILED}"
-      - column_name: match_expression_json
-        value: "{\"taskType\":\"ONLINE_SCHEMA_CHANGE\",\"taskStatus\":\"EXECUTION_FAILED\"}"
+      - column_name: match_expression
+        value: "taskType.equals('ONLINE_SCHEMA_CHANGE') && taskStatus.equals('EXECUTION_FAILED')"
   - metadata:
       allow_duplicate: false
       table_name: notification_policy_metadata
@@ -428,8 +428,8 @@ templates:
         value: "TASK"
       - column_name: event_name
         value: "${com.oceanbase.odc.TaskType.ONLINE_SCHEMA_CHANGE}-${com.oceanbase.odc.TaskStatus.EXECUTION_TIMEOUT}"
-      - column_name: match_expression_json
-        value: "{\"taskType\":\"ONLINE_SCHEMA_CHANGE\",\"taskStatus\":\"EXECUTION_TIMEOUT\"}"
+      - column_name: match_expression
+        value: "taskType.equals('ONLINE_SCHEMA_CHANGE') && taskStatus.equals('EXECUTION_TIMEOUT')"
   - metadata:
       allow_duplicate: false
       table_name: notification_policy_metadata
@@ -441,8 +441,8 @@ templates:
         value: "TASK"
       - column_name: event_name
         value: "${com.oceanbase.odc.TaskType.ONLINE_SCHEMA_CHANGE}-${com.oceanbase.odc.TaskStatus.PENDING_APPROVAL}"
-      - column_name: match_expression_json
-        value: "{\"taskType\":\"ONLINE_SCHEMA_CHANGE\",\"taskStatus\":\"PENDING_APPROVAL\"}"
+      - column_name: match_expression
+        value: "taskType.equals('ONLINE_SCHEMA_CHANGE') && taskStatus.equals('PENDING_APPROVAL')"
   - metadata:
       allow_duplicate: false
       table_name: notification_policy_metadata
@@ -454,8 +454,8 @@ templates:
         value: "TASK"
       - column_name: event_name
         value: "${com.oceanbase.odc.TaskType.ONLINE_SCHEMA_CHANGE}-${com.oceanbase.odc.TaskStatus.APPROVED}"
-      - column_name: match_expression_json
-        value: "{\"taskType\":\"ONLINE_SCHEMA_CHANGE\",\"taskStatus\":\"APPROVED\"}"
+      - column_name: match_expression
+        value: "taskType.equals('ONLINE_SCHEMA_CHANGE') && taskStatus.equals('APPROVED')"
   - metadata:
       allow_duplicate: false
       table_name: notification_policy_metadata
@@ -466,9 +466,9 @@ templates:
       - column_name: event_category
         value: "TASK"
       - column_name: event_name
-        value: "${com.oceanbase.odc.TaskType.ONLINE_SCHEMA_CHANGE}-${com.oceanbase.odc.TaskStatus.APPORVAL_REJECTION}"
-      - column_name: match_expression_json
-        value: "{\"taskType\":\"ONLINE_SCHEMA_CHANGE\",\"taskStatus\":\"APPORVAL_REJECTION\"}"
+        value: "${com.oceanbase.odc.TaskType.ONLINE_SCHEMA_CHANGE}-${com.oceanbase.odc.TaskStatus.APPROVAL_REJECTION}"
+      - column_name: match_expression
+        value: "taskType.equals('ONLINE_SCHEMA_CHANGE') && taskStatus.equals('APPROVAL_REJECTION')"
   - metadata:
       allow_duplicate: false
       table_name: notification_policy_metadata
@@ -480,8 +480,8 @@ templates:
         value: "TASK"
       - column_name: event_name
         value: "${com.oceanbase.odc.TaskType.EXPORT_RESULT_SET}-${com.oceanbase.odc.TaskStatus.EXECUTION_SUCCEEDED}"
-      - column_name: match_expression_json
-        value: "{\"taskType\":\"EXPORT_RESULT_SET\",\"taskStatus\":\"EXECUTION_SUCCEEDED\"}"
+      - column_name: match_expression
+        value: "taskType.equals('EXPORT_RESULT_SET') && taskStatus.equals('EXECUTION_SUCCEEDED')"
   - metadata:
       allow_duplicate: false
       table_name: notification_policy_metadata
@@ -493,8 +493,8 @@ templates:
         value: "TASK"
       - column_name: event_name
         value: "${com.oceanbase.odc.TaskType.EXPORT_RESULT_SET}-${com.oceanbase.odc.TaskStatus.EXECUTION_FAILED}"
-      - column_name: match_expression_json
-        value: "{\"taskType\":\"EXPORT_RESULT_SET\",\"taskStatus\":\"EXECUTION_FAILED\"}"
+      - column_name: match_expression
+        value: "taskType.equals('EXPORT_RESULT_SET') && taskStatus.equals('EXECUTION_FAILED')"
   - metadata:
       allow_duplicate: false
       table_name: notification_policy_metadata
@@ -506,8 +506,8 @@ templates:
         value: "TASK"
       - column_name: event_name
         value: "${com.oceanbase.odc.TaskType.EXPORT_RESULT_SET}-${com.oceanbase.odc.TaskStatus.EXECUTION_TIMEOUT}"
-      - column_name: match_expression_json
-        value: "{\"taskType\":\"EXPORT_RESULT_SET\",\"taskStatus\":\"EXECUTION_TIMEOUT\"}"
+      - column_name: match_expression
+        value: "taskType.equals('EXPORT_RESULT_SET') && taskStatus.equals('EXECUTION_TIMEOUT')"
   - metadata:
       allow_duplicate: false
       table_name: notification_policy_metadata
@@ -519,8 +519,8 @@ templates:
         value: "TASK"
       - column_name: event_name
         value: "${com.oceanbase.odc.TaskType.EXPORT_RESULT_SET}-${com.oceanbase.odc.TaskStatus.PENDING_APPROVAL}"
-      - column_name: match_expression_json
-        value: "{\"taskType\":\"EXPORT_RESULT_SET\",\"taskStatus\":\"PENDING_APPROVAL\"}"
+      - column_name: match_expression
+        value: "taskType.equals('EXPORT_RESULT_SET') && taskStatus.equals('PENDING_APPROVAL')"
   - metadata:
       allow_duplicate: false
       table_name: notification_policy_metadata
@@ -532,8 +532,8 @@ templates:
         value: "TASK"
       - column_name: event_name
         value: "${com.oceanbase.odc.TaskType.EXPORT_RESULT_SET}-${com.oceanbase.odc.TaskStatus.APPROVED}"
-      - column_name: match_expression_json
-        value: "{\"taskType\":\"EXPORT_RESULT_SET\",\"taskStatus\":\"APPROVED\"}"
+      - column_name: match_expression
+        value: "taskType.equals('EXPORT_RESULT_SET') && taskStatus.equals('APPROVED')"
   - metadata:
       allow_duplicate: false
       table_name: notification_policy_metadata
@@ -544,9 +544,9 @@ templates:
       - column_name: event_category
         value: "TASK"
       - column_name: event_name
-        value: "${com.oceanbase.odc.TaskType.EXPORT_RESULT_SET}-${com.oceanbase.odc.TaskStatus.APPORVAL_REJECTION}"
-      - column_name: match_expression_json
-        value: "{\"taskType\":\"EXPORT_RESULT_SET\",\"taskStatus\":\"APPORVAL_REJECTION\"}"
+        value: "${com.oceanbase.odc.TaskType.EXPORT_RESULT_SET}-${com.oceanbase.odc.TaskStatus.APPROVAL_REJECTION}"
+      - column_name: match_expression
+        value: "taskType.equals('EXPORT_RESULT_SET') && taskStatus.equals('APPROVAL_REJECTION')"
   - metadata:
       allow_duplicate: false
       table_name: notification_policy_metadata
@@ -558,8 +558,8 @@ templates:
         value: "TASK"
       - column_name: event_name
         value: "${com.oceanbase.odc.TaskType.SQL_PLAN}-${com.oceanbase.odc.TaskStatus.EXECUTION_SUCCEEDED}"
-      - column_name: match_expression_json
-        value: "{\"taskType\":\"SQL_PLAN\",\"taskStatus\":\"EXECUTION_SUCCEEDED\"}"
+      - column_name: match_expression
+        value: "taskType.equals('SQL_PLAN') && taskStatus.equals('EXECUTION_SUCCEEDED')"
   - metadata:
       allow_duplicate: false
       table_name: notification_policy_metadata
@@ -571,8 +571,8 @@ templates:
         value: "TASK"
       - column_name: event_name
         value: "${com.oceanbase.odc.TaskType.SQL_PLAN}-${com.oceanbase.odc.TaskStatus.EXECUTION_FAILED}"
-      - column_name: match_expression_json
-        value: "{\"taskType\":\"SQL_PLAN\",\"taskStatus\":\"EXECUTION_FAILED\"}"
+      - column_name: match_expression
+        value: "taskType.equals('SQL_PLAN') && taskStatus.equals('EXECUTION_FAILED')"
   - metadata:
       allow_duplicate: false
       table_name: notification_policy_metadata
@@ -584,8 +584,8 @@ templates:
         value: "TASK"
       - column_name: event_name
         value: "${com.oceanbase.odc.TaskType.SQL_PLAN}-${com.oceanbase.odc.TaskStatus.EXECUTION_TIMEOUT}"
-      - column_name: match_expression_json
-        value: "{\"taskType\":\"SQL_PLAN\",\"taskStatus\":\"EXECUTION_TIMEOUT\"}"
+      - column_name: match_expression
+        value: "taskType.equals('SQL_PLAN') && taskStatus.equals('EXECUTION_TIMEOUT')"
   - metadata:
       allow_duplicate: false
       table_name: notification_policy_metadata
@@ -597,8 +597,8 @@ templates:
         value: "TASK"
       - column_name: event_name
         value: "${com.oceanbase.odc.TaskType.SQL_PLAN}-${com.oceanbase.odc.TaskStatus.PENDING_APPROVAL}"
-      - column_name: match_expression_json
-        value: "{\"taskType\":\"SQL_PLAN\",\"taskStatus\":\"PENDING_APPROVAL\"}"
+      - column_name: match_expression
+        value: "taskType.equals('SQL_PLAN') && taskStatus.equals('PENDING_APPROVAL')"
   - metadata:
       allow_duplicate: false
       table_name: notification_policy_metadata
@@ -610,8 +610,8 @@ templates:
         value: "TASK"
       - column_name: event_name
         value: "${com.oceanbase.odc.TaskType.SQL_PLAN}-${com.oceanbase.odc.TaskStatus.APPROVED}"
-      - column_name: match_expression_json
-        value: "{\"taskType\":\"SQL_PLAN\",\"taskStatus\":\"APPROVED\"}"
+      - column_name: match_expression
+        value: "taskType.equals('SQL_PLAN') && taskStatus.equals('APPROVED')"
   - metadata:
       allow_duplicate: false
       table_name: notification_policy_metadata
@@ -622,9 +622,9 @@ templates:
       - column_name: event_category
         value: "TASK"
       - column_name: event_name
-        value: "${com.oceanbase.odc.TaskType.SQL_PLAN}-${com.oceanbase.odc.TaskStatus.APPORVAL_REJECTION}"
-      - column_name: match_expression_json
-        value: "{\"taskType\":\"SQL_PLAN\",\"taskStatus\":\"APPORVAL_REJECTION\"}"
+        value: "${com.oceanbase.odc.TaskType.SQL_PLAN}-${com.oceanbase.odc.TaskStatus.APPROVAL_REJECTION}"
+      - column_name: match_expression
+        value: "taskType.equals('SQL_PLAN') && taskStatus.equals('APPROVAL_REJECTION')"
   - metadata:
       allow_duplicate: false
       table_name: notification_policy_metadata
@@ -636,8 +636,8 @@ templates:
         value: "TASK"
       - column_name: event_name
         value: "${com.oceanbase.odc.TaskType.PARTITION_PLAN}-${com.oceanbase.odc.TaskStatus.EXECUTION_SUCCEEDED}"
-      - column_name: match_expression_json
-        value: "{\"taskType\":\"PARTITION_PLAN\",\"taskStatus\":\"EXECUTION_SUCCEEDED\"}"
+      - column_name: match_expression
+        value: "taskType.equals('PARTITION_PLAN') && taskStatus.equals('EXECUTION_SUCCEEDED')"
   - metadata:
       allow_duplicate: false
       table_name: notification_policy_metadata
@@ -649,8 +649,8 @@ templates:
         value: "TASK"
       - column_name: event_name
         value: "${com.oceanbase.odc.TaskType.PARTITION_PLAN}-${com.oceanbase.odc.TaskStatus.EXECUTION_FAILED}"
-      - column_name: match_expression_json
-        value: "{\"taskType\":\"PARTITION_PLAN\",\"taskStatus\":\"EXECUTION_FAILED\"}"
+      - column_name: match_expression
+        value: "taskType.equals('PARTITION_PLAN') && taskStatus.equals('EXECUTION_FAILED')"
   - metadata:
       allow_duplicate: false
       table_name: notification_policy_metadata
@@ -662,8 +662,8 @@ templates:
         value: "TASK"
       - column_name: event_name
         value: "${com.oceanbase.odc.TaskType.PARTITION_PLAN}-${com.oceanbase.odc.TaskStatus.EXECUTION_TIMEOUT}"
-      - column_name: match_expression_json
-        value: "{\"taskType\":\"PARTITION_PLAN\",\"taskStatus\":\"EXECUTION_TIMEOUT\"}"
+      - column_name: match_expression
+        value: "taskType.equals('PARTITION_PLAN') && taskStatus.equals('EXECUTION_TIMEOUT')"
   - metadata:
       allow_duplicate: false
       table_name: notification_policy_metadata
@@ -675,8 +675,8 @@ templates:
         value: "TASK"
       - column_name: event_name
         value: "${com.oceanbase.odc.TaskType.PARTITION_PLAN}-${com.oceanbase.odc.TaskStatus.PENDING_APPROVAL}"
-      - column_name: match_expression_json
-        value: "{\"taskType\":\"PARTITION_PLAN\",\"taskStatus\":\"PENDING_APPROVAL\"}"
+      - column_name: match_expression
+        value: "taskType.equals('PARTITION_PLAN') && taskStatus.equals('PENDING_APPROVAL')"
   - metadata:
       allow_duplicate: false
       table_name: notification_policy_metadata
@@ -688,8 +688,8 @@ templates:
         value: "TASK"
       - column_name: event_name
         value: "${com.oceanbase.odc.TaskType.PARTITION_PLAN}-${com.oceanbase.odc.TaskStatus.APPROVED}"
-      - column_name: match_expression_json
-        value: "{\"taskType\":\"PARTITION_PLAN\",\"taskStatus\":\"APPROVED\"}"
+      - column_name: match_expression
+        value: "taskType.equals('PARTITION_PLAN') && taskStatus.equals('APPROVED')"
   - metadata:
       allow_duplicate: false
       table_name: notification_policy_metadata
@@ -700,9 +700,9 @@ templates:
       - column_name: event_category
         value: "TASK"
       - column_name: event_name
-        value: "${com.oceanbase.odc.TaskType.PARTITION_PLAN}-${com.oceanbase.odc.TaskStatus.APPORVAL_REJECTION}"
-      - column_name: match_expression_json
-        value: "{\"taskType\":\"PARTITION_PLAN\",\"taskStatus\":\"APPORVAL_REJECTION\"}"
+        value: "${com.oceanbase.odc.TaskType.PARTITION_PLAN}-${com.oceanbase.odc.TaskStatus.APPROVAL_REJECTION}"
+      - column_name: match_expression
+        value: "taskType.equals('PARTITION_PLAN') && taskStatus.equals('APPROVAL_REJECTION')"
   - metadata:
       allow_duplicate: false
       table_name: notification_policy_metadata
@@ -714,8 +714,8 @@ templates:
         value: "TASK"
       - column_name: event_name
         value: "${com.oceanbase.odc.TaskType.DATA_ARCHIVE}-${com.oceanbase.odc.TaskStatus.EXECUTION_SUCCEEDED}"
-      - column_name: match_expression_json
-        value: "{\"taskType\":\"DATA_ARCHIVE\",\"taskStatus\":\"EXECUTION_SUCCEEDED\"}"
+      - column_name: match_expression
+        value: "taskType.equals('DATA_ARCHIVE') && taskStatus.equals('EXECUTION_SUCCEEDED')"
   - metadata:
       allow_duplicate: false
       table_name: notification_policy_metadata
@@ -727,8 +727,8 @@ templates:
         value: "TASK"
       - column_name: event_name
         value: "${com.oceanbase.odc.TaskType.DATA_ARCHIVE}-${com.oceanbase.odc.TaskStatus.EXECUTION_FAILED}"
-      - column_name: match_expression_json
-        value: "{\"taskType\":\"DATA_ARCHIVE\",\"taskStatus\":\"EXECUTION_FAILED\"}"
+      - column_name: match_expression
+        value: "taskType.equals('DATA_ARCHIVE') && taskStatus.equals('EXECUTION_FAILED')"
   - metadata:
       allow_duplicate: false
       table_name: notification_policy_metadata
@@ -740,8 +740,8 @@ templates:
         value: "TASK"
       - column_name: event_name
         value: "${com.oceanbase.odc.TaskType.DATA_ARCHIVE}-${com.oceanbase.odc.TaskStatus.EXECUTION_TIMEOUT}"
-      - column_name: match_expression_json
-        value: "{\"taskType\":\"DATA_ARCHIVE\",\"taskStatus\":\"EXECUTION_TIMEOUT\"}"
+      - column_name: match_expression
+        value: "taskType.equals('DATA_ARCHIVE') && taskStatus.equals('EXECUTION_TIMEOUT')"
   - metadata:
       allow_duplicate: false
       table_name: notification_policy_metadata
@@ -753,8 +753,8 @@ templates:
         value: "TASK"
       - column_name: event_name
         value: "${com.oceanbase.odc.TaskType.DATA_ARCHIVE}-${com.oceanbase.odc.TaskStatus.PENDING_APPROVAL}"
-      - column_name: match_expression_json
-        value: "{\"taskType\":\"DATA_ARCHIVE\",\"taskStatus\":\"PENDING_APPROVAL\"}"
+      - column_name: match_expression
+        value: "taskType.equals('DATA_ARCHIVE') && taskStatus.equals('PENDING_APPROVAL')"
   - metadata:
       allow_duplicate: false
       table_name: notification_policy_metadata
@@ -766,8 +766,8 @@ templates:
         value: "TASK"
       - column_name: event_name
         value: "${com.oceanbase.odc.TaskType.DATA_ARCHIVE}-${com.oceanbase.odc.TaskStatus.APPROVED}"
-      - column_name: match_expression_json
-        value: "{\"taskType\":\"DATA_ARCHIVE\",\"taskStatus\":\"APPROVED\"}"
+      - column_name: match_expression
+        value: "taskType.equals('DATA_ARCHIVE') && taskStatus.equals('APPROVED')"
   - metadata:
       allow_duplicate: false
       table_name: notification_policy_metadata
@@ -778,9 +778,9 @@ templates:
       - column_name: event_category
         value: "TASK"
       - column_name: event_name
-        value: "${com.oceanbase.odc.TaskType.DATA_ARCHIVE}-${com.oceanbase.odc.TaskStatus.APPORVAL_REJECTION}"
-      - column_name: match_expression_json
-        value: "{\"taskType\":\"DATA_ARCHIVE\",\"taskStatus\":\"APPORVAL_REJECTION\"}"
+        value: "${com.oceanbase.odc.TaskType.DATA_ARCHIVE}-${com.oceanbase.odc.TaskStatus.APPROVAL_REJECTION}"
+      - column_name: match_expression
+        value: "taskType.equals('DATA_ARCHIVE') && taskStatus.equals('APPROVAL_REJECTION')"
   - metadata:
       allow_duplicate: false
       table_name: notification_policy_metadata
@@ -792,8 +792,8 @@ templates:
         value: "TASK"
       - column_name: event_name
         value: "${com.oceanbase.odc.TaskType.DATA_ARCHIVE}-${com.oceanbase.odc.TaskStatus.SCHEDULING_FAILED}"
-      - column_name: match_expression_json
-        value: "{\"taskType\":\"DATA_ARCHIVE\",\"taskStatus\":\"SCHEDULING_FAILED\"}"
+      - column_name: match_expression
+        value: "taskType.equals('DATA_ARCHIVE') && taskStatus.equals('SCHEDULING_FAILED')"
   - metadata:
       allow_duplicate: false
       table_name: notification_policy_metadata
@@ -805,8 +805,8 @@ templates:
         value: "TASK"
       - column_name: event_name
         value: "${com.oceanbase.odc.TaskType.DATA_ARCHIVE}-${com.oceanbase.odc.TaskStatus.SCHEDULING_TIMEOUT}"
-      - column_name: match_expression_json
-        value: "{\"taskType\":\"DATA_ARCHIVE\",\"taskStatus\":\"SCHEDULING_TIMEOUT\"}"
+      - column_name: match_expression
+        value: "taskType.equals('DATA_ARCHIVE') && taskStatus.equals('SCHEDULING_TIMEOUT')"
   - metadata:
       allow_duplicate: false
       table_name: notification_policy_metadata
@@ -818,8 +818,8 @@ templates:
         value: "TASK"
       - column_name: event_name
         value: "${com.oceanbase.odc.TaskType.DATA_DELETE}-${com.oceanbase.odc.TaskStatus.EXECUTION_SUCCEEDED}"
-      - column_name: match_expression_json
-        value: "{\"taskType\":\"DATA_DELETE\",\"taskStatus\":\"EXECUTION_SUCCEEDED\"}"
+      - column_name: match_expression
+        value: "taskType.equals('DATA_DELETE') && taskStatus.equals('EXECUTION_SUCCEEDED')"
   - metadata:
       allow_duplicate: false
       table_name: notification_policy_metadata
@@ -831,8 +831,8 @@ templates:
         value: "TASK"
       - column_name: event_name
         value: "${com.oceanbase.odc.TaskType.DATA_DELETE}-${com.oceanbase.odc.TaskStatus.EXECUTION_FAILED}"
-      - column_name: match_expression_json
-        value: "{\"taskType\":\"DATA_DELETE\",\"taskStatus\":\"EXECUTION_FAILED\"}"
+      - column_name: match_expression
+        value: "taskType.equals('DATA_DELETE') && taskStatus.equals('EXECUTION_FAILED')"
   - metadata:
       allow_duplicate: false
       table_name: notification_policy_metadata
@@ -844,8 +844,8 @@ templates:
         value: "TASK"
       - column_name: event_name
         value: "${com.oceanbase.odc.TaskType.DATA_DELETE}-${com.oceanbase.odc.TaskStatus.EXECUTION_TIMEOUT}"
-      - column_name: match_expression_json
-        value: "{\"taskType\":\"DATA_DELETE\",\"taskStatus\":\"EXECUTION_TIMEOUT\"}"
+      - column_name: match_expression
+        value: "taskType.equals('DATA_DELETE') && taskStatus.equals('EXECUTION_TIMEOUT')"
   - metadata:
       allow_duplicate: false
       table_name: notification_policy_metadata
@@ -857,8 +857,8 @@ templates:
         value: "TASK"
       - column_name: event_name
         value: "${com.oceanbase.odc.TaskType.DATA_DELETE}-${com.oceanbase.odc.TaskStatus.PENDING_APPROVAL}"
-      - column_name: match_expression_json
-        value: "{\"taskType\":\"DATA_DELETE\",\"taskStatus\":\"PENDING_APPROVAL\"}"
+      - column_name: match_expression
+        value: "taskType.equals('DATA_DELETE') && taskStatus.equals('PENDING_APPROVAL')"
   - metadata:
       allow_duplicate: false
       table_name: notification_policy_metadata
@@ -870,8 +870,8 @@ templates:
         value: "TASK"
       - column_name: event_name
         value: "${com.oceanbase.odc.TaskType.DATA_DELETE}-${com.oceanbase.odc.TaskStatus.APPROVED}"
-      - column_name: match_expression_json
-        value: "{\"taskType\":\"DATA_DELETE\",\"taskStatus\":\"APPROVED\"}"
+      - column_name: match_expression
+        value: "taskType.equals('DATA_DELETE') && taskStatus.equals('APPROVED')"
   - metadata:
       allow_duplicate: false
       table_name: notification_policy_metadata
@@ -882,9 +882,9 @@ templates:
       - column_name: event_category
         value: "TASK"
       - column_name: event_name
-        value: "${com.oceanbase.odc.TaskType.DATA_DELETE}-${com.oceanbase.odc.TaskStatus.APPORVAL_REJECTION}"
-      - column_name: match_expression_json
-        value: "{\"taskType\":\"DATA_DELETE\",\"taskStatus\":\"APPORVAL_REJECTION\"}"
+        value: "${com.oceanbase.odc.TaskType.DATA_DELETE}-${com.oceanbase.odc.TaskStatus.APPROVAL_REJECTION}"
+      - column_name: match_expression
+        value: "taskType.equals('DATA_DELETE') && taskStatus.equals('APPROVAL_REJECTION')"
   - metadata:
       allow_duplicate: false
       table_name: notification_policy_metadata
@@ -896,8 +896,8 @@ templates:
         value: "TASK"
       - column_name: event_name
         value: "${com.oceanbase.odc.TaskType.DATA_DELETE}-${com.oceanbase.odc.TaskStatus.SCHEDULING_FAILED}"
-      - column_name: match_expression_json
-        value: "{\"taskType\":\"DATA_DELETE\",\"taskStatus\":\"SCHEDULING_FAILED\"}"
+      - column_name: match_expression
+        value: "taskType.equals('DATA_DELETE') && taskStatus.equals('SCHEDULING_FAILED')"
   - metadata:
       allow_duplicate: false
       table_name: notification_policy_metadata
@@ -909,8 +909,8 @@ templates:
         value: "TASK"
       - column_name: event_name
         value: "${com.oceanbase.odc.TaskType.DATA_DELETE}-${com.oceanbase.odc.TaskStatus.SCHEDULING_TIMEOUT}"
-      - column_name: match_expression_json
-        value: "{\"taskType\":\"DATA_DELETE\",\"taskStatus\":\"SCHEDULING_TIMEOUT\"}"
+      - column_name: match_expression
+        value: "taskType.equals('DATA_DELETE') && taskStatus.equals('SCHEDULING_TIMEOUT')"
   - metadata:
       allow_duplicate: false
       table_name: notification_policy_metadata
@@ -922,8 +922,8 @@ templates:
         value: "TASK"
       - column_name: event_name
         value: "${com.oceanbase.odc.TaskType.APPLY_PROJECT_PERMISSION}-${com.oceanbase.odc.TaskStatus.EXECUTION_SUCCEEDED}"
-      - column_name: match_expression_json
-        value: "{\"taskType\":\"APPLY_PROJECT_PERMISSION\",\"taskStatus\":\"EXECUTION_SUCCEEDED\"}"
+      - column_name: match_expression
+        value: "taskType.equals('APPLY_PROJECT_PERMISSION') && taskStatus.equals('EXECUTION_SUCCEEDED')"
   - metadata:
       allow_duplicate: false
       table_name: notification_policy_metadata
@@ -935,8 +935,8 @@ templates:
         value: "TASK"
       - column_name: event_name
         value: "${com.oceanbase.odc.TaskType.APPLY_PROJECT_PERMISSION}-${com.oceanbase.odc.TaskStatus.EXECUTION_FAILED}"
-      - column_name: match_expression_json
-        value: "{\"taskType\":\"APPLY_PROJECT_PERMISSION\",\"taskStatus\":\"EXECUTION_FAILED\"}"
+      - column_name: match_expression
+        value: "taskType.equals('APPLY_PROJECT_PERMISSION') && taskStatus.equals('EXECUTION_FAILED')"
   - metadata:
       allow_duplicate: false
       table_name: notification_policy_metadata
@@ -948,8 +948,8 @@ templates:
         value: "TASK"
       - column_name: event_name
         value: "${com.oceanbase.odc.TaskType.APPLY_PROJECT_PERMISSION}-${com.oceanbase.odc.TaskStatus.EXECUTION_TIMEOUT}"
-      - column_name: match_expression_json
-        value: "{\"taskType\":\"APPLY_PROJECT_PERMISSION\",\"taskStatus\":\"EXECUTION_TIMEOUT\"}"
+      - column_name: match_expression
+        value: "taskType.equals('APPLY_PROJECT_PERMISSION') && taskStatus.equals('EXECUTION_TIMEOUT')"
   - metadata:
       allow_duplicate: false
       table_name: notification_policy_metadata
@@ -961,8 +961,8 @@ templates:
         value: "TASK"
       - column_name: event_name
         value: "${com.oceanbase.odc.TaskType.APPLY_PROJECT_PERMISSION}-${com.oceanbase.odc.TaskStatus.PENDING_APPROVAL}"
-      - column_name: match_expression_json
-        value: "{\"taskType\":\"APPLY_PROJECT_PERMISSION\",\"taskStatus\":\"PENDING_APPROVAL\"}"
+      - column_name: match_expression
+        value: "taskType.equals('APPLY_PROJECT_PERMISSION') && taskStatus.equals('PENDING_APPROVAL')"
   - metadata:
       allow_duplicate: false
       table_name: notification_policy_metadata
@@ -974,8 +974,8 @@ templates:
         value: "TASK"
       - column_name: event_name
         value: "${com.oceanbase.odc.TaskType.APPLY_PROJECT_PERMISSION}-${com.oceanbase.odc.TaskStatus.APPROVED}"
-      - column_name: match_expression_json
-        value: "{\"taskType\":\"APPLY_PROJECT_PERMISSION\",\"taskStatus\":\"APPROVED\"}"
+      - column_name: match_expression
+        value: "taskType.equals('APPLY_PROJECT_PERMISSION') && taskStatus.equals('APPROVED')"
   - metadata:
       allow_duplicate: false
       table_name: notification_policy_metadata
@@ -986,6 +986,6 @@ templates:
       - column_name: event_category
         value: "TASK"
       - column_name: event_name
-        value: "${com.oceanbase.odc.TaskType.APPLY_PROJECT_PERMISSION}-${com.oceanbase.odc.TaskStatus.APPORVAL_REJECTION}"
-      - column_name: match_expression_json
-        value: "{\"taskType\":\"APPLY_PROJECT_PERMISSION\",\"taskStatus\":\"APPORVAL_REJECTION\"}"
+        value: "${com.oceanbase.odc.TaskType.APPLY_PROJECT_PERMISSION}-${com.oceanbase.odc.TaskStatus.APPROVAL_REJECTION}"
+      - column_name: match_expression
+        value: "taskType.equals('APPLY_PROJECT_PERMISSION') && taskStatus.equals('APPROVAL_REJECTION')"
