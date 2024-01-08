@@ -59,7 +59,7 @@ CREATE TABLE IF NOT EXISTS `notification_event`(
 ) comment = 'notification events';
 
 DROP TABLE IF EXISTS `notification_message`;
-CREATE TABLE `notification_message` (
+CREATE TABLE IF NOT EXISTS`notification_message` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
