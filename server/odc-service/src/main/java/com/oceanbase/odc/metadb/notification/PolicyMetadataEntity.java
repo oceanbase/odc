@@ -27,13 +27,17 @@ import javax.persistence.Table;
 import org.hibernate.annotations.Generated;
 import org.hibernate.annotations.GenerationTime;
 
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * @author liuyizhuo.lyz
  * @date 2024/1/4
  */
-@Data
+@Getter
+@Setter
+@EqualsAndHashCode(exclude = {"createTime", "updateTime"})
 @Entity
 @Table(name = "notification_policy_metadata")
 public class PolicyMetadataEntity {

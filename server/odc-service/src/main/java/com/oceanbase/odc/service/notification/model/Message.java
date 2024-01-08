@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.notification.model;
 
 import java.util.Date;
+import java.util.List;
 
 import com.oceanbase.odc.metadb.notification.MessageEntity;
 
@@ -37,6 +38,8 @@ public class Message {
     private Long id;
     private String title;
     private String content;
+    private List<String> toRecipients;
+    private List<String> ccRecipients;
     private MessageSendingStatus status;
     private Integer retryTimes;
     private Integer maxRetryTimes;
@@ -57,8 +60,11 @@ public class Message {
         entity.setContent(this.getContent());
         entity.setCreatorId(this.getCreatorId());
         entity.setOrganizationId(this.getOrganizationId());
+        entity.setProjectId(this.projectId);
         entity.setChannelId(this.channel.getId());
         entity.setStatus(this.getStatus());
+        entity.setToRecipients(this.getToRecipients());
+        entity.setCcRecipients(this.getCcRecipients());
         entity.setRetryTimes(this.getRetryTimes());
         entity.setMaxRetryTimes(this.getMaxRetryTimes());
         return entity;
@@ -69,9 +75,12 @@ public class Message {
         message.setId(entity.getId());
         message.setContent(entity.getContent());
         message.setTitle(entity.getTitle());
+        message.setCcRecipients(entity.getCcRecipients());
+        message.setToRecipients(entity.getToRecipients());
         message.setStatus(entity.getStatus());
         message.setCreatorId(entity.getCreatorId());
         message.setOrganizationId(entity.getOrganizationId());
+        message.setProjectId(entity.getProjectId());
         message.setRetryTimes(entity.getRetryTimes());
         message.setMaxRetryTimes(entity.getMaxRetryTimes());
         return message;

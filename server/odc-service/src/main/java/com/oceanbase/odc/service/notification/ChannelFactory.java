@@ -18,8 +18,11 @@ package com.oceanbase.odc.service.notification;
 import org.springframework.stereotype.Service;
 
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
+import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.exception.NotImplementedException;
 import com.oceanbase.odc.service.notification.model.Channel;
+
+import lombok.NonNull;
 
 /**
  * @Author: Lebie
@@ -30,10 +33,14 @@ import com.oceanbase.odc.service.notification.model.Channel;
 @SkipAuthorize("odc internal usage")
 public class ChannelFactory {
 
-    public MessageChannel generate(Channel channel) {
+    public MessageChannel generate(@NonNull Channel channel) {
+        Verify.notNull(channel.getType(), "channel type");
         switch (channel.getType()) {
             case DingTalk:
                 return new DingTalkBotChannel(channel);
+            case Webhook:
+            case Feishu:
+            case WeCom:
             default:
                 throw new NotImplementedException();
         }

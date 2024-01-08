@@ -1,5 +1,5 @@
 DROP TABLE IF EXISTS `notification_channel`;
-CREATE TABLE `notification_channel` (
+CREATE TABLE IF NOT EXISTS `notification_channel`(
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -9,7 +9,8 @@ CREATE TABLE `notification_channel` (
   `type` varchar(128) NOT NULL COMMENT 'channel type, may DingTalk, SMS, etc.',
   `project_id` bigint(20) NOT NULL COMMENT 'project id, references collaboration_project.id',
   `description` varchar(512) DEFAULT NULL COMMENT 'description',
-  PRIMARY KEY (`id`),
+  CONSTRAINT `pk_notification_channel_id` PRIMARY KEY (`id`),
+  CONSTRAINT `uk_notification_channel_project_id_name` UNIQUE KEY(`project_id`,`name`),
   KEY `notification_channel_project_id` (`project_id`)
 ) COMMENT = 'notification channel configs';
 
@@ -39,7 +40,8 @@ CREATE TABLE IF NOT EXISTS `notification_policy_metadata`(
   `event_category` varchar(128) NOT NULL comment 'notification event category, such as TASK',
   `event_name` varchar(128) NOT NULL comment 'notification event name',
   `match_expression` varchar(2048) comment 'indicate if a event matches the expression',
-  CONSTRAINT `pk_notification_policy_metadata_id` PRIMARY KEY (`id`)
+  CONSTRAINT `pk_notification_policy_metadata_id` PRIMARY KEY (`id`),
+  CONSTRAINT `uk_policy_metadata_event_category_name` UNIQUE KEY (`event_category`, `event_name`)
 ) comment = 'notification policy metadata';
 
 DROP TABLE IF EXISTS `notification_event`;

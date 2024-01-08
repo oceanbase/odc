@@ -86,5 +86,5 @@ public class MessageEntity {
     @OneToMany
     @JoinColumn(name = "message_id", referencedColumnName = "id")
     @ToString.Exclude
-    List<MessageSendingHistoryEntity> sendHistory;
+    private List<MessageSendingHistoryEntity> sendHistory;
 }

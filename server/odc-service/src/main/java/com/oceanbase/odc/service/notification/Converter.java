@@ -113,15 +113,18 @@ public class Converter {
                     Notification notification = new Notification();
 
                     Message message = new Message();
-                    message.setTitle(MessageTemplateProcessor
-                            .replaceVariables(channel.getChannelConfig().getTitleTemplate(), event.getLabels()));
-                    message.setContent(MessageTemplateProcessor
-                            .replaceVariables(channel.getChannelConfig().getContentTemplate(), event.getLabels()));
+                    if (Objects.nonNull(channel.getChannelConfig())) {
+                        message.setTitle(MessageTemplateProcessor
+                                .replaceVariables(channel.getChannelConfig().getTitleTemplate(), event.getLabels()));
+                        message.setContent(MessageTemplateProcessor
+                                .replaceVariables(channel.getChannelConfig().getContentTemplate(), event.getLabels()));
+                    }
                     message.setOrganizationId(policy.getOrganizationId());
                     message.setCreatorId(event.getCreatorId());
                     message.setChannel(channel);
                     message.setStatus(MessageSendingStatus.CREATED);
                     message.setRetryTimes(0);
+                    message.setProjectId(channel.getProjectId());
                     message.setMaxRetryTimes(notificationProperties.getMaxResendTimes());
                     notification.setMessage(message);
                     notifications.add(notification);
