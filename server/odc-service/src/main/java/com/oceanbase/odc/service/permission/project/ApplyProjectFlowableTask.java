@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.permissionapply.project;
+package com.oceanbase.odc.service.permission.project;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -39,7 +39,7 @@ import com.oceanbase.odc.metadb.iam.resourcerole.UserResourceRoleEntity;
 import com.oceanbase.odc.metadb.iam.resourcerole.UserResourceRoleRepository;
 import com.oceanbase.odc.service.flow.task.BaseODCFlowTaskDelegate;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
-import com.oceanbase.odc.service.permissionapply.project.ApplyProjectParameter.ApplyResourceRole;
+import com.oceanbase.odc.service.permission.project.ApplyProjectParameter.ApplyResourceRole;
 import com.oceanbase.odc.service.task.TaskService;
 
 import lombok.extern.slf4j.Slf4j;

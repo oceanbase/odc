@@ -72,6 +72,8 @@ public class DataBaseController {
             @RequestParam(required = false, name = "projectId") Long projectId,
             @RequestParam(required = false, defaultValue = "false",
                     name = "containsUnassigned") Boolean containsUnassigned,
+            @RequestParam(required = false, defaultValue = "false",
+                    name = "includePermittedAction") Boolean includePermittedAction,
             @PageableDefault(size = Integer.MAX_VALUE, sort = {"id"}, direction = Direction.DESC) Pageable pageable) {
         QueryDatabaseParams params = QueryDatabaseParams.builder()
                 .dataSourceId(dataSourceId)
@@ -79,6 +81,7 @@ public class DataBaseController {
                 .environmentId(environmentId)
                 .schemaName(name)
                 .containsUnassigned(containsUnassigned)
+                .includePermittedAction(includePermittedAction)
                 .projectId(projectId).build();
         return Responses.paginated(databaseService.list(params, pageable));
     }

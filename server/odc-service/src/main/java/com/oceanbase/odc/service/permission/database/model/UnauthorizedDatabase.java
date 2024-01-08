@@ -13,27 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.oceanbase.odc.service.permission.database.model;
 
-package com.oceanbase.odc.service.permissionapply.project;
+import java.util.List;
 
-import com.oceanbase.odc.core.flow.model.FlowTaskResult;
+import com.oceanbase.odc.service.connection.database.model.Database;
 
 import lombok.Data;
 
 /**
  * @author gaoda.xy
- * @date 2023/10/13 16:12
+ * @date 2024/1/4 17:12
  */
 @Data
-public class ApplyProjectResult implements FlowTaskResult {
+public class UnauthorizedDatabase {
 
-    /**
-     * Mark whether the task is successful
-     */
-    private boolean success;
-    /**
-     * Task parameters
-     */
-    private ApplyProjectParameter parameter;
+    private Database database;
+    private List<DatabasePermissionType> unauthorizedPermissionTypes;
 
 }

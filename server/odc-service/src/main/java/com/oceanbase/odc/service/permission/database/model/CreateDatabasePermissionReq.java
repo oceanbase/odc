@@ -13,34 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.connection.database.model;
+package com.oceanbase.odc.service.permission.database.model;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
+import java.util.Date;
+import java.util.List;
+
+import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
+
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 /**
- * @Author: Lebie
- * @Date: 2023/6/5 15:33
- * @Description: []
+ * @author gaoda.xy
+ * @date 2024/1/4 13:39
  */
 @Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class QueryDatabaseParams {
-    private String schemaName;
+public class CreateDatabasePermissionReq {
 
-    private Long projectId;
+    @NotEmpty
+    private List<Long> databaseIds;
 
-    private Long dataSourceId;
+    @NotEmpty
+    private List<DatabasePermissionType> permissionTypes;
 
-    private Long environmentId;
+    private Date expireTime;
 
-    private Boolean existed;
+    @NotNull
+    private Long userId;
 
-    private Boolean containsUnassigned;
-
-    private Boolean includePermittedAction;
 }
