@@ -32,7 +32,7 @@ public class QueryDatabasePermissionParams {
 
     private Long userId;
     private String fuzzyDatabaseName;
-    private String fuzzyDatasourceName;
+    private String fuzzyDataSourceName;
     private List<Long> environmentIds;
     private List<DatabasePermissionType> types;
     private List<AuthorizationType> authorizationTypes;

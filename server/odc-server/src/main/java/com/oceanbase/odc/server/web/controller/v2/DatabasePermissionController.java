@@ -58,7 +58,7 @@ public class DatabasePermissionController {
     public PaginatedResponse<UserDatabasePermission> list(@PathVariable Long projectId,
             @RequestParam(name = "user") Long userId,
             @RequestParam(name = "databaseName", required = false) String fuzzyDatabaseName,
-            @RequestParam(name = "datasourceName", required = false) String fuzzyDatasourceName,
+            @RequestParam(name = "dataSourceName", required = false) String fuzzyDataSourceName,
             @RequestParam(name = "environmentId", required = false) List<Long> environmentIds,
             @RequestParam(name = "type", required = false) List<DatabasePermissionType> types,
             @RequestParam(name = "authorizationType", required = false) List<AuthorizationType> authorizationTypes,
@@ -69,7 +69,7 @@ public class DatabasePermissionController {
         QueryDatabasePermissionParams params = QueryDatabasePermissionParams.builder()
                 .userId(userId)
                 .fuzzyDatabaseName(fuzzyDatabaseName)
-                .fuzzyDatasourceName(fuzzyDatasourceName)
+                .fuzzyDataSourceName(fuzzyDataSourceName)
                 .environmentIds(environmentIds)
                 .types(types)
                 .authorizationTypes(authorizationTypes)
