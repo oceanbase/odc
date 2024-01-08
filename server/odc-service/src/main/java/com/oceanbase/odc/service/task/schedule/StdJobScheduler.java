@@ -114,7 +114,7 @@ public class StdJobScheduler implements JobScheduler {
 
     private void initExpiredCheckJob() {
         initCronJob("CheckExpiredJob", "CheckExpiredJobGroup",
-                "* 0/1 * * * ?", CheckRunningExpiredJob.class);
+                "* 0/1 * * * ?", CheckRunningJob.class);
     }
 
     private void initStartPreparingJob() {

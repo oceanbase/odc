@@ -90,7 +90,7 @@ public class StartPreparingJob implements Job {
 
     }
 
-    public JobConfiguration getConfiguration() {
+    private JobConfiguration getConfiguration() {
         return configuration;
     }
 }

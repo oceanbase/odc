@@ -43,7 +43,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @DisallowConcurrentExecution
-public class CheckRunningExpiredJob implements Job {
+public class CheckRunningJob implements Job {
 
     private JobConfiguration configuration;
 
