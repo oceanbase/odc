@@ -87,14 +87,14 @@ public class DatabasePermissionController {
     }
 
     @ApiOperation(value = "reclaimDatabasePermission", notes = "Reclaim database permission")
-    @RequestMapping(value = "/revoke/{id:[\\d]+}", method = RequestMethod.POST)
+    @RequestMapping(value = "/{id:[\\d]+}/revoke", method = RequestMethod.POST)
     public SuccessResponse<UserDatabasePermission> revoke(@PathVariable Long projectId,
             @PathVariable(name = "id") Long id) {
         return Responses.success(service.revoke(projectId, id));
     }
 
     @ApiOperation(value = "releaseDatabasePermission", notes = "Release database permission")
-    @RequestMapping(value = "/release/{id:[\\d]+}", method = RequestMethod.POST)
+    @RequestMapping(value = "/{id:[\\d]+}/release", method = RequestMethod.POST)
     public SuccessResponse<UserDatabasePermission> release(@PathVariable Long projectId,
             @PathVariable(name = "id") Long id) {
         return Responses.success(service.release(projectId, id));
