@@ -27,7 +27,7 @@ import lombok.Data;
 @Data
 public class RateLimitConfig {
 
-    private long time = 1;
+    private long time;
 
     private TimeUnit timeUnit;
 
