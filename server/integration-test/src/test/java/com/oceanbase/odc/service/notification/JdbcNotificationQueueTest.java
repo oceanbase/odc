@@ -134,6 +134,7 @@ public class JdbcNotificationQueueTest extends ServiceTestEnv {
         channel.setType(ChannelType.DingTalk);
         channel.setName("testChannel");
         channel.setId(1L);
+        channel.setProjectId(1L);
         return channel;
     }
 
@@ -142,6 +143,7 @@ public class JdbcNotificationQueueTest extends ServiceTestEnv {
         entity.setId(1L);
         entity.setCreatorId(USER_ID);
         entity.setOrganizationId(ORGANIZATION_ID);
+        entity.setProjectId(1L);
         entity.setType(ChannelType.DingTalk);
         entity.setName("test");
         return entity;
@@ -156,6 +158,8 @@ public class JdbcNotificationQueueTest extends ServiceTestEnv {
                 .status(MessageSendingStatus.CREATED)
                 .creatorId(USER_ID)
                 .organizationId(ORGANIZATION_ID)
+                .projectId(1L)
+                .channel(getChannel())
                 .build();
     }
 

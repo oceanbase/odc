@@ -126,6 +126,7 @@ public class JdbcEventQueueTest extends ServiceTestEnv {
         event.setTriggerTime(new Date());
         event.setCreatorId(USER_ID);
         event.setLabels(getLabels());
+        event.setProjectId(1L);
         return event;
     }
 

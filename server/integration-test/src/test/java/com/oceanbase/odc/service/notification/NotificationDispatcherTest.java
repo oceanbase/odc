@@ -28,6 +28,7 @@ import com.oceanbase.odc.metadb.notification.MessageEntity;
 import com.oceanbase.odc.metadb.notification.MessageRepository;
 import com.oceanbase.odc.service.notification.model.Channel;
 import com.oceanbase.odc.service.notification.model.ChannelType;
+import com.oceanbase.odc.service.notification.model.DingTalkChannelConfig;
 import com.oceanbase.odc.service.notification.model.Message;
 import com.oceanbase.odc.service.notification.model.MessageSendingStatus;
 import com.oceanbase.odc.service.notification.model.Notification;
@@ -79,8 +80,10 @@ public class NotificationDispatcherTest extends ServiceTestEnv {
     private Channel getChannel() {
         Channel channel = new Channel();
         channel.setType(ChannelType.DingTalk);
+        channel.setChannelConfig(new DingTalkChannelConfig());
         channel.setName("testChannel");
         channel.setId(1L);
+        channel.setProjectId(1L);
         return channel;
     }
 
@@ -93,6 +96,8 @@ public class NotificationDispatcherTest extends ServiceTestEnv {
                 .status(MessageSendingStatus.CREATED)
                 .creatorId(USER_ID)
                 .organizationId(ORGANIZATION_ID)
+                .projectId(1L)
+                .channel(getChannel())
                 .build();
     }
 }

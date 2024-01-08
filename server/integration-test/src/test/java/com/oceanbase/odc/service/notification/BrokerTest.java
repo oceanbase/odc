@@ -125,6 +125,7 @@ public class BrokerTest extends ServiceTestEnv {
         event.setOrganizationId(ORGANIZATION_ID);
         event.setTriggerTime(new Date());
         event.setCreatorId(USER_ID);
+        event.setProjectId(1L);
         event.setLabels(getLabels());
         return event;
     }
@@ -149,6 +150,8 @@ public class BrokerTest extends ServiceTestEnv {
     }
 
     private Message getMessage() {
+        Channel channel = new Channel();
+        channel.setId(1L);
         return Message.builder()
                 .title("test title")
                 .content("test content")
@@ -157,6 +160,8 @@ public class BrokerTest extends ServiceTestEnv {
                 .status(MessageSendingStatus.CREATED)
                 .creatorId(USER_ID)
                 .organizationId(ORGANIZATION_ID)
+                .projectId(1L)
+                .channel(channel)
                 .build();
     }
 
