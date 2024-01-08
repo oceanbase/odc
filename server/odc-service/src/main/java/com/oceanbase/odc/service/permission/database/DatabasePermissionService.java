@@ -66,7 +66,7 @@ public class DatabasePermissionService {
     @Transactional(rollbackFor = Exception.class)
     @PreAuthenticate(hasAnyResourceRole = {"OWNER", "DBA", "DEVELOPER", "SECURITY_ADMINISTRATOR", "PARTICIPANT"},
             resourceType = "ODC_PROJECT", indexOfIdParam = 0)
-    public UserDatabasePermission release(@NotNull Long projectId, @NotNull Long permissionId) {
+    public UserDatabasePermission relinquish(@NotNull Long projectId, @NotNull Long permissionId) {
         throw new NotImplementedException();
     }
 

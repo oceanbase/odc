@@ -94,10 +94,10 @@ public class DatabasePermissionController {
     }
 
     @ApiOperation(value = "releaseDatabasePermission", notes = "Release database permission")
-    @RequestMapping(value = "/{id:[\\d]+}/release", method = RequestMethod.POST)
-    public SuccessResponse<UserDatabasePermission> release(@PathVariable Long projectId,
+    @RequestMapping(value = "/{id:[\\d]+}/relinquish", method = RequestMethod.POST)
+    public SuccessResponse<UserDatabasePermission> relinquish(@PathVariable Long projectId,
             @PathVariable(name = "id") Long id) {
-        return Responses.success(service.release(projectId, id));
+        return Responses.success(service.relinquish(projectId, id));
     }
 
 }
