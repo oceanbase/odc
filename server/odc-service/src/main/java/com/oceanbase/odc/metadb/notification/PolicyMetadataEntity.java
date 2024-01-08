@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,23 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.odc.metadb.notification;
 
 import java.util.Date;
 
 import javax.persistence.Column;
+import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.Table;
 
 import org.hibernate.annotations.Generated;
 import org.hibernate.annotations.GenerationTime;
+
+import lombok.Data;
 
 /**
  * @author liuyizhuo.lyz
  * @date 2024/1/4
  */
+@Data
+@Entity
+@Table(name = "notification_policy_metadata")
 public class PolicyMetadataEntity {
 
     @Id
@@ -46,7 +52,7 @@ public class PolicyMetadataEntity {
     private String eventCategory;
     @Column(name = "event_name", nullable = false)
     private String eventName;
-    @Column(name = "match_expression_json")
-    private String matchExpressionJson;
+    @Column(name = "match_expression")
+    private String matchExpression;
 
 }

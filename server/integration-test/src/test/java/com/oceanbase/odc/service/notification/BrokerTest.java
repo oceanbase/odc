@@ -22,9 +22,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.Arrays;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -39,7 +37,6 @@ import com.oceanbase.odc.metadb.notification.ChannelRepository;
 import com.oceanbase.odc.metadb.notification.EventRepository;
 import com.oceanbase.odc.metadb.notification.MessageEntity;
 import com.oceanbase.odc.metadb.notification.MessageRepository;
-import com.oceanbase.odc.service.notification.constant.ChannelPropertiesConstants;
 import com.oceanbase.odc.service.notification.helper.EventMapper;
 import com.oceanbase.odc.service.notification.helper.EventUtils;
 import com.oceanbase.odc.service.notification.model.Channel;
@@ -155,7 +152,6 @@ public class BrokerTest extends ServiceTestEnv {
         return Message.builder()
                 .title("test title")
                 .content("test content")
-                .eventId(1L)
                 .retryTimes(0)
                 .maxRetryTimes(3)
                 .status(MessageSendingStatus.CREATED)

@@ -64,7 +64,7 @@ public class NotificationPolicyEntity {
     private Long projectId;
     @Column(name = "policy_metadata_id", nullable = false)
     private Long policyMetadataId;
-    @Column(name = "match_expression_json", nullable = false)
+    @Column(name = "match_expression", nullable = false)
     private String matchExpression;
     @Convert(converter = ListConverter.class)
     @Column(name = "to_users")

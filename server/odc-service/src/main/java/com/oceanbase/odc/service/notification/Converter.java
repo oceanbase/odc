@@ -119,7 +119,6 @@ public class Converter {
                             .replaceVariables(channel.getChannelConfig().getContentTemplate(), event.getLabels()));
                     message.setOrganizationId(policy.getOrganizationId());
                     message.setCreatorId(event.getCreatorId());
-                    message.setEventId(event.getId());
                     message.setChannel(channel);
                     message.setStatus(MessageSendingStatus.CREATED);
                     message.setRetryTimes(0);
