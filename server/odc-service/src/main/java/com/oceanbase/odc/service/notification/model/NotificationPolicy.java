@@ -27,19 +27,35 @@ import lombok.Data;
  */
 @Data
 public class NotificationPolicy {
-
     private long id;
-    private Date createTime;
-    private Date updateTime;
-    private Long creatorId;
-    private Long organizationId;
-    private Long projectId;
+
+    private String titleTemplate;
+
+    private String contentTemplate;
+
     private String matchExpression;
-    private boolean enabled;
-    private List<Channel> channels;
+
+    private List<Long> channelConfigId;
+
+    private Date createTime;
+
+    private Date updateTime;
+
+    private Long creatorId;
+
+    private Long organizationId;
+
+    private Long projectId;
+
     private Long policyMetadataId;
+
+    private boolean enabled;
+
     private String eventName;
+
     private List<String> toUsers;
+
     private List<String> ccUsers;
 
+    private List<Channel> channels;
 }

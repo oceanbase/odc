@@ -88,7 +88,6 @@ public class NotificationDispatcherTest extends ServiceTestEnv {
         return Message.builder()
                 .title("test title")
                 .content("test content")
-                .eventId(1L)
                 .retryTimes(0)
                 .maxRetryTimes(3)
                 .status(MessageSendingStatus.CREATED)
