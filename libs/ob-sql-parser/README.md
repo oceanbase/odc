@@ -1,6 +1,6 @@
-# OB-SQL-PARSER
+# ob-sql-parser
 
-## 什么是 OB-SQL-PARSER
+## 什么是 ob-sql-parser
 
 `ob-sql-parser`是基于`antlr4`构建的 SQL 解析器，它的主要功能是将 SQL 语句文本翻译成 Java Pojo 类。
 
@@ -141,7 +141,7 @@ Assert.assertEquals("p1_1", subPartitionElement.getRelation());
 
 > Q: 支持哪个版本的 OceanBase 语法？
 
-目前，`ob-sql-parser`是基于 OceanBase 3.2.3 版本的语法构建出来的，所有该版本及该版本之前的语法都是支持的。该版本之后新增或调整的语法可能会存在不支持问题，出现这种情况会当成缺陷进行修复。
+目前，`ob-sql-parser`兼容 OceanBase 4.2.1 版本的语法。
 
 > Q: 支持哪些 OceanBase 方言？
 
@@ -149,7 +149,7 @@ Assert.assertEquals("p1_1", subPartitionElement.getRelation());
 
 > Q: 对不同 SQL 句型的支持现状是怎么样的？
 
-截止到`1.1.1-SNAPSHOT`版本，支持将所有类型的 SQL 转化为 AST；从 SQL 文本到 Java Pojo 类的转化来说，目前支持力度如下：
+截止目前，支持将所有类型的 SQL 转化为 AST；从 SQL 文本到 Java Pojo 类的转化来说，目前支持力度如下：
 
 |SQL 句型|支持力度|备注|
 |:----|:----|:----|
