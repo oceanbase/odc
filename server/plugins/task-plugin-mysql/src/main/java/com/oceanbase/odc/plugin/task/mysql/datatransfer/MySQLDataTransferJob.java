@@ -29,6 +29,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Properties;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -57,6 +58,7 @@ import com.oceanbase.odc.common.util.tableformat.CellStyle.NullStyle;
 import com.oceanbase.odc.common.util.tableformat.Table;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
+import com.oceanbase.odc.plugin.connect.model.ConnectionConstants;
 import com.oceanbase.odc.plugin.connect.mysql.MySQLConnectionExtension;
 import com.oceanbase.odc.plugin.task.api.datatransfer.DataTransferJob;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.ConnectionInfo;
@@ -172,13 +174,27 @@ public class MySQLDataTransferJob implements DataTransferJob {
             jdbcUrlParams.put("socksProxyPort", connectionInfo.getProxyPort() + "");
         }
         HikariDataSource dataSource = new HikariDataSource();
-        dataSource.setJdbcUrl(new MySQLConnectionExtension().generateJdbcUrl(connectionInfo.getHost(),
-                connectionInfo.getPort(), connectionInfo.getSchema(), jdbcUrlParams));
+        dataSource.setJdbcUrl(
+                new MySQLConnectionExtension().generateJdbcUrl(getJdbcUrlProperties(connectionInfo), jdbcUrlParams));
         dataSource.setUsername(connectionInfo.getUserNameForConnect());
         dataSource.setPassword(connectionInfo.getPassword());
         dataSource.setDriverClassName(OdcConstants.MYSQL_DRIVER_CLASS_NAME);
         dataSource.setMaximumPoolSize(3);
         return dataSource;
+    }
+
+    private Properties getJdbcUrlProperties(ConnectionInfo connectionInfo) {
+        Properties properties = new Properties();
+        if (Objects.nonNull(connectionInfo.getHost())) {
+            properties.put(ConnectionConstants.HOST, connectionInfo.getHost());
+        }
+        if (Objects.nonNull(connectionInfo.getPort())) {
+            properties.put(ConnectionConstants.PORT, connectionInfo.getPort());
+        }
+        if (Objects.nonNull(connectionInfo.getSchema())) {
+            properties.put(ConnectionConstants.DEFAULT_SCHEMA, connectionInfo.getSchema());
+        }
+        return properties;
     }
 
     private void initTransferJobs(DataSource dataSource, String jdbcUrl) {

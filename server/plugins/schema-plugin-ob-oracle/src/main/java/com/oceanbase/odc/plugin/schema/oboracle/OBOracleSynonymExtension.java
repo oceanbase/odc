@@ -29,6 +29,7 @@ import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBSynonym;
 import com.oceanbase.tools.dbbrowser.model.DBSynonymType;
+import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 
 import lombok.NonNull;
 
@@ -43,13 +44,13 @@ public class OBOracleSynonymExtension implements SynonymExtensionPoint {
     @Override
     public List<DBObjectIdentity> list(@NonNull Connection connection, @NonNull String schemaName,
             @NonNull DBSynonymType synonymType) {
-        return DBAccessorUtil.getSchemaAccessor(connection).listSynonyms(schemaName, synonymType);
+        return getSchemaAccessor(connection).listSynonyms(schemaName, synonymType);
     }
 
     @Override
     public DBSynonym getDetail(@NonNull Connection connection, @NonNull String schemaName, @NonNull String synonymName,
             DBSynonymType synonymType) {
-        return DBAccessorUtil.getSchemaAccessor(connection).getSynonym(schemaName, synonymName, synonymType);
+        return getSchemaAccessor(connection).getSynonym(schemaName, synonymName, synonymType);
     }
 
     @Override
@@ -68,5 +69,9 @@ public class OBOracleSynonymExtension implements SynonymExtensionPoint {
     public String generateCreateDDL(@NonNull DBSynonym synonym) {
         OracleSynonymEditor editor = new OracleSynonymEditor();
         return editor.generateCreateDefinitionDDL(synonym);
+    }
+
+    protected DBSchemaAccessor getSchemaAccessor(Connection connection) {
+        return DBAccessorUtil.getSchemaAccessor(connection);
     }
 }

@@ -69,16 +69,13 @@ public class MySQLConnectionExtension extends OBMySQLConnectionExtension {
     }
 
     @Override
-    public TestResult test(String jdbcUrl, String username, String password, int queryTimeout) {
-        Properties properties = new Properties();
-        properties.setProperty("user", username);
-        properties.setProperty("password", Objects.isNull(password) ? "" : password);
+    public TestResult test(String jdbcUrl, Properties properties, int queryTimeout) {
         // fix arbitrary file reading vulnerability
         properties.setProperty("allowLoadLocalInfile", "false");
         properties.setProperty("allowUrlInLocalInfile", "false");
         properties.setProperty("allowLoadLocalInfileInPath", "");
         properties.setProperty("autoDeserialize", "false");
-        TestResult testResult = test(jdbcUrl, properties, queryTimeout);
+        TestResult testResult = super.internalTest(jdbcUrl, properties, queryTimeout);
         if (testResult.getErrorCode() != null) {
             return testResult;
         }
@@ -96,7 +93,7 @@ public class MySQLConnectionExtension extends OBMySQLConnectionExtension {
 
     @Override
     protected Map<String, String> appendDefaultJdbcUrlParameters(Map<String, String> jdbcUrlParams) {
-        if (!jdbcUrlParams.containsKey("tinyInt1isBit")) {
+        if (Objects.nonNull(jdbcUrlParams) && !jdbcUrlParams.containsKey("tinyInt1isBit")) {
             jdbcUrlParams.put("tinyInt1isBit", "false");
         }
         return jdbcUrlParams;

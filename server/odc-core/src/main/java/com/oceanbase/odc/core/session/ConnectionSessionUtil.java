@@ -215,7 +215,7 @@ public class ConnectionSessionUtil {
         return (String) connectionSession.getAttribute(ConnectionSessionConstants.TENANT_NAME);
     }
 
-    public static void setConnectSchema(@NonNull ConnectionSession connectionSession, @NonNull String schema) {
+    public static void setConnectSchema(@NonNull ConnectionSession connectionSession, String schema) {
         connectionSession.setAttribute(ConnectionSessionConstants.CONNECT_SCHEMA_KEY, schema);
     }
 

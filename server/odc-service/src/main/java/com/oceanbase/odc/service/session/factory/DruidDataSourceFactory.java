@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.session.factory;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 
 import javax.sql.DataSource;
@@ -27,6 +28,7 @@ import com.oceanbase.odc.core.datasource.CloneableDataSourceFactory;
 import com.oceanbase.odc.core.datasource.ConnectionInitializer;
 import com.oceanbase.odc.core.datasource.DataSourceFactory;
 import com.oceanbase.odc.core.shared.jdbc.JdbcUrlParser;
+import com.oceanbase.odc.plugin.connect.model.ConnectionConstants;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.util.ConnectionMapper;
 import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
@@ -60,6 +62,11 @@ public class DruidDataSourceFactory extends OBConsoleDataSourceFactory {
         dataSource.setUrl(jdbcUrl);
         dataSource.setUsername(username);
         dataSource.setPassword(password);
+        if (Objects.nonNull(this.userRole)) {
+            Properties properties = new Properties();
+            properties.put(ConnectionConstants.USER_ROLE, this.userRole.name());
+            dataSource.setConnectProperties(properties);
+        }
         dataSource.setDriverClassName(connectionExtensionPoint.getDriverClassName());
         init(dataSource);
         return dataSource;
@@ -87,7 +94,7 @@ public class DruidDataSourceFactory extends OBConsoleDataSourceFactory {
         dataSource.setSocketTimeout(DEFAULT_TIMEOUT_MILLIS);
         dataSource.setConnectTimeout(DEFAULT_TIMEOUT_MILLIS);
         // fix arbitrary file reading vulnerability
-        Properties properties = new Properties();
+        Properties properties = dataSource.getConnectProperties();
         properties.setProperty("allowLoadLocalInfile", "false");
         properties.setProperty("allowUrlInLocalInfile", "false");
         properties.setProperty("allowLoadLocalInfileInPath", "");

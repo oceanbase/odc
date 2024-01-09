@@ -17,7 +17,6 @@ package com.oceanbase.odc.service.dml.converter;
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Objects;
 
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.service.dml.DataConverter;
@@ -36,11 +35,11 @@ public class DataConverters {
 
     private final List<BaseDataConverter> converterList;
 
-    private DataConverters(DialectType dialectType, String serverTimeZoneId) {
+    private DataConverters(@NonNull DialectType dialectType, String serverTimeZoneId) {
         converterList = new LinkedList<>();
-        if (DialectType.OB_ORACLE.equals(dialectType)) {
+        if (dialectType.isOracle()) {
             initForOracleMode(serverTimeZoneId);
-        } else if (Objects.nonNull(dialectType) && dialectType.isMysql()) {
+        } else if (dialectType.isMysql()) {
             initForMysqlMode();
         } else {
             throw new IllegalArgumentException("Illegal DialectType " + dialectType);

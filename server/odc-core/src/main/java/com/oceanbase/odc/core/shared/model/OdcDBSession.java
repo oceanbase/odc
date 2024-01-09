@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.core.shared.model;
 
+import java.util.Objects;
+
 import com.oceanbase.tools.dbbrowser.model.DBSession;
 
 import lombok.Data;
@@ -39,7 +41,7 @@ public class OdcDBSession {
         session.setSrcIp(dbSession.getHost());
         session.setDatabase(dbSession.getDatabaseName());
         session.setCommand(dbSession.getCommand());
-        session.setExecuteTime(dbSession.getExecuteTime());
+        session.setExecuteTime(Objects.isNull(dbSession.getExecuteTime()) ? 0 : dbSession.getExecuteTime());
         session.setStatus(dbSession.getState());
         session.setObproxyIp(dbSession.getProxyHost());
         session.setSql(dbSession.getLatestQueries());

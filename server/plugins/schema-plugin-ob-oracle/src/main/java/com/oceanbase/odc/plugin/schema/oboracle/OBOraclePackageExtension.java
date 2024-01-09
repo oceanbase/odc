@@ -27,6 +27,7 @@ import com.oceanbase.tools.dbbrowser.editor.oracle.OracleObjectOperator;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBPLObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBPackage;
+import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 import com.oceanbase.tools.dbbrowser.template.oracle.OraclePackageTemplate;
 
 import lombok.NonNull;
@@ -41,18 +42,18 @@ public class OBOraclePackageExtension implements PackageExtensionPoint {
 
     @Override
     public List<DBPLObjectIdentity> list(@NonNull Connection connection, @NonNull String schemaName) {
-        return DBAccessorUtil.getSchemaAccessor(connection).listPackages(schemaName);
+        return getSchemaAccessor(connection).listPackages(schemaName);
     }
 
     @Override
     public List<DBPLObjectIdentity> listPackageBodies(Connection connection, String schemaName) {
-        return DBAccessorUtil.getSchemaAccessor(connection).listPackageBodies(schemaName);
+        return getSchemaAccessor(connection).listPackageBodies(schemaName);
     }
 
     @Override
     public DBPackage getDetail(@NonNull Connection connection, @NonNull String schemaName,
             @NonNull String packageName) {
-        return DBAccessorUtil.getSchemaAccessor(connection).getPackage(schemaName, packageName);
+        return getSchemaAccessor(connection).getPackage(schemaName, packageName);
     }
 
     @Override
@@ -71,5 +72,9 @@ public class OBOraclePackageExtension implements PackageExtensionPoint {
     public String generateCreateTemplate(@NonNull Connection connection, @NonNull DBPackage dbPackage) {
         OraclePackageTemplate template = new OraclePackageTemplate(JdbcOperationsUtil.getJdbcOperations(connection));
         return template.generateCreateObjectTemplate(dbPackage);
+    }
+
+    protected DBSchemaAccessor getSchemaAccessor(Connection connection) {
+        return DBAccessorUtil.getSchemaAccessor(connection);
     }
 }
