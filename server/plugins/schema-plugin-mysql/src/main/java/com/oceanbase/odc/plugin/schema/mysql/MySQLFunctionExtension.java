@@ -19,10 +19,8 @@ import java.sql.Connection;
 
 import org.pf4j.Extension;
 
-import com.oceanbase.odc.common.util.JdbcOperationsUtil;
 import com.oceanbase.odc.plugin.schema.obmysql.OBMySQLFunctionExtension;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
-import com.oceanbase.tools.dbbrowser.schema.mysql.MySQLNoGreaterThan5740SchemaAccessor;
 
 /**
  * @author jingtian
@@ -33,6 +31,6 @@ import com.oceanbase.tools.dbbrowser.schema.mysql.MySQLNoGreaterThan5740SchemaAc
 public class MySQLFunctionExtension extends OBMySQLFunctionExtension {
     @Override
     protected DBSchemaAccessor getSchemaAccessor(Connection connection) {
-        return new MySQLNoGreaterThan5740SchemaAccessor(JdbcOperationsUtil.getJdbcOperations(connection));
+        return new MySQLSchemaBrowserExtension().getDBSchemaAccessor(connection);
     }
 }

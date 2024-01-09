@@ -137,6 +137,9 @@ public class OBMySQLBetween2277And3XSchemaAccessor extends OBMySQLSchemaAccessor
         DBTablePartitionOption partitionOption = new DBTablePartitionOption();
         partitionOption.setType(DBTablePartitionType.NOT_PARTITIONED);
         partition.setPartitionOption(partitionOption);
+        partition.setSchemaName(schemaName);
+        partition.setTableName(tableName);
+        subPartition.setSchemaName(schemaName);
 
         DBTablePartitionOption subPartitionOption = new DBTablePartitionOption();
         subPartitionOption.setType(DBTablePartitionType.NOT_PARTITIONED);

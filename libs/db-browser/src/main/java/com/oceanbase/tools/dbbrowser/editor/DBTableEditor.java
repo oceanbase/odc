@@ -182,7 +182,7 @@ public abstract class DBTableEditor implements DBObjectEditor<DBTable> {
         return sqlBuilder.toString();
     }
 
-    protected abstract void generateUpdateTableOptionDDL(DBTable oldTable, DBTable newTable, SqlBuilder sqlBuilder);
+    public abstract void generateUpdateTableOptionDDL(DBTable oldTable, DBTable newTable, SqlBuilder sqlBuilder);
 
     protected abstract SqlBuilder sqlBuilder();
 
@@ -199,7 +199,7 @@ public abstract class DBTableEditor implements DBObjectEditor<DBTable> {
      * 排除唯一性约束</br>
      * 创建一个唯一索引，OB 会自动创建一个同名唯一约束；因此在生成 DDL 时，如果已有唯一索引，则需要忽略掉同名唯一约束，不然生成的 DDL 会无法执行</br>
      */
-    protected List<DBTableConstraint> excludeUniqueConstraint(List<DBTableIndex> indexes,
+    public List<DBTableConstraint> excludeUniqueConstraint(List<DBTableIndex> indexes,
             List<DBTableConstraint> constraints) {
         if (CollectionUtils.isEmpty(indexes) || CollectionUtils.isEmpty(constraints)) {
             return constraints;
@@ -219,7 +219,7 @@ public abstract class DBTableEditor implements DBObjectEditor<DBTable> {
      * 排除主键约束对应的唯一索引</br>
      * 创建主键约束的时候，OB 会自动创建一个同名唯一索引；因此在生成 DDL 时，如果已有主键约束，则需要忽略掉同名唯一索引，不然生成的 DDL 会无法执行</br>
      */
-    protected List<DBTableIndex> excludePrimaryKeyIndex(List<DBTableIndex> indexes,
+    public List<DBTableIndex> excludePrimaryKeyIndex(List<DBTableIndex> indexes,
             List<DBTableConstraint> constraints) {
         if (CollectionUtils.isEmpty(indexes) || CollectionUtils.isEmpty(constraints)) {
             return indexes;

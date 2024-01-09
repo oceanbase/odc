@@ -21,6 +21,12 @@ import com.oceanbase.odc.common.util.JdbcOperationsUtil;
 import com.oceanbase.odc.plugin.connect.oboracle.OBOracleInformationExtension;
 import com.oceanbase.odc.plugin.schema.oboracle.browser.DBSchemaAccessors;
 import com.oceanbase.odc.plugin.schema.oboracle.browser.DBStatsAccessors;
+import com.oceanbase.tools.dbbrowser.editor.DBTableEditor;
+import com.oceanbase.tools.dbbrowser.editor.oracle.OBOracleIndexEditor;
+import com.oceanbase.tools.dbbrowser.editor.oracle.OracleColumnEditor;
+import com.oceanbase.tools.dbbrowser.editor.oracle.OracleConstraintEditor;
+import com.oceanbase.tools.dbbrowser.editor.oracle.OracleDBTablePartitionEditor;
+import com.oceanbase.tools.dbbrowser.editor.oracle.OracleTableEditor;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 import com.oceanbase.tools.dbbrowser.stats.DBStatsAccessor;
 
@@ -40,6 +46,11 @@ public class DBAccessorUtil {
 
     public static DBStatsAccessor getStatsAccessor(Connection connection) {
         return DBStatsAccessors.create(JdbcOperationsUtil.getJdbcOperations(connection), getDbVersion(connection));
+    }
+
+    public static DBTableEditor getTableEditor(Connection connection) {
+        return new OracleTableEditor(new OBOracleIndexEditor(), new OracleColumnEditor(),
+                new OracleConstraintEditor(), new OracleDBTablePartitionEditor());
     }
 
 }

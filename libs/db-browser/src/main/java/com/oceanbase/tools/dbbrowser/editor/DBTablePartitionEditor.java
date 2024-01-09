@@ -246,10 +246,10 @@ public abstract class DBTablePartitionEditor implements DBObjectEditor<DBTablePa
     protected String getFullyQualifiedTableName(@NotNull DBTablePartition partition) {
         SqlBuilder sqlBuilder = sqlBuilder();
         if (StringUtils.isNotEmpty(partition.getSchemaName())) {
-            sqlBuilder.identifier(partition.getSchemaName()).append(".");
+            sqlBuilder.identifier(partition.getSchemaName());
         }
         if (StringUtils.isNotEmpty(partition.getTableName())) {
-            sqlBuilder.identifier(partition.getTableName());
+            sqlBuilder.append(".").identifier(partition.getTableName());
         }
         return sqlBuilder.toString();
     }

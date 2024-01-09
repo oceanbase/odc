@@ -35,7 +35,7 @@ import lombok.EqualsAndHashCode;
  * columnName.
  */
 @Data
-@EqualsAndHashCode(exclude = {"name", "warning", "schemaName", "tableName", "ordinalPosition"})
+@EqualsAndHashCode(exclude = {"name", "warning", "schemaName", "tableName", "ordinalPosition", "keyType"})
 public class DBTableColumn implements DBObject, DBObjectWarningDescriptor {
     /**
      * 所属 schemaName

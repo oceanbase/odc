@@ -73,7 +73,7 @@ public class OracleTableEditor extends DBTableEditor {
     }
 
     @Override
-    protected void generateUpdateTableOptionDDL(DBTable oldTable, DBTable newTable, SqlBuilder sqlBuilder) {
+    public void generateUpdateTableOptionDDL(DBTable oldTable, DBTable newTable, SqlBuilder sqlBuilder) {
         if (!StringUtils.equals(oldTable.getTableOptions().getComment(), newTable.getTableOptions().getComment())) {
             appendTableComment(newTable, sqlBuilder);
         }
