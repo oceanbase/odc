@@ -57,8 +57,8 @@ public class OdcRuntimeDelegateMapper implements RuntimeDelegateMapper {
     public Class<? extends BaseRuntimeFlowableDelegate<?>> map(@NonNull TaskType taskType) {
         switch (taskType) {
             case ASYNC:
-                TaskRunModeEnum runMode = taskFrameworkProperties.getRunMode();
-                return runMode != null && runMode.isLegacy() ? DatabaseChangeRuntimeFlowableTask.class
+                return taskFrameworkProperties.getRunMode() == TaskRunModeEnum.LEGACY
+                        ? DatabaseChangeRuntimeFlowableTask.class
                         : DatabaseChangeRuntimeFlowableTaskCopied.class;
             case MOCKDATA:
                 return MockDataRuntimeFlowableTask.class;

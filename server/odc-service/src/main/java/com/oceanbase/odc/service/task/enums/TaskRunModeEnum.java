@@ -40,9 +40,4 @@ public enum TaskRunModeEnum {
     public boolean isK8s() {
         return this == K8S;
     }
-
-    public boolean isLegacy(){
-        return this == LEGACY;
-    }
-
 }

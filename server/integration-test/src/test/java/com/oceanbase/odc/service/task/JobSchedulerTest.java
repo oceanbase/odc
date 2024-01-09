@@ -32,7 +32,6 @@ import org.quartz.listeners.TriggerListenerSupport;
 
 import com.oceanbase.odc.common.event.LocalEventPublisher;
 import com.oceanbase.odc.metadb.task.JobEntity;
-import com.oceanbase.odc.service.info.InfoAdapter;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.caller.JobException;
 import com.oceanbase.odc.service.task.config.DefaultJobConfiguration;
