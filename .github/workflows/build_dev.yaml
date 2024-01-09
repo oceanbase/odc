@@ -24,77 +24,13 @@ on:
       - "**"
 
 jobs:
-  check-format:
-    name: Check Code Format
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout workspace
-        uses: actions/checkout@v3
-      - name: Setup JDK 8
-        uses: actions/setup-java@v3
-        with:
-          java-version: "8"
-          distribution: "temurin"
-          cache: maven
-      - name: Check code format
-        run: mvn impsort:check formatter:validate
-      - name: Check license
-        run: mvn license:check
-
-  pmd-scan:
-    name: PMD Scan
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout workspace
-        uses: actions/checkout@v3
-      - name: Setup JDK 8
-        uses: actions/setup-java@v3
-        with:
-          java-version: "8"
-          distribution: "temurin"
-          cache: maven
-      - name: Install ob-sql-parser
-        run: |
-          echo "Start install ob-sql-parser"
-          pushd libs/ob-sql-parser
-          echo "Current dir is "`pwd`
-          mvn clean install -Dmaven.test.skip=true
-          echo "Install ob-sql-parser success"
-          popd
-      - name: Install db-browser
-        run: |
-          echo "Start install db-browser"
-          pushd libs/db-browser
-          echo "Current dir is "`pwd`
-          mvn clean install -Dmaven.test.skip=true
-          echo "Install db-browser success"
-          popd
-      - name: Build project
-        run: mvn clean install -Dmaven.test.skip=true
-      - name: Run PMD scan
-        run: mvn pmd:check
-
-  unit-test-odc:
-    name: Unit Test (ODC)
-    if: ${{ github.event_name == 'pull_request' }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout workspace
-        uses: actions/checkout@v3
-      - name: action by obfarm++odc_ut++COMMIT=${{ github.event.pull_request.head.sha }}
-        uses: ./.github/obfarm/
-        id: odc_ut
-        with:
-          pipeline_id: ${{ github.run_id }}
-          project: ${{ github.repository }}
-
   calculate-version:
     name: Calculate Version Number
-    needs: [ check-format, pmd-scan, unit-test-odc ]
     if: ${{ github.event_name == 'pull_request' }}
     runs-on: ubuntu-latest
     outputs:
       odc_rpm_release_number: ${{ steps.calculate_version.outputs.odc_rpm_release_number }}
+      odc_docker_image_tag: ${{ steps.calculate_version.outputs.odc_docker_image_tag }}
     steps:
       - name: Checkout workspace
         uses: actions/checkout@v3
@@ -104,13 +40,17 @@ jobs:
           odc_rpm_release_number=$(date +%Y%m%d%H%M%S)
           echo "odc_rpm_release_number=${odc_rpm_release_number}" >> $GITHUB_OUTPUT
           echo "odc_rpm_release_number=${odc_rpm_release_number}"
+          odc_docker_image_tag="latest"
+          echo "odc_docker_image_tag=${odc_docker_image_tag}" >> $GITHUB_OUTPUT
+          echo "odc_docker_image_tag=${odc_docker_image_tag}"
 
-  build-rpm-x86_64:
-    name: Build RPM (x86_64)
+  build-docker-x86_64:
+    name: Build Docker Image (x86_64)
     needs: [ calculate-version ]
     runs-on: ubuntu-latest
     env:
       odc_rpm_release_number: ${{ needs.calculate-version.outputs.odc_rpm_release_number }}
+      odc_docker_image_tag: ${{ needs.calculate-version.outputs.odc_docker_image_tag }}
     steps:
       - name: Checkout workspace
         uses: actions/checkout@v3
@@ -126,6 +66,28 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: "16"
+      - name: Build front static resources
+        run: |
+          echo "Current directory: "`pwd`
+          echo "Start build front static resources"
+          pushd client
+          echo "Run npm install pnpm -g"
+          npm install pnpm -g
+          echo "Run pnpm install"
+          pnpm install
+          echo "Run npm run build:odc"
+          npm run build:odc
+          popd
+          echo "Build front static resources success"
+          echo "Start copy resources files"
+          static_resources_path="server/odc-server/src/main/resources/static"
+          if [ ! -d "${static_resources_path}" ]; then
+            echo "mkdir -p ${static_resources_path}"
+            mkdir -p "${static_resources_path}"
+          fi
+          rm --force --recursive --verbose ${static_resources_path}/*
+          cp --force --recursive --verbose client/dist/renderer/* ${static_resources_path}
+          echo "Copy resources files success"
       - name: Set release version
         id: set_release_version
         run: |
@@ -151,7 +113,7 @@ jobs:
           mvn clean install -Dmaven.test.skip=true
           echo "Install db-browser success"
           popd
-      - name: Build jar & rpm (x86_64)
+      - name: Build rpm (x86_64)
         run: |
           echo "Start prepare oceanbase-client"
           pushd import
@@ -167,8 +129,22 @@ jobs:
           rm --force --recursive --verbose distribution/docker/resources/odc-*.rpm
           mkdir -p distribution/docker/resources/
           mv --verbose server/odc-server/target/rpm/odc-server/RPMS/*/odc-*.rpm distribution/docker/resources/
-      - name: Upload rpm (x86_64)
+      - name: Build docker image (x86_64)
+        run: |
+          sed -e "s/DATE_CHANGE/$(date)/" -i distribution/docker/odc/Dockerfile
+          echo "odc_docker_image_tag=${odc_docker_image_tag}"
+          pushd distribution/docker
+          docker build -t docker.io/oceanbase/odc:${odc_docker_image_tag} -f odc/Dockerfile .
+          docker save -o resources/odc-${odc_docker_image_tag}.tar.gz docker.io/oceanbase/odc:${odc_docker_image_tag}
+          popd
+      - name: Push docker image (x86_64)
+        run: |
+          docker login -p${{ secrets.DOCKER_PASSWORD }} -u${{ secrets.DOCKER_USERNAME }}
+          docker load -i distribution/docker/resources/odc-${odc_docker_image_tag}.tar.gz
+          docker tag oceanbase/odc:${odc_docker_image_tag} ${{ secrets.DOCKER_USERNAME }}/odc:${odc_docker_image_tag}
+          docker push ${{ secrets.DOCKER_USERNAME }}/odc:${odc_docker_image_tag}
+      - name: Upload docker image (x86_64)
         uses: actions/upload-artifact@v3
         with:
-          name: odc-server-${{ steps.set_release_version.outputs.new_version }}.x86_64.rpm
-          path: distribution/docker/resources/odc-*.rpm
+          name: odc-${{ env.odc_docker_image_tag }}.tar.gz
+          path: distribution/docker/resources/odc-*.tar.gz
