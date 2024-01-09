@@ -13,34 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.connection.database.model;
+package com.oceanbase.odc.service.permission.database.model;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
+import java.util.List;
+
+import com.oceanbase.odc.service.connection.database.model.Database;
+
 import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.EqualsAndHashCode;
 
 /**
- * @Author: Lebie
- * @Date: 2023/6/5 15:33
- * @Description: []
+ * @author gaoda.xy
+ * @date 2024/1/4 17:12
  */
 @Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class QueryDatabaseParams {
-    private String schemaName;
+@EqualsAndHashCode(callSuper = true)
+public class UnauthorizedDatabase extends Database {
 
-    private Long projectId;
+    private List<DatabasePermissionType> unauthorizedPermissionTypes;
 
-    private Long dataSourceId;
-
-    private Long environmentId;
-
-    private Boolean existed;
-
-    private Boolean containsUnassigned;
-
-    private Boolean includesPermittedAction;
 }

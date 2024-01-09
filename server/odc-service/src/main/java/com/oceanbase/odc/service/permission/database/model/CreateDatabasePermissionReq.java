@@ -13,27 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.oceanbase.odc.service.permission.database.model;
 
-package com.oceanbase.odc.service.permissionapply.project;
+import java.util.Date;
+import java.util.List;
 
-import com.oceanbase.odc.core.flow.model.FlowTaskResult;
+import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
 
 import lombok.Data;
 
 /**
  * @author gaoda.xy
- * @date 2023/10/13 16:12
+ * @date 2024/1/4 13:39
  */
 @Data
-public class ApplyProjectResult implements FlowTaskResult {
+public class CreateDatabasePermissionReq {
 
-    /**
-     * Mark whether the task is successful
-     */
-    private boolean success;
-    /**
-     * Task parameters
-     */
-    private ApplyProjectParameter parameter;
+    @NotEmpty
+    private List<Long> databaseIds;
+
+    @NotEmpty
+    private List<DatabasePermissionType> permissionTypes;
+
+    private Date expireTime;
+
+    @NotNull
+    private Long userId;
 
 }

@@ -182,6 +182,7 @@ public class DatabaseService {
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("internal authenticated")
     public Page<Database> list(@NonNull QueryDatabaseParams params, @NotNull Pageable pageable) {
+        // TODO: Databases include permitted actions
         if (Objects.nonNull(params.getDataSourceId())
                 && authenticationFacade.currentUser().getOrganizationType() == OrganizationType.INDIVIDUAL) {
             try {

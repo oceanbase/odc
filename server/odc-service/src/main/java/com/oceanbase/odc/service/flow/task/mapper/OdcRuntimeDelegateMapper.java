@@ -28,7 +28,7 @@ import com.oceanbase.odc.service.flow.task.PreCheckRuntimeFlowableTask;
 import com.oceanbase.odc.service.flow.task.RollbackPlanRuntimeFlowableTask;
 import com.oceanbase.odc.service.flow.task.ShadowtableSyncRuntimeFlowableTask;
 import com.oceanbase.odc.service.onlineschemachange.OnlineSchemaChangeFlowableTask;
-import com.oceanbase.odc.service.permissionapply.project.ApplyProjectFlowableTask;
+import com.oceanbase.odc.service.permission.project.ApplyProjectFlowableTask;
 import com.oceanbase.odc.service.resultset.ResultSetExportFlowableTask;
 import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleTask;
 
