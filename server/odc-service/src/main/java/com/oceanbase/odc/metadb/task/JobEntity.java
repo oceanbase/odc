@@ -57,6 +57,12 @@ public class JobEntity implements Serializable {
     @Column(name = "job_type", nullable = false)
     private String jobType;
 
+    @Column(name = "job_parameters_json")
+    private String jobParametersJson;
+
+    @Column(name = "job_properties_json")
+    private String jobPropertiesJson;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private JobStatus status;
@@ -73,9 +79,6 @@ public class JobEntity implements Serializable {
     @Column(name = "run_mode")
     private String runMode;
 
-    @Column(name = "job_parameters_json")
-    private String jobParametersJson;
-
     @Column(name = "result_json")
     private String resultJson;
 
@@ -90,6 +93,15 @@ public class JobEntity implements Serializable {
 
     @Column(name = "organization_id")
     private Long organizationId;
+
+    @Column(name = "started_time")
+    private Date startedTime;
+
+    @Column(name = "finished_time")
+    private Date finishedTime;
+
+    @Column(name = "last_report_time")
+    private Date lastReportTime;
 
     @Generated(GenerationTime.ALWAYS)
     @Column(name = "create_time", insertable = false, updatable = false)

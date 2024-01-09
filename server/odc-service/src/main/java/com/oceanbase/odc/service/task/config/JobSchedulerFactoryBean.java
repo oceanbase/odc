@@ -17,6 +17,7 @@
 package com.oceanbase.odc.service.task.config;
 
 import org.springframework.beans.factory.FactoryBean;
+import org.springframework.beans.factory.InitializingBean;
 
 import com.oceanbase.odc.service.task.schedule.JobScheduler;
 import com.oceanbase.odc.service.task.schedule.StdJobScheduler;
@@ -28,14 +29,16 @@ import lombok.Setter;
  * @date 2023-11-29
  * @since 4.2.4
  */
-public class JobSchedulerFactoryBean implements FactoryBean<JobScheduler> {
+public class JobSchedulerFactoryBean implements FactoryBean<JobScheduler>, InitializingBean {
+
+    private JobScheduler jobScheduler;
 
     @Setter
     public JobConfiguration jobConfiguration;
 
     @Override
     public JobScheduler getObject() throws Exception {
-        return new StdJobScheduler(jobConfiguration);
+        return jobScheduler;
     }
 
     @Override
@@ -43,4 +46,8 @@ public class JobSchedulerFactoryBean implements FactoryBean<JobScheduler> {
         return JobScheduler.class;
     }
 
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        jobScheduler = new StdJobScheduler(jobConfiguration);
+    }
 }
