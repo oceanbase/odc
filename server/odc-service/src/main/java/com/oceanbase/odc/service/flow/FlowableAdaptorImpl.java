@@ -57,6 +57,7 @@ import com.oceanbase.odc.service.flow.instance.FlowTaskInstance;
 import com.oceanbase.odc.service.flow.model.FlowNodeType;
 import com.oceanbase.odc.service.flow.task.mapper.OdcRuntimeDelegateMapper;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
+import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -96,6 +97,8 @@ public class FlowableAdaptorImpl implements FlowableAdaptor {
     private GateWayInstanceRepository gateWayInstanceRepository;
     @Autowired
     private UserTaskInstanceCandidateRepository userTaskInstanceCandidateRepository;
+    @Autowired
+    private TaskFrameworkProperties taskFrameworkProperties;
 
     @Override
     public void setProcessInstanceId(@NonNull Long flowInstanceId, @NonNull String processInstanceId) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 OceanBase.
+ * Copyright (c) 2024 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,35 +14,19 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.task.enums;
+package com.oceanbase.odc.service.task.schedule;
 
 /**
  * @author yaobin
- * @date 2023-11-21
+ * @date 2024-01-09
  * @since 4.2.4
  */
-public enum TaskRunModeEnum {
+public interface JobImageNameProvider {
 
     /**
-     * ODC job run will run in old model and will not be by scheduled task-framework
+     * provide k8s job image name
+     * 
+     * @return image name with repository
      */
-    LEGACY,
-
-    /**
-     * ODC job run by k8s job
-     */
-    K8S,
-    /**
-     * ODC job run by ODC server process
-     */
-    PROCESS;
-
-    public boolean isK8s() {
-        return this == K8S;
-    }
-
-    public boolean isLegacy(){
-        return this == LEGACY;
-    }
-
+    String provide();
 }

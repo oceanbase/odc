@@ -20,11 +20,13 @@ import org.quartz.Scheduler;
 
 import com.oceanbase.odc.common.event.EventPublisher;
 import com.oceanbase.odc.service.connection.ConnectionService;
+import com.oceanbase.odc.service.info.InfoAdapter;
 import com.oceanbase.odc.service.schedule.ScheduleTaskService;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.caller.K8sJobClient;
 import com.oceanbase.odc.service.task.dispatch.JobDispatcher;
 import com.oceanbase.odc.service.task.schedule.HostUrlProvider;
+import com.oceanbase.odc.service.task.schedule.JobImageNameProvider;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 
 /**
@@ -53,4 +55,6 @@ public interface JobConfiguration {
     TaskFrameworkService getTaskFrameworkService();
 
     EventPublisher getEventPublisher();
+
+    JobImageNameProvider getJobImageNameProvider();
 }

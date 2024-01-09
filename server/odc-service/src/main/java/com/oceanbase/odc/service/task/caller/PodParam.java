@@ -39,8 +39,14 @@ public class PodParam {
 
     private Long requestMem;
 
+    private Double limitCpu;
+
+    private Long limitMem;
+
+    private Boolean enableMount;
+
     private String mountPath;
 
-    private Long diskSize;
+    private Long mountDiskSize;
 
 }

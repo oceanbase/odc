@@ -60,8 +60,10 @@ public class StdJobScheduler implements JobScheduler {
         PreConditions.notNull(configuration.getJobDispatcher(), "job dispatcher");
         PreConditions.notNull(configuration.getHostUrlProvider(), "host url provider");
         PreConditions.notNull(configuration.getTaskFrameworkService(), "task framework service");
+        PreConditions.notNull(configuration.getJobImageNameProvider(), "job image name provider");
         JobConfigurationHolder.setJobConfiguration(configuration);
 
+        log.info("Job image name is {}", configuration.getJobImageNameProvider().provide());
         getEventPublisher().addEventListener(new DestroyJobListener(this));
         getEventPublisher().addEventListener(new DefaultJobCallerListener(this));
         initDaemonJob();
