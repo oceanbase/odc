@@ -30,6 +30,7 @@ import org.quartz.Trigger.CompletedExecutionInstruction;
 import org.quartz.impl.StdSchedulerFactory;
 import org.quartz.listeners.TriggerListenerSupport;
 
+import com.oceanbase.odc.common.event.LocalEventPublisher;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.caller.JobException;
@@ -61,12 +62,14 @@ public class JobSchedulerTest {
         DefaultJobConfiguration jc = new DefaultJobConfiguration() {};
         jc.setScheduler(sched);
         jc.setHostUrlProvider(Mockito.mock(HostUrlProvider.class));
+        jc.setEventPublisher(new LocalEventPublisher());
         TaskFrameworkService taskFrameworkService = Mockito.mock(TaskFrameworkService.class);
         jc.setTaskFrameworkService(taskFrameworkService);
         Mockito.when(taskFrameworkService.save(Mockito.any())).thenReturn(Mockito.mock(JobEntity.class));
         Mockito.when(taskFrameworkService.find(Mockito.any())).thenReturn(Mockito.mock(JobEntity.class));
 
-        DefaultJobDefinition jd = DefaultJobDefinition.builder().jobClass(SampleTask.class).build();
+        DefaultJobDefinition jd = DefaultJobDefinition.builder().jobClass(SampleTask.class)
+                .jobType("sampleTask").build();
 
         JobDispatcher jobDispatcher = Mockito.mock(JobDispatcher.class);
         Mockito.doNothing().when(jobDispatcher).start(Mockito.mock(JobContext.class));
