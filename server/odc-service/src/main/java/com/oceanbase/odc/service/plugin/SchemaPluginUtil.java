@@ -24,7 +24,6 @@ import com.oceanbase.odc.plugin.schema.api.DatabaseExtensionPoint;
 import com.oceanbase.odc.plugin.schema.api.FunctionExtensionPoint;
 import com.oceanbase.odc.plugin.schema.api.PackageExtensionPoint;
 import com.oceanbase.odc.plugin.schema.api.ProcedureExtensionPoint;
-import com.oceanbase.odc.plugin.schema.api.SchemaBrowserExtensionPoint;
 import com.oceanbase.odc.plugin.schema.api.SequenceExtensionPoint;
 import com.oceanbase.odc.plugin.schema.api.SynonymExtensionPoint;
 import com.oceanbase.odc.plugin.schema.api.TableExtensionPoint;
@@ -83,9 +82,6 @@ public class SchemaPluginUtil {
         return getSingletonExtension(dialectType, TypeExtensionPoint.class);
     }
 
-    public static SchemaBrowserExtensionPoint getSchemaBrowserExtension(DialectType dialectType) {
-        return getSingletonExtension(dialectType, SchemaBrowserExtensionPoint.class);
-    }
 
     public static <T extends ExtensionPoint> T getSingletonExtension(DialectType dialectType, Class<T> type) {
         return getOdcPluginManager().getSingletonExtension(dialectType, type);

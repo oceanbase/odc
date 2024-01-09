@@ -22,7 +22,7 @@ import java.util.Set;
 import javax.sql.DataSource;
 import javax.validation.constraints.NotNull;
 
-import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 
 import lombok.Data;
@@ -37,7 +37,7 @@ public class DBStructureComparisonConfig {
     @NotNull
     private String schemaName;
     @NotNull
-    private DialectType dialectType;
+    private ConnectType connectType;
     @NotNull
     private DataSource dataSource;
     @NotNull

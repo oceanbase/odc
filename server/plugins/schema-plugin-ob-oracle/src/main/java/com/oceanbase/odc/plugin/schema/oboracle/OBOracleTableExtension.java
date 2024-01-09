@@ -28,6 +28,11 @@ import com.oceanbase.odc.plugin.schema.obmysql.OBMySQLTableExtension;
 import com.oceanbase.odc.plugin.schema.oboracle.parser.OBOracleGetDBTableByParser;
 import com.oceanbase.odc.plugin.schema.oboracle.utils.DBAccessorUtil;
 import com.oceanbase.tools.dbbrowser.editor.DBTableEditor;
+import com.oceanbase.tools.dbbrowser.editor.oracle.OBOracleIndexEditor;
+import com.oceanbase.tools.dbbrowser.editor.oracle.OracleColumnEditor;
+import com.oceanbase.tools.dbbrowser.editor.oracle.OracleConstraintEditor;
+import com.oceanbase.tools.dbbrowser.editor.oracle.OracleDBTablePartitionEditor;
+import com.oceanbase.tools.dbbrowser.editor.oracle.OracleTableEditor;
 import com.oceanbase.tools.dbbrowser.model.DBIndexType;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.model.DBTable.DBTableOptions;
@@ -139,6 +144,7 @@ public class OBOracleTableExtension extends OBMySQLTableExtension {
 
     @Override
     protected DBTableEditor getTableEditor(Connection connection) {
-        return DBAccessorUtil.getTableEditor(connection);
+        return new OracleTableEditor(new OBOracleIndexEditor(), new OracleColumnEditor(),
+                new OracleConstraintEditor(), new OracleDBTablePartitionEditor());
     }
 }

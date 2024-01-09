@@ -22,10 +22,20 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.sql.DataSource;
+
 import org.apache.commons.compress.utils.Lists;
 
+import com.oceanbase.odc.common.util.JdbcOperationsUtil;
+import com.oceanbase.odc.common.util.VersionUtils;
+import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.DialectType;
-import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
+import com.oceanbase.odc.plugin.connect.api.InformationExtensionPoint;
+import com.oceanbase.odc.plugin.schema.obmysql.parser.OBMySQLGetDBTableByParser;
+import com.oceanbase.odc.service.db.browser.DBObjectEditorFactory;
+import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
+import com.oceanbase.odc.service.db.browser.DBTableEditorFactory;
+import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 import com.oceanbase.odc.service.structurecompare.comparedbobject.TableStructureComparator;
 import com.oceanbase.odc.service.structurecompare.model.ComparisonResult;
 import com.oceanbase.odc.service.structurecompare.model.DBObjectComparisonResult;
@@ -60,17 +70,23 @@ public class OdcDBStructureComparator implements DBStructureComparator {
         List<DBObjectComparisonResult> returnVal = new ArrayList<>();
         checkConfig(srcConfig, tgtConfig);
 
-        DBSchemaAccessor srcAccessor = SchemaPluginUtil.getSchemaBrowserExtension(srcConfig.getDialectType())
-                .getDBSchemaAccessor(srcConfig.getDataSource().getConnection());
-        DBSchemaAccessor tgtAccessor = SchemaPluginUtil.getSchemaBrowserExtension(tgtConfig.getDialectType())
-                .getDBSchemaAccessor(tgtConfig.getDataSource().getConnection());
-        DBTableEditor tgtTableEditor = SchemaPluginUtil.getSchemaBrowserExtension(tgtConfig.getDialectType())
-                .getDBTableEditor(tgtConfig.getDataSource().getConnection());
+        String srcDbVersion = getDBVersion(srcConfig.getConnectType(), srcConfig.getDataSource());
+        String tgtDbVersion = getDBVersion(tgtConfig.getConnectType(), tgtConfig.getDataSource());
 
-        Map<String, DBTable> srcTables = buildSchemaTables(srcAccessor, srcConfig.getSchemaName());
-        Map<String, DBTable> tgtTables = buildSchemaTables(tgtAccessor, tgtConfig.getSchemaName());
+        DBSchemaAccessor srcAccessor =
+                getDBSchemaAccessor(srcConfig.getConnectType(), srcConfig.getDataSource(), srcDbVersion);
+        DBSchemaAccessor tgtAccessor =
+                getDBSchemaAccessor(tgtConfig.getConnectType(), tgtConfig.getDataSource(), tgtDbVersion);
+
+        DBTableEditor tgtTableEditor = getDBTableEditor(tgtConfig.getConnectType(), tgtDbVersion);
+
+        Map<String, DBTable> srcTables = buildSchemaTables(srcAccessor, srcConfig.getSchemaName(),
+                srcConfig.getConnectType().getDialectType(), srcDbVersion);
+        Map<String, DBTable> tgtTables = buildSchemaTables(tgtAccessor, tgtConfig.getSchemaName(),
+                tgtConfig.getConnectType().getDialectType(), tgtDbVersion);
+
         TableStructureComparator tableComparator = new TableStructureComparator(tgtTableEditor,
-                tgtConfig.getDialectType(),
+                tgtConfig.getConnectType().getDialectType(),
                 srcConfig.getSchemaName(), tgtConfig.getSchemaName());
 
         if (srcConfig.getBlackListMap().get(DBObjectType.TABLE) == null) {
@@ -97,13 +113,38 @@ public class OdcDBStructureComparator implements DBStructureComparator {
         return returnVal;
     }
 
+    private DBSchemaAccessor getDBSchemaAccessor(ConnectType connectType, DataSource dataSource, String dbVersion)
+            throws SQLException {
+        /**
+         * sysJdbcOperations and tenantName are required for OBMySQLNoGreaterThan1479SchemaAccessor to get
+         * table partition, this method will be replaced by OBMySQLGetDBTableByParser, so we just set it
+         * null here.
+         */
+        return DBSchemaAccessors.create(JdbcOperationsUtil.getJdbcOperations(dataSource.getConnection()), null,
+                connectType, dbVersion, null);
+    }
+
+    private DBTableEditor getDBTableEditor(ConnectType connectType, String dbVersion) {
+        DBObjectEditorFactory<DBTableEditor> tableEditorFactory =
+                new DBTableEditorFactory(connectType, dbVersion);
+        return tableEditorFactory.create();
+    }
+
+    private String getDBVersion(ConnectType connectType, DataSource dataSource) throws SQLException {
+        InformationExtensionPoint informationExtension = ConnectionPluginUtil.getInformationExtension(
+                connectType.getDialectType());
+        return informationExtension.getDBVersion(dataSource.getConnection());
+
+    }
+
     private void checkConfig(DBStructureComparisonConfig srcConfig, DBStructureComparisonConfig tgtConfig) {
-        if (!srcConfig.getDialectType().equals(tgtConfig.getDialectType())) {
+        if (!srcConfig.getConnectType().getDialectType().equals(tgtConfig.getConnectType().getDialectType())) {
             throw new IllegalArgumentException("The dialect type of source and target schema must be equal");
         }
-        if (!supportedDialectTypes.contains(srcConfig.getDialectType())) {
+        if (!supportedDialectTypes.contains(srcConfig.getConnectType().getDialectType())) {
             throw new UnsupportedOperationException(
-                    "Unsupported dialect type for schema structure comparison: " + srcConfig.getDialectType());
+                    "Unsupported dialect type for schema structure comparison: "
+                            + srcConfig.getConnectType().getDialectType());
         }
         srcConfig.getToComparedObjectTypes().stream().forEach(dbObjectType -> {
             if (!supportedDBObjectTypes.contains(dbObjectType)) {
@@ -113,7 +154,8 @@ public class OdcDBStructureComparator implements DBStructureComparator {
         });
     }
 
-    private Map<String, DBTable> buildSchemaTables(DBSchemaAccessor accessor, String schemaName) {
+    private Map<String, DBTable> buildSchemaTables(DBSchemaAccessor accessor, String schemaName,
+            DialectType dialectType, String dbVersion) {
         Map<String, DBTable> returnVal = new HashMap<>();
         List<String> tableNames = accessor.showTables(schemaName);
         if (tableNames.isEmpty()) {
@@ -137,7 +179,14 @@ public class OdcDBStructureComparator implements DBStructureComparator {
             table.setIndexes(tableName2Indexes.getOrDefault(tableName, Lists.newArrayList()));
             table.setConstraints(tableName2Constraints.getOrDefault(tableName, Lists.newArrayList()));
             table.setTableOptions(tableName2Options.getOrDefault(tableName, new DBTableOptions()));
-            table.setPartition(accessor.getPartition(schemaName, tableName));
+            if (DialectType.OB_MYSQL.equals(dialectType) && VersionUtils.isLessThanOrEqualsTo(dbVersion, "1.4.79")) {
+                // Remove dependence on sys account
+                String ddl = accessor.getTableDDL(schemaName, tableName);
+                OBMySQLGetDBTableByParser parser = new OBMySQLGetDBTableByParser(ddl);
+                table.setPartition(parser.getPartition());
+            } else {
+                table.setPartition(accessor.getPartition(schemaName, tableName));
+            }
             table.setDDL(accessor.getTableDDL(schemaName, tableName));
             returnVal.put(tableName, table);
         }

@@ -275,6 +275,11 @@
             </dependency>
             <dependency>
                 <groupId>com.oceanbase</groupId>
+                <artifactId>schema-plugin-ob-mysql</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.oceanbase</groupId>
                 <artifactId>task-plugin-api</artifactId>
                 <version>${project.version}</version>
             </dependency>

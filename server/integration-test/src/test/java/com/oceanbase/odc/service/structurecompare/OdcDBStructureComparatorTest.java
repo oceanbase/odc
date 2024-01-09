@@ -37,7 +37,7 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.oceanbase.odc.PluginTestEnv;
-import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.service.structurecompare.model.ComparisonResult;
 import com.oceanbase.odc.service.structurecompare.model.DBObjectComparisonResult;
 import com.oceanbase.odc.service.structurecompare.model.DBStructureComparisonConfig;
@@ -106,7 +106,7 @@ public class OdcDBStructureComparatorTest extends PluginTestEnv {
     private static DBStructureComparisonConfig getSourceConfig(TestDBConfiguration configuration) {
         DBStructureComparisonConfig srcConfig = new DBStructureComparisonConfig();
         srcConfig.setSchemaName(sourceSchemaName);
-        srcConfig.setDialectType(DialectType.OB_MYSQL);
+        srcConfig.setConnectType(ConnectType.OB_MYSQL);
         srcConfig.setDataSource(configuration.getDataSource());
         srcConfig.setToComparedObjectTypes(Collections.singleton(DBObjectType.TABLE));
         return srcConfig;
@@ -115,7 +115,7 @@ public class OdcDBStructureComparatorTest extends PluginTestEnv {
     private static DBStructureComparisonConfig getTargetConfig(TestDBConfiguration configuration) {
         DBStructureComparisonConfig srcConfig = new DBStructureComparisonConfig();
         srcConfig.setSchemaName(targetSchemaName);
-        srcConfig.setDialectType(DialectType.OB_MYSQL);
+        srcConfig.setConnectType(ConnectType.OB_MYSQL);
         srcConfig.setDataSource(configuration.getDataSource());
         srcConfig.setToComparedObjectTypes(Collections.singleton(DBObjectType.TABLE));
         return srcConfig;
@@ -124,7 +124,7 @@ public class OdcDBStructureComparatorTest extends PluginTestEnv {
     @Test
     public void test_srcDialectTypeNotEqualsToTgtDialectType_throwException() throws SQLException {
         DBStructureComparisonConfig targetConfig = getTargetConfig(tgtConfiguration);
-        targetConfig.setDialectType(DialectType.OB_ORACLE);
+        targetConfig.setConnectType(ConnectType.OB_ORACLE);
         thrown.expect(IllegalArgumentException.class);
         thrown.expectMessage("The dialect type of source and target schema must be equal");
         comparator.compare(getSourceConfig(srcConfiguration), targetConfig);
@@ -133,9 +133,9 @@ public class OdcDBStructureComparatorTest extends PluginTestEnv {
     @Test
     public void test_notSupportedDialect_throwException() throws SQLException {
         DBStructureComparisonConfig sourceConfig = getSourceConfig(srcConfiguration);
-        sourceConfig.setDialectType(DialectType.ORACLE);
+        sourceConfig.setConnectType(ConnectType.ORACLE);
         DBStructureComparisonConfig targetConfig = getTargetConfig(tgtConfiguration);
-        targetConfig.setDialectType(DialectType.ORACLE);
+        targetConfig.setConnectType(ConnectType.ORACLE);
         thrown.expect(UnsupportedOperationException.class);
         thrown.expectMessage("Unsupported dialect type for schema structure comparison: ORACLE");
         comparator.compare(sourceConfig, targetConfig);

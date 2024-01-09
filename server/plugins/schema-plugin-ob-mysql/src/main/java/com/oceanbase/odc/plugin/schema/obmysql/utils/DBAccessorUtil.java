@@ -18,18 +18,9 @@ package com.oceanbase.odc.plugin.schema.obmysql.utils;
 import java.sql.Connection;
 
 import com.oceanbase.odc.common.util.JdbcOperationsUtil;
-import com.oceanbase.odc.common.util.VersionUtils;
 import com.oceanbase.odc.plugin.connect.obmysql.OBMySQLInformationExtension;
 import com.oceanbase.odc.plugin.schema.obmysql.browser.DBSchemaAccessors;
 import com.oceanbase.odc.plugin.schema.obmysql.browser.DBStatsAccessors;
-import com.oceanbase.tools.dbbrowser.editor.DBTableEditor;
-import com.oceanbase.tools.dbbrowser.editor.DBTablePartitionEditor;
-import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLColumnEditor;
-import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLConstraintEditor;
-import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLDBTablePartitionEditor;
-import com.oceanbase.tools.dbbrowser.editor.mysql.OBMySQLIndexEditor;
-import com.oceanbase.tools.dbbrowser.editor.mysql.OBMySQLLessThan2277PartitionEditor;
-import com.oceanbase.tools.dbbrowser.editor.mysql.OBMySQLTableEditor;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 import com.oceanbase.tools.dbbrowser.stats.DBStatsAccessor;
 
@@ -49,19 +40,5 @@ public class DBAccessorUtil {
 
     public static DBStatsAccessor getStatsAccessor(Connection connection) {
         return DBStatsAccessors.create(JdbcOperationsUtil.getJdbcOperations(connection), getDbVersion(connection));
-    }
-
-    public static DBTableEditor getTableEditor(Connection connection) {
-        return new OBMySQLTableEditor(new OBMySQLIndexEditor(), new MySQLColumnEditor(), new MySQLConstraintEditor(),
-                getDBTablePartitionEditor(connection));
-    }
-
-    private static DBTablePartitionEditor getDBTablePartitionEditor(Connection connection) {
-        String dbVersion = getDbVersion(connection);
-        if (VersionUtils.isLessThan(dbVersion, "2.2.77")) {
-            return new OBMySQLLessThan2277PartitionEditor();
-        } else {
-            return new MySQLDBTablePartitionEditor();
-        }
     }
 }

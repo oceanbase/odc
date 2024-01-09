@@ -19,10 +19,13 @@ import java.sql.Connection;
 
 import org.pf4j.Extension;
 
+import com.oceanbase.odc.common.util.JdbcOperationsUtil;
 import com.oceanbase.odc.plugin.schema.obmysql.OBMySQLTableExtension;
-import com.oceanbase.tools.dbbrowser.editor.DBTableEditor;
+import com.oceanbase.tools.dbbrowser.editor.DBTablePartitionEditor;
+import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLDBTablePartitionEditor;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
+import com.oceanbase.tools.dbbrowser.schema.mysql.ODPOBMySQLSchemaAccessor;
 import com.oceanbase.tools.dbbrowser.stats.DBStatsAccessor;
 import com.oceanbase.tools.dbbrowser.stats.mysql.ODPOBMySQLStatsAccessor;
 
@@ -48,7 +51,7 @@ public class ODPShardingOBMySQLTableExtension extends OBMySQLTableExtension {
 
     @Override
     protected DBSchemaAccessor getSchemaAccessor(Connection connection) {
-        return new ODPShardingOBMySQLSchemaBrowserExtension().getDBSchemaAccessor(connection);
+        return new ODPOBMySQLSchemaAccessor(JdbcOperationsUtil.getJdbcOperations(connection));
     }
 
     @Override
@@ -58,7 +61,7 @@ public class ODPShardingOBMySQLTableExtension extends OBMySQLTableExtension {
     }
 
     @Override
-    protected DBTableEditor getTableEditor(Connection connection) {
-        return new ODPShardingOBMySQLSchemaBrowserExtension().getDBTableEditor(connection);
+    protected DBTablePartitionEditor getDBTablePartitionEditor(Connection connection) {
+        return new MySQLDBTablePartitionEditor();
     }
 }
