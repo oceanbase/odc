@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
+import com.oceanbase.odc.service.permission.database.model.UnauthorizedDatabase;
 import com.oceanbase.odc.service.regulation.ruleset.model.Rule;
 
 import lombok.Data;
@@ -37,6 +38,7 @@ public class SqlAsyncExecuteResp {
     private List<Rule> violatedRules;
     private List<SqlTuplesWithViolation> sqls;
     private List<String> unauthorizedDatabaseNames;
+    private List<UnauthorizedDatabase> unauthorizedDatabases;
 
     public SqlAsyncExecuteResp(String requestId, List<SqlTuplesWithViolation> sqls) {
         this.requestId = requestId;
