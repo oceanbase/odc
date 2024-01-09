@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS `job_job` (
   `job_class` varchar(256) NOT NULL COMMENT '任务执行的 Class 类名',
   `job_type` varchar(32) NOT NULL COMMENT '任务类型，可选值有: ASYNC,IMPORT,EXPORT,MOCKDATA',
   `job_parameters_json` mediumtext DEFAULT NULL COMMENT '任务数据参数，不同任务由不同字段组成，为json格式',
-  `job_properties_json` mediumtext DEFAULT NULL COMMENT '任务调度参数，控制任务调度，为json格式',
+  `job_properties_json` text DEFAULT NULL COMMENT '任务调度参数，控制任务调度，为json格式',
   `status` varchar(16) NOT NULL COMMENT '任务运行状态，可选值有：PREPARING,RUNNING,RETRYING,FAILED,CANCELING,CANCELED,DONE',
   `execution_times` int NOT NULL COMMENT '已执行次数',
   `executor_identifier` varchar(256) DEFAULT NULL COMMENT 'executor identifier',
