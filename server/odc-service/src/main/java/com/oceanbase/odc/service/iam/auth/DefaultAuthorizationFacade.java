@@ -45,6 +45,7 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import com.oceanbase.odc.core.authority.model.DefaultSecurityResource;
 import com.oceanbase.odc.core.authority.model.SecurityResource;
 import com.oceanbase.odc.core.authority.permission.ConnectionPermission;
+import com.oceanbase.odc.core.authority.permission.DatabasePermission;
 import com.oceanbase.odc.core.authority.permission.Permission;
 import com.oceanbase.odc.core.authority.permission.PrivateConnectionPermission;
 import com.oceanbase.odc.core.authority.permission.ResourcePermission;
@@ -98,9 +99,13 @@ public abstract class DefaultAuthorizationFacade implements AuthorizationFacade 
                     if (resourceType == ResourceType.ODC_PRIVATE_CONNECTION) {
                         returnVal.addAll(
                                 PrivateConnectionPermission.getActionList(((ResourcePermission) permission).getMask()));
-                    } else {
+                    } else if (resourceType == ResourceType.ODC_CONNECTION) {
                         returnVal.addAll(
                                 ConnectionPermission.getActionList(((ResourcePermission) permission).getMask()));
+                    } else if (resourceType == ResourceType.ODC_DATABASE) {
+                        returnVal.addAll(DatabasePermission.getActionList(((ResourcePermission) permission).getMask()));
+                    } else {
+                        returnVal.addAll(ResourcePermission.getActionList(((ResourcePermission) permission).getMask()));
                     }
                 }
             }
@@ -155,11 +160,18 @@ public abstract class DefaultAuthorizationFacade implements AuthorizationFacade 
                         Collectors.toList());
         Map<SecurityResource, Set<String>> returnVal = new HashMap<>();
         for (Permission permission : permissions) {
-            Set<String> actions = returnVal.computeIfAbsent(
-                    new DefaultSecurityResource(((ResourcePermission) permission).getResourceId(),
-                            ((ResourcePermission) permission).getResourceType()),
-                    identifier -> new HashSet<>());
-            actions.addAll(ConnectionPermission.getActionList(((ResourcePermission) permission).getMask()));
+            SecurityResource resource = new DefaultSecurityResource(((ResourcePermission) permission).getResourceId(),
+                    ((ResourcePermission) permission).getResourceType());
+            Set<String> actions = returnVal.computeIfAbsent(resource, identifier -> new HashSet<>());
+            if (ResourceType.ODC_DATABASE.name().equals(resource.resourceType())) {
+                actions.addAll(DatabasePermission.getActionList(((ResourcePermission) permission).getMask()));
+            } else if (ResourceType.ODC_PRIVATE_CONNECTION.name().equals(resource.resourceType())) {
+                actions.addAll(PrivateConnectionPermission.getActionList(((ResourcePermission) permission).getMask()));
+            } else if (ResourceType.ODC_CONNECTION.name().equals(resource.resourceType())) {
+                actions.addAll(ConnectionPermission.getActionList(((ResourcePermission) permission).getMask()));
+            } else {
+                actions.addAll(ResourcePermission.getActionList(((ResourcePermission) permission).getMask()));
+            }
         }
         return returnVal;
     }
