@@ -16,6 +16,11 @@
 
 package com.oceanbase.odc.service.task.schedule;
 
+import java.util.Map;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.task.caller.DefaultJobContext;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
@@ -35,6 +40,17 @@ public class DefaultJobContextBuilder implements JobContextBuilder {
         jobContext.setJobClass(jd.getJobClass().getCanonicalName());
         jobContext.setJobParameters(jd.getJobParameters());
         jobContext.setHostUrls(configuration.getHostUrlProvider().hostUrl());
+        return jobContext;
+    }
+
+    @Override
+    public JobContext build(JobEntity jobEntity, HostUrlProvider hostUrlProvider) {
+        DefaultJobContext jobContext = new DefaultJobContext();
+        jobContext.setJobIdentity(JobIdentity.of(jobEntity.getId()));
+        jobContext.setJobClass(jobEntity.getJobClass());
+        jobContext.setJobParameters(JsonUtils.fromJson(jobEntity.getJobParametersJson(),
+                new TypeReference<Map<String, String>>() {}));
+        jobContext.setHostUrls(hostUrlProvider.hostUrl());
         return jobContext;
     }
 }

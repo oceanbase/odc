@@ -16,6 +16,8 @@
 
 package com.oceanbase.odc.service.task.service;
 
+import java.util.List;
+
 import org.springframework.transaction.annotation.Transactional;
 
 import com.oceanbase.odc.metadb.task.JobEntity;
@@ -36,6 +38,10 @@ public interface TaskFrameworkService {
     JobEntity save(JobDefinition jd);
 
     JobEntity find(Long id);
+
+    List<JobEntity> find(JobStatus status, int offset, int limit);
+
+    List<JobEntity> find(List<JobStatus> status, int offset, int limit);
 
     JobDefinition getJobDefinition(Long id);
 

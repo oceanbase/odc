@@ -40,8 +40,13 @@ public interface JobDefinition {
     String getJobType();
 
     /**
-     * job data
+     * job parameters for task executor
      */
     Map<String, String> getJobParameters();
+
+    /**
+     * job properties for job scheduler
+     */
+    JobProperties getJobProperties();
 
 }
