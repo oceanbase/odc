@@ -26,8 +26,6 @@ import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
 import org.hibernate.annotations.Generated;
@@ -37,7 +35,6 @@ import com.oceanbase.odc.common.jpa.JsonListConverter;
 import com.oceanbase.odc.service.notification.model.MessageSendingStatus;
 
 import lombok.Data;
-import lombok.ToString;
 
 /**
  * @Author: Lebie
@@ -83,8 +80,8 @@ public class MessageEntity {
     private Integer retryTimes;
     @Column(name = "max_retry_times", nullable = false, updatable = false)
     private Integer maxRetryTimes;
-    @OneToMany
-    @JoinColumn(name = "message_id", referencedColumnName = "id")
-    @ToString.Exclude
-    private List<MessageSendingHistoryEntity> sendHistory;
+    @Column(name = "last_sent_time")
+    private Date lastSentTime;
+    @Column(name = "error_message")
+    private String errorMessage;
 }

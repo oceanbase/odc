@@ -74,6 +74,8 @@ CREATE TABLE IF NOT EXISTS`notification_message` (
   `project_id` bigint(20) NOT NULL COMMENT 'project id, references collaboration_project.id',
   `to_recipients` varchar(2048) DEFAULT NULL comment 'odc users who will receive this message',
   `cc_recipients` varchar(2048) DEFAULT NULL comment 'odc users who will receive this message by copy',
+  `error_message` varchar(2048) DEFAULT NULL comment 'reason for message sending failure',
+  `last_sent_time` datetime DEFAULT NULL COMMENT 'the last attempt to send current message',
   PRIMARY KEY (`id`),
   KEY `idx_status_retry_times_max_retry_times` (`status`, `retry_times`, `max_retry_times`),
   KEY `notification_message_channel_id` (`channel_id`),
@@ -102,5 +104,5 @@ CREATE TABLE IF NOT EXISTS `notification_message_sending_history`(
   `status` varchar(128) NOT NULL COMMENT 'MessageSendingStatus enum, may SENT_SUCCESSFULLY or SENT_FAILED',
   `error_message` text DEFAULT NULL COMMENT 'error message',
   CONSTRAINT `pk_notification_message_sending_history_id` PRIMARY KEY (`id`),
-  KEY `idx_notification_message_id`(`message_id`)
+  KEY `notification_message_id_status_create_time`(`message_id`, `status`, `create_time`)
 ) comment = 'notification message sending history';
