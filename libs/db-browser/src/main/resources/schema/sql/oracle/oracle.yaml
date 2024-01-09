@@ -23,6 +23,49 @@ sqls:
       SYS.ALL_TAB_COLS NATURAL JOIN SYS.ALL_COL_COMMENTS
     WHERE
       OWNER = ?
+      AND TABLE_NAME IN (
+        SELECT
+          TABLE_NAME
+        FROM
+          SYS.ALL_TABLES
+        WHERE
+          OWNER = ?
+      )
+    ORDER BY
+      TABLE_NAME ASC,
+      COLUMN_ID ASC
+  list-basic-view-columns: |-
+    SELECT
+      OWNER,
+      TABLE_NAME,
+      COLUMN_NAME,
+      DATA_TYPE,
+      COMMENTS
+    FROM
+      SYS.ALL_TAB_COLS NATURAL JOIN SYS.ALL_COL_COMMENTS
+    WHERE
+      OWNER = ? AND TABLE_NAME = ?
+    ORDER BY
+      COLUMN_ID ASC
+  list-basic-schema-view-columns: |-
+    SELECT
+      OWNER,
+      TABLE_NAME,
+      COLUMN_NAME,
+      DATA_TYPE,
+      COMMENTS
+    FROM
+      SYS.ALL_TAB_COLS NATURAL JOIN SYS.ALL_COL_COMMENTS
+    WHERE
+      OWNER = ?
+      AND TABLE_NAME IN (
+        SELECT
+          VIEW_NAME
+        FROM
+          SYS.ALL_VIEWS
+        WHERE
+          OWNER = ?
+      )
     ORDER BY
       TABLE_NAME ASC,
       COLUMN_ID ASC
@@ -71,7 +114,7 @@ sqls:
     WHERE
       OWNER = ? 
     ORDER BY
-      COLUMN_ID, COLUMN_NAME ASC
+      COLUMN_ID ASC
   list-table-indexes: |-
     SELECT
       OWNER,
@@ -82,7 +125,8 @@ sqls:
       UNIQUENESS,
       COMPRESSION,
       VISIBILITY,
-      STATUS
+      STATUS,
+      PARTITIONED
     FROM
       SYS.ALL_INDEXES
     WHERE
@@ -130,47 +174,36 @@ sqls:
     ORDER BY
       t1.CONSTRAINT_NAME,
       t2.position ASC
-  get-partition: |-
-    select 
-      case 
-          when t.part_func_type=4 then 'RANGE'
-          when t.part_func_type=7 then 'LIST'
-          when t.part_func_type=8 then 'HASH'
-          else 'UNKNOWN'
-      end as PARTITION_METHOD,
-
-      t.part_func_expr as EXPRESSION,
-      t.part_num as PART_NUM,
-      p.part_id as PART_ID,
-      p.part_name as PART_NAME,
-      p.high_bound_val as MAX_VALUE,
-      p.list_val as LIST_VALUE
-    from
-      SYS.ALL_VIRTUAL_DATABASE_REAL_AGENT d,
-      SYS.ALL_VIRTUAL_TABLE_REAL_AGENT t,
-      SYS.ALL_VIRTUAL_PART_REAL_AGENT p
-      where d.database_name=? and t.table_name=? and d.tenant_id=t.tenant_id 
-      and d.database_id=t.database_id and t.tenant_id=p.tenant_id and t.table_id=p.table_id
-      order by part_id asc;
-  get-table-option: |-
-    select
-      t.*
-    from
-      SYS.ALL_VIRTUAL_DATABASE_REAL_AGENT d,
-      SYS.ALL_VIRTUAL_TABLE_REAL_AGENT t
-    where
-      d.DATABASE_NAME = ? and t.TABLE_NAME = ?
-      and d.DATABASE_ID = t.DATABASE_ID;
+  get-partition-option: |-
+    SELECT
+      PARTITIONING_TYPE
+    FROM
+      SYS.ALL_PART_TABLES
+    WHERE
+      OWNER = ?
+      AND TABLE_NAME = ?
+  list-partition-definitions: |-
+    SELECT
+      PARTITION_NAME,
+      PARTITION_POSITION,
+      HIGH_VALUE
+    FROM
+      SYS.ALL_TAB_PARTITIONS
+    WHERE
+      TABLE_OWNER = ?
+      AND TABLE_NAME = ?
+    ORDER BY
+      PARTITION_POSITION ASC
   list-database: |-
-    select 
+    SELECT 
       USERNAME, 
-      USERID 
+      USER_ID 
     from 
-      ALL_USERS
+      SYS.ALL_USERS
   get-database: |-
     SELECT 
       USERNAME, 
-      USERID 
+      USER_ID 
     from 
       SYS.ALL_USERS
     WHERE

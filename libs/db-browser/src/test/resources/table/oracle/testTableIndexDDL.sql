@@ -1,15 +1,22 @@
--- test index type
+CREATE TABLE TEST_INDEX_RANGE (
+C1 NUMBER,
+C2 NUMBER,
+C3 NUMBER
+)  PARTITION BY HASH(C2)
+PARTITIONS 5
+/
+CREATE INDEX test_global_idx on TEST_INDEX_RANGE(C1) GLOBAL
+/
+CREATE INDEX test_local_idx on TEST_INDEX_RANGE(C2) LOCAL
+/
+CREATE INDEX test_local_idx2 on TEST_INDEX_RANGE(C3) LOCAL
+/
 create table TEST_INDEX_TYPE(
   col1 int,
   col2 int
-);
-CREATE UNIQUE INDEX test_normal_idx on TEST_INDEX_TYPE(col1);
-CREATE UNIQUE INDEX test_btree_idx using btree on TEST_INDEX_TYPE(col2);
-
--- test index range
-create table TEST_INDEX_RANGE(
-  col1 int,
-  col2 int
-);
-CREATE INDEX test_global_idx on TEST_INDEX_RANGE(col1) GLOBAL;
-CREATE INDEX test_local_idx on TEST_INDEX_RANGE(col2) LOCAL;
+)
+/
+CREATE INDEX test_normal_idx on TEST_INDEX_TYPE(col1)
+/
+CREATE UNIQUE INDEX test_unique_idx on TEST_INDEX_TYPE(col2)
+/

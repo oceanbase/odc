@@ -30,6 +30,7 @@ import com.oceanbase.tools.dbbrowser.schema.mysql.OBMySQLSchemaAccessor;
 import com.oceanbase.tools.dbbrowser.schema.oracle.OBOracleLessThan2270SchemaAccessor;
 import com.oceanbase.tools.dbbrowser.schema.oracle.OBOracleLessThan400SchemaAccessor;
 import com.oceanbase.tools.dbbrowser.schema.oracle.OBOracleSchemaAccessor;
+import com.oceanbase.tools.dbbrowser.schema.oracle.OracleSchemaAccessor;
 import com.oceanbase.tools.dbbrowser.util.ALLDataDictTableNames;
 
 import lombok.extern.slf4j.Slf4j;
@@ -101,6 +102,10 @@ public class DBSchemaAccessors {
             // OB 版本 < 2.2.7
             return new OBOracleLessThan2270SchemaAccessor(this.jdbcTemplate, new ALLDataDictTableNames());
         }
+    }
+
+    public DBSchemaAccessor createOracle() {
+        return new OracleSchemaAccessor(this.jdbcTemplate, new ALLDataDictTableNames());
     }
 
     public DBSchemaAccessor createMysql() {

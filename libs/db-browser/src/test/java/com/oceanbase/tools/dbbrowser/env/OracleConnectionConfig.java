@@ -13,13 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.tools.dbbrowser.model;
 
-public class PLConstants {
-    public static final String PL_IN_PARAM = "in";
-    public static final String PL_OUT_PARAM = "out";
-    public static final String OB_ORACLE_PL_INOUT_PARAM = "in out";
-    public static final String ORACLE_PL_INOUT_PARAM = "IN/OUT";
-    public static final String MYSQL_PL_INOUT_PARAM = "inout";
-    public static final String PL_OBJECT_STATUS_INVALID = "INVALID";
+package com.oceanbase.tools.dbbrowser.env;
+
+import lombok.Data;
+
+/**
+ * @author jingtian
+ * @date 2023/10/9
+ */
+@Data
+public class OracleConnectionConfig {
+    private String host;
+    private String port;
+    private String username;
+    private String password;
+    private String serviceName;
+    private String sid;
+    private String role;
 }

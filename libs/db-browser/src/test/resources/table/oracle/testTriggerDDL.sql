@@ -1,7 +1,17 @@
-create table TRIGGER_TABLE (col varchar2(20));
+CREATE TABLE TRIGGER_TABLE (col varchar2(20))
 /
 
-create or replace trigger TRIGGER_TEST before insert on TRIGGER_TABLE for each row begin select 1+1 from dual;end;
+CREATE OR REPLACE TRIGGER TRIGGER_ACCESSOR
+    BEFORE INSERT OR DELETE OR UPDATE ON TRIGGER_TABLE
+    FOR EACH ROW
+    BEGIN
+        DBMS_OUTPUT.PUT_LINE('db-browser test');
+    END;
 /
 
-create or replace trigger INVALID_TRIGGER before insert on TRIGGER_TABLE for each row begin select 1+1 from invalid_dual;end;
+CREATE OR REPLACE TRIGGER TRIGGER_INVALID_ACCESSOR
+    BEFORE INSERT ON TRIGGER_TABLE
+    FOR EACH ROW
+    BEGIN
+        select 1+1 from invalid_dual;
+    END;

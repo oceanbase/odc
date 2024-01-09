@@ -22,6 +22,8 @@ import java.sql.DriverManager;
 import java.sql.Statement;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Properties;
 
 import javax.sql.DataSource;
 
@@ -46,14 +48,22 @@ public abstract class BaseTestEnv extends BasePropertiesEnv {
     private static final String OB_MYSQL_COMMANDLINE_KEY = "odc.ob.default.mysql.commandline";
     private static final String OB_ORACLE_COMMANDLINE_KEY = "odc.ob.default.oracle.commandline";
     private static final String MYSQL_COMMANDLINE_KEY = "odc.mysql.default.commandline";
+    private static final String ORACLE_HOST_KEY = "odc.oracle.default.host";
+    private static final String ORACLE_PORT_KEY = "odc.oracle.default.port";
+    private static final String ORACLE_USERNAME_KEY = "odc.oracle.default.username";
+    private static final String ORACLE_PASSWORD_KEY = "odc.oracle.default.password";
+    private static final String ORACLE_SID_KEY = "odc.oracle.default.sid";
+    private static final String ORACLE_ROLE_KEY = "odc.oracle.default.role";
     private static final Map<String, SingleConnectionDataSource> DATASOURCE_MAP = new HashMap<>();
     private static final int MAX_HOST_NAME_LENGTH = 16;
     private static final String OB_MYSQL_DS_KEY = "OB_MYSQL_DATA_SOURCE";
     private static final String OB_ORACLE_DS_KEY = "OB_ORACLE_DATA_SOURCE";
     private static final String MYSQL_DS_KEY = "MYSQL_DATA_SOURCE";
+    private static final String ORACLE_DS_KEY = "ORACLE_DATA_SOURCE";
     private static final String TEST_OB_MYSQL_DATABASE_NAME = generate().toLowerCase();
     private static final String TEST_OB_ORACLE_DATABASE_NAME = generate().toUpperCase();
     private static final String TEST_MYSQL_DATABASE_NAME = generate().toLowerCase();
+    private static final String TEST_ORACLE_DATABASE_NAME = generate().toUpperCase();
 
     static {
         String obMysqlCommandLine = get(OB_MYSQL_COMMANDLINE_KEY);
@@ -68,13 +78,18 @@ public abstract class BaseTestEnv extends BasePropertiesEnv {
         ConnectionParseResult mysqlParseResult = MySQLClientArgsParser.parse(mysqlCommandLine);
         initDataSource(mysqlParseResult, MYSQL_DS_KEY);
 
+        OracleConnectionConfig oracleConfig = buildOracleConnectionConfig();
+        initOracleDataSource(oracleConfig);
+
         Thread shutdownHookThread = new Thread(() -> {
             clear(obMysqlParseResult, OB_MYSQL_DS_KEY);
             log.info("Clear OB MySQL database succeed, database={}", TEST_OB_MYSQL_DATABASE_NAME);
             clear(obOracleParseResult, OB_ORACLE_DS_KEY);
             log.info("Clear OB Oracle user succeed, user={}", TEST_OB_ORACLE_DATABASE_NAME);
             clear(mysqlParseResult, MYSQL_DS_KEY);
-            log.info("Clear MySQL user succeed, user={}", TEST_MYSQL_DATABASE_NAME);
+            log.info("Clear MySQL database succeed, database={}", TEST_MYSQL_DATABASE_NAME);
+            clear(oracleConfig);
+            log.info("Clear Oracle user succeed, user={}", TEST_ORACLE_DATABASE_NAME);
             DATASOURCE_MAP.values().forEach(SingleConnectionDataSource::destroy);
             log.info("Clear datasource succeed");
         });
@@ -95,6 +110,10 @@ public abstract class BaseTestEnv extends BasePropertiesEnv {
         return DATASOURCE_MAP.get(MYSQL_DS_KEY);
     }
 
+    protected static DataSource getOracleDataSource() {
+        return DATASOURCE_MAP.get(ORACLE_DS_KEY);
+    }
+
     protected static String getOBMySQLDataBaseName() {
         return TEST_OB_MYSQL_DATABASE_NAME;
     }
@@ -105,6 +124,10 @@ public abstract class BaseTestEnv extends BasePropertiesEnv {
 
     protected static String getMySQLDataBaseName() {
         return TEST_MYSQL_DATABASE_NAME;
+    }
+
+    protected static String getOracleSchema() {
+        return TEST_ORACLE_DATABASE_NAME;
     }
 
     /**
@@ -133,7 +156,7 @@ public abstract class BaseTestEnv extends BasePropertiesEnv {
         }
         log.info("hostName={}, removeSpecial={}, HOST_NAME={}", hostName, removeSpecial, hostName);
         long currentMillis = System.currentTimeMillis() % 1000000;
-        return "dbbrowser_" + hostName + "_" + currentMillis;
+        return "db_" + hostName + "_" + currentMillis;
     }
 
     private static void initDataSource(ConnectionParseResult parseResult, String dataSourceKey) {
@@ -186,6 +209,42 @@ public abstract class BaseTestEnv extends BasePropertiesEnv {
         parseResult.setDefaultDBName(origin);
     }
 
+    private static void initOracleDataSource(OracleConnectionConfig config) {
+        clear(config);
+        String jdbcUrl = buildOracleJdbcUrl(config);
+        Properties props = new Properties();
+        props.setProperty("user", config.getUsername());
+        props.setProperty("password", config.getPassword());
+        if (Objects.nonNull(config.getRole())) {
+            props.put("internal_logon", config.getRole());
+        }
+        try (Connection connection = DriverManager.getConnection(jdbcUrl, props)) {
+            try (Statement statement = connection.createStatement()) {
+                String sql = "CREATE USER " + TEST_ORACLE_DATABASE_NAME;
+                if (StringUtils.isNotEmpty(config.getPassword())) {
+                    sql += " IDENTIFIED BY \"" + config.getPassword() + "\"";
+                }
+                statement.executeUpdate(sql);
+                sql = "GRANT ALL PRIVILEGES TO " + TEST_ORACLE_DATABASE_NAME;
+                statement.executeUpdate(sql);
+            }
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
+        }
+        DATASOURCE_MAP.put(ORACLE_DS_KEY, buildDataSource(config));
+    }
+
+    private static OracleConnectionConfig buildOracleConnectionConfig() {
+        OracleConnectionConfig config = new OracleConnectionConfig();
+        config.setHost(get(ORACLE_HOST_KEY));
+        config.setPort(get(ORACLE_PORT_KEY));
+        config.setSid(get(ORACLE_SID_KEY));
+        config.setUsername(get(ORACLE_USERNAME_KEY));
+        config.setPassword(get(ORACLE_PASSWORD_KEY));
+        config.setRole(get(ORACLE_ROLE_KEY));
+        return config;
+    }
+
     private static void clear(ConnectionParseResult parseResult, String dataSourceKey) {
         String jdbcUrl = buildOBJdbcUrl(parseResult);
         String username = buildUser(parseResult);
@@ -222,6 +281,24 @@ public abstract class BaseTestEnv extends BasePropertiesEnv {
         }
     }
 
+    private static void clear(OracleConnectionConfig config) {
+        String jdbcUrl = buildOracleJdbcUrl(config);
+        Properties props = new Properties();
+        props.setProperty("user", config.getUsername());
+        props.setProperty("password", config.getPassword());
+        if (Objects.nonNull(config.getRole())) {
+            props.put("internal_logon", config.getRole());
+        }
+        try (Connection connection = DriverManager.getConnection(jdbcUrl, props)) {
+            try (Statement statement = connection.createStatement()) {
+                String sql = String.format("DROP USER %s CASCADE", TEST_ORACLE_DATABASE_NAME);
+                statement.executeUpdate(sql);
+            }
+        } catch (Exception e) {
+            log.warn("Failed to drop oracle user, errMsg={}", e.getMessage());
+        }
+    }
+
     private static String buildOBJdbcUrl(ConnectionParseResult parseResult) {
         StringBuilder builder =
                 new StringBuilder(
@@ -240,6 +317,18 @@ public abstract class BaseTestEnv extends BasePropertiesEnv {
             builder.append(String.format("/%s", parseResult.getDefaultDBName()));
         }
         builder.append("?useSSL=false");
+        return builder.toString();
+    }
+
+    private static String buildOracleJdbcUrl(OracleConnectionConfig config) {
+        StringBuilder builder = new StringBuilder();
+        if (Objects.nonNull(config.getSid())) {
+            builder.append(
+                    String.format("jdbc:oracle:thin:@%s:%s:%s", config.getHost(), config.getPort(), config.getSid()));
+        } else {
+            builder.append(String.format("jdbc:oracle:thin:@//%s:%s/%s", config.getHost(), config.getPort(),
+                    config.getServiceName()));
+        }
         return builder.toString();
     }
 
@@ -267,10 +356,24 @@ public abstract class BaseTestEnv extends BasePropertiesEnv {
         return dataSource;
     }
 
+    private static SingleConnectionDataSource buildDataSource(OracleConnectionConfig config) {
+        SingleConnectionDataSource dataSource = new SingleConnectionDataSource();
+        dataSource.setUrl(buildOracleJdbcUrl(config));
+        Properties props = new Properties();
+        props.setProperty("user", config.getUsername());
+        props.setProperty("password", config.getPassword());
+        if (Objects.nonNull(config.getRole())) {
+            props.put("internal_logon", config.getRole());
+        }
+        dataSource.setConnectionProperties(props);
+        return dataSource;
+    }
+
     private enum ConnectType {
         OB_MYSQL,
         OB_ORACLE,
         MYSQL,
+        ORACLE,
     }
 
 }

@@ -65,7 +65,7 @@ import lombok.Data;
  * @author jingtian
  */
 public class OBOracleSchemaAccessorTest extends BaseTestEnv {
-    private static final String BASE_PATH = "src/test/resources/table/oracle/";
+    private static final String BASE_PATH = "src/test/resources/table/oboracle/";
     private static String ddl;
     private static String dropTables;
     private static String testFunctionDDL;
@@ -305,6 +305,12 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
     public void showViews_Success() {
         List<DBObjectIdentity> views = accessor.listViews(getOBOracleSchema());
         Assert.assertTrue(views != null && views.size() == 2);
+    }
+
+    @Test
+    public void listAllViews_Success() {
+        List<DBObjectIdentity> views = accessor.listAllViews("ALL");
+        Assert.assertTrue(views.size() > 0);
     }
 
     @Test

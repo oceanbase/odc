@@ -41,8 +41,9 @@ public enum DBPLParamMode {
             return IN;
         } else if (PLConstants.PL_OUT_PARAM.equalsIgnoreCase(name)) {
             return OUT;
-        } else if (PLConstants.ORACLE_PL_INOUT_PARAM.equalsIgnoreCase(name)
-                || PLConstants.MYSQL_PL_INOUT_PARAM.equalsIgnoreCase(name)) {
+        } else if (PLConstants.OB_ORACLE_PL_INOUT_PARAM.equalsIgnoreCase(name)
+                || PLConstants.MYSQL_PL_INOUT_PARAM.equalsIgnoreCase(name)
+                || PLConstants.ORACLE_PL_INOUT_PARAM.equalsIgnoreCase(name)) {
             return INOUT;
         } else {
             return UNKNOWN;

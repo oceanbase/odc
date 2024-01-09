@@ -193,3 +193,17 @@ sqls:
       AND TABLE_NAME = ?
     ORDER BY
       PARTITION_POSITION ASC
+  list-database: |-
+    select 
+      USERNAME, 
+      USERID 
+    from 
+      ALL_USERS
+  get-database: |-
+    SELECT 
+      USERNAME, 
+      USERID 
+    from 
+      SYS.ALL_USERS
+    WHERE
+      USERNAME = ?
