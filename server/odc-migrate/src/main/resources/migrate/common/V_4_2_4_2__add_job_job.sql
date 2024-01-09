@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS `job_job` (
   `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
   CONSTRAINT `pk_job_job_id` PRIMARY KEY (`id`),
   INDEX `idx_job_job_status_create_time` (`status`,`create_time`)
-) COMMENT = '任务表';
+);
 
 
 CREATE TABLE IF NOT EXISTS `job_attribute` (
@@ -35,4 +35,4 @@ CREATE TABLE IF NOT EXISTS `job_attribute` (
   `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
   CONSTRAINT `pk_job_attribute_id` PRIMARY KEY (`id`),
   CONSTRAINT `uk_job_attribute_job_id_attribute_key` UNIQUE KEY(`job_id`, `attribute_key`)
-) COMMENT = '任务属性表';
+);
