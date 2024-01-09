@@ -58,7 +58,7 @@ import lombok.extern.slf4j.Slf4j;
  * @since ODC_release_4.2.4
  */
 @Slf4j
-public class OdcDBStructureComparator implements DBStructureComparator {
+public class DefaultDBStructureComparator implements DBStructureComparator {
     private final List<DialectType> supportedDialectTypes =
             Arrays.asList(DialectType.MYSQL, DialectType.OB_MYSQL, DialectType.OB_ORACLE);
     private final List<DBObjectType> supportedDBObjectTypes = Arrays.asList(DBObjectType.TABLE);
@@ -80,9 +80,9 @@ public class OdcDBStructureComparator implements DBStructureComparator {
 
         DBTableEditor tgtTableEditor = getDBTableEditor(tgtConfig.getConnectType(), tgtDbVersion);
 
-        Map<String, DBTable> srcTables = buildSchemaTables(srcAccessor, srcConfig.getSchemaName(),
+        Map<String, DBTable> srcTableName2Table = buildSchemaTables(srcAccessor, srcConfig.getSchemaName(),
                 srcConfig.getConnectType().getDialectType(), srcDbVersion);
-        Map<String, DBTable> tgtTables = buildSchemaTables(tgtAccessor, tgtConfig.getSchemaName(),
+        Map<String, DBTable> tgtTableName2Table = buildSchemaTables(tgtAccessor, tgtConfig.getSchemaName(),
                 tgtConfig.getConnectType().getDialectType(), tgtDbVersion);
 
         TableStructureComparator tableComparator = new TableStructureComparator(tgtTableEditor,
@@ -94,14 +94,16 @@ public class OdcDBStructureComparator implements DBStructureComparator {
              * Compare all the tables between source database and target database.
              */
             returnVal =
-                    tableComparator.compare(new ArrayList<>(srcTables.values()), new ArrayList<>(tgtTables.values()));
+                    tableComparator.compare(new ArrayList<>(srcTableName2Table.values()),
+                            new ArrayList<>(tgtTableName2Table.values()));
         } else {
             /**
              * Compare specified tables between source database and target database.
              */
             for (String tableName : srcConfig.getBlackListMap().get(DBObjectType.TABLE)) {
-                if (srcTables.containsKey(tableName)) {
-                    returnVal.add(tableComparator.compare(srcTables.get(tableName), tgtTables.get(tableName)));
+                if (srcTableName2Table.containsKey(tableName)) {
+                    returnVal.add(tableComparator.compare(srcTableName2Table.get(tableName),
+                            tgtTableName2Table.get(tableName)));
                 } else {
                     DBObjectComparisonResult result = new DBObjectComparisonResult(DBObjectType.TABLE, tableName,
                             srcConfig.getSchemaName(), tgtConfig.getSchemaName());

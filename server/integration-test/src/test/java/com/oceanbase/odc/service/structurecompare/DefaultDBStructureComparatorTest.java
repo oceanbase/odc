@@ -51,7 +51,7 @@ import com.oceanbase.tools.dbbrowser.model.DBObjectType;
  * @date 2024/1/8
  * @since ODC_release_4.2.4
  */
-public class OdcDBStructureComparatorTest extends PluginTestEnv {
+public class DefaultDBStructureComparatorTest extends PluginTestEnv {
     private static final String BASE_PATH = "src/test/resources/structurecompare/";
     private static String sourceSchemaDdl = FileUtil.loadAsString(BASE_PATH + "source_schema_ddl.sql");
     private static String targetSchemaDdl = FileUtil.loadAsString(BASE_PATH + "target_schema_ddl.sql");
@@ -63,7 +63,7 @@ public class OdcDBStructureComparatorTest extends PluginTestEnv {
     private final static String targetSchemaName = generateSchemaName() + "_target";
     private static TestDBConfiguration srcConfiguration = new TestDBConfiguration();
     private static TestDBConfiguration tgtConfiguration = new TestDBConfiguration();
-    private static OdcDBStructureComparator comparator = new OdcDBStructureComparator();
+    private static DefaultDBStructureComparator comparator = new DefaultDBStructureComparator();
     private static List<DBObjectComparisonResult> results;
     @Rule
     public ExpectedException thrown = ExpectedException.none();

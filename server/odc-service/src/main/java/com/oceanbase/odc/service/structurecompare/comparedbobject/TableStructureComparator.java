@@ -81,35 +81,35 @@ public class TableStructureComparator implements DBObjectStructureComparator<DBT
 
         String srcSchemaName = srcTables.get(0).getSchemaName();
         String tgtSchemaName = tgtTables.get(0).getSchemaName();
-        Map<String, DBTable> srcTableMapping =
+        Map<String, DBTable> srcTableName2Table =
                 srcTables.stream().collect(Collectors.toMap(DBTable::getName, table -> table));
-        Map<String, DBTable> tgtTableMapping =
+        Map<String, DBTable> tgtTableName2Table =
                 tgtTables.stream().collect(Collectors.toMap(DBTable::getName, table -> table));
         List<String> toCreatedNames = new ArrayList<>();
         List<String> toComparedNames = new ArrayList<>();
         List<String> toDroppedNames = new ArrayList<>();
 
-        for (String tableName : srcTableMapping.keySet()) {
-            if (!tgtTableMapping.containsKey(tableName)) {
+        for (String tableName : srcTableName2Table.keySet()) {
+            if (!tgtTableName2Table.containsKey(tableName)) {
                 toCreatedNames.add(tableName);
             } else {
                 toComparedNames.add(tableName);
             }
         }
-        for (String tableName : tgtTableMapping.keySet()) {
-            if (!srcTableMapping.containsKey(tableName)) {
+        for (String tableName : tgtTableName2Table.keySet()) {
+            if (!srcTableName2Table.containsKey(tableName)) {
                 toDroppedNames.add(tableName);
             }
         }
 
         List<DBObjectComparisonResult> createdResults =
-                buildCreatedTableResults(toCreatedNames, srcTableMapping, srcSchemaName, tgtSchemaName);
+                buildCreatedTableResults(toCreatedNames, srcTableName2Table, srcSchemaName, tgtSchemaName);
         List<DBObjectComparisonResult> dropResults =
-                buildDroppedTableResults(toDroppedNames, tgtTableMapping, srcSchemaName, tgtSchemaName);
+                buildDroppedTableResults(toDroppedNames, tgtTableName2Table, srcSchemaName, tgtSchemaName);
 
         List<DBObjectComparisonResult> comparedResults = new ArrayList<>();
         toComparedNames.forEach(name -> {
-            comparedResults.add(compare(srcTableMapping.get(name), tgtTableMapping.get(name)));
+            comparedResults.add(compare(srcTableName2Table.get(name), tgtTableName2Table.get(name)));
         });
 
         returnVal.addAll(createdResults);
@@ -120,18 +120,18 @@ public class TableStructureComparator implements DBObjectStructureComparator<DBT
     }
 
     private List<DBObjectComparisonResult> buildCreatedTableResults(List<String> toCreate,
-            Map<String, DBTable> srcTableMapping, String srcSchemaName, String tgtSchemaName) {
+            Map<String, DBTable> srcTableName2Table, String srcSchemaName, String tgtSchemaName) {
         List<DBObjectComparisonResult> returnVal = new LinkedList<>();
         if (toCreate.isEmpty()) {
             return returnVal;
         }
-        toCreate = getTableNamesByDependencyOrder(toCreate, srcTableMapping, srcSchemaName);
+        toCreate = getTableNamesByDependencyOrder(toCreate, srcTableName2Table, srcSchemaName);
 
         toCreate.forEach(name -> {
             DBObjectComparisonResult result =
                     new DBObjectComparisonResult(DBObjectType.TABLE, name, srcSchemaName, tgtSchemaName);
             result.setComparisonResult(ComparisonResult.ONLY_IN_SOURCE);
-            DBTable sourceTable = srcTableMapping.get(name);
+            DBTable sourceTable = srcTableName2Table.get(name);
             result.setSourceDdl(sourceTable.getDDL());
             DBTable targetTable = new DBTable();
             BeanUtils.copyProperties(sourceTable, targetTable);
@@ -143,20 +143,20 @@ public class TableStructureComparator implements DBObjectStructureComparator<DBT
     }
 
     private List<DBObjectComparisonResult> buildDroppedTableResults(List<String> toDrop,
-            Map<String, DBTable> tgtTableMapping,
+            Map<String, DBTable> tgtTableName2Table,
             String srcSchemaName, String tgtSchemaName) {
         List<DBObjectComparisonResult> returnVal = new LinkedList<>();
         if (toDrop.isEmpty()) {
             return returnVal;
         }
-        toDrop = getTableNamesByDependencyOrder(toDrop, tgtTableMapping, tgtSchemaName);
+        toDrop = getTableNamesByDependencyOrder(toDrop, tgtTableName2Table, tgtSchemaName);
         Collections.reverse(toDrop);
 
         toDrop.forEach(name -> {
             DBObjectComparisonResult result =
                     new DBObjectComparisonResult(DBObjectType.TABLE, name, srcSchemaName, tgtSchemaName);
             result.setComparisonResult(ComparisonResult.ONLY_IN_TARGET);
-            result.setTargetDdl(tgtTableMapping.get(name).getDDL());
+            result.setTargetDdl(tgtTableName2Table.get(name).getDDL());
             SqlBuilder sqlBuilder = getTargetDBSqlBuilder();
             result.setChangeScript(
                     GeneralSqlStatementBuilder.drop(sqlBuilder, DBObjectType.TABLE, tgtSchemaName, name));

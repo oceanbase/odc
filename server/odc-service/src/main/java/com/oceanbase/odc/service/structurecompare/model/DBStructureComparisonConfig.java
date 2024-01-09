@@ -42,5 +42,8 @@ public class DBStructureComparisonConfig {
     private DataSource dataSource;
     @NotNull
     private Set<DBObjectType> toComparedObjectTypes;
+    /**
+     * Used to compare specified database objects [Optional] If null or empty, ignore
+     */
     private Map<DBObjectType, Set<String>> blackListMap = new HashMap<>();
 }
