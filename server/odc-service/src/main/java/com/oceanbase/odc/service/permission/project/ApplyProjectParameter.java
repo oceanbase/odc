@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.permissionapply.project;
+package com.oceanbase.odc.service.permission.project;
 
 import java.io.Serializable;
 import java.util.List;

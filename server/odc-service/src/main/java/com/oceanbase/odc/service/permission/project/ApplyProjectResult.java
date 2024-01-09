@@ -13,34 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.connection.database.model;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
+package com.oceanbase.odc.service.permission.project;
+
+import com.oceanbase.odc.core.flow.model.FlowTaskResult;
+
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 /**
- * @Author: Lebie
- * @Date: 2023/6/5 15:33
- * @Description: []
+ * @author gaoda.xy
+ * @date 2023/10/13 16:12
  */
 @Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class QueryDatabaseParams {
-    private String schemaName;
+public class ApplyProjectResult implements FlowTaskResult {
 
-    private Long projectId;
+    /**
+     * Mark whether the task is successful
+     */
+    private boolean success;
+    /**
+     * Task parameters
+     */
+    private ApplyProjectParameter parameter;
 
-    private Long dataSourceId;
-
-    private Long environmentId;
-
-    private Boolean existed;
-
-    private Boolean containsUnassigned;
-
-    private Boolean includesPermittedAction;
 }

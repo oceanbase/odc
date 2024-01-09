@@ -13,34 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.connection.database.model;
-
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+package com.oceanbase.odc.core.shared.constant;
 
 /**
- * @Author: Lebie
- * @Date: 2023/6/5 15:33
- * @Description: []
+ * @author gaoda.xy
+ * @date 2024/1/2 19:45
  */
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class QueryDatabaseParams {
-    private String schemaName;
+public enum AuthorizationType {
 
-    private Long projectId;
+    /**
+     * Permissions obtained through administrator user authorization
+     */
+    USER_AUTHORIZATION,
+    /**
+     * Permissions obtained through ticket application
+     */
+    TICKET_APPLICATION
 
-    private Long dataSourceId;
-
-    private Long environmentId;
-
-    private Boolean existed;
-
-    private Boolean containsUnassigned;
-
-    private Boolean includesPermittedAction;
 }

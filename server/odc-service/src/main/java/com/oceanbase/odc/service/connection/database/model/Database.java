@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.connection.database.model;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.List;
 
 import javax.validation.constraints.NotBlank;
 
@@ -78,6 +79,9 @@ public class Database implements SecurityResource, OrganizationIsolated, Seriali
 
     @JsonProperty(access = Access.READ_ONLY)
     private boolean lockDatabaseUserRequired;
+
+    @JsonProperty(access = Access.READ_ONLY)
+    private List<String> permittedActions;
 
     @Override
     public String resourceId() {
