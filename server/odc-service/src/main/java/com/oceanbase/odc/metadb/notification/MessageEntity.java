@@ -26,6 +26,8 @@ import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
 import org.hibernate.annotations.Generated;
@@ -35,6 +37,7 @@ import com.oceanbase.odc.common.jpa.JsonListConverter;
 import com.oceanbase.odc.service.notification.model.MessageSendingStatus;
 
 import lombok.Data;
+import lombok.ToString;
 
 /**
  * @Author: Lebie
@@ -59,18 +62,18 @@ public class MessageEntity {
     private Long creatorId;
     @Column(name = "organization_id", nullable = false, updatable = false)
     private Long organizationId;
+    @Column(name = "project_id", nullable = false, updatable = false)
+    private Long projectId;
     @Column(name = "title", nullable = false, updatable = false)
     private String title;
     @Column(name = "content", nullable = false, updatable = false)
     private String content;
     @Convert(converter = JsonListConverter.class)
-    @Column(name = "to_recipients", nullable = false, updatable = false)
+    @Column(name = "to_recipients", updatable = false)
     private List<String> toRecipients;
     @Convert(converter = JsonListConverter.class)
-    @Column(name = "cc_recipients", nullable = false, updatable = false)
+    @Column(name = "cc_recipients", updatable = false)
     private List<String> ccRecipients;
-    @Column(name = "event_id", nullable = false, updatable = false)
-    private Long eventId;
     @Column(name = "channel_id", nullable = false, updatable = false)
     private Long channelId;
     @Enumerated(value = EnumType.STRING)
@@ -80,4 +83,8 @@ public class MessageEntity {
     private Integer retryTimes;
     @Column(name = "max_retry_times", nullable = false, updatable = false)
     private Integer maxRetryTimes;
+    @OneToMany
+    @JoinColumn(name = "message_id", referencedColumnName = "id")
+    @ToString.Exclude
+    private List<MessageSendingHistoryEntity> sendHistory;
 }

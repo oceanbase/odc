@@ -13,17 +13,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.oceanbase.odc.service.notification.model;
+
+import java.util.concurrent.TimeUnit;
 
 import lombok.Data;
 
 /**
- * @Author: Lebie
- * @Date: 2023/3/21 11:43
- * @Description: []
+ * @author liuyizhuo.lyz
+ * @date 2024/1/4
  */
 @Data
-public class Notification {
-    private Message message;
-    private Channel channel;
+public class RateLimitConfig {
+
+    private long time;
+
+    private TimeUnit timeUnit;
+
+    private long limit;
+
+    private OverLimitStrategy overLimitStrategy;
+
+    public enum OverLimitStrategy {
+
+        THROWN,
+
+        RESEND;
+
+    }
+
 }

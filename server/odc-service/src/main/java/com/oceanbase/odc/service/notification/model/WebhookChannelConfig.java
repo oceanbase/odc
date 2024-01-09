@@ -15,22 +15,14 @@
  */
 package com.oceanbase.odc.service.notification.model;
 
-import java.util.Map;
-
-import lombok.Data;
-
 /**
- * @Author: Lebie
- * @Date: 2023/3/20 14:49
- * @Description: []
+ * @author liuyizhuo.lyz
+ * @date 2024/1/4
  */
-@Data
-public class ChannelConfig {
-    private Long id;
+public class WebhookChannelConfig extends BaseChannelConfig {
 
-    private String name;
+    private String webhook;
 
-    private ChannelType type;
+    private String sign;
 
-    private Map<String, String> properties;
 }

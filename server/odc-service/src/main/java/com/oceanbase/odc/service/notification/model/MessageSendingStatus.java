@@ -27,7 +27,7 @@ public enum MessageSendingStatus {
 
     THROWN("THROWN"),
 
-    CONVERTING("CONVERTING");
+    SENDING("SENDING");
 
     private String name;
 

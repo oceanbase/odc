@@ -40,6 +40,8 @@ public class Event {
 
     private Long creatorId;
 
+    private Long projectId;
+
     private EventStatus status;
 
     private EventLabels labels;

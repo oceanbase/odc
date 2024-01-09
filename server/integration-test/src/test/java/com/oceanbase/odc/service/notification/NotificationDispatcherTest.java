@@ -15,10 +15,6 @@
  */
 package com.oceanbase.odc.service.notification;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -30,9 +26,9 @@ import com.oceanbase.odc.ServiceTestEnv;
 import com.oceanbase.odc.metadb.notification.ChannelRepository;
 import com.oceanbase.odc.metadb.notification.MessageEntity;
 import com.oceanbase.odc.metadb.notification.MessageRepository;
-import com.oceanbase.odc.service.notification.constant.ChannelPropertiesConstants;
-import com.oceanbase.odc.service.notification.model.ChannelConfig;
+import com.oceanbase.odc.service.notification.model.Channel;
 import com.oceanbase.odc.service.notification.model.ChannelType;
+import com.oceanbase.odc.service.notification.model.DingTalkChannelConfig;
 import com.oceanbase.odc.service.notification.model.Message;
 import com.oceanbase.odc.service.notification.model.MessageSendingStatus;
 import com.oceanbase.odc.service.notification.model.Notification;
@@ -81,32 +77,27 @@ public class NotificationDispatcherTest extends ServiceTestEnv {
         return notification;
     }
 
-    private ChannelConfig getChannel() {
-        ChannelConfig channelConfig = new ChannelConfig();
-        channelConfig.setType(ChannelType.DingTalkGroupBot);
-        channelConfig.setName("testChannel");
-        channelConfig.setId(1L);
-        Map<String, String> properties = new HashMap<>();
-        properties.put(ChannelPropertiesConstants.SERVICE_URL, "[\"fake_url\"]");
-        properties.put(ChannelPropertiesConstants.AT_ALL, "[false]");
-        properties.put(ChannelPropertiesConstants.RECIPIENT_ATTRIBUTE_NAME, "[\"user_account_name\"]");
-        channelConfig.setProperties(properties);
-        return channelConfig;
+    private Channel getChannel() {
+        Channel channel = new Channel();
+        channel.setType(ChannelType.DingTalk);
+        channel.setChannelConfig(new DingTalkChannelConfig());
+        channel.setName("testChannel");
+        channel.setId(1L);
+        channel.setProjectId(1L);
+        return channel;
     }
 
     private Message getMessage() {
         return Message.builder()
                 .title("test title")
                 .content("test content")
-                .channelId(1L)
-                .eventId(1L)
                 .retryTimes(0)
                 .maxRetryTimes(3)
                 .status(MessageSendingStatus.CREATED)
-                .toRecipients(Arrays.asList("1"))
-                .ccRecipients(Arrays.asList("2"))
                 .creatorId(USER_ID)
                 .organizationId(ORGANIZATION_ID)
+                .projectId(1L)
+                .channel(getChannel())
                 .build();
     }
 }

@@ -42,6 +42,7 @@ public class EventMapper {
         event.setCreatorId(entity.getCreatorId());
         event.setStatus(entity.getStatus());
         event.setTriggerTime(entity.getTriggerTime());
+        entity.setProjectId(entity.getProjectId());
         if (CollectionUtils.isNotEmpty(entity.getLabels())) {
             event.setLabels(new EventLabels().addLabels(
                     entity.getLabels().stream().collect(HashMap::new, (k, v) -> k.put(v.getKey(), v.getValue()),
@@ -56,6 +57,7 @@ public class EventMapper {
         entity.setOrganizationId(event.getOrganizationId());
         entity.setStatus(event.getStatus());
         entity.setTriggerTime(event.getTriggerTime());
+        entity.setProjectId(event.getProjectId());
         if (Objects.nonNull(event.getLabels())) {
             entity.setLabels(event.getLabels().entrySet().stream().map(entry -> {
                 EventLabelEntity labelEntity = new EventLabelEntity();

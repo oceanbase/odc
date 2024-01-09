@@ -13,13 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.notification;
 
-import com.oceanbase.odc.service.notification.model.ChannelType;
-import com.oceanbase.odc.service.notification.model.Message;
+package com.oceanbase.odc.service.notification.model;
 
-public interface Channel {
-    ChannelType type();
+import java.util.List;
 
-    boolean send(Message message);
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+
+/**
+ * @author liuyizhuo.lyz
+ * @date 2024/1/4
+ */
+@Data
+@EqualsAndHashCode(callSuper = true)
+public class DingTalkChannelConfig extends BaseChannelConfig {
+
+    private String webhook;
+
+    private List<Long> atMobiles;
+
+    private String sign;
+
 }

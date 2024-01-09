@@ -113,6 +113,7 @@ public class ConverterTest extends ServiceTestEnv {
         event.setOrganizationId(ORGANIZATION_ID);
         event.setTriggerTime(new Date());
         event.setCreatorId(USER_ID);
+        event.setProjectId(1L);
         event.setLabels(getLabels());
         return event;
     }
@@ -135,7 +136,7 @@ public class ConverterTest extends ServiceTestEnv {
     private ChannelEntity getChannelEntity() {
         ChannelEntity entity = new ChannelEntity();
         entity.setId(1L);
-        entity.setType(ChannelType.DingTalkGroupBot);
+        entity.setType(ChannelType.DingTalk);
         entity.setName("testChannel");
         entity.setCreatorId(USER_ID);
         entity.setOrganizationId(ORGANIZATION_ID);

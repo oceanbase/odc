@@ -16,11 +16,11 @@
 package com.oceanbase.odc.metadb.notification;
 
 import java.util.Date;
-import java.util.List;
 
 import javax.persistence.Column;
-import javax.persistence.Convert;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -29,19 +29,19 @@ import javax.persistence.Table;
 import org.hibernate.annotations.Generated;
 import org.hibernate.annotations.GenerationTime;
 
-import com.oceanbase.odc.common.jpa.ListConverter;
+import com.oceanbase.odc.service.notification.model.MessageSendingStatus;
 
 import lombok.Data;
 
 /**
- * @Author: Lebie
- * @Date: 2023/3/20 21:26
- * @Description: []
+ * @author liuyizhuo.lyz
+ * @date 2024/1/6
  */
 @Data
 @Entity
-@Table(name = "notification_policy")
-public class NotificationPolicyEntity {
+@Table(name = "notification_message_sending_history")
+public class MessageSendingHistoryEntity {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", updatable = false, nullable = false)
@@ -52,26 +52,12 @@ public class NotificationPolicyEntity {
     @Generated(GenerationTime.ALWAYS)
     @Column(name = "update_time", insertable = false, updatable = false)
     private Date updateTime;
-    @Column(name = "creator_id", nullable = false)
-    private Long creatorId;
-    @Column(name = "organization_id", nullable = false)
-    private Long organizationId;
-    @Column(name = "title_template")
-    private String titleTemplate;
-    @Column(name = "content_template")
-    private String contentTemplate;
-    @Column(name = "project_id", nullable = false)
-    private Long projectId;
-    @Column(name = "policy_metadata_id", nullable = false)
-    private Long policyMetadataId;
-    @Column(name = "match_expression", nullable = false)
-    private String matchExpression;
-    @Convert(converter = ListConverter.class)
-    @Column(name = "to_users")
-    private List<String> toUsers;
-    @Convert(converter = ListConverter.class)
-    @Column(name = "cc_users")
-    private List<String> ccUsers;
-    @Column(name = "is_enabled", nullable = false)
-    private boolean enabled;
+    @Enumerated(value = EnumType.STRING)
+    @Column(name = "status", nullable = false, updatable = false)
+    private MessageSendingStatus status;
+    @Column(name = "message_id", nullable = false, updatable = false)
+    private Long messageId;
+    @Column(name = "error_message")
+    private String errorMessage;
+
 }

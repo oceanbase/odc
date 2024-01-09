@@ -60,6 +60,8 @@ public class EventEntity {
     private Long creatorId;
     @Column(name = "organization_id", nullable = false, updatable = false)
     private Long organizationId;
+    @Column(name = "project_id", nullable = false, updatable = false)
+    private Long projectId;
     @Column(name = "trigger_time", nullable = false, updatable = false)
     private Date triggerTime;
     @Enumerated(value = EnumType.STRING)

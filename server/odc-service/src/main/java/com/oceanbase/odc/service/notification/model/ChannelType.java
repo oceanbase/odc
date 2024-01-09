@@ -15,9 +15,11 @@
  */
 package com.oceanbase.odc.service.notification.model;
 
-
 public enum ChannelType {
-    DingTalkGroupBot,
+    DingTalk,
+    Feishu,
+    WeCom,
+    Webhook,
     Email,
     SMS,
 }
