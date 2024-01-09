@@ -82,7 +82,6 @@ public class SchemaPluginUtil {
         return getSingletonExtension(dialectType, TypeExtensionPoint.class);
     }
 
-
     public static <T extends ExtensionPoint> T getSingletonExtension(DialectType dialectType, Class<T> type) {
         return getOdcPluginManager().getSingletonExtension(dialectType, type);
     }

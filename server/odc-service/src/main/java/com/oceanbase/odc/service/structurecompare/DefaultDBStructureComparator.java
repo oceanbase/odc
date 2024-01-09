@@ -30,13 +30,11 @@ import com.oceanbase.odc.common.util.JdbcOperationsUtil;
 import com.oceanbase.odc.common.util.VersionUtils;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.DialectType;
-import com.oceanbase.odc.plugin.connect.api.InformationExtensionPoint;
 import com.oceanbase.odc.plugin.schema.obmysql.parser.OBMySQLGetDBTableByParser;
-import com.oceanbase.odc.service.db.browser.DBObjectEditorFactory;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.db.browser.DBTableEditorFactory;
 import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
-import com.oceanbase.odc.service.structurecompare.comparedbobject.TableStructureComparator;
+import com.oceanbase.odc.service.structurecompare.comparedbobject.DBTableStructureComparator;
 import com.oceanbase.odc.service.structurecompare.model.ComparisonResult;
 import com.oceanbase.odc.service.structurecompare.model.DBObjectComparisonResult;
 import com.oceanbase.odc.service.structurecompare.model.DBStructureComparisonConfig;
@@ -65,10 +63,9 @@ public class DefaultDBStructureComparator implements DBStructureComparator {
 
     @Override
     public List<DBObjectComparisonResult> compare(@NonNull DBStructureComparisonConfig srcConfig,
-            @NonNull DBStructureComparisonConfig tgtConfig)
-            throws SQLException {
+            @NonNull DBStructureComparisonConfig tgtConfig) throws SQLException {
         List<DBObjectComparisonResult> returnVal = new ArrayList<>();
-        checkConfig(srcConfig, tgtConfig);
+        checkUnsupportedConfiguration(srcConfig, tgtConfig);
 
         String srcDbVersion = getDBVersion(srcConfig.getConnectType(), srcConfig.getDataSource());
         String tgtDbVersion = getDBVersion(tgtConfig.getConnectType(), tgtConfig.getDataSource());
@@ -85,7 +82,7 @@ public class DefaultDBStructureComparator implements DBStructureComparator {
         Map<String, DBTable> tgtTableName2Table = buildSchemaTables(tgtAccessor, tgtConfig.getSchemaName(),
                 tgtConfig.getConnectType().getDialectType(), tgtDbVersion);
 
-        TableStructureComparator tableComparator = new TableStructureComparator(tgtTableEditor,
+        DBTableStructureComparator tableComparator = new DBTableStructureComparator(tgtTableEditor,
                 tgtConfig.getConnectType().getDialectType(),
                 srcConfig.getSchemaName(), tgtConfig.getSchemaName());
 
@@ -127,19 +124,16 @@ public class DefaultDBStructureComparator implements DBStructureComparator {
     }
 
     private DBTableEditor getDBTableEditor(ConnectType connectType, String dbVersion) {
-        DBObjectEditorFactory<DBTableEditor> tableEditorFactory =
-                new DBTableEditorFactory(connectType, dbVersion);
-        return tableEditorFactory.create();
+        return new DBTableEditorFactory(connectType, dbVersion).create();
     }
 
     private String getDBVersion(ConnectType connectType, DataSource dataSource) throws SQLException {
-        InformationExtensionPoint informationExtension = ConnectionPluginUtil.getInformationExtension(
-                connectType.getDialectType());
-        return informationExtension.getDBVersion(dataSource.getConnection());
-
+        return ConnectionPluginUtil.getInformationExtension(connectType.getDialectType())
+                .getDBVersion(dataSource.getConnection());
     }
 
-    private void checkConfig(DBStructureComparisonConfig srcConfig, DBStructureComparisonConfig tgtConfig) {
+    private void checkUnsupportedConfiguration(DBStructureComparisonConfig srcConfig,
+            DBStructureComparisonConfig tgtConfig) {
         if (!srcConfig.getConnectType().getDialectType().equals(tgtConfig.getConnectType().getDialectType())) {
             throw new IllegalArgumentException("The dialect type of source and target schema must be equal");
         }

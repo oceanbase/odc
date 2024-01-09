@@ -21,6 +21,7 @@ import org.springframework.beans.BeanUtils;
 
 import com.oceanbase.odc.service.structurecompare.model.ComparisonResult;
 import com.oceanbase.odc.service.structurecompare.model.DBObjectComparisonResult;
+import com.oceanbase.odc.service.structurecompare.util.StructureCompareUtil;
 import com.oceanbase.tools.dbbrowser.editor.DBTablePartitionEditor;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartition;
@@ -31,12 +32,12 @@ import com.oceanbase.tools.dbbrowser.model.DBTablePartitionType;
  * @date 2024/1/4
  * @since ODC_release_4.2.4
  */
-public class TablePartitionStructureComparator implements DBObjectStructureComparator<DBTablePartition> {
+public class DBTablePartitionStructureComparator implements DBObjectStructureComparator<DBTablePartition> {
     private DBTablePartitionEditor tgtPartitionEditor;
     private String srcSchemaName;
     private String tgtSchemaName;
 
-    public TablePartitionStructureComparator(DBTablePartitionEditor tgtPartitionEditor, String srcSchemaName,
+    public DBTablePartitionStructureComparator(DBTablePartitionEditor tgtPartitionEditor, String srcSchemaName,
             String tgtSchemaName) {
         this.tgtPartitionEditor = tgtPartitionEditor;
         this.srcSchemaName = srcSchemaName;
@@ -67,9 +68,8 @@ public class TablePartitionStructureComparator implements DBObjectStructureCompa
             // partition to be created
             result.setComparisonResult(ComparisonResult.ONLY_IN_SOURCE);
             result.setChangeScript(
-                    appendDelimiterIfNotExist(
-                            this.tgtPartitionEditor.generateCreateObjectDDL(
-                                    copySrcPartitionWithTgtSchemaName(srcPartition, this.tgtSchemaName))));
+                    StructureCompareUtil.appendDelimiterIfNotExist(this.tgtPartitionEditor.generateCreateObjectDDL(
+                            copySrcPartitionWithTgtSchemaName(srcPartition, this.tgtSchemaName))));
         } else {
             String ddl = this.tgtPartitionEditor.generateUpdateObjectDDL(tgtPartition,
                     copySrcPartitionWithTgtSchemaName(srcPartition, this.tgtSchemaName));
@@ -78,7 +78,7 @@ public class TablePartitionStructureComparator implements DBObjectStructureCompa
             } else {
                 // partition to be updated
                 result.setComparisonResult(ComparisonResult.INCONSISTENT);
-                result.setChangeScript(appendDelimiterIfNotExist(ddl));
+                result.setChangeScript(StructureCompareUtil.appendDelimiterIfNotExist(ddl));
             }
         }
         return result;

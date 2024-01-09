@@ -70,7 +70,8 @@ public abstract class AbstractDBObjectStructureComparator<T extends DBObject>
                 returnVal.add(buildOnlyInTargetResult(tgtObjectName2Object.get(tgtObjectName), this.srcSchemaName));
             } else {
                 // database object to be compared
-                returnVal.add(compare(srcObjectName2Object.get(tgtObjectName), tgtObjectName2Object.get(tgtObjectName)));
+                returnVal
+                        .add(compare(srcObjectName2Object.get(tgtObjectName), tgtObjectName2Object.get(tgtObjectName)));
             }
         });
 

@@ -52,13 +52,13 @@ import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
  * @date 2024/1/4
  * @since ODC_release_4.2.4
  */
-public class TableStructureComparator implements DBObjectStructureComparator<DBTable> {
+public class DBTableStructureComparator implements DBObjectStructureComparator<DBTable> {
     private DBTableEditor tgtTableEditor;
     private DialectType tgtDialectType;
     private String srcSchemaName;
     private String tgtSchemaName;
 
-    public TableStructureComparator(DBTableEditor tgtTableEditor, DialectType tgtDialectType, String srcSchemaName,
+    public DBTableStructureComparator(DBTableEditor tgtTableEditor, DialectType tgtDialectType, String srcSchemaName,
             String tgtSchemaName) {
         this.tgtTableEditor = tgtTableEditor;
         this.tgtDialectType = tgtDialectType;
@@ -72,10 +72,10 @@ public class TableStructureComparator implements DBObjectStructureComparator<DBT
         if (srcTables.isEmpty() && tgtTables.isEmpty()) {
             return returnVal;
         } else if (srcTables.isEmpty()) {
-            return buildDroppedTableResults(tgtTables.stream().map(DBTable::getName).collect(Collectors.toList()),
+            return buildOnlyInTargetResult(tgtTables.stream().map(DBTable::getName).collect(Collectors.toList()),
                     new HashMap<>(), srcSchemaName, tgtSchemaName);
         } else if (tgtTables.isEmpty()) {
-            return buildCreatedTableResults(srcTables.stream().map(DBTable::getName).collect(Collectors.toList()),
+            return buildOnlyInSourceResult(srcTables.stream().map(DBTable::getName).collect(Collectors.toList()),
                     new HashMap<>(), srcSchemaName, tgtSchemaName);
         }
 
@@ -103,9 +103,9 @@ public class TableStructureComparator implements DBObjectStructureComparator<DBT
         }
 
         List<DBObjectComparisonResult> createdResults =
-                buildCreatedTableResults(toCreatedNames, srcTableName2Table, srcSchemaName, tgtSchemaName);
+                buildOnlyInSourceResult(toCreatedNames, srcTableName2Table, srcSchemaName, tgtSchemaName);
         List<DBObjectComparisonResult> dropResults =
-                buildDroppedTableResults(toDroppedNames, tgtTableName2Table, srcSchemaName, tgtSchemaName);
+                buildOnlyInTargetResult(toDroppedNames, tgtTableName2Table, srcSchemaName, tgtSchemaName);
 
         List<DBObjectComparisonResult> comparedResults = new ArrayList<>();
         toComparedNames.forEach(name -> {
@@ -119,7 +119,7 @@ public class TableStructureComparator implements DBObjectStructureComparator<DBT
         return returnVal;
     }
 
-    private List<DBObjectComparisonResult> buildCreatedTableResults(List<String> toCreate,
+    private List<DBObjectComparisonResult> buildOnlyInSourceResult(List<String> toCreate,
             Map<String, DBTable> srcTableName2Table, String srcSchemaName, String tgtSchemaName) {
         List<DBObjectComparisonResult> returnVal = new LinkedList<>();
         if (toCreate.isEmpty()) {
@@ -142,7 +142,7 @@ public class TableStructureComparator implements DBObjectStructureComparator<DBT
         return returnVal;
     }
 
-    private List<DBObjectComparisonResult> buildDroppedTableResults(List<String> toDrop,
+    private List<DBObjectComparisonResult> buildOnlyInTargetResult(List<String> toDrop,
             Map<String, DBTable> tgtTableName2Table,
             String srcSchemaName, String tgtSchemaName) {
         List<DBObjectComparisonResult> returnVal = new LinkedList<>();
@@ -206,11 +206,11 @@ public class TableStructureComparator implements DBObjectStructureComparator<DBT
         if (Objects.isNull(sourceTable) && Objects.isNull(targetTable)) {
             throw new IllegalStateException("Both source table and target table are null");
         } else if (Objects.isNull(sourceTable)) {
-            return buildDroppedTableResults(Collections.singletonList(targetTable.getName()),
+            return buildOnlyInTargetResult(Collections.singletonList(targetTable.getName()),
                     Collections.singletonMap(targetTable.getName(), targetTable), this.srcSchemaName,
                     this.tgtSchemaName).get(0);
         } else if (Objects.isNull(targetTable)) {
-            return buildCreatedTableResults(Collections.singletonList(sourceTable.getName()),
+            return buildOnlyInSourceResult(Collections.singletonList(sourceTable.getName()),
                     Collections.singletonMap(sourceTable.getName(), sourceTable), this.srcSchemaName,
                     this.tgtSchemaName).get(0);
         }
@@ -252,13 +252,13 @@ public class TableStructureComparator implements DBObjectStructureComparator<DBT
     }
 
     private List<DBObjectComparisonResult> compareTableColumns(DBTable srcTable, DBTable tgtTable) {
-        return new TableColumnStructureComparator(
+        return new DBTableColumnStructureComparator(
                 (DBTableColumnEditor) this.tgtTableEditor.getColumnEditor(), srcSchemaName, tgtSchemaName)
                         .compare(srcTable.getColumns(), tgtTable.getColumns());
     }
 
     private List<DBObjectComparisonResult> compareTableIndexes(DBTable srcTable, DBTable tgtTable) {
-        return new TableIndexStructureComparator((DBTableIndexEditor) this.tgtTableEditor.getIndexEditor(),
+        return new DBTableIndexStructureComparator((DBTableIndexEditor) this.tgtTableEditor.getIndexEditor(),
                 srcSchemaName, tgtSchemaName)
                         .compare(
                                 this.tgtTableEditor.excludePrimaryKeyIndex(srcTable.getIndexes(),
@@ -268,7 +268,7 @@ public class TableStructureComparator implements DBObjectStructureComparator<DBT
     }
 
     private List<DBObjectComparisonResult> compareTableConstraints(DBTable srcTable, DBTable tgtTable) {
-        return new TableConstraintStructureComparator(
+        return new DBTableConstraintStructureComparator(
                 (DBTableConstraintEditor) this.tgtTableEditor.getConstraintEditor(), srcSchemaName, tgtSchemaName)
                         .compare(
                                 this.tgtTableEditor.excludeUniqueConstraint(srcTable.getIndexes(),
@@ -278,7 +278,8 @@ public class TableStructureComparator implements DBObjectStructureComparator<DBT
     }
 
     private DBObjectComparisonResult compareTablePartition(DBTable srcTable, DBTable tgtTable) {
-        return new TablePartitionStructureComparator((DBTablePartitionEditor) this.tgtTableEditor.getPartitionEditor(),
+        return new DBTablePartitionStructureComparator(
+                (DBTablePartitionEditor) this.tgtTableEditor.getPartitionEditor(),
                 srcSchemaName, tgtSchemaName)
                         .compare(srcTable.getPartition(), tgtTable.getPartition());
     }

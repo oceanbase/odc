@@ -26,6 +26,7 @@ import org.springframework.beans.BeanUtils;
 
 import com.oceanbase.odc.service.structurecompare.model.ComparisonResult;
 import com.oceanbase.odc.service.structurecompare.model.DBObjectComparisonResult;
+import com.oceanbase.odc.service.structurecompare.util.StructureCompareUtil;
 import com.oceanbase.tools.dbbrowser.editor.DBTableColumnEditor;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
@@ -37,16 +38,13 @@ import lombok.NonNull;
  * @date 2024/1/4
  * @since ODC_release_4.2.4
  */
-public class TableColumnStructureComparator implements DBObjectStructureComparator<DBTableColumn> {
+public class DBTableColumnStructureComparator extends AbstractDBObjectStructureComparator<DBTableColumn> {
     private DBTableColumnEditor tgtColumnEditor;
-    private String srcSchemaName;
-    private String tgtSchemaName;
 
-    public TableColumnStructureComparator(DBTableColumnEditor tgtColumnEditor, String srcSchemaName,
+    public DBTableColumnStructureComparator(DBTableColumnEditor tgtColumnEditor, String srcSchemaName,
             String tgtSchemaName) {
+        super(srcSchemaName, tgtSchemaName);
         this.tgtColumnEditor = tgtColumnEditor;
-        this.srcSchemaName = srcSchemaName;
-        this.tgtSchemaName = tgtSchemaName;
     }
 
     @Override
@@ -58,42 +56,51 @@ public class TableColumnStructureComparator implements DBObjectStructureComparat
         String tgtSchemaName = tgtTabCols.get(0).getSchemaName();
         List<String> srcColNames = srcTabCols.stream().map(DBTableColumn::getName).collect(Collectors.toList());
         List<String> tgtColNames = tgtTabCols.stream().map(DBTableColumn::getName).collect(Collectors.toList());
-        Map<String, DBTableColumn> srcColMapping =
+        Map<String, DBTableColumn> srcColumnName2Column =
                 srcTabCols.stream().collect(Collectors.toMap(DBTableColumn::getName, col -> col));
-        Map<String, DBTableColumn> tgtColMapping =
+        Map<String, DBTableColumn> tgtColumnName2Column =
                 tgtTabCols.stream().collect(Collectors.toMap(DBTableColumn::getName, col -> col));
 
         tgtColNames.forEach(tarColName -> {
             if (!srcColNames.contains(tarColName)) {
                 // column to be dropped
-                DBObjectComparisonResult result = new DBObjectComparisonResult(DBObjectType.COLUMN, tarColName,
-                        srcSchemaName, tgtSchemaName);
-                result.setComparisonResult(ComparisonResult.ONLY_IN_TARGET);
-                result.setChangeScript(
-                        appendDelimiterIfNotExist(this.tgtColumnEditor
-                                .generateDropObjectDDL(tgtColMapping.get(tarColName))));
-                returnVal.add(result);
+                returnVal.add(buildOnlyInTargetResult(tgtColumnName2Column.get(tarColName), srcSchemaName));
             }
         });
 
         srcColNames.forEach(srcColName -> {
-            DBTableColumn copiedSrcCol = copySrcColumnWithTgtSchemaName(srcColMapping.get(srcColName), tgtSchemaName);
-
             if (tgtColNames.contains(srcColName)) {
                 // column to be compared
-                returnVal.add(compare(srcColMapping.get(srcColName), tgtColMapping.get(srcColName)));
+                returnVal.add(compare(srcColumnName2Column.get(srcColName), tgtColumnName2Column.get(srcColName)));
             } else {
                 // column to be created
-                DBObjectComparisonResult result = new DBObjectComparisonResult(DBObjectType.COLUMN, srcColName,
-                        srcSchemaName, tgtSchemaName);
-                result.setComparisonResult(ComparisonResult.ONLY_IN_SOURCE);
-                result.setChangeScript(appendDelimiterIfNotExist(
-                        tgtColumnEditor.generateCreateObjectDDL(copiedSrcCol)));
-                returnVal.add(result);
+                returnVal.add(buildOnlyInSourceResult(srcColumnName2Column.get(srcColName), tgtSchemaName));
             }
         });
 
         return returnVal;
+    }
+
+    @Override
+    protected DBObjectComparisonResult buildOnlyInTargetResult(DBTableColumn tgtDbObject, String srcSchemaName) {
+        DBObjectComparisonResult result = new DBObjectComparisonResult(DBObjectType.COLUMN, tgtDbObject.getName(),
+                srcSchemaName, tgtSchemaName);
+        result.setComparisonResult(ComparisonResult.ONLY_IN_TARGET);
+        result.setChangeScript(
+                StructureCompareUtil.appendDelimiterIfNotExist(
+                        this.tgtColumnEditor.generateDropObjectDDL(tgtDbObject)));
+        return result;
+    }
+
+    @Override
+    protected DBObjectComparisonResult buildOnlyInSourceResult(DBTableColumn srcDbObject, String tgtSchemaName) {
+        DBObjectComparisonResult result = new DBObjectComparisonResult(DBObjectType.COLUMN, srcDbObject.getName(),
+                srcSchemaName, tgtSchemaName);
+        result.setComparisonResult(ComparisonResult.ONLY_IN_SOURCE);
+        result.setChangeScript(StructureCompareUtil
+                .appendDelimiterIfNotExist(tgtColumnEditor
+                        .generateCreateObjectDDL(copySrcColumnWithTgtSchemaName(srcDbObject, tgtSchemaName))));
+        return result;
     }
 
     @Override
@@ -108,7 +115,7 @@ public class TableColumnStructureComparator implements DBObjectStructureComparat
         if (!ddl.isEmpty()) {
             // column to be updated
             result.setComparisonResult(ComparisonResult.INCONSISTENT);
-            result.setChangeScript(appendDelimiterIfNotExist(ddl));
+            result.setChangeScript(StructureCompareUtil.appendDelimiterIfNotExist(ddl));
         } else {
             result.setComparisonResult(ComparisonResult.CONSISTENT);
         }

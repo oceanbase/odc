@@ -26,8 +26,6 @@ import com.oceanbase.tools.dbbrowser.model.DBObject;
  * @since ODC_release_4.2.4
  */
 public interface DBObjectStructureComparator<T extends DBObject> {
-    String DEFAULT_SQL_DELIMITER = ";";
-
     /**
      * Compare specified database object types between two schema.
      *
@@ -46,12 +44,4 @@ public interface DBObjectStructureComparator<T extends DBObject> {
      * @return {@link DBObjectComparisonResult}
      */
     DBObjectComparisonResult compare(T sourceObject, T targetObject);
-
-    default String appendDelimiterIfNotExist(String sql) {
-        String returnVal = sql.trim();
-        if (!returnVal.endsWith(DEFAULT_SQL_DELIMITER)) {
-            return returnVal + DEFAULT_SQL_DELIMITER + "\n";
-        }
-        return sql;
-    }
 }

@@ -35,6 +35,5 @@ public interface DBStructureComparator {
      * @return {@link DBObjectComparisonResult}
      */
     List<DBObjectComparisonResult> compare(DBStructureComparisonConfig srcConfig,
-            DBStructureComparisonConfig destConfig)
-            throws SQLException;
+            DBStructureComparisonConfig destConfig) throws SQLException;
 }

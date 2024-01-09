@@ -19,6 +19,7 @@ import org.springframework.beans.BeanUtils;
 
 import com.oceanbase.odc.service.structurecompare.model.ComparisonResult;
 import com.oceanbase.odc.service.structurecompare.model.DBObjectComparisonResult;
+import com.oceanbase.odc.service.structurecompare.util.StructureCompareUtil;
 import com.oceanbase.tools.dbbrowser.editor.DBTableIndexEditor;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBTableIndex;
@@ -30,11 +31,11 @@ import lombok.NonNull;
  * @date 2024/1/4
  * @since ODC_release_4.2.4
  */
-public class TableIndexStructureComparator extends AbstractDBObjectStructureComparator<DBTableIndex> {
+public class DBTableIndexStructureComparator extends AbstractDBObjectStructureComparator<DBTableIndex> {
 
     private DBTableIndexEditor targetTableIndexEditor;
 
-    public TableIndexStructureComparator(DBTableIndexEditor targetTableIndexEditor, String srcSchemaName,
+    public DBTableIndexStructureComparator(DBTableIndexEditor targetTableIndexEditor, String srcSchemaName,
             String tgtSchemaName) {
         super(srcSchemaName, tgtSchemaName);
         this.targetTableIndexEditor = targetTableIndexEditor;
@@ -45,8 +46,8 @@ public class TableIndexStructureComparator extends AbstractDBObjectStructureComp
         DBObjectComparisonResult result = new DBObjectComparisonResult(DBObjectType.INDEX, tgtDbObject.getName(),
                 srcSchemaName, tgtDbObject.getSchemaName());
         result.setComparisonResult(ComparisonResult.ONLY_IN_TARGET);
-        result.setChangeScript(appendDelimiterIfNotExist(
-                targetTableIndexEditor.generateDropObjectDDL(tgtDbObject)));
+        result.setChangeScript(StructureCompareUtil
+                .appendDelimiterIfNotExist(targetTableIndexEditor.generateDropObjectDDL(tgtDbObject)));
         return result;
     }
 
@@ -55,9 +56,8 @@ public class TableIndexStructureComparator extends AbstractDBObjectStructureComp
         DBObjectComparisonResult result = new DBObjectComparisonResult(DBObjectType.INDEX, srcDbObject.getName(),
                 srcDbObject.getSchemaName(), tgtSchemaName);
         result.setComparisonResult(ComparisonResult.ONLY_IN_SOURCE);
-        result.setChangeScript(appendDelimiterIfNotExist(
-                targetTableIndexEditor
-                        .generateCreateObjectDDL(copySrcIndexWithTgtSchemaName(srcDbObject, tgtSchemaName))));
+        result.setChangeScript(StructureCompareUtil.appendDelimiterIfNotExist(targetTableIndexEditor
+                .generateCreateObjectDDL(copySrcIndexWithTgtSchemaName(srcDbObject, tgtSchemaName))));
         return result;
     }
 
@@ -72,7 +72,7 @@ public class TableIndexStructureComparator extends AbstractDBObjectStructureComp
         if (!ddl.isEmpty()) {
             // index to be updated
             result.setComparisonResult(ComparisonResult.INCONSISTENT);
-            result.setChangeScript(appendDelimiterIfNotExist(ddl));
+            result.setChangeScript(StructureCompareUtil.appendDelimiterIfNotExist(ddl));
         } else {
             result.setComparisonResult(ComparisonResult.CONSISTENT);
         }

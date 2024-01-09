@@ -19,6 +19,7 @@ import org.springframework.beans.BeanUtils;
 
 import com.oceanbase.odc.service.structurecompare.model.ComparisonResult;
 import com.oceanbase.odc.service.structurecompare.model.DBObjectComparisonResult;
+import com.oceanbase.odc.service.structurecompare.util.StructureCompareUtil;
 import com.oceanbase.tools.dbbrowser.editor.DBTableConstraintEditor;
 import com.oceanbase.tools.dbbrowser.model.DBConstraintType;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
@@ -31,10 +32,10 @@ import lombok.NonNull;
  * @date 2024/1/4
  * @since ODC_release_4.2.4
  */
-public class TableConstraintStructureComparator extends AbstractDBObjectStructureComparator<DBTableConstraint> {
+public class DBTableConstraintStructureComparator extends AbstractDBObjectStructureComparator<DBTableConstraint> {
     private DBTableConstraintEditor tgtConstraintEditor;
 
-    public TableConstraintStructureComparator(DBTableConstraintEditor tgtConstraintEditor, String srcSchemaName,
+    public DBTableConstraintStructureComparator(DBTableConstraintEditor tgtConstraintEditor, String srcSchemaName,
             String tgtSchemaName) {
         super(srcSchemaName, tgtSchemaName);
         this.tgtConstraintEditor = tgtConstraintEditor;
@@ -45,8 +46,8 @@ public class TableConstraintStructureComparator extends AbstractDBObjectStructur
         DBObjectComparisonResult result = new DBObjectComparisonResult(DBObjectType.CONSTRAINT, tgtDbObject.getName(),
                 srcSchemaName, tgtDbObject.getSchemaName());
         result.setComparisonResult(ComparisonResult.ONLY_IN_TARGET);
-        result.setChangeScript(appendDelimiterIfNotExist(
-                this.tgtConstraintEditor.generateDropObjectDDL(tgtDbObject)));
+        result.setChangeScript(StructureCompareUtil
+                .appendDelimiterIfNotExist(this.tgtConstraintEditor.generateDropObjectDDL(tgtDbObject)));
         return result;
     }
 
@@ -60,9 +61,8 @@ public class TableConstraintStructureComparator extends AbstractDBObjectStructur
         if (copiedSrcCons.getType().equals(DBConstraintType.FOREIGN_KEY)) {
             copiedSrcCons.setReferenceSchemaName(tgtSchemaName);
         }
-        result.setChangeScript(appendDelimiterIfNotExist(
-                this.tgtConstraintEditor
-                        .generateCreateObjectDDL(copiedSrcCons)));
+        result.setChangeScript(StructureCompareUtil.appendDelimiterIfNotExist(
+                this.tgtConstraintEditor.generateCreateObjectDDL(copiedSrcCons)));
         return result;
     }
 
@@ -86,7 +86,7 @@ public class TableConstraintStructureComparator extends AbstractDBObjectStructur
         if (!ddl.isEmpty()) {
             // constraint to be updated
             result.setComparisonResult(ComparisonResult.INCONSISTENT);
-            result.setChangeScript(appendDelimiterIfNotExist(ddl));
+            result.setChangeScript(StructureCompareUtil.appendDelimiterIfNotExist(ddl));
         } else {
             result.setComparisonResult(ComparisonResult.CONSISTENT);
         }
