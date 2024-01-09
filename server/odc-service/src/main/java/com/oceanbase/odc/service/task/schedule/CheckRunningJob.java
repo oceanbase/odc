@@ -99,7 +99,7 @@ public class CheckRunningJob implements Job {
         long baseTime = (a.getLastReportTime() != null ? a.getLastReportTime()
                 : (a.getStartedTime() != null ? a.getStartedTime() : a.getCreateTime())).getTime();
         return JobDateUtils.getCurrentDate().getTime() - baseTime > TimeUnit.MILLISECONDS.convert(
-                getConfiguration().getTaskFrameworkProperties().getJobExpiredDurationSeconds(), TimeUnit.SECONDS);
+                getConfiguration().getTaskFrameworkProperties().getJobReportTimeoutSeconds(), TimeUnit.SECONDS);
     }
 
     private boolean checkRetryNeeded(JobEntity je) {

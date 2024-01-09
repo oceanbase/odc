@@ -16,6 +16,7 @@
 
 package com.oceanbase.odc.service.task.service;
 
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -112,6 +113,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     public JobEntity save(JobDefinition jd) {
         JobEntity jse = new JobEntity();
         jse.setJobParametersJson(JsonUtils.toJson(jd.getJobParameters()));
+        jse.setJobPropertiesJson(JsonUtils.toJson(jd.getJobProperties()));
         jse.setExecutionTimes(0);
         jse.setJobClass(jd.getJobClass().getCanonicalName());
         jse.setJobType(jd.getJobType());
@@ -129,8 +131,14 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
 
     @Override
     public List<JobEntity> find(List<JobStatus> status, int offset, int limit) {
-        return entityManager.createQuery("from JobEntity where status in (:status)"
+        // fetch recent 30 days jobs
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(JobDateUtils.getCurrentDate());
+        cal.add(Calendar.DATE, -30);
+
+        return entityManager.createQuery("from JobEntity where status in (:status) and createTime > :date "
                 + " order by createTime asc", JobEntity.class)
+                .setParameter("date", cal.getTime())
                 .setParameter("status", status)
                 .setFirstResult(offset)
                 .setMaxResults(limit).getResultList();

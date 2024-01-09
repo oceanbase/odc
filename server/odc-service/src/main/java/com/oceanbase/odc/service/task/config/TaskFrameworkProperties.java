@@ -42,8 +42,8 @@ public class TaskFrameworkProperties {
     @NestedConfigurationProperty
     private K8sProperties k8s = new K8sProperties();
 
-    // job will be expired after this duration
-    private int jobExpiredDurationSeconds = 10 * 60;
+    // job will be timeout when last report time more than this duration
+    private int jobReportTimeoutSeconds = 10 * 60;
 
     // single fetch job rows for schedule
     private int singleFetchJobRowsForSchedule = 100;

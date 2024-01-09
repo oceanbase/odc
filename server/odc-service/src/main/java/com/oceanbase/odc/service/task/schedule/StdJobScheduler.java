@@ -106,14 +106,12 @@ public class StdJobScheduler implements JobScheduler {
     }
 
     private void initDaemonJob() {
-        initExpiredCheckJob();
+        initCheckRunningJob();
         initStartPreparingJob();
     }
 
-
-
-    private void initExpiredCheckJob() {
-        initCronJob("CheckExpiredJob", "CheckExpiredJobGroup",
+    private void initCheckRunningJob() {
+        initCronJob("checkRunningJob", "checkRunningJobGroup",
                 "* 0/1 * * * ?", CheckRunningJob.class);
     }
 
@@ -121,7 +119,6 @@ public class StdJobScheduler implements JobScheduler {
         initCronJob("startPreparingJob", "startPreparingJobGroup",
                 "0/3 * * * * ?", StartPreparingJob.class);
     }
-
 
     private void initCronJob(String key, String group, String cronExpression, Class<? extends Job> jobClass) {
         TriggerConfig config = new TriggerConfig();
