@@ -92,7 +92,6 @@ public class OdcJobListener implements JobListener {
      */
     @Override
     public void jobToBeExecuted(JobExecutionContext context) {
-
         // todo skip osc task
         if (Objects.equals(context.getJobDetail().getKey().getGroup(), JobType.ONLINE_SCHEMA_CHANGE_COMPLETE.name())) {
             return;

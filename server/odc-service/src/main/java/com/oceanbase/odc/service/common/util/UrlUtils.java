@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import com.google.common.base.MoreObjects;
@@ -63,6 +64,16 @@ public class UrlUtils {
     public static String getQueryParameterFirst(String url, String parameterName) {
         List<String> strings = getQueryParameter(url, parameterName);
         return CollectionUtils.isEmpty(strings) ? null : strings.get(0);
+    }
+
+    @SneakyThrows
+    public static String getPath(String url) {
+        return UriComponentsBuilder.fromUriString(url).build().getPath();
+    }
+
+    @SneakyThrows
+    public static UriComponents getUriComponents(String url) {
+        return UriComponentsBuilder.fromUriString(url).build();
     }
 
 }

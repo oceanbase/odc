@@ -33,6 +33,7 @@ import org.quartz.TriggerBuilder;
 import org.quartz.TriggerKey;
 import org.quartz.UnableToInterruptJobException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
@@ -55,6 +56,7 @@ import com.oceanbase.odc.service.schedule.model.TriggerConfig;
 public class QuartzJobService {
 
     @Autowired
+    @Qualifier(value = ("defaultScheduler"))
     private Scheduler scheduler;
 
     public void createJob(CreateQuartzJobReq req) throws SchedulerException {

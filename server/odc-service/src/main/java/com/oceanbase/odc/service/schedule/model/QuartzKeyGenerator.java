@@ -25,6 +25,7 @@ import org.quartz.TriggerKey;
  * @Descripition: Defines the key generation rules to ensure global uniqueness in this class.
  */
 public class QuartzKeyGenerator {
+
     public static TriggerKey generateTriggerKey(Long scheduleId, JobType jobType) {
         return new TriggerKey(scheduleId + "", jobType.name());
     }
@@ -32,4 +33,13 @@ public class QuartzKeyGenerator {
     public static JobKey generateJobKey(Long scheduleId, JobType jobType) {
         return new JobKey(scheduleId + "", jobType.name());
     }
+
+    public static TriggerKey generateTriggerKey(Long jobId) {
+        return new TriggerKey(jobId + "");
+    }
+
+    public static JobKey generateJobKey(Long jobId) {
+        return new JobKey(jobId + "");
+    }
+
 }

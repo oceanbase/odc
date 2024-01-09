@@ -88,13 +88,22 @@ public class CloudObjectStorageService {
     private CloudObjectStorage internalEndpointCloudObjectStorage;
     private ObjectStorageConfiguration objectStorageConfiguration;
 
+    @Autowired
     public CloudObjectStorageService(
             @Autowired @Qualifier("publicEndpointCloudClient") CloudObjectStorage publicEndpointCloudObjectStorage,
             @Autowired @Qualifier("internalEndpointCloudClient") CloudObjectStorage internalEndpointCloudObjectStorage,
             CloudEnvConfigurations cloudEnvConfigurations) {
+
+        this(publicEndpointCloudObjectStorage, internalEndpointCloudObjectStorage,
+                cloudEnvConfigurations.getObjectStorageConfiguration());
+    }
+
+    public CloudObjectStorageService(CloudObjectStorage publicEndpointCloudObjectStorage,
+            CloudObjectStorage internalEndpointCloudObjectStorage,
+            ObjectStorageConfiguration objectStorageConfiguration) {
         this.publicEndpointCloudObjectStorage = publicEndpointCloudObjectStorage;
         this.internalEndpointCloudObjectStorage = internalEndpointCloudObjectStorage;
-        this.objectStorageConfiguration = cloudEnvConfigurations.getObjectStorageConfiguration();
+        this.objectStorageConfiguration = objectStorageConfiguration;
         if (this.publicEndpointCloudObjectStorage.supported()) {
             validateBucket();
             createTempDirectory();

@@ -17,10 +17,14 @@ package com.oceanbase.odc.service.task;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.MessageFormat;
+import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 import javax.validation.constraints.NotNull;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.LineIterator;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,6 +54,7 @@ import com.oceanbase.odc.service.common.model.HostProperties;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
 import com.oceanbase.odc.service.flow.model.QueryTaskInstanceParams;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
+import com.oceanbase.odc.service.task.executor.executor.TaskRuntimeException;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
 
@@ -306,6 +311,25 @@ public class TaskService {
         taskRepository.delete(taskEntity);
         log.info("Task has been deleted: taskId={}", id);
     }
+
+    public Optional<TaskEntity> findByJobId(@NonNull Long jobId) {
+        List<TaskEntity> entities = taskRepository.findByJobId(jobId);
+        if (CollectionUtils.isNotEmpty(entities)) {
+            if (entities.size() > 1) {
+                throw new TaskRuntimeException(
+                        MessageFormat.format("Find TaskEntity by job id {0}, excepted size 1 but found {1}",
+                                jobId, entities.size()));
+            }
+            return Optional.of(entities.get(0));
+        }
+        return Optional.empty();
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void updateJobId(Long id, Long jobId) {
+        taskRepository.updateJobId(id, jobId);
+    }
+
 
     private TaskEntity nullSafeFindById(Long id) {
         return taskRepository.findById(id)

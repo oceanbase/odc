@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.core.flow.model;
 
+import java.io.Serializable;
+
 /**
  * Methodless interface for marking process task results
  *
@@ -22,5 +24,5 @@ package com.oceanbase.odc.core.flow.model;
  * @date 2022-03-07 21:53
  * @since ODC_release_3.3.0
  */
-public interface FlowTaskResult {
+public interface FlowTaskResult extends Serializable {
 }

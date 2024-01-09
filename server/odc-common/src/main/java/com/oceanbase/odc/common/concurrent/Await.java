@@ -53,6 +53,8 @@ public class Await {
     @Builder.Default
     private TimeUnit timeUnit = TimeUnit.SECONDS;
     @Builder.Default
+    private TimeUnit periodTimeUnit = TimeUnit.SECONDS;
+    @Builder.Default
     private Integer maxRetryTimes = Integer.MAX_VALUE;
 
     /**
@@ -103,7 +105,7 @@ public class Await {
                         countDownLatch.countDown();
                     }
                 },
-                0, period, timeUnit);
+                0, period, periodTimeUnit);
     }
 
     private void predicateResult(AtomicInteger hasRetryTimes, boolean await, AtomicBoolean conditionResult)

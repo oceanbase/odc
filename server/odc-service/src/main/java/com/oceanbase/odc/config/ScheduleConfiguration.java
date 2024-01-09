@@ -198,6 +198,22 @@ public class ScheduleConfiguration {
         return executor;
     }
 
+    @Bean(name = "taskResultPublisherExecutor")
+    public ThreadPoolTaskExecutor taskResultPublisherExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        int poolSize = Math.max(SystemUtils.availableProcessors() * 8, 128);
+        executor.setCorePoolSize(poolSize);
+        executor.setMaxPoolSize(poolSize);
+        executor.setThreadNamePrefix("task-result-publish-");
+        executor.setWaitForTasksToCompleteOnShutdown(true);
+        executor.setAwaitTerminationSeconds(5);
+        executor.setTaskDecorator(new TraceDecorator<>());
+        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.DiscardPolicy());
+        executor.initialize();
+        log.info("taskResultPublisherExecutor initialized");
+        return executor;
+    }
+
     @Scheduled(fixedDelay = REFRESH_CONFIG_RATE_MILLIS)
     public void refreshSysConfig() {
         systemConfigService.refresh();

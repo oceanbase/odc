@@ -51,4 +51,12 @@ public interface TaskRepository extends JpaRepository<TaskEntity, Long>, JpaSpec
     int updateExecutorById(@Param("id") Long id, @Param("executor") String executor);
 
     List<TaskEntity> findByIdIn(Set<Long> taskIds);
+
+    List<TaskEntity> findByJobId(Long jobId);
+
+    @Transactional
+    @Query("update TaskEntity set job_id=:jobId where id=:id")
+    @Modifying
+    void updateJobId(@Param("id") Long id, @Param("jobId") Long jobId);
+
 }

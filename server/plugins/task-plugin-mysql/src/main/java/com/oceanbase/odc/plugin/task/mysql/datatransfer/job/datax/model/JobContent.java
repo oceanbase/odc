@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.odc.plugin.task.mysql.datatransfer.job.datax.model;
 
 import java.util.List;

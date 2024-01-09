@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.objectstorage.cloud.model;
 
+import java.io.Serializable;
+
 import com.aliyuncs.endpoint.EndpointResolver;
 import com.aliyuncs.endpoint.LocalConfigRegionalEndpointResolver;
 import com.aliyuncs.endpoint.ResolveEndpointRequest;
@@ -28,7 +30,7 @@ import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import lombok.Data;
 
 @Data
-public class ObjectStorageConfiguration {
+public class ObjectStorageConfiguration implements Serializable {
     /**
      * if cloud storage supports
      */

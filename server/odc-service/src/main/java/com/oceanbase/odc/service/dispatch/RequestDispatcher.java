@@ -27,6 +27,7 @@ import java.util.Enumeration;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -70,7 +71,16 @@ public class RequestDispatcher {
     @Autowired
     private DispatchProperties dispatchProperties;
 
+
+    public DispatchResponse forward(@NonNull String endpoint) throws IOException {
+        return forward(() -> endpoint);
+    }
+
     public DispatchResponse forward(@NonNull String ip, @NonNull Integer port) throws IOException {
+        return forward(() -> String.format("%s://%s:%s", PROTOCAL, ip, port));
+    }
+
+    public DispatchResponse forward(@NonNull Supplier<String> hostUrl) throws IOException {
         HttpServletRequest request = requestProvider.getRequest();
         Verify.notNull(request, "HttpServletRequest");
 
@@ -91,15 +101,15 @@ public class RequestDispatcher {
         HttpHeaders headers = getRequestHeaders(request);
         ByteArrayOutputStream outputStream = requestProvider.getRequestBody();
         if (outputStream == null) {
-            return forward(ip, port, method, uriBuilder.toString(), headers, null);
+            return forward(hostUrl.get(), method, uriBuilder.toString(), headers, null);
         }
-        return forward(ip, port, method, uriBuilder.toString(), headers, outputStream.toByteArray());
+        return forward(hostUrl.get(), method, uriBuilder.toString(), headers, outputStream.toByteArray());
     }
 
-    public DispatchResponse forward(@NonNull String ip, @NonNull Integer port, @NonNull HttpMethod method,
+    public DispatchResponse forward(@NonNull String hostUrl, @NonNull HttpMethod method,
             @NonNull String requestUri, @NonNull HttpHeaders headers, byte[] requestBody) throws IOException {
         verifyAndReduceTtl(headers);
-        String realUri = generateRealUri(ip, port, requestUri);
+        String realUri = generateRealUri(hostUrl, requestUri);
         log.info("Request dispatch starts, uri={}", realUri);
         HttpHeaders responseHeaders = new HttpHeaders();
         RestTemplate restTemplate = dispatchRestTemplate();
@@ -142,12 +152,12 @@ public class RequestDispatcher {
         }
     }
 
-    private String generateRealUri(String ip, Integer port, @NonNull String uri) {
+    private String generateRealUri(String hostUrl, @NonNull String uri) {
         URI requestUri = URI.create(uri);
         String parameters = requestUri.getRawQuery() == null ? "" : "?" + requestUri.getRawQuery();
         String rawPath = requestUri.getRawPath();
         rawPath = rawPath.startsWith("/") ? rawPath : "/" + rawPath;
-        return String.format("%s://%s:%s%s%s", PROTOCAL, ip, port, rawPath, parameters);
+        return String.format("%s%s%s", hostUrl, rawPath, parameters);
     }
 
     private HttpHeaders getRequestHeaders(@NonNull HttpServletRequest request) {
