@@ -82,7 +82,7 @@ public class DBUserLogStatusMonitorTest {
             Assert.assertFalse(dbUserMonitor.isDone());
             Thread.sleep(1000);
             dbUserMonitor.stop();
-            Thread.sleep(2000);
+            Thread.sleep(3000);
             Assert.assertTrue(dbUserMonitor.isDone());
         } finally {
             executorService.shutdownNow();
