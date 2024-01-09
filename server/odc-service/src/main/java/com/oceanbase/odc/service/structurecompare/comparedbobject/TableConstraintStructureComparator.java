@@ -15,11 +15,6 @@
  */
 package com.oceanbase.odc.service.structurecompare.comparedbobject;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
 import org.springframework.beans.BeanUtils;
 
 import com.oceanbase.odc.service.structurecompare.model.ComparisonResult;
@@ -36,81 +31,32 @@ import lombok.NonNull;
  * @date 2024/1/4
  * @since ODC_release_4.2.4
  */
-public class TableConstraintStructureComparator implements DBObjectStructureComparator<DBTableConstraint> {
+public class TableConstraintStructureComparator extends AbstractDBObjectStructureComparator<DBTableConstraint> {
     private DBTableConstraintEditor tgtConstraintEditor;
-    private String srcSchemaName;
-    private String tgtSchemaName;
 
     public TableConstraintStructureComparator(DBTableConstraintEditor tgtConstraintEditor, String srcSchemaName,
             String tgtSchemaName) {
+        super(srcSchemaName, tgtSchemaName);
         this.tgtConstraintEditor = tgtConstraintEditor;
-        this.srcSchemaName = srcSchemaName;
-        this.tgtSchemaName = tgtSchemaName;
     }
 
     @Override
-    public List<DBObjectComparisonResult> compare(List<DBTableConstraint> srcTabCons,
-            List<DBTableConstraint> tgtTabCons) {
-        List<DBObjectComparisonResult> returnVal = new ArrayList<>();
-        if (srcTabCons.isEmpty() && tgtTabCons.isEmpty()) {
-            return returnVal;
-        } else if (srcTabCons.isEmpty()) {
-            // constraints to be dropped
-            tgtTabCons.forEach(cons -> {
-                returnVal.add(buildDropConstraintResult(cons, this.srcSchemaName));
-            });
-            return returnVal;
-        } else if (tgtTabCons.isEmpty()) {
-            // constraints to be created
-            srcTabCons.forEach(cons -> {
-                returnVal.add(buildCreateConstraintResult(cons, this.tgtSchemaName));
-            });
-            return returnVal;
-        }
-
-        List<String> srcConsNames = srcTabCons.stream().map(DBTableConstraint::getName).collect(Collectors.toList());
-        List<String> tgtConsNames = tgtTabCons.stream().map(DBTableConstraint::getName).collect(Collectors.toList());
-        Map<String, DBTableConstraint> srcConsMapping =
-                srcTabCons.stream().collect(Collectors.toMap(DBTableConstraint::getName, col -> col));
-        Map<String, DBTableConstraint> tarConsMapping =
-                tgtTabCons.stream().collect(Collectors.toMap(DBTableConstraint::getName, col -> col));
-
-        tgtConsNames.forEach(tgtConsName -> {
-            if (!srcConsNames.contains(tgtConsName)) {
-                // constraint to be dropped
-                returnVal.add(buildDropConstraintResult(tarConsMapping.get(tgtConsName), this.srcSchemaName));
-            } else {
-                // constraint to be compared
-                returnVal.add(compare(srcConsMapping.get(tgtConsName), tarConsMapping.get(tgtConsName)));
-            }
-        });
-
-        srcConsNames.forEach(srcConsName -> {
-            if (!tgtConsNames.contains(srcConsName)) {
-                // constraint to be created
-                returnVal.add(buildCreateConstraintResult(srcConsMapping.get(srcConsName), this.tgtSchemaName));
-            }
-        });
-
-        return returnVal;
-    }
-
-    private DBObjectComparisonResult buildDropConstraintResult(DBTableConstraint tgtCons, String srcSchemaName) {
-        DBObjectComparisonResult result = new DBObjectComparisonResult(DBObjectType.CONSTRAINT, tgtCons.getName(),
-                srcSchemaName, tgtCons.getSchemaName());
+    protected DBObjectComparisonResult buildOnlyInTargetResult(DBTableConstraint tgtDbObject, String srcSchemaName) {
+        DBObjectComparisonResult result = new DBObjectComparisonResult(DBObjectType.CONSTRAINT, tgtDbObject.getName(),
+                srcSchemaName, tgtDbObject.getSchemaName());
         result.setComparisonResult(ComparisonResult.ONLY_IN_TARGET);
         result.setChangeScript(appendDelimiterIfNotExist(
-                this.tgtConstraintEditor.generateDropObjectDDL(tgtCons)));
+                this.tgtConstraintEditor.generateDropObjectDDL(tgtDbObject)));
         return result;
     }
 
-    private DBObjectComparisonResult buildCreateConstraintResult(DBTableConstraint srcConstraint,
-            String tgtSchemaName) {
-        DBObjectComparisonResult result = new DBObjectComparisonResult(DBObjectType.CONSTRAINT, srcConstraint.getName(),
-                srcConstraint.getSchemaName(), tgtSchemaName);
+    @Override
+    protected DBObjectComparisonResult buildOnlyInSourceResult(DBTableConstraint srcDbObject, String tgtSchemaName) {
+        DBObjectComparisonResult result = new DBObjectComparisonResult(DBObjectType.CONSTRAINT, srcDbObject.getName(),
+                srcDbObject.getSchemaName(), tgtSchemaName);
         result.setComparisonResult(ComparisonResult.ONLY_IN_SOURCE);
 
-        DBTableConstraint copiedSrcCons = copySrcConstraintWithTgtSchemaName(srcConstraint, tgtSchemaName);
+        DBTableConstraint copiedSrcCons = copySrcConstraintWithTgtSchemaName(srcDbObject, tgtSchemaName);
         if (copiedSrcCons.getType().equals(DBConstraintType.FOREIGN_KEY)) {
             copiedSrcCons.setReferenceSchemaName(tgtSchemaName);
         }

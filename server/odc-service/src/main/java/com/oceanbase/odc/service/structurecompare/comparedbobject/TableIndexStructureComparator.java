@@ -15,11 +15,6 @@
  */
 package com.oceanbase.odc.service.structurecompare.comparedbobject;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
 import org.springframework.beans.BeanUtils;
 
 import com.oceanbase.odc.service.structurecompare.model.ComparisonResult;
@@ -35,63 +30,35 @@ import lombok.NonNull;
  * @date 2024/1/4
  * @since ODC_release_4.2.4
  */
-public class TableIndexStructureComparator implements DBObjectStructureComparator<DBTableIndex> {
+public class TableIndexStructureComparator extends AbstractDBObjectStructureComparator<DBTableIndex> {
 
     private DBTableIndexEditor targetTableIndexEditor;
-    private String srcSchemaName;
-    private String tgtSchemaName;
 
     public TableIndexStructureComparator(DBTableIndexEditor targetTableIndexEditor, String srcSchemaName,
             String tgtSchemaName) {
+        super(srcSchemaName, tgtSchemaName);
         this.targetTableIndexEditor = targetTableIndexEditor;
-        this.srcSchemaName = srcSchemaName;
-        this.tgtSchemaName = tgtSchemaName;
     }
 
     @Override
-    public List<DBObjectComparisonResult> compare(List<DBTableIndex> srcIndexes, List<DBTableIndex> tgtIndexes) {
-        List<DBObjectComparisonResult> returnVal = new ArrayList<>();
-        if (srcIndexes.isEmpty() && tgtIndexes.isEmpty()) {
-            return returnVal;
-        } else if (srcIndexes.isEmpty()) {
-            // indexes to be dropped
-            tgtIndexes.forEach(idx -> {
-                returnVal.add(buildDropIndexResult(idx, this.srcSchemaName));
-            });
-            return returnVal;
-        } else if (tgtIndexes.isEmpty()) {
-            // indexes to be created
-            srcIndexes.forEach(idx -> {
-                returnVal.add(buildCreateIndexResult(idx, this.tgtSchemaName));
-            });
-            return returnVal;
-        }
+    protected DBObjectComparisonResult buildOnlyInTargetResult(DBTableIndex tgtDbObject, String srcSchemaName) {
+        DBObjectComparisonResult result = new DBObjectComparisonResult(DBObjectType.INDEX, tgtDbObject.getName(),
+                srcSchemaName, tgtDbObject.getSchemaName());
+        result.setComparisonResult(ComparisonResult.ONLY_IN_TARGET);
+        result.setChangeScript(appendDelimiterIfNotExist(
+                targetTableIndexEditor.generateDropObjectDDL(tgtDbObject)));
+        return result;
+    }
 
-        List<String> srcIdxNames = srcIndexes.stream().map(DBTableIndex::getName).collect(Collectors.toList());
-        List<String> tgtIdxNames = tgtIndexes.stream().map(DBTableIndex::getName).collect(Collectors.toList());
-        Map<String, DBTableIndex> srcIdxMapping =
-                srcIndexes.stream().collect(Collectors.toMap(DBTableIndex::getName, col -> col));
-        Map<String, DBTableIndex> tgtIdxMapping =
-                tgtIndexes.stream().collect(Collectors.toMap(DBTableIndex::getName, col -> col));
-
-        tgtIdxNames.forEach(tgtIdxName -> {
-            if (!srcIdxNames.contains(tgtIdxName)) {
-                // index to be dropped
-                returnVal.add(buildDropIndexResult(tgtIdxMapping.get(tgtIdxName), this.srcSchemaName));
-            } else {
-                // index to be compared
-                returnVal.add(compare(srcIdxMapping.get(tgtIdxName), tgtIdxMapping.get(tgtIdxName)));
-            }
-        });
-
-        srcIdxNames.forEach(srcIdxName -> {
-            if (!tgtIdxNames.contains(srcIdxName)) {
-                // index to be created
-                returnVal.add(buildCreateIndexResult(srcIdxMapping.get(srcIdxName), this.tgtSchemaName));
-            }
-        });
-
-        return returnVal;
+    @Override
+    protected DBObjectComparisonResult buildOnlyInSourceResult(DBTableIndex srcDbObject, String tgtSchemaName) {
+        DBObjectComparisonResult result = new DBObjectComparisonResult(DBObjectType.INDEX, srcDbObject.getName(),
+                srcDbObject.getSchemaName(), tgtSchemaName);
+        result.setComparisonResult(ComparisonResult.ONLY_IN_SOURCE);
+        result.setChangeScript(appendDelimiterIfNotExist(
+                targetTableIndexEditor
+                        .generateCreateObjectDDL(copySrcIndexWithTgtSchemaName(srcDbObject, tgtSchemaName))));
+        return result;
     }
 
     @Override
@@ -109,25 +76,6 @@ public class TableIndexStructureComparator implements DBObjectStructureComparato
         } else {
             result.setComparisonResult(ComparisonResult.CONSISTENT);
         }
-        return result;
-    }
-
-    private DBObjectComparisonResult buildCreateIndexResult(DBTableIndex srcIndex, String tgtSchemaName) {
-        DBObjectComparisonResult result = new DBObjectComparisonResult(DBObjectType.INDEX, srcIndex.getName(),
-                srcIndex.getSchemaName(), tgtSchemaName);
-        result.setComparisonResult(ComparisonResult.ONLY_IN_SOURCE);
-        result.setChangeScript(appendDelimiterIfNotExist(
-                targetTableIndexEditor
-                        .generateCreateObjectDDL(copySrcIndexWithTgtSchemaName(srcIndex, tgtSchemaName))));
-        return result;
-    }
-
-    private DBObjectComparisonResult buildDropIndexResult(DBTableIndex tgtIndex, String srcSchemaName) {
-        DBObjectComparisonResult result = new DBObjectComparisonResult(DBObjectType.INDEX, tgtIndex.getName(),
-                srcSchemaName, tgtIndex.getSchemaName());
-        result.setComparisonResult(ComparisonResult.ONLY_IN_TARGET);
-        result.setChangeScript(appendDelimiterIfNotExist(
-                targetTableIndexEditor.generateDropObjectDDL(tgtIndex)));
         return result;
     }
 

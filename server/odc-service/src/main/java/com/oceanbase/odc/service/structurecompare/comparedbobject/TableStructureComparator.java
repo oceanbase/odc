@@ -216,10 +216,7 @@ public class TableStructureComparator implements DBObjectStructureComparator<DBT
         }
 
         DBObjectComparisonResult result = new DBObjectComparisonResult(DBObjectType.TABLE, sourceTable.getName(),
-                sourceTable.getSchemaName(), targetTable.getSchemaName());
-
-        String srcSchemaName = sourceTable.getSchemaName();
-        String tgtSchemaName = targetTable.getSchemaName();
+                this.srcSchemaName, this.tgtSchemaName);
 
         // compare table options
         SqlBuilder tableOptionDdl = getTargetDBSqlBuilder();
@@ -231,36 +228,10 @@ public class TableStructureComparator implements DBObjectStructureComparator<DBT
         result.setSourceDdl(sourceTable.getDDL());
         result.setTargetDdl(targetTable.getDDL());
 
-        // compare table columns
-        List<DBObjectComparisonResult> columns =
-                new TableColumnStructureComparator(
-                        (DBTableColumnEditor) this.tgtTableEditor.getColumnEditor(), srcSchemaName, tgtSchemaName)
-                                .compare(sourceTable.getColumns(), targetTable.getColumns());
-
-        // compare table index
-        List<DBObjectComparisonResult> indexes =
-                new TableIndexStructureComparator((DBTableIndexEditor) this.tgtTableEditor.getIndexEditor(),
-                        srcSchemaName, tgtSchemaName)
-                                .compare(
-                                        this.tgtTableEditor.excludePrimaryKeyIndex(sourceTable.getIndexes(),
-                                                sourceTable.getConstraints()),
-                                        this.tgtTableEditor.excludePrimaryKeyIndex(targetTable.getIndexes(),
-                                                targetTable.getConstraints()));
-
-        // compare table constraints
-        List<DBObjectComparisonResult> constraints = new TableConstraintStructureComparator(
-                (DBTableConstraintEditor) this.tgtTableEditor.getConstraintEditor(), srcSchemaName, tgtSchemaName)
-                        .compare(
-                                this.tgtTableEditor.excludeUniqueConstraint(sourceTable.getIndexes(),
-                                        sourceTable.getConstraints()),
-                                this.tgtTableEditor.excludeUniqueConstraint(targetTable.getIndexes(),
-                                        targetTable.getConstraints()));
-
-        // compare table partition
-        DBObjectComparisonResult partition =
-                new TablePartitionStructureComparator((DBTablePartitionEditor) this.tgtTableEditor.getPartitionEditor(),
-                        srcSchemaName, tgtSchemaName)
-                                .compare(sourceTable.getPartition(), targetTable.getPartition());
+        List<DBObjectComparisonResult> columns = compareTableColumns(sourceTable, targetTable);
+        List<DBObjectComparisonResult> indexes = compareTableIndexes(sourceTable, targetTable);
+        List<DBObjectComparisonResult> constraints = compareTableConstraints(sourceTable, targetTable);
+        DBObjectComparisonResult partition = compareTablePartition(sourceTable, targetTable);
 
         if (columns.stream().allMatch(item -> item.getComparisonResult().equals(ComparisonResult.CONSISTENT))
                 && indexes.stream().allMatch(item -> item.getComparisonResult().equals(ComparisonResult.CONSISTENT))
@@ -278,5 +249,37 @@ public class TableStructureComparator implements DBObjectStructureComparator<DBT
         result.getSubDBObjectComparisonResult().add(partition);
 
         return result;
+    }
+
+    private List<DBObjectComparisonResult> compareTableColumns(DBTable srcTable, DBTable tgtTable) {
+        return new TableColumnStructureComparator(
+                (DBTableColumnEditor) this.tgtTableEditor.getColumnEditor(), srcSchemaName, tgtSchemaName)
+                        .compare(srcTable.getColumns(), tgtTable.getColumns());
+    }
+
+    private List<DBObjectComparisonResult> compareTableIndexes(DBTable srcTable, DBTable tgtTable) {
+        return new TableIndexStructureComparator((DBTableIndexEditor) this.tgtTableEditor.getIndexEditor(),
+                srcSchemaName, tgtSchemaName)
+                        .compare(
+                                this.tgtTableEditor.excludePrimaryKeyIndex(srcTable.getIndexes(),
+                                        srcTable.getConstraints()),
+                                this.tgtTableEditor.excludePrimaryKeyIndex(tgtTable.getIndexes(),
+                                        tgtTable.getConstraints()));
+    }
+
+    private List<DBObjectComparisonResult> compareTableConstraints(DBTable srcTable, DBTable tgtTable) {
+        return new TableConstraintStructureComparator(
+                (DBTableConstraintEditor) this.tgtTableEditor.getConstraintEditor(), srcSchemaName, tgtSchemaName)
+                        .compare(
+                                this.tgtTableEditor.excludeUniqueConstraint(srcTable.getIndexes(),
+                                        srcTable.getConstraints()),
+                                this.tgtTableEditor.excludeUniqueConstraint(tgtTable.getIndexes(),
+                                        tgtTable.getConstraints()));
+    }
+
+    private DBObjectComparisonResult compareTablePartition(DBTable srcTable, DBTable tgtTable) {
+        return new TablePartitionStructureComparator((DBTablePartitionEditor) this.tgtTableEditor.getPartitionEditor(),
+                srcSchemaName, tgtSchemaName)
+                        .compare(srcTable.getPartition(), tgtTable.getPartition());
     }
 }
