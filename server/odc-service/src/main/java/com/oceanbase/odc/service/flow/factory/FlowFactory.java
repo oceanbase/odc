@@ -151,7 +151,15 @@ public class FlowFactory {
     public FlowTaskInstance generateFlowTaskInstance(@NonNull Long flowInstanceId, boolean isStartEndPoint,
             boolean isEndEndPoint, @NonNull TaskType taskType, @NonNull ExecutionStrategyConfig config) {
         return new FlowTaskInstance(taskType, authenticationFacade.currentOrganizationId(), flowInstanceId, config,
+<<<<<<< HEAD
+<<<<<<< HEAD
                 isStartEndPoint, isEndEndPoint, new OdcRuntimeDelegateMapper(), flowableAdaptor,
+=======
+                isStartEndPoint, isEndEndPoint, new OdcRuntimeDelegateMapper(taskFrameworkProperties), flowableAdaptor,
+>>>>>>> 51d5e485d (feat(taskframework): add pod config in meta-db and task legacy run model (#1367))
+=======
+                isStartEndPoint, isEndEndPoint, new OdcRuntimeDelegateMapper(), flowableAdaptor,
+>>>>>>> 848537093 (add config)
                 eventPublisher,
                 flowableTaskService, nodeRepository, sequenceRepository, serviceTaskRepository);
     }
@@ -257,7 +265,15 @@ public class FlowFactory {
         try {
             entity.setId(null);
             FlowTaskInstance target =
+<<<<<<< HEAD
+<<<<<<< HEAD
                     new FlowTaskInstance(entity, new OdcRuntimeDelegateMapper(),
+=======
+                    new FlowTaskInstance(entity, new OdcRuntimeDelegateMapper(taskFrameworkProperties),
+>>>>>>> 51d5e485d (feat(taskframework): add pod config in meta-db and task legacy run model (#1367))
+=======
+                    new FlowTaskInstance(entity, new OdcRuntimeDelegateMapper(),
+>>>>>>> 848537093 (add config)
                             flowableAdaptor, eventPublisher, flowableTaskService, nodeRepository, sequenceRepository,
                             serviceTaskRepository);
             setNameAndActivityId(id, target, nodes);

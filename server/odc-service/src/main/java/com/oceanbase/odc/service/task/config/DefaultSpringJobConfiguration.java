@@ -29,6 +29,13 @@ import com.oceanbase.odc.service.schedule.ScheduleTaskService;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.caller.K8sJobClient;
 import com.oceanbase.odc.service.task.dispatch.ImmediateJobDispatcher;
+<<<<<<< HEAD
+<<<<<<< HEAD
+=======
+import com.oceanbase.odc.service.task.enums.TaskRunModeEnum;
+>>>>>>> 51d5e485d (feat(taskframework): add pod config in meta-db and task legacy run model (#1367))
+=======
+>>>>>>> 848537093 (add config)
 import com.oceanbase.odc.service.task.schedule.DefaultJobImageNameProvider;
 import com.oceanbase.odc.service.task.schedule.HostUrlProvider;
 import com.oceanbase.odc.service.task.service.StdTaskFrameworkService;

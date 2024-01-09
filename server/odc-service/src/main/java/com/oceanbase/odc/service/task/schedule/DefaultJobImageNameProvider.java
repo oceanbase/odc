@@ -21,8 +21,18 @@ import java.util.List;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.service.info.InfoAdapter;
+<<<<<<< HEAD
+<<<<<<< HEAD
 import com.oceanbase.odc.service.task.config.K8sProperties;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
+=======
+import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
+import com.oceanbase.odc.service.task.config.TaskFrameworkProperties.K8sProperties;
+>>>>>>> 51d5e485d (feat(taskframework): add pod config in meta-db and task legacy run model (#1367))
+=======
+import com.oceanbase.odc.service.task.config.K8sProperties;
+import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
+>>>>>>> 848537093 (add config)
 import com.oceanbase.odc.service.task.constants.JobEnvConstants;
 
 /**
@@ -44,8 +54,18 @@ public class DefaultJobImageNameProvider implements JobImageNameProvider {
         K8sProperties k8s = taskFrameworkProperties.getK8s();
 
         List<String> candidateImages = new ArrayList<>();
+<<<<<<< HEAD
+<<<<<<< HEAD
         candidateImages.add(SystemUtils.getEnvOrProperty(JobEnvConstants.ODC_IMAGE_NAME));
         candidateImages.add(k8s.getPodImageName());
+=======
+        candidateImages.add(k8s.getPodImageName());
+        candidateImages.add(SystemUtils.getEnvOrProperty(JobEnvConstants.ODC_IMAGE_NAME));
+>>>>>>> 51d5e485d (feat(taskframework): add pod config in meta-db and task legacy run model (#1367))
+=======
+        candidateImages.add(SystemUtils.getEnvOrProperty(JobEnvConstants.ODC_IMAGE_NAME));
+        candidateImages.add(k8s.getPodImageName());
+>>>>>>> 27f7e016d (candidateImages first get from env)
         candidateImages.add("odc-server:" + infoAdapter.getBuildVersion());
 
         return candidateImages.stream().filter(StringUtils::isNotBlank).findFirst().get();

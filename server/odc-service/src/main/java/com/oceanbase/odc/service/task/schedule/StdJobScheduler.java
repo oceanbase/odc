@@ -56,11 +56,31 @@ public class StdJobScheduler implements JobScheduler {
     public StdJobScheduler(JobConfiguration configuration) {
         this.configuration = configuration;
         this.scheduler = configuration.getScheduler();
+<<<<<<< HEAD
+<<<<<<< HEAD
         validConfiguration(configuration);
         JobConfigurationHolder.setJobConfiguration(configuration);
 
         log.info("Job image name is {}", configuration.getJobImageNameProvider().provide());
         getEventPublisher().addEventListener(new DestroyJobListener(configuration));
+=======
+        PreConditions.notNull(configuration.getScheduler(), "quartz scheduler");
+        PreConditions.notNull(configuration.getJobDispatcher(), "job dispatcher");
+        PreConditions.notNull(configuration.getHostUrlProvider(), "host url provider");
+        PreConditions.notNull(configuration.getTaskFrameworkService(), "task framework service");
+        PreConditions.notNull(configuration.getJobImageNameProvider(), "job image name provider");
+=======
+        validConfiguration(configuration);
+>>>>>>> 3d1ad5653 (fix unit test)
+        JobConfigurationHolder.setJobConfiguration(configuration);
+
+        log.info("Job image name is {}", configuration.getJobImageNameProvider().provide());
+<<<<<<< HEAD
+        getEventPublisher().addEventListener(new DestroyJobListener(this));
+>>>>>>> 51d5e485d (feat(taskframework): add pod config in meta-db and task legacy run model (#1367))
+=======
+        getEventPublisher().addEventListener(new DestroyJobListener(configuration));
+>>>>>>> 4f6e19f81 (fix task is failed)
         getEventPublisher().addEventListener(new DefaultJobCallerListener(this));
         initDaemonJob();
     }

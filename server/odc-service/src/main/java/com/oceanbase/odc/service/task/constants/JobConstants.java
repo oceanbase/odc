@@ -31,7 +31,15 @@ public class JobConstants {
 
     public static final String TEMPLATE_BATCH_API_VERSION = "batch/v1";
 
+<<<<<<< HEAD
+<<<<<<< HEAD
     public static final String TEMPLATE_JOB_NAME_PREFIX = "odc-job-";
+=======
+    public static final String TEMPLATE_JOB_NAME_PREFIX = "odc-task-";
+>>>>>>> 848537093 (add config)
+=======
+    public static final String TEMPLATE_JOB_NAME_PREFIX = "odc-job-";
+>>>>>>> 4f6e19f81 (fix task is failed)
 
     public static final String RESTART_POLICY_NEVER = "Never";
 
