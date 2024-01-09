@@ -136,9 +136,11 @@ public class FlowResponseMapperFactoryTest extends ServiceTestEnv {
     @Test
     public void generateFlowInstanceDetailResp_entityInput_returnDesp() {
         FlowInstanceEntity instanceEntity = createFlowInstanceEntity();
+        TaskEntity taskEntity = TestRandom.nextObject(TaskEntity.class);
+        taskEntity.setTaskType(TaskType.ASYNC);
         FlowInstanceMapper mapper = FlowInstanceDetailResp.mapper()
                 .withApprovable(id -> false)
-                .withGetTaskByFlowInstanceId(id -> Collections.singleton(TestRandom.nextObject(TaskEntity.class)))
+                .withGetTaskByFlowInstanceId(id -> Collections.singleton(taskEntity))
                 .withGetUserById(id -> TestRandom.nextObject(UserEntity.class))
                 .withGetExecutionStrategyByFlowInstanceId(
                         id -> Collections.singletonList(TestRandom.nextObject(FlowTaskExecutionStrategy.class)))
