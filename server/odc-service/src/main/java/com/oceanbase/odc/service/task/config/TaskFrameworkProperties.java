@@ -42,6 +42,21 @@ public class TaskFrameworkProperties {
     @NestedConfigurationProperty
     private K8sProperties k8s = new K8sProperties();
 
+    // job will be timeout when last report time more than this duration
+    private int jobReportTimeoutSeconds = 10 * 60;
+
+    // single fetch job rows for schedule
+    private int singleFetchJobRowsForSchedule = 100;
+
+    // single fetch job rows to check report timeout or not
+    private int singleFetchJobRowsForCheckReportTimeout = 100;
+
+    // max fetch job rows to check there is expired between once job schedule
+    private int maxFetchJobRowsForCheckExpired = 2000;
+
+    // max retry times after report timeout
+    private int maxRetryTimesAfterReportTimeout = 3;
+
     @Data
     public static class K8sProperties {
         private String kubeUrl;

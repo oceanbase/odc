@@ -35,6 +35,7 @@ import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
 import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfiguration;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.constants.JobAttributeKeyConstants;
+import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.constants.JobDataMapConstants;
 import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.executor.logger.LogUtils;
@@ -50,9 +51,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public abstract class BaseTask implements Task {
 
-    private static final int REPORT_TASK_INFO_INTERVAL_SECONDS = 5;
-    private static final int REPORT_RESULT_RETRY_TIMES = 10;
-    private static final int REPORT_RESULT_RETRY_INTERVAL_SECONDS = 10;
+    private static final int REPORT_RESULT_RETRY_TIMES = Integer.MAX_VALUE;
     private static final int DEFAULT_TASK_TIMEOUT_MILLI_SECONDS = 48 * 60 * 60 * 1000;
 
     private JobContext context;
@@ -76,7 +75,7 @@ public abstract class BaseTask implements Task {
             onInit();
             initTaskMonitor();
             onStart();
-        } catch (Exception e) {
+        } catch (Throwable e) {
             log.info("Task failed, id: {}, details: {}", context.getJobIdentity().getId(), e);
             updateStatus(JobStatus.FAILED);
             onFail(e);
@@ -142,11 +141,11 @@ public abstract class BaseTask implements Task {
             } else {
                 try {
                     reportTaskResult();
-                } catch (Exception e) {
+                } catch (Throwable e) {
                     log.warn("Update task info failed, id: {}", getJobContext().getJobIdentity().getId(), e);
                 }
             }
-        }, 1, REPORT_TASK_INFO_INTERVAL_SECONDS, TimeUnit.SECONDS);
+        }, 1, JobConstants.REPORT_TASK_INFO_INTERVAL_SECONDS, TimeUnit.SECONDS);
         log.info("Task monitor init success");
     }
 
@@ -161,7 +160,7 @@ public abstract class BaseTask implements Task {
 
         log.info("Task id: {}, remained work be completed, report finished status.", getJobId());
         // Report finish signal to task server
-        reportTaskResultWithRetry(finalResult, REPORT_RESULT_RETRY_TIMES, REPORT_RESULT_RETRY_INTERVAL_SECONDS);
+        reportTaskResultWithRetry(finalResult, REPORT_RESULT_RETRY_TIMES);
         log.info("Task id: {} exit.", getJobId());
     }
 
@@ -221,21 +220,20 @@ public abstract class BaseTask implements Task {
                 getStatus(), String.format("%.2f", progress), getTaskResult());
     }
 
-    private void reportTaskResultWithRetry(TaskResult result, int retries, int intervalSeconds) {
+    private void reportTaskResultWithRetry(TaskResult result, int retries) {
         int retryTimes = 0;
-        while (retryTimes < retries) {
+        while (retryTimes++ < retries) {
             try {
-                retryTimes++;
                 boolean success = reporter.report(result);
                 if (success) {
                     log.info("Report task result successfully");
                     break;
                 } else {
                     log.warn("Report task result failed, will retry after {} seconds, remaining retries: {}",
-                            intervalSeconds, retries - retryTimes);
-                    Thread.sleep(intervalSeconds * 1000L);
+                            JobConstants.REPORT_TASK_INFO_INTERVAL_SECONDS, retries - retryTimes);
+                    Thread.sleep(JobConstants.REPORT_TASK_INFO_INTERVAL_SECONDS * 1000L);
                 }
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 log.warn("Report task result failed, taskId: {}", getJobId(), e);
             }
         }
@@ -261,6 +259,6 @@ public abstract class BaseTask implements Task {
 
     protected abstract void onStop();
 
-    protected abstract void onFail(Exception e);
+    protected abstract void onFail(Throwable e);
 
 }

@@ -13,30 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.task.schedule;
+package com.oceanbase.odc.service.task.util;
 
-import java.util.Map;
-
-import com.oceanbase.odc.service.task.executor.task.Task;
-
-import lombok.Builder;
-import lombok.Data;
+import java.util.Date;
 
 /**
  * @author yaobin
- * @date 2023-11-23
+ * @date 2024-01-04
  * @since 4.2.4
  */
-@Data
-@Builder
-public class DefaultJobDefinition implements JobDefinition {
+public class JobDateUtils {
 
-    private Class<? extends Task> jobClass;
-
-    private String jobType;
-
-    private Map<String, String> jobParameters;
-
-    private JobProperties jobProperties;
-
+    public static Date getCurrentDate() {
+        return new Date();
+    }
 }

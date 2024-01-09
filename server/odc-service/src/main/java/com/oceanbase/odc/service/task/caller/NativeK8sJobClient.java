@@ -96,7 +96,11 @@ public class NativeK8sJobClient implements K8sJobClient {
                     null, null);
             return createdJob.getMetadata().getName();
         } catch (ApiException e) {
-            throw new JobException(e.getResponseBody(), e);
+            if (e.getResponseBody() != null) {
+                throw new JobException(e.getResponseBody(), e);
+            } else {
+                throw new JobException("Create job occur error:", e);
+            }
         }
     }
 
