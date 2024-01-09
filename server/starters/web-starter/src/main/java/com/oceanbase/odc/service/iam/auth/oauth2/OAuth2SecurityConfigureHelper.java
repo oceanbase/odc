@@ -24,6 +24,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.DelegatingOAuth2UserService;
+import org.springframework.security.oauth2.client.web.OAuth2LoginAuthenticationFilter;
 import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.service.iam.auth.CustomAuthenticationFailureHandler;
@@ -67,5 +68,9 @@ public class OAuth2SecurityConfigureHelper {
                 .userService(new DelegatingOAuth2UserService<>(
                         Arrays.asList(this.oAuth2UserServiceImpl, new DefaultOAuth2UserService())))
                 .oidcUserService(oidcUserService);
+
+        http.addFilterBefore(
+                new OAuth2AbstractTestLoginAuthenticationFilter(),
+                OAuth2LoginAuthenticationFilter.class);
     }
 }

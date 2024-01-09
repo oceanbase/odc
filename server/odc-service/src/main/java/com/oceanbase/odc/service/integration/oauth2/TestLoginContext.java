@@ -15,39 +15,25 @@
  */
 package com.oceanbase.odc.service.integration.oauth2;
 
-import static com.oceanbase.odc.service.integration.model.SSOIntegrationConfig.parseRegistrationName;
-
-import javax.servlet.http.HttpServletRequest;
+import java.util.function.Supplier;
 
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 public final class TestLoginContext {
 
-    private static final String REGISTRATION_ID_URI_VARIABLE_NAME = "registrationId";
-    private static final AntPathRequestMatcher authorizationRequestMatcher = new AntPathRequestMatcher(
-            "/login/oauth2/code" + "/{" + REGISTRATION_ID_URI_VARIABLE_NAME + "}");
     private static final ThreadLocal<SecurityContext> TEST_SECURITY_CONTEXT_HOLDER = new ThreadLocal<>();
 
     private TestLoginContext() {}
 
-    public static boolean isTestLoginRequest(HttpServletRequest request) {
-        String registrationId = resolveRegistrationId(request);
-        if (registrationId == null) {
-            return false;
-        }
-        return "test".equals(parseRegistrationName(registrationId));
-    }
-
-    public static void stashTestLoginSecurityContext(HttpServletRequest request) {
-        if (isTestLoginRequest(request)) {
+    public static void stashTestLoginSecurityContext(Supplier<Boolean> isTestRequest) {
+        if (Boolean.TRUE.equals(isTestRequest.get())) {
             TEST_SECURITY_CONTEXT_HOLDER.set(SecurityContextHolder.getContext());
         }
     }
 
-    public static void restoreTestLoginSecurityContext(HttpServletRequest request) {
-        if (isTestLoginRequest(request)) {
+    public static void restoreTestLoginSecurityContext(Supplier<Boolean> isTestRequest) {
+        if (Boolean.TRUE.equals(isTestRequest.get())) {
             SecurityContextHolder.setContext(TEST_SECURITY_CONTEXT_HOLDER.get());
         }
     }
@@ -56,11 +42,4 @@ public final class TestLoginContext {
         TEST_SECURITY_CONTEXT_HOLDER.remove();
     }
 
-    private static String resolveRegistrationId(HttpServletRequest request) {
-        if (authorizationRequestMatcher.matches(request)) {
-            return authorizationRequestMatcher.matcher(request).getVariables()
-                    .get(REGISTRATION_ID_URI_VARIABLE_NAME);
-        }
-        return null;
-    }
 }

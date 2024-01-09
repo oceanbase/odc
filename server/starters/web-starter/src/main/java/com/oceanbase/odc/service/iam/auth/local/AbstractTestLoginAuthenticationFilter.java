@@ -29,24 +29,32 @@ import com.oceanbase.odc.service.integration.oauth2.TestLoginManager;
 
 /**
  * test login with terminate when user info has been
- * obtained；{@link TestLoginManager#abortIfTestLoginTest} Default OAuth2LoginAuthenticationFilter
- * login failure handling will clean up security context
+ * obtained；{@link TestLoginManager#abortIfOAuthTestLoginTest} Default
+ * OAuth2LoginAuthenticationFilter login failure handling will clean up security context
  * {@link AbstractAuthenticationProcessingFilter#unsuccessfulAuthentication(HttpServletRequest, HttpServletResponse, AuthenticationException)},
  * will cause the original login state failure。
  * {@link HttpSessionSecurityContextRepository.SaveToSessionResponseWrapper#saveContext(SecurityContext context)},
  * 
  */
-public class TestLoginAuthenticationFilter extends OncePerRequestFilter {
+public abstract class AbstractTestLoginAuthenticationFilter extends OncePerRequestFilter {
+
+    protected abstract Boolean isTestRequest(HttpServletRequest request);
+
+    protected void finallyCallback() {
+
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
         try {
-            TestLoginContext.stashTestLoginSecurityContext(request);
+            TestLoginContext.stashTestLoginSecurityContext(() -> isTestRequest(request));
             filterChain.doFilter(request, response);
-            TestLoginContext.restoreTestLoginSecurityContext(request);
+            TestLoginContext.restoreTestLoginSecurityContext(() -> isTestRequest(request));
         } finally {
             TestLoginContext.removeSecurityContext();
+            finallyCallback();
         }
     }
+
 }

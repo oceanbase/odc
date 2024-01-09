@@ -59,6 +59,7 @@ public class SSOIntegrationConfig implements Serializable {
     @JsonSubTypes(value = {
             @JsonSubTypes.Type(value = Oauth2Parameter.class, name = "OAUTH2"),
             @JsonSubTypes.Type(value = OidcParameter.class, names = "OIDC"),
+            @JsonSubTypes.Type(value = LdapParameter.class, names = "LDAP"),
     })
     SSOParameter ssoParameter;
 
@@ -68,6 +69,9 @@ public class SSOIntegrationConfig implements Serializable {
         return ImmutableSet.of("OAUTH2", "OIDC").contains(type);
     }
 
+    public boolean isLdap() {
+        return Objects.equals(type, "LDAP");
+    }
 
     public static SSOIntegrationConfig of(IntegrationConfig integrationConfig, Long organizationId) {
         SSOIntegrationConfig ssoIntegrationConfig =
@@ -83,6 +87,13 @@ public class SSOIntegrationConfig implements Serializable {
                 parameter.setName(integrationConfig.getName());
                 parameter.fillParameter();
                 parameter.setSecret(integrationConfig.getEncryption().getSecret());
+                break;
+            case "LDAP":
+                Preconditions.checkArgument(integrationConfig.getEncryption().getEnabled()
+                        && integrationConfig.getEncryption().getAlgorithm()
+                                .equals(EncryptionAlgorithm.RAW));
+                LdapParameter ldapParameter = (LdapParameter) ssoIntegrationConfig.getSsoParameter();
+                ldapParameter.setManagerPassword(integrationConfig.getEncryption().getSecret());
                 break;
             default:
                 throw new UnsupportedOperationException("unknown type=" + ssoIntegrationConfig.getType());
@@ -110,9 +121,16 @@ public class SSOIntegrationConfig implements Serializable {
     public String resolveRegistrationId() {
         if (isOauth2OrOidc()) {
             return ((Oauth2Parameter) ssoParameter).getRegistrationId();
+        } else if (isLdap()) {
+            return ((LdapParameter) ssoParameter).getRegistrationId();
         } else {
             throw new UnsupportedOperationException();
+
         }
+    }
+
+    public Long resolveOrganizationId() {
+        return parseOrganizationId(resolveRegistrationId());
     }
 
     @Getter
@@ -165,6 +183,9 @@ public class SSOIntegrationConfig implements Serializable {
     public void fillDecryptSecret(String decryptSecret) {
         if (isOauth2OrOidc()) {
             ((Oauth2Parameter) ssoParameter).setSecret(decryptSecret);
+        }
+        if (isLdap()) {
+            ((LdapParameter) ssoParameter).setManagerPassword(decryptSecret);
         }
     }
 

@@ -13,25 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.integration.model;
+package com.oceanbase.odc.service.iam.auth.local;
 
-/**
- * @author gaoda.xy
- * @date 2023/3/31 10:51
- */
-public enum IntegrationType {
-    /**
-     * External approval system
-     */
-    APPROVAL,
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 
-    /**
-     * External SQL interceptor system
-     */
-    SQL_INTERCEPTOR,
+public class LocalPasswordAuthenticationToken extends UsernamePasswordAuthenticationToken {
 
-    /**
-     * sso integration， OAuth、OIDC,LDAP
-     */
-    SSO,
+    public LocalPasswordAuthenticationToken(Object principal, Object credentials) {
+        super(principal, credentials);
+    }
 }

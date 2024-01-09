@@ -51,7 +51,7 @@ public class AddableClientRegistrationManager implements ClientRegistrationRepos
     @Override
     public void afterPropertiesSet() {
         SSOIntegrationConfig sSoClientRegistration = integrationService.getSSoIntegrationConfig();
-        if (sSoClientRegistration != null) {
+        if (sSoClientRegistration != null && sSoClientRegistration.isOauth2OrOidc()) {
             configRegistrations.put(sSoClientRegistration.resolveRegistrationId(), sSoClientRegistration);
             clientRegistrations.put(sSoClientRegistration.resolveRegistrationId(),
                     sSoClientRegistration.toClientRegistration());

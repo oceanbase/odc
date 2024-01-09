@@ -13,25 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.integration.model;
+package com.oceanbase.odc.service.iam.auth.local;
 
-/**
- * @author gaoda.xy
- * @date 2023/3/31 10:51
- */
-public enum IntegrationType {
-    /**
-     * External approval system
-     */
-    APPROVAL,
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 
-    /**
-     * External SQL interceptor system
-     */
-    SQL_INTERCEPTOR,
+public class LocalDaoAuthenticationProvider extends DaoAuthenticationProvider {
 
-    /**
-     * sso integration， OAuth、OIDC,LDAP
-     */
-    SSO,
+    public LocalDaoAuthenticationProvider() {
+        super();
+    }
+
+
+    @Override
+    public boolean supports(Class<?> authentication) {
+        return authentication.isAssignableFrom(LocalPasswordAuthenticationToken.class);
+    }
+
 }

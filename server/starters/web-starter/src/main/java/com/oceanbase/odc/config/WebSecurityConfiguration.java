@@ -21,13 +21,11 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.oauth2.client.web.OAuth2LoginAuthenticationFilter;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.servlet.LocaleResolver;
 
@@ -44,9 +42,14 @@ import com.oceanbase.odc.service.iam.auth.UsernamePasswordConfigureHelper;
 import com.oceanbase.odc.service.iam.auth.bastion.BastionAuthenticationProcessingFilter;
 import com.oceanbase.odc.service.iam.auth.bastion.BastionAuthenticationProvider;
 import com.oceanbase.odc.service.iam.auth.bastion.BastionUserDetailService;
-import com.oceanbase.odc.service.iam.auth.local.TestLoginAuthenticationFilter;
+import com.oceanbase.odc.service.iam.auth.ldap.LdapSecurityConfigureHelper;
+import com.oceanbase.odc.service.iam.auth.ldap.LdapUserDetailsContextMapper;
+import com.oceanbase.odc.service.iam.auth.ldap.ODCLdapAuthenticationProvider;
+import com.oceanbase.odc.service.iam.auth.ldap.ODCLdapAuthenticator;
+import com.oceanbase.odc.service.iam.auth.local.LocalDaoAuthenticationProvider;
 import com.oceanbase.odc.service.iam.auth.oauth2.OAuth2SecurityConfigureHelper;
 import com.oceanbase.odc.service.iam.util.FailedLoginAttemptLimiter;
+import com.oceanbase.odc.service.integration.ldap.LdapConfigRegistrationManager;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -98,10 +101,20 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
     private UsernamePasswordConfigureHelper usernamePasswordConfigureHelper;
 
     @Autowired
-    private DaoAuthenticationProvider daoAuthenticationProvider;
+    private LocalDaoAuthenticationProvider localDaoAuthenticationProvider;
 
     @Autowired
     private OAuth2SecurityConfigureHelper oauth2SecurityConfigureHelper;
+
+
+    @Autowired
+    private LdapSecurityConfigureHelper ldapSecurityConfigureHelper;
+
+    @Autowired
+    private LdapUserDetailsContextMapper ldapUserDetailsContextMapper;
+
+    @Autowired
+    private LdapConfigRegistrationManager ldapConfigRegistrationManager;
 
     private BastionAuthenticationProvider bastionAuthenticationProvider() {
         return new BastionAuthenticationProvider(bastionUserDetailService);
@@ -109,8 +122,11 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
 
     @Override
     public void configure(AuthenticationManagerBuilder auth) {
-        auth.authenticationProvider(daoAuthenticationProvider)
-                .authenticationProvider(bastionAuthenticationProvider());
+        auth.authenticationProvider(localDaoAuthenticationProvider)
+                .authenticationProvider(bastionAuthenticationProvider())
+                .authenticationProvider(
+                        new ODCLdapAuthenticationProvider(new ODCLdapAuthenticator(ldapConfigRegistrationManager),
+                                ldapUserDetailsContextMapper));
     }
 
     @Override
@@ -126,6 +142,8 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
 
         usernamePasswordConfigureHelper.configure(http, authenticationManager());
         oauth2SecurityConfigureHelper.configure(http);
+        ldapSecurityConfigureHelper.configure(http, authenticationManager());
+
         // @formatter:off
         http.exceptionHandling()
                 .authenticationEntryPoint(new CustomAuthenticationEntryPoint(commonSecurityProperties.getLoginPage(),localeResolver))
@@ -148,10 +166,6 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
 
         // @formatter:on
         csrfConfigureHelper.configure(http);
-
-        http.addFilterBefore(
-                new TestLoginAuthenticationFilter(),
-                OAuth2LoginAuthenticationFilter.class);
 
         if (bastionProperties.getAccount().isAutoLoginEnabled()) {
             http.addFilterBefore(bastionAuthenticationProcessingFilter(authenticationManager()),

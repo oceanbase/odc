@@ -13,25 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.integration.model;
+package com.oceanbase.odc.service.iam.auth.oauth2;
 
-/**
- * @author gaoda.xy
- * @date 2023/3/31 10:51
- */
-public enum IntegrationType {
-    /**
-     * External approval system
-     */
-    APPROVAL,
+import javax.servlet.http.HttpServletRequest;
 
-    /**
-     * External SQL interceptor system
-     */
-    SQL_INTERCEPTOR,
+import com.oceanbase.odc.service.iam.auth.local.AbstractTestLoginAuthenticationFilter;
+import com.oceanbase.odc.service.integration.oauth2.TestLoginManager;
 
-    /**
-     * sso integration， OAuth、OIDC,LDAP
-     */
-    SSO,
+public class OAuth2AbstractTestLoginAuthenticationFilter extends AbstractTestLoginAuthenticationFilter {
+
+    @Override
+    protected Boolean isTestRequest(HttpServletRequest request) {
+        return TestLoginManager.isOAuthTestLoginRequest(request);
+    }
 }

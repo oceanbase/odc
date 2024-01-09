@@ -91,7 +91,7 @@ public class IntegrationService {
     private AuthenticationFacade authenticationFacade;
 
     @Autowired
-    private IntegrationConfigurationValidator configurationValidator;
+    private IntegrationConfigurationValidatorDelegate integrationConfigurationValidatorDelegate;
 
     @Autowired
     private HorizontalDataPermissionValidator permissionValidator;
@@ -132,13 +132,7 @@ public class IntegrationService {
                 .findByNameAndTypeAndOrganizationId(config.getName(), config.getType(), organizationId);
         PreConditions.validNoDuplicated(ResourceType.ODC_EXTERNAL_APPROVAL, "name", config.getName(),
                 existsEntity::isPresent);
-        if (config.getType() == IntegrationType.APPROVAL) {
-            configurationValidator.check(ApprovalProperties.from(config));
-        } else if (config.getType() == IntegrationType.SQL_INTERCEPTOR) {
-            configurationValidator.check(SqlInterceptorProperties.from(config));
-        } else if (config.getType() == IntegrationType.SSO) {
-            configurationValidator.checkAndFillConfig(config, organizationId, config.getEnabled(), null);
-        }
+        integrationConfigurationValidatorDelegate.preProcessConfig(config);
         Encryption encryption = config.getEncryption();
         encryption.check();
         applicationContext.publishEvent(IntegrationEvent.createPreCreate(config));
@@ -221,18 +215,11 @@ public class IntegrationService {
     public IntegrationConfig update(@NotNull Long id, @NotNull @Valid IntegrationConfig config) {
         IntegrationEntity entity = nullSafeGet(id);
         permissionValidator.checkCurrentOrganization(new IntegrationConfig(entity));
-        if (entity.getBuiltin()) {
+        if (Boolean.TRUE.equals(entity.getBuiltin())) {
             throw new UnsupportedException(ErrorCodes.IllegalOperation, new Object[] {"builtin integration"},
                     "Operation on builtin integration is not allowed");
         }
-        if (config.getType() == IntegrationType.APPROVAL) {
-            configurationValidator.check(ApprovalProperties.from(config));
-        } else if (config.getType() == IntegrationType.SQL_INTERCEPTOR) {
-            configurationValidator.check(SqlInterceptorProperties.from(config));
-        } else if (config.getType() == IntegrationType.SSO) {
-            configurationValidator.checkAndFillConfig(config,
-                    authenticationFacade.currentOrganizationId(), config.getEnabled(), entity.getId());
-        }
+        integrationConfigurationValidatorDelegate.preProcessConfig(config);
         Encryption encryption = config.getEncryption();
         applicationContext.publishEvent(
                 IntegrationEvent.createPreUpdate(config, new IntegrationConfig(entity), entity.getSalt()));
@@ -351,12 +338,9 @@ public class IntegrationService {
     public SSOIntegrationConfig getSSOIntegrationConfig(IntegrationEntity integrationEntity) {
         SSOIntegrationConfig ssoIntegrationConfig =
                 JsonUtils.fromJson(integrationEntity.getConfiguration(), SSOIntegrationConfig.class);
-        if (ssoIntegrationConfig.isOauth2OrOidc()) {
-            ssoIntegrationConfig.fillDecryptSecret(decodeSecret(integrationEntity.getSecret(),
-                    integrationEntity.getSalt(), integrationEntity.getOrganizationId()));
-            return ssoIntegrationConfig;
-        }
-        return null;
+        ssoIntegrationConfig.fillDecryptSecret(decodeSecret(integrationEntity.getSecret(),
+                integrationEntity.getSalt(), integrationEntity.getOrganizationId()));
+        return ssoIntegrationConfig;
     }
 
 
