@@ -31,6 +31,6 @@ public class CloudObjectStorageServiceBuilder {
     public static CloudObjectStorageService build(ObjectStorageConfiguration storageConfig) {
         CloudClient cloudClient =
                 new CloudResourceConfigurations.CloudClientBuilder().generateCloudClient(storageConfig);
-        return new CloudObjectStorageService(cloudClient, storageConfig);
+        return new CloudObjectStorageService(cloudClient, cloudClient, storageConfig);
     }
 }

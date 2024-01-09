@@ -238,7 +238,6 @@ public class FlowTaskInstanceService {
         return taskService.getLog(taskEntity.getCreatorId(), taskEntity.getId() + "", taskEntity.getTaskType(), level);
     }
 
-
     public List<? extends FlowTaskResult> getResult(@NotNull Long id) throws IOException {
         TaskEntity task = flowInstanceService.getTaskByFlowInstanceId(id);
         if (task.getTaskType() == TaskType.ONLINE_SCHEMA_CHANGE) {
@@ -458,7 +457,7 @@ public class FlowTaskInstanceService {
             List<MockDataTaskResult> details = getMockDataResult(taskEntity);
             Verify.singleton(details, "MockDataDetail");
 
-            String objectName = ossTaskReferManager.get(taskEntity.getId() + "");
+            String objectName = details.get(0).getObjectName();
             PreConditions.validExists(ResourceType.ODC_FILE, "taskId", taskEntity.getId(),
                     () -> StringUtils.isNotBlank(objectName));
             URL url = generatePresignedUrl(objectName, expirationSecs);
@@ -470,8 +469,7 @@ public class FlowTaskInstanceService {
             List<DataTransferTaskResult> taskResults = getDataTransferResult(taskEntity);
             Verify.singleton(taskResults, "DataTransferTaskResult");
 
-            DataTransferTaskResult taskResult = taskResults.get(0);
-            String objectName = ossTaskReferManager.get(taskResult.getExportZipFilePath());
+            String objectName = taskResults.get(0).getExportZipFilePath();
             PreConditions.validExists(ResourceType.ODC_FILE, "taskId", taskEntity.getId(),
                     () -> StringUtils.isNotBlank(objectName));
             URL url = generatePresignedUrl(objectName, expirationSecs);
@@ -482,7 +480,7 @@ public class FlowTaskInstanceService {
         } else if (taskEntity.getTaskType() == TaskType.EXPORT_RESULT_SET) {
             List<ResultSetExportResult> results = getResultSetExportResult(taskEntity);
             Verify.singleton(results, "ResultSetExportResult");
-            String objectName = ossTaskReferManager.get(results.get(0).getFileName());
+            String objectName = results.get(0).getFileName();
             PreConditions.validExists(ResourceType.ODC_FILE, "taskId", taskEntity.getId(),
                     () -> StringUtils.isNotBlank(objectName));
             return Collections.singletonList(generatePresignedUrl(objectName, expirationSecs));
@@ -614,12 +612,13 @@ public class FlowTaskInstanceService {
             result.setRecords(Collections.emptyList());
         }
         if (StringUtils.isNotEmpty(result.getJsonFileName())) {
-            String jsonFileName = result.getJsonFileName();
-            File jsonFile = new File(String.format("%s/ASYNC/%s.json", FileManager.basePath, jsonFileName));
-            BasicFileAttributes attributes = Files.readAttributes(jsonFile.toPath(), BasicFileAttributes.class);
-            if (jsonFile.exists() && attributes.isRegularFile()) {
-                result.setResultPreviewMaxSizeBytes(resultPreviewMaxSizeBytes);
-                result.setJsonFileBytes(attributes.size());
+            File jsonFile = new File(String.format("%s/ASYNC/%s.json", FileManager.basePath, result.getJsonFileName()));
+            if (jsonFile.exists()) {
+                BasicFileAttributes attributes = Files.readAttributes(jsonFile.toPath(), BasicFileAttributes.class);
+                if (attributes.isRegularFile()) {
+                    result.setResultPreviewMaxSizeBytes(resultPreviewMaxSizeBytes);
+                    result.setJsonFileBytes(attributes.size());
+                }
             }
         }
         if (cloudObjectStorageService.supported()) {

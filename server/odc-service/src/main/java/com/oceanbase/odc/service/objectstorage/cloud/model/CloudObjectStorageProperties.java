@@ -30,7 +30,8 @@ import lombok.Data;
 public class CloudObjectStorageProperties {
     private CloudProvider provider = CloudProvider.NONE;
     private String region;
-    private String endpoint;
+    private String publicEndpoint;
+    private String internalEndpoint;
     private String accessKeyId;
     private String accessKeySecret;
     private String bucketName;

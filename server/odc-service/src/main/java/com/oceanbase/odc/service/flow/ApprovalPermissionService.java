@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.flow;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -98,18 +99,19 @@ public class ApprovalPermissionService {
         long userId = authenticationFacade.currentUserId();
         Set<Long> roleIds = userService.getCurrentUserRoleIds();
         Set<String> resourceRoleIdentifiers = userService.getCurrentUserResourceRoleIdentifiers();
+        Set<FlowNodeStatus> unViewableStatuses = Collections.singleton(FlowNodeStatus.CREATED);
         List<UserTaskInstanceEntity> userTaskInstanceEntities = new ArrayList<>();
         if (CollectionUtils.isNotEmpty(resourceRoleIdentifiers)) {
-            userTaskInstanceEntities
-                    .addAll(userTaskInstanceRepository.findByResourceRoleIdentifierIn(resourceRoleIdentifiers));
+            userTaskInstanceEntities.addAll(userTaskInstanceRepository
+                    .findByStatusNotInAndResourceRoleIdentifierIn(unViewableStatuses, resourceRoleIdentifiers));
         }
         if (CollectionUtils.isEmpty(roleIds)) {
             if (CollectionUtils.isEmpty(resourceRoleIdentifiers)) {
                 userTaskInstanceEntities.addAll(userTaskInstanceRepository.findByCandidateUserId(userId));
             } else {
                 userTaskInstanceEntities
-                        .addAll(userTaskInstanceRepository.findByCandidateUserIdOrResourceRoleIdentifier(userId,
-                                resourceRoleIdentifiers));
+                        .addAll(userTaskInstanceRepository.findByStatusNotInAndCandidateUserIdOrResourceRoleIdentifier(
+                                unViewableStatuses, userId, resourceRoleIdentifiers));
             }
         } else {
             userTaskInstanceEntities.addAll(userTaskInstanceRepository.findByCandidateUserIdOrRoleIds(userId, roleIds));

@@ -42,7 +42,10 @@ public class OssConfiguration {
     private String regionId;
 
     @Value("${odc.oss.public-endpoint:#{null}}")
-    private String endpoint;
+    private String publicEndpoint;
+
+    @Value("${odc.oss.inner-endpoint:#{null}}")
+    private String internalEndpoint;
 
     @Value("${odc.oss.arn-role:#{null}}")
     private String arnRole;

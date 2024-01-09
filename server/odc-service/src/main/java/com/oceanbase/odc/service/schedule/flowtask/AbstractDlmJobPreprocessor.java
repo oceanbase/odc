@@ -78,7 +78,7 @@ public class AbstractDlmJobPreprocessor implements Preprocessor {
     public void checkTableAndCondition(ConnectionSession connectionSession, Database sourceDb,
             List<DataArchiveTableConfig> tables,
             List<OffsetConfig> variables) {
-        checkPrimaryKey(connectionSession, sourceDb.getName(), tables);
+        checkShardKey(connectionSession, sourceDb.getName(), tables);
         Map<DataArchiveTableConfig, String> sqlMap = getDataArchiveSqls(sourceDb, tables, variables);
         checkDataArchiveSql(connectionSession, sqlMap);
     }
@@ -89,14 +89,14 @@ public class AbstractDlmJobPreprocessor implements Preprocessor {
         }
     }
 
-    private void checkPrimaryKey(ConnectionSession connectionSession, String databaseName,
+    private void checkShardKey(ConnectionSession connectionSession, String databaseName,
             List<DataArchiveTableConfig> tables) {
         SyncJdbcExecutor syncJdbcExecutor = connectionSession.getSyncJdbcExecutor(
                 ConnectionSessionConstants.CONSOLE_DS_KEY);
         SqlBuilder sqlBuilder = new MySQLSqlBuilder();
-        sqlBuilder.append("select table_name from information_schema.COLUMNS where ");
-        sqlBuilder.append(String.format("table_schema='%s' ", databaseName));
-        sqlBuilder.append("and column_key = 'PRI' group by table_name;");
+        sqlBuilder.append(
+                "SELECT TABLE_NAME from INFORMATION_SCHEMA.STATISTICS where NON_UNIQUE = 0 AND NULLABLE != 'YES' ");
+        sqlBuilder.append(String.format("AND TABLE_SCHEMA='%s' GROUP BY TABLE_NAME", databaseName));
         HashSet<String> tableNames =
                 new HashSet<>(syncJdbcExecutor.query(sqlBuilder.toString(), (rs, num) -> rs.getString(1)));
         tables.forEach(tableConfig -> {
