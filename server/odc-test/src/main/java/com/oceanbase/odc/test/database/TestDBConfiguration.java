@@ -25,12 +25,14 @@ import com.oceanbase.odc.test.cli.MysqlClientArgsParser;
 import com.oceanbase.odc.test.util.JdbcUtil;
 
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * @author gaoda.xy
  * @date 2023/2/17 10:47
  */
 @Data
+@NoArgsConstructor
 public class TestDBConfiguration {
     private DataSource dataSource;
     private TestDBType type;
@@ -65,7 +67,7 @@ public class TestDBConfiguration {
         initDataSource();
     }
 
-    private void initDataSource() {
+    public void initDataSource() {
         DruidDataSource dataSource = new DruidDataSource();
         dataSource.setUrl(JdbcUtil.buildUrl(host, port, defaultDBName, type));
         dataSource.setUsername(JdbcUtil.buildUser(username, tenant, cluster));
