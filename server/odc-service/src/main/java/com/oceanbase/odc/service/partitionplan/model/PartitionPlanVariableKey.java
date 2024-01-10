@@ -18,14 +18,14 @@ package com.oceanbase.odc.service.partitionplan.model;
 import com.oceanbase.odc.common.i18n.Translatable;
 
 /**
- * {@link PartitionPlanSubstitutorKey}
+ * {@link PartitionPlanVariableKey}
  *
  * @author yh263208
  * @date 2024-01-09 16:03
  * @since ODC_release_4.2.4
  * @see com.oceanbase.odc.common.i18n.Translatable
  */
-public enum PartitionPlanSubstitutorKey implements Translatable {
+public enum PartitionPlanVariableKey implements Translatable {
     /**
      * the value it depends on user's input
      */

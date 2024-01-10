@@ -35,8 +35,8 @@ import com.oceanbase.odc.service.partitionplan.PartitionPlanService;
 import com.oceanbase.odc.service.partitionplan.model.DatabasePartitionPlan;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanDBTable;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanPreViewResp;
-import com.oceanbase.odc.service.partitionplan.model.PartitionPlanSubstitutor;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanTableConfig;
+import com.oceanbase.odc.service.partitionplan.model.PartitionPlanVariable;
 
 /**
  * @Author：tianke
@@ -62,8 +62,8 @@ public class PartitionPlanController {
         return Responses.success(partitionPlanService.hasConnectionPartitionPlan(databaseId));
     }
 
-    @GetMapping(value = "/substitutors")
-    public ListResponse<PartitionPlanSubstitutor> getSupportedSubstitutor() {
+    @GetMapping(value = "/supportedVariables")
+    public ListResponse<PartitionPlanVariable> getSupportedVariables() {
         throw new NotImplementedException();
     }
 
@@ -75,7 +75,7 @@ public class PartitionPlanController {
     }
 
     @PostMapping(value = "/sessions/{sessionId}/preView")
-    public ListResponse<PartitionPlanPreViewResp> preViewResp(@RequestBody List<PartitionPlanTableConfig> tableConfigs,
+    public ListResponse<PartitionPlanPreViewResp> getPreView(@RequestBody List<PartitionPlanTableConfig> tableConfigs,
             @RequestParam(name = "onlyForPartitionName", defaultValue = "false") Boolean onlyForPartitionName) {
         throw new NotImplementedException();
     }

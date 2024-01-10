@@ -20,17 +20,17 @@ import org.springframework.context.i18n.LocaleContextHolder;
 import lombok.NonNull;
 
 /**
- * {@link PartitionPlanSubstitutor}
+ * {@link PartitionPlanVariable}
  *
  * @author yh263208
  * @date 2024-01-09 16:14
  * @since ODC_release_4.2.4
  */
-public class PartitionPlanSubstitutor {
+public class PartitionPlanVariable {
 
-    private final PartitionPlanSubstitutorKey key;
+    private final PartitionPlanVariableKey key;
 
-    public PartitionPlanSubstitutor(@NonNull PartitionPlanSubstitutorKey key) {
+    public PartitionPlanVariable(@NonNull PartitionPlanVariableKey key) {
         this.key = key;
     }
 
