@@ -15,16 +15,28 @@
  */
 package com.oceanbase.odc.server.web.controller.v2;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.oceanbase.odc.core.shared.exception.NotImplementedException;
+import com.oceanbase.odc.service.common.response.ListResponse;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.partitionplan.PartitionPlanService;
 import com.oceanbase.odc.service.partitionplan.model.DatabasePartitionPlan;
+import com.oceanbase.odc.service.partitionplan.model.PartitionPlanDBTable;
+import com.oceanbase.odc.service.partitionplan.model.PartitionPlanPreViewResp;
+import com.oceanbase.odc.service.partitionplan.model.PartitionPlanSubstitutor;
+import com.oceanbase.odc.service.partitionplan.model.PartitionPlanTableConfig;
 
 /**
  * @Author：tianke
@@ -48,6 +60,24 @@ public class PartitionPlanController {
     @RequestMapping(value = "/partitionPlans/exists", method = RequestMethod.GET)
     public SuccessResponse<Boolean> exist(@RequestParam("databaseId") Long databaseId) {
         return Responses.success(partitionPlanService.hasConnectionPartitionPlan(databaseId));
+    }
+
+    @GetMapping(value = "/substitutors")
+    public ListResponse<PartitionPlanSubstitutor> getSupportedSubstitutor() {
+        throw new NotImplementedException();
+    }
+
+    @GetMapping(value = "/sessions/{sessionId}/databases/{databaseName}/tables")
+    public ListResponse<PartitionPlanDBTable> listTables(@PathVariable String sessionId,
+            @PathVariable String databaseName,
+            @RequestParam(required = false, name = "tableName") List<String> tableNames) {
+        throw new NotImplementedException();
+    }
+
+    @PostMapping(value = "/sessions/{sessionId}/preView")
+    public ListResponse<PartitionPlanPreViewResp> preViewResp(@RequestBody List<PartitionPlanTableConfig> tableConfigs,
+            @RequestParam(name = "onlyForPartitionName", defaultValue = "false") Boolean onlyForPartitionName) {
+        throw new NotImplementedException();
     }
 
 }
