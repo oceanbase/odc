@@ -26,14 +26,14 @@ import org.springframework.web.bind.annotation.RestController;
 import com.oceanbase.odc.service.common.response.ListResponse;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
+import com.oceanbase.odc.service.flow.task.model.DBObjectStructureComparisonResp;
+import com.oceanbase.odc.service.flow.task.model.DBStructureComparisonResp;
+import com.oceanbase.odc.service.flow.task.model.DBStructureComparisonResp.OperationType;
 import com.oceanbase.odc.service.shadowtable.ShadowTableComparingService;
 import com.oceanbase.odc.service.shadowtable.model.SetSkippedReq;
 import com.oceanbase.odc.service.shadowtable.model.ShadowTableSyncReq;
 import com.oceanbase.odc.service.shadowtable.model.ShadowTableSyncResp;
 import com.oceanbase.odc.service.shadowtable.model.ShadowTableSyncResp.TableComparing;
-import com.oceanbase.odc.service.structurecompare.DBObjectStructureComparisonResult;
-import com.oceanbase.odc.service.structurecompare.DBStructureComparisonResult;
-import com.oceanbase.odc.service.structurecompare.DBStructureComparisonResult.OperationType;
 
 /**
  * @Author: Lebie
@@ -69,13 +69,13 @@ public class SchemaSyncController {
     }
 
     @RequestMapping(value = "/structureComparison/{taskId}", method = RequestMethod.GET)
-    public SuccessResponse<DBStructureComparisonResult> listStructureComparisonResult(@PathVariable Long taskId,
+    public SuccessResponse<DBStructureComparisonResp> listStructureComparisonResult(@PathVariable Long taskId,
             @RequestParam OperationType operationType) {
         throw new UnsupportedOperationException("structure comparison not supported yet");
     }
 
     @RequestMapping(value = "/structureComparison/{taskId}/{structureComparisonId}", method = RequestMethod.GET)
-    public SuccessResponse<DBObjectStructureComparisonResult> getStructureComparisonResult(@PathVariable Long taskId,
+    public SuccessResponse<DBObjectStructureComparisonResp> getStructureComparisonResult(@PathVariable Long taskId,
             @PathVariable Long structureComparisonId) {
         throw new UnsupportedOperationException("structure comparison not supported yet");
     }

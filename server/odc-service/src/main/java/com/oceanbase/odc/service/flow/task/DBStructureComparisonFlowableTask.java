@@ -17,7 +17,7 @@ package com.oceanbase.odc.service.flow.task;
 
 import org.flowable.engine.delegate.DelegateExecution;
 
-import com.oceanbase.odc.service.flow.task.model.StructureComparisonTaskResult;
+import com.oceanbase.odc.service.flow.task.model.DBStructureComparisonTaskResult;
 import com.oceanbase.odc.service.task.TaskService;
 
 /**
@@ -25,9 +25,9 @@ import com.oceanbase.odc.service.task.TaskService;
  * @date 2024/1/9
  * @since
  */
-public class DBStructureComparisonFlowableTask extends BaseODCFlowTaskDelegate<StructureComparisonTaskResult> {
+public class DBStructureComparisonFlowableTask extends BaseODCFlowTaskDelegate<DBStructureComparisonTaskResult> {
     @Override
-    protected StructureComparisonTaskResult start(Long taskId, TaskService taskService, DelegateExecution execution)
+    protected DBStructureComparisonTaskResult start(Long taskId, TaskService taskService, DelegateExecution execution)
             throws Exception {
         return null;
     }

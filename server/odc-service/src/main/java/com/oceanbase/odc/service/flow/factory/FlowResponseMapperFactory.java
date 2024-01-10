@@ -76,7 +76,7 @@ import com.oceanbase.odc.service.flow.model.FlowNodeInstanceDetailResp;
 import com.oceanbase.odc.service.flow.model.FlowNodeInstanceDetailResp.FlowNodeInstanceMapper;
 import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
 import com.oceanbase.odc.service.flow.model.FlowTaskExecutionStrategy;
-import com.oceanbase.odc.service.flow.task.model.StructureComparisonParameter;
+import com.oceanbase.odc.service.flow.task.model.DBStructureComparisonParameter;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.integration.IntegrationService;
 import com.oceanbase.odc.service.integration.client.ApprovalClient;
@@ -316,7 +316,7 @@ public class FlowResponseMapperFactory {
         Set<Long> relatedDatabaseIds = taskId2TaskEntity.values().stream()
                 .filter(task -> task.getTaskType().equals(TaskType.STRUCTURE_COMPARISON))
                 .map(taskEntity -> JsonUtils.fromJson(taskEntity.getParametersJson(),
-                        StructureComparisonParameter.class).getTargetDatabaseId())
+                        DBStructureComparisonParameter.class).getTargetDatabaseId())
                 .collect(Collectors.toSet());
         if (!relatedDatabaseIds.isEmpty()) {
             databaseService.listDatabasesByIds(relatedDatabaseIds).stream()

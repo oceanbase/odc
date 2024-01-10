@@ -32,7 +32,7 @@ import lombok.Data;
  * @since ODC_release_4.2.4
  */
 @Data
-public class StructureComparisonParameter implements Serializable, TaskParameters {
+public class DBStructureComparisonParameter implements Serializable, TaskParameters {
     /**
      * Source database id, refer to {@link DatabaseEntity#getId()}
      */

@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.structurecompare;
+package com.oceanbase.odc.service.flow.task.model;
 
-import com.oceanbase.odc.service.structurecompare.DBStructureComparisonResult.OperationType;
+import com.oceanbase.odc.service.flow.task.model.DBStructureComparisonResp.OperationType;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 
 import lombok.Data;
@@ -26,7 +26,7 @@ import lombok.Data;
  * @since ODC_release_4.2.4
  */
 @Data
-public class DBObjectStructureComparisonResult {
+public class DBObjectStructureComparisonResp {
     /**
      * Refer to structure_comparison.id
      */

@@ -13,10 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.structurecompare;
+package com.oceanbase.odc.service.flow.task.model;
 
 import java.util.List;
 
+import com.oceanbase.odc.core.flow.model.FlowTaskResult;
+import com.oceanbase.odc.core.shared.constant.TaskStatus;
+import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 
 import lombok.Data;
@@ -27,27 +30,20 @@ import lombok.Data;
  * @since ODC_release_4.2.4
  */
 @Data
-public class DBStructureComparisonResult {
+public class DBStructureComparisonTaskResult implements FlowTaskResult {
+    /**
+     * Refer to {@link TaskEntity#getId()}
+     */
     private Long taskId;
-    private List<ComparisonResult> comparisonResults;
-    private String totalChangeScript;
-    private String storageObjectId;
+    private TaskStatus status;
+    private List<Comparing> comparingList;
 
-    private class ComparisonResult {
+    private class Comparing {
         /**
-         * Refer to {@link DBObjectStructureComparisonResult#getId()}
+         * Refer to {@link DBObjectStructureComparisonResp#getId()}
          */
         private Long structureComparisonId;
         private DBObjectType dbObjectType;
         private String dbObjectName;
-        private OperationType operationType;
-    }
-    public enum OperationType {
-        CREATE,
-        UPDATE,
-        DROP,
-        NO_ACTION,
-        SKIP,
-        UNSUPPORTED
     }
 }

@@ -48,10 +48,10 @@ import com.oceanbase.odc.service.flow.instance.FlowApprovalInstance;
 import com.oceanbase.odc.service.flow.instance.FlowInstance;
 import com.oceanbase.odc.service.flow.instance.FlowTaskInstance;
 import com.oceanbase.odc.service.flow.model.FlowNodeInstanceDetailResp.FlowNodeInstanceMapper;
+import com.oceanbase.odc.service.flow.task.model.DBStructureComparisonParameter;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.OdcMockTaskConfig;
 import com.oceanbase.odc.service.flow.task.model.ShadowTableSyncTaskParameter;
-import com.oceanbase.odc.service.flow.task.model.StructureComparisonParameter;
 import com.oceanbase.odc.service.flow.util.FlowInstanceUtil;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanTaskParameters;
@@ -311,12 +311,12 @@ public class FlowInstanceDetailResp {
                     resp.setParameters(JsonUtils.fromJson(parameterJson, ApplyProjectParameter.class));
                     break;
                 case STRUCTURE_COMPARISON:
-                    StructureComparisonParameter structureComparisonParameter = JsonUtils.fromJson(parameterJson,
-                            StructureComparisonParameter.class);
-                    resp.setParameters(structureComparisonParameter);
+                    DBStructureComparisonParameter dbStructureComparisonParameter = JsonUtils.fromJson(parameterJson,
+                            DBStructureComparisonParameter.class);
+                    resp.setParameters(dbStructureComparisonParameter);
                     if (getDatabaseById != null) {
                         resp.setRelatedDatabase(
-                                this.getDatabaseById.apply(structureComparisonParameter.getTargetDatabaseId()));
+                                this.getDatabaseById.apply(dbStructureComparisonParameter.getTargetDatabaseId()));
                     }
                     break;
                 default:
