@@ -10,8 +10,7 @@ CREATE TABLE IF NOT EXISTS `notification_channel`(
   `project_id` bigint(20) NOT NULL COMMENT 'project id, references collaboration_project.id',
   `description` varchar(512) DEFAULT NULL COMMENT 'description',
   CONSTRAINT `pk_notification_channel_id` PRIMARY KEY (`id`),
-  CONSTRAINT `uk_notification_channel_project_id_name` UNIQUE KEY(`project_id`,`name`),
-  KEY `notification_channel_project_id` (`project_id`)
+  CONSTRAINT `uk_notification_channel_project_id_name` UNIQUE KEY(`project_id`,`name`)
 ) COMMENT = 'notification channel configs';
 
 DROP TABLE IF EXISTS `notification_policy`;
@@ -30,7 +29,7 @@ CREATE TABLE IF NOT EXISTS `notification_policy`(
   `project_id` bigint(20) NOT NULL COMMENT 'project id, references collaboration_project.id',
   `policy_metadata_id` bigint(20) NOT NULL COMMENT 'notification policy metadata id, reference to notification_policy_metadata.id',
   CONSTRAINT `pk_notification_policy_id` PRIMARY KEY (`id`),
-  KEY `notification_policy_project_id` (`project_id`)
+  KEY `idx_notification_policy_project_id` (`project_id`)
 ) COMMENT = 'notification policy';
 
 CREATE TABLE IF NOT EXISTS `notification_policy_metadata`(
@@ -55,11 +54,11 @@ CREATE TABLE IF NOT EXISTS `notification_event`(
   `trigger_time` datetime NOT NULL comment 'time when the event triggered',
   `status` varchar(128) NOT NULL comment 'status enum, may CREATED, THROWN, CONVERTED, etc.',
   CONSTRAINT `pk_notification_event_id` PRIMARY KEY (`id`),
-  KEY `notification_event_status_time`(`status`, `trigger_time`)
+  KEY `idx_notification_event_status_time`(`status`, `trigger_time`)
 ) comment = 'notification events';
 
 DROP TABLE IF EXISTS `notification_message`;
-CREATE TABLE IF NOT EXISTS`notification_message` (
+CREATE TABLE IF NOT EXISTS `notification_message` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -76,10 +75,10 @@ CREATE TABLE IF NOT EXISTS`notification_message` (
   `cc_recipients` varchar(2048) DEFAULT NULL comment 'odc users who will receive this message by copy',
   `error_message` varchar(2048) DEFAULT NULL comment 'reason for message sending failure',
   `last_sent_time` datetime DEFAULT NULL COMMENT 'the last attempt to send current message',
-  PRIMARY KEY (`id`),
+  CONSTRAINT pk_notification_message_id PRIMARY KEY (`id`),
   KEY `idx_status_retry_times_max_retry_times` (`status`, `retry_times`, `max_retry_times`),
-  KEY `notification_message_channel_id` (`channel_id`),
-  KEY `notification_message_project_id` (`project_id`)
+  KEY `idx_notification_message_channel_id` (`channel_id`),
+  KEY `idx_notification_message_project_id` (`project_id`)
 ) COMMENT = 'notification message';
 
 DROP TABLE IF EXISTS `notification_policy_channel_relation`;
@@ -93,7 +92,7 @@ CREATE TABLE IF NOT EXISTS `notification_policy_channel_relation`(
   `channel_id` bigint(20) NOT NULL comment 'channel config id, reference to notification_channel.id',
   CONSTRAINT `pk_notification_policy_channel_relation_id` PRIMARY KEY (`id`),
   CONSTRAINT `uk_notification_policy_channel_relation_policy_id_channel_id` UNIQUE KEY(`organization_id`,`notification_policy_id`, `channel_id`),
-	KEY `idx_notification_policy_id`(`notification_policy_id`)
+  KEY `idx_notification_policy_id`(`notification_policy_id`)
 ) comment = 'notification policy and channel config relations';
 
 CREATE TABLE IF NOT EXISTS `notification_message_sending_history`(
@@ -104,5 +103,5 @@ CREATE TABLE IF NOT EXISTS `notification_message_sending_history`(
   `status` varchar(128) NOT NULL COMMENT 'MessageSendingStatus enum, may SENT_SUCCESSFULLY or SENT_FAILED',
   `error_message` text DEFAULT NULL COMMENT 'error message',
   CONSTRAINT `pk_notification_message_sending_history_id` PRIMARY KEY (`id`),
-  KEY `notification_message_id_status_create_time`(`message_id`, `status`, `create_time`)
+  KEY `idx_notification_message_id_status_create_time`(`message_id`, `status`, `create_time`)
 ) comment = 'notification message sending history';
