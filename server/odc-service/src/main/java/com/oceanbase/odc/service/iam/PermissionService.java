@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.iam;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -105,6 +106,13 @@ public class PermissionService {
         affectRows = this.userPermissionRepository.deleteByPermissionIds(permissionIds);
         log.info("Delete related user permission entity, affectRows={}", affectRows);
         return delete;
+    }
+
+    @SkipAuthorize
+    @Transactional(rollbackFor = Exception.class)
+    public void clearExpiredPermission(Date expiredTime) {
+        int count = permissionRepository.deleteByExpireTimeBefore(expiredTime);
+        log.info("Clear expired permission, count: {}, expired time: {}", count, expiredTime);
     }
 
 }

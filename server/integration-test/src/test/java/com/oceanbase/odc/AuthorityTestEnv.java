@@ -25,6 +25,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import com.oceanbase.odc.core.authority.DefaultLoginSecurityManager;
+import com.oceanbase.odc.core.shared.constant.AuthorizationType;
 import com.oceanbase.odc.core.shared.constant.Cipher;
 import com.oceanbase.odc.core.shared.constant.PermissionType;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
@@ -138,6 +139,7 @@ public abstract class AuthorityTestEnv extends ServiceTestEnv {
         entity.setCreatorId(ADMIN_USER_ID);
         entity.setOrganizationId(ORGANIZATION_ID);
         entity.setBuiltIn(false);
+        entity.setAuthorizationType(AuthorizationType.USER_AUTHORIZATION);
         return permissionRepository.saveAndFlush(entity);
     }
 
