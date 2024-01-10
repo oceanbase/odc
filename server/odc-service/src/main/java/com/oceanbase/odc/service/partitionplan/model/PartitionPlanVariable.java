@@ -34,7 +34,7 @@ public class PartitionPlanVariable {
         this.key = key;
     }
 
-    public String getLocalizedName() {
+    public String getLocalizedDescription() {
         return this.key.translate(new Object[] {}, LocaleContextHolder.getLocale());
     }
 

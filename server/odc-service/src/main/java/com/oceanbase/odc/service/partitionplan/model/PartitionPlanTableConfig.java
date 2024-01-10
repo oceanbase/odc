@@ -44,7 +44,7 @@ public class PartitionPlanTableConfig implements Serializable {
     private DBTablePartitionType partitionType;
     private List<PartitionPlanKeyConfig> partitionKeyConfigs;
     private String partitionNameInvoker;
-    private Map<String, Object> partitionNameInvokerParameter;
+    private Map<String, Serializable> partitionNameInvokerParameter;
 
     public boolean isContainsCreateStrategy() {
         return this.partitionKeyConfigs.stream().anyMatch(i -> i.getStrategy() == PartitionPlanStrategy.CREATE);

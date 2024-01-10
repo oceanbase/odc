@@ -69,8 +69,7 @@ public class PartitionPlanController {
 
     @GetMapping(value = "/sessions/{sessionId}/databases/{databaseName}/tables")
     public ListResponse<PartitionPlanDBTable> listTables(@PathVariable String sessionId,
-            @PathVariable String databaseName,
-            @RequestParam(required = false, name = "tableName") List<String> tableNames) {
+            @PathVariable String databaseName) {
         throw new NotImplementedException();
     }
 
