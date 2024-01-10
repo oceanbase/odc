@@ -28,7 +28,7 @@ public class JobContextProviderFactory {
         switch (mode) {
             case K8S:
                 return new K8sJobContextProvider();
-            case THREAD:
+            case PROCESS:
             default:
                 throw new UnsupportedOperationException("Not supported yet.");
         }
