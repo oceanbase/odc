@@ -38,9 +38,9 @@ import lombok.extern.slf4j.Slf4j;
  * @date 2024/1/8
  */
 @Slf4j
-@Migratable(version = "4.2.4.2", description = "Built-in notification policy metadata migrate",
+@Migratable(version = "4.2.4.3", description = "Built-in notification policy metadata migrate",
         repeatable = true, ignoreChecksum = true)
-public class R4242NotificationPolicyMetaMigrate implements JdbcMigratable {
+public class R4243NotificationPolicyMetaMigrate implements JdbcMigratable {
     private static final String MIGRATE_CONFIG_FILE = "init-config/init/notification-policy-metadata.yaml";
 
     @Override
