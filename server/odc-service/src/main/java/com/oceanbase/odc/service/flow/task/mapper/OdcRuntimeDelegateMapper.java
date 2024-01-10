@@ -20,6 +20,7 @@ import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.service.flow.task.BaseRuntimeFlowableDelegate;
+import com.oceanbase.odc.service.flow.task.DBStructureComparisonFlowableTask;
 import com.oceanbase.odc.service.flow.task.DataTransferRuntimeFlowableTask;
 import com.oceanbase.odc.service.flow.task.DatabaseChangeRuntimeFlowableTask;
 import com.oceanbase.odc.service.flow.task.MockDataRuntimeFlowableTask;
@@ -70,6 +71,8 @@ public class OdcRuntimeDelegateMapper implements RuntimeDelegateMapper {
                 return PreCheckRuntimeFlowableTask.class;
             case APPLY_PROJECT_PERMISSION:
                 return ApplyProjectFlowableTask.class;
+            case STRUCTURE_COMPARISON:
+                return DBStructureComparisonFlowableTask.class;
             default:
                 throw new UnsupportedException(ErrorCodes.Unsupported, new Object[] {ResourceType.ODC_TASK},
                         "Unsupported task type: " + taskType);

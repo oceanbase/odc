@@ -35,7 +35,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 
+import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
+import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.metadb.connection.ConnectionConfigRepository;
 import com.oceanbase.odc.metadb.connection.ConnectionEntity;
 import com.oceanbase.odc.metadb.connection.ConnectionSpecs;
@@ -62,6 +64,10 @@ import com.oceanbase.odc.metadb.regulation.risklevel.RiskLevelRepository;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.metadb.task.TaskRepository;
 import com.oceanbase.odc.metadb.task.TaskSpecs;
+import com.oceanbase.odc.service.connection.database.DatabaseService;
+import com.oceanbase.odc.service.connection.database.model.Database;
+import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.connection.util.ConnectionMapper;
 import com.oceanbase.odc.service.flow.ApprovalPermissionService;
 import com.oceanbase.odc.service.flow.instance.FlowInstance;
 import com.oceanbase.odc.service.flow.model.FlowInstanceDetailResp;
@@ -70,6 +76,7 @@ import com.oceanbase.odc.service.flow.model.FlowNodeInstanceDetailResp;
 import com.oceanbase.odc.service.flow.model.FlowNodeInstanceDetailResp.FlowNodeInstanceMapper;
 import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
 import com.oceanbase.odc.service.flow.model.FlowTaskExecutionStrategy;
+import com.oceanbase.odc.service.flow.task.model.DBStructureComparisonParameter;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.integration.IntegrationService;
 import com.oceanbase.odc.service.integration.client.ApprovalClient;
@@ -110,6 +117,8 @@ public class FlowResponseMapperFactory {
     @Autowired
     private TaskRepository taskRepository;
     @Autowired
+    private DatabaseService databaseService;
+    @Autowired
     private ApprovalPermissionService approvalPermissionService;
     @Autowired
     private ApprovalClient approvalClient;
@@ -123,6 +132,7 @@ public class FlowResponseMapperFactory {
     private RiskLevelRepository riskLevelRepository;
     @Autowired
     private AuthenticationFacade authenticationFacade;
+    private final ConnectionMapper connectionMapper = ConnectionMapper.INSTANCE;
 
     private final RiskLevelMapper riskLevelMapper = RiskLevelMapper.INSTANCE;
 
@@ -293,16 +303,39 @@ public class FlowResponseMapperFactory {
         });
 
         /**
-         * In order to improve the interface efficiency, it is necessary to find out the connection entity
-         * corresponding to the process instance at one time
+         * Get Database associated with each TaskEntity
          */
-        Set<Long> connectionIds = flowInstanceId2Tasks.values().stream()
-                .flatMap((Function<Set<TaskEntity>, Stream<TaskEntity>>) Collection::stream)
-                .filter(entity -> entity.getConnectionId() != null)
-                .map(TaskEntity::getConnectionId).collect(Collectors.toSet());
-        Map<Long, ConnectionEntity> connectionId2Connection =
+        Set<Long> databaseIds = taskId2TaskEntity.values().stream().filter(entity -> entity.getDatabaseId() != null)
+                .map(TaskEntity::getDatabaseId).collect(Collectors.toSet());
+        Map<Long, Database> databaseId2database = databaseService.listDatabasesByIds(databaseIds).stream()
+                .collect(Collectors.toMap(Database::getId, database -> database));
+        /**
+         * get the target database associated with the structure comparison task
+         */
+        Set<Long> relatedDatabaseIds = taskId2TaskEntity.values().stream()
+                .filter(task -> task.getTaskType().equals(TaskType.STRUCTURE_COMPARISON))
+                .map(taskEntity -> JsonUtils.fromJson(taskEntity.getParametersJson(),
+                        DBStructureComparisonParameter.class).getTargetDatabaseId())
+                .collect(Collectors.toSet());
+        if (!relatedDatabaseIds.isEmpty()) {
+            databaseService.listDatabasesByIds(relatedDatabaseIds).stream()
+                    .forEach(database -> databaseId2database.putIfAbsent(database.getId(), database));
+        }
+
+        /**
+         * find the ConnectionConfig associated with each Database
+         */
+        Set<Long> connectionIds = databaseId2database.values().stream().filter(entity -> entity.getDataSource() != null)
+                .filter(entity -> entity.getDataSource().getId() != null)
+                .map(entity -> entity.getDataSource().getId()).collect(Collectors.toSet());
+        Map<Long, ConnectionConfig> connectionId2Connection =
                 listConnectionsByConnectionIdsWithoutPermissionCheck(connectionIds)
-                        .stream().collect(Collectors.toMap(ConnectionEntity::getId, entity -> entity));
+                        .stream().collect(Collectors.toMap(ConnectionEntity::getId, connectionMapper::entityToModel));
+        databaseId2database.values().forEach(database -> {
+            if (connectionId2Connection.containsKey(database.getDataSource().getId())) {
+                database.setDataSource(connectionId2Connection.get(database.getDataSource().getId()));
+            }
+        });
 
         /**
          * list candidates
@@ -332,7 +365,6 @@ public class FlowResponseMapperFactory {
         return FlowInstanceDetailResp.mapper()
                 .withRollbackable(flowInstanceId2Rollbackable::get)
                 .withApprovable(approvableFlowInstanceIds::contains)
-                .withGetConnectionById(connectionId2Connection::get)
                 .withGetTaskByFlowInstanceId(flowInstanceId2Tasks::get)
                 .withGetRolesByUserId(userId2Roles::get)
                 .withGetUserById(userId2User::get)
@@ -340,7 +372,8 @@ public class FlowResponseMapperFactory {
                 .withGetExecutionStrategyByFlowInstanceId(flowInstanceId2ExecutionStrategy::get)
                 .withGetRiskLevelByRiskLevelId(
                         id -> riskLevelRepository.findById(id).map(riskLevelMapper::entityToModel).orElse(null))
-                .withGetCandidatesByFlowInstanceId(candidatesByFlowInstanceIds::get);
+                .withGetCandidatesByFlowInstanceId(candidatesByFlowInstanceIds::get)
+                .withGetDatabaseById(databaseId2database::get);
     }
 
     public Map<Long, List<RoleEntity>> getUserId2Roles(@NonNull Collection<Long> userIds) {
