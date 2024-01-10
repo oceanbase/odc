@@ -30,7 +30,7 @@ import com.oceanbase.odc.service.task.caller.JobException;
 import com.oceanbase.odc.service.task.caller.K8sJobClient;
 import com.oceanbase.odc.service.task.caller.NativeK8sJobClient;
 import com.oceanbase.odc.service.task.caller.PodParam;
-import com.oceanbase.odc.service.task.config.TaskFrameworkProperties.K8sProperties;
+import com.oceanbase.odc.service.task.config.K8sProperties;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 import com.oceanbase.odc.service.task.util.JobUtils;
 import com.oceanbase.odc.test.database.TestProperties;

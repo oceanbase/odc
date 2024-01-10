@@ -18,8 +18,6 @@ package com.oceanbase.odc.service.task.service;
 
 import java.util.List;
 
-import org.springframework.transaction.annotation.Transactional;
-
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.executor.task.TaskResult;
@@ -31,10 +29,9 @@ import com.oceanbase.odc.service.task.schedule.JobDefinition;
  * @since 4.2.4
  */
 public interface TaskFrameworkService {
-    @Transactional(rollbackFor = Exception.class)
+
     void handleResult(TaskResult taskResult);
 
-    @Transactional(rollbackFor = Exception.class)
     JobEntity save(JobDefinition jd);
 
     JobEntity find(Long id);

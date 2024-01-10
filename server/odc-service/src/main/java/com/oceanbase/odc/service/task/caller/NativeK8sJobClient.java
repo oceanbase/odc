@@ -36,7 +36,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import com.oceanbase.odc.common.util.EncodeUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.Verify;
-import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
+import com.oceanbase.odc.service.task.config.K8sProperties;
 
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
@@ -62,7 +62,7 @@ public class NativeK8sJobClient implements K8sJobClient {
 
     private static final long TIMEOUT_MILLS = 60000;
 
-    public NativeK8sJobClient(TaskFrameworkProperties.K8sProperties k8sProperties) throws IOException {
+    public NativeK8sJobClient(K8sProperties k8sProperties) throws IOException {
         ApiClient apiClient = null;
         if (StringUtils.isNotBlank(k8sProperties.getKubeConfig())) {
             byte[] kubeConfigBytes = EncodeUtils.base64DecodeFromString(k8sProperties.getKubeConfig());

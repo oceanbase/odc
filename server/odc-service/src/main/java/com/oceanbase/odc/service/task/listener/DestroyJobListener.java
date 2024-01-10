@@ -17,9 +17,10 @@
 package com.oceanbase.odc.service.task.listener;
 
 import com.oceanbase.odc.service.task.caller.JobException;
+import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.executor.task.TaskResult;
-import com.oceanbase.odc.service.task.schedule.JobScheduler;
+import com.oceanbase.odc.service.task.schedule.JobIdentity;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -31,10 +32,10 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class DestroyJobListener extends TaskResultUploadListener {
 
-    private final JobScheduler jobScheduler;
+    private final JobConfiguration jobConfiguration;
 
-    public DestroyJobListener(JobScheduler jobScheduler) {
-        this.jobScheduler = jobScheduler;
+    public DestroyJobListener(JobConfiguration jobConfiguration) {
+        this.jobConfiguration = jobConfiguration;
     }
 
     @Override
@@ -44,8 +45,9 @@ public class DestroyJobListener extends TaskResultUploadListener {
             log.info("Accept job {} is finished by status {}, and try to destroy job.",
                     taskResult.getJobIdentity().getId(), taskResult.getStatus());
             try {
-                jobScheduler.cancelJob(event.getTaskResult().getJobIdentity().getId());
-                log.info("Destroy job {} successfully.", taskResult.getJobIdentity().getId());
+                Long id = taskResult.getJobIdentity().getId();
+                jobConfiguration.getJobDispatcher().stop(JobIdentity.of(id));
+                log.info("Destroy job {} successfully.", id);
             } catch (JobException e) {
                 log.warn("Job {} is finished, destroy job failed, occur error: ",
                         taskResult.getJobIdentity().getId(), e);

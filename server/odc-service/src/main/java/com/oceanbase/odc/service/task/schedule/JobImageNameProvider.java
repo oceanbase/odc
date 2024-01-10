@@ -13,40 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package com.oceanbase.odc.service.task.caller;
-
-import java.util.HashMap;
-import java.util.Map;
-
-import com.oceanbase.odc.service.task.constants.JobConstants;
-
-import lombok.Data;
+package com.oceanbase.odc.service.task.schedule;
 
 /**
  * @author yaobin
- * @date 2023-11-15
+ * @date 2024-01-09
  * @since 4.2.4
  */
-@Data
-public class PodParam {
+public interface JobImageNameProvider {
 
-    private Map<String, String> environments = new HashMap<>(2);
-
-    private String imagePullPolicy = JobConstants.IMAGE_PULL_POLICY_ALWAYS;
-
-    private Double requestCpu;
-
-    private Long requestMem;
-
-    private Double limitCpu;
-
-    private Long limitMem;
-
-    private Boolean enableMount;
-
-    private String mountPath;
-
-    private Long mountDiskSize;
-
+    /**
+     * provide k8s job image name
+     * 
+     * @return image name with repository
+     */
+    String provide();
 }
