@@ -849,6 +849,9 @@ public class MySQLNoGreaterThan5740SchemaAccessor implements DBSchemaAccessor {
         DBTablePartition partition = new DBTablePartition();
         DBTablePartition subPartition = new DBTablePartition();
         partition.setSubpartition(subPartition);
+        partition.setSchemaName(schemaName);
+        partition.setTableName(tableName);
+        subPartition.setSchemaName(schemaName);
 
         DBTablePartitionOption partitionOption = new DBTablePartitionOption();
         partitionOption.setType(DBTablePartitionType.NOT_PARTITIONED);
