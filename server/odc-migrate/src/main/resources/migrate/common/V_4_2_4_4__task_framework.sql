@@ -1,0 +1,1 @@
+UPDATE `config_system_configuration` SET `value`='K8S' WHERE `key`='odc.task-framework.run-mode';

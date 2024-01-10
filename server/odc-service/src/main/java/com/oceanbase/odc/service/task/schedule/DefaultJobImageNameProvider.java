@@ -44,8 +44,8 @@ public class DefaultJobImageNameProvider implements JobImageNameProvider {
         K8sProperties k8s = taskFrameworkProperties.getK8s();
 
         List<String> candidateImages = new ArrayList<>();
-        candidateImages.add(k8s.getPodImageName());
         candidateImages.add(SystemUtils.getEnvOrProperty(JobEnvConstants.ODC_IMAGE_NAME));
+        candidateImages.add(k8s.getPodImageName());
         candidateImages.add("odc-server:" + infoAdapter.getBuildVersion());
 
         return candidateImages.stream().filter(StringUtils::isNotBlank).findFirst().get();
