@@ -13,17 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.notification.model;
+package com.oceanbase.odc.service.notification;
 
-import lombok.Data;
+import com.oceanbase.odc.service.notification.model.ChannelType;
+import com.oceanbase.odc.service.notification.model.Message;
 
 /**
- * @Author: Lebie
- * @Date: 2023/3/21 11:43
- * @Description: []
+ * @author liuyizhuo.lyz
+ * @date 2024/1/4
  */
-@Data
-public class Notification {
-    private Message message;
-    private Channel channel;
+public interface MessageChannel {
+    ChannelType type();
+
+    boolean send(Message message);
 }

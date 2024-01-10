@@ -13,17 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.notification.model;
+package com.oceanbase.odc.metadb.notification;
 
-import lombok.Data;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 /**
- * @Author: Lebie
- * @Date: 2023/3/21 11:43
- * @Description: []
+ * @author liuyizhuo.lyz
+ * @date 2024/1/8
  */
-@Data
-public class Notification {
-    private Message message;
-    private Channel channel;
+public interface PolicyMetadataRepository extends JpaRepository<PolicyMetadataEntity, Long>,
+        JpaSpecificationExecutor<PolicyMetadataEntity> {
 }

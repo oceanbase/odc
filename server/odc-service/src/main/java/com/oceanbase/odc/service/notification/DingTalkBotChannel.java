@@ -15,18 +15,12 @@
  */
 package com.oceanbase.odc.service.notification;
 
-import java.util.stream.Collectors;
-
-import org.apache.commons.collections4.CollectionUtils;
-
 import com.dingtalk.api.DefaultDingTalkClient;
 import com.dingtalk.api.DingTalkClient;
 import com.dingtalk.api.request.OapiRobotSendRequest;
-import com.oceanbase.odc.metadb.iam.UserRepository;
-import com.oceanbase.odc.service.notification.constant.ChannelPropertiesConstants;
-import com.oceanbase.odc.service.notification.helper.ChannelUtils;
-import com.oceanbase.odc.service.notification.model.ChannelConfig;
+import com.oceanbase.odc.service.notification.model.Channel;
 import com.oceanbase.odc.service.notification.model.ChannelType;
+import com.oceanbase.odc.service.notification.model.DingTalkChannelConfig;
 import com.oceanbase.odc.service.notification.model.Message;
 import com.taobao.api.TaobaoResponse;
 
@@ -38,24 +32,17 @@ import lombok.extern.slf4j.Slf4j;
  * @Description: []
  */
 @Slf4j
-public class DingTalkBotChannel implements Channel {
-    private String serviceUri;
-    private boolean atAll;
-    private final String atUserIdsAttributeName;
+public class DingTalkBotChannel implements MessageChannel {
+    private final String serviceUri;
 
-    private UserRepository userRepository;
-
-    public DingTalkBotChannel(ChannelConfig channelConfig, UserRepository userRepository) {
-        this.userRepository = userRepository;
-        this.serviceUri = channelConfig.getProperties().get(ChannelPropertiesConstants.SERVICE_URL);
-        this.atAll = "TRUE".equalsIgnoreCase(channelConfig.getProperties().get(ChannelPropertiesConstants.AT_ALL));
-        this.atUserIdsAttributeName =
-                channelConfig.getProperties().get(ChannelPropertiesConstants.RECIPIENT_ATTRIBUTE_NAME);
+    public DingTalkBotChannel(Channel channel) {
+        DingTalkChannelConfig channelConfig = (DingTalkChannelConfig) channel.getChannelConfig();
+        this.serviceUri = channelConfig.getWebhook();
     }
 
     @Override
     public ChannelType type() {
-        return ChannelType.DingTalkGroupBot;
+        return ChannelType.DingTalk;
     }
 
     @Override
@@ -63,15 +50,6 @@ public class DingTalkBotChannel implements Channel {
         DingTalkClient client = new DefaultDingTalkClient(this.serviceUri);
         OapiRobotSendRequest request = new OapiRobotSendRequest();
         OapiRobotSendRequest.At at = new OapiRobotSendRequest.At();
-        if (CollectionUtils.isNotEmpty(message.getToRecipients())) {
-            at.setAtUserIds(userRepository.findByIdIn(message.getToRecipients()
-                    .stream()
-                    .map(Long::valueOf).collect(Collectors.toSet()))
-                    .stream()
-                    .map(userEntity -> ChannelUtils.getRecipientAttributeName(this.atUserIdsAttributeName, userEntity))
-                    .collect(Collectors.toList()));
-        }
-        at.setIsAtAll(this.atAll);
         request.setAt(at);
         request.setMsgtype("text");
         OapiRobotSendRequest.Text text = new OapiRobotSendRequest.Text();
