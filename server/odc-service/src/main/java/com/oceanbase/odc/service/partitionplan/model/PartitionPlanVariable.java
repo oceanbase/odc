@@ -38,8 +38,8 @@ public class PartitionPlanVariable {
         return this.key.translate(new Object[] {}, LocaleContextHolder.getLocale());
     }
 
-    public String getSubstitutor() {
-        return this.key.getSubstitutor();
+    public String getVariable() {
+        return this.key.getVariable();
     }
 
 }

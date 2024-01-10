@@ -47,7 +47,7 @@ public enum PartitionPlanVariableKey implements Translatable {
         return name();
     }
 
-    public String getSubstitutor() {
+    public String getVariable() {
         return "${" + name() + "}";
     }
 
