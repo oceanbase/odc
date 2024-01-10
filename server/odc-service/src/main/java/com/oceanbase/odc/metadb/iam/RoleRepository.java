@@ -60,6 +60,13 @@ public interface RoleRepository extends JpaRepository<RoleEntity, Long>, JpaSpec
             nativeQuery = true)
     List<RoleEntity> findByUserIdAndEnabled(@Param("userId") Long userId, @Param("enabled") Boolean enabled);
 
+    @Query(value = "select r.* from iam_user u inner join iam_user_role ur on u.id=ur.user_id "
+            + "inner join iam_role r on r.id=ur.role_id where u.id=:userId and r.organization_id=:organizationId "
+            + "and r.is_enabled=:enabled",
+            nativeQuery = true)
+    List<RoleEntity> findByUserIdAndOrganizationIdAndEnabled(@Param("userId") Long userId,
+            @Param("organizationId") Long organizationId, @Param("enabled") Boolean enabled);
+
     @Query(value = "select r.* from iam_role r where id in (:roleIds) and r.is_enabled=:enabled",
             nativeQuery = true)
     List<RoleEntity> findByRoleIdsAndEnabled(@Param("roleIds") Collection<Long> roleIds,

@@ -13,27 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package com.oceanbase.odc.service.permissionapply.project;
-
-import com.oceanbase.odc.core.flow.model.FlowTaskResult;
-
-import lombok.Data;
+package com.oceanbase.odc.service.structurecompare.util;
 
 /**
- * @author gaoda.xy
- * @date 2023/10/13 16:12
+ * @author jingtian
+ * @date 2024/1/9
+ * @since ODC_release_4.2.4
  */
-@Data
-public class ApplyProjectResult implements FlowTaskResult {
+public class StructureCompareUtil {
+    private static final String DEFAULT_SQL_DELIMITER = ";";
 
-    /**
-     * Mark whether the task is successful
-     */
-    private boolean success;
-    /**
-     * Task parameters
-     */
-    private ApplyProjectParameter parameter;
-
+    public static String appendDelimiterIfNotExist(String sql) {
+        String returnVal = sql.trim();
+        if (!returnVal.endsWith(DEFAULT_SQL_DELIMITER)) {
+            return returnVal + DEFAULT_SQL_DELIMITER + "\n";
+        }
+        return sql;
+    }
 }

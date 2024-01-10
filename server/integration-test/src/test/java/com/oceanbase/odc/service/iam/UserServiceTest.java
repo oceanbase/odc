@@ -699,6 +699,22 @@ public class UserServiceTest extends MockedAuthorityTestEnv {
         Assert.assertTrue(passwordEncoder.matches(request.getNewPassword(), changePasswordUser.getPassword()));
     }
 
+    @Test
+    public void test_getCurrentUserRoleIds() {
+        UserEntity userEntity = createUserEntity();
+        userEntity.setOrganizationId(ORGANIZATION_ID);
+        userEntity = userRepository.saveAndFlush(userEntity);
+        RoleEntity roleEntity = createRoleEntity();
+        roleEntity.setOrganizationId(ORGANIZATION_ID);
+        roleRepository.saveAndFlush(roleEntity);
+        UserRoleEntity relation = createUserRoleRelation(userEntity, roleEntity);
+        userRoleRepository.saveAndFlush(relation);
+        Mockito.when(authenticationFacade.currentUserId()).thenReturn(userEntity.getId());
+        Set<Long> roleIds = userService.getCurrentUserRoleIds();
+        Assert.assertEquals(1, roleIds.size());
+        Assert.assertEquals(roleEntity.getId(), roleIds.iterator().next());
+    }
+
     private List<User> batchCreate(int count) {
         return batchCreate(0, count, DEFAULT_ROLE_IDS);
     }
@@ -759,8 +775,8 @@ public class UserServiceTest extends MockedAuthorityTestEnv {
         Validate.notNull(roleEntity.getId());
         relation.setUserId(userEntity.getId());
         relation.setRoleId(roleEntity.getId());
-        relation.setOrganizationId(1L);
-        relation.setCreatorId(1L);
+        relation.setOrganizationId(ORGANIZATION_ID);
+        relation.setCreatorId(ADMIN_USER_ID);
         return relation;
     }
 
