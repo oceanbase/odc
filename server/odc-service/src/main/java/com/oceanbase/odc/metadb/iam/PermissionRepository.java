@@ -110,7 +110,7 @@ public interface PermissionRepository
                 .field(PermissionEntity_.type)
                 .field(PermissionEntity_.creatorId)
                 .field(PermissionEntity_.organizationId)
-                .field(PermissionEntity_.builtIn)
+                .field("is_builtin")
                 .field(PermissionEntity_.expireTime)
                 .field(PermissionEntity_.authorizationType)
                 .field(PermissionEntity_.ticketId)
