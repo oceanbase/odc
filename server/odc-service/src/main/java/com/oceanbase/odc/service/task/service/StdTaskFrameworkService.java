@@ -177,10 +177,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     }
 
     @Override
-    public void stopSuccess(Long id) {
-        jobRepository.updateStatus(id, JobStatus.CANCELED);
-        log.info("Update job {} status to {}", id, JobStatus.CANCELED.name());
-    }
+    public void stopSuccess(Long id) {}
 
     private void updateJobScheduleEntity(TaskResult taskResult) {
         JobEntity jse = find(taskResult.getJobIdentity().getId());

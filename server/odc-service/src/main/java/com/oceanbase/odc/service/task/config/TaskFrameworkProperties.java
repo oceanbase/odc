@@ -15,53 +15,32 @@
  */
 package com.oceanbase.odc.service.task.config;
 
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.boot.context.properties.NestedConfigurationProperty;
-import org.springframework.cloud.context.config.annotation.RefreshScope;
-import org.springframework.context.annotation.Configuration;
-
 import com.oceanbase.odc.service.task.enums.TaskRunModeEnum;
-
-import lombok.Data;
 
 /**
  * @author yaobin
- * @date 2023-11-21
+ * @date 2024-01-10
  * @since 4.2.4
  */
-@Data
-@RefreshScope
-@Configuration
-@ConfigurationProperties(prefix = "odc.task-framework")
-public class TaskFrameworkProperties {
+public interface TaskFrameworkProperties {
 
-    private TaskRunModeEnum runMode;
+    TaskRunModeEnum getRunMode();
 
-    private String odcUrl;
+    String getOdcUrl();
 
-    @NestedConfigurationProperty
-    private K8sProperties k8s = new K8sProperties();
+    K8sProperties getK8s();
 
-    // job will be timeout when last report time more than this duration
-    private int jobReportTimeoutSeconds = 10 * 60;
+    int getJobReportTimeoutSeconds();
 
-    // single fetch job rows for schedule
-    private int singleFetchJobRowsForSchedule = 100;
+    int getSingleFetchJobRowsForSchedule();
 
-    // single fetch job rows to check report timeout or not
-    private int singleFetchJobRowsForCheckReportTimeout = 100;
+    int getSingleFetchJobRowsForCheckReportTimeout();
 
-    // max fetch job rows to check there is expired between once job schedule
-    private int maxFetchJobRowsForCheckExpired = 2000;
+    int getMaxFetchJobRowsForCheckExpired();
 
-    // max retry times after report timeout
-    private int maxRetryTimesAfterReportTimeout = 3;
+    int getMaxRetryTimesAfterReportTimeout();
 
-    @Data
-    public static class K8sProperties {
-        private String kubeUrl;
-        private String namespace;
-        private String kubeConfig;
-    }
+    String getStartPreparingJobCronExpression();
 
+    String getCheckRunningJobCronExpression();
 }

@@ -60,9 +60,11 @@ public class StdJobScheduler implements JobScheduler {
         PreConditions.notNull(configuration.getJobDispatcher(), "job dispatcher");
         PreConditions.notNull(configuration.getHostUrlProvider(), "host url provider");
         PreConditions.notNull(configuration.getTaskFrameworkService(), "task framework service");
+        PreConditions.notNull(configuration.getJobImageNameProvider(), "job image name provider");
         JobConfigurationHolder.setJobConfiguration(configuration);
 
-        getEventPublisher().addEventListener(new DestroyJobListener(this));
+        log.info("Job image name is {}", configuration.getJobImageNameProvider().provide());
+        getEventPublisher().addEventListener(new DestroyJobListener(configuration));
         getEventPublisher().addEventListener(new DefaultJobCallerListener(this));
         initDaemonJob();
     }
@@ -89,8 +91,10 @@ public class StdJobScheduler implements JobScheduler {
             return;
         }
         configuration.getTaskFrameworkService().updateStatus(id, JobStatus.CANCELING);
+        log.info("Update job {} status to {}", id, JobStatus.CANCELING.name());
         configuration.getJobDispatcher().stop(JobIdentity.of(id));
         configuration.getTaskFrameworkService().updateStatus(id, JobStatus.CANCELED);
+        log.info("Update job {} status to {}", id, JobStatus.CANCELED.name());
     }
 
     @Override
@@ -112,12 +116,13 @@ public class StdJobScheduler implements JobScheduler {
 
     private void initCheckRunningJob() {
         initCronJob("checkRunningJob", "checkRunningJobGroup",
-                "* 0/1 * * * ?", CheckRunningJob.class);
+                configuration.getTaskFrameworkProperties().getCheckRunningJobCronExpression(), CheckRunningJob.class);
     }
 
     private void initStartPreparingJob() {
         initCronJob("startPreparingJob", "startPreparingJobGroup",
-                "0/3 * * * * ?", StartPreparingJob.class);
+                configuration.getTaskFrameworkProperties().getStartPreparingJobCronExpression(),
+                StartPreparingJob.class);
     }
 
     private void initCronJob(String key, String group, String cronExpression, Class<? extends Job> jobClass) {

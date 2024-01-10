@@ -39,4 +39,6 @@ public class JobEnvConstants {
 
     public static final String ODC_SERVICE_PORT = "ODC_SERVICE_PORT";
 
+    public static final String ODC_IMAGE_NAME = "ODC_IMAGE_NAME";
+
 }

@@ -23,10 +23,12 @@ import com.oceanbase.odc.service.task.caller.PodConfig;
 import com.oceanbase.odc.service.task.caller.PodParam;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
+import com.oceanbase.odc.service.task.config.K8sProperties;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.enums.TaskRunModeEnum;
 import com.oceanbase.odc.service.task.schedule.JobCallerBuilder;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
+import com.oceanbase.odc.service.task.schedule.JobImageNameProvider;
 
 /**
  * Dispatch job to JobCaller immediately
@@ -52,26 +54,29 @@ public class ImmediateJobDispatcher implements JobDispatcher {
 
     private JobCaller getJobCaller(JobConfiguration config) {
         if (config.getTaskFrameworkProperties().getRunMode() == TaskRunModeEnum.K8S) {
-            TaskFrameworkProperties properties = config.getTaskFrameworkProperties();
-            String namespace = properties.getK8s().getNamespace();
             return JobCallerBuilder.buildK8sJobCaller(config.getK8sJobClient(),
-                    createDefaultPodConfig(namespace));
+                    createDefaultPodConfig(config.getTaskFrameworkProperties()));
         }
         return JobCallerBuilder.buildJvmCaller();
     }
 
+    private PodConfig createDefaultPodConfig(TaskFrameworkProperties taskFrameworkProperties) {
+        K8sProperties k8s = taskFrameworkProperties.getK8s();
 
-    private PodConfig createDefaultPodConfig(String namespace) {
         PodConfig podConfig = new PodConfig();
-        // todo read odc version
-        podConfig.setImage("mengdezhicai/odc:test-task-latest");
-        podConfig.setNamespace(namespace);
+        podConfig.setNamespace(k8s.getNamespace());
+        JobImageNameProvider jobImageNameProvider = JobConfigurationHolder.getJobConfiguration()
+                .getJobImageNameProvider();
+        podConfig.setImage(jobImageNameProvider.provide());
 
         PodParam podParam = podConfig.getPodParam();
-        podParam.setRequestCpu(1.0);
-        podParam.setRequestMem(128L);
-        podParam.setMountPath("/opt/odc/log");
-        podParam.setDiskSize(64L);
+        podParam.setRequestCpu(k8s.getRequestCpu());
+        podParam.setRequestMem(k8s.getRequestMem());
+        podParam.setLimitCpu(k8s.getLimitCpu());
+        podParam.setLimitMem(k8s.getLimitMem());
+        podParam.setEnableMount(k8s.getEnableMount());
+        podParam.setMountPath(k8s.getMountPath());
+        podParam.setMountDiskSize(k8s.getMountDiskSize());
         return podConfig;
     }
 

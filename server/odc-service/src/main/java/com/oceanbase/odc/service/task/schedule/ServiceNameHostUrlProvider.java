@@ -32,6 +32,6 @@ public class ServiceNameHostUrlProvider implements HostUrlProvider {
     @Override
     public List<String> hostUrl() {
         return Collections.singletonList("http://" + SystemUtils.getEnvOrProperty(JobEnvConstants.ODC_SERVICE_HOST)
-                + ":" + SystemUtils.getEnvOrProperty(JobEnvConstants.ODC_SERVER_PORT));
+                + ":" + SystemUtils.getEnvOrProperty(JobEnvConstants.ODC_SERVICE_PORT));
     }
 }

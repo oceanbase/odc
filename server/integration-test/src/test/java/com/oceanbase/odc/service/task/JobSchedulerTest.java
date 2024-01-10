@@ -41,6 +41,7 @@ import com.oceanbase.odc.service.task.executor.sampletask.SampleTask;
 import com.oceanbase.odc.service.task.schedule.DefaultJobDefinition;
 import com.oceanbase.odc.service.task.schedule.HostUrlProvider;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
+import com.oceanbase.odc.service.task.schedule.JobImageNameProvider;
 import com.oceanbase.odc.service.task.schedule.JobScheduler;
 import com.oceanbase.odc.service.task.schedule.StdJobScheduler;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
@@ -63,6 +64,7 @@ public class JobSchedulerTest {
         jc.setScheduler(sched);
         jc.setHostUrlProvider(Mockito.mock(HostUrlProvider.class));
         jc.setEventPublisher(new LocalEventPublisher());
+        jc.setJobImageNameProvider(Mockito.mock(JobImageNameProvider.class));
         TaskFrameworkService taskFrameworkService = Mockito.mock(TaskFrameworkService.class);
         jc.setTaskFrameworkService(taskFrameworkService);
         Mockito.when(taskFrameworkService.save(Mockito.any())).thenReturn(Mockito.mock(JobEntity.class));
