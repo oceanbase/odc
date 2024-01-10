@@ -68,14 +68,14 @@ public class SchemaSyncController {
         return Responses.list(shadowTableComparingService.setSkipTableComparing(id, setSkippedReq));
     }
 
-    @RequestMapping(value = "/structureComparison/{taskId}", method = RequestMethod.GET)
-    public SuccessResponse<DBStructureComparisonResp> listStructureComparisonResult(@PathVariable Long taskId,
+    @RequestMapping(value = "/structureComparison/{id}", method = RequestMethod.GET)
+    public SuccessResponse<DBStructureComparisonResp> listStructureComparisonResult(@PathVariable Long id,
             @RequestParam OperationType operationType) {
         throw new UnsupportedOperationException("structure comparison not supported yet");
     }
 
-    @RequestMapping(value = "/structureComparison/{taskId}/{structureComparisonId}", method = RequestMethod.GET)
-    public SuccessResponse<DBObjectStructureComparisonResp> getStructureComparisonResult(@PathVariable Long taskId,
+    @RequestMapping(value = "/structureComparison/{id}/{structureComparisonId}", method = RequestMethod.GET)
+    public SuccessResponse<DBObjectStructureComparisonResp> getStructureComparisonResult(@PathVariable Long id,
             @PathVariable Long structureComparisonId) {
         throw new UnsupportedOperationException("structure comparison not supported yet");
     }

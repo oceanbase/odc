@@ -28,7 +28,10 @@ import lombok.Data;
  */
 @Data
 public class DBStructureComparisonResp {
-    private Long taskId;
+    /**
+     * Refer to structure_comparison_task.id
+     */
+    private Long id;
     private List<ComparisonResult> comparisonResults;
     private String totalChangeScript;
     private String storageObjectId;
