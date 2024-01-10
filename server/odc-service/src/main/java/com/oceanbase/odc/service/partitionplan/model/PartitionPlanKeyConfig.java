@@ -38,7 +38,7 @@ public class PartitionPlanKeyConfig implements Serializable {
     private static final long serialVersionUID = 7176051008183974787L;
     private PartitionPlanStrategy strategy;
     private String partitionKey;
-    private String invoker;
-    private Map<String, Object> invokerParameter;
+    private String partitionKeyInvoker;
+    private Map<String, Object> partitionKeyInvokerParameter;
 
 }
