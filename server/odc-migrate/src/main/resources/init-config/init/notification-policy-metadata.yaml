@@ -1,6 +1,6 @@
 - id: 1
   event_category: "NONE"
-  event_name: "${com.oceanbase.odc.notification.policy-metadata.all-events.name}"
+  event_name: "${com.oceanbase.odc.event.ALL_EVENTS.name}"
   match_expression: "true"
 - id: 2
   event_category: "TASK"
