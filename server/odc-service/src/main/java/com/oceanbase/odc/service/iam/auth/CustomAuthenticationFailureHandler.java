@@ -40,6 +40,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.LocaleResolver;
 
 import com.github.benmanes.caffeine.cache.LoadingCache;
+import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.trace.TraceContextHolder;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.AttemptLoginOverLimitException;
@@ -107,7 +108,8 @@ public class CustomAuthenticationFailureHandler implements AuthenticationFailure
             if (redirectUrl != null) {
                 httpServletResponse.sendRedirect(redirectUrl);
             }
-            WebResponseUtils.writeJsonObjectWithOkStatus("TestLoginSuccess", httpServletRequest, httpServletResponse);
+            WebResponseUtils.writeJsonObjectWithOkStatus(JsonUtils.toJson(Responses.ok("TestLoginSuccess")),
+                    httpServletRequest, httpServletResponse);
             log.info("Test login success for uri#{}", httpServletRequest.getRequestURI());
             return;
         }
