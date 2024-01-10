@@ -91,7 +91,10 @@ public enum TaskType implements Translatable {
      * Apply database permission
      */
     APPLY_DATABASE_PERMISSION,
-    ;
+    /**
+     * Structure comparison
+     */
+    STRUCTURE_COMPARISON;
 
     @Override
     public String code() {
