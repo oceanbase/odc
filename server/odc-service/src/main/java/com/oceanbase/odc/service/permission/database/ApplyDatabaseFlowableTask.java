@@ -117,7 +117,7 @@ public class ApplyDatabaseFlowableTask extends BaseODCFlowTaskDelegate<ApplyData
                             permissionEntities.add(permissionEntity);
                         }
                     }
-                    List<PermissionEntity> saved = permissionRepository.saveAll(permissionEntities);
+                    List<PermissionEntity> saved = permissionRepository.batchCreate(permissionEntities);
                     List<UserPermissionEntity> userPermissionEntities = new ArrayList<>();
                     for (PermissionEntity permissionEntity : saved) {
                         UserPermissionEntity userPermissionEntity = new UserPermissionEntity();
@@ -127,7 +127,7 @@ public class ApplyDatabaseFlowableTask extends BaseODCFlowTaskDelegate<ApplyData
                         userPermissionEntity.setOrganizationId(organizationId);
                         userPermissionEntities.add(userPermissionEntity);
                     }
-                    userPermissionRepository.saveAll(userPermissionEntities);
+                    userPermissionRepository.batchCreate(userPermissionEntities);
                     success = true;
                 } catch (Exception e) {
                     failure = true;
@@ -241,7 +241,8 @@ public class ApplyDatabaseFlowableTask extends BaseODCFlowTaskDelegate<ApplyData
                 log.warn("Database not found, id={}", id);
                 throw new NotFoundException(ResourceType.ODC_DATABASE, "id", id);
             }
-            if (!id2databaseEntities.get(id).getProjectId().equals(projectId)) {
+            DatabaseEntity databaseEntity = id2databaseEntities.get(id);
+            if (databaseEntity.getProjectId() == null || !databaseEntity.getProjectId().equals(projectId)) {
                 log.warn("Database not belong to project, databaseId={}, projectId={}", id, projectId);
                 throw new IllegalStateException("Database not belong to project");
             }
