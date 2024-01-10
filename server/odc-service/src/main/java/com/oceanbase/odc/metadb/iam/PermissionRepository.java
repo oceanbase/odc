@@ -118,12 +118,12 @@ public interface PermissionRepository
         List<Function<PermissionEntity, Object>> getter = valueGetterBuilder()
                 .add(PermissionEntity::getAction)
                 .add(PermissionEntity::getResourceIdentifier)
-                .add(PermissionEntity::getType)
+                .add((PermissionEntity e) -> e.getType().name())
                 .add(PermissionEntity::getCreatorId)
                 .add(PermissionEntity::getOrganizationId)
                 .add(PermissionEntity::getBuiltIn)
                 .add(PermissionEntity::getExpireTime)
-                .add(PermissionEntity::getAuthorizationType)
+                .add((PermissionEntity e) -> e.getAuthorizationType().name())
                 .add(PermissionEntity::getTicketId)
                 .build();
         return batchCreate(entities, sql, getter, PermissionEntity::setId);
