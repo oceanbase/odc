@@ -85,7 +85,7 @@ public class MySQLTableEditor extends DBTableEditor {
     protected void appendMoreTableOptions(DBTable table, SqlBuilder sqlBuilder) {}
 
     @Override
-    protected void generateUpdateTableOptionDDL(@NonNull DBTable oldTable, @NonNull DBTable newTable,
+    public void generateUpdateTableOptionDDL(@NonNull DBTable oldTable, @NonNull DBTable newTable,
             @NonNull SqlBuilder sqlBuilder) {
         if (Objects.isNull(oldTable.getTableOptions()) || Objects.isNull(newTable.getTableOptions())) {
             return;
@@ -95,6 +95,22 @@ public class MySQLTableEditor extends DBTableEditor {
                     .append(getFullyQualifiedTableName(newTable))
                     .append(" COMMENT = ")
                     .value(newTable.getTableOptions().getComment())
+                    .append(";\n");
+        }
+        if (!StringUtils.equals(oldTable.getTableOptions().getCharsetName(),
+                newTable.getTableOptions().getCharsetName())) {
+            sqlBuilder.append("ALTER TABLE ")
+                    .append(getFullyQualifiedTableName(newTable))
+                    .append(" CHARACTER SET = ")
+                    .append(newTable.getTableOptions().getCharsetName())
+                    .append(";\n");
+        }
+        if (!StringUtils.equals(oldTable.getTableOptions().getCollationName(),
+                newTable.getTableOptions().getCollationName())) {
+            sqlBuilder.append("ALTER TABLE ")
+                    .append(getFullyQualifiedTableName(newTable))
+                    .append(" COLLATE = ")
+                    .append(newTable.getTableOptions().getCollationName())
                     .append(";\n");
         }
     }

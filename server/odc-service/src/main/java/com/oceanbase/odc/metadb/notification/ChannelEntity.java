@@ -58,6 +58,8 @@ public class ChannelEntity {
     private Long creatorId;
     @Column(name = "organization_id", nullable = false)
     private Long organizationId;
+    @Column(name = "project_id", nullable = false)
+    private Long projectId;
     @Column(name = "name", nullable = false)
     private String name;
     @Enumerated(EnumType.STRING)
@@ -65,4 +67,6 @@ public class ChannelEntity {
     private ChannelType type;
     @OneToMany(mappedBy = "channel")
     List<ChannelPropertyEntity> properties;
+    @Column(name = "description")
+    private String description;
 }

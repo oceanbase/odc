@@ -261,5 +261,9 @@
             <groupId>com.oceanbase</groupId>
             <artifactId>task-plugin-api</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.oceanbase</groupId>
+            <artifactId>schema-plugin-ob-mysql</artifactId>
+        </dependency>
     </dependencies>
 </project>

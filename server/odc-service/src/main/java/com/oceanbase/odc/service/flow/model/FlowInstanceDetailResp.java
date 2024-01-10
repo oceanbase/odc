@@ -31,24 +31,24 @@ import com.oceanbase.odc.common.i18n.Internationalizable;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.flow.model.TaskParameters;
 import com.oceanbase.odc.core.shared.Verify;
-import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.core.shared.exception.InternalServerError;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
-import com.oceanbase.odc.metadb.connection.ConnectionEntity;
 import com.oceanbase.odc.metadb.flow.FlowInstanceEntity;
 import com.oceanbase.odc.metadb.iam.RoleEntity;
 import com.oceanbase.odc.metadb.iam.UserEntity;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
 import com.oceanbase.odc.service.common.model.InnerUser;
+import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.flow.instance.BaseFlowNodeInstance;
 import com.oceanbase.odc.service.flow.instance.FlowApprovalInstance;
 import com.oceanbase.odc.service.flow.instance.FlowInstance;
 import com.oceanbase.odc.service.flow.instance.FlowTaskInstance;
 import com.oceanbase.odc.service.flow.model.FlowNodeInstanceDetailResp.FlowNodeInstanceMapper;
+import com.oceanbase.odc.service.flow.task.model.DBStructureComparisonParameter;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.OdcMockTaskConfig;
 import com.oceanbase.odc.service.flow.task.model.ShadowTableSyncTaskParameter;
@@ -61,10 +61,7 @@ import com.oceanbase.odc.service.resultset.ResultSetExportTaskParameter;
 import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleParameters;
 
 import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
 import lombok.NonNull;
-import lombok.ToString;
 
 /**
  * @author wenniu.ly
@@ -79,11 +76,10 @@ public class FlowInstanceDetailResp {
     private List<FlowSubType> subTypes;
     private Integer maxRiskLevel;
     private RiskLevel riskLevel;
-    private InnerConnection connection;
+    private Database database;
+    private Database relatedDatabase;
     private Long projectId;
     private Set<InnerUser> candidateApprovers;
-    private String databaseName;
-    private Long databaseId;
     private InnerUser creator;
     private Date createTime;
     private TaskParameters parameters;
@@ -98,25 +94,10 @@ public class FlowInstanceDetailResp {
     private Date completeTime;
     private List<FlowNodeInstanceDetailResp> nodeList;
 
-    @Getter
-    @ToString
-    @EqualsAndHashCode
-    public static class InnerConnection {
-        private final Long id;
-        private final String name;
-        private final DialectType dbMode;
-
-        public InnerConnection(@NonNull ConnectionEntity config) {
-            this.id = config.getId();
-            this.name = config.getName();
-            this.dbMode = config.getDialectType();
-        }
-    }
-
     public static class FlowInstanceMapper {
         private Predicate<Long> ifApprovable = null;
         private Predicate<Long> ifRollbackable = null;
-        private Function<Long, ConnectionEntity> getConnectionById = null;
+        private Function<Long, Database> getDatabaseById = null;
         private Function<Long, UserEntity> getUserById = null;
         private Function<Long, Set<TaskEntity>> getTasksByFlowInstanceId = null;
         private Function<Long, List<RoleEntity>> getRolesByUserId = null;
@@ -147,8 +128,8 @@ public class FlowInstanceDetailResp {
             return this;
         }
 
-        public FlowInstanceMapper withGetConnectionById(@NonNull Function<Long, ConnectionEntity> getConnectionById) {
-            this.getConnectionById = getConnectionById;
+        public FlowInstanceMapper withGetDatabaseById(@NonNull Function<Long, Database> getDatabaseById) {
+            this.getDatabaseById = getDatabaseById;
             return this;
         }
 
@@ -212,17 +193,13 @@ public class FlowInstanceDetailResp {
                     .orElseThrow(() -> new UnexpectedException("not task found"));
             resp.setType(taskEntity.getTaskType());
             resp.setProgressPercentage(taskEntity.getProgressPercentage());
-            resp.setDatabaseName(taskEntity.getDatabaseName());
-            resp.setDatabaseId(taskEntity.getDatabaseId());
-            if (this.getConnectionById != null) {
-                ConnectionEntity connectionEntity = getConnectionById.apply(taskEntity.getConnectionId());
-                if (connectionEntity != null) {
-                    resp.setConnection(new InnerConnection(connectionEntity));
-                }
-            }
             if (taskEntity.getTaskType() == TaskType.ALTER_SCHEDULE) {
                 resp.setParameters(JsonUtils.fromJson(taskEntity.getParametersJson(), AlterScheduleParameters.class));
             }
+            if (this.getDatabaseById == null) {
+                return resp;
+            }
+            resp.setDatabase(getDatabaseById.apply(taskEntity.getDatabaseId()));
             return resp;
         }
 
@@ -333,19 +310,24 @@ public class FlowInstanceDetailResp {
                 case APPLY_PROJECT_PERMISSION:
                     resp.setParameters(JsonUtils.fromJson(parameterJson, ApplyProjectParameter.class));
                     break;
+                case STRUCTURE_COMPARISON:
+                    DBStructureComparisonParameter dbStructureComparisonParameter = JsonUtils.fromJson(parameterJson,
+                            DBStructureComparisonParameter.class);
+                    resp.setParameters(dbStructureComparisonParameter);
+                    if (getDatabaseById != null) {
+                        resp.setRelatedDatabase(
+                                this.getDatabaseById.apply(dbStructureComparisonParameter.getTargetDatabaseId()));
+                    }
+                    break;
                 default:
                     throw new UnsupportedException("Unsupported task type " + taskEntity.getTaskType());
             }
-            resp.setDatabaseId(taskEntity.getDatabaseId());
-            resp.setDatabaseName(taskEntity.getDatabaseName());
             resp.setType(taskEntity.getTaskType());
             resp.setProgressPercentage(taskEntity.getProgressPercentage());
-            if (this.getConnectionById != null) {
-                ConnectionEntity connectionEntity = getConnectionById.apply(taskEntity.getConnectionId());
-                if (connectionEntity != null) {
-                    resp.setConnection(new InnerConnection(connectionEntity));
-                }
+            if (this.getDatabaseById == null) {
+                return resp;
             }
+            resp.setDatabase(getDatabaseById.apply(taskEntity.getDatabaseId()));
             return resp;
         }
 
