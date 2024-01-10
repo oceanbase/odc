@@ -17,11 +17,9 @@ package com.oceanbase.tools.dbbrowser.schema.oracle;
 
 import java.sql.ResultSetMetaData;
 import java.sql.Timestamp;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -68,7 +66,6 @@ import com.oceanbase.tools.dbbrowser.parser.SqlParser;
 import com.oceanbase.tools.dbbrowser.parser.result.ParseOraclePLResult;
 import com.oceanbase.tools.dbbrowser.parser.result.ParseSqlResult;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessorSqlMappers;
-import com.oceanbase.tools.dbbrowser.schema.constant.Statements;
 import com.oceanbase.tools.dbbrowser.schema.constant.StatementsFiles;
 import com.oceanbase.tools.dbbrowser.util.DBSchemaAccessorUtil;
 import com.oceanbase.tools.dbbrowser.util.OracleDataDictTableNames;
@@ -186,30 +183,13 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
     }
 
     @Override
-    protected List<DBTableIndex> obtainBasicIndexInfo(String schemaName, String tableName) {
-        String sql = this.sqlMapper.getSql(Statements.LIST_TABLE_INDEXES);
-        Map<String, DBTableIndex> indexName2Index = new LinkedHashMap<>();
-        jdbcOperations.query(sql, new Object[] {schemaName, tableName}, (rs, num) -> {
-            DBTableIndex index = new DBTableIndex();
-            index.setName(rs.getString(OracleConstants.INDEX_NAME));
-            index.setOrdinalPosition(num);
-            index.setOwner(rs.getString("OWNER"));
-            index.setNonUnique(!"UNIQUE".equalsIgnoreCase(rs.getString(OracleConstants.INDEX_UNIQUENESS)));
-            index.setType(DBIndexType.fromString(rs.getString(OracleConstants.INDEX_TYPE)));
-            index.setVisible("VISIBLE".equalsIgnoreCase(rs.getString("VISIBILITY")));
-            if (index.isNonUnique()) {
-                index.setType(DBIndexType.fromString(rs.getString(OracleConstants.INDEX_TYPE)));
-            } else {
-                index.setType(DBIndexType.UNIQUE);
-            }
-            index.setAlgorithm(DBIndexAlgorithm.fromString(rs.getString(OracleConstants.INDEX_TYPE)));
-            index.setCompressInfo(rs.getString(OracleConstants.INDEX_COMPRESSION));
-            index.setColumnNames(new ArrayList<>());
-            index.setAvailable("VALID".equals(rs.getString(OracleConstants.INDEX_STATUS)));
-            indexName2Index.putIfAbsent(index.getName(), index);
-            return index;
-        });
-        return new ArrayList<>(indexName2Index.values());
+    protected boolean isTableIndexAvailable(String status) {
+        return "VALID".equals(status);
+    }
+
+    @Override
+    protected boolean judgeIndexGlobalOrLocalFromDataDict() {
+        return false;
     }
 
     protected void fillIndexRange(List<DBTableIndex> indexList) {
@@ -843,40 +823,23 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
     }
 
     @Override
-    protected DBType parseTypeDDL(DBType type) {
-        OracleSqlBuilder sb = new OracleSqlBuilder();
-        sb.append("select dbms_metadata.get_ddl('TYPE', ");
-        sb.value(type.getTypeName());
-        sb.append(", ");
-        sb.value(type.getOwner());
-        sb.append(") from dual");
-
-        String typeDdl = jdbcOperations.query(sb.toString(), rs -> {
+    protected String queryTypeDdl(String querySql) {
+        return jdbcOperations.query(querySql, rs -> {
             if (!rs.next()) {
                 return null;
             }
             return rs.getClob(1).toString();
         });
+    }
 
-        OracleSqlBuilder sb2 = new OracleSqlBuilder();
-        sb2.append("select dbms_metadata.get_ddl('TYPE_SPEC', ");
-        sb2.value(type.getTypeName());
-        sb2.append(", ");
-        sb2.value(type.getOwner());
-        sb2.append(") from dual");
-
-        String typeHeadDdl = jdbcOperations.query(sb2.toString(), rs -> {
+    @Override
+    protected String queryTypeSpecDdl(String querySql) {
+        return jdbcOperations.query(querySql, rs -> {
             if (!rs.next()) {
                 return null;
             }
             return rs.getClob(1).toString();
         });
-        Validate.notBlank(typeDdl, "typeDdl");
-        Validate.notBlank(typeHeadDdl, "typeHeadDdl");
-
-        type.setDdl(typeDdl);
-
-        return parseTypeDDL(type, typeHeadDdl);
     }
 
     @Override

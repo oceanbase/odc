@@ -905,12 +905,22 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
             index.setAlgorithm(DBIndexAlgorithm.fromString(rs.getString(OracleConstants.INDEX_TYPE)));
             index.setCompressInfo(rs.getString(OracleConstants.INDEX_COMPRESSION));
             index.setColumnNames(new ArrayList<>());
-            index.setAvailable(!"UNUSABLE".equals(rs.getString(OracleConstants.INDEX_STATUS)));
-            index.setGlobal("NO".equalsIgnoreCase(rs.getString("PARTITIONED")));
+            index.setAvailable(isTableIndexAvailable(rs.getString(OracleConstants.INDEX_STATUS)));
+            if (judgeIndexGlobalOrLocalFromDataDict()) {
+                index.setGlobal("NO".equalsIgnoreCase(rs.getString("PARTITIONED")));
+            }
             indexName2Index.putIfAbsent(index.getName(), index);
             return index;
         });
         return new ArrayList<>(indexName2Index.values());
+    }
+
+    protected boolean isTableIndexAvailable(String status) {
+        return !"UNUSABLE".equals(status);
+    }
+
+    protected boolean judgeIndexGlobalOrLocalFromDataDict() {
+        return true;
     }
 
     @Override
@@ -1135,7 +1145,7 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
     protected DBFunction parseFunctionDDL(DBFunction function) {
         // get variables defined in function by parse function ddl
         try {
-            ParseOraclePLResult result = getPLParserResult(function.getDdl());
+            ParseOraclePLResult result = PLParser.parseOracle(function.getDdl());
             function.setVariables(result.getVaribaleList());
             function.setTypes(result.getTypeList());
         } catch (Exception e) {
@@ -1143,10 +1153,6 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
             function.setParseErrorMessage(e.getMessage());
         }
         return function;
-    }
-
-    protected ParseOraclePLResult getPLParserResult(String ddl) {
-        return PLParser.parseOracle(ddl);
     }
 
     @Override
@@ -1374,12 +1380,7 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
                 .value(type.getOwner())
                 .append(") as DDL from dual");
 
-        String typeDdl = jdbcOperations.query(typeDDL.toString(), rs -> {
-            if (!rs.next()) {
-                return null;
-            }
-            return rs.getString(1);
-        });
+        String typeDdl = queryTypeDdl(typeDDL.toString());
 
         OracleSqlBuilder typeSpecDDL = new OracleSqlBuilder();
         typeSpecDDL.append("select dbms_metadata.get_ddl('TYPE_SPEC', ")
@@ -1388,17 +1389,30 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
                 .value(type.getOwner())
                 .append(") as DDL from dual");
 
-        String typeHeadDdl = jdbcOperations.query(typeSpecDDL.toString(), rs -> {
-            if (!rs.next()) {
-                return null;
-            }
-            return rs.getString(1);
-        });
+        String typeHeadDdl = queryTypeSpecDdl(typeSpecDDL.toString());
         Validate.notBlank(typeDdl, "typeDdl");
         Validate.notBlank(typeHeadDdl, "typeHeadDdl");
         type.setDdl(typeDdl);
 
         return parseTypeDDL(type, typeHeadDdl);
+    }
+
+    protected String queryTypeDdl(String querySql) {
+        return jdbcOperations.query(querySql, rs -> {
+            if (!rs.next()) {
+                return null;
+            }
+            return rs.getString(1);
+        });
+    }
+
+    protected String queryTypeSpecDdl(String querySql) {
+        return jdbcOperations.query(querySql, rs -> {
+            if (!rs.next()) {
+                return null;
+            }
+            return rs.getString(1);
+        });
     }
 
     protected DBType parseTypeDDL(DBType type, String typeHeadDdl) {
