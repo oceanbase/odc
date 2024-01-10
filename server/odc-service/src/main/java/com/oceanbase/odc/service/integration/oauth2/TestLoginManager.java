@@ -111,6 +111,7 @@ public class TestLoginManager {
         }
         String testId = UUID.randomUUID().toString();
         String redirectUrl = null;
+        String testRegistrationId = null;
         if (ssoConfig.isOauth2OrOidc()) {
             if (addableClientRegistrationManager == null) {
                 throw new UnsupportedOperationException("add test sso is not support");
@@ -123,8 +124,9 @@ public class TestLoginManager {
                 throw new UnsupportedOperationException("add test sso is not support");
             }
             ldapConfigRegistrationManager.addTestConfig(ssoConfig);
+            testRegistrationId = ssoConfig.resolveRegistrationId();
         }
-        return new SSOTestInfo(redirectUrl, testId);
+        return new SSOTestInfo(redirectUrl, testId, testRegistrationId);
     }
 
     @Nullable
