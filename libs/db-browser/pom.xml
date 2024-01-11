@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.oceanbase</groupId>
     <artifactId>db-browser</artifactId>
-    <version>1.0.5</version>
+    <version>1.1.0</version>
     <name>db-browser</name>
     <url>https://github.com/oceanbase/odc/tree/main/libs/db-browser</url>
 
@@ -97,6 +97,7 @@
         <maven-javadoc-plugin.version>2.9.1</maven-javadoc-plugin.version>
         <maven-source-plugin.version>2.2.1</maven-source-plugin.version>
         <license-maven-plugin.version>3.0</license-maven-plugin.version>
+        <oracle.jdbc.version>21.1.0.0</oracle.jdbc.version>
     </properties>
 
     <dependencyManagement>
@@ -194,6 +195,11 @@
                 <groupId>com.fasterxml.jackson.dataformat</groupId>
                 <artifactId>jackson-dataformat-yaml</artifactId>
                 <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.oracle.database.jdbc</groupId>
+                <artifactId>ojdbc8</artifactId>
+                <version>${oracle.jdbc.version}</version>
             </dependency>
             <dependency>
                 <groupId>mysql</groupId>
@@ -296,6 +302,10 @@
         <dependency>
             <groupId>com.fasterxml.jackson.dataformat</groupId>
             <artifactId>jackson-dataformat-yaml</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.oracle.database.jdbc</groupId>
+            <artifactId>ojdbc8</artifactId>
         </dependency>
     </dependencies>
 

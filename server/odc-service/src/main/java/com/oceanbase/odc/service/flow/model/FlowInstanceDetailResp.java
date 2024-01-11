@@ -55,6 +55,7 @@ import com.oceanbase.odc.service.flow.task.model.ShadowTableSyncTaskParameter;
 import com.oceanbase.odc.service.flow.util.FlowInstanceUtil;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanTaskParameters;
+import com.oceanbase.odc.service.permission.database.model.ApplyDatabaseParameter;
 import com.oceanbase.odc.service.permission.project.ApplyProjectParameter;
 import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevel;
 import com.oceanbase.odc.service.resultset.ResultSetExportTaskParameter;
@@ -309,6 +310,9 @@ public class FlowInstanceDetailResp {
                     break;
                 case APPLY_PROJECT_PERMISSION:
                     resp.setParameters(JsonUtils.fromJson(parameterJson, ApplyProjectParameter.class));
+                    break;
+                case APPLY_DATABASE_PERMISSION:
+                    resp.setParameters(JsonUtils.fromJson(parameterJson, ApplyDatabaseParameter.class));
                     break;
                 case STRUCTURE_COMPARISON:
                     DBStructureComparisonParameter dbStructureComparisonParameter = JsonUtils.fromJson(parameterJson,

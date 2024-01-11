@@ -21,10 +21,13 @@ import org.springframework.context.i18n.LocaleContextHolder;
 
 import com.oceanbase.odc.common.i18n.Translatable;
 
+import lombok.Getter;
+
 /**
  * @author gaoda.xy
  * @date 2024/1/3 14:04
  */
+@Getter
 public enum DatabasePermissionType implements Translatable {
 
     QUERY("query"),

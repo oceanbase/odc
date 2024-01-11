@@ -161,3 +161,17 @@ sqls:
     where
       d.DATABASE_NAME = ? and t.TABLE_NAME = ?
       and d.DATABASE_ID = t.DATABASE_ID;
+  list-database: |-
+    select 
+      USERNAME, 
+      USERID 
+    from 
+      ALL_USERS
+  get-database: |-
+    SELECT 
+      USERNAME, 
+      USERID 
+    from 
+      SYS.ALL_USERS
+    WHERE
+      USERNAME = ?

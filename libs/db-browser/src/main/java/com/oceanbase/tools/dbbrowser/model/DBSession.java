@@ -77,7 +77,7 @@ public class DBSession {
     /**
      * 当前命令执行时间
      */
-    private int executeTime;
+    private Integer executeTime;
 
 
     public static DBSession unknown() {

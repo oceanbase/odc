@@ -15,25 +15,26 @@
  */
 package com.oceanbase.tools.dbbrowser.schema.oracle;
 
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.Validate;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.lang.NonNull;
 
+import com.oceanbase.tools.dbbrowser.model.DBBasicPLObject;
 import com.oceanbase.tools.dbbrowser.model.DBColumnTypeDisplay;
 import com.oceanbase.tools.dbbrowser.model.DBConstraintDeferability;
 import com.oceanbase.tools.dbbrowser.model.DBConstraintType;
@@ -45,7 +46,11 @@ import com.oceanbase.tools.dbbrowser.model.DBIndexType;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBPLObjectIdentity;
+import com.oceanbase.tools.dbbrowser.model.DBPLParam;
+import com.oceanbase.tools.dbbrowser.model.DBPLParamMode;
 import com.oceanbase.tools.dbbrowser.model.DBPackage;
+import com.oceanbase.tools.dbbrowser.model.DBPackageBasicInfo;
+import com.oceanbase.tools.dbbrowser.model.DBPackageDetail;
 import com.oceanbase.tools.dbbrowser.model.DBProcedure;
 import com.oceanbase.tools.dbbrowser.model.DBSequence;
 import com.oceanbase.tools.dbbrowser.model.DBSynonym;
@@ -65,6 +70,9 @@ import com.oceanbase.tools.dbbrowser.model.DBType;
 import com.oceanbase.tools.dbbrowser.model.DBVariable;
 import com.oceanbase.tools.dbbrowser.model.DBView;
 import com.oceanbase.tools.dbbrowser.model.OracleConstants;
+import com.oceanbase.tools.dbbrowser.model.PLConstants;
+import com.oceanbase.tools.dbbrowser.parser.PLParser;
+import com.oceanbase.tools.dbbrowser.parser.result.ParseOraclePLResult;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessorSqlMapper;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessorSqlMappers;
@@ -73,6 +81,7 @@ import com.oceanbase.tools.dbbrowser.schema.constant.StatementsFiles;
 import com.oceanbase.tools.dbbrowser.util.DBSchemaAccessorUtil;
 import com.oceanbase.tools.dbbrowser.util.OracleDataDictTableNames;
 import com.oceanbase.tools.dbbrowser.util.OracleSqlBuilder;
+import com.oceanbase.tools.dbbrowser.util.PLObjectErrMsgUtils;
 import com.oceanbase.tools.dbbrowser.util.StringUtils;
 
 import lombok.extern.slf4j.Slf4j;
@@ -86,14 +95,6 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
             "COMMENT ON TABLE ${schemaName}.${tableName} IS ${comment}";
     private static final String ORACLE_COLUMN_COMMENT_DDL_TEMPLATE =
             "COMMENT ON COLUMN ${schemaName}.${tableName}.${columnName} IS ${comment}";
-    protected static final Set<String> ESCAPE_USER_SET = new HashSet<>(3);
-
-    static {
-        ESCAPE_USER_SET.add("PUBLIC");
-        ESCAPE_USER_SET.add("LBACSYS");
-        ESCAPE_USER_SET.add("ORAAUDITOR");
-        ESCAPE_USER_SET.add("__public");
-    }
     protected OracleDataDictTableNames dataDictTableNames;
     protected JdbcOperations jdbcOperations;
     protected DBSchemaAccessorSqlMapper sqlMapper;
@@ -102,7 +103,7 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
             OracleDataDictTableNames dataDictTableNames) {
         this.dataDictTableNames = dataDictTableNames;
         this.jdbcOperations = jdbcOperations;
-        this.sqlMapper = DBSchemaAccessorSqlMappers.get(StatementsFiles.OBORACLE_4_0_x);
+        this.sqlMapper = DBSchemaAccessorSqlMappers.get(StatementsFiles.ORACLE_11_g);
     }
 
     @Override
@@ -111,25 +112,60 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
         sb.append("select USERNAME from ");
         sb.append(dataDictTableNames.USERS());
 
-        List<String> users = jdbcOperations.queryForList(sb.toString(), String.class);
-        return users.stream().filter(user -> !ESCAPE_USER_SET.contains(user)).collect(Collectors.toList());
+        return jdbcOperations.queryForList(sb.toString(), String.class);
     }
 
     @Override
     public DBDatabase getDatabase(String schemaName) {
-        throw new UnsupportedOperationException("Not supported yet");
+        DBDatabase database = new DBDatabase();
+        String sql = this.sqlMapper.getSql(Statements.GET_DATABASE);
+        jdbcOperations.query(sql, new Object[] {schemaName}, rs -> {
+            database.setId(rs.getString(2));
+            database.setName(rs.getString(1));
+        });
+        sql = "select value from v$nls_parameters where PARAMETER = 'NLS_CHARACTERSET'";
+        jdbcOperations.query(sql, rs -> {
+            database.setCharset(rs.getString(1));
+        });
+        sql = "SELECT value from v$nls_parameters where parameter = 'NLS_SORT'";
+        jdbcOperations.query(sql, rs -> {
+            database.setCollation(rs.getString(1));
+        });
+        return database;
     }
 
     @Override
     public List<DBDatabase> listDatabases() {
-        throw new UnsupportedOperationException("Not supported yet");
+        List<DBDatabase> databases = new ArrayList();
+        String sql = this.sqlMapper.getSql(Statements.LIST_DATABASE);
+        this.jdbcOperations.query(sql, (rs) -> {
+            DBDatabase database = new DBDatabase();
+            database.setId(rs.getString(2));
+            database.setName(rs.getString(1));
+            databases.add(database);
+        });
+        sql = "select value from v$nls_parameters where PARAMETER = 'NLS_CHARACTERSET'";
+        AtomicReference<String> charset = new AtomicReference();
+        this.jdbcOperations.query(sql, (rs) -> {
+            charset.set(rs.getString(1));
+        });
+        sql = "SELECT value from v$nls_parameters where parameter = 'NLS_SORT'";
+        AtomicReference<String> collation = new AtomicReference();
+        this.jdbcOperations.query(sql, (rs) -> {
+            collation.set(rs.getString(1));
+        });
+        databases.forEach((item) -> {
+            item.setCharset(charset.get());
+            item.setCollation(collation.get());
+        });
+        return databases;
     }
 
     @Override
     public void switchDatabase(String schemaName) {
         OracleSqlBuilder sb = new OracleSqlBuilder();
         sb.append("alter session set current_schema=");
-        sb.value(schemaName);
+        sb.identifier(schemaName);
         jdbcOperations.execute(sb.toString());
     }
 
@@ -199,7 +235,7 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
                 .append(dataDictTableNames.VIEWS())
                 .append(" where VIEW_NAME LIKE ")
                 .value('%' + viewNameLike + '%')
-                .append("  order by name asc;");
+                .append("  order by name asc");
         return jdbcOperations.query(sb.toString(), new BeanPropertyRowMapper<>(DBObjectIdentity.class));
     }
 
@@ -232,7 +268,7 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
 
     @Override
     public List<DBVariable> showVariables() {
-        String sql = "show variables";
+        String sql = "SELECT name, value FROM V$PARAMETER";
 
         return jdbcOperations.query(sql, (rs, rowNum) -> {
             DBVariable variable = new DBVariable();
@@ -244,7 +280,7 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
 
     @Override
     public List<DBVariable> showSessionVariables() {
-        String sql = "show session variables";
+        String sql = "SELECT name, value FROM V$PARAMETER";
 
         return jdbcOperations.query(sql, (rs, rowNum) -> {
             DBVariable variable = new DBVariable();
@@ -256,7 +292,7 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
 
     @Override
     public List<DBVariable> showGlobalVariables() {
-        String sql = "show global variables";
+        String sql = "SELECT name, value FROM V$SYSTEM_PARAMETER";
 
         return jdbcOperations.query(sql, (rs, rowNum) -> {
             DBVariable variable = new DBVariable();
@@ -269,17 +305,17 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
     @Override
     public List<String> showCharset() {
         OracleSqlBuilder sb = new OracleSqlBuilder();
-        sb.append("show character set");
+        sb.append("SELECT DISTINCT VALUE FROM V$NLS_VALID_VALUES WHERE PARAMETER = 'CHARACTERSET' ORDER BY VALUE");
 
-        return jdbcOperations.query(sb.toString(), (rs, rowNum) -> rs.getString(1));
+        return jdbcOperations.queryForList(sb.toString(), String.class);
     }
 
     @Override
     public List<String> showCollation() {
         OracleSqlBuilder sb = new OracleSqlBuilder();
-        sb.append("show collation");
+        sb.append("SELECT DISTINCT VALUE FROM V$NLS_VALID_VALUES WHERE PARAMETER = 'SORT' ORDER BY VALUE");
 
-        return jdbcOperations.query(sb.toString(), (rs, rowNum) -> rs.getString(1));
+        return jdbcOperations.queryForList(sb.toString(), String.class);
     }
 
     @Override
@@ -292,7 +328,18 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
                 .value(schemaName)
                 .append(" order by object_name asc");
 
-        return jdbcOperations.query(sb.toString(), new BeanPropertyRowMapper<>(DBPLObjectIdentity.class));
+        List<DBPLObjectIdentity> functions =
+                jdbcOperations.query(sb.toString(), new BeanPropertyRowMapper<>(DBPLObjectIdentity.class));
+
+        Map<String, String> errorText = PLObjectErrMsgUtils.acquireErrorMessage(jdbcOperations,
+                schemaName, DBObjectType.FUNCTION.name(), null);
+        for (DBPLObjectIdentity function : functions) {
+            if (StringUtils.containsIgnoreCase(function.getStatus(), PLConstants.PL_OBJECT_STATUS_INVALID)) {
+                function.setErrorMessage(errorText.get(function.getName()));
+            }
+        }
+
+        return functions;
     }
 
     @Override
@@ -305,7 +352,18 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
         sb.value(schemaName);
         sb.append(" order by object_name asc");
 
-        return jdbcOperations.query(sb.toString(), new BeanPropertyRowMapper<>(DBPLObjectIdentity.class));
+        List<DBPLObjectIdentity> procedures =
+                jdbcOperations.query(sb.toString(), new BeanPropertyRowMapper<>(DBPLObjectIdentity.class));
+
+        Map<String, String> errorText = PLObjectErrMsgUtils.acquireErrorMessage(jdbcOperations,
+                schemaName, DBObjectType.PROCEDURE.name(), null);
+        for (DBPLObjectIdentity procedure : procedures) {
+            if (StringUtils.containsIgnoreCase(procedure.getStatus(), PLConstants.PL_OBJECT_STATUS_INVALID)) {
+                procedure.setErrorMessage(errorText.get(procedure.getName()));
+            }
+        }
+
+        return procedures;
     }
 
     @Override
@@ -318,7 +376,7 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
         sb.value(schemaName);
         sb.append(" order by name asc");
 
-        return jdbcOperations.query(sb.toString(), (rs, rowNum) -> {
+        List<DBPLObjectIdentity> packages = jdbcOperations.query(sb.toString(), (rs, rowNum) -> {
             DBPLObjectIdentity dbPackage = new DBPLObjectIdentity();
             dbPackage.setName(rs.getString("name"));
             dbPackage.setStatus(rs.getString("status"));
@@ -326,6 +384,40 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
             dbPackage.setType(DBObjectType.getEnumByName(rs.getString("type")));
             return dbPackage;
         });
+
+        List<DBPLObjectIdentity> filtered = new ArrayList<>();
+        Map<String, String> name2Status = new HashMap<>();
+        for (DBPLObjectIdentity dbPackage : packages) {
+            String pkgName = dbPackage.getName();
+            String status = dbPackage.getStatus();
+            // merge status of 'package' and 'package body'
+            if (name2Status.containsKey(pkgName)) {
+                if (PLConstants.PL_OBJECT_STATUS_INVALID.equalsIgnoreCase(status)) {
+                    name2Status.put(pkgName, status);
+                }
+            } else {
+                name2Status.put(pkgName, status);
+            }
+        }
+        Map<String, String> errorText = PLObjectErrMsgUtils.acquireErrorMessage(jdbcOperations,
+                schemaName, DBObjectType.PACKAGE.name(), null);
+        String pkgName = null;
+        for (DBPLObjectIdentity pkg : packages) {
+            if (Objects.isNull(pkgName) || !StringUtils.equals(pkgName, pkg.getName())) {
+                pkgName = pkg.getName();
+                DBPLObjectIdentity dbPackage = new DBPLObjectIdentity();
+                dbPackage.setName(pkg.getName());
+                dbPackage.setStatus(name2Status.get(pkg.getName()));
+                dbPackage.setSchemaName(pkg.getSchemaName());
+                dbPackage.setType(pkg.getType());
+                if (StringUtils.containsIgnoreCase(dbPackage.getStatus(),
+                        PLConstants.PL_OBJECT_STATUS_INVALID)) {
+                    dbPackage.setErrorMessage(errorText.get(dbPackage.getName()));
+                }
+                filtered.add(dbPackage);
+            }
+        }
+        return filtered;
     }
 
     @Override
@@ -361,7 +453,7 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
         sb.value(schemaName);
         sb.append(" order by TRIGGER_NAME asc");
 
-        return jdbcOperations.query(sb.toString(), (rs, rowNum) -> {
+        List<DBPLObjectIdentity> triggers = jdbcOperations.query(sb.toString(), (rs, rowNum) -> {
             DBPLObjectIdentity trigger = new DBPLObjectIdentity();
             trigger.setName(rs.getString("TRIGGER_NAME"));
             trigger.setSchemaName(rs.getString("OWNER"));
@@ -370,6 +462,16 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
             trigger.setType(DBObjectType.TRIGGER);
             return trigger;
         });
+
+        Map<String, String> errorText = PLObjectErrMsgUtils.acquireErrorMessage(jdbcOperations,
+                schemaName, DBObjectType.TRIGGER.name(), null);
+        for (DBPLObjectIdentity trigger : triggers) {
+            if (StringUtils.containsIgnoreCase(trigger.getStatus(), PLConstants.PL_OBJECT_STATUS_INVALID)) {
+                trigger.setErrorMessage(errorText.get(trigger.getName()));
+            }
+        }
+
+        return triggers;
     }
 
     @Override
@@ -382,7 +484,22 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
         sb.value(schemaName);
         sb.append(" order by OBJECT_NAME asc");
 
-        return jdbcOperations.query(sb.toString(), new BeanPropertyRowMapper<>(DBPLObjectIdentity.class));
+        List<DBPLObjectIdentity> types =
+                jdbcOperations.query(sb.toString(), new BeanPropertyRowMapper<>(DBPLObjectIdentity.class));
+
+        return fillTypeErrorMessage(types, schemaName);
+    }
+
+    protected List<DBPLObjectIdentity> fillTypeErrorMessage(List<DBPLObjectIdentity> types, String schemaName) {
+        Map<String, String> errorText = PLObjectErrMsgUtils.acquireErrorMessage(jdbcOperations,
+                schemaName, DBObjectType.TYPE.name(), null);
+        for (DBPLObjectIdentity type : types) {
+            if (StringUtils.containsIgnoreCase(type.getStatus(), PLConstants.PL_OBJECT_STATUS_INVALID)) {
+                type.setErrorMessage(errorText.get(type.getName()));
+            }
+        }
+
+        return types;
     }
 
     @Override
@@ -406,7 +523,19 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
 
     @Override
     public List<DBObjectIdentity> listSynonyms(String schemaName, DBSynonymType synonymType) {
-        throw new UnsupportedOperationException("Not supported yet");
+        OracleSqlBuilder sb = new OracleSqlBuilder();
+        if (DBSynonymType.PUBLIC.equals(synonymType)) {
+            sb.append(
+                    "SELECT OWNER as schema_name, SYNONYM_NAME as name, 'PUBLIC_SYNONYM' as type FROM ALL_SYNONYMS where owner='PUBLIC'");
+        } else if (DBSynonymType.COMMON.equals(synonymType)) {
+            sb.append(
+                    "SELECT OWNER as schema_name, SYNONYM_NAME as name, 'SYNONYM' as type FROM ALL_SYNONYMS where owner=")
+                    .value(schemaName);
+        } else {
+            throw new UnsupportedOperationException("Not supported Synonym type");
+        }
+
+        return jdbcOperations.query(sb.toString(), new BeanPropertyRowMapper<>(DBObjectIdentity.class));
     }
 
     @Override
@@ -573,7 +702,8 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
                 hiddenColumnOrdinaryPosition[0]--;
             }
             tableColumn.setVirtual("YES".equalsIgnoreCase(rs.getString(OracleConstants.COL_VIRTUAL_COLUMN)));
-            tableColumn.setDefaultValue(rs.getString(OracleConstants.COL_DATA_DEFAULT));
+            tableColumn.setDefaultValue("NULL".equals(rs.getString(OracleConstants.COL_DATA_DEFAULT)) ? null
+                    : rs.getString(OracleConstants.COL_DATA_DEFAULT));
             if (tableColumn.getVirtual()) {
                 tableColumn.setGenExpression(rs.getString(OracleConstants.COL_DATA_DEFAULT));
             }
@@ -775,32 +905,27 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
             index.setAlgorithm(DBIndexAlgorithm.fromString(rs.getString(OracleConstants.INDEX_TYPE)));
             index.setCompressInfo(rs.getString(OracleConstants.INDEX_COMPRESSION));
             index.setColumnNames(new ArrayList<>());
-            index.setAvailable("VALID".equals(rs.getString(OracleConstants.INDEX_STATUS)));
+            index.setAvailable(isTableIndexAvailable(rs.getString(OracleConstants.INDEX_STATUS)));
+            if (judgeIndexGlobalOrLocalFromDataDict()) {
+                index.setGlobal("NO".equalsIgnoreCase(rs.getString("PARTITIONED")));
+            }
             indexName2Index.putIfAbsent(index.getName(), index);
             return index;
         });
         return new ArrayList<>(indexName2Index.values());
     }
 
+    protected boolean isTableIndexAvailable(String status) {
+        return !"UNUSABLE".equals(status);
+    }
+
+    protected boolean judgeIndexGlobalOrLocalFromDataDict() {
+        return true;
+    }
+
     @Override
     public String getTableDDL(String schemaName, String tableName) {
-        OracleSqlBuilder sb = new OracleSqlBuilder();
-        sb.append("SHOW CREATE TABLE ");
-        sb.identifier(schemaName);
-        sb.append(".");
-        sb.identifier(tableName);
-
-        AtomicReference<String> ddlRef = new AtomicReference<>();
-        jdbcOperations.query(sb.toString(), t -> {
-            // Create table ddl like this: CREATE [GLOBAL TEMPORARY|SHARDED|DUPLICATED] TABLE T...
-            String ddl = t.getString(2);
-            if (Objects.nonNull(ddl)) {
-                // fix: Replace " TABLE " to " TABLE schemaName."
-                ddlRef.set(StringUtils.replace(ddl, " TABLE ",
-                        " TABLE " + StringUtils.quoteOracleIdentifier(schemaName) + ".", 1));
-            }
-        });
-        StringBuilder ddl = new StringBuilder(ddlRef.get());
+        StringBuilder ddl = new StringBuilder(getTableDDLOnly(schemaName, tableName));
         ddl.append(";\n");
         Map<String, String> variables = new HashMap<>();
         DBTableOptions tableOptions = getTableOptions(schemaName, tableName);
@@ -856,6 +981,17 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
 
     }
 
+    protected String getTableDDLOnly(String schemaName, String tableName) {
+        OracleSqlBuilder sb = new OracleSqlBuilder();
+        sb.append("SELECT dbms_metadata.get_ddl('TABLE', ")
+                .value(tableName)
+                .append(", ")
+                .value(schemaName)
+                .append(") as DDL from dual");
+
+        return jdbcOperations.queryForObject(sb.toString(), String.class);
+    }
+
     @Override
     public DBTableOptions getTableOptions(String schemaName, String tableName) {
         DBTableOptions tableOptions = new DBTableOptions();
@@ -872,16 +1008,16 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
     }
 
     protected void obtainTableCharset(DBTableOptions tableOptions) {
-        String sql = "SHOW VARIABLES LIKE 'nls_characterset'";
+        String sql = "select value from v$nls_parameters where PARAMETER = 'NLS_CHARACTERSET'";
         jdbcOperations.query(sql, t -> {
-            tableOptions.setCharsetName(t.getString("VALUE"));
+            tableOptions.setCharsetName(t.getString(1));
         });
     }
 
     protected void obtainTableCollation(DBTableOptions tableOptions) {
-        String sql = "SHOW VARIABLES LIKE 'nls_sort'";
+        String sql = "SELECT value from v$nls_parameters where parameter = 'NLS_SORT'";
         jdbcOperations.query(sql, t -> {
-            tableOptions.setCollationName(t.getString("VALUE"));
+            tableOptions.setCollationName(t.getString(1));
         });
     }
 
@@ -914,42 +1050,501 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
 
     @Override
     public DBView getView(String schemaName, String viewName) {
-        throw new UnsupportedOperationException("Not supported yet");
+        DBView view = new DBView();
+        view.setViewName(viewName);
+        view.setSchemaName(schemaName);
+        view.setDefiner(schemaName);
+        OracleSqlBuilder getDDL = new OracleSqlBuilder();
+        getDDL.append("SELECT dbms_metadata.get_ddl('VIEW', ")
+                .value(viewName)
+                .append(", ")
+                .value(schemaName)
+                .append(") as DDL FROM dual");
+        jdbcOperations.query(getDDL.toString(), rs -> {
+            view.setDdl(rs.getString(1));
+        });
+
+        OracleSqlBuilder getColumns = new OracleSqlBuilder();
+        getColumns.append(
+                "SELECT COLUMN_NAME, DATA_TYPE, NULLABLE, DATA_DEFAULT, COMMENTS FROM SYS.ALL_TAB_COLS NATURAL JOIN SYS.ALL_COL_COMMENTS WHERE OWNER = ")
+                .value(schemaName).append(" AND TABLE_NAME=").value(viewName).append(" ORDER BY COLUMN_ID ASC");
+        List<DBTableColumn> columns = jdbcOperations.query(getColumns.toString(), (rs, rowNum) -> {
+            DBTableColumn column = new DBTableColumn();
+            column.setName(rs.getString("COLUMN_NAME"));
+            column.setTypeName(rs.getString("DATA_TYPE"));
+            column.setNullable("Y".equalsIgnoreCase(rs.getString("NULLABLE")));
+            column.setDefaultValue(rs.getString("DATA_DEFAULT"));
+            column.setOrdinalPosition(rowNum);
+            column.setTableName(view.getViewName());
+            return column;
+        });
+        view.setColumns(columns);
+        return view;
     }
 
     @Override
     public DBFunction getFunction(String schemaName, String functionName) {
-        throw new UnsupportedOperationException("Not supported yet");
+        OracleSqlBuilder info = new OracleSqlBuilder();
+        info.append("select OWNER, STATUS, CREATED, LAST_DDL_TIME from ")
+                .append(dataDictTableNames.OBJECTS())
+                .append(" where object_type='FUNCTION' and owner=")
+                .value(schemaName)
+                .append(" and OBJECT_NAME=")
+                .value(functionName);
+        DBFunction function = new DBFunction();
+        function.setFunName(functionName);
+        function.setDefiner(schemaName);
+
+        jdbcOperations.query(info.toString(), (rs) -> {
+            function.setDefiner(rs.getString("OWNER"));
+            function.setStatus(rs.getString("STATUS"));
+            function.setCreateTime(Timestamp.valueOf(rs.getString("CREATED")));
+            function.setModifyTime(Timestamp.valueOf(rs.getString("LAST_DDL_TIME")));
+        });
+
+        OracleSqlBuilder ddl = new OracleSqlBuilder();
+        ddl.append("SELECT dbms_metadata.get_ddl('FUNCTION', ")
+                .value(functionName)
+                .append(", ")
+                .value(schemaName)
+                .append(") as DDL from dual");
+        jdbcOperations.query(ddl.toString(), rs -> {
+            function.setDdl(rs.getString(1));
+        });
+
+        OracleSqlBuilder getParams = new OracleSqlBuilder();
+        getParams.append("SELECT OWNER, OBJECT_NAME, ARGUMENT_NAME, DATA_TYPE, IN_OUT, PLS_TYPE, POSITION FROM ")
+                .append(dataDictTableNames.ARGUMENTS())
+                .append(" WHERE OWNER=")
+                .value(schemaName)
+                .append(" AND OBJECT_NAME=")
+                .value(functionName)
+                .append("AND PACKAGE_NAME IS NULL ORDER BY POSITION");
+        List<DBPLParam> params = new ArrayList<>();
+        jdbcOperations.query(getParams.toString(), rs -> {
+            if (Objects.isNull(rs.getString("ARGUMENT_NAME"))) {
+                function.setReturnType(rs.getString("DATA_TYPE"));
+            } else {
+                DBPLParam param = new DBPLParam();
+                param.setParamName(rs.getString("ARGUMENT_NAME"));
+                param.setDataType(rs.getString("DATA_TYPE"));
+                param.setParamMode(DBPLParamMode.getEnum(rs.getString("IN_OUT")));
+                param.setSeqNum(rs.getInt("POSITION"));
+                params.add(param);
+            }
+        });
+        function.setParams(params);
+        if (StringUtils.containsIgnoreCase(function.getStatus(), PLConstants.PL_OBJECT_STATUS_INVALID)) {
+            function.setErrorMessage(PLObjectErrMsgUtils.getOraclePLObjErrMsg(jdbcOperations,
+                    function.getDefiner(), DBObjectType.FUNCTION.name(), function.getFunName()));
+        }
+
+        return parseFunctionDDL(function);
+    }
+
+    protected DBFunction parseFunctionDDL(DBFunction function) {
+        // get variables defined in function by parse function ddl
+        try {
+            ParseOraclePLResult result = PLParser.parseOracle(function.getDdl());
+            function.setVariables(result.getVaribaleList());
+            function.setTypes(result.getTypeList());
+        } catch (Exception e) {
+            log.warn("Failed to parse function ddl={}, errorMessage={}", function.getDdl(), e.getMessage());
+            function.setParseErrorMessage(e.getMessage());
+        }
+        return function;
     }
 
     @Override
     public DBProcedure getProcedure(String schemaName, String procedureName) {
-        throw new UnsupportedOperationException("Not supported yet");
+        OracleSqlBuilder info = new OracleSqlBuilder();
+        info.append("select OWNER, STATUS, CREATED, LAST_DDL_TIME from ")
+                .append(dataDictTableNames.OBJECTS())
+                .append(" where object_type='PROCEDURE' and owner=")
+                .value(schemaName)
+                .append(" and OBJECT_NAME=")
+                .value(procedureName);
+        DBProcedure procedure = new DBProcedure();
+        procedure.setProName(procedureName);
+
+        jdbcOperations.query(info.toString(), (rs) -> {
+            procedure.setDefiner(rs.getString("OWNER"));
+            procedure.setStatus(rs.getString("STATUS"));
+            procedure.setCreateTime(Timestamp.valueOf(rs.getString("CREATED")));
+            procedure.setModifyTime(Timestamp.valueOf(rs.getString("LAST_DDL_TIME")));
+        });
+
+        OracleSqlBuilder ddl = new OracleSqlBuilder();
+        ddl.append("SELECT dbms_metadata.get_ddl('PROCEDURE', ")
+                .value(procedureName)
+                .append(", ")
+                .value(schemaName)
+                .append(") as DDL from dual");
+        jdbcOperations.query(ddl.toString(), rs -> {
+            procedure.setDdl(rs.getString(1));
+        });
+
+        OracleSqlBuilder getParams = new OracleSqlBuilder();
+        getParams.append(
+                "SELECT OWNER, OBJECT_NAME, ARGUMENT_NAME, DATA_TYPE, IN_OUT, PLS_TYPE, DEFAULT_VALUE, POSITION FROM ")
+                .append(dataDictTableNames.ARGUMENTS())
+                .append(" WHERE OWNER=")
+                .value(schemaName)
+                .append(" AND OBJECT_NAME=")
+                .value(procedureName)
+                .append(" AND PACKAGE_NAME IS NULL ORDER BY POSITION");
+        List<DBPLParam> params = new ArrayList<>();
+        jdbcOperations.query(getParams.toString(), rs -> {
+            DBPLParam param = new DBPLParam();
+            param.setParamName(rs.getString("ARGUMENT_NAME"));
+            param.setDataType(rs.getString("DATA_TYPE"));
+            param.setSeqNum(rs.getInt("POSITION"));
+            param.setParamMode(DBPLParamMode.getEnum(rs.getString("IN_OUT")));
+            params.add(param);
+        });
+        procedure.setParams(params);
+        if (StringUtils.containsIgnoreCase(procedure.getStatus(), PLConstants.PL_OBJECT_STATUS_INVALID)) {
+            procedure.setErrorMessage(PLObjectErrMsgUtils.getOraclePLObjErrMsg(jdbcOperations,
+                    procedure.getDefiner(), DBObjectType.PROCEDURE.name(), procedure.getProName()));
+        }
+        return parseProcedureDDL(procedure);
+    }
+
+    protected DBProcedure parseProcedureDDL(DBProcedure procedure) {
+        Validate.notBlank(procedure.getDdl(), "procedure.ddl");
+        String ddl = procedure.getDdl();
+        ParseOraclePLResult result;
+        try {
+            result = PLParser.parseOracle(ddl);
+        } catch (Exception e) {
+            log.warn("Failed to parse oracle procedure ddl, ddl={}, errorMessage={}", ddl, e.getMessage());
+            procedure.setParseErrorMessage(e.getMessage());
+            return procedure;
+        }
+        procedure.setVariables(result.getVaribaleList());
+        procedure.setTypes((result.getTypeList()));
+        return procedure;
     }
 
     @Override
     public DBPackage getPackage(String schemaName, String packageName) {
-        throw new UnsupportedOperationException("Not supported yet");
+        OracleSqlBuilder info = new OracleSqlBuilder();
+        info.append(
+                "select OWNER, OBJECT_TYPE, STATUS, CREATED, LAST_DDL_TIME from ")
+                .append(dataDictTableNames.OBJECTS())
+                .append(" where object_type in ('PACKAGE', 'PACKAGE BODY') and owner=")
+                .value(schemaName)
+                .append(" and OBJECT_NAME=")
+                .value(packageName)
+                .append(" order by OBJECT_TYPE");
+
+        DBPackage dbPackage = new DBPackage();
+        dbPackage.setPackageName(packageName);
+
+        DBPackageDetail packageHead = new DBPackageDetail();
+        DBPackageDetail packageBody = new DBPackageDetail();
+        DBPackageBasicInfo packageHeadBasicInfo = new DBPackageBasicInfo();
+        DBPackageBasicInfo packageBodyBasicInfo = new DBPackageBasicInfo();
+        packageHead.setBasicInfo(packageHeadBasicInfo);
+        packageBody.setBasicInfo(packageBodyBasicInfo);
+        dbPackage.setPackageHead(packageHead);
+        dbPackage.setPackageBody(packageBody);
+
+        jdbcOperations.query(info.toString(), (rs) -> {
+            dbPackage.setStatus(rs.getString("STATUS"));
+            if (DBObjectType.PACKAGE.name().equalsIgnoreCase(rs.getString("OBJECT_TYPE"))) {
+                packageHeadBasicInfo.setDefiner(rs.getString("OWNER"));
+                packageHeadBasicInfo.setCreateTime(rs.getTimestamp("CREATED"));
+                packageHeadBasicInfo.setModifyTime(rs.getTimestamp("LAST_DDL_TIME"));
+            } else {
+                packageBodyBasicInfo.setDefiner(rs.getString("OWNER"));
+                packageBodyBasicInfo.setCreateTime(rs.getTimestamp("CREATED"));
+                packageBodyBasicInfo.setModifyTime(rs.getTimestamp("LAST_DDL_TIME"));
+            }
+        });
+
+        OracleSqlBuilder packageHeadDDL = new OracleSqlBuilder();
+        packageHeadDDL.append("SELECT dbms_metadata.get_ddl('PACKAGE_SPEC', ")
+                .value(packageName)
+                .append(", ")
+                .value(schemaName)
+                .append(") as DDL from dual");
+        jdbcOperations.query(packageHeadDDL.toString(), rs -> {
+            packageHeadBasicInfo.setDdl(rs.getString(1));
+        });
+        parsePackageDDL(packageHead);
+
+        OracleSqlBuilder packageBodyDDL = new OracleSqlBuilder();
+        packageBodyDDL.append("SELECT dbms_metadata.get_ddl('PACKAGE_BODY', ")
+                .value(packageName)
+                .append(", ")
+                .value(schemaName)
+                .append(") as DDL from dual");
+        jdbcOperations.query(packageBodyDDL.toString(), rs -> {
+            packageBodyBasicInfo.setDdl(rs.getString(1));
+        });
+        parsePackageDDL(packageBody);
+
+        if (StringUtils.containsIgnoreCase(dbPackage.getStatus(), PLConstants.PL_OBJECT_STATUS_INVALID)) {
+            dbPackage.setErrorMessage(PLObjectErrMsgUtils.getOraclePLObjErrMsg(jdbcOperations,
+                    schemaName, DBObjectType.PACKAGE.name(), dbPackage.getPackageName()));
+        }
+        return dbPackage;
+    }
+
+    private void parsePackageDDL(DBPackageDetail packageDetail) {
+        if (Objects.isNull(packageDetail.getBasicInfo().getDdl())) {
+            return;
+        }
+        try {
+            ParseOraclePLResult oraclePLResult = PLParser.parseOracle(packageDetail.getBasicInfo().getDdl());
+            packageDetail.setVariables(oraclePLResult.getVaribaleList());
+            packageDetail.setTypes(oraclePLResult.getTypeList());
+            packageDetail.setFunctions(oraclePLResult.getFunctionList());
+            packageDetail.setProcedures(oraclePLResult.getProcedureList());
+        } catch (Exception e) {
+            log.warn("Failed to parse package ddl={}, errorMessage={}", packageDetail.getBasicInfo().getDdl(),
+                    e.getMessage());
+            packageDetail.setParseErrorMessage(e.getMessage());
+        }
     }
 
     @Override
-    public DBTrigger getTrigger(String schemaName, String packageName) {
-        throw new UnsupportedOperationException("Not supported yet");
+    public DBTrigger getTrigger(String schemaName, String triggerName) {
+        DBTrigger trigger = new DBTrigger();
+        OracleSqlBuilder sb = new OracleSqlBuilder();
+        sb.append(
+                "select s.OWNER, s.TRIGGER_NAME, s.BASE_OBJECT_TYPE, s.TABLE_OWNER, s.TABLE_NAME, s.STATUS as ENABLE_STATUS, o.STATUS")
+                .append(" FROM (SELECT * FROM ")
+                .append(dataDictTableNames.OBJECTS())
+                .append(" WHERE OBJECT_TYPE='TRIGGER') o RIGHT JOIN ")
+                .append(dataDictTableNames.TRIGGERS())
+                .append(" s ON o.OBJECT_NAME=s.TRIGGER_NAME AND o.OWNER=s.OWNER")
+                .append(" WHERE s.OWNER=").value(schemaName)
+                .append(" AND s.TRIGGER_NAME=").value(triggerName);
+        jdbcOperations.query(sb.toString(), (rs) -> {
+            trigger.setBaseObjectType(rs.getString("BASE_OBJECT_TYPE"));
+            trigger.setTriggerName(rs.getString("TRIGGER_NAME"));
+            trigger.setOwner(rs.getString("OWNER"));
+            trigger.setSchemaMode(rs.getString("TABLE_OWNER"));
+            trigger.setSchemaName(rs.getString("TABLE_NAME"));
+            trigger.setEnable("ENABLED".equalsIgnoreCase(rs.getString("ENABLE_STATUS")));
+            trigger.setStatus(rs.getString("STATUS"));
+        });
+
+        OracleSqlBuilder ddl = new OracleSqlBuilder();
+        ddl.append("SELECT dbms_metadata.get_ddl('TRIGGER',")
+                .value(triggerName)
+                .append(", ")
+                .value(schemaName)
+                .append(") as DDL FROM dual");
+        jdbcOperations.query(ddl.toString(), rs -> {
+            trigger.setDdl(rs.getString(1));
+        });
+        if (StringUtils.containsIgnoreCase(trigger.getStatus(), PLConstants.PL_OBJECT_STATUS_INVALID)) {
+            trigger.setErrorMessage(PLObjectErrMsgUtils.getOraclePLObjErrMsg(jdbcOperations,
+                    trigger.getOwner(), DBObjectType.TRIGGER.name(), trigger.getTriggerName()));
+        }
+        return trigger;
     }
 
     @Override
     public DBType getType(String schemaName, String typeName) {
-        throw new UnsupportedOperationException("Not supported yet");
+        OracleSqlBuilder sb = new OracleSqlBuilder();
+        sb.append("select a.OWNER,a.OBJECT_NAME,u.TYPE_NAME,a.CREATED,a.LAST_DDL_TIME,u.TYPECODE,u.TYPEID from ");
+        sb.append(dataDictTableNames.OBJECTS());
+        sb.append(" a right join ");
+        sb.append(dataDictTableNames.TYPES());
+        sb.append(" u on a.OBJECT_NAME=u.TYPE_NAME where a.OWNER=");
+        sb.value(schemaName);
+        sb.append(" and u.TYPE_NAME=");
+        sb.value(typeName);
+
+        DBType type = new DBType();
+        jdbcOperations.query(sb.toString(), (rs) -> {
+            type.setOwner(rs.getString("OWNER"));
+            type.setTypeName(rs.getString("TYPE_NAME"));
+            type.setCreateTime(rs.getTimestamp("CREATED"));
+            type.setLastDdlTime(rs.getTimestamp("LAST_DDL_TIME"));
+            type.setTypeId(rs.getString("TYPEID"));
+            type.setType(rs.getString("TYPECODE"));
+        });
+        return parseTypeDDL(type);
+    }
+
+    protected DBType parseTypeDDL(DBType type) {
+        OracleSqlBuilder typeDDL = new OracleSqlBuilder();
+        typeDDL.append("select dbms_metadata.get_ddl('TYPE', ")
+                .value(type.getTypeName())
+                .append(", ")
+                .value(type.getOwner())
+                .append(") as DDL from dual");
+
+        String typeDdl = queryTypeDdl(typeDDL.toString());
+
+        OracleSqlBuilder typeSpecDDL = new OracleSqlBuilder();
+        typeSpecDDL.append("select dbms_metadata.get_ddl('TYPE_SPEC', ")
+                .value(type.getTypeName())
+                .append(", ")
+                .value(type.getOwner())
+                .append(") as DDL from dual");
+
+        String typeHeadDdl = queryTypeSpecDdl(typeSpecDDL.toString());
+        Validate.notBlank(typeDdl, "typeDdl");
+        Validate.notBlank(typeHeadDdl, "typeHeadDdl");
+        type.setDdl(typeDdl);
+
+        return parseTypeDDL(type, typeHeadDdl);
+    }
+
+    protected String queryTypeDdl(String querySql) {
+        return jdbcOperations.query(querySql, rs -> {
+            if (!rs.next()) {
+                return null;
+            }
+            return rs.getString(1);
+        });
+    }
+
+    protected String queryTypeSpecDdl(String querySql) {
+        return jdbcOperations.query(querySql, rs -> {
+            if (!rs.next()) {
+                return null;
+            }
+            return rs.getString(1);
+        });
+    }
+
+    protected DBType parseTypeDDL(DBType type, String typeHeadDdl) {
+        DBBasicPLObject typeDetail = new DBBasicPLObject();
+        try {
+            ParseOraclePLResult oraclePLResult = PLParser.parseObOracle(typeHeadDdl);
+            typeDetail.setVariables(oraclePLResult.getVaribaleList());
+            typeDetail.setTypes(oraclePLResult.getTypeList());
+            typeDetail.setProcedures(oraclePLResult.getProcedureList());
+            typeDetail.setFunctions(oraclePLResult.getFunctionList());
+        } catch (Exception e) {
+            log.warn("Parse type ddl failed, ddl={}, errorMessage={}", typeHeadDdl, e.getMessage());
+            typeDetail.setParseErrorMessage(e.getMessage());
+        }
+
+        type.setTypeDetail(typeDetail);
+        String errorText = PLObjectErrMsgUtils.getOraclePLObjErrMsg(jdbcOperations,
+                type.getOwner(), DBObjectType.TYPE.name(), type.getTypeName());
+        if (StringUtils.isNotBlank(errorText)) {
+            type.setStatus(PLConstants.PL_OBJECT_STATUS_INVALID);
+            type.setErrorMessage(errorText);
+        }
+        return type;
     }
 
     @Override
     public DBSequence getSequence(String schemaName, String sequenceName) {
-        throw new UnsupportedOperationException("Not supported yet");
+        OracleSqlBuilder sb = new OracleSqlBuilder();
+        sb.append("select * from ")
+                .append(dataDictTableNames.SEQUENCES())
+                .append(" where sequence_owner=")
+                .value(schemaName)
+                .append(" and sequence_name=")
+                .value(sequenceName);
+
+        DBSequence sequence = new DBSequence();
+        sequence.setName(sequenceName);
+        jdbcOperations.query(sb.toString(), rs -> {
+            sequence.setUser(rs.getString("SEQUENCE_OWNER"));
+            sequence.setMinValue(rs.getBigDecimal("MIN_VALUE").toString());
+            sequence.setMaxValue(rs.getBigDecimal("MAX_VALUE").toString());
+            sequence.setIncreament(rs.getBigDecimal("INCREMENT_BY").longValue());
+            sequence.setCycled("Y".equalsIgnoreCase(rs.getString("CYCLE_FLAG")));
+            sequence.setOrderd("Y".equalsIgnoreCase(rs.getString("ORDER_FLAG")));
+            long cacheSize = rs.getBigDecimal("CACHE_SIZE").longValue();
+            if (cacheSize > 1) {
+                sequence.setCacheSize(cacheSize);
+                sequence.setCached(true);
+            } else {
+                sequence.setCached(false);
+            }
+            sequence.setNextCacheValue(rs.getBigDecimal("LAST_NUMBER").toString());
+
+        });
+
+        String ddl = getSequenceDDL(sequence);
+        sequence.setDdl(ddl);
+        return sequence;
+    }
+
+    protected String getSequenceDDL(DBSequence sequence) {
+        Validate.notNull(sequence, "sequence");
+        Validate.notBlank(sequence.getName(), "sequence.name");
+
+        OracleSqlBuilder ddl = new OracleSqlBuilder();
+        ddl.append("SELECT dbms_metadata.get_ddl('SEQUENCE', ")
+                .value(sequence.getName())
+                .append(", ")
+                .value(sequence.getUser())
+                .append(") as DDL from dual");
+        return jdbcOperations.query(ddl.toString(), rs -> {
+            if (!rs.next()) {
+                return null;
+            }
+            return rs.getString(1);
+        });
     }
 
     @Override
     public DBSynonym getSynonym(String schemaName, String synonymName, DBSynonymType synonymType) {
-        throw new UnsupportedOperationException("Not supported yet");
+        OracleSqlBuilder sb = new OracleSqlBuilder();
+        sb.append(
+                "select s.OWNER,s.SYNONYM_NAME,s.TABLE_OWNER,s.TABLE_NAME,s.DB_LINK,o.CREATED,o.LAST_DDL_TIME,o.STATUS from ");
+        sb.append(dataDictTableNames.SYNONYMS());
+        sb.append(" s left join (select * from ");
+        sb.append(dataDictTableNames.OBJECTS());
+        sb.append(" where OBJECT_TYPE='SYNONYM') o on s.SYNONYM_NAME=o.OBJECT_NAME and s.OWNER=o.OWNER where s.OWNER=");
+        sb.value(getSynonymOwnerSymbol(synonymType, schemaName));
+        sb.append(" and s.SYNONYM_NAME=");
+        sb.value(synonymName);
+
+        DBSynonym synonym = new DBSynonym();
+        synonym.setSynonymType(synonymType);
+        jdbcOperations.query(sb.toString(), rs -> {
+            synonym.setOwner(rs.getString("OWNER"));
+            synonym.setSynonymName(rs.getString("SYNONYM_NAME"));
+            synonym.setTableOwner(rs.getString("TABLE_OWNER"));
+            synonym.setTableName(rs.getString("TABLE_NAME"));
+            synonym.setDbLink(rs.getString("DB_LINK"));
+            synonym.setCreated(rs.getTimestamp("CREATED"));
+            synonym.setLastDdlTime(rs.getTimestamp("LAST_DDL_TIME"));
+            synonym.setStatus(rs.getString("STATUS"));
+        });
+        synonym.setDdl(getSynonymDDL(synonym));
+
+        return synonym;
+    }
+
+    protected String getSynonymDDL(DBSynonym synonym) {
+        OracleSqlBuilder ddl = new OracleSqlBuilder();
+        ddl.append("SELECT dbms_metadata.get_ddl('SYNONYM', ")
+                .value(synonym.getSynonymName())
+                .append(", ")
+                .value(synonym.getOwner())
+                .append(") as DDL from dual");
+
+        return jdbcOperations.query(ddl.toString(), rs -> {
+            if (!rs.next()) {
+                return null;
+            }
+            return rs.getString(1);
+        });
+    }
+
+    protected String getSynonymOwnerSymbol(DBSynonymType synonymType, String schemaName) {
+        if (synonymType.equals(DBSynonymType.PUBLIC)) {
+            return "PUBLIC";
+        } else if (synonymType.equals(DBSynonymType.COMMON)) {
+            return schemaName;
+        } else {
+            throw new UnsupportedOperationException("Not supported Synonym type");
+        }
     }
 
 }

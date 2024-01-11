@@ -95,6 +95,7 @@ import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
 import com.oceanbase.odc.service.partitionplan.PartitionPlanService;
+import com.oceanbase.odc.service.permission.database.model.ApplyDatabaseResult;
 import com.oceanbase.odc.service.permission.project.ApplyProjectResult;
 import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleResult;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
@@ -226,6 +227,8 @@ public class FlowTaskInstanceService {
             return getResultSetExportResult(taskEntity);
         } else if (taskEntity.getTaskType() == TaskType.APPLY_PROJECT_PERMISSION) {
             return getApplyProjectResult(taskEntity);
+        } else if (taskEntity.getTaskType() == TaskType.APPLY_DATABASE_PERMISSION) {
+            return getApplyDatabaseResult(taskEntity);
         } else {
             throw new UnsupportedException(ErrorCodes.Unsupported, new Object[] {ResourceType.ODC_TASK},
                     "Unsupported task type: " + taskEntity.getTaskType());
@@ -616,6 +619,10 @@ public class FlowTaskInstanceService {
         return innerGetResult(taskEntity, ApplyProjectResult.class);
     }
 
+    private List<ApplyDatabaseResult> getApplyDatabaseResult(@NonNull TaskEntity taskEntity) {
+        return innerGetResult(taskEntity, ApplyDatabaseResult.class);
+    }
+
     private <T extends FlowTaskResult> List<T> innerGetResult(@NonNull TaskEntity taskEntity,
             @NonNull Class<T> clazz) {
         String resultJson = taskEntity.getResultJson();
@@ -648,7 +655,8 @@ public class FlowTaskInstanceService {
                         && instance.getTaskType() != TaskType.SQL_CHECK
                         && instance.getTaskType() != TaskType.PRE_CHECK
                         && instance.getTaskType() != TaskType.GENERATE_ROLLBACK
-                        && instance.getTaskType() != TaskType.APPLY_PROJECT_PERMISSION;
+                        && instance.getTaskType() != TaskType.APPLY_PROJECT_PERMISSION
+                        && instance.getTaskType() != TaskType.APPLY_DATABASE_PERMISSION;
             }
         });
     }
