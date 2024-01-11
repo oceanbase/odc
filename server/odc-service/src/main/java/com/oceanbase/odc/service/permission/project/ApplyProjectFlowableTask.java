@@ -26,9 +26,11 @@ import org.springframework.data.domain.Example;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import com.oceanbase.odc.common.trace.TaskContextHolder;
+import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
+import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.metadb.collaboration.ProjectEntity;
 import com.oceanbase.odc.metadb.collaboration.ProjectRepository;
 import com.oceanbase.odc.metadb.iam.UserEntity;
@@ -83,10 +85,10 @@ public class ApplyProjectFlowableTask extends BaseODCFlowTaskDelegate<ApplyProje
                     taskService.start(taskId);
                     ApplyProjectParameter parameter = FlowTaskUtil.getApplyProjectParameter(execution);
                     result.setParameter(parameter);
-                    UserEntity userEntity = userRepository.findById(parameter.getUserId()).orElseThrow(
+                    UserEntity userEntity = userRepository.findById(this.taskCreatorId).orElseThrow(
                             () -> {
-                                log.warn("User not found, id={}", parameter.getUserId());
-                                return new NotFoundException(ResourceType.ODC_USER, "id", parameter.getUserId());
+                                log.warn("User not found, id={}", this.taskCreatorId);
+                                return new NotFoundException(ResourceType.ODC_USER, "id", this.taskCreatorId);
                             });
                     Long projectId = parameter.getProject().getId();
                     ProjectEntity projectEntity = projectRepository.findById(projectId).orElseThrow(
@@ -110,7 +112,7 @@ public class ApplyProjectFlowableTask extends BaseODCFlowTaskDelegate<ApplyProje
                                                     resourceRoleId);
                                         });
                         log.info("Start grant project role to user, userId={}, projectId={}, projectRoleId={}",
-                                parameter.getUserId(), projectId, resourceRoleId);
+                                this.taskCreatorId, projectId, resourceRoleId);
                         UserResourceRoleEntity entity = new UserResourceRoleEntity();
                         entity.setUserId(userEntity.getId());
                         entity.setResourceId(projectEntity.getId());
@@ -122,7 +124,7 @@ public class ApplyProjectFlowableTask extends BaseODCFlowTaskDelegate<ApplyProje
                         }
                         userResourceRoleRepository.save(entity);
                         log.info("Grant project role to user successfully, userId={}, projectId={}, projectRoleId={}",
-                                parameter.getUserId(), projectId, resourceRoleId);
+                                this.taskCreatorId, projectId, resourceRoleId);
                     }
                     success = true;
                 } catch (Exception e) {
@@ -189,8 +191,8 @@ public class ApplyProjectFlowableTask extends BaseODCFlowTaskDelegate<ApplyProje
 
     @Override
     protected boolean cancel(boolean mayInterruptIfRunning, Long taskId, TaskService taskService) {
-        taskService.cancel(taskId);
-        return true;
+        throw new UnsupportedException(ErrorCodes.TaskNotTerminable, null,
+                "The task is not terminable during execution");
     }
 
     @Override

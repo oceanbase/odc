@@ -50,6 +50,7 @@ import com.oceanbase.odc.service.iam.model.User;
 import com.oceanbase.odc.service.integration.model.TemplateVariables;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanTaskParameters;
+import com.oceanbase.odc.service.permission.database.model.ApplyDatabaseParameter;
 import com.oceanbase.odc.service.permission.project.ApplyProjectParameter;
 import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevelDescriber;
@@ -77,6 +78,11 @@ public class FlowTaskUtil {
 
     public static void setParameters(@NonNull Map<String, Object> variables, @NonNull String parametersJson) {
         variables.put(RuntimeTaskConstants.PARAMETERS, parametersJson);
+    }
+
+    public static ApplyDatabaseParameter getApplyDatabaseParameter(@NonNull DelegateExecution execution) {
+        return internalGetParameter(execution, ApplyDatabaseParameter.class).orElseThrow(
+                () -> new VerifyException("ApplyDatabaseParameter is absent"));
     }
 
     public static ApplyProjectParameter getApplyProjectParameter(@NonNull DelegateExecution execution) {
@@ -141,6 +147,15 @@ public class FlowTaskUtil {
     public static User getTaskCreator(@NonNull DelegateExecution execution) {
         Object value = execution.getVariables().get(RuntimeTaskConstants.TASK_CREATOR);
         return internalGet(value, User.class).orElseThrow(() -> new VerifyException("Task creator is absent"));
+    }
+
+    public static void setOrganizationId(@NonNull Map<String, Object> variables, @NonNull Long organizationId) {
+        variables.put(RuntimeTaskConstants.TASK_ORGANIZATION_ID, organizationId);
+    }
+
+    public static Long getOrganizationId(@NonNull DelegateExecution execution) {
+        Object value = execution.getVariables().get(RuntimeTaskConstants.TASK_ORGANIZATION_ID);
+        return internalGet(value, Long.class).orElseThrow(() -> new VerifyException("Task organization id is absent"));
     }
 
     public static void setInterceptTaskId(@NonNull Map<String, Object> variables, @NonNull String interceptTaskId) {

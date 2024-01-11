@@ -15,39 +15,18 @@
  */
 package com.oceanbase.odc.service.permission.database.model;
 
-import java.util.Locale;
+import com.oceanbase.odc.core.flow.model.FlowTaskResult;
 
-import org.springframework.context.i18n.LocaleContextHolder;
-
-import com.oceanbase.odc.common.i18n.Translatable;
-
-import lombok.Getter;
+import lombok.Data;
 
 /**
  * @author gaoda.xy
- * @date 2024/1/3 14:04
+ * @date 2024/1/3 14:58
  */
-@Getter
-public enum DatabasePermissionType implements Translatable {
+@Data
+public class ApplyDatabaseResult implements FlowTaskResult {
 
-    QUERY("query"),
-    CHANGE("change"),
-    EXPORT("export");
-
-    private final String action;
-
-    DatabasePermissionType(String action) {
-        this.action = action;
-    }
-
-    @Override
-    public String code() {
-        return name();
-    }
-
-    public String getLocalizedMessage() {
-        Locale locale = LocaleContextHolder.getLocale();
-        return translate(null, locale);
-    }
+    private boolean success;
+    private ApplyDatabaseParameter parameter;
 
 }

@@ -45,11 +45,6 @@ public class ApplyProjectParameter implements Serializable, TaskParameters {
      * Reason for application
      */
     private String applyReason;
-    /**
-     * ID of the user who applied for the project, filled in by {@link ApplyProjectPreprocessor}
-     */
-    private Long userId;
-
 
     @Data
     public static class ApplyProject implements Serializable {

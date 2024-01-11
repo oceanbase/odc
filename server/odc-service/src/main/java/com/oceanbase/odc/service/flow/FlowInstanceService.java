@@ -382,7 +382,8 @@ public class FlowInstanceService {
                     TaskType.ONLINE_SCHEMA_CHANGE,
                     TaskType.ALTER_SCHEDULE,
                     TaskType.EXPORT_RESULT_SET,
-                    TaskType.APPLY_PROJECT_PERMISSION);
+                    TaskType.APPLY_PROJECT_PERMISSION,
+                    TaskType.APPLY_DATABASE_PERMISSION);
             specification = specification.and(FlowInstanceViewSpecs.taskTypeIn(types));
         }
 
@@ -872,6 +873,7 @@ public class FlowInstanceService {
             FlowTaskUtil.setSchemaName(variables, databaseService.detail(taskEntity.getDatabaseId()).getName());
         }
         FlowTaskUtil.setTaskCreator(variables, authenticationFacade.currentUser());
+        FlowTaskUtil.setOrganizationId(variables, authenticationFacade.currentOrganizationId());
         FlowTaskUtil.setTaskSubmitter(variables, JsonUtils.fromJson(taskEntity.getSubmitter(), ExecutorInfo.class));
         FlowTaskUtil.setRiskLevelDescriber(variables, riskLevelDescriber);
         FlowTaskUtil.setCloudMainAccountId(variables, authenticationFacade.currentUser().getUid());
