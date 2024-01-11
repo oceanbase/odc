@@ -19,13 +19,17 @@ import javax.servlet.http.HttpServletRequest;
 
 import com.oceanbase.odc.service.iam.auth.local.AbstractTestLoginAuthenticationFilter;
 import com.oceanbase.odc.service.integration.model.LdapContextHolder;
+import com.oceanbase.odc.service.integration.model.LdapContextHolder.LdapContext;
 import com.oceanbase.odc.service.integration.oauth2.TestLoginManager;
 
 public class LdapAbstractTestLoginAuthenticationFilter extends AbstractTestLoginAuthenticationFilter {
 
+    TestLoginManager testLoginManager;
+
     @Override
     protected Boolean isTestRequest(HttpServletRequest request) {
-        return TestLoginManager.isLdapTestRequest(request);
+        LdapContext ldapContext = testLoginManager.loadLdapContext(request);
+        return ldapContext != null && ldapContext.isTest();
     }
 
     @Override
