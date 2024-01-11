@@ -27,4 +27,17 @@ public class TestChannelResult {
     private boolean active;
     private String errorMessage;
 
+    public static TestChannelResult ofFail(String errorMessage) {
+        TestChannelResult result = new TestChannelResult();
+        result.setActive(false);
+        result.setErrorMessage(errorMessage);
+        return result;
+    }
+
+    public static TestChannelResult ofSuccess() {
+        TestChannelResult result = new TestChannelResult();
+        result.setActive(true);
+        return result;
+    }
+
 }

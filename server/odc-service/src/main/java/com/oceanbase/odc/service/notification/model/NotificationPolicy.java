@@ -27,15 +27,13 @@ import lombok.Data;
  */
 @Data
 public class NotificationPolicy {
-    private long id;
+    private Long id;
 
     private String titleTemplate;
 
     private String contentTemplate;
 
     private String matchExpression;
-
-    private List<Long> channelConfigId;
 
     private Date createTime;
 

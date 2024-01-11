@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.notification;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import org.junit.After;
@@ -31,11 +33,16 @@ import com.oceanbase.odc.AuthorityTestEnv;
 import com.oceanbase.odc.metadb.notification.ChannelPropertyEntity;
 import com.oceanbase.odc.metadb.notification.ChannelPropertyRepository;
 import com.oceanbase.odc.metadb.notification.ChannelRepository;
+import com.oceanbase.odc.metadb.notification.NotificationPolicyChannelRelationRepository;
+import com.oceanbase.odc.metadb.notification.NotificationPolicyEntity;
+import com.oceanbase.odc.metadb.notification.NotificationPolicyRepository;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
+import com.oceanbase.odc.service.notification.helper.PolicyMapper;
 import com.oceanbase.odc.service.notification.model.BaseChannelConfig;
 import com.oceanbase.odc.service.notification.model.Channel;
 import com.oceanbase.odc.service.notification.model.ChannelType;
 import com.oceanbase.odc.service.notification.model.DingTalkChannelConfig;
+import com.oceanbase.odc.service.notification.model.NotificationPolicy;
 import com.oceanbase.odc.service.notification.model.QueryChannelParams;
 
 /**
@@ -53,8 +60,14 @@ public class NotificationServiceTest extends AuthorityTestEnv {
     private ChannelRepository channelRepository;
     @Autowired
     private ChannelPropertyRepository channelPropertyRepository;
+    @Autowired
+    private NotificationPolicyChannelRelationRepository relationRepository;
     @MockBean
     private AuthenticationFacade authenticationFacade;
+    @Autowired
+    private NotificationPolicyRepository policyRepository;
+    @Autowired
+    private PolicyMapper policyMapper;
 
     @Before
     public void setUp() {
@@ -66,6 +79,8 @@ public class NotificationServiceTest extends AuthorityTestEnv {
     public void tearDown() {
         channelPropertyRepository.deleteAll();
         channelRepository.deleteAll();
+        relationRepository.deleteAll();
+        policyRepository.deleteAll();
     }
 
     @Test
@@ -125,6 +140,38 @@ public class NotificationServiceTest extends AuthorityTestEnv {
         Assert.assertTrue(notificationService.existsChannel(PROJECT_ID, saved.getName()));
     }
 
+    @Test
+    public void test_ListPolicies_NoActualData() {
+        List<NotificationPolicy> policies = notificationService.listPolicies(PROJECT_ID);
+        Assert.assertEquals("${com.oceanbase.odc.event.ALL_EVENTS.name}", policies.get(0).getEventName());
+        Assert.assertTrue(policies.get(0).isEnabled());
+    }
+
+    @Test
+    public void test_ListPolicies_WithActualData() {
+        NotificationPolicyEntity policy = getPolicy();
+        policy.setEnabled(false);
+        policyRepository.save(policy);
+        List<NotificationPolicy> policies = notificationService.listPolicies(PROJECT_ID);
+        Assert.assertFalse(policies.get(0).isEnabled());
+    }
+
+    @Test
+    public void test_BatchUpdatePolicies() {
+        Channel channel = notificationService.createChannel(PROJECT_ID, getChannel());
+        NotificationPolicy saved = policyMapper.fromEntity(policyRepository.save(getPolicy()));
+        saved.setEnabled(false);
+        NotificationPolicy metaPolicy = policyMapper.fromEntity(getPolicy());
+        metaPolicy.setPolicyMetadataId(2L);
+        metaPolicy.setChannels(Collections.singletonList(channel));
+        List<NotificationPolicy> toBeUpdated = Arrays.asList(saved, metaPolicy);
+        notificationService.batchUpdatePolicies(PROJECT_ID, toBeUpdated);
+
+        List<NotificationPolicy> policies = notificationService.listPolicies(PROJECT_ID);
+        Assert.assertFalse(policies.get(0).isEnabled());
+        Assert.assertEquals(channel.getId(), policies.get(1).getChannels().get(0).getId());
+    }
+
     private Channel getChannel() {
         Channel channel = new Channel();
         channel.setProjectId(PROJECT_ID);
@@ -136,6 +183,16 @@ public class NotificationServiceTest extends AuthorityTestEnv {
         channelConfig.setWebhook("test");
         channel.setChannelConfig(channelConfig);
         return channel;
+    }
+
+    private NotificationPolicyEntity getPolicy() {
+        NotificationPolicyEntity policy = new NotificationPolicyEntity();
+        policy.setCreatorId(ADMIN_USER_ID);
+        policy.setOrganizationId(ORGANIZATION_ID);
+        policy.setProjectId(PROJECT_ID);
+        policy.setPolicyMetadataId(1L);
+        policy.setMatchExpression("true");
+        return policy;
     }
 
 }

@@ -18,6 +18,8 @@ package com.oceanbase.odc.metadb.notification;
 import java.util.Collection;
 import java.util.List;
 
+import javax.transaction.Transactional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -30,6 +32,12 @@ public interface NotificationPolicyChannelRelationRepository
 
     List<NotificationChannelRelationEntity> findByOrganizationIdAndNotificationPolicyId(Long organizationId,
             Long notificationPolicyId);
+
+    @Transactional
+    int deleteByChannelId(Long channelId);
+
+    @Transactional
+    int deleteByNotificationPolicyId(Long notificationPolicyId);
 
     @Query(value = "select * from notification_policy_channel_relation where notification_policy_id in (:ids)",
             nativeQuery = true)

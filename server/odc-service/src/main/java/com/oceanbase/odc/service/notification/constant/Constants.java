@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 OceanBase.
+ * Copyright (c) 2024 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,27 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.notification.model;
-
-import java.util.List;
-
-import lombok.Builder;
-import lombok.Data;
+package com.oceanbase.odc.service.notification.constant;
 
 /**
  * @author liuyizhuo.lyz
- * @date 2024/1/10
+ * @date 2024/1/11
  */
-@Data
-@Builder
-public class QueryChannelParams {
+public class Constants {
 
-    private List<Long> ids;
-
-    private String fuzzyChannelName;
-
-    private List<ChannelType> channelTypes;
-
-    private Long projectId;
+    public static final String CHANNEL_TEST_MESSAGE_KEY = "com.oceanbase.odc.notification.channel-test-message";
 
 }

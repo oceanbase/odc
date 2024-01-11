@@ -35,4 +35,6 @@ public interface NotificationPolicyRepository extends JpaRepository<Notification
     List<NotificationPolicyEntity> findByOrganizationIds(@Param("organizationIds") Collection<Long> ids);
 
     boolean existsByOrganizationIdAndMatchExpression(Long organizationId, String matchExpression);
+
+    List<NotificationPolicyEntity> findByProjectId(Long projectId);
 }

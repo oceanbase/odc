@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 OceanBase.
+ * Copyright (c) 2024 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,17 +22,17 @@ import lombok.Data;
 
 /**
  * @author liuyizhuo.lyz
- * @date 2024/1/10
+ * @date 2024/1/11
  */
 @Data
 @Builder
-public class QueryChannelParams {
+public class QueryMessageParams {
 
-    private List<Long> ids;
+    private String fuzzyTitle;
 
-    private String fuzzyChannelName;
+    private List<Long> channelIds;
 
-    private List<ChannelType> channelTypes;
+    private List<MessageSendingStatus> statuses;
 
     private Long projectId;
 

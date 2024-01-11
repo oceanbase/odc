@@ -18,7 +18,6 @@ package com.oceanbase.odc.server.web.controller.v2;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.web.PageableDefault;
@@ -40,6 +39,7 @@ import com.oceanbase.odc.service.notification.model.Message;
 import com.oceanbase.odc.service.notification.model.MessageSendingStatus;
 import com.oceanbase.odc.service.notification.model.NotificationPolicy;
 import com.oceanbase.odc.service.notification.model.QueryChannelParams;
+import com.oceanbase.odc.service.notification.model.QueryMessageParams;
 import com.oceanbase.odc.service.notification.model.TestChannelResult;
 
 import io.swagger.annotations.ApiOperation;
@@ -62,10 +62,11 @@ public class NotificationController {
             @RequestParam(required = false, name = "type") List<ChannelType> channelTypes,
             @PageableDefault(size = Integer.MAX_VALUE, sort = "id") Pageable pageable) {
 
-        QueryChannelParams queryParams =
-                QueryChannelParams.builder().fuzzyChannelName(fuzzyChannelName).channelTypes(channelTypes).build();
-        return Responses.paginated(
-                notificationService.listChannels(projectId, queryParams, pageable));
+        QueryChannelParams queryParams = QueryChannelParams.builder()
+                .fuzzyChannelName(fuzzyChannelName)
+                .channelTypes(channelTypes)
+                .projectId(projectId).build();
+        return Responses.paginated(notificationService.listChannels(projectId, queryParams, pageable));
     }
 
     @ApiOperation(value = "detailChannel", notes = "Detail a channel by id")
@@ -107,20 +108,20 @@ public class NotificationController {
     @ApiOperation(value = "listPolicies", notes = "List all policies in the project")
     @RequestMapping(value = "/policies", method = RequestMethod.GET)
     public ListResponse<NotificationPolicy> listPolicies(@PathVariable Long projectId) {
-        return Responses.list(null);
+        return Responses.list(notificationService.listPolicies(projectId));
     }
 
     @ApiOperation(value = "detailPolicy", notes = "Detail a policy by id")
     @RequestMapping(value = "/policies/{id}", method = RequestMethod.GET)
     public SuccessResponse<NotificationPolicy> detailPolicy(@PathVariable Long projectId, @PathVariable Long policyId) {
-        return Responses.success(null);
+        return Responses.success(notificationService.detailPolicy(projectId, policyId));
     }
 
     @ApiOperation(value = "batchUpdatePolicies", notes = "Batch update policies")
     @RequestMapping(value = "/policies", method = RequestMethod.PUT)
     public ListResponse<NotificationPolicy> batchUpdatePolicies(@PathVariable Long projectId,
-            List<NotificationPolicy> policies) {
-        return Responses.list(null);
+            @RequestBody List<NotificationPolicy> policies) {
+        return Responses.list(notificationService.batchUpdatePolicies(projectId, policies));
     }
 
     @ApiOperation(value = "listMessages", notes = "List messages in the project")
@@ -130,14 +131,19 @@ public class NotificationController {
             @RequestParam(required = false, name = "channelId") List<Long> channelIds,
             @RequestParam(required = false, name = "status") List<MessageSendingStatus> statuses,
             @PageableDefault(
-                    size = Integer.MAX_VALUE, sort = {"create_time"}, direction = Direction.DESC) Pageable pageable) {
-        return Responses.paginated(Page.empty(pageable));
+                    size = Integer.MAX_VALUE, sort = {"createTime"}, direction = Direction.DESC) Pageable pageable) {
+        QueryMessageParams queryParams = QueryMessageParams.builder()
+                .fuzzyTitle(fuzzyTitle)
+                .channelIds(channelIds)
+                .statuses(statuses)
+                .projectId(projectId).build();
+        return Responses.paginated(notificationService.listMessages(projectId, queryParams, pageable));
     }
 
     @ApiOperation(value = "detailMessage", notes = "Detail a message by id")
     @RequestMapping(value = "/messages/{id}", method = RequestMethod.GET)
     public SuccessResponse<Message> detailMessage(@PathVariable Long projectId, @PathVariable Long messageId) {
-        return Responses.success(null);
+        return Responses.success(notificationService.detailMessage(projectId, messageId));
     }
 
 }

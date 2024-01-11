@@ -27,6 +27,8 @@ import javax.persistence.Table;
 import org.hibernate.annotations.Generated;
 import org.hibernate.annotations.GenerationTime;
 
+import com.oceanbase.odc.service.notification.model.NotificationPolicy;
+
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
@@ -58,5 +60,14 @@ public class PolicyMetadataEntity {
     private String eventName;
     @Column(name = "match_expression")
     private String matchExpression;
+
+    public NotificationPolicy toPolicy() {
+        NotificationPolicy policy = new NotificationPolicy();
+        policy.setEventName(eventName);
+        policy.setEnabled(true);
+        policy.setPolicyMetadataId(id);
+        policy.setMatchExpression(matchExpression);
+        return policy;
+    }
 
 }
