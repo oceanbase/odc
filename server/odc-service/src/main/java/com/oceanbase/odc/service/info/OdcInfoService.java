@@ -142,7 +142,7 @@ public class OdcInfoService {
         odcInfo.setPasswordLoginEnabled(this.infoAdapter.isPasswordLoginEnabled());
         odcInfo.setSsoLoginEnabled(Objects.nonNull(getLoginUrl()));
         odcInfo.setSsoLoginName(infoAdapter.ssoLoginName());
-        odcInfo.setSsoLoginType(infoAdapter.ssoLoginName());
+        odcInfo.setSsoLoginType(infoAdapter.ssoLoginType());
         odcInfo.setSupportGroupQRCodeUrl(getSupportGroupQRCodeUrl());
         return odcInfo;
     }
