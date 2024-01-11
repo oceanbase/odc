@@ -13,37 +13,42 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.partitionplan.model;
-
-import lombok.Getter;
-import lombok.NonNull;
+package com.oceanbase.odc.plugin.task.api.partitionplan.datatype;
 
 /**
- * {@link PartitionPlanGeneralTimeType}
+ * {@link PartitionPlanCharType}
  *
  * @author yh263208
- * @date 2024-01-09 15:38
+ * @date 2024-01-11 20:54
  * @since ODC_release_4.2.4
  * @see PartitionPlanDataType
  */
-@Getter
-public class PartitionPlanGeneralTimeType implements PartitionPlanDataType {
+public class PartitionPlanCharType implements PartitionPlanDataType {
 
-    public static final int YEAR = 0x1;
-    public static final int MONTH = 0x2 | YEAR;
-    public static final int DAY = 0x4 | MONTH;
-    public static final int HOUR = 0x8 | DAY;
-    public static final int MINUTE = 0x10 | HOUR;
-    public static final int SECOND = 0x20 | MINUTE;
-    private final int precision;
+    private final Integer width;
 
-    public PartitionPlanGeneralTimeType(@NonNull int precision) {
-        this.precision = precision;
+    public PartitionPlanCharType(Integer width) {
+        this.width = width;
     }
 
     @Override
     public String getName() {
-        return "TIME";
+        return "CHAR";
+    }
+
+    @Override
+    public Integer getPrecision() {
+        return -1;
+    }
+
+    @Override
+    public Integer getScale() {
+        return -1;
+    }
+
+    @Override
+    public Integer getWidth() {
+        return this.width;
     }
 
 }

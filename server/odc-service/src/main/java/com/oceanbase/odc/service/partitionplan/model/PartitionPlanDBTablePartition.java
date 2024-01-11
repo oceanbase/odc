@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.partitionplan.model;
 
 import java.util.List;
 
+import com.oceanbase.odc.plugin.task.api.partitionplan.datatype.PartitionPlanDataType;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartition;
 
 import lombok.EqualsAndHashCode;

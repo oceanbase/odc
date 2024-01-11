@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.partitionplan.model;
+package com.oceanbase.odc.plugin.task.api.partitionplan.datatype;
 
 /**
  * {@link PartitionPlanDataType}
@@ -25,5 +25,11 @@ package com.oceanbase.odc.service.partitionplan.model;
 public interface PartitionPlanDataType {
 
     String getName();
+
+    Integer getPrecision();
+
+    Integer getScale();
+
+    Integer getWidth();
 
 }

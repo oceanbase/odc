@@ -13,32 +13,44 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.partitionplan.model;
+package com.oceanbase.odc.plugin.task.api.partitionplan.datatype;
 
-import lombok.Getter;
 import lombok.NonNull;
 
 /**
- * {@link PartitionPlanGeneralNumberType}
+ * {@link PartitionPlanCustomType}
  *
  * @author yh263208
- * @date 2024-01-09 15:46
+ * @date 2023-01-11 20:58
  * @since ODC_release_4.2.4
+ * @see PartitionPlanDataType
  */
-@Getter
-public class PartitionPlanGeneralNumberType implements PartitionPlanDataType {
+public class PartitionPlanCustomType implements PartitionPlanDataType {
 
-    private final Integer scale;
-    private final Integer precision;
+    private final String name;
 
-    public PartitionPlanGeneralNumberType(@NonNull Integer precision, @NonNull Integer scale) {
-        this.scale = scale;
-        this.precision = precision;
+    public PartitionPlanCustomType(@NonNull String name) {
+        this.name = name;
     }
 
     @Override
     public String getName() {
-        return "NUMBER";
+        return this.name;
+    }
+
+    @Override
+    public Integer getPrecision() {
+        return -1;
+    }
+
+    @Override
+    public Integer getScale() {
+        return -1;
+    }
+
+    @Override
+    public Integer getWidth() {
+        return -1;
     }
 
 }
