@@ -30,8 +30,11 @@ import lombok.NonNull;
 public class PartitionPlanGeneralTimeType implements PartitionPlanDataType {
 
     public static final int YEAR = 0x1;
-    public static final int DAY = 0x2 | YEAR;
-    public static final int SECOND = 0x4 | DAY;
+    public static final int MONTH = 0x2 | YEAR;
+    public static final int DAY = 0x4 | MONTH;
+    public static final int HOUR = 0x8 | DAY;
+    public static final int MINUTE = 0x10 | HOUR;
+    public static final int SECOND = 0x20 | MINUTE;
     private final int precision;
 
     public PartitionPlanGeneralTimeType(@NonNull int precision) {
