@@ -16,7 +16,6 @@
 
 package com.oceanbase.odc.service.task.executor.sampletask;
 
-import java.io.Serializable;
 import java.util.Map;
 
 import org.springframework.jdbc.core.JdbcOperations;
@@ -28,6 +27,7 @@ import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
+import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.constants.JobDataMapConstants;
 import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.executor.task.BaseTask;
@@ -41,7 +41,7 @@ import lombok.extern.slf4j.Slf4j;
  * @date 2023/11/22 20:01
  */
 @Slf4j
-public class SampleTask extends BaseTask {
+public class SampleTask extends BaseTask<FlowTaskResult> {
 
     private SampleTaskParameter parameter;
 
@@ -52,12 +52,12 @@ public class SampleTask extends BaseTask {
     private FlowTaskResult result;
 
     @Override
-    protected void onInit() {
+    protected void onInit(JobContext context) {
 
     }
 
     @Override
-    protected void onStart() {
+    protected void onStart(JobContext context) {
         updateStatus(JobStatus.RUNNING);
         Map<String, String> dataMap = getJobContext().getJobParameters();
 
@@ -110,7 +110,7 @@ public class SampleTask extends BaseTask {
     }
 
     @Override
-    public Serializable getTaskResult() {
+    public FlowTaskResult getTaskResult() {
         return this.result;
     }
 

@@ -16,8 +16,6 @@
 
 package com.oceanbase.odc.service.task.executor.task;
 
-import java.io.Serializable;
-
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.executor.executor.TaskExecutor;
@@ -28,7 +26,7 @@ import com.oceanbase.odc.service.task.executor.executor.TaskExecutor;
  * @author gaoda.xy
  * @date 2023/11/22 15:46
  */
-public interface Task {
+public interface Task<RESULT> {
 
     /**
      * Start current task. This method will be called by {@link TaskExecutor} for fire a task
@@ -64,6 +62,6 @@ public interface Task {
     /**
      * Get task result
      */
-    Serializable getTaskResult();
+    RESULT getTaskResult();
 
 }
