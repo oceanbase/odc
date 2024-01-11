@@ -56,11 +56,7 @@ public class StdJobScheduler implements JobScheduler {
     public StdJobScheduler(JobConfiguration configuration) {
         this.configuration = configuration;
         this.scheduler = configuration.getScheduler();
-        PreConditions.notNull(configuration.getScheduler(), "quartz scheduler");
-        PreConditions.notNull(configuration.getJobDispatcher(), "job dispatcher");
-        PreConditions.notNull(configuration.getHostUrlProvider(), "host url provider");
-        PreConditions.notNull(configuration.getTaskFrameworkService(), "task framework service");
-        PreConditions.notNull(configuration.getJobImageNameProvider(), "job image name provider");
+        validConfiguration(configuration);
         JobConfigurationHolder.setJobConfiguration(configuration);
 
         log.info("Job image name is {}", configuration.getJobImageNameProvider().provide());
@@ -146,4 +142,18 @@ public class StdJobScheduler implements JobScheduler {
             log.warn("schedule job failed:", e);
         }
     }
+
+    private void validConfiguration(JobConfiguration configuration) {
+        PreConditions.notNull(configuration.getTaskFrameworkProperties(), "task-framework properties");
+        PreConditions.notNull(configuration.getTaskFrameworkProperties().getCheckRunningJobCronExpression(),
+                "checkRunningJobCronExpression");
+        PreConditions.notNull(configuration.getTaskFrameworkProperties().getStartPreparingJobCronExpression(),
+                "startPreparingJobCronExpression");
+        PreConditions.notNull(configuration.getScheduler(), "quartz scheduler");
+        PreConditions.notNull(configuration.getJobDispatcher(), "job dispatcher");
+        PreConditions.notNull(configuration.getHostUrlProvider(), "host url provider");
+        PreConditions.notNull(configuration.getTaskFrameworkService(), "task framework service");
+        PreConditions.notNull(configuration.getJobImageNameProvider(), "job image name provider");
+    }
+
 }

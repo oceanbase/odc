@@ -35,6 +35,7 @@ import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.caller.JobException;
 import com.oceanbase.odc.service.task.config.DefaultJobConfiguration;
+import com.oceanbase.odc.service.task.config.SpringTaskFrameworkProperties;
 import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.dispatch.JobDispatcher;
 import com.oceanbase.odc.service.task.executor.sampletask.SampleTask;
@@ -67,6 +68,10 @@ public class JobSchedulerTest {
         jc.setJobImageNameProvider(Mockito.mock(JobImageNameProvider.class));
         TaskFrameworkService taskFrameworkService = Mockito.mock(TaskFrameworkService.class);
         jc.setTaskFrameworkService(taskFrameworkService);
+        SpringTaskFrameworkProperties properties = new SpringTaskFrameworkProperties();
+        properties.setCheckRunningJobCronExpression("0/3 * * * * ?");
+        properties.setStartPreparingJobCronExpression("0/3 * * * * ?");
+        jc.setTaskFrameworkProperties(properties);
         Mockito.when(taskFrameworkService.save(Mockito.any())).thenReturn(Mockito.mock(JobEntity.class));
         Mockito.when(taskFrameworkService.find(Mockito.any())).thenReturn(Mockito.mock(JobEntity.class));
 

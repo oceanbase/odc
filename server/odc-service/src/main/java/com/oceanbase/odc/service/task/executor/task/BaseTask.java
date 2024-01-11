@@ -49,7 +49,7 @@ import lombok.extern.slf4j.Slf4j;
  * @date 2023/11/22 20:16
  */
 @Slf4j
-public abstract class BaseTask implements Task {
+public abstract class BaseTask<RESULT> implements Task<RESULT> {
 
     private static final int REPORT_RESULT_RETRY_TIMES = Integer.MAX_VALUE;
     private static final int DEFAULT_TASK_TIMEOUT_MILLI_SECONDS = 48 * 60 * 60 * 1000;
@@ -72,9 +72,9 @@ public abstract class BaseTask implements Task {
             this.jobData = Collections.unmodifiableMap(getJobContext().getJobParameters());
             initCloudObjectStorageService();
             this.reporter = new TaskReporter(context.getHostUrls());
-            onInit();
+            onInit(context);
             initTaskMonitor();
-            onStart();
+            onStart(context);
         } catch (Throwable e) {
             log.info("Task failed, id: {}, details: {}", context.getJobIdentity().getId(), e);
             updateStatus(JobStatus.FAILED);
@@ -253,9 +253,9 @@ public abstract class BaseTask implements Task {
         return getJobContext().getJobIdentity().getId();
     }
 
-    protected abstract void onInit();
+    protected abstract void onInit(JobContext context) throws Exception;
 
-    protected abstract void onStart();
+    protected abstract void onStart(JobContext context) throws Exception;
 
     protected abstract void onStop();
 
