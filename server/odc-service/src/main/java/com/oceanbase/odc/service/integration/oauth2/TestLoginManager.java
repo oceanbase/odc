@@ -32,6 +32,7 @@ import org.springframework.stereotype.Service;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.authority.util.Authenticated;
 import com.oceanbase.odc.core.authority.util.PreAuthenticate;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
@@ -178,7 +179,7 @@ public class TestLoginManager {
             return null;
         }
         String registrationId = request.getParameter(REGISTRATION_ID_URI_VARIABLE_NAME);
-        if (registrationId == null) {
+        if (StringUtils.isBlank(registrationId)) {
             SSOIntegrationConfig sSoIntegrationConfig = integrationService.getSSoIntegrationConfig();
             registrationId = sSoIntegrationConfig.resolveRegistrationId();
         }
