@@ -89,6 +89,15 @@ public class WebInfoAdapter implements InfoAdapter {
     }
 
     @Override
+    public boolean isSSoLoginEnabled(HttpServletRequest request) {
+        if (authType.contains("local")) {
+            SSOIntegrationConfig ssoIntegrationConfig = integrationService.getSSoIntegrationConfig();
+            return ssoIntegrationConfig != null;
+        }
+        return getLoginUrl(request) != null;
+    }
+
+    @Override
     public String ssoLoginName() {
         SSOIntegrationConfig sSoIntegrationConfig = integrationService.getSSoIntegrationConfig();
         if (sSoIntegrationConfig == null) {
