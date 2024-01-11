@@ -36,6 +36,8 @@ import lombok.Data;
 @Data
 public class ApplyDatabaseParameter implements Serializable, TaskParameters {
 
+    private static final long serialVersionUID = -2482302525012272875L;
+
     /**
      * Project to be applied for, the
      */
@@ -59,6 +61,8 @@ public class ApplyDatabaseParameter implements Serializable, TaskParameters {
 
     @Data
     public static class ApplyDatabase implements Serializable {
+
+        private static final long serialVersionUID = -8433967513537417701L;
 
         private Long id;
         private String name;
