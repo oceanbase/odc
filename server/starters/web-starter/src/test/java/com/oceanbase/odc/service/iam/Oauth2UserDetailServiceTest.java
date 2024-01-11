@@ -39,7 +39,7 @@ import com.oceanbase.odc.service.iam.model.Organization;
 public class Oauth2UserDetailServiceTest extends ServiceTestEnv {
 
     @Autowired
-    private SsoUserDetailService   SSOUserDetailService;
+    private SsoUserDetailService SSOUserDetailService;
     @MockBean
     private OrganizationRepository organizationRepository;
     @MockBean
