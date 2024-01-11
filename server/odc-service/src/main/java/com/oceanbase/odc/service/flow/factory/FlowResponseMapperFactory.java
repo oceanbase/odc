@@ -25,6 +25,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -305,35 +306,31 @@ public class FlowResponseMapperFactory {
         /**
          * Get Database associated with each TaskEntity
          */
-        Set<Long> databaseIds = taskId2TaskEntity.values().stream().filter(entity -> entity.getDatabaseId() != null)
-                .map(TaskEntity::getDatabaseId).collect(Collectors.toSet());
-        Map<Long, Database> databaseId2database = databaseService.listDatabasesByIds(databaseIds).stream()
-                .collect(Collectors.toMap(Database::getId, database -> database));
-        /**
-         * get the target database associated with the structure comparison task
-         */
-        Set<Long> relatedDatabaseIds = taskId2TaskEntity.values().stream()
+        Map<Long, Database> id2Database = new HashMap<>();
+        Set<Long> databaseIds = new HashSet<>();
+        databaseIds.addAll(taskId2TaskEntity.values().stream().map(TaskEntity::getDatabaseId).filter(Objects::nonNull)
+                .collect(Collectors.toSet()));
+        databaseIds.addAll(taskId2TaskEntity.values().stream()
                 .filter(task -> task.getTaskType().equals(TaskType.STRUCTURE_COMPARISON))
-                .map(taskEntity -> JsonUtils.fromJson(taskEntity.getParametersJson(),
-                        DBStructureComparisonParameter.class).getTargetDatabaseId())
-                .collect(Collectors.toSet());
-        if (!relatedDatabaseIds.isEmpty()) {
-            databaseService.listDatabasesByIds(relatedDatabaseIds).stream()
-                    .forEach(database -> databaseId2database.putIfAbsent(database.getId(), database));
+                .map(taskEntity -> JsonUtils
+                        .fromJson(taskEntity.getParametersJson(), DBStructureComparisonParameter.class)
+                        .getTargetDatabaseId())
+                .collect(Collectors.toSet()));
+        if (CollectionUtils.isNotEmpty(databaseIds)) {
+            id2Database = databaseService.listDatabasesByIds(databaseIds).stream()
+                    .collect(Collectors.toMap(Database::getId, database -> database));
         }
-
         /**
          * find the ConnectionConfig associated with each Database
          */
-        Set<Long> connectionIds = databaseId2database.values().stream().filter(entity -> entity.getDataSource() != null)
-                .filter(entity -> entity.getDataSource().getId() != null)
-                .map(entity -> entity.getDataSource().getId()).collect(Collectors.toSet());
-        Map<Long, ConnectionConfig> connectionId2Connection =
-                listConnectionsByConnectionIdsWithoutPermissionCheck(connectionIds)
-                        .stream().collect(Collectors.toMap(ConnectionEntity::getId, connectionMapper::entityToModel));
-        databaseId2database.values().forEach(database -> {
-            if (connectionId2Connection.containsKey(database.getDataSource().getId())) {
-                database.setDataSource(connectionId2Connection.get(database.getDataSource().getId()));
+        Set<Long> connectionIds = id2Database.values().stream()
+                .filter(e -> e.getDataSource() != null && e.getDataSource().getId() != null)
+                .map(e -> e.getDataSource().getId()).collect(Collectors.toSet());
+        Map<Long, ConnectionConfig> id2Connection = listConnectionsByConnectionIdsWithoutPermissionCheck(connectionIds)
+                .stream().collect(Collectors.toMap(ConnectionEntity::getId, connectionMapper::entityToModel));
+        id2Database.values().forEach(database -> {
+            if (id2Connection.containsKey(database.getDataSource().getId())) {
+                database.setDataSource(id2Connection.get(database.getDataSource().getId()));
             }
         });
 
@@ -373,7 +370,7 @@ public class FlowResponseMapperFactory {
                 .withGetRiskLevelByRiskLevelId(
                         id -> riskLevelRepository.findById(id).map(riskLevelMapper::entityToModel).orElse(null))
                 .withGetCandidatesByFlowInstanceId(candidatesByFlowInstanceIds::get)
-                .withGetDatabaseById(databaseId2database::get);
+                .withGetDatabaseById(id2Database::get);
     }
 
     public Map<Long, List<RoleEntity>> getUserId2Roles(@NonNull Collection<Long> userIds) {
