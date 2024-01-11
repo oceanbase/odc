@@ -47,7 +47,7 @@ import org.springframework.web.client.UnknownContentTypeException;
 import com.oceanbase.odc.common.trace.TraceContextHolder;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.service.iam.auth.MappingRuleConvert;
-import com.oceanbase.odc.service.iam.auth.SSOUserDetailService;
+import com.oceanbase.odc.service.iam.auth.SsoUserDetailService;
 import com.oceanbase.odc.service.iam.model.User;
 import com.oceanbase.odc.service.integration.oauth2.TestLoginManager;
 
@@ -72,7 +72,7 @@ public class OAuth2UserServiceImpl implements OAuth2UserService<OAuth2UserReques
     private final Converter<OAuth2UserRequest, RequestEntity<?>> requestEntityConverter =
             new OAuth2UserRequestEntityConverter();
     @Autowired
-    private SSOUserDetailService ssoUserDetailService;
+    private SsoUserDetailService ssoUserDetailService;
     @Autowired
     private MappingRuleConvert mappingRuleConvert;
     @Autowired
