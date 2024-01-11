@@ -64,7 +64,7 @@ public class StdJobScheduler implements JobScheduler {
         JobConfigurationHolder.setJobConfiguration(configuration);
 
         log.info("Job image name is {}", configuration.getJobImageNameProvider().provide());
-        getEventPublisher().addEventListener(new DestroyJobListener(this));
+        getEventPublisher().addEventListener(new DestroyJobListener(configuration));
         getEventPublisher().addEventListener(new DefaultJobCallerListener(this));
         initDaemonJob();
     }
@@ -91,8 +91,10 @@ public class StdJobScheduler implements JobScheduler {
             return;
         }
         configuration.getTaskFrameworkService().updateStatus(id, JobStatus.CANCELING);
+        log.info("Update job {} status to {}", id, JobStatus.CANCELING.name());
         configuration.getJobDispatcher().stop(JobIdentity.of(id));
         configuration.getTaskFrameworkService().updateStatus(id, JobStatus.CANCELED);
+        log.info("Update job {} status to {}", id, JobStatus.CANCELED.name());
     }
 
     @Override
