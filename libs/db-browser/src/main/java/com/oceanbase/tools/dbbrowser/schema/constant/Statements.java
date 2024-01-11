@@ -45,4 +45,8 @@ public final class Statements {
 
     public static final String LIST_SCHEMA_INDEX = "list-schema-index";
 
+    public static final String LIST_DATABASE = "list-database";
+
+    public static final String GET_DATABASE = "get-database";
+
 }
