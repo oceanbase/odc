@@ -67,7 +67,6 @@ import com.oceanbase.odc.service.flow.model.ExecutionStrategyConfig;
 import com.oceanbase.odc.service.flow.task.mapper.OdcRuntimeDelegateMapper;
 import com.oceanbase.odc.service.flow.util.FlowInstanceUtil;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
-import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 
 import lombok.NonNull;
 
@@ -109,8 +108,6 @@ public class FlowFactory {
     private ServiceTaskInstanceRepository serviceTaskRepository;
     @Autowired
     private UserTaskInstanceCandidateRepository userTaskInstanceCandidateRepository;
-    @Autowired
-    private TaskFrameworkProperties taskFrameworkProperties;
 
     public FlowInstance generateFlowInstance(@NonNull String name, String description) {
         return new OdcFlowInstance(name, description, flowableAdaptor, authenticationFacade,
@@ -154,7 +151,7 @@ public class FlowFactory {
     public FlowTaskInstance generateFlowTaskInstance(@NonNull Long flowInstanceId, boolean isStartEndPoint,
             boolean isEndEndPoint, @NonNull TaskType taskType, @NonNull ExecutionStrategyConfig config) {
         return new FlowTaskInstance(taskType, authenticationFacade.currentOrganizationId(), flowInstanceId, config,
-                isStartEndPoint, isEndEndPoint, new OdcRuntimeDelegateMapper(taskFrameworkProperties), flowableAdaptor,
+                isStartEndPoint, isEndEndPoint, new OdcRuntimeDelegateMapper(), flowableAdaptor,
                 eventPublisher,
                 flowableTaskService, nodeRepository, sequenceRepository, serviceTaskRepository);
     }
@@ -260,7 +257,7 @@ public class FlowFactory {
         try {
             entity.setId(null);
             FlowTaskInstance target =
-                    new FlowTaskInstance(entity, new OdcRuntimeDelegateMapper(taskFrameworkProperties),
+                    new FlowTaskInstance(entity, new OdcRuntimeDelegateMapper(),
                             flowableAdaptor, eventPublisher, flowableTaskService, nodeRepository, sequenceRepository,
                             serviceTaskRepository);
             setNameAndActivityId(id, target, nodes);

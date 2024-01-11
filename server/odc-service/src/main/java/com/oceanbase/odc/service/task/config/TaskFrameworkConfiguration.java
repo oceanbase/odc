@@ -29,7 +29,6 @@ import com.oceanbase.odc.service.common.model.HostProperties;
 import com.oceanbase.odc.service.task.caller.K8sJobClient;
 import com.oceanbase.odc.service.task.caller.NativeK8sJobClient;
 import com.oceanbase.odc.service.task.constants.JobEnvConstants;
-import com.oceanbase.odc.service.task.enums.TaskRunModeEnum;
 import com.oceanbase.odc.service.task.schedule.FixedHostUrlProvider;
 import com.oceanbase.odc.service.task.schedule.HostUrlProvider;
 import com.oceanbase.odc.service.task.schedule.IpBasedHostUrlProvider;
@@ -49,16 +48,14 @@ public class TaskFrameworkConfiguration {
     @Bean
     @ConditionalOnMissingBean(K8sJobClient.class)
     public K8sJobClient k8sJobClient(@Autowired TaskFrameworkProperties taskFrameworkProperties) {
-        if (taskFrameworkProperties.getRunMode() == TaskRunModeEnum.K8S) {
-            try {
-                log.info("k8s url is {}", taskFrameworkProperties.getK8s().getKubeUrl());
-                log.info("k8s namespace is {}", taskFrameworkProperties.getK8s().getNamespace());
-                return new NativeK8sJobClient(taskFrameworkProperties.getK8s());
-            } catch (IOException e) {
-                log.warn("Create NativeK8sJobClient occur error", e);
-            }
+        try {
+            log.info("k8s url is {}", taskFrameworkProperties.getK8s().getKubeUrl());
+            log.info("k8s namespace is {}", taskFrameworkProperties.getK8s().getNamespace());
+            return new NativeK8sJobClient(taskFrameworkProperties.getK8s());
+        } catch (IOException e) {
+            log.warn("Create NativeK8sJobClient occur error:", e);
+            return null;
         }
-        return null;
     }
 
     @Bean

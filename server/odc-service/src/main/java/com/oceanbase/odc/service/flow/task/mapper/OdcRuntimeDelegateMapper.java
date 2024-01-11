@@ -19,6 +19,7 @@ import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
+import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.flow.task.BaseRuntimeFlowableDelegate;
 import com.oceanbase.odc.service.flow.task.DataTransferRuntimeFlowableTask;
 import com.oceanbase.odc.service.flow.task.DatabaseChangeRuntimeFlowableTask;
@@ -46,17 +47,12 @@ import lombok.NonNull;
  * @see RuntimeDelegateMapper
  */
 public class OdcRuntimeDelegateMapper implements RuntimeDelegateMapper {
-
-    private final TaskFrameworkProperties taskFrameworkProperties;
-
-    public OdcRuntimeDelegateMapper(TaskFrameworkProperties taskFrameworkProperties) {
-        this.taskFrameworkProperties = taskFrameworkProperties;
-    }
-
     @Override
     public Class<? extends BaseRuntimeFlowableDelegate<?>> map(@NonNull TaskType taskType) {
         switch (taskType) {
             case ASYNC:
+                TaskFrameworkProperties taskFrameworkProperties =
+                        SpringContextUtil.getBean(TaskFrameworkProperties.class);
                 return taskFrameworkProperties.getRunMode() == TaskRunModeEnum.LEGACY
                         ? DatabaseChangeRuntimeFlowableTask.class
                         : DatabaseChangeRuntimeFlowableTaskCopied.class;
