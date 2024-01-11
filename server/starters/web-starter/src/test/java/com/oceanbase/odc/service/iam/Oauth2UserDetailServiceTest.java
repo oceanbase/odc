@@ -32,14 +32,14 @@ import com.oceanbase.odc.core.shared.exception.VerifyException;
 import com.oceanbase.odc.metadb.iam.OrganizationRepository;
 import com.oceanbase.odc.metadb.iam.UserEntity;
 import com.oceanbase.odc.metadb.iam.UserRepository;
-import com.oceanbase.odc.service.iam.auth.SSOUserDetailService;
+import com.oceanbase.odc.service.iam.auth.SsoUserDetailService;
 import com.oceanbase.odc.service.iam.auth.oauth2.MappingResult;
 import com.oceanbase.odc.service.iam.model.Organization;
 
 public class Oauth2UserDetailServiceTest extends ServiceTestEnv {
 
     @Autowired
-    private SSOUserDetailService SSOUserDetailService;
+    private SsoUserDetailService   SSOUserDetailService;
     @MockBean
     private OrganizationRepository organizationRepository;
     @MockBean

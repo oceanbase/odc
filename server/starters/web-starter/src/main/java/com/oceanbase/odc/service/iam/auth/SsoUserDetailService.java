@@ -62,7 +62,7 @@ import lombok.extern.slf4j.Slf4j;
 @ConditionalOnProperty(value = "odc.iam.auth.type", havingValues = {"local"})
 @Slf4j
 @SkipAuthorize("odc internal usage")
-public class SSOUserDetailService {
+public class SsoUserDetailService {
     private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
 
     @Autowired

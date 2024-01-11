@@ -54,7 +54,7 @@ import org.springframework.util.StringUtils;
 import com.oceanbase.odc.common.trace.TraceContextHolder;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.service.iam.auth.MappingRuleConvert;
-import com.oceanbase.odc.service.iam.auth.SSOUserDetailService;
+import com.oceanbase.odc.service.iam.auth.SsoUserDetailService;
 import com.oceanbase.odc.service.iam.model.User;
 import com.oceanbase.odc.service.integration.oauth2.TestLoginManager;
 
@@ -79,7 +79,7 @@ public class OidcUserServiceImpl implements OAuth2UserService<OidcUserRequest, O
     private final Function<ClientRegistration, Converter<Map<String, Object>, Map<String, Object>>> claimTypeConverterFactory =
             (clientRegistration) -> DEFAULT_CLAIM_TYPE_CONVERTER;
     @Autowired
-    private SSOUserDetailService SSOUserDetailService;
+    private SsoUserDetailService SSOUserDetailService;
     @Autowired
     private MappingRuleConvert mappingRuleConvert;
 

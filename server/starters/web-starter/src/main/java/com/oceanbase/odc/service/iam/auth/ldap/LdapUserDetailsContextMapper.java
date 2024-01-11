@@ -27,7 +27,7 @@ import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.common.trace.TraceContextHolder;
 import com.oceanbase.odc.service.iam.auth.MappingRuleConvert;
-import com.oceanbase.odc.service.iam.auth.SSOUserDetailService;
+import com.oceanbase.odc.service.iam.auth.SsoUserDetailService;
 import com.oceanbase.odc.service.iam.auth.oauth2.MappingResult;
 import com.oceanbase.odc.service.iam.model.User;
 
@@ -41,7 +41,7 @@ public class LdapUserDetailsContextMapper implements UserDetailsContextMapper {
     MappingRuleConvert mappingRuleConvert;
 
     @Autowired
-    SSOUserDetailService ssoUserDetailService;
+    SsoUserDetailService ssoUserDetailService;
 
     @Override
     public UserDetails mapUserFromContext(DirContextOperations ctx, String username,
