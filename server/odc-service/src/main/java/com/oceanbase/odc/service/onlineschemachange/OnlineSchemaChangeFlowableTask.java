@@ -16,8 +16,10 @@
 package com.oceanbase.odc.service.onlineschemachange;
 
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
@@ -87,6 +89,7 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
     private volatile long organizationId;
     private volatile boolean continueOnError;
     private volatile double percentage;
+    private volatile Set<Long> lastManualSwapTableEnableTasks = new HashSet<>();
 
     @Override
     protected Void start(Long taskId, TaskService taskService, DelegateExecution execution) throws Exception {
@@ -165,7 +168,23 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
 
             TaskEntity flowTask = taskService.detail(taskId);
             TaskStatus dbStatus = flowTask.getStatus();
-            if (currentPercentage > this.percentage || dbStatus != this.status) {
+
+            Set<Long> currentManualSwapTableEnableTasks = new HashSet<>();
+            for (ScheduleTaskEntity task : tasks) {
+                OnlineSchemaChangeScheduleTaskResult result = JsonUtils.fromJson(task.getResultJson(),
+                        OnlineSchemaChangeScheduleTaskResult.class);
+                if (result.isManualSwapTableEnabled()) {
+                    currentManualSwapTableEnableTasks.add(task.getId());
+                }
+            }
+
+            boolean manualSwapTableTasksChanged = !CollectionUtils.isEqualCollection(currentManualSwapTableEnableTasks,
+                    lastManualSwapTableEnableTasks);
+            if (manualSwapTableTasksChanged) {
+                lastManualSwapTableEnableTasks = currentManualSwapTableEnableTasks;
+            }
+
+            if (currentPercentage > this.percentage || dbStatus != this.status || manualSwapTableTasksChanged) {
                 flowTask.setResultJson(JsonUtils.toJson(new OnlineSchemaChangeTaskResult(tasks.getContent())));
                 flowTask.setStatus(this.status);
                 flowTask.setProgressPercentage(Math.min(currentPercentage, 100));
