@@ -15,8 +15,6 @@
  */
 package com.oceanbase.odc.service.partitionplan.model;
 
-import java.util.concurrent.TimeUnit;
-
 import lombok.Getter;
 import lombok.NonNull;
 
@@ -31,9 +29,12 @@ import lombok.NonNull;
 @Getter
 public class PartitionPlanGeneralTimeType implements PartitionPlanDataType {
 
-    private final TimeUnit precision;
+    public static final int YEAR = 0x1;
+    public static final int DAY = 0x2 | YEAR;
+    public static final int SECOND = 0x4 | DAY;
+    private final int precision;
 
-    public PartitionPlanGeneralTimeType(@NonNull TimeUnit precision) {
+    public PartitionPlanGeneralTimeType(@NonNull int precision) {
         this.precision = precision;
     }
 
