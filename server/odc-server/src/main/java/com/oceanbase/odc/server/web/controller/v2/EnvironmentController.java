@@ -17,6 +17,7 @@ package com.oceanbase.odc.server.web.controller.v2;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
@@ -52,5 +53,19 @@ public class EnvironmentController {
     public SuccessResponse<Environment> getEnvironment(@PathVariable Long id) {
         return Responses.success(environmentService.detail(id));
     }
+
+    @ApiOperation(value = "createEnvironment", notes = "Create an environment")
+    @RequestMapping(value = "/environments", method = RequestMethod.POST)
+    public SuccessResponse<Environment> createEnvironment(@RequestBody Environment environment) {
+        throw new UnsupportedOperationException();
+    }
+
+    @ApiOperation(value = "deleteEnvironment", notes = "Delete an environment")
+    @RequestMapping(value = "/environments", method = RequestMethod.DELETE)
+    public SuccessResponse<Environment> deleteEnvironment() {
+        throw new UnsupportedOperationException();
+    }
+
+
 
 }
