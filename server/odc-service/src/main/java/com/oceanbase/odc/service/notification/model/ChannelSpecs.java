@@ -13,24 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.odc.service.notification.model;
 
-import lombok.Data;
+import java.util.List;
+
+import org.springframework.data.jpa.domain.Specification;
+
+import com.oceanbase.odc.common.jpa.SpecificationUtil;
+import com.oceanbase.odc.metadb.notification.ChannelEntity;
 
 /**
  * @author liuyizhuo.lyz
- * @date 2024/1/4
+ * @date 2024/1/10
  */
-@Data
-public class BaseChannelConfig {
+public class ChannelSpecs {
 
-    private String language;
+    public static Specification<ChannelEntity> projectIdEquals(Long projectId) {
+        return SpecificationUtil.columnEqual("projectId", projectId);
+    }
 
-    private String titleTemplate;
+    public static Specification<ChannelEntity> nameLike(String fuzzyName) {
+        return SpecificationUtil.columnLike("name", fuzzyName);
 
-    private String contentTemplate;
+    }
 
-    private RateLimitConfig rateLimitConfig;
+    public static Specification<ChannelEntity> typeIn(List<ChannelType> types) {
+        return SpecificationUtil.columnIn("type", types);
+    }
 
 }

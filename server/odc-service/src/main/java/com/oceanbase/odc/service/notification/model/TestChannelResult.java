@@ -13,20 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.metadb.notification;
+package com.oceanbase.odc.service.notification.model;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
+import lombok.Data;
 
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+/**
+ * @author liuyizhuo.lyz
+ * @date 2024/1/4
+ */
+@Data
+public class TestChannelResult {
 
-public interface ChannelRepository extends JpaRepository<ChannelEntity, Long>,
-        JpaSpecificationExecutor<ChannelEntity> {
-
-    List<ChannelEntity> findByIdIn(Collection<Long> ids);
-
-    Optional<ChannelEntity> findByProjectIdAndName(Long projectId, String name);
+    private boolean active;
+    private String errorMessage;
 
 }

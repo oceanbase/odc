@@ -15,18 +15,26 @@
  */
 package com.oceanbase.odc.metadb.notification;
 
-import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
+
+import javax.transaction.Transactional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
 
-public interface ChannelRepository extends JpaRepository<ChannelEntity, Long>,
-        JpaSpecificationExecutor<ChannelEntity> {
+/**
+ * @author liuyizhuo.lyz
+ * @date 2024/1/10
+ */
+public interface ChannelPropertyRepository extends JpaRepository<ChannelPropertyEntity, Long> {
 
-    List<ChannelEntity> findByIdIn(Collection<Long> ids);
+    @Transactional
+    @Modifying
+    @Query(value = "delete from notification_channel_property where channel_id=?1", nativeQuery = true)
+    int deleteByChannelId(Long channelId);
 
-    Optional<ChannelEntity> findByProjectIdAndName(Long projectId, String name);
+    @Transactional
+    List<ChannelPropertyEntity> findAllByChannelId(Long channelId);
 
 }
