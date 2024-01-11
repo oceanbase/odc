@@ -13,63 +13,74 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.permission.database.model;
+package com.oceanbase.odc.metadb.iam;
 
 import java.util.Date;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonProperty.Access;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
 import com.oceanbase.odc.core.shared.constant.AuthorizationType;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 /**
  * @author gaoda.xy
- * @date 2024/1/4 11:31
+ * @date 2024/1/3 17:30
  */
 @Data
-public class UserDatabasePermission {
+@Entity
+@Table(name = "list_user_database_permission_view")
+@EqualsAndHashCode(exclude = {"createTime"})
+public class UserDatabasePermissionEntity {
 
-    @JsonProperty(access = Access.READ_ONLY)
+    @Id
+    @Column(name = "id", nullable = false, updatable = false)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @JsonProperty(access = Access.READ_ONLY)
+    @Column(name = "user_id")
     private Long userId;
 
-    @JsonProperty(access = Access.READ_ONLY)
-    private DatabasePermissionType type;
+    @Column(name = "action")
+    private String action;
 
-    @JsonProperty(access = Access.READ_ONLY)
+    @Column(name = "authorization_type")
     private AuthorizationType authorizationType;
 
-    @JsonProperty(access = Access.READ_ONLY)
+    @Column(name = "ticket_id")
     private Long ticketId;
 
-    @JsonProperty(access = Access.READ_ONLY)
+    @Column(name = "create_time")
     private Date createTime;
 
-    @JsonProperty(access = Access.READ_ONLY)
+    @Column(name = "expire_time")
     private Date expireTime;
 
-    @JsonProperty(access = Access.READ_ONLY)
+    @Column(name = "creator_id")
     private Long creatorId;
 
-    @JsonProperty(access = Access.READ_ONLY)
+    @Column(name = "organization_id")
     private Long organizationId;
 
-    @JsonProperty(access = Access.READ_ONLY)
+    @Column(name = "project_id")
     private Long projectId;
 
-    @JsonProperty(access = Access.READ_ONLY)
+    @Column(name = "database_id")
     private Long databaseId;
 
-    @JsonProperty(access = Access.READ_ONLY)
+    @Column(name = "database_name")
     private String databaseName;
 
-    @JsonProperty(access = Access.READ_ONLY)
+    @Column(name = "data_source_id")
     private Long dataSourceId;
 
-    @JsonProperty(access = Access.READ_ONLY)
+    @Column(name = "data_source_name")
     private String dataSourceName;
 
 }

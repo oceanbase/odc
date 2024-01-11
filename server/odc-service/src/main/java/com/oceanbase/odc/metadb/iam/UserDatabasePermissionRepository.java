@@ -13,32 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.permission.database.model;
+package com.oceanbase.odc.metadb.iam;
 
-import java.util.Date;
-import java.util.List;
-
-import javax.validation.constraints.NotEmpty;
-import javax.validation.constraints.NotNull;
-
-import lombok.Data;
+import com.oceanbase.odc.metadb.flow.ReadOnlyRepository;
 
 /**
  * @author gaoda.xy
- * @date 2024/1/4 13:39
+ * @date 2024/1/3 17:38
  */
-@Data
-public class CreateDatabasePermissionReq {
-
-    @NotEmpty
-    private List<Long> databaseIds;
-
-    @NotEmpty
-    private List<DatabasePermissionType> types;
-
-    private Date expireTime;
-
-    @NotNull
-    private Long userId;
+public interface UserDatabasePermissionRepository extends ReadOnlyRepository<UserDatabasePermissionEntity, Long> {
 
 }

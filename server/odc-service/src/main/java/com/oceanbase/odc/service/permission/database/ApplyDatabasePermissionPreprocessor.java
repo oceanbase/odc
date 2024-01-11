@@ -64,7 +64,7 @@ public class ApplyDatabasePermissionPreprocessor implements Preprocessor {
         ApplyDatabaseParameter parameter = (ApplyDatabaseParameter) req.getParameters();
         Verify.notNull(parameter.getProject(), "project");
         Verify.notEmpty(parameter.getDatabases(), "databases");
-        Verify.notEmpty(parameter.getPermissionTypes(), "permissionTypes");
+        Verify.notEmpty(parameter.getTypes(), "types");
         Verify.notNull(parameter.getApplyReason(), "applyReason");
         // Check resources and permissions
         Project project = projectService.detail(parameter.getProject().getId());
@@ -90,7 +90,7 @@ public class ApplyDatabasePermissionPreprocessor implements Preprocessor {
         String i18nKey = "com.oceanbase.odc.builtin-resource.permission-apply.database.description";
         req.setDescription(I18n.translate(
                 i18nKey,
-                new Object[] {parameter.getPermissionTypes().stream().map(DatabasePermissionType::getLocalizedMessage)
+                new Object[] {parameter.getTypes().stream().map(DatabasePermissionType::getLocalizedMessage)
                         .collect(Collectors.joining(","))},
                 locale));
     }

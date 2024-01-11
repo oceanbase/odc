@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.permission.database;
 import java.util.List;
 
 import javax.validation.Valid;
+import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
 import org.springframework.data.domain.Page;
@@ -52,21 +53,14 @@ public class DatabasePermissionService {
 
     @Transactional(rollbackFor = Exception.class)
     @PreAuthenticate(hasAnyResourceRole = {"OWNER", "DBA"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
-    public List<UserDatabasePermission> create(@NotNull Long projectId,
+    public List<UserDatabasePermission> batchCreate(@NotNull Long projectId,
             @NotNull @Valid CreateDatabasePermissionReq req) {
         throw new NotImplementedException();
     }
 
     @Transactional(rollbackFor = Exception.class)
     @PreAuthenticate(hasAnyResourceRole = {"OWNER", "DBA"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
-    public UserDatabasePermission revoke(@NotNull Long projectId, @NotNull Long permissionId) {
-        throw new NotImplementedException();
-    }
-
-    @Transactional(rollbackFor = Exception.class)
-    @PreAuthenticate(hasAnyResourceRole = {"OWNER", "DBA", "DEVELOPER", "SECURITY_ADMINISTRATOR", "PARTICIPANT"},
-            resourceType = "ODC_PROJECT", indexOfIdParam = 0)
-    public UserDatabasePermission relinquish(@NotNull Long projectId, @NotNull Long permissionId) {
+    public List<UserDatabasePermission> batchRevoke(@NotNull Long projectId, @NotEmpty List<Long> ids) {
         throw new NotImplementedException();
     }
 

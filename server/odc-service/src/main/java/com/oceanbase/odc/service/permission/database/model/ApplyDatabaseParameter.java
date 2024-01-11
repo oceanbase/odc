@@ -49,7 +49,7 @@ public class ApplyDatabaseParameter implements Serializable, TaskParameters {
     /**
      * Permission types to be applied for, required
      */
-    private List<DatabasePermissionType> permissionTypes;
+    private List<DatabasePermissionType> types;
     /**
      * Expiration time, null means no expiration, optional
      */

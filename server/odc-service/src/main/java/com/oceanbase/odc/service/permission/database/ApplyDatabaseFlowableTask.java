@@ -102,11 +102,13 @@ public class ApplyDatabaseFlowableTask extends BaseODCFlowTaskDelegate<ApplyData
                     List<PermissionEntity> permissionEntities = new ArrayList<>();
                     Long organizationId = FlowTaskUtil.getOrganizationId(execution);
                     for (ApplyDatabase database : parameter.getDatabases()) {
-                        for (DatabasePermissionType permissionType : parameter.getPermissionTypes()) {
+                        for (DatabasePermissionType permissionType : parameter.getTypes()) {
                             PermissionEntity permissionEntity = new PermissionEntity();
                             permissionEntity.setAction(permissionType.getAction());
                             permissionEntity
                                     .setResourceIdentifier(ResourceType.ODC_DATABASE.name() + ":" + database.getId());
+                            permissionEntity.setResourceType(ResourceType.ODC_DATABASE);
+                            permissionEntity.setResourceId(database.getId());
                             permissionEntity.setType(PermissionType.PUBLIC_RESOURCE);
                             permissionEntity.setCreatorId(this.creatorId);
                             permissionEntity.setOrganizationId(organizationId);

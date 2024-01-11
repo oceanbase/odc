@@ -34,6 +34,7 @@ import org.hibernate.annotations.Where;
 import com.oceanbase.odc.core.shared.PermissionConfiguration;
 import com.oceanbase.odc.core.shared.constant.AuthorizationType;
 import com.oceanbase.odc.core.shared.constant.PermissionType;
+import com.oceanbase.odc.core.shared.constant.ResourceType;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -84,6 +85,13 @@ public class PermissionEntity implements PermissionConfiguration {
 
     @Column(name = "is_builtin", nullable = false)
     private Boolean builtIn;
+
+    @Column(name = "resource_type")
+    @Enumerated(value = EnumType.STRING)
+    private ResourceType resourceType;
+
+    @Column(name = "resource_id")
+    private Long resourceId;
 
     @Column(name = "expire_time")
     private Date expireTime;

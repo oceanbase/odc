@@ -39,6 +39,9 @@ import lombok.Data;
  */
 @Data
 public class Database implements SecurityResource, OrganizationIsolated, Serializable {
+
+    private static final long serialVersionUID = 729227718029437346L;
+
     private Long id;
 
     @JsonProperty(access = Access.READ_ONLY)
