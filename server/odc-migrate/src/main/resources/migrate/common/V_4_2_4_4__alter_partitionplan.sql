@@ -35,5 +35,5 @@ CREATE TABLE IF NOT EXISTS `partitionplan_table_partitionkey` (
   	`update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Record modification time',
     `partitionplan_table_id` bigint(20) NOT NULL COMMENT 'Related partition plan table id, reference partitionplan_table(id)',
     CONSTRAINT `pk_partitionplan_table_partitionkey` PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_partitionplan_table_partitionkey_partitionplan_table_id_strategy_partition_key` (`partitionplan_table_id`, `strategy`, `partition_key`)
+    UNIQUE KEY `uk_ptp_ptid_strategy_partition_key` (`partitionplan_table_id`, `strategy`, `partition_key`)
 );
