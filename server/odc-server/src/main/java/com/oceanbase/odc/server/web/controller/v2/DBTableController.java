@@ -27,12 +27,14 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.oceanbase.odc.core.session.ConnectionSession;
+import com.oceanbase.odc.core.shared.exception.NotImplementedException;
 import com.oceanbase.odc.service.common.response.ListResponse;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.db.DBTableService;
 import com.oceanbase.odc.service.db.model.GenerateTableDDLResp;
 import com.oceanbase.odc.service.db.model.GenerateUpdateTableDDLReq;
+import com.oceanbase.odc.service.partitionplan.model.PartitionPlanDBTable;
 import com.oceanbase.odc.service.session.ConnectSessionService;
 import com.oceanbase.tools.dbbrowser.model.DBSchema;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
@@ -86,6 +88,12 @@ public class DBTableController {
         req.getCurrent().setSchemaName(databaseName);
         ConnectionSession session = sessionService.nullSafeGet(sessionId, true);
         return Responses.success(tableService.generateUpdateDDL(session, req));
+    }
+
+    @GetMapping(value = "/{sessionId}/databases/{databaseName}/candidatePartitionPlanTables")
+    public ListResponse<PartitionPlanDBTable> listTables(@PathVariable String sessionId,
+            @PathVariable String databaseName) {
+        throw new NotImplementedException();
     }
 
 }
