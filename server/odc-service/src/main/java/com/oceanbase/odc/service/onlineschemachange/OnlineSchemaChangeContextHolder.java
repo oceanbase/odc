@@ -55,7 +55,10 @@ public class OnlineSchemaChangeContextHolder {
         String organizationId = context.get(OdcConstants.ORGANIZATION_ID);
         Long userIdL = (userId == null ? null : Long.parseLong(userId));
         Long organizationIdL = (organizationId == null ? null : Long.parseLong(organizationId));
+<<<<<<< HEAD
 
+=======
+>>>>>>> 710720b79 (fix(osc): osc job query connection config by id throw Access Denied (#1378))
         // set current user to get tenant list
         SecurityContextUtils.setCurrentUser(userIdL, organizationIdL, null);
     }
