@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.permission.database.model;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
 
 import org.springframework.context.i18n.LocaleContextHolder;
@@ -38,6 +40,10 @@ public enum DatabasePermissionType implements Translatable {
 
     DatabasePermissionType(String action) {
         this.action = action;
+    }
+
+    public static List<DatabasePermissionType> all() {
+        return Arrays.asList(DatabasePermissionType.values());
     }
 
     @Override

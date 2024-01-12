@@ -15,6 +15,9 @@
  */
 package com.oceanbase.odc.metadb.iam;
 
+import java.util.Collection;
+import java.util.List;
+
 import com.oceanbase.odc.metadb.flow.ReadOnlyRepository;
 
 /**
@@ -22,5 +25,7 @@ import com.oceanbase.odc.metadb.flow.ReadOnlyRepository;
  * @date 2024/1/3 17:38
  */
 public interface UserDatabasePermissionRepository extends ReadOnlyRepository<UserDatabasePermissionEntity, Long> {
+
+    List<UserDatabasePermissionEntity> findByProjectIdAndIdIn(Long projectId, Collection<Long> ids);
 
 }

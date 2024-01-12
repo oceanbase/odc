@@ -15,26 +15,28 @@
  */
 package com.oceanbase.odc.service.permission.database;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.i18n.LocaleContextHolder;
-import org.springframework.data.domain.Pageable;
 
 import com.oceanbase.odc.common.i18n.I18n;
 import com.oceanbase.odc.core.shared.Verify;
+import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.TaskType;
+import com.oceanbase.odc.core.shared.exception.AccessDeniedException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
+import com.oceanbase.odc.metadb.collaboration.ProjectEntity;
 import com.oceanbase.odc.service.collaboration.project.ProjectService;
-import com.oceanbase.odc.service.collaboration.project.model.Project;
+import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
-import com.oceanbase.odc.service.connection.database.model.QueryDatabaseParams;
+import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
 import com.oceanbase.odc.service.flow.processor.FlowTaskPreprocessor;
 import com.oceanbase.odc.service.flow.processor.Preprocessor;
@@ -57,6 +59,9 @@ public class ApplyDatabasePermissionPreprocessor implements Preprocessor {
     private DatabaseService databaseService;
 
     @Autowired
+    private ConnectionService connectionService;
+
+    @Autowired
     private AuthenticationFacade authenticationFacade;
 
     @Override
@@ -67,25 +72,36 @@ public class ApplyDatabasePermissionPreprocessor implements Preprocessor {
         Verify.notEmpty(parameter.getTypes(), "types");
         Verify.notNull(parameter.getApplyReason(), "applyReason");
         // Check resources and permissions
-        Project project = projectService.detail(parameter.getProject().getId());
-        Verify.verify(!project.getArchived(), "Project is archived");
-        parameter.getProject().setName(project.getName());
-        List<Database> allProjectDatabases =
-                databaseService.list(QueryDatabaseParams.builder().projectId(project.getId()).containsUnassigned(false)
-                        .existed(true).build(), Pageable.unpaged()).getContent();
-        Map<Long, Database> id2Database =
-                allProjectDatabases.stream().collect(Collectors.toMap(Database::getId, d -> d, (d1, d2) -> d1));
-        List<ApplyDatabase> applyDatabases = new ArrayList<>();
-        for (ApplyDatabase applyDatabase : parameter.getDatabases()) {
-            if (!id2Database.containsKey(applyDatabase.getId())) {
-                throw new NotFoundException(ResourceType.ODC_DATABASE, "id", applyDatabase.getId());
-            }
-            applyDatabases.add(ApplyDatabase.from(id2Database.get(applyDatabase.getId())));
+        Long projectId = parameter.getProject().getId();
+        ProjectEntity projectEntity = projectService.nullSafeGet(projectId);
+        Verify.verify(Boolean.FALSE.equals(projectEntity.getArchived()), "Project is archived");
+        if (projectService.checkPermission(projectId, ResourceRoleName.all())) {
+            throw new AccessDeniedException();
         }
-        parameter.setDatabases(applyDatabases);
+        parameter.getProject().setName(projectEntity.getName());
+        List<Long> databaseIds =
+                parameter.getDatabases().stream().map(ApplyDatabase::getId).collect(Collectors.toList());
+        List<Database> databases = databaseService.listDatabasesByIds(databaseIds);
+        List<Long> connectionIds = databases.stream().map(e -> e.getDataSource().getId()).collect(Collectors.toList());
+        Map<Long, Database> id2Database =
+                databases.stream().collect(Collectors.toMap(Database::getId, d -> d, (d1, d2) -> d1));
+        Map<Long, ConnectionConfig> id2ConnectionEntity = connectionService.innerListByIds(connectionIds).stream()
+                .collect(Collectors.toMap(ConnectionConfig::getId, c -> c, (c1, c2) -> c1));
+        for (ApplyDatabase database : parameter.getDatabases()) {
+            if (!id2Database.containsKey(database.getId())) {
+                throw new NotFoundException(ResourceType.ODC_DATABASE, "id", database.getId());
+            }
+            Database d = id2Database.get(database.getId());
+            if (d.getProject() == null || !Objects.equals(d.getProject().getId(), projectId)) {
+                throw new AccessDeniedException();
+            }
+            database.setName(d.getName());
+            database.setDataSourceId(d.getDataSource().getId());
+            database.setDataSourceName(id2ConnectionEntity.get(d.getDataSource().getId()).getName());
+        }
         // Fill in other parameters
-        req.setProjectId(project.getId());
-        req.setProjectName(project.getName());
+        req.setProjectId(projectId);
+        req.setProjectName(projectEntity.getName());
         Locale locale = LocaleContextHolder.getLocale();
         String i18nKey = "com.oceanbase.odc.builtin-resource.permission-apply.database.description";
         req.setDescription(I18n.translate(

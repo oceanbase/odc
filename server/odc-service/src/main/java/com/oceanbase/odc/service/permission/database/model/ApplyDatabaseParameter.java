@@ -20,9 +20,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 
-import org.springframework.context.i18n.LocaleContextHolder;
-
-import com.oceanbase.odc.common.i18n.I18n;
 import com.oceanbase.odc.core.flow.model.TaskParameters;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.permission.project.ApplyProjectParameter.ApplyProject;
@@ -68,8 +65,6 @@ public class ApplyDatabaseParameter implements Serializable, TaskParameters {
         private String name;
         private Long dataSourceId;
         private String dataSourceName;
-        private Long environmentId;
-        private String environmentName;
 
         public static ApplyDatabase from(Database database) {
             ApplyDatabase applyDatabase = new ApplyDatabase();
@@ -81,15 +76,6 @@ public class ApplyDatabaseParameter implements Serializable, TaskParameters {
             if (Objects.nonNull(database.getDataSource())) {
                 applyDatabase.setDataSourceId(database.getDataSource().getId());
                 applyDatabase.setDataSourceName(database.getDataSource().getName());
-            }
-            if (Objects.nonNull(database.getEnvironment())) {
-                applyDatabase.setEnvironmentId(database.getEnvironment().getId());
-                String envName = database.getEnvironment().getName();
-                if (envName.startsWith("${") && envName.endsWith("}")) {
-                    envName = I18n.translate(envName.substring(2, envName.length() - 1), null,
-                            LocaleContextHolder.getLocale());
-                }
-                applyDatabase.setEnvironmentName(envName);
             }
             return applyDatabase;
         }

@@ -20,6 +20,7 @@ import java.util.Date;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import com.oceanbase.odc.core.shared.constant.AuthorizationType;
+import com.oceanbase.odc.service.permission.database.model.QueryDatabasePermissionParams.PermissionExpireStatus;
 
 import lombok.Data;
 
@@ -52,6 +53,9 @@ public class UserDatabasePermission {
     private Date expireTime;
 
     @JsonProperty(access = Access.READ_ONLY)
+    private PermissionExpireStatus expireStatus;
+
+    @JsonProperty(access = Access.READ_ONLY)
     private Long creatorId;
 
     @JsonProperty(access = Access.READ_ONLY)
@@ -71,5 +75,11 @@ public class UserDatabasePermission {
 
     @JsonProperty(access = Access.READ_ONLY)
     private String dataSourceName;
+
+    public static UserDatabasePermission from(Long permissionId) {
+        UserDatabasePermission permission = new UserDatabasePermission();
+        permission.setId(permissionId);
+        return permission;
+    }
 
 }

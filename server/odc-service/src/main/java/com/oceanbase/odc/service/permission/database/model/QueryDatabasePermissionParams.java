@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.permission.database.model;
 
+import java.util.Arrays;
 import java.util.List;
 
 import com.oceanbase.odc.core.shared.constant.AuthorizationType;
@@ -50,7 +51,12 @@ public class QueryDatabasePermissionParams {
         /**
          * Not expired
          */
-        NOT_EXPIRED
+        NOT_EXPIRED;
+
+        public static List<PermissionExpireStatus> all() {
+            return Arrays.asList(PermissionExpireStatus.values());
+        }
+
     }
 
 }
