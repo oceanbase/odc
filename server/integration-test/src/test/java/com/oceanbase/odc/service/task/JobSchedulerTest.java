@@ -65,14 +65,7 @@ public class JobSchedulerTest {
         jc.setScheduler(sched);
         jc.setHostUrlProvider(Mockito.mock(HostUrlProvider.class));
         jc.setEventPublisher(new LocalEventPublisher());
-<<<<<<< HEAD
-<<<<<<< HEAD
         jc.setJobImageNameProvider(Mockito.mock(JobImageNameProvider.class));
-=======
->>>>>>> d7a83d1a8 (fix unit test)
-=======
-        jc.setJobImageNameProvider(Mockito.mock(JobImageNameProvider.class));
->>>>>>> 51d5e485d (feat(taskframework): add pod config in meta-db and task legacy run model (#1367))
         TaskFrameworkService taskFrameworkService = Mockito.mock(TaskFrameworkService.class);
         jc.setTaskFrameworkService(taskFrameworkService);
         SpringTaskFrameworkProperties properties = new SpringTaskFrameworkProperties();

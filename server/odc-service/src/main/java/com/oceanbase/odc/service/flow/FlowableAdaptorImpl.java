@@ -189,15 +189,7 @@ public class FlowableAdaptorImpl implements FlowableAdaptor {
                 .findByInstanceTypeAndActivityId(FlowNodeType.SERVICE_TASK, activityId, flowInstanceId);
         return innerConvert(optional, this,
                 (entity, flowService) -> new FlowTaskInstance(entity,
-<<<<<<< HEAD
-<<<<<<< HEAD
                         new OdcRuntimeDelegateMapper(), flowService,
-=======
-                        new OdcRuntimeDelegateMapper(taskFrameworkProperties), flowService,
->>>>>>> 51d5e485d (feat(taskframework): add pod config in meta-db and task legacy run model (#1367))
-=======
-                        new OdcRuntimeDelegateMapper(), flowService,
->>>>>>> 848537093 (add config)
                         eventPublisher, taskService, nodeInstanceRepository, sequenceRepository,
                         serviceTaskInstanceRepository));
     }

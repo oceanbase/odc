@@ -47,33 +47,12 @@ import lombok.NonNull;
  * @see RuntimeDelegateMapper
  */
 public class OdcRuntimeDelegateMapper implements RuntimeDelegateMapper {
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-
-    private final TaskFrameworkProperties taskFrameworkProperties;
-
-    public OdcRuntimeDelegateMapper(TaskFrameworkProperties taskFrameworkProperties) {
-        this.taskFrameworkProperties = taskFrameworkProperties;
-    }
-
->>>>>>> 51d5e485d (feat(taskframework): add pod config in meta-db and task legacy run model (#1367))
-=======
->>>>>>> 848537093 (add config)
     @Override
     public Class<? extends BaseRuntimeFlowableDelegate<?>> map(@NonNull TaskType taskType) {
         switch (taskType) {
             case ASYNC:
-<<<<<<< HEAD
-<<<<<<< HEAD
                 TaskFrameworkProperties taskFrameworkProperties =
                         SpringContextUtil.getBean(TaskFrameworkProperties.class);
-=======
->>>>>>> 51d5e485d (feat(taskframework): add pod config in meta-db and task legacy run model (#1367))
-=======
-                TaskFrameworkProperties taskFrameworkProperties =
-                        SpringContextUtil.getBean(TaskFrameworkProperties.class);
->>>>>>> 848537093 (add config)
                 return taskFrameworkProperties.getRunMode() == TaskRunModeEnum.LEGACY
                         ? DatabaseChangeRuntimeFlowableTask.class
                         : DatabaseChangeRuntimeFlowableTaskCopied.class;

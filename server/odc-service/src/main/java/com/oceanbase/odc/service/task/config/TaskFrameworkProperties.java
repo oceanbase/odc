@@ -40,58 +40,7 @@ public interface TaskFrameworkProperties {
 
     int getMaxRetryTimesAfterReportTimeout();
 
-<<<<<<< HEAD
-<<<<<<< HEAD
     String getStartPreparingJobCronExpression();
-=======
-    @Data
-    public static class K8sProperties {
-        private String kubeUrl;
-        private String namespace;
-        private String kubeConfig;
-        /**
-         * pod image name with version, odc job will be running in this image
-         */
-        private String podImageName;
-
-        /**
-         * pod request cpu
-         */
-        private Double requestCpu;
-
-        /**
-         * pod request memory
-         */
-        private Long requestMem;
-
-        /**
-         * pod limit cpu
-         */
-        private Double limitCpu;
-
-        /**
-         * pod limit memory
-         */
-        private Long limitMem;
-
-        /**
-         * pod enable mount
-         */
-        private Boolean enableMount;
-        /**
-         * pod mount disk absolute path
-         */
-        private String mountPath;
-
-        /**
-         * pod mount disk size
-         */
-        private Long mountDiskSize;
-    }
->>>>>>> 51d5e485d (feat(taskframework): add pod config in meta-db and task legacy run model (#1367))
-=======
-    String getStartPreparingJobCronExpression();
->>>>>>> 848537093 (add config)
 
     String getCheckRunningJobCronExpression();
 }

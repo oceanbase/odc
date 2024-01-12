@@ -84,15 +84,7 @@ public class DBUserLogStatusMonitorTest {
             Assert.assertFalse(dbUserMonitor.isDone());
             Thread.sleep(1000);
             dbUserMonitor.stop();
-<<<<<<< HEAD
-<<<<<<< HEAD
             Thread.sleep(6000);
-=======
-            Thread.sleep(3000);
->>>>>>> 814a593a0 (fix unit test)
-=======
-            Thread.sleep(6000);
->>>>>>> 5e4614870 (fix unit test)
             Assert.assertTrue(dbUserMonitor.isDone());
         } finally {
             executorService.shutdownNow();
