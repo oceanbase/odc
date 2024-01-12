@@ -21,7 +21,7 @@ alter table `flow_instance_node_task` add index `flow_instance_node_task_flow_in
 
 alter table `flow_instance` add index `flow_instance_parent_oid_ct_id`(`organization_id`,`create_time`,`id`);
 
-CREATE VIEW `list_flow_instance_view2` AS
+CREATE VIEW `list_flow_instance_view` AS
 select
     `odc_metadb3`.`flow_instance`.`id` AS `id`,
     `odc_metadb3`.`flow_instance`.`create_time` AS `create_time`,
