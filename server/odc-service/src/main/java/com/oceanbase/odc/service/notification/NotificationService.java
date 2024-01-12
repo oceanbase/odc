@@ -18,12 +18,18 @@ package com.oceanbase.odc.service.notification;
 import static com.oceanbase.odc.service.notification.constant.Constants.CHANNEL_TEST_MESSAGE_KEY;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
+import javax.annotation.PostConstruct;
 import javax.sql.DataSource;
 import javax.transaction.Transactional;
 import javax.validation.constraints.NotBlank;
@@ -31,7 +37,9 @@ import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -81,6 +89,7 @@ import lombok.extern.slf4j.Slf4j;
 @Authenticated
 @Slf4j
 @Validated
+@DependsOn("policyMetadataRepository")
 public class NotificationService {
 
     @Autowired
@@ -108,6 +117,15 @@ public class NotificationService {
     @Autowired
     private ChannelFactory channelFactory;
 
+    private TreeMap<Long, NotificationPolicy> metaPolicies;
+
+    @PostConstruct
+    public void init() {
+        metaPolicies = policyMetadataRepository.findAll(Sort.by("id")).stream()
+                .map(PolicyMetadataEntity::toPolicy)
+                .collect(Collectors.toMap(
+                        NotificationPolicy::getPolicyMetadataId, policy -> policy, (p1, p2) -> p1, TreeMap::new));
+    }
 
     @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
     public Page<Channel> listChannels(@NotNull Long projectId, @NotNull QueryChannelParams queryParams,
@@ -199,21 +217,17 @@ public class NotificationService {
 
     @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
     public List<NotificationPolicy> listPolicies(@NotNull Long projectId) {
-        TreeMap<Long, NotificationPolicy> meta = policyMetadataRepository.findAll(Sort.by("id")).stream()
-                .map(PolicyMetadataEntity::toPolicy)
-                .collect(Collectors.toMap(
-                        NotificationPolicy::getPolicyMetadataId, policy -> policy, (p1, p2) -> p1, TreeMap::new));
+        TreeMap<Long, NotificationPolicy> policies = new TreeMap<>(metaPolicies);
 
         List<NotificationPolicyEntity> actual = policyRepository.findByProjectId(projectId);
         if (CollectionUtils.isNotEmpty(actual)) {
-            for (NotificationPolicyEntity policyInDb : actual) {
-                NotificationPolicy policyInMeta = meta.get(policyInDb.getPolicyMetadataId());
-                policyInMeta.setId(policyInDb.getId());
-                policyInMeta.setEnabled(policyInDb.isEnabled());
-                policyInMeta.setChannels(getChannelsByPolicyId(policyInDb.getId()));
+            for (NotificationPolicyEntity entity : actual) {
+                NotificationPolicy policy = policyMapper.fromEntity(entity);
+                policy.setChannels(getChannelsByPolicyId(policy.getId()));
+                policies.put(policy.getPolicyMetadataId(), policy);
             }
         }
-        return new ArrayList<>(meta.values());
+        return new ArrayList<>(policies.values());
     }
 
     @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
@@ -232,15 +246,19 @@ public class NotificationService {
     @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
     public List<NotificationPolicy> batchUpdatePolicies(@NotNull Long projectId,
             @NotEmpty List<NotificationPolicy> policies) {
-        List<NotificationPolicy> results = new ArrayList<>();
+        List<NotificationPolicy> toBeCreated = new ArrayList<>();
+        List<NotificationPolicy> toBeUpdated = new ArrayList<>();
         for (NotificationPolicy policy : policies) {
             if (Objects.nonNull(policy.getId())) {
-                results.add(innerUpdatePolicy(projectId, policy));
+                toBeUpdated.add(policy);
             } else {
                 PreConditions.notNull(policy.getPolicyMetadataId(), "policy.metadataId");
-                results.add(innerCreatePolicy(projectId, policy));
+                toBeCreated.add(policy);
             }
         }
+        List<NotificationPolicy> results = new ArrayList<>();
+        results.addAll(innerBatchCreatePolicies(projectId, toBeCreated));
+        results.addAll(innerBatchUpdatePolicies(projectId, toBeUpdated));
         return results;
     }
 
@@ -259,55 +277,88 @@ public class NotificationService {
         return message;
     }
 
-    private NotificationPolicy innerCreatePolicy(Long projectId, NotificationPolicy policy) {
-        Optional<PolicyMetadataEntity> metadata = policyMetadataRepository.findById(policy.getPolicyMetadataId());
-        PreConditions.validExists(ResourceType.ODC_NOTIFICATION_POLICY,
-                "policy metadata", policy.getPolicyMetadataId(), metadata::isPresent);
-
-        NotificationPolicyEntity entity = new NotificationPolicyEntity();
-        entity.setCreatorId(authenticationFacade.currentUserId());
-        entity.setOrganizationId(authenticationFacade.currentOrganizationId());
-        entity.setProjectId(projectId);
-        entity.setPolicyMetadataId(policy.getPolicyMetadataId());
-        entity.setMatchExpression(metadata.get().getMatchExpression());
-        entity.setEnabled(policy.isEnabled());
-
-        NotificationPolicyEntity saved = policyRepository.save(entity);
-        innerCreateRelation(projectId, saved.getId(), policy.getChannels());
-        return policyMapper.fromEntity(saved);
-    }
-
-    private NotificationPolicy innerUpdatePolicy(Long projectId, NotificationPolicy policy) {
-        NotificationPolicyEntity entity = nullSafeGetPolicy(policy.getId());
-        if (!Objects.equals(projectId, entity.getProjectId())) {
-            throw new AccessDeniedException("Policy does not belong to this project");
+    private List<NotificationPolicy> innerBatchCreatePolicies(Long projectId, List<NotificationPolicy> policies) {
+        if (CollectionUtils.isEmpty(policies)) {
+            return Collections.emptyList();
         }
 
-        if (!Objects.equals(entity.isEnabled(), policy.isEnabled())) {
+        List<NotificationPolicyEntity> toBeCreated = new ArrayList<>();
+        for (NotificationPolicy policy : policies) {
+            NotificationPolicy metadata = metaPolicies.get(policy.getPolicyMetadataId());
+            PreConditions.validExists(ResourceType.ODC_NOTIFICATION_POLICY,
+                    "policy metadata", policy.getPolicyMetadataId(), () -> Objects.nonNull(metadata));
+
+            NotificationPolicyEntity entity = new NotificationPolicyEntity();
+            entity.setCreatorId(authenticationFacade.currentUserId());
+            entity.setOrganizationId(authenticationFacade.currentOrganizationId());
+            entity.setProjectId(projectId);
+            entity.setPolicyMetadataId(policy.getPolicyMetadataId());
+            entity.setMatchExpression(metadata.getMatchExpression());
             entity.setEnabled(policy.isEnabled());
-            policyRepository.save(entity);
+
+            toBeCreated.add(entity);
         }
-        relationRepository.deleteByNotificationPolicyId(entity.getId());
-        innerCreateRelation(projectId, entity.getId(), policy.getChannels());
-        return policyMapper.fromEntity(entity);
+
+        List<NotificationPolicyEntity> saved = policyRepository.batchCreate(toBeCreated);
+
+        List<Channel> channels = policies.get(0).getChannels();
+        if (CollectionUtils.isNotEmpty(channels)) {
+            innerBatchCreateRelation(projectId,
+                    saved.stream().collect(Collectors.toMap(NotificationPolicyEntity::getId, e -> channels)));
+        }
+        return saved.stream().map(policyMapper::fromEntity).collect(Collectors.toList());
     }
 
-    private void innerCreateRelation(Long projectId, Long policyId, List<Channel> channels) {
-        if (CollectionUtils.isEmpty(channels)) {
+    private List<NotificationPolicy> innerBatchUpdatePolicies(Long projectId, List<NotificationPolicy> policies) {
+        if (CollectionUtils.isEmpty(policies)) {
+            return Collections.emptyList();
+        }
+
+        Set<Long> policyIds = policies.stream().map(NotificationPolicy::getId).collect(Collectors.toSet());
+        List<NotificationPolicyEntity> entities = policyRepository.findByIdIn(policyIds);
+        for (NotificationPolicyEntity entity : entities) {
+            if (!Objects.equals(projectId, entity.getProjectId())) {
+                throw new AccessDeniedException("Policy does not belong to this project");
+            }
+        }
+
+        policyRepository.updateStatusByIds(policies.get(0).isEnabled(), policyIds);
+
+        relationRepository.deleteByNotificationPolicyIds(policyIds);
+        innerBatchCreateRelation(projectId, policies.stream()
+                .filter(policy -> CollectionUtils.isNotEmpty(policy.getChannels()))
+                .collect(Collectors.toMap(NotificationPolicy::getId, NotificationPolicy::getChannels)));
+        return entities.stream().map(policyMapper::fromEntity).collect(Collectors.toList());
+    }
+
+    private void innerBatchCreateRelation(Long projectId, Map<Long, List<Channel>> policyId2Channels) {
+        if (MapUtils.isEmpty(policyId2Channels)) {
             return;
         }
-        for (Channel channel : channels) {
-            ChannelEntity entity = nullSafeGetChannel(channel.getId());
-            if (!Objects.equals(projectId, entity.getProjectId())) {
-                throw new AccessDeniedException("Channel does not belong to this project");
+        // check access
+        Set<Long> channelIds = policyId2Channels.values().stream()
+                .flatMap(Collection::stream)
+                .map(Channel::getId)
+                .collect(Collectors.toSet());
+        List<ChannelEntity> channelEntities = channelRepository.findByIdIn(channelIds);
+        for (ChannelEntity channelEntity : channelEntities) {
+            if (!Objects.equals(projectId, channelEntity.getProjectId())) {
+                throw new AccessDeniedException("Channel does not belong to this project, id=" + channelEntity.getId());
             }
-            NotificationChannelRelationEntity relation = new NotificationChannelRelationEntity();
-            relation.setChannelId(entity.getId());
-            relation.setNotificationPolicyId(policyId);
-            relation.setOrganizationId(authenticationFacade.currentOrganizationId());
-            relation.setCreatorId(authenticationFacade.currentUserId());
-            relationRepository.save(relation);
         }
+
+        List<NotificationChannelRelationEntity> relations = new ArrayList<>();
+        for (Entry<Long, List<Channel>> entry : policyId2Channels.entrySet()) {
+            for (Channel channel : entry.getValue()) {
+                NotificationChannelRelationEntity relation = new NotificationChannelRelationEntity();
+                relation.setChannelId(channel.getId());
+                relation.setNotificationPolicyId(entry.getKey());
+                relation.setOrganizationId(authenticationFacade.currentOrganizationId());
+                relation.setCreatorId(authenticationFacade.currentUserId());
+                relations.add(relation);
+            }
+        }
+        relationRepository.batchCreate(relations);
     }
 
     private ChannelEntity nullSafeGetChannel(@NonNull Long channelId) {
