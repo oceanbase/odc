@@ -234,7 +234,7 @@ public class ConnectSessionController {
         return Responses.success(sessionService.currentDBSession(sessionId));
     }
 
-    @PostMapping(value = "/sessions/{sessionId}/partitionPlans/latest/preView")
+    @PostMapping(value = "/sessions/{sessionId}/partitionPlans/latest/preview")
     public ListResponse<PartitionPlanPreViewResp> getPreView(@RequestBody List<PartitionPlanTableConfig> tableConfigs,
             @RequestParam(name = "onlyForPartitionName", defaultValue = "false") Boolean onlyForPartitionName) {
         throw new NotImplementedException();
