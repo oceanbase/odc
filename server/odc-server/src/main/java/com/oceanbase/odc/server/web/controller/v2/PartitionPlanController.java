@@ -15,13 +15,8 @@
  */
 package com.oceanbase.odc.server.web.controller.v2;
 
-import java.util.List;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -33,9 +28,6 @@ import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.partitionplan.PartitionPlanService;
 import com.oceanbase.odc.service.partitionplan.model.DatabasePartitionPlan;
-import com.oceanbase.odc.service.partitionplan.model.PartitionPlanDBTable;
-import com.oceanbase.odc.service.partitionplan.model.PartitionPlanPreViewResp;
-import com.oceanbase.odc.service.partitionplan.model.PartitionPlanTableConfig;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanVariable;
 
 /**
@@ -64,18 +56,6 @@ public class PartitionPlanController {
 
     @GetMapping(value = "/supportedVariables")
     public ListResponse<PartitionPlanVariable> getSupportedVariables() {
-        throw new NotImplementedException();
-    }
-
-    @GetMapping(value = "/sessions/{sessionId}/databases/{databaseName}/tables")
-    public ListResponse<PartitionPlanDBTable> listTables(@PathVariable String sessionId,
-            @PathVariable String databaseName) {
-        throw new NotImplementedException();
-    }
-
-    @PostMapping(value = "/sessions/{sessionId}/preView")
-    public ListResponse<PartitionPlanPreViewResp> getPreView(@RequestBody List<PartitionPlanTableConfig> tableConfigs,
-            @RequestParam(name = "onlyForPartitionName", defaultValue = "false") Boolean onlyForPartitionName) {
         throw new NotImplementedException();
     }
 

@@ -39,6 +39,6 @@ public class PartitionPlanKeyConfig implements Serializable {
     private PartitionPlanStrategy strategy;
     private String partitionKey;
     private String partitionKeyInvoker;
-    private Map<String, Serializable> partitionKeyInvokerParameter;
+    private Map<String, Serializable> partitionKeyInvokerParameters;
 
 }

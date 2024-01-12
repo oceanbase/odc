@@ -75,6 +75,6 @@ public class PartitionPlanTablePartitionKeyEntity {
      */
     @Column(name = "partition_key_invoker", nullable = false)
     private Boolean partitionKeyInvoker;
-    @Column(name = "partition_key_invoker_parameter", nullable = false)
-    private String partitionKeyInvokerParameter;
+    @Column(name = "partition_key_invoker_parameters", nullable = false)
+    private String partitionKeyInvokerParameters;
 }

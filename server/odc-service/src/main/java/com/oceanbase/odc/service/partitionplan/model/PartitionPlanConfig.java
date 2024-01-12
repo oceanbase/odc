@@ -46,8 +46,8 @@ public class PartitionPlanConfig implements Serializable, TaskParameters {
      * (~, 0] -> ignore any errors (0, ~) -> meaningful value
      */
     private Integer maxErrors = -1;
-    private TriggerConfig createTriggerConfig;
-    private TriggerConfig dropTriggerConfig;
+    private TriggerConfig createTrigger;
+    private TriggerConfig dropTrigger;
     private List<PartitionPlanTableConfig> partitionTableConfigs;
 
 }

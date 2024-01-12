@@ -69,6 +69,6 @@ public class PartitionPlanTableEntity {
      */
     @Column(name = "partition_name_invoker", nullable = false)
     private Boolean partitionNameInvoker;
-    @Column(name = "partition_name_invoker_parameter", nullable = false)
-    private String partitionNameInvokerParameter;
+    @Column(name = "partition_name_invoker_parameters", nullable = false)
+    private String partitionNameInvokerParameters;
 }

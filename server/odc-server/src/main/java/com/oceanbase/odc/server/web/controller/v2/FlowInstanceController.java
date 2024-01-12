@@ -220,7 +220,7 @@ public class FlowInstanceController {
         return Responses.list(flowTaskInstanceService.getAsyncDownloadUrl(id, objectId));
     }
 
-    @GetMapping(value = "/{id:[\\d]+}/tasks/partitionplan/getDetail")
+    @GetMapping(value = "/{id:[\\d]+}/tasks/partitionPlans/getDetail")
     public SuccessResponse<PartitionPlanConfig> getPartitionPlan(@PathVariable Long flowInstanceId) {
         throw new NotImplementedException();
     }
