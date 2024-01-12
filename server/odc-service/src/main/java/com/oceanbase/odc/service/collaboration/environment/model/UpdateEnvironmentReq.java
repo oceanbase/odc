@@ -18,36 +18,18 @@ package com.oceanbase.odc.service.collaboration.environment.model;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 
-import com.oceanbase.odc.common.validate.Name;
-
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 /**
  * @Author: Lebie
- * @Date: 2024/1/11 10:17
+ * @Date: 2024/1/12 14:40
  * @Description: []
  */
 @Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class CreateEnvironmentReq {
-    @Name
-    @Size(min = 1, max = 5, message = "The length of the environment name must be between 1 and 5")
-    private String name;
-
+public class UpdateEnvironmentReq {
     @Size(max = 256, message = "The length of the environment description must be between 0 and 256")
     private String description;
 
     @NotNull
     private EnvironmentStyle style;
-
-    @NotNull
-    private Long copiedRulesetId;
-
-    @NotNull
-    private Boolean enabled;
 }

@@ -15,29 +15,49 @@
  */
 package com.oceanbase.odc.service.collaboration.environment;
 
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import javax.validation.constraints.NotNull;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.Example;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.CollectionUtils;
 
+import com.oceanbase.odc.common.i18n.I18n;
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.authority.util.Authenticated;
 import com.oceanbase.odc.core.authority.util.PreAuthenticate;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
+import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.core.shared.constant.AuditEventAction;
+import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
+import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.metadb.collaboration.EnvironmentEntity;
 import com.oceanbase.odc.metadb.collaboration.EnvironmentRepository;
+import com.oceanbase.odc.service.collaboration.environment.model.CreateEnvironmentReq;
 import com.oceanbase.odc.service.collaboration.environment.model.Environment;
+import com.oceanbase.odc.service.collaboration.environment.model.UpdateEnvironmentReq;
+import com.oceanbase.odc.service.common.model.InnerUser;
+import com.oceanbase.odc.service.common.model.SetEnabledReq;
+import com.oceanbase.odc.service.connection.ConnectionService;
+import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.iam.HorizontalDataPermissionValidator;
 import com.oceanbase.odc.service.iam.UserService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
+import com.oceanbase.odc.service.regulation.risklevel.RiskDetectService;
+import com.oceanbase.odc.service.regulation.risklevel.model.ConditionExpression;
+import com.oceanbase.odc.service.regulation.risklevel.model.RiskDetectRule;
+import com.oceanbase.odc.service.regulation.ruleset.RuleService;
+import com.oceanbase.odc.service.regulation.ruleset.RulesetService;
+import com.oceanbase.odc.service.regulation.ruleset.model.QueryRuleMetadataParams;
+import com.oceanbase.odc.service.regulation.ruleset.model.Rule;
+import com.oceanbase.odc.service.regulation.ruleset.model.Ruleset;
 
 import lombok.NonNull;
 
@@ -62,6 +82,32 @@ public class EnvironmentService {
 
     @Autowired
     private HorizontalDataPermissionValidator permissionValidator;
+
+    @Autowired
+    private RulesetService rulesetService;
+
+    @Autowired
+    private RuleService ruleService;
+
+    @Autowired
+    private RiskDetectService riskDetectService;
+
+
+    @Autowired
+    private ConnectionService connectionService;
+
+    @Transactional(rollbackFor = Exception.class)
+    @PreAuthenticate(actions = "create", resourceType = "ODC_ENVIRONMENT", isForAll = true)
+    public Environment create(@NotNull CreateEnvironmentReq req) {
+        PreConditions.validNoDuplicated(ResourceType.ODC_ENVIRONMENT, "name", req.getName(),
+                () -> exists(req.getName()));
+
+        Ruleset saveedRuleset = rulesetService.create(buildRuleset(req.getName(), req.getDescription()));
+        List<Rule> copiedRules = ruleService.list(req.getCopiedRulesetId(), new QueryRuleMetadataParams());
+        ruleService.create(saveedRuleset.getId(), copiedRules);
+        return entityToModel(environmentRepository.save(buildEnvironmentEntity(req, saveedRuleset.getId())));
+    }
+
 
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("Internal authenticated")
@@ -102,29 +148,89 @@ public class EnvironmentService {
 
     @PreAuthenticate(actions = "update", resourceType = "ODC_ENVIRONMENT", indexOfIdParam = 0)
     @Transactional(rollbackFor = Exception.class)
-    public Environment update(@NonNull Long id, @NonNull Environment environment) {
-        EnvironmentEntity previous = environmentRepository.findByIdAndOrganizationId(id,
-                authenticationFacade.currentOrganizationId())
-                .orElseThrow(() -> new NotFoundException(ResourceType.ODC_ENVIRONMENT, "id", id));
-
-        previous.setDescription(environment.getDescription());
-        /**
-         * TODO: permission check for ruleset
-         */
-        previous.setRulesetId(environment.getRulesetId());
-        previous.setLastModifierId(authenticationFacade.currentUserId());
-
-        EnvironmentEntity saved = environmentRepository.save(previous);
-        return entityToModel(saved);
+    public Environment update(@NotNull Long id, @NotNull UpdateEnvironmentReq req) {
+        Environment environment = innerDetail(id);
+        if (environment.getBuiltIn()) {
+            throw new BadRequestException("Not allowed to update builtin environments");
+        }
+        environment.setDescription(req.getDescription());
+        environment.setStyle(req.getStyle());
+        environment.setLastModifier(InnerUser.of(authenticationFacade.currentUserId(), null, null));
+        return entityToModel(environmentRepository.save(environmentMapper.modelToEntity(environment)));
     }
 
-    @SkipAuthorize("internal usage")
-    public Map<Long, List<Environment>> mapByIdIn(Set<Long> ids) {
-        if (CollectionUtils.isEmpty(ids)) {
-            return Collections.emptyMap();
+    @PreAuthenticate(actions = "update", resourceType = "ODC_ENVIRONMENT", indexOfIdParam = 0)
+    @Transactional(rollbackFor = Exception.class)
+    public Boolean setEnabled(@NotNull Long id, @NotNull SetEnabledReq req) {
+        /**
+         * ensure that the environment is not referenced by any data source before disabling it
+         */
+        if (!req.getEnabled()) {
+            checkDataSourceReference(id);
         }
-        return environmentRepository.findAllById(ids).stream().map(environmentMapper::entityToModel)
-                .collect(Collectors.groupingBy(Environment::getId));
+        return environmentRepository.updateEnabledById(id, req.getEnabled()) > 0;
+    }
+
+    @PreAuthenticate(actions = "delete", resourceType = "ODC_ENVIRONMENT", indexOfIdParam = 0)
+    @Transactional(rollbackFor = Exception.class)
+    public Environment delete(@NotNull Long id) {
+        checkDataSourceReference(id);
+        checkRiskLevelReference(id);
+        Environment environment = innerDetail(id);
+        if (environment.getBuiltIn()) {
+            throw new BadRequestException("Not allowed to delete builtin environments");
+        }
+        environmentRepository.deleteById(id);
+        rulesetService.delete(environment.getRulesetId());
+        return environment;
+    }
+
+
+    private void checkDataSourceReference(Long id) {
+        Set<ConnectionConfig> referencedConnections =
+                connectionService.listByOrganizationId(authenticationFacade.currentOrganizationId()).stream()
+                        .filter(connection -> connection.getEnvironmentId().equals(id)).collect(Collectors.toSet());
+        if (!referencedConnections.isEmpty()) {
+            throw new BadRequestException(ErrorCodes.CannotOperateDueReference,
+                    new Object[] {
+                            AuditEventAction.DISABLE_ENVIRONMENT.getLocalizedMessage(),
+                            ResourceType.ODC_ENVIRONMENT.getLocalizedMessage(), "name",
+                            String.join(referencedConnections.stream().map(ConnectionConfig::getName)
+                                    .collect(Collectors.joining(", "))),
+                            ResourceType.ODC_CONNECTION.getLocalizedMessage()},
+                    "cannot disable the environment due to referenced by some data sources");
+        }
+
+    }
+
+    private void checkRiskLevelReference(Long id) {
+        Set<RiskDetectRule> referencedRiskDetectRules =
+                riskDetectService.listAllByOrganizationId(authenticationFacade.currentOrganizationId())
+                        .stream().filter(rule -> rule.getRootNode().find(ConditionExpression.ENVIRONMENT_ID.name(), id))
+                        .collect(Collectors.toSet());
+
+        if (!referencedRiskDetectRules.isEmpty()) {
+            String riskLevelNames = referencedRiskDetectRules.stream().map(rule -> I18n.translate(
+                    StringUtils.substring(rule.getRiskLevel().getName(), 2, rule.getRiskLevel().getName().length() - 1),
+                    null, rule.getRiskLevel().getName(), LocaleContextHolder.getLocale()))
+                    .collect(Collectors.joining(", "));
+
+            throw new BadRequestException(ErrorCodes.CannotOperateDueReference,
+                    new Object[] {
+                            AuditEventAction.DELETE_ENVIRONMENT.getLocalizedMessage(),
+                            ResourceType.ODC_ENVIRONMENT.getLocalizedMessage(), "name",
+                            riskLevelNames,
+                            ResourceType.ODC_RISK_LEVEL.getLocalizedMessage()},
+                    "cannot delete the environment due to referenced by some risk level");
+        }
+    }
+
+
+    private boolean exists(String name) {
+        EnvironmentEntity entity = new EnvironmentEntity();
+        entity.setOrganizationId(authenticationFacade.currentOrganizationId());
+        entity.setName(name);
+        return environmentRepository.exists(Example.of(entity));
     }
 
     private Environment innerDetail(@NonNull Long id) {
@@ -143,4 +249,32 @@ public class EnvironmentService {
     private Environment entityToModel(@NonNull EnvironmentEntity entity) {
         return environmentMapper.entityToModel(entity);
     }
+
+    private Ruleset buildRuleset(String name, String description) {
+        Long organizationId = authenticationFacade.currentOrganizationId();
+        Long userId = authenticationFacade.currentUserId();
+        Ruleset ruleset = new Ruleset();
+        ruleset.setName(name);
+        ruleset.setDescription(description);
+        ruleset.setBuiltin(false);
+        ruleset.setOrganizationId(organizationId);
+        ruleset.setCreator(InnerUser.of(userId, null, null));
+        ruleset.setLastModifier(InnerUser.of(userId, null, null));
+        return ruleset;
+    }
+
+    private EnvironmentEntity buildEnvironmentEntity(CreateEnvironmentReq req, Long rulesetId) {
+        EnvironmentEntity environment = new EnvironmentEntity();
+        environment.setOrganizationId(authenticationFacade.currentOrganizationId());
+        environment.setName(req.getName());
+        environment.setDescription(req.getDescription());
+        environment.setStyle(req.getStyle());
+        environment.setRulesetId(rulesetId);
+        environment.setEnabled(req.getEnabled());
+        environment.setBuiltin(false);
+        environment.setCreatorId(authenticationFacade.currentUserId());
+        environment.setLastModifierId(authenticationFacade.currentUserId());
+        return environment;
+    }
+
 }

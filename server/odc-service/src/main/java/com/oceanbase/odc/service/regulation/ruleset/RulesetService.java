@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.regulation.ruleset;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.oceanbase.odc.core.authority.util.Authenticated;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
@@ -47,6 +48,9 @@ public class RulesetService {
     @Autowired
     private HorizontalDataPermissionValidator permissionValidator;
 
+    @Autowired
+    private RuleService ruleService;
+
     private final RulesetMapper rulesetMapper = RulesetMapper.INSTANCE;
 
     @SkipAuthorize("internal authenticated")
@@ -57,7 +61,27 @@ public class RulesetService {
         return ruleset;
     }
 
+    @Transactional(rollbackFor = Exception.class)
+    public Ruleset create(@NonNull Ruleset ruleset) {
+        permissionValidator.checkCurrentOrganization(ruleset);
+        return entityToModel(rulesetRepository.save(modelToEntity(ruleset)));
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public Ruleset delete(@NonNull Long id) {
+        Ruleset ruleset = entityToModel(rulesetRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException(ResourceType.ODC_RULESET, "id", id)));
+        permissionValidator.checkCurrentOrganization(ruleset);
+        rulesetRepository.deleteById(id);
+        ruleService.delete(id);
+        return ruleset;
+    }
+
     private Ruleset entityToModel(RulesetEntity entity) {
         return rulesetMapper.entityToModel(entity);
+    }
+
+    private RulesetEntity modelToEntity(Ruleset ruleset) {
+        return rulesetMapper.modelToEntity(ruleset);
     }
 }

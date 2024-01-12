@@ -20,6 +20,7 @@ import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
 
 public interface EnvironmentRepository extends JpaRepository<EnvironmentEntity, Long>,
         JpaSpecificationExecutor<EnvironmentEntity> {
@@ -29,5 +30,8 @@ public interface EnvironmentRepository extends JpaRepository<EnvironmentEntity, 
 
 
     Optional<EnvironmentEntity> findByIdAndOrganizationId(Long id, Long organizationId);
+
+    @Query(value = "update collaboration_environment set is_enabled=:enabled where id=:id", nativeQuery = true)
+    int updateEnabledById(Long id, Boolean enabled);
 
 }

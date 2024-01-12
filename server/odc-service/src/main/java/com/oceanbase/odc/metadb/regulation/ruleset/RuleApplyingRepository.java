@@ -43,5 +43,8 @@ public interface RuleApplyingRepository extends JpaRepository<RuleApplyingEntity
     List<RuleApplyingEntity> findByOrganizationIdAndRuleMetadataName(@Param("organizationId") Long organizationId,
             @Param("name") String name);
 
+    @Transactional
+    int deleteByOrganizationIdAndRulesetId(Long organizationId, Long rulesetId);
+
 }
 

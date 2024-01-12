@@ -26,10 +26,12 @@ import java.util.stream.Collectors;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -188,6 +190,34 @@ public class RuleService {
         rulesetId2RulesCache.invalidate(rulesetId);
         return rule;
     }
+
+    @SkipAuthorize("internal usage")
+    @Transactional(rollbackFor = Exception.class)
+    public List<Rule> create(@NotNull Long rulesetId, @NotEmpty List<Rule> rules) {
+        List<RuleApplyingEntity> entities = rules.stream().map(rule -> {
+            RuleApplyingEntity entity = new RuleApplyingEntity();
+            entity.setOrganizationId(authenticationFacade.currentOrganizationId());
+            entity.setRulesetId(rulesetId);
+            entity.setRuleMetadataId(rule.getMetadata().getId());
+            entity.setLevel(rule.getLevel());
+            entity.setEnabled(rule.getEnabled());
+            entity.setPropertiesJson(JsonUtils.toJson(rule.getProperties()));
+            if (Objects.nonNull(rule.getAppliedDialectTypes())) {
+                entity.setAppliedDialectTypes(
+                        rule.getAppliedDialectTypes().stream().map(DialectType::name).collect(Collectors.toList()));
+            }
+            return entity;
+        }).collect(Collectors.toList());
+        ruleApplyingRepository.saveAll(entities);
+        return rules;
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public boolean delete(@NotNull Long rulesetId) {
+        return ruleApplyingRepository.deleteByOrganizationIdAndRulesetId(authenticationFacade.currentOrganizationId(),
+                rulesetId) >= 0;
+    }
+
 
     private List<Rule> internalList(@NonNull Long rulesetId, @NonNull QueryRuleMetadataParams params) {
         List<RuleMetadata> ruleMetadatas = metadataService.list(params);

@@ -19,8 +19,6 @@ import java.util.Date;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -63,7 +61,7 @@ public class EnvironmentEntity {
     private String description;
 
     @Column(name = "style", nullable = false)
-    private String style;
+    private EnvironmentStyle style;
 
     /**
      * refer to regulation_ruleset.id
