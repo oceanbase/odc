@@ -19,7 +19,7 @@ package com.oceanbase.odc.plugin.task.api.partitionplan.datatype;
  * {@link PartitionPlanCharType}
  *
  * @author yh263208
- * @date 2024-01-11 20:54
+ * @date 2024-01-11 20:55
  * @since ODC_release_4.2.4
  * @see PartitionPlanDataType
  */
