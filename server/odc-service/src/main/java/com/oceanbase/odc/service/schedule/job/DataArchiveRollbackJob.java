@@ -64,16 +64,17 @@ public class DataArchiveRollbackJob extends AbstractDlmJob {
         // prepare tasks for rollback
         List<DlmTask> taskUnits = JsonUtils.fromJson(dataArchiveTask.getResultJson(),
                 new TypeReference<List<DlmTask>>() {});
-        taskUnits.forEach(taskUnit -> {
+        for (int i = 0; i < taskUnits.size(); i++) {
+            DlmTask taskUnit = taskUnits.get(i);
             Long temp = taskUnit.getSourceDatabaseId();
             taskUnit.setId(DlmJobIdUtil.generateHistoryJobId(taskEntity.getJobName(), taskEntity.getJobGroup(),
                     taskEntity.getId(),
-                    taskUnits.size()));
+                    i));
             taskUnit.setSourceDatabaseId(taskUnit.getTargetDatabaseId());
             taskUnit.setTargetDatabaseId(temp);
             taskUnit.setJobType(JobType.ROLLBACK);
             taskUnit.setStatus(taskUnit.getStatus() == TaskStatus.PREPARING ? TaskStatus.DONE : TaskStatus.PREPARING);
-        });
+        }
         executeTask(taskEntity.getId(), taskUnits);
         TaskStatus taskStatus = getTaskStatus(taskUnits);
         scheduleTaskRepository.updateStatusById(taskEntity.getId(), taskStatus);
