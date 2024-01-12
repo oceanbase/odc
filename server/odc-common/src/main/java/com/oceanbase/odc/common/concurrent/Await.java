@@ -50,8 +50,10 @@ public class Await {
     private Integer period = 5;
     @Builder.Default
     private String threadName = "await-thread-%d";
+    // await timeout time unit
     @Builder.Default
     private TimeUnit timeUnit = TimeUnit.SECONDS;
+    // period check condition time unit
     @Builder.Default
     private TimeUnit periodTimeUnit = TimeUnit.SECONDS;
     @Builder.Default
