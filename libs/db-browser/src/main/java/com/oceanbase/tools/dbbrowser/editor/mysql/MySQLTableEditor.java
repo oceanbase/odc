@@ -76,13 +76,13 @@ public class MySQLTableEditor extends DBTableEditor {
         if (StringUtils.isNotBlank(options.getCompressionOption())) {
             sqlBuilder.append("COMPRESSION = ").append(options.getCompressionOption()).space();
         }
-        appendMoreTableOptions(table, sqlBuilder);
+        appendParticularTableOptions(table, sqlBuilder);
         if (StringUtils.isNotEmpty(options.getComment())) {
             sqlBuilder.append("COMMENT = ").value(options.getComment()).space();
         }
     }
 
-    protected void appendMoreTableOptions(DBTable table, SqlBuilder sqlBuilder) {}
+    protected void appendParticularTableOptions(DBTable table, SqlBuilder sqlBuilder) {}
 
     @Override
     public void generateUpdateTableOptionDDL(@NonNull DBTable oldTable, @NonNull DBTable newTable,
