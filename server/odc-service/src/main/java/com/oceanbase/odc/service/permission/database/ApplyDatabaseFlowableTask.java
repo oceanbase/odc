@@ -103,6 +103,7 @@ public class ApplyDatabaseFlowableTask extends BaseODCFlowTaskDelegate<ApplyData
                     checkResourceAndPermission(parameter);
                     List<PermissionEntity> permissionEntities = new ArrayList<>();
                     Long organizationId = FlowTaskUtil.getOrganizationId(execution);
+                    Date expireTime = getFixedExpireTime(parameter.getExpireTime());
                     for (ApplyDatabase database : parameter.getDatabases()) {
                         for (DatabasePermissionType permissionType : parameter.getTypes()) {
                             PermissionEntity permissionEntity = new PermissionEntity();
@@ -115,7 +116,7 @@ public class ApplyDatabaseFlowableTask extends BaseODCFlowTaskDelegate<ApplyData
                             permissionEntity.setCreatorId(this.creatorId);
                             permissionEntity.setOrganizationId(organizationId);
                             permissionEntity.setBuiltIn(false);
-                            permissionEntity.setExpireTime(getFixedExpireTime(parameter.getExpireTime()));
+                            permissionEntity.setExpireTime(expireTime);
                             permissionEntity.setAuthorizationType(AuthorizationType.TICKET_APPLICATION);
                             permissionEntity.setTicketId(FlowTaskUtil.getFlowInstanceId(execution));
                             permissionEntities.add(permissionEntity);
