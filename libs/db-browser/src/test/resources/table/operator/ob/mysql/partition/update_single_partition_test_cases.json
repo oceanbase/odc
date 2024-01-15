@@ -191,5 +191,33 @@
       }
     },
     "output": "ALTER TABLE `schema`.`table`  PARTITION BY RANGE(col1) (\nPARTITION `p1` VALUES LESS THAN (1000),\nPARTITION `p2` VALUES LESS THAN (2000)\n);\n"
+  },
+  {
+    "id": 5,
+    "name": "case",
+    "description": "修改一级分区表的分区类型",
+    "input": {
+      "previous": {
+        "schemaName": "schema",
+        "tableName": "table",
+        "partitionOption": {
+          "type": "HASH",
+          "expression": "col1",
+          "partitionsNum": 20
+        }
+      },
+      "current": {
+        "schemaName": "schema",
+        "tableName": "table",
+        "partitionOption": {
+          "type": "KEY",
+          "partitionsNum": 20,
+          "columnNames": [
+            "col1"
+          ]
+        }
+      }
+    },
+    "output": "ALTER TABLE `schema`.`table`  PARTITION BY KEY(col1) \nPARTITIONS 20;\n"
   }
 ]

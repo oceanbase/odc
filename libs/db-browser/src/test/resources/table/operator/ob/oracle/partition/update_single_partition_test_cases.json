@@ -210,5 +210,33 @@
       }
     },
     "output": "ALTER TABLE \"schema\".\"table\" MODIFY PARTITION BY RANGE(col1) (\nPARTITION \"p1\" VALUES LESS THAN (1000),\nPARTITION \"p2\" VALUES LESS THAN (2000)\n);\n"
+  },
+  {
+    "id": 5,
+    "name": "case",
+    "description": "不支持的操作：修改一级分区表的分区类型",
+    "input": {
+      "previous": {
+        "schemaName": "schema",
+        "tableName": "table",
+        "partitionOption": {
+          "type": "HASH",
+          "expression": "col1",
+          "partitionsNum": 20
+        }
+      },
+      "current": {
+        "schemaName": "schema",
+        "tableName": "table",
+        "partitionOption": {
+          "type": "KEY",
+          "partitionsNum": 20,
+          "columnNames": [
+            "col1"
+          ]
+        }
+      }
+    },
+    "output": "/* Unsupported operation to modify table partition type */\n"
   }
 ]

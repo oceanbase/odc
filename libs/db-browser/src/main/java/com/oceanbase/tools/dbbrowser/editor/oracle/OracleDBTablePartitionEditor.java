@@ -85,6 +85,11 @@ public class OracleDBTablePartitionEditor extends DBTablePartitionEditor {
     }
 
     @Override
+    protected boolean ifSupportUpdatePartitionType(DBTablePartitionType oldType, DBTablePartitionType newType) {
+        return false;
+    }
+
+    @Override
     protected String generateAddPartitionDefinitionDDL(
             @NotNull DBTablePartitionDefinition definition,
             @NotNull DBTablePartitionOption option, String fullyQualifiedTableName) {
