@@ -97,6 +97,8 @@ import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.dispatch.DispatchResponse;
 import com.oceanbase.odc.service.dispatch.RequestDispatcher;
 import com.oceanbase.odc.service.dispatch.TaskDispatchChecker;
+import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
+import com.oceanbase.odc.service.dlm.model.DataDeleteParameters;
 import com.oceanbase.odc.service.flow.factory.FlowFactory;
 import com.oceanbase.odc.service.flow.factory.FlowResponseMapperFactory;
 import com.oceanbase.odc.service.flow.instance.BaseFlowNodeInstance;
@@ -117,6 +119,7 @@ import com.oceanbase.odc.service.flow.model.FlowNodeType;
 import com.oceanbase.odc.service.flow.model.QueryFlowInstanceParams;
 import com.oceanbase.odc.service.flow.processor.EnablePreprocess;
 import com.oceanbase.odc.service.flow.task.BaseRuntimeFlowableDelegate;
+import com.oceanbase.odc.service.flow.task.model.DBStructureComparisonParameter;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.FlowTaskProperties;
 import com.oceanbase.odc.service.flow.task.model.RuntimeTaskConstants;
@@ -133,6 +136,7 @@ import com.oceanbase.odc.service.integration.model.ApprovalProperties;
 import com.oceanbase.odc.service.integration.model.IntegrationConfig;
 import com.oceanbase.odc.service.integration.model.TemplateVariables;
 import com.oceanbase.odc.service.integration.model.TemplateVariables.Variable;
+import com.oceanbase.odc.service.permission.database.DatabasePermissionValidator;
 import com.oceanbase.odc.service.regulation.approval.model.ApprovalFlowConfig;
 import com.oceanbase.odc.service.regulation.approval.model.ApprovalNodeConfig;
 import com.oceanbase.odc.service.regulation.risklevel.RiskLevelService;
@@ -141,6 +145,7 @@ import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevelDescriber;
 import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleParameters;
 import com.oceanbase.odc.service.schedule.flowtask.OperationType;
+import com.oceanbase.odc.service.schedule.model.JobType;
 import com.oceanbase.odc.service.schedule.model.ScheduleStatus;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
@@ -215,6 +220,8 @@ public class FlowInstanceService {
     private ProjectService projectService;
     @Autowired
     private ResourceRoleService resourceRoleService;
+    @Autowired
+    private DatabasePermissionValidator databasePermissionValidator;
 
     private final List<Consumer<DataTransferTaskInitEvent>> dataTransferTaskInitHooks = new ArrayList<>();
     private final List<Consumer<ShadowTableComparingUpdateEvent>> shadowTableComparingTaskHooks = new ArrayList<>();
@@ -263,6 +270,7 @@ public class FlowInstanceService {
     @Transactional(rollbackFor = Throwable.class, propagation = Propagation.REQUIRED)
     public List<FlowInstanceDetailResp> create(@NotNull @Valid CreateFlowInstanceReq createReq) {
         // TODO 原终止逻辑想表达的语意是终止执行中的计划，但目前线上的语意是终止审批流。暂保留逻辑，待前端修改后删除。
+        checkCreateFlowInstancePermission(createReq);
         if (createReq.getTaskType() == TaskType.ALTER_SCHEDULE) {
             AlterScheduleParameters parameters = (AlterScheduleParameters) createReq.getParameters();
             if (parameters.getOperationType() == OperationType.TERMINATION) {
@@ -645,6 +653,48 @@ public class FlowInstanceService {
         Long taskId = taskIds.iterator().next();
         return taskService.detail(taskId);
     }
+
+    private void checkCreateFlowInstancePermission(CreateFlowInstanceReq req) {
+        Set<Long> databaseIds = new HashSet<>();
+        Set<String> actions = new HashSet<>();
+        if (Objects.nonNull(req.getDatabaseId())) {
+            databaseIds.add(req.getDatabaseId());
+        }
+        databaseIds.add(req.getDatabaseId());
+        switch (req.getTaskType()) {
+            case EXPORT:
+            case EXPORT_RESULT_SET:
+                actions.add("export");
+                break;
+            case IMPORT:
+            case MOCKDATA:
+            case ASYNC:
+            case SHADOWTABLE_SYNC:
+            case ONLINE_SCHEMA_CHANGE:
+                actions.add("change");
+                break;
+            case ALTER_SCHEDULE:
+                actions.add("change");
+                AlterScheduleParameters params = (AlterScheduleParameters) req.getParameters();
+                if (params.getType() == JobType.DATA_ARCHIVE) {
+                    DataArchiveParameters p = (DataArchiveParameters) params.getScheduleTaskParameters();
+                    databaseIds.add(p.getSourceDatabaseId());
+                    databaseIds.add(p.getTargetDataBaseId());
+                } else if (params.getType() == JobType.DATA_DELETE) {
+                    DataDeleteParameters p = (DataDeleteParameters) params.getScheduleTaskParameters();
+                    databaseIds.add(p.getDatabaseId());
+                }
+            case STRUCTURE_COMPARISON:
+                DBStructureComparisonParameter p = (DBStructureComparisonParameter) req.getParameters();
+                databaseIds.add(p.getTargetDatabaseId());
+                databaseIds.add(p.getSourceDatabaseId());
+                break;
+            default:
+                break;
+        }
+        databasePermissionValidator.check(databaseIds, actions);
+    }
+
 
     /**
      * It's used to internal build approval node.

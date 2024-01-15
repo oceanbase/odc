@@ -30,6 +30,8 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 public class UnauthorizedDatabase extends Database {
 
+    private static final long serialVersionUID = 2659094834615671659L;
+
     private List<DatabasePermissionType> unauthorizedPermissionTypes;
 
 }

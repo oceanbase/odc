@@ -181,7 +181,7 @@ public class DatabasePermissionService {
                 permissionEntity.setCreatorId(creatorId);
                 permissionEntity.setOrganizationId(organizationId);
                 permissionEntity.setBuiltIn(false);
-                permissionEntity.setExpireTime(req.getExpireTime());
+                permissionEntity.setExpireTime(getFixedExpireTime(req.getExpireTime()));
                 permissionEntity.setAuthorizationType(AuthorizationType.USER_AUTHORIZATION);
                 permissionEntities.add(permissionEntity);
             }
@@ -220,6 +220,19 @@ public class DatabasePermissionService {
         calendar.set(Calendar.SECOND, 0);
         calendar.set(Calendar.MILLISECOND, 0);
         return new Date(calendar.getTimeInMillis());
+    }
+
+    private Date getFixedExpireTime(Date expireTime) {
+        if (expireTime == null) {
+            return null;
+        }
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(expireTime);
+        calendar.set(Calendar.HOUR_OF_DAY, 23);
+        calendar.set(Calendar.MINUTE, 59);
+        calendar.set(Calendar.SECOND, 59);
+        calendar.set(Calendar.MILLISECOND, 0);
+        return calendar.getTime();
     }
 
     private Specification<UserDatabasePermissionEntity> getSpecificationByStatus(PermissionExpireStatus status,

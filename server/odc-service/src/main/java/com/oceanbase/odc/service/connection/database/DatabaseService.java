@@ -23,6 +23,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -66,6 +67,8 @@ import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.metadb.connection.DatabaseEntity;
 import com.oceanbase.odc.metadb.connection.DatabaseRepository;
 import com.oceanbase.odc.metadb.connection.DatabaseSpecs;
+import com.oceanbase.odc.metadb.iam.UserDatabasePermissionEntity;
+import com.oceanbase.odc.metadb.iam.UserDatabasePermissionRepository;
 import com.oceanbase.odc.service.collaboration.environment.EnvironmentService;
 import com.oceanbase.odc.service.collaboration.environment.model.Environment;
 import com.oceanbase.odc.service.collaboration.project.ProjectService;
@@ -144,6 +147,9 @@ public class DatabaseService {
     @Autowired
     private DatabaseSyncProperties databaseSyncProperties;
 
+    @Autowired
+    private UserDatabasePermissionRepository userDatabasePermissionRepository;
+
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("internal authenticated")
     public Database detail(@NonNull Long id) {
@@ -174,7 +180,7 @@ public class DatabaseService {
                 .connectionIdEquals(id)
                 .and(DatabaseSpecs.nameLike(name));
         Page<DatabaseEntity> entities = databaseRepository.findAll(specs, pageable);
-        Page<Database> databases = entitiesToModels(entities);
+        Page<Database> databases = entitiesToModels(entities, false);
         horizontalDataPermissionValidator.checkCurrentOrganization(databases.getContent());
         return databases;
     }
@@ -182,7 +188,6 @@ public class DatabaseService {
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("internal authenticated")
     public Page<Database> list(@NonNull QueryDatabaseParams params, @NotNull Pageable pageable) {
-        // TODO: Databases include permitted actions
         if (Objects.nonNull(params.getDataSourceId())
                 && authenticationFacade.currentUser().getOrganizationType() == OrganizationType.INDIVIDUAL) {
             try {
@@ -228,7 +233,8 @@ public class DatabaseService {
             specs = specs.and(DatabaseSpecs.connectionIdEquals(params.getDataSourceId()));
         }
         Page<DatabaseEntity> entities = databaseRepository.findAll(specs, pageable);
-        return entitiesToModels(entities);
+        return entitiesToModels(entities,
+                Objects.nonNull(params.getIncludesPermittedAction()) && params.getIncludesPermittedAction());
     }
 
     @SkipAuthorize("internal authenticated")
@@ -649,7 +655,7 @@ public class DatabaseService {
         });
     }
 
-    private Page<Database> entitiesToModels(Page<DatabaseEntity> entities) {
+    private Page<Database> entitiesToModels(Page<DatabaseEntity> entities, boolean includesPermittedAction) {
         if (CollectionUtils.isEmpty(entities.getContent())) {
             return Page.empty();
         }
@@ -657,6 +663,24 @@ public class DatabaseService {
                 .map(DatabaseEntity::getProjectId).collect(Collectors.toSet()));
         Map<Long, List<ConnectionConfig>> connectionId2Connections = connectionService.mapByIdIn(entities.stream()
                 .map(DatabaseEntity::getConnectionId).collect(Collectors.toSet()));
+        Map<Long, List<String>> databaseId2PermittedActions = new HashMap<>();
+        Set<Long> databaseIds = entities.stream().map(DatabaseEntity::getId).collect(Collectors.toSet());
+        if (includesPermittedAction) {
+            databaseId2PermittedActions = userDatabasePermissionRepository
+                    .findByUserIdAndDatabaseIdIn(authenticationFacade.currentUserId(), databaseIds).stream()
+                    .collect(Collectors.toMap(
+                            UserDatabasePermissionEntity::getDatabaseId,
+                            e -> {
+                                List<String> actions = new ArrayList<>();
+                                actions.add(e.getAction());
+                                return actions;
+                            },
+                            (e1, e2) -> {
+                                e1.addAll(e2);
+                                return e1;
+                            }));
+        }
+        Map<Long, List<String>> finalId2PermittedActions = databaseId2PermittedActions;
         return entities.map(entity -> {
             Database database = databaseMapper.entityToModel(entity);
             List<Project> projects = projectId2Projects.getOrDefault(entity.getProjectId(), new ArrayList<>());
@@ -667,6 +691,9 @@ public class DatabaseService {
                     : new Environment(connections.get(0).getEnvironmentId(), connections.get(0).getEnvironmentName(),
                             connections.get(0).getEnvironmentStyle()));
             database.setDataSource(CollectionUtils.isEmpty(connections) ? null : connections.get(0));
+            if (includesPermittedAction) {
+                database.setPermittedActions(finalId2PermittedActions.get(entity.getId()));
+            }
             return database;
         });
     }

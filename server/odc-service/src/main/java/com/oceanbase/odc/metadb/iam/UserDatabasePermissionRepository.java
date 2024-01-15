@@ -28,4 +28,6 @@ public interface UserDatabasePermissionRepository extends ReadOnlyRepository<Use
 
     List<UserDatabasePermissionEntity> findByProjectIdAndIdIn(Long projectId, Collection<Long> ids);
 
+    List<UserDatabasePermissionEntity> findByUserIdAndDatabaseIdIn(Long userId, Collection<Long> databaseIds);
+
 }
