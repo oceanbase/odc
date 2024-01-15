@@ -16,10 +16,10 @@
 
 package com.oceanbase.odc.service.task.listener;
 
+import com.oceanbase.odc.common.event.AbstractEventListener;
+import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.task.caller.JobException;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
-import com.oceanbase.odc.service.task.enums.JobStatus;
-import com.oceanbase.odc.service.task.executor.task.TaskResult;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 
 import lombok.extern.slf4j.Slf4j;
@@ -30,28 +30,30 @@ import lombok.extern.slf4j.Slf4j;
  * @since 4.2.4
  */
 @Slf4j
-public class DestroyJobListener extends TaskResultUploadListener {
+public class DestroyExecutorListener extends AbstractEventListener<DestroyExecutorEvent> {
 
     private final JobConfiguration jobConfiguration;
 
-    public DestroyJobListener(JobConfiguration jobConfiguration) {
+    public DestroyExecutorListener(JobConfiguration jobConfiguration) {
         this.jobConfiguration = jobConfiguration;
     }
 
     @Override
-    public void onEvent(TaskResultUploadEvent event) {
-        TaskResult taskResult = event.getTaskResult();
-        if (taskResult.getStatus() == JobStatus.DONE || taskResult.getStatus() == JobStatus.FAILED) {
+    public void onEvent(DestroyExecutorEvent event) {
+        JobIdentity ji = event.getJi();
+        JobEntity jobEntity = jobConfiguration.getTaskFrameworkService().find(ji.getId());
+
+        if (jobEntity.getExecutorIdentifier() != null && jobEntity.getExecutorDestroyedTime() == null) {
             log.info("Accept job {} is finished by status {}, and try to destroy job.",
-                    taskResult.getJobIdentity().getId(), taskResult.getStatus());
+                    jobEntity.getId(), jobEntity.getStatus());
             try {
-                Long id = taskResult.getJobIdentity().getId();
-                jobConfiguration.getJobDispatcher().stop(JobIdentity.of(id));
-                log.info("Destroy job {} successfully.", id);
+                jobConfiguration.getJobDispatcher().destroy(ji);
+                log.warn("Destroy job {}, executor {} failed", jobEntity.getId(), jobEntity.getExecutorIdentifier());
             } catch (JobException e) {
-                log.warn("Job {} is finished, destroy job failed, occur error: ",
-                        taskResult.getJobIdentity().getId(), e);
+                log.warn("Destroy job {}, executor {} failed, occur error: {}", jobEntity.getId(),
+                        jobEntity.getExecutorIdentifier(), e.getMessage());
             }
         }
+
     }
 }

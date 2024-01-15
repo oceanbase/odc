@@ -13,22 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.oceanbase.odc.service.task.listener;
 
-package com.oceanbase.odc.service.task.schedule;
+import com.oceanbase.odc.common.event.AbstractEvent;
+import com.oceanbase.odc.service.task.schedule.JobIdentity;
 
-import java.util.List;
+import lombok.Getter;
 
 /**
  * @author yaobin
- * @date 2023-11-30
+ * @date 2024-01-12
  * @since 4.2.4
  */
-public interface HostUrlProvider {
+public class DestroyExecutorEvent extends AbstractEvent {
+
+    @Getter
+    private final JobIdentity ji;
 
     /**
-     * provide host url for task executor report result
+     * Constructs a prototypical Event.
      *
-     * @return host url, eg: localhost:8989
+     * @param ji The object on which the Event initially occurred.
      */
-    List<String> hostUrl();
+    public DestroyExecutorEvent(JobIdentity ji) {
+        super(ji, "DestroyExecutorEvent");
+        this.ji = ji;
+    }
 }

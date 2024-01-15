@@ -36,7 +36,7 @@ public interface Task<RESULT> {
     /**
      * Stop current task. This method will be called by {@link TaskExecutor} for stop a task
      */
-    void stop();
+    boolean stop();
 
     /**
      * Get task progress, the progress should be between 0 and 1 (include 0 and 1)

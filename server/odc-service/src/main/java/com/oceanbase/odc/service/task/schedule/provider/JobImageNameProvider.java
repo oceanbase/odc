@@ -13,26 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.task.listener;
-
-import com.oceanbase.odc.common.event.AbstractEvent;
-import com.oceanbase.odc.service.task.executor.task.TaskResult;
-
-import lombok.Getter;
+package com.oceanbase.odc.service.task.schedule.provider;
 
 /**
  * @author yaobin
- * @date 2023-11-16
+ * @date 2024-01-09
  * @since 4.2.4
  */
-public class TaskResultUploadEvent extends AbstractEvent {
+public interface JobImageNameProvider {
 
-    @Getter
-    private final TaskResult taskResult;
-
-    public TaskResultUploadEvent(TaskResult taskResult) {
-        super(taskResult, "upload");
-        this.taskResult = taskResult;
-    }
+    /**
+     * provide k8s job image name
+     * 
+     * @return image name with repository
+     */
+    String provide();
 }
-

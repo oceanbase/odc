@@ -13,16 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.oceanbase.odc.service.task.schedule.provider;
 
-package com.oceanbase.odc.service.task.listener;
-
-import com.oceanbase.odc.common.event.AbstractEventListener;
+import java.util.List;
 
 /**
  * @author yaobin
- * @date 2023-11-16
+ * @date 2023-11-30
  * @since 4.2.4
  */
-public abstract class TaskResultUploadListener extends AbstractEventListener<TaskResultUploadEvent> {
+public interface HostUrlProvider {
 
+    /**
+     * provide host url for task executor report result
+     *
+     * @return host url, eg: localhost:8989
+     */
+    List<String> hostUrl();
 }

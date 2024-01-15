@@ -13,41 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.oceanbase.odc.service.task.schedule;
 
-package com.oceanbase.odc.service.task.enums;
+import lombok.Data;
 
 /**
  * @author yaobin
- * @date 2023-11-23
+ * @date 2024-01-05
  * @since 4.2.4
  */
-public enum SourceType {
-    /**
-     * data from task_task
-     */
-    TASK_TASK("task-task"),
+@Data
+public class SingleJobProperties {
 
     /**
-     * data from schedule_task
+     * job enable retry when task is expired
      */
-    SCHEDULE_TASK("schedule-task");
+    private boolean enableRetryAfterHeartTimeout;
 
-    private final String code;
+    /**
+     * job retry max times
+     */
+    private Integer maxRetryTimesAfterHeartTimeout;
 
-    SourceType(String code) {
-        this.code = code;
-    }
-
-    public String getCode() {
-        return code;
-    }
-
-    public static SourceType from(String name) {
-        for (SourceType g : SourceType.values()) {
-            if (g.name().equals(name)) {
-                return g;
-            }
-        }
-        throw new IllegalArgumentException("unsupported source name" + name);
-    }
+    /**
+     * job expired after seconds when job status is preparing and no resources to schedule job
+     */
+    private Integer jobExpiredIfNotRunningAfterSeconds;
 }

@@ -113,6 +113,8 @@ public class DatabaseChangeTask extends BaseTask<FlowTaskResult> {
 
     // todo read from env passed by FlowTask
     private long resultPreviewMaxSizeBytes = 5242880;
+    private volatile boolean canceled = false;
+
 
     @Getter
     protected long taskId;
@@ -135,6 +137,7 @@ public class DatabaseChangeTask extends BaseTask<FlowTaskResult> {
     @Override
     protected void onStop() {
         expireConnectionSession();
+        canceled = true;
     }
 
     @Override
@@ -530,6 +533,10 @@ public class DatabaseChangeTask extends BaseTask<FlowTaskResult> {
         if (getConnectionSession() != null && !getConnectionSession().isExpired()) {
             getConnectionSession().expire();
         }
+    }
+
+    private boolean isCanceled() {
+        return canceled;
     }
 
     private ConnectionSession getConnectionSession() {

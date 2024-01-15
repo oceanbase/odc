@@ -16,7 +16,6 @@
 
 package com.oceanbase.odc.service.task.executor.task;
 
-import java.io.Serializable;
 import java.util.Map;
 
 import com.oceanbase.odc.service.task.enums.JobStatus;
@@ -30,7 +29,7 @@ import lombok.Data;
  * @since 4.2.4
  */
 @Data
-public class DefaultTaskResult implements TaskResult, Serializable {
+public class DefaultTaskResult implements TaskResult {
 
     private JobIdentity jobIdentity;
 

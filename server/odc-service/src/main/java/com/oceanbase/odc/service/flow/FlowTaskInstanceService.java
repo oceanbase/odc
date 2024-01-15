@@ -104,10 +104,12 @@ import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.constants.JobAttributeKeyConstants;
+import com.oceanbase.odc.service.task.constants.JobUrlConstants;
 import com.oceanbase.odc.service.task.executor.task.ObjectStorageHandler;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
+import com.oceanbase.odc.service.task.util.HttpUtil;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -209,8 +211,12 @@ public class FlowTaskInstanceService {
             if (jobEntity != null) {
                 if (!jobEntity.getStatus().isTerminated()) {
                     log.info("job: {} is not finished, try to get log from remote pod.", jobEntity.getId());
-                    DispatchResponse response = requestDispatcher.forward(jobEntity.getExecutorEndpoint());
-                    return response.getContentByType(new TypeReference<SuccessResponse<String>>() {}).getData();
+
+                    String hostWithUrl = jobEntity.getExecutorEndpoint() + String.format(JobUrlConstants.LOG_QUERY,
+                            jobEntity.getId()) + "?logType=" + level.getName();
+                    SuccessResponse<String> response =
+                            HttpUtil.request(hostWithUrl, new TypeReference<SuccessResponse<String>>() {});
+                    return response.getData();
                 } else if (cloudObjectStorageService.supported()) {
                     String objId = taskFrameworkService.findByJobIdAndAttributeKey(jobEntity.getId(),
                             JobAttributeKeyConstants.LOG_ALL_OBJECT_ID);

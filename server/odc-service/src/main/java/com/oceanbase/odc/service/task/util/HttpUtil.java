@@ -13,8 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package com.oceanbase.odc.service.task.executor.util;
+package com.oceanbase.odc.service.task.util;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -23,7 +22,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
-import org.apache.http.HttpEntity;
 import org.apache.http.HttpVersion;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
@@ -60,6 +58,10 @@ public class HttpUtil {
             .setDefaultRequestConfig(DEFAULT_REQUEST_CONFIG)
             .build();
 
+    public static <T> T request(String uri, TypeReference<T> responseTypeRef) throws IOException {
+        return request(DEFAULT_METHOD, uri, DEFAULT_HEADERS, null, null, responseTypeRef);
+    }
+
     public static <T> T request(String uri, String jsonBody, TypeReference<T> responseTypeRef) throws IOException {
         return request(DEFAULT_METHOD, uri, DEFAULT_HEADERS, null, jsonBody, responseTypeRef);
     }
@@ -77,11 +79,13 @@ public class HttpUtil {
         if (Objects.nonNull(parameters)) {
             parameters.forEach(builder::addParameter);
         }
-        HttpEntity entity = EntityBuilder.create()
-                .setContentType(ContentType.APPLICATION_JSON)
-                .setText(jsonBody)
-                .build();
-        builder.setEntity(entity);
+        EntityBuilder eb = EntityBuilder.create()
+                .setContentType(ContentType.APPLICATION_JSON);
+
+        if (jsonBody != null) {
+            eb.setText(jsonBody);
+        }
+        builder.setEntity(eb.build());
         String response = DEFAULT_HTTP_CLIENT.execute(builder.build(), new BasicResponseHandler());
         return JsonUtils.fromJson(response, responseTypeRef);
     }

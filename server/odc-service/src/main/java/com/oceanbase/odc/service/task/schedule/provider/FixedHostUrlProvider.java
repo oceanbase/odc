@@ -13,30 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.task.schedule;
+package com.oceanbase.odc.service.task.schedule.provider;
 
-import lombok.Data;
+import java.util.Collections;
+import java.util.List;
+
+import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 
 /**
  * @author yaobin
- * @date 2024-01-05
+ * @date 2023-12-15
  * @since 4.2.4
  */
-@Data
-public class JobProperties {
+public class FixedHostUrlProvider implements HostUrlProvider {
 
-    /**
-     * job enable retry when task is expired
-     */
-    private boolean enableRetryAfterReportTimeout;
+    private final TaskFrameworkProperties taskFrameworkProperties;
 
-    /**
-     * job retry max times
-     */
-    private Integer maxRetryTimesAfterReportTimeout;
+    public FixedHostUrlProvider(TaskFrameworkProperties taskFrameworkProperties) {
+        this.taskFrameworkProperties = taskFrameworkProperties;
+    }
 
-    /**
-     * job expired after seconds when job status is preparing and no resources to schedule job
-     */
-    private Integer jobExpiredAfterSeconds;
+    @Override
+    public List<String> hostUrl() {
+        return Collections.singletonList(taskFrameworkProperties.getOdcUrl());
+    }
 }

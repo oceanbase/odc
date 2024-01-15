@@ -32,7 +32,7 @@ public interface JobDefinition {
     /**
      * job class
      */
-    Class<? extends Task> getJobClass();
+    Class<? extends Task<?>> getJobClass();
 
     /**
      * job type
@@ -47,6 +47,6 @@ public interface JobDefinition {
     /**
      * job properties for job scheduler
      */
-    JobProperties getJobProperties();
+    SingleJobProperties getJobProperties();
 
 }

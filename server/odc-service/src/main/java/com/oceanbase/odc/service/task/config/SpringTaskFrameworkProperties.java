@@ -43,21 +43,27 @@ public class SpringTaskFrameworkProperties implements TaskFrameworkProperties {
     private K8sProperties k8s = new K8sProperties();
 
     // job will be timeout when last report time more than this duration
-    private int jobReportTimeoutSeconds;
+    private int jobHeartTimeoutSeconds;
+
+    // job to be canceled timeout and current status is cancelling
+    private int jobCancelTimeoutSeconds = 2 * 60;
 
     // single fetch job rows for schedule
-    private int singleFetchJobRowsForSchedule = 100;
+    private int singleFetchJobRowsForStart = 10;
+
+    private int singleFetchJobRowsForCancel = 100;
 
     // single fetch job rows to check report timeout or not
-    private int singleFetchJobRowsForCheckReportTimeout = 100;
-
-    // max fetch job rows to check there is expired between once job schedule
-    private int maxFetchJobRowsForCheckExpired = 2000;
+    private int singleFetchJobRowsForCheckHeartTimeout = 1000;
 
     // max retry times after report timeout
-    private int maxRetryTimesAfterReportTimeout = 3;
+    private int maxRetryTimesAfterHeartTimeout = 3;
 
     private String startPreparingJobCronExpression;
 
     private String checkRunningJobCronExpression;
+
+    private String doCancelingJobCronExpression;
+
+
 }

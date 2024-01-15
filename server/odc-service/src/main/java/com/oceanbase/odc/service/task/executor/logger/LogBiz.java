@@ -13,19 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.task.schedule;
+package com.oceanbase.odc.service.task.executor.logger;
+
+import java.util.Map;
+
+import com.oceanbase.odc.service.common.response.SuccessResponse;
+import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
+import com.oceanbase.odc.service.task.schedule.JobIdentity;
 
 /**
  * @author yaobin
- * @date 2024-01-09
+ * @date 2023-12-13
  * @since 4.2.4
  */
-public interface JobImageNameProvider {
+public interface LogBiz {
 
-    /**
-     * provide k8s job image name
-     * 
-     * @return image name with repository
-     */
-    String provide();
+    SuccessResponse<String> getLog(Long id, String logType);
+
+    Map<String, String> uploadLogFileToCloudStorage(JobIdentity ji,
+            CloudObjectStorageService cloudObjectStorageService);
+
 }

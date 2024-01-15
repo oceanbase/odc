@@ -13,8 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package com.oceanbase.odc.service.task.schedule;
+package com.oceanbase.odc.service.task.executor.sampletask;
 
 import java.util.HashMap;
 import java.util.List;
@@ -23,8 +22,8 @@ import java.util.Map;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.task.constants.JobDataMapConstants;
-import com.oceanbase.odc.service.task.executor.sampletask.SampleTask;
-import com.oceanbase.odc.service.task.executor.sampletask.SampleTaskParameter;
+import com.oceanbase.odc.service.task.schedule.DefaultJobDefinition;
+import com.oceanbase.odc.service.task.schedule.JobDefinition;
 import com.oceanbase.odc.service.task.util.JobUtils;
 
 /**

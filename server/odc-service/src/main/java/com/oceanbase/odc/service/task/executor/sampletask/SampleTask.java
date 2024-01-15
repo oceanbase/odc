@@ -50,6 +50,7 @@ public class SampleTask extends BaseTask<FlowTaskResult> {
     private int totalSqlCount = 0;
 
     private FlowTaskResult result;
+    private volatile boolean canceled = false;
 
     @Override
     protected void onInit(JobContext context) {
@@ -112,6 +113,10 @@ public class SampleTask extends BaseTask<FlowTaskResult> {
     @Override
     public FlowTaskResult getTaskResult() {
         return this.result;
+    }
+
+    private boolean isCanceled() {
+        return canceled;
     }
 
 }

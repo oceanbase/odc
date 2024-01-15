@@ -13,28 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.odc.service.task.executor.task;
 
-import com.oceanbase.odc.service.task.executor.executor.TaskRuntimeException;
+import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.service.task.util.JobUtils;
 
 /**
- * @author gaoda.xy
- * @date 2023/11/24 11:01
+ * @author yaobin
+ * @date 2024-01-12
+ * @since 4.2.4
  */
-public class TaskFactory {
+public class DefaultTaskResultBuilder {
 
-    public static Task<?> create(String jobClass) {
-        try {
-            Class<?> c = Class.forName(jobClass);
-            if (!Task.class.isAssignableFrom(c)) {
-                throw new TaskRuntimeException("Job class is not implements Task. name={}" + jobClass);
-            }
-            return (Task<?>) c.newInstance();
-        } catch (Exception e) {
-            throw new TaskRuntimeException(e);
-        }
+    public static DefaultTaskResult build(Task<?> task) {
+
+        DefaultTaskResult result = new DefaultTaskResult();
+        result.setResultJson(JsonUtils.toJson(task.getTaskResult()));
+        result.setStatus(task.getStatus());
+        result.setProgress(task.getProgress());
+        result.setJobIdentity(task.getJobContext().getJobIdentity());
+        result.setExecutorEndpoint(JobUtils.getExecutorPoint());
+        return result;
     }
-
 
 }

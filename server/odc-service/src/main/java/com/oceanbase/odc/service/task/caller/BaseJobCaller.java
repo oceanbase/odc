@@ -16,12 +16,19 @@
 
 package com.oceanbase.odc.service.task.caller;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.metadb.task.JobEntity;
+import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
+import com.oceanbase.odc.service.task.constants.JobUrlConstants;
 import com.oceanbase.odc.service.task.enums.JobCallerAction;
 import com.oceanbase.odc.service.task.listener.JobCallerEvent;
-import com.oceanbase.odc.service.task.schedule.ExecutorIdentifier;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
+import com.oceanbase.odc.service.task.service.TaskFrameworkService;
+import com.oceanbase.odc.service.task.util.HttpUtil;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -56,18 +63,54 @@ public abstract class BaseJobCaller implements JobCaller {
 
     @Override
     public void stop(JobIdentity ji) throws JobException {
+        // send stop to executor
+        JobConfiguration jobConfiguration = JobConfigurationHolder.getJobConfiguration();
+        if (jobConfiguration == null || jobConfiguration.getTaskFrameworkService() == null) {
+            return;
+        }
+        TaskFrameworkService taskFrameworkService = jobConfiguration.getTaskFrameworkService();
+        JobEntity jobEntity = taskFrameworkService.find(ji.getId());
+        String executorEndpoint = jobEntity.getExecutorEndpoint();
+
         try {
-            doStop(ji);
-            publishEvent(new JobCallerEvent(ji, JobCallerAction.STOP, true, null));
+            String url = executorEndpoint + String.format(JobUrlConstants.STOP_TASK, ji.getId());
+            SuccessResponse<Boolean> response =
+                    HttpUtil.request(url, new TypeReference<SuccessResponse<Boolean>>() {});
+            log.info("Stop job {} response is {}.", ji.getId(), JsonUtils.toJson(response));
+            if (response != null && response.getSuccessful() && response.getData()) {
+                publishEvent(new JobCallerEvent(ji, JobCallerAction.STOP, true, null));
+            } else {
+                publishEvent(new JobCallerEvent(ji, JobCallerAction.STOP, false, null));
+            }
+            log.info("Stop job {} successfully, executor endpoint {}.", ji.getId(), executorEndpoint);
+        } catch (Exception e) {
+            publishEvent(new JobCallerEvent(ji, JobCallerAction.STOP, false, e));
+            throw new JobException(e);
+        }
+
+    }
+
+    @Override
+    public void destroy(JobIdentity ji) throws JobException {
+        JobConfiguration jobConfiguration = JobConfigurationHolder.getJobConfiguration();
+        if (jobConfiguration == null || jobConfiguration.getTaskFrameworkService() == null) {
+            return;
+        }
+        TaskFrameworkService taskFrameworkService = jobConfiguration.getTaskFrameworkService();
+        JobEntity jobEntity = taskFrameworkService.find(ji.getId());
+        String executorIdentifier = jobEntity.getExecutorIdentifier();
+        PreConditions.notNull(executorIdentifier, "executorIdentifier");
+        log.info("Preparing stop job {}, executor name {}.", ji.getId(), executorIdentifier);
+
+        try {
+            destroy(ExecutorIdentifierParser.parser(executorIdentifier));
+            log.info("Stop job {} successfully, executor name {}.", ji.getId(), executorIdentifier);
+            publishEvent(new JobCallerEvent(ji, JobCallerAction.DESTROY, true, null));
         } catch (JobException ex) {
-            publishEvent(new JobCallerEvent(ji, JobCallerAction.STOP, false, ex));
+            publishEvent(new JobCallerEvent(ji, JobCallerAction.DESTROY, false, ex));
             throw ex;
         }
     }
-
-    protected abstract ExecutorIdentifier doStart(JobContext context) throws JobException;
-
-    protected abstract void doStop(JobIdentity ji) throws JobException;
 
     private void publishEvent(JobCallerEvent event) {
         JobConfiguration configuration = JobConfigurationHolder.getJobConfiguration();
@@ -75,5 +118,17 @@ public abstract class BaseJobCaller implements JobCaller {
             configuration.getEventPublisher().publishEvent(event);
         }
     }
+
+    @Override
+    public void destroy(ExecutorIdentifier identifier) throws JobException {
+        doDestroy(identifier);
+    }
+
+
+    protected abstract ExecutorIdentifier doStart(JobContext context) throws JobException;
+
+    protected abstract void doStop(JobIdentity ji) throws JobException;
+
+    protected abstract void doDestroy(ExecutorIdentifier identifier) throws JobException;
 
 }

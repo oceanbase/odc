@@ -18,19 +18,26 @@ package com.oceanbase.odc.service.task.service;
 
 import java.util.Calendar;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
 import javax.persistence.EntityManager;
+import javax.persistence.LockModeType;
+import javax.persistence.criteria.Expression;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.event.EventPublisher;
+import com.oceanbase.odc.common.jpa.SpecificationUtil;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.Verify;
@@ -43,9 +50,10 @@ import com.oceanbase.odc.metadb.task.JobRepository;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.executor.executor.TaskRuntimeException;
+import com.oceanbase.odc.service.task.executor.task.HeartRequest;
 import com.oceanbase.odc.service.task.executor.task.Task;
 import com.oceanbase.odc.service.task.executor.task.TaskResult;
-import com.oceanbase.odc.service.task.listener.TaskResultUploadEvent;
+import com.oceanbase.odc.service.task.listener.DestroyExecutorEvent;
 import com.oceanbase.odc.service.task.schedule.DefaultJobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobDefinition;
 import com.oceanbase.odc.service.task.util.JobDateUtils;
@@ -62,6 +70,10 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @SkipAuthorize("odc internal usage")
 public class StdTaskFrameworkService implements TaskFrameworkService {
+
+    private static final int RECENT_DAY = 30;
+    private static final String STATUS_COLUMN = "status";
+    private static final String LAST_HEART_TIME_COLUMN = "lastHeartTime";
 
     @Autowired
     private JobRepository jobRepository;
@@ -84,6 +96,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     @Autowired
     private EntityManager entityManager;
 
+
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void handleResult(TaskResult taskResult) {
@@ -101,11 +114,21 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         if (resultHandleServices != null) {
             resultHandleServices.forEach(r -> r.handle(taskResult));
         }
-        if (publisher != null) {
+        if (publisher != null && taskResult.getStatus() != null && taskResult.getStatus().isTerminated()) {
             taskResultPublisherExecutor
-                    .execute(() -> publisher.publishEvent(new TaskResultUploadEvent(taskResult)));
+                    .execute(() -> publisher.publishEvent(new DestroyExecutorEvent(taskResult.getJobIdentity())));
         }
 
+    }
+
+    @Override
+    public void handleHeart(HeartRequest heart) {
+        if (heart.getJobIdentity() == null || heart.getJobIdentity().getId() == null ||
+                heart.getExecutorEndpoint() == null) {
+            return;
+        }
+        jobRepository.updateLatestHeartTime(heart.getJobIdentity().getId(), heart.getExecutorEndpoint(),
+                JobDateUtils.getCurrentDate());
     }
 
     @Override
@@ -122,7 +145,6 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         return jobRepository.save(jse);
     }
 
-
     @Override
     public JobEntity find(Long id) {
         return jobRepository.findById(id)
@@ -130,32 +152,58 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     }
 
     @Override
-    public List<JobEntity> find(List<JobStatus> status, int offset, int limit) {
-        // fetch recent 30 days jobs
-        Calendar cal = Calendar.getInstance();
-        cal.setTime(JobDateUtils.getCurrentDate());
-        cal.add(Calendar.DATE, -30);
-
-        return entityManager.createQuery("from JobEntity where status in (:status) and createTime > :date "
-                + " order by createTime asc", JobEntity.class)
-                .setParameter("date", cal.getTime())
-                .setParameter("status", status)
-                .setFirstResult(offset)
-                .setMaxResults(limit).getResultList();
+    public JobEntity findWithLock(Long id) {
+        return entityManager.find(JobEntity.class, id, LockModeType.PESSIMISTIC_WRITE);
     }
 
     @Override
-    public List<JobEntity> find(JobStatus status, int offset, int limit) {
-        return find(Collections.singletonList(status), offset, limit);
+    public Page<JobEntity> find(JobStatus status, int page, int size) {
+        return find(Collections.singletonList(status), page, size);
+    }
+
+    @Override
+    public Page<JobEntity> find(List<JobStatus> status, int page, int size) {
+        Specification<JobEntity> condition = Specification.where(getRecentDaySpec(RECENT_DAY))
+                .and(SpecificationUtil.columnIn(STATUS_COLUMN, status));
+        return page(condition, page, size);
+    }
+
+    @Override
+    public Page<JobEntity> findHeartTimeTimeoutJobs(long timeoutSeconds, int page, int size) {
+        Specification<JobEntity> condition = Specification.where(getRecentDaySpec(RECENT_DAY))
+                .and(getTimeoutOnColumnSpec(LAST_HEART_TIME_COLUMN, timeoutSeconds))
+                .and(SpecificationUtil.columnEqual(STATUS_COLUMN, JobStatus.RUNNING));
+        return page(condition, page, size);
+    }
+
+    private Page<JobEntity> page(Specification<JobEntity> specification, int page, int size) {
+        return jobRepository.findAll(specification, PageRequest.of(page, size));
+    }
+
+    private Specification<JobEntity> getTimeoutOnColumnSpec(String referenceColumn, long timeoutSeconds) {
+        long expiredUxTime = JobDateUtils.getCurrentDate().getTime() / 1000 - timeoutSeconds;
+        return (root, query, criteriaBuilder) -> {
+            Expression<Long> beginUxTime = criteriaBuilder.function(
+                    "UNIX_TIMESTAMP", Long.class, root.get(referenceColumn));
+
+            return criteriaBuilder.lessThan(beginUxTime, expiredUxTime);
+        };
+    }
+
+    private Specification<JobEntity> getRecentDaySpec(int day) {
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(JobDateUtils.getCurrentDate());
+        cal.add(Calendar.DATE, Math.negateExact(day));
+        return SpecificationUtil.columnLate("createTime", cal.getTime());
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public JobDefinition getJobDefinition(Long id) {
         JobEntity entity = find(id);
-        Class<? extends Task> cl;
+        Class<? extends Task<?>> cl;
         try {
-            cl = (Class<? extends Task>) Class.forName(entity.getJobClass());
+            cl = (Class<? extends Task<?>>) Class.forName(entity.getJobClass());
         } catch (ClassNotFoundException e) {
             throw new TaskRuntimeException(e);
         }
@@ -168,12 +216,18 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     @Override
     public void startSuccess(Long id, String executorIdentifier) {
         JobEntity jobEntity = find(id);
+        Date currentDate = JobDateUtils.getCurrentDate();
         jobEntity.setStatus(JobStatus.RUNNING);
         jobEntity.setExecutorIdentifier(executorIdentifier);
         // increment executionTimes
         jobEntity.setExecutionTimes(jobEntity.getExecutionTimes() + 1);
-        jobEntity.setStartedTime(JobDateUtils.getCurrentDate());
-        jobRepository.updateJobExecutorIdentifierAndStatus(jobEntity);
+        // set current date as first heart time
+        jobEntity.setLastHeartTime(currentDate);
+        jobEntity.setStartedTime(currentDate);
+        if (jobEntity.getExecutorDestroyedTime() != null) {
+            jobEntity.setExecutorDestroyedTime(null);
+        }
+        jobRepository.updateJobExecutorIdentifierAndStatusById(jobEntity);
     }
 
     @Override
@@ -210,7 +264,30 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
 
     @Override
     public void updateStatus(Long id, JobStatus status) {
-        jobRepository.updateStatus(id, status);
+        jobRepository.updateStatusByIdAndOldStatus(id, status);
+    }
+
+    @Override
+    public int updateStatusDescriptionByIdOldStatus(Long id, JobStatus oldStatus, JobStatus newStatus,
+            String description) {
+        return jobRepository.updateStatusDescriptionByIdOldStatus(id, oldStatus, newStatus, description);
+    }
+
+    @Override
+    public int updateStatusDescriptionByIdOldStatusAndExecutorDestroyed(Long id, JobStatus oldStatus,
+            JobStatus newStatus, String description) {
+        return jobRepository.updateStatusDescriptionByIdOldStatusAndExecutorDestroyed(id, oldStatus, newStatus,
+                description);
+    }
+
+    @Override
+    public int updateJobToCanceling(Long id, JobStatus oldStatus) {
+        return jobRepository.updateJobToCancelling(id, oldStatus, JobStatus.CANCELING, JobDateUtils.getCurrentDate());
+    }
+
+    @Override
+    public int updateExecutorToDestroyed(Long id) {
+        return jobRepository.updateExecutorToDestroyed(id, JobDateUtils.getCurrentDate());
     }
 
     @Override

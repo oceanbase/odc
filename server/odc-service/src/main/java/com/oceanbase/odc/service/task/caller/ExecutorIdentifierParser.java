@@ -13,13 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package com.oceanbase.odc.service.task.schedule;
+package com.oceanbase.odc.service.task.caller;
 
 import org.springframework.web.util.UriComponents;
 
 import com.oceanbase.odc.service.common.util.UrlUtils;
-import com.oceanbase.odc.service.task.caller.JobException;
 
 /**
  * @author yaobin

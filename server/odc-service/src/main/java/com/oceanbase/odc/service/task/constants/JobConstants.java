@@ -45,6 +45,8 @@ public class JobConstants {
 
     public static final String QUARTZ_DATA_MAP_JOB_CONTEXT = JobEnvConstants.TASK_ALL_PARAMETERS;
 
-    public static final int REPORT_TASK_INFO_INTERVAL_SECONDS = 5;
+    public static final int REPORT_TASK_INFO_INTERVAL_SECONDS = 30;
+
+    public static final int REPORT_TASK_HEART_INTERVAL_SECONDS = 5;
 
 }

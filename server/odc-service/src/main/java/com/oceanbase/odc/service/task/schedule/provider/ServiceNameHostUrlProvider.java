@@ -13,24 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.oceanbase.odc.service.task.schedule.provider;
 
-package com.oceanbase.odc.service.task.schedule;
+import java.util.Collections;
+import java.util.List;
+
+import com.oceanbase.odc.common.util.SystemUtils;
+import com.oceanbase.odc.service.task.constants.JobEnvConstants;
 
 /**
  * @author yaobin
- * @date 2023-12-25
+ * @date 2023-12-01
  * @since 4.2.4
  */
-public interface ExecutorIdentifier {
+public class ServiceNameHostUrlProvider implements HostUrlProvider {
 
-    String getSchema();
-
-    String getHost();
-
-    int getPort();
-
-    String getNamespace();
-
-    String getExecutorName();
-
+    @Override
+    public List<String> hostUrl() {
+        return Collections.singletonList("http://" + SystemUtils.getEnvOrProperty(JobEnvConstants.ODC_SERVICE_HOST)
+                + ":" + SystemUtils.getEnvOrProperty(JobEnvConstants.ODC_SERVICE_PORT));
+    }
 }

@@ -17,8 +17,8 @@
 package com.oceanbase.odc.service.task.listener;
 
 import com.oceanbase.odc.common.event.AbstractEventListener;
+import com.oceanbase.odc.service.task.caller.ExecutorIdentifier;
 import com.oceanbase.odc.service.task.enums.JobCallerAction;
-import com.oceanbase.odc.service.task.schedule.ExecutorIdentifier;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 
 /**
@@ -42,6 +42,12 @@ public class JobCallerListener extends AbstractEventListener<JobCallerEvent> {
             } else {
                 stopFailed(event.getJobIdentity(), event.getEx());
             }
+        } else if (event.getJobAction() == JobCallerAction.DESTROY) {
+            if (event.isSuccess()) {
+                destroySucceed(event.getJobIdentity());
+            } else {
+                destroyFailed(event.getJobIdentity(), event.getEx());
+            }
         }
     }
 
@@ -59,6 +65,14 @@ public class JobCallerListener extends AbstractEventListener<JobCallerEvent> {
     }
 
     protected void stopFailed(JobIdentity ji, Exception ex) {
+
+    }
+
+    protected void destroySucceed(JobIdentity ji) {
+
+    }
+
+    protected void destroyFailed(JobIdentity ji, Exception ex) {
 
     }
 }

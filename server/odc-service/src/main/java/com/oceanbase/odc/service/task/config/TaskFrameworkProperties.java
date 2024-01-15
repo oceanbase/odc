@@ -30,17 +30,21 @@ public interface TaskFrameworkProperties {
 
     K8sProperties getK8s();
 
-    int getJobReportTimeoutSeconds();
+    int getJobHeartTimeoutSeconds();
 
-    int getSingleFetchJobRowsForSchedule();
+    int getJobCancelTimeoutSeconds();
 
-    int getSingleFetchJobRowsForCheckReportTimeout();
+    int getSingleFetchJobRowsForStart();
 
-    int getMaxFetchJobRowsForCheckExpired();
+    int getSingleFetchJobRowsForCancel();
 
-    int getMaxRetryTimesAfterReportTimeout();
+    int getSingleFetchJobRowsForCheckHeartTimeout();
+
+    int getMaxRetryTimesAfterHeartTimeout();
 
     String getStartPreparingJobCronExpression();
 
     String getCheckRunningJobCronExpression();
+
+    String getDoCancelingJobCronExpression();
 }

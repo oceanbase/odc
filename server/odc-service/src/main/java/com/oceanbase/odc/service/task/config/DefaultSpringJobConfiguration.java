@@ -21,6 +21,7 @@ import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import com.oceanbase.odc.common.event.LocalEventPublisher;
 import com.oceanbase.odc.service.connection.ConnectionService;
@@ -29,8 +30,9 @@ import com.oceanbase.odc.service.schedule.ScheduleTaskService;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.caller.K8sJobClient;
 import com.oceanbase.odc.service.task.dispatch.ImmediateJobDispatcher;
-import com.oceanbase.odc.service.task.schedule.DefaultJobImageNameProvider;
-import com.oceanbase.odc.service.task.schedule.HostUrlProvider;
+import com.oceanbase.odc.service.task.schedule.provider.DefaultJobImageNameProvider;
+import com.oceanbase.odc.service.task.schedule.provider.HostUrlProvider;
+import com.oceanbase.odc.service.task.service.SpringTransactionManager;
 import com.oceanbase.odc.service.task.service.StdTaskFrameworkService;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 
@@ -63,6 +65,7 @@ public class DefaultSpringJobConfiguration extends DefaultJobConfiguration
         setEventPublisher(publisher);
         setJobImageNameProvider(new DefaultJobImageNameProvider(ctx.getBean(InfoAdapter.class),
                 getTaskFrameworkProperties()));
+        setTransactionManager(new SpringTransactionManager(ctx.getBean(TransactionTemplate.class)));
     }
 
     @Override

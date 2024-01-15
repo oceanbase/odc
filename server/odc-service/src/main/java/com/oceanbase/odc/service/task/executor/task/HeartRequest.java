@@ -14,23 +14,22 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.task.executor.executor;
+package com.oceanbase.odc.service.task.executor.task;
 
-import com.oceanbase.odc.service.task.caller.JobContext;
-import com.oceanbase.odc.service.task.executor.task.Task;
+import com.oceanbase.odc.service.task.schedule.JobIdentity;
+
+import lombok.Data;
 
 /**
- * 
- * A synchronous task executor.
- * 
- * @author gaoda.xy
- * @date 2023/11/30 10:40
+ * @author yaobin
+ * @date 2023-11-29
+ * @since 4.2.4
  */
-public class SyncTaskExecutor implements TaskExecutor {
+@Data
+public class HeartRequest {
 
-    @Override
-    public void execute(Task task, JobContext jc) {
-        task.start(jc);
-    }
+    private JobIdentity jobIdentity;
+
+    private String executorEndpoint;
 
 }

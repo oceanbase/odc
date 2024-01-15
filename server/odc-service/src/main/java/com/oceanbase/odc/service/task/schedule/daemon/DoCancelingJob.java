@@ -13,25 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.oceanbase.odc.service.task.schedule.daemon;
 
-package com.oceanbase.odc.service.task.schedule;
-
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import org.quartz.DisallowConcurrentExecution;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
+import org.springframework.data.domain.Page;
 
-import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.metadb.task.JobEntity;
-import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.caller.JobException;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.enums.JobStatus;
+import com.oceanbase.odc.service.task.executor.executor.TaskRuntimeException;
+import com.oceanbase.odc.service.task.schedule.JobIdentity;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 import com.oceanbase.odc.service.task.util.JobDateUtils;
 
@@ -39,12 +38,12 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author yaobin
- * @date 2023-11-24
+ * @date 2024-01-12
  * @since 4.2.4
  */
 @Slf4j
 @DisallowConcurrentExecution
-public class StartPreparingJob implements Job {
+public class DoCancelingJob implements Job {
 
     private JobConfiguration configuration;
 
@@ -58,35 +57,44 @@ public class StartPreparingJob implements Job {
         // scan preparing job
         TaskFrameworkService taskFrameworkService = configuration.getTaskFrameworkService();
         TaskFrameworkProperties taskFrameworkProperties = configuration.getTaskFrameworkProperties();
-        List<JobEntity> jobs = taskFrameworkService.find(JobStatus.PREPARING, 0,
-                taskFrameworkProperties.getSingleFetchJobRowsForSchedule());
+        Page<JobEntity> jobs = taskFrameworkService.find(JobStatus.CANCELING, 0,
+                taskFrameworkProperties.getSingleFetchJobRowsForCancel());
         jobs.forEach(a -> {
             try {
-                if (checkJobIsExpired(a)) {
-                    getConfiguration().getJobDispatcher().stop(JobIdentity.of(a.getId()));
-                    getConfiguration().getTaskFrameworkService().updateStatus(a.getId(), JobStatus.FAILED);
-                    getConfiguration().getTaskFrameworkService()
-                            .updateDescription(a.getId(), "Job expired and failed.");
-                } else {
-                    JobContext jc = new DefaultJobContextBuilder().build(a, configuration.getHostUrlProvider());
-                    configuration.getJobDispatcher().start(jc);
-                }
-            } catch (JobException e) {
-                log.warn("try to start job {} failed: ", a.getId(), e);
+                cancelJob(taskFrameworkService, a);
+            } catch (Throwable e) {
+                log.warn("Try to start job {} failed: ", a.getId(), e);
             }
         });
     }
 
-    private boolean checkJobIsExpired(JobEntity a) {
+    private void cancelJob(TaskFrameworkService taskFrameworkService, JobEntity oldEntity) {
+        getConfiguration().getTransactionManager().doInTransactionWithoutResult(() -> {
+            JobEntity newEntity = taskFrameworkService.findWithLock(oldEntity.getId());
 
-        JobProperties jobProperties = JsonUtils.fromJson(a.getJobPropertiesJson(), JobProperties.class);
-        if (jobProperties == null || jobProperties.getJobExpiredAfterSeconds() == null) {
-            return false;
-        }
+            if (newEntity.getStatus() == JobStatus.CANCELING) {
+                log.info("Job {} current status is {} but not canceling, prepare cancel.",
+                        newEntity.getId(), newEntity.getStatus());
+                try {
+                    getConfiguration().getJobDispatcher().stop(JobIdentity.of(newEntity.getId()));
+                } catch (JobException e) {
+                    log.warn("Start job occur error: ", e);
+                    throw new TaskRuntimeException(e);
+                }
+            } else {
+                log.warn("Job {} current status is {} but not canceling, cancel explain is aborted.",
+                        newEntity.getId(), newEntity.getStatus());
+            }
+            return null;
+        });
+    }
 
-        long baseTime = a.getCreateTime().getTime();
-        return JobDateUtils.getCurrentDate().getTime() - baseTime > TimeUnit.MILLISECONDS.convert(
-                jobProperties.getJobExpiredAfterSeconds(), TimeUnit.SECONDS);
+    private boolean checkCancelingIsTimeout(JobEntity a) {
+
+        long baseTimeMills = a.getCreateTime().getTime();
+        long cancelTimeoutMills = TimeUnit.MILLISECONDS.convert(
+                getConfiguration().getTaskFrameworkProperties().getJobCancelTimeoutSeconds(), TimeUnit.SECONDS);
+        return JobDateUtils.getCurrentDate().getTime() - baseTimeMills > cancelTimeoutMills;
 
     }
 

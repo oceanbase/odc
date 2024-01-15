@@ -88,20 +88,29 @@ public class JobEntity implements Serializable {
     @Column(name = "description")
     private String description;
 
-    @Column(name = "creator_id")
-    private Long creatorId;
-
-    @Column(name = "organization_id")
-    private Long organizationId;
-
     @Column(name = "started_time")
     private Date startedTime;
 
     @Column(name = "finished_time")
     private Date finishedTime;
 
+    @Column(name = "cancelling_time")
+    private Date cancellingTime;
+
+    @Column(name = "executor_destroyed_time")
+    private Date executorDestroyedTime;
+
     @Column(name = "last_report_time")
     private Date lastReportTime;
+
+    @Column(name = "last_heart_time")
+    private Date lastHeartTime;
+
+    @Column(name = "creator_id")
+    private Long creatorId;
+
+    @Column(name = "organization_id")
+    private Long organizationId;
 
     @Generated(GenerationTime.ALWAYS)
     @Column(name = "create_time", insertable = false, updatable = false)

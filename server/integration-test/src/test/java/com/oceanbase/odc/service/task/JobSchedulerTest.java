@@ -40,12 +40,13 @@ import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.dispatch.JobDispatcher;
 import com.oceanbase.odc.service.task.executor.sampletask.SampleTask;
 import com.oceanbase.odc.service.task.schedule.DefaultJobDefinition;
-import com.oceanbase.odc.service.task.schedule.HostUrlProvider;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
-import com.oceanbase.odc.service.task.schedule.JobImageNameProvider;
 import com.oceanbase.odc.service.task.schedule.JobScheduler;
 import com.oceanbase.odc.service.task.schedule.StdJobScheduler;
+import com.oceanbase.odc.service.task.schedule.provider.HostUrlProvider;
+import com.oceanbase.odc.service.task.schedule.provider.JobImageNameProvider;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
+import com.oceanbase.odc.service.task.service.TransactionManager;
 
 import cn.hutool.core.lang.Assert;
 
@@ -68,9 +69,11 @@ public class JobSchedulerTest {
         jc.setJobImageNameProvider(Mockito.mock(JobImageNameProvider.class));
         TaskFrameworkService taskFrameworkService = Mockito.mock(TaskFrameworkService.class);
         jc.setTaskFrameworkService(taskFrameworkService);
+        jc.setTransactionManager(Mockito.mock(TransactionManager.class));
         SpringTaskFrameworkProperties properties = new SpringTaskFrameworkProperties();
         properties.setCheckRunningJobCronExpression("0/3 * * * * ?");
         properties.setStartPreparingJobCronExpression("0/3 * * * * ?");
+        properties.setDoCancelingJobCronExpression("0/3 * * * * ?");
         jc.setTaskFrameworkProperties(properties);
         Mockito.when(taskFrameworkService.save(Mockito.any())).thenReturn(Mockito.mock(JobEntity.class));
         Mockito.when(taskFrameworkService.find(Mockito.any())).thenReturn(Mockito.mock(JobEntity.class));

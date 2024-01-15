@@ -30,8 +30,6 @@ public class JobDataMapConstants {
 
     public static final String META_DB_TASK_PARAMETER = "metaDbTaskParameter";
 
-    public static final String BUZ_ID = "buzId";
-
     public static final String FLOW_INSTANCE_ID = "flowInstanceId";
 
     public static final String CURRENT_SCHEMA_KEY = ConnectionSessionConstants.CURRENT_SCHEMA_KEY;
@@ -42,5 +40,5 @@ public class JobDataMapConstants {
 
     public static final String OBJECT_METADATA = "objectMetadata";
 
-    public static final String TIMEOUT_MILLI_SECONDS = RuntimeTaskConstants.TIMEOUT_MILLI_SECONDS;
+    public static final String TASK_EXECUTION_TIMEOUT_MILLIS = RuntimeTaskConstants.TIMEOUT_MILLI_SECONDS;
 }

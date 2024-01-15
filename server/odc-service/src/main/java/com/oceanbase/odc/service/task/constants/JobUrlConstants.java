@@ -13,17 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package com.oceanbase.odc.service.task.executor;
-
-import com.oceanbase.odc.service.common.response.SuccessResponse;
+package com.oceanbase.odc.service.task.constants;
 
 /**
  * @author yaobin
- * @date 2023-12-13
+ * @date 2024-01-12
  * @since 4.2.4
  */
-public interface ExecutorBiz {
+public class JobUrlConstants {
 
-    SuccessResponse<String> log(Long id, String logType);
+    public static final String TASK_RESULT_UPLOAD = "/api/v2/task/result";
+
+    public static final String TASK_HEART = "/api/v2/task/heart";
+
+    public static final String LOG_QUERY = "/api/v2/task/%s/log";
+
+    public static final String STOP_TASK = "/api/v2/task/%s/stop";
+
 }

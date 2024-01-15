@@ -725,9 +725,10 @@ INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('o
 --
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.run-mode', 'PROCESS', 'ODC task run mode contain: LEGACY/PROCESS/K8S, default is PROCESS' ) ON DUPLICATE KEY UPDATE `id` = `id`;
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.odc-url', '', 'odc server url is used to report task result by TaskExecutor, use odc server ip when odc url is null') ON DUPLICATE KEY UPDATE `id`=`id`;
-INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.start-preparing-job-cron-expression', '0/3 * * * * ?', 'start preparing job cron expression, modify value restart to take affect' ) ON DUPLICATE KEY UPDATE `id` = `id`;
+INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.start-preparing-job-cron-expression', '0/1 * * * * ?', 'start preparing job cron expression, modify value restart to take affect' ) ON DUPLICATE KEY UPDATE `id` = `id`;
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.check-running-job-cron-expression', '* 0/1 * * * ?', 'check running job cron expression, modify value restart to take affect' ) ON DUPLICATE KEY UPDATE `id` = `id`;
-INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.job-report-timeout-seconds', '600', 'job report timeout seconds, job will failed or retrying' ) ON DUPLICATE KEY UPDATE `id` = `id`;
+INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.do-canceling-job-cron-expression', '0/10 * * * * ?', 'check canceling job cron expression, modify value restart to take affect' ) ON DUPLICATE KEY UPDATE `id` = `id`;
+INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.job-heart-timeout-seconds', '300', 'job heart timeout seconds, job will failed or retrying' ) ON DUPLICATE KEY UPDATE `id` = `id`;
 
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.k8s.kube-config', '', 'kube config base64 encoded is used k8s connect default' ) ON DUPLICATE KEY UPDATE `id` = `id`;
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.k8s.kube-url', '', 'kube url be used to connect k8s when kube config is null' ) ON DUPLICATE KEY UPDATE `id` = `id`;

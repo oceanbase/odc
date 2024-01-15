@@ -19,10 +19,10 @@ package com.oceanbase.odc.service.task;
 import org.junit.Assert;
 import org.junit.Test;
 
+import com.oceanbase.odc.service.task.caller.DefaultExecutorIdentifier;
+import com.oceanbase.odc.service.task.caller.ExecutorIdentifier;
+import com.oceanbase.odc.service.task.caller.ExecutorIdentifierParser;
 import com.oceanbase.odc.service.task.caller.JobException;
-import com.oceanbase.odc.service.task.schedule.DefaultExecutorIdentifier;
-import com.oceanbase.odc.service.task.schedule.ExecutorIdentifier;
-import com.oceanbase.odc.service.task.schedule.ExecutorIdentifierParser;
 
 /**
  * @author yaobin

@@ -29,10 +29,10 @@ import com.oceanbase.odc.service.common.model.HostProperties;
 import com.oceanbase.odc.service.task.caller.K8sJobClient;
 import com.oceanbase.odc.service.task.caller.NativeK8sJobClient;
 import com.oceanbase.odc.service.task.constants.JobEnvConstants;
-import com.oceanbase.odc.service.task.schedule.FixedHostUrlProvider;
-import com.oceanbase.odc.service.task.schedule.HostUrlProvider;
-import com.oceanbase.odc.service.task.schedule.IpBasedHostUrlProvider;
-import com.oceanbase.odc.service.task.schedule.ServiceNameHostUrlProvider;
+import com.oceanbase.odc.service.task.schedule.provider.FixedHostUrlProvider;
+import com.oceanbase.odc.service.task.schedule.provider.HostUrlProvider;
+import com.oceanbase.odc.service.task.schedule.provider.IpBasedHostUrlProvider;
+import com.oceanbase.odc.service.task.schedule.provider.ServiceNameHostUrlProvider;
 
 import lombok.extern.slf4j.Slf4j;
 
