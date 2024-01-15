@@ -197,7 +197,7 @@ public class FlowInstanceServiceTest extends ServiceTestEnv {
         when(databaseService.detail(Mockito.anyLong())).thenReturn(database);
         when(riskLevelService.findDefaultRiskLevel()).thenReturn(getRiskLevel());
         when(riskLevelService.list()).thenReturn(Arrays.asList(getRiskLevel(), getRiskLevel()));
-        doNothing().when(databasePermissionHelper).checkPermission(Mockito.anyCollection(), Mockito.anyCollection());
+        doNothing().when(databasePermissionHelper).checkPermissions(Mockito.anyCollection(), Mockito.anyCollection());
     }
 
     @Test

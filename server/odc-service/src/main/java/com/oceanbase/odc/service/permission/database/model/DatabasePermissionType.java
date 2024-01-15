@@ -22,6 +22,7 @@ import java.util.Locale;
 import org.springframework.context.i18n.LocaleContextHolder;
 
 import com.oceanbase.odc.common.i18n.Translatable;
+import com.oceanbase.tools.dbbrowser.parser.constant.SqlType;
 
 import lombok.Getter;
 
@@ -44,6 +45,37 @@ public enum DatabasePermissionType implements Translatable {
 
     public static List<DatabasePermissionType> all() {
         return Arrays.asList(DatabasePermissionType.values());
+    }
+
+    public static DatabasePermissionType from(String action) {
+        if ("query".equalsIgnoreCase(action)) {
+            return DatabasePermissionType.QUERY;
+        }
+        if ("change".equalsIgnoreCase(action)) {
+            return DatabasePermissionType.CHANGE;
+        }
+        if ("export".equalsIgnoreCase(action)) {
+            return DatabasePermissionType.EXPORT;
+        }
+        throw new IllegalArgumentException("unknown action: " + action);
+    }
+
+    public static DatabasePermissionType from(SqlType type) {
+        switch (type) {
+            case SELECT:
+                return QUERY;
+            case UPDATE:
+            case DELETE:
+            case INSERT:
+            case CREATE:
+            case DROP:
+            case ALTER:
+            case REPLACE:
+            case TRUNCATE:
+                return CHANGE;
+            default:
+                return null;
+        }
     }
 
     @Override

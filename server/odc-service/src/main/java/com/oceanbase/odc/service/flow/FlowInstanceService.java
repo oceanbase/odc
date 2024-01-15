@@ -692,7 +692,7 @@ public class FlowInstanceService {
             default:
                 break;
         }
-        databasePermissionHelper.checkPermission(databaseIds, actions);
+        databasePermissionHelper.checkPermissions(databaseIds, actions);
     }
 
 

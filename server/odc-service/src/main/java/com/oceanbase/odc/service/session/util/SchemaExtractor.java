@@ -17,8 +17,10 @@
 package com.oceanbase.odc.service.session.util;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -30,6 +32,8 @@ import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
 import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTree;
 import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTreeFactories;
 import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTreeFactory;
+import com.oceanbase.tools.dbbrowser.parser.constant.SqlType;
+import com.oceanbase.tools.dbbrowser.parser.result.BasicResult;
 import com.oceanbase.tools.sqlparser.adapter.mysql.MySQLFromReferenceFactory;
 import com.oceanbase.tools.sqlparser.adapter.oracle.OracleFromReferenceFactory;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Create_database_stmtContext;
@@ -50,6 +54,33 @@ import lombok.Getter;
  * @Description: []
  */
 public class SchemaExtractor {
+
+    public static Map<String, Set<SqlType>> listSchemaName2SqlTypes(List<SqlTuple> sqlTuples, DialectType dialectType) {
+        Map<String, Set<SqlType>> schemaName2SqlTypes = new HashMap<>();
+        for (SqlTuple sqlTuple : sqlTuples) {
+            try {
+                AbstractSyntaxTree ast = sqlTuple.getAst();
+                if (ast == null) {
+                    sqlTuple.initAst(AbstractSyntaxTreeFactories.getAstFactory(dialectType, 0));
+                    ast = sqlTuple.getAst();
+                }
+                Set<String> schemaNames = listSchemaNames(ast, dialectType);
+                SqlType sqlType = SqlType.OTHERS;
+                BasicResult basicResult = ast.getParseResult();
+                if (Objects.nonNull(basicResult) && Objects.nonNull(basicResult.getSqlType())
+                        && basicResult.getSqlType() != SqlType.UNKNOWN) {
+                    sqlType = basicResult.getSqlType();
+                }
+                for (String schemaName : schemaNames) {
+                    Set<SqlType> sqlTypes = schemaName2SqlTypes.computeIfAbsent(schemaName, k -> new HashSet<>());
+                    sqlTypes.add(sqlType);
+                }
+            } catch (Exception e) {
+                // just eat exception due to parse failed
+            }
+        }
+        return schemaName2SqlTypes;
+    }
 
     public static Set<String> listSchemaNames(DialectType dialectType, List<SqlTuple> sqlTuples) {
         return sqlTuples.stream().flatMap(sqlTuple -> {

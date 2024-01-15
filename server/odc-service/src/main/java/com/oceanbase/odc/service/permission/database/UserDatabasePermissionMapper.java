@@ -38,16 +38,7 @@ public interface UserDatabasePermissionMapper {
 
     @Named("actionToType")
     static DatabasePermissionType actionToType(String action) {
-        if ("query".equalsIgnoreCase(action)) {
-            return DatabasePermissionType.QUERY;
-        }
-        if ("change".equalsIgnoreCase(action)) {
-            return DatabasePermissionType.CHANGE;
-        }
-        if ("export".equalsIgnoreCase(action)) {
-            return DatabasePermissionType.EXPORT;
-        }
-        return null;
+        return DatabasePermissionType.from(action);
     }
 
 }
