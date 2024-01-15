@@ -32,6 +32,7 @@ import javax.validation.constraints.NotNull;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang.time.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -66,10 +67,13 @@ import com.oceanbase.odc.service.permission.database.model.QueryDatabasePermissi
 import com.oceanbase.odc.service.permission.database.model.QueryDatabasePermissionParams.PermissionExpireStatus;
 import com.oceanbase.odc.service.permission.database.model.UserDatabasePermission;
 
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * @author gaoda.xy
  * @date 2024/1/4 11:24
  */
+@Slf4j
 @Service
 @Validated
 @Authenticated
@@ -93,6 +97,9 @@ public class DatabasePermissionService {
     @Autowired
     private UserDatabasePermissionRepository userDatabasePermissionRepository;
 
+    @Value("${odc.iam.permission.expired-retention-time-seconds:7776000}")
+    private long expiredRetentionTimeSeconds;
+
     private static final UserDatabasePermissionMapper mapper = UserDatabasePermissionMapper.INSTANCE;
     private static final int EXPIRING_DAYS = 7;
 
@@ -110,6 +117,8 @@ public class DatabasePermissionService {
         if (!hasPermission) {
             throw new AccessDeniedException();
         }
+        // Delete expired permission before list
+        deleteExpiredDBPermission();
         Specification<UserDatabasePermissionEntity> spec = Specification
                 .where(UserDatabasePermissionSpec.projectIdEqual(projectId))
                 .and(UserDatabasePermissionSpec.organizationIdEqual(authenticationFacade.currentOrganizationId()))
@@ -211,6 +220,12 @@ public class DatabasePermissionService {
         permissionRepository.deleteByIds(permissionIds);
         userPermissionRepository.deleteByPermissionIds(permissionIds);
         return permissionIds.stream().map(UserDatabasePermission::from).collect(Collectors.toList());
+    }
+
+    private void deleteExpiredDBPermission() {
+        Date expiredTime = new Date(System.currentTimeMillis() - expiredRetentionTimeSeconds * 1000);
+        int count = permissionRepository.deleteByExpireTimeBefore(expiredTime);
+        log.info("Clear expired permission, count: {}, expired time: {}", count, expiredTime);
     }
 
     private Date getExpireTimeThreshold() {
