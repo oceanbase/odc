@@ -1,0 +1,34 @@
+[
+  {
+    "id": 1,
+    "name": "case4",
+    "description": "不支持的操作：将非分区表转化为分区表",
+    "input": {
+      "previous": {
+        "schemaName": "schema",
+        "tableName": "table",
+        "partitionOption": {
+          "type": "NOT_PARTITIONED"
+        }
+      },
+      "current": {
+        "schemaName": "schema",
+        "tableName": "table",
+        "partitionOption": {
+          "type": "RANGE",
+          "expression": "col1"
+        },
+        "partitionDefinitions": [
+          {
+            "name": "p1",
+            "ordinalPosition": null,
+            "maxValues": [
+              "1000"
+            ]
+          }
+        ]
+      }
+    },
+    "output": "/* Unsupported operation to convert non-partitioned table to partitioned table */\n"
+  }
+]

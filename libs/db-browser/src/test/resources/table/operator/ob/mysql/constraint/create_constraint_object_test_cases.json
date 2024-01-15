@@ -5,7 +5,7 @@
     "description": "主键约束",
     "input": {
       "current": {
-        "name": "pk",
+        "name": "",
         "schemaName": "schema",
         "tableName": "table",
         "type": "PRIMARY_KEY",
@@ -16,7 +16,7 @@
         "deferability": "NOT_DEFERRABLE"
       }
     },
-    "output": "ALTER TABLE \"schema\".\"table\" DROP CONSTRAINT \"pk\""
+    "output": "ALTER TABLE `schema`.`table` ADD PRIMARY KEY (`col1`);\n"
   },
   {
     "id": 2,
@@ -36,7 +36,7 @@
         "deferability": "NOT_DEFERRABLE"
       }
     },
-    "output": "ALTER TABLE \"schema\".\"table\" DROP CONSTRAINT \"uk_col1\""
+    "output": "ALTER TABLE `schema`.`table` ADD CONSTRAINT `uk_col1` UNIQUE (`col1`, `col2`);\n"
   },
   {
     "id": 3,
@@ -64,7 +64,7 @@
         "enabled": true
       }
     },
-    "output": "ALTER TABLE \"schema\".\"table\" DROP CONSTRAINT \"fk_odc\""
+    "output": "ALTER TABLE `schema`.`table` ADD CONSTRAINT `fk_odc` FOREIGN KEY (`col1`, `col2`) REFERENCES `odc331`.`iam_user_role` (`col1`, `col2`) ON DELETE CASCADE ON UPDATE NO ACTION;\n"
   }
 ]
 

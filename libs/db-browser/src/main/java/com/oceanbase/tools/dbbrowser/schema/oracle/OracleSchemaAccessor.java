@@ -896,6 +896,8 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
     @Override
     public DBTablePartition getPartition(String schemaName, String tableName) {
         DBTablePartition partition = new DBTablePartition();
+        partition.setSchemaName(schemaName);
+        partition.setTableName(tableName);
         partition.setPartitionOption(obtainPartitionOption(schemaName, tableName));
         partition.setPartitionDefinitions(
                 obtainPartitionDefinition(schemaName, tableName, partition.getPartitionOption()));

@@ -46,7 +46,7 @@
         ]
       }
     },
-    "output": "ALTER TABLE `schema`.`table` ADD PARTITION(PARTITION `p2` VALUES LESS THAN (2000));\n"
+    "output": "ALTER TABLE \"schema\".\"table\" ADD PARTITION \"p2\" VALUES LESS THAN (2000);\n"
   },
   {
     "id": 2,
@@ -58,11 +58,15 @@
         "tableName": "table",
         "partitionOption": {
           "type": "RANGE",
+          "schemaName": "schema",
+          "tableName": "table",
           "expression": "col1"
         },
         "partitionDefinitions": [
           {
             "name": "p1",
+            "schemaName": "schema",
+            "tableName": "table",
             "ordinalPosition": 1,
             "maxValues": [
               "1000"
@@ -70,7 +74,9 @@
           },
           {
             "name": "p2",
-            "ordinalPosition": null,
+            "schemaName": "schema",
+            "tableName": "table",
+            "ordinalPosition": 2,
             "maxValues": [
               "2000"
             ]
@@ -79,10 +85,27 @@
       },
       "current": {
         "schemaName": "schema",
-        "tableName": "table"
+        "tableName": "table",
+        "partitionOption": {
+          "type": "RANGE",
+          "schemaName": "schema",
+          "tableName": "table",
+          "expression": "col1"
+        },
+        "partitionDefinitions": [
+          {
+            "name": "p1",
+            "schemaName": "schema",
+            "tableName": "table",
+            "ordinalPosition": 1,
+            "maxValues": [
+              "1000"
+            ]
+          }
+        ]
       }
     },
-    "output": "ALTER TABLE `schema`.`table` DROP PARTITION (p1);\nALTER TABLE `schema`.`table` DROP PARTITION (p2);\n"
+    "output": "ALTER TABLE \"schema\".\"table\" DROP PARTITION (p2);\n"
   },
   {
     "id": 3,
@@ -99,6 +122,8 @@
         "partitionDefinitions": [
           {
             "name": "p1",
+            "schemaName": "schema",
+            "tableName": "table",
             "ordinalPosition": 1,
             "maxValues": [
               "1000"
@@ -106,7 +131,9 @@
           },
           {
             "name": "p2",
-            "ordinalPosition": null,
+            "schemaName": "schema",
+            "tableName": "table",
+            "ordinalPosition": 2,
             "maxValues": [
               "2000"
             ]
@@ -124,6 +151,8 @@
           {
             "name": "p1",
             "ordinalPosition": 1,
+            "schemaName": "schema",
+            "tableName": "table",
             "maxValues": [
               "1000"
             ]
@@ -131,6 +160,8 @@
           {
             "name": "p3",
             "ordinalPosition": null,
+            "schemaName": "schema",
+            "tableName": "table",
             "maxValues": [
               "3000"
             ]
@@ -138,14 +169,21 @@
         ]
       }
     },
-    "output": "ALTER TABLE `schema`.`table` ADD PARTITION(PARTITION `p3` VALUES LESS THAN (3000));\nALTER TABLE `schema`.`table` DROP PARTITION (p2);\n"
+    "output": "ALTER TABLE \"schema\".\"table\" ADD PARTITION \"p3\" VALUES LESS THAN (3000);\nALTER TABLE \"schema\".\"table\" DROP PARTITION (p2);\n"
   },
   {
     "id": 4,
     "name": "case4",
     "description": "之前没分区，新增分区",
     "input": {
-      "previous": {},
+      "previous": {
+        "schemaName": "schema",
+        "tableName": "table",
+        "partitionOption": {
+          "type": "NOT_PARTITIONED",
+          "expression": null
+        }
+      },
       "current": {
         "schemaName": "schema",
         "tableName": "table",
@@ -171,6 +209,6 @@
         ]
       }
     },
-    "output": "ALTER TABLE `schema`.`table` ADD PARTITION(PARTITION `p1` VALUES LESS THAN (1000));\nALTER TABLE `schema`.`table` ADD PARTITION(PARTITION `p2` VALUES LESS THAN (2000));\n"
+    "output": "ALTER TABLE \"schema\".\"table\" MODIFY PARTITION BY RANGE(col1) (\nPARTITION \"p1\" VALUES LESS THAN (1000),\nPARTITION \"p2\" VALUES LESS THAN (2000)\n);\n"
   }
 ]

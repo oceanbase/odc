@@ -31,7 +31,7 @@ import com.oceanbase.tools.dbbrowser.model.DBTablePartition;
 public class MySQLDBTablePartitionEditorTest {
 
     private DBTablePartitionEditor partitionEditor;
-    private final String BASE_DIR = "src/test/resources/table/operator/mysql/partition";
+    private final String BASE_DIR = "src/test/resources/table/operator/ob/mysql/partition";
 
     @Before
     public void setUp() {

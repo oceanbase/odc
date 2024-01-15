@@ -158,14 +158,14 @@ public class DBObjectEditorUtils {
         if (CollectionUtils.isEmpty(oldConstraintsWithoutFK)) {
             if (CollectionUtils.isNotEmpty(newConstraintsWithoutFK)) {
                 newConstraintsWithoutFK.forEach(
-                        constraint -> sqlBuilder.append(editor.generateCreateObjectDDL(constraint)).append(";\n"));
+                        constraint -> sqlBuilder.append(editor.generateCreateObjectDDL(constraint)));
             }
             return;
         }
         if (CollectionUtils.isEmpty(newConstraintsWithoutFK)) {
             if (CollectionUtils.isNotEmpty(oldConstraintsWithoutFK)) {
                 oldConstraintsWithoutFK.forEach(
-                        constraint -> sqlBuilder.append(editor.generateDropObjectDDL(constraint)).append(";\n"));
+                        constraint -> sqlBuilder.append(editor.generateDropObjectDDL(constraint)));
             }
             return;
         }
@@ -181,7 +181,7 @@ public class DBObjectEditorUtils {
         });
         for (DBTableConstraint newConstraint : newConstraintsWithoutFK) {
             if (!name2OldConstraint.containsKey(newConstraint.getName())) {
-                sqlBuilder.append(editor.generateCreateObjectDDL(newConstraint)).append(";\n");
+                sqlBuilder.append(editor.generateCreateObjectDDL(newConstraint));
             } else {
                 // this is an existing constraint
                 sqlBuilder.append(
@@ -192,7 +192,7 @@ public class DBObjectEditorUtils {
         for (DBTableConstraint oldConstraint : oldConstraintsWithoutFK) {
             // means this constraint should be dropped
             if (!name2NewConstraint.containsKey(oldConstraint.getName())) {
-                sqlBuilder.append(editor.generateDropObjectDDL(oldConstraint)).append(";\n");
+                sqlBuilder.append(editor.generateDropObjectDDL(oldConstraint));
             }
         }
     }
@@ -214,7 +214,7 @@ public class DBObjectEditorUtils {
             }
             // 创建外键约束的时候，不指定名称创建，防止同一个 database 下跟源表的外键名重复
             newConstraint.setName(StringUtils.EMPTY);
-            sqlBuilder.append(editor.generateCreateObjectDDL(newConstraint)).append(";\n");
+            sqlBuilder.append(editor.generateCreateObjectDDL(newConstraint));
         }
         for (DBTableConstraint oldConstraint : oldForeignKeys) {
             boolean isEqual = false;
@@ -227,7 +227,7 @@ public class DBObjectEditorUtils {
             if (isEqual) {
                 continue;
             }
-            sqlBuilder.append(editor.generateDropObjectDDL(oldConstraint)).append(";\n");
+            sqlBuilder.append(editor.generateDropObjectDDL(oldConstraint));
         }
     }
 

@@ -198,9 +198,8 @@ public class DefaultDBStructureComparatorTest extends PluginTestEnv {
                 item -> item.getDbObjectType().equals(DBObjectType.CONSTRAINT)).collect(Collectors.toList()).get(0);
         DBObjectComparisonResult expect =
                 new DBObjectComparisonResult(DBObjectType.CONSTRAINT, "PRIMARY", sourceSchemaName, targetSchemaName);
-        expect.setChangeScript("ALTER TABLE `" + targetSchemaName + "`.`primary_key_test` DROP PRIMARY KEY;\n"
-                + "ALTER TABLE `" + targetSchemaName + "`.`primary_key_test` ADD CONSTRAINT `PRIMARY` "
-                + "PRIMARY KEY (`c1`);\n");
+        expect.setChangeScript("/* Unsupported operation to drop primary key constraint */\n"
+                + "/* Unsupported operation to add primary key constraint */\n");
         expect.setComparisonResult(ComparisonResult.INCONSISTENT);
         Assert.assertEquals(expect, actual);
     }
@@ -345,14 +344,7 @@ public class DefaultDBStructureComparatorTest extends PluginTestEnv {
         DBObjectComparisonResult excepted =
                 new DBObjectComparisonResult(DBObjectType.PARTITION, sourceSchemaName, targetSchemaName);
         excepted.setComparisonResult(ComparisonResult.ONLY_IN_SOURCE);
-        excepted.setChangeScript("ALTER TABLE `" + targetSchemaName + "`.`converse_to_partition_table`  PARTITION"
-                + " BY KEY(`id`) \n"
-                + "PARTITIONS 4(\n"
-                + "PARTITION `p0`,\n"
-                + "PARTITION `p1`,\n"
-                + "PARTITION `p2`,\n"
-                + "PARTITION `p3`\n"
-                + ");\n");
+        excepted.setChangeScript("/* Unsupported operation to convert non-partitioned table to partitioned table */\n");
         Assert.assertEquals(excepted, actual);
     }
 
@@ -378,10 +370,8 @@ public class DefaultDBStructureComparatorTest extends PluginTestEnv {
         Assert.assertEquals(result.getComparisonResult(), ComparisonResult.INCONSISTENT);
         Assert.assertEquals(result.getChangeScript(), "ALTER TABLE `" + targetSchemaName + "`"
                 + ".`update_options` COMMENT = 'comment1';\n"
-                + "ALTER TABLE `" + targetSchemaName + "`"
-                + ".`update_options` CHARACTER SET = utf8mb4;\n"
-                + "ALTER TABLE `" + targetSchemaName + "`"
-                + ".`update_options` COLLATE = utf8mb4_bin;\n");
+                + "/* Unsupported operation to modify table charset */\n"
+                + "/* Unsupported operation to modify table collation */\n");
     }
 
     @Test

@@ -46,17 +46,6 @@ public abstract class DBTablePartitionEditor implements DBObjectEditor<DBTablePa
         return false;
     }
 
-    @Override
-    public String generateCreateObjectDDL(@NotNull DBTablePartition partition) {
-        if (partition.getPartitionOption().getType() == DBTablePartitionType.NOT_PARTITIONED) {
-            return StringUtils.EMPTY;
-        }
-        SqlBuilder sqlBuilder = sqlBuilder();
-        sqlBuilder.append("ALTER TABLE ").append(getFullyQualifiedTableName(partition)).space()
-                .append(generateCreateDefinitionDDL(partition));
-        return sqlBuilder.toString();
-    }
-
     protected void appendExpression(DBTablePartition partition, SqlBuilder sqlBuilder) {
         String expression = partition.getPartitionOption().getExpression();
         List<String> columnNames = partition.getPartitionOption().getColumnNames();
@@ -103,6 +92,10 @@ public abstract class DBTablePartitionEditor implements DBObjectEditor<DBTablePa
             @NotNull DBTablePartition newPartition) {
         if (Objects.isNull(oldPartition) || Objects.isNull(newPartition)) {
             return StringUtils.EMPTY;
+        }
+        if (oldPartition.getPartitionOption().getType() == DBTablePartitionType.NOT_PARTITIONED
+                && newPartition.getPartitionOption().getType() != DBTablePartitionType.NOT_PARTITIONED) {
+            return generateCreateObjectDDL(newPartition);
         }
         SqlBuilder sqlBuilder = sqlBuilder();
         String fullyQualifiedTableName = getFullyQualifiedTableName(newPartition);

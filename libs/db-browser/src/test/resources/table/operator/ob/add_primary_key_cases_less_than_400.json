@@ -1,0 +1,21 @@
+[
+  {
+    "id": 1,
+    "name": "case1",
+    "description": "不支持的操作：增加主键约束",
+    "input": {
+      "current": {
+        "name": "",
+        "schemaName": "schema",
+        "tableName": "table",
+        "type": "PRIMARY_KEY",
+        "columnNames": [
+          "col1"
+        ],
+        "enabled": true,
+        "deferability": "NOT_DEFERRABLE"
+      }
+    },
+    "output": "/* Unsupported operation to add primary key constraint */\n"
+  }
+]

@@ -19,6 +19,7 @@ import java.util.Objects;
 
 import javax.validation.constraints.NotNull;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.util.CollectionUtils;
 
 import com.oceanbase.tools.dbbrowser.editor.DBTablePartitionEditor;
@@ -36,6 +37,18 @@ import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
  * @Description: []
  */
 public class OracleDBTablePartitionEditor extends DBTablePartitionEditor {
+
+    @Override
+    public String generateCreateObjectDDL(@NotNull DBTablePartition partition) {
+        if (partition.getPartitionOption().getType() == DBTablePartitionType.NOT_PARTITIONED) {
+            return StringUtils.EMPTY;
+        }
+        SqlBuilder sqlBuilder = sqlBuilder();
+        sqlBuilder.append("ALTER TABLE ").append(getFullyQualifiedTableName(partition)).space()
+                .append("MODIFY")
+                .append(generateCreateDefinitionDDL(partition));
+        return sqlBuilder.toString().trim() + ";\n";
+    }
 
     @Override
     protected void appendDefinitions(DBTablePartition partition, SqlBuilder sqlBuilder) {

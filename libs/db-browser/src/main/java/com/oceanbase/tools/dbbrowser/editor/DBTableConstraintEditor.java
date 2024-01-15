@@ -46,13 +46,23 @@ public abstract class DBTableConstraintEditor implements DBObjectEditor<DBTableC
     @Override
     public String generateCreateObjectDDL(@NotNull DBTableConstraint constraint) {
         SqlBuilder sqlBuilder = sqlBuilder();
+        if (constraint.getType() == DBConstraintType.PRIMARY_KEY) {
+            sqlBuilder.append("ALTER TABLE ").append(getFullyQualifiedTableName(constraint));
+            if (constraint.getName().isEmpty()) {
+                sqlBuilder.append(" ADD PRIMARY KEY ");
+            } else {
+                sqlBuilder.append(" ADD CONSTRAINT ").identifier(constraint.getName()).append(" PRIMARY KEY ");
+            }
+            appendConstraintColumns(constraint, sqlBuilder);
+            return sqlBuilder.append(";").line().toString();
+        }
         sqlBuilder.append("ALTER TABLE ").append(getFullyQualifiedTableName(constraint))
                 .append(" ADD CONSTRAINT ")
                 .identifierIf(constraint.getName(), StringUtils.isNotEmpty(constraint.getName())).space();
         appendConstraintType(constraint, sqlBuilder);
         appendConstraintColumns(constraint, sqlBuilder);
         appendConstraintOptions(constraint, sqlBuilder);
-        return sqlBuilder.toString().trim();
+        return sqlBuilder.toString().trim() + ";\n";
     }
 
     protected void appendConstraintOptions(DBTableConstraint constraint, SqlBuilder sqlBuilder) {
@@ -128,8 +138,8 @@ public abstract class DBTableConstraintEditor implements DBObjectEditor<DBTableC
         SqlBuilder sqlBuilder = sqlBuilder();
         if (!Objects.equals(oldConstraint, newConstraint)) {
             String drop = generateDropObjectDDL(oldConstraint);
-            sqlBuilder.append(drop).append(";").line()
-                    .append(generateCreateObjectDDL(newConstraint)).append(";").line();
+            sqlBuilder.append(drop)
+                    .append(generateCreateObjectDDL(newConstraint));
             return sqlBuilder.toString();
         }
         if (!Objects.equals(oldConstraint.getEnabled(), newConstraint.getEnabled())) {
@@ -152,16 +162,14 @@ public abstract class DBTableConstraintEditor implements DBObjectEditor<DBTableC
         if (CollectionUtils.isEmpty(oldConstraints)) {
             if (CollectionUtils.isNotEmpty(newConstraints)) {
                 newConstraints
-                        .forEach(constraint -> sqlBuilder.append(generateCreateObjectDDL(constraint))
-                                .append(";\n"));
+                        .forEach(constraint -> sqlBuilder.append(generateCreateObjectDDL(constraint)));
             }
             return sqlBuilder.toString();
         }
         if (CollectionUtils.isEmpty(newConstraints)) {
             if (CollectionUtils.isNotEmpty(oldConstraints)) {
                 oldConstraints
-                        .forEach(constraint -> sqlBuilder.append(generateDropObjectDDL(constraint))
-                                .append(";\n"));
+                        .forEach(constraint -> sqlBuilder.append(generateDropObjectDDL(constraint)));
             }
 
             return sqlBuilder.toString();
@@ -179,7 +187,7 @@ public abstract class DBTableConstraintEditor implements DBObjectEditor<DBTableC
         for (DBTableConstraint newConstraint : newConstraints) {
             // ordinaryPosition is NULL means this is a new constraint
             if (Objects.isNull(newConstraint.getOrdinalPosition())) {
-                sqlBuilder.append(generateCreateObjectDDL(newConstraint)).append(";\n");
+                sqlBuilder.append(generateCreateObjectDDL(newConstraint));
             } else if (position2OldConstraint.containsKey(newConstraint.getOrdinalPosition())) {
                 // this is an existing constraint
                 sqlBuilder.append(
@@ -190,7 +198,7 @@ public abstract class DBTableConstraintEditor implements DBObjectEditor<DBTableC
         for (DBTableConstraint oldConstraint : oldConstraints) {
             // means this constraint should be dropped
             if (!position2NewConstraint.containsKey(oldConstraint.getOrdinalPosition())) {
-                sqlBuilder.append(generateDropObjectDDL(oldConstraint)).append(";").line();
+                sqlBuilder.append(generateDropObjectDDL(oldConstraint));
             }
         }
         return sqlBuilder.toString();
