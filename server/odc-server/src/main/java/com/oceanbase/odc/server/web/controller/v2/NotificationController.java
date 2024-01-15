@@ -70,7 +70,7 @@ public class NotificationController {
     }
 
     @ApiOperation(value = "detailChannel", notes = "Detail a channel by id")
-    @RequestMapping(value = "/channels/{id}", method = RequestMethod.GET)
+    @RequestMapping(value = "/channels/{channelId}", method = RequestMethod.GET)
     public SuccessResponse<Channel> detailChannel(@PathVariable Long projectId, @PathVariable Long channelId) {
         return Responses.success(notificationService.detailChannel(projectId, channelId));
     }
@@ -82,13 +82,13 @@ public class NotificationController {
     }
 
     @ApiOperation(value = "updateChannel", notes = "Update a channel by id")
-    @RequestMapping(value = "/channels/{id}", method = RequestMethod.PUT)
+    @RequestMapping(value = "/channels/{channelId}", method = RequestMethod.PUT)
     public SuccessResponse<Channel> updateChannel(@PathVariable Long projectId, @RequestBody Channel channel) {
         return Responses.success(notificationService.updateChannel(projectId, channel));
     }
 
     @ApiOperation(value = "deleteChannel", notes = "Delete a channel by id")
-    @RequestMapping(value = "/channels/{id}", method = RequestMethod.DELETE)
+    @RequestMapping(value = "/channels/{channelId}", method = RequestMethod.DELETE)
     public SuccessResponse<Channel> deleteChannel(@PathVariable Long projectId, @PathVariable Long channelId) {
         return Responses.success(notificationService.deleteChannel(projectId, channelId));
     }
@@ -112,7 +112,7 @@ public class NotificationController {
     }
 
     @ApiOperation(value = "detailPolicy", notes = "Detail a policy by id")
-    @RequestMapping(value = "/policies/{id}", method = RequestMethod.GET)
+    @RequestMapping(value = "/policies/{policyId}", method = RequestMethod.GET)
     public SuccessResponse<NotificationPolicy> detailPolicy(@PathVariable Long projectId, @PathVariable Long policyId) {
         return Responses.success(notificationService.detailPolicy(projectId, policyId));
     }
@@ -141,7 +141,7 @@ public class NotificationController {
     }
 
     @ApiOperation(value = "detailMessage", notes = "Detail a message by id")
-    @RequestMapping(value = "/messages/{id}", method = RequestMethod.GET)
+    @RequestMapping(value = "/messages/{messageId}", method = RequestMethod.GET)
     public SuccessResponse<Message> detailMessage(@PathVariable Long projectId, @PathVariable Long messageId) {
         return Responses.success(notificationService.detailMessage(projectId, messageId));
     }
