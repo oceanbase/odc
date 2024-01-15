@@ -42,3 +42,4 @@ from
     (
         `flow_instance` join `flow_instance_node_task` on  ( `flow_instance`.`id` = `flow_instance_node_task`.`flow_instance_id`)
     )
+group by `flow_instance`.`id`,`flow_instance_node_task`.`task_type`
