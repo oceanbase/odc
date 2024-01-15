@@ -76,6 +76,8 @@ public class Message {
     public static Message fromEntity(MessageEntity entity) {
         Message message = new Message();
         message.setId(entity.getId());
+        message.setCreateTime(entity.getCreateTime());
+        message.setUpdateTime(entity.getUpdateTime());
         message.setContent(entity.getContent());
         message.setTitle(entity.getTitle());
         message.setCcRecipients(entity.getCcRecipients());

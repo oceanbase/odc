@@ -222,9 +222,11 @@ public class NotificationService {
         List<NotificationPolicyEntity> actual = policyRepository.findByProjectId(projectId);
         if (CollectionUtils.isNotEmpty(actual)) {
             for (NotificationPolicyEntity entity : actual) {
+                Long metadataId = entity.getPolicyMetadataId();
                 NotificationPolicy policy = policyMapper.fromEntity(entity);
+                policy.setEventName(policies.get(metadataId).getEventName());
                 policy.setChannels(getChannelsByPolicyId(policy.getId()));
-                policies.put(policy.getPolicyMetadataId(), policy);
+                policies.put(metadataId, policy);
             }
         }
         return new ArrayList<>(policies.values());
