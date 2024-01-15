@@ -24,11 +24,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
-import org.springframework.util.Assert;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.base.Preconditions;
+import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.service.integration.IntegrationService;
 import com.oceanbase.odc.service.integration.model.LdapParameter;
 import com.oceanbase.odc.service.integration.model.SSOIntegrationConfig;
@@ -50,7 +50,7 @@ public class LdapConfigRegistrationManager implements InitializingBean {
 
     @NonNull
     public SSOIntegrationConfig findByRegistrationId(String registrationId) {
-        Assert.hasText(registrationId, "registrationId cannot be empty");
+        Verify.notBlank(registrationId, "registrationId cannot be empty");
         SSOIntegrationConfig clientRegistration = this.configRegistrations.get(registrationId);
         SSOIntegrationConfig ssoIntegrationConfig = clientRegistration != null ? clientRegistration
                 : this.testConfigRegistrations.get(registrationId, key -> null);
@@ -67,7 +67,7 @@ public class LdapConfigRegistrationManager implements InitializingBean {
     }
 
     public void addConfig(SSOIntegrationConfig ssoIntegrationConfig) {
-        testConfigRegistrations.put(ssoIntegrationConfig.resolveRegistrationId(), ssoIntegrationConfig);
+        configRegistrations.put(ssoIntegrationConfig.resolveRegistrationId(), ssoIntegrationConfig);
     }
 
     public void removeConfig(String registrationId) {

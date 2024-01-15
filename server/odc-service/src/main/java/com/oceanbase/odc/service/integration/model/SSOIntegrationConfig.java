@@ -47,6 +47,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class SSOIntegrationConfig implements Serializable {
 
+    private static final long serialVersionUID = 7526472295622776147L;
     /**
      * orgId-name, the separator character should be '-', however some system may not follow this rule,
      * * e.g. use ':' instead, here we support both.
