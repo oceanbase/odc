@@ -21,8 +21,8 @@ import java.util.List;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.service.info.InfoAdapter;
+import com.oceanbase.odc.service.task.config.K8sProperties;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
-import com.oceanbase.odc.service.task.config.TaskFrameworkProperties.K8sProperties;
 import com.oceanbase.odc.service.task.constants.JobEnvConstants;
 
 /**
