@@ -29,7 +29,10 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import org.hibernate.annotations.Where;
+
 import com.oceanbase.odc.core.shared.PermissionConfiguration;
+import com.oceanbase.odc.core.shared.constant.AuthorizationType;
 import com.oceanbase.odc.core.shared.constant.PermissionType;
 
 import lombok.AllArgsConstructor;
@@ -45,6 +48,7 @@ import lombok.NoArgsConstructor;
 @Data
 @Entity
 @EqualsAndHashCode(exclude = {"updateTime", "createTime"})
+@Where(clause = "expire_time is null or expire_time > now()")
 @Table(name = "iam_permission")
 @NoArgsConstructor
 @AllArgsConstructor
@@ -67,7 +71,7 @@ public class PermissionEntity implements PermissionConfiguration {
     private PermissionType type;
 
     @Column(name = "creator_id", nullable = false)
-    private long creatorId;
+    private Long creatorId;
 
     @Column(name = "create_time", insertable = false, updatable = false)
     private Date createTime;
@@ -80,6 +84,16 @@ public class PermissionEntity implements PermissionConfiguration {
 
     @Column(name = "is_builtin", nullable = false)
     private Boolean builtIn;
+
+    @Column(name = "expire_time")
+    private Date expireTime;
+
+    @Column(name = "authorization_type", nullable = false)
+    @Enumerated(value = EnumType.STRING)
+    private AuthorizationType authorizationType;
+
+    @Column(name = "ticket_id")
+    private Long ticketId;
 
     @Override
     public String resourceIdentifier() {

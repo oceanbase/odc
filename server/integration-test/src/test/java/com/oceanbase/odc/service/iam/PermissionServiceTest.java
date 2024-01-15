@@ -27,6 +27,7 @@ import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.oceanbase.odc.AuthorityTestEnv;
+import com.oceanbase.odc.core.shared.constant.AuthorizationType;
 import com.oceanbase.odc.core.shared.constant.PermissionType;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.metadb.iam.PermissionEntity;
@@ -120,6 +121,7 @@ public class PermissionServiceTest extends AuthorityTestEnv {
         permissionEntity.setResourceIdentifier(
                 ResourceContextUtil.generateResourceIdentifierString(10L, ResourceType.ODC_RESOURCE_GROUP));
         permissionEntity.setBuiltIn(false);
+        permissionEntity.setAuthorizationType(AuthorizationType.USER_AUTHORIZATION);
         return permissionEntity;
     }
 

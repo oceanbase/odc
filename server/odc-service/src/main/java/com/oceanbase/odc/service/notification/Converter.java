@@ -34,7 +34,7 @@ import com.oceanbase.odc.metadb.notification.NotificationPolicyRepository;
 import com.oceanbase.odc.service.notification.helper.ChannelMapper;
 import com.oceanbase.odc.service.notification.helper.MessageTemplateProcessor;
 import com.oceanbase.odc.service.notification.helper.NotificationPolicyFilter;
-import com.oceanbase.odc.service.notification.model.ChannelConfig;
+import com.oceanbase.odc.service.notification.model.Channel;
 import com.oceanbase.odc.service.notification.model.Event;
 import com.oceanbase.odc.service.notification.model.Message;
 import com.oceanbase.odc.service.notification.model.MessageSendingStatus;
@@ -84,7 +84,7 @@ public class Converter {
             return notifications;
         }
 
-        Map<Long, List<ChannelConfig>> mappedChannels = channelRepository.findByIdIn(
+        Map<Long, List<Channel>> mappedChannels = channelRepository.findByIdIn(
                 policyChannelEntities.stream()
                         .map(NotificationChannelRelationEntity::getChannelId).collect(Collectors.toSet()))
                 .stream().map(entity -> channelMapper.fromEntity(entity))
@@ -104,7 +104,7 @@ public class Converter {
                 continue;
             }
             for (NotificationPolicyEntity policy : matched) {
-                List<ChannelConfig> channels = mappedChannels.get(policy.getId());
+                List<Channel> channels = mappedChannels.get(policy.getId());
 
                 if (CollectionUtils.isEmpty(channels)) {
                     return null;
@@ -113,19 +113,19 @@ public class Converter {
                     Notification notification = new Notification();
 
                     Message message = new Message();
-                    message.setTitle(
-                            MessageTemplateProcessor.replaceVariables(policy.getTitleTemplate(), event.getLabels()));
-                    message.setContent(
-                            MessageTemplateProcessor.replaceVariables(policy.getContentTemplate(), event.getLabels()));
+                    if (Objects.nonNull(channel.getChannelConfig())) {
+                        message.setTitle(MessageTemplateProcessor
+                                .replaceVariables(channel.getChannelConfig().getTitleTemplate(), event.getLabels()));
+                        message.setContent(MessageTemplateProcessor
+                                .replaceVariables(channel.getChannelConfig().getContentTemplate(), event.getLabels()));
+                    }
                     message.setOrganizationId(policy.getOrganizationId());
                     message.setCreatorId(event.getCreatorId());
-                    message.setEventId(event.getId());
-                    message.setChannelId(channel.getId());
+                    message.setChannel(channel);
                     message.setStatus(MessageSendingStatus.CREATED);
                     message.setRetryTimes(0);
+                    message.setProjectId(channel.getProjectId());
                     message.setMaxRetryTimes(notificationProperties.getMaxResendTimes());
-                    message.setToRecipients(policy.getToRecipients());
-                    message.setCcRecipients(policy.getCcRecipients());
                     notification.setMessage(message);
                     notifications.add(notification);
                 });

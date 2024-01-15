@@ -382,7 +382,8 @@ public class FlowInstanceService {
                     TaskType.ONLINE_SCHEMA_CHANGE,
                     TaskType.ALTER_SCHEDULE,
                     TaskType.EXPORT_RESULT_SET,
-                    TaskType.APPLY_PROJECT_PERMISSION);
+                    TaskType.APPLY_PROJECT_PERMISSION,
+                    TaskType.APPLY_DATABASE_PERMISSION);
             specification = specification.and(FlowInstanceViewSpecs.taskTypeIn(types));
         }
 
@@ -611,7 +612,10 @@ public class FlowInstanceService {
                 optional.orElseThrow(() -> new NotFoundException(ResourceType.ODC_FLOW_INSTANCE, "id", flowInstanceId));
         try {
             if (!skipAuth) {
-                if (!Objects.equals(authenticationFacade.currentUserId(), flowInstance.getCreatorId())) {
+                boolean isProjectOwner = flowInstance.getProjectId() != null && projectService.checkPermission(
+                        flowInstance.getProjectId(), Collections.singletonList(ResourceRoleName.OWNER));
+                if (!Objects.equals(authenticationFacade.currentUserId(), flowInstance.getCreatorId())
+                        && !isProjectOwner) {
                     List<UserTaskInstanceEntity> entities = approvalPermissionService.getApprovableApprovalInstances();
                     Set<Long> flowInstanceIds = entities.stream().map(UserTaskInstanceEntity::getFlowInstanceId)
                             .collect(Collectors.toSet());
@@ -869,6 +873,7 @@ public class FlowInstanceService {
             FlowTaskUtil.setSchemaName(variables, databaseService.detail(taskEntity.getDatabaseId()).getName());
         }
         FlowTaskUtil.setTaskCreator(variables, authenticationFacade.currentUser());
+        FlowTaskUtil.setOrganizationId(variables, authenticationFacade.currentOrganizationId());
         FlowTaskUtil.setTaskSubmitter(variables, JsonUtils.fromJson(taskEntity.getSubmitter(), ExecutorInfo.class));
         FlowTaskUtil.setRiskLevelDescriber(variables, riskLevelDescriber);
         FlowTaskUtil.setCloudMainAccountId(variables, authenticationFacade.currentUser().getUid());

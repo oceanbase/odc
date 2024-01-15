@@ -14,26 +14,25 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.permissionapply.project;
+package com.oceanbase.odc.service.notification.model;
 
-import com.oceanbase.odc.core.flow.model.FlowTaskResult;
+import java.util.List;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 /**
- * @author gaoda.xy
- * @date 2023/10/13 16:12
+ * @author liuyizhuo.lyz
+ * @date 2024/1/4
  */
 @Data
-public class ApplyProjectResult implements FlowTaskResult {
+@EqualsAndHashCode(callSuper = true)
+public class DingTalkChannelConfig extends BaseChannelConfig {
 
-    /**
-     * Mark whether the task is successful
-     */
-    private boolean success;
-    /**
-     * Task parameters
-     */
-    private ApplyProjectParameter parameter;
+    private String webhook;
+
+    private List<Long> atMobiles;
+
+    private String sign;
 
 }

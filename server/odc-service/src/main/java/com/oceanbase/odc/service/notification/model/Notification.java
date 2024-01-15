@@ -25,5 +25,5 @@ import lombok.Data;
 @Data
 public class Notification {
     private Message message;
-    private ChannelConfig channel;
+    private Channel channel;
 }

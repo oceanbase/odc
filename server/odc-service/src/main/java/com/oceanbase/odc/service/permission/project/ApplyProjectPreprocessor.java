@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.permissionapply.project;
+package com.oceanbase.odc.service.permission.project;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,7 +38,7 @@ import com.oceanbase.odc.service.flow.processor.FlowTaskPreprocessor;
 import com.oceanbase.odc.service.flow.processor.Preprocessor;
 import com.oceanbase.odc.service.iam.ResourceRoleService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
-import com.oceanbase.odc.service.permissionapply.project.ApplyProjectParameter.ApplyResourceRole;
+import com.oceanbase.odc.service.permission.project.ApplyProjectParameter.ApplyResourceRole;
 
 /**
  * @author gaoda.xy
@@ -65,7 +65,6 @@ public class ApplyProjectPreprocessor implements Preprocessor {
         ProjectEntity projectEntity = checkProjectExistAndValid(parameter.getProject().getId());
         List<ResourceRoleEntity> resourceRoleEntities = checkResourceRoleExist(
                 parameter.getResourceRoles().stream().map(ApplyResourceRole::getId).collect(Collectors.toList()));
-        parameter.setUserId(authenticationFacade.currentUserId());
         parameter.getProject().setName(projectEntity.getName());
         for (int index = 0; index < parameter.getResourceRoles().size(); index++) {
             parameter.getResourceRoles().get(index).setName(resourceRoleEntities.get(index).getRoleName());

@@ -13,13 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.notification;
+package com.oceanbase.odc.metadb.partitionplan;
 
-import com.oceanbase.odc.service.notification.model.ChannelType;
-import com.oceanbase.odc.service.notification.model.Message;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
-public interface Channel {
-    ChannelType type();
-
-    boolean send(Message message);
+/**
+ * {@link PartitionPlanTableRepository}
+ *
+ * @author yh263208
+ * @date 2024-01-10 17:04
+ * @since ODC_release_4.2.4
+ */
+public interface PartitionPlanTableRepository extends JpaRepository<PartitionPlanTableEntity, Long>,
+        JpaSpecificationExecutor<PartitionPlanTableEntity> {
 }

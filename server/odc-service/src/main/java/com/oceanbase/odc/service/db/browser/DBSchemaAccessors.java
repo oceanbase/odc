@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.db.browser;
 
+import org.springframework.jdbc.core.JdbcOperations;
+
 import com.oceanbase.odc.common.util.VersionUtils;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
@@ -37,6 +39,7 @@ import com.oceanbase.tools.dbbrowser.schema.oracle.OBOracleSchemaAccessor;
 import com.oceanbase.tools.dbbrowser.schema.oracle.OracleSchemaAccessor;
 import com.oceanbase.tools.dbbrowser.util.ALLDataDictTableNames;
 
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -57,6 +60,23 @@ public class DBSchemaAccessors {
         String obVersion = ConnectionSessionUtil.getVersion(connectionSession);
         PreConditions.notNull(obVersion, "obVersion");
 
+        SyncJdbcExecutor sysSyncJdbcExecutor = null;
+        String tenantName = null;
+        if (VersionUtils.isGreaterThanOrEqualsTo(obVersion, "1.4.79")) {
+            try {
+                sysSyncJdbcExecutor =
+                        connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.SYS_DS_KEY);
+                tenantName = ConnectionSessionUtil.getTenantName(connectionSession);
+            } catch (Exception e) {
+                log.warn("Get SYS-DATASOURCE failed, may lack of sys tenant permission，message={}", e.getMessage());
+            }
+        }
+
+        return create(syncJdbcExecutor, sysSyncJdbcExecutor, connectType, obVersion, tenantName);
+    }
+
+    public static DBSchemaAccessor create(@NonNull JdbcOperations syncJdbcExecutor, JdbcOperations sysJdbcExecutor,
+            @NonNull ConnectType connectType, @NonNull String obVersion, String tenantName) {
         if (connectType == ConnectType.OB_MYSQL || connectType == ConnectType.CLOUD_OB_MYSQL) {
             if (VersionUtils.isGreaterThanOrEqualsTo(obVersion, "4.0.0")) {
                 // OB 版本 >= 4.0.0
@@ -72,16 +92,7 @@ public class DBSchemaAccessors {
                 return new OBMySQLBetween220And225XSchemaAccessor(syncJdbcExecutor);
             } else {
                 // OB 版本 <= 1.4.79
-                SyncJdbcExecutor sysSyncJdbcExecutor = null;
-                String tenantName = null;
-                try {
-                    sysSyncJdbcExecutor =
-                            connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.SYS_DS_KEY);
-                    tenantName = ConnectionSessionUtil.getTenantName(connectionSession);
-                } catch (Exception e) {
-                    log.warn("Get SYS-DATASOURCE failed, may lack of sys tenant permission，message={}", e.getMessage());
-                }
-                return new OBMySQLNoGreaterThan1479SchemaAccessor(syncJdbcExecutor, sysSyncJdbcExecutor, tenantName);
+                return new OBMySQLNoGreaterThan1479SchemaAccessor(syncJdbcExecutor, sysJdbcExecutor, tenantName);
             }
         } else if (connectType == ConnectType.OB_ORACLE || connectType == ConnectType.CLOUD_OB_ORACLE) {
             if (VersionUtils.isGreaterThanOrEqualsTo(obVersion, "4.0.0")) {

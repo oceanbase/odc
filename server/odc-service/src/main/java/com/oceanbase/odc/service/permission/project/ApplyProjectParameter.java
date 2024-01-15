@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.permissionapply.project;
+package com.oceanbase.odc.service.permission.project;
 
 import java.io.Serializable;
 import java.util.List;
@@ -45,11 +45,6 @@ public class ApplyProjectParameter implements Serializable, TaskParameters {
      * Reason for application
      */
     private String applyReason;
-    /**
-     * ID of the user who applied for the project, filled in by {@link ApplyProjectPreprocessor}
-     */
-    private Long userId;
-
 
     @Data
     public static class ApplyProject implements Serializable {

@@ -79,7 +79,7 @@ public class JdbcNotificationQueue implements NotificationQueue {
             if (!channelOpt.isPresent()) {
                 messageRepository.updateStatusById(messageEntity.getId(), MessageSendingStatus.THROWN);
             } else {
-                messageRepository.updateStatusById(messageEntity.getId(), MessageSendingStatus.CONVERTING);
+                messageRepository.updateStatusById(messageEntity.getId(), MessageSendingStatus.SENDING);
                 Notification notification = new Notification();
                 ChannelEntity channel = channelOpt.get();
                 notification.setMessage(Message.fromEntity(messageEntity));

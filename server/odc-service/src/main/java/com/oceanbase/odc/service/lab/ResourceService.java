@@ -37,6 +37,7 @@ import com.oceanbase.odc.core.authority.model.DefaultSecurityResource;
 import com.oceanbase.odc.core.authority.model.SecurityResource;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.core.shared.constant.AuthorizationType;
 import com.oceanbase.odc.core.shared.constant.ConnectionVisibleScope;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.PermissionType;
@@ -236,6 +237,7 @@ public class ResourceService {
         permission.setCreatorId(1L);
         permission.setOrganizationId(organizationId);
         permission.setBuiltIn(false);
+        permission.setAuthorizationType(AuthorizationType.USER_AUTHORIZATION);
         permissionRepository.saveAndFlush(permission);
 
         RolePermissionEntity rolePermissionEntity = new RolePermissionEntity();
