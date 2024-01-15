@@ -30,4 +30,6 @@ public interface UserDatabasePermissionRepository extends ReadOnlyRepository<Use
 
     List<UserDatabasePermissionEntity> findByUserIdAndDatabaseIdIn(Long userId, Collection<Long> databaseIds);
 
+    List<UserDatabasePermissionEntity> findByDatabaseIdIn(Collection<Long> databaseIds);
+
 }

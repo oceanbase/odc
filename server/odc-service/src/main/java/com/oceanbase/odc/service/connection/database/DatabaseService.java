@@ -67,8 +67,10 @@ import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.metadb.connection.DatabaseEntity;
 import com.oceanbase.odc.metadb.connection.DatabaseRepository;
 import com.oceanbase.odc.metadb.connection.DatabaseSpecs;
+import com.oceanbase.odc.metadb.iam.PermissionRepository;
 import com.oceanbase.odc.metadb.iam.UserDatabasePermissionEntity;
 import com.oceanbase.odc.metadb.iam.UserDatabasePermissionRepository;
+import com.oceanbase.odc.metadb.iam.UserPermissionRepository;
 import com.oceanbase.odc.service.collaboration.environment.EnvironmentService;
 import com.oceanbase.odc.service.collaboration.environment.model.Environment;
 import com.oceanbase.odc.service.collaboration.project.ProjectService;
@@ -149,6 +151,12 @@ public class DatabaseService {
 
     @Autowired
     private UserDatabasePermissionRepository userDatabasePermissionRepository;
+
+    @Autowired
+    private PermissionRepository permissionRepository;
+
+    @Autowired
+    private UserPermissionRepository userPermissionRepository;
 
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("internal authenticated")
@@ -331,6 +339,7 @@ public class DatabaseService {
         checkTransferable(entities, req.getProjectId());
         databaseRepository.setProjectIdByIdIn(req.getProjectId(), entities.stream().map(DatabaseEntity::getId)
                 .collect(Collectors.toSet()));
+        deleteDatabasePermissionByIds(req.getDatabaseIds());
         return true;
     }
 
@@ -348,6 +357,7 @@ public class DatabaseService {
         }
         saved.forEach(database -> checkPermission(database.getProjectId(), database.getConnectionId()));
         databaseRepository.deleteAll(saved);
+        deleteDatabasePermissionByIds(req.getDatabaseIds());
         return true;
     }
 
@@ -714,6 +724,19 @@ public class DatabaseService {
         db.setCharset(req.getCharsetName());
         db.setCollation(req.getCollationName());
         SchemaPluginUtil.getDatabaseExtension(connection.getDialectType()).create(conn, db, connection.getPassword());
+    }
+
+    private void deleteDatabasePermissionByIds(Collection<Long> ids) {
+        if (CollectionUtils.isEmpty(ids)) {
+            return;
+        }
+        List<UserDatabasePermissionEntity> entities = userDatabasePermissionRepository.findByDatabaseIdIn(ids);
+        List<Long> permissionIds =
+                entities.stream().map(UserDatabasePermissionEntity::getId).collect(Collectors.toList());
+        if (CollectionUtils.isNotEmpty(permissionIds)) {
+            permissionRepository.deleteByIds(permissionIds);
+            userPermissionRepository.deleteByPermissionIds(permissionIds);
+        }
     }
 
 }
