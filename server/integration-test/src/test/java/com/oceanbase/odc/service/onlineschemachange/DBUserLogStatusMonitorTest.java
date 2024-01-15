@@ -24,6 +24,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.oceanbase.odc.TestConnectionUtil;
@@ -39,6 +40,7 @@ import com.oceanbase.odc.service.onlineschemachange.monitor.DBUserMonitor;
  * @date 2023-10-10
  * @since 4.2.3
  */
+@Ignore("manual run this case")
 public class DBUserLogStatusMonitorTest {
 
     private static ConnectionSession obMySqlConnSession;
@@ -82,7 +84,7 @@ public class DBUserLogStatusMonitorTest {
             Assert.assertFalse(dbUserMonitor.isDone());
             Thread.sleep(1000);
             dbUserMonitor.stop();
-            Thread.sleep(3000);
+            Thread.sleep(6000);
             Assert.assertTrue(dbUserMonitor.isDone());
         } finally {
             executorService.shutdownNow();

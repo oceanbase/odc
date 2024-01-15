@@ -27,16 +27,16 @@ import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.task.caller.DefaultJobContext;
 import com.oceanbase.odc.service.task.caller.JobCaller;
+import com.oceanbase.odc.service.task.caller.JobCallerBuilder;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.caller.JobException;
 import com.oceanbase.odc.service.task.caller.K8sJobCaller;
 import com.oceanbase.odc.service.task.caller.PodConfig;
 import com.oceanbase.odc.service.task.constants.JobConstants;
+import com.oceanbase.odc.service.task.executor.sampletask.SampleTaskJobDefinitionBuilder;
 import com.oceanbase.odc.service.task.schedule.DefaultJobContextBuilder;
-import com.oceanbase.odc.service.task.schedule.JobCallerBuilder;
 import com.oceanbase.odc.service.task.schedule.JobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
-import com.oceanbase.odc.service.task.schedule.SampleTaskJobDefinitionBuilder;
 
 import lombok.extern.slf4j.Slf4j;
 

@@ -52,7 +52,7 @@ public class TaskApplication {
         log.info("Starting embed server.");
         try {
             JobContext context = jobContextProvider.provide();
-            Task task = TaskFactory.create(context.getJobClass());
+            Task<?> task = TaskFactory.create(context.getJobClass());
             log.info("Task created {}.", JsonUtils.toJson(context.getJobIdentity()));
             taskExecutor.execute(task, context);
             ExitHelper.await();
@@ -80,7 +80,7 @@ public class TaskApplication {
 
         jobContextProvider = JobContextProviderFactory.create(TaskRunModeEnum.valueOf(runMode));
         log.info("JobContextProvider init success: {}", jobContextProvider.getClass().getSimpleName());
-        taskExecutor = new ThreadPoolTaskExecutor(1);
+        taskExecutor = ThreadPoolTaskExecutor.getInstance();
         log.info("Task executor init success: {}", taskExecutor.getClass().getSimpleName());
         log.info("Task application ip is {}.", SystemUtils.getLocalIpAddress());
         log.info("Task application port is {}.", JobUtils.getPort());

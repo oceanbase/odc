@@ -18,7 +18,6 @@ package com.oceanbase.odc.service.task.executor.task;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -40,6 +39,7 @@ import com.oceanbase.odc.common.util.CSVUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.datamasking.algorithm.Algorithm;
 import com.oceanbase.odc.core.datasource.ConnectionInitializer;
+import com.oceanbase.odc.core.flow.model.FlowTaskResult;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
@@ -74,6 +74,7 @@ import com.oceanbase.odc.service.session.OdcStatementCallBack;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.odc.service.session.initializer.ConsoleTimeoutInitializer;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
+import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.constants.JobDataMapConstants;
 import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.tools.dbbrowser.parser.ParserUtil;
@@ -89,7 +90,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 
 @Slf4j
-public class DatabaseChangeTask extends BaseTask {
+public class DatabaseChangeTask extends BaseTask<FlowTaskResult> {
 
     private ConnectionSession connectionSession;
     private List<String> sqls;
@@ -112,6 +113,8 @@ public class DatabaseChangeTask extends BaseTask {
 
     // todo read from env passed by FlowTask
     private long resultPreviewMaxSizeBytes = 5242880;
+    private volatile boolean canceled = false;
+
 
     @Getter
     protected long taskId;
@@ -120,20 +123,21 @@ public class DatabaseChangeTask extends BaseTask {
     private DataMaskingService maskingService;
 
     @Override
-    protected void onInit() {
+    protected void onInit(JobContext context) {
         log.info("Async task  start to run, task id:{}", this.getTaskId());
         log.info("Start read sql content, taskId={}", this.getTaskId());
         init();
     }
 
     @Override
-    protected void onStart() {
+    protected void onStart(JobContext context) {
         run();
     }
 
     @Override
     protected void onStop() {
         expireConnectionSession();
+        canceled = true;
     }
 
     @Override
@@ -155,8 +159,9 @@ public class DatabaseChangeTask extends BaseTask {
         return progress;
     }
 
+
     @Override
-    public Serializable getTaskResult() {
+    public FlowTaskResult getTaskResult() {
         DatabaseChangeResult taskResult = new DatabaseChangeResult();
         taskResult.setFailCount(failCount);
         taskResult.setSuccessCount(successCount);
@@ -528,6 +533,10 @@ public class DatabaseChangeTask extends BaseTask {
         if (getConnectionSession() != null && !getConnectionSession().isExpired()) {
             getConnectionSession().expire();
         }
+    }
+
+    private boolean isCanceled() {
+        return canceled;
     }
 
     private ConnectionSession getConnectionSession() {

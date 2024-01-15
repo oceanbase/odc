@@ -16,11 +16,20 @@
 
 package com.oceanbase.odc.service.task.executor.executor;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.executor.task.Task;
+import com.oceanbase.odc.service.task.schedule.JobIdentity;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * A thread pool task executor.
@@ -28,17 +37,48 @@ import com.oceanbase.odc.service.task.executor.task.Task;
  * @author gaoda.xy
  * @date 2023/11/24 11:22
  */
+@Slf4j
 public class ThreadPoolTaskExecutor implements TaskExecutor {
 
+    private static final TaskExecutor TASK_EXECUTOR = new ThreadPoolTaskExecutor();
     private final ExecutorService executor;
+    private final Map<JobIdentity, Task<?>> tasks = new HashMap<>();
+    private final Map<JobIdentity, Future<?>> futures = new HashMap<>();
 
-    public ThreadPoolTaskExecutor(int nThreads) {
-        this.executor = Executors.newFixedThreadPool(nThreads);
+    private ThreadPoolTaskExecutor() {
+        this.executor = Executors.newFixedThreadPool(2);
+    }
+
+    public static TaskExecutor getInstance() {
+        return TASK_EXECUTOR;
     }
 
     @Override
-    public void execute(Task task, JobContext jc) {
-        executor.submit(() -> task.start(jc));
+    public void execute(Task<?> task, JobContext jc) {
+        Future<?> future = executor.submit(() -> task.start(jc));
+        tasks.put(jc.getJobIdentity(), task);
+        futures.put(jc.getJobIdentity(), future);
     }
 
+    @Override
+    public boolean cancel(JobIdentity ji) {
+        Future<?> startFuture = futures.get(ji);
+        if (startFuture.isDone()) {
+            return true;
+        }
+        Task<?> task = tasks.get(ji);
+        Future<Boolean> stopFuture = executor.submit(task::stop);
+        boolean result = false;
+        try {
+            // wait 30 seconds for stop task accomplished
+            result = stopFuture.get(30 * 1000, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            log.warn("Stop task {} is be interrupted.", ji.getId(), e);
+        } catch (ExecutionException e) {
+            log.warn("Stop task {} execution exception.", ji.getId(), e);
+        } catch (TimeoutException e) {
+            log.warn("Stop task {} time out.", ji.getId(), e);
+        }
+        return result || startFuture.cancel(true);
+    }
 }

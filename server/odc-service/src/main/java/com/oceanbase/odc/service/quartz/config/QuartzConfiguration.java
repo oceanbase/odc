@@ -65,6 +65,7 @@ public class QuartzConfiguration {
         schedulerFactoryBean.setDataSource(dataSource);
         String taskFrameworkSchedulerName = "TASK-FRAMEWORK-SCHEDULER";
         schedulerFactoryBean.setSchedulerName(taskFrameworkSchedulerName);
+        schedulerFactoryBean.setStartupDelay(30);
         return schedulerFactoryBean;
     }
 

@@ -56,6 +56,10 @@ public class JobUtils {
         return port != null ? Integer.parseInt(port) : 8989;
     }
 
+    public static String getExecutorPoint() {
+        return "http://" + SystemUtils.getLocalIpAddress() + ":" + JobUtils.getPort();
+    }
+
     public static ConnectionConfig getMetaDBConnectionConfig() {
         ConnectionConfig config = new ConnectionConfig();
         config.setHost(SystemUtils.getEnvOrProperty("DATABASE_HOST"));

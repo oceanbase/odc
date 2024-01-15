@@ -16,19 +16,20 @@
 
 package com.oceanbase.odc.service.task.dispatch;
 
+import com.oceanbase.odc.service.task.caller.ExecutorIdentifier;
 import com.oceanbase.odc.service.task.caller.JobCaller;
+import com.oceanbase.odc.service.task.caller.JobCallerBuilder;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.caller.JobException;
 import com.oceanbase.odc.service.task.caller.PodConfig;
 import com.oceanbase.odc.service.task.caller.PodParam;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
+import com.oceanbase.odc.service.task.config.K8sProperties;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
-import com.oceanbase.odc.service.task.config.TaskFrameworkProperties.K8sProperties;
 import com.oceanbase.odc.service.task.enums.TaskRunModeEnum;
-import com.oceanbase.odc.service.task.schedule.JobCallerBuilder;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
-import com.oceanbase.odc.service.task.schedule.JobImageNameProvider;
+import com.oceanbase.odc.service.task.schedule.provider.JobImageNameProvider;
 
 /**
  * Dispatch job to JobCaller immediately
@@ -50,6 +51,18 @@ public class ImmediateJobDispatcher implements JobDispatcher {
     public void stop(JobIdentity ji) throws JobException {
         JobCaller jobCaller = getJobCaller(JobConfigurationHolder.getJobConfiguration());
         jobCaller.stop(ji);
+    }
+
+    @Override
+    public void destroy(JobIdentity ji) throws JobException {
+        JobCaller jobCaller = getJobCaller(JobConfigurationHolder.getJobConfiguration());
+        jobCaller.destroy(ji);
+    }
+
+    @Override
+    public void destroy(ExecutorIdentifier executorIdentifier) throws JobException {
+        JobCaller jobCaller = getJobCaller(JobConfigurationHolder.getJobConfiguration());
+        jobCaller.destroy(executorIdentifier);
     }
 
     private JobCaller getJobCaller(JobConfiguration config) {

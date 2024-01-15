@@ -24,13 +24,13 @@ import com.oceanbase.odc.service.task.executor.executor.TaskRuntimeException;
  */
 public class TaskFactory {
 
-    public static Task create(String jobClass) {
+    public static Task<?> create(String jobClass) {
         try {
             Class<?> c = Class.forName(jobClass);
             if (!Task.class.isAssignableFrom(c)) {
                 throw new TaskRuntimeException("Job class is not implements Task. name={}" + jobClass);
             }
-            return (Task) c.newInstance();
+            return (Task<?>) c.newInstance();
         } catch (Exception e) {
             throw new TaskRuntimeException(e);
         }

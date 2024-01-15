@@ -15,8 +15,7 @@
  */
 package com.oceanbase.odc.metadb.task;
 
-import java.util.List;
-import java.util.Set;
+import java.util.Date;
 
 import javax.transaction.Transactional;
 
@@ -40,37 +39,78 @@ public interface JobRepository extends JpaRepository<JobEntity, Long>,
 
     @Transactional
     @Query("update JobEntity set "
-            + "executorEndpoint=:#{#param.executorEndpoint},status=:#{#param.status},"
-            + "progressPercentage=:#{#param.progressPercentage},resultJson=:#{#param.resultJson},"
-            + "finishedTime=:#{#param.finishedTime},lastReportTime=:#{#param.lastReportTime}"
+            + " executorEndpoint=:#{#param.executorEndpoint},status=:#{#param.status},"
+            + " progressPercentage=:#{#param.progressPercentage},resultJson=:#{#param.resultJson},"
+            + " finishedTime=:#{#param.finishedTime},lastReportTime=:#{#param.lastReportTime}"
             + " where id=:#{#param.id}")
     @Modifying
     int update(@Param("param") JobEntity entity);
 
     @Transactional
     @Query("update JobEntity set "
-            + "executorIdentifier=:#{#param.executorIdentifier},status=:#{#param.status},"
-            + "executionTimes=:#{#param.executionTimes},"
-            + "startedTime=:#{#param.startedTime}"
+            + " executorIdentifier=:#{#param.executorIdentifier},status=:#{#param.status},"
+            + " executionTimes=:#{#param.executionTimes},"
+            + " startedTime=:#{#param.startedTime},"
+            + " executorDestroyedTime=:#{#param.executorDestroyedTime}"
             + " where id=:#{#param.id}")
     @Modifying
-    void updateJobExecutorIdentifierAndStatus(@Param("param") JobEntity entity);
+    int updateJobExecutorIdentifierAndStatusById(@Param("param") JobEntity entity);
 
     @Transactional
     @Query("update JobEntity set "
-            + "description=:description"
+            + " description=:description"
             + " where id=:id")
     @Modifying
     void updateDescription(@Param("id") Long id, @Param("description") String description);
 
     @Transactional
     @Query("update JobEntity set "
-            + "status=:status"
+            + " status=:status"
             + " where id=:id")
     @Modifying
-    void updateStatus(@Param("id") Long id, @Param("status") JobStatus status);
+    void updateStatusByIdAndOldStatus(@Param("id") Long id, @Param("status") JobStatus status);
 
 
-    List<TaskEntity> findByIdIn(Set<Long> taskIds);
+    @Transactional
+    @Query("update JobEntity set "
+            + " status=:newStatus,description=:description"
+            + " where id=:id and status=:oldStatus")
+    @Modifying
+    int updateStatusDescriptionByIdOldStatus(@Param("id") Long id, @Param("oldStatus") JobStatus oldStatus,
+            @Param("newStatus") JobStatus newStatus, @Param("description") String description);
+
+    @Transactional
+    @Query("update JobEntity set "
+            + " status=:newStatus,description=:description"
+            + " where id=:id and status=:oldStatus and executorDestroyedTime is null")
+    @Modifying
+    int updateStatusDescriptionByIdOldStatusAndExecutorDestroyed(@Param("id") Long id,
+            @Param("oldStatus") JobStatus oldStatus, @Param("newStatus") JobStatus newStatus,
+            @Param("description") String description);
+
+    @Transactional
+    @Query("update JobEntity set "
+            + " status=:newStatus, cancellingTime=:cancellingTime"
+            + " where id=:id and status=:oldStatus")
+    @Modifying
+    int updateJobToCancelling(@Param("id") Long id, @Param("oldStatus") JobStatus oldStatus,
+            @Param("newStatus") JobStatus newStatus, @Param("cancellingTime") Date cancellingTime);
+
+    @Transactional
+    @Query("update JobEntity set "
+            + " executorDestroyedTime=:executorDestroyedTime"
+            + " where id=:id and executorDestroyedTime is not null")
+    @Modifying
+    int updateExecutorToDestroyed(@Param("id") Long id,
+            @Param("executorDestroyedTime") Date executorDestroyedTime);
+
+    @Transactional
+    @Query("update JobEntity set "
+            + " lastHeartTime=:lastHeartTime"
+            + " where id=:id and executorEndpoint=:executorEndpoint")
+    @Modifying
+    void updateLatestHeartTime(@Param("id") Long id,
+            @Param("executorEndpoint") String executorEndpoint,
+            @Param("lastHeartTime") Date lastHeartTime);
 
 }

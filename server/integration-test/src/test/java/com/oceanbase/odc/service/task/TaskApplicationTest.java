@@ -19,8 +19,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -40,12 +42,13 @@ import com.oceanbase.odc.service.task.constants.JobDataMapConstants;
 import com.oceanbase.odc.service.task.constants.JobEnvConstants;
 import com.oceanbase.odc.service.task.executor.ExitHelper;
 import com.oceanbase.odc.service.task.executor.TaskApplication;
+import com.oceanbase.odc.service.task.executor.executor.ThreadPoolTaskExecutor;
+import com.oceanbase.odc.service.task.executor.sampletask.SampleTaskJobDefinitionBuilder;
 import com.oceanbase.odc.service.task.executor.task.DatabaseChangeTask;
 import com.oceanbase.odc.service.task.schedule.DefaultJobContextBuilder;
 import com.oceanbase.odc.service.task.schedule.DefaultJobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
-import com.oceanbase.odc.service.task.schedule.SampleTaskJobDefinitionBuilder;
 import com.oceanbase.odc.service.task.util.JobUtils;
 
 /**
@@ -68,27 +71,46 @@ public class TaskApplicationTest extends BaseJobTest {
                 .build(connectionConfig, connectionConfig.getDefaultSchema(), sqls);
         JobContext jc = new DefaultJobContextBuilder().build(jobIdentity, jd);
         System.setProperty(JobEnvConstants.TASK_ALL_PARAMETERS, JobUtils.toJson(jc));
-        mainMethodExit(20 * 1000);
+        mainMethodExit(20 * 1000, null);
         new TaskApplication().run(null);
     }
 
 
     @Test
-    public void test_executeDatabaseChangeTask() {
+    public void test_executeDatabaseChangeTask_run() {
         Long exceptedTaskId = System.currentTimeMillis();
         JobIdentity jobIdentity = JobIdentity.of(exceptedTaskId);
 
         JobDefinition jd = buildJobDefinition();
         JobContext jc = new DefaultJobContextBuilder().build(jobIdentity, jd);
         System.setProperty(JobEnvConstants.TASK_ALL_PARAMETERS, JobUtils.toJson(jc));
-        mainMethodExit(60 * 1000);
+        mainMethodExit(60 * 1000, null);
         new TaskApplication().run(null);
     }
 
-    private void mainMethodExit(int waitMills) {
+    @Test
+    public void test_executeDatabaseChangeTask_stop() {
+        Long exceptedTaskId = System.currentTimeMillis();
+        JobIdentity jobIdentity = JobIdentity.of(exceptedTaskId);
+
+        JobDefinition jd = buildJobDefinition();
+        JobContext jc = new DefaultJobContextBuilder().build(jobIdentity, jd);
+        System.setProperty(JobEnvConstants.TASK_ALL_PARAMETERS, JobUtils.toJson(jc));
+        mainMethodExit(1000, () -> {
+            boolean result = ThreadPoolTaskExecutor.getInstance().cancel(jc.getJobIdentity());
+            Assert.assertTrue(result);
+            return null;
+        });
+        new TaskApplication().run(null);
+    }
+
+    private void mainMethodExit(int waitMills, Supplier<Void> action) {
         new Thread(() -> {
             try {
                 Thread.sleep(waitMills);
+                if (action != null) {
+                    action.get();
+                }
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             } finally {
@@ -112,7 +134,7 @@ public class TaskApplicationTest extends BaseJobTest {
         jobData.put(JobDataMapConstants.CONNECTION_CONFIG, JobUtils.toJson(config));
         jobData.put(JobDataMapConstants.FLOW_INSTANCE_ID, exceptedTaskId + "");
         jobData.put(JobDataMapConstants.CURRENT_SCHEMA_KEY, config.getDefaultSchema());
-        jobData.put(JobDataMapConstants.TIMEOUT_MILLI_SECONDS, 30 * 60 * 1000 + "");
+        jobData.put(JobDataMapConstants.TASK_EXECUTION_TIMEOUT_MILLIS, 30 * 60 * 1000 + "");
         ObjectStorageConfiguration storageConfig = new ObjectStorageConfiguration();
         storageConfig.setCloudProvider(CloudProvider.NONE);
         jobData.put(JobDataMapConstants.OBJECT_STORAGE_CONFIGURATION, JsonUtils.toJson(storageConfig));

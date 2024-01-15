@@ -25,7 +25,9 @@ import org.springframework.web.bind.annotation.RestController;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
+import com.oceanbase.odc.service.task.constants.JobUrlConstants;
 import com.oceanbase.odc.service.task.executor.task.DefaultTaskResult;
+import com.oceanbase.odc.service.task.executor.task.HeartRequest;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 
 import io.swagger.annotations.ApiOperation;
@@ -38,18 +40,23 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/v2/task")
 public class TaskController {
 
     @Autowired
     private TaskFrameworkService taskFrameworkService;
 
     @ApiOperation(value = "updateResult", notes = "update task result")
-    @RequestMapping(value = "/result", method = RequestMethod.POST)
+    @RequestMapping(value = JobUrlConstants.TASK_RESULT_UPLOAD, method = RequestMethod.POST)
     public SuccessResponse<String> updateResult(@RequestBody DefaultTaskResult taskResult) {
         log.info("Accept task result {}.", JsonUtils.toJson(taskResult));
         taskFrameworkService.handleResult(taskResult);
-        log.info("update result succeed {}", JsonUtils.toJson(taskResult));
+        return Responses.success("ok");
+    }
+
+    @ApiOperation(value = "heart", notes = "update heart request")
+    @RequestMapping(value = JobUrlConstants.TASK_HEART, method = RequestMethod.POST)
+    public SuccessResponse<String> heart(@RequestBody HeartRequest heart) {
+        taskFrameworkService.handleHeart(heart);
         return Responses.success("ok");
     }
 

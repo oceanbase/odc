@@ -24,9 +24,10 @@ import com.oceanbase.odc.service.schedule.ScheduleTaskService;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.caller.K8sJobClient;
 import com.oceanbase.odc.service.task.dispatch.JobDispatcher;
-import com.oceanbase.odc.service.task.schedule.HostUrlProvider;
-import com.oceanbase.odc.service.task.schedule.JobImageNameProvider;
+import com.oceanbase.odc.service.task.schedule.provider.HostUrlProvider;
+import com.oceanbase.odc.service.task.schedule.provider.JobImageNameProvider;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
+import com.oceanbase.odc.service.task.service.TransactionManager;
 
 import lombok.Data;
 
@@ -59,4 +60,6 @@ public abstract class DefaultJobConfiguration implements JobConfiguration {
     protected EventPublisher eventPublisher;
 
     protected JobImageNameProvider jobImageNameProvider;
+
+    protected TransactionManager transactionManager;
 }

@@ -17,7 +17,6 @@
 package com.oceanbase.odc.service.task.caller;
 
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
-import com.oceanbase.odc.service.task.schedule.ExecutorIdentifier;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 
 /**
@@ -36,4 +35,10 @@ public class JvmJobCaller extends BaseJobCaller {
     protected void doStop(JobIdentity ji) throws JobException {
         throw new UnsupportedException();
     }
+
+    @Override
+    protected void doDestroy(ExecutorIdentifier identifier) throws JobException {
+        throw new UnsupportedException();
+    }
+
 }

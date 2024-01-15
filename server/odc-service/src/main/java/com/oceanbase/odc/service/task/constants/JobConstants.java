@@ -31,7 +31,7 @@ public class JobConstants {
 
     public static final String TEMPLATE_BATCH_API_VERSION = "batch/v1";
 
-    public static final String TEMPLATE_JOB_NAME_PREFIX = "task-";
+    public static final String TEMPLATE_JOB_NAME_PREFIX = "odc-job-";
 
     public static final String RESTART_POLICY_NEVER = "Never";
 
@@ -45,6 +45,8 @@ public class JobConstants {
 
     public static final String QUARTZ_DATA_MAP_JOB_CONTEXT = JobEnvConstants.TASK_ALL_PARAMETERS;
 
-    public static final int REPORT_TASK_INFO_INTERVAL_SECONDS = 5;
+    public static final int REPORT_TASK_INFO_INTERVAL_SECONDS = 30;
+
+    public static final int REPORT_TASK_HEART_INTERVAL_SECONDS = 5;
 
 }

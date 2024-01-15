@@ -31,6 +31,11 @@ import com.oceanbase.odc.common.util.ExceptionUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.common.util.UrlUtils;
+import com.oceanbase.odc.service.task.constants.JobUrlConstants;
+import com.oceanbase.odc.service.task.executor.executor.ThreadPoolTaskExecutor;
+import com.oceanbase.odc.service.task.executor.logger.LogBiz;
+import com.oceanbase.odc.service.task.executor.logger.LogBizImpl;
+import com.oceanbase.odc.service.task.schedule.JobIdentity;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.Unpooled;
@@ -67,11 +72,11 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class EmbedServer {
 
-    private ExecutorBiz executorBiz;
+    private LogBiz executorBiz;
     private Thread thread;
 
     public void start(final int port) {
-        executorBiz = new ExecutorBizImpl();
+        executorBiz = new LogBizImpl();
         thread = new Thread(new Runnable() {
             @Override
             public void run() {
@@ -158,12 +163,12 @@ public class EmbedServer {
     public static class EmbedHttpServerHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
         private static final Logger logger = LoggerFactory.getLogger(EmbedHttpServerHandler.class);
 
-        private final Pattern logUrlPattern = Pattern.compile("/([0-9]+)/tasks/log");
-        private final Pattern cancelTaskPattern = Pattern.compile("/([0-9]+)/tasks/cancel");
-        private final ExecutorBiz executorBiz;
+        private final Pattern logUrlPattern = Pattern.compile(String.format(JobUrlConstants.LOG_QUERY, "([0-9]+)"));
+        private final Pattern stopTaskPattern = Pattern.compile(String.format(JobUrlConstants.STOP_TASK, "([0-9]+)"));
+        private final LogBiz executorBiz;
         private final ThreadPoolExecutor bizThreadPool;
 
-        public EmbedHttpServerHandler(ExecutorBiz executorBiz, ThreadPoolExecutor bizThreadPool) {
+        public EmbedHttpServerHandler(LogBiz executorBiz, ThreadPoolExecutor bizThreadPool) {
             this.executorBiz = executorBiz;
             this.bizThreadPool = bizThreadPool;
         }
@@ -211,13 +216,13 @@ public class EmbedServer {
                 String path = UrlUtils.getPath(uri);
                 Matcher matcher = logUrlPattern.matcher(path);
                 if (matcher.find()) {
-                    return executorBiz.log(Long.parseLong(matcher.group(1)),
+                    return executorBiz.getLog(Long.parseLong(matcher.group(1)),
                             UrlUtils.getQueryParameterFirst(uri, "logType"));
                 }
-                matcher = cancelTaskPattern.matcher(path);
+                matcher = stopTaskPattern.matcher(path);
                 if (matcher.find()) {
-                    // todo cancel job
-                    return new SuccessResponse<>("cancel job success.");
+                    JobIdentity ji = JobIdentity.of(Long.parseLong(matcher.group(1)));
+                    return new SuccessResponse<>(ThreadPoolTaskExecutor.getInstance().cancel(ji));
                 }
 
                 return new SuccessResponse<>("invalid request, uri-mapping(" + uri + ") not found.");

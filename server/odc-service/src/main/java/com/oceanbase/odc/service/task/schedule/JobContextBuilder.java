@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.task.schedule;
 
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.task.caller.JobContext;
+import com.oceanbase.odc.service.task.schedule.provider.HostUrlProvider;
 
 /**
  * @author yaobin

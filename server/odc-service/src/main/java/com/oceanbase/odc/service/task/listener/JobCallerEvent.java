@@ -16,8 +16,8 @@
 package com.oceanbase.odc.service.task.listener;
 
 import com.oceanbase.odc.common.event.AbstractEvent;
+import com.oceanbase.odc.service.task.caller.ExecutorIdentifier;
 import com.oceanbase.odc.service.task.enums.JobCallerAction;
-import com.oceanbase.odc.service.task.schedule.ExecutorIdentifier;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 
 import lombok.Getter;
