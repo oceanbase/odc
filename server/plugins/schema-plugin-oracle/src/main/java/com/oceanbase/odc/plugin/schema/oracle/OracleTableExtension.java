@@ -20,6 +20,7 @@ import java.sql.Connection;
 
 import org.pf4j.Extension;
 
+import com.oceanbase.odc.common.unit.BinarySizeUnit;
 import com.oceanbase.odc.plugin.schema.oboracle.OBOracleTableExtension;
 import com.oceanbase.odc.plugin.schema.oracle.utils.DBAccessorUtil;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
@@ -42,7 +43,7 @@ public class OracleTableExtension extends OBOracleTableExtension {
         DBTable table = new DBTable();
         table.setSchemaName(schemaName);
         table.setOwner(schemaName);
-        table.setName(schemaAccessor.isLowerCaseTableName() ? tableName.toLowerCase() : tableName);
+        table.setName(tableName);
         table.setColumns(schemaAccessor.listTableColumns(schemaName, tableName));
         table.setConstraints(schemaAccessor.listTableConstraints(schemaName, tableName));
         table.setPartition(schemaAccessor.getPartition(schemaName, tableName));
@@ -56,7 +57,15 @@ public class OracleTableExtension extends OBOracleTableExtension {
     @Override
     protected DBTableStats getTableStats(@NonNull Connection connection, @NonNull String schemaName,
             @NonNull String tableName) {
-        throw new UnsupportedOperationException("Not supported for oracle mode yet");
+        DBStatsAccessor statsAccessor = getStatsAccessor(connection);
+        DBTableStats tableStats = statsAccessor.getTableStats(schemaName, tableName);
+        Long dataSizeInBytes = tableStats.getDataSizeInBytes();
+        if (dataSizeInBytes == null || dataSizeInBytes < 0) {
+            tableStats.setTableSize(null);
+        } else {
+            tableStats.setTableSize(BinarySizeUnit.B.of(dataSizeInBytes).toString());
+        }
+        return tableStats;
     }
 
     @Override
@@ -66,7 +75,7 @@ public class OracleTableExtension extends OBOracleTableExtension {
 
     @Override
     protected DBStatsAccessor getStatsAccessor(Connection connection) {
-        throw new UnsupportedOperationException("Not supported for oracle mode yet");
+        return DBAccessorUtil.getStatsAccessor(connection);
     }
 
 }

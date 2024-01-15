@@ -23,6 +23,7 @@ import com.oceanbase.odc.plugin.connect.oracle.OracleInformationExtension;
 import com.oceanbase.odc.plugin.schema.oracle.browser.DBSchemaAccessors;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 import com.oceanbase.tools.dbbrowser.stats.DBStatsAccessor;
+import com.oceanbase.tools.dbbrowser.stats.oracle.OracleStatsAccessor;
 
 /**
  * @author jingtian
@@ -40,6 +41,6 @@ public class DBAccessorUtil {
     }
 
     public static DBStatsAccessor getStatsAccessor(Connection connection) {
-        throw new UnsupportedOperationException("Not supported for oracle mode yet");
+        return new OracleStatsAccessor(JdbcOperationsUtil.getJdbcOperations(connection));
     }
 }
