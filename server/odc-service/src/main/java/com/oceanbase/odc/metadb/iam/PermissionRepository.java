@@ -101,6 +101,11 @@ public interface PermissionRepository
     @Query(value = "delete from iam_permission p where p.id in (:ids)", nativeQuery = true)
     int deleteByIds(@Param("ids") Collection<Long> ids);
 
+    @Modifying
+    @Transactional
+    @Query(value = "delete from iam_permission p where 1=1", nativeQuery = true)
+    void deleteAll();
+
     default List<PermissionEntity> batchCreate(List<PermissionEntity> entities) {
         String sql = InsertSqlTemplateBuilder.from("iam_permission")
                 .field(PermissionEntity_.action)

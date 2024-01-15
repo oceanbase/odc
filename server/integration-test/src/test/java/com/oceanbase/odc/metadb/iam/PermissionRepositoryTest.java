@@ -42,7 +42,7 @@ public class PermissionRepositoryTest extends ServiceTestEnv {
     }
 
     @Test
-    public void test_deleteByExpireTimeBefore() {
+    public void test_findByExpireTimeBefore() {
         long currentTime = System.currentTimeMillis();
         PermissionEntity entity = createPermissionEntity("query", "ODC_DATABASE:1", new Date(currentTime - 90 * 1000L));
         createPermissionEntity("change", "ODC_DATABASE:2", new Date(currentTime - 30 * 1000L));
