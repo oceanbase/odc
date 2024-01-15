@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.permission.database;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -27,9 +28,13 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.exception.AccessDeniedException;
 import com.oceanbase.odc.metadb.iam.UserDatabasePermissionEntity;
 import com.oceanbase.odc.metadb.iam.UserDatabasePermissionRepository;
+import com.oceanbase.odc.service.collaboration.project.ProjectService;
+import com.oceanbase.odc.service.connection.database.DatabaseService;
+import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 
 /**
@@ -38,6 +43,12 @@ import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
  */
 @Component
 public class DatabasePermissionValidator {
+
+    @Autowired
+    private ProjectService projectService;
+
+    @Autowired
+    private DatabaseService databaseService;
 
     @Autowired
     private AuthenticationFacade authenticationFacade;
@@ -59,6 +70,17 @@ public class DatabasePermissionValidator {
 
     public void check(Collection<Long> databaseIds, Collection<String> actions) {
         if (CollectionUtils.isEmpty(databaseIds) || CollectionUtils.isEmpty(actions)) {
+            return;
+        }
+        List<Database> databases = databaseService.listDatabasesByIds(databaseIds);
+        Set<Long> projectIds = databases.stream().filter(e -> {
+            if (e.getProject() == null) {
+                throw new AccessDeniedException("Database is not belong to any project");
+            }
+            return true;
+        }).map(e -> e.getProject().getId()).collect(Collectors.toSet());
+        if (projectService.checkPermission(projectIds,
+                Arrays.asList(ResourceRoleName.OWNER, ResourceRoleName.DBA, ResourceRoleName.DEVELOPER))) {
             return;
         }
         Map<Long, List<String>> id2Actions = userDatabasePermissionRepository
