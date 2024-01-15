@@ -60,6 +60,7 @@ import com.oceanbase.odc.service.collaboration.project.ProjectService;
 import com.oceanbase.odc.service.collaboration.project.model.Project;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
+import com.oceanbase.odc.service.iam.PermissionService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.permission.database.model.CreateDatabasePermissionReq;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
@@ -97,6 +98,9 @@ public class DatabasePermissionService {
     @Autowired
     private UserDatabasePermissionRepository userDatabasePermissionRepository;
 
+    @Autowired
+    private PermissionService permissionService;
+
     @Value("${odc.iam.permission.expired-retention-time-seconds:7776000}")
     private long expiredRetentionTimeSeconds;
 
@@ -117,8 +121,8 @@ public class DatabasePermissionService {
         if (!hasPermission) {
             throw new AccessDeniedException();
         }
-        // Delete expired permission before list
-        deleteExpiredDBPermission();
+        Date expiredTime = new Date(System.currentTimeMillis() - expiredRetentionTimeSeconds * 1000);
+        permissionService.deleteExpiredPermission(expiredTime);
         Specification<UserDatabasePermissionEntity> spec = Specification
                 .where(UserDatabasePermissionSpec.projectIdEqual(projectId))
                 .and(UserDatabasePermissionSpec.organizationIdEqual(authenticationFacade.currentOrganizationId()))
@@ -179,6 +183,7 @@ public class DatabasePermissionService {
         List<PermissionEntity> permissionEntities = new ArrayList<>();
         Long organizationId = authenticationFacade.currentOrganizationId();
         Long creatorId = authenticationFacade.currentUserId();
+        Date expireTime = getFixedExpireTime(req.getExpireTime());
         for (Long databaseId : req.getDatabaseIds()) {
             for (DatabasePermissionType permissionType : req.getTypes()) {
                 PermissionEntity permissionEntity = new PermissionEntity();
@@ -190,7 +195,7 @@ public class DatabasePermissionService {
                 permissionEntity.setCreatorId(creatorId);
                 permissionEntity.setOrganizationId(organizationId);
                 permissionEntity.setBuiltIn(false);
-                permissionEntity.setExpireTime(getFixedExpireTime(req.getExpireTime()));
+                permissionEntity.setExpireTime(expireTime);
                 permissionEntity.setAuthorizationType(AuthorizationType.USER_AUTHORIZATION);
                 permissionEntities.add(permissionEntity);
             }
@@ -220,12 +225,6 @@ public class DatabasePermissionService {
         permissionRepository.deleteByIds(permissionIds);
         userPermissionRepository.deleteByPermissionIds(permissionIds);
         return permissionIds.stream().map(UserDatabasePermission::from).collect(Collectors.toList());
-    }
-
-    private void deleteExpiredDBPermission() {
-        Date expiredTime = new Date(System.currentTimeMillis() - expiredRetentionTimeSeconds * 1000);
-        int count = permissionRepository.deleteByExpireTimeBefore(expiredTime);
-        log.info("Clear expired permission, count: {}, expired time: {}", count, expiredTime);
     }
 
     private Date getExpireTimeThreshold() {

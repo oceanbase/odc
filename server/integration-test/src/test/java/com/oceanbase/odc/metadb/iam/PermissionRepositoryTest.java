@@ -44,11 +44,12 @@ public class PermissionRepositoryTest extends ServiceTestEnv {
     @Test
     public void test_deleteByExpireTimeBefore() {
         long currentTime = System.currentTimeMillis();
-        PermissionEntity entity = createPermissionEntity("query", "ODC_DATABASE:1", new Date(currentTime + 90 * 1000L));
-        createPermissionEntity("change", "ODC_DATABASE:2", new Date(currentTime + 30 * 1000L));
-        Assert.assertEquals(2, permissionRepository.findAll().size());
-        permissionRepository.deleteByExpireTimeBefore(new Date(currentTime + 60 * 1000L));
-        List<PermissionEntity> entities = permissionRepository.findAll();
+        PermissionEntity entity = createPermissionEntity("query", "ODC_DATABASE:1", new Date(currentTime - 90 * 1000L));
+        createPermissionEntity("change", "ODC_DATABASE:2", new Date(currentTime - 30 * 1000L));
+        createPermissionEntity("change", "ODC_DATABASE:3", null);
+        Assert.assertEquals(3, permissionRepository.findAllNoCareExpireTime().size());
+        List<PermissionEntity> entities =
+                permissionRepository.findByExpireTimeBefore(new Date(currentTime - 60 * 1000L));
         Assert.assertEquals(1, entities.size());
         Assert.assertEquals(entity.getId(), entities.get(0).getId());
     }

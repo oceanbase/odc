@@ -92,16 +92,14 @@ public interface PermissionRepository
     @Query(value = "select p.* from iam_permission p", nativeQuery = true)
     List<PermissionEntity> findAllNoCareExpireTime();
 
+    @Query(value = "select p.* from iam_permission p where p.expire_time is not null and p.expire_time <:expireTime",
+            nativeQuery = true)
+    List<PermissionEntity> findByExpireTimeBefore(@Param("expireTime") Date expireTime);
+
     @Modifying
     @Transactional
     @Query(value = "delete from iam_permission p where p.id in (:ids)", nativeQuery = true)
     int deleteByIds(@Param("ids") Collection<Long> ids);
-
-    @Modifying
-    @Transactional
-    @Query(value = "delete from iam_permission p where p.expire_time is not null and p.expire_time < :expireTime",
-            nativeQuery = true)
-    int deleteByExpireTimeBefore(@Param("expireTime") Date expireTime);
 
     default List<PermissionEntity> batchCreate(List<PermissionEntity> entities) {
         String sql = InsertSqlTemplateBuilder.from("iam_permission")
