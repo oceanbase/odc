@@ -136,7 +136,7 @@ import com.oceanbase.odc.service.integration.model.ApprovalProperties;
 import com.oceanbase.odc.service.integration.model.IntegrationConfig;
 import com.oceanbase.odc.service.integration.model.TemplateVariables;
 import com.oceanbase.odc.service.integration.model.TemplateVariables.Variable;
-import com.oceanbase.odc.service.permission.database.DatabasePermissionValidator;
+import com.oceanbase.odc.service.permission.database.DatabasePermissionHelper;
 import com.oceanbase.odc.service.regulation.approval.model.ApprovalFlowConfig;
 import com.oceanbase.odc.service.regulation.approval.model.ApprovalNodeConfig;
 import com.oceanbase.odc.service.regulation.risklevel.RiskLevelService;
@@ -221,7 +221,7 @@ public class FlowInstanceService {
     @Autowired
     private ResourceRoleService resourceRoleService;
     @Autowired
-    private DatabasePermissionValidator databasePermissionValidator;
+    private DatabasePermissionHelper databasePermissionHelper;
 
     private final List<Consumer<DataTransferTaskInitEvent>> dataTransferTaskInitHooks = new ArrayList<>();
     private final List<Consumer<ShadowTableComparingUpdateEvent>> shadowTableComparingTaskHooks = new ArrayList<>();
@@ -692,7 +692,7 @@ public class FlowInstanceService {
             default:
                 break;
         }
-        databasePermissionValidator.check(databaseIds, actions);
+        databasePermissionHelper.checkPermission(databaseIds, actions);
     }
 
 

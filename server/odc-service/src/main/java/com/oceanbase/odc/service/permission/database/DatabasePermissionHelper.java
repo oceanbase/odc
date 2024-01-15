@@ -16,9 +16,7 @@
 package com.oceanbase.odc.service.permission.database;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -34,7 +32,6 @@ import com.oceanbase.odc.metadb.iam.UserDatabasePermissionEntity;
 import com.oceanbase.odc.metadb.iam.UserDatabasePermissionRepository;
 import com.oceanbase.odc.service.collaboration.project.ProjectService;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
-import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 
 /**
@@ -42,7 +39,7 @@ import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
  * @date 2024/1/15 10:58
  */
 @Component
-public class DatabasePermissionValidator {
+public class DatabasePermissionHelper {
 
     @Autowired
     private ProjectService projectService;
@@ -56,35 +53,46 @@ public class DatabasePermissionValidator {
     @Autowired
     private UserDatabasePermissionRepository userDatabasePermissionRepository;
 
-    public void check(Long databaseId, String action) {
-        check(Collections.singletonList(databaseId), Collections.singletonList(action));
-    }
-
-    public void check(Long databaseId, Collection<String> actions) {
-        check(Collections.singletonList(databaseId), actions);
-    }
-
-    public void check(Collection<Long> databaseIds, String action) {
-        check(databaseIds, Collections.singletonList(action));
-    }
-
-    public void check(Collection<Long> databaseIds, Collection<String> actions) {
+    public void checkPermission(Collection<Long> databaseIds, Collection<String> actions) {
         if (CollectionUtils.isEmpty(databaseIds) || CollectionUtils.isEmpty(actions)) {
             return;
         }
-        List<Database> databases = databaseService.listDatabasesByIds(databaseIds);
-        Set<Long> projectIds = databases.stream().filter(e -> {
-            if (e.getProject() == null) {
-                throw new AccessDeniedException("Database is not belong to any project");
+        Map<Long, List<Long>> projectId2DatabaseIds = databaseService.listDatabasesByIds(databaseIds).stream()
+                .filter(
+                        e -> {
+                            if (e.getProject() == null || e.getProject().getId() == null) {
+                                throw new AccessDeniedException("Database is not belong to any project");
+                            }
+                            return true;
+                        })
+                .collect(Collectors.toMap(
+                        e -> e.getProject().getId(),
+                        e -> {
+                            List<Long> list = new ArrayList<>();
+                            list.add(e.getId());
+                            return list;
+                        },
+                        (e1, e2) -> {
+                            e1.addAll(e2);
+                            return e1;
+                        }));
+
+        Map<Long, Set<ResourceRoleName>> projectIds2Roles = projectService.getProjectId2ResourceRoleNames();
+        Set<Long> projectIds = projectIds2Roles.entrySet().stream()
+                .filter(e -> e.getValue().contains(ResourceRoleName.OWNER)
+                        || e.getValue().contains(ResourceRoleName.DBA)
+                        || e.getValue().contains(ResourceRoleName.DEVELOPER))
+                .map(Map.Entry::getKey).collect(Collectors.toSet());
+
+        List<Long> toCheckDatabaseIds = new ArrayList<>();
+        for (Map.Entry<Long, List<Long>> entry : projectId2DatabaseIds.entrySet()) {
+            if (!projectIds.contains(entry.getKey())) {
+                toCheckDatabaseIds.addAll(entry.getValue());
             }
-            return true;
-        }).map(e -> e.getProject().getId()).collect(Collectors.toSet());
-        if (projectService.checkPermission(projectIds,
-                Arrays.asList(ResourceRoleName.OWNER, ResourceRoleName.DBA, ResourceRoleName.DEVELOPER))) {
-            return;
         }
+
         Map<Long, List<String>> id2Actions = userDatabasePermissionRepository
-                .findByUserIdAndDatabaseIdIn(authenticationFacade.currentUserId(), databaseIds).stream()
+                .findByUserIdAndDatabaseIdIn(authenticationFacade.currentUserId(), toCheckDatabaseIds).stream()
                 .collect(Collectors.toMap(
                         UserDatabasePermissionEntity::getDatabaseId,
                         e -> {
@@ -96,7 +104,7 @@ public class DatabasePermissionValidator {
                             e1.addAll(e2);
                             return e1;
                         }));
-        for (Long databaseId : databaseIds) {
+        for (Long databaseId : toCheckDatabaseIds) {
             List<String> permittedActions = id2Actions.get(databaseId);
             if (CollectionUtils.isEmpty(permittedActions)) {
                 throw new AccessDeniedException(String.format("No permission for the database with id %s", databaseId));
@@ -109,5 +117,7 @@ public class DatabasePermissionValidator {
             }
         }
     }
+
+
 
 }
