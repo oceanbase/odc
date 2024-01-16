@@ -61,7 +61,7 @@ public class DBTablePartitionStructureComparator implements DBObjectStructureCom
                 && DBTablePartitionType.NOT_PARTITIONED.equals(tgtPartitionType)) {
             result.setComparisonResult(ComparisonResult.CONSISTENT);
         } else {
-            String ddl = this.tgtPartitionEditor.generateUpdateObjectDDL(tgtPartition,
+            String ddl = this.tgtPartitionEditor.generateShadowTableUpdateObjectDDL(tgtPartition,
                     copySrcPartitionWithTgtSchemaName(srcPartition, this.tgtSchemaName));
             if (ddl.isEmpty()) {
                 result.setComparisonResult(ComparisonResult.CONSISTENT);

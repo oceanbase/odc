@@ -27,6 +27,7 @@ import javax.validation.constraints.NotNull;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
 
 import com.oceanbase.tools.dbbrowser.model.DBTablePartition;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartitionDefinition;
@@ -93,19 +94,8 @@ public abstract class DBTablePartitionEditor implements DBObjectEditor<DBTablePa
         if (Objects.isNull(oldPartition) || Objects.isNull(newPartition)) {
             return StringUtils.EMPTY;
         }
-        DBTablePartitionType oldType = oldPartition.getPartitionOption().getType();
-        DBTablePartitionType newType = newPartition.getPartitionOption().getType();
-        if (oldType != newType) {
-            if (newType == DBTablePartitionType.NOT_PARTITIONED) {
-                // means convert partitioned table to non-partitioned table
-                return generateDropObjectDDL(oldPartition);
-            } else if (oldType == DBTablePartitionType.NOT_PARTITIONED) {
-                // means convert non-partitioned table to partitioned table
-                return generateCreateObjectDDL(newPartition);
-            } else {
-                // means modify table partition type
-                return modifyPartitionType(oldPartition, newPartition);
-            }
+        if (oldPartition.getPartitionOption().getType() != newPartition.getPartitionOption().getType()) {
+            return handleUpdatePartitionType(oldPartition, newPartition);
         }
         SqlBuilder sqlBuilder = sqlBuilder();
         String fullyQualifiedTableName = getFullyQualifiedTableName(newPartition);
@@ -149,6 +139,23 @@ public abstract class DBTablePartitionEditor implements DBObjectEditor<DBTablePa
         return sqlBuilder.toString();
     }
 
+    private String handleUpdatePartitionType(@NotNull DBTablePartition oldPartition,
+            @NotNull DBTablePartition newPartition) {
+        DBTablePartitionType oldType = oldPartition.getPartitionOption().getType();
+        DBTablePartitionType newType = newPartition.getPartitionOption().getType();
+        Validate.isTrue(oldType != newType, "Partition type should be different");
+        if (newType == DBTablePartitionType.NOT_PARTITIONED) {
+            // means convert partitioned table to non-partitioned table
+            return generateDropObjectDDL(oldPartition);
+        } else if (oldType == DBTablePartitionType.NOT_PARTITIONED) {
+            // means convert non-partitioned table to partitioned table
+            return generateCreateObjectDDL(newPartition);
+        } else {
+            // means modify table partition type
+            return modifyPartitionType(oldPartition, newPartition);
+        }
+    }
+
     abstract protected String modifyPartitionType(@NotNull DBTablePartition oldPartition,
             @NotNull DBTablePartition newPartition);
 
@@ -167,6 +174,9 @@ public abstract class DBTablePartitionEditor implements DBObjectEditor<DBTablePa
             @NotNull DBTablePartition newPartition) {
         if (Objects.isNull(oldPartition) || Objects.isNull(newPartition)) {
             return StringUtils.EMPTY;
+        }
+        if (oldPartition.getPartitionOption().getType() != newPartition.getPartitionOption().getType()) {
+            return handleUpdatePartitionType(oldPartition, newPartition);
         }
         SqlBuilder sqlBuilder = sqlBuilder();
         String fullyQualifiedTableName = getFullyQualifiedTableName(newPartition);
