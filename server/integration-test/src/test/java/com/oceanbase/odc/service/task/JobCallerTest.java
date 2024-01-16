@@ -90,7 +90,7 @@ public class JobCallerTest extends BaseJobTest {
         JobContext jc = new DefaultJobContextBuilder().build(jobIdentity, jd);
 
         jobCaller.start(jc);
-        Thread.sleep(600000);
+        Thread.sleep(60000);
         JobIdentity newJi = JobIdentity.of(exceptedTaskId);
         jobCaller.stop(newJi);
     }

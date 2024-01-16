@@ -84,7 +84,7 @@ public class DatabaseChangeRuntimeFlowableTaskCopied extends BaseODCFlowTaskDele
         try {
             jobScheduler.cancelJob(jobEntity.getId());
             // todo flow optimized
-            jobScheduler.await(jobEntity.getId(),  taskFrameworkProperties.getJobCancelTimeoutSeconds(),
+            jobScheduler.await(jobEntity.getId(), taskFrameworkProperties.getJobCancelTimeoutSeconds(),
                     TimeUnit.SECONDS);
             taskService.cancel(taskId);
             isCanceled = true;

@@ -35,17 +35,20 @@ public interface TaskFrameworkProperties {
 
     int getJobCancelTimeoutSeconds();
 
-    int getSingleFetchJobRowsForStart();
+    int getSingleFetchPreparingJobRows();
 
-    int getSingleFetchJobRowsForCancel();
+    int getSingleFetchCancelingJobRows();
 
-    int getSingleFetchJobRowsForCheckHeartTimeout();
+    int getSingleFetchCheckHeartTimeoutJobRows();
 
-    int getMaxRetryTimesAfterHeartTimeout();
+    int getMaxHeartTimeoutRetryTimes();
+
+    int getQuartzStartDelaySeconds();
 
     String getStartPreparingJobCronExpression();
 
     String getCheckRunningJobCronExpression();
 
     String getDoCancelingJobCronExpression();
+
 }

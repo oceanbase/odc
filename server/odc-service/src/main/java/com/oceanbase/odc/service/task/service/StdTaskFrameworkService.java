@@ -74,8 +74,6 @@ import lombok.extern.slf4j.Slf4j;
 public class StdTaskFrameworkService implements TaskFrameworkService {
 
     private static final int RECENT_DAY = 30;
-    private static final String STATUS_COLUMN = "status";
-    private static final String LAST_HEART_TIME_COLUMN = "lastHeartTime";
 
     @Autowired
     private JobRepository jobRepository;
@@ -117,15 +115,15 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     @Override
     public Page<JobEntity> find(List<JobStatus> status, int page, int size) {
         Specification<JobEntity> condition = Specification.where(getRecentDaySpec(RECENT_DAY))
-                .and(SpecificationUtil.columnIn(STATUS_COLUMN, status));
+                .and(SpecificationUtil.columnIn(JobEntityColumn.STATUS, status));
         return page(condition, page, size);
     }
 
     @Override
     public Page<JobEntity> findHeartTimeTimeoutJobs(int timeoutSeconds, int page, int size) {
         Specification<JobEntity> condition = Specification.where(getRecentDaySpec(RECENT_DAY))
-                .and(getTimeoutOnColumnSpec(LAST_HEART_TIME_COLUMN, timeoutSeconds))
-                .and(SpecificationUtil.columnEqual(STATUS_COLUMN, JobStatus.RUNNING));
+                .and(getTimeoutOnColumnSpec(JobEntityColumn.LAST_HEART_TIME, timeoutSeconds))
+                .and(SpecificationUtil.columnEqual(JobEntityColumn.STATUS, JobStatus.RUNNING));
         return page(condition, page, size);
     }
 

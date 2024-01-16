@@ -51,21 +51,23 @@ public class SpringTaskFrameworkProperties implements TaskFrameworkProperties {
     private int jobCancelTimeoutSeconds = 2 * 60;
 
     // single fetch job rows for schedule
-    private int singleFetchJobRowsForStart = 10;
+    private int singleFetchPreparingJobRows = 10;
 
-    private int singleFetchJobRowsForCancel = 100;
+    private int singleFetchCancelingJobRows = 100;
 
     // single fetch job rows to check report timeout or not
-    private int singleFetchJobRowsForCheckHeartTimeout = 1000;
+    private int singleFetchCheckHeartTimeoutJobRows = 1000;
 
     // max retry times after heart timeout
-    private int maxRetryTimesAfterHeartTimeout = 3;
+    private int maxHeartTimeoutRetryTimes = 3;
+
+    // number of seconds to wait after initialization before starting the scheduler
+    private int quartzStartDelaySeconds = 30;
 
     private String startPreparingJobCronExpression;
 
     private String checkRunningJobCronExpression;
 
     private String doCancelingJobCronExpression;
-
 
 }

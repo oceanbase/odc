@@ -52,7 +52,7 @@ public class CheckRunningJob implements Job {
             return;
         }
         TaskFrameworkProperties taskFrameworkProperties = getConfiguration().getTaskFrameworkProperties();
-        int size = taskFrameworkProperties.getSingleFetchJobRowsForCheckHeartTimeout();
+        int size = taskFrameworkProperties.getSingleFetchCheckHeartTimeoutJobRows();
         int heartTimeoutPeriod = taskFrameworkProperties.getJobHeartTimeoutSeconds();
         // find heart timeout job
         Page<JobEntity> jobs = getConfiguration().getTaskFrameworkService()
@@ -92,7 +92,7 @@ public class CheckRunningJob implements Job {
         }
         int maxRetryTimes = jobProperties.getMaxRetryTimesAfterHeartTimeout() != null
                 ? jobProperties.getMaxRetryTimesAfterHeartTimeout()
-                : getConfiguration().getTaskFrameworkProperties().getMaxRetryTimesAfterHeartTimeout();
+                : getConfiguration().getTaskFrameworkProperties().getMaxHeartTimeoutRetryTimes();
 
         return maxRetryTimes - je.getExecutionTimes() > 0;
     }

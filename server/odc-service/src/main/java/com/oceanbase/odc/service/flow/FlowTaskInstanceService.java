@@ -217,7 +217,9 @@ public class FlowTaskInstanceService {
                         JobAttributeKeyConstants.STORAGE_BUCKET_NAME);
 
                 if (objId != null && bucketName != null) {
-                    log.info("job: {} is finished, try to get log from local or oss.", jobEntity.getId());
+                    if (log.isDebugEnabled()) {
+                        log.debug("job: {} is finished, try to get log from local or oss.", jobEntity.getId());
+                    }
                     ObjectStorageHandler objectStorageHandler =
                             new ObjectStorageHandler(cloudObjectStorageService, localFileOperator);
                     return objectStorageHandler.loadObjectContentAsString(
@@ -225,7 +227,9 @@ public class FlowTaskInstanceService {
                 }
             }
             if (jobEntity.getExecutorDestroyedTime() == null && jobEntity.getExecutorEndpoint() != null) {
-                log.info("job: {} is not finished, try to get log from remote pod.", jobEntity.getId());
+                if (log.isDebugEnabled()) {
+                    log.debug("job: {} is not finished, try to get log from remote pod.", jobEntity.getId());
+                }
                 String hostWithUrl = jobEntity.getExecutorEndpoint() + String.format(JobUrlConstants.LOG_QUERY,
                         jobEntity.getId()) + "?logType=" + level.getName();
                 SuccessResponse<String> response =
@@ -628,6 +632,7 @@ public class FlowTaskInstanceService {
         }
         return Collections.singletonList(result);
     }
+
     private List<MockDataTaskResult> getMockDataResult(@NonNull TaskEntity taskEntity) {
         return innerGetResult(taskEntity, MockDataTaskResult.class);
     }

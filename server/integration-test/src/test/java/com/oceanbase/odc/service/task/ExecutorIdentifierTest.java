@@ -35,7 +35,7 @@ public class ExecutorIdentifierTest {
     @Test
     public void test_parser_successful() throws JobException {
 
-        String identifierString = "http://_:-1/test";
+        String identifierString = "http://:-1/test";
         ExecutorIdentifier identifier = ExecutorIdentifierParser.parser(identifierString);
         Assert.assertNotNull(identifierString);
         Assert.assertEquals("test", identifier.getExecutorName());

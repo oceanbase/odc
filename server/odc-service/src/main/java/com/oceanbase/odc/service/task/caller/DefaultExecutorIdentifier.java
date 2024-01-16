@@ -29,12 +29,12 @@ import lombok.Data;
 @Data
 public class DefaultExecutorIdentifier implements ExecutorIdentifier {
 
-    public static final String DEFAULT_SCHEMA = "http";
-    public static final String DEFAULT_HOST = "_";
+    public static final String DEFAULT_PROTOCOL = "http";
+    public static final String DEFAULT_HOST     = "localhost";
     public static final Integer DEFAULT_PORT = -1;
 
     @Builder.Default()
-    private String schema = DEFAULT_SCHEMA;
+    private String protocol = DEFAULT_PROTOCOL;
 
     @Builder.Default()
     private String host = DEFAULT_HOST;
@@ -49,7 +49,7 @@ public class DefaultExecutorIdentifier implements ExecutorIdentifier {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append(schema)
+        sb.append(protocol)
                 .append("://")
                 .append(host == null ? "" : host)
                 .append(":")

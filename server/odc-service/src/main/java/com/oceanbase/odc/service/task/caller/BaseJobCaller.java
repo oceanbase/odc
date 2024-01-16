@@ -22,6 +22,7 @@ import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
+import com.oceanbase.odc.service.task.config.JobConfigurationValidator;
 import com.oceanbase.odc.service.task.constants.JobUrlConstants;
 import com.oceanbase.odc.service.task.enums.JobCallerAction;
 import com.oceanbase.odc.service.task.listener.JobCallerEvent;
@@ -42,7 +43,7 @@ public abstract class BaseJobCaller implements JobCaller {
     @Override
     public void start(JobContext context) throws JobException {
         try {
-            ExecutorIdentifier executorIdentifier = tryStart(context);
+            ExecutorIdentifier executorIdentifier = doStart(context);;
             publishEvent(new JobCallerEvent(context.getJobIdentity(), JobCallerAction.START, true,
                     executorIdentifier, null));
         } catch (Exception ex) {
@@ -51,22 +52,11 @@ public abstract class BaseJobCaller implements JobCaller {
         }
     }
 
-    private ExecutorIdentifier tryStart(JobContext context) throws Exception {
-        try {
-            return doStart(context);
-        } catch (Exception e) {
-            log.warn("Start job {} failed and retry again, error is: ", context.getJobIdentity().getId(), e);
-            throw e;
-        }
-    }
-
     @Override
     public void stop(JobIdentity ji) throws JobException {
+        JobConfigurationValidator.validComponent();
         // send stop to executor
         JobConfiguration jobConfiguration = JobConfigurationHolder.getJobConfiguration();
-        if (jobConfiguration == null || jobConfiguration.getTaskFrameworkService() == null) {
-            return;
-        }
         TaskFrameworkService taskFrameworkService = jobConfiguration.getTaskFrameworkService();
         JobEntity jobEntity = taskFrameworkService.find(ji.getId());
         String executorEndpoint = jobEntity.getExecutorEndpoint();
@@ -95,10 +85,8 @@ public abstract class BaseJobCaller implements JobCaller {
 
     @Override
     public void destroy(JobIdentity ji) throws JobException {
+        JobConfigurationValidator.validComponent();
         JobConfiguration jobConfiguration = JobConfigurationHolder.getJobConfiguration();
-        if (jobConfiguration == null || jobConfiguration.getTaskFrameworkService() == null) {
-            return;
-        }
         TaskFrameworkService taskFrameworkService = jobConfiguration.getTaskFrameworkService();
         JobEntity jobEntity = taskFrameworkService.find(ji.getId());
         String executorIdentifier = jobEntity.getExecutorIdentifier();
@@ -117,11 +105,10 @@ public abstract class BaseJobCaller implements JobCaller {
         }
     }
 
+
     private void publishEvent(JobCallerEvent event) {
         JobConfiguration configuration = JobConfigurationHolder.getJobConfiguration();
-        if (configuration != null && configuration.getEventPublisher() != null) {
-            configuration.getEventPublisher().publishEvent(event);
-        }
+        configuration.getEventPublisher().publishEvent(event);
     }
 
     @Override

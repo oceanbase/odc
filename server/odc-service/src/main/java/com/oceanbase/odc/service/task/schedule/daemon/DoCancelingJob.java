@@ -59,7 +59,7 @@ public class DoCancelingJob implements Job {
         TaskFrameworkService taskFrameworkService = configuration.getTaskFrameworkService();
         TaskFrameworkProperties taskFrameworkProperties = configuration.getTaskFrameworkProperties();
         Page<JobEntity> jobs = taskFrameworkService.find(JobStatus.CANCELING, 0,
-                taskFrameworkProperties.getSingleFetchJobRowsForCancel());
+                taskFrameworkProperties.getSingleFetchCancelingJobRows());
         jobs.forEach(a -> {
             try {
                 cancelJob(taskFrameworkService, a);
