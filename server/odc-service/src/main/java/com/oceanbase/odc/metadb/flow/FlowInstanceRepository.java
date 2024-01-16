@@ -101,7 +101,7 @@ public interface FlowInstanceRepository
     Set<FlowInstanceEntity> findByScheduleIdAndStatus(@Param("scheduleIds") Set<Long> scheduleIds,
             @Param("status") FlowStatus status);
 
-    @Query("select e.parentInstanceId as parentInstanceId, count(1) as count from FlowInstanceEntity e where e.parentInstanceId=?1 group by parentInstanceId")
+    @Query("select e.parentInstanceId as parentInstanceId, count(1) as count from FlowInstanceEntity e where e.parentInstanceId in ?1 group by parentInstanceId")
     List<ParentInstanceIdCount> findByParentInstanceIdIn(Collection<Long> parentInstanceId);
 
     interface ParentInstanceIdCount {
