@@ -291,7 +291,7 @@ public class FlowResponseMapperFactory {
 
         Map<Long, Boolean> flowInstanceId2Rollbackable = flowInstanceIds.stream().collect(Collectors
                 .toMap(Function.identity(),
-                        id -> MoreObjects.firstNonNull(parentInstanceIdMap.get(id), 0) > 0));
+                        id -> MoreObjects.firstNonNull(parentInstanceIdMap.get(id), 0) == 0));
 
         /**
          * In order to improve the interface efficiency, it is necessary to find out the task entity
