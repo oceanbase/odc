@@ -62,17 +62,22 @@ public class Message {
         entity.setOrganizationId(this.getOrganizationId());
         entity.setProjectId(this.projectId);
         entity.setChannelId(this.channel.getId());
+        entity.setChannelName(this.channel.getName());
         entity.setStatus(this.getStatus());
         entity.setToRecipients(this.getToRecipients());
         entity.setCcRecipients(this.getCcRecipients());
         entity.setRetryTimes(this.getRetryTimes());
         entity.setMaxRetryTimes(this.getMaxRetryTimes());
+        entity.setLastSentTime(this.getLastSentTime());
+        entity.setErrorMessage(this.getErrorMessage());
         return entity;
     }
 
     public static Message fromEntity(MessageEntity entity) {
         Message message = new Message();
         message.setId(entity.getId());
+        message.setCreateTime(entity.getCreateTime());
+        message.setUpdateTime(entity.getUpdateTime());
         message.setContent(entity.getContent());
         message.setTitle(entity.getTitle());
         message.setCcRecipients(entity.getCcRecipients());
@@ -83,6 +88,11 @@ public class Message {
         message.setProjectId(entity.getProjectId());
         message.setRetryTimes(entity.getRetryTimes());
         message.setMaxRetryTimes(entity.getMaxRetryTimes());
+        message.setLastSentTime(entity.getLastSentTime());
+        message.setErrorMessage(entity.getErrorMessage());
+        message.setChannel(new Channel());
+        message.getChannel().setId(entity.getChannelId());
+        message.getChannel().setName(entity.getChannelName());
         return message;
     }
 }

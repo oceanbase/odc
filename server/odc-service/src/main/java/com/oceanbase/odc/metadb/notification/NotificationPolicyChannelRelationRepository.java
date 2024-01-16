@@ -17,21 +17,54 @@ package com.oceanbase.odc.metadb.notification;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.function.Function;
 
-import org.springframework.data.jpa.repository.JpaRepository;
+import javax.transaction.Transactional;
+
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import com.oceanbase.odc.common.jpa.InsertSqlTemplateBuilder;
+import com.oceanbase.odc.config.jpa.OdcJpaRepository;
+
 public interface NotificationPolicyChannelRelationRepository
-        extends JpaRepository<NotificationChannelRelationEntity, Long>,
+        extends OdcJpaRepository<NotificationChannelRelationEntity, Long>,
         JpaSpecificationExecutor<NotificationChannelRelationEntity> {
 
 
     List<NotificationChannelRelationEntity> findByOrganizationIdAndNotificationPolicyId(Long organizationId,
             Long notificationPolicyId);
 
+    @Transactional
+    int deleteByChannelId(Long channelId);
+
+    @Transactional
+    @Query(value = "delete from notification_policy_channel_relation where notification_policy_id in (:ids)",
+            nativeQuery = true)
+    @Modifying
+    int deleteByNotificationPolicyIds(@Param("ids") Collection<Long> ids);
+
     @Query(value = "select * from notification_policy_channel_relation where notification_policy_id in (:ids)",
             nativeQuery = true)
     List<NotificationChannelRelationEntity> findByNotificationPolicyIds(@Param("ids") Collection<Long> ids);
+
+    default List<NotificationChannelRelationEntity> batchCreate(List<NotificationChannelRelationEntity> entities) {
+        String sql = InsertSqlTemplateBuilder.from("notification_policy_channel_relation")
+                .field(NotificationChannelRelationEntity_.creatorId)
+                .field(NotificationChannelRelationEntity_.organizationId)
+                .field(NotificationChannelRelationEntity_.notificationPolicyId)
+                .field(NotificationChannelRelationEntity_.channelId)
+                .build();
+
+        List<Function<NotificationChannelRelationEntity, Object>> getter = valueGetterBuilder()
+                .add(NotificationChannelRelationEntity::getCreatorId)
+                .add(NotificationChannelRelationEntity::getOrganizationId)
+                .add(NotificationChannelRelationEntity::getNotificationPolicyId)
+                .add(NotificationChannelRelationEntity::getChannelId)
+                .build();
+
+        return batchCreate(entities, sql, getter, NotificationChannelRelationEntity::setId);
+    }
 }

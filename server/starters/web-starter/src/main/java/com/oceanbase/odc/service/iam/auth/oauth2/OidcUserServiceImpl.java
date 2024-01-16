@@ -53,6 +53,8 @@ import org.springframework.util.StringUtils;
 
 import com.oceanbase.odc.common.trace.TraceContextHolder;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
+import com.oceanbase.odc.service.iam.auth.MappingRuleConvert;
+import com.oceanbase.odc.service.iam.auth.SsoUserDetailService;
 import com.oceanbase.odc.service.iam.model.User;
 import com.oceanbase.odc.service.integration.oauth2.TestLoginManager;
 
@@ -77,7 +79,7 @@ public class OidcUserServiceImpl implements OAuth2UserService<OidcUserRequest, O
     private final Function<ClientRegistration, Converter<Map<String, Object>, Map<String, Object>>> claimTypeConverterFactory =
             (clientRegistration) -> DEFAULT_CLAIM_TYPE_CONVERTER;
     @Autowired
-    private OAuth2UserDetailService oAuth2UserDetailService;
+    private SsoUserDetailService SSOUserDetailService;
     @Autowired
     private MappingRuleConvert mappingRuleConvert;
 
@@ -129,9 +131,9 @@ public class OidcUserServiceImpl implements OAuth2UserService<OidcUserRequest, O
             }
         }
         Map<String, Object> userInfoMap = collectClaims(userRequest.getIdToken(), userInfo);
-        MappingResult mappingResult = mappingRuleConvert.resolveMappingResult(userRequest, userInfoMap);
-        testLoginManager.abortIfTestLoginTest();
-        User user = oAuth2UserDetailService
+        MappingResult mappingResult = mappingRuleConvert.resolveOAuthMappingResult(userRequest, userInfoMap);
+        testLoginManager.abortIfOAuthTestLoginTest();
+        User user = SSOUserDetailService
                 .getOrCreateUser(mappingResult);
         TraceContextHolder.setUserId(user.getId());
         TraceContextHolder.setOrganizationId(user.getOrganizationId());

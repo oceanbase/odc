@@ -58,6 +58,9 @@ public class JsonUtils {
 
     private static final ObjectMapper UNSAFE_OBJECT_MAPPER = JacksonFactory.unsafeJsonMapper();
 
+    private static final ObjectMapper OBJECT_MAPPER_IGNORE_NULL = JacksonFactory.jsonMapper()
+            .setSerializationInclusion(Include.NON_NULL);
+
     public static <T> T fromJson(String json, Class<T> classType) {
         if (json == null) {
             return null;
@@ -155,6 +158,11 @@ public class JsonUtils {
     public static String toJsonUpperCamelCase(Object obj) {
         return innerToJson(OBJECT_MAPPER_UPPER_CAMEL_CASE, obj);
     }
+
+    public static String toJsonIgnoreNull(Object obj) {
+        return innerToJson(OBJECT_MAPPER_IGNORE_NULL, obj);
+    }
+
 
     /**
      * 将 XML 转换成 JSON

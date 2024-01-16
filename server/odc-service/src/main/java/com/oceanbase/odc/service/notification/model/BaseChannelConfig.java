@@ -16,12 +16,6 @@
 
 package com.oceanbase.odc.service.notification.model;
 
-import java.util.Locale;
-
-import org.springframework.context.i18n.LocaleContextHolder;
-
-import com.fasterxml.jackson.annotation.JsonSetter;
-
 import lombok.Data;
 
 /**
@@ -31,21 +25,12 @@ import lombok.Data;
 @Data
 public class BaseChannelConfig {
 
-    private Locale language;
+    private String language;
 
     private String titleTemplate;
 
     private String contentTemplate;
 
     private RateLimitConfig rateLimitConfig;
-
-    @JsonSetter("language")
-    public void setLanguage(String language) {
-        try {
-            this.language = Locale.forLanguageTag(language);
-        } catch (Exception e) {
-            this.language = LocaleContextHolder.getLocale();
-        }
-    }
 
 }
