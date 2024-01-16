@@ -17,8 +17,8 @@ package com.oceanbase.odc.service.permission.database;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -30,11 +30,11 @@ import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.exception.AccessDeniedException;
+import com.oceanbase.odc.metadb.connection.DatabaseEntity;
+import com.oceanbase.odc.metadb.connection.DatabaseRepository;
 import com.oceanbase.odc.metadb.iam.UserDatabasePermissionEntity;
 import com.oceanbase.odc.metadb.iam.UserDatabasePermissionRepository;
 import com.oceanbase.odc.service.collaboration.project.ProjectService;
-import com.oceanbase.odc.service.connection.database.DatabaseService;
-import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
 
@@ -49,70 +49,83 @@ public class DatabasePermissionHelper {
     private ProjectService projectService;
 
     @Autowired
-    private DatabaseService databaseService;
+    private AuthenticationFacade authenticationFacade;
 
     @Autowired
-    private AuthenticationFacade authenticationFacade;
+    private DatabaseRepository databaseRepository;
 
     @Autowired
     private UserDatabasePermissionRepository userDatabasePermissionRepository;
 
-    public void checkPermissions(Collection<Long> databaseIds, Collection<String> actions) {
-        if (CollectionUtils.isEmpty(databaseIds) || CollectionUtils.isEmpty(actions)) {
+    /**
+     * Check whether the current user has the permission to access the database
+     * 
+     * @param databaseIds database ids
+     * @param permissionTypes permission types
+     */
+    public void checkPermissions(Collection<Long> databaseIds, Collection<DatabasePermissionType> permissionTypes) {
+        if (CollectionUtils.isEmpty(databaseIds) || CollectionUtils.isEmpty(permissionTypes)) {
             return;
         }
-        List<Database> databases = databaseService.listDatabasesByIds(databaseIds);
+        List<DatabaseEntity> entities = databaseRepository.findByIdIn(databaseIds);
         List<Long> toCheckDatabaseIds = new ArrayList<>();
-        Set<Long> projectIds = getAllDatabasePermittedProjectIds();
-        for (Database database : databases) {
-            if (database.getProject() == null || database.getProject().getId() == null) {
+        Set<Long> projectIds = getPermittedProjectIds();
+        for (DatabaseEntity e : entities) {
+            if (e.getProjectId() == null) {
                 throw new AccessDeniedException("Database is not belong to any project");
             }
-            if (!projectIds.contains(database.getProject().getId())) {
-                toCheckDatabaseIds.add(database.getId());
+            if (!projectIds.contains(e.getProjectId())) {
+                toCheckDatabaseIds.add(e.getId());
             }
         }
-        Map<Long, List<String>> id2Actions = getDatabaseId2Actions(databaseIds);
+        Map<Long, Set<DatabasePermissionType>> id2PermissionTypes = getDatabaseId2PermissionTypes(databaseIds);
         for (Long databaseId : toCheckDatabaseIds) {
-            List<String> permittedActions = id2Actions.get(databaseId);
-            if (CollectionUtils.isEmpty(permittedActions)) {
+            Set<DatabasePermissionType> authorized = id2PermissionTypes.get(databaseId);
+            if (CollectionUtils.isEmpty(authorized)) {
                 throw new AccessDeniedException(String.format("No permission for the database with id %s", databaseId));
             }
-            Set<String> unPermittedActions = actions.stream().filter(action -> !permittedActions.contains(action))
-                    .collect(Collectors.toSet());
-            if (CollectionUtils.isNotEmpty(unPermittedActions)) {
+            Set<DatabasePermissionType> unAuthorized =
+                    permissionTypes.stream().filter(e -> !authorized.contains(e)).collect(Collectors.toSet());
+            if (CollectionUtils.isNotEmpty(unAuthorized)) {
                 throw new AccessDeniedException(String.format("No %s permission for the database with id %s",
-                        String.join(",", unPermittedActions), databaseId));
+                        unAuthorized.stream().map(DatabasePermissionType::name).collect(Collectors.joining(",")),
+                        databaseId));
             }
         }
     }
 
-    public Map<Long, List<DatabasePermissionType>> getPermissions(Collection<Long> databaseIds) {
-        Map<Long, List<DatabasePermissionType>> ret = new HashMap<>();
+    /**
+     * Get the DB access permissions of the databases
+     * 
+     * @param databaseIds database ids
+     * @return database id to permission types
+     */
+    public Map<Long, Set<DatabasePermissionType>> getPermissions(Collection<Long> databaseIds) {
+        Map<Long, Set<DatabasePermissionType>> ret = new HashMap<>();
         if (CollectionUtils.isEmpty(databaseIds)) {
             return ret;
         }
-        List<Database> databases = databaseService.listDatabasesByIds(databaseIds);
-        Set<Long> projectIds = getAllDatabasePermittedProjectIds();
-        Map<Long, List<String>> id2Actions = getDatabaseId2Actions(databaseIds);
-        for (Database database : databases) {
-            if (database.getProject() == null || database.getProject().getId() == null) {
-                ret.put(database.getId(), new ArrayList<>());
-            } else if (projectIds.contains(database.getProject().getId())) {
-                ret.put(database.getId(), DatabasePermissionType.all());
+        List<DatabaseEntity> entities = databaseRepository.findByIdIn(databaseIds);
+        Set<Long> projectIds = getPermittedProjectIds();
+        Map<Long, Set<DatabasePermissionType>> id2PermissionTypes = getDatabaseId2PermissionTypes(databaseIds);
+        for (DatabaseEntity e : entities) {
+            if (e.getProjectId() == null) {
+                ret.put(e.getId(), new HashSet<>());
+            } else if (projectIds.contains(e.getProjectId())) {
+                ret.put(e.getId(), new HashSet<>(DatabasePermissionType.all()));
             } else {
-                if (id2Actions.containsKey(database.getId())) {
-                    ret.put(database.getId(), id2Actions.get(database.getId()).stream()
-                            .map(DatabasePermissionType::from).collect(Collectors.toList()));
+                if (id2PermissionTypes.containsKey(e.getId())) {
+                    ret.put(e.getId(), id2PermissionTypes.get(e.getId()));
                 } else {
-                    ret.put(database.getId(), new ArrayList<>());
+                    ret.put(e.getId(), new HashSet<>());
                 }
             }
         }
         return ret;
     }
 
-    private Set<Long> getAllDatabasePermittedProjectIds() {
+    private Set<Long> getPermittedProjectIds() {
+        // OWNER, DBA or DEVELOPER of a project can access all databases inner the project
         Map<Long, Set<ResourceRoleName>> projectIds2Roles = projectService.getProjectId2ResourceRoleNames();
         return projectIds2Roles.entrySet().stream()
                 .filter(e -> e.getValue().contains(ResourceRoleName.OWNER)
@@ -121,16 +134,14 @@ public class DatabasePermissionHelper {
                 .map(Map.Entry::getKey).collect(Collectors.toSet());
     }
 
-    private Map<Long, List<String>> getDatabaseId2Actions(Collection<Long> databaseIds) {
+    private Map<Long, Set<DatabasePermissionType>> getDatabaseId2PermissionTypes(Collection<Long> databaseIds) {
         return userDatabasePermissionRepository
-                .findByExpireTimeAfterAndUserIdAndDatabaseIdIn(new Date(), authenticationFacade.currentUserId(),
-                        databaseIds)
-                .stream()
+                .findNotExpiredByUserIdAndDatabaseIdIn(authenticationFacade.currentUserId(), databaseIds).stream()
                 .collect(Collectors.toMap(
                         UserDatabasePermissionEntity::getDatabaseId,
                         e -> {
-                            List<String> list = new ArrayList<>();
-                            list.add(e.getAction());
+                            Set<DatabasePermissionType> list = new HashSet<>();
+                            list.add(DatabasePermissionType.from(e.getAction()));
                             return list;
                         },
                         (e1, e2) -> {
@@ -138,6 +149,5 @@ public class DatabasePermissionHelper {
                             return e1;
                         }));
     }
-
 
 }

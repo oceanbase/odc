@@ -46,6 +46,7 @@ import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.service.common.FileManager;
 import com.oceanbase.odc.service.common.model.FileBucket;
 import com.oceanbase.odc.service.common.util.SqlUtils;
+import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.flow.exception.ServiceTaskError;
 import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
@@ -57,7 +58,6 @@ import com.oceanbase.odc.service.flow.task.model.SqlCheckTaskResult;
 import com.oceanbase.odc.service.flow.task.util.DatabaseChangeFileReader;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
-import com.oceanbase.odc.service.permission.database.DatabasePermissionService;
 import com.oceanbase.odc.service.permission.database.model.UnauthorizedDatabase;
 import com.oceanbase.odc.service.regulation.approval.ApprovalFlowConfigSelector;
 import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevel;
@@ -96,7 +96,7 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
     @Autowired
     private ApprovalFlowConfigSelector approvalFlowConfigSelector;
     @Autowired
-    private DatabasePermissionService databasePermissionService;
+    private DatabaseService databaseService;
     @Autowired
     private DatabaseChangeFileReader databaseChangeFileReader;
     @Autowired
@@ -263,11 +263,9 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
         if (CollectionUtils.isNotEmpty(sqls)) {
             violations.addAll(this.sqlCheckService.check(Long.valueOf(describer.getEnvironmentId()),
                     describer.getDatabaseName(), sqls, connectionConfig));
-
-            unauthorizedDatabases =
-                    databasePermissionService.filterUnauthorizedDatabases(SchemaExtractor.listSchemaName2SqlTypes(
-                            sqls.stream().map(e -> SqlTuple.newTuple(e.getStr())).collect(Collectors.toList()),
-                            this.connectionConfig.getDialectType()), connectionConfig.getId());
+            unauthorizedDatabases = databaseService.filterUnauthorizedDatabases(SchemaExtractor.listSchemaName2SqlTypes(
+                    sqls.stream().map(e -> SqlTuple.newTuple(e.getStr())).collect(Collectors.toList()),
+                    this.connectionConfig.getDialectType()), connectionConfig.getId());
         }
         this.permissionCheckResult = new DatabasePermissionCheckResult(unauthorizedDatabases);
         this.sqlCheckResult = SqlCheckTaskResult.success(violations);

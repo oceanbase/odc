@@ -29,9 +29,9 @@ import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.sql.execute.SqlExecuteStages;
+import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
-import com.oceanbase.odc.service.permission.database.DatabasePermissionService;
 import com.oceanbase.odc.service.permission.database.model.UnauthorizedDatabase;
 import com.oceanbase.odc.service.session.model.SqlAsyncExecuteReq;
 import com.oceanbase.odc.service.session.model.SqlAsyncExecuteResp;
@@ -53,7 +53,8 @@ import lombok.extern.slf4j.Slf4j;
 public class DatabasePermissionInterceptor extends BaseTimeConsumingInterceptor {
 
     @Autowired
-    private DatabasePermissionService databasePermissionService;
+    private DatabaseService databaseService;
+
     @Autowired
     private AuthenticationFacade authenticationFacade;
 
@@ -73,7 +74,7 @@ public class DatabasePermissionInterceptor extends BaseTimeConsumingInterceptor 
                 response.getSqls().stream().map(SqlTuplesWithViolation::getSqlTuple).collect(Collectors.toList()),
                 session.getDialectType());
         List<UnauthorizedDatabase> unauthorizedDatabases =
-                databasePermissionService.filterUnauthorizedDatabases(schemaName2SqlTypes, connectionConfig.getId());
+                databaseService.filterUnauthorizedDatabases(schemaName2SqlTypes, connectionConfig.getId());
         if (CollectionUtils.isNotEmpty(unauthorizedDatabases)) {
             response.setUnauthorizedDatabases(unauthorizedDatabases);
             return false;

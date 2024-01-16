@@ -16,8 +16,10 @@
 package com.oceanbase.odc.metadb.iam;
 
 import java.util.Collection;
-import java.util.Date;
 import java.util.List;
+
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import com.oceanbase.odc.metadb.flow.ReadOnlyRepository;
 
@@ -27,12 +29,13 @@ import com.oceanbase.odc.metadb.flow.ReadOnlyRepository;
  */
 public interface UserDatabasePermissionRepository extends ReadOnlyRepository<UserDatabasePermissionEntity, Long> {
 
-    List<UserDatabasePermissionEntity> findByExpireTimeAfterAndProjectIdAndIdIn(Date expireTime, Long projectId,
-            Collection<Long> ids);
-
-    List<UserDatabasePermissionEntity> findByExpireTimeAfterAndUserIdAndDatabaseIdIn(Date expireTime, Long userId,
-            Collection<Long> databaseIds);
+    List<UserDatabasePermissionEntity> findByProjectIdAndIdIn(Long projectId, Collection<Long> ids);
 
     List<UserDatabasePermissionEntity> findByDatabaseIdIn(Collection<Long> databaseIds);
+
+    @Query(value = "select v.* from list_user_database_permission_view v where (v.expire_time is null or v.expire_time > now()) "
+            + "and v.user_id = :userId and v.database_id in (:databaseIds)", nativeQuery = true)
+    List<UserDatabasePermissionEntity> findNotExpiredByUserIdAndDatabaseIdIn(@Param("userId") Long userId,
+            @Param("databaseIds") Collection<Long> databaseIds);
 
 }

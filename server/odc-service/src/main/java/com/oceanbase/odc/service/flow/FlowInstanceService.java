@@ -680,9 +680,8 @@ public class FlowInstanceService {
             databaseIds.add(p.getTargetDatabaseId());
             databaseIds.add(p.getSourceDatabaseId());
         }
-        DatabasePermissionType permissionType = DatabasePermissionType.from(req.getTaskType());
-        Set<String> actions = permissionType == null ? null : Collections.singleton(permissionType.getAction());
-        databasePermissionHelper.checkPermissions(databaseIds, actions);
+        DatabasePermissionType type = DatabasePermissionType.from(req.getTaskType());
+        databasePermissionHelper.checkPermissions(databaseIds, type == null ? null : Collections.singleton(type));
     }
 
 

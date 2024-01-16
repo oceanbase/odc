@@ -18,7 +18,6 @@ package com.oceanbase.odc.service.permission.database;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -41,7 +40,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
-import com.oceanbase.odc.common.lang.CaseInsensitiveString;
 import com.oceanbase.odc.core.authority.util.Authenticated;
 import com.oceanbase.odc.core.authority.util.PreAuthenticate;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
@@ -60,19 +58,15 @@ import com.oceanbase.odc.metadb.iam.UserPermissionEntity;
 import com.oceanbase.odc.metadb.iam.UserPermissionRepository;
 import com.oceanbase.odc.service.collaboration.project.ProjectService;
 import com.oceanbase.odc.service.collaboration.project.model.Project;
-import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
-import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.iam.PermissionService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.permission.database.model.CreateDatabasePermissionReq;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
 import com.oceanbase.odc.service.permission.database.model.QueryDatabasePermissionParams;
 import com.oceanbase.odc.service.permission.database.model.QueryDatabasePermissionParams.PermissionExpireStatus;
-import com.oceanbase.odc.service.permission.database.model.UnauthorizedDatabase;
 import com.oceanbase.odc.service.permission.database.model.UserDatabasePermission;
-import com.oceanbase.tools.dbbrowser.parser.constant.SqlType;
 
 /**
  * @author gaoda.xy
@@ -103,12 +97,6 @@ public class DatabasePermissionService {
 
     @Autowired
     private PermissionService permissionService;
-
-    @Autowired
-    private ConnectionService connectionService;
-
-    @Autowired
-    private DatabasePermissionHelper databasePermissionHelper;
 
     @Value("${odc.iam.permission.expired-retention-time-seconds:7776000}")
     private long expiredRetentionTimeSeconds;
@@ -228,54 +216,12 @@ public class DatabasePermissionService {
     @PreAuthenticate(hasAnyResourceRole = {"OWNER", "DBA"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
     public List<UserDatabasePermission> batchRevoke(@NotNull Long projectId, @NotEmpty List<Long> ids) {
         List<UserDatabasePermissionEntity> entities =
-                userDatabasePermissionRepository.findByExpireTimeAfterAndProjectIdAndIdIn(new Date(), projectId, ids);
+                userDatabasePermissionRepository.findByProjectIdAndIdIn(projectId, ids);
         List<Long> permissionIds =
                 entities.stream().map(UserDatabasePermissionEntity::getId).collect(Collectors.toList());
         permissionRepository.deleteByIds(permissionIds);
         userPermissionRepository.deleteByPermissionIds(permissionIds);
         return permissionIds.stream().map(UserDatabasePermission::from).collect(Collectors.toList());
-    }
-
-    @SkipAuthorize("odc internal usage")
-    public List<UnauthorizedDatabase> filterUnauthorizedDatabases(
-            @NotEmpty Map<String, Set<SqlType>> schemaName2SqlTypes, @NotNull Long dataSourceId) {
-        ConnectionConfig dataSource = connectionService.nullSafeGet(dataSourceId);
-        List<Database> databases = databaseService.listDatabasesByConnectionIds(Collections.singleton(dataSourceId));
-        databases.forEach(d -> d.getDataSource().setName(dataSource.getName()));
-        Map<CaseInsensitiveString, Database> name2Database = databases.stream()
-                .collect(Collectors.toMap(d -> new CaseInsensitiveString(d.getName()), d -> d, (d1, d2) -> d1));
-        Map<Long, List<DatabasePermissionType>> id2Permissions = databasePermissionHelper
-                .getPermissions(databases.stream().map(Database::getId).collect(Collectors.toList()));
-
-        List<UnauthorizedDatabase> unauthorizedDatabases = new ArrayList<>();
-        for (Map.Entry<String, Set<SqlType>> entry : schemaName2SqlTypes.entrySet()) {
-            CaseInsensitiveString schemaName = new CaseInsensitiveString(entry.getKey());
-            Set<DatabasePermissionType> needPermissions = entry.getValue().stream().map(DatabasePermissionType::from)
-                    .filter(Objects::nonNull).collect(Collectors.toSet());
-            if (CollectionUtils.isEmpty(needPermissions)) {
-                continue;
-            }
-            if (name2Database.containsKey(schemaName)) {
-                Database database = name2Database.get(schemaName);
-                List<DatabasePermissionType> hasPermissions = id2Permissions.get(database.getId());
-                if (CollectionUtils.isEmpty(hasPermissions)) {
-                    unauthorizedDatabases.add(UnauthorizedDatabase.from(database, new ArrayList<>(needPermissions)));
-                } else {
-                    Set<DatabasePermissionType> unauthorizedPermissions = needPermissions.stream()
-                            .filter(p -> !hasPermissions.contains(p)).collect(Collectors.toSet());
-                    if (CollectionUtils.isNotEmpty(unauthorizedPermissions)) {
-                        unauthorizedDatabases
-                                .add(UnauthorizedDatabase.from(database, new ArrayList<>(unauthorizedPermissions)));
-                    }
-                }
-            } else {
-                Database unknownDatabase = new Database();
-                unknownDatabase.setName(schemaName.toString());
-                unknownDatabase.setDataSource(dataSource);
-                unauthorizedDatabases.add(UnauthorizedDatabase.from(unknownDatabase, new ArrayList<>(needPermissions)));
-            }
-        }
-        return unauthorizedDatabases;
     }
 
     private Date getExpireTimeThreshold() {

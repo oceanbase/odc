@@ -15,7 +15,7 @@
  */
 package com.oceanbase.odc.service.permission.database.model;
 
-import java.util.List;
+import java.util.Set;
 
 import com.oceanbase.odc.service.connection.database.model.Database;
 
@@ -32,9 +32,9 @@ public class UnauthorizedDatabase extends Database {
 
     private static final long serialVersionUID = 2659094834615671659L;
 
-    private List<DatabasePermissionType> unauthorizedPermissionTypes;
+    private Set<DatabasePermissionType> unauthorizedPermissionTypes;
 
-    public static UnauthorizedDatabase from(Database database, List<DatabasePermissionType> types) {
+    public static UnauthorizedDatabase from(Database database, Set<DatabasePermissionType> types) {
         UnauthorizedDatabase obj = new UnauthorizedDatabase();
         obj.setId(database.getId());
         obj.setName(database.getName());
