@@ -37,7 +37,7 @@ import lombok.Data;
  */
 @Data
 @Entity
-@Table(name = "job_attribute")
+@Table(name = "job_job_attribute")
 public class JobAttributeEntity implements Serializable {
 
     private static final long serialVersionUID = 2744695847461276123L;

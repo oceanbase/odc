@@ -78,6 +78,7 @@ public class OdcServer {
                 JobConstants.ODC_BOOT_MODE_EXECUTOR)) {
             log.info("ODC start as task executor mode");
             new TaskApplication().run(args);
+            log.info("Task executor exit.");
             return;
         }
         initEnv();

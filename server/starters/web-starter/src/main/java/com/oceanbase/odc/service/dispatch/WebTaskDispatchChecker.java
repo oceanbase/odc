@@ -15,14 +15,19 @@
  */
 package com.oceanbase.odc.service.dispatch;
 
+import java.util.Objects;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.service.common.model.HostProperties;
+import com.oceanbase.odc.service.task.enums.TaskRunModeEnum;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
+import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 
 import lombok.NonNull;
 
@@ -40,6 +45,8 @@ public class WebTaskDispatchChecker implements TaskDispatchChecker {
 
     @Autowired
     private HostProperties hostProperties;
+    @Autowired
+    private TaskFrameworkService taskFrameworkService;
 
     @Override
     public boolean isThisMachine(@NonNull ExecutorInfo info) {
@@ -49,6 +56,12 @@ public class WebTaskDispatchChecker implements TaskDispatchChecker {
 
     @Override
     public boolean isTaskEntityOnThisMachine(@NonNull TaskEntity taskEntity) {
+        if (taskEntity.getJobId() != null) {
+            JobEntity jobEntity = taskFrameworkService.find(taskEntity.getJobId());
+            if (jobEntity != null && Objects.equals(jobEntity.getRunMode(), TaskRunModeEnum.K8S.name())) {
+                return false;
+            }
+        }
         ExecutorInfo executorInfo = JsonUtils.fromJson(taskEntity.getExecutor(), ExecutorInfo.class);
         if (executorInfo == null) {
             return true;

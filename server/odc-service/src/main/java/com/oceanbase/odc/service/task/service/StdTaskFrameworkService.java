@@ -198,6 +198,10 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
             return;
         }
         JobEntity je = find(taskResult.getJobIdentity().getId());
+        if (je == null) {
+            log.warn("Job identity is not exists by id {}", taskResult.getJobIdentity().getId());
+            return;
+        }
         if (je.getStatus().isTerminated()) {
             log.warn("Job {} is finished, ignore result", je.getId());
             return;
@@ -221,6 +225,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
                 heart.getExecutorEndpoint() == null) {
             return;
         }
+
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaUpdate<JobEntity> update = cb.createCriteriaUpdate(JobEntity.class);
         Root<JobEntity> e = update.from(JobEntity.class);

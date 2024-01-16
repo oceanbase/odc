@@ -42,13 +42,14 @@ import lombok.extern.slf4j.Slf4j;
 @ConditionalOnProperty(prefix = "odc.task-framework", name = "enable-task-framework", havingValues = "true")
 @Slf4j
 @RestController
+@RequestMapping("/api/v2/task")
 public class TaskController {
 
     @Autowired
     private TaskFrameworkService taskFrameworkService;
 
     @ApiOperation(value = "updateResult", notes = "update task result")
-    @RequestMapping(value = JobUrlConstants.TASK_RESULT_UPLOAD, method = RequestMethod.POST)
+    @RequestMapping(value = "/result", method = RequestMethod.POST)
     public SuccessResponse<String> updateResult(@RequestBody DefaultTaskResult taskResult) {
         if (log.isDebugEnabled()) {
             log.debug("Accept task result {}.", JsonUtils.toJson(taskResult));
@@ -58,7 +59,7 @@ public class TaskController {
     }
 
     @ApiOperation(value = "heart", notes = "update heart request")
-    @RequestMapping(value = JobUrlConstants.TASK_HEART, method = RequestMethod.POST)
+    @RequestMapping(value = "/heart", method = RequestMethod.POST)
     public SuccessResponse<String> heart(@RequestBody HeartRequest heart) {
         taskFrameworkService.handleHeart(heart);
         return Responses.success("ok");
