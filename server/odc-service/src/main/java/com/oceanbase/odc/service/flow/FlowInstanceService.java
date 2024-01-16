@@ -65,6 +65,7 @@ import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.constant.LimitMetric;
+import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.TaskType;
@@ -137,6 +138,7 @@ import com.oceanbase.odc.service.integration.model.IntegrationConfig;
 import com.oceanbase.odc.service.integration.model.TemplateVariables;
 import com.oceanbase.odc.service.integration.model.TemplateVariables.Variable;
 import com.oceanbase.odc.service.permission.database.DatabasePermissionHelper;
+import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
 import com.oceanbase.odc.service.regulation.approval.model.ApprovalFlowConfig;
 import com.oceanbase.odc.service.regulation.approval.model.ApprovalNodeConfig;
 import com.oceanbase.odc.service.regulation.risklevel.RiskLevelService;
@@ -655,43 +657,31 @@ public class FlowInstanceService {
     }
 
     private void checkCreateFlowInstancePermission(CreateFlowInstanceReq req) {
+        if (authenticationFacade.currentUser().getOrganizationType() == OrganizationType.INDIVIDUAL) {
+            return;
+        }
         Set<Long> databaseIds = new HashSet<>();
-        Set<String> actions = new HashSet<>();
         if (Objects.nonNull(req.getDatabaseId())) {
             databaseIds.add(req.getDatabaseId());
         }
-        databaseIds.add(req.getDatabaseId());
-        switch (req.getTaskType()) {
-            case EXPORT:
-            case EXPORT_RESULT_SET:
-                actions.add("export");
-                break;
-            case IMPORT:
-            case MOCKDATA:
-            case ASYNC:
-            case SHADOWTABLE_SYNC:
-            case ONLINE_SCHEMA_CHANGE:
-                actions.add("change");
-                break;
-            case ALTER_SCHEDULE:
-                actions.add("change");
-                AlterScheduleParameters params = (AlterScheduleParameters) req.getParameters();
-                if (params.getType() == JobType.DATA_ARCHIVE) {
-                    DataArchiveParameters p = (DataArchiveParameters) params.getScheduleTaskParameters();
-                    databaseIds.add(p.getSourceDatabaseId());
-                    databaseIds.add(p.getTargetDataBaseId());
-                } else if (params.getType() == JobType.DATA_DELETE) {
-                    DataDeleteParameters p = (DataDeleteParameters) params.getScheduleTaskParameters();
-                    databaseIds.add(p.getDatabaseId());
-                }
-            case STRUCTURE_COMPARISON:
-                DBStructureComparisonParameter p = (DBStructureComparisonParameter) req.getParameters();
-                databaseIds.add(p.getTargetDatabaseId());
+        TaskType taskType = req.getTaskType();
+        if (taskType == TaskType.ALTER_SCHEDULE) {
+            AlterScheduleParameters params = (AlterScheduleParameters) req.getParameters();
+            if (params.getType() == JobType.DATA_ARCHIVE) {
+                DataArchiveParameters p = (DataArchiveParameters) params.getScheduleTaskParameters();
                 databaseIds.add(p.getSourceDatabaseId());
-                break;
-            default:
-                break;
+                databaseIds.add(p.getTargetDataBaseId());
+            } else if (params.getType() == JobType.DATA_DELETE) {
+                DataDeleteParameters p = (DataDeleteParameters) params.getScheduleTaskParameters();
+                databaseIds.add(p.getDatabaseId());
+            }
+        } else if (taskType == TaskType.STRUCTURE_COMPARISON) {
+            DBStructureComparisonParameter p = (DBStructureComparisonParameter) req.getParameters();
+            databaseIds.add(p.getTargetDatabaseId());
+            databaseIds.add(p.getSourceDatabaseId());
         }
+        DatabasePermissionType permissionType = DatabasePermissionType.from(req.getTaskType());
+        Set<String> actions = permissionType == null ? null : Collections.singleton(permissionType.getAction());
         databasePermissionHelper.checkPermissions(databaseIds, actions);
     }
 

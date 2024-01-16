@@ -677,7 +677,9 @@ public class DatabaseService {
         Set<Long> databaseIds = entities.stream().map(DatabaseEntity::getId).collect(Collectors.toSet());
         if (includesPermittedAction) {
             databaseId2PermittedActions = userDatabasePermissionRepository
-                    .findByUserIdAndDatabaseIdIn(authenticationFacade.currentUserId(), databaseIds).stream()
+                    .findByExpireTimeAfterAndUserIdAndDatabaseIdIn(new Date(), authenticationFacade.currentUserId(),
+                            databaseIds)
+                    .stream()
                     .collect(Collectors.toMap(
                             UserDatabasePermissionEntity::getDatabaseId,
                             e -> {

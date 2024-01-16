@@ -228,7 +228,7 @@ public class DatabasePermissionService {
     @PreAuthenticate(hasAnyResourceRole = {"OWNER", "DBA"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
     public List<UserDatabasePermission> batchRevoke(@NotNull Long projectId, @NotEmpty List<Long> ids) {
         List<UserDatabasePermissionEntity> entities =
-                userDatabasePermissionRepository.findByProjectIdAndIdIn(projectId, ids);
+                userDatabasePermissionRepository.findByExpireTimeAfterAndProjectIdAndIdIn(new Date(), projectId, ids);
         List<Long> permissionIds =
                 entities.stream().map(UserDatabasePermissionEntity::getId).collect(Collectors.toList());
         permissionRepository.deleteByIds(permissionIds);

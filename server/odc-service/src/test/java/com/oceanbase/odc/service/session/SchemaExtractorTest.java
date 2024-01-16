@@ -38,11 +38,13 @@ public class SchemaExtractorTest {
 
     @Test
     public void testMySQL_listSchemaName2SqlTypes() {
-        String sql = "select * from db1.table1";
-        Map<String, Set<SqlType>> actual =
-                SchemaExtractor.listSchemaName2SqlTypes(Arrays.asList(SqlTuple.newTuple(sql)), DialectType.OB_MYSQL);
+        String sql1 = "select * from db1.table1;";
+        String sql2 = "truncate table db1.table1;";
+        Map<String, Set<SqlType>> actual = SchemaExtractor.listSchemaName2SqlTypes(
+                Arrays.asList(SqlTuple.newTuple(sql1), SqlTuple.newTuple(sql2)), DialectType.OB_MYSQL);
         Assert.assertTrue(actual.keySet().size() == 1 && actual.containsKey("db1"));
-        Assert.assertTrue(actual.get("db1").size() == 1 && actual.get("db1").contains(SqlType.SELECT));
+        Assert.assertTrue(actual.get("db1").size() == 2 && actual.get("db1").contains(SqlType.SELECT)
+                && actual.get("db1").contains(SqlType.TRUNCATE));
     }
 
     @Test

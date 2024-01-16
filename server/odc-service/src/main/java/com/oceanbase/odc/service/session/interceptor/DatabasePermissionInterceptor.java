@@ -29,7 +29,6 @@ import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.sql.execute.SqlExecuteStages;
-import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.permission.database.DatabasePermissionService;
@@ -53,8 +52,6 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 public class DatabasePermissionInterceptor extends BaseTimeConsumingInterceptor {
 
-    @Autowired
-    private DatabaseService databaseService;
     @Autowired
     private DatabasePermissionService databasePermissionService;
     @Autowired

@@ -16,6 +16,7 @@
 package com.oceanbase.odc.metadb.iam;
 
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 
 import com.oceanbase.odc.metadb.flow.ReadOnlyRepository;
@@ -26,9 +27,11 @@ import com.oceanbase.odc.metadb.flow.ReadOnlyRepository;
  */
 public interface UserDatabasePermissionRepository extends ReadOnlyRepository<UserDatabasePermissionEntity, Long> {
 
-    List<UserDatabasePermissionEntity> findByProjectIdAndIdIn(Long projectId, Collection<Long> ids);
+    List<UserDatabasePermissionEntity> findByExpireTimeAfterAndProjectIdAndIdIn(Date expireTime, Long projectId,
+            Collection<Long> ids);
 
-    List<UserDatabasePermissionEntity> findByUserIdAndDatabaseIdIn(Long userId, Collection<Long> databaseIds);
+    List<UserDatabasePermissionEntity> findByExpireTimeAfterAndUserIdAndDatabaseIdIn(Date expireTime, Long userId,
+            Collection<Long> databaseIds);
 
     List<UserDatabasePermissionEntity> findByDatabaseIdIn(Collection<Long> databaseIds);
 

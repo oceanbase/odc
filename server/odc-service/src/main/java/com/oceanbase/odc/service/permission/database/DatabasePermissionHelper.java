@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.permission.database;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -122,7 +123,9 @@ public class DatabasePermissionHelper {
 
     private Map<Long, List<String>> getDatabaseId2Actions(Collection<Long> databaseIds) {
         return userDatabasePermissionRepository
-                .findByUserIdAndDatabaseIdIn(authenticationFacade.currentUserId(), databaseIds).stream()
+                .findByExpireTimeAfterAndUserIdAndDatabaseIdIn(new Date(), authenticationFacade.currentUserId(),
+                        databaseIds)
+                .stream()
                 .collect(Collectors.toMap(
                         UserDatabasePermissionEntity::getDatabaseId,
                         e -> {
