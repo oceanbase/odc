@@ -21,6 +21,7 @@ import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.tools.dbbrowser.editor.DBTablePartitionEditor;
 import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLDBTablePartitionEditor;
+import com.oceanbase.tools.dbbrowser.editor.mysql.OBMySQLDBTablePartitionEditor;
 import com.oceanbase.tools.dbbrowser.editor.mysql.OBMySQLLessThan2277PartitionEditor;
 import com.oceanbase.tools.dbbrowser.editor.mysql.OBMySQLLessThan400DBTablePartitionEditor;
 import com.oceanbase.tools.dbbrowser.editor.oracle.OBOracleLessThan400DBTablePartitionEditor;
@@ -46,7 +47,7 @@ public class DBTablePartitionEditorFactory extends DBObjectEditorFactory<DBTable
             } else if (VersionUtils.isLessThan(dbVersion, "4.0.0")) {
                 return new OBMySQLLessThan400DBTablePartitionEditor();
             } else {
-                return new MySQLDBTablePartitionEditor();
+                return new OBMySQLDBTablePartitionEditor();
             }
         } else if (connectType == ConnectType.MYSQL || connectType == ConnectType.ODP_SHARDING_OB_MYSQL) {
             return new MySQLDBTablePartitionEditor();

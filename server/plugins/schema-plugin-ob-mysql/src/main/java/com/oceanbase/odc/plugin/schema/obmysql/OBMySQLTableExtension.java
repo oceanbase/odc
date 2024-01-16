@@ -33,8 +33,8 @@ import com.oceanbase.tools.dbbrowser.editor.DBTableEditor;
 import com.oceanbase.tools.dbbrowser.editor.DBTablePartitionEditor;
 import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLColumnEditor;
 import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLConstraintEditor;
-import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLDBTablePartitionEditor;
 import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLObjectOperator;
+import com.oceanbase.tools.dbbrowser.editor.mysql.OBMySQLDBTablePartitionEditor;
 import com.oceanbase.tools.dbbrowser.editor.mysql.OBMySQLIndexEditor;
 import com.oceanbase.tools.dbbrowser.editor.mysql.OBMySQLLessThan2277PartitionEditor;
 import com.oceanbase.tools.dbbrowser.editor.mysql.OBMySQLLessThan400ConstraintEditor;
@@ -154,7 +154,7 @@ public class OBMySQLTableExtension implements TableExtensionPoint {
         } else if (VersionUtils.isLessThan(dbVersion, "4.0.0")) {
             return new OBMySQLLessThan400DBTablePartitionEditor();
         } else {
-            return new MySQLDBTablePartitionEditor();
+            return new OBMySQLDBTablePartitionEditor();
         }
     }
 

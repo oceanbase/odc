@@ -51,6 +51,11 @@ public class OracleDBTablePartitionEditor extends DBTablePartitionEditor {
     }
 
     @Override
+    public String generateDropObjectDDL(DBTablePartition dbObject) {
+        return "/* Unsupported operation to convert partitioned table to non-partitioned table */\n";
+    }
+
+    @Override
     protected void appendDefinitions(DBTablePartition partition, SqlBuilder sqlBuilder) {
         DBTablePartitionType type = partition.getPartitionOption().getType();
         if (type == DBTablePartitionType.HASH) {

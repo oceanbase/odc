@@ -15,24 +15,16 @@
  */
 package com.oceanbase.tools.dbbrowser.editor.mysql;
 
-import javax.validation.constraints.NotNull;
-
 import com.oceanbase.tools.dbbrowser.model.DBTablePartition;
 
 /**
  * @author jingtian
- * @date 2024/1/12
+ * @date 2024/1/16
  * @since ODC_release_4.2.4
  */
-public class OBMySQLLessThan400DBTablePartitionEditor extends OBMySQLDBTablePartitionEditor {
+public class OBMySQLDBTablePartitionEditor extends MySQLDBTablePartitionEditor {
     @Override
-    public String generateCreateObjectDDL(DBTablePartition partition) {
-        return "/* Unsupported operation to convert non-partitioned table to partitioned table */\n";
-    }
-
-    @Override
-    protected String modifyPartitionType(@NotNull DBTablePartition oldPartition,
-            @NotNull DBTablePartition newPartition) {
-        return "/* Unsupported operation to modify table partition type */\n";
+    public String generateDropObjectDDL(DBTablePartition dbObject) {
+        return "/* Unsupported operation to convert partitioned table to non-partitioned table */\n";
     }
 }

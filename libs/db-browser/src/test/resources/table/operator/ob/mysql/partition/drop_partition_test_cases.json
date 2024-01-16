@@ -21,7 +21,7 @@
         ]
       }
     },
-    "output": "ALTER TABLE `schema`.`table` DROP PARTITION (p1);\n"
+    "output": "ALTER TABLE `schema`.`table` REMOVE PARTITIONING;\n"
   },
   {
     "id": 2,
@@ -51,6 +51,6 @@
         ]
       }
     },
-    "output": "ALTER TABLE `schema`.`table` DROP PARTITION (p1);\nALTER TABLE `schema`.`table` DROP PARTITION (p2);\n"
+    "output": "ALTER TABLE `schema`.`table` REMOVE PARTITIONING;\n"
   }
 ]

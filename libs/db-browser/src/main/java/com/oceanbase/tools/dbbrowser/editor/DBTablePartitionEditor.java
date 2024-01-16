@@ -97,7 +97,8 @@ public abstract class DBTablePartitionEditor implements DBObjectEditor<DBTablePa
         DBTablePartitionType newType = newPartition.getPartitionOption().getType();
         if (oldType != newType) {
             if (newType == DBTablePartitionType.NOT_PARTITIONED) {
-                return "/* Unsupported operation to convert partitioned table to non-partitioned table */\n";
+                // means convert partitioned table to non-partitioned table
+                return generateDropObjectDDL(oldPartition);
             } else if (oldType == DBTablePartitionType.NOT_PARTITIONED) {
                 // means convert non-partitioned table to partitioned table
                 return generateCreateObjectDDL(newPartition);
@@ -220,18 +221,6 @@ public abstract class DBTablePartitionEditor implements DBObjectEditor<DBTablePa
     @Override
     public String generateRenameObjectDDL(@NotNull DBTablePartition oldObject,
             @NotNull DBTablePartition newObject) {
-        return StringUtils.EMPTY;
-    }
-
-    @Override
-    public String generateDropObjectDDL(@NotNull DBTablePartition partition) {
-        SqlBuilder sqlBuilder = sqlBuilder();
-        String fullyQualifiedTableName = getFullyQualifiedTableName(partition);
-        if (Objects.nonNull(partition.getPartitionDefinitions())) {
-            partition.getPartitionDefinitions().forEach(definition -> sqlBuilder
-                    .append(generateDropPartitionDefinitionDDL(definition, fullyQualifiedTableName)));
-            return sqlBuilder.toString();
-        }
         return StringUtils.EMPTY;
     }
 

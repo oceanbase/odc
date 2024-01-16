@@ -55,6 +55,15 @@ public class MySQLDBTablePartitionEditor extends DBTablePartitionEditor {
     }
 
     @Override
+    public String generateDropObjectDDL(DBTablePartition dbObject) {
+        SqlBuilder sqlBuilder = sqlBuilder();
+        String fullyQualifiedTableName = getFullyQualifiedTableName(dbObject);
+        sqlBuilder.append("ALTER TABLE ").append(fullyQualifiedTableName).append(" REMOVE PARTITIONING").append(";")
+                .line();
+        return sqlBuilder.toString();
+    }
+
+    @Override
     protected void appendDefinitions(DBTablePartition partition, SqlBuilder sqlBuilder) {
         DBTablePartitionType type = partition.getPartitionOption().getType();
         if (type == DBTablePartitionType.HASH || type == DBTablePartitionType.KEY) {
