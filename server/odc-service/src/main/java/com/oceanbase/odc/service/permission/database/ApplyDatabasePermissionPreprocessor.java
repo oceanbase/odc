@@ -75,7 +75,7 @@ public class ApplyDatabasePermissionPreprocessor implements Preprocessor {
         Long projectId = parameter.getProject().getId();
         ProjectEntity projectEntity = projectService.nullSafeGet(projectId);
         Verify.verify(Boolean.FALSE.equals(projectEntity.getArchived()), "Project is archived");
-        if (projectService.checkPermission(projectId, ResourceRoleName.all())) {
+        if (!projectService.checkPermission(projectId, ResourceRoleName.all())) {
             throw new AccessDeniedException();
         }
         parameter.getProject().setName(projectEntity.getName());
