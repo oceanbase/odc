@@ -448,7 +448,7 @@ public class FlowInstanceServiceTest extends ServiceTestEnv {
     public void testFindByParentInstanceIdIn() {
         createChildFlowInstance("test", 1L);
         List<ParentInstanceIdCount> byParentInstanceIdIn = flowInstanceRepository.findByParentInstanceIdIn(
-                Collections.singleton(1L));
+                Arrays.asList(1L, 2L));
         Assert.assertEquals(byParentInstanceIdIn.size(), 1);
     }
 
