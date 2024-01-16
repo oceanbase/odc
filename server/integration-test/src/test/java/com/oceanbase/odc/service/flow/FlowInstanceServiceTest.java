@@ -61,6 +61,7 @@ import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.core.shared.exception.OverLimitException;
 import com.oceanbase.odc.metadb.flow.FlowInstanceEntity;
 import com.oceanbase.odc.metadb.flow.FlowInstanceRepository;
+import com.oceanbase.odc.metadb.flow.FlowInstanceRepository.ParentInstanceIdCount;
 import com.oceanbase.odc.metadb.flow.GateWayInstanceRepository;
 import com.oceanbase.odc.metadb.flow.NodeInstanceEntityRepository;
 import com.oceanbase.odc.metadb.flow.SequenceInstanceRepository;
@@ -443,6 +444,14 @@ public class FlowInstanceServiceTest extends ServiceTestEnv {
         Assert.assertEquals(0, status.size());
     }
 
+    @Test
+    public void testFindByParentInstanceIdIn() {
+        createChildFlowInstance("test", 1L);
+        List<ParentInstanceIdCount> byParentInstanceIdIn = flowInstanceRepository.findByParentInstanceIdIn(
+                Collections.singleton(1L));
+        Assert.assertEquals(byParentInstanceIdIn.size(), 1);
+    }
+
     private void buildFlowInstance(FlowInstance flowInstance) {
         buildFlowInstanceWithTaskType(flowInstance, TaskType.ASYNC);
     }
@@ -484,6 +493,10 @@ public class FlowInstanceServiceTest extends ServiceTestEnv {
 
     private FlowInstance createFlowInstance(String name) {
         return flowFactory.generateFlowInstance(name, null, 1L, null);
+    }
+
+    private FlowInstance createChildFlowInstance(String name, Long parentFloweInstanceId) {
+        return flowFactory.generateFlowInstance(name, parentFloweInstanceId, 1L, null);
     }
 
     private FlowTaskInstance createTaskInstance(Long flowInstanceId, TaskEntity taskEntity,
