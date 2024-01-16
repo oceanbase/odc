@@ -46,20 +46,14 @@ public abstract class DBTableConstraintEditor implements DBObjectEditor<DBTableC
     @Override
     public String generateCreateObjectDDL(@NotNull DBTableConstraint constraint) {
         SqlBuilder sqlBuilder = sqlBuilder();
-        if (constraint.getType() == DBConstraintType.PRIMARY_KEY) {
-            sqlBuilder.append("ALTER TABLE ").append(getFullyQualifiedTableName(constraint));
-            if (constraint.getName().isEmpty()) {
-                sqlBuilder.append(" ADD PRIMARY KEY ");
-            } else {
-                sqlBuilder.append(" ADD CONSTRAINT ").identifier(constraint.getName()).append(" PRIMARY KEY ");
-            }
-            appendConstraintColumns(constraint, sqlBuilder);
-            return sqlBuilder.append(";").line().toString();
+        sqlBuilder.append("ALTER TABLE ").append(getFullyQualifiedTableName(constraint));
+        if (constraint.getType() == DBConstraintType.PRIMARY_KEY && constraint.getName().isEmpty()) {
+            sqlBuilder.append(" ADD PRIMARY KEY ");
+        } else {
+            sqlBuilder.append(" ADD CONSTRAINT ")
+                    .identifierIf(constraint.getName(), StringUtils.isNotEmpty(constraint.getName())).space();
+            appendConstraintType(constraint, sqlBuilder);
         }
-        sqlBuilder.append("ALTER TABLE ").append(getFullyQualifiedTableName(constraint))
-                .append(" ADD CONSTRAINT ")
-                .identifierIf(constraint.getName(), StringUtils.isNotEmpty(constraint.getName())).space();
-        appendConstraintType(constraint, sqlBuilder);
         appendConstraintColumns(constraint, sqlBuilder);
         appendConstraintOptions(constraint, sqlBuilder);
         return sqlBuilder.toString().trim() + ";\n";
