@@ -18,7 +18,6 @@ package com.oceanbase.odc.config;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -28,6 +27,7 @@ import com.oceanbase.odc.service.encryption.SensitivePropertyHandler;
 import com.oceanbase.odc.service.iam.auth.CustomAuthenticationFailureHandler;
 import com.oceanbase.odc.service.iam.auth.CustomAuthenticationSuccessHandler;
 import com.oceanbase.odc.service.iam.auth.UsernamePasswordConfigureHelper;
+import com.oceanbase.odc.service.iam.auth.local.LocalDaoAuthenticationProvider;
 import com.oceanbase.odc.service.iam.util.FailedLoginAttemptLimiter;
 
 @Configuration
@@ -59,8 +59,8 @@ public class SecurityBeanConfiguration {
 
 
     @Bean
-    public DaoAuthenticationProvider authenticationProvider() {
-        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
+    public LocalDaoAuthenticationProvider authenticationProvider() {
+        LocalDaoAuthenticationProvider provider = new LocalDaoAuthenticationProvider();
         provider.setHideUserNotFoundExceptions(false);
         provider.setUserDetailsService(userDetailsService);
         provider.setPasswordEncoder(passwordEncoder);

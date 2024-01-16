@@ -46,6 +46,8 @@ import org.springframework.web.client.UnknownContentTypeException;
 
 import com.oceanbase.odc.common.trace.TraceContextHolder;
 import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.service.iam.auth.MappingRuleConvert;
+import com.oceanbase.odc.service.iam.auth.SsoUserDetailService;
 import com.oceanbase.odc.service.iam.model.User;
 import com.oceanbase.odc.service.integration.oauth2.TestLoginManager;
 
@@ -70,7 +72,7 @@ public class OAuth2UserServiceImpl implements OAuth2UserService<OAuth2UserReques
     private final Converter<OAuth2UserRequest, RequestEntity<?>> requestEntityConverter =
             new OAuth2UserRequestEntityConverter();
     @Autowired
-    private OAuth2UserDetailService OAuth2UserDetailService;
+    private SsoUserDetailService ssoUserDetailService;
     @Autowired
     private MappingRuleConvert mappingRuleConvert;
     @Autowired
@@ -101,10 +103,10 @@ public class OAuth2UserServiceImpl implements OAuth2UserService<OAuth2UserReques
 
         PreConditions.notNull(response, "oAuth2User");
 
-        MappingResult mappingResult = mappingRuleConvert.resolveMappingResult(userRequest, response.getBody());
-        testLoginManager.abortIfTestLoginTest();
+        MappingResult mappingResult = mappingRuleConvert.resolveOAuthMappingResult(userRequest, response.getBody());
+        testLoginManager.abortIfOAuthTestLoginTest();
 
-        User user = OAuth2UserDetailService.getOrCreateUser(mappingResult);
+        User user = ssoUserDetailService.getOrCreateUser(mappingResult);
 
         this.defaultPreAuthenticationChecks(user);
 
