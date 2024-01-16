@@ -13,21 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.odc.service.task.constants;
-
-import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
 
 /**
  * @author yaobin
- * @date 2023-12-25
+ * @date 2024-01-15
  * @since 4.2.4
  */
-public class JobAttributeKeyConstants {
+public class JobEntityColumn {
 
-    public static final String STORAGE_LOG_ALL_OBJECT_ID = OdcTaskLogLevel.ALL.name();
+    public static final String ID = "id";
 
-    public static final String STORAGE_LOG_WARN_OBJECT_ID = OdcTaskLogLevel.WARN.name();
+    public static final String STATUS = "status";
 
-    public static final String STORAGE_BUCKET_NAME = "STORAGE_BUCKET_NAME";
+    public static final String LAST_HEART_TIME = "lastHeartTime";
+
+    public static final String FINISHED_TIME = "finishedTime";
+
+    public static final String CANCELLING_TIME = "cancellingTime";
+
+    public static final String EXECUTOR_DESTROYED_TIME = "executorDestroyedTime";
+
+    public static final String DESCRIPTION = "description";
+
+    public static final String EXECUTOR_ENDPOINT = "executorEndpoint";
+
 }

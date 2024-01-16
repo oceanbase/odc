@@ -35,12 +35,14 @@ import lombok.Data;
 @ConfigurationProperties(prefix = "odc.task-framework")
 public class SpringTaskFrameworkProperties implements TaskFrameworkProperties {
 
+    private boolean enableTaskFramework;
+
     private TaskRunModeEnum runMode;
 
     private String odcUrl;
 
     @NestedConfigurationProperty
-    private K8sProperties k8s = new K8sProperties();
+    private K8sProperties k8sProperties = new K8sProperties();
 
     // job will be timeout when last report time more than this duration
     private int jobHeartTimeoutSeconds;
@@ -56,7 +58,7 @@ public class SpringTaskFrameworkProperties implements TaskFrameworkProperties {
     // single fetch job rows to check report timeout or not
     private int singleFetchJobRowsForCheckHeartTimeout = 1000;
 
-    // max retry times after report timeout
+    // max retry times after heart timeout
     private int maxRetryTimesAfterHeartTimeout = 3;
 
     private String startPreparingJobCronExpression;

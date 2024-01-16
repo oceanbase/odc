@@ -50,7 +50,7 @@ public class DefaultJobCallerListener extends JobCallerListener {
             try {
                 taskFrameworkService.startSuccess(ji.getId(), identifier.toString());
             } catch (Exception ex) {
-                // if transaction out, we should destroy executor
+                // if transaction timeout, we should destroy executor
                 try {
                     configuration.getJobDispatcher().destroy(identifier);
                 } catch (JobException e) {
@@ -80,11 +80,7 @@ public class DefaultJobCallerListener extends JobCallerListener {
 
     @Override
     protected void stopFailed(JobIdentity ji, Exception ex) {
-        if (taskFrameworkService != null) {
-            String desc = "Try to cancel job failed.";
-            taskFrameworkService.updateDescription(ji.getId(), desc);
-            log.info("Stop job " + ji.getId() + " failed, error is: ", ex);
-        }
+
     }
 
     @Override

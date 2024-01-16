@@ -65,9 +65,9 @@ public class LogBizImpl implements LogBiz {
         try {
             String objectName = cloudObjectStorageService.uploadTemp(fileId, jobLogFile);
             Map<String, String> logMap = new HashMap<>();
-            logMap.put(JobAttributeKeyConstants.LOG_ALL_OBJECT_ID, objectName);
-            logMap.put(JobAttributeKeyConstants.LOG_WARN_OBJECT_ID, objectName);
-            logMap.put(JobAttributeKeyConstants.OSS_BUCKET_NAME,
+            logMap.put(JobAttributeKeyConstants.STORAGE_LOG_ALL_OBJECT_ID, objectName);
+            logMap.put(JobAttributeKeyConstants.STORAGE_LOG_WARN_OBJECT_ID, objectName);
+            logMap.put(JobAttributeKeyConstants.STORAGE_BUCKET_NAME,
                     cloudObjectStorageService.getBucketName());
             log.info("upload task log to OSS successfully, file name={}", fileId);
             return logMap;

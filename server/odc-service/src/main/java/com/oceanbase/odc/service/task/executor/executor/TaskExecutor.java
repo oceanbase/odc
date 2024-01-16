@@ -30,4 +30,6 @@ public interface TaskExecutor {
 
     boolean cancel(JobIdentity ji);
 
+    Task<?> getTask(JobIdentity ji);
+
 }

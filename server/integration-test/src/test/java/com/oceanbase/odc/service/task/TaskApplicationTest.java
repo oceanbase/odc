@@ -19,7 +19,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Supplier;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.junit.Assert;
@@ -40,11 +39,12 @@ import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfigur
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.constants.JobDataMapConstants;
 import com.oceanbase.odc.service.task.constants.JobEnvConstants;
-import com.oceanbase.odc.service.task.executor.ExitHelper;
+import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.executor.TaskApplication;
 import com.oceanbase.odc.service.task.executor.executor.ThreadPoolTaskExecutor;
 import com.oceanbase.odc.service.task.executor.sampletask.SampleTaskJobDefinitionBuilder;
 import com.oceanbase.odc.service.task.executor.task.DatabaseChangeTask;
+import com.oceanbase.odc.service.task.executor.task.Task;
 import com.oceanbase.odc.service.task.schedule.DefaultJobContextBuilder;
 import com.oceanbase.odc.service.task.schedule.DefaultJobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobDefinition;
@@ -71,8 +71,8 @@ public class TaskApplicationTest extends BaseJobTest {
                 .build(connectionConfig, connectionConfig.getDefaultSchema(), sqls);
         JobContext jc = new DefaultJobContextBuilder().build(jobIdentity, jd);
         System.setProperty(JobEnvConstants.TASK_ALL_PARAMETERS, JobUtils.toJson(jc));
-        mainMethodExit(20 * 1000, null);
-        new TaskApplication().run(null);
+        startTaskApplication();
+        assertRunningResult(jc);
     }
 
 
@@ -84,8 +84,8 @@ public class TaskApplicationTest extends BaseJobTest {
         JobDefinition jd = buildJobDefinition();
         JobContext jc = new DefaultJobContextBuilder().build(jobIdentity, jd);
         System.setProperty(JobEnvConstants.TASK_ALL_PARAMETERS, JobUtils.toJson(jc));
-        mainMethodExit(60 * 1000, null);
-        new TaskApplication().run(null);
+        startTaskApplication();
+        assertRunningResult(jc);
     }
 
     @Test
@@ -96,27 +96,36 @@ public class TaskApplicationTest extends BaseJobTest {
         JobDefinition jd = buildJobDefinition();
         JobContext jc = new DefaultJobContextBuilder().build(jobIdentity, jd);
         System.setProperty(JobEnvConstants.TASK_ALL_PARAMETERS, JobUtils.toJson(jc));
-        mainMethodExit(1000, () -> {
-            boolean result = ThreadPoolTaskExecutor.getInstance().cancel(jc.getJobIdentity());
-            Assert.assertTrue(result);
-            return null;
-        });
-        new TaskApplication().run(null);
+        startTaskApplication();
+        assertCancelResult(jc);
     }
 
-    private void mainMethodExit(int waitMills, Supplier<Void> action) {
-        new Thread(() -> {
-            try {
-                Thread.sleep(waitMills);
-                if (action != null) {
-                    action.get();
-                }
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            } finally {
-                ExitHelper.exit();
-            }
-        }).start();
+    private void assertRunningResult(JobContext jc) {
+
+        try {
+            Thread.sleep(10 * 1000L);
+            Task<?> task = ThreadPoolTaskExecutor.getInstance().getTask(jc.getJobIdentity());
+            Assert.assertSame(JobStatus.DONE, task.getStatus());
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+
+    }
+
+    private void assertCancelResult(JobContext jc) {
+
+        try {
+            Thread.sleep(5 * 1000L);
+            boolean result = ThreadPoolTaskExecutor.getInstance().cancel(jc.getJobIdentity());
+            Assert.assertTrue(result);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+
+    }
+
+    private void startTaskApplication() {
+        new Thread(() -> new TaskApplication().run(null)).start();
     }
 
     private JobDefinition buildJobDefinition() {

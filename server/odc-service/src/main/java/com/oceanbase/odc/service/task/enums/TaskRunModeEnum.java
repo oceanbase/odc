@@ -22,12 +22,6 @@ package com.oceanbase.odc.service.task.enums;
  * @since 4.2.4
  */
 public enum TaskRunModeEnum {
-
-    /**
-     * ODC job run will run in old model and will not be by scheduled task-framework
-     */
-    LEGACY,
-
     /**
      * ODC job run by k8s job
      */
@@ -39,5 +33,10 @@ public enum TaskRunModeEnum {
 
     public boolean isK8s() {
         return this == K8S;
+    }
+
+    @Override
+    public String toString() {
+        return this.name();
     }
 }

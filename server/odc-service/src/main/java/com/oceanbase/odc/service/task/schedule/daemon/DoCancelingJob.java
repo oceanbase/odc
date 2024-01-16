@@ -30,6 +30,7 @@ import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.executor.executor.TaskRuntimeException;
+import com.oceanbase.odc.service.task.listener.DestroyExecutorEvent;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 import com.oceanbase.odc.service.task.util.JobDateUtils;
@@ -73,14 +74,16 @@ public class DoCancelingJob implements Job {
             JobEntity newEntity = taskFrameworkService.findWithLock(oldEntity.getId());
 
             if (newEntity.getStatus() == JobStatus.CANCELING) {
-                log.info("Job {} current status is {} but not canceling, prepare cancel.",
+                log.info("Job {} current status is {}, prepare cancel.",
                         newEntity.getId(), newEntity.getStatus());
                 try {
                     getConfiguration().getJobDispatcher().stop(JobIdentity.of(newEntity.getId()));
                 } catch (JobException e) {
-                    log.warn("Start job occur error: ", e);
+                    log.warn("Stop job occur error: ", e);
                     throw new TaskRuntimeException(e);
                 }
+                getConfiguration().getEventPublisher()
+                        .publishEvent(new DestroyExecutorEvent(JobIdentity.of(newEntity.getId())));
             } else {
                 log.warn("Job {} current status is {} but not canceling, cancel explain is aborted.",
                         newEntity.getId(), newEntity.getStatus());

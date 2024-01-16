@@ -41,7 +41,7 @@ public class DefaultJobImageNameProvider implements JobImageNameProvider {
 
     @Override
     public String provide() {
-        K8sProperties k8s = taskFrameworkProperties.getK8s();
+        K8sProperties k8s = taskFrameworkProperties.getK8sProperties();
 
         List<String> candidateImages = new ArrayList<>();
         candidateImages.add(SystemUtils.getEnvOrProperty(JobEnvConstants.ODC_IMAGE_NAME));

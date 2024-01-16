@@ -34,7 +34,6 @@ import com.oceanbase.odc.service.permissionapply.project.ApplyProjectFlowableTas
 import com.oceanbase.odc.service.resultset.ResultSetExportFlowableTask;
 import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleTask;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
-import com.oceanbase.odc.service.task.enums.TaskRunModeEnum;
 
 import lombok.NonNull;
 
@@ -53,9 +52,9 @@ public class OdcRuntimeDelegateMapper implements RuntimeDelegateMapper {
             case ASYNC:
                 TaskFrameworkProperties taskFrameworkProperties =
                         SpringContextUtil.getBean(TaskFrameworkProperties.class);
-                return taskFrameworkProperties.getRunMode() == TaskRunModeEnum.LEGACY
-                        ? DatabaseChangeRuntimeFlowableTask.class
-                        : DatabaseChangeRuntimeFlowableTaskCopied.class;
+                return taskFrameworkProperties.isEnableTaskFramework()
+                        ? DatabaseChangeRuntimeFlowableTaskCopied.class
+                        : DatabaseChangeRuntimeFlowableTask.class;
             case MOCKDATA:
                 return MockDataRuntimeFlowableTask.class;
             case IMPORT:

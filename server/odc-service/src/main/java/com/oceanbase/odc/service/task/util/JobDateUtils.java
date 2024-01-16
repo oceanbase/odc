@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.task.util;
 
+import java.util.Calendar;
 import java.util.Date;
 
 /**
@@ -26,5 +27,19 @@ public class JobDateUtils {
 
     public static Date getCurrentDate() {
         return new Date();
+    }
+
+    public static Date getCurrentDateSubtractDays(int days) {
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(JobDateUtils.getCurrentDate());
+        cal.add(Calendar.DATE, Math.negateExact(days));
+        return cal.getTime();
+    }
+
+    public static Date getCurrentDateSubtractSeconds(int seconds) {
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(JobDateUtils.getCurrentDate());
+        cal.add(Calendar.SECOND, Math.negateExact(seconds));
+        return cal.getTime();
     }
 }

@@ -74,8 +74,10 @@ public class CheckRunningJob implements Job {
 
         } else {
             log.info("No need to restart job {}, try to set status FAILED.", a.getId());
+            TaskFrameworkProperties taskFrameworkProperties = getConfiguration().getTaskFrameworkProperties();
             int count = getConfiguration().getTaskFrameworkService()
-                    .updateStatusDescriptionByIdOldStatus(a.getId(), JobStatus.RUNNING, JobStatus.FAILED,
+                    .updateStatusToCanceledWhenHeartTimeout(a.getId(),
+                            taskFrameworkProperties.getJobHeartTimeoutSeconds(),
                             "Heart timeout and job failed.");
             if (count >= 0) {
                 log.info("Set job {} status FAILED accomplished.", a.getId());

@@ -210,26 +210,28 @@ public class FlowTaskInstanceService {
             JobEntity jobEntity = taskFrameworkService.find(taskEntity.getJobId());
             if (jobEntity != null) {
                 if (!jobEntity.getStatus().isTerminated()) {
-                    log.info("job: {} is not finished, try to get log from remote pod.", jobEntity.getId());
-
-                    String hostWithUrl = jobEntity.getExecutorEndpoint() + String.format(JobUrlConstants.LOG_QUERY,
-                            jobEntity.getId()) + "?logType=" + level.getName();
-                    SuccessResponse<String> response =
-                            HttpUtil.request(hostWithUrl, new TypeReference<SuccessResponse<String>>() {});
-                    return response.getData();
+                    if (jobEntity.getExecutorEndpoint() != null) {
+                        log.info("job: {} is not finished, try to get log from remote pod.", jobEntity.getId());
+                        String hostWithUrl = jobEntity.getExecutorEndpoint() + String.format(JobUrlConstants.LOG_QUERY,
+                                jobEntity.getId()) + "?logType=" + level.getName();
+                        SuccessResponse<String> response =
+                                HttpUtil.request(hostWithUrl, new TypeReference<SuccessResponse<String>>() {});
+                        return response.getData();
+                    }
                 } else if (cloudObjectStorageService.supported()) {
                     String objId = taskFrameworkService.findByJobIdAndAttributeKey(jobEntity.getId(),
-                            JobAttributeKeyConstants.LOG_ALL_OBJECT_ID);
+                            JobAttributeKeyConstants.STORAGE_LOG_ALL_OBJECT_ID);
                     String bucketName = taskFrameworkService.findByJobIdAndAttributeKey(jobEntity.getId(),
-                            JobAttributeKeyConstants.OSS_BUCKET_NAME);
+                            JobAttributeKeyConstants.STORAGE_BUCKET_NAME);
 
                     log.info("job: {} is finished, try to get log from local or oss.", jobEntity.getId());
                     ObjectStorageHandler objectStorageHandler =
                             new ObjectStorageHandler(cloudObjectStorageService, localFileOperator);
                     return objId != null ? objectStorageHandler.loadObjectContentAsString(
                             ObjectMetadata.builder().bucketName(bucketName).objectId(objId).build())
-                            : "No log message";
+                            : "No log message at this moment";
                 }
+                return "No log message at this moment";
             }
         }
 

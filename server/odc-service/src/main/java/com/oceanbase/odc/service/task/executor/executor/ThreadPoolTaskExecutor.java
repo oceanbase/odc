@@ -42,8 +42,8 @@ public class ThreadPoolTaskExecutor implements TaskExecutor {
 
     private static final TaskExecutor TASK_EXECUTOR = new ThreadPoolTaskExecutor();
     private final ExecutorService executor;
-    private final Map<JobIdentity, Task<?>> tasks = new HashMap<>();
-    private final Map<JobIdentity, Future<?>> futures = new HashMap<>();
+    private volatile Map<JobIdentity, Task<?>> tasks = new HashMap<>();
+    private volatile Map<JobIdentity, Future<?>> futures = new HashMap<>();
 
     private ThreadPoolTaskExecutor() {
         this.executor = Executors.newFixedThreadPool(2);
@@ -80,5 +80,10 @@ public class ThreadPoolTaskExecutor implements TaskExecutor {
             log.warn("Stop task {} time out.", ji.getId(), e);
         }
         return result || startFuture.cancel(true);
+    }
+
+    @Override
+    public Task<?> getTask(JobIdentity ji) {
+        return tasks.get(ji);
     }
 }

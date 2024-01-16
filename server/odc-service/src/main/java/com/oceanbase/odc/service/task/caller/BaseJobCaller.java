@@ -18,7 +18,6 @@ package com.oceanbase.odc.service.task.caller;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.json.JsonUtils;
-import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
@@ -73,14 +72,18 @@ public abstract class BaseJobCaller implements JobCaller {
         String executorEndpoint = jobEntity.getExecutorEndpoint();
 
         try {
-            String url = executorEndpoint + String.format(JobUrlConstants.STOP_TASK, ji.getId());
-            SuccessResponse<Boolean> response =
-                    HttpUtil.request(url, new TypeReference<SuccessResponse<Boolean>>() {});
-            log.info("Stop job {} response is {}.", ji.getId(), JsonUtils.toJson(response));
-            if (response != null && response.getSuccessful() && response.getData()) {
-                publishEvent(new JobCallerEvent(ji, JobCallerAction.STOP, true, null));
+            if (executorEndpoint != null) {
+                String url = executorEndpoint + String.format(JobUrlConstants.STOP_TASK, ji.getId());
+                SuccessResponse<Boolean> response =
+                        HttpUtil.request(url, new TypeReference<SuccessResponse<Boolean>>() {});
+                log.info("Stop job {} response is {}.", ji.getId(), JsonUtils.toJson(response));
+                if (response != null && response.getSuccessful() && response.getData()) {
+                    publishEvent(new JobCallerEvent(ji, JobCallerAction.STOP, true, null));
+                } else {
+                    publishEvent(new JobCallerEvent(ji, JobCallerAction.STOP, false, null));
+                }
             } else {
-                publishEvent(new JobCallerEvent(ji, JobCallerAction.STOP, false, null));
+                publishEvent(new JobCallerEvent(ji, JobCallerAction.STOP, true, null));
             }
             log.info("Stop job {} successfully, executor endpoint {}.", ji.getId(), executorEndpoint);
         } catch (Exception e) {
@@ -99,7 +102,9 @@ public abstract class BaseJobCaller implements JobCaller {
         TaskFrameworkService taskFrameworkService = jobConfiguration.getTaskFrameworkService();
         JobEntity jobEntity = taskFrameworkService.find(ji.getId());
         String executorIdentifier = jobEntity.getExecutorIdentifier();
-        PreConditions.notNull(executorIdentifier, "executorIdentifier");
+        if (executorIdentifier == null) {
+            return;
+        }
         log.info("Preparing stop job {}, executor name {}.", ji.getId(), executorIdentifier);
 
         try {

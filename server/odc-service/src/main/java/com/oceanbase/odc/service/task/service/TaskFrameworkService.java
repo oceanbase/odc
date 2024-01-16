@@ -33,11 +33,11 @@ import com.oceanbase.odc.service.task.schedule.JobDefinition;
  */
 public interface TaskFrameworkService {
 
+    JobEntity save(JobDefinition jd);
+
     void handleResult(TaskResult taskResult);
 
     void handleHeart(HeartRequest heart);
-
-    JobEntity save(JobDefinition jd);
 
     JobEntity find(Long id);
 
@@ -47,23 +47,21 @@ public interface TaskFrameworkService {
 
     Page<JobEntity> find(List<JobStatus> status, int page, int size);
 
-    Page<JobEntity> findHeartTimeTimeoutJobs(long timeoutSeconds, int page, int size);
+    Page<JobEntity> findHeartTimeTimeoutJobs(int timeoutSeconds, int page, int size);
 
     JobDefinition getJobDefinition(Long id);
 
     void startSuccess(Long id, String executorIdentifier);
 
-    void stopSuccess(Long id);
-
     void updateDescription(Long id, String description);
-
-    void updateStatus(Long id, JobStatus status);
 
     int updateJobToCanceling(Long id, JobStatus oldStatus);
 
     int updateExecutorToDestroyed(Long id);
 
     int updateStatusDescriptionByIdOldStatus(Long id, JobStatus oldStatus, JobStatus newStatus, String description);
+
+    int updateStatusToCanceledWhenHeartTimeout(Long id, int heartTimeoutSeconds, String description);
 
     int updateStatusDescriptionByIdOldStatusAndExecutorDestroyed(Long id, JobStatus oldStatus, JobStatus newStatus,
             String description);
