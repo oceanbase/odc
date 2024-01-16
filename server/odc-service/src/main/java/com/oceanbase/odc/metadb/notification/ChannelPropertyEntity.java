@@ -18,6 +18,7 @@ package com.oceanbase.odc.metadb.notification;
 import java.util.Date;
 
 import javax.persistence.Column;
+import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -30,6 +31,7 @@ import org.hibernate.annotations.Generated;
 import org.hibernate.annotations.GenerationTime;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.oceanbase.odc.common.jpa.JsonObjectConverter;
 
 import lombok.Data;
 import lombok.ToString;
@@ -57,7 +59,8 @@ public class ChannelPropertyEntity {
     @Column(name = "key_string", nullable = false)
     private String key;
     @Column(name = "value_string")
-    private String value;
+    @Convert(converter = JsonObjectConverter.class)
+    private Object value;
     @ManyToOne
     @JoinColumn(name = "channel_id")
     @JsonIgnore

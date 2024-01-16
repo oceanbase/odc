@@ -26,6 +26,7 @@ import com.oceanbase.odc.service.integration.IntegrationConfigurationValidator;
 import com.oceanbase.odc.service.integration.IntegrationEvent;
 import com.oceanbase.odc.service.integration.IntegrationEventHandler;
 import com.oceanbase.odc.service.integration.IntegrationService;
+import com.oceanbase.odc.service.integration.ldap.LdapConfigRegistrationManager;
 import com.oceanbase.odc.service.integration.model.IntegrationConfig;
 import com.oceanbase.odc.service.integration.model.IntegrationType;
 import com.oceanbase.odc.service.integration.model.SSOIntegrationConfig;
@@ -35,6 +36,9 @@ public class SSOEventHandler implements IntegrationEventHandler {
 
     @Autowired(required = false)
     private AddableClientRegistrationManager addableClientRegistrationManager;
+
+    @Autowired(required = false)
+    private LdapConfigRegistrationManager ldapConfigRegistrationManager;
 
     @Autowired
     private IntegrationConfigurationValidator configurationValidator;
@@ -49,25 +53,22 @@ public class SSOEventHandler implements IntegrationEventHandler {
 
     @Override
     public void preCreate(IntegrationEvent integrationEvent) {
-        Verify.notNull(addableClientRegistrationManager, "addableClientRegistrationManager");
-        if (integrationEvent.getCurrentConfig().getEnabled()) {
+        if (Boolean.TRUE.equals(integrationEvent.getCurrentConfig().getEnabled())) {
             IntegrationConfig currentConfig = integrationEvent.getCurrentConfig();
             SSOIntegrationConfig decryptConfiguration =
                     getDecryptConfiguration(currentConfig, currentConfig.getEncryption().getSecret());
-            addableClientRegistrationManager.addToRegister(decryptConfiguration);
+            addConfig(decryptConfiguration);
         }
     }
 
     @Override
     public void preDelete(IntegrationEvent integrationEvent) {
-        Verify.notNull(addableClientRegistrationManager, "addableClientRegistrationManager");
         SSOIntegrationConfig decryptConfiguration = getDecryptConfiguration(integrationEvent.getCurrentConfig(), null);
-        addableClientRegistrationManager.removeRegister(decryptConfiguration.resolveRegistrationId());
+        removeConfig(decryptConfiguration);
     }
 
     @Override
     public void preUpdate(IntegrationEvent integrationEvent) {
-        Verify.notNull(addableClientRegistrationManager, "addableClientRegistrationManager");
         IntegrationConfig preConfig = integrationEvent.getPreConfig();
         IntegrationConfig currentConfig = integrationEvent.getCurrentConfig();
         configurationValidator.checkNotEnabledInDbBeforeSave(currentConfig.getEnabled(),
@@ -77,9 +78,29 @@ public class SSOEventHandler implements IntegrationEventHandler {
                 integrationEvent.getSalt(), preConfig.getOrganizationId());
         SSOIntegrationConfig ssoIntegrationConfig = getDecryptConfiguration(currentConfig, decryptSecret);
         if (Boolean.TRUE.equals(integrationEvent.getCurrentConfig().getEnabled())) {
-            addableClientRegistrationManager.addToRegister(ssoIntegrationConfig);
+            addConfig(ssoIntegrationConfig);
         } else {
+            removeConfig(ssoIntegrationConfig);
+        }
+    }
+
+    private void addConfig(SSOIntegrationConfig ssoIntegrationConfig) {
+        Verify.notNull(addableClientRegistrationManager, "addableClientRegistrationManager");
+        Verify.notNull(ldapConfigRegistrationManager, "ldapConfigRegistrationManager");
+        if (ssoIntegrationConfig.isLdap()) {
+            ldapConfigRegistrationManager.addConfig(ssoIntegrationConfig);
+        } else if (ssoIntegrationConfig.isOauth2OrOidc()) {
+            addableClientRegistrationManager.addToRegister(ssoIntegrationConfig);
+        }
+    }
+
+    private void removeConfig(SSOIntegrationConfig ssoIntegrationConfig) {
+        Verify.notNull(addableClientRegistrationManager, "addableClientRegistrationManager");
+        Verify.notNull(ldapConfigRegistrationManager, "ldapConfigRegistrationManager");
+        if (ssoIntegrationConfig.isOauth2OrOidc()) {
             addableClientRegistrationManager.removeRegister(ssoIntegrationConfig.resolveRegistrationId());
+        } else if (ssoIntegrationConfig.isLdap()) {
+            ldapConfigRegistrationManager.removeConfig(ssoIntegrationConfig.resolveRegistrationId());
         }
     }
 
