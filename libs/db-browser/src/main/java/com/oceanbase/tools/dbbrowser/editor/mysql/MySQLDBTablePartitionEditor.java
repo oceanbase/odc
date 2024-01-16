@@ -94,8 +94,9 @@ public class MySQLDBTablePartitionEditor extends DBTablePartitionEditor {
     }
 
     @Override
-    protected boolean ifSupportUpdatePartitionType(DBTablePartitionType oldType, DBTablePartitionType newType) {
-        return true;
+    protected String modifyPartitionType(@NotNull DBTablePartition oldPartition,
+            @NotNull DBTablePartition newPartition) {
+        return generateCreateObjectDDL(newPartition);
     }
 
     @Override

@@ -30,5 +30,37 @@
       }
     },
     "output": "/* Unsupported operation to convert non-partitioned table to partitioned table */\n"
+  },
+  {
+    "id": 2,
+    "name": "case2",
+    "description": "不支持的操作：修改分区表的分区方式",
+    "input": {
+      "previous": {
+        "schemaName": "schema",
+        "tableName": "table",
+        "partitionOption": {
+          "type": "HASH"
+        }
+      },
+      "current": {
+        "schemaName": "schema",
+        "tableName": "table",
+        "partitionOption": {
+          "type": "RANGE",
+          "expression": "col1"
+        },
+        "partitionDefinitions": [
+          {
+            "name": "p1",
+            "ordinalPosition": null,
+            "maxValues": [
+              "1000"
+            ]
+          }
+        ]
+      }
+    },
+    "output": "/* Unsupported operation to modify table partition type */\n"
   }
 ]

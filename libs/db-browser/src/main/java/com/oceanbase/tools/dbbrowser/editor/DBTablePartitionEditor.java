@@ -102,12 +102,8 @@ public abstract class DBTablePartitionEditor implements DBObjectEditor<DBTablePa
                 // means convert non-partitioned table to partitioned table
                 return generateCreateObjectDDL(newPartition);
             } else {
-                // means convert table partition type
-                if (ifSupportUpdatePartitionType(oldType, newType)) {
-                    return generateCreateObjectDDL(newPartition);
-                } else {
-                    return "/* Unsupported operation to modify table partition type */\n";
-                }
+                // means modify table partition type
+                return modifyPartitionType(oldPartition, newPartition);
             }
         }
         SqlBuilder sqlBuilder = sqlBuilder();
@@ -152,7 +148,8 @@ public abstract class DBTablePartitionEditor implements DBObjectEditor<DBTablePa
         return sqlBuilder.toString();
     }
 
-    abstract protected boolean ifSupportUpdatePartitionType(DBTablePartitionType oldType, DBTablePartitionType newType);
+    abstract protected String modifyPartitionType(@NotNull DBTablePartition oldPartition,
+            @NotNull DBTablePartition newPartition);
 
     @Override
     public String generateUpdateObjectListDDL(Collection<DBTablePartition> oldObjects,

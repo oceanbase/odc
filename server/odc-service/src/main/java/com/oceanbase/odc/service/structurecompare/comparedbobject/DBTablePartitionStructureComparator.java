@@ -60,16 +60,6 @@ public class DBTablePartitionStructureComparator implements DBObjectStructureCom
         if (DBTablePartitionType.NOT_PARTITIONED.equals(srcPartitionType)
                 && DBTablePartitionType.NOT_PARTITIONED.equals(tgtPartitionType)) {
             result.setComparisonResult(ComparisonResult.CONSISTENT);
-        } else if (DBTablePartitionType.NOT_PARTITIONED.equals(srcPartitionType)) {
-            // cannot cover partitioned table to non-partitioned table
-            result.setComparisonResult(ComparisonResult.UNSUPPORTED);
-            result.setChangeScript("/* Unsupported operation: Convert partitioned table to non-partitioned table */\n");
-        } else if (DBTablePartitionType.NOT_PARTITIONED.equals(tgtPartitionType)) {
-            // partition to be created
-            result.setComparisonResult(ComparisonResult.ONLY_IN_SOURCE);
-            result.setChangeScript(
-                    StructureCompareUtil.appendDelimiterIfNotExist(this.tgtPartitionEditor.generateCreateObjectDDL(
-                            copySrcPartitionWithTgtSchemaName(srcPartition, this.tgtSchemaName))));
         } else {
             String ddl = this.tgtPartitionEditor.generateUpdateObjectDDL(tgtPartition,
                     copySrcPartitionWithTgtSchemaName(srcPartition, this.tgtSchemaName));

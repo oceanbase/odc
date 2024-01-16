@@ -343,7 +343,7 @@ public class DefaultDBStructureComparatorTest extends PluginTestEnv {
 
         DBObjectComparisonResult excepted =
                 new DBObjectComparisonResult(DBObjectType.PARTITION, sourceSchemaName, targetSchemaName);
-        excepted.setComparisonResult(ComparisonResult.ONLY_IN_SOURCE);
+        excepted.setComparisonResult(ComparisonResult.INCONSISTENT);
         excepted.setChangeScript("/* Unsupported operation to convert non-partitioned table to partitioned table */\n");
         Assert.assertEquals(excepted, actual);
     }
@@ -358,8 +358,8 @@ public class DefaultDBStructureComparatorTest extends PluginTestEnv {
 
         DBObjectComparisonResult excepted =
                 new DBObjectComparisonResult(DBObjectType.PARTITION, sourceSchemaName, targetSchemaName);
-        excepted.setComparisonResult(ComparisonResult.UNSUPPORTED);
-        excepted.setChangeScript("/* Unsupported operation: Convert partitioned table to non-partitioned table */\n");
+        excepted.setComparisonResult(ComparisonResult.INCONSISTENT);
+        excepted.setChangeScript("/* Unsupported operation to convert partitioned table to non-partitioned table */\n");
         Assert.assertEquals(excepted, actual);
     }
 
@@ -389,5 +389,20 @@ public class DefaultDBStructureComparatorTest extends PluginTestEnv {
 
         List<DBObjectComparisonResult> result = comparator.compare(sourceConfig, getTargetConfig(tgtConfiguration));
         Assert.assertEquals(result.size(), 5);
+    }
+
+    @Test
+    public void test_modifyPartitionType() {
+        DBObjectComparisonResult actual = results.stream().filter(
+                item -> item.getDbObjectName().equals("modify_partition_type")).collect(Collectors.toList())
+                .get(0).getSubDBObjectComparisonResult().stream().filter(
+                        item -> item.getDbObjectType().equals(DBObjectType.PARTITION))
+                .collect(Collectors.toList()).get(0);
+
+        DBObjectComparisonResult excepted =
+                new DBObjectComparisonResult(DBObjectType.PARTITION, sourceSchemaName, targetSchemaName);
+        excepted.setComparisonResult(ComparisonResult.INCONSISTENT);
+        excepted.setChangeScript("/* Unsupported operation to modify table partition type */\n");
+        Assert.assertEquals(excepted, actual);
     }
 }
