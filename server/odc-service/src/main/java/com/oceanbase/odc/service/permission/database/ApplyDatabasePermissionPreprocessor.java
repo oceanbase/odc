@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.permission.database;
 
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -79,6 +81,7 @@ public class ApplyDatabasePermissionPreprocessor implements Preprocessor {
             throw new AccessDeniedException();
         }
         parameter.getProject().setName(projectEntity.getName());
+        parameter.setExpireTime(getFixedExpireTime(parameter.getExpireTime()));
         List<Long> databaseIds =
                 parameter.getDatabases().stream().map(ApplyDatabase::getId).collect(Collectors.toList());
         List<Database> databases = databaseService.listDatabasesByIds(databaseIds);
@@ -109,6 +112,19 @@ public class ApplyDatabasePermissionPreprocessor implements Preprocessor {
                 new Object[] {parameter.getTypes().stream().map(DatabasePermissionType::getLocalizedMessage)
                         .collect(Collectors.joining(","))},
                 locale));
+    }
+
+    private Date getFixedExpireTime(Date expireTime) {
+        if (expireTime == null) {
+            return null;
+        }
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(expireTime);
+        calendar.set(Calendar.HOUR_OF_DAY, 23);
+        calendar.set(Calendar.MINUTE, 59);
+        calendar.set(Calendar.SECOND, 59);
+        calendar.set(Calendar.MILLISECOND, 0);
+        return calendar.getTime();
     }
 
 }

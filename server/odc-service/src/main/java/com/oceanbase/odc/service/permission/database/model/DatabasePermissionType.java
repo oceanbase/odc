@@ -16,8 +16,10 @@
 package com.oceanbase.odc.service.permission.database.model;
 
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 import org.springframework.context.i18n.LocaleContextHolder;
 
@@ -58,7 +60,7 @@ public enum DatabasePermissionType implements Translatable {
         if ("export".equalsIgnoreCase(action)) {
             return DatabasePermissionType.EXPORT;
         }
-        throw new IllegalArgumentException("unknown action: " + action);
+        return null;
     }
 
     public static DatabasePermissionType from(SqlType sqlType) {
@@ -79,11 +81,16 @@ public enum DatabasePermissionType implements Translatable {
         }
     }
 
-    public static DatabasePermissionType from(TaskType taskType) {
+    public static Set<DatabasePermissionType> from(TaskType taskType) {
+        Set<DatabasePermissionType> types = new HashSet<>();
         switch (taskType) {
             case EXPORT:
+                types.add(EXPORT);
+                break;
             case EXPORT_RESULT_SET:
-                return EXPORT;
+                types.add(QUERY);
+                types.add(EXPORT);
+                break;
             case IMPORT:
             case MOCKDATA:
             case ASYNC:
@@ -91,10 +98,12 @@ public enum DatabasePermissionType implements Translatable {
             case ONLINE_SCHEMA_CHANGE:
             case ALTER_SCHEDULE:
             case STRUCTURE_COMPARISON:
-                return CHANGE;
+                types.add(CHANGE);
+                break;
             default:
-                return null;
+                break;
         }
+        return types;
     }
 
     @Override

@@ -16,8 +16,6 @@
 package com.oceanbase.odc.service.permission.database;
 
 import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -103,7 +101,6 @@ public class ApplyDatabaseFlowableTask extends BaseODCFlowTaskDelegate<ApplyData
                     checkResourceAndPermission(parameter);
                     List<PermissionEntity> permissionEntities = new ArrayList<>();
                     Long organizationId = FlowTaskUtil.getOrganizationId(execution);
-                    Date expireTime = getFixedExpireTime(parameter.getExpireTime());
                     for (ApplyDatabase database : parameter.getDatabases()) {
                         for (DatabasePermissionType permissionType : parameter.getTypes()) {
                             PermissionEntity permissionEntity = new PermissionEntity();
@@ -116,7 +113,7 @@ public class ApplyDatabaseFlowableTask extends BaseODCFlowTaskDelegate<ApplyData
                             permissionEntity.setCreatorId(this.creatorId);
                             permissionEntity.setOrganizationId(organizationId);
                             permissionEntity.setBuiltIn(false);
-                            permissionEntity.setExpireTime(expireTime);
+                            permissionEntity.setExpireTime(parameter.getExpireTime());
                             permissionEntity.setAuthorizationType(AuthorizationType.TICKET_APPLICATION);
                             permissionEntity.setTicketId(FlowTaskUtil.getFlowInstanceId(execution));
                             permissionEntities.add(permissionEntity);
@@ -252,19 +249,6 @@ public class ApplyDatabaseFlowableTask extends BaseODCFlowTaskDelegate<ApplyData
                 throw new IllegalStateException("Database not belong to project");
             }
         }
-    }
-
-    private Date getFixedExpireTime(Date expireTime) {
-        if (expireTime == null) {
-            return null;
-        }
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTime(expireTime);
-        calendar.set(Calendar.HOUR_OF_DAY, 23);
-        calendar.set(Calendar.MINUTE, 59);
-        calendar.set(Calendar.SECOND, 59);
-        calendar.set(Calendar.MILLISECOND, 0);
-        return calendar.getTime();
     }
 
 }

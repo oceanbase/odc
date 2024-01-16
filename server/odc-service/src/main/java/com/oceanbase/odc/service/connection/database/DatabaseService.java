@@ -574,8 +574,11 @@ public class DatabaseService {
     }
 
     @SkipAuthorize("odc internal usage")
-    public List<UnauthorizedDatabase> filterUnauthorizedDatabases(
-            @NotEmpty Map<String, Set<SqlType>> schemaName2SqlTypes, @NotNull Long dataSourceId) {
+    public List<UnauthorizedDatabase> filterUnauthorizedDatabases(Map<String, Set<SqlType>> schemaName2SqlTypes,
+            @NotNull Long dataSourceId) {
+        if (schemaName2SqlTypes == null || schemaName2SqlTypes.isEmpty()) {
+            return Collections.emptyList();
+        }
         ConnectionConfig dataSource = connectionService.nullSafeGet(dataSourceId);
         List<Database> databases = listDatabasesByConnectionIds(Collections.singleton(dataSourceId));
         databases.forEach(d -> d.getDataSource().setName(dataSource.getName()));
@@ -583,7 +586,6 @@ public class DatabaseService {
                 .collect(Collectors.toMap(d -> new CaseInsensitiveString(d.getName()), d -> d, (d1, d2) -> d1));
         Map<Long, Set<DatabasePermissionType>> id2Types = databasePermissionHelper
                 .getPermissions(databases.stream().map(Database::getId).collect(Collectors.toList()));
-
         List<UnauthorizedDatabase> unauthorizedDatabases = new ArrayList<>();
         for (Map.Entry<String, Set<SqlType>> entry : schemaName2SqlTypes.entrySet()) {
             CaseInsensitiveString schemaName = new CaseInsensitiveString(entry.getKey());

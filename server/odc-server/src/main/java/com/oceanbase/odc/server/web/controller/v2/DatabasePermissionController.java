@@ -55,7 +55,7 @@ public class DatabasePermissionController {
     @ApiOperation(value = "listDatabasePermissions", notes = "List database permissions")
     @RequestMapping(value = "", method = RequestMethod.GET)
     public PaginatedResponse<UserDatabasePermission> list(@PathVariable Long projectId,
-            @RequestParam(name = "user", required = false) Long userId,
+            @RequestParam(name = "userId", required = false) Long userId,
             @RequestParam(name = "ticketId", required = false) Long ticketId,
             @RequestParam(name = "databaseName", required = false) String fuzzyDatabaseName,
             @RequestParam(name = "dataSourceName", required = false) String fuzzyDataSourceName,
