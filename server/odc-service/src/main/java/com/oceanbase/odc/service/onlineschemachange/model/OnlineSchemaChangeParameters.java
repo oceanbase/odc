@@ -56,6 +56,7 @@ public class OnlineSchemaChangeParameters implements Serializable, TaskParameter
 
     private List<String> lockUsers;
     private SwapTableType swapTableType;
+    private Long flowInstanceId;
 
     public boolean isContinueOnError() {
         return this.errorStrategy == TaskErrorStrategy.CONTINUE;

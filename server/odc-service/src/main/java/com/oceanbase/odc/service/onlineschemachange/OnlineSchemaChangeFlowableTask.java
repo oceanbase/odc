@@ -102,6 +102,7 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
         // for public cloud
         String uid = FlowTaskUtil.getCloudMainAccountId(execution);
         OnlineSchemaChangeParameters parameter = FlowTaskUtil.getOnlineSchemaChangeParameter(execution);
+        parameter.setFlowInstanceId(FlowTaskUtil.getFlowInstanceId(execution));
         ConnectionConfig connectionConfig = FlowTaskUtil.getConnectionConfig(execution);
         String schema = FlowTaskUtil.getSchemaName(execution);
         continueOnError = parameter.isContinueOnError();
