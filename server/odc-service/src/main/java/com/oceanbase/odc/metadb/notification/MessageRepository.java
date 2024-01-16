@@ -19,15 +19,21 @@ import java.util.List;
 
 import javax.transaction.Transactional;
 
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import com.oceanbase.odc.config.jpa.OdcJpaRepository;
 import com.oceanbase.odc.service.notification.model.MessageSendingStatus;
+import com.oceanbase.odc.service.notification.model.QueryMessageParams;
 
-public interface MessageRepository extends JpaRepository<MessageEntity, Long>,
+import lombok.NonNull;
+
+public interface MessageRepository extends OdcJpaRepository<MessageEntity, Long>,
         JpaSpecificationExecutor<MessageEntity> {
     @Query(value = "update notification_message set `status`=:#{#status.name()} where `id`=:id", nativeQuery = true)
     @Transactional
@@ -46,5 +52,14 @@ public interface MessageRepository extends JpaRepository<MessageEntity, Long>,
             nativeQuery = true)
     List<MessageEntity> findNByStatusForUpdate(@Param("status") MessageSendingStatus status,
             @Param("limit") Integer limit);
+
+    default Page<MessageEntity> find(@NonNull QueryMessageParams queryParams, @NonNull Pageable pageable) {
+        Specification<MessageEntity> specs = Specification
+                .where(OdcJpaRepository.eq(MessageEntity_.projectId, queryParams.getProjectId()))
+                .and(OdcJpaRepository.like(MessageEntity_.title, queryParams.getFuzzyTitle()))
+                .and(OdcJpaRepository.in(MessageEntity_.channelId, queryParams.getChannelIds()))
+                .and(OdcJpaRepository.in(MessageEntity_.status, queryParams.getStatuses()));
+        return findAll(specs, pageable);
+    }
 
 }

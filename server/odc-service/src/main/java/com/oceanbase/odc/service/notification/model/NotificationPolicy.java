@@ -18,6 +18,8 @@ package com.oceanbase.odc.service.notification.model;
 import java.util.Date;
 import java.util.List;
 
+import com.oceanbase.odc.common.i18n.Internationalizable;
+
 import lombok.Data;
 
 /**
@@ -27,15 +29,13 @@ import lombok.Data;
  */
 @Data
 public class NotificationPolicy {
-    private long id;
+    private Long id;
 
     private String titleTemplate;
 
     private String contentTemplate;
 
     private String matchExpression;
-
-    private List<Long> channelConfigId;
 
     private Date createTime;
 
@@ -51,6 +51,7 @@ public class NotificationPolicy {
 
     private boolean enabled;
 
+    @Internationalizable
     private String eventName;
 
     private List<String> toUsers;

@@ -88,6 +88,10 @@ public enum ResourceType implements Translatable {
     ODC_INDIVIDUAL_ORGANIZATION,
     ODC_TEAM_ORGANIZATION,
 
+    ODC_NOTIFICATION_CHANNEL,
+    ODC_NOTIFICATION_POLICY,
+    ODC_NOTIFICATION_MESSAGE,
+
 
     /**
      * OB Resources, with 'OB_' prefix

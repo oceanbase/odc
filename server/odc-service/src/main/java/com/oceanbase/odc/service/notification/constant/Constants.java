@@ -13,24 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package com.oceanbase.odc.service.notification.model;
-
-import lombok.Data;
+package com.oceanbase.odc.service.notification.constant;
 
 /**
  * @author liuyizhuo.lyz
- * @date 2024/1/4
+ * @date 2024/1/11
  */
-@Data
-public class BaseChannelConfig {
+public class Constants {
 
-    private String language;
-
-    private String titleTemplate;
-
-    private String contentTemplate;
-
-    private RateLimitConfig rateLimitConfig;
+    public static final String CHANNEL_TEST_MESSAGE_KEY = "com.oceanbase.odc.notification.channel-test-message";
 
 }

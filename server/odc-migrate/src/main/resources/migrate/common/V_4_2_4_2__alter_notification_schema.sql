@@ -67,6 +67,7 @@ CREATE TABLE IF NOT EXISTS `notification_message` (
   `title` varchar(512) NOT NULL COMMENT 'message title',
   `content` text NOT NULL COMMENT 'message content',
   `channel_id` bigint(20) NOT NULL COMMENT 'channel id, reference to notification_channel.id',
+  `channel_name` varchar(128) NOT NULL COMMENT 'channel name',
   `status` varchar(128) NOT NULL COMMENT 'MessageSendingStatus enum, may CREATED, SENT_SUCCESSFULLY, SENT_FAILED, SENDING, etc.',
   `retry_times` bigint(20) DEFAULT 0 NOT NULL COMMENT 'describe how many times spent on resending this message',
   `max_retry_times` bigint(20) NOT NULL COMMENT 'describe max times of resending this message',

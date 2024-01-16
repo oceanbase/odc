@@ -13,24 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.odc.service.notification.model;
 
+import java.util.List;
+
+import lombok.Builder;
 import lombok.Data;
 
 /**
  * @author liuyizhuo.lyz
- * @date 2024/1/4
+ * @date 2024/1/11
  */
 @Data
-public class BaseChannelConfig {
+@Builder
+public class QueryMessageParams {
 
-    private String language;
+    private String fuzzyTitle;
 
-    private String titleTemplate;
+    private List<Long> channelIds;
 
-    private String contentTemplate;
+    private List<MessageSendingStatus> statuses;
 
-    private RateLimitConfig rateLimitConfig;
+    private Long projectId;
 
 }

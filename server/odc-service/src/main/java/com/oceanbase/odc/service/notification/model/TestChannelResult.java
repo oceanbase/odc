@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.odc.service.notification.model;
 
 import lombok.Data;
@@ -23,14 +22,22 @@ import lombok.Data;
  * @date 2024/1/4
  */
 @Data
-public class BaseChannelConfig {
+public class TestChannelResult {
 
-    private String language;
+    private boolean active;
+    private String errorMessage;
 
-    private String titleTemplate;
+    public static TestChannelResult ofFail(String errorMessage) {
+        TestChannelResult result = new TestChannelResult();
+        result.setActive(false);
+        result.setErrorMessage(errorMessage);
+        return result;
+    }
 
-    private String contentTemplate;
-
-    private RateLimitConfig rateLimitConfig;
+    public static TestChannelResult ofSuccess() {
+        TestChannelResult result = new TestChannelResult();
+        result.setActive(true);
+        return result;
+    }
 
 }
