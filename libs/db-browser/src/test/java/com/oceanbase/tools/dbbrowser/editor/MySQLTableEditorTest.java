@@ -39,8 +39,8 @@ public class MySQLTableEditorTest {
     public void generateCreateObjectDDL() {
         String ddl = tableEditor.generateCreateObjectDDL(DBObjectUtilsTest.getNewTable());
         Assert.assertEquals("CREATE TABLE `whatever_schema`.`whatever_table` (\n"
-                + "`COL1` NUMBER(2, 1) DEFAULT '1' NOT NULL,\n"
-                + "`OLD_COL1` NUMBER(2, 1) DEFAULT '1' NOT NULL,\n"
+                + "`COL1` NUMBER(2, 1) DEFAULT 1 NOT NULL,\n"
+                + "`OLD_COL1` NUMBER(2, 1) DEFAULT 1 NOT NULL,\n"
                 + "INDEX `new_index` USING HASH (`col1`, `col2`) GLOBAL  COMMENT 'whatever_comment',\n"
                 + "INDEX `old_index` USING BTREE (`col1`, `col2`) GLOBAL  COMMENT 'whatever_comment',\n"
                 + "CONSTRAINT `old_constraint` FOREIGN KEY (`col1`, `col2`) REFERENCES `ref_schema`.`ref_table` (`ref_col1`, `ref_col2`) "
