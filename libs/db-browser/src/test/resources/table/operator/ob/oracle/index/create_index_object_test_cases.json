@@ -18,7 +18,7 @@
         "ordinalPosition": null
       }
     },
-    "output": "CREATE  INDEX \"a\" USING BTREE ON \"schema\".\"table\" (\"a\") GLOBAL"
+    "output": "CREATE  INDEX \"a\" USING BTREE ON \"schema\".\"table\" (\"a\") GLOBAL;\n"
   },
   {
     "id": 2,
@@ -40,6 +40,6 @@
         "ordinalPosition": null
       }
     },
-    "output": "CREATE  INDEX \"a\" USING BTREE ON \"schema\".\"table\" (\"a\", \"b\") LOCAL"
+    "output": "CREATE  INDEX \"a\" USING BTREE ON \"schema\".\"table\" (\"a\", \"b\") LOCAL;\n"
   }
 ]

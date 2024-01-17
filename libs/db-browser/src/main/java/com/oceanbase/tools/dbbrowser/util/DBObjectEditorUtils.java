@@ -83,13 +83,13 @@ public class DBObjectEditorUtils {
             DBObjectEditor<DBTableIndex> editor, SqlBuilder sqlBuilder) {
         if (CollectionUtils.isEmpty(oldIndexes)) {
             if (CollectionUtils.isNotEmpty(newIndexes)) {
-                newIndexes.forEach(column -> sqlBuilder.append(editor.generateCreateObjectDDL(column)).append(";\n"));
+                newIndexes.forEach(column -> sqlBuilder.append(editor.generateCreateObjectDDL(column)));
             }
             return;
         }
         if (CollectionUtils.isEmpty(newIndexes)) {
             if (CollectionUtils.isNotEmpty(oldIndexes)) {
-                oldIndexes.forEach(column -> sqlBuilder.append(editor.generateDropObjectDDL(column)).append(";\n"));
+                oldIndexes.forEach(column -> sqlBuilder.append(editor.generateDropObjectDDL(column)));
             }
             return;
         }
@@ -104,7 +104,7 @@ public class DBObjectEditorUtils {
         });
         for (DBTableIndex newIndex : newIndexes) {
             if (!name2OldIndex.containsKey(newIndex.getName())) {
-                sqlBuilder.append(editor.generateCreateObjectDDL(newIndex)).append(";\n");
+                sqlBuilder.append(editor.generateCreateObjectDDL(newIndex));
             } else {
                 // this is an existing index
                 sqlBuilder.append(editor.generateUpdateObjectDDL(name2OldIndex.get(newIndex.getName()),
@@ -114,7 +114,7 @@ public class DBObjectEditorUtils {
         for (DBTableIndex oldIndex : oldIndexes) {
             // means this index should be dropped
             if (!name2NewIndex.containsKey(oldIndex.getName())) {
-                sqlBuilder.append(editor.generateDropObjectDDL(oldIndex)).append(";").line();
+                sqlBuilder.append(editor.generateDropObjectDDL(oldIndex));
             }
         }
     }

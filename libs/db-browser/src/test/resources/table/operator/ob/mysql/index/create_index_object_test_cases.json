@@ -18,7 +18,7 @@
         "ordinalPosition": null
       }
     },
-    "output": "CREATE  INDEX `a` USING BTREE ON `schema`.`table` (`a`) GLOBAL"
+    "output": "CREATE  INDEX `a` USING BTREE ON `schema`.`table` (`a`) GLOBAL;\n"
   },
   {
     "id": 2,
@@ -40,7 +40,7 @@
         "ordinalPosition": null
       }
     },
-    "output": "CREATE  INDEX `a` USING BTREE ON `schema`.`table` (`a`, `b`) GLOBAL"
+    "output": "CREATE  INDEX `a` USING BTREE ON `schema`.`table` (`a`, `b`) GLOBAL;\n"
   },
   {
     "id": 3,
@@ -62,6 +62,6 @@
         "ordinalPosition": null
       }
     },
-    "output": "CREATE UNIQUE INDEX `a` USING BTREE ON `schema`.`table` (`a`, `b`) GLOBAL"
+    "output": "CREATE UNIQUE INDEX `a` USING BTREE ON `schema`.`table` (`a`, `b`) GLOBAL;\n"
   }
 ]
