@@ -68,13 +68,13 @@ public class DataArchiveDeleteJob extends AbstractDlmJob {
         // prepare tasks for clear
         List<DlmTask> taskUnits = JsonUtils.fromJson(dataArchiveTask.getResultJson(),
                 new TypeReference<List<DlmTask>>() {});
-        taskUnits.forEach(taskUnit -> {
-            taskUnit.setId(DlmJobIdUtil.generateHistoryJobId(taskEntity.getJobName(), taskEntity.getJobGroup(),
+        for (int i = 0; i < taskUnits.size(); i++) {
+            taskUnits.get(i).setId(DlmJobIdUtil.generateHistoryJobId(taskEntity.getJobName(), taskEntity.getJobGroup(),
                     taskEntity.getId(),
-                    taskUnits.size()));
-            taskUnit.setJobType(JobType.DELETE);
-            taskUnit.setStatus(TaskStatus.PREPARING);
-        });
+                    i));
+            taskUnits.get(i).setJobType(JobType.DELETE);
+            taskUnits.get(i).setStatus(TaskStatus.PREPARING);
+        }
         executeTask(taskEntity.getId(), taskUnits);
         TaskStatus taskStatus = getTaskStatus(taskUnits);
         scheduleTaskRepository.updateStatusById(taskEntity.getId(), taskStatus);
