@@ -63,6 +63,7 @@ import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.flow.model.TaskParameters;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.Verify;
+import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.constant.LimitMetric;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
@@ -72,6 +73,7 @@ import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.core.shared.exception.AccessDeniedException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.core.shared.exception.OverLimitException;
+import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.core.shared.exception.VerifyException;
 import com.oceanbase.odc.metadb.flow.FlowInstanceEntity;
 import com.oceanbase.odc.metadb.flow.FlowInstanceRepository;
@@ -577,6 +579,10 @@ public class FlowInstanceService {
                 taskInstance.cancel(true);
                 return FlowInstanceDetailResp.withIdAndType(id, taskInstance.getTaskType());
             }
+        }
+        if (CollectionUtils.isEmpty(approvalInstances) && CollectionUtils.isEmpty(taskInstances)) {
+            throw new UnsupportedException(ErrorCodes.FinishedTaskNotTerminable, null,
+                    "The current task has been completed and cannot be terminated");
         }
         log.info("Flow status error, cancellation conditions are not met, forced cancellation, flowInstanceId={}, "
                 + "nodes={}", id,
