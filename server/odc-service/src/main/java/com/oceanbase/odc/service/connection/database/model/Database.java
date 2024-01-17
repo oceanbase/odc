@@ -57,7 +57,6 @@ public class Database implements SecurityResource, OrganizationIsolated, Seriali
     @JsonProperty(access = Access.READ_ONLY)
     private Project project;
 
-    @JsonProperty(access = Access.READ_ONLY)
     private ConnectionConfig dataSource;
 
     @JsonProperty(access = Access.READ_ONLY)

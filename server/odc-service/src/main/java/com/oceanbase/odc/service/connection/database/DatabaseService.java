@@ -175,8 +175,7 @@ public class DatabaseService {
     private Database getDatabase(Long id) {
         Database database = entityToModel(databaseRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException(ResourceType.ODC_DATABASE, "id", id)));
-        if (!projectService.checkPermission(database.getProject().getId(),
-                Arrays.asList(ResourceRoleName.DBA, ResourceRoleName.OWNER, ResourceRoleName.DEVELOPER))) {
+        if (!projectService.checkPermission(database.getProject().getId(), ResourceRoleName.all())) {
             throw new AccessDeniedException();
         }
         return database;
