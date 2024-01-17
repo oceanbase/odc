@@ -118,9 +118,13 @@ public class OscService {
         Optional<FlowInstance> optional = flowFactory.getFlowInstance(oscParameters.getFlowInstanceId());
         FlowInstance flowInstance = optional.orElseThrow(
                 () -> new NotFoundException(ResourceType.ODC_FLOW_INSTANCE, "id", oscParameters.getFlowInstanceId()));
-        permissionValidator.checkCurrentOrganization(flowInstance);
+        try {
+            permissionValidator.checkCurrentOrganization(flowInstance);
+        } finally {
+            flowInstance.dealloc();
+        }
 
-        // check permission, only creator can swap table manual
+        // check user permission, only creator can swap table manual
         PreConditions.validHasPermission(
                 Objects.equals(authenticationFacade.currentUserId(), scheduleEntity.get().getCreatorId()),
                 ErrorCodes.AccessDenied,
