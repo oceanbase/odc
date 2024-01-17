@@ -58,8 +58,13 @@ public class RequestHandler {
             String path = UrlUtils.getPath(uri);
             Matcher matcher = logUrlPattern.matcher(path);
             if (matcher.find()) {
+                String maxLine = UrlUtils.getQueryParameterFirst(uri, "fetchMaxLine");
+                String maxSize = UrlUtils.getQueryParameterFirst(uri, "fetchMaxByteSize");
+
                 return Responses.single(executorBiz.getLog(Long.parseLong(matcher.group(1)),
-                        UrlUtils.getQueryParameterFirst(uri, "logType")));
+                        UrlUtils.getQueryParameterFirst(uri, "logType"),
+                        (maxLine == null ? null : Long.parseLong(maxLine)),
+                        (maxSize == null ? null : Long.parseLong(maxSize))));
             }
             matcher = stopTaskPattern.matcher(path);
             if (matcher.find()) {

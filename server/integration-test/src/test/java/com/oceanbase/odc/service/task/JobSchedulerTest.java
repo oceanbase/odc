@@ -30,7 +30,7 @@ import com.oceanbase.odc.service.task.caller.JobException;
 import com.oceanbase.odc.service.task.config.DefaultJobConfiguration;
 import com.oceanbase.odc.service.task.config.SpringTaskFrameworkProperties;
 import com.oceanbase.odc.service.task.dispatch.JobDispatcher;
-import com.oceanbase.odc.service.task.executor.sampletask.SampleTask;
+import com.oceanbase.odc.service.task.executor.task.DatabaseChangeTask;
 import com.oceanbase.odc.service.task.schedule.DefaultJobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobScheduler;
 import com.oceanbase.odc.service.task.schedule.StdJobScheduler;
@@ -69,8 +69,8 @@ public class JobSchedulerTest {
         Mockito.when(taskFrameworkService.save(Mockito.any())).thenReturn(Mockito.mock(JobEntity.class));
         Mockito.when(taskFrameworkService.find(Mockito.any())).thenReturn(Mockito.mock(JobEntity.class));
 
-        DefaultJobDefinition jd = DefaultJobDefinition.builder().jobClass(SampleTask.class)
-                .jobType("sampleTask").build();
+        DefaultJobDefinition jd = DefaultJobDefinition.builder().jobClass(DatabaseChangeTask.class)
+                .jobType("ASYNC").build();
 
         JobDispatcher jobDispatcher = Mockito.mock(JobDispatcher.class);
         Mockito.doNothing().when(jobDispatcher).start(Mockito.mock(JobContext.class));

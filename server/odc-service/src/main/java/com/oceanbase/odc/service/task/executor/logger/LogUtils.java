@@ -41,8 +41,10 @@ public class LogUtils {
     private static final long MAX_LOG_BYTE_COUNT = 1024 * 1024;
     private static final String LOG_PATH_PATTERN = "%s/%s/task.%s";
 
-    public static String getLogContent(String file) {
+    public static String getLogContent(String file, Long fetchMaxLine, Long fetchMaxByteSize) {
 
+        long lineSize = fetchMaxLine != null ? Math.min(MAX_LOG_LINE_COUNT, fetchMaxLine) : MAX_LOG_LINE_COUNT;
+        long byteSize = fetchMaxByteSize != null ? Math.min(MAX_LOG_BYTE_COUNT, fetchMaxByteSize) : MAX_LOG_BYTE_COUNT;
         if (!new File(file).exists()) {
             return ErrorCodes.TaskLogNotFound.getLocalizedMessage(new Object[] {file});
         }
@@ -53,7 +55,7 @@ public class LogUtils {
         try {
             it = FileUtils.lineIterator(new File(file));
             while (it.hasNext()) {
-                if (lineCount > MAX_LOG_LINE_COUNT || byteCount > MAX_LOG_BYTE_COUNT) {
+                if (lineCount > lineSize || byteCount > byteSize) {
                     sb.append("Logs exceed max limitation (10000 rows or 1 MB), please download logs directly");
                     break;
                 }

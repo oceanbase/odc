@@ -28,7 +28,7 @@ import com.oceanbase.odc.service.task.schedule.JobIdentity;
  */
 public interface LogBiz {
 
-    String getLog(Long id, String logType);
+    String getLog(Long jobId, String logType, Long fetchMaxLine, Long fetchMaxByteSize);
 
     Map<String, String> uploadLogFileToCloudStorage(JobIdentity ji, CloudObjectStorageService cloudObjectStorageService)
             throws IOException;
