@@ -47,7 +47,7 @@ public interface JobConfiguration {
 
     ConnectionService getConnectionService();
 
-    Scheduler getScheduler();
+    Scheduler getDaemonScheduler();
 
     JobDispatcher getJobDispatcher();
 

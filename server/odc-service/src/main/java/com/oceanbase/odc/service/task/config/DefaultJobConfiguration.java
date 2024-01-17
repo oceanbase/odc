@@ -52,7 +52,7 @@ public abstract class DefaultJobConfiguration implements JobConfiguration {
 
     protected JobDispatcher jobDispatcher;
 
-    protected Scheduler scheduler;
+    protected Scheduler daemonScheduler;
 
     protected K8sJobClient k8sJobClient;
 

@@ -54,7 +54,7 @@ public class JobSchedulerTest {
         SchedulerFactory sf = new StdSchedulerFactory();
         Scheduler sched = sf.getScheduler();
         DefaultJobConfiguration jc = new DefaultJobConfiguration() {};
-        jc.setScheduler(sched);
+        jc.setDaemonScheduler(sched);
         jc.setHostUrlProvider(Mockito.mock(HostUrlProvider.class));
         jc.setEventPublisher(new LocalEventPublisher());
         jc.setJobImageNameProvider(Mockito.mock(JobImageNameProvider.class));

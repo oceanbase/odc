@@ -62,7 +62,7 @@ public class StdJobScheduler implements JobScheduler {
 
     public StdJobScheduler(JobConfiguration configuration) {
         this.configuration = configuration;
-        this.scheduler = configuration.getScheduler();
+        this.scheduler = configuration.getDaemonScheduler();
         validConfiguration(configuration);
         JobConfigurationHolder.setJobConfiguration(configuration);
 
@@ -182,7 +182,7 @@ public class StdJobScheduler implements JobScheduler {
                 "checkRunningJobCronExpression");
         PreConditions.notNull(configuration.getTaskFrameworkProperties().getStartPreparingJobCronExpression(),
                 "startPreparingJobCronExpression");
-        PreConditions.notNull(configuration.getScheduler(), "quartz scheduler");
+        PreConditions.notNull(configuration.getDaemonScheduler(), "quartz scheduler");
         PreConditions.notNull(configuration.getJobDispatcher(), "job dispatcher");
         PreConditions.notNull(configuration.getHostUrlProvider(), "host url provider");
         PreConditions.notNull(configuration.getTaskFrameworkService(), "task framework service");

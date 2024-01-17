@@ -23,12 +23,9 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import com.oceanbase.odc.service.common.model.HostProperties;
 import com.oceanbase.odc.service.common.util.ConditionalOnProperty;
 import com.oceanbase.odc.service.task.caller.K8sJobClient;
 import com.oceanbase.odc.service.task.caller.NativeK8sJobClient;
-import com.oceanbase.odc.service.task.schedule.provider.DefaultHostUrlProvider;
-import com.oceanbase.odc.service.task.schedule.provider.HostUrlProvider;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -53,11 +50,6 @@ public class TaskFrameworkConfiguration {
             log.warn("Create NativeK8sJobClient occur error:", e);
             return null;
         }
-    }
-
-    @Bean
-    public HostUrlProvider hostUrlProvider(@Autowired HostProperties hostProperties) {
-        return new DefaultHostUrlProvider(TaskFrameworkPropertiesSupplier.getSupplier(), hostProperties);
     }
 
     @Bean

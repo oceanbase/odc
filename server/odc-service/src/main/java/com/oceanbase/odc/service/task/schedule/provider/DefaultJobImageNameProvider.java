@@ -17,9 +17,11 @@ package com.oceanbase.odc.service.task.schedule.provider;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Supplier;
 
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
+import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.service.info.InfoAdapter;
 import com.oceanbase.odc.service.task.config.K8sProperties;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
@@ -32,16 +34,18 @@ import com.oceanbase.odc.service.task.constants.JobEnvConstants;
  */
 public class DefaultJobImageNameProvider implements JobImageNameProvider {
     private final InfoAdapter infoAdapter;
-    private final TaskFrameworkProperties taskFrameworkProperties;
+    private final Supplier<TaskFrameworkProperties> taskFrameworkProperties;
 
-    public DefaultJobImageNameProvider(InfoAdapter infoAdapter, TaskFrameworkProperties taskFrameworkProperties) {
+    public DefaultJobImageNameProvider(Supplier<TaskFrameworkProperties> taskFrameworkProperties,
+            InfoAdapter infoAdapter) {
+        PreConditions.notNull(taskFrameworkProperties.get(), "taskFrameworkProperties");
         this.infoAdapter = infoAdapter;
         this.taskFrameworkProperties = taskFrameworkProperties;
     }
 
     @Override
     public String provide() {
-        K8sProperties k8s = taskFrameworkProperties.getK8sProperties();
+        K8sProperties k8s = taskFrameworkProperties.get().getK8sProperties();
 
         List<String> candidateImages = new ArrayList<>();
         candidateImages.add(SystemUtils.getEnvOrProperty(JobEnvConstants.ODC_IMAGE_NAME));

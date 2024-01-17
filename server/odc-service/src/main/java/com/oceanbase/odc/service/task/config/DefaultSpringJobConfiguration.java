@@ -24,6 +24,7 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import com.oceanbase.odc.common.event.LocalEventPublisher;
+import com.oceanbase.odc.service.common.model.HostProperties;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.info.InfoAdapter;
 import com.oceanbase.odc.service.objectstorage.cloud.model.CloudEnvConfigurations;
@@ -31,8 +32,8 @@ import com.oceanbase.odc.service.schedule.ScheduleTaskService;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.caller.K8sJobClient;
 import com.oceanbase.odc.service.task.dispatch.ImmediateJobDispatcher;
+import com.oceanbase.odc.service.task.schedule.provider.DefaultHostUrlProvider;
 import com.oceanbase.odc.service.task.schedule.provider.DefaultJobImageNameProvider;
-import com.oceanbase.odc.service.task.schedule.provider.HostUrlProvider;
 import com.oceanbase.odc.service.task.service.SpringTransactionManager;
 import com.oceanbase.odc.service.task.service.StdTaskFrameworkService;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
@@ -50,13 +51,16 @@ public class DefaultSpringJobConfiguration extends DefaultJobConfiguration
     @Override
     public void afterPropertiesSet() {
         setCloudEnvConfigurations(ctx.getBean(CloudEnvConfigurations.class));
+        setHostUrlProvider(new DefaultHostUrlProvider(this::getTaskFrameworkProperties,
+                ctx.getBean(HostProperties.class)));
+        setJobImageNameProvider(new DefaultJobImageNameProvider(this::getTaskFrameworkProperties,
+                ctx.getBean(InfoAdapter.class)));
         setConnectionService(ctx.getBean(ConnectionService.class));
         setTaskService(ctx.getBean(TaskService.class));
         setScheduleTaskService(ctx.getBean(ScheduleTaskService.class));
-        setScheduler((Scheduler) ctx.getBean("taskFrameworkSchedulerFactoryBean"));
+        setDaemonScheduler((Scheduler) ctx.getBean("taskFrameworkSchedulerFactoryBean"));
         setJobDispatcher(new ImmediateJobDispatcher());
         setK8sJobClient(ctx.getBean(K8sJobClient.class));
-        setHostUrlProvider(ctx.getBean(HostUrlProvider.class));
         LocalEventPublisher publisher = new LocalEventPublisher();
         TaskFrameworkService tfs = ctx.getBean(TaskFrameworkService.class);
         if (tfs instanceof StdTaskFrameworkService) {
@@ -64,8 +68,6 @@ public class DefaultSpringJobConfiguration extends DefaultJobConfiguration
         }
         setTaskFrameworkService(tfs);
         setEventPublisher(publisher);
-        setJobImageNameProvider(new DefaultJobImageNameProvider(ctx.getBean(InfoAdapter.class),
-                getTaskFrameworkProperties()));
         setTransactionManager(new SpringTransactionManager(ctx.getBean(TransactionTemplate.class)));
     }
 
