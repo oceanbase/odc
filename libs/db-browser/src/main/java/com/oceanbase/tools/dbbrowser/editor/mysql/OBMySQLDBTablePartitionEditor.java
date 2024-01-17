@@ -25,6 +25,6 @@ import com.oceanbase.tools.dbbrowser.model.DBTablePartition;
 public class OBMySQLDBTablePartitionEditor extends MySQLDBTablePartitionEditor {
     @Override
     public String generateDropObjectDDL(DBTablePartition dbObject) {
-        return "/* Unsupported operation to convert partitioned table to non-partitioned table */\n";
+        return "-- Unsupported operation to convert partitioned table to non-partitioned table\n";
     }
 }

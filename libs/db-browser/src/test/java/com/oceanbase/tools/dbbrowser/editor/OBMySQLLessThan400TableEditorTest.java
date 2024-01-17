@@ -45,8 +45,8 @@ public class OBMySQLLessThan400TableEditorTest {
                 tableEditor.generateUpdateObjectDDL(DBObjectUtilsTest.getOldTable(), DBObjectUtilsTest.getNewTable());
         Assert.assertEquals(
                 "ALTER TABLE `old_table` RENAME TO `whatever_table`;\n"
-                        + "/* Unsupported operation to modify table charset */\n"
-                        + "/* Unsupported operation to modify table collation */\n",
+                        + "-- Unsupported operation to modify table charset\n"
+                        + "-- Unsupported operation to modify table collation\n",
                 ddl);
     }
 }

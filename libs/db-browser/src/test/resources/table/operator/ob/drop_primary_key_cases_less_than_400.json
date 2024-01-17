@@ -16,6 +16,6 @@
         "deferability": "NOT_DEFERRABLE"
       }
     },
-    "output": "/* Unsupported operation to drop primary key constraint */\n"
+    "output": "-- Unsupported operation to drop primary key constraint\n"
   }
 ]

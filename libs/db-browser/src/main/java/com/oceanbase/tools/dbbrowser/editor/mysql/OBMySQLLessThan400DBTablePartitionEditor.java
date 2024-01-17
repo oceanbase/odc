@@ -27,12 +27,12 @@ import com.oceanbase.tools.dbbrowser.model.DBTablePartition;
 public class OBMySQLLessThan400DBTablePartitionEditor extends OBMySQLDBTablePartitionEditor {
     @Override
     public String generateCreateObjectDDL(DBTablePartition partition) {
-        return "/* Unsupported operation to convert non-partitioned table to partitioned table */\n";
+        return "-- Unsupported operation to convert non-partitioned table to partitioned table\n";
     }
 
     @Override
     protected String modifyPartitionType(@NotNull DBTablePartition oldPartition,
             @NotNull DBTablePartition newPartition) {
-        return "/* Unsupported operation to modify table partition type */\n";
+        return "-- Unsupported operation to modify table partition type\n";
     }
 }

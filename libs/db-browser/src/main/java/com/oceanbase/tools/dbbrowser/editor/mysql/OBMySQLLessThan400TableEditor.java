@@ -50,11 +50,11 @@ public class OBMySQLLessThan400TableEditor extends OBMySQLTableEditor {
         generateUpdateTableCommentDDL(oldTable, newTable, sqlBuilder);
         if (!StringUtils.equals(oldTable.getTableOptions().getCharsetName(),
                 newTable.getTableOptions().getCharsetName())) {
-            sqlBuilder.append("/* Unsupported operation to modify table charset */\n");
+            sqlBuilder.append("-- Unsupported operation to modify table charset\n");
         }
         if (!StringUtils.equals(oldTable.getTableOptions().getCollationName(),
                 newTable.getTableOptions().getCollationName())) {
-            sqlBuilder.append("/* Unsupported operation to modify table collation */\n");
+            sqlBuilder.append("-- Unsupported operation to modify table collation\n");
         }
     }
 }

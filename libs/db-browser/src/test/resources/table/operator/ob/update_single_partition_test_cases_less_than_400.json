@@ -29,7 +29,7 @@
         ]
       }
     },
-    "output": "/* Unsupported operation to convert non-partitioned table to partitioned table */\n"
+    "output": "-- Unsupported operation to convert non-partitioned table to partitioned table\n"
   },
   {
     "id": 2,
@@ -61,6 +61,6 @@
         ]
       }
     },
-    "output": "/* Unsupported operation to modify table partition type */\n"
+    "output": "-- Unsupported operation to modify table partition type\n"
   }
 ]

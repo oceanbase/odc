@@ -52,7 +52,7 @@ public class OracleDBTablePartitionEditor extends DBTablePartitionEditor {
 
     @Override
     public String generateDropObjectDDL(DBTablePartition dbObject) {
-        return "/* Unsupported operation to convert partitioned table to non-partitioned table */\n";
+        return "-- Unsupported operation to convert partitioned table to non-partitioned table\n";
     }
 
     @Override
@@ -92,7 +92,7 @@ public class OracleDBTablePartitionEditor extends DBTablePartitionEditor {
     @Override
     protected String modifyPartitionType(@NotNull DBTablePartition oldPartition,
             @NotNull DBTablePartition newPartition) {
-        return "/* Unsupported operation to modify table partition type */\n";
+        return "-- Unsupported operation to modify table partition type\n";
     }
 
     @Override

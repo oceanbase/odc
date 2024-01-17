@@ -21,7 +21,6 @@ import org.springframework.beans.BeanUtils;
 
 import com.oceanbase.odc.service.structurecompare.model.ComparisonResult;
 import com.oceanbase.odc.service.structurecompare.model.DBObjectComparisonResult;
-import com.oceanbase.odc.service.structurecompare.util.StructureCompareUtil;
 import com.oceanbase.tools.dbbrowser.editor.DBTablePartitionEditor;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartition;
@@ -68,7 +67,7 @@ public class DBTablePartitionStructureComparator implements DBObjectStructureCom
             } else {
                 // partition to be updated
                 result.setComparisonResult(ComparisonResult.INCONSISTENT);
-                result.setChangeScript(StructureCompareUtil.appendDelimiterIfNotExist(ddl));
+                result.setChangeScript(ddl);
             }
         }
         return result;

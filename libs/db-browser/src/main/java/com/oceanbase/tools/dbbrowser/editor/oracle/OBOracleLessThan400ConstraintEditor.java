@@ -32,7 +32,7 @@ public class OBOracleLessThan400ConstraintEditor extends OracleConstraintEditor 
         if (constraint.getType() != DBConstraintType.PRIMARY_KEY) {
             return ddl;
         }
-        return "/* Unsupported operation to drop primary key constraint */\n";
+        return "-- Unsupported operation to drop primary key constraint\n";
     }
 
     @Override
@@ -41,6 +41,6 @@ public class OBOracleLessThan400ConstraintEditor extends OracleConstraintEditor 
         if (constraint.getType() != DBConstraintType.PRIMARY_KEY) {
             return ddl;
         }
-        return "/* Unsupported operation to add primary key constraint */\n";
+        return "-- Unsupported operation to add primary key constraint\n";
     }
 }

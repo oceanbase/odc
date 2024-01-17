@@ -25,6 +25,6 @@ import com.oceanbase.tools.dbbrowser.model.DBTablePartition;
 public class OBOracleLessThan400DBTablePartitionEditor extends OracleDBTablePartitionEditor {
     @Override
     public String generateCreateObjectDDL(DBTablePartition partition) {
-        return "/* Unsupported operation to convert non-partitioned table to partitioned table */\n";
+        return "-- Unsupported operation to convert non-partitioned table to partitioned table\n";
     }
 }

@@ -198,8 +198,8 @@ public class DefaultDBStructureComparatorTest extends PluginTestEnv {
                 item -> item.getDbObjectType().equals(DBObjectType.CONSTRAINT)).collect(Collectors.toList()).get(0);
         DBObjectComparisonResult expect =
                 new DBObjectComparisonResult(DBObjectType.CONSTRAINT, "PRIMARY", sourceSchemaName, targetSchemaName);
-        expect.setChangeScript("/* Unsupported operation to drop primary key constraint */\n"
-                + "/* Unsupported operation to add primary key constraint */\n");
+        expect.setChangeScript("-- Unsupported operation to drop primary key constraint\n"
+                + "-- Unsupported operation to add primary key constraint\n");
         expect.setComparisonResult(ComparisonResult.INCONSISTENT);
         Assert.assertEquals(expect, actual);
     }
@@ -344,7 +344,7 @@ public class DefaultDBStructureComparatorTest extends PluginTestEnv {
         DBObjectComparisonResult excepted =
                 new DBObjectComparisonResult(DBObjectType.PARTITION, sourceSchemaName, targetSchemaName);
         excepted.setComparisonResult(ComparisonResult.INCONSISTENT);
-        excepted.setChangeScript("/* Unsupported operation to convert non-partitioned table to partitioned table */\n");
+        excepted.setChangeScript("-- Unsupported operation to convert non-partitioned table to partitioned table\n");
         Assert.assertEquals(excepted, actual);
     }
 
@@ -359,7 +359,7 @@ public class DefaultDBStructureComparatorTest extends PluginTestEnv {
         DBObjectComparisonResult excepted =
                 new DBObjectComparisonResult(DBObjectType.PARTITION, sourceSchemaName, targetSchemaName);
         excepted.setComparisonResult(ComparisonResult.INCONSISTENT);
-        excepted.setChangeScript("/* Unsupported operation to convert partitioned table to non-partitioned table */\n");
+        excepted.setChangeScript("-- Unsupported operation to convert partitioned table to non-partitioned table\n");
         Assert.assertEquals(excepted, actual);
     }
 
@@ -370,8 +370,8 @@ public class DefaultDBStructureComparatorTest extends PluginTestEnv {
         Assert.assertEquals(result.getComparisonResult(), ComparisonResult.INCONSISTENT);
         Assert.assertEquals(result.getChangeScript(), "ALTER TABLE `" + targetSchemaName + "`"
                 + ".`update_options` COMMENT = 'comment1';\n"
-                + "/* Unsupported operation to modify table charset */\n"
-                + "/* Unsupported operation to modify table collation */\n");
+                + "-- Unsupported operation to modify table charset\n"
+                + "-- Unsupported operation to modify table collation\n");
     }
 
     @Test
@@ -402,7 +402,7 @@ public class DefaultDBStructureComparatorTest extends PluginTestEnv {
         DBObjectComparisonResult excepted =
                 new DBObjectComparisonResult(DBObjectType.PARTITION, sourceSchemaName, targetSchemaName);
         excepted.setComparisonResult(ComparisonResult.INCONSISTENT);
-        excepted.setChangeScript("/* Unsupported operation to modify table partition type */\n");
+        excepted.setChangeScript("-- Unsupported operation to modify table partition type\n");
         Assert.assertEquals(excepted, actual);
     }
 }
