@@ -55,7 +55,7 @@ public class DefaultJobCallerListener extends JobCallerListener {
             try {
                 configuration.getJobDispatcher().destroy(identifier);
             } catch (JobException e) {
-                // send alarm
+                // if destroy failed, domain job will destroy it
                 log.warn("Destroy executor {} occur exception", identifier.toString());
             }
             throw ex;

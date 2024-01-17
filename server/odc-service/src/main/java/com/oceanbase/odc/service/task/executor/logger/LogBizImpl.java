@@ -21,7 +21,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.oceanbase.odc.common.util.StringUtils;
-import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
 import com.oceanbase.odc.service.task.constants.JobAttributeKeyConstants;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
@@ -43,9 +42,9 @@ public class LogBizImpl implements LogBiz {
         OdcTaskLogLevel logTypeLevel = null;
         try {
             logTypeLevel = OdcTaskLogLevel.valueOf(logType);
-        } catch (Exception e) {
+        } catch (IllegalArgumentException e) {
             log.warn("logType {} is illegal.", logType);
-            new SuccessResponse<>("logType " + logType + " is illegal.");
+            return "logType " + logType + " is illegal.";
         }
 
         String logFileStr = LogUtils.getJobLogFileWithPath(id, logTypeLevel);
