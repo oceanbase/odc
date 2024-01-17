@@ -40,6 +40,7 @@ import lombok.Data;
  */
 @Data
 public class OnlineSchemaChangeParameters implements Serializable, TaskParameters {
+    private static final long serialVersionUID = 2870979595720162565L;
 
     private OnlineSchemaChangeSqlType sqlType;
 

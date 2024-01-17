@@ -115,16 +115,16 @@ public class OscService {
         OnlineSchemaChangeParameters oscParameters = JsonUtils.fromJson(scheduleEntity.get().getJobParametersJson(),
                 OnlineSchemaChangeParameters.class);
 
+        Optional<FlowInstance> optional = flowFactory.getFlowInstance(oscParameters.getFlowInstanceId());
+        FlowInstance flowInstance = optional.orElseThrow(
+                () -> new NotFoundException(ResourceType.ODC_FLOW_INSTANCE, "id", oscParameters.getFlowInstanceId()));
+        permissionValidator.checkCurrentOrganization(flowInstance);
+
         // check permission, only creator can swap table manual
         PreConditions.validHasPermission(
                 Objects.equals(authenticationFacade.currentUserId(), scheduleEntity.get().getCreatorId()),
                 ErrorCodes.AccessDenied,
                 "no permission swap table name, schedule task id " + scheduleTaskId);
-
-        Optional<FlowInstance> optional = flowFactory.getFlowInstance(oscParameters.getFlowInstanceId());
-        FlowInstance flowInstance = optional.orElseThrow(
-                () -> new NotFoundException(ResourceType.ODC_FLOW_INSTANCE, "id", oscParameters.getFlowInstanceId()));
-        permissionValidator.checkCurrentOrganization(flowInstance);
 
         OnlineSchemaChangeScheduleTaskResult result = JsonUtils.fromJson(scheduleTask.getResultJson(),
                 OnlineSchemaChangeScheduleTaskResult.class);
