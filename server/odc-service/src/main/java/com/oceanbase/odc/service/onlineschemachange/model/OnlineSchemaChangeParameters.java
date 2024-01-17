@@ -40,6 +40,7 @@ import lombok.Data;
  */
 @Data
 public class OnlineSchemaChangeParameters implements Serializable, TaskParameters {
+    private static final long serialVersionUID = 2870979595720162565L;
 
     private OnlineSchemaChangeSqlType sqlType;
 
@@ -56,6 +57,7 @@ public class OnlineSchemaChangeParameters implements Serializable, TaskParameter
 
     private List<String> lockUsers;
     private SwapTableType swapTableType;
+    private Long flowInstanceId;
 
     public boolean isContinueOnError() {
         return this.errorStrategy == TaskErrorStrategy.CONTINUE;
