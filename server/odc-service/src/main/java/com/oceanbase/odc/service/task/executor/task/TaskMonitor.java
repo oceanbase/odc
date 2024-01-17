@@ -27,6 +27,7 @@ import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.constants.JobDataMapConstants;
 import com.oceanbase.odc.service.task.constants.JobUrlConstants;
 import com.oceanbase.odc.service.task.enums.JobStatus;
+import com.oceanbase.odc.service.task.executor.executor.TraceDecoratorThreadFactory;
 import com.oceanbase.odc.service.task.util.JobUtils;
 
 import lombok.extern.slf4j.Slf4j;
@@ -53,7 +54,7 @@ public class TaskMonitor {
         this.startTimeMilliSeconds = System.currentTimeMillis();
 
         ThreadFactory threadFactory =
-                new TaskThreadFactory(("Task-Monitor-Job-" + getJobId()));
+                new TraceDecoratorThreadFactory(new TaskThreadFactory(("Task-Monitor-Job-" + getJobId())));
         ScheduledExecutorService scheduledExecutor = Executors.newSingleThreadScheduledExecutor(threadFactory);
         scheduledExecutor.scheduleAtFixedRate(() -> {
 
@@ -73,7 +74,7 @@ public class TaskMonitor {
         log.info("Task monitor init success");
 
         ScheduledExecutorService heartScheduledExecutor = Executors.newSingleThreadScheduledExecutor(
-                new TaskThreadFactory(("Task-Heart-Job-" + getJobId())));
+                new TraceDecoratorThreadFactory(new TaskThreadFactory(("Task-Heart-Job-" + getJobId()))));
 
         heartScheduledExecutor.scheduleAtFixedRate(() -> {
             if (getTask().getStatus().isTerminated()) {

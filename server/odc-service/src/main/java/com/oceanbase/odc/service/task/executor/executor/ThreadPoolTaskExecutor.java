@@ -48,7 +48,7 @@ public class ThreadPoolTaskExecutor implements TaskExecutor {
 
     private ThreadPoolTaskExecutor() {
         this.executor = Executors.newFixedThreadPool(2,
-                new TaskThreadFactory("Task-Executor"));
+                new TraceDecoratorThreadFactory(new TaskThreadFactory("Task-Executor")));
     }
 
     public static TaskExecutor getInstance() {

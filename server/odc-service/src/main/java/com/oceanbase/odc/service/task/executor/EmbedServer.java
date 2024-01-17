@@ -33,6 +33,8 @@ import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.common.util.UrlUtils;
 import com.oceanbase.odc.service.task.constants.JobUrlConstants;
 import com.oceanbase.odc.service.task.executor.executor.ThreadPoolTaskExecutor;
+import com.oceanbase.odc.service.task.executor.executor.TraceDecoratorThreadFactory;
+import com.oceanbase.odc.service.task.executor.executor.TraceDecoratorUtils;
 import com.oceanbase.odc.service.task.executor.logger.LogBiz;
 import com.oceanbase.odc.service.task.executor.logger.LogBizImpl;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
@@ -77,7 +79,7 @@ public class EmbedServer {
 
     public void start(final int port) {
         executorBiz = new LogBizImpl();
-        thread = new Thread(new Runnable() {
+        thread = new Thread(TraceDecoratorUtils.decorate(new Runnable() {
             @Override
             public void run() {
                 // param
@@ -89,12 +91,12 @@ public class EmbedServer {
                         60L,
                         TimeUnit.SECONDS,
                         new LinkedBlockingQueue<Runnable>(64),
-                        new ThreadFactory() {
+                        new TraceDecoratorThreadFactory(new ThreadFactory() {
                             @Override
                             public Thread newThread(Runnable r) {
                                 return new Thread(r, "odc-job, EmbedServer bizThreadPool-" + r.hashCode());
                             }
-                        },
+                        }),
                         new RejectedExecutionHandler() {
                             @Override
                             public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
@@ -144,7 +146,7 @@ public class EmbedServer {
                     }
                 }
             }
-        });
+        }));
         thread.setDaemon(true); // daemon, service jvm, user thread leave >>> daemon leave >>> jvm leave
         thread.start();
     }
@@ -190,7 +192,7 @@ public class EmbedServer {
             }
 
             // invoke
-            bizThreadPool.execute(new Runnable() {
+            bizThreadPool.execute(TraceDecoratorUtils.decorate(new Runnable() {
                 @Override
                 public void run() {
                     // do invoke
@@ -202,7 +204,7 @@ public class EmbedServer {
                     // write response
                     writeResponse(ctx, keepAlive, responseJson);
                 }
-            });
+            }));
         }
 
         private Object process(HttpMethod httpMethod, String uri, String requestData) {
