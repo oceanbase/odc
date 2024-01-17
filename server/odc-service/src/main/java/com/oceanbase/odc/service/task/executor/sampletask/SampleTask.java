@@ -53,12 +53,12 @@ public class SampleTask extends BaseTask<FlowTaskResult> {
     private volatile boolean canceled = false;
 
     @Override
-    protected void onInit(JobContext context) {
+    protected void doInit(JobContext context) {
 
     }
 
     @Override
-    protected void onStart(JobContext context) {
+    protected void doStart(JobContext context) {
         updateStatus(JobStatus.RUNNING);
         Map<String, String> dataMap = getJobContext().getJobParameters();
 
@@ -91,7 +91,7 @@ public class SampleTask extends BaseTask<FlowTaskResult> {
     }
 
     @Override
-    protected void onStop() {
+    protected void doStop() {
 
     }
 

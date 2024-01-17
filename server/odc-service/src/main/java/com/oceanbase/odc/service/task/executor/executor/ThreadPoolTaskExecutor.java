@@ -25,6 +25,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import com.oceanbase.odc.core.task.TaskThreadFactory;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.executor.task.Task;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
@@ -41,13 +42,13 @@ import lombok.extern.slf4j.Slf4j;
 public class ThreadPoolTaskExecutor implements TaskExecutor {
 
     private static final TaskExecutor TASK_EXECUTOR = new ThreadPoolTaskExecutor();
+    private final Map<JobIdentity, Task<?>> tasks = new HashMap<>();
+    private final Map<JobIdentity, Future<?>> futures = new HashMap<>();
     private final ExecutorService executor;
-    private volatile Map<JobIdentity, Task<?>> tasks = new HashMap<>();
-    private volatile Map<JobIdentity, Future<?>> futures = new HashMap<>();
 
     private ThreadPoolTaskExecutor() {
         this.executor = Executors.newFixedThreadPool(2,
-                r -> new Thread(r, "task-executor-thread-" + r.hashCode()));
+                new TaskThreadFactory("Task-Executor"));
     }
 
     public static TaskExecutor getInstance() {

@@ -57,9 +57,9 @@ public abstract class BaseTask<RESULT> implements Task<RESULT> {
             this.reporter = new TaskReporter(context.getHostUrls());
             TaskMonitor taskMonitor = new TaskMonitor(this, this.reporter);
             initCloudObjectStorageService();
-            onInit(context);
+            doInit(context);
             taskMonitor.monitor();
-            onStart(context);
+            doStart(context);
         } catch (Throwable e) {
             log.info("Task failed, id: {}, details: {}", context.getJobIdentity().getId(), e);
             updateStatus(JobStatus.FAILED);
@@ -77,7 +77,7 @@ public abstract class BaseTask<RESULT> implements Task<RESULT> {
             return true;
         }
         try {
-            onStop();
+            doStop();
         } catch (Throwable e) {
             log.warn("stop task id : {} failed", getJobContext().getJobIdentity().getId(), e);
             return false;
@@ -167,11 +167,11 @@ public abstract class BaseTask<RESULT> implements Task<RESULT> {
         return getJobContext().getJobIdentity().getId();
     }
 
-    protected abstract void onInit(JobContext context) throws Exception;
+    protected abstract void doInit(JobContext context) throws Exception;
 
-    protected abstract void onStart(JobContext context) throws Exception;
+    protected abstract void doStart(JobContext context) throws Exception;
 
-    protected abstract void onStop() throws Exception;
+    protected abstract void doStop() throws Exception;
 
     protected abstract void onFail(Throwable e);
 

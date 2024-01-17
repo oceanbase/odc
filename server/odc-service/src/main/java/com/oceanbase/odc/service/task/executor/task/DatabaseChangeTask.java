@@ -123,19 +123,19 @@ public class DatabaseChangeTask extends BaseTask<FlowTaskResult> {
     private DataMaskingService maskingService;
 
     @Override
-    protected void onInit(JobContext context) {
+    protected void doInit(JobContext context) {
         log.info("Async task  start to run, task id:{}", this.getTaskId());
         log.info("Start read sql content, taskId={}", this.getTaskId());
         init();
     }
 
     @Override
-    protected void onStart(JobContext context) {
+    protected void doStart(JobContext context) {
         run();
     }
 
     @Override
-    protected void onStop() {
+    protected void doStop() {
         expireConnectionSession();
         canceled = true;
     }

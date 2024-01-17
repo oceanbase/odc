@@ -39,8 +39,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class TaskMonitor {
 
-    private volatile Task<?> task;
     private final TaskReporter reporter;
+    private final Task<?> task;
     private volatile long startTimeMilliSeconds;
 
 
@@ -53,7 +53,7 @@ public class TaskMonitor {
         this.startTimeMilliSeconds = System.currentTimeMillis();
 
         ThreadFactory threadFactory =
-                new TaskThreadFactory(("Task-Monitor-" + getJobId()));
+                new TaskThreadFactory(("Task-Monitor-Job-" + getJobId()));
         ScheduledExecutorService scheduledExecutor = Executors.newSingleThreadScheduledExecutor(threadFactory);
         scheduledExecutor.scheduleAtFixedRate(() -> {
 
@@ -73,7 +73,7 @@ public class TaskMonitor {
         log.info("Task monitor init success");
 
         ScheduledExecutorService heartScheduledExecutor = Executors.newSingleThreadScheduledExecutor(
-                new TaskThreadFactory(("Task-Heart-" + getJobId())));
+                new TaskThreadFactory(("Task-Heart-Job-" + getJobId())));
 
         heartScheduledExecutor.scheduleAtFixedRate(() -> {
             if (getTask().getStatus().isTerminated()) {
