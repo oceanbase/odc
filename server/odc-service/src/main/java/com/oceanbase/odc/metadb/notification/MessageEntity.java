@@ -73,6 +73,8 @@ public class MessageEntity {
     private List<String> ccRecipients;
     @Column(name = "channel_id", nullable = false, updatable = false)
     private Long channelId;
+    @Column(name = "channel_name", nullable = false, updatable = false)
+    private String channelName;
     @Enumerated(value = EnumType.STRING)
     @Column(name = "status", nullable = false, updatable = false)
     private MessageSendingStatus status;

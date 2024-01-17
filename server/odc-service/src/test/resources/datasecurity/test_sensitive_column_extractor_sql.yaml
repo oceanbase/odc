@@ -86,6 +86,21 @@ mysql:
       AS case_when_condition_id
     FROM
       test_data_masking_1
+  select-nesting-case-when-condition: |-
+    SELECT
+      id,
+      name,
+      CASE
+        WHEN birthday < '2000-01-01' THEN 1
+        WHEN birthday < '2010-01-01' THEN CASE
+          WHEN birthday < '2005-01-01' THEN 21
+          WHEN birthday < '2010-01-01' THEN 22
+        END
+        WHEN birthday < '2020-01-01' THEN 3
+        ELSE 4
+      END AS decade
+    FROM
+      test_data_masking_1;
   select-subquery: |-
     SELECT
       (
