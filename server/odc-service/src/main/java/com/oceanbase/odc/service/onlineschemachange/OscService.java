@@ -124,7 +124,7 @@ public class OscService {
         PreConditions.validHasPermission(
                 Objects.equals(authenticationFacade.currentUserId(), scheduleEntity.get().getCreatorId()),
                 ErrorCodes.AccessDenied,
-                "no permission swap table name, schedule task id " + scheduleTaskId);
+                "no permission swap table.");
 
         OnlineSchemaChangeScheduleTaskResult result = JsonUtils.fromJson(scheduleTask.getResultJson(),
                 OnlineSchemaChangeScheduleTaskResult.class);
