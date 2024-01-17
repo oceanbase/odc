@@ -17,9 +17,11 @@ package com.oceanbase.odc.service.task.schedule.provider;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Supplier;
 
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
+import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.service.common.model.HostProperties;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.constants.JobEnvConstants;
@@ -33,9 +35,11 @@ import com.oceanbase.odc.service.task.util.JobUtils;
 public class DefaultHostUrlProvider implements HostUrlProvider {
 
     private final HostProperties configProperties;
-    private final TaskFrameworkProperties taskFrameworkProperties;
+    private final Supplier<TaskFrameworkProperties> taskFrameworkProperties;
 
-    public DefaultHostUrlProvider(TaskFrameworkProperties taskFrameworkProperties, HostProperties configProperties) {
+    public DefaultHostUrlProvider(Supplier<TaskFrameworkProperties> taskFrameworkProperties,
+            HostProperties configProperties) {
+        PreConditions.notNull(taskFrameworkProperties.get(), "taskFrameworkProperties");
         this.taskFrameworkProperties = taskFrameworkProperties;
         this.configProperties = configProperties;
     }
@@ -43,8 +47,8 @@ public class DefaultHostUrlProvider implements HostUrlProvider {
     @Override
     public List<String> hostUrl() {
 
-        if (StringUtils.isNotBlank(taskFrameworkProperties.getOdcUrl())) {
-            return Collections.singletonList(taskFrameworkProperties.getOdcUrl());
+        if (StringUtils.isNotBlank(taskFrameworkProperties.get().getOdcUrl())) {
+            return Collections.singletonList(taskFrameworkProperties.get().getOdcUrl());
         }
         if (StringUtils.isNotBlank(SystemUtils.getEnvOrProperty(JobEnvConstants.ODC_SERVICE_HOST)) &&
                 StringUtils.isNotBlank(SystemUtils.getEnvOrProperty(JobEnvConstants.ODC_SERVER_PORT))) {

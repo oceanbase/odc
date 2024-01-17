@@ -20,6 +20,7 @@ import org.quartz.Scheduler;
 
 import com.oceanbase.odc.common.event.EventPublisher;
 import com.oceanbase.odc.service.connection.ConnectionService;
+import com.oceanbase.odc.service.objectstorage.cloud.model.CloudEnvConfigurations;
 import com.oceanbase.odc.service.schedule.ScheduleTaskService;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.caller.K8sJobClient;
@@ -37,6 +38,8 @@ import com.oceanbase.odc.service.task.service.TransactionManager;
 public interface JobConfiguration {
 
     TaskFrameworkProperties getTaskFrameworkProperties();
+
+    CloudEnvConfigurations getCloudEnvConfigurations();
 
     TaskService getTaskService();
 

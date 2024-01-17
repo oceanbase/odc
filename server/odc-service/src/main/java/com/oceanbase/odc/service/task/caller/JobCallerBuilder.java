@@ -17,7 +17,11 @@ package com.oceanbase.odc.service.task.caller;
 
 import java.util.Map;
 
+import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
+import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.service.objectstorage.cloud.model.CloudEnvConfigurations;
+import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.constants.JobEnvConstants;
 import com.oceanbase.odc.service.task.enums.TaskRunModeEnum;
@@ -48,6 +52,12 @@ public class JobCallerBuilder {
         envs.put("DATABASE_USERNAME", SystemUtils.getEnvOrProperty("ODC_DATABASE_USERNAME"));
         envs.put("DATABASE_PASSWORD", SystemUtils.getEnvOrProperty("ODC_DATABASE_PASSWORD"));
         envs.put(JobEnvConstants.LOG_DIRECTORY, SystemUtils.getEnvOrProperty(JobEnvConstants.LOG_DIRECTORY));
+
+        CloudEnvConfigurations cloudEnvConfigurations = JobConfigurationHolder.getJobConfiguration()
+                .getCloudEnvConfigurations();
+        PreConditions.notNull(cloudEnvConfigurations, "cloudEnvConfigurations");
+        envs.put(JobEnvConstants.OBJECT_STORAGE_CONFIGURATION,
+                JsonUtils.toJson(cloudEnvConfigurations.getObjectStorageConfiguration()));
 
         return new K8sJobCaller(k8sJobClient, podConfig);
     }

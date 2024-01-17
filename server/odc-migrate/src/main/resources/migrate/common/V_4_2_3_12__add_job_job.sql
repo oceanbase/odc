@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS `job_job` (
   `status` varchar(16) NOT NULL COMMENT '任务运行状态，可选值有：PREPARING,RUNNING,RETRYING,FAILED,CANCELING,CANCELED,DONE',
   `execution_times` int NOT NULL COMMENT '已执行次数',
   `executor_identifier` varchar(256) DEFAULT NULL COMMENT '执行器实别符',
-  `run_mode` varchar(16) DEFAULT NULL COMMENT '任务运行模式，可选值有：THREAD,K8S',
+  `run_mode` varchar(16) DEFAULT NULL COMMENT '任务运行模式，可选值有：PROCESS,K8S',
   `result_json` mediumtext DEFAULT NULL COMMENT '任务执行结果',
   `progress_percentage` decimal(6,3) DEFAULT NULL COMMENT '任务完成百分比',
   `executor_endpoint` varchar(128) DEFAULT NULL COMMENT '执行此任务的执行器信息',

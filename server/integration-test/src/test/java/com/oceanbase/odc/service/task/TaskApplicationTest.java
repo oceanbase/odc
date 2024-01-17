@@ -146,7 +146,6 @@ public class TaskApplicationTest extends BaseJobTest {
         jobData.put(JobDataMapConstants.TASK_EXECUTION_TIMEOUT_MILLIS, 30 * 60 * 1000 + "");
         ObjectStorageConfiguration storageConfig = new ObjectStorageConfiguration();
         storageConfig.setCloudProvider(CloudProvider.NONE);
-        jobData.put(JobDataMapConstants.OBJECT_STORAGE_CONFIGURATION, JsonUtils.toJson(storageConfig));
 
         return DefaultJobDefinition.builder().jobClass(DatabaseChangeTask.class)
                 .jobType(TaskType.ASYNC.name())

@@ -56,9 +56,8 @@ public class TaskFrameworkConfiguration {
     }
 
     @Bean
-    public HostUrlProvider hostUrlProvider(@Autowired TaskFrameworkProperties taskFrameworkProperties,
-            @Autowired HostProperties hostProperties) {
-        return new DefaultHostUrlProvider(taskFrameworkProperties, hostProperties);
+    public HostUrlProvider hostUrlProvider(@Autowired HostProperties hostProperties) {
+        return new DefaultHostUrlProvider(TaskFrameworkPropertiesSupplier.getSupplier(), hostProperties);
     }
 
     @Bean

@@ -41,4 +41,7 @@ public class JobEnvConstants {
 
     public static final String ODC_IMAGE_NAME = "ODC_IMAGE_NAME";
 
+    public static final String OBJECT_STORAGE_CONFIGURATION = "OBJECT_STORAGE_CONFIGURATION";
+
+
 }

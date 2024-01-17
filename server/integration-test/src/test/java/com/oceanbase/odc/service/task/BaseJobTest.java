@@ -29,12 +29,13 @@ import com.oceanbase.odc.service.task.caller.NativeK8sJobClient;
 import com.oceanbase.odc.service.task.config.DefaultJobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.config.K8sProperties;
+import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.constants.JobEnvConstants;
 import com.oceanbase.odc.service.task.enums.TaskRunModeEnum;
 import com.oceanbase.odc.service.task.executor.logger.LogUtils;
+import com.oceanbase.odc.service.task.schedule.provider.DefaultHostUrlProvider;
 import com.oceanbase.odc.service.task.schedule.provider.HostUrlProvider;
-import com.oceanbase.odc.service.task.schedule.provider.IpBasedHostUrlProvider;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 import com.oceanbase.odc.test.database.TestDBConfiguration;
 import com.oceanbase.odc.test.database.TestDBConfigurations;
@@ -66,7 +67,8 @@ public abstract class BaseJobTest {
         System.setProperty(JobEnvConstants.TASK_RUN_MODE, TaskRunModeEnum.K8S.name());
         DefaultJobConfiguration jc = new DefaultJobConfiguration() {};
 
-        HostUrlProvider urlProvider = new IpBasedHostUrlProvider(new HostProperties());
+        HostUrlProvider urlProvider = new DefaultHostUrlProvider(
+                () -> Mockito.mock(TaskFrameworkProperties.class), new HostProperties());
         jc.setHostUrlProvider(urlProvider);
         jc.setTaskFrameworkService(Mockito.mock(TaskFrameworkService.class));
         JobConfigurationHolder.setJobConfiguration(jc);

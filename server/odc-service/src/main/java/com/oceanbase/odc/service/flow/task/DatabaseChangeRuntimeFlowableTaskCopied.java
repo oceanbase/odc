@@ -38,7 +38,6 @@ import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeResult;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
 import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
-import com.oceanbase.odc.service.objectstorage.cloud.model.CloudEnvConfigurations;
 import com.oceanbase.odc.service.objectstorage.model.ObjectMetadata;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.caller.JobException;
@@ -74,8 +73,6 @@ public class DatabaseChangeRuntimeFlowableTaskCopied extends BaseODCFlowTaskDele
     private JobScheduler jobScheduler;
     @Autowired
     private TaskFrameworkService taskFrameworkService;
-    @Autowired
-    private CloudEnvConfigurations cloudEnvConfigurations;
     @Autowired
     private TaskFrameworkProperties taskFrameworkProperties;
 
@@ -179,8 +176,6 @@ public class DatabaseChangeRuntimeFlowableTaskCopied extends BaseODCFlowTaskDele
         jobData.put(JobDataMapConstants.CURRENT_SCHEMA_KEY, FlowTaskUtil.getSchemaName(execution));
         jobData.put(JobDataMapConstants.SESSION_TIME_ZONE, connectProperties.getDefaultTimeZone());
         jobData.put(JobDataMapConstants.TASK_EXECUTION_TIMEOUT_MILLIS, parameters.getTimeoutMillis() + "");
-        jobData.put(JobDataMapConstants.OBJECT_STORAGE_CONFIGURATION,
-                JsonUtils.toJson(cloudEnvConfigurations.getObjectStorageConfiguration()));
         if (CollectionUtils.isNotEmpty(parameters.getSqlObjectIds())) {
             List<ObjectMetadata> objectMetadatas = new ArrayList<>();
             for (String objectId : parameters.getSqlObjectIds()) {

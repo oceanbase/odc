@@ -19,17 +19,17 @@ package com.oceanbase.odc.service.task.executor.task;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Optional;
 
-import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
 import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfiguration;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.constants.JobConstants;
-import com.oceanbase.odc.service.task.constants.JobDataMapConstants;
 import com.oceanbase.odc.service.task.constants.JobUrlConstants;
 import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.executor.logger.LogBiz;
 import com.oceanbase.odc.service.task.executor.logger.LogBizImpl;
+import com.oceanbase.odc.service.task.util.JobUtils;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -89,12 +89,8 @@ public abstract class BaseTask<RESULT> implements Task<RESULT> {
 
 
     private void initCloudObjectStorageService() {
-        if (getJobData().get(JobDataMapConstants.OBJECT_STORAGE_CONFIGURATION) != null) {
-            ObjectStorageConfiguration storageConfig = JsonUtils.fromJson(
-                    getJobData().get(JobDataMapConstants.OBJECT_STORAGE_CONFIGURATION),
-                    ObjectStorageConfiguration.class);
-            this.cloudObjectStorageService = CloudObjectStorageServiceBuilder.build(storageConfig);
-        }
+        Optional<ObjectStorageConfiguration> storageConfig = JobUtils.getObjectStorageConfiguration();
+        storageConfig.ifPresent(osc -> this.cloudObjectStorageService = CloudObjectStorageServiceBuilder.build(osc));
     }
 
     protected CloudObjectStorageService getCloudObjectStorageService() {

@@ -36,8 +36,6 @@ public class JobDataMapConstants {
 
     public static final String SESSION_TIME_ZONE = ConnectionSessionConstants.SESSION_TIME_ZONE;
 
-    public static final String OBJECT_STORAGE_CONFIGURATION = "objectStorageConfiguration";
-
     public static final String OBJECT_METADATA = "objectMetadata";
 
     public static final String TASK_EXECUTION_TIMEOUT_MILLIS = RuntimeTaskConstants.TIMEOUT_MILLI_SECONDS;

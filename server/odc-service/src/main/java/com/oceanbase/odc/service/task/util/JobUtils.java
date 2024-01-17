@@ -18,10 +18,13 @@ package com.oceanbase.odc.service.task.util;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Optional;
 
 import com.google.gson.Gson;
+import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfiguration;
 import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.constants.JobEnvConstants;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
@@ -70,5 +73,14 @@ public class JobUtils {
         config.setPassword(SystemUtils.getEnvOrProperty("DATABASE_PASSWORD"));
         config.setId(1L);
         return config;
+    }
+
+    public static Optional<ObjectStorageConfiguration> getObjectStorageConfiguration() {
+        String osc;
+        if ((osc = SystemUtils.getEnvOrProperty(JobEnvConstants.OBJECT_STORAGE_CONFIGURATION)) != null) {
+            ObjectStorageConfiguration storageConfig = JsonUtils.fromJson(osc, ObjectStorageConfiguration.class);
+            return Optional.of(storageConfig);
+        }
+        return Optional.empty();
     }
 }

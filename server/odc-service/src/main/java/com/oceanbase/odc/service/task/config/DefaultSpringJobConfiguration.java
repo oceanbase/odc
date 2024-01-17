@@ -26,6 +26,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 import com.oceanbase.odc.common.event.LocalEventPublisher;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.info.InfoAdapter;
+import com.oceanbase.odc.service.objectstorage.cloud.model.CloudEnvConfigurations;
 import com.oceanbase.odc.service.schedule.ScheduleTaskService;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.caller.K8sJobClient;
@@ -48,7 +49,7 @@ public class DefaultSpringJobConfiguration extends DefaultJobConfiguration
 
     @Override
     public void afterPropertiesSet() {
-        setTaskFrameworkProperties(getTaskFrameworkProperties());
+        setCloudEnvConfigurations(ctx.getBean(CloudEnvConfigurations.class));
         setConnectionService(ctx.getBean(ConnectionService.class));
         setTaskService(ctx.getBean(TaskService.class));
         setScheduleTaskService(ctx.getBean(ScheduleTaskService.class));
