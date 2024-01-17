@@ -15,9 +15,9 @@
  */
 package com.oceanbase.odc.service.task.executor.logger;
 
+import java.io.IOException;
 import java.util.Map;
 
-import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 
@@ -28,9 +28,9 @@ import com.oceanbase.odc.service.task.schedule.JobIdentity;
  */
 public interface LogBiz {
 
-    SuccessResponse<String> getLog(Long id, String logType);
+    String getLog(Long id, String logType);
 
-    Map<String, String> uploadLogFileToCloudStorage(JobIdentity ji,
-            CloudObjectStorageService cloudObjectStorageService);
+    Map<String, String> uploadLogFileToCloudStorage(JobIdentity ji, CloudObjectStorageService cloudObjectStorageService)
+            throws IOException;
 
 }

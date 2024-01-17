@@ -212,9 +212,9 @@ public class FlowTaskInstanceService {
 
             if (cloudObjectStorageService.supported()) {
                 String objId = taskFrameworkService.findByJobIdAndAttributeKey(jobEntity.getId(),
-                        JobAttributeKeyConstants.STORAGE_LOG_ALL_OBJECT_ID);
+                        JobAttributeKeyConstants.LOG_STORAGE_ALL_OBJECT_ID);
                 String bucketName = taskFrameworkService.findByJobIdAndAttributeKey(jobEntity.getId(),
-                        JobAttributeKeyConstants.STORAGE_BUCKET_NAME);
+                        JobAttributeKeyConstants.LOG_STORAGE_BUCKET_NAME);
 
                 if (objId != null && bucketName != null) {
                     if (log.isDebugEnabled()) {

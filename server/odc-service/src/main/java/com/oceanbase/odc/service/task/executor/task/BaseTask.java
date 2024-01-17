@@ -16,6 +16,7 @@
 
 package com.oceanbase.odc.service.task.executor.task;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
 
@@ -136,8 +137,13 @@ public abstract class BaseTask<RESULT> implements Task<RESULT> {
     private void uploadLogFileToCloudStorage(DefaultTaskResult finalResult) {
         if (getCloudObjectStorageService() != null && getCloudObjectStorageService().supported()) {
             LogBiz biz = new LogBizImpl();
-            Map<String, String> logMap =
-                    biz.uploadLogFileToCloudStorage(getJobContext().getJobIdentity(), getCloudObjectStorageService());
+            Map<String, String> logMap = null;
+            try {
+                logMap = biz.uploadLogFileToCloudStorage(getJobContext().getJobIdentity(),
+                        getCloudObjectStorageService());
+            } catch (IOException e) {
+                log.warn("Upload job {} log file to cloud storage occur error", getJobId(), e);
+            }
             finalResult.setLogMetadata(logMap);
         }
     }

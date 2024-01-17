@@ -216,8 +216,8 @@ public class EmbedServer {
                 String path = UrlUtils.getPath(uri);
                 Matcher matcher = logUrlPattern.matcher(path);
                 if (matcher.find()) {
-                    return executorBiz.getLog(Long.parseLong(matcher.group(1)),
-                            UrlUtils.getQueryParameterFirst(uri, "logType"));
+                    return new SuccessResponse<>(executorBiz.getLog(Long.parseLong(matcher.group(1)),
+                            UrlUtils.getQueryParameterFirst(uri, "logType")));
                 }
                 matcher = stopTaskPattern.matcher(path);
                 if (matcher.find()) {

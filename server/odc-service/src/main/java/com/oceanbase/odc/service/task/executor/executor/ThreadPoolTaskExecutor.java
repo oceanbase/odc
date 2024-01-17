@@ -46,7 +46,8 @@ public class ThreadPoolTaskExecutor implements TaskExecutor {
     private volatile Map<JobIdentity, Future<?>> futures = new HashMap<>();
 
     private ThreadPoolTaskExecutor() {
-        this.executor = Executors.newFixedThreadPool(2);
+        this.executor = Executors.newFixedThreadPool(2,
+                r -> new Thread(r, "task-executor-thread-" + r.hashCode()));
     }
 
     public static TaskExecutor getInstance() {

@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.task.executor.logger;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -37,7 +38,7 @@ import lombok.extern.slf4j.Slf4j;
 public class LogBizImpl implements LogBiz {
 
     @Override
-    public SuccessResponse<String> getLog(Long id, String logType) {
+    public String getLog(Long id, String logType) {
         log.info("Accept log request, task id = {}, logType = {}", id, logType);
         OdcTaskLogLevel logTypeLevel = null;
         try {
@@ -47,34 +48,29 @@ public class LogBizImpl implements LogBiz {
             new SuccessResponse<>("logType " + logType + " is illegal.");
         }
 
-        String logFile = LogUtils.getJobLogFileWithPath(id, logTypeLevel);
-        return new SuccessResponse<>(LogUtils.getLogContent(logFile));
+        String logFileStr = LogUtils.getJobLogFileWithPath(id, logTypeLevel);
+        return LogUtils.getLogContent(logFileStr);
     }
 
 
     @Override
     public Map<String, String> uploadLogFileToCloudStorage(JobIdentity ji,
-            CloudObjectStorageService cloudObjectStorageService) {
+            CloudObjectStorageService cloudObjectStorageService) throws IOException {
         log.info("Task id: {}, upload log", ji.getId());
-        String jobLog = LogUtils.getJobLogFileWithPath(ji.getId(), OdcTaskLogLevel.ALL);
+        String logFileStr = LogUtils.getJobLogFileWithPath(ji.getId(), OdcTaskLogLevel.ALL);
         String fileId = StringUtils.uuid();
-        File jobLogFile = new File(jobLog);
+        File jobLogFile = new File(logFileStr);
         if (!jobLogFile.exists()) {
             return null;
         }
-        try {
-            String objectName = cloudObjectStorageService.uploadTemp(fileId, jobLogFile);
-            Map<String, String> logMap = new HashMap<>();
-            logMap.put(JobAttributeKeyConstants.STORAGE_LOG_ALL_OBJECT_ID, objectName);
-            logMap.put(JobAttributeKeyConstants.STORAGE_LOG_WARN_OBJECT_ID, objectName);
-            logMap.put(JobAttributeKeyConstants.STORAGE_BUCKET_NAME,
-                    cloudObjectStorageService.getBucketName());
-            log.info("upload task log to OSS successfully, file name={}", fileId);
-            return logMap;
-        } catch (Exception exception) {
-            log.warn("upload task log to OSS failed, file name={}", fileId);
-            return null;
-        }
+        String objectName = cloudObjectStorageService.uploadTemp(fileId, jobLogFile);
+        Map<String, String> logMap = new HashMap<>();
+        logMap.put(JobAttributeKeyConstants.LOG_STORAGE_ALL_OBJECT_ID, objectName);
+        logMap.put(JobAttributeKeyConstants.LOG_STORAGE_WARN_OBJECT_ID, objectName);
+        logMap.put(JobAttributeKeyConstants.LOG_STORAGE_BUCKET_NAME,
+                cloudObjectStorageService.getBucketName());
+        log.info("upload task log to OSS successfully, file name={}", fileId);
+        return logMap;
 
     }
 

@@ -34,7 +34,7 @@ public class HorizontalDataPermissionValidator {
     @Autowired
     private AuthenticationFacade authenticationFacade;
 
-    public final <T extends OrganizationIsolated> void aocheckCurrentOrganization(T object) {
+    public final <T extends OrganizationIsolated> void checkCurrentOrganization(T object) {
         checkCurrentOrganization(Collections.singletonList(object));
     }
 
