@@ -50,16 +50,16 @@ public class JobCallerBuilder {
             envs.put(JobEnvKeyConstants.ODC_JOB_CONTEXT, JobUtils.toJson(context));
         }
 
-        envs.put(JobEnvKeyConstants.ODC_DATABASE_HOST,
-                SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_DATABASE_HOST));
-        envs.put(JobEnvKeyConstants.ODC_DATABASE_PORT,
-                SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_DATABASE_PORT));
-        envs.put(JobEnvKeyConstants.ODC_DATABASE_NAME,
-                SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_DATABASE_NAME));
-        envs.put(JobEnvKeyConstants.ODC_DATABASE_USERNAME,
-                SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_DATABASE_USERNAME));
-        envs.put(JobEnvKeyConstants.ODC_DATABASE_PASSWORD,
-                SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_DATABASE_PASSWORD));
+        envs.put(JobEnvKeyConstants.DATABASE_HOST,
+                SystemUtils.getEnvOrProperty(JobEnvKeyConstants.DATABASE_HOST));
+        envs.put(JobEnvKeyConstants.DATABASE_PORT,
+                SystemUtils.getEnvOrProperty(JobEnvKeyConstants.DATABASE_PORT));
+        envs.put(JobEnvKeyConstants.DATABASE_NAME,
+                SystemUtils.getEnvOrProperty(JobEnvKeyConstants.DATABASE_NAME));
+        envs.put(JobEnvKeyConstants.DATABASE_USERNAME,
+                SystemUtils.getEnvOrProperty(JobEnvKeyConstants.DATABASE_USERNAME));
+        envs.put(JobEnvKeyConstants.DATABASE_PASSWORD,
+                SystemUtils.getEnvOrProperty(JobEnvKeyConstants.DATABASE_PASSWORD));
 
         envs.put(JobEnvKeyConstants.ODC_LOG_DIRECTORY,
                 SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_LOG_DIRECTORY));
