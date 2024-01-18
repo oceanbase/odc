@@ -25,6 +25,7 @@ import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
 import com.oceanbase.odc.service.task.enums.TaskRunModeEnum;
+import com.oceanbase.odc.service.task.util.JobUtils;
 
 /**
  * @author yaobin
@@ -38,19 +39,28 @@ public class JobCallerBuilder {
     }
 
 
-    public static JobCaller buildK8sJobCaller(K8sJobClient k8sJobClient, PodConfig podConfig) {
+    public static JobCaller buildK8sJobCaller(K8sJobClient k8sJobClient, PodConfig podConfig, JobContext context) {
 
         PodParam podParam = podConfig.getPodParam();
 
         Map<String, String> envs = podParam.getEnvironments();
         envs.put(JobEnvKeyConstants.ODC_BOOT_MODE, JobConstants.ODC_BOOT_MODE_EXECUTOR);
         envs.put(JobEnvKeyConstants.ODC_TASK_RUN_MODE, TaskRunModeEnum.K8S.name());
+        if (context != null) {
+            envs.put(JobEnvKeyConstants.ODC_JOB_CONTEXT, JobUtils.toJson(context));
+        }
 
-        envs.put("DATABASE_HOST", SystemUtils.getEnvOrProperty("ODC_DATABASE_HOST"));
-        envs.put("DATABASE_PORT", SystemUtils.getEnvOrProperty("ODC_DATABASE_PORT"));
-        envs.put("DATABASE_NAME", SystemUtils.getEnvOrProperty("ODC_DATABASE_NAME"));
-        envs.put("DATABASE_USERNAME", SystemUtils.getEnvOrProperty("ODC_DATABASE_USERNAME"));
-        envs.put("DATABASE_PASSWORD", SystemUtils.getEnvOrProperty("ODC_DATABASE_PASSWORD"));
+        envs.put(JobEnvKeyConstants.ODC_DATABASE_HOST,
+                SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_DATABASE_HOST));
+        envs.put(JobEnvKeyConstants.ODC_DATABASE_PORT,
+                SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_DATABASE_PORT));
+        envs.put(JobEnvKeyConstants.ODC_DATABASE_NAME,
+                SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_DATABASE_NAME));
+        envs.put(JobEnvKeyConstants.ODC_DATABASE_USERNAME,
+                SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_DATABASE_USERNAME));
+        envs.put(JobEnvKeyConstants.ODC_DATABASE_PASSWORD,
+                SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_DATABASE_PASSWORD));
+
         envs.put(JobEnvKeyConstants.ODC_LOG_DIRECTORY,
                 SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_LOG_DIRECTORY));
 

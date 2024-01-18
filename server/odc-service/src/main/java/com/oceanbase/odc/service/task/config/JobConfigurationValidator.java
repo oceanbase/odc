@@ -28,5 +28,6 @@ public class JobConfigurationValidator {
         JobConfiguration jobConfiguration = JobConfigurationHolder.getJobConfiguration();
         PreConditions.notNull(jobConfiguration, "jobConfiguration");
         PreConditions.notNull(jobConfiguration.getTaskFrameworkService(), "taskFrameworkService");
+        PreConditions.notNull(jobConfiguration.getTaskFrameworkProperties(), "taskFrameworkProperties");
     }
 }

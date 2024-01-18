@@ -43,5 +43,15 @@ public class JobEnvKeyConstants {
 
     public static final String ODC_OBJECT_STORAGE_CONFIGURATION = "ODC_OBJECT_STORAGE_CONFIGURATION";
 
+    public static final String ODC_DATABASE_HOST = "ODC_DATABASE_HOST";
+
+    public static final String ODC_DATABASE_PORT = "ODC_DATABASE_PORT";
+
+    public static final String ODC_DATABASE_NAME = "ODC_DATABASE_NAME";
+
+    public static final String ODC_DATABASE_USERNAME = "ODC_DATABASE_USERNAME";
+
+    public static final String ODC_DATABASE_PASSWORD = "ODC_DATABASE_PASSWORD";
+
 
 }
