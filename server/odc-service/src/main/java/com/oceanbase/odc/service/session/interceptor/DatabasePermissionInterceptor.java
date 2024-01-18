@@ -16,8 +16,11 @@
 
 package com.oceanbase.odc.service.session.interceptor;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -32,6 +35,7 @@ import com.oceanbase.odc.core.sql.execute.SqlExecuteStages;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
+import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
 import com.oceanbase.odc.service.permission.database.model.UnauthorizedDatabase;
 import com.oceanbase.odc.service.session.model.SqlAsyncExecuteReq;
 import com.oceanbase.odc.service.session.model.SqlAsyncExecuteResp;
@@ -73,8 +77,19 @@ public class DatabasePermissionInterceptor extends BaseTimeConsumingInterceptor 
         Map<String, Set<SqlType>> schemaName2SqlTypes = SchemaExtractor.listSchemaName2SqlTypes(
                 response.getSqls().stream().map(SqlTuplesWithViolation::getSqlTuple).collect(Collectors.toList()),
                 session.getDialectType());
+        Map<String, Set<DatabasePermissionType>> schemaName2PermissionTypes = new HashMap<>();
+        for (Entry<String, Set<SqlType>> entry : schemaName2SqlTypes.entrySet()) {
+            Set<SqlType> sqlTypes = entry.getValue();
+            if (CollectionUtils.isNotEmpty(sqlTypes)) {
+                Set<DatabasePermissionType> permissionTypes = sqlTypes.stream().map(DatabasePermissionType::from)
+                        .filter(Objects::nonNull).collect(Collectors.toSet());
+                if (CollectionUtils.isNotEmpty(permissionTypes)) {
+                    schemaName2PermissionTypes.put(entry.getKey(), permissionTypes);
+                }
+            }
+        }
         List<UnauthorizedDatabase> unauthorizedDatabases =
-                databaseService.filterUnauthorizedDatabases(schemaName2SqlTypes, connectionConfig.getId());
+                databaseService.filterUnauthorizedDatabases(schemaName2PermissionTypes, connectionConfig.getId());
         if (CollectionUtils.isNotEmpty(unauthorizedDatabases)) {
             response.setUnauthorizedDatabases(unauthorizedDatabases);
             return false;

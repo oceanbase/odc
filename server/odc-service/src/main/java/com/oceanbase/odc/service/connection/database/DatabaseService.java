@@ -103,7 +103,6 @@ import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.odc.service.session.factory.OBConsoleDataSourceFactory;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.tools.dbbrowser.model.DBDatabase;
-import com.oceanbase.tools.dbbrowser.parser.constant.SqlType;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -573,9 +572,9 @@ public class DatabaseService {
     }
 
     @SkipAuthorize("odc internal usage")
-    public List<UnauthorizedDatabase> filterUnauthorizedDatabases(Map<String, Set<SqlType>> schemaName2SqlTypes,
-            @NotNull Long dataSourceId) {
-        if (schemaName2SqlTypes == null || schemaName2SqlTypes.isEmpty()) {
+    public List<UnauthorizedDatabase> filterUnauthorizedDatabases(
+            Map<String, Set<DatabasePermissionType>> schemaName2PermissionTypes, @NotNull Long dataSourceId) {
+        if (schemaName2PermissionTypes == null || schemaName2PermissionTypes.isEmpty()) {
             return Collections.emptyList();
         }
         ConnectionConfig dataSource = connectionService.nullSafeGet(dataSourceId);
@@ -586,10 +585,9 @@ public class DatabaseService {
         Map<Long, Set<DatabasePermissionType>> id2Types = databasePermissionHelper
                 .getPermissions(databases.stream().map(Database::getId).collect(Collectors.toList()));
         List<UnauthorizedDatabase> unauthorizedDatabases = new ArrayList<>();
-        for (Map.Entry<String, Set<SqlType>> entry : schemaName2SqlTypes.entrySet()) {
+        for (Map.Entry<String, Set<DatabasePermissionType>> entry : schemaName2PermissionTypes.entrySet()) {
             CaseInsensitiveString schemaName = new CaseInsensitiveString(entry.getKey());
-            Set<DatabasePermissionType> needs = entry.getValue().stream().map(DatabasePermissionType::from)
-                    .filter(Objects::nonNull).collect(Collectors.toSet());
+            Set<DatabasePermissionType> needs = entry.getValue();
             if (CollectionUtils.isEmpty(needs)) {
                 continue;
             }
