@@ -151,7 +151,8 @@ public class FlowFactory {
     public FlowTaskInstance generateFlowTaskInstance(@NonNull Long flowInstanceId, boolean isStartEndPoint,
             boolean isEndEndPoint, @NonNull TaskType taskType, @NonNull ExecutionStrategyConfig config) {
         return new FlowTaskInstance(taskType, authenticationFacade.currentOrganizationId(), flowInstanceId, config,
-                isStartEndPoint, isEndEndPoint, new OdcRuntimeDelegateMapper(), flowableAdaptor, eventPublisher,
+                isStartEndPoint, isEndEndPoint, new OdcRuntimeDelegateMapper(), flowableAdaptor,
+                eventPublisher,
                 flowableTaskService, nodeRepository, sequenceRepository, serviceTaskRepository);
     }
 
@@ -255,9 +256,10 @@ public class FlowFactory {
         Long id = entity.getId();
         try {
             entity.setId(null);
-            FlowTaskInstance target = new FlowTaskInstance(entity, new OdcRuntimeDelegateMapper(),
-                    flowableAdaptor, eventPublisher, flowableTaskService, nodeRepository, sequenceRepository,
-                    serviceTaskRepository);
+            FlowTaskInstance target =
+                    new FlowTaskInstance(entity, new OdcRuntimeDelegateMapper(),
+                            flowableAdaptor, eventPublisher, flowableTaskService, nodeRepository, sequenceRepository,
+                            serviceTaskRepository);
             setNameAndActivityId(id, target, nodes);
             eventPublisher.publishEvent(new TaskInstanceCreatedEvent(target));
             return target;
