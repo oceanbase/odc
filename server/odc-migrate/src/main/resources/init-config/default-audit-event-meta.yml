@@ -398,3 +398,19 @@
   in_connection: 0
   enabled: 1
   id: 81
+
+# DATABASE_PERMISSION_MANAGEMENT
+- type: "DATABASE_PERMISSION_MANAGEMENT"
+  action: "GRANT_DATABASE_PERMISSION"
+  method_signature: "com.oceanbase.odc.server.web.controller.v2.DatabasePermissionController.batchCreate"
+  sid_extract_expression: ""
+  in_connection: 0
+  enabled: 1
+  id: 82
+- type: "DATABASE_PERMISSION_MANAGEMENT"
+  action: "REVOKE_DATABASE_PERMISSION"
+  method_signature: "com.oceanbase.odc.server.web.controller.v2.DatabasePermissionController.batchRevoke"
+  sid_extract_expression: ""
+  in_connection: 0
+  enabled: 1
+  id: 83

@@ -321,7 +321,16 @@ public enum AuditEventAction implements Translatable {
 
     CREATE_PROJECT,
 
-    UPDATE_SQL_SECURITY_RULE;
+    UPDATE_SQL_SECURITY_RULE,
+
+    /**
+     * Permission management
+     */
+    GRANT_DATABASE_PERMISSION,
+
+    REVOKE_DATABASE_PERMISSION,
+
+    ;
 
     @Override
     public String code() {
