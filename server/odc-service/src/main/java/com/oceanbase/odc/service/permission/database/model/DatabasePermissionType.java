@@ -95,6 +95,7 @@ public enum DatabasePermissionType implements Translatable {
             case MOCKDATA:
             case ASYNC:
             case SHADOWTABLE_SYNC:
+            case PARTITION_PLAN:
             case ONLINE_SCHEMA_CHANGE:
             case ALTER_SCHEDULE:
             case STRUCTURE_COMPARISON:
