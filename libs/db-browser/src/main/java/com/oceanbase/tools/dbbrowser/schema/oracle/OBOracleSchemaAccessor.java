@@ -167,6 +167,11 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
     public List<DBTableIndex> listTableIndexes(String schemaName, String tableName) {
         List<DBTableIndex> indexList = super.listTableIndexes(schemaName, tableName);
         fillIndexRange(indexList);
+        fillIndexTypeAndAlgorithm(indexList);
+        return indexList;
+    }
+
+    protected void fillIndexTypeAndAlgorithm(List<DBTableIndex> indexList) {
         for (DBTableIndex index : indexList) {
             if (index.getType() == DBIndexType.UNKNOWN) {
                 if (index.isNonUnique()) {
@@ -179,7 +184,16 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
                 index.setAlgorithm(DBIndexAlgorithm.BTREE);
             }
         }
-        return indexList;
+    }
+
+    @Override
+    public Map<String, List<DBTableIndex>> listTableIndexes(String schemaName) {
+        Map<String, List<DBTableIndex>> tableName2Indexes = super.listTableIndexes(schemaName);
+        List<DBTableIndex> indexList =
+                tableName2Indexes.values().stream().flatMap(List::stream).collect(Collectors.toList());
+        fillIndexRange(indexList);
+        fillIndexTypeAndAlgorithm(indexList);
+        return tableName2Indexes;
     }
 
     @Override
@@ -327,18 +341,26 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
     }
 
     @Override
-    protected void obtainTableCharset(DBTableOptions tableOptions) {
+    protected void obtainTableCharset(List<DBTableOptions> tableOptions) {
         String sql = "SHOW VARIABLES LIKE 'nls_characterset'";
+        AtomicReference<String> charset = new AtomicReference<>();
         jdbcOperations.query(sql, t -> {
-            tableOptions.setCharsetName(t.getString("VALUE"));
+            charset.set(t.getString("VALUE"));
+        });
+        tableOptions.forEach(option -> {
+            option.setCharsetName(charset.get());
         });
     }
 
     @Override
-    protected void obtainTableCollation(DBTableOptions tableOptions) {
+    protected void obtainTableCollation(List<DBTableOptions> tableOptions) {
         String sql = "SHOW VARIABLES LIKE 'nls_sort'";
+        AtomicReference<String> collation = new AtomicReference<>();
         jdbcOperations.query(sql, t -> {
-            tableOptions.setCollationName(t.getString("VALUE"));
+            collation.set(t.getString("VALUE"));
+        });
+        tableOptions.forEach(option -> {
+            option.setCollationName(collation.get());
         });
     }
 

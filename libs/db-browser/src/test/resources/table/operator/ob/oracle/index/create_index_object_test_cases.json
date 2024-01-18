@@ -18,19 +18,19 @@
         "ordinalPosition": null
       }
     },
-    "output": "CREATE  INDEX `a` USING BTREE ON `schema`.`table` (`a`) GLOBAL"
+    "output": "CREATE  INDEX \"a\" USING BTREE ON \"schema\".\"table\" (\"a\") GLOBAL;\n"
   },
   {
     "id": 2,
     "name": "case2",
-    "description": "普通索引，多列",
+    "description": "普通索引，多列，RANGE 为 LOCAL",
     "input": {
       "current": {
         "name": "a",
         "schemaName": "schema",
         "tableName": "table",
         "type": "NORMAL",
-        "global": true,
+        "global": false,
         "visible": true,
         "columnNames": [
           "a",
@@ -40,28 +40,6 @@
         "ordinalPosition": null
       }
     },
-    "output": "CREATE  INDEX `a` USING BTREE ON `schema`.`table` (`a`, `b`) GLOBAL"
-  },
-  {
-    "id": 3,
-    "name": "case3",
-    "description": "唯一索引",
-    "input": {
-      "current": {
-        "name": "a",
-        "schemaName": "schema",
-        "tableName": "table",
-        "type": "UNIQUE",
-        "global": true,
-        "visible": true,
-        "columnNames": [
-          "a",
-          "b"
-        ],
-        "algorithm": "BTREE",
-        "ordinalPosition": null
-      }
-    },
-    "output": "CREATE UNIQUE INDEX `a` USING BTREE ON `schema`.`table` (`a`, `b`) GLOBAL"
+    "output": "CREATE  INDEX \"a\" USING BTREE ON \"schema\".\"table\" (\"a\", \"b\") LOCAL;\n"
   }
 ]

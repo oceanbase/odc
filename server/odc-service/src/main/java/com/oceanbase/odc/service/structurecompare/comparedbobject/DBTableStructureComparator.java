@@ -159,7 +159,7 @@ public class DBTableStructureComparator implements DBObjectStructureComparator<D
             result.setTargetDdl(tgtTableName2Table.get(name).getDDL());
             SqlBuilder sqlBuilder = getTargetDBSqlBuilder();
             result.setChangeScript(
-                    GeneralSqlStatementBuilder.drop(sqlBuilder, DBObjectType.TABLE, tgtSchemaName, name));
+                    GeneralSqlStatementBuilder.drop(sqlBuilder, DBObjectType.TABLE, tgtSchemaName, name) + ";\n");
             returnVal.add(result);
         });
         return returnVal;

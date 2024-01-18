@@ -13,21 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.structurecompare.util;
+package com.oceanbase.tools.dbbrowser.editor.mysql;
+
+import com.oceanbase.tools.dbbrowser.model.DBTablePartition;
 
 /**
  * @author jingtian
- * @date 2024/1/9
+ * @date 2024/1/16
  * @since ODC_release_4.2.4
  */
-public class StructureCompareUtil {
-    private static final String DEFAULT_SQL_DELIMITER = ";";
-
-    public static String appendDelimiterIfNotExist(String sql) {
-        String returnVal = sql.trim();
-        if (!returnVal.endsWith(DEFAULT_SQL_DELIMITER)) {
-            return returnVal + DEFAULT_SQL_DELIMITER + "\n";
-        }
-        return sql;
+public class OBMySQLDBTablePartitionEditor extends MySQLDBTablePartitionEditor {
+    @Override
+    public String generateDropObjectDDL(DBTablePartition dbObject) {
+        return "-- Unsupported operation to convert partitioned table to non-partitioned table\n";
     }
 }
