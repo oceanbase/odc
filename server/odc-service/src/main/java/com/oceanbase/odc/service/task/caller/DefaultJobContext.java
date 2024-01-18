@@ -16,7 +16,6 @@
 
 package com.oceanbase.odc.service.task.caller;
 
-import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
@@ -31,7 +30,7 @@ import lombok.Data;
  */
 
 @Data
-public class DefaultJobContext implements JobContext, Serializable {
+public class DefaultJobContext implements JobContext {
 
     /**
      * job identity

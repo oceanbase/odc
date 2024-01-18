@@ -31,12 +31,12 @@ import lombok.Data;
 @Builder
 public class DefaultJobDefinition implements JobDefinition {
 
-    private Class<? extends Task> jobClass;
+    private Class<? extends Task<?>> jobClass;
 
     private String jobType;
 
     private Map<String, String> jobParameters;
 
-    private JobProperties jobProperties;
+    private SingleJobProperties jobProperties;
 
 }

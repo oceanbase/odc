@@ -25,7 +25,6 @@ import org.springframework.transaction.annotation.Transactional;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.metadb.task.TaskEntity;
-import com.oceanbase.odc.service.flow.FlowInstanceService;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.executor.task.TaskResult;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
@@ -46,9 +45,6 @@ public class TaskTaskResultHandleService implements ResultHandleService {
 
     @Autowired
     private StdTaskFrameworkService stdTaskFrameworkService;
-
-    @Autowired
-    private FlowInstanceService flowInstanceService;
 
     @Transactional(rollbackFor = Exception.class)
     @Override

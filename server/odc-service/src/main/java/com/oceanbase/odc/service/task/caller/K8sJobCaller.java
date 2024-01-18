@@ -16,15 +16,7 @@
 
 package com.oceanbase.odc.service.task.caller;
 
-import com.oceanbase.odc.metadb.task.JobEntity;
-import com.oceanbase.odc.service.task.config.JobConfiguration;
-import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
-import com.oceanbase.odc.service.task.constants.JobEnvConstants;
-import com.oceanbase.odc.service.task.schedule.DefaultExecutorIdentifier;
-import com.oceanbase.odc.service.task.schedule.ExecutorIdentifier;
-import com.oceanbase.odc.service.task.schedule.ExecutorIdentifierParser;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
-import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 import com.oceanbase.odc.service.task.util.JobUtils;
 
 import lombok.extern.slf4j.Slf4j;
@@ -49,8 +41,6 @@ public class K8sJobCaller extends BaseJobCaller {
     public ExecutorIdentifier doStart(JobContext context) throws JobException {
         String jobName = JobUtils.generateJobName(context.getJobIdentity());
 
-        podConfig.getPodParam().getEnvironments().put(JobEnvConstants.TASK_ALL_PARAMETERS, JobUtils.toJson(context));
-
         String name = client.create(podConfig.getNamespace(), jobName, podConfig.getImage(),
                 podConfig.getCommand(), podConfig.getPodParam());
 
@@ -61,16 +51,11 @@ public class K8sJobCaller extends BaseJobCaller {
     @Override
     public void doStop(JobIdentity ji) throws JobException {
 
-        JobConfiguration jobConfiguration = JobConfigurationHolder.getJobConfiguration();
-        if (jobConfiguration != null && jobConfiguration.getTaskFrameworkService() != null) {
-            TaskFrameworkService taskFrameworkService = jobConfiguration.getTaskFrameworkService();
-            JobEntity jobEntity = taskFrameworkService.find(ji.getId());
-            String executorIdentifier = jobEntity.getExecutorIdentifier();
-            ExecutorIdentifier identifier = ExecutorIdentifierParser.parser(executorIdentifier);
 
-            log.info("Preparing stop job {}, executor name {}.", ji.getId(), identifier.getExecutorName());
-            client.delete(podConfig.getNamespace(), identifier.getExecutorName());
-            log.info("Stop job {} successfully, executor name {}.", ji.getId(), identifier.getExecutorName());
-        }
+    }
+
+    @Override
+    protected void doDestroy(ExecutorIdentifier identifier) throws JobException {
+        client.delete(podConfig.getNamespace(), identifier.getExecutorName());
     }
 }

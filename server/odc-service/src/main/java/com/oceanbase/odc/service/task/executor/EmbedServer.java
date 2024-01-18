@@ -20,16 +20,12 @@ import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.oceanbase.odc.common.json.JsonUtils;
-import com.oceanbase.odc.common.util.ExceptionUtils;
 import com.oceanbase.odc.common.util.StringUtils;
-import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.common.util.UrlUtils;
 
 import io.netty.bootstrap.ServerBootstrap;
@@ -67,11 +63,11 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class EmbedServer {
 
-    private ExecutorBiz executorBiz;
+    private RequestHandler requestHandler;
     private Thread thread;
 
     public void start(final int port) {
-        executorBiz = new ExecutorBizImpl();
+        requestHandler = new RequestHandler();
         thread = new Thread(new Runnable() {
             @Override
             public void run() {
@@ -111,7 +107,7 @@ public class EmbedServer {
                                             .addLast(new HttpServerCodec())
                                             .addLast(new HttpObjectAggregator(5 * 1024 * 1024)) // merge request &
                                                                                                 // reponse to FULL
-                                            .addLast(new EmbedHttpServerHandler(executorBiz, bizThreadPool));
+                                            .addLast(new EmbedHttpServerHandler(requestHandler, bizThreadPool));
                                 }
                             })
                             .childOption(ChannelOption.SO_KEEPALIVE, true);
@@ -158,13 +154,11 @@ public class EmbedServer {
     public static class EmbedHttpServerHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
         private static final Logger logger = LoggerFactory.getLogger(EmbedHttpServerHandler.class);
 
-        private final Pattern logUrlPattern = Pattern.compile("/([0-9]+)/tasks/log");
-        private final Pattern cancelTaskPattern = Pattern.compile("/([0-9]+)/tasks/cancel");
-        private final ExecutorBiz executorBiz;
         private final ThreadPoolExecutor bizThreadPool;
+        private final RequestHandler requestHandler;
 
-        public EmbedHttpServerHandler(ExecutorBiz executorBiz, ThreadPoolExecutor bizThreadPool) {
-            this.executorBiz = executorBiz;
+        public EmbedHttpServerHandler(RequestHandler requestHandler, ThreadPoolExecutor bizThreadPool) {
+            this.requestHandler = requestHandler;
             this.bizThreadPool = bizThreadPool;
         }
 
@@ -189,7 +183,7 @@ public class EmbedServer {
                 @Override
                 public void run() {
                     // do invoke
-                    Object responseObj = process(httpMethod, uri, requestData);
+                    Object responseObj = requestHandler.process(httpMethod, uri, requestData);
 
                     // to json
                     String responseJson = JsonUtils.toJson(responseObj);
@@ -198,33 +192,6 @@ public class EmbedServer {
                     writeResponse(ctx, keepAlive, responseJson);
                 }
             });
-        }
-
-        private Object process(HttpMethod httpMethod, String uri, String requestData) {
-
-            if (uri == null || uri.trim().length() == 0) {
-                return new SuccessResponse<>("request error: uri is empty.");
-            }
-
-            try {
-                // services mapping
-                String path = UrlUtils.getPath(uri);
-                Matcher matcher = logUrlPattern.matcher(path);
-                if (matcher.find()) {
-                    return executorBiz.log(Long.parseLong(matcher.group(1)),
-                            UrlUtils.getQueryParameterFirst(uri, "logType"));
-                }
-                matcher = cancelTaskPattern.matcher(path);
-                if (matcher.find()) {
-                    // todo cancel job
-                    return new SuccessResponse<>("cancel job success.");
-                }
-
-                return new SuccessResponse<>("invalid request, uri-mapping(" + uri + ") not found.");
-            } catch (Exception e) {
-                logger.error(e.getMessage(), e);
-                return new SuccessResponse<>("request error:" + ExceptionUtils.getRootCauseReason(e));
-            }
         }
 
         /**

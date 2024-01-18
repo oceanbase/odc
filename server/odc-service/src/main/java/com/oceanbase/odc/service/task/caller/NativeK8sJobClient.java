@@ -35,8 +35,10 @@ import org.apache.commons.collections4.CollectionUtils;
 
 import com.oceanbase.odc.common.util.EncodeUtils;
 import com.oceanbase.odc.common.util.StringUtils;
+import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.Verify;
-import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
+import com.oceanbase.odc.core.shared.constant.ErrorCodes;
+import com.oceanbase.odc.service.task.config.K8sProperties;
 
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
@@ -60,9 +62,11 @@ import lombok.NonNull;
  */
 public class NativeK8sJobClient implements K8sJobClient {
 
+    private final K8sProperties k8sProperties;
     private static final long TIMEOUT_MILLS = 60000;
 
-    public NativeK8sJobClient(TaskFrameworkProperties.K8sProperties k8sProperties) throws IOException {
+    public NativeK8sJobClient(K8sProperties k8sProperties) throws IOException {
+        this.k8sProperties = k8sProperties;
         ApiClient apiClient = null;
         if (StringUtils.isNotBlank(k8sProperties.getKubeConfig())) {
             byte[] kubeConfigBytes = EncodeUtils.base64DecodeFromString(k8sProperties.getKubeConfig());
@@ -89,6 +93,8 @@ public class NativeK8sJobClient implements K8sJobClient {
     @Override
     public String create(@NonNull String namespace, @NonNull String name, @NonNull String image,
             List<String> command, @NonNull PodParam podParam) throws JobException {
+        validK8sProperties();
+
         V1Pod job = getV1Pod(name, image, command, podParam);
         CoreV1Api api = new CoreV1Api();
         try {
@@ -106,6 +112,7 @@ public class NativeK8sJobClient implements K8sJobClient {
 
     @Override
     public Optional<String> get(@NonNull String namespace, @NonNull String name) throws JobException {
+        validK8sProperties();
         CoreV1Api api = new CoreV1Api();
         V1PodList job = null;
         try {
@@ -121,6 +128,7 @@ public class NativeK8sJobClient implements K8sJobClient {
 
     @Override
     public String delete(@NonNull String namespace, @NonNull String name) throws JobException {
+        validK8sProperties();
         CoreV1Api api = new CoreV1Api();
         V1Pod pod = null;
         try {
@@ -157,6 +165,13 @@ public class NativeK8sJobClient implements K8sJobClient {
                 .apiVersion(getVersion()).kind(getKind())
                 .metadata(new V1ObjectMeta().name(jobName))
                 .spec(v1PodSpec);
+    }
+
+    private void validK8sProperties() {
+        PreConditions.validArgumentState(k8sProperties.getKubeConfig() != null
+                || k8sProperties.getKubeUrl() != null,
+                ErrorCodes.BadArgument,
+                new Object[] {}, "Target k8s is not set");
     }
 
     private String getVersion() {

@@ -24,7 +24,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
-import com.oceanbase.odc.service.task.executor.util.HttpUtil;
+import com.oceanbase.odc.service.task.util.HttpUtil;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -37,21 +37,21 @@ public class TaskReporter {
 
     private final List<String> hostUrls;
 
-    private static final String UPLOAD_RESULT_URL = "/api/v2/task/result";
 
     public TaskReporter(List<String> hostUrls) {
         this.hostUrls = hostUrls;
     }
 
-    public boolean report(TaskResult result) {
+
+    public <T> boolean report(String url, T result) {
         if (CollectionUtils.isEmpty(hostUrls)) {
             log.warn("host url is empty");
             return false;
         }
         for (String host : hostUrls) {
             try {
-                String url = host + UPLOAD_RESULT_URL;
-                SuccessResponse<String> response = HttpUtil.request(url, JsonUtils.toJson(result),
+                String hostWithUrl = host + url;
+                SuccessResponse<String> response = HttpUtil.request(hostWithUrl, JsonUtils.toJson(result),
                         new TypeReference<SuccessResponse<String>>() {});
                 if (response != null && response.getSuccessful()) {
                     log.info("Report to host {} success, result is {}, response is {}.", host, JsonUtils.toJson(result),

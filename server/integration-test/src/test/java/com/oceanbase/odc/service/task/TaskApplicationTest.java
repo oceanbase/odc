@@ -15,12 +15,11 @@
  */
 package com.oceanbase.odc.service.task;
 
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -36,16 +35,17 @@ import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfiguration;
 import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfiguration.CloudProvider;
 import com.oceanbase.odc.service.task.caller.JobContext;
-import com.oceanbase.odc.service.task.constants.JobDataMapConstants;
-import com.oceanbase.odc.service.task.constants.JobEnvConstants;
-import com.oceanbase.odc.service.task.executor.ExitHelper;
+import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
+import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
+import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.executor.TaskApplication;
+import com.oceanbase.odc.service.task.executor.executor.ThreadPoolTaskExecutor;
 import com.oceanbase.odc.service.task.executor.task.DatabaseChangeTask;
+import com.oceanbase.odc.service.task.executor.task.Task;
 import com.oceanbase.odc.service.task.schedule.DefaultJobContextBuilder;
 import com.oceanbase.odc.service.task.schedule.DefaultJobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
-import com.oceanbase.odc.service.task.schedule.SampleTaskJobDefinitionBuilder;
 import com.oceanbase.odc.service.task.util.JobUtils;
 
 /**
@@ -57,44 +57,55 @@ import com.oceanbase.odc.service.task.util.JobUtils;
 public class TaskApplicationTest extends BaseJobTest {
 
     @Test
-    public void test_executeSimpleTask() {
-        Long exceptedTaskId = System.currentTimeMillis();;
-        JobIdentity jobIdentity = JobIdentity.of(exceptedTaskId);
-        ConnectionConfig connectionConfig = TestConnectionUtil.getTestConnectionConfig(ConnectType.OB_MYSQL);
-        List<String> sqls =
-                Collections.singletonList(String.format("CREATE TABLE %s (id int(10))", "t_" + exceptedTaskId));
-
-        JobDefinition jd = new SampleTaskJobDefinitionBuilder()
-                .build(connectionConfig, connectionConfig.getDefaultSchema(), sqls);
-        JobContext jc = new DefaultJobContextBuilder().build(jobIdentity, jd);
-        System.setProperty(JobEnvConstants.TASK_ALL_PARAMETERS, JobUtils.toJson(jc));
-        mainMethodExit(20 * 1000);
-        new TaskApplication().run(null);
-    }
-
-
-    @Test
-    public void test_executeDatabaseChangeTask() {
+    public void test_executeDatabaseChangeTask_run() {
         Long exceptedTaskId = System.currentTimeMillis();
         JobIdentity jobIdentity = JobIdentity.of(exceptedTaskId);
 
         JobDefinition jd = buildJobDefinition();
         JobContext jc = new DefaultJobContextBuilder().build(jobIdentity, jd);
-        System.setProperty(JobEnvConstants.TASK_ALL_PARAMETERS, JobUtils.toJson(jc));
-        mainMethodExit(60 * 1000);
-        new TaskApplication().run(null);
+        System.setProperty(JobEnvKeyConstants.ODC_JOB_CONTEXT, JobUtils.toJson(jc));
+        startTaskApplication();
+        assertRunningResult(jc);
     }
 
-    private void mainMethodExit(int waitMills) {
-        new Thread(() -> {
-            try {
-                Thread.sleep(waitMills);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            } finally {
-                ExitHelper.exit();
-            }
-        }).start();
+    @Test
+    public void test_executeDatabaseChangeTask_stop() {
+        Long exceptedTaskId = System.currentTimeMillis();
+        JobIdentity jobIdentity = JobIdentity.of(exceptedTaskId);
+
+        JobDefinition jd = buildJobDefinition();
+        JobContext jc = new DefaultJobContextBuilder().build(jobIdentity, jd);
+        System.setProperty(JobEnvKeyConstants.ODC_JOB_CONTEXT, JobUtils.toJson(jc));
+        startTaskApplication();
+        assertCancelResult(jc);
+    }
+
+    private void assertRunningResult(JobContext jc) {
+
+        try {
+            Thread.sleep(10 * 1000L);
+            Task<?> task = ThreadPoolTaskExecutor.getInstance().getTask(jc.getJobIdentity());
+            Assert.assertSame(JobStatus.DONE, task.getStatus());
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+
+    }
+
+    private void assertCancelResult(JobContext jc) {
+
+        try {
+            Thread.sleep(5 * 1000L);
+            boolean result = ThreadPoolTaskExecutor.getInstance().cancel(jc.getJobIdentity());
+            Assert.assertTrue(result);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+
+    }
+
+    private void startTaskApplication() {
+        new Thread(() -> new TaskApplication().run(null)).start();
     }
 
     private JobDefinition buildJobDefinition() {
@@ -108,14 +119,13 @@ public class TaskApplicationTest extends BaseJobTest {
 
         ConnectionConfig config = TestConnectionUtil.getTestConnectionConfig(ConnectType.OB_MYSQL);
         Map<String, String> jobData = new HashMap<>();
-        jobData.put(JobDataMapConstants.META_DB_TASK_PARAMETER, JsonUtils.toJson(parameters));
-        jobData.put(JobDataMapConstants.CONNECTION_CONFIG, JobUtils.toJson(config));
-        jobData.put(JobDataMapConstants.FLOW_INSTANCE_ID, exceptedTaskId + "");
-        jobData.put(JobDataMapConstants.CURRENT_SCHEMA_KEY, config.getDefaultSchema());
-        jobData.put(JobDataMapConstants.TIMEOUT_MILLI_SECONDS, 30 * 60 * 1000 + "");
+        jobData.put(JobParametersKeyConstants.META_TASK_PARAMETER_JSON, JsonUtils.toJson(parameters));
+        jobData.put(JobParametersKeyConstants.CONNECTION_CONFIG, JobUtils.toJson(config));
+        jobData.put(JobParametersKeyConstants.FLOW_INSTANCE_ID, exceptedTaskId + "");
+        jobData.put(JobParametersKeyConstants.CURRENT_SCHEMA, config.getDefaultSchema());
+        jobData.put(JobParametersKeyConstants.TASK_EXECUTION_TIMEOUT_MILLIS, 30 * 60 * 1000 + "");
         ObjectStorageConfiguration storageConfig = new ObjectStorageConfiguration();
         storageConfig.setCloudProvider(CloudProvider.NONE);
-        jobData.put(JobDataMapConstants.OBJECT_STORAGE_CONFIGURATION, JsonUtils.toJson(storageConfig));
 
         return DefaultJobDefinition.builder().jobClass(DatabaseChangeTask.class)
                 .jobType(TaskType.ASYNC.name())

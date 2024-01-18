@@ -15,9 +15,6 @@
  */
 package com.oceanbase.odc.metadb.task;
 
-import java.util.List;
-import java.util.Set;
-
 import javax.transaction.Transactional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -26,8 +23,6 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-
-import com.oceanbase.odc.service.task.enums.JobStatus;
 
 /**
  * @author yaobin
@@ -40,37 +35,21 @@ public interface JobRepository extends JpaRepository<JobEntity, Long>,
 
     @Transactional
     @Query("update JobEntity set "
-            + "executorEndpoint=:#{#param.executorEndpoint},status=:#{#param.status},"
-            + "progressPercentage=:#{#param.progressPercentage},resultJson=:#{#param.resultJson},"
-            + "finishedTime=:#{#param.finishedTime},lastReportTime=:#{#param.lastReportTime}"
+            + " executorEndpoint=:#{#param.executorEndpoint},status=:#{#param.status},"
+            + " progressPercentage=:#{#param.progressPercentage},resultJson=:#{#param.resultJson},"
+            + " finishedTime=:#{#param.finishedTime},lastReportTime=:#{#param.lastReportTime}"
             + " where id=:#{#param.id}")
     @Modifying
     int update(@Param("param") JobEntity entity);
 
     @Transactional
     @Query("update JobEntity set "
-            + "executorIdentifier=:#{#param.executorIdentifier},status=:#{#param.status},"
-            + "executionTimes=:#{#param.executionTimes},"
-            + "startedTime=:#{#param.startedTime}"
+            + " executorIdentifier=:#{#param.executorIdentifier},status=:#{#param.status},"
+            + " executionTimes=:#{#param.executionTimes},"
+            + " startedTime=:#{#param.startedTime},"
+            + " executorDestroyedTime=:#{#param.executorDestroyedTime}"
             + " where id=:#{#param.id}")
     @Modifying
-    void updateJobExecutorIdentifierAndStatus(@Param("param") JobEntity entity);
-
-    @Transactional
-    @Query("update JobEntity set "
-            + "description=:description"
-            + " where id=:id")
-    @Modifying
-    void updateDescription(@Param("id") Long id, @Param("description") String description);
-
-    @Transactional
-    @Query("update JobEntity set "
-            + "status=:status"
-            + " where id=:id")
-    @Modifying
-    void updateStatus(@Param("id") Long id, @Param("status") JobStatus status);
-
-
-    List<TaskEntity> findByIdIn(Set<Long> taskIds);
+    int updateJobExecutorIdentifierAndStatusById(@Param("param") JobEntity entity);
 
 }

@@ -15,91 +15,40 @@
  */
 package com.oceanbase.odc.service.task.config;
 
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.boot.context.properties.NestedConfigurationProperty;
-import org.springframework.cloud.context.config.annotation.RefreshScope;
-import org.springframework.context.annotation.Configuration;
-
 import com.oceanbase.odc.service.task.enums.TaskRunModeEnum;
-
-import lombok.Data;
 
 /**
  * @author yaobin
- * @date 2023-11-21
+ * @date 2024-01-10
  * @since 4.2.4
  */
-@Data
-@RefreshScope
-@Configuration
-@ConfigurationProperties(prefix = "odc.task-framework")
-public class TaskFrameworkProperties {
+public interface TaskFrameworkProperties {
+    boolean isEnableTaskFramework();
 
-    private TaskRunModeEnum runMode;
+    TaskRunModeEnum getRunMode();
 
-    private String odcUrl;
+    String getOdcUrl();
 
-    @NestedConfigurationProperty
-    private K8sProperties k8s = new K8sProperties();
+    K8sProperties getK8sProperties();
 
-    // job will be timeout when last report time more than this duration
-    private int jobReportTimeoutSeconds = 10 * 60;
+    int getJobHeartTimeoutSeconds();
 
-    // single fetch job rows for schedule
-    private int singleFetchJobRowsForSchedule = 100;
+    int getJobCancelTimeoutSeconds();
 
-    // single fetch job rows to check report timeout or not
-    private int singleFetchJobRowsForCheckReportTimeout = 100;
+    int getSingleFetchPreparingJobRows();
 
-    // max fetch job rows to check there is expired between once job schedule
-    private int maxFetchJobRowsForCheckExpired = 2000;
+    int getSingleFetchCancelingJobRows();
 
-    // max retry times after report timeout
-    private int maxRetryTimesAfterReportTimeout = 3;
+    int getSingleFetchCheckHeartTimeoutJobRows();
 
-    @Data
-    public static class K8sProperties {
-        private String kubeUrl;
-        private String namespace;
-        private String kubeConfig;
-        /**
-         * pod image name with version, odc job will be running in this image
-         */
-        private String podImageName;
+    int getMaxHeartTimeoutRetryTimes();
 
-        /**
-         * pod request cpu
-         */
-        private Double requestCpu;
+    int getQuartzStartDelaySeconds();
 
-        /**
-         * pod request memory
-         */
-        private Long requestMem;
+    String getStartPreparingJobCronExpression();
 
-        /**
-         * pod limit cpu
-         */
-        private Double limitCpu;
+    String getCheckRunningJobCronExpression();
 
-        /**
-         * pod limit memory
-         */
-        private Long limitMem;
-
-        /**
-         * pod enable mount
-         */
-        private Boolean enableMount;
-        /**
-         * pod mount disk absolute path
-         */
-        private String mountPath;
-
-        /**
-         * pod mount disk size
-         */
-        private Long mountDiskSize;
-    }
+    String getDoCancelingJobCronExpression();
 
 }

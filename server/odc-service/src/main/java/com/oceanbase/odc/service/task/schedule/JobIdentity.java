@@ -17,6 +17,8 @@
 package com.oceanbase.odc.service.task.schedule;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 /**
  * Identity a unique job
@@ -25,6 +27,8 @@ import lombok.Data;
  * @date 2023-11-23
  * @since 4.2.4
  */
+@ToString
+@EqualsAndHashCode
 @Data
 public class JobIdentity {
 

@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.objectstorage.cloud;
 
+import java.util.function.Supplier;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
@@ -64,8 +66,8 @@ public class CloudResourceConfigurations {
     @RefreshScope
     public CloudClient publicEndpointCloudClient(@Autowired CloudEnvConfigurations cloudEnvConfigurations) {
         ObjectStorageConfiguration objectStorageConfiguration = cloudEnvConfigurations.getObjectStorageConfiguration();
-        log.info("recreate public endpoint cloud client, ak=" + objectStorageConfiguration.getAccessKeyId());
-        return new CloudClientBuilder().generateCloudClient(objectStorageConfiguration);
+        return new CloudClientBuilder().generateCloudClient(objectStorageConfiguration,
+                () -> getPublicOss(objectStorageConfiguration));
 
     }
 
@@ -73,22 +75,24 @@ public class CloudResourceConfigurations {
     @RefreshScope
     public CloudClient internalEndpointCloudClient(@Autowired CloudEnvConfigurations cloudEnvConfigurations) {
         ObjectStorageConfiguration objectStorageConfiguration = cloudEnvConfigurations.getObjectStorageConfiguration();
-        log.info("recreate internal endpoint cloud client, ak=" + objectStorageConfiguration.getAccessKeyId());
-        return new CloudClientBuilder().generateCloudClient(objectStorageConfiguration);
-
+        return new CloudClientBuilder().generateCloudClient(objectStorageConfiguration,
+                () -> getInternalOss(objectStorageConfiguration));
     }
+
 
     public static class CloudClientBuilder {
         public CloudClient generateCloudClient(ObjectStorageConfiguration objectStorageConfiguration) {
+            return generateCloudClient(objectStorageConfiguration, () -> getInternalOss(objectStorageConfiguration));
+        }
+
+        public CloudClient generateCloudClient(ObjectStorageConfiguration objectStorageConfiguration,
+                Supplier<OSS> ossSupplier) {
             CloudProvider cloudProvider = objectStorageConfiguration.getCloudProvider();
             log.info("recreate cloud client, ak=" + objectStorageConfiguration.getAccessKeyId());
             switch (cloudProvider) {
                 case ALIBABA_CLOUD:
                     try {
-                        return createAlibabaCloudClient(objectStorageConfiguration, createOssClient(
-                                objectStorageConfiguration.getAccessKeyId(),
-                                objectStorageConfiguration.getAccessKeySecret(),
-                                objectStorageConfiguration.getInternalEndpoint()));
+                        return createAlibabaCloudClient(objectStorageConfiguration, ossSupplier.get());
                     } catch (ClientException e) {
                         throw new RuntimeException("Create Alibaba Cloud Client failed", e);
                     }
@@ -98,50 +102,65 @@ public class CloudResourceConfigurations {
                     return new NullCloudClient();
             }
         }
+    }
 
-        CloudClient createAlibabaCloudClient(ObjectStorageConfiguration configuration, OSS oss)
-                throws ClientException {
-            String accessKeyId = configuration.getAccessKeyId();
-            String accessKeySecret = configuration.getAccessKeySecret();
 
-            // 添加endpoint（直接使用STS endpoint，前两个参数留空，无需添加region ID）
-            // 构造default profile（参数留空，无需添加region ID）
-            DefaultProfile.addEndpoint("", "", "Sts", "sts.aliyuncs.com");
-            IClientProfile profile = DefaultProfile.getProfile("", accessKeyId, accessKeySecret);
-            IAcsClient acsClient = new DefaultAcsClient(profile);
-            String roleSessionName = configuration.getRoleSessionName();
-            String roleArn = configuration.getRoleArn();
-            return new AlibabaCloudClient(oss, acsClient, roleSessionName, roleArn);
-        }
+    static CloudClient createAlibabaCloudClient(ObjectStorageConfiguration configuration, OSS oss)
+            throws ClientException {
+        String accessKeyId = configuration.getAccessKeyId();
+        String accessKeySecret = configuration.getAccessKeySecret();
 
-        AmazonCloudClient createAmazonCloudClient(ObjectStorageConfiguration configuration) {
-            String region = configuration.getRegion();
-            String accessKeyId = configuration.getAccessKeyId();
-            String accessKeySecret = configuration.getAccessKeySecret();
-            AWSStaticCredentialsProvider credentialsProvider = new AWSStaticCredentialsProvider(
-                    new BasicAWSCredentials(accessKeyId, accessKeySecret));
-            ClientConfiguration clientConfiguration = new ClientConfiguration().withProtocol(Protocol.HTTPS);
-            AmazonS3 s3 = AmazonS3ClientBuilder.standard()
-                    .withCredentials(credentialsProvider)
-                    .withRegion(region)
-                    .withClientConfiguration(clientConfiguration)
-                    .disableChunkedEncoding()
-                    .build();
-            AWSSecurityTokenService sts = AWSSecurityTokenServiceClientBuilder.standard()
-                    .withCredentials(credentialsProvider)
-                    .withRegion(region)
-                    .build();
-            String roleSessionName = configuration.getRoleSessionName();
-            String roleArn = configuration.getRoleArn();
-            return new AmazonCloudClient(s3, sts, roleSessionName, roleArn);
-        }
+        // 添加endpoint（直接使用STS endpoint，前两个参数留空，无需添加region ID）
+        // 构造default profile（参数留空，无需添加region ID）
+        DefaultProfile.addEndpoint("", "", "Sts", "sts.aliyuncs.com");
+        IClientProfile profile = DefaultProfile.getProfile("", accessKeyId, accessKeySecret);
+        IAcsClient acsClient = new DefaultAcsClient(profile);
+        String roleSessionName = configuration.getRoleSessionName();
+        String roleArn = configuration.getRoleArn();
+        return new AlibabaCloudClient(oss, acsClient, roleSessionName, roleArn);
+    }
 
-        private OSS createOssClient(String ak, String sk, String endpoint) {
-            com.aliyun.oss.ClientBuilderConfiguration clientBuilderConfiguration =
-                    new com.aliyun.oss.ClientBuilderConfiguration();
-            clientBuilderConfiguration.setProtocol(com.aliyun.oss.common.comm.Protocol.HTTPS);
-            OSS oss = new OSSClientBuilder().build(endpoint, ak, sk, clientBuilderConfiguration);
-            return oss;
-        }
+    static AmazonCloudClient createAmazonCloudClient(ObjectStorageConfiguration configuration) {
+        String region = configuration.getRegion();
+        String accessKeyId = configuration.getAccessKeyId();
+        String accessKeySecret = configuration.getAccessKeySecret();
+        AWSStaticCredentialsProvider credentialsProvider = new AWSStaticCredentialsProvider(
+                new BasicAWSCredentials(accessKeyId, accessKeySecret));
+        ClientConfiguration clientConfiguration = new ClientConfiguration().withProtocol(Protocol.HTTPS);
+        AmazonS3 s3 = AmazonS3ClientBuilder.standard()
+                .withCredentials(credentialsProvider)
+                .withRegion(region)
+                .withClientConfiguration(clientConfiguration)
+                .disableChunkedEncoding()
+                .build();
+        AWSSecurityTokenService sts = AWSSecurityTokenServiceClientBuilder.standard()
+                .withCredentials(credentialsProvider)
+                .withRegion(region)
+                .build();
+        String roleSessionName = configuration.getRoleSessionName();
+        String roleArn = configuration.getRoleArn();
+        return new AmazonCloudClient(s3, sts, roleSessionName, roleArn);
+    }
+
+    private static OSS getInternalOss(ObjectStorageConfiguration objectStorageConfiguration) {
+        return createOssClient(
+                objectStorageConfiguration.getAccessKeyId(),
+                objectStorageConfiguration.getAccessKeySecret(),
+                objectStorageConfiguration.getInternalEndpoint());
+    }
+
+    private static OSS getPublicOss(ObjectStorageConfiguration objectStorageConfiguration) {
+        return createOssClient(
+                objectStorageConfiguration.getAccessKeyId(),
+                objectStorageConfiguration.getAccessKeySecret(),
+                objectStorageConfiguration.getPublicEndpoint());
+    }
+
+    private static OSS createOssClient(String ak, String sk, String endpoint) {
+        com.aliyun.oss.ClientBuilderConfiguration clientBuilderConfiguration =
+                new com.aliyun.oss.ClientBuilderConfiguration();
+        clientBuilderConfiguration.setProtocol(com.aliyun.oss.common.comm.Protocol.HTTPS);
+        OSS oss = new OSSClientBuilder().build(endpoint, ak, sk, clientBuilderConfiguration);
+        return oss;
     }
 }

@@ -19,10 +19,10 @@ package com.oceanbase.odc.service.task;
 import org.junit.Assert;
 import org.junit.Test;
 
+import com.oceanbase.odc.service.task.caller.DefaultExecutorIdentifier;
+import com.oceanbase.odc.service.task.caller.ExecutorIdentifier;
+import com.oceanbase.odc.service.task.caller.ExecutorIdentifierParser;
 import com.oceanbase.odc.service.task.caller.JobException;
-import com.oceanbase.odc.service.task.schedule.DefaultExecutorIdentifier;
-import com.oceanbase.odc.service.task.schedule.ExecutorIdentifier;
-import com.oceanbase.odc.service.task.schedule.ExecutorIdentifierParser;
 
 /**
  * @author yaobin
@@ -35,13 +35,13 @@ public class ExecutorIdentifierTest {
     @Test
     public void test_parser_successful() throws JobException {
 
-        String identifierString = "http://_:-1/test";
+        String identifierString = "http://odc:8989/test";
         ExecutorIdentifier identifier = ExecutorIdentifierParser.parser(identifierString);
         Assert.assertNotNull(identifierString);
         Assert.assertEquals("test", identifier.getExecutorName());
         Assert.assertNull(identifier.getNamespace());
-        Assert.assertEquals("_", identifier.getHost());
-        Assert.assertSame(-1, identifier.getPort());
+        Assert.assertEquals("odc", identifier.getHost());
+        Assert.assertEquals(8989, identifier.getPort());
         Assert.assertEquals(identifier.toString(), identifierString);
     }
 
@@ -53,7 +53,7 @@ public class ExecutorIdentifierTest {
         Assert.assertEquals("test", identifier.getExecutorName());
         Assert.assertNull(identifier.getNamespace());
         Assert.assertEquals(DefaultExecutorIdentifier.DEFAULT_HOST, identifier.getHost());
-        Assert.assertSame(DefaultExecutorIdentifier.DEFAULT_PORT, identifier.getPort());
+        Assert.assertEquals(DefaultExecutorIdentifier.DEFAULT_PORT.intValue(), identifier.getPort());
     }
 
 }

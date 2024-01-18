@@ -16,12 +16,9 @@
 
 package com.oceanbase.odc.service.task.listener;
 
-import com.oceanbase.odc.service.task.config.JobConfiguration;
-import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
-import com.oceanbase.odc.service.task.schedule.ExecutorIdentifier;
+import com.oceanbase.odc.service.task.caller.ExecutorIdentifier;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 import com.oceanbase.odc.service.task.schedule.JobScheduler;
-import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -33,18 +30,12 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class DefaultJobCallerListener extends JobCallerListener {
 
-    private final TaskFrameworkService taskFrameworkService;
 
-    public DefaultJobCallerListener(JobScheduler jobScheduler) {
-        JobConfiguration configuration = JobConfigurationHolder.getJobConfiguration();
-        this.taskFrameworkService = configuration.getTaskFrameworkService();
-    }
+    public DefaultJobCallerListener(JobScheduler jobScheduler) {}
 
     @Override
     protected void startSucceed(JobIdentity ji, ExecutorIdentifier identifier) {
-        if (taskFrameworkService != null) {
-            taskFrameworkService.startSuccess(ji.getId(), identifier.toString());
-        }
+
     }
 
     @Override
@@ -53,16 +44,15 @@ public class DefaultJobCallerListener extends JobCallerListener {
     }
 
     @Override
-    protected void stopSucceed(JobIdentity ji) {
+    protected void stopSucceed(JobIdentity ji) {}
+
+    @Override
+    protected void stopFailed(JobIdentity ji, Exception ex) {
 
     }
 
     @Override
-    protected void stopFailed(JobIdentity ji, Exception ex) {
-        if (taskFrameworkService != null) {
-            String desc = "Try to cancel job failed.";
-            taskFrameworkService.updateDescription(ji.getId(), desc);
-            log.info("Stop job " + ji.getId() + " failed, error is: ", ex);
-        }
+    protected void destroySucceed(JobIdentity ji) {
+
     }
 }

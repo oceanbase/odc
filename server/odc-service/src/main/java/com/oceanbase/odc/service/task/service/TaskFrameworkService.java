@@ -18,10 +18,11 @@ package com.oceanbase.odc.service.task.service;
 
 import java.util.List;
 
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.domain.Page;
 
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.task.enums.JobStatus;
+import com.oceanbase.odc.service.task.executor.task.HeartRequest;
 import com.oceanbase.odc.service.task.executor.task.TaskResult;
 import com.oceanbase.odc.service.task.schedule.JobDefinition;
 
@@ -31,27 +32,39 @@ import com.oceanbase.odc.service.task.schedule.JobDefinition;
  * @since 4.2.4
  */
 public interface TaskFrameworkService {
-    @Transactional(rollbackFor = Exception.class)
+
+    JobEntity save(JobDefinition jd);
+
     void handleResult(TaskResult taskResult);
 
-    @Transactional(rollbackFor = Exception.class)
-    JobEntity save(JobDefinition jd);
+    void handleHeart(HeartRequest heart);
 
     JobEntity find(Long id);
 
-    List<JobEntity> find(JobStatus status, int offset, int limit);
+    JobEntity findWithLock(Long id);
 
-    List<JobEntity> find(List<JobStatus> status, int offset, int limit);
+    Page<JobEntity> find(JobStatus status, int page, int size);
+
+    Page<JobEntity> find(List<JobStatus> status, int page, int size);
+
+    Page<JobEntity> findHeartTimeTimeoutJobs(int timeoutSeconds, int page, int size);
 
     JobDefinition getJobDefinition(Long id);
 
-    void startSuccess(Long id, String executorIdentifier);
-
-    void stopSuccess(Long id);
+    int startSuccess(Long id, String executorIdentifier);
 
     void updateDescription(Long id, String description);
 
-    void updateStatus(Long id, JobStatus status);
+    int updateJobToCanceling(Long id, JobStatus oldStatus);
+
+    int updateExecutorToDestroyed(Long id);
+
+    int updateStatusDescriptionByIdOldStatus(Long id, JobStatus oldStatus, JobStatus newStatus, String description);
+
+    int updateStatusToCanceledWhenHeartTimeout(Long id, int heartTimeoutSeconds, String description);
+
+    int updateStatusDescriptionByIdOldStatusAndExecutorDestroyed(Long id, JobStatus oldStatus, JobStatus newStatus,
+            String description);
 
     String findByJobIdAndAttributeKey(Long jobId, String attributeKey);
 

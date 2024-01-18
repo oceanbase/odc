@@ -18,7 +18,6 @@ package com.oceanbase.odc.service.task.executor.task;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -40,6 +39,7 @@ import com.oceanbase.odc.common.util.CSVUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.datamasking.algorithm.Algorithm;
 import com.oceanbase.odc.core.datasource.ConnectionInitializer;
+import com.oceanbase.odc.core.flow.model.FlowTaskResult;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
@@ -74,7 +74,8 @@ import com.oceanbase.odc.service.session.OdcStatementCallBack;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.odc.service.session.initializer.ConsoleTimeoutInitializer;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
-import com.oceanbase.odc.service.task.constants.JobDataMapConstants;
+import com.oceanbase.odc.service.task.caller.JobContext;
+import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.tools.dbbrowser.parser.ParserUtil;
 import com.oceanbase.tools.dbbrowser.parser.constant.GeneralSqlType;
@@ -89,7 +90,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 
 @Slf4j
-public class DatabaseChangeTask extends BaseTask {
+public class DatabaseChangeTask extends BaseTask<FlowTaskResult> {
 
     private ConnectionSession connectionSession;
     private List<String> sqls;
@@ -112,6 +113,8 @@ public class DatabaseChangeTask extends BaseTask {
 
     // todo read from env passed by FlowTask
     private long resultPreviewMaxSizeBytes = 5242880;
+    private volatile boolean canceled = false;
+
 
     @Getter
     protected long taskId;
@@ -120,20 +123,17 @@ public class DatabaseChangeTask extends BaseTask {
     private DataMaskingService maskingService;
 
     @Override
-    protected void onInit() {
+    protected void doStart(JobContext context) {
         log.info("Async task  start to run, task id:{}", this.getTaskId());
         log.info("Start read sql content, taskId={}", this.getTaskId());
         init();
-    }
-
-    @Override
-    protected void onStart() {
         run();
     }
 
     @Override
-    protected void onStop() {
+    protected void doStop() {
         expireConnectionSession();
+        canceled = true;
     }
 
     @Override
@@ -155,8 +155,9 @@ public class DatabaseChangeTask extends BaseTask {
         return progress;
     }
 
+
     @Override
-    public Serializable getTaskResult() {
+    public FlowTaskResult getTaskResult() {
         DatabaseChangeResult taskResult = new DatabaseChangeResult();
         taskResult.setFailCount(failCount);
         taskResult.setSuccessCount(successCount);
@@ -206,13 +207,13 @@ public class DatabaseChangeTask extends BaseTask {
 
     private void init() {
         this.taskId = getJobContext().getJobIdentity().getId();
-        this.parameters = JsonUtils.fromJson(getJobData().get(JobDataMapConstants.META_DB_TASK_PARAMETER),
+        this.parameters = JsonUtils.fromJson(getJobParameters().get(JobParametersKeyConstants.META_TASK_PARAMETER_JSON),
                 DatabaseChangeParameters.class);
         this.connectionSession = generateSession();
         String sqlStr = null;
         if (StringUtils.isNotEmpty(parameters.getSqlContent())) {
             sqlStr = parameters.getSqlContent();
-        } else if (getJobData().get(JobDataMapConstants.OBJECT_METADATA) != null) {
+        } else if (getJobParameters().get(JobParametersKeyConstants.OBJECT_METADATA) != null) {
             try {
                 sqlStr = readSqlFiles();
             } catch (IOException exception) {
@@ -228,15 +229,16 @@ public class DatabaseChangeTask extends BaseTask {
 
     private ConnectionSession generateSession() {
         ConnectionConfig connectionConfig =
-                JsonUtils.fromJson(getJobData().get(JobDataMapConstants.CONNECTION_CONFIG), ConnectionConfig.class);
+                JsonUtils.fromJson(getJobParameters().get(JobParametersKeyConstants.CONNECTION_CONFIG),
+                        ConnectionConfig.class);
         connectionConfig.setId(1L);
-        connectionConfig.setDefaultSchema(getJobData().get(JobDataMapConstants.CURRENT_SCHEMA_KEY));
+        connectionConfig.setDefaultSchema(getJobParameters().get(JobParametersKeyConstants.CURRENT_SCHEMA));
         DefaultConnectSessionFactory sessionFactory = new DefaultConnectSessionFactory(connectionConfig);
         sessionFactory.setSessionTimeoutMillis(parameters.getTimeoutMillis());
         ConnectionSession connectionSession = sessionFactory.generateSession();
         if (connectionSession.getDialectType() == DialectType.OB_ORACLE) {
             ConnectionSessionUtil.initConsoleSessionTimeZone(connectionSession,
-                    getJobData().get(JobDataMapConstants.SESSION_TIME_ZONE));
+                    getJobParameters().get(JobParametersKeyConstants.SESSION_TIME_ZONE));
         }
         SqlCommentProcessor processor = new SqlCommentProcessor(connectionConfig.getDialectType(), true, true);
         ConnectionSessionUtil.setSqlCommentProcessor(connectionSession, processor);
@@ -250,7 +252,8 @@ public class DatabaseChangeTask extends BaseTask {
         StringBuilder sb = new StringBuilder();
 
         List<ObjectMetadata> metadatas = JsonUtils.fromJson(
-                getJobData().get(JobDataMapConstants.OBJECT_METADATA), new TypeReference<List<ObjectMetadata>>() {});
+                getJobParameters().get(JobParametersKeyConstants.OBJECT_METADATA),
+                new TypeReference<List<ObjectMetadata>>() {});
 
         for (ObjectMetadata metadata : metadatas) {
             String objectContentStr = new ObjectStorageHandler(getCloudObjectStorageService(), "/opt/odc/data")
@@ -286,7 +289,7 @@ public class DatabaseChangeTask extends BaseTask {
         try {
             jsonFileName = writeJsonFile(fileDir, queryResultSet);
             FileMeta fileMeta = writeZipFile(fileDir, queryResultSet, getCloudObjectStorageService(),
-                    Long.parseLong(getJobData().get(JobDataMapConstants.FLOW_INSTANCE_ID)));
+                    Long.parseLong(getJobParameters().get(JobParametersKeyConstants.FLOW_INSTANCE_ID)));
             zipFileDownloadUrl = fileMeta.getDownloadUrl();
             zipFileId = fileMeta.getFileId();
             writeFileSuccessCount++;
@@ -528,6 +531,10 @@ public class DatabaseChangeTask extends BaseTask {
         if (getConnectionSession() != null && !getConnectionSession().isExpired()) {
             getConnectionSession().expire();
         }
+    }
+
+    private boolean isCanceled() {
+        return canceled;
     }
 
     private ConnectionSession getConnectionSession() {

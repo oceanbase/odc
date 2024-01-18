@@ -51,6 +51,12 @@ public class OnlineSchemaChangeContextHolder {
 
     public static void retrace(Map<String, String> context) {
         MDC.setContextMap(context);
+        String userId = context.get(TASK_WORK_SPACE);
+        String organizationId = context.get(OdcConstants.ORGANIZATION_ID);
+        Long userIdL = (userId == null ? null : Long.parseLong(userId));
+        Long organizationIdL = (organizationId == null ? null : Long.parseLong(organizationId));
+        // set current user to get tenant list
+        SecurityContextUtils.setCurrentUser(userIdL, organizationIdL, null);
     }
 
     /**
