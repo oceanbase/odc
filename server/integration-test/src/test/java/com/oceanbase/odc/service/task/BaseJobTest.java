@@ -55,13 +55,14 @@ public abstract class BaseJobTest {
 
     @BeforeClass
     public static void init() throws IOException {
+
         TestDBConfiguration tdc = TestDBConfigurations.getInstance().getTestOBMysqlConfiguration();
-        System.setProperty("DATABASE_HOST", tdc.getHost());
-        System.setProperty("DATABASE_PORT", tdc.getPort() + "");
-        System.setProperty("DATABASE_NAME", tdc.getDefaultDBName());
-        System.setProperty("DATABASE_USERNAME",
+        System.setProperty(JobEnvKeyConstants.ODC_DATABASE_HOST, tdc.getHost());
+        System.setProperty(JobEnvKeyConstants.ODC_DATABASE_PORT, tdc.getPort() + "");
+        System.setProperty(JobEnvKeyConstants.ODC_DATABASE_NAME, tdc.getDefaultDBName());
+        System.setProperty(JobEnvKeyConstants.ODC_DATABASE_USERNAME,
                 JdbcUtil.buildUser(tdc.getUsername(), tdc.getTenant(), tdc.getCluster()));
-        System.setProperty("DATABASE_PASSWORD", tdc.getPassword());
+        System.setProperty(JobEnvKeyConstants.ODC_DATABASE_PASSWORD, tdc.getPassword());
         System.setProperty(JobEnvKeyConstants.ODC_LOG_DIRECTORY, LogUtils.getBaseLogPath());
         System.setProperty(JobEnvKeyConstants.ODC_BOOT_MODE, JobConstants.ODC_BOOT_MODE_EXECUTOR);
         System.setProperty(JobEnvKeyConstants.ODC_TASK_RUN_MODE, TaskRunModeEnum.K8S.name());
