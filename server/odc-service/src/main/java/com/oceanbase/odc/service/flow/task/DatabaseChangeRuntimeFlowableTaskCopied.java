@@ -83,8 +83,14 @@ public class DatabaseChangeRuntimeFlowableTaskCopied extends BaseODCFlowTaskDele
             // todo flow optimized
             jobScheduler.await(jobEntity.getId(), taskFrameworkProperties.getJobCancelTimeoutSeconds(),
                     TimeUnit.SECONDS);
-            taskService.cancel(taskId);
-            isCanceled = true;
+            JobEntity recentJob = taskFrameworkService.find(jobEntity.getId());
+            if (recentJob.getStatus() == JobStatus.CANCELED) {
+                taskService.cancel(taskId);
+                isCanceled = true;
+                return true;
+            } else {
+                return false;
+            }
         } catch (JobException e) {
             log.warn("cancel job failed.", e);
             return false;
@@ -92,7 +98,6 @@ public class DatabaseChangeRuntimeFlowableTaskCopied extends BaseODCFlowTaskDele
             log.warn("wait cancel job be interrupted.", e);
             return false;
         }
-        return true;
     }
 
     @Override
