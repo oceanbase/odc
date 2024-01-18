@@ -61,12 +61,10 @@ public class TaskMonitor implements Closeable {
             if (isTimeout()) {
                 getTask().stop();
             }
-            if (!getTask().getStatus().isTerminated()) {
-                try {
-                    reportTaskResult();
-                } catch (Throwable e) {
-                    log.warn("Update task info failed, id: {}", getJobId(), e);
-                }
+            try {
+                reportTaskResult();
+            } catch (Throwable e) {
+                log.warn("Update task info failed, id: {}", getJobId(), e);
             }
         }, 1, JobConstants.REPORT_TASK_INFO_INTERVAL_SECONDS, TimeUnit.SECONDS);
         log.info("Task monitor init success");
@@ -75,12 +73,10 @@ public class TaskMonitor implements Closeable {
                 new TaskThreadFactory(("Task-Heart-Job-" + getJobId())));
 
         heartScheduledExecutor.scheduleAtFixedRate(() -> {
-            if (!getTask().getStatus().isTerminated()) {
-                try {
-                    getReporter().report(JobUrlConstants.TASK_HEART, buildHeartRequest());
-                } catch (Throwable e) {
-                    log.warn("Update heart info failed, id: {}", getJobId(), e);
-                }
+            try {
+                getReporter().report(JobUrlConstants.TASK_HEART, buildHeartRequest());
+            } catch (Throwable e) {
+                log.warn("Update heart info failed, id: {}", getJobId(), e);
             }
         }, 1, JobConstants.REPORT_TASK_HEART_INTERVAL_SECONDS, TimeUnit.SECONDS);
         log.info("Task heart init success");
@@ -109,7 +105,6 @@ public class TaskMonitor implements Closeable {
                     taskResult.getJobIdentity().getId(), taskResult.getStatus());
             return;
         }
-
         DefaultTaskResult copiedResult = ObjectUtil.deepCopy(taskResult, DefaultTaskResult.class);
         getReporter().report(JobUrlConstants.TASK_RESULT_UPLOAD, copiedResult);
         log.info("Report task info, id: {}, status: {}, progress: {}%, result: {}", getJobId(),
