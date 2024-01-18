@@ -55,7 +55,8 @@ public abstract class BaseTask<RESULT> implements Task<RESULT> {
         this.jobParameters = Collections.unmodifiableMap(getJobContext().getJobParameters());
         initCloudObjectStorageService();
         updateStatus(JobStatus.RUNNING);
-        try (TaskMonitor taskMonitor = new TaskMonitor(this, this.reporter)) {
+        TaskMonitor taskMonitor = new TaskMonitor(this, this.reporter);
+        try {
             taskMonitor.monitor();
             doStart(context);
         } catch (Throwable e) {
@@ -63,7 +64,11 @@ public abstract class BaseTask<RESULT> implements Task<RESULT> {
             updateStatus(JobStatus.FAILED);
             onFail(e);
         } finally {
-            doFinal();
+            try {
+                doFinal();
+            } finally {
+                taskMonitor.destroy();
+            }
         }
     }
 
