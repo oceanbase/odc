@@ -25,6 +25,7 @@ import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.service.common.model.HostProperties;
+import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.enums.TaskRunModeEnum;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
@@ -47,6 +48,8 @@ public class WebTaskDispatchChecker implements TaskDispatchChecker {
     private HostProperties hostProperties;
     @Autowired
     private TaskFrameworkService taskFrameworkService;
+    @Autowired
+    private TaskFrameworkProperties taskFrameworkProperties;
 
     @Override
     public boolean isThisMachine(@NonNull ExecutorInfo info) {
@@ -56,7 +59,7 @@ public class WebTaskDispatchChecker implements TaskDispatchChecker {
 
     @Override
     public boolean isTaskEntityOnThisMachine(@NonNull TaskEntity taskEntity) {
-        if (taskEntity.getJobId() != null) {
+        if (taskFrameworkProperties.isEnableTaskFramework() && taskEntity.getJobId() != null) {
             JobEntity jobEntity = taskFrameworkService.find(taskEntity.getJobId());
             if (jobEntity != null && Objects.equals(jobEntity.getRunMode(), TaskRunModeEnum.K8S.name())) {
                 return true;
