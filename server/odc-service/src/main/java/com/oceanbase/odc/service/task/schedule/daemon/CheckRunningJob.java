@@ -59,9 +59,18 @@ public class CheckRunningJob implements Job {
         Page<JobEntity> jobs = getConfiguration().getTaskFrameworkService()
                 .findHeartTimeTimeoutJobs(heartTimeoutPeriod, 0, size);
         jobs.forEach(this::handleJobRetryingOrCanceled);
+
     }
 
     private void handleJobRetryingOrCanceled(JobEntity a) {
+        getConfiguration().getTransactionManager().doInTransaction(() -> {
+            doHandleJobRetryingOrCanceled(a);
+            return null;
+        });
+
+    }
+
+    private void doHandleJobRetryingOrCanceled(JobEntity a) {
         // destroy executor
         getConfiguration().getEventPublisher().publishEvent(new DestroyExecutorEvent(JobIdentity.of(a.getId())));
 

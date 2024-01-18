@@ -108,17 +108,20 @@ public abstract class BaseJobCaller implements JobCaller {
 
     private void tryStop(JobConfiguration jobConfiguration, JobIdentity ji, String executorEndpoint)
             throws IOException, JobException {
+        // For transaction atomic, first update to CANCELED, then stop remote job in executor,
+        // if stop remote failed, transaction will be rollback
+        int rows = jobConfiguration.getTaskFrameworkService()
+                .updateStatusDescriptionByIdOldStatus(ji.getId(),
+                        JobStatus.CANCELING, JobStatus.CANCELED, "stop job completed");
+        if (rows <= 0) {
+            log.info("Update job {} status to CANCELED failed ", ji.getId());
+        }
         String url = executorEndpoint + String.format(JobUrlConstants.STOP_TASK, ji.getId());
+        log.info("Try stop job {} in executor {}.", ji.getId(), url);
         SuccessResponse<Boolean> response =
                 HttpUtil.request(url, new TypeReference<SuccessResponse<Boolean>>() {});
-        log.info("Stop job {} response is {}.", ji.getId(), JsonUtils.toJson(response));
+        log.info("Stop job {} in executor, response is {}.", ji.getId(), JsonUtils.toJson(response));
         if (response != null && response.getSuccessful() && response.getData()) {
-            int rows = jobConfiguration.getTaskFrameworkService()
-                    .updateStatusDescriptionByIdOldStatus(ji.getId(),
-                            JobStatus.CANCELING, JobStatus.CANCELED, "stop job completed");
-            if (rows > 0) {
-                log.info("Update job {} status to {}", ji.getId(), JobStatus.CANCELED.name());
-            }
             afterStopSucceed(jobConfiguration, ji);
         } else {
             afterStopFailed(ji, new JobException("Stop job response is " + response + ",not succeed"));
@@ -126,7 +129,7 @@ public abstract class BaseJobCaller implements JobCaller {
     }
 
     protected void afterStopSucceed(JobConfiguration jobConfiguration, JobIdentity ji) {
-        log.info("Stop job {} successfully.", ji.getId());
+        log.info("Stop job {}, set status to CANCELED successfully.", ji.getId());
         jobConfiguration.getEventPublisher().publishEvent(new JobTerminateEvent(ji, JobStatus.CANCELED));
         publishEvent(new JobCallerEvent(ji, JobCallerAction.STOP, true, null));
     }
