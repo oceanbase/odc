@@ -64,8 +64,8 @@ import com.oceanbase.odc.service.iam.PermissionService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.permission.database.model.CreateDatabasePermissionReq;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
+import com.oceanbase.odc.service.permission.database.model.PermissionStatus;
 import com.oceanbase.odc.service.permission.database.model.QueryDatabasePermissionParams;
-import com.oceanbase.odc.service.permission.database.model.QueryDatabasePermissionParams.PermissionExpireStatus;
 import com.oceanbase.odc.service.permission.database.model.UserDatabasePermission;
 
 /**
@@ -132,7 +132,7 @@ public class DatabasePermissionService {
         Date expireTimeThreshold = getExpireTimeThreshold();
         if (CollectionUtils.isNotEmpty(params.getStatuses())) {
             List<Specification<UserDatabasePermissionEntity>> expireSpecList = new ArrayList<>();
-            for (PermissionExpireStatus status : params.getStatuses()) {
+            for (PermissionStatus status : params.getStatuses()) {
                 expireSpecList.add(getSpecificationByStatus(status, expireTimeThreshold));
             }
             Specification<UserDatabasePermissionEntity> expireSpec = expireSpecList.get(0);
@@ -146,13 +146,13 @@ public class DatabasePermissionService {
                     UserDatabasePermission permission = mapper.entityToModel(e);
                     Date expireTime = permission.getExpireTime();
                     if (expireTime == null) {
-                        permission.setExpireStatus(PermissionExpireStatus.NOT_EXPIRED);
+                        permission.setStatus(PermissionStatus.NOT_EXPIRED);
                     } else if (expireTime.before(expireTimeThreshold)) {
-                        permission.setExpireStatus(PermissionExpireStatus.EXPIRED);
+                        permission.setStatus(PermissionStatus.EXPIRED);
                     } else if (expireTime.before(DateUtils.addDays(expireTimeThreshold, EXPIRING_DAYS))) {
-                        permission.setExpireStatus(PermissionExpireStatus.EXPIRING);
+                        permission.setStatus(PermissionStatus.EXPIRING);
                     } else {
-                        permission.setExpireStatus(PermissionExpireStatus.NOT_EXPIRED);
+                        permission.setStatus(PermissionStatus.NOT_EXPIRED);
                     }
                     return permission;
                 });
@@ -246,7 +246,7 @@ public class DatabasePermissionService {
         return calendar.getTime();
     }
 
-    private Specification<UserDatabasePermissionEntity> getSpecificationByStatus(PermissionExpireStatus status,
+    private Specification<UserDatabasePermissionEntity> getSpecificationByStatus(PermissionStatus status,
             Date date) {
         switch (status) {
             case EXPIRED:
