@@ -65,12 +65,12 @@ public class JobUtils {
 
     public static ConnectionConfig getMetaDBConnectionConfig() {
         ConnectionConfig config = new ConnectionConfig();
-        config.setHost(SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_DATABASE_HOST));
-        String port = SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_DATABASE_PORT);
+        config.setHost(SystemUtils.getEnvOrProperty(JobEnvKeyConstants.DATABASE_HOST));
+        String port = SystemUtils.getEnvOrProperty(JobEnvKeyConstants.DATABASE_PORT);
         config.setPort(port != null ? Integer.parseInt(port) : 8989);
-        config.setDefaultSchema(SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_DATABASE_NAME));
-        config.setUsername(SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_DATABASE_USERNAME));
-        config.setPassword(SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_DATABASE_PASSWORD));
+        config.setDefaultSchema(SystemUtils.getEnvOrProperty(JobEnvKeyConstants.DATABASE_NAME));
+        config.setUsername(SystemUtils.getEnvOrProperty(JobEnvKeyConstants.DATABASE_USERNAME));
+        config.setPassword(SystemUtils.getEnvOrProperty(JobEnvKeyConstants.DATABASE_PASSWORD));
         config.setId(1L);
         return config;
     }
