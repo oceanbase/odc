@@ -272,7 +272,7 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
                     describer.getDatabaseName(), sqls, connectionConfig));
             Map<String, Set<SqlType>> schemaName2SqlTypes = SchemaExtractor.listSchemaName2SqlTypes(
                     sqls.stream().map(e -> SqlTuple.newTuple(e.getStr())).collect(Collectors.toList()),
-                    this.connectionConfig.getDialectType());
+                    preCheckTaskEntity.getDatabaseName(), this.connectionConfig.getDialectType());
             Map<String, Set<DatabasePermissionType>> schemaName2PermissionTypes = new HashMap<>();
             for (Entry<String, Set<SqlType>> entry : schemaName2SqlTypes.entrySet()) {
                 Set<SqlType> sqlTypes = entry.getValue();

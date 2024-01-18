@@ -41,7 +41,7 @@ public class SchemaExtractorTest {
         String sql1 = "select * from db1.table1;";
         String sql2 = "truncate table db1.table1;";
         Map<String, Set<SqlType>> actual = SchemaExtractor.listSchemaName2SqlTypes(
-                Arrays.asList(SqlTuple.newTuple(sql1), SqlTuple.newTuple(sql2)), DialectType.OB_MYSQL);
+                Arrays.asList(SqlTuple.newTuple(sql1), SqlTuple.newTuple(sql2)), "default", DialectType.OB_MYSQL);
         Assert.assertTrue(actual.keySet().size() == 1 && actual.containsKey("db1"));
         Assert.assertTrue(actual.get("db1").size() == 2 && actual.get("db1").contains(SqlType.SELECT)
                 && actual.get("db1").contains(SqlType.TRUNCATE));
@@ -50,8 +50,8 @@ public class SchemaExtractorTest {
     @Test
     public void testOracle_listSchemaName2SqlTypes() {
         String sql = "SELECT * FROM DB1.TABLE1";
-        Map<String, Set<SqlType>> actual =
-                SchemaExtractor.listSchemaName2SqlTypes(Arrays.asList(SqlTuple.newTuple(sql)), DialectType.OB_ORACLE);
+        Map<String, Set<SqlType>> actual = SchemaExtractor
+                .listSchemaName2SqlTypes(Arrays.asList(SqlTuple.newTuple(sql)), "default", DialectType.OB_ORACLE);
         Assert.assertTrue(actual.keySet().size() == 1 && actual.containsKey("DB1"));
         Assert.assertTrue(actual.get("DB1").size() == 1 && actual.get("DB1").contains(SqlType.SELECT));
     }
@@ -59,15 +59,15 @@ public class SchemaExtractorTest {
     @Test
     public void testOracle_listSchemaName2SqlTypes_WithDBLink() {
         String sql = "SELECT * FROM DB1.TABLE1@FAKE_DBLINK;";
-        Map<String, Set<SqlType>> actual =
-                SchemaExtractor.listSchemaName2SqlTypes(Arrays.asList(SqlTuple.newTuple(sql)), DialectType.OB_ORACLE);
+        Map<String, Set<SqlType>> actual = SchemaExtractor
+                .listSchemaName2SqlTypes(Arrays.asList(SqlTuple.newTuple(sql)), "default", DialectType.OB_ORACLE);
         Assert.assertTrue(actual.isEmpty());
     }
 
     @Test
     public void testMySQL_ListSchemaNames() {
         String sql = "select * from db1.table1";
-        Set<String> actual = SchemaExtractor.listSchemaNames(Arrays.asList(sql), DialectType.OB_MYSQL);
+        Set<String> actual = SchemaExtractor.listSchemaNames(Arrays.asList(sql), DialectType.OB_MYSQL, "default");
         Set<String> expect = Collections.singleton("db1");
         Assert.assertEquals(expect, actual);
     }
@@ -75,7 +75,7 @@ public class SchemaExtractorTest {
     @Test
     public void testOracle_ListSchemaNames_NoDBLink() {
         String sql = "SELECT * FROM DB1.TABLE1";
-        Set<String> actual = SchemaExtractor.listSchemaNames(Arrays.asList(sql), DialectType.OB_ORACLE);
+        Set<String> actual = SchemaExtractor.listSchemaNames(Arrays.asList(sql), DialectType.OB_ORACLE, "default");
         Set<String> expect = Collections.singleton("DB1");
         Assert.assertEquals(expect, actual);
     }
@@ -84,7 +84,7 @@ public class SchemaExtractorTest {
     @Test
     public void testOracle_ListSchemaNames_WithDBLink() {
         String sql = "SELECT * FROM DB1.TABLE1@FAKE_DBLINK;";
-        Set<String> actual = SchemaExtractor.listSchemaNames(Arrays.asList(sql), DialectType.OB_ORACLE);
+        Set<String> actual = SchemaExtractor.listSchemaNames(Arrays.asList(sql), DialectType.OB_ORACLE, "default");
         Assert.assertTrue(actual.isEmpty());
     }
 

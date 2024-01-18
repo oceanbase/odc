@@ -74,9 +74,10 @@ public class DatabasePermissionInterceptor extends BaseTimeConsumingInterceptor 
             return true;
         }
         ConnectionConfig connectionConfig = (ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(session);
+        String currentSchema = ConnectionSessionUtil.getCurrentSchema(session);
         Map<String, Set<SqlType>> schemaName2SqlTypes = SchemaExtractor.listSchemaName2SqlTypes(
                 response.getSqls().stream().map(SqlTuplesWithViolation::getSqlTuple).collect(Collectors.toList()),
-                session.getDialectType());
+                currentSchema, session.getDialectType());
         Map<String, Set<DatabasePermissionType>> schemaName2PermissionTypes = new HashMap<>();
         for (Entry<String, Set<SqlType>> entry : schemaName2SqlTypes.entrySet()) {
             Set<SqlType> sqlTypes = entry.getValue();

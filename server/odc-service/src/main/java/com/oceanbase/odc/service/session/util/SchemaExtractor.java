@@ -55,7 +55,8 @@ import lombok.Getter;
  */
 public class SchemaExtractor {
 
-    public static Map<String, Set<SqlType>> listSchemaName2SqlTypes(List<SqlTuple> sqlTuples, DialectType dialectType) {
+    public static Map<String, Set<SqlType>> listSchemaName2SqlTypes(List<SqlTuple> sqlTuples, String defaultSchema,
+            DialectType dialectType) {
         Map<String, Set<SqlType>> schemaName2SqlTypes = new HashMap<>();
         for (SqlTuple sqlTuple : sqlTuples) {
             try {
@@ -64,7 +65,7 @@ public class SchemaExtractor {
                     sqlTuple.initAst(AbstractSyntaxTreeFactories.getAstFactory(dialectType, 0));
                     ast = sqlTuple.getAst();
                 }
-                Set<String> schemaNames = listSchemaNames(ast, dialectType);
+                Set<String> schemaNames = listSchemaNames(ast, defaultSchema, dialectType);
                 SqlType sqlType = SqlType.OTHERS;
                 BasicResult basicResult = ast.getParseResult();
                 if (Objects.nonNull(basicResult) && Objects.nonNull(basicResult.getSqlType())
@@ -82,7 +83,7 @@ public class SchemaExtractor {
         return schemaName2SqlTypes;
     }
 
-    public static Set<String> listSchemaNames(DialectType dialectType, List<SqlTuple> sqlTuples) {
+    public static Set<String> listSchemaNames(List<SqlTuple> sqlTuples, String defaultSchema, DialectType dialectType) {
         return sqlTuples.stream().flatMap(sqlTuple -> {
             try {
                 AbstractSyntaxTree ast = sqlTuple.getAst();
@@ -90,7 +91,7 @@ public class SchemaExtractor {
                     sqlTuple.initAst(AbstractSyntaxTreeFactories.getAstFactory(dialectType, 0));
                     ast = sqlTuple.getAst();
                 }
-                return listSchemaNames(ast, dialectType).stream();
+                return listSchemaNames(ast, defaultSchema, dialectType).stream();
             } catch (Exception e) {
                 // just eat exception due to parse failed
                 return Stream.empty();
@@ -98,14 +99,14 @@ public class SchemaExtractor {
         }).collect(Collectors.toSet());
     }
 
-    public static Set<String> listSchemaNames(List<String> sqls, DialectType dialectType) {
+    public static Set<String> listSchemaNames(List<String> sqls, DialectType dialectType, String defaultSchema) {
         AbstractSyntaxTreeFactory factory = AbstractSyntaxTreeFactories.getAstFactory(dialectType, 0);
         if (factory == null) {
             return new HashSet<>();
         }
         return sqls.stream().flatMap(sql -> {
             try {
-                return listSchemaNames(factory.buildAst(sql), dialectType).stream();
+                return listSchemaNames(factory.buildAst(sql), defaultSchema, dialectType).stream();
             } catch (Exception e) {
                 // just eat exception due to parse failed
                 return Stream.empty();
@@ -113,14 +114,17 @@ public class SchemaExtractor {
         }).collect(Collectors.toSet());
     }
 
-    private static Set<String> listSchemaNames(AbstractSyntaxTree ast, DialectType dialectType) {
+    private static Set<String> listSchemaNames(AbstractSyntaxTree ast, String defaultSchema, DialectType dialectType) {
         if (dialectType.isMysql()) {
             OBMySQLRelationFactorVisitor visitor = new OBMySQLRelationFactorVisitor();
             visitor.visit(ast.getRoot());
             List<RelationFactor> relationFactorList = visitor.getRelationFactorList();
             return relationFactorList.stream()
                     .filter(r -> StringUtils.isBlank(r.getUserVariable()))
-                    .map(r -> StringUtils.unquoteMySqlIdentifier(r.getSchema()))
+                    .map(r -> {
+                        String schema = StringUtils.isNotBlank(r.getSchema()) ? r.getSchema() : defaultSchema;
+                        return StringUtils.unquoteMySqlIdentifier(schema);
+                    })
                     .filter(Objects::nonNull).collect(Collectors.toSet());
         } else if (dialectType.isOracle()) {
             OBOracleRelationFactorVisitor visitor = new OBOracleRelationFactorVisitor();
@@ -129,7 +133,7 @@ public class SchemaExtractor {
             return relationFactorList.stream()
                     .filter(r -> StringUtils.isBlank(r.getUserVariable()))
                     .map(r -> {
-                        String schema = r.getSchema();
+                        String schema = StringUtils.isNotBlank(r.getSchema()) ? r.getSchema() : defaultSchema;
                         if (StringUtils.startsWith(schema, "\"") && StringUtils.endsWith(schema, "\"")) {
                             return StringUtils.unquoteOracleIdentifier(schema);
                         }

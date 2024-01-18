@@ -754,6 +754,7 @@ public class FlowInstanceService {
         preCheckReq.setTaskType(TaskType.PRE_CHECK);
         preCheckReq.setConnectionId(flowInstanceReq.getConnectionId());
         preCheckReq.setDatabaseId(flowInstanceReq.getDatabaseId());
+        preCheckReq.setDatabaseName(flowInstanceReq.getDatabaseName());
         TaskEntity preCheckTaskEntity = taskService.create(preCheckReq, (int) TimeUnit.SECONDS
                 .convert(flowTaskProperties.getDefaultExecutionExpirationIntervalHours(), TimeUnit.HOURS));
 
