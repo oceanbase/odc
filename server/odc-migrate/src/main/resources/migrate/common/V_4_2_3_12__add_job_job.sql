@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS `job_job` (
-  `id` bigint NOT NULL AUTO_INCREMENT COMMENT "主键 ID",
+  `id` bigint NOT NULL AUTO_INCREMENT,
   `job_class` varchar(256) NOT NULL COMMENT '任务执行的 Class 类名',
   `job_type` varchar(32) NOT NULL COMMENT '任务类型，可选值有: ASYNC,IMPORT,EXPORT,MOCKDATA',
   `job_parameters_json` mediumtext DEFAULT NULL COMMENT '任务数据参数，不同任务由不同字段组成，为json格式',
@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS `job_job` (
 
 
 CREATE TABLE IF NOT EXISTS `job_job_attribute` (
-  `id` bigint NOT NULL AUTO_INCREMENT COMMENT "主键 ID",
+  `id` bigint NOT NULL AUTO_INCREMENT,
   `job_id` bigint NOT NULL COMMENT 'job_id, 参考 job_job(id)',
   `attribute_key` varchar(128) DEFAULT NULL COMMENT '属性键',
   `attribute_value` mediumtext DEFAULT NULL COMMENT '属性值',
