@@ -16,19 +16,12 @@
 
 package com.oceanbase.odc.service.task;
 
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-
 import org.junit.Test;
 import org.mockito.Mockito;
-import org.quartz.JobExecutionContext;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.SchedulerFactory;
-import org.quartz.Trigger;
-import org.quartz.Trigger.CompletedExecutionInstruction;
 import org.quartz.impl.StdSchedulerFactory;
-import org.quartz.listeners.TriggerListenerSupport;
 
 import com.oceanbase.odc.common.event.LocalEventPublisher;
 import com.oceanbase.odc.metadb.task.JobEntity;
@@ -36,12 +29,9 @@ import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.caller.JobException;
 import com.oceanbase.odc.service.task.config.DefaultJobConfiguration;
 import com.oceanbase.odc.service.task.config.SpringTaskFrameworkProperties;
-import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.dispatch.JobDispatcher;
-import com.oceanbase.odc.service.task.executor.sampletask.SampleTask;
+import com.oceanbase.odc.service.task.executor.task.DatabaseChangeTask;
 import com.oceanbase.odc.service.task.schedule.DefaultJobDefinition;
-import com.oceanbase.odc.service.task.schedule.JobIdentity;
-import com.oceanbase.odc.service.task.schedule.JobImageNameProvider;
 import com.oceanbase.odc.service.task.schedule.JobScheduler;
 import com.oceanbase.odc.service.task.schedule.StdJobScheduler;
 import com.oceanbase.odc.service.task.schedule.provider.HostUrlProvider;
@@ -64,7 +54,7 @@ public class JobSchedulerTest {
         SchedulerFactory sf = new StdSchedulerFactory();
         Scheduler sched = sf.getScheduler();
         DefaultJobConfiguration jc = new DefaultJobConfiguration() {};
-        jc.setScheduler(sched);
+        jc.setDaemonScheduler(sched);
         jc.setHostUrlProvider(Mockito.mock(HostUrlProvider.class));
         jc.setEventPublisher(new LocalEventPublisher());
         jc.setJobImageNameProvider(Mockito.mock(JobImageNameProvider.class));
@@ -79,8 +69,8 @@ public class JobSchedulerTest {
         Mockito.when(taskFrameworkService.save(Mockito.any())).thenReturn(Mockito.mock(JobEntity.class));
         Mockito.when(taskFrameworkService.find(Mockito.any())).thenReturn(Mockito.mock(JobEntity.class));
 
-        DefaultJobDefinition jd = DefaultJobDefinition.builder().jobClass(SampleTask.class)
-                .jobType("sampleTask").build();
+        DefaultJobDefinition jd = DefaultJobDefinition.builder().jobClass(DatabaseChangeTask.class)
+                .jobType("ASYNC").build();
 
         JobDispatcher jobDispatcher = Mockito.mock(JobDispatcher.class);
         Mockito.doNothing().when(jobDispatcher).start(Mockito.mock(JobContext.class));
@@ -88,26 +78,6 @@ public class JobSchedulerTest {
 
         JobScheduler js = new StdJobScheduler(jc);
         Long id = js.scheduleJobNow(jd);
-
-        sched.start();
-        CountDownLatch cd = new CountDownLatch(1);
-        sched.getListenerManager().addTriggerListener(new TriggerListenerSupport() {
-            @Override
-            public String getName() {
-                return "test";
-            }
-
-            @Override
-            public void triggerComplete(
-                    Trigger trigger,
-                    JobExecutionContext context,
-                    CompletedExecutionInstruction triggerInstructionCode) {
-                JobContext o = (JobContext) context.getMergedJobDataMap().get(JobConstants.QUARTZ_DATA_MAP_JOB_CONTEXT);
-                Assert.equals(JobIdentity.of(id), o.getJobIdentity());
-                cd.countDown();
-            }
-        });
-        cd.await(3000, TimeUnit.MILLISECONDS);
-        sched.shutdown();
+        Assert.notNull(id);
     }
 }

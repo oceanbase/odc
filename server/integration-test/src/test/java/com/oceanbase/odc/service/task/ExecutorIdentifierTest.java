@@ -35,13 +35,13 @@ public class ExecutorIdentifierTest {
     @Test
     public void test_parser_successful() throws JobException {
 
-        String identifierString = "http://_:-1/test";
+        String identifierString = "http://odc:8989/test";
         ExecutorIdentifier identifier = ExecutorIdentifierParser.parser(identifierString);
         Assert.assertNotNull(identifierString);
         Assert.assertEquals("test", identifier.getExecutorName());
         Assert.assertNull(identifier.getNamespace());
-        Assert.assertEquals("_", identifier.getHost());
-        Assert.assertSame(-1, identifier.getPort());
+        Assert.assertEquals("odc", identifier.getHost());
+        Assert.assertEquals(8989, identifier.getPort());
         Assert.assertEquals(identifier.toString(), identifierString);
     }
 

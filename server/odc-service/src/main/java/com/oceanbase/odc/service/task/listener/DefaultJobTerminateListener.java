@@ -14,23 +14,23 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.task.executor.sampletask;
+package com.oceanbase.odc.service.task.listener;
 
-import java.util.List;
+import com.oceanbase.odc.common.event.AbstractEventListener;
 
-import com.oceanbase.odc.core.flow.model.TaskParameters;
-
-import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 
 /**
- * @author gaoda.xy
- * @date 2023/11/23 17:59
+ * @author yaobin
+ * @date 2023-12-15
+ * @since 4.2.4
  */
-@Data
-public class SampleTaskParameter implements TaskParameters {
+@Slf4j
+public class DefaultJobTerminateListener extends AbstractEventListener<JobTerminateEvent> {
 
-    private List<String> sqls;
 
-    private String defaultSchema;
+    @Override
+    public void onEvent(JobTerminateEvent event) {
 
+    }
 }

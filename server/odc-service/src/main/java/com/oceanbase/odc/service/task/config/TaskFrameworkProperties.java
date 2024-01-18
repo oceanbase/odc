@@ -23,28 +23,32 @@ import com.oceanbase.odc.service.task.enums.TaskRunModeEnum;
  * @since 4.2.4
  */
 public interface TaskFrameworkProperties {
+    boolean isEnableTaskFramework();
 
     TaskRunModeEnum getRunMode();
 
     String getOdcUrl();
 
-    K8sProperties getK8s();
+    K8sProperties getK8sProperties();
 
     int getJobHeartTimeoutSeconds();
 
     int getJobCancelTimeoutSeconds();
 
-    int getSingleFetchJobRowsForStart();
+    int getSingleFetchPreparingJobRows();
 
-    int getSingleFetchJobRowsForCancel();
+    int getSingleFetchCancelingJobRows();
 
-    int getSingleFetchJobRowsForCheckHeartTimeout();
+    int getSingleFetchCheckHeartTimeoutJobRows();
 
-    int getMaxRetryTimesAfterHeartTimeout();
+    int getMaxHeartTimeoutRetryTimes();
+
+    int getQuartzStartDelaySeconds();
 
     String getStartPreparingJobCronExpression();
 
     String getCheckRunningJobCronExpression();
 
     String getDoCancelingJobCronExpression();
+
 }

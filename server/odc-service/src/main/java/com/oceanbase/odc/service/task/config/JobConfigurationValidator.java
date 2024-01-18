@@ -13,32 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.oceanbase.odc.service.task.config;
 
-package com.oceanbase.odc.service.task.executor.sampletask;
-
-import com.oceanbase.odc.core.flow.model.FlowTaskResult;
-
-import lombok.Data;
+import com.oceanbase.odc.core.shared.PreConditions;
 
 /**
- * @author gaoda.xy
- * @date 2023/11/22 20:01
+ * @author yaobin
+ * @date 2024-01-15
+ * @since 4.2.4
  */
-@Data
-public class SampleTaskResult implements FlowTaskResult {
+public class JobConfigurationValidator {
 
-    private boolean success;
-
-    public static SampleTaskResult success() {
-        SampleTaskResult result = new SampleTaskResult();
-        result.setSuccess(true);
-        return result;
+    public static void validComponent() {
+        JobConfiguration jobConfiguration = JobConfigurationHolder.getJobConfiguration();
+        PreConditions.notNull(jobConfiguration, "jobConfiguration");
+        PreConditions.notNull(jobConfiguration.getTaskFrameworkService(), "taskFrameworkService");
     }
-
-    public static SampleTaskResult fail() {
-        SampleTaskResult result = new SampleTaskResult();
-        result.setSuccess(false);
-        return result;
-    }
-
 }

@@ -38,12 +38,11 @@ import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeResult;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
 import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
-import com.oceanbase.odc.service.objectstorage.cloud.model.CloudEnvConfigurations;
 import com.oceanbase.odc.service.objectstorage.model.ObjectMetadata;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.caller.JobException;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
-import com.oceanbase.odc.service.task.constants.JobDataMapConstants;
+import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.executor.task.DatabaseChangeTask;
 import com.oceanbase.odc.service.task.schedule.DefaultJobDefinition;
@@ -75,8 +74,6 @@ public class DatabaseChangeRuntimeFlowableTaskCopied extends BaseODCFlowTaskDele
     @Autowired
     private TaskFrameworkService taskFrameworkService;
     @Autowired
-    private CloudEnvConfigurations cloudEnvConfigurations;
-    @Autowired
     private TaskFrameworkProperties taskFrameworkProperties;
 
     @Override
@@ -84,19 +81,23 @@ public class DatabaseChangeRuntimeFlowableTaskCopied extends BaseODCFlowTaskDele
         try {
             jobScheduler.cancelJob(jobEntity.getId());
             // todo flow optimized
-            try {
-                jobScheduler.await(jobEntity.getId(), taskFrameworkProperties.getJobCancelTimeoutSeconds(),
-                        TimeUnit.MILLISECONDS);
-            } catch (Exception e) {
-                log.warn("wait job cancelled timeout", e);
+            jobScheduler.await(jobEntity.getId(), taskFrameworkProperties.getJobCancelTimeoutSeconds(),
+                    TimeUnit.SECONDS);
+            JobEntity recentJob = taskFrameworkService.find(jobEntity.getId());
+            if (recentJob.getStatus() == JobStatus.CANCELED) {
+                taskService.cancel(taskId);
+                isCanceled = true;
+                return true;
+            } else {
+                return false;
             }
-            taskService.cancel(taskId);
-            isCanceled = true;
         } catch (JobException e) {
             log.warn("cancel job failed.", e);
             return false;
+        } catch (InterruptedException e) {
+            log.warn("wait cancel job be interrupted.", e);
+            return false;
         }
-        return true;
     }
 
     @Override
@@ -174,14 +175,12 @@ public class DatabaseChangeRuntimeFlowableTaskCopied extends BaseODCFlowTaskDele
 
         ConnectionConfig config = FlowTaskUtil.getConnectionConfig(execution);
         Map<String, String> jobData = new HashMap<>();
-        jobData.put(JobDataMapConstants.META_DB_TASK_PARAMETER, JsonUtils.toJson(parameters));
-        jobData.put(JobDataMapConstants.CONNECTION_CONFIG, JobUtils.toJson(config));
-        jobData.put(JobDataMapConstants.FLOW_INSTANCE_ID, FlowTaskUtil.getFlowInstanceId(execution) + "");
-        jobData.put(JobDataMapConstants.CURRENT_SCHEMA_KEY, FlowTaskUtil.getSchemaName(execution));
-        jobData.put(JobDataMapConstants.SESSION_TIME_ZONE, connectProperties.getDefaultTimeZone());
-        jobData.put(JobDataMapConstants.TASK_EXECUTION_TIMEOUT_MILLIS, parameters.getTimeoutMillis() + "");
-        jobData.put(JobDataMapConstants.OBJECT_STORAGE_CONFIGURATION,
-                JsonUtils.toJson(cloudEnvConfigurations.getObjectStorageConfiguration()));
+        jobData.put(JobParametersKeyConstants.META_TASK_PARAMETER_JSON, JsonUtils.toJson(parameters));
+        jobData.put(JobParametersKeyConstants.CONNECTION_CONFIG, JobUtils.toJson(config));
+        jobData.put(JobParametersKeyConstants.FLOW_INSTANCE_ID, FlowTaskUtil.getFlowInstanceId(execution) + "");
+        jobData.put(JobParametersKeyConstants.CURRENT_SCHEMA, FlowTaskUtil.getSchemaName(execution));
+        jobData.put(JobParametersKeyConstants.SESSION_TIME_ZONE, connectProperties.getDefaultTimeZone());
+        jobData.put(JobParametersKeyConstants.TASK_EXECUTION_TIMEOUT_MILLIS, parameters.getTimeoutMillis() + "");
         if (CollectionUtils.isNotEmpty(parameters.getSqlObjectIds())) {
             List<ObjectMetadata> objectMetadatas = new ArrayList<>();
             for (String objectId : parameters.getSqlObjectIds()) {
@@ -190,7 +189,7 @@ public class DatabaseChangeRuntimeFlowableTaskCopied extends BaseODCFlowTaskDele
                         objectId);
                 objectMetadatas.add(om);
             }
-            jobData.put(JobDataMapConstants.OBJECT_METADATA, JsonUtils.toJson(objectMetadatas));
+            jobData.put(JobParametersKeyConstants.OBJECT_METADATA, JsonUtils.toJson(objectMetadatas));
         }
 
         return DefaultJobDefinition.builder().jobClass(DatabaseChangeTask.class)

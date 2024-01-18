@@ -25,7 +25,9 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import com.oceanbase.odc.core.task.TaskThreadFactory;
 import com.oceanbase.odc.service.task.caller.JobContext;
+import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.executor.task.Task;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 
@@ -41,12 +43,13 @@ import lombok.extern.slf4j.Slf4j;
 public class ThreadPoolTaskExecutor implements TaskExecutor {
 
     private static final TaskExecutor TASK_EXECUTOR = new ThreadPoolTaskExecutor();
-    private final ExecutorService executor;
     private final Map<JobIdentity, Task<?>> tasks = new HashMap<>();
     private final Map<JobIdentity, Future<?>> futures = new HashMap<>();
+    private final ExecutorService executor;
 
     private ThreadPoolTaskExecutor() {
-        this.executor = Executors.newFixedThreadPool(2);
+        this.executor = Executors.newFixedThreadPool(2,
+                new TaskThreadFactory("Task-Executor"));
     }
 
     public static TaskExecutor getInstance() {
@@ -62,11 +65,12 @@ public class ThreadPoolTaskExecutor implements TaskExecutor {
 
     @Override
     public boolean cancel(JobIdentity ji) {
+        Task<?> task = tasks.get(ji);
         Future<?> startFuture = futures.get(ji);
         if (startFuture.isDone()) {
-            return true;
+            return task.getStatus() == JobStatus.CANCELED;
         }
-        Task<?> task = tasks.get(ji);
+
         Future<Boolean> stopFuture = executor.submit(task::stop);
         boolean result = false;
         try {
@@ -80,5 +84,10 @@ public class ThreadPoolTaskExecutor implements TaskExecutor {
             log.warn("Stop task {} time out.", ji.getId(), e);
         }
         return result || startFuture.cancel(true);
+    }
+
+    @Override
+    public Task<?> getTask(JobIdentity ji) {
+        return tasks.get(ji);
     }
 }

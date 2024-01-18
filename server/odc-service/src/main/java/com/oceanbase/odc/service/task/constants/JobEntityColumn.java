@@ -13,24 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.task.schedule.provider;
-
-import java.util.Collections;
-import java.util.List;
-
-import com.oceanbase.odc.common.util.SystemUtils;
-import com.oceanbase.odc.service.task.constants.JobEnvConstants;
+package com.oceanbase.odc.service.task.constants;
 
 /**
  * @author yaobin
- * @date 2023-12-01
+ * @date 2024-01-15
  * @since 4.2.4
  */
-public class ServiceNameHostUrlProvider implements HostUrlProvider {
+public class JobEntityColumn {
 
-    @Override
-    public List<String> hostUrl() {
-        return Collections.singletonList("http://" + SystemUtils.getEnvOrProperty(JobEnvConstants.ODC_SERVICE_HOST)
-                + ":" + SystemUtils.getEnvOrProperty(JobEnvConstants.ODC_SERVICE_PORT));
-    }
+    public static final String ID = "id";
+
+    public static final String STATUS = "status";
+
+    public static final String LAST_HEART_TIME = "lastHeartTime";
+
+    public static final String FINISHED_TIME = "finishedTime";
+
+    public static final String CANCELLING_TIME = "cancellingTime";
+
+    public static final String EXECUTOR_DESTROYED_TIME = "executorDestroyedTime";
+
+    public static final String DESCRIPTION = "description";
+
+    public static final String EXECUTOR_ENDPOINT = "executorEndpoint";
+
 }

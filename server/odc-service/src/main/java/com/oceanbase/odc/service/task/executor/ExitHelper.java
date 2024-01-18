@@ -38,7 +38,4 @@ public class ExitHelper {
         }
     }
 
-    public static void exit() {
-        LATCH.countDown();
-    }
 }

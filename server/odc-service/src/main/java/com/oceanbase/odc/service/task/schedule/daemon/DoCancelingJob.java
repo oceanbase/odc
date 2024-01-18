@@ -58,7 +58,7 @@ public class DoCancelingJob implements Job {
         TaskFrameworkService taskFrameworkService = configuration.getTaskFrameworkService();
         TaskFrameworkProperties taskFrameworkProperties = configuration.getTaskFrameworkProperties();
         Page<JobEntity> jobs = taskFrameworkService.find(JobStatus.CANCELING, 0,
-                taskFrameworkProperties.getSingleFetchJobRowsForCancel());
+                taskFrameworkProperties.getSingleFetchCancelingJobRows());
         jobs.forEach(a -> {
             try {
                 cancelJob(taskFrameworkService, a);
@@ -73,17 +73,13 @@ public class DoCancelingJob implements Job {
             JobEntity newEntity = taskFrameworkService.findWithLock(oldEntity.getId());
 
             if (newEntity.getStatus() == JobStatus.CANCELING) {
-                log.info("Job {} current status is {} but not canceling, prepare cancel.",
-                        newEntity.getId(), newEntity.getStatus());
+                log.info("Job {} current status is {}, prepare cancel.", newEntity.getId(), newEntity.getStatus());
                 try {
                     getConfiguration().getJobDispatcher().stop(JobIdentity.of(newEntity.getId()));
                 } catch (JobException e) {
-                    log.warn("Start job occur error: ", e);
+                    log.warn("Stop job occur error: ", e);
                     throw new TaskRuntimeException(e);
                 }
-            } else {
-                log.warn("Job {} current status is {} but not canceling, cancel explain is aborted.",
-                        newEntity.getId(), newEntity.getStatus());
             }
             return null;
         });

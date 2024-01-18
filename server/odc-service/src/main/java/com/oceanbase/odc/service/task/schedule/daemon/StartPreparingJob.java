@@ -63,7 +63,7 @@ public class StartPreparingJob implements Job {
         TaskFrameworkProperties taskFrameworkProperties = configuration.getTaskFrameworkProperties();
         Page<JobEntity> jobs = taskFrameworkService.find(
                 Lists.newArrayList(JobStatus.PREPARING, JobStatus.RETRYING), 0,
-                taskFrameworkProperties.getSingleFetchJobRowsForStart());
+                taskFrameworkProperties.getSingleFetchPreparingJobRows());
         jobs.forEach(a -> {
             try {
                 if (checkJobIsExpired(a)) {

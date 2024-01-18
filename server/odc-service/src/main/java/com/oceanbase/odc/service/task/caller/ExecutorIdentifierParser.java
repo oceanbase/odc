@@ -37,7 +37,7 @@ public class ExecutorIdentifierParser {
         String namespace = path.substring(0, nameIndex).replace("/", "");
         return DefaultExecutorIdentifier.builder().host(uriComponents.getHost())
                 .port(uriComponents.getPort())
-                .schema(uriComponents.getScheme())
+                .protocol(uriComponents.getScheme())
                 .namespace(namespace.length() == 0 ? null : namespace)
                 .executorName(path.substring(nameIndex).replace("/", ""))
                 .build();

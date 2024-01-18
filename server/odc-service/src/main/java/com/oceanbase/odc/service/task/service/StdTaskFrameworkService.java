@@ -16,7 +16,6 @@
 
 package com.oceanbase.odc.service.task.service;
 
-import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -24,7 +23,9 @@ import java.util.Map;
 
 import javax.persistence.EntityManager;
 import javax.persistence.LockModeType;
-import javax.persistence.criteria.Expression;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaUpdate;
+import javax.persistence.criteria.Root;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -48,12 +49,14 @@ import com.oceanbase.odc.metadb.task.JobAttributeRepository;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.metadb.task.JobRepository;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
+import com.oceanbase.odc.service.task.constants.JobEntityColumn;
 import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.executor.executor.TaskRuntimeException;
 import com.oceanbase.odc.service.task.executor.task.HeartRequest;
 import com.oceanbase.odc.service.task.executor.task.Task;
 import com.oceanbase.odc.service.task.executor.task.TaskResult;
 import com.oceanbase.odc.service.task.listener.DestroyExecutorEvent;
+import com.oceanbase.odc.service.task.listener.JobTerminateEvent;
 import com.oceanbase.odc.service.task.schedule.DefaultJobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobDefinition;
 import com.oceanbase.odc.service.task.util.JobDateUtils;
@@ -72,8 +75,6 @@ import lombok.extern.slf4j.Slf4j;
 public class StdTaskFrameworkService implements TaskFrameworkService {
 
     private static final int RECENT_DAY = 30;
-    private static final String STATUS_COLUMN = "status";
-    private static final String LAST_HEART_TIME_COLUMN = "lastHeartTime";
 
     @Autowired
     private JobRepository jobRepository;
@@ -96,55 +97,6 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     @Autowired
     private EntityManager entityManager;
 
-
-    @Override
-    @Transactional(rollbackFor = Exception.class)
-    public void handleResult(TaskResult taskResult) {
-        if (taskResult.getJobIdentity() == null || taskResult.getJobIdentity().getId() == null) {
-            log.warn("Job identity is null");
-            return;
-        }
-        JobEntity je = find(taskResult.getJobIdentity().getId());
-        if (je.getStatus().isTerminated()) {
-            log.warn("Job {} is finished, ignore result", je.getId());
-            return;
-        }
-
-        updateJobScheduleEntity(taskResult);
-        if (resultHandleServices != null) {
-            resultHandleServices.forEach(r -> r.handle(taskResult));
-        }
-        if (publisher != null && taskResult.getStatus() != null && taskResult.getStatus().isTerminated()) {
-            taskResultPublisherExecutor
-                    .execute(() -> publisher.publishEvent(new DestroyExecutorEvent(taskResult.getJobIdentity())));
-        }
-
-    }
-
-    @Override
-    public void handleHeart(HeartRequest heart) {
-        if (heart.getJobIdentity() == null || heart.getJobIdentity().getId() == null ||
-                heart.getExecutorEndpoint() == null) {
-            return;
-        }
-        jobRepository.updateLatestHeartTime(heart.getJobIdentity().getId(), heart.getExecutorEndpoint(),
-                JobDateUtils.getCurrentDate());
-    }
-
-    @Override
-    @Transactional(rollbackFor = Exception.class)
-    public JobEntity save(JobDefinition jd) {
-        JobEntity jse = new JobEntity();
-        jse.setJobParametersJson(JsonUtils.toJson(jd.getJobParameters()));
-        jse.setJobPropertiesJson(JsonUtils.toJson(jd.getJobProperties()));
-        jse.setExecutionTimes(0);
-        jse.setJobClass(jd.getJobClass().getCanonicalName());
-        jse.setJobType(jd.getJobType());
-        jse.setStatus(JobStatus.PREPARING);
-        jse.setRunMode(taskFrameworkProperties.getRunMode().name());
-        return jobRepository.save(jse);
-    }
-
     @Override
     public JobEntity find(Long id) {
         return jobRepository.findById(id)
@@ -164,15 +116,15 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     @Override
     public Page<JobEntity> find(List<JobStatus> status, int page, int size) {
         Specification<JobEntity> condition = Specification.where(getRecentDaySpec(RECENT_DAY))
-                .and(SpecificationUtil.columnIn(STATUS_COLUMN, status));
+                .and(SpecificationUtil.columnIn(JobEntityColumn.STATUS, status));
         return page(condition, page, size);
     }
 
     @Override
-    public Page<JobEntity> findHeartTimeTimeoutJobs(long timeoutSeconds, int page, int size) {
+    public Page<JobEntity> findHeartTimeTimeoutJobs(int timeoutSeconds, int page, int size) {
         Specification<JobEntity> condition = Specification.where(getRecentDaySpec(RECENT_DAY))
-                .and(getTimeoutOnColumnSpec(LAST_HEART_TIME_COLUMN, timeoutSeconds))
-                .and(SpecificationUtil.columnEqual(STATUS_COLUMN, JobStatus.RUNNING));
+                .and(getTimeoutOnColumnSpec(JobEntityColumn.LAST_HEART_TIME, timeoutSeconds))
+                .and(SpecificationUtil.columnEqual(JobEntityColumn.STATUS, JobStatus.RUNNING));
         return page(condition, page, size);
     }
 
@@ -180,21 +132,13 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         return jobRepository.findAll(specification, PageRequest.of(page, size));
     }
 
-    private Specification<JobEntity> getTimeoutOnColumnSpec(String referenceColumn, long timeoutSeconds) {
-        long expiredUxTime = JobDateUtils.getCurrentDate().getTime() / 1000 - timeoutSeconds;
-        return (root, query, criteriaBuilder) -> {
-            Expression<Long> beginUxTime = criteriaBuilder.function(
-                    "UNIX_TIMESTAMP", Long.class, root.get(referenceColumn));
-
-            return criteriaBuilder.lessThan(beginUxTime, expiredUxTime);
-        };
+    private Specification<JobEntity> getTimeoutOnColumnSpec(String referenceColumn, int timeoutSeconds) {
+        return SpecificationUtil.columnBefore(referenceColumn,
+                JobDateUtils.getCurrentDateSubtractSeconds(timeoutSeconds));
     }
 
-    private Specification<JobEntity> getRecentDaySpec(int day) {
-        Calendar cal = Calendar.getInstance();
-        cal.setTime(JobDateUtils.getCurrentDate());
-        cal.add(Calendar.DATE, Math.negateExact(day));
-        return SpecificationUtil.columnLate("createTime", cal.getTime());
+    private Specification<JobEntity> getRecentDaySpec(int days) {
+        return SpecificationUtil.columnLate("createTime", JobDateUtils.getCurrentDateSubtractDays(days));
     }
 
     @SuppressWarnings("unchecked")
@@ -214,7 +158,21 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     }
 
     @Override
-    public void startSuccess(Long id, String executorIdentifier) {
+    @Transactional(rollbackFor = Exception.class)
+    public JobEntity save(JobDefinition jd) {
+        JobEntity jse = new JobEntity();
+        jse.setJobParametersJson(JsonUtils.toJson(jd.getJobParameters()));
+        jse.setJobPropertiesJson(JsonUtils.toJson(jd.getJobProperties()));
+        jse.setExecutionTimes(0);
+        jse.setJobClass(jd.getJobClass().getCanonicalName());
+        jse.setJobType(jd.getJobType());
+        jse.setStatus(JobStatus.PREPARING);
+        jse.setRunMode(taskFrameworkProperties.getRunMode().name());
+        return jobRepository.save(jse);
+    }
+
+    @Override
+    public int startSuccess(Long id, String executorIdentifier) {
         JobEntity jobEntity = find(id);
         Date currentDate = JobDateUtils.getCurrentDate();
         jobEntity.setStatus(JobStatus.RUNNING);
@@ -227,11 +185,58 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         if (jobEntity.getExecutorDestroyedTime() != null) {
             jobEntity.setExecutorDestroyedTime(null);
         }
-        jobRepository.updateJobExecutorIdentifierAndStatusById(jobEntity);
+        return jobRepository.updateJobExecutorIdentifierAndStatusById(jobEntity);
     }
 
+
     @Override
-    public void stopSuccess(Long id) {}
+    @Transactional(rollbackFor = Exception.class)
+    public void handleResult(TaskResult taskResult) {
+        if (taskResult.getJobIdentity() == null || taskResult.getJobIdentity().getId() == null) {
+            log.warn("Job identity is null");
+            return;
+        }
+        JobEntity je = find(taskResult.getJobIdentity().getId());
+        if (je == null) {
+            log.warn("Job identity is not exists by id {}", taskResult.getJobIdentity().getId());
+            return;
+        }
+        if (je.getStatus().isTerminated()) {
+            log.warn("Job {} is finished, ignore result", je.getId());
+            return;
+        }
+
+        updateJobScheduleEntity(taskResult);
+        if (resultHandleServices != null) {
+            resultHandleServices.forEach(r -> r.handle(taskResult));
+        }
+        if (publisher != null && taskResult.getStatus() != null && taskResult.getStatus().isTerminated()) {
+            taskResultPublisherExecutor.execute(() -> publisher
+                    .publishEvent(new JobTerminateEvent(taskResult.getJobIdentity(), taskResult.getStatus())));
+            taskResultPublisherExecutor
+                    .execute(() -> publisher.publishEvent(new DestroyExecutorEvent(taskResult.getJobIdentity())));
+        }
+
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    @Override
+    public void handleHeart(HeartRequest heart) {
+        if (heart.getJobIdentity() == null || heart.getJobIdentity().getId() == null ||
+                heart.getExecutorEndpoint() == null) {
+            return;
+        }
+
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaUpdate<JobEntity> update = cb.createCriteriaUpdate(JobEntity.class);
+        Root<JobEntity> e = update.from(JobEntity.class);
+        update.set(JobEntityColumn.LAST_HEART_TIME, JobDateUtils.getCurrentDate());
+        update.where(cb.equal(e.get(JobEntityColumn.ID), heart.getJobIdentity().getId()),
+                cb.equal(e.get(JobEntityColumn.EXECUTOR_ENDPOINT), heart.getExecutorEndpoint()));
+
+        entityManager.createQuery(update).executeUpdate();
+
+    }
 
     private void updateJobScheduleEntity(TaskResult taskResult) {
         JobEntity jse = find(taskResult.getJobIdentity().getId());
@@ -253,41 +258,108 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
                 jobAttribute.setAttributeValue(v);
                 jobAttributeRepository.save(jobAttribute);
             });
-
         }
     }
 
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public void updateDescription(Long id, String description) {
-        jobRepository.updateDescription(id, description);
+
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaUpdate<JobEntity> update = cb.createCriteriaUpdate(JobEntity.class);
+        Root<JobEntity> e = update.from(JobEntity.class);
+        update.set(JobEntityColumn.DESCRIPTION, description);
+        update.where(cb.equal(e.get(JobEntityColumn.ID), id));
+
+        entityManager.createQuery(update).executeUpdate();
     }
 
-    @Override
-    public void updateStatus(Long id, JobStatus status) {
-        jobRepository.updateStatusByIdAndOldStatus(id, status);
-    }
-
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int updateStatusDescriptionByIdOldStatus(Long id, JobStatus oldStatus, JobStatus newStatus,
             String description) {
-        return jobRepository.updateStatusDescriptionByIdOldStatus(id, oldStatus, newStatus, description);
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+
+        CriteriaUpdate<JobEntity> update = cb.createCriteriaUpdate(JobEntity.class);
+        Root<JobEntity> e = update.from(JobEntity.class);
+        update.set(JobEntityColumn.STATUS, newStatus);
+        update.set(JobEntityColumn.FINISHED_TIME, JobDateUtils.getCurrentDate());
+        update.set(JobEntityColumn.DESCRIPTION, description);
+
+        update.where(cb.equal(e.get(JobEntityColumn.ID), id),
+                cb.equal(e.get(JobEntityColumn.STATUS), oldStatus));
+
+        return entityManager.createQuery(update).executeUpdate();
     }
 
+    @Transactional(rollbackFor = Exception.class)
+    @Override
+    public int updateStatusToCanceledWhenHeartTimeout(Long id, int heartTimeoutSeconds, String description) {
+
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaUpdate<JobEntity> update = cb.createCriteriaUpdate(JobEntity.class);
+        Root<JobEntity> e = update.from(JobEntity.class);
+        update.set(JobEntityColumn.STATUS, JobStatus.CANCELED);
+        update.set(JobEntityColumn.FINISHED_TIME, JobDateUtils.getCurrentDate());
+        update.set(JobEntityColumn.DESCRIPTION, description);
+
+        update.where(cb.equal(e.get(JobEntityColumn.ID), id),
+                cb.lessThan(e.get(JobEntityColumn.LAST_HEART_TIME),
+                        JobDateUtils.getCurrentDateSubtractSeconds(heartTimeoutSeconds)));
+
+        return entityManager.createQuery(update).executeUpdate();
+    }
+
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int updateStatusDescriptionByIdOldStatusAndExecutorDestroyed(Long id, JobStatus oldStatus,
             JobStatus newStatus, String description) {
-        return jobRepository.updateStatusDescriptionByIdOldStatusAndExecutorDestroyed(id, oldStatus, newStatus,
-                description);
+
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaUpdate<JobEntity> update = cb.createCriteriaUpdate(JobEntity.class);
+        Root<JobEntity> e = update.from(JobEntity.class);
+        update.set(JobEntityColumn.STATUS, newStatus);
+        if (newStatus.isTerminated()) {
+            update.set(JobEntityColumn.FINISHED_TIME, JobDateUtils.getCurrentDate());
+        }
+        update.set(JobEntityColumn.DESCRIPTION, description);
+
+        update.where(cb.equal(e.get(JobEntityColumn.ID), id),
+                cb.equal(e.get(JobEntityColumn.STATUS), oldStatus),
+                cb.isNull(e.get(JobEntityColumn.EXECUTOR_DESTROYED_TIME)));
+
+        return entityManager.createQuery(update).executeUpdate();
     }
 
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int updateJobToCanceling(Long id, JobStatus oldStatus) {
-        return jobRepository.updateJobToCancelling(id, oldStatus, JobStatus.CANCELING, JobDateUtils.getCurrentDate());
+
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaUpdate<JobEntity> update = cb.createCriteriaUpdate(JobEntity.class);
+        Root<JobEntity> e = update.from(JobEntity.class);
+        update.set(JobEntityColumn.STATUS, JobStatus.CANCELING);
+        update.set(JobEntityColumn.CANCELLING_TIME, JobDateUtils.getCurrentDate());
+
+        update.where(cb.equal(e.get(JobEntityColumn.ID), id),
+                cb.equal(e.get(JobEntityColumn.STATUS), oldStatus));
+
+        return entityManager.createQuery(update).executeUpdate();
+
     }
 
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int updateExecutorToDestroyed(Long id) {
-        return jobRepository.updateExecutorToDestroyed(id, JobDateUtils.getCurrentDate());
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaUpdate<JobEntity> update = cb.createCriteriaUpdate(JobEntity.class);
+        Root<JobEntity> e = update.from(JobEntity.class);
+        update.set(JobEntityColumn.EXECUTOR_DESTROYED_TIME, JobDateUtils.getCurrentDate());
+
+        update.where(cb.equal(e.get(JobEntityColumn.ID), id),
+                cb.isNull(e.get(JobEntityColumn.EXECUTOR_DESTROYED_TIME)));
+
+        return entityManager.createQuery(update).executeUpdate();
     }
 
     @Override

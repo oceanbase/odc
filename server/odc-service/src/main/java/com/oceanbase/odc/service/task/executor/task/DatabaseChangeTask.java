@@ -75,7 +75,7 @@ import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.odc.service.session.initializer.ConsoleTimeoutInitializer;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.odc.service.task.caller.JobContext;
-import com.oceanbase.odc.service.task.constants.JobDataMapConstants;
+import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.tools.dbbrowser.parser.ParserUtil;
 import com.oceanbase.tools.dbbrowser.parser.constant.GeneralSqlType;
@@ -123,19 +123,15 @@ public class DatabaseChangeTask extends BaseTask<FlowTaskResult> {
     private DataMaskingService maskingService;
 
     @Override
-    protected void onInit(JobContext context) {
+    protected void doStart(JobContext context) {
         log.info("Async task  start to run, task id:{}", this.getTaskId());
         log.info("Start read sql content, taskId={}", this.getTaskId());
         init();
-    }
-
-    @Override
-    protected void onStart(JobContext context) {
         run();
     }
 
     @Override
-    protected void onStop() {
+    protected void doStop() {
         expireConnectionSession();
         canceled = true;
     }
@@ -211,13 +207,13 @@ public class DatabaseChangeTask extends BaseTask<FlowTaskResult> {
 
     private void init() {
         this.taskId = getJobContext().getJobIdentity().getId();
-        this.parameters = JsonUtils.fromJson(getJobData().get(JobDataMapConstants.META_DB_TASK_PARAMETER),
+        this.parameters = JsonUtils.fromJson(getJobParameters().get(JobParametersKeyConstants.META_TASK_PARAMETER_JSON),
                 DatabaseChangeParameters.class);
         this.connectionSession = generateSession();
         String sqlStr = null;
         if (StringUtils.isNotEmpty(parameters.getSqlContent())) {
             sqlStr = parameters.getSqlContent();
-        } else if (getJobData().get(JobDataMapConstants.OBJECT_METADATA) != null) {
+        } else if (getJobParameters().get(JobParametersKeyConstants.OBJECT_METADATA) != null) {
             try {
                 sqlStr = readSqlFiles();
             } catch (IOException exception) {
@@ -233,15 +229,16 @@ public class DatabaseChangeTask extends BaseTask<FlowTaskResult> {
 
     private ConnectionSession generateSession() {
         ConnectionConfig connectionConfig =
-                JsonUtils.fromJson(getJobData().get(JobDataMapConstants.CONNECTION_CONFIG), ConnectionConfig.class);
+                JsonUtils.fromJson(getJobParameters().get(JobParametersKeyConstants.CONNECTION_CONFIG),
+                        ConnectionConfig.class);
         connectionConfig.setId(1L);
-        connectionConfig.setDefaultSchema(getJobData().get(JobDataMapConstants.CURRENT_SCHEMA_KEY));
+        connectionConfig.setDefaultSchema(getJobParameters().get(JobParametersKeyConstants.CURRENT_SCHEMA));
         DefaultConnectSessionFactory sessionFactory = new DefaultConnectSessionFactory(connectionConfig);
         sessionFactory.setSessionTimeoutMillis(parameters.getTimeoutMillis());
         ConnectionSession connectionSession = sessionFactory.generateSession();
         if (connectionSession.getDialectType() == DialectType.OB_ORACLE) {
             ConnectionSessionUtil.initConsoleSessionTimeZone(connectionSession,
-                    getJobData().get(JobDataMapConstants.SESSION_TIME_ZONE));
+                    getJobParameters().get(JobParametersKeyConstants.SESSION_TIME_ZONE));
         }
         SqlCommentProcessor processor = new SqlCommentProcessor(connectionConfig.getDialectType(), true, true);
         ConnectionSessionUtil.setSqlCommentProcessor(connectionSession, processor);
@@ -255,7 +252,8 @@ public class DatabaseChangeTask extends BaseTask<FlowTaskResult> {
         StringBuilder sb = new StringBuilder();
 
         List<ObjectMetadata> metadatas = JsonUtils.fromJson(
-                getJobData().get(JobDataMapConstants.OBJECT_METADATA), new TypeReference<List<ObjectMetadata>>() {});
+                getJobParameters().get(JobParametersKeyConstants.OBJECT_METADATA),
+                new TypeReference<List<ObjectMetadata>>() {});
 
         for (ObjectMetadata metadata : metadatas) {
             String objectContentStr = new ObjectStorageHandler(getCloudObjectStorageService(), "/opt/odc/data")
@@ -291,7 +289,7 @@ public class DatabaseChangeTask extends BaseTask<FlowTaskResult> {
         try {
             jsonFileName = writeJsonFile(fileDir, queryResultSet);
             FileMeta fileMeta = writeZipFile(fileDir, queryResultSet, getCloudObjectStorageService(),
-                    Long.parseLong(getJobData().get(JobDataMapConstants.FLOW_INSTANCE_ID)));
+                    Long.parseLong(getJobParameters().get(JobParametersKeyConstants.FLOW_INSTANCE_ID)));
             zipFileDownloadUrl = fileMeta.getDownloadUrl();
             zipFileId = fileMeta.getFileId();
             writeFileSuccessCount++;

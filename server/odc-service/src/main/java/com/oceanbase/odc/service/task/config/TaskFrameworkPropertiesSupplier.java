@@ -13,28 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.task.schedule.provider;
+package com.oceanbase.odc.service.task.config;
 
-import java.util.Collections;
-import java.util.List;
+import java.util.function.Supplier;
 
-import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
+import com.oceanbase.odc.service.common.util.SpringContextUtil;
 
 /**
  * @author yaobin
- * @date 2023-12-15
+ * @date 2024-01-16
  * @since 4.2.4
  */
-public class FixedHostUrlProvider implements HostUrlProvider {
+public class TaskFrameworkPropertiesSupplier {
 
-    private final TaskFrameworkProperties taskFrameworkProperties;
-
-    public FixedHostUrlProvider(TaskFrameworkProperties taskFrameworkProperties) {
-        this.taskFrameworkProperties = taskFrameworkProperties;
-    }
-
-    @Override
-    public List<String> hostUrl() {
-        return Collections.singletonList(taskFrameworkProperties.getOdcUrl());
+    public static Supplier<TaskFrameworkProperties> getSupplier() {
+        return () -> SpringContextUtil.getBean(TaskFrameworkProperties.class);
     }
 }

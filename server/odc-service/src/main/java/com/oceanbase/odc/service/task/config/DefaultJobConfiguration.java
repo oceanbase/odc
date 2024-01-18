@@ -20,6 +20,7 @@ import org.quartz.Scheduler;
 
 import com.oceanbase.odc.common.event.EventPublisher;
 import com.oceanbase.odc.service.connection.ConnectionService;
+import com.oceanbase.odc.service.objectstorage.cloud.model.CloudEnvConfigurations;
 import com.oceanbase.odc.service.schedule.ScheduleTaskService;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.caller.K8sJobClient;
@@ -41,6 +42,8 @@ public abstract class DefaultJobConfiguration implements JobConfiguration {
 
     protected TaskFrameworkProperties taskFrameworkProperties;
 
+    protected CloudEnvConfigurations cloudEnvConfigurations;
+
     protected TaskService taskService;
 
     protected ScheduleTaskService scheduleTaskService;
@@ -49,7 +52,7 @@ public abstract class DefaultJobConfiguration implements JobConfiguration {
 
     protected JobDispatcher jobDispatcher;
 
-    protected Scheduler scheduler;
+    protected Scheduler daemonScheduler;
 
     protected K8sJobClient k8sJobClient;
 

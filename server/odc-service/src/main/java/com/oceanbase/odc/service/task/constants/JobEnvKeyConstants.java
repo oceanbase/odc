@@ -23,15 +23,15 @@ package com.oceanbase.odc.service.task.constants;
  * @date 2023-11-21
  * @since 4.2.4
  */
-public class JobEnvConstants {
+public class JobEnvKeyConstants {
 
-    public static final String TASK_ALL_PARAMETERS = "ODC_TASK_ALL_PARAMETERS";
+    public static final String ODC_JOB_CONTEXT = "ODC_JOB_CONTEXT";
 
-    public static final String TASK_RUN_MODE = "ODC_TASK_RUN_MODE";
+    public static final String ODC_TASK_RUN_MODE = "ODC_TASK_RUN_MODE";
 
-    public static final String BOOT_MODE = "ODC_BOOT_MODE";
+    public static final String ODC_BOOT_MODE = "ODC_BOOT_MODE";
 
-    public static final String LOG_DIRECTORY = "odc.log.directory";
+    public static final String ODC_LOG_DIRECTORY = "odc.log.directory";
 
     public static final String ODC_SERVER_PORT = "ODC_SERVER_PORT";
 
@@ -40,5 +40,8 @@ public class JobEnvConstants {
     public static final String ODC_SERVICE_PORT = "ODC_SERVICE_PORT";
 
     public static final String ODC_IMAGE_NAME = "ODC_IMAGE_NAME";
+
+    public static final String ODC_OBJECT_STORAGE_CONFIGURATION = "ODC_OBJECT_STORAGE_CONFIGURATION";
+
 
 }

@@ -20,6 +20,7 @@ import org.quartz.Scheduler;
 
 import com.oceanbase.odc.common.event.EventPublisher;
 import com.oceanbase.odc.service.connection.ConnectionService;
+import com.oceanbase.odc.service.objectstorage.cloud.model.CloudEnvConfigurations;
 import com.oceanbase.odc.service.schedule.ScheduleTaskService;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.caller.K8sJobClient;
@@ -38,13 +39,15 @@ public interface JobConfiguration {
 
     TaskFrameworkProperties getTaskFrameworkProperties();
 
+    CloudEnvConfigurations getCloudEnvConfigurations();
+
     TaskService getTaskService();
 
     ScheduleTaskService getScheduleTaskService();
 
     ConnectionService getConnectionService();
 
-    Scheduler getScheduler();
+    Scheduler getDaemonScheduler();
 
     JobDispatcher getJobDispatcher();
 

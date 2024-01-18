@@ -105,6 +105,7 @@ import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.constants.JobAttributeKeyConstants;
 import com.oceanbase.odc.service.task.constants.JobUrlConstants;
+import com.oceanbase.odc.service.task.enums.TaskRunModeEnum;
 import com.oceanbase.odc.service.task.executor.task.ObjectStorageHandler;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
@@ -205,32 +206,8 @@ public class FlowTaskInstanceService {
             return null;
         }
 
-        // forward to target host when task is not be executed on this machine or running in k8s pod
-        if (taskFrameworkProperties.getRunMode().isK8s() && taskEntity.getJobId() != null) {
-            JobEntity jobEntity = taskFrameworkService.find(taskEntity.getJobId());
-            if (jobEntity != null) {
-                if (!jobEntity.getStatus().isTerminated()) {
-                    log.info("job: {} is not finished, try to get log from remote pod.", jobEntity.getId());
-
-                    String hostWithUrl = jobEntity.getExecutorEndpoint() + String.format(JobUrlConstants.LOG_QUERY,
-                            jobEntity.getId()) + "?logType=" + level.getName();
-                    SuccessResponse<String> response =
-                            HttpUtil.request(hostWithUrl, new TypeReference<SuccessResponse<String>>() {});
-                    return response.getData();
-                } else if (cloudObjectStorageService.supported()) {
-                    String objId = taskFrameworkService.findByJobIdAndAttributeKey(jobEntity.getId(),
-                            JobAttributeKeyConstants.LOG_ALL_OBJECT_ID);
-                    String bucketName = taskFrameworkService.findByJobIdAndAttributeKey(jobEntity.getId(),
-                            JobAttributeKeyConstants.OSS_BUCKET_NAME);
-
-                    log.info("job: {} is finished, try to get log from local or oss.", jobEntity.getId());
-                    ObjectStorageHandler objectStorageHandler =
-                            new ObjectStorageHandler(cloudObjectStorageService, localFileOperator);
-                    return objId != null ? objectStorageHandler.loadObjectContentAsString(
-                            ObjectMetadata.builder().bucketName(bucketName).objectId(objId).build())
-                            : "No log message";
-                }
-            }
+        if (taskFrameworkProperties.isEnableTaskFramework() && taskEntity.getJobId() != null) {
+            return getLogByTaskFramework(level, taskEntity.getJobId());
         }
 
         if (!dispatchChecker.isTaskEntityOnThisMachine(taskEntity)) {
@@ -242,6 +219,44 @@ public class FlowTaskInstanceService {
             return response.getContentByType(new TypeReference<SuccessResponse<String>>() {}).getData();
         }
         return taskService.getLog(taskEntity.getCreatorId(), taskEntity.getId() + "", taskEntity.getTaskType(), level);
+    }
+
+    private String getLogByTaskFramework(OdcTaskLogLevel level, Long jobId) throws IOException {
+        // forward to target host when task is not be executed on this machine or running in k8s pod
+        JobEntity jobEntity = taskFrameworkService.find(jobId);
+        PreConditions.notNull(jobEntity, "job not found by id " + jobId);
+
+        if (!Objects.equals(jobEntity.getRunMode(), TaskRunModeEnum.K8S.name())) {
+            return "No log message at this moment";
+        }
+
+        if (cloudObjectStorageService.supported()) {
+            String objId = taskFrameworkService.findByJobIdAndAttributeKey(jobEntity.getId(),
+                    JobAttributeKeyConstants.LOG_STORAGE_ALL_OBJECT_ID);
+            String bucketName = taskFrameworkService.findByJobIdAndAttributeKey(jobEntity.getId(),
+                    JobAttributeKeyConstants.LOG_STORAGE_BUCKET_NAME);
+
+            if (objId != null && bucketName != null) {
+                if (log.isDebugEnabled()) {
+                    log.debug("job: {} is finished, try to get log from local or oss.", jobEntity.getId());
+                }
+                ObjectStorageHandler objectStorageHandler =
+                        new ObjectStorageHandler(cloudObjectStorageService, localFileOperator);
+                return objectStorageHandler.loadObjectContentAsString(
+                        ObjectMetadata.builder().bucketName(bucketName).objectId(objId).build());
+            }
+        }
+        if (jobEntity.getExecutorDestroyedTime() == null && jobEntity.getExecutorEndpoint() != null) {
+            if (log.isDebugEnabled()) {
+                log.debug("job: {} is not finished, try to get log from remote pod.", jobEntity.getId());
+            }
+            String hostWithUrl = jobEntity.getExecutorEndpoint() + String.format(JobUrlConstants.LOG_QUERY,
+                    jobEntity.getId()) + "?logType=" + level.getName();
+            SuccessResponse<String> response =
+                    HttpUtil.request(hostWithUrl, new TypeReference<SuccessResponse<String>>() {});
+            return response.getData();
+        }
+        return "No log message at this moment";
     }
 
     public List<? extends FlowTaskResult> getResult(@NotNull Long id) throws IOException {
@@ -578,12 +593,6 @@ public class FlowTaskInstanceService {
     }
 
     private List<DatabaseChangeResult> getAsyncResult(@NonNull TaskEntity taskEntity) throws IOException {
-        if (taskFrameworkProperties.getRunMode().isK8s() && taskEntity.getJobId() != null) {
-            JobEntity job = taskFrameworkService.find(taskEntity.getJobId());
-            if (job != null) {
-                return getDatabaseChangeResults(taskEntity);
-            }
-        }
         if (!dispatchChecker.isTaskEntityOnThisMachine(taskEntity)) {
             /**
              * 任务不在当前机器上，需要进行 {@code RPC} 转发获取
@@ -627,20 +636,6 @@ public class FlowTaskInstanceService {
                 }
             }
         }
-        if (cloudObjectStorageService.supported()) {
-            result.setZipFileDownloadUrl(databaseChangeOssUrlCache.get(taskEntity.getId()));
-        }
-        return Collections.singletonList(result);
-    }
-
-    private List<DatabaseChangeResult> getDatabaseChangeResults(TaskEntity taskEntity) {
-        List<DatabaseChangeResult> results = innerGetResult(taskEntity, DatabaseChangeResult.class);
-        if (CollectionUtils.isEmpty(results)) {
-            return Collections.emptyList();
-        }
-        Verify.singleton(results, "OdcAsyncTaskResults");
-
-        DatabaseChangeResult result = results.get(0);
         if (cloudObjectStorageService.supported()) {
             result.setZipFileDownloadUrl(databaseChangeOssUrlCache.get(taskEntity.getId()));
         }

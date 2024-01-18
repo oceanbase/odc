@@ -74,7 +74,7 @@ public class ImmediateJobDispatcher implements JobDispatcher {
     }
 
     private PodConfig createDefaultPodConfig(TaskFrameworkProperties taskFrameworkProperties) {
-        K8sProperties k8s = taskFrameworkProperties.getK8s();
+        K8sProperties k8s = taskFrameworkProperties.getK8sProperties();
 
         PodConfig podConfig = new PodConfig();
         podConfig.setNamespace(k8s.getNamespace());

@@ -13,24 +13,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.task.executor.logger;
+package com.oceanbase.odc.service.task.listener;
 
-import java.io.IOException;
-import java.util.Map;
-
-import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
+import com.oceanbase.odc.common.event.AbstractEvent;
+import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
+
+import lombok.Getter;
 
 /**
  * @author yaobin
- * @date 2023-12-13
+ * @date 2024-01-12
  * @since 4.2.4
  */
-public interface LogBiz {
+public class JobTerminateEvent extends AbstractEvent {
 
-    String getLog(Long jobId, String logType, Long fetchMaxLine, Long fetchMaxByteSize);
+    @Getter
+    private final JobIdentity ji;
 
-    Map<String, String> uploadLogFileToCloudStorage(JobIdentity ji, CloudObjectStorageService cloudObjectStorageService)
-            throws IOException;
+    @Getter
+    private final JobStatus status;
 
+    /**
+     * Constructs a prototypical Event.
+     *
+     * @param ji job identity
+     * @param status job status
+     */
+    public JobTerminateEvent(JobIdentity ji, JobStatus status) {
+        super(ji, "DestroyExecutorEvent");
+        this.ji = ji;
+        this.status = status;
+    }
 }

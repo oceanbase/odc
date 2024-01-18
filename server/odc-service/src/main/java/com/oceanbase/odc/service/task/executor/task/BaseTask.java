@@ -18,17 +18,17 @@ package com.oceanbase.odc.service.task.executor.task;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.Optional;
 
-import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
 import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfiguration;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.constants.JobConstants;
-import com.oceanbase.odc.service.task.constants.JobDataMapConstants;
 import com.oceanbase.odc.service.task.constants.JobUrlConstants;
 import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.executor.logger.LogBiz;
 import com.oceanbase.odc.service.task.executor.logger.LogBizImpl;
+import com.oceanbase.odc.service.task.util.JobUtils;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -42,7 +42,7 @@ public abstract class BaseTask<RESULT> implements Task<RESULT> {
     private static final int REPORT_RESULT_RETRY_TIMES = Integer.MAX_VALUE;
 
     private JobContext context;
-    private Map<String, String> jobData;
+    private Map<String, String> jobParameters;
     private TaskReporter reporter;
 
     private volatile JobStatus status = JobStatus.PREPARING;
@@ -51,14 +51,13 @@ public abstract class BaseTask<RESULT> implements Task<RESULT> {
     @Override
     public void start(JobContext context) {
         this.context = context;
-        try {
-            this.jobData = Collections.unmodifiableMap(getJobContext().getJobParameters());
-            this.reporter = new TaskReporter(context.getHostUrls());
-            TaskMonitor taskMonitor = new TaskMonitor(this, this.reporter);
-            initCloudObjectStorageService();
-            onInit(context);
+        this.reporter = new TaskReporter(context.getHostUrls());
+        this.jobParameters = Collections.unmodifiableMap(getJobContext().getJobParameters());
+        initCloudObjectStorageService();
+        updateStatus(JobStatus.RUNNING);
+        try (TaskMonitor taskMonitor = new TaskMonitor(this, this.reporter)) {
             taskMonitor.monitor();
-            onStart(context);
+            doStart(context);
         } catch (Throwable e) {
             log.info("Task failed, id: {}, details: {}", context.getJobIdentity().getId(), e);
             updateStatus(JobStatus.FAILED);
@@ -76,7 +75,7 @@ public abstract class BaseTask<RESULT> implements Task<RESULT> {
             return true;
         }
         try {
-            onStop();
+            doStop();
         } catch (Throwable e) {
             log.warn("stop task id : {} failed", getJobContext().getJobIdentity().getId(), e);
             return false;
@@ -88,12 +87,8 @@ public abstract class BaseTask<RESULT> implements Task<RESULT> {
 
 
     private void initCloudObjectStorageService() {
-        if (getJobData().get(JobDataMapConstants.OBJECT_STORAGE_CONFIGURATION) != null) {
-            ObjectStorageConfiguration storageConfig = JsonUtils.fromJson(
-                    getJobData().get(JobDataMapConstants.OBJECT_STORAGE_CONFIGURATION),
-                    ObjectStorageConfiguration.class);
-            this.cloudObjectStorageService = CloudObjectStorageServiceBuilder.build(storageConfig);
-        }
+        Optional<ObjectStorageConfiguration> storageConfig = JobUtils.getObjectStorageConfiguration();
+        storageConfig.ifPresent(osc -> this.cloudObjectStorageService = CloudObjectStorageServiceBuilder.build(osc));
     }
 
     protected CloudObjectStorageService getCloudObjectStorageService() {
@@ -114,8 +109,8 @@ public abstract class BaseTask<RESULT> implements Task<RESULT> {
         this.status = status;
     }
 
-    protected Map<String, String> getJobData() {
-        return this.jobData;
+    protected Map<String, String> getJobParameters() {
+        return this.jobParameters;
     }
 
     private void doFinal() {
@@ -128,6 +123,7 @@ public abstract class BaseTask<RESULT> implements Task<RESULT> {
         uploadLogFileToCloudStorage(finalResult);
 
         log.info("Task id: {}, remained work be completed, report finished status.", getJobId());
+
         // Report finish signal to task server
         reportTaskResultWithRetry(finalResult, REPORT_RESULT_RETRY_TIMES);
         log.info("Task id: {} exit.", getJobId());
@@ -136,13 +132,21 @@ public abstract class BaseTask<RESULT> implements Task<RESULT> {
     private void uploadLogFileToCloudStorage(DefaultTaskResult finalResult) {
         if (getCloudObjectStorageService() != null && getCloudObjectStorageService().supported()) {
             LogBiz biz = new LogBizImpl();
-            Map<String, String> logMap =
-                    biz.uploadLogFileToCloudStorage(getJobContext().getJobIdentity(), getCloudObjectStorageService());
+            Map<String, String> logMap = null;
+            try {
+                logMap = biz.uploadLogFileToCloudStorage(getJobContext().getJobIdentity(),
+                        getCloudObjectStorageService());
+            } catch (Throwable e) {
+                log.warn("Upload job {} log file to cloud storage occur error", getJobId(), e);
+            }
             finalResult.setLogMetadata(logMap);
         }
     }
 
-    private void reportTaskResultWithRetry(TaskResult result, int retries) {
+    private void reportTaskResultWithRetry(DefaultTaskResult result, int retries) {
+        if (result.getStatus() == JobStatus.DONE) {
+            result.setProgress(100.0);
+        }
         int retryTimes = 0;
         while (retryTimes++ < retries) {
             try {
@@ -165,11 +169,9 @@ public abstract class BaseTask<RESULT> implements Task<RESULT> {
         return getJobContext().getJobIdentity().getId();
     }
 
-    protected abstract void onInit(JobContext context) throws Exception;
+    protected abstract void doStart(JobContext context) throws Exception;
 
-    protected abstract void onStart(JobContext context) throws Exception;
-
-    protected abstract void onStop() throws Exception;
+    protected abstract void doStop() throws Exception;
 
     protected abstract void onFail(Throwable e);
 

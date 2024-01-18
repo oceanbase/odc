@@ -22,7 +22,7 @@ package com.oceanbase.odc.service.task.caller;
  */
 public interface ExecutorIdentifier {
 
-    String getSchema();
+    String getProtocol();
 
     String getHost();
 
