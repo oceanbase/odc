@@ -16,6 +16,8 @@
 
 package com.oceanbase.odc.service.task.caller;
 
+import java.io.IOException;
+
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.metadb.task.JobEntity;
@@ -25,7 +27,9 @@ import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.config.JobConfigurationValidator;
 import com.oceanbase.odc.service.task.constants.JobUrlConstants;
 import com.oceanbase.odc.service.task.enums.JobCallerAction;
+import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.listener.JobCallerEvent;
+import com.oceanbase.odc.service.task.listener.JobTerminateEvent;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 import com.oceanbase.odc.service.task.util.HttpUtil;
@@ -42,14 +46,43 @@ public abstract class BaseJobCaller implements JobCaller {
 
     @Override
     public void start(JobContext context) throws JobException {
+        JobConfigurationValidator.validComponent();
+        JobConfiguration jobConfiguration = JobConfigurationHolder.getJobConfiguration();
+        TaskFrameworkService taskFrameworkService = jobConfiguration.getTaskFrameworkService();
+        ExecutorIdentifier executorIdentifier = null;
+        JobIdentity ji = context.getJobIdentity();
         try {
-            ExecutorIdentifier executorIdentifier = doStart(context);;
-            publishEvent(new JobCallerEvent(context.getJobIdentity(), JobCallerAction.START, true,
-                    executorIdentifier, null));
+            executorIdentifier = doStart(context);
+            int rows = taskFrameworkService.startSuccess(ji.getId(), executorIdentifier.toString());
+            if (rows > 0) {
+                afterStartSucceed(executorIdentifier, ji);
+            } else {
+                afterStartFailed(ji, jobConfiguration, executorIdentifier,
+                        new JobException("Update job status to RUNNING failed."));
+            }
+
         } catch (Exception ex) {
-            publishEvent(new JobCallerEvent(context.getJobIdentity(), JobCallerAction.START, false, ex));
-            throw new JobException(ex);
+            afterStartFailed(ji, jobConfiguration, executorIdentifier, ex);
         }
+    }
+
+    private void afterStartSucceed(ExecutorIdentifier executorIdentifier, JobIdentity ji) {
+        log.info("Start job {} succeed.", ji.getId());
+        publishEvent(new JobCallerEvent(ji, JobCallerAction.START, true, executorIdentifier, null));
+    }
+
+    private void afterStartFailed(JobIdentity ji, JobConfiguration jobConfiguration,
+            ExecutorIdentifier executorIdentifier, Exception ex) throws JobException {
+        if (executorIdentifier != null) {
+            try {
+                jobConfiguration.getJobDispatcher().destroy(executorIdentifier);
+            } catch (JobException e) {
+                // if destroy failed, domain job will destroy it
+                log.warn("Destroy executor {} occur exception", executorIdentifier);
+            }
+        }
+        publishEvent(new JobCallerEvent(ji, JobCallerAction.START, false, ex));
+        throw new JobException(ex);
     }
 
     @Override
@@ -63,24 +96,45 @@ public abstract class BaseJobCaller implements JobCaller {
 
         try {
             if (executorEndpoint != null) {
-                String url = executorEndpoint + String.format(JobUrlConstants.STOP_TASK, ji.getId());
-                SuccessResponse<Boolean> response =
-                        HttpUtil.request(url, new TypeReference<SuccessResponse<Boolean>>() {});
-                log.info("Stop job {} response is {}.", ji.getId(), JsonUtils.toJson(response));
-                if (response != null && response.getSuccessful() && response.getData()) {
-                    publishEvent(new JobCallerEvent(ji, JobCallerAction.STOP, true, null));
-                } else {
-                    publishEvent(new JobCallerEvent(ji, JobCallerAction.STOP, false, null));
-                }
+                tryStop(jobConfiguration, ji, executorEndpoint);
             } else {
-                publishEvent(new JobCallerEvent(ji, JobCallerAction.STOP, true, null));
+                afterStopSucceed(jobConfiguration, ji);
             }
-            log.info("Stop job {} successfully, executor endpoint {}.", ji.getId(), executorEndpoint);
-        } catch (Exception e) {
-            publishEvent(new JobCallerEvent(ji, JobCallerAction.STOP, false, e));
-            throw new JobException(e);
-        }
 
+        } catch (Exception e) {
+            afterStopFailed(ji, e);
+        }
+    }
+
+    private void tryStop(JobConfiguration jobConfiguration, JobIdentity ji, String executorEndpoint)
+            throws IOException, JobException {
+        String url = executorEndpoint + String.format(JobUrlConstants.STOP_TASK, ji.getId());
+        SuccessResponse<Boolean> response =
+                HttpUtil.request(url, new TypeReference<SuccessResponse<Boolean>>() {});
+        log.info("Stop job {} response is {}.", ji.getId(), JsonUtils.toJson(response));
+        if (response != null && response.getSuccessful() && response.getData()) {
+            int rows = jobConfiguration.getTaskFrameworkService()
+                    .updateStatusDescriptionByIdOldStatus(ji.getId(),
+                            JobStatus.CANCELING, JobStatus.CANCELED, "stop job completed");
+            if (rows > 0) {
+                log.info("Update job {} status to {}", ji.getId(), JobStatus.CANCELED.name());
+            }
+            afterStopSucceed(jobConfiguration, ji);
+        } else {
+            afterStopFailed(ji, new JobException("Stop job response is " + response + ",not succeed"));
+        }
+    }
+
+    protected void afterStopSucceed(JobConfiguration jobConfiguration, JobIdentity ji) {
+        log.info("Stop job {} successfully.", ji.getId());
+        jobConfiguration.getEventPublisher().publishEvent(new JobTerminateEvent(ji, JobStatus.CANCELED));
+        publishEvent(new JobCallerEvent(ji, JobCallerAction.STOP, true, null));
+    }
+
+    protected void afterStopFailed(JobIdentity ji, Exception e) throws JobException {
+        log.info("Stop job {} failed.", ji.getId());
+        publishEvent(new JobCallerEvent(ji, JobCallerAction.STOP, false, null));
+        throw new JobException("job " + ji.getId() + "be stop failed.", e);
     }
 
     @Override
@@ -93,16 +147,14 @@ public abstract class BaseJobCaller implements JobCaller {
         if (executorIdentifier == null) {
             return;
         }
-        log.info("Preparing stop job {}, executor name {}.", ji.getId(), executorIdentifier);
+        log.info("Preparing destroy job {} executor {}.", ji.getId(), executorIdentifier);
 
-        try {
-            destroy(ExecutorIdentifierParser.parser(executorIdentifier));
-            log.info("Stop job {} successfully, executor name {}.", ji.getId(), executorIdentifier);
-            publishEvent(new JobCallerEvent(ji, JobCallerAction.DESTROY, true, null));
-        } catch (JobException ex) {
-            publishEvent(new JobCallerEvent(ji, JobCallerAction.DESTROY, false, ex));
-            throw ex;
+        destroy(ExecutorIdentifierParser.parser(executorIdentifier));
+        int rows = taskFrameworkService.updateExecutorToDestroyed(ji.getId());
+        if (rows > 0) {
+            log.info("Destroy job {} executor {} succeed.", ji.getId(), executorIdentifier);
         }
+        publishEvent(new JobCallerEvent(ji, JobCallerAction.DESTROY, true, null));
     }
 
 

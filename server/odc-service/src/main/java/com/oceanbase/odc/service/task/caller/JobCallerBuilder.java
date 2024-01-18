@@ -23,7 +23,7 @@ import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.service.objectstorage.cloud.model.CloudEnvConfigurations;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.constants.JobConstants;
-import com.oceanbase.odc.service.task.constants.JobEnvConstants;
+import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
 import com.oceanbase.odc.service.task.enums.TaskRunModeEnum;
 
 /**
@@ -43,20 +43,21 @@ public class JobCallerBuilder {
         PodParam podParam = podConfig.getPodParam();
 
         Map<String, String> envs = podParam.getEnvironments();
-        envs.put(JobEnvConstants.BOOT_MODE, JobConstants.ODC_BOOT_MODE_EXECUTOR);
-        envs.put(JobEnvConstants.TASK_RUN_MODE, TaskRunModeEnum.K8S.name());
+        envs.put(JobEnvKeyConstants.ODC_BOOT_MODE, JobConstants.ODC_BOOT_MODE_EXECUTOR);
+        envs.put(JobEnvKeyConstants.ODC_TASK_RUN_MODE, TaskRunModeEnum.K8S.name());
 
         envs.put("DATABASE_HOST", SystemUtils.getEnvOrProperty("ODC_DATABASE_HOST"));
         envs.put("DATABASE_PORT", SystemUtils.getEnvOrProperty("ODC_DATABASE_PORT"));
         envs.put("DATABASE_NAME", SystemUtils.getEnvOrProperty("ODC_DATABASE_NAME"));
         envs.put("DATABASE_USERNAME", SystemUtils.getEnvOrProperty("ODC_DATABASE_USERNAME"));
         envs.put("DATABASE_PASSWORD", SystemUtils.getEnvOrProperty("ODC_DATABASE_PASSWORD"));
-        envs.put(JobEnvConstants.LOG_DIRECTORY, SystemUtils.getEnvOrProperty(JobEnvConstants.LOG_DIRECTORY));
+        envs.put(JobEnvKeyConstants.ODC_LOG_DIRECTORY,
+                SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_LOG_DIRECTORY));
 
         CloudEnvConfigurations cloudEnvConfigurations = JobConfigurationHolder.getJobConfiguration()
                 .getCloudEnvConfigurations();
         PreConditions.notNull(cloudEnvConfigurations, "cloudEnvConfigurations");
-        envs.put(JobEnvConstants.OBJECT_STORAGE_CONFIGURATION,
+        envs.put(JobEnvKeyConstants.ODC_OBJECT_STORAGE_CONFIGURATION,
                 JsonUtils.toJson(cloudEnvConfigurations.getObjectStorageConfiguration()));
 
         return new K8sJobCaller(k8sJobClient, podConfig);

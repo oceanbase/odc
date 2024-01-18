@@ -14,28 +14,23 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.task.executor;
+package com.oceanbase.odc.service.task.listener;
 
-import java.util.concurrent.CountDownLatch;
+import com.oceanbase.odc.common.event.AbstractEventListener;
 
 import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author yaobin
- * @date 2023-12-13
+ * @date 2023-12-15
  * @since 4.2.4
  */
 @Slf4j
-public class ExitHelper {
+public class DefaultJobTerminateListener extends AbstractEventListener<JobTerminateEvent> {
 
-    private static final CountDownLatch LATCH = new CountDownLatch(1);
 
-    public static void await() {
-        try {
-            LATCH.await();
-        } catch (InterruptedException e) {
-            log.warn("Await thread be interrupted and exit:", e);
-        }
+    @Override
+    public void onEvent(JobTerminateEvent event) {
+
     }
-
 }

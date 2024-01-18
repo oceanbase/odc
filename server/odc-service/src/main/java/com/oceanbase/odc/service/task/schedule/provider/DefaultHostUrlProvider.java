@@ -24,7 +24,7 @@ import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.service.common.model.HostProperties;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
-import com.oceanbase.odc.service.task.constants.JobEnvConstants;
+import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
 import com.oceanbase.odc.service.task.util.JobUtils;
 
 /**
@@ -50,10 +50,11 @@ public class DefaultHostUrlProvider implements HostUrlProvider {
         if (StringUtils.isNotBlank(taskFrameworkProperties.get().getOdcUrl())) {
             return Collections.singletonList(taskFrameworkProperties.get().getOdcUrl());
         }
-        if (StringUtils.isNotBlank(SystemUtils.getEnvOrProperty(JobEnvConstants.ODC_SERVICE_HOST)) &&
-                StringUtils.isNotBlank(SystemUtils.getEnvOrProperty(JobEnvConstants.ODC_SERVER_PORT))) {
-            return Collections.singletonList("http://" + SystemUtils.getEnvOrProperty(JobEnvConstants.ODC_SERVICE_HOST)
-                    + ":" + SystemUtils.getEnvOrProperty(JobEnvConstants.ODC_SERVICE_PORT));
+        if (StringUtils.isNotBlank(SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_SERVICE_HOST)) &&
+                StringUtils.isNotBlank(SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_SERVER_PORT))) {
+            return Collections
+                    .singletonList("http://" + SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_SERVICE_HOST)
+                            + ":" + SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_SERVICE_PORT));
         }
 
         String host =

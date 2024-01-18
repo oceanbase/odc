@@ -16,7 +16,6 @@
 
 package com.oceanbase.odc.service.task.executor.task;
 
-import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
@@ -43,7 +42,7 @@ public abstract class BaseTask<RESULT> implements Task<RESULT> {
     private static final int REPORT_RESULT_RETRY_TIMES = Integer.MAX_VALUE;
 
     private JobContext context;
-    private Map<String, String> jobData;
+    private Map<String, String> jobParameters;
     private TaskReporter reporter;
 
     private volatile JobStatus status = JobStatus.PREPARING;
@@ -52,12 +51,11 @@ public abstract class BaseTask<RESULT> implements Task<RESULT> {
     @Override
     public void start(JobContext context) {
         this.context = context;
-        try {
-            this.jobData = Collections.unmodifiableMap(getJobContext().getJobParameters());
-            this.reporter = new TaskReporter(context.getHostUrls());
-            TaskMonitor taskMonitor = new TaskMonitor(this, this.reporter);
-            initCloudObjectStorageService();
-            doInit(context);
+        this.reporter = new TaskReporter(context.getHostUrls());
+        this.jobParameters = Collections.unmodifiableMap(getJobContext().getJobParameters());
+        initCloudObjectStorageService();
+        updateStatus(JobStatus.RUNNING);
+        try (TaskMonitor taskMonitor = new TaskMonitor(this, this.reporter)) {
             taskMonitor.monitor();
             doStart(context);
         } catch (Throwable e) {
@@ -111,8 +109,8 @@ public abstract class BaseTask<RESULT> implements Task<RESULT> {
         this.status = status;
     }
 
-    protected Map<String, String> getJobData() {
-        return this.jobData;
+    protected Map<String, String> getJobParameters() {
+        return this.jobParameters;
     }
 
     private void doFinal() {
@@ -125,6 +123,7 @@ public abstract class BaseTask<RESULT> implements Task<RESULT> {
         uploadLogFileToCloudStorage(finalResult);
 
         log.info("Task id: {}, remained work be completed, report finished status.", getJobId());
+
         // Report finish signal to task server
         reportTaskResultWithRetry(finalResult, REPORT_RESULT_RETRY_TIMES);
         log.info("Task id: {} exit.", getJobId());
@@ -137,14 +136,17 @@ public abstract class BaseTask<RESULT> implements Task<RESULT> {
             try {
                 logMap = biz.uploadLogFileToCloudStorage(getJobContext().getJobIdentity(),
                         getCloudObjectStorageService());
-            } catch (IOException e) {
+            } catch (Throwable e) {
                 log.warn("Upload job {} log file to cloud storage occur error", getJobId(), e);
             }
             finalResult.setLogMetadata(logMap);
         }
     }
 
-    private void reportTaskResultWithRetry(TaskResult result, int retries) {
+    private void reportTaskResultWithRetry(DefaultTaskResult result, int retries) {
+        if (result.getStatus() == JobStatus.DONE) {
+            result.setProgress(100.0);
+        }
         int retryTimes = 0;
         while (retryTimes++ < retries) {
             try {
@@ -166,8 +168,6 @@ public abstract class BaseTask<RESULT> implements Task<RESULT> {
     private Long getJobId() {
         return getJobContext().getJobIdentity().getId();
     }
-
-    protected abstract void doInit(JobContext context) throws Exception;
 
     protected abstract void doStart(JobContext context) throws Exception;
 

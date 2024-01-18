@@ -28,6 +28,7 @@ import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.listener.DestroyExecutorEvent;
+import com.oceanbase.odc.service.task.listener.JobTerminateEvent;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 import com.oceanbase.odc.service.task.schedule.SingleJobProperties;
 
@@ -57,32 +58,37 @@ public class CheckRunningJob implements Job {
         // find heart timeout job
         Page<JobEntity> jobs = getConfiguration().getTaskFrameworkService()
                 .findHeartTimeTimeoutJobs(heartTimeoutPeriod, 0, size);
-        jobs.forEach(this::handleJobRetryingOrFailed);
+        jobs.forEach(this::handleJobRetryingOrCanceled);
     }
 
-    private void handleJobRetryingOrFailed(JobEntity a) {
+    private void handleJobRetryingOrCanceled(JobEntity a) {
+        // destroy executor
         getConfiguration().getEventPublisher().publishEvent(new DestroyExecutorEvent(JobIdentity.of(a.getId())));
 
         if (checkJobIfRetryNecessary(a)) {
             log.info("Need to restart job {}, try to destroy executor.", a.getId());
-            int count = getConfiguration().getTaskFrameworkService()
+            int rows = getConfiguration().getTaskFrameworkService()
                     .updateStatusDescriptionByIdOldStatusAndExecutorDestroyed(a.getId(), JobStatus.RUNNING,
                             JobStatus.RETRYING, "Heart timeout and retrying job");
-            if (count > 0) {
+            if (rows > 0) {
                 log.info("Job {} set status to RETRYING.", a.getId());
             }
 
         } else {
-            log.info("No need to restart job {}, try to set status FAILED.", a.getId());
+            log.info("No need to restart job {}, try to set status to CANCELED.", a.getId());
             TaskFrameworkProperties taskFrameworkProperties = getConfiguration().getTaskFrameworkProperties();
-            int count = getConfiguration().getTaskFrameworkService()
+            int rows = getConfiguration().getTaskFrameworkService()
                     .updateStatusToCanceledWhenHeartTimeout(a.getId(),
                             taskFrameworkProperties.getJobHeartTimeoutSeconds(),
-                            "Heart timeout and job failed.");
-            if (count >= 0) {
-                log.info("Set job {} status FAILED accomplished.", a.getId());
+                            "Heart timeout and set job to status CANCELED.");
+            if (rows >= 0) {
+                getConfiguration().getEventPublisher().publishEvent(
+                        new JobTerminateEvent(JobIdentity.of(a.getId()), JobStatus.CANCELED));
+                log.info("Set job {} status to CANCELED accomplished.", a.getId());
             }
+
         }
+
     }
 
     private boolean checkJobIfRetryNecessary(JobEntity je) {

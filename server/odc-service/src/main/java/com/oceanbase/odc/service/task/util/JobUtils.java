@@ -26,7 +26,7 @@ import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfiguration;
 import com.oceanbase.odc.service.task.constants.JobConstants;
-import com.oceanbase.odc.service.task.constants.JobEnvConstants;
+import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 
 import lombok.extern.slf4j.Slf4j;
@@ -55,7 +55,7 @@ public class JobUtils {
     }
 
     public static int getPort() {
-        String port = SystemUtils.getEnvOrProperty(JobEnvConstants.ODC_SERVER_PORT);
+        String port = SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_SERVER_PORT);
         return port != null ? Integer.parseInt(port) : 8989;
     }
 
@@ -77,7 +77,7 @@ public class JobUtils {
 
     public static Optional<ObjectStorageConfiguration> getObjectStorageConfiguration() {
         String osc;
-        if ((osc = SystemUtils.getEnvOrProperty(JobEnvConstants.OBJECT_STORAGE_CONFIGURATION)) != null) {
+        if ((osc = SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_OBJECT_STORAGE_CONFIGURATION)) != null) {
             ObjectStorageConfiguration storageConfig = JsonUtils.fromJson(osc, ObjectStorageConfiguration.class);
             return Optional.of(storageConfig);
         }

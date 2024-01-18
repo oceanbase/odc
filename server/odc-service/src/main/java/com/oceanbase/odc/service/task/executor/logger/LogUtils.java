@@ -24,7 +24,7 @@ import org.apache.commons.io.LineIterator;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
-import com.oceanbase.odc.service.task.constants.JobEnvConstants;
+import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
 
 import lombok.extern.slf4j.Slf4j;
@@ -75,7 +75,7 @@ public class LogUtils {
 
 
     public static String getBaseLogPath() {
-        String logPath = SystemUtils.getEnvOrProperty(JobEnvConstants.LOG_DIRECTORY);
+        String logPath = SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_LOG_DIRECTORY);
         return logPath == null ? "./log" : logPath;
     }
 

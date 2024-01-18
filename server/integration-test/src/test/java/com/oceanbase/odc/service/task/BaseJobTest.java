@@ -31,7 +31,7 @@ import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.config.K8sProperties;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.constants.JobConstants;
-import com.oceanbase.odc.service.task.constants.JobEnvConstants;
+import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
 import com.oceanbase.odc.service.task.enums.TaskRunModeEnum;
 import com.oceanbase.odc.service.task.executor.logger.LogUtils;
 import com.oceanbase.odc.service.task.schedule.provider.DefaultHostUrlProvider;
@@ -62,9 +62,9 @@ public abstract class BaseJobTest {
         System.setProperty("DATABASE_USERNAME",
                 JdbcUtil.buildUser(tdc.getUsername(), tdc.getTenant(), tdc.getCluster()));
         System.setProperty("DATABASE_PASSWORD", tdc.getPassword());
-        System.setProperty(JobEnvConstants.LOG_DIRECTORY, LogUtils.getBaseLogPath());
-        System.setProperty(JobEnvConstants.BOOT_MODE, JobConstants.ODC_BOOT_MODE_EXECUTOR);
-        System.setProperty(JobEnvConstants.TASK_RUN_MODE, TaskRunModeEnum.K8S.name());
+        System.setProperty(JobEnvKeyConstants.ODC_LOG_DIRECTORY, LogUtils.getBaseLogPath());
+        System.setProperty(JobEnvKeyConstants.ODC_BOOT_MODE, JobConstants.ODC_BOOT_MODE_EXECUTOR);
+        System.setProperty(JobEnvKeyConstants.ODC_TASK_RUN_MODE, TaskRunModeEnum.K8S.name());
         DefaultJobConfiguration jc = new DefaultJobConfiguration() {};
 
         HostUrlProvider urlProvider = new DefaultHostUrlProvider(

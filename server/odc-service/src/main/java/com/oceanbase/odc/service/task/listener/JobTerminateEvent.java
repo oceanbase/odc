@@ -13,46 +13,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.odc.service.task.listener;
 
-import com.oceanbase.odc.service.task.caller.ExecutorIdentifier;
+import com.oceanbase.odc.common.event.AbstractEvent;
+import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
-import com.oceanbase.odc.service.task.schedule.JobScheduler;
 
-import lombok.extern.slf4j.Slf4j;
+import lombok.Getter;
 
 /**
  * @author yaobin
- * @date 2023-12-15
+ * @date 2024-01-12
  * @since 4.2.4
  */
-@Slf4j
-public class DefaultJobCallerListener extends JobCallerListener {
+public class JobTerminateEvent extends AbstractEvent {
 
+    @Getter
+    private final JobIdentity ji;
 
-    public DefaultJobCallerListener(JobScheduler jobScheduler) {}
+    @Getter
+    private final JobStatus status;
 
-    @Override
-    protected void startSucceed(JobIdentity ji, ExecutorIdentifier identifier) {
-
-    }
-
-    @Override
-    protected void startFailed(JobIdentity ji, Exception ex) {
-
-    }
-
-    @Override
-    protected void stopSucceed(JobIdentity ji) {}
-
-    @Override
-    protected void stopFailed(JobIdentity ji, Exception ex) {
-
-    }
-
-    @Override
-    protected void destroySucceed(JobIdentity ji) {
-
+    /**
+     * Constructs a prototypical Event.
+     *
+     * @param ji job identity
+     * @param status job status
+     */
+    public JobTerminateEvent(JobIdentity ji, JobStatus status) {
+        super(ji, "DestroyExecutorEvent");
+        this.ji = ji;
+        this.status = status;
     }
 }

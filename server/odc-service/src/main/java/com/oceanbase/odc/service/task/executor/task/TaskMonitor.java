@@ -16,17 +16,18 @@
 
 package com.oceanbase.odc.service.task.executor.task;
 
-import java.math.BigDecimal;
+import java.io.Closeable;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
+import com.oceanbase.odc.common.util.ObjectUtil;
 import com.oceanbase.odc.core.task.TaskThreadFactory;
 import com.oceanbase.odc.service.task.constants.JobConstants;
-import com.oceanbase.odc.service.task.constants.JobDataMapConstants;
+import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.odc.service.task.constants.JobUrlConstants;
-import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.util.JobUtils;
 
 import lombok.extern.slf4j.Slf4j;
@@ -37,12 +38,13 @@ import lombok.extern.slf4j.Slf4j;
  * @since 4.2.4
  */
 @Slf4j
-public class TaskMonitor {
+public class TaskMonitor implements Closeable {
 
     private final TaskReporter reporter;
     private final Task<?> task;
     private volatile long startTimeMilliSeconds;
-
+    private ScheduledExecutorService reportScheduledExecutor;
+    private ScheduledExecutorService heartScheduledExecutor;
 
     public TaskMonitor(Task<?> task, TaskReporter reporter) {
         this.task = task;
@@ -54,15 +56,12 @@ public class TaskMonitor {
 
         ThreadFactory threadFactory =
                 new TaskThreadFactory(("Task-Monitor-Job-" + getJobId()));
-        ScheduledExecutorService scheduledExecutor = Executors.newSingleThreadScheduledExecutor(threadFactory);
-        scheduledExecutor.scheduleAtFixedRate(() -> {
-
+        this.reportScheduledExecutor = Executors.newSingleThreadScheduledExecutor(threadFactory);
+        reportScheduledExecutor.scheduleAtFixedRate(() -> {
             if (isTimeout()) {
                 getTask().stop();
             }
-            if (getTask().getStatus().isTerminated()) {
-                scheduledExecutor.shutdown();
-            } else {
+            if (!getTask().getStatus().isTerminated()) {
                 try {
                     reportTaskResult();
                 } catch (Throwable e) {
@@ -72,13 +71,11 @@ public class TaskMonitor {
         }, 1, JobConstants.REPORT_TASK_INFO_INTERVAL_SECONDS, TimeUnit.SECONDS);
         log.info("Task monitor init success");
 
-        ScheduledExecutorService heartScheduledExecutor = Executors.newSingleThreadScheduledExecutor(
+        heartScheduledExecutor = Executors.newSingleThreadScheduledExecutor(
                 new TaskThreadFactory(("Task-Heart-Job-" + getJobId())));
 
         heartScheduledExecutor.scheduleAtFixedRate(() -> {
-            if (getTask().getStatus().isTerminated()) {
-                heartScheduledExecutor.shutdown();
-            } else {
+            if (!getTask().getStatus().isTerminated()) {
                 try {
                     getReporter().report(JobUrlConstants.TASK_HEART, buildHeartRequest());
                 } catch (Throwable e) {
@@ -89,25 +86,40 @@ public class TaskMonitor {
         log.info("Task heart init success");
     }
 
+    @Override
+    public void close() {
+        close(reportScheduledExecutor);
+        close(heartScheduledExecutor);
+    }
+
+    private void close(ExecutorService executorService) {
+        try {
+            if (executorService != null) {
+                executorService.shutdownNow();
+            }
+        } catch (Throwable ex) {
+            // shutdown quietly
+        }
+    }
+
     private void reportTaskResult() {
-        double progress = getTask().getProgress();
-        if (new BigDecimal(progress).compareTo(new BigDecimal("100.0")) > 0) {
-            log.warn("progress value {} is illegal, bigger than 100.0", progress);
+        DefaultTaskResult taskResult = DefaultTaskResultBuilder.build(getTask());
+        if (taskResult.getStatus().isTerminated()) {
+            log.info("job {} status {} is terminate, monitor report be ignored.",
+                    taskResult.getJobIdentity().getId(), taskResult.getStatus());
             return;
         }
-        // onUpdate();
-        if (getTask().getStatus() == JobStatus.DONE) {
-            progress = 100.0;
-        }
-        getReporter().report(JobUrlConstants.TASK_RESULT_UPLOAD, DefaultTaskResultBuilder.build(getTask()));
-        log.info("Report task info, id: {}, status: {}, progress: {}%, result: {}",
-                getJobId(),
-                getTask().getStatus(), String.format("%.2f", progress), getTask().getTaskResult());
+
+        DefaultTaskResult copiedResult = ObjectUtil.deepCopy(taskResult, DefaultTaskResult.class);
+        getReporter().report(JobUrlConstants.TASK_RESULT_UPLOAD, copiedResult);
+        log.info("Report task info, id: {}, status: {}, progress: {}%, result: {}", getJobId(),
+                copiedResult.getStatus(), String.format("%.2f", copiedResult.getProgress()), getTask().getTaskResult());
     }
 
     private boolean isTimeout() {
         String milliSecStr =
-                getTask().getJobContext().getJobParameters().get(JobDataMapConstants.TASK_EXECUTION_TIMEOUT_MILLIS);
+                getTask().getJobContext().getJobParameters()
+                        .get(JobParametersKeyConstants.TASK_EXECUTION_TIMEOUT_MILLIS);
 
         if (milliSecStr != null) {
             return System.currentTimeMillis() - startTimeMilliSeconds > Long.parseLong(milliSecStr);
