@@ -1,9 +1,16 @@
 [
   {
     "id": 1,
-    "name": "case1",
-    "description": "RANGE 分区，单分区",
+    "name": "case4",
+    "description": "不支持的操作：将非分区表转化为分区表",
     "input": {
+      "previous": {
+        "schemaName": "schema",
+        "tableName": "table",
+        "partitionOption": {
+          "type": "NOT_PARTITIONED"
+        }
+      },
       "current": {
         "schemaName": "schema",
         "tableName": "table",
@@ -14,6 +21,7 @@
         "partitionDefinitions": [
           {
             "name": "p1",
+            "ordinalPosition": null,
             "maxValues": [
               "1000"
             ]
@@ -21,13 +29,20 @@
         ]
       }
     },
-    "output": "ALTER TABLE `schema`.`table` DROP PARTITION (p1);\n"
+    "output": "-- Unsupported operation to convert non-partitioned table to partitioned table\n"
   },
   {
     "id": 2,
     "name": "case2",
-    "description": "RANGE 分区，多个分区",
+    "description": "不支持的操作：修改分区表的分区方式",
     "input": {
+      "previous": {
+        "schemaName": "schema",
+        "tableName": "table",
+        "partitionOption": {
+          "type": "HASH"
+        }
+      },
       "current": {
         "schemaName": "schema",
         "tableName": "table",
@@ -38,19 +53,14 @@
         "partitionDefinitions": [
           {
             "name": "p1",
+            "ordinalPosition": null,
             "maxValues": [
               "1000"
-            ]
-          },
-          {
-            "name": "p2",
-            "maxValues": [
-              "2000"
             ]
           }
         ]
       }
     },
-    "output": "ALTER TABLE `schema`.`table` DROP PARTITION (p1);\nALTER TABLE `schema`.`table` DROP PARTITION (p2);\n"
+    "output": "-- Unsupported operation to modify table partition type\n"
   }
 ]

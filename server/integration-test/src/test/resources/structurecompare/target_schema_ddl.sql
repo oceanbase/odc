@@ -86,6 +86,11 @@ CREATE TABLE `converse_to_non_partition_table` (
      PARTITION p2 VALUES IN ('category5', 'category6')
 );
 
+CREATE TABLE `modify_partition_type` (
+    `id` INT(11) AUTO_INCREMENT NOT NULL PRIMARY KEY
+)
+PARTITION BY KEY(`id`) PARTITIONS 4;
+
 -- 更新表属性 case
 create table `update_options`(
   `c1` INT(11) NOT NULL,

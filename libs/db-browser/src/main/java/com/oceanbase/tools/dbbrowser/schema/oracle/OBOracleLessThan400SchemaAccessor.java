@@ -17,6 +17,7 @@ package com.oceanbase.tools.dbbrowser.schema.oracle;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -81,8 +82,8 @@ public class OBOracleLessThan400SchemaAccessor extends OBOracleSchemaAccessor {
     @Override
     public DBTableOptions getTableOptions(String schemaName, String tableName) {
         DBTableOptions tableOptions = new DBTableOptions();
-        obtainTableCharset(tableOptions);
-        obtainTableCollation(tableOptions);
+        obtainTableCharset(Collections.singletonList(tableOptions));
+        obtainTableCollation(Collections.singletonList(tableOptions));
         String sql = this.sqlMapper.getSql(Statements.GET_TABLE_OPTION);
         try {
             this.jdbcOperations.query(sql.toString(), new Object[] {schemaName, tableName},
@@ -103,6 +104,8 @@ public class OBOracleLessThan400SchemaAccessor extends OBOracleSchemaAccessor {
         DBTablePartition partition = new DBTablePartition();
         partition.setPartitionOption(new DBTablePartitionOption());
         partition.setPartitionDefinitions(new ArrayList<>());
+        partition.setSchemaName(schemaName);
+        partition.setTableName(tableName);
 
         String sql = this.sqlMapper.getSql(Statements.GET_TABLE_PARTITION);
 

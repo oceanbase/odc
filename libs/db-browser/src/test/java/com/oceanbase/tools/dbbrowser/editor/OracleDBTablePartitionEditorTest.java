@@ -30,7 +30,7 @@ import com.oceanbase.tools.dbbrowser.model.DBTablePartition;
 public class OracleDBTablePartitionEditorTest {
 
     private DBTablePartitionEditor partitionEditor;
-    private final String BASE_DIR = "src/test/resources/table/operator/oracle/partition";
+    private final String BASE_DIR = "src/test/resources/table/operator/ob/oracle/partition";
 
     @Before
     public void setUp() {

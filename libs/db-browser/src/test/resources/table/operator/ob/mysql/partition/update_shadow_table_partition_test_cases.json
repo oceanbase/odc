@@ -72,9 +72,24 @@
           }
         ]
       },
-      "current": {}
+      "current": {
+        "schemaName": "schema",
+        "tableName": "table",
+        "partitionOption": {
+          "type": "RANGE",
+          "expression": "col1"
+        },
+        "partitionDefinitions": [
+          {
+            "name": "p1",
+            "maxValues": [
+              "1000"
+            ]
+          }
+        ]
+      }
     },
-    "output": "ALTER TABLE  DROP PARTITION (p1);\nALTER TABLE  DROP PARTITION (p2);\n"
+    "output": "ALTER TABLE `schema`.`table` DROP PARTITION (p2);\n"
   },
   {
     "id": 3,
@@ -133,7 +148,13 @@
     "name": "case4",
     "description": "之前没分区，新增分区",
     "input": {
-      "previous": {},
+      "previous": {
+        "schemaName": "schema",
+        "tableName": "table",
+        "partitionOption": {
+          "type": "NOT_PARTITIONED"
+        }
+      },
       "current": {
         "schemaName": "schema",
         "tableName": "table",
@@ -157,6 +178,6 @@
         ]
       }
     },
-    "output": "ALTER TABLE `schema`.`table` ADD PARTITION(PARTITION `p1` VALUES LESS THAN (1000));\nALTER TABLE `schema`.`table` ADD PARTITION(PARTITION `p2` VALUES LESS THAN (2000));\n"
+    "output": "ALTER TABLE `schema`.`table`  PARTITION BY RANGE(col1) (\nPARTITION `p1` VALUES LESS THAN (1000),\nPARTITION `p2` VALUES LESS THAN (2000)\n);\n"
   }
 ]

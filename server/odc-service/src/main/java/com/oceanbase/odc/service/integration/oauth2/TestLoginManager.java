@@ -32,6 +32,7 @@ import org.springframework.stereotype.Service;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.authority.util.Authenticated;
 import com.oceanbase.odc.core.authority.util.PreAuthenticate;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
@@ -111,6 +112,7 @@ public class TestLoginManager {
         }
         String testId = UUID.randomUUID().toString();
         String redirectUrl = null;
+        String testRegistrationId = null;
         if (ssoConfig.isOauth2OrOidc()) {
             if (addableClientRegistrationManager == null) {
                 throw new UnsupportedOperationException("add test sso is not support");
@@ -123,8 +125,9 @@ public class TestLoginManager {
                 throw new UnsupportedOperationException("add test sso is not support");
             }
             ldapConfigRegistrationManager.addTestConfig(ssoConfig);
+            testRegistrationId = ssoConfig.resolveRegistrationId();
         }
-        return new SSOTestInfo(redirectUrl, testId);
+        return new SSOTestInfo(redirectUrl, testId, testRegistrationId);
     }
 
     @Nullable
@@ -170,18 +173,22 @@ public class TestLoginManager {
         return "test".equals(parseRegistrationName(registrationId));
     }
 
-    public static boolean isLdapTestRequest(HttpServletRequest request) {
+    public LdapContext loadLdapContext(HttpServletRequest request) {
         boolean isLdapLogin = LDAP_REQUEST_MATCHER.matches(request);
         if (!isLdapLogin) {
-            return false;
+            return null;
         }
         String registrationId = request.getParameter(REGISTRATION_ID_URI_VARIABLE_NAME);
+        if (StringUtils.isBlank(registrationId)) {
+            SSOIntegrationConfig sSoIntegrationConfig = integrationService.getSSoIntegrationConfig();
+            registrationId = sSoIntegrationConfig.resolveRegistrationId();
+        }
         String testId = request.getParameter("testId");
         String username = request.getParameter("username");
         String password = request.getParameter("password");
         LdapContext ldapContext = new LdapContext(registrationId, testId, username, password);
         LdapContextHolder.setParameter(ldapContext);
-        return ldapContext.isTest();
+        return ldapContext;
     }
 
 

@@ -17,6 +17,8 @@ package com.oceanbase.odc.service.integration.model;
 
 import static com.oceanbase.odc.service.integration.model.SSOIntegrationConfig.parseRegistrationName;
 
+import com.oceanbase.odc.core.shared.Verify;
+
 import lombok.Value;
 
 public final class LdapContextHolder {
@@ -49,6 +51,7 @@ public final class LdapContextHolder {
         String password;
 
         public boolean isTest() {
+            Verify.notBlank(registrationId, "registrationId can't be blank");
             return "test".equals(parseRegistrationName(registrationId));
         }
     }

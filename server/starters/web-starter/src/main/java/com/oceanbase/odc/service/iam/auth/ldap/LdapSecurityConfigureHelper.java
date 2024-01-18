@@ -24,6 +24,7 @@ import org.springframework.stereotype.Component;
 import com.oceanbase.odc.service.encryption.SensitivePropertyHandler;
 import com.oceanbase.odc.service.iam.auth.CustomAuthenticationFailureHandler;
 import com.oceanbase.odc.service.iam.auth.CustomAuthenticationSuccessHandler;
+import com.oceanbase.odc.service.integration.oauth2.TestLoginManager;
 
 @Component
 public class LdapSecurityConfigureHelper {
@@ -37,6 +38,9 @@ public class LdapSecurityConfigureHelper {
     @Autowired
     private CustomAuthenticationFailureHandler customAuthenticationFailureHandler;
 
+    @Autowired
+    private TestLoginManager testLoginManager;
+
 
     public void configure(HttpSecurity http, AuthenticationManager authenticationManager)
             throws Exception {
@@ -48,7 +52,7 @@ public class LdapSecurityConfigureHelper {
         http.addFilterBefore(ldapUsernamePasswordAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         http.addFilterBefore(
-                new LdapAbstractTestLoginAuthenticationFilter(),
+                new LdapAbstractTestLoginAuthenticationFilter(testLoginManager),
                 LdapUsernamePasswordAuthenticationFilter.class);
     }
 }

@@ -18,6 +18,6 @@
         "ordinalPosition": null
       }
     },
-    "output": "ALTER TABLE `schema`.`table` DROP INDEX `a`"
+    "output": "ALTER TABLE `schema`.`table` DROP INDEX `a`;\n"
   }
 ]

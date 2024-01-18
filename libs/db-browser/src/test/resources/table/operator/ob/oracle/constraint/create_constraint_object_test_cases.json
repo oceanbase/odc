@@ -16,7 +16,7 @@
         "deferability": "NOT_DEFERRABLE"
       }
     },
-    "output": "ALTER TABLE \"schema\".\"table\" ADD CONSTRAINT  PRIMARY KEY (\"col1\")"
+    "output": "ALTER TABLE \"schema\".\"table\" ADD PRIMARY KEY (\"col1\");\n"
   },
   {
     "id": 2,
@@ -36,7 +36,7 @@
         "deferability": "NOT_DEFERRABLE"
       }
     },
-    "output": "ALTER TABLE \"schema\".\"table\" ADD CONSTRAINT \"uk_col1\" UNIQUE (\"col1\", \"col2\")"
+    "output": "ALTER TABLE \"schema\".\"table\" ADD CONSTRAINT \"uk_col1\" UNIQUE (\"col1\", \"col2\");\n"
   },
   {
     "id": 3,
@@ -64,7 +64,7 @@
         "enabled": true
       }
     },
-    "output": "ALTER TABLE \"schema\".\"table\" ADD CONSTRAINT \"fk_odc\" FOREIGN KEY (\"col1\", \"col2\") REFERENCES \"odc331\".\"iam_user_role\" (\"col1\", \"col2\") ON DELETE CASCADE"
+    "output": "ALTER TABLE \"schema\".\"table\" ADD CONSTRAINT \"fk_odc\" FOREIGN KEY (\"col1\", \"col2\") REFERENCES \"odc331\".\"iam_user_role\" (\"col1\", \"col2\") ON DELETE CASCADE;\n"
   },
   {
     "id": 4,
@@ -79,7 +79,7 @@
         "enabled": true
       }
     },
-    "output": "ALTER TABLE  ADD CONSTRAINT \"a\" CHECK (c1+1)"
+    "output": "ALTER TABLE  ADD CONSTRAINT \"a\" CHECK (c1+1);\n"
   },
   {
     "id": 5,
@@ -94,7 +94,7 @@
         "enabled": true
       }
     },
-    "output": "ALTER TABLE  ADD CONSTRAINT \"a\" CHECK (c1+1)  DEFERRABLE INITIALLY DEFERRED"
+    "output": "ALTER TABLE  ADD CONSTRAINT \"a\" CHECK (c1+1)  DEFERRABLE INITIALLY DEFERRED;\n"
   },
   {
     "id": 6,
@@ -109,7 +109,7 @@
         "enabled": true
       }
     },
-    "output": "ALTER TABLE  ADD CONSTRAINT \"a\" CHECK (c1+1)  DEFERRABLE INITIALLY IMMEDIATE"
+    "output": "ALTER TABLE  ADD CONSTRAINT \"a\" CHECK (c1+1)  DEFERRABLE INITIALLY IMMEDIATE;\n"
   },
   {
     "id": 7,
@@ -137,7 +137,7 @@
         "enabled": false
       }
     },
-    "output": "ALTER TABLE \"schema\".\"table\" ADD CONSTRAINT \"fk_odc\" FOREIGN KEY (\"col1\", \"col2\") REFERENCES \"odc331\".\"iam_user_role\" (\"col1\", \"col2\") ON DELETE CASCADE DISABLE"
+    "output": "ALTER TABLE \"schema\".\"table\" ADD CONSTRAINT \"fk_odc\" FOREIGN KEY (\"col1\", \"col2\") REFERENCES \"odc331\".\"iam_user_role\" (\"col1\", \"col2\") ON DELETE CASCADE DISABLE;\n"
   }
 ]
 

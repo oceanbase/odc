@@ -5,7 +5,7 @@
     "description": "主键约束",
     "input": {
       "current": {
-        "name": "",
+        "name": "pk",
         "schemaName": "schema",
         "tableName": "table",
         "type": "PRIMARY_KEY",
@@ -16,7 +16,7 @@
         "deferability": "NOT_DEFERRABLE"
       }
     },
-    "output": "ALTER TABLE `schema`.`table` DROP PRIMARY KEY"
+    "output": "ALTER TABLE \"schema\".\"table\" DROP CONSTRAINT \"pk\";\n"
   },
   {
     "id": 2,
@@ -36,7 +36,7 @@
         "deferability": "NOT_DEFERRABLE"
       }
     },
-    "output": "ALTER TABLE `schema`.`table` DROP KEY `uk_col1`"
+    "output": "ALTER TABLE \"schema\".\"table\" DROP CONSTRAINT \"uk_col1\";\n"
   },
   {
     "id": 3,
@@ -64,7 +64,7 @@
         "enabled": true
       }
     },
-    "output": "ALTER TABLE `schema`.`table` DROP FOREIGN KEY `fk_odc`"
+    "output": "ALTER TABLE \"schema\".\"table\" DROP CONSTRAINT \"fk_odc\";\n"
   }
 ]
 

@@ -71,15 +71,41 @@
             "maxValues": [
               "1000"
             ]
+          },
+          {
+            "name": "p2",
+            "schemaName": "schema",
+            "tableName": "table",
+            "ordinalPosition": 2,
+            "maxValues": [
+              "2000"
+            ]
           }
         ]
       },
       "current": {
         "schemaName": "schema",
-        "tableName": "table"
+        "tableName": "table",
+        "partitionOption": {
+          "type": "RANGE",
+          "schemaName": "schema",
+          "tableName": "table",
+          "expression": "col1"
+        },
+        "partitionDefinitions": [
+          {
+            "name": "p1",
+            "schemaName": "schema",
+            "tableName": "table",
+            "ordinalPosition": 1,
+            "maxValues": [
+              "1000"
+            ]
+          }
+        ]
       }
     },
-    "output": "ALTER TABLE \"schema\".\"table\" DROP PARTITION (p1);\n"
+    "output": "ALTER TABLE \"schema\".\"table\" DROP PARTITION (p2);\n"
   },
   {
     "id": 3,
@@ -152,7 +178,11 @@
     "input": {
       "previous": {
         "schemaName": "schema",
-        "tableName": "table"
+        "tableName": "table",
+        "partitionOption": {
+          "type": "NOT_PARTITIONED",
+          "expression": null
+        }
       },
       "current": {
         "schemaName": "schema",
@@ -179,6 +209,34 @@
         ]
       }
     },
-    "output": "ALTER TABLE \"schema\".\"table\" ADD PARTITION \"p1\" VALUES LESS THAN (1000);\nALTER TABLE \"schema\".\"table\" ADD PARTITION \"p2\" VALUES LESS THAN (2000);\n"
+    "output": "ALTER TABLE \"schema\".\"table\" MODIFY PARTITION BY RANGE(col1) (\nPARTITION \"p1\" VALUES LESS THAN (1000),\nPARTITION \"p2\" VALUES LESS THAN (2000)\n);\n"
+  },
+  {
+    "id": 5,
+    "name": "case",
+    "description": "不支持的操作：修改一级分区表的分区类型",
+    "input": {
+      "previous": {
+        "schemaName": "schema",
+        "tableName": "table",
+        "partitionOption": {
+          "type": "HASH",
+          "expression": "col1",
+          "partitionsNum": 20
+        }
+      },
+      "current": {
+        "schemaName": "schema",
+        "tableName": "table",
+        "partitionOption": {
+          "type": "KEY",
+          "partitionsNum": 20,
+          "columnNames": [
+            "col1"
+          ]
+        }
+      }
+    },
+    "output": "-- Unsupported operation to modify table partition type\n"
   }
 ]

@@ -21,7 +21,7 @@
         ]
       }
     },
-    "output": "ALTER TABLE `schema`.`table`  PARTITION BY RANGE(col1) (\nPARTITION `p1` VALUES LESS THAN (1000)\n)"
+    "output": "ALTER TABLE `schema`.`table`  PARTITION BY RANGE(col1) (\nPARTITION `p1` VALUES LESS THAN (1000)\n);\n"
   },
   {
     "id": 2,
@@ -51,7 +51,7 @@
         ]
       }
     },
-    "output": "ALTER TABLE `schema`.`table`  PARTITION BY RANGE(col1) (\nPARTITION `p1` VALUES LESS THAN (1000),\nPARTITION `p2` VALUES LESS THAN (2000)\n)"
+    "output": "ALTER TABLE `schema`.`table`  PARTITION BY RANGE(col1) (\nPARTITION `p1` VALUES LESS THAN (1000),\nPARTITION `p2` VALUES LESS THAN (2000)\n);\n"
   },
   {
     "id": 3,
@@ -79,7 +79,7 @@
         ]
       }
     },
-    "output": "ALTER TABLE `schema`.`table`  PARTITION BY RANGE COLUMNS(col1,col2) (\nPARTITION `p1` VALUES LESS THAN (1,2)\n)"
+    "output": "ALTER TABLE `schema`.`table`  PARTITION BY RANGE COLUMNS(col1,col2) (\nPARTITION `p1` VALUES LESS THAN (1,2)\n);\n"
   },
   {
     "id": 4,
@@ -114,7 +114,7 @@
         ]
       }
     },
-    "output": "ALTER TABLE `schema`.`table`  PARTITION BY RANGE COLUMNS(col1,col2) (\nPARTITION `p1` VALUES LESS THAN (1,2),\nPARTITION `p2` VALUES LESS THAN (10,20)\n)"
+    "output": "ALTER TABLE `schema`.`table`  PARTITION BY RANGE COLUMNS(col1,col2) (\nPARTITION `p1` VALUES LESS THAN (1,2),\nPARTITION `p2` VALUES LESS THAN (10,20)\n);\n"
   },
   {
     "id": 5,
@@ -146,7 +146,7 @@
         ]
       }
     },
-    "output": "ALTER TABLE `schema`.`table`  PARTITION BY LIST(col1+1) (\nPARTITION `p1` VALUES IN (1,2,3)\n)"
+    "output": "ALTER TABLE `schema`.`table`  PARTITION BY LIST(col1+1) (\nPARTITION `p1` VALUES IN (1,2,3)\n);\n"
   },
   {
     "id": 6,
@@ -185,7 +185,7 @@
         ]
       }
     },
-    "output": "ALTER TABLE `schema`.`table`  PARTITION BY LIST COLUMNS(col1,col2) (\nPARTITION `p1` VALUES IN ((1,2)),\nPARTITION `p2` VALUES IN ((2,3))\n)"
+    "output": "ALTER TABLE `schema`.`table`  PARTITION BY LIST COLUMNS(col1,col2) (\nPARTITION `p1` VALUES IN ((1,2)),\nPARTITION `p2` VALUES IN ((2,3))\n);\n"
   },
   {
     "id": 7,
@@ -202,7 +202,7 @@
         }
       }
     },
-    "output": "ALTER TABLE `schema`.`table`  PARTITION BY HASH(col1) \nPARTITIONS 20"
+    "output": "ALTER TABLE `schema`.`table`  PARTITION BY HASH(col1) \nPARTITIONS 20;\n"
   },
   {
     "id": 8,
@@ -222,7 +222,7 @@
         }
       }
     },
-    "output": "ALTER TABLE `schema`.`table`  PARTITION BY KEY(col1,col2) \nPARTITIONS 20"
+    "output": "ALTER TABLE `schema`.`table`  PARTITION BY KEY(col1,col2) \nPARTITIONS 20;\n"
   },
   {
     "id": 9,
@@ -249,7 +249,7 @@
         }
       }
     },
-    "output": "ALTER TABLE `schema`.`table`  PARTITION BY HASH(col1) SUBPARTITION BY HASH(col1) subpartitions 20\nPARTITIONS 20"
+    "output": "ALTER TABLE `schema`.`table`  PARTITION BY HASH(col1) SUBPARTITION BY HASH(col1) subpartitions 20\nPARTITIONS 20;\n"
   },
   {
     "id": 10,
@@ -279,6 +279,6 @@
         }
       }
     },
-    "output": "ALTER TABLE `schema`.`table`  PARTITION BY HASH(col1) SUBPARTITION BY KEY(col1,col2) subpartitions 20\nPARTITIONS 20"
+    "output": "ALTER TABLE `schema`.`table`  PARTITION BY HASH(col1) SUBPARTITION BY KEY(col1,col2) subpartitions 20\nPARTITIONS 20;\n"
   }
 ]

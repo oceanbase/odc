@@ -21,7 +21,7 @@
         ]
       }
     },
-    "output": "ALTER TABLE \"schema\".\"table\"  PARTITION BY RANGE(col1) (\nPARTITION \"p1\" VALUES LESS THAN (1000)\n)"
+    "output": "ALTER TABLE \"schema\".\"table\" MODIFY PARTITION BY RANGE(col1) (\nPARTITION \"p1\" VALUES LESS THAN (1000)\n);\n"
   },
   {
     "id": 2,
@@ -51,7 +51,7 @@
         ]
       }
     },
-    "output": "ALTER TABLE \"schema\".\"table\"  PARTITION BY RANGE(col1) (\nPARTITION \"p1\" VALUES LESS THAN (1000),\nPARTITION \"p2\" VALUES LESS THAN (2000)\n)"
+    "output": "ALTER TABLE \"schema\".\"table\" MODIFY PARTITION BY RANGE(col1) (\nPARTITION \"p1\" VALUES LESS THAN (1000),\nPARTITION \"p2\" VALUES LESS THAN (2000)\n);\n"
   },
   {
     "id": 5,
@@ -83,7 +83,7 @@
         ]
       }
     },
-    "output": "ALTER TABLE \"schema\".\"table\"  PARTITION BY LIST(col1+1) (\nPARTITION \"p1\" VALUES (1,2,3)\n)"
+    "output": "ALTER TABLE \"schema\".\"table\" MODIFY PARTITION BY LIST(col1+1) (\nPARTITION \"p1\" VALUES (1,2,3)\n);\n"
   },
   {
     "id": 7,
@@ -100,6 +100,6 @@
         }
       }
     },
-    "output": "ALTER TABLE \"schema\".\"table\"  PARTITION BY HASH(col1) \nPARTITIONS 20"
+    "output": "ALTER TABLE \"schema\".\"table\" MODIFY PARTITION BY HASH(col1) \nPARTITIONS 20;\n"
   }
 ]

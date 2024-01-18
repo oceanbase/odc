@@ -31,7 +31,7 @@ import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 public class OBMySQLColumnEditorTest {
 
     private DBTableColumnEditor columnEditor;
-    private final String BASE_DIR = "src/test/resources/table/operator/mysql/column";
+    private final String BASE_DIR = "src/test/resources/table/operator/ob/mysql/column";
 
     @Before
     public void setUp() {

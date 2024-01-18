@@ -22,7 +22,6 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 
 import javax.annotation.PostConstruct;
@@ -140,8 +139,9 @@ public class OdcInfoService {
         odcInfo.setBuildTime(infoAdapter.getBuildTime());
         odcInfo.setProfiles(profiles);
         odcInfo.setPasswordLoginEnabled(this.infoAdapter.isPasswordLoginEnabled());
-        odcInfo.setSsoLoginEnabled(Objects.nonNull(getLoginUrl()));
+        odcInfo.setSsoLoginEnabled(infoAdapter.isSSoLoginEnabled(request));
         odcInfo.setSsoLoginName(infoAdapter.ssoLoginName());
+        odcInfo.setSsoLoginType(infoAdapter.ssoLoginType());
         odcInfo.setSupportGroupQRCodeUrl(getSupportGroupQRCodeUrl());
         return odcInfo;
     }

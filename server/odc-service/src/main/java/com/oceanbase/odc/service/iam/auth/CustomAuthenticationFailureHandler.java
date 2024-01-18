@@ -107,7 +107,8 @@ public class CustomAuthenticationFailureHandler implements AuthenticationFailure
             if (redirectUrl != null) {
                 httpServletResponse.sendRedirect(redirectUrl);
             }
-            WebResponseUtils.writeJsonObjectWithOkStatus("TestLoginSuccess", httpServletRequest, httpServletResponse);
+            WebResponseUtils.writeJsonObjectWithOkStatus(Responses.ok("TestLoginSuccess"),
+                    httpServletRequest, httpServletResponse);
             log.info("Test login success for uri#{}", httpServletRequest.getRequestURI());
             return;
         }

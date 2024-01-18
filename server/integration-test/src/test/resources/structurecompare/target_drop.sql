@@ -10,4 +10,5 @@ drop table if exists `fk_dependency`;
 drop table if exists `update_partition`;
 drop table if exists `converse_to_partition_table`;
 drop table if exists `converse_to_non_partition_table`;
+drop table if exists `modify_partition_type`;
 drop table if exists `update_options`;
