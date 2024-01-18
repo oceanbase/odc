@@ -47,7 +47,7 @@ public class PermissionRepositoryTest extends ServiceTestEnv {
         long currentTime = System.currentTimeMillis();
         PermissionEntity entity = createPermissionEntity("query", "ODC_DATABASE:1", new Date(currentTime - 90 * 1000L));
         createPermissionEntity("change", "ODC_DATABASE:2", new Date(currentTime - 30 * 1000L));
-        createPermissionEntity("change", "ODC_DATABASE:3", null);
+        createPermissionEntity("change", "ODC_DATABASE:3", TimeUtils.getMySQLMaxDatetime());
         Assert.assertEquals(3, permissionRepository.findAllNoCareExpireTime().size());
         List<PermissionEntity> entities =
                 permissionRepository.findByExpireTimeBefore(new Date(currentTime - 60 * 1000L));
@@ -61,7 +61,6 @@ public class PermissionRepositoryTest extends ServiceTestEnv {
         entity.setAction(action);
         entity.setCreatorId(1L);
         entity.setOrganizationId(1L);
-        entity.setExpireTime(TimeUtils.getMySQLMaxDatetime());
         entity.setAuthorizationType(AuthorizationType.USER_AUTHORIZATION);
         entity.setBuiltIn(false);
         entity.setResourceIdentifier(resourceIdentifier);
