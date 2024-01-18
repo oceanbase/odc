@@ -55,7 +55,7 @@ function usage() {
 }
 
 function log_info() {
-    echo 1>&2 "$(date +"%Y-%m-%dT%H:%M:%S.%Z") [INFO]" "$*"
+    echo "$(date +"%Y-%m-%dT%H:%M:%S.%Z") [INFO]" "$*"
 }
 
 function log_error() {
