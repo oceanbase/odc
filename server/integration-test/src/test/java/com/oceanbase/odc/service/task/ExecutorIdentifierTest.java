@@ -53,7 +53,7 @@ public class ExecutorIdentifierTest {
         Assert.assertEquals("test", identifier.getExecutorName());
         Assert.assertNull(identifier.getNamespace());
         Assert.assertEquals(DefaultExecutorIdentifier.DEFAULT_HOST, identifier.getHost());
-        Assert.assertSame(DefaultExecutorIdentifier.DEFAULT_PORT, identifier.getPort());
+        Assert.assertEquals(DefaultExecutorIdentifier.DEFAULT_PORT.intValue(), identifier.getPort());
     }
 
 }
