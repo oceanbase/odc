@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.objectstorage.cloud;
 
+import java.util.function.Supplier;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
@@ -64,11 +66,8 @@ public class CloudResourceConfigurations {
     @RefreshScope
     public CloudClient publicEndpointCloudClient(@Autowired CloudEnvConfigurations cloudEnvConfigurations) {
         ObjectStorageConfiguration objectStorageConfiguration = cloudEnvConfigurations.getObjectStorageConfiguration();
-        log.info("recreate public endpoint cloud client, ak=" + objectStorageConfiguration.getAccessKeyId());
-        return new CloudClientBuilder().generateCloudClient(objectStorageConfiguration, createOssClient(
-                objectStorageConfiguration.getAccessKeyId(),
-                objectStorageConfiguration.getAccessKeySecret(),
-                objectStorageConfiguration.getPublicEndpoint()));
+        return new CloudClientBuilder().generateCloudClient(objectStorageConfiguration,
+                () -> getPublicOss(objectStorageConfiguration));
 
     }
 
@@ -76,41 +75,24 @@ public class CloudResourceConfigurations {
     @RefreshScope
     public CloudClient internalEndpointCloudClient(@Autowired CloudEnvConfigurations cloudEnvConfigurations) {
         ObjectStorageConfiguration objectStorageConfiguration = cloudEnvConfigurations.getObjectStorageConfiguration();
-        log.info("recreate internal endpoint cloud client, ak=" + objectStorageConfiguration.getAccessKeyId());
-        return new CloudClientBuilder().generateCloudClient(objectStorageConfiguration, createOssClient(
-                objectStorageConfiguration.getAccessKeyId(),
-                objectStorageConfiguration.getAccessKeySecret(),
-                objectStorageConfiguration.getInternalEndpoint()));
+        return new CloudClientBuilder().generateCloudClient(objectStorageConfiguration,
+                () -> getInternalOss(objectStorageConfiguration));
     }
+
 
     public static class CloudClientBuilder {
         public CloudClient generateCloudClient(ObjectStorageConfiguration objectStorageConfiguration) {
-            CloudProvider cloudProvider = objectStorageConfiguration.getCloudProvider();
-            log.info("recreate cloud client, ak=" + objectStorageConfiguration.getAccessKeyId());
-            switch (cloudProvider) {
-                case ALIBABA_CLOUD:
-                    try {
-                        return createAlibabaCloudClient(objectStorageConfiguration, createOssClient(
-                                objectStorageConfiguration.getAccessKeyId(),
-                                objectStorageConfiguration.getAccessKeySecret(),
-                                objectStorageConfiguration.getInternalEndpoint()));
-                    } catch (ClientException e) {
-                        throw new RuntimeException("Create Alibaba Cloud Client failed", e);
-                    }
-                case AWS:
-                    return createAmazonCloudClient(objectStorageConfiguration);
-                default:
-                    return new NullCloudClient();
-            }
+            return generateCloudClient(objectStorageConfiguration, () -> getInternalOss(objectStorageConfiguration));
         }
 
-        public CloudClient generateCloudClient(ObjectStorageConfiguration objectStorageConfiguration, OSS oss) {
+        public CloudClient generateCloudClient(ObjectStorageConfiguration objectStorageConfiguration,
+                Supplier<OSS> ossSupplier) {
             CloudProvider cloudProvider = objectStorageConfiguration.getCloudProvider();
             log.info("recreate cloud client, ak=" + objectStorageConfiguration.getAccessKeyId());
             switch (cloudProvider) {
                 case ALIBABA_CLOUD:
                     try {
-                        return createAlibabaCloudClient(objectStorageConfiguration, oss);
+                        return createAlibabaCloudClient(objectStorageConfiguration, ossSupplier.get());
                     } catch (ClientException e) {
                         throw new RuntimeException("Create Alibaba Cloud Client failed", e);
                     }
@@ -121,6 +103,7 @@ public class CloudResourceConfigurations {
             }
         }
     }
+
 
     static CloudClient createAlibabaCloudClient(ObjectStorageConfiguration configuration, OSS oss)
             throws ClientException {
@@ -157,6 +140,20 @@ public class CloudResourceConfigurations {
         String roleSessionName = configuration.getRoleSessionName();
         String roleArn = configuration.getRoleArn();
         return new AmazonCloudClient(s3, sts, roleSessionName, roleArn);
+    }
+
+    private static OSS getInternalOss(ObjectStorageConfiguration objectStorageConfiguration) {
+        return createOssClient(
+                objectStorageConfiguration.getAccessKeyId(),
+                objectStorageConfiguration.getAccessKeySecret(),
+                objectStorageConfiguration.getInternalEndpoint());
+    }
+
+    private static OSS getPublicOss(ObjectStorageConfiguration objectStorageConfiguration) {
+        return createOssClient(
+                objectStorageConfiguration.getAccessKeyId(),
+                objectStorageConfiguration.getAccessKeySecret(),
+                objectStorageConfiguration.getPublicEndpoint());
     }
 
     private static OSS createOssClient(String ak, String sk, String endpoint) {
