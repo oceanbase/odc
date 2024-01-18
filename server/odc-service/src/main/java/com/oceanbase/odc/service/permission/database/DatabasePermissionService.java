@@ -17,7 +17,6 @@ package com.oceanbase.odc.service.permission.database;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -40,6 +39,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
+import com.oceanbase.odc.common.util.TimeUtils;
 import com.oceanbase.odc.core.authority.util.Authenticated;
 import com.oceanbase.odc.core.authority.util.PreAuthenticate;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
@@ -129,7 +129,7 @@ public class DatabasePermissionService {
                 .and(UserDatabasePermissionSpec.dataSourceNameLike(params.getFuzzyDataSourceName()))
                 .and(UserDatabasePermissionSpec.typeIn(params.getTypes()))
                 .and(UserDatabasePermissionSpec.authorizationTypeEqual(params.getAuthorizationType()));
-        Date expireTimeThreshold = getExpireTimeThreshold();
+        Date expireTimeThreshold = TimeUtils.getStartOfDay(new Date());
         if (CollectionUtils.isNotEmpty(params.getStatuses())) {
             List<Specification<UserDatabasePermissionEntity>> expireSpecList = new ArrayList<>();
             for (PermissionStatus status : params.getStatuses()) {
@@ -145,9 +145,7 @@ public class DatabasePermissionService {
                 e -> {
                     UserDatabasePermission permission = mapper.entityToModel(e);
                     Date expireTime = permission.getExpireTime();
-                    if (expireTime == null) {
-                        permission.setStatus(PermissionStatus.NOT_EXPIRED);
-                    } else if (expireTime.before(expireTimeThreshold)) {
+                    if (expireTime.before(expireTimeThreshold)) {
                         permission.setStatus(PermissionStatus.EXPIRED);
                     } else if (expireTime.before(DateUtils.addDays(expireTimeThreshold, EXPIRING_DAYS))) {
                         permission.setStatus(PermissionStatus.EXPIRING);
@@ -180,7 +178,8 @@ public class DatabasePermissionService {
         List<PermissionEntity> permissionEntities = new ArrayList<>();
         Long organizationId = authenticationFacade.currentOrganizationId();
         Long creatorId = authenticationFacade.currentUserId();
-        Date expireTime = getFixedExpireTime(req.getExpireTime());
+        Date expireTime = req.getExpireTime() == null ? TimeUtils.getMySQLMaxDatetime()
+                : TimeUtils.getEndOfDay(req.getExpireTime());
         for (Long databaseId : req.getDatabaseIds()) {
             for (DatabasePermissionType permissionType : req.getTypes()) {
                 PermissionEntity permissionEntity = new PermissionEntity();
@@ -224,41 +223,16 @@ public class DatabasePermissionService {
         return permissionIds.stream().map(UserDatabasePermission::from).collect(Collectors.toList());
     }
 
-    private Date getExpireTimeThreshold() {
-        Calendar calendar = Calendar.getInstance();
-        calendar.set(Calendar.HOUR_OF_DAY, 0);
-        calendar.set(Calendar.MINUTE, 0);
-        calendar.set(Calendar.SECOND, 0);
-        calendar.set(Calendar.MILLISECOND, 0);
-        return new Date(calendar.getTimeInMillis());
-    }
-
-    private Date getFixedExpireTime(Date expireTime) {
-        if (expireTime == null) {
-            return null;
-        }
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTime(expireTime);
-        calendar.set(Calendar.HOUR_OF_DAY, 23);
-        calendar.set(Calendar.MINUTE, 59);
-        calendar.set(Calendar.SECOND, 59);
-        calendar.set(Calendar.MILLISECOND, 0);
-        return calendar.getTime();
-    }
-
     private Specification<UserDatabasePermissionEntity> getSpecificationByStatus(PermissionStatus status,
             Date date) {
         switch (status) {
             case EXPIRED:
-                return UserDatabasePermissionSpec.expireTimeIsNotNull()
-                        .and(UserDatabasePermissionSpec.expireTimeBefore(date));
+                return UserDatabasePermissionSpec.expireTimeBefore(date);
             case EXPIRING:
-                return UserDatabasePermissionSpec.expireTimeIsNotNull()
-                        .and(UserDatabasePermissionSpec.expireTimeLate(date))
+                return UserDatabasePermissionSpec.expireTimeLate(date)
                         .and(UserDatabasePermissionSpec.expireTimeBefore(DateUtils.addDays(date, EXPIRING_DAYS)));
             case NOT_EXPIRED:
-                return UserDatabasePermissionSpec.expireTimeIsNull()
-                        .or(UserDatabasePermissionSpec.expireTimeLate(date));
+                return UserDatabasePermissionSpec.expireTimeLate(date);
             default:
                 throw new IllegalArgumentException("Unknown status: " + status);
         }

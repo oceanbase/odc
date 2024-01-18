@@ -27,6 +27,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.i18n.LocaleContextHolder;
 
 import com.oceanbase.odc.common.i18n.I18n;
+import com.oceanbase.odc.common.util.TimeUtils;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
@@ -81,7 +82,8 @@ public class ApplyDatabasePermissionPreprocessor implements Preprocessor {
             throw new AccessDeniedException();
         }
         parameter.getProject().setName(projectEntity.getName());
-        parameter.setExpireTime(getFixedExpireTime(parameter.getExpireTime()));
+        parameter.setExpireTime(parameter.getExpireTime() == null ? TimeUtils.getMySQLMaxDatetime()
+                : TimeUtils.getEndOfDay(parameter.getExpireTime()));
         List<Long> databaseIds =
                 parameter.getDatabases().stream().map(ApplyDatabase::getId).collect(Collectors.toList());
         List<Database> databases = databaseService.listDatabasesByIds(databaseIds);

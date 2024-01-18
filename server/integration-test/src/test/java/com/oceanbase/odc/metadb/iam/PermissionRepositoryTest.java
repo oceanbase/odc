@@ -24,6 +24,7 @@ import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.oceanbase.odc.ServiceTestEnv;
+import com.oceanbase.odc.common.util.TimeUtils;
 import com.oceanbase.odc.core.shared.constant.AuthorizationType;
 import com.oceanbase.odc.core.shared.constant.PermissionType;
 
@@ -60,6 +61,7 @@ public class PermissionRepositoryTest extends ServiceTestEnv {
         entity.setAction(action);
         entity.setCreatorId(1L);
         entity.setOrganizationId(1L);
+        entity.setExpireTime(TimeUtils.getMySQLMaxDatetime());
         entity.setAuthorizationType(AuthorizationType.USER_AUTHORIZATION);
         entity.setBuiltIn(false);
         entity.setResourceIdentifier(resourceIdentifier);

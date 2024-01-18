@@ -33,7 +33,7 @@ public interface UserDatabasePermissionRepository extends ReadOnlyRepository<Use
 
     List<UserDatabasePermissionEntity> findByDatabaseIdIn(Collection<Long> databaseIds);
 
-    @Query(value = "select v.* from list_user_database_permission_view v where (v.expire_time is null or v.expire_time > now()) "
+    @Query(value = "select v.* from list_user_database_permission_view v where v.expire_time > now() "
             + "and v.user_id = :userId and v.database_id in (:databaseIds)", nativeQuery = true)
     List<UserDatabasePermissionEntity> findNotExpiredByUserIdAndDatabaseIdIn(@Param("userId") Long userId,
             @Param("databaseIds") Collection<Long> databaseIds);

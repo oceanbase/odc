@@ -32,6 +32,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import com.oceanbase.odc.ServiceTestEnv;
+import com.oceanbase.odc.common.util.TimeUtils;
 import com.oceanbase.odc.core.shared.constant.AuthorizationType;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.metadb.connection.ConnectionConfigRepository;
@@ -119,7 +120,7 @@ public class DatabasePermissionServiceTest extends ServiceTestEnv {
         PermissionEntity p5 = createPermission(d2.getId(), "change", AuthorizationType.TICKET_APPLICATION, TICKET_ID,
                 DateUtils.addDays(new Date(), 30));
         PermissionEntity p6 = createPermission(d2.getId(), "query", AuthorizationType.TICKET_APPLICATION, TICKET_ID + 1,
-                null);
+                TimeUtils.getMySQLMaxDatetime());
         createUserPermission(p1.getId());
         createUserPermission(p2.getId());
         createUserPermission(p3.getId());

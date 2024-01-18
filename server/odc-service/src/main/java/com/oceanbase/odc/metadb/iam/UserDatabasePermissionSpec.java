@@ -80,12 +80,4 @@ public class UserDatabasePermissionSpec {
         return SpecificationUtil.columnLate(UserDatabasePermissionEntity_.EXPIRE_TIME, date);
     }
 
-    public static Specification<UserDatabasePermissionEntity> expireTimeIsNotNull() {
-        return SpecificationUtil.columnIsNotNull(UserDatabasePermissionEntity_.EXPIRE_TIME);
-    }
-
-    public static Specification<UserDatabasePermissionEntity> expireTimeIsNull() {
-        return SpecificationUtil.columnIsNull(UserDatabasePermissionEntity_.EXPIRE_TIME);
-    }
-
 }
