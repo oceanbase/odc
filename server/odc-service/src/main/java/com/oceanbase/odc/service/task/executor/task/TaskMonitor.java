@@ -16,7 +16,6 @@
 
 package com.oceanbase.odc.service.task.executor.task;
 
-import java.io.Closeable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -38,7 +37,7 @@ import lombok.extern.slf4j.Slf4j;
  * @since 4.2.4
  */
 @Slf4j
-public class TaskMonitor implements Closeable {
+public class TaskMonitor {
 
     private final TaskReporter reporter;
     private final Task<?> task;
@@ -82,13 +81,12 @@ public class TaskMonitor implements Closeable {
         log.info("Task heart init success");
     }
 
-    @Override
-    public void close() {
-        close(reportScheduledExecutor);
-        close(heartScheduledExecutor);
+    public void destroy() {
+        destroy(reportScheduledExecutor);
+        destroy(heartScheduledExecutor);
     }
 
-    private void close(ExecutorService executorService) {
+    private void destroy(ExecutorService executorService) {
         try {
             if (executorService != null) {
                 executorService.shutdownNow();
