@@ -13,24 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.task.executor.logger;
 
-import java.io.IOException;
-import java.util.Map;
+package com.oceanbase.odc.service.task.listener;
 
-import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
-import com.oceanbase.odc.service.task.schedule.JobIdentity;
+import com.oceanbase.odc.common.event.AbstractEventListener;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author yaobin
- * @date 2023-12-13
+ * @date 2023-12-15
  * @since 4.2.4
  */
-public interface LogBiz {
+@Slf4j
+public class DefaultJobTerminateListener extends AbstractEventListener<JobTerminateEvent> {
 
-    String getLog(Long jobId, String logType, Long fetchMaxLine, Long fetchMaxByteSize);
 
-    Map<String, String> uploadLogFileToCloudStorage(JobIdentity ji, CloudObjectStorageService cloudObjectStorageService)
-            throws IOException;
+    @Override
+    public void onEvent(JobTerminateEvent event) {
 
+    }
 }

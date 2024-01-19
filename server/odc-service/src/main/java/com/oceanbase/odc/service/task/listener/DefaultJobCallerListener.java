@@ -17,14 +17,8 @@
 package com.oceanbase.odc.service.task.listener;
 
 import com.oceanbase.odc.service.task.caller.ExecutorIdentifier;
-import com.oceanbase.odc.service.task.caller.JobException;
-import com.oceanbase.odc.service.task.config.JobConfiguration;
-import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
-import com.oceanbase.odc.service.task.config.JobConfigurationValidator;
-import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 import com.oceanbase.odc.service.task.schedule.JobScheduler;
-import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -36,30 +30,12 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class DefaultJobCallerListener extends JobCallerListener {
 
-    private final TaskFrameworkService taskFrameworkService;
-    private final JobConfiguration configuration;
 
-    public DefaultJobCallerListener(JobScheduler jobScheduler) {
-        JobConfigurationValidator.validComponent();
-        JobConfiguration configuration = JobConfigurationHolder.getJobConfiguration();
-        this.taskFrameworkService = configuration.getTaskFrameworkService();
-        this.configuration = configuration;
-    }
+    public DefaultJobCallerListener(JobScheduler jobScheduler) {}
 
     @Override
     protected void startSucceed(JobIdentity ji, ExecutorIdentifier identifier) {
-        try {
-            taskFrameworkService.startSuccess(ji.getId(), identifier.toString());
-        } catch (Exception ex) {
-            // if transaction timeout, we should destroy executor
-            try {
-                configuration.getJobDispatcher().destroy(identifier);
-            } catch (JobException e) {
-                // send alarm
-                log.warn("Destroy executor {} occur exception", identifier.toString());
-            }
-            throw ex;
-        }
+
     }
 
     @Override
@@ -68,13 +44,7 @@ public class DefaultJobCallerListener extends JobCallerListener {
     }
 
     @Override
-    protected void stopSucceed(JobIdentity ji) {
-        int rows = taskFrameworkService.updateStatusDescriptionByIdOldStatus(ji.getId(), JobStatus.CANCELING,
-                JobStatus.CANCELED, "cancel job completed");
-        if (rows > 0) {
-            log.info("Update job {} status to {}", ji.getId(), JobStatus.CANCELED.name());
-        }
-    }
+    protected void stopSucceed(JobIdentity ji) {}
 
     @Override
     protected void stopFailed(JobIdentity ji, Exception ex) {
@@ -83,9 +53,6 @@ public class DefaultJobCallerListener extends JobCallerListener {
 
     @Override
     protected void destroySucceed(JobIdentity ji) {
-        int rows = taskFrameworkService.updateExecutorToDestroyed(ji.getId());
-        if (rows > 0) {
-            log.info("Destroy job {} executor succeed.", ji.getId());
-        }
+
     }
 }

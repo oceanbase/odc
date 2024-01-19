@@ -21,7 +21,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.oceanbase.odc.common.util.StringUtils;
-import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
 import com.oceanbase.odc.service.task.constants.JobAttributeKeyConstants;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
@@ -38,25 +37,25 @@ import lombok.extern.slf4j.Slf4j;
 public class LogBizImpl implements LogBiz {
 
     @Override
-    public String getLog(Long id, String logType) {
-        log.info("Accept log request, task id = {}, logType = {}", id, logType);
+    public String getLog(Long jobId, String logType, Long fetchMaxLine, Long fetchMaxByteSize) {
+        log.info("Accept log request, job id = {}, logType = {}", jobId, logType);
         OdcTaskLogLevel logTypeLevel = null;
         try {
             logTypeLevel = OdcTaskLogLevel.valueOf(logType);
-        } catch (Exception e) {
+        } catch (IllegalArgumentException e) {
             log.warn("logType {} is illegal.", logType);
-            new SuccessResponse<>("logType " + logType + " is illegal.");
+            return "logType " + logType + " is illegal.";
         }
 
-        String logFileStr = LogUtils.getJobLogFileWithPath(id, logTypeLevel);
-        return LogUtils.getLogContent(logFileStr);
+        String logFileStr = LogUtils.getJobLogFileWithPath(jobId, logTypeLevel);
+        return LogUtils.getLogContent(logFileStr, fetchMaxLine, fetchMaxByteSize);
     }
 
 
     @Override
     public Map<String, String> uploadLogFileToCloudStorage(JobIdentity ji,
             CloudObjectStorageService cloudObjectStorageService) throws IOException {
-        log.info("Task id: {}, upload log", ji.getId());
+        log.info("Job id: {}, upload log", ji.getId());
         String logFileStr = LogUtils.getJobLogFileWithPath(ji.getId(), OdcTaskLogLevel.ALL);
         String fileId = StringUtils.uuid();
         File jobLogFile = new File(logFileStr);
@@ -69,7 +68,7 @@ public class LogBizImpl implements LogBiz {
         logMap.put(JobAttributeKeyConstants.LOG_STORAGE_WARN_OBJECT_ID, objectName);
         logMap.put(JobAttributeKeyConstants.LOG_STORAGE_BUCKET_NAME,
                 cloudObjectStorageService.getBucketName());
-        log.info("upload task log to OSS successfully, file name={}", fileId);
+        log.info("upload job log to OSS successfully, file name={}", fileId);
         return logMap;
 
     }

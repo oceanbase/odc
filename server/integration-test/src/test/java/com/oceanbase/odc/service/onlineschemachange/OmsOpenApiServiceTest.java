@@ -34,24 +34,24 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.service.onlineschemachange.oms.client.ClientRequestParams;
 import com.oceanbase.odc.service.onlineschemachange.oms.client.OmsClient;
 import com.oceanbase.odc.service.onlineschemachange.oms.enums.OmsOceanBaseType;
-import com.oceanbase.odc.service.onlineschemachange.oms.enums.ProjectStatusEnum;
+import com.oceanbase.odc.service.onlineschemachange.oms.enums.OmsProjectStatusEnum;
 import com.oceanbase.odc.service.onlineschemachange.oms.openapi.DataSourceOpenApiService;
 import com.oceanbase.odc.service.onlineschemachange.oms.openapi.DataSourceOpenApiServiceImpl;
-import com.oceanbase.odc.service.onlineschemachange.oms.openapi.ProjectOpenApiService;
-import com.oceanbase.odc.service.onlineschemachange.oms.openapi.ProjectOpenApiServiceImpl;
+import com.oceanbase.odc.service.onlineschemachange.oms.openapi.OmsProjectOpenApiService;
+import com.oceanbase.odc.service.onlineschemachange.oms.openapi.OmsProjectOpenApiServiceImpl;
 import com.oceanbase.odc.service.onlineschemachange.oms.request.CommonTransferConfig;
 import com.oceanbase.odc.service.onlineschemachange.oms.request.CreateOceanBaseDataSourceRequest;
-import com.oceanbase.odc.service.onlineschemachange.oms.request.CreateProjectRequest;
+import com.oceanbase.odc.service.onlineschemachange.oms.request.CreateOmsProjectRequest;
 import com.oceanbase.odc.service.onlineschemachange.oms.request.DatabaseTransferObject;
 import com.oceanbase.odc.service.onlineschemachange.oms.request.FullTransferConfig;
 import com.oceanbase.odc.service.onlineschemachange.oms.request.IncrTransferConfig;
-import com.oceanbase.odc.service.onlineschemachange.oms.request.ListProjectFullVerifyResultRequest;
+import com.oceanbase.odc.service.onlineschemachange.oms.request.ListOmsProjectFullVerifyResultRequest;
 import com.oceanbase.odc.service.onlineschemachange.oms.request.OmsApiReturnResult;
-import com.oceanbase.odc.service.onlineschemachange.oms.request.ProjectControlRequest;
+import com.oceanbase.odc.service.onlineschemachange.oms.request.OmsProjectControlRequest;
 import com.oceanbase.odc.service.onlineschemachange.oms.request.SpecificTransferMapping;
 import com.oceanbase.odc.service.onlineschemachange.oms.request.TableTransferObject;
-import com.oceanbase.odc.service.onlineschemachange.oms.response.ProjectFullVerifyResultResponse;
-import com.oceanbase.odc.service.onlineschemachange.oms.response.ProjectProgressResponse;
+import com.oceanbase.odc.service.onlineschemachange.oms.response.OmsProjectFullVerifyResultResponse;
+import com.oceanbase.odc.service.onlineschemachange.oms.response.OmsProjectProgressResponse;
 import com.oceanbase.odc.test.database.TestDBConfiguration;
 import com.oceanbase.odc.test.database.TestDBConfigurations;
 import com.oceanbase.odc.test.database.TestDBType;
@@ -68,7 +68,7 @@ import lombok.extern.slf4j.Slf4j;
 public class OmsOpenApiServiceTest {
 
     private static DataSourceOpenApiService dataSourceOpenApiService;
-    private static ProjectOpenApiService projectOpenApiService;
+    private static OmsProjectOpenApiService projectOpenApiService;
 
     private static TestDBConfiguration config =
             TestDBConfigurations.getInstance().getTestOBMysqlConfiguration();
@@ -82,7 +82,7 @@ public class OmsOpenApiServiceTest {
 
         omsClient = Mockito.mock(OmsClient.class);
         dataSourceOpenApiService = new DataSourceOpenApiServiceImpl(omsClient);
-        projectOpenApiService = new ProjectOpenApiServiceImpl(omsClient);
+        projectOpenApiService = new OmsProjectOpenApiServiceImpl(omsClient);
         datasourceId = UUID.randomUUID().toString();
         projectId = UUID.randomUUID().toString();
     }
@@ -113,28 +113,28 @@ public class OmsOpenApiServiceTest {
 
     private void test_project_create_and_start() {
 
-        CreateProjectRequest request = getCreateProjectRequest();
+        CreateOmsProjectRequest request = getCreateProjectRequest();
         Mockito.when(omsClient.postOmsInterface(Mockito.any(ClientRequestParams.class))).thenReturn(projectId);
 
         String projectIdResult = projectOpenApiService.createProject(request);
         Assert.assertEquals(projectIdResult, projectId);
 
-        ProjectProgressResponse projectProgressResponse = new ProjectProgressResponse();
-        projectProgressResponse.setStatus(ProjectStatusEnum.INIT);
+        OmsProjectProgressResponse projectProgressResponse = new OmsProjectProgressResponse();
+        projectProgressResponse.setStatus(OmsProjectStatusEnum.INIT);
         Mockito.when(omsClient.postOmsInterface(Mockito.any(ClientRequestParams.class))).thenReturn(
                 projectProgressResponse);
 
-        ProjectProgressResponse projectProgressResponseReturn = projectOpenApiService.describeProjectProgress(
-                Mockito.any(ProjectControlRequest.class));
-        Assert.assertEquals(ProjectStatusEnum.INIT, projectProgressResponseReturn.getStatus());
+        OmsProjectProgressResponse projectProgressResponseReturn = projectOpenApiService.describeProjectProgress(
+                Mockito.any(OmsProjectControlRequest.class));
+        Assert.assertEquals(OmsProjectStatusEnum.INIT, projectProgressResponseReturn.getStatus());
 
         Mockito.when(omsClient.postOmsInterface(Mockito.any(ClientRequestParams.class))).thenReturn(Void.class);
-        projectOpenApiService.startProject(Mockito.any(ProjectControlRequest.class));
+        projectOpenApiService.startProject(Mockito.any(OmsProjectControlRequest.class));
 
     }
 
     private void test_listProjectFullVerifyResult() {
-        ListProjectFullVerifyResultRequest request = new ListProjectFullVerifyResultRequest();
+        ListOmsProjectFullVerifyResultRequest request = new ListOmsProjectFullVerifyResultRequest();
         request.setProjectId(projectId);
         request.setSourceSchemas(new String[] {config.getDefaultDBName()});
         request.setDestSchemas(new String[] {config.getDefaultDBName()});
@@ -142,11 +142,11 @@ public class OmsOpenApiServiceTest {
         request.setPageSize(10);
         request.setPageNumber(1);
 
-        ProjectFullVerifyResultResponse response = Mockito.mock(ProjectFullVerifyResultResponse.class);
+        OmsProjectFullVerifyResultResponse response = Mockito.mock(OmsProjectFullVerifyResultResponse.class);
 
         Mockito.when(omsClient.postOmsInterface(Mockito.any(ClientRequestParams.class))).thenReturn(response);
 
-        ProjectFullVerifyResultResponse verifyResultResponse =
+        OmsProjectFullVerifyResultResponse verifyResultResponse =
                 projectOpenApiService.listProjectFullVerifyResult(request);
 
         Assert.assertEquals(verifyResultResponse, response);
@@ -157,7 +157,7 @@ public class OmsOpenApiServiceTest {
 
         Mockito.when(omsClient.postOmsInterface(Mockito.any(ClientRequestParams.class))).thenReturn(Void.class);
 
-        ProjectControlRequest request = new ProjectControlRequest();
+        OmsProjectControlRequest request = new OmsProjectControlRequest();
         request.setUid("1");
         request.setId(projectId);
 
@@ -170,8 +170,8 @@ public class OmsOpenApiServiceTest {
         projectOpenApiService.deleteProject(request);
     }
 
-    private CreateProjectRequest getCreateProjectRequest() {
-        CreateProjectRequest request = new CreateProjectRequest();
+    private CreateOmsProjectRequest getCreateProjectRequest() {
+        CreateOmsProjectRequest request = new CreateOmsProjectRequest();
         request.setSourceEndpointId(datasourceId);
         request.setSinkEndpointId(datasourceId);
 

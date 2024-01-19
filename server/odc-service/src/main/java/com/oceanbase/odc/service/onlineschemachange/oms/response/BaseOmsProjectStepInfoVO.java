@@ -13,24 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package com.oceanbase.odc.service.task.executor.sampletask;
-
-import java.util.List;
-
-import com.oceanbase.odc.core.flow.model.TaskParameters;
+package com.oceanbase.odc.service.onlineschemachange.oms.response;
 
 import lombok.Data;
 
 /**
- * @author gaoda.xy
- * @date 2023/11/23 17:59
+ * @author yaobin
+ * @date 2023-06-01
+ * @since 4.2.0
  */
 @Data
-public class SampleTaskParameter implements TaskParameters {
-
-    private List<String> sqls;
-
-    private String defaultSchema;
-
+public class BaseOmsProjectStepInfoVO {
 }

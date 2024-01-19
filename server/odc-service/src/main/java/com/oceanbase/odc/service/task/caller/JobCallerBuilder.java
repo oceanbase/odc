@@ -23,8 +23,9 @@ import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.service.objectstorage.cloud.model.CloudEnvConfigurations;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.constants.JobConstants;
-import com.oceanbase.odc.service.task.constants.JobEnvConstants;
+import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
 import com.oceanbase.odc.service.task.enums.TaskRunModeEnum;
+import com.oceanbase.odc.service.task.util.JobUtils;
 
 /**
  * @author yaobin
@@ -38,25 +39,35 @@ public class JobCallerBuilder {
     }
 
 
-    public static JobCaller buildK8sJobCaller(K8sJobClient k8sJobClient, PodConfig podConfig) {
+    public static JobCaller buildK8sJobCaller(K8sJobClient k8sJobClient, PodConfig podConfig, JobContext context) {
 
         PodParam podParam = podConfig.getPodParam();
 
         Map<String, String> envs = podParam.getEnvironments();
-        envs.put(JobEnvConstants.BOOT_MODE, JobConstants.ODC_BOOT_MODE_EXECUTOR);
-        envs.put(JobEnvConstants.TASK_RUN_MODE, TaskRunModeEnum.K8S.name());
+        envs.put(JobEnvKeyConstants.ODC_BOOT_MODE, JobConstants.ODC_BOOT_MODE_EXECUTOR);
+        envs.put(JobEnvKeyConstants.ODC_TASK_RUN_MODE, TaskRunModeEnum.K8S.name());
+        if (context != null) {
+            envs.put(JobEnvKeyConstants.ODC_JOB_CONTEXT, JobUtils.toJson(context));
+        }
 
-        envs.put("DATABASE_HOST", SystemUtils.getEnvOrProperty("ODC_DATABASE_HOST"));
-        envs.put("DATABASE_PORT", SystemUtils.getEnvOrProperty("ODC_DATABASE_PORT"));
-        envs.put("DATABASE_NAME", SystemUtils.getEnvOrProperty("ODC_DATABASE_NAME"));
-        envs.put("DATABASE_USERNAME", SystemUtils.getEnvOrProperty("ODC_DATABASE_USERNAME"));
-        envs.put("DATABASE_PASSWORD", SystemUtils.getEnvOrProperty("ODC_DATABASE_PASSWORD"));
-        envs.put(JobEnvConstants.LOG_DIRECTORY, SystemUtils.getEnvOrProperty(JobEnvConstants.LOG_DIRECTORY));
+        envs.put(JobEnvKeyConstants.DATABASE_HOST,
+                SystemUtils.getEnvOrProperty(JobEnvKeyConstants.DATABASE_HOST));
+        envs.put(JobEnvKeyConstants.DATABASE_PORT,
+                SystemUtils.getEnvOrProperty(JobEnvKeyConstants.DATABASE_PORT));
+        envs.put(JobEnvKeyConstants.DATABASE_NAME,
+                SystemUtils.getEnvOrProperty(JobEnvKeyConstants.DATABASE_NAME));
+        envs.put(JobEnvKeyConstants.DATABASE_USERNAME,
+                SystemUtils.getEnvOrProperty(JobEnvKeyConstants.DATABASE_USERNAME));
+        envs.put(JobEnvKeyConstants.DATABASE_PASSWORD,
+                SystemUtils.getEnvOrProperty(JobEnvKeyConstants.DATABASE_PASSWORD));
+
+        envs.put(JobEnvKeyConstants.ODC_LOG_DIRECTORY,
+                SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_LOG_DIRECTORY));
 
         CloudEnvConfigurations cloudEnvConfigurations = JobConfigurationHolder.getJobConfiguration()
                 .getCloudEnvConfigurations();
         PreConditions.notNull(cloudEnvConfigurations, "cloudEnvConfigurations");
-        envs.put(JobEnvConstants.OBJECT_STORAGE_CONFIGURATION,
+        envs.put(JobEnvKeyConstants.ODC_OBJECT_STORAGE_CONFIGURATION,
                 JsonUtils.toJson(cloudEnvConfigurations.getObjectStorageConfiguration()));
 
         return new K8sJobCaller(k8sJobClient, podConfig);

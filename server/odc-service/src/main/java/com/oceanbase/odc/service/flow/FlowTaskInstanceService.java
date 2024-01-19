@@ -206,37 +206,8 @@ public class FlowTaskInstanceService {
             return null;
         }
 
-        // forward to target host when task is not be executed on this machine or running in k8s pod
-        JobEntity jobEntity = taskFrameworkService.find(taskEntity.getJobId());
-        if (jobEntity != null && Objects.equals(jobEntity.getRunMode(), TaskRunModeEnum.K8S.name())) {
-
-            if (cloudObjectStorageService.supported()) {
-                String objId = taskFrameworkService.findByJobIdAndAttributeKey(jobEntity.getId(),
-                        JobAttributeKeyConstants.LOG_STORAGE_ALL_OBJECT_ID);
-                String bucketName = taskFrameworkService.findByJobIdAndAttributeKey(jobEntity.getId(),
-                        JobAttributeKeyConstants.LOG_STORAGE_BUCKET_NAME);
-
-                if (objId != null && bucketName != null) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("job: {} is finished, try to get log from local or oss.", jobEntity.getId());
-                    }
-                    ObjectStorageHandler objectStorageHandler =
-                            new ObjectStorageHandler(cloudObjectStorageService, localFileOperator);
-                    return objectStorageHandler.loadObjectContentAsString(
-                            ObjectMetadata.builder().bucketName(bucketName).objectId(objId).build());
-                }
-            }
-            if (jobEntity.getExecutorDestroyedTime() == null && jobEntity.getExecutorEndpoint() != null) {
-                if (log.isDebugEnabled()) {
-                    log.debug("job: {} is not finished, try to get log from remote pod.", jobEntity.getId());
-                }
-                String hostWithUrl = jobEntity.getExecutorEndpoint() + String.format(JobUrlConstants.LOG_QUERY,
-                        jobEntity.getId()) + "?logType=" + level.getName();
-                SuccessResponse<String> response =
-                        HttpUtil.request(hostWithUrl, new TypeReference<SuccessResponse<String>>() {});
-                return response.getData();
-            }
-            return "No log message at this moment";
+        if (taskFrameworkProperties.isEnableTaskFramework() && taskEntity.getJobId() != null) {
+            return getLogByTaskFramework(level, taskEntity.getJobId());
         }
 
         if (!dispatchChecker.isTaskEntityOnThisMachine(taskEntity)) {
@@ -248,6 +219,44 @@ public class FlowTaskInstanceService {
             return response.getContentByType(new TypeReference<SuccessResponse<String>>() {}).getData();
         }
         return taskService.getLog(taskEntity.getCreatorId(), taskEntity.getId() + "", taskEntity.getTaskType(), level);
+    }
+
+    private String getLogByTaskFramework(OdcTaskLogLevel level, Long jobId) throws IOException {
+        // forward to target host when task is not be executed on this machine or running in k8s pod
+        JobEntity jobEntity = taskFrameworkService.find(jobId);
+        PreConditions.notNull(jobEntity, "job not found by id " + jobId);
+
+        if (!Objects.equals(jobEntity.getRunMode(), TaskRunModeEnum.K8S.name())) {
+            return "No log message at this moment";
+        }
+
+        if (cloudObjectStorageService.supported()) {
+            String objId = taskFrameworkService.findByJobIdAndAttributeKey(jobEntity.getId(),
+                    JobAttributeKeyConstants.LOG_STORAGE_ALL_OBJECT_ID);
+            String bucketName = taskFrameworkService.findByJobIdAndAttributeKey(jobEntity.getId(),
+                    JobAttributeKeyConstants.LOG_STORAGE_BUCKET_NAME);
+
+            if (objId != null && bucketName != null) {
+                if (log.isDebugEnabled()) {
+                    log.debug("job: {} is finished, try to get log from local or oss.", jobEntity.getId());
+                }
+                ObjectStorageHandler objectStorageHandler =
+                        new ObjectStorageHandler(cloudObjectStorageService, localFileOperator);
+                return objectStorageHandler.loadObjectContentAsString(
+                        ObjectMetadata.builder().bucketName(bucketName).objectId(objId).build());
+            }
+        }
+        if (jobEntity.getExecutorDestroyedTime() == null && jobEntity.getExecutorEndpoint() != null) {
+            if (log.isDebugEnabled()) {
+                log.debug("job: {} is not finished, try to get log from remote pod.", jobEntity.getId());
+            }
+            String hostWithUrl = jobEntity.getExecutorEndpoint() + String.format(JobUrlConstants.LOG_QUERY,
+                    jobEntity.getId()) + "?logType=" + level.getName();
+            SuccessResponse<String> response =
+                    HttpUtil.request(hostWithUrl, new TypeReference<SuccessResponse<String>>() {});
+            return response.getData();
+        }
+        return "No log message at this moment";
     }
 
     public List<? extends FlowTaskResult> getResult(@NotNull Long id) throws IOException {

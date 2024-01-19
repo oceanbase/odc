@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 OceanBase.
+ * Copyright (c) 2024 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,15 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.onlineschemachange.oms.response;
 
-import lombok.Data;
+package com.oceanbase.odc.service.task.service;
+
+import org.springframework.beans.factory.annotation.Autowired;
+
+import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
 
 /**
  * @author yaobin
- * @date 2023-06-01
- * @since 4.2.0
+ * @date 2024-01-19
+ * @since 4.2.4
  */
-@Data
-public class BaseProjectStepInfoVO {
+public class LogLoadService {
+
+    @Autowired
+    private CloudObjectStorageService cloudObjectStorageService;
+
+
+
 }

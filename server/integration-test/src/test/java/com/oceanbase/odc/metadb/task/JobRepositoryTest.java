@@ -22,7 +22,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import com.oceanbase.odc.ServiceTestEnv;
 import com.oceanbase.odc.service.task.enums.JobStatus;
-import com.oceanbase.odc.service.task.executor.sampletask.SampleTask;
+import com.oceanbase.odc.service.task.executor.task.DatabaseChangeTask;
 
 /**
  * @author yaobin
@@ -43,8 +43,8 @@ public class JobRepositoryTest extends ServiceTestEnv {
 
     private JobEntity createJobEntity() {
         JobEntity entity = new JobEntity();
-        entity.setJobClass(SampleTask.class.getCanonicalName());
-        entity.setJobType("SAMPLE");
+        entity.setJobClass(DatabaseChangeTask.class.getCanonicalName());
+        entity.setJobType("ASYNC");
         entity.setExecutionTimes(0);
         entity.setStatus(JobStatus.PREPARING);
         return jobRepository.save(entity);

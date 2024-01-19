@@ -63,6 +63,8 @@ public class ObjectStorageHandler {
     public StorageObject loadObject(ObjectMetadata metadata) {
         try {
             if (localFileOperator.isLocalFileAbsent(metadata)) {
+                log.info("File is absent in local, load file from oss, bucket={}, objectId={}",
+                        metadata.getBucketName(), metadata.getObjectId());
                 loadObjectFromOss(metadata);
             }
             Resource resource = localFileOperator.loadAsResource(metadata.getBucketName(), metadata.getObjectId());
@@ -75,7 +77,6 @@ public class ObjectStorageHandler {
     }
 
     private void loadObjectFromOss(ObjectMetadata metadata) throws IOException {
-        localFileOperator.deleteLocalFile(metadata.getBucketName(), metadata.getObjectId());
         File tempFile = cloudObjectStorageService.downloadToTempFile(metadata.getObjectId());
         try (FileInputStream inputStream = new FileInputStream(tempFile)) {
             FileUtils.copyInputStreamToFile(inputStream,

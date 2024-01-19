@@ -27,6 +27,7 @@ import java.util.concurrent.TimeoutException;
 
 import com.oceanbase.odc.core.task.TaskThreadFactory;
 import com.oceanbase.odc.service.task.caller.JobContext;
+import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.executor.task.Task;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 
@@ -64,11 +65,12 @@ public class ThreadPoolTaskExecutor implements TaskExecutor {
 
     @Override
     public boolean cancel(JobIdentity ji) {
+        Task<?> task = tasks.get(ji);
         Future<?> startFuture = futures.get(ji);
         if (startFuture.isDone()) {
-            return true;
+            return task.getStatus() == JobStatus.CANCELED;
         }
-        Task<?> task = tasks.get(ji);
+
         Future<Boolean> stopFuture = executor.submit(task::stop);
         boolean result = false;
         try {

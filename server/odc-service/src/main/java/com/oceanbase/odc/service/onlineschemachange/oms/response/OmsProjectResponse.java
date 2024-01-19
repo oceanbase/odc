@@ -13,24 +13,38 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.task.executor.logger;
+package com.oceanbase.odc.service.onlineschemachange.oms.response;
 
-import java.io.IOException;
-import java.util.Map;
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonFormat.Feature;
 
-import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
-import com.oceanbase.odc.service.task.schedule.JobIdentity;
+import lombok.Data;
 
 /**
  * @author yaobin
- * @date 2023-12-13
- * @since 4.2.4
+ * @date 2023-12-27
+ * @since 4.2.3
  */
-public interface LogBiz {
+@Data
+@JsonFormat(with = Feature.ACCEPT_CASE_INSENSITIVE_PROPERTIES)
+public class OmsProjectResponse {
+    /**
+     * 项目 ID
+     */
+    private String id;
 
-    String getLog(Long jobId, String logType, Long fetchMaxLine, Long fetchMaxByteSize);
+    /**
+     * 传输实例的 ID
+     */
+    private String workerGradeId;
 
-    Map<String, String> uploadLogFileToCloudStorage(JobIdentity ji, CloudObjectStorageService cloudObjectStorageService)
-            throws IOException;
+    /**
+     * 项目状态
+     */
+    private String status;
 
+    /**
+     * 项目类型
+     */
+    private String type;
 }

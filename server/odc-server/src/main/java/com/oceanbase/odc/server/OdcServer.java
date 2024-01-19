@@ -42,7 +42,7 @@ import com.oceanbase.odc.core.authority.interceptor.MethodAuthorizedPostProcesso
 import com.oceanbase.odc.migrate.AbstractMetaDBMigrate;
 import com.oceanbase.odc.server.starter.StarterSpringApplication;
 import com.oceanbase.odc.service.task.constants.JobConstants;
-import com.oceanbase.odc.service.task.constants.JobEnvConstants;
+import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
 import com.oceanbase.odc.service.task.executor.TaskApplication;
 
 import lombok.extern.slf4j.Slf4j;
@@ -74,7 +74,7 @@ public class OdcServer {
      * @param args
      */
     public static void main(String[] args) {
-        if (Objects.equals(SystemUtils.getEnvOrProperty(JobEnvConstants.BOOT_MODE),
+        if (Objects.equals(SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_BOOT_MODE),
                 JobConstants.ODC_BOOT_MODE_EXECUTOR)) {
             log.info("ODC start as task executor mode");
             new TaskApplication().run(args);

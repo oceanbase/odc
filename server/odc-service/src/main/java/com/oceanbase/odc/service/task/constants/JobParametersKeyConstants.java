@@ -24,15 +24,15 @@ import com.oceanbase.odc.service.flow.task.model.RuntimeTaskConstants;
  * @date 2023-12-06
  * @since 4.2.4
  */
-public class JobDataMapConstants {
+public class JobParametersKeyConstants {
 
     public static final String CONNECTION_CONFIG = "connectionConfig";
 
-    public static final String META_DB_TASK_PARAMETER = "metaDbTaskParameter";
+    public static final String META_TASK_PARAMETER_JSON = "metaTaskParameterJson";
 
     public static final String FLOW_INSTANCE_ID = "flowInstanceId";
 
-    public static final String CURRENT_SCHEMA_KEY = ConnectionSessionConstants.CURRENT_SCHEMA_KEY;
+    public static final String CURRENT_SCHEMA = ConnectionSessionConstants.CURRENT_SCHEMA_KEY;
 
     public static final String SESSION_TIME_ZONE = ConnectionSessionConstants.SESSION_TIME_ZONE;
 

@@ -25,6 +25,7 @@ import com.oceanbase.odc.service.task.caller.PodConfig;
 import com.oceanbase.odc.service.task.caller.PodParam;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
+import com.oceanbase.odc.service.task.config.JobConfigurationValidator;
 import com.oceanbase.odc.service.task.config.K8sProperties;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.enums.TaskRunModeEnum;
@@ -42,33 +43,38 @@ public class ImmediateJobDispatcher implements JobDispatcher {
 
     @Override
     public void start(JobContext context) throws JobException {
-
-        JobCaller jobCaller = getJobCaller(JobConfigurationHolder.getJobConfiguration());
+        JobCaller jobCaller = getJobCallerWithContext(context);
         jobCaller.start(context);
     }
 
     @Override
     public void stop(JobIdentity ji) throws JobException {
-        JobCaller jobCaller = getJobCaller(JobConfigurationHolder.getJobConfiguration());
+        JobCaller jobCaller = getJobCaller();
         jobCaller.stop(ji);
     }
 
     @Override
     public void destroy(JobIdentity ji) throws JobException {
-        JobCaller jobCaller = getJobCaller(JobConfigurationHolder.getJobConfiguration());
+        JobCaller jobCaller = getJobCaller();
         jobCaller.destroy(ji);
     }
 
     @Override
     public void destroy(ExecutorIdentifier executorIdentifier) throws JobException {
-        JobCaller jobCaller = getJobCaller(JobConfigurationHolder.getJobConfiguration());
+        JobCaller jobCaller = getJobCaller();
         jobCaller.destroy(executorIdentifier);
     }
 
-    private JobCaller getJobCaller(JobConfiguration config) {
+    private JobCaller getJobCaller() {
+        return getJobCallerWithContext(null);
+    }
+
+    private JobCaller getJobCallerWithContext(JobContext context) {
+        JobConfigurationValidator.validComponent();
+        JobConfiguration config = JobConfigurationHolder.getJobConfiguration();
         if (config.getTaskFrameworkProperties().getRunMode() == TaskRunModeEnum.K8S) {
             return JobCallerBuilder.buildK8sJobCaller(config.getK8sJobClient(),
-                    createDefaultPodConfig(config.getTaskFrameworkProperties()));
+                    createDefaultPodConfig(config.getTaskFrameworkProperties()), context);
         }
         return JobCallerBuilder.buildJvmCaller();
     }

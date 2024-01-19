@@ -56,6 +56,7 @@ import com.oceanbase.odc.service.task.executor.task.HeartRequest;
 import com.oceanbase.odc.service.task.executor.task.Task;
 import com.oceanbase.odc.service.task.executor.task.TaskResult;
 import com.oceanbase.odc.service.task.listener.DestroyExecutorEvent;
+import com.oceanbase.odc.service.task.listener.JobTerminateEvent;
 import com.oceanbase.odc.service.task.schedule.DefaultJobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobDefinition;
 import com.oceanbase.odc.service.task.util.JobDateUtils;
@@ -171,7 +172,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     }
 
     @Override
-    public void startSuccess(Long id, String executorIdentifier) {
+    public int startSuccess(Long id, String executorIdentifier) {
         JobEntity jobEntity = find(id);
         Date currentDate = JobDateUtils.getCurrentDate();
         jobEntity.setStatus(JobStatus.RUNNING);
@@ -184,7 +185,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         if (jobEntity.getExecutorDestroyedTime() != null) {
             jobEntity.setExecutorDestroyedTime(null);
         }
-        jobRepository.updateJobExecutorIdentifierAndStatusById(jobEntity);
+        return jobRepository.updateJobExecutorIdentifierAndStatusById(jobEntity);
     }
 
 
@@ -210,6 +211,8 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
             resultHandleServices.forEach(r -> r.handle(taskResult));
         }
         if (publisher != null && taskResult.getStatus() != null && taskResult.getStatus().isTerminated()) {
+            taskResultPublisherExecutor.execute(() -> publisher
+                    .publishEvent(new JobTerminateEvent(taskResult.getJobIdentity(), taskResult.getStatus())));
             taskResultPublisherExecutor
                     .execute(() -> publisher.publishEvent(new DestroyExecutorEvent(taskResult.getJobIdentity())));
         }

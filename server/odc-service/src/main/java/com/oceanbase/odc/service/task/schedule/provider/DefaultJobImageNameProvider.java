@@ -25,7 +25,7 @@ import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.service.info.InfoAdapter;
 import com.oceanbase.odc.service.task.config.K8sProperties;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
-import com.oceanbase.odc.service.task.constants.JobEnvConstants;
+import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
 
 /**
  * @author yaobin
@@ -48,7 +48,7 @@ public class DefaultJobImageNameProvider implements JobImageNameProvider {
         K8sProperties k8s = taskFrameworkProperties.get().getK8sProperties();
 
         List<String> candidateImages = new ArrayList<>();
-        candidateImages.add(SystemUtils.getEnvOrProperty(JobEnvConstants.ODC_IMAGE_NAME));
+        candidateImages.add(SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_IMAGE_NAME));
         candidateImages.add(k8s.getPodImageName());
         candidateImages.add("odc-server:" + infoAdapter.getBuildVersion());
 
