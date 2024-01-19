@@ -27,7 +27,7 @@ import lombok.Data;
  */
 @Data
 @JsonFormat(with = Feature.ACCEPT_CASE_INSENSITIVE_PROPERTIES)
-public class ProjectResponse {
+public class OmsProjectResponse {
     /**
      * 项目 ID
      */

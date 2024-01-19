@@ -13,51 +13,39 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.oceanbase.odc.service.onlineschemachange.oms.request;
 
+import java.util.List;
+
 import javax.validation.constraints.Min;
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.Size;
 
 import org.hibernate.validator.constraints.Range;
+
+import com.oceanbase.odc.service.onlineschemachange.oms.annotation.OmsEnumsCheck;
+import com.oceanbase.odc.service.onlineschemachange.oms.enums.OmsProjectType;
 
 import lombok.Data;
 
 /**
  * @author yaobin
- * @date 2023-06-01
- * @since 4.2.0
+ * @date 2023-12-27
+ * @since 4.2.3
  */
 @Data
-public class ListProjectFullVerifyResultRequest extends BaseOmsRequest {
-    /**
-     * 项目ID
-     */
-    @NotBlank(message = "project id can not be blank")
-    private String projectId;
+public class ListOmsProjectRequest extends BaseOmsRequest {
+
+    @OmsEnumsCheck(fieldName = "type", enumClass = OmsProjectType.class)
+    private String type;
 
     /**
-     * 源端库名
+     * project status
      */
-    @Size(min = 1, message = "source schemas can not be null")
-    private String[] sourceSchemas;
-    /**
-     * 目标端库名
-     */
-    @Size(min = 1, message = "dest schemas can not be null")
-    private String[] destSchemas;
-    /**
-     * 状态
-     */
-    private String[] status;
-    /**
-     * 当前页
-     */
+    private List<String> status;
+
     @Min(1)
     private Integer pageNumber = 1;
-    /**
-     * 每页个数
-     */
+
     @Range(min = 1, max = 150)
     private Integer pageSize = 10;
 }

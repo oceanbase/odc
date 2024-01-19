@@ -13,17 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.oceanbase.odc.service.onlineschemachange.oms.response;
 
-package com.oceanbase.odc.service.onlineschemachange.oms.enums;
+import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonFormat.Feature;
+
+import lombok.Data;
 
 /**
  * @author yaobin
- * @date 2023-12-27
- * @since 4.2.4
+ * @date 2023-06-01
+ * @since 4.2.0
  */
-public enum ProjectTypeEnum {
+@Data
+@JsonFormat(with = Feature.ACCEPT_CASE_INSENSITIVE_PROPERTIES)
+public class OmsProjectFullVerifyResultResponse {
 
-    MIGRATION,
+    /**
+     * 不一致数据总条数
+     */
+    private Long differentNumber;
 
-    SYNC
+    /**
+     * 全量校验列表
+     */
+    private List<FullVerifyTableStatisticVO> fullVerifyTableStatistics;
 }

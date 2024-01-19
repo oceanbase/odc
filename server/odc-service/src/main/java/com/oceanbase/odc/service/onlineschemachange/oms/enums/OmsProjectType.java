@@ -13,24 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.onlineschemachange.oms.request;
 
-import javax.validation.constraints.NotBlank;
-
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.ToString;
+package com.oceanbase.odc.service.onlineschemachange.oms.enums;
 
 /**
  * @author yaobin
- * @date 2023-06-03
- * @since 4.2.0
+ * @date 2023-12-27
+ * @since 4.2.4
  */
-@Data
-@ToString
-@EqualsAndHashCode(callSuper = true)
-public class ProjectControlRequest extends BaseOmsRequest {
+public enum OmsProjectType {
 
-    @NotBlank(message = "project id can not be blank")
-    private String id;
+    MIGRATION,
+
+    SYNC
 }

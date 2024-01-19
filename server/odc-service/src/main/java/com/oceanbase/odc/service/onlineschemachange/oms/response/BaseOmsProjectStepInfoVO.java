@@ -15,11 +15,6 @@
  */
 package com.oceanbase.odc.service.onlineschemachange.oms.response;
 
-import java.util.List;
-
-import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.annotation.JsonFormat.Feature;
-
 import lombok.Data;
 
 /**
@@ -28,16 +23,5 @@ import lombok.Data;
  * @since 4.2.0
  */
 @Data
-@JsonFormat(with = Feature.ACCEPT_CASE_INSENSITIVE_PROPERTIES)
-public class ProjectFullVerifyResultResponse {
-
-    /**
-     * 不一致数据总条数
-     */
-    private Long differentNumber;
-
-    /**
-     * 全量校验列表
-     */
-    private List<FullVerifyTableStatisticVO> fullVerifyTableStatistics;
+public class BaseOmsProjectStepInfoVO {
 }

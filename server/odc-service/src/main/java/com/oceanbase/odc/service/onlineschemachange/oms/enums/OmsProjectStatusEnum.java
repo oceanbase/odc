@@ -27,7 +27,7 @@ import lombok.Getter;
  */
 @Getter
 @AllArgsConstructor
-public enum ProjectStatusEnum {
+public enum OmsProjectStatusEnum {
 
     /**
      * 未启动
