@@ -20,6 +20,8 @@ import java.util.UUID;
 
 import javax.validation.constraints.NotBlank;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import com.amazonaws.util.SdkHttpUtils;
@@ -46,7 +48,7 @@ public class CloudResourceService {
     private final CloudSecurityTokenService cloudSecurityTokenService;
 
     public CloudResourceService(CloudObjectStorageService cloudObjectStorageService,
-            CloudSecurityTokenService cloudSecurityTokenService) {
+            @Autowired @Qualifier("publicEndpointCloudClient") CloudSecurityTokenService cloudSecurityTokenService) {
         this.cloudObjectStorageService = cloudObjectStorageService;
         this.cloudSecurityTokenService = cloudSecurityTokenService;
     }

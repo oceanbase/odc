@@ -73,7 +73,6 @@ import com.oceanbase.odc.core.shared.constant.Cipher;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
 import com.oceanbase.odc.core.shared.constant.PermissionType;
-import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.RoleType;
 import com.oceanbase.odc.core.shared.constant.UserType;
@@ -90,7 +89,6 @@ import com.oceanbase.odc.metadb.iam.RolePermissionEntity;
 import com.oceanbase.odc.metadb.iam.RolePermissionRepository;
 import com.oceanbase.odc.metadb.iam.RoleRepository;
 import com.oceanbase.odc.metadb.iam.UserEntity;
-import com.oceanbase.odc.metadb.iam.UserOrganizationRepository;
 import com.oceanbase.odc.metadb.iam.UserPermissionEntity;
 import com.oceanbase.odc.metadb.iam.UserPermissionRepository;
 import com.oceanbase.odc.metadb.iam.UserRepository;
@@ -109,7 +107,6 @@ import com.oceanbase.odc.service.iam.model.QueryUserParams;
 import com.oceanbase.odc.service.iam.model.Role;
 import com.oceanbase.odc.service.iam.model.UpdateUserReq;
 import com.oceanbase.odc.service.iam.model.User;
-import com.oceanbase.odc.service.iam.model.UserResourceRole;
 import com.oceanbase.odc.service.iam.util.FailedLoginAttemptLimiter;
 import com.oceanbase.odc.service.iam.util.PermissionUtil;
 import com.oceanbase.odc.service.iam.util.ResourceContextUtil;
@@ -150,9 +147,6 @@ public class UserService {
     private PermissionRepository permissionRepository;
 
     @Autowired
-    private UserOrganizationRepository userOrganizationRepository;
-
-    @Autowired
     private LoginHistoryRepository loginHistoryRepository;
 
     @Autowired
@@ -182,7 +176,6 @@ public class UserService {
     @Autowired
     private UserOrganizationService userOrganizationService;
 
-    private final OrganizationMapper organizationMapper = OrganizationMapper.INSTANCE;
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private final List<Consumer<PasswordChangeEvent>> postPasswordChangeHooks = new ArrayList<>();
     private final List<Consumer<UserDeleteEvent>> postUserDeleteHooks = new ArrayList<>();
@@ -269,8 +262,6 @@ public class UserService {
             log.error("registerSynchronization failed", e);
         }
     }
-
-
 
     @SkipAuthorize("for odc internal usage")
     public boolean exists(Long organizationId, String accountName) {
@@ -442,37 +433,18 @@ public class UserService {
 
     @SkipAuthorize("odc internal usage")
     public Set<Long> getCurrentUserRoleIds() {
-        long currentUserId = authenticationFacade.currentUserId();
-        return getUserRoleIds(currentUserId);
+        List<RoleEntity> roleEntities = roleRepository.findByUserIdAndOrganizationIdAndEnabled(
+                authenticationFacade.currentUserId(), authenticationFacade.currentOrganizationId(), true);
+        if (CollectionUtils.isEmpty(roleEntities)) {
+            return Collections.emptySet();
+        }
+        return roleEntities.stream().map(RoleEntity::getId).collect(Collectors.toSet());
     }
 
     public Set<String> getCurrentUserResourceRoleIdentifiers() {
         long currentUserId = authenticationFacade.currentUserId();
         long currentOrganizationId = authenticationFacade.currentOrganizationId();
         return resourceRoleService.getResourceRoleIdentifiersByUserId(currentOrganizationId, currentUserId);
-    }
-
-    @SkipAuthorize("odc internal usage")
-    public Set<Long> getUserRoleIds(Long userId) {
-        List<RoleEntity> relations = roleRepository.findByUserIdAndEnabled(userId, true);
-        if (CollectionUtils.isEmpty(relations)) {
-            return Collections.emptySet();
-        }
-        return relations.stream().map(RoleEntity::getId).collect(Collectors.toSet());
-    }
-
-    private List<UserResourceRole> getUserResourceRoles(@NonNull Long userId, @NonNull Long resourceId,
-            @NonNull ResourceType resourceType, @NotEmpty List<ResourceRoleName> resourceRoles) {
-        List<UserResourceRole> userResourceRoles = new ArrayList<>();
-        for (ResourceRoleName role : resourceRoles) {
-            UserResourceRole resourceRole = new UserResourceRole();
-            resourceRole.setUserId(userId);
-            resourceRole.setResourceType(resourceType);
-            resourceRole.setResourceId(resourceId);
-            resourceRole.setResourceRole(role);
-            userResourceRoles.add(resourceRole);
-        }
-        return userResourceRoles;
     }
 
     private void acquirePermissions(@NonNull Collection<User> users) {

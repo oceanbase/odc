@@ -261,22 +261,36 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
         return username;
     }
 
+    public static String getSchema(@NonNull String schema, @NonNull DialectType dialectType) {
+        switch (dialectType) {
+            case OB_ORACLE:
+            case ORACLE:
+                return "\"" + schema + "\"";
+            case OB_MYSQL:
+            case MYSQL:
+            case ODP_SHARDING_OB_MYSQL:
+                return schema;
+            default:
+                return null;
+        }
+    }
+
     public static String getDefaultSchema(@NonNull ConnectionConfig connectionConfig) {
         String defaultSchema = connectionConfig.getDefaultSchema();
         switch (connectionConfig.getDialectType()) {
             case OB_ORACLE:
             case ORACLE:
                 if (StringUtils.isNotEmpty(defaultSchema)) {
-                    return "\"" + defaultSchema + "\"";
+                    return getSchema(defaultSchema, connectionConfig.getDialectType());
                 }
-                return "\"" + getDbUser(connectionConfig) + "\"";
+                return getSchema(getDbUser(connectionConfig), connectionConfig.getDialectType());
             case OB_MYSQL:
             case MYSQL:
             case ODP_SHARDING_OB_MYSQL:
                 if (StringUtils.isNotEmpty(defaultSchema)) {
-                    return defaultSchema;
+                    return getSchema(defaultSchema, connectionConfig.getDialectType());
                 }
-                return OdcConstants.MYSQL_DEFAULT_SCHEMA;
+                return getSchema(OdcConstants.MYSQL_DEFAULT_SCHEMA, connectionConfig.getDialectType());
             default:
                 return null;
         }
