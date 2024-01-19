@@ -30,8 +30,8 @@ CREATE TABLE IF NOT EXISTS `job_job` (
 CREATE TABLE IF NOT EXISTS `job_job_attribute` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `job_id` bigint NOT NULL COMMENT 'job_id, 参考 job_job(id)',
-  `attribute_key` varchar(128) DEFAULT NULL COMMENT '属性键',
-  `attribute_value` mediumtext DEFAULT NULL COMMENT '属性值',
+  `attribute_key` varchar(128) NOT NULL COMMENT '属性键',
+  `attribute_value` mediumtext NOT NULL COMMENT '属性值',
   `creator_id` bigint DEFAULT NULL COMMENT '创建用户 ID, 参考 iam_user(id)',
   `organization_id` bigint DEFAULT NULL COMMENT '所属组织 ID, 参考 iam_organization(id)',
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',

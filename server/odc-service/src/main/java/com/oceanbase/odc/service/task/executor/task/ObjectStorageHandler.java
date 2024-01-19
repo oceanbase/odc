@@ -62,8 +62,9 @@ public class ObjectStorageHandler {
 
     public StorageObject loadObject(ObjectMetadata metadata) {
         try {
-            if (!localFileOperator.isLocalFileAbsent(metadata)) {
-                loadObjectFromOss(metadata);
+            if (localFileOperator.isLocalFileAbsent(metadata)) {
+                log.info("File is absent in local, load file from oss, bucket={}, objectId={}",
+                        metadata.getBucketName(), metadata.getObjectId());
             }
             Resource resource = localFileOperator.loadAsResource(metadata.getBucketName(), metadata.getObjectId());
             return StorageObject.builder().content(resource.getInputStream()).metadata(metadata).build();

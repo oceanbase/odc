@@ -16,7 +16,6 @@
 
 package com.oceanbase.odc.service.task.constants;
 
-import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
 
 /**
  * @author yaobin
@@ -25,9 +24,9 @@ import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
  */
 public class JobAttributeKeyConstants {
 
-    public static final String LOG_STORAGE_ALL_OBJECT_ID = OdcTaskLogLevel.ALL.name();
+    public static final String LOG_STORAGE_ALL_OBJECT_ID = "LOG_STORAGE_ALL_OBJECT_ID";
 
-    public static final String LOG_STORAGE_WARN_OBJECT_ID = OdcTaskLogLevel.WARN.name();
+    public static final String LOG_STORAGE_WARN_OBJECT_ID = "LOG_STORAGE_WARN_OBJECT_ID";
 
-    public static final String LOG_STORAGE_BUCKET_NAME = "STORAGE_BUCKET_NAME";
+    public static final String LOG_STORAGE_BUCKET_NAME = "LOG_STORAGE_BUCKET_NAME";
 }
