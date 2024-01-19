@@ -54,16 +54,16 @@ import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeScheduleTaskParameters;
-import com.oceanbase.odc.service.onlineschemachange.oms.enums.ProjectStatusEnum;
+import com.oceanbase.odc.service.onlineschemachange.oms.enums.OmsProjectStatusEnum;
 import com.oceanbase.odc.service.onlineschemachange.oms.openapi.DataSourceOpenApiService;
-import com.oceanbase.odc.service.onlineschemachange.oms.openapi.ProjectOpenApiService;
+import com.oceanbase.odc.service.onlineschemachange.oms.openapi.OmsProjectOpenApiService;
 import com.oceanbase.odc.service.onlineschemachange.oms.request.CreateOceanBaseDataSourceRequest;
-import com.oceanbase.odc.service.onlineschemachange.oms.request.CreateProjectRequest;
-import com.oceanbase.odc.service.onlineschemachange.oms.request.ListProjectFullVerifyResultRequest;
-import com.oceanbase.odc.service.onlineschemachange.oms.request.ProjectControlRequest;
-import com.oceanbase.odc.service.onlineschemachange.oms.response.ProjectFullVerifyResultResponse;
-import com.oceanbase.odc.service.onlineschemachange.oms.response.ProjectProgressResponse;
-import com.oceanbase.odc.service.onlineschemachange.oms.response.ProjectStepVO;
+import com.oceanbase.odc.service.onlineschemachange.oms.request.CreateOmsProjectRequest;
+import com.oceanbase.odc.service.onlineschemachange.oms.request.ListOmsProjectFullVerifyResultRequest;
+import com.oceanbase.odc.service.onlineschemachange.oms.request.OmsProjectControlRequest;
+import com.oceanbase.odc.service.onlineschemachange.oms.response.OmsProjectFullVerifyResultResponse;
+import com.oceanbase.odc.service.onlineschemachange.oms.response.OmsProjectProgressResponse;
+import com.oceanbase.odc.service.onlineschemachange.oms.response.OmsProjectStepVO;
 import com.oceanbase.odc.service.quartz.model.MisfireStrategy;
 import com.oceanbase.odc.service.schedule.model.JobType;
 import com.oceanbase.odc.service.schedule.model.ScheduleStatus;
@@ -92,7 +92,7 @@ public abstract class BaseOscTestEnv extends ServiceTestEnv {
     protected ConnectionService connectionService;
 
     @MockBean
-    protected ProjectOpenApiService projectOpenApiService;
+    protected OmsProjectOpenApiService projectOpenApiService;
     @MockBean
     protected DataSourceOpenApiService dataSourceOpenApiService;
 
@@ -124,26 +124,26 @@ public abstract class BaseOscTestEnv extends ServiceTestEnv {
         when(dataSourceOpenApiService.createOceanBaseDataSource(Mockito.any(CreateOceanBaseDataSourceRequest.class)))
                 .thenReturn(datasourceId);
 
-        when(projectOpenApiService.createProject(Mockito.any(CreateProjectRequest.class)))
+        when(projectOpenApiService.createProject(Mockito.any(CreateOmsProjectRequest.class)))
                 .thenReturn(projectId);
 
-        doNothing().when(projectOpenApiService).startProject(Mockito.any(ProjectControlRequest.class));
+        doNothing().when(projectOpenApiService).startProject(Mockito.any(OmsProjectControlRequest.class));
         ProjectStepResultTest projectStepResultTest = new ProjectStepResultTest();
-        List<ProjectStepVO> projectSteps = projectStepResultTest.projectSteps();
+        List<OmsProjectStepVO> projectSteps = projectStepResultTest.projectSteps();
 
-        ProjectProgressResponse projectProgressResponse = new ProjectProgressResponse();
-        projectProgressResponse.setStatus(ProjectStatusEnum.DELETED);
+        OmsProjectProgressResponse projectProgressResponse = new OmsProjectProgressResponse();
+        projectProgressResponse.setStatus(OmsProjectStatusEnum.DELETED);
 
         doReturn(projectProgressResponse).when(projectOpenApiService)
-                .describeProjectProgress(Mockito.any(ProjectControlRequest.class));
+                .describeProjectProgress(Mockito.any(OmsProjectControlRequest.class));
 
-        ProjectFullVerifyResultResponse fullVerifyResultResponse = projectStepResultTest.verifyResult();
+        OmsProjectFullVerifyResultResponse fullVerifyResultResponse = projectStepResultTest.verifyResult();
         doReturn(projectSteps).when(projectOpenApiService)
-                .describeProjectSteps(Mockito.any(ProjectControlRequest.class));
+                .describeProjectSteps(Mockito.any(OmsProjectControlRequest.class));
 
 
         doReturn(fullVerifyResultResponse).when(projectOpenApiService)
-                .listProjectFullVerifyResult(Mockito.any(ListProjectFullVerifyResultRequest.class));
+                .listProjectFullVerifyResult(Mockito.any(ListOmsProjectFullVerifyResultRequest.class));
 
         doNothing().when(dbSessionManager)
                 .killAllSessions(Mockito.any(ConnectionSession.class), Mockito.any(Predicate.class), Mockito.anyInt());

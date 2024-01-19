@@ -22,23 +22,29 @@ import lombok.Data;
 
 /**
  * @author yaobin
- * @date 2023-06-01
- * @since 4.2.0
+ * @date 2023-12-27
+ * @since 4.2.3
  */
 @Data
 @JsonFormat(with = Feature.ACCEPT_CASE_INSENSITIVE_PROPERTIES)
-public class IncrTransferStepInfoVO extends BaseOmsProjectStepInfoVO {
+public class OmsProjectResponse {
     /**
-     * 位点时间，unix timestamp, 单位秒
+     * 项目 ID
      */
-    private Long incrTimestampCheckpoint;
+    private String id;
 
     /**
-     * 位点采集时间，unix timestamp，单位秒
+     * 传输实例的 ID
      */
-    private Long checkpointSampleTimestamp;
+    private String workerGradeId;
+
     /**
-     * 是否开启 DML/DDL 统计
+     * 项目状态
      */
-    private Boolean enableIncrStatistics;
+    private String status;
+
+    /**
+     * 项目类型
+     */
+    private String type;
 }

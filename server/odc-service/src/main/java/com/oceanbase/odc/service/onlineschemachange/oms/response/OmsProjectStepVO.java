@@ -39,7 +39,7 @@ import lombok.Data;
  */
 @Data
 @JsonFormat(with = Feature.ACCEPT_CASE_INSENSITIVE_PROPERTIES)
-public class ProjectStepVO {
+public class OmsProjectStepVO {
     /**
      * 步骤顺序
      */
@@ -85,15 +85,15 @@ public class ProjectStepVO {
      * 步骤详情,全量传输/增量传输/正向切换
      */
     @JsonTypeInfo(use = Id.NAME, include = As.EXTERNAL_PROPERTY, property = "name",
-            defaultImpl = BaseProjectStepInfoVO.class)
+            defaultImpl = BaseOmsProjectStepInfoVO.class)
     @JsonSubTypes(value = {
             @JsonSubTypes.Type(value = FullTransferStepInfoVO.class, name = "FULL_TRANSFER"),
             @JsonSubTypes.Type(value = FullTransferStepInfoVO.class, name = "FULL_VERIFIER"),
-            @JsonSubTypes.Type(value = BaseProjectStepInfoVO.class, name = "TRANSFER_PRECHECK"),
-            @JsonSubTypes.Type(value = BaseProjectStepInfoVO.class, name = "TRANSFER_INCR_LOG_PULL"),
+            @JsonSubTypes.Type(value = BaseOmsProjectStepInfoVO.class, name = "TRANSFER_PRECHECK"),
+            @JsonSubTypes.Type(value = BaseOmsProjectStepInfoVO.class, name = "TRANSFER_INCR_LOG_PULL"),
             @JsonSubTypes.Type(value = IncrTransferStepInfoVO.class, name = "INCR_TRANSFER"),
             @JsonSubTypes.Type(value = TransferAppSwitchStepInfoVO.class, name = "TRANSFER_APP_SWITCH")
     })
-    private BaseProjectStepInfoVO stepInfo;
+    private BaseOmsProjectStepInfoVO stepInfo;
 
 }

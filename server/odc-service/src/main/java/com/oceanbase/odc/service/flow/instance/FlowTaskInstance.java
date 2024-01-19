@@ -177,7 +177,8 @@ public class FlowTaskInstance extends BaseFlowNodeInstance {
     }
 
     public void bindServiceTask(@NonNull BaseRuntimeFlowableDelegate<?> target) {
-        if (!Objects.equals(target.getTargetTaskInstanceId(), getId())) {
+        if (target.getTargetTaskInstanceId() == null || getId() == null
+                || !Objects.equals(target.getTargetTaskInstanceId(), getId())) {
             return;
         }
         this.targetTaskHandle = target;
