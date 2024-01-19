@@ -36,6 +36,7 @@ public class DataSourceInfoBuilder {
 
     public static DataSourceInfo build(ConnectionConfig connectionConfig) {
         DataSourceInfo dataSourceInfo = new DataSourceInfo();
+        dataSourceInfo.setDataSourceName(connectionConfig.getName());
         dataSourceInfo.setDatabaseName(connectionConfig.getDefaultSchema());
         if (StringUtils.isNotEmpty(connectionConfig.getPassword())) {
             dataSourceInfo.setPassword(connectionConfig.getPassword());
@@ -53,7 +54,7 @@ public class DataSourceInfoBuilder {
                         .setObProxy(String.format("%s:%s", connectionConfig.getHost(), connectionConfig.getPort()));
                 dataSourceInfo
                         .setFullUserName(OBConsoleDataSourceFactory.getUsername(connectionConfig));
-                dataSourceInfo.setDatabaseType(DataBaseType.OCEANBASEV10);
+                dataSourceInfo.setDatabaseType(DataBaseType.OB_MYSQL);
                 dataSourceInfo.setSysUser(connectionConfig.getSysTenantUsername());
                 dataSourceInfo.setClusterName(connectionConfig.getClusterName());
                 if (StringUtils.isNotEmpty(connectionConfig.getSysTenantPassword())) {
@@ -66,6 +67,13 @@ public class DataSourceInfoBuilder {
                 dataSourceInfo.setSysDatabaseName("oceanbase");
                 break;
             }
+            case OB_ORACLE:
+                dataSourceInfo.setIp(connectionConfig.getHost());
+                dataSourceInfo.setPort(connectionConfig.getPort());
+                dataSourceInfo.setFullUserName(connectionConfig.getUsername());
+                dataSourceInfo.setClusterName(connectionConfig.getClusterName());
+                dataSourceInfo.setTenantName(connectionConfig.getTenantName());
+                dataSourceInfo.setDatabaseType(DataBaseType.OB_ORACLE);
             default:
                 log.warn(String.format("Unsupported datasource type:%s", connectionConfig.getDialectType()));
                 throw new UnsupportedException(

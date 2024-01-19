@@ -434,7 +434,7 @@ public class ScheduleService {
                         new TypeReference<SuccessResponse<String>>() {}).getData();
             } catch (Exception e) {
                 log.warn("Remote get task log failed, taskId={}", taskId, e);
-                throw new UnexpectedException(String.format("Remote interrupt task failed, taskId=%s", taskId));
+                throw new UnexpectedException(String.format("Remote get task log failed, taskId=%s", taskId));
             }
         }
         return scheduleTaskService.getScheduleTaskLog(taskId, logLevel);

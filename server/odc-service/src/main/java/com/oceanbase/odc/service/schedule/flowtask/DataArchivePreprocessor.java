@@ -80,8 +80,6 @@ public class DataArchivePreprocessor extends AbstractDlmJobPreprocessor {
             // permission to access it.
             Database sourceDb = databaseService.detail(dataArchiveParameters.getSourceDatabaseId());
             Database targetDb = databaseService.detail(dataArchiveParameters.getTargetDataBaseId());
-            checkDatasource(sourceDb.getDataSource());
-            checkDatasource(targetDb.getDataSource());
             dataArchiveParameters.setSourceDatabaseName(sourceDb.getName());
             dataArchiveParameters.setTargetDatabaseName(targetDb.getName());
             dataArchiveParameters.setSourceDataSourceName(sourceDb.getDataSource().getName());
@@ -146,9 +144,14 @@ public class DataArchivePreprocessor extends AbstractDlmJobPreprocessor {
                         String.format("Unsupported data archiving link from %s to %s.", sourceDbType, targetDbType));
             }
         }
-        // Cannot supports archive from mysql to ob.
         if (sourceDbType == DialectType.MYSQL) {
             if (targetDbType != DialectType.OB_MYSQL && targetDbType != DialectType.MYSQL) {
+                throw new UnsupportedException(
+                        String.format("Unsupported data archiving link from %s to %s.", sourceDbType, targetDbType));
+            }
+        }
+        if (sourceDbType == DialectType.OB_ORACLE) {
+            if (targetDbType != DialectType.OB_ORACLE) {
                 throw new UnsupportedException(
                         String.format("Unsupported data archiving link from %s to %s.", sourceDbType, targetDbType));
             }
