@@ -29,7 +29,7 @@ import lombok.Data;
  */
 @Data
 @JsonFormat(with = Feature.ACCEPT_CASE_INSENSITIVE_PROPERTIES)
-public class FullTransferStepInfoVO extends BaseProjectStepInfoVO {
+public class FullTransferStepInfoVO extends BaseOmsProjectStepInfoVO {
     /**
      * 已完成迁移行数/实际行数。
      */

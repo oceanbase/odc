@@ -13,55 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.oceanbase.odc.service.onlineschemachange.oms.enums;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-
 /**
- * 项目状态
- *
  * @author yaobin
- * @date 2023-06-01
- * @since 4.2.0
+ * @date 2023-12-27
+ * @since 4.2.4
  */
-@Getter
-@AllArgsConstructor
-public enum ProjectStatusEnum {
+public enum OmsProjectType {
 
-    /**
-     * 未启动
-     */
-    INIT,
-    /**
-     * 迁移中
-     */
-    RUNNING,
-    /**
-     * 暂停中
-     */
-    SUSPEND,
-    /**
-     * 失败
-     */
-    FAILED,
-    /**
-     * 已完成
-     */
-    FINISHED,
-    /**
-     * 释放中
-     */
-    RELEASING,
-    /**
-     * 已释放
-     */
-    RELEASED,
-    /**
-     * 已删除
-     */
-    DELETED,
+    MIGRATION,
 
-    UNKNOWN
-
+    SYNC
 }

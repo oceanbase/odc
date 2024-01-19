@@ -15,9 +15,6 @@
  */
 package com.oceanbase.odc.service.onlineschemachange.oms.response;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.annotation.JsonFormat.Feature;
-
 import lombok.Data;
 
 /**
@@ -26,19 +23,5 @@ import lombok.Data;
  * @since 4.2.0
  */
 @Data
-@JsonFormat(with = Feature.ACCEPT_CASE_INSENSITIVE_PROPERTIES)
-public class IncrTransferStepInfoVO extends BaseOmsProjectStepInfoVO {
-    /**
-     * 位点时间，unix timestamp, 单位秒
-     */
-    private Long incrTimestampCheckpoint;
-
-    /**
-     * 位点采集时间，unix timestamp，单位秒
-     */
-    private Long checkpointSampleTimestamp;
-    /**
-     * 是否开启 DML/DDL 统计
-     */
-    private Boolean enableIncrStatistics;
+public class BaseOmsProjectStepInfoVO {
 }

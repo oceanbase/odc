@@ -18,7 +18,7 @@ package com.oceanbase.odc.service.onlineschemachange.oms.response;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonFormat.Feature;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.oceanbase.odc.service.onlineschemachange.oms.enums.ProjectStatusEnum;
+import com.oceanbase.odc.service.onlineschemachange.oms.enums.OmsProjectStatusEnum;
 import com.oceanbase.odc.service.onlineschemachange.oms.jackson.CustomEnumDeserializer;
 
 import lombok.Data;
@@ -32,7 +32,7 @@ import lombok.Data;
  */
 @Data
 @JsonFormat(with = Feature.ACCEPT_CASE_INSENSITIVE_PROPERTIES)
-public class ProjectProgressResponse {
+public class OmsProjectProgressResponse {
     /**
      * 项目ID
      */
@@ -41,7 +41,7 @@ public class ProjectProgressResponse {
      * 通用的项目状态枚举
      */
     @JsonDeserialize(using = CustomEnumDeserializer.ProjectStatusEnumDeserializer.class)
-    private ProjectStatusEnum status;
+    private OmsProjectStatusEnum status;
 
     /**
      * 告警保障等级
