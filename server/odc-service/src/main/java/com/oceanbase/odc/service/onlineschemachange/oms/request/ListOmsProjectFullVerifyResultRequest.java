@@ -29,7 +29,7 @@ import lombok.Data;
  * @since 4.2.0
  */
 @Data
-public class ListProjectFullVerifyResultRequest extends BaseOmsRequest {
+public class ListOmsProjectFullVerifyResultRequest extends BaseOmsRequest {
     /**
      * 项目ID
      */

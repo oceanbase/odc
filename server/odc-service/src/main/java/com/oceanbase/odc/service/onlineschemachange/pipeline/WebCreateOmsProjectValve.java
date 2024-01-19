@@ -29,7 +29,7 @@ import com.oceanbase.odc.service.onlineschemachange.exception.OmsException;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeScheduleTaskParameters;
 import com.oceanbase.odc.service.onlineschemachange.oms.enums.OmsOceanBaseType;
 import com.oceanbase.odc.service.onlineschemachange.oms.request.CreateOceanBaseDataSourceRequest;
-import com.oceanbase.odc.service.onlineschemachange.oms.request.CreateProjectRequest;
+import com.oceanbase.odc.service.onlineschemachange.oms.request.CreateOmsProjectRequest;
 
 /**
  * @author yaobin
@@ -66,7 +66,7 @@ public class WebCreateOmsProjectValve extends BaseCreateOmsProjectValve {
 
     @Override
     protected void doCreateProjectRequest(String omsDsId, Long scheduleId,
-            OnlineSchemaChangeScheduleTaskParameters oscScheduleTaskParameters, CreateProjectRequest request) {
+            OnlineSchemaChangeScheduleTaskParameters oscScheduleTaskParameters, CreateOmsProjectRequest request) {
 
     }
 

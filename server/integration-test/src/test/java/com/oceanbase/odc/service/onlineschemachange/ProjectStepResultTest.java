@@ -25,8 +25,8 @@ import org.springframework.util.CollectionUtils;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.json.JsonUtils;
-import com.oceanbase.odc.service.onlineschemachange.oms.response.ProjectFullVerifyResultResponse;
-import com.oceanbase.odc.service.onlineschemachange.oms.response.ProjectStepVO;
+import com.oceanbase.odc.service.onlineschemachange.oms.response.OmsProjectFullVerifyResultResponse;
+import com.oceanbase.odc.service.onlineschemachange.oms.response.OmsProjectStepVO;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -40,22 +40,22 @@ public class ProjectStepResultTest {
 
     @Test
     public void readProjectStepFile() {
-        List<ProjectStepVO> projectStepVOS = projectSteps();
+        List<OmsProjectStepVO> projectStepVOS = projectSteps();
         Assert.assertFalse(CollectionUtils.isEmpty(projectStepVOS));
     }
 
     @Test
     public void readVerifyResultFile() {
-        ProjectFullVerifyResultResponse fullVerifyResultResponse = verifyResult();
+        OmsProjectFullVerifyResultResponse fullVerifyResultResponse = verifyResult();
         Assert.assertNotNull(fullVerifyResultResponse);
     }
 
-    public List<ProjectStepVO> projectSteps() {
-        return getJsonResult("project_step.json", new TypeReference<List<ProjectStepVO>>() {});
+    public List<OmsProjectStepVO> projectSteps() {
+        return getJsonResult("project_step.json", new TypeReference<List<OmsProjectStepVO>>() {});
     }
 
-    public ProjectFullVerifyResultResponse verifyResult() {
-        return getJsonResult("verify_result.json", new TypeReference<ProjectFullVerifyResultResponse>() {});
+    public OmsProjectFullVerifyResultResponse verifyResult() {
+        return getJsonResult("verify_result.json", new TypeReference<OmsProjectFullVerifyResultResponse>() {});
     }
 
     @SuppressWarnings("all")

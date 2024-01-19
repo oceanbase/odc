@@ -13,24 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.onlineschemachange.oms.request;
+package com.oceanbase.odc.service.onlineschemachange.oms.response;
 
-import javax.validation.constraints.NotBlank;
+import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonFormat.Feature;
 
 import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.ToString;
 
 /**
  * @author yaobin
- * @date 2023-06-03
+ * @date 2023-06-01
  * @since 4.2.0
  */
 @Data
-@ToString
-@EqualsAndHashCode(callSuper = true)
-public class ProjectControlRequest extends BaseOmsRequest {
+@JsonFormat(with = Feature.ACCEPT_CASE_INSENSITIVE_PROPERTIES)
+public class OmsProjectFullVerifyResultResponse {
 
-    @NotBlank(message = "project id can not be blank")
-    private String id;
+    /**
+     * 不一致数据总条数
+     */
+    private Long differentNumber;
+
+    /**
+     * 全量校验列表
+     */
+    private List<FullVerifyTableStatisticVO> fullVerifyTableStatistics;
 }

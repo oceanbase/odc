@@ -23,13 +23,15 @@ import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.service.onlineschemachange.oms.client.ClientRequestParams;
 import com.oceanbase.odc.service.onlineschemachange.oms.client.OmsClient;
-import com.oceanbase.odc.service.onlineschemachange.oms.request.CreateProjectRequest;
-import com.oceanbase.odc.service.onlineschemachange.oms.request.ListProjectFullVerifyResultRequest;
+import com.oceanbase.odc.service.onlineschemachange.oms.request.CreateOmsProjectRequest;
+import com.oceanbase.odc.service.onlineschemachange.oms.request.ListOmsProjectFullVerifyResultRequest;
+import com.oceanbase.odc.service.onlineschemachange.oms.request.ListOmsProjectRequest;
 import com.oceanbase.odc.service.onlineschemachange.oms.request.OmsApiReturnResult;
-import com.oceanbase.odc.service.onlineschemachange.oms.request.ProjectControlRequest;
-import com.oceanbase.odc.service.onlineschemachange.oms.response.ProjectFullVerifyResultResponse;
-import com.oceanbase.odc.service.onlineschemachange.oms.response.ProjectProgressResponse;
-import com.oceanbase.odc.service.onlineschemachange.oms.response.ProjectStepVO;
+import com.oceanbase.odc.service.onlineschemachange.oms.request.OmsProjectControlRequest;
+import com.oceanbase.odc.service.onlineschemachange.oms.response.OmsProjectFullVerifyResultResponse;
+import com.oceanbase.odc.service.onlineschemachange.oms.response.OmsProjectProgressResponse;
+import com.oceanbase.odc.service.onlineschemachange.oms.response.OmsProjectResponse;
+import com.oceanbase.odc.service.onlineschemachange.oms.response.OmsProjectStepVO;
 
 /**
  * @author yaobin
@@ -37,15 +39,25 @@ import com.oceanbase.odc.service.onlineschemachange.oms.response.ProjectStepVO;
  * @since 4.2.0
  */
 @Service
-public class ProjectOpenApiServiceImpl implements ProjectOpenApiService {
+public class OmsProjectOpenApiServiceImpl implements OmsProjectOpenApiService {
     private final OmsClient omsClient;
 
-    public ProjectOpenApiServiceImpl(@Autowired OmsClient omsClient) {
+    public OmsProjectOpenApiServiceImpl(@Autowired OmsClient omsClient) {
         this.omsClient = omsClient;
     }
 
     @Override
-    public String createProject(CreateProjectRequest request) {
+    public List<OmsProjectResponse> listProjects(ListOmsProjectRequest request) {
+        ClientRequestParams params = new ClientRequestParams()
+                .setRequest(request)
+                .setAction("ListProjects")
+                .setTypeReference(new TypeReference<OmsApiReturnResult<List<OmsProjectResponse>>>() {});
+
+        return omsClient.postOmsInterface(params);
+    }
+
+    @Override
+    public String createProject(CreateOmsProjectRequest request) {
         ClientRequestParams params = new ClientRequestParams()
                 .setRequest(request)
                 .setAction("CreateProject")
@@ -55,7 +67,7 @@ public class ProjectOpenApiServiceImpl implements ProjectOpenApiService {
     }
 
     @Override
-    public void startProject(ProjectControlRequest request) {
+    public void startProject(OmsProjectControlRequest request) {
         ClientRequestParams params = new ClientRequestParams()
                 .setRequest(request)
                 .setAction("StartProject")
@@ -64,7 +76,7 @@ public class ProjectOpenApiServiceImpl implements ProjectOpenApiService {
     }
 
     @Override
-    public void stopProject(ProjectControlRequest request) {
+    public void stopProject(OmsProjectControlRequest request) {
         ClientRequestParams params = new ClientRequestParams()
                 .setRequest(request)
                 .setAction("StopProject")
@@ -74,7 +86,7 @@ public class ProjectOpenApiServiceImpl implements ProjectOpenApiService {
     }
 
     @Override
-    public void resumeProject(ProjectControlRequest request) {
+    public void resumeProject(OmsProjectControlRequest request) {
         ClientRequestParams params = new ClientRequestParams()
                 .setRequest(request)
                 .setAction("ResumeProject")
@@ -84,7 +96,7 @@ public class ProjectOpenApiServiceImpl implements ProjectOpenApiService {
     }
 
     @Override
-    public void releaseProject(ProjectControlRequest request) {
+    public void releaseProject(OmsProjectControlRequest request) {
 
         ClientRequestParams params = new ClientRequestParams()
                 .setRequest(request)
@@ -95,7 +107,7 @@ public class ProjectOpenApiServiceImpl implements ProjectOpenApiService {
     }
 
     @Override
-    public void deleteProject(ProjectControlRequest request) {
+    public void deleteProject(OmsProjectControlRequest request) {
         ClientRequestParams params = new ClientRequestParams()
                 .setRequest(request)
                 .setAction("DeleteProject")
@@ -105,34 +117,35 @@ public class ProjectOpenApiServiceImpl implements ProjectOpenApiService {
     }
 
     @Override
-    public ProjectProgressResponse describeProjectProgress(ProjectControlRequest request) {
+    public OmsProjectProgressResponse describeProjectProgress(OmsProjectControlRequest request) {
 
         ClientRequestParams params = new ClientRequestParams()
                 .setRequest(request)
                 .setAction("DescribeProjectProgress")
-                .setTypeReference(new TypeReference<OmsApiReturnResult<ProjectProgressResponse>>() {});
+                .setTypeReference(new TypeReference<OmsApiReturnResult<OmsProjectProgressResponse>>() {});
 
         return omsClient.postOmsInterface(params);
     }
 
     @Override
-    public List<ProjectStepVO> describeProjectSteps(ProjectControlRequest request) {
+    public List<OmsProjectStepVO> describeProjectSteps(OmsProjectControlRequest request) {
 
         ClientRequestParams params = new ClientRequestParams()
                 .setRequest(request)
                 .setAction("DescribeProjectSteps")
-                .setTypeReference(new TypeReference<OmsApiReturnResult<List<ProjectStepVO>>>() {});
+                .setTypeReference(new TypeReference<OmsApiReturnResult<List<OmsProjectStepVO>>>() {});
 
         return omsClient.postOmsInterface(params);
 
     }
 
     @Override
-    public ProjectFullVerifyResultResponse listProjectFullVerifyResult(ListProjectFullVerifyResultRequest request) {
+    public OmsProjectFullVerifyResultResponse listProjectFullVerifyResult(
+            ListOmsProjectFullVerifyResultRequest request) {
         ClientRequestParams params = new ClientRequestParams()
                 .setRequest(request)
                 .setAction("ListProjectFullVerifyResult")
-                .setTypeReference(new TypeReference<OmsApiReturnResult<ProjectFullVerifyResultResponse>>() {});
+                .setTypeReference(new TypeReference<OmsApiReturnResult<OmsProjectFullVerifyResultResponse>>() {});
 
         return omsClient.postOmsInterface(params);
     }

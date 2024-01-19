@@ -21,6 +21,8 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 
+import com.oceanbase.odc.service.onlineschemachange.oms.enums.OmsProjectType;
+
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -31,8 +33,12 @@ import lombok.EqualsAndHashCode;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class CreateProjectRequest extends BaseOmsRequest {
+public class CreateOmsProjectRequest extends BaseOmsRequest {
 
+    /**
+     * 项目 id
+     */
+    private String id;
     /**
      * 名称,不能包含空格
      */
@@ -40,7 +46,7 @@ public class CreateProjectRequest extends BaseOmsRequest {
     /**
      * 项目类型 数据迁移任务 MIGRATION, 数据同步任务 SYNC
      */
-    private String type = "MIGRATION";
+    private String type = OmsProjectType.MIGRATION.name();
 
     /**
      * 公有云：传输实例规格，专有云不需要，公有云必填
