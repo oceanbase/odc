@@ -15,11 +15,11 @@
              如果每个类的 log 对象都基于当前类生成，%logger 可作为 %class 的替代。
         -->
         <Property name="LOG_PATTERN">
-            [%date{yyyy-MM-dd HH:mm:ss.SSS}][%thread][%X{traceId},%X{spanId},%X{requestId}][%level][%class][%line]:
+            [%date{yyyy-MM-dd HH:mm:ss.SSS}][%thread][%X{traceId},%X{spanId},%X{requestId},%X{taskId}][%level][%class][%line]:
             %message%n
         </Property>
         <Property name="TASK_LOG_PATTERN">
-            %d{yyyy-MM-dd HH:mm:ss} [%p] %m%n
+            %d{yyyy-MM-dd HH:mm:ss} [%X{taskId}] [%p] %m%n
         </Property>
     </Properties>
 
@@ -53,7 +53,7 @@
                                  fileName="${LOG_DIRECTORY}/task/${ctx:taskId}/log.all"
                                  filePattern="${LOG_DIRECTORY}/task/${ctx:taskId}/${date:yyyy-MM}/task-%d{yyyy-MM-dd}-%i.all.gz">
                         <PatternLayout>
-                            <pattern>%d{yyyy-MM-dd HH:mm:ss} [%p] %m%n</pattern>
+                            <pattern>%d{yyyy-MM-dd HH:mm:ss} [%X{taskId}] [%p] %m%n</pattern>
                         </PatternLayout>
                         <Filters>
                             <!-- TRACE < DEBUG < INFO < WARN < ERROR < FATAL -->
@@ -75,7 +75,7 @@
                                  fileName="${LOG_DIRECTORY}/task/${ctx:taskId}/log.warn"
                                  filePattern="${LOG_DIRECTORY}/task/${ctx:taskId}/${date:yyyy-MM}/task-%d{yyyy-MM-dd}-%i.warn.gz">
                         <PatternLayout>
-                            <pattern>%d{yyyy-MM-dd HH:mm:ss} [%p] %m%n</pattern>
+                            <pattern>%d{yyyy-MM-dd HH:mm:ss} [%X{taskId}] [%p] %m%n</pattern>
                         </PatternLayout>
                         <Filters>
                             <!-- TRACE < DEBUG < INFO < WARN < ERROR < FATAL -->
