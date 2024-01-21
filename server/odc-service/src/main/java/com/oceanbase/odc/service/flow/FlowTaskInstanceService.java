@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.flow;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -95,7 +96,6 @@ import com.oceanbase.odc.service.flow.task.util.DatabaseChangeOssUrlCache;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
-import com.oceanbase.odc.service.objectstorage.model.ObjectMetadata;
 import com.oceanbase.odc.service.objectstorage.operator.LocalFileOperator;
 import com.oceanbase.odc.service.partitionplan.PartitionPlanService;
 import com.oceanbase.odc.service.permissionapply.project.ApplyProjectResult;
@@ -106,7 +106,7 @@ import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.constants.JobAttributeKeyConstants;
 import com.oceanbase.odc.service.task.constants.JobUrlConstants;
 import com.oceanbase.odc.service.task.enums.TaskRunModeEnum;
-import com.oceanbase.odc.service.task.executor.task.ObjectStorageHandler;
+import com.oceanbase.odc.service.task.executor.logger.LogUtils;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
@@ -231,8 +231,10 @@ public class FlowTaskInstanceService {
         }
 
         if (cloudObjectStorageService.supported()) {
-            String objId = taskFrameworkService.findByJobIdAndAttributeKey(jobEntity.getId(),
-                    JobAttributeKeyConstants.LOG_STORAGE_ALL_OBJECT_ID);
+
+            String logIdKey = level == OdcTaskLogLevel.ALL ? JobAttributeKeyConstants.LOG_STORAGE_ALL_OBJECT_ID
+                    : JobAttributeKeyConstants.LOG_STORAGE_WARN_OBJECT_ID;
+            String objId = taskFrameworkService.findByJobIdAndAttributeKey(jobEntity.getId(), logIdKey);
             String bucketName = taskFrameworkService.findByJobIdAndAttributeKey(jobEntity.getId(),
                     JobAttributeKeyConstants.LOG_STORAGE_BUCKET_NAME);
 
@@ -240,10 +242,20 @@ public class FlowTaskInstanceService {
                 if (log.isDebugEnabled()) {
                     log.debug("job: {} is finished, try to get log from local or oss.", jobEntity.getId());
                 }
-                ObjectStorageHandler objectStorageHandler =
-                        new ObjectStorageHandler(cloudObjectStorageService, localFileOperator);
-                return objectStorageHandler.loadObjectContentAsString(
-                        ObjectMetadata.builder().bucketName(bucketName).objectId(objId).build());
+                // check log file is exist on current disk
+                String logFileStr = LogUtils.getTaskLogFileWithPath(jobEntity.getId(), level);
+                if (new File(logFileStr).exists()) {
+                    return LogUtils.getLogContent(logFileStr, LogUtils.MAX_LOG_LINE_COUNT, LogUtils.MAX_LOG_BYTE_COUNT);
+                }
+
+                File tempFile = cloudObjectStorageService.downloadToTempFile(objId);
+                try (FileInputStream inputStream = new FileInputStream(tempFile)) {
+                    FileUtils.copyInputStreamToFile(inputStream, new File(logFileStr));
+                } finally {
+                    FileUtils.deleteQuietly(tempFile);
+                }
+                return LogUtils.getLogContent(logFileStr, LogUtils.MAX_LOG_LINE_COUNT, LogUtils.MAX_LOG_BYTE_COUNT);
+
             }
         }
         if (jobEntity.getExecutorDestroyedTime() == null && jobEntity.getExecutorEndpoint() != null) {

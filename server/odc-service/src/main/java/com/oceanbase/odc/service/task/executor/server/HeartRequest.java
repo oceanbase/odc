@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,23 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.oceanbase.odc.service.task.executor.server;
 
-package com.oceanbase.odc.service.task.service;
+import com.oceanbase.odc.service.task.schedule.JobIdentity;
 
-import org.springframework.beans.factory.annotation.Autowired;
-
-import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
+import lombok.Data;
 
 /**
  * @author yaobin
- * @date 2024-01-19
+ * @date 2023-11-29
  * @since 4.2.4
  */
-public class LogLoadService {
+@Data
+public class HeartRequest {
 
-    @Autowired
-    private CloudObjectStorageService cloudObjectStorageService;
+    private JobIdentity jobIdentity;
 
-
+    private String executorEndpoint;
 
 }

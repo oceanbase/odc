@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.task.executor.executor;
+package com.oceanbase.odc.service.task.executor.server;
 
 import java.util.HashMap;
 import java.util.Map;

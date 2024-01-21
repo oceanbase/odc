@@ -76,7 +76,8 @@ import com.oceanbase.odc.service.session.initializer.ConsoleTimeoutInitializer;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
-import com.oceanbase.odc.service.task.enums.JobStatus;
+import com.oceanbase.odc.service.task.executor.server.ObjectStorageHandler;
+import com.oceanbase.odc.service.task.util.JobUtils;
 import com.oceanbase.tools.dbbrowser.parser.ParserUtil;
 import com.oceanbase.tools.dbbrowser.parser.constant.GeneralSqlType;
 
@@ -123,10 +124,14 @@ public class DatabaseChangeTask extends BaseTask<FlowTaskResult> {
     private DataMaskingService maskingService;
 
     @Override
-    protected void doStart(JobContext context) {
+    protected void doInit(JobContext context) throws Exception {
         log.info("Async task  start to run, task id:{}", this.getTaskId());
         log.info("Start read sql content, taskId={}", this.getTaskId());
         init();
+    }
+
+    @Override
+    protected void doStart(JobContext context) {
         run();
     }
 
@@ -256,8 +261,8 @@ public class DatabaseChangeTask extends BaseTask<FlowTaskResult> {
                 new TypeReference<List<ObjectMetadata>>() {});
 
         for (ObjectMetadata metadata : metadatas) {
-            String objectContentStr = new ObjectStorageHandler(getCloudObjectStorageService(), "/opt/odc/data")
-                    .loadObjectContentAsString(metadata);
+            String objectContentStr = new ObjectStorageHandler(getCloudObjectStorageService(),
+                    JobUtils.getExecutorDataPath()).loadObjectContentAsString(metadata);
             /**
              * remove UTF-8 BOM
              */
@@ -294,7 +299,6 @@ public class DatabaseChangeTask extends BaseTask<FlowTaskResult> {
             zipFileId = fileMeta.getFileId();
             writeFileSuccessCount++;
             log.info("Async task end up running, task id: {}", this.getTaskId());
-            updateStatus(JobStatus.DONE);
         } catch (Exception e) {
             writeFileFailCount++;
             log.warn("Write async task file failed, task id: {}, error message: {}", this.getTaskId(), e.getMessage());

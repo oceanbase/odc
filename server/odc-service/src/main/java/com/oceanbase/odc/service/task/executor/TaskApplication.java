@@ -16,6 +16,12 @@
 
 package com.oceanbase.odc.service.task.executor;
 
+import java.net.URISyntaxException;
+import java.net.URL;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.LoggerContext;
+
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.trace.TaskContextHolder;
 import com.oceanbase.odc.common.trace.TraceContextHolder;
@@ -23,15 +29,17 @@ import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
-import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
 import com.oceanbase.odc.service.task.enums.TaskRunModeEnum;
+import com.oceanbase.odc.service.task.exception.TaskRuntimeException;
 import com.oceanbase.odc.service.task.executor.context.JobContextProvider;
 import com.oceanbase.odc.service.task.executor.context.JobContextProviderFactory;
-import com.oceanbase.odc.service.task.executor.executor.TaskExecutor;
-import com.oceanbase.odc.service.task.executor.executor.ThreadPoolTaskExecutor;
 import com.oceanbase.odc.service.task.executor.logger.LogUtils;
+import com.oceanbase.odc.service.task.executor.server.EmbedServer;
+import com.oceanbase.odc.service.task.executor.server.ExitHelper;
+import com.oceanbase.odc.service.task.executor.server.TaskExecutor;
+import com.oceanbase.odc.service.task.executor.server.TaskFactory;
+import com.oceanbase.odc.service.task.executor.server.ThreadPoolTaskExecutor;
 import com.oceanbase.odc.service.task.executor.task.Task;
-import com.oceanbase.odc.service.task.executor.task.TaskFactory;
 import com.oceanbase.odc.service.task.util.JobUtils;
 
 import lombok.extern.slf4j.Slf4j;
@@ -89,13 +97,24 @@ public class TaskApplication {
         log.info("JobContextProvider init success: {}", jobContextProvider.getClass().getSimpleName());
         taskExecutor = ThreadPoolTaskExecutor.getInstance();
         log.info("Task executor init success: {}", taskExecutor.getClass().getSimpleName());
-        log.info("Task application ip is {}.", SystemUtils.getLocalIpAddress());
-        log.info("Task application port is {}.", JobUtils.getPort());
+        log.info("Task executor ip is {}.", SystemUtils.getLocalIpAddress());
+        log.info("Task executor port is {}.", JobUtils.getPort());
     }
 
     private void trace(long taskId) {
+        String taskLogFile = "log4j2-task-executor.xml";
+        LoggerContext context = (org.apache.logging.log4j.core.LoggerContext) LogManager.getContext(false);
+
+        URL resource = getClass().getClassLoader().getResource(taskLogFile);
+        try {
+            // this will force a reconfiguration
+            context.setConfigLocation(resource.toURI());
+        } catch (URISyntaxException e) {
+            throw new TaskRuntimeException("load " + taskLogFile + " occur error.", e);
+        }
+
         TraceContextHolder.trace();
-        // todo mock userId
+        // mock userId
         TaskContextHolder.trace(1L, taskId);
     }
 

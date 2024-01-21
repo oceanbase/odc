@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.task.executor;
+package com.oceanbase.odc.service.task.executor.server;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -23,7 +23,6 @@ import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.common.util.UrlUtils;
 import com.oceanbase.odc.service.task.constants.JobUrlConstants;
-import com.oceanbase.odc.service.task.executor.executor.ThreadPoolTaskExecutor;
 import com.oceanbase.odc.service.task.executor.logger.LogBiz;
 import com.oceanbase.odc.service.task.executor.logger.LogBizImpl;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;

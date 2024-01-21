@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.task.executor;
+package com.oceanbase.odc.service.task.executor.server;
 
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionHandler;
@@ -27,8 +27,6 @@ import org.slf4j.LoggerFactory;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.service.common.util.UrlUtils;
-import com.oceanbase.odc.service.task.executor.executor.TraceDecoratorThreadFactory;
-import com.oceanbase.odc.service.task.executor.executor.TraceDecoratorUtils;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.Unpooled;

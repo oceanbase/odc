@@ -19,6 +19,8 @@ package com.oceanbase.odc.service.task.caller;
 import java.util.List;
 import java.util.Optional;
 
+import com.oceanbase.odc.service.task.exception.JobException;
+
 /**
  * K8sJobClient is a client to CRUD k8s job in different environment. eg: native or cloud k8s
  *

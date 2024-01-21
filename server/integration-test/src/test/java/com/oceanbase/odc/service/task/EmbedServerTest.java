@@ -19,7 +19,7 @@ package com.oceanbase.odc.service.task;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import com.oceanbase.odc.service.task.executor.EmbedServer;
+import com.oceanbase.odc.service.task.executor.server.EmbedServer;
 
 import lombok.extern.slf4j.Slf4j;
 

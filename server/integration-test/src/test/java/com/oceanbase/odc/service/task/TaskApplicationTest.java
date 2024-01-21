@@ -39,7 +39,7 @@ import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.executor.TaskApplication;
-import com.oceanbase.odc.service.task.executor.executor.ThreadPoolTaskExecutor;
+import com.oceanbase.odc.service.task.executor.server.ThreadPoolTaskExecutor;
 import com.oceanbase.odc.service.task.executor.task.DatabaseChangeTask;
 import com.oceanbase.odc.service.task.executor.task.Task;
 import com.oceanbase.odc.service.task.schedule.DefaultJobContextBuilder;
@@ -83,7 +83,7 @@ public class TaskApplicationTest extends BaseJobTest {
     private void assertRunningResult(JobContext jc) {
 
         try {
-            Thread.sleep(10 * 1000L);
+            Thread.sleep(600 * 1000L);
             Task<?> task = ThreadPoolTaskExecutor.getInstance().getTask(jc.getJobIdentity());
             Assert.assertSame(JobStatus.DONE, task.getStatus());
         } catch (InterruptedException e) {

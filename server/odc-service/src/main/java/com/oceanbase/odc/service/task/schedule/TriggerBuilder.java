@@ -26,7 +26,7 @@ import org.quartz.TriggerKey;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.service.quartz.util.QuartzCronExpressionUtils;
 import com.oceanbase.odc.service.schedule.model.TriggerConfig;
-import com.oceanbase.odc.service.task.caller.JobException;
+import com.oceanbase.odc.service.task.exception.JobException;
 
 /**
  * @author yaobin

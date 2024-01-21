@@ -26,8 +26,8 @@ import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.common.util.ConditionalOnProperty;
+import com.oceanbase.odc.service.task.executor.server.HeartRequest;
 import com.oceanbase.odc.service.task.executor.task.DefaultTaskResult;
-import com.oceanbase.odc.service.task.executor.task.HeartRequest;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 
 import io.swagger.annotations.ApiOperation;

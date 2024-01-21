@@ -28,6 +28,8 @@ import com.oceanbase.odc.service.task.constants.JobUrlConstants;
 import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.executor.logger.LogBiz;
 import com.oceanbase.odc.service.task.executor.logger.LogBizImpl;
+import com.oceanbase.odc.service.task.executor.server.TaskMonitor;
+import com.oceanbase.odc.service.task.executor.server.TaskReporter;
 import com.oceanbase.odc.service.task.util.JobUtils;
 
 import lombok.extern.slf4j.Slf4j;
@@ -54,21 +56,20 @@ public abstract class BaseTask<RESULT> implements Task<RESULT> {
         this.reporter = new TaskReporter(context.getHostUrls());
         this.jobParameters = Collections.unmodifiableMap(getJobContext().getJobParameters());
         initCloudObjectStorageService();
-        updateStatus(JobStatus.RUNNING);
-        TaskMonitor taskMonitor = new TaskMonitor(this, this.reporter);
+        TaskMonitor taskMonitor = new TaskMonitor(this, this.reporter, cloudObjectStorageService);
         try {
+            doInit(context);
+            updateStatus(JobStatus.RUNNING);
             taskMonitor.monitor();
             doStart(context);
+            updateStatus(JobStatus.DONE);
         } catch (Throwable e) {
             log.info("Task failed, id: {}, details: {}", context.getJobIdentity().getId(), e);
             updateStatus(JobStatus.FAILED);
             onFail(e);
         } finally {
-            try {
-                doFinal();
-            } finally {
-                taskMonitor.destroy();
-            }
+            log.info("Task id: {} be completed with status {}.", getJobId(), getStatus());
+            taskMonitor.finalWork();
         }
     }
 
@@ -173,6 +174,8 @@ public abstract class BaseTask<RESULT> implements Task<RESULT> {
     private Long getJobId() {
         return getJobContext().getJobIdentity().getId();
     }
+
+    protected abstract void doInit(JobContext context) throws Exception;
 
     protected abstract void doStart(JobContext context) throws Exception;
 

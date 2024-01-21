@@ -63,6 +63,11 @@ public class JobUtils {
         return "http://" + SystemUtils.getLocalIpAddress() + ":" + JobUtils.getPort();
     }
 
+    public static String getExecutorDataPath() {
+        String userDir = SystemUtils.getEnvOrProperty("user.dir");
+        return userDir != null ? userDir : "./data";
+    }
+
     public static ConnectionConfig getMetaDBConnectionConfig() {
         ConnectionConfig config = new ConnectionConfig();
         config.setHost(SystemUtils.getEnvOrProperty(JobEnvKeyConstants.DATABASE_HOST));

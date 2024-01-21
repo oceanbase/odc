@@ -14,22 +14,22 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.task.executor.task;
+package com.oceanbase.odc.service.task.executor.server;
 
+import com.oceanbase.odc.service.task.caller.JobContext;
+import com.oceanbase.odc.service.task.executor.task.Task;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 
-import lombok.Data;
-
 /**
- * @author yaobin
- * @date 2023-11-29
- * @since 4.2.4
+ * @author gaoda.xy
+ * @date 2023/11/24 11:18
  */
-@Data
-public class HeartRequest {
+public interface TaskExecutor {
 
-    private JobIdentity jobIdentity;
+    void execute(Task<?> task, JobContext jc);
 
-    private String executorEndpoint;
+    boolean cancel(JobIdentity ji);
+
+    Task<?> getTask(JobIdentity ji);
 
 }

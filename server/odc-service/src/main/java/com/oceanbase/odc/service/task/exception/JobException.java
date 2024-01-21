@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,26 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package com.oceanbase.odc.service.task.executor.executor;
-
-import java.util.concurrent.ThreadFactory;
+package com.oceanbase.odc.service.task.exception;
 
 /**
  * @author yaobin
- * @date 2024-01-17
+ * @date 2023-11-15
  * @since 4.2.4
  */
-public class TraceDecoratorThreadFactory implements ThreadFactory {
+public class JobException extends Exception {
 
-    private final ThreadFactory threadFactory;
+    public JobException() {}
 
-    public TraceDecoratorThreadFactory(ThreadFactory threadFactory) {
-        this.threadFactory = threadFactory;
+    public JobException(String message) {
+        super(message);
     }
 
-    @Override
-    public Thread newThread(Runnable r) {
-        return threadFactory.newThread(TraceDecoratorUtils.decorate(r));
+    public JobException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
+    public JobException(Throwable cause) {
+        super(cause);
     }
 }

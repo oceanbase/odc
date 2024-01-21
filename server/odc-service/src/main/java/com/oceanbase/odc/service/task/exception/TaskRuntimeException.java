@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,21 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package com.oceanbase.odc.service.task.executor.executor;
-
-import com.oceanbase.odc.common.trace.TraceDecorator;
+package com.oceanbase.odc.service.task.exception;
 
 /**
  * @author yaobin
- * @date 2024-01-17
+ * @date 2023-11-15
  * @since 4.2.4
  */
-public class TraceDecoratorUtils {
+public class TaskRuntimeException extends RuntimeException {
 
-    private static final TraceDecorator<?> DECORATOR = new TraceDecorator<>();
+    public TaskRuntimeException() {}
 
-    public static Runnable decorate(Runnable r) {
-        return DECORATOR.decorate(r);
+    public TaskRuntimeException(String message) {
+        super(message);
+    }
+
+    public TaskRuntimeException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
+    public TaskRuntimeException(Throwable cause) {
+        super(cause);
     }
 }

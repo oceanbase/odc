@@ -47,7 +47,7 @@ public class LogBizImpl implements LogBiz {
             return "logType " + logType + " is illegal.";
         }
 
-        String logFileStr = LogUtils.getJobLogFileWithPath(jobId, logTypeLevel);
+        String logFileStr = LogUtils.getTaskLogFileWithPath(jobId, logTypeLevel);
         return LogUtils.getLogContent(logFileStr, fetchMaxLine, fetchMaxByteSize);
     }
 
@@ -56,7 +56,7 @@ public class LogBizImpl implements LogBiz {
     public Map<String, String> uploadLogFileToCloudStorage(JobIdentity ji,
             CloudObjectStorageService cloudObjectStorageService) throws IOException {
         log.info("Job id: {}, upload log", ji.getId());
-        String logFileStr = LogUtils.getJobLogFileWithPath(ji.getId(), OdcTaskLogLevel.ALL);
+        String logFileStr = LogUtils.getTaskLogFileWithPath(ji.getId(), OdcTaskLogLevel.ALL);
         String fileId = StringUtils.uuid();
         File jobLogFile = new File(logFileStr);
         if (!jobLogFile.exists()) {

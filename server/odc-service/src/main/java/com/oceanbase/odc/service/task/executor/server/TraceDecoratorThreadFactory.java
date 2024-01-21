@@ -13,23 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.oceanbase.odc.service.task.executor.server;
 
-package com.oceanbase.odc.service.task.executor.executor;
-
-import com.oceanbase.odc.service.task.caller.JobContext;
-import com.oceanbase.odc.service.task.executor.task.Task;
-import com.oceanbase.odc.service.task.schedule.JobIdentity;
+import java.util.concurrent.ThreadFactory;
 
 /**
- * @author gaoda.xy
- * @date 2023/11/24 11:18
+ * @author yaobin
+ * @date 2024-01-17
+ * @since 4.2.4
  */
-public interface TaskExecutor {
+public class TraceDecoratorThreadFactory implements ThreadFactory {
 
-    void execute(Task<?> task, JobContext jc);
+    private final ThreadFactory threadFactory;
 
-    boolean cancel(JobIdentity ji);
+    public TraceDecoratorThreadFactory(ThreadFactory threadFactory) {
+        this.threadFactory = threadFactory;
+    }
 
-    Task<?> getTask(JobIdentity ji);
-
+    @Override
+    public Thread newThread(Runnable r) {
+        return threadFactory.newThread(TraceDecoratorUtils.decorate(r));
+    }
 }
