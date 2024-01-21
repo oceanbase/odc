@@ -55,9 +55,9 @@ public class TaskMonitor {
     private ScheduledExecutorService heartScheduledExecutor;
 
 
-    public TaskMonitor(Task<?> task, TaskReporter reporter, CloudObjectStorageService cloudObjectStorageService) {
+    public TaskMonitor(Task<?> task, CloudObjectStorageService cloudObjectStorageService) {
         this.task = task;
-        this.reporter = reporter;
+        this.reporter = new TaskReporter(task.getJobContext().getHostUrls());;
         this.cloudObjectStorageService = cloudObjectStorageService;
     }
 

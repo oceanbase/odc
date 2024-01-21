@@ -25,7 +25,6 @@ import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfigur
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.executor.server.TaskMonitor;
-import com.oceanbase.odc.service.task.executor.server.TaskReporter;
 import com.oceanbase.odc.service.task.util.JobUtils;
 
 import lombok.extern.slf4j.Slf4j;
@@ -37,11 +36,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public abstract class BaseTask<RESULT> implements Task<RESULT> {
 
-    private static final int REPORT_RESULT_RETRY_TIMES = Integer.MAX_VALUE;
-
     private JobContext context;
     private Map<String, String> jobParameters;
-    private TaskReporter reporter;
 
     private volatile JobStatus status = JobStatus.PREPARING;
     private CloudObjectStorageService cloudObjectStorageService;
@@ -49,10 +45,9 @@ public abstract class BaseTask<RESULT> implements Task<RESULT> {
     @Override
     public void start(JobContext context) {
         this.context = context;
-        this.reporter = new TaskReporter(context.getHostUrls());
         this.jobParameters = Collections.unmodifiableMap(getJobContext().getJobParameters());
         initCloudObjectStorageService();
-        TaskMonitor taskMonitor = new TaskMonitor(this, this.reporter, cloudObjectStorageService);
+        TaskMonitor taskMonitor = new TaskMonitor(this, cloudObjectStorageService);
         try {
             doInit(context);
             updateStatus(JobStatus.RUNNING);
