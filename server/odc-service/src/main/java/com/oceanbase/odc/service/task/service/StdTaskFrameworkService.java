@@ -40,6 +40,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.event.EventPublisher;
 import com.oceanbase.odc.common.jpa.SpecificationUtil;
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.common.trace.TraceContextHolder;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
@@ -104,7 +105,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     }
 
     @Override
-    public JobEntity findWithLock(Long id) {
+    public JobEntity findWithPessimisticLock(Long id) {
         return entityManager.find(JobEntity.class, id, LockModeType.PESSIMISTIC_WRITE);
     }
 
@@ -168,6 +169,9 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         jse.setJobType(jd.getJobType());
         jse.setStatus(JobStatus.PREPARING);
         jse.setRunMode(taskFrameworkProperties.getRunMode().name());
+
+        jse.setCreatorId(TraceContextHolder.getUserId());
+        jse.setOrganizationId(TraceContextHolder.getOrganizationId());
         return jobRepository.save(jse);
     }
 

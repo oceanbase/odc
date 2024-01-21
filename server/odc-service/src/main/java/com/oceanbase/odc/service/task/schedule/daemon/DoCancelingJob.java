@@ -70,7 +70,7 @@ public class DoCancelingJob implements Job {
 
     private void cancelJob(TaskFrameworkService taskFrameworkService, JobEntity oldEntity) {
         getConfiguration().getTransactionManager().doInTransactionWithoutResult(() -> {
-            JobEntity newEntity = taskFrameworkService.findWithLock(oldEntity.getId());
+            JobEntity newEntity = taskFrameworkService.findWithPessimisticLock(oldEntity.getId());
 
             if (newEntity.getStatus() == JobStatus.CANCELING) {
                 log.info("Job {} current status is {}, prepare cancel.", newEntity.getId(), newEntity.getStatus());

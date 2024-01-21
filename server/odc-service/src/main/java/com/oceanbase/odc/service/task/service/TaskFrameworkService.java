@@ -41,7 +41,7 @@ public interface TaskFrameworkService {
 
     JobEntity find(Long id);
 
-    JobEntity findWithLock(Long id);
+    JobEntity findWithPessimisticLock(Long id);
 
     Page<JobEntity> find(JobStatus status, int page, int size);
 

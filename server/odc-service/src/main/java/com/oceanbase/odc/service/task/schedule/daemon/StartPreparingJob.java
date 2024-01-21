@@ -80,7 +80,7 @@ public class StartPreparingJob implements Job {
 
     private void startJob(TaskFrameworkService taskFrameworkService, JobEntity oldEntity) {
         getConfiguration().getTransactionManager().doInTransactionWithoutResult(() -> {
-            JobEntity je = taskFrameworkService.findWithLock(oldEntity.getId());
+            JobEntity je = taskFrameworkService.findWithPessimisticLock(oldEntity.getId());
 
             if (je.getStatus() == JobStatus.PREPARING || je.getStatus() == JobStatus.RETRYING) {
                 log.info("Job {} current status is {}, prepare start job.",

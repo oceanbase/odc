@@ -22,6 +22,7 @@ import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.service.task.caller.DefaultJobContext;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
+import com.oceanbase.odc.service.task.util.JobEncryptUtils;
 
 /**
  * @author gaoda.xy
@@ -33,7 +34,7 @@ public class K8sJobContextProvider implements JobContextProvider {
     public JobContext provide() {
         String jobContextJson = SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_JOB_CONTEXT);
         Verify.notBlank(jobContextJson, JobEnvKeyConstants.ODC_JOB_CONTEXT);
-        return JsonUtils.fromJson(jobContextJson, DefaultJobContext.class);
+        return JsonUtils.fromJson(JobEncryptUtils.decrypt(jobContextJson), DefaultJobContext.class);
     }
 
 }

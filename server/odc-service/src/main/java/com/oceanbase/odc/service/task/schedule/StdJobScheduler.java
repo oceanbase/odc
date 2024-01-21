@@ -106,7 +106,7 @@ public class StdJobScheduler implements JobScheduler {
     }
 
     private Void TryCanceling(Long id) {
-        JobEntity jobEntity = configuration.getTaskFrameworkService().findWithLock(id);
+        JobEntity jobEntity = configuration.getTaskFrameworkService().findWithPessimisticLock(id);
         if (!cancelable(jobEntity.getStatus())) {
             throw new TaskRuntimeException(
                     MessageFormat.format("Cancel job failed, current job {0} status is {1}, can't be cancel.",
