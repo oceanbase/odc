@@ -23,11 +23,7 @@ import java.util.Optional;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
 import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfiguration;
 import com.oceanbase.odc.service.task.caller.JobContext;
-import com.oceanbase.odc.service.task.constants.JobConstants;
-import com.oceanbase.odc.service.task.constants.JobUrlConstants;
 import com.oceanbase.odc.service.task.enums.JobStatus;
-import com.oceanbase.odc.service.task.executor.logger.LogBiz;
-import com.oceanbase.odc.service.task.executor.logger.LogBizImpl;
 import com.oceanbase.odc.service.task.executor.server.TaskMonitor;
 import com.oceanbase.odc.service.task.executor.server.TaskReporter;
 import com.oceanbase.odc.service.task.util.JobUtils;
@@ -117,58 +113,6 @@ public abstract class BaseTask<RESULT> implements Task<RESULT> {
 
     protected Map<String, String> getJobParameters() {
         return this.jobParameters;
-    }
-
-    private void doFinal() {
-        // Report final result
-        log.info("Task id: {}, finished with status: {}, start to report final result", getJobId(), getStatus());
-        DefaultTaskResult finalResult = DefaultTaskResultBuilder.build(this);
-
-        // todo wait timeout for upload log file
-        log.info("Task id: {}, start to do remained work.", getJobId());
-        uploadLogFileToCloudStorage(finalResult);
-
-        log.info("Task id: {}, remained work be completed, report finished status.", getJobId());
-
-        // Report finish signal to task server
-        reportTaskResultWithRetry(finalResult, REPORT_RESULT_RETRY_TIMES);
-        log.info("Task id: {} exit.", getJobId());
-    }
-
-    private void uploadLogFileToCloudStorage(DefaultTaskResult finalResult) {
-        if (getCloudObjectStorageService() != null && getCloudObjectStorageService().supported()) {
-            LogBiz biz = new LogBizImpl();
-            Map<String, String> logMap = null;
-            try {
-                logMap = biz.uploadLogFileToCloudStorage(getJobContext().getJobIdentity(),
-                        getCloudObjectStorageService());
-            } catch (Throwable e) {
-                log.warn("Upload job {} log file to cloud storage occur error", getJobId(), e);
-            }
-            finalResult.setLogMetadata(logMap);
-        }
-    }
-
-    private void reportTaskResultWithRetry(DefaultTaskResult result, int retries) {
-        if (result.getStatus() == JobStatus.DONE) {
-            result.setProgress(100.0);
-        }
-        int retryTimes = 0;
-        while (retryTimes++ < retries) {
-            try {
-                boolean success = reporter.report(JobUrlConstants.TASK_RESULT_UPLOAD, result);
-                if (success) {
-                    log.info("Report task result successfully");
-                    break;
-                } else {
-                    log.warn("Report task result failed, will retry after {} seconds, remaining retries: {}",
-                            JobConstants.REPORT_TASK_INFO_INTERVAL_SECONDS, retries - retryTimes);
-                    Thread.sleep(JobConstants.REPORT_TASK_INFO_INTERVAL_SECONDS * 1000L);
-                }
-            } catch (Throwable e) {
-                log.warn("Report task result failed, taskId: {}", getJobId(), e);
-            }
-        }
     }
 
     private Long getJobId() {
