@@ -160,8 +160,7 @@ public class TaskMonitor {
             LogBiz biz = new LogBizImpl();
             Map<String, String> logMap = null;
             try {
-                logMap = biz.uploadLogFileToCloudStorage(finalResult.getJobIdentity(),
-                        cloudObjectStorageService);
+                logMap = biz.uploadLogFileToCloudStorage(finalResult.getJobIdentity(), cloudObjectStorageService);
             } catch (Throwable e) {
                 log.warn("Upload job {} log file to cloud storage occur error", getJobId(), e);
             }

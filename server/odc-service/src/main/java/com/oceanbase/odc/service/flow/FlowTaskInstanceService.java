@@ -268,7 +268,7 @@ public class FlowTaskInstanceService {
                     HttpUtil.request(hostWithUrl, new TypeReference<SuccessResponse<String>>() {});
             return response.getData();
         }
-        return "No log message at this moment";
+        return "No log message be found.";
     }
 
     public List<? extends FlowTaskResult> getResult(@NotNull Long id) throws IOException {
