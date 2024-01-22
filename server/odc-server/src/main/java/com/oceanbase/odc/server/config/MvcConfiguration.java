@@ -20,6 +20,7 @@ import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.web.servlet.ConditionalOnMissingFilterBean;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
@@ -60,6 +61,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Configuration
+@ConditionalOnExpression("#{!environment.acceptsProfiles('publicAliyun')}")
 public class MvcConfiguration implements WebMvcConfigurer {
     private static final String DEFAULT_INDEX_PAGE = "index.html";
     private static final String DEFAULT_WEB_STATIC_LOCATION = "classpath:/static/";
