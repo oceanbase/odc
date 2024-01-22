@@ -140,13 +140,12 @@ public class AbstractDlmJobPreprocessor implements Preprocessor {
                 throw new UnsupportedException();
             }
             SqlBuilder sqlBuilder = dbType.isMysql() ? new MySQLSqlBuilder() : new OracleSqlBuilder();
-            sqlBuilder.append("SELECT 1 FROM").identifier(database.getName(), table.getTableName());
+            sqlBuilder.append("SELECT 1 FROM ").identifier(database.getName(), table.getTableName());
             if (StringUtils.isNotEmpty(table.getConditionExpression())) {
                 sqlBuilder.append(" WHERE ")
                         .append(DataArchiveConditionUtil.parseCondition(table.getConditionExpression(),
                                 variables, new Date()));
             }
-            sqlBuilder.append(" LIMIT 1;");
             return sqlBuilder.toString();
         } catch (Exception e) {
             throw new IllegalArgumentException(String.format("Parse condition error,message=%s", e.getMessage()));
