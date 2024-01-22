@@ -43,11 +43,11 @@ public interface CloudMetadataClient {
      * Permission check hook. If you want to check some permission additionally, you can override this
      * method. The default implementation will always return true.
      * 
-     * @param tenant, the instance to be checked
-     * @param action, enum: "read", "write"
+     * @param tenant, the tenant to be checked
+     * @param type
      * @return true if permission check passed, otherwise false
      */
-    default void additionalAuthenticationChecks(OBTenant tenant, OBInstanceType type, String action)
+    default void additionalAuthenticationChecks(OBTenant tenant, OBInstanceType type)
             throws AccessDeniedException {}
 
     /**

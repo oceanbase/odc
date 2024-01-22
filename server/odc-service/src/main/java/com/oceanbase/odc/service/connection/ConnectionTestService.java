@@ -33,6 +33,7 @@ import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.model.ConnectionTestResult;
+import com.oceanbase.odc.service.connection.model.OBTenant;
 import com.oceanbase.odc.service.connection.model.TestConnectionReq;
 
 import lombok.extern.slf4j.Slf4j;
@@ -54,6 +55,8 @@ public class ConnectionTestService {
     private ConnectionService connectionService;
     @Autowired
     private ConnectionTesting connectionTesting;
+    @Autowired
+    private CloudMetadataClient cloudMetadataClient;
 
     public ConnectionTestResult test(@NotNull @Valid TestConnectionReq req) {
         PreConditions.notNull(req, "req");
@@ -64,6 +67,8 @@ public class ConnectionTestService {
         }
         if (Objects.nonNull(connectionId)) {
             ConnectionConfig connection = connectionService.getForConnect(connectionId);
+            cloudMetadataClient.additionalAuthenticationChecks(OBTenant.of(connection.getClusterName(),
+                    connection.getTenantName()), connection.getInstanceType());
             if (Objects.isNull(req.getType())) {
                 req.setType(connection.getType());
             }

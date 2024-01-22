@@ -23,9 +23,9 @@ import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.oceanbase.odc.service.onlineschemachange.oms.enums.CheckerObjectStatus;
 import com.oceanbase.odc.service.onlineschemachange.oms.enums.CheckerResultType;
+import com.oceanbase.odc.service.onlineschemachange.oms.enums.OmsProjectStatusEnum;
 import com.oceanbase.odc.service.onlineschemachange.oms.enums.OmsStepName;
 import com.oceanbase.odc.service.onlineschemachange.oms.enums.OmsStepStatus;
-import com.oceanbase.odc.service.onlineschemachange.oms.enums.ProjectStatusEnum;
 
 /**
  * @author yaobin
@@ -57,15 +57,15 @@ public class CustomEnumDeserializer {
         }
     }
 
-    public static class ProjectStatusEnumDeserializer extends JsonDeserializer<ProjectStatusEnum> {
+    public static class ProjectStatusEnumDeserializer extends JsonDeserializer<OmsProjectStatusEnum> {
 
         @Override
-        public ProjectStatusEnum deserialize(JsonParser jsonParser, DeserializationContext ctxt)
+        public OmsProjectStatusEnum deserialize(JsonParser jsonParser, DeserializationContext ctxt)
                 throws IOException, JacksonException {
 
             String status = jsonParser.readValueAs(String.class);
-            return getEnum(ProjectStatusEnum.class, status,
-                    ProjectStatusEnum.UNKNOWN);
+            return getEnum(OmsProjectStatusEnum.class, status,
+                    OmsProjectStatusEnum.UNKNOWN);
         }
     }
 
