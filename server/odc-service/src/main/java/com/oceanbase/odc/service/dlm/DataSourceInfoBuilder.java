@@ -70,7 +70,7 @@ public class DataSourceInfoBuilder {
             case OB_ORACLE:
                 dataSourceInfo.setIp(connectionConfig.getHost());
                 dataSourceInfo.setPort(connectionConfig.getPort());
-                dataSourceInfo.setFullUserName(connectionConfig.getUsername());
+                dataSourceInfo.setFullUserName(OBConsoleDataSourceFactory.getUsername(connectionConfig));
                 dataSourceInfo.setClusterName(connectionConfig.getClusterName());
                 dataSourceInfo.setTenantName(connectionConfig.getTenantName());
                 dataSourceInfo.setDatabaseType(DataBaseType.OB_ORACLE);
