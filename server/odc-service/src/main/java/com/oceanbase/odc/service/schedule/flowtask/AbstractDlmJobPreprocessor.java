@@ -94,8 +94,9 @@ public class AbstractDlmJobPreprocessor implements Preprocessor {
             sqlBuilder.append(String.format("AND TABLE_SCHEMA='%s' GROUP BY TABLE_NAME", databaseName));
         } else {
             sqlBuilder = new OracleSqlBuilder();
-            sqlBuilder.append("select table_name from all_constraints where constraint_type = 'P' and owner = ");
-            sqlBuilder.identifier(databaseName);
+            sqlBuilder.append(
+                    String.format("select table_name from all_constraints where constraint_type = 'P' and owner = '%s'",
+                            databaseName));
         }
 
         HashSet<String> tableNames =
