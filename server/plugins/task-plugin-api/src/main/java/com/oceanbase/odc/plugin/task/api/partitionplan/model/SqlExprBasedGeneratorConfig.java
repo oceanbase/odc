@@ -13,23 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.plugin.task.api.partitionplan.datatype;
+package com.oceanbase.odc.plugin.task.api.partitionplan.model;
+
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
 /**
- * {@link PartitionPlanDataType}
+ * {@link SqlExprBasedGeneratorConfig}
  *
  * @author yh263208
- * @date 2024-01-09 15:35
- * @since ODC-release_4.2.4
+ * @date 2023-01-19 13:49
+ * @since ODC_release_4.2.4
  */
-public interface PartitionPlanDataType {
+@Getter
+@Setter
+@ToString
+public class SqlExprBasedGeneratorConfig {
 
-    String getName();
-
-    Integer getPrecision();
-
-    Integer getScale();
-
-    Integer getWidth();
+    private String intervalGenerateExpr;
+    private String partitionLowerBoundGenerateExpr;
 
 }

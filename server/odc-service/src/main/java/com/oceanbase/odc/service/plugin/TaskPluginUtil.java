@@ -20,6 +20,7 @@ import org.pf4j.ExtensionPoint;
 
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.plugin.task.api.datatransfer.DataTransferExtensionPoint;
+import com.oceanbase.odc.plugin.task.api.partitionplan.PartitionPlanExtensionPoint;
 
 public class TaskPluginUtil {
 
@@ -30,6 +31,10 @@ public class TaskPluginUtil {
 
     public static DataTransferExtensionPoint getDataTransferExtension(DialectType dialectType) {
         return getSingletonExtension(dialectType, DataTransferExtensionPoint.class);
+    }
+
+    public static PartitionPlanExtensionPoint getPartitionPlanExtensionPoint(DialectType dialectType) {
+        return getSingletonExtension(dialectType, PartitionPlanExtensionPoint.class);
     }
 
     public static <T extends ExtensionPoint> T getSingletonExtension(DialectType dialectType, Class<T> type) {

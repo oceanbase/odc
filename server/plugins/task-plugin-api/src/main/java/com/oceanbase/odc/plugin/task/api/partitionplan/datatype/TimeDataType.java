@@ -15,42 +15,30 @@
  */
 package com.oceanbase.odc.plugin.task.api.partitionplan.datatype;
 
+import com.oceanbase.tools.dbbrowser.model.datatype.DataType;
+import com.oceanbase.tools.dbbrowser.model.datatype.GeneralDataType;
+
 import lombok.NonNull;
 
 /**
- * {@link PartitionPlanCustomType}
+ * {@link TimeDataType}
  *
  * @author yh263208
- * @date 2023-01-11 20:58
+ * @date 2024-01-09 15:38
  * @since ODC_release_4.2.4
- * @see PartitionPlanDataType
+ * @see DataType
  */
-public class PartitionPlanCustomType implements PartitionPlanDataType {
+public class TimeDataType extends GeneralDataType {
 
-    private final String name;
+    public static final int YEAR = 0x1;
+    public static final int MONTH = 0x2 | YEAR;
+    public static final int DAY = 0x4 | MONTH;
+    public static final int HOUR = 0x8 | DAY;
+    public static final int MINUTE = 0x10 | HOUR;
+    public static final int SECOND = 0x20 | MINUTE;
 
-    public PartitionPlanCustomType(@NonNull String name) {
-        this.name = name;
-    }
-
-    @Override
-    public String getName() {
-        return this.name;
-    }
-
-    @Override
-    public Integer getPrecision() {
-        return -1;
-    }
-
-    @Override
-    public Integer getScale() {
-        return -1;
-    }
-
-    @Override
-    public Integer getWidth() {
-        return -1;
+    public TimeDataType(@NonNull int precision) {
+        super(precision, -1, "TIME");
     }
 
 }
