@@ -75,7 +75,7 @@
         <log4j2.version>2.17.1</log4j2.version>
         <jackson.version>2.15.2</jackson.version>
         <jackson-databind.version>2.14.1</jackson-databind.version>
-        <json-path.version>2.7.0</json-path.version>
+        <json-path.version>2.9.0</json-path.version>
         <json-smart.version>2.4.9</json-smart.version>
         <guava.version>31.1-jre</guava.version>
         <snakeyaml.version>2.0</snakeyaml.version>
