@@ -36,6 +36,7 @@ import org.springframework.validation.beanvalidation.MethodValidationPostProcess
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.common.security.SensitiveDataUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.authority.interceptor.MethodAuthorizedPostProcessor;
 import com.oceanbase.odc.migrate.AbstractMetaDBMigrate;
@@ -79,9 +80,9 @@ public class OdcServer {
         log.info("odc server initializing...");
 
         Map<String, String> systemEnv = SystemUtils.getSystemEnv();
-        log.info("systemEnv:\n{}", JsonUtils.prettyToJson(systemEnv));
+        log.info("systemEnv:\n{}", SensitiveDataUtils.mask(JsonUtils.prettyToJson(systemEnv)));
         Properties systemProperties = SystemUtils.getSystemProperties();
-        log.info("systemProperties:\n{}", JsonUtils.prettyToJson(systemProperties));
+        log.info("systemProperties:\n{}", SensitiveDataUtils.mask(JsonUtils.prettyToJson(systemProperties)));
 
         Runtime.getRuntime().addShutdownHook(new Thread(
                 () -> log.info("Oceanbase Developer Center exits, systemInfo={}", SystemUtils.getSystemMemoryInfo())));
