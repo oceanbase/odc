@@ -117,7 +117,19 @@ public class User implements Principal, UserDetails, SecurityResource, Organizat
      * Only for public cloud, Used to display the main account id
      */
     @JsonIgnore
-    private String uid;
+    private String parentUid;
+
+    @JsonIgnore
+    private String subUid;
+
+    @JsonIgnore
+    private String callerType;
+
+    @JsonIgnore
+    private String securityToken;
+
+    @JsonIgnore
+    private String accessKeyId;
 
     public User() {}
 
