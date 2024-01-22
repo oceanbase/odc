@@ -16,6 +16,8 @@
 
 package com.oceanbase.odc.plugin.task.obmysql.datatransfer.factory;
 
+import static com.oceanbase.odc.core.shared.constant.OdcConstants.DEFAULT_ZERO_DATE_TIME_BEHAVIOR;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -152,6 +154,8 @@ public abstract class BaseParameterFactory<T extends BaseParameter> {
 
             sessionConfig.setJdbcOption("useServerPrepStmts", transferConfig.isUsePrepStmts() + "");
             sessionConfig.setJdbcOption("useCursorFetch", transferConfig.isUsePrepStmts() + "");
+            sessionConfig.setJdbcOption("zeroDateTimeBehavior", DEFAULT_ZERO_DATE_TIME_BEHAVIOR);
+            sessionConfig.setJdbcOption("sendConnectionAttributes", "false");
 
             parameter.setSessionConfig(sessionConfig);
         }
