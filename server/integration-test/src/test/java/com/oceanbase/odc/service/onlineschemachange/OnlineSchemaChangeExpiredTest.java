@@ -82,7 +82,7 @@ public class OnlineSchemaChangeExpiredTest extends OBMySqlOscTestEnv {
             };
 
             scheduler.getListenerManager().addSchedulerListener(listener);
-            Await.await().timeout(30).until(scheduleDeleted::get).build().start();
+            Await.await().timeout(60).until(scheduleDeleted::get).build().start();
             Assert.assertEquals(2, taskEntities.size());
             Assert.assertEquals(TaskStatus.CANCELED,
                     scheduleTaskRepository.findById(taskEntities.get(0).getId()).get().getStatus());

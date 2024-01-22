@@ -32,6 +32,7 @@ import org.junit.Before;
 import org.mockito.Mockito;
 import org.quartz.Scheduler;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.mock.mockito.MockBean;
 
 import com.oceanbase.odc.ServiceTestEnv;
@@ -98,6 +99,7 @@ public abstract class BaseOscTestEnv extends ServiceTestEnv {
     @MockBean
     protected DBSessionManageFacade dbSessionManager;
 
+    @Qualifier(value = "defaultScheduler")
     @Autowired
     protected Scheduler scheduler;
 
