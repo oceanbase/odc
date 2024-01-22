@@ -277,7 +277,7 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
     }
 
     private String getFileName(String extension) {
-        return parameter.getTableName() + ".0.0" + extension;
+        return parameter.getTableName() + extension;
     }
 
     private String getDumpFileDirectory() throws IOException {

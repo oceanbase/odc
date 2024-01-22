@@ -57,7 +57,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public abstract class BaseParameterFactory<T extends BaseParameter> {
-    private static final String SESSION_CONFIG_FILE_PATH = "session.config.json";
+    private static final String SESSION_CONFIG_FILE_PATH = "/session.config.json";
 
     protected final DataTransferConfig transferConfig;
     protected final File workingDir;
@@ -107,7 +107,7 @@ public abstract class BaseParameterFactory<T extends BaseParameter> {
             parameter.setConnectDatabaseName("\"" + transferConfig.getSchemaName() + "\"");
         } else {
             parameter.setUser(username);
-            parameter.setDatabaseName("`" + transferConfig.getSchemaName() + "`");
+            parameter.setDatabaseName(transferConfig.getSchemaName());
             parameter.setConnectDatabaseName(transferConfig.getSchemaName());
         }
 
