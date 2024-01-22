@@ -74,6 +74,7 @@ public class DataSourceInfoBuilder {
                 dataSourceInfo.setClusterName(connectionConfig.getClusterName());
                 dataSourceInfo.setTenantName(connectionConfig.getTenantName());
                 dataSourceInfo.setDatabaseType(DataBaseType.OB_ORACLE);
+                break;
             default:
                 log.warn(String.format("Unsupported datasource type:%s", connectionConfig.getDialectType()));
                 throw new UnsupportedException(
