@@ -15,15 +15,27 @@
  */
 package com.oceanbase.odc.service.notification;
 
+import org.springframework.stereotype.Component;
+
 import com.oceanbase.odc.service.notification.model.ChannelType;
 import com.oceanbase.odc.service.notification.model.Message;
+import com.oceanbase.odc.service.notification.model.MessageSendResult;
 
 /**
  * @author liuyizhuo.lyz
- * @date 2024/1/4
+ * @date 2024/1/22
  */
-public interface MessageChannel {
-    ChannelType type();
+@Component("Webhook")
+public class HttpSender implements MessageSender {
+    @Override
+    public ChannelType type() {
+        return ChannelType.Webhook;
+    }
 
-    boolean send(Message message);
+    @Override
+    public MessageSendResult send(Message message) throws Exception {
+        // TODO implement this
+        return new MessageSendResult();
+    }
+
 }

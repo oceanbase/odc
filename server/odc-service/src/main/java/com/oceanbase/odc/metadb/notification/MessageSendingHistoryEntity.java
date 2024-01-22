@@ -32,6 +32,7 @@ import org.hibernate.annotations.GenerationTime;
 import com.oceanbase.odc.service.notification.model.MessageSendingStatus;
 
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * @author liuyizhuo.lyz
@@ -40,6 +41,7 @@ import lombok.Data;
 @Data
 @Entity
 @Table(name = "notification_message_sending_history")
+@NoArgsConstructor
 public class MessageSendingHistoryEntity {
 
     @Id
@@ -60,4 +62,14 @@ public class MessageSendingHistoryEntity {
     @Column(name = "error_message")
     private String errorMessage;
 
+    public MessageSendingHistoryEntity(Long messageId, MessageSendingStatus status) {
+        this.status = status;
+        this.messageId = messageId;
+    }
+
+    public MessageSendingHistoryEntity(Long messageId, MessageSendingStatus status, String errorMessage) {
+        this.status = status;
+        this.messageId = messageId;
+        this.errorMessage = errorMessage;
+    }
 }

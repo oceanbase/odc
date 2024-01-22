@@ -17,36 +17,37 @@ package com.oceanbase.odc.service.notification;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
-import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.metadb.notification.ChannelRepository;
 import com.oceanbase.odc.metadb.notification.NotificationChannelRelationEntity;
 import com.oceanbase.odc.metadb.notification.NotificationPolicyChannelRelationRepository;
-import com.oceanbase.odc.metadb.notification.NotificationPolicyEntity;
 import com.oceanbase.odc.metadb.notification.NotificationPolicyRepository;
 import com.oceanbase.odc.service.notification.helper.ChannelMapper;
 import com.oceanbase.odc.service.notification.helper.MessageTemplateProcessor;
-import com.oceanbase.odc.service.notification.helper.NotificationPolicyFilter;
 import com.oceanbase.odc.service.notification.model.Channel;
 import com.oceanbase.odc.service.notification.model.Event;
 import com.oceanbase.odc.service.notification.model.Message;
 import com.oceanbase.odc.service.notification.model.MessageSendingStatus;
-import com.oceanbase.odc.service.notification.model.Notification;
+import com.oceanbase.odc.service.notification.model.NotificationPolicy;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @Author: Lebie
  * @Date: 2023/3/20 14:45
  * @Description: []
  */
-@Service
-@SkipAuthorize("currently not in use")
+@Component
+@Slf4j
 public class Converter {
     @Autowired
     private NotificationPolicyRepository notificationPolicyRepository;
@@ -63,31 +64,28 @@ public class Converter {
     @Autowired
     private NotificationProperties notificationProperties;
 
-    public List<Notification> convert(List<Event> events) {
-        List<Notification> notifications = new ArrayList<>();
+    @Transactional
+    public List<Message> convert(List<Event> events) {
+        List<Message> messages = new ArrayList<>();
         if (CollectionUtils.isEmpty(events)) {
-            return notifications;
+            return messages;
         }
 
-        List<NotificationPolicyEntity> policies = notificationPolicyRepository.findByOrganizationIds(
-                events.stream().map(Event::getOrganizationId).collect(Collectors.toSet()));
-        if (CollectionUtils.isEmpty(policies)) {
-            return notifications;
-        }
-        Map<Long, List<NotificationPolicyEntity>> mappedPolicies = policies.stream()
-                .collect(Collectors.groupingBy(NotificationPolicyEntity::getOrganizationId));
+        List<NotificationPolicy> policies = events.stream()
+                .flatMap(event -> event.getPolicies().stream())
+                .collect(Collectors.toList());
 
         List<NotificationChannelRelationEntity> policyChannelEntities =
                 policyChannelRepository.findByNotificationPolicyIds(
-                        policies.stream().map(NotificationPolicyEntity::getId).collect(Collectors.toSet()));
+                        policies.stream().map(NotificationPolicy::getId).collect(Collectors.toSet()));
         if (CollectionUtils.isEmpty(policyChannelEntities)) {
-            return notifications;
+            return messages;
         }
 
         Map<Long, List<Channel>> mappedChannels = channelRepository.findByIdIn(
                 policyChannelEntities.stream()
                         .map(NotificationChannelRelationEntity::getChannelId).collect(Collectors.toSet()))
-                .stream().map(entity -> channelMapper.fromEntity(entity))
+                .stream().map(entity -> channelMapper.fromEntityWithConfig(entity))
                 .collect(Collectors.groupingBy(channel -> {
                     for (NotificationChannelRelationEntity entity : policyChannelEntities) {
                         if (Objects.equals(entity.getChannelId(), channel.getId())) {
@@ -98,39 +96,42 @@ public class Converter {
                 }));
 
         for (Event event : events) {
-            List<NotificationPolicyEntity> matched = NotificationPolicyFilter.filter(event.getLabels(),
-                    mappedPolicies.get(event.getOrganizationId()));
-            if (matched.isEmpty()) {
-                continue;
-            }
-            for (NotificationPolicyEntity policy : matched) {
+            for (NotificationPolicy policy : event.getPolicies()) {
                 List<Channel> channels = mappedChannels.get(policy.getId());
-
                 if (CollectionUtils.isEmpty(channels)) {
-                    return null;
+                    continue;
                 }
                 channels.forEach(channel -> {
-                    Notification notification = new Notification();
-
-                    Message message = new Message();
-                    if (Objects.nonNull(channel.getChannelConfig())) {
-                        message.setTitle(MessageTemplateProcessor
-                                .replaceVariables(channel.getChannelConfig().getTitleTemplate(), event.getLabels()));
-                        message.setContent(MessageTemplateProcessor
-                                .replaceVariables(channel.getChannelConfig().getContentTemplate(), event.getLabels()));
+                    try {
+                        Message message = new Message();
+                        if (Objects.nonNull(channel.getChannelConfig())) {
+                            Locale locale;
+                            try {
+                                locale = Locale.forLanguageTag(channel.getChannelConfig().getLanguage());
+                            } catch (Exception e) {
+                                locale = Locale.getDefault();
+                            }
+                            message.setTitle(MessageTemplateProcessor.replaceVariables(
+                                    channel.getChannelConfig().getTitleTemplate(), locale, event.getLabels()));
+                            message.setContent(MessageTemplateProcessor.replaceVariables(
+                                    channel.getChannelConfig().getContentTemplate(), locale, event.getLabels()));
+                        }
+                        message.setOrganizationId(policy.getOrganizationId());
+                        message.setCreatorId(event.getCreatorId());
+                        message.setChannel(channel);
+                        message.setStatus(MessageSendingStatus.CREATED);
+                        message.setRetryTimes(0);
+                        message.setProjectId(channel.getProjectId());
+                        message.setMaxRetryTimes(notificationProperties.getMaxResendTimes());
+                        messages.add(message);
+                    } catch (Exception e) {
+                        log.error("failed to convert event with id={}, channel id={}",
+                                event.getId(), channel.getId(), e);
                     }
-                    message.setOrganizationId(policy.getOrganizationId());
-                    message.setCreatorId(event.getCreatorId());
-                    message.setChannel(channel);
-                    message.setStatus(MessageSendingStatus.CREATED);
-                    message.setRetryTimes(0);
-                    message.setProjectId(channel.getProjectId());
-                    message.setMaxRetryTimes(notificationProperties.getMaxResendTimes());
-                    notification.setMessage(message);
-                    notifications.add(notification);
                 });
             }
         }
-        return notifications;
+        log.info("{} events were converted into {} messages", events.size(), messages.size());
+        return messages;
     }
 }

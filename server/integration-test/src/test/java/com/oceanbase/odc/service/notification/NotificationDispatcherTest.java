@@ -31,7 +31,6 @@ import com.oceanbase.odc.service.notification.model.ChannelType;
 import com.oceanbase.odc.service.notification.model.DingTalkChannelConfig;
 import com.oceanbase.odc.service.notification.model.Message;
 import com.oceanbase.odc.service.notification.model.MessageSendingStatus;
-import com.oceanbase.odc.service.notification.model.Notification;
 
 public class NotificationDispatcherTest extends ServiceTestEnv {
     public static final Long ORGANIZATION_ID = 1L;
@@ -62,19 +61,12 @@ public class NotificationDispatcherTest extends ServiceTestEnv {
 
 
     @Test
-    public void testDispatch_SendFailed() {
+    public void testDispatch_SendFailed() throws Exception {
         MessageEntity entity = messageRepository.save(getMessage().toEntity());
 
-        dispatcher.dispatch(getNotification(entity));
+        dispatcher.dispatch(Message.fromEntity(entity));
 
         Assert.assertEquals(MessageSendingStatus.SENT_FAILED, messageRepository.findAll().get(0).getStatus());
-    }
-
-    private Notification getNotification(MessageEntity message) {
-        Notification notification = new Notification();
-        notification.setMessage(Message.fromEntity(message));
-        notification.setChannel(getChannel());
-        return notification;
     }
 
     private Channel getChannel() {

@@ -31,7 +31,6 @@ import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
 import javax.sql.DataSource;
-import javax.transaction.Transactional;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
@@ -45,10 +44,12 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
 import com.oceanbase.odc.common.i18n.I18n;
 import com.oceanbase.odc.common.util.ExceptionUtils;
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.authority.util.Authenticated;
 import com.oceanbase.odc.core.authority.util.PreAuthenticate;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
@@ -73,10 +74,10 @@ import com.oceanbase.odc.service.notification.helper.ChannelMapper;
 import com.oceanbase.odc.service.notification.helper.PolicyMapper;
 import com.oceanbase.odc.service.notification.model.Channel;
 import com.oceanbase.odc.service.notification.model.Message;
+import com.oceanbase.odc.service.notification.model.MessageSendResult;
 import com.oceanbase.odc.service.notification.model.NotificationPolicy;
 import com.oceanbase.odc.service.notification.model.QueryChannelParams;
 import com.oceanbase.odc.service.notification.model.QueryMessageParams;
-import com.oceanbase.odc.service.notification.model.TestChannelResult;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -113,9 +114,7 @@ public class NotificationService {
     @Autowired
     private ChannelMapper channelMapper;
     @Autowired
-    private PolicyMapper policyMapper;
-    @Autowired
-    private ChannelFactory channelFactory;
+    private MessageSenderMapper messageSenderMapper;
 
     private TreeMap<Long, NotificationPolicy> metaPolicies;
 
@@ -135,7 +134,7 @@ public class NotificationService {
         return channels;
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
     public Channel detailChannel(@NotNull Long projectId, @NotNull Long channelId) {
         Channel channel = channelMapper.fromEntityWithConfig(nullSafeGetChannel(channelId));
@@ -145,7 +144,7 @@ public class NotificationService {
         return channel;
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
     public Channel createChannel(@NotNull Long projectId, @NotNull Channel channel) {
         PreConditions.notBlank(channel.getName(), "channel.name");
@@ -153,6 +152,9 @@ public class NotificationService {
         PreConditions.validNoDuplicated(ResourceType.ODC_NOTIFICATION_CHANNEL, "channel.name", channel.getName(),
                 () -> existsChannel(projectId, channel.getName()));
 
+        if (StringUtils.isEmpty(channel.getChannelConfig().getTitleTemplate())) {
+            channel.getChannelConfig().setTitleTemplate("【ODC】${taskType}-${taskStatus}");
+        }
         ChannelEntity entity = channelMapper.toEntity(channel);
         entity.setCreatorId(authenticationFacade.currentUserId());
         entity.setOrganizationId(authenticationFacade.currentOrganizationId());
@@ -161,7 +163,7 @@ public class NotificationService {
         return channelMapper.fromEntity(channelRepository.save(entity));
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
     public Channel updateChannel(@NotNull Long projectId, @NotNull Channel channel) {
         PreConditions.notNull(channel.getId(), "channel.id");
@@ -180,7 +182,7 @@ public class NotificationService {
         return channelMapper.fromEntity(channelRepository.save(toBeSaved));
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
     public Channel deleteChannel(@NotNull Long projectId, @NotNull Long channelId) {
         ChannelEntity entity = nullSafeGetChannel(channelId);
@@ -195,18 +197,20 @@ public class NotificationService {
     }
 
     @SkipAuthorize("Any user could test channel")
-    public TestChannelResult testChannel(@NotNull Channel channel) {
+    public MessageSendResult testChannel(@NotNull Channel channel) {
         PreConditions.notNull(channel.getType(), "channel.type");
         PreConditions.notNull(channel.getChannelConfig(), "channel.config");
-        MessageChannel sender = channelFactory.generate(channel);
+        MessageSender sender = messageSenderMapper.get(channel);
 
         String testMessage = I18n.translate(CHANNEL_TEST_MESSAGE_KEY, null, LocaleContextHolder.getLocale());
         try {
-            sender.send(Message.builder().content(testMessage).build());
+            return sender.send(Message.builder()
+                    .title(testMessage)
+                    .content(testMessage)
+                    .channel(channel).build());
         } catch (Exception e) {
-            return TestChannelResult.ofFail(ExceptionUtils.getRootCauseMessage(e));
+            return MessageSendResult.ofFail(ExceptionUtils.getRootCauseMessage(e));
         }
-        return TestChannelResult.ofSuccess();
     }
 
     @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
@@ -223,7 +227,7 @@ public class NotificationService {
         if (CollectionUtils.isNotEmpty(actual)) {
             for (NotificationPolicyEntity entity : actual) {
                 Long metadataId = entity.getPolicyMetadataId();
-                NotificationPolicy policy = policyMapper.fromEntity(entity);
+                NotificationPolicy policy = PolicyMapper.fromEntity(entity);
                 policy.setEventName(policies.get(metadataId).getEventName());
                 policy.setChannels(getChannelsByPolicyId(policy.getId()));
                 policies.put(metadataId, policy);
@@ -239,12 +243,12 @@ public class NotificationService {
             throw new AccessDeniedException("Policy does not belong to this project");
         }
 
-        NotificationPolicy policy = policyMapper.fromEntity(entity);
+        NotificationPolicy policy = PolicyMapper.fromEntity(entity);
         policy.setChannels(getChannelsByPolicyId(policy.getId()));
         return policy;
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
     public List<NotificationPolicy> batchUpdatePolicies(@NotNull Long projectId,
             @NotEmpty List<NotificationPolicy> policies) {
@@ -308,7 +312,7 @@ public class NotificationService {
             innerBatchCreateRelation(projectId,
                     saved.stream().collect(Collectors.toMap(NotificationPolicyEntity::getId, e -> channels)));
         }
-        return saved.stream().map(policyMapper::fromEntity).collect(Collectors.toList());
+        return saved.stream().map(PolicyMapper::fromEntity).collect(Collectors.toList());
     }
 
     private List<NotificationPolicy> innerBatchUpdatePolicies(Long projectId, List<NotificationPolicy> policies) {
@@ -330,7 +334,7 @@ public class NotificationService {
         innerBatchCreateRelation(projectId, policies.stream()
                 .filter(policy -> CollectionUtils.isNotEmpty(policy.getChannels()))
                 .collect(Collectors.toMap(NotificationPolicy::getId, NotificationPolicy::getChannels)));
-        return entities.stream().map(policyMapper::fromEntity).collect(Collectors.toList());
+        return entities.stream().map(PolicyMapper::fromEntity).collect(Collectors.toList());
     }
 
     private void innerBatchCreateRelation(Long projectId, Map<Long, List<Channel>> policyId2Channels) {

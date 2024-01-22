@@ -15,12 +15,16 @@
  */
 package com.oceanbase.odc.service.notification;
 
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.exception.NotImplementedException;
 import com.oceanbase.odc.service.notification.model.Channel;
+import com.oceanbase.odc.service.notification.model.ChannelType;
 
 import lombok.NonNull;
 
@@ -31,18 +35,19 @@ import lombok.NonNull;
  */
 @Service
 @SkipAuthorize("odc internal usage")
-public class ChannelFactory {
+public class MessageSenderMapper {
 
-    public MessageChannel generate(@NonNull Channel channel) {
-        Verify.notNull(channel.getType(), "channel type");
-        switch (channel.getType()) {
-            case DingTalk:
-                return new DingTalkBotChannel(channel);
-            case Webhook:
-            case Feishu:
-            case WeCom:
-            default:
-                throw new NotImplementedException();
+    @Autowired
+    private Map<String, MessageSender> senderMap;
+
+    public MessageSender get(@NonNull Channel channel) {
+        ChannelType type = channel.getType();
+        Verify.notNull(type, "channel type");
+
+        if (!senderMap.containsKey(type.name())) {
+            throw new NotImplementedException(type.name());
         }
+        return senderMap.get(type.name());
     }
+
 }

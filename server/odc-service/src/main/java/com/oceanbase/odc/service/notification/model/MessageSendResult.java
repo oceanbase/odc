@@ -22,20 +22,20 @@ import lombok.Data;
  * @date 2024/1/4
  */
 @Data
-public class TestChannelResult {
+public class MessageSendResult {
 
     private boolean active;
     private String errorMessage;
 
-    public static TestChannelResult ofFail(String errorMessage) {
-        TestChannelResult result = new TestChannelResult();
+    public static MessageSendResult ofFail(String errorMessage) {
+        MessageSendResult result = new MessageSendResult();
         result.setActive(false);
         result.setErrorMessage(errorMessage);
         return result;
     }
 
-    public static TestChannelResult ofSuccess() {
-        TestChannelResult result = new TestChannelResult();
+    public static MessageSendResult ofSuccess() {
+        MessageSendResult result = new MessageSendResult();
         result.setActive(true);
         return result;
     }

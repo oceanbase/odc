@@ -66,8 +66,6 @@ public class NotificationServiceTest extends AuthorityTestEnv {
     private AuthenticationFacade authenticationFacade;
     @Autowired
     private NotificationPolicyRepository policyRepository;
-    @Autowired
-    private PolicyMapper policyMapper;
 
     @Before
     public void setUp() {
@@ -159,9 +157,9 @@ public class NotificationServiceTest extends AuthorityTestEnv {
     @Test
     public void test_BatchUpdatePolicies() {
         Channel channel = notificationService.createChannel(PROJECT_ID, getChannel());
-        NotificationPolicy saved = policyMapper.fromEntity(policyRepository.save(getPolicy()));
+        NotificationPolicy saved = PolicyMapper.fromEntity(policyRepository.save(getPolicy()));
         saved.setEnabled(false);
-        NotificationPolicy metaPolicy = policyMapper.fromEntity(getPolicy());
+        NotificationPolicy metaPolicy = PolicyMapper.fromEntity(getPolicy());
         metaPolicy.setPolicyMetadataId(2L);
         metaPolicy.setChannels(Collections.singletonList(channel));
         List<NotificationPolicy> toBeUpdated = Arrays.asList(saved, metaPolicy);

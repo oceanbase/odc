@@ -15,40 +15,21 @@
  */
 package com.oceanbase.odc.service.notification.model;
 
-import java.util.Date;
-import java.util.List;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
 /**
- * @Author: Lebie
- * @Date: 2023/3/20 14:44
- * @Description: []
+ * @author liuyizhuo.lyz
+ * @date 2024/1/17
  */
-@Data
-@Builder
-@AllArgsConstructor
-@NoArgsConstructor
-public class Event {
-    private Long id;
+public enum TaskEvent {
 
-    private Date triggerTime;
+    EXECUTION_SUCCEEDED,
+    EXECUTION_FAILED,
+    EXECUTION_TIMEOUT,
+    PENDING_APPROVAL,
+    APPROVED,
+    APPROVAL_REJECTION,
+    SCHEDULING_FAILED,
+    SCHEDULING_TIMEOUT
 
-    private Long organizationId;
+    ;
 
-    private Long creatorId;
-
-    private Long projectId;
-
-    private EventStatus status;
-
-    private EventLabels labels;
-
-    @JsonIgnore
-    private List<NotificationPolicy> policies;
 }

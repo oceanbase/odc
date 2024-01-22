@@ -33,8 +33,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 
 import com.oceanbase.odc.ServiceTestEnv;
-import com.oceanbase.odc.common.json.JsonUtils;
-import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.metadb.notification.ChannelEntity;
 import com.oceanbase.odc.metadb.notification.ChannelRepository;
 import com.oceanbase.odc.metadb.notification.EventEntity;
@@ -44,12 +42,10 @@ import com.oceanbase.odc.metadb.notification.NotificationPolicyChannelRelationRe
 import com.oceanbase.odc.metadb.notification.NotificationPolicyEntity;
 import com.oceanbase.odc.metadb.notification.NotificationPolicyRepository;
 import com.oceanbase.odc.service.notification.helper.EventMapper;
-import com.oceanbase.odc.service.notification.helper.EventUtils;
 import com.oceanbase.odc.service.notification.model.ChannelType;
 import com.oceanbase.odc.service.notification.model.Event;
-import com.oceanbase.odc.service.notification.model.EventLabels;
 import com.oceanbase.odc.service.notification.model.EventStatus;
-import com.oceanbase.odc.service.notification.model.Notification;
+import com.oceanbase.odc.service.notification.model.Message;
 
 public class ConverterTest extends ServiceTestEnv {
     public static final Long ORGANIZATION_ID = 1L;
@@ -101,10 +97,10 @@ public class ConverterTest extends ServiceTestEnv {
         when(channelRepository.findByIdIn(any()))
                 .thenReturn(Arrays.asList(getChannelEntity()));
 
-        List<Notification> notifications =
+        List<Message> messages =
                 converter.convert(events.stream().map(e -> mapper.fromEntity(e)).collect(Collectors.toList()));
 
-        Assert.assertEquals(eventCount, notifications.size());
+        Assert.assertEquals(eventCount, messages.size());
     }
 
     private Event getEvent() {
@@ -114,12 +110,7 @@ public class ConverterTest extends ServiceTestEnv {
         event.setTriggerTime(new Date());
         event.setCreatorId(USER_ID);
         event.setProjectId(1L);
-        event.setLabels(getLabels());
         return event;
-    }
-
-    private EventLabels getLabels() {
-        return EventUtils.buildEventLabels(TaskType.ASYNC, "failed", 1L);
     }
 
     private NotificationPolicyEntity getPolicyEntity() {
@@ -146,7 +137,7 @@ public class ConverterTest extends ServiceTestEnv {
     private NotificationPolicyEntity getNotificationPolicy() {
         NotificationPolicyEntity policy = new NotificationPolicyEntity();
         policy.setId(1L);
-        policy.setMatchExpression(JsonUtils.toJson(getLabels()));
+        policy.setMatchExpression("true");
         policy.setOrganizationId(ORGANIZATION_ID);
         return policy;
     }

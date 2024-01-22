@@ -15,11 +15,15 @@
  */
 package com.oceanbase.odc.service.notification.helper;
 
+import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 
 import org.apache.commons.text.StringSubstitutor;
 import org.springframework.util.CollectionUtils;
 
+import com.oceanbase.odc.common.i18n.I18n;
 import com.oceanbase.odc.common.util.StringUtils;
 
 /**
@@ -28,18 +32,32 @@ import com.oceanbase.odc.common.util.StringUtils;
  * @Description: []
  */
 public class MessageTemplateProcessor {
-    private static final String VARIABLE_PREFIX = "${";
-    private static final String VARIABLE_SUFFIX = "}";
+    private static final Map<Locale, StringSubstitutor> LOCALE2SUBSTITUTOR = new HashMap<>();
 
-    public static String replaceVariables(final String template, final Map<String, String> variables) {
+    public static String replaceVariables(final String template, Locale locale, final Map<String, String> variables) {
         if (StringUtils.isEmpty(template)) {
             return "";
         }
         if (CollectionUtils.isEmpty(variables)) {
             return template;
         }
+        if (variables.containsKey("taskType")) {
+            String taskTypeI18nKey = String.format("${com.oceanbase.odc.TaskType.%s}", variables.get("taskType"));
+            variables.put("taskType", taskTypeI18nKey);
+        }
+        if (variables.containsKey("taskStatus")) {
+            String taskStatusI18nKey = String.format("${com.oceanbase.odc.event.%s.name}", variables.get("taskStatus"));
+            variables.put("taskStatus", taskStatusI18nKey);
+        }
         StringSubstitutor sub =
-                new StringSubstitutor(variables, VARIABLE_PREFIX, VARIABLE_SUFFIX).setDisableSubstitutionInValues(true);
-        return sub.replace(template);
+                new StringSubstitutor(variables).setDisableSubstitutionInValues(true);
+        String message = sub.replace(template);
+
+        if (Objects.nonNull(locale)) {
+            StringSubstitutor i18n =
+                    LOCALE2SUBSTITUTOR.computeIfAbsent(locale, l -> new StringSubstitutor(I18n.getAllMessages(l)));
+            message = i18n.replace(message);
+        }
+        return message;
     }
 }
