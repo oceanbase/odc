@@ -86,13 +86,16 @@ public class AbstractDlmJobPreprocessor implements Preprocessor {
             List<DataArchiveTableConfig> tables) {
         SyncJdbcExecutor syncJdbcExecutor = connectionSession.getSyncJdbcExecutor(
                 ConnectionSessionConstants.CONSOLE_DS_KEY);
-        SqlBuilder sqlBuilder = new MySQLSqlBuilder();
+        SqlBuilder sqlBuilder;
         if (connectionSession.getDialectType().isMysql()) {
+            sqlBuilder = new MySQLSqlBuilder();
             sqlBuilder.append(
                     "SELECT TABLE_NAME from INFORMATION_SCHEMA.STATISTICS where NON_UNIQUE = 0 AND NULLABLE != 'YES' ");
             sqlBuilder.append(String.format("AND TABLE_SCHEMA='%s' GROUP BY TABLE_NAME", databaseName));
         } else {
-            sqlBuilder.append("select table_name from all_constraints where constraint_type = 'P' and owner = %s");
+            sqlBuilder = new OracleSqlBuilder();
+            sqlBuilder.append("select table_name from all_constraints where constraint_type = 'P' and owner = ");
+            sqlBuilder.identifier(databaseName);
         }
 
         HashSet<String> tableNames =
