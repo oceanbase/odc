@@ -578,6 +578,10 @@
                         <groupId>com.oceanbase</groupId>
                         <artifactId>obkv-table-client</artifactId>
                     </exclusion>
+                    <exclusion>
+                        <groupId>com.oceanbase</groupId>
+                        <artifactId>obtools-dbdiff</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
 

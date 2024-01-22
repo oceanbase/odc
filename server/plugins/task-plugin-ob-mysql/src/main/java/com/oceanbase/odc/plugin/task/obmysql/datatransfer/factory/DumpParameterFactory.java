@@ -220,7 +220,7 @@ public class DumpParameterFactory extends BaseParameterFactory<DumpParameter> {
                 controlDescription.add(function);
                 controlContext.add(controlDescription);
             }
-            // TODO ob-loader-dumper will restore this method in version 2.4.8.1
+            // TODO ob-loader-dumper will restore this method in version 4.2.8.1
             // controlManager.register(entry.getKey().getSchemaName(), entry.getKey().getTableName(),
             // controlContext);
         }
