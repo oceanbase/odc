@@ -40,8 +40,6 @@ import com.oceanbase.tools.loaddump.common.enums.DataFormat;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
 import com.oceanbase.tools.loaddump.common.model.LoadParameter;
 import com.oceanbase.tools.loaddump.common.model.MapObject;
-import com.oceanbase.tools.loaddump.function.context.ControlContext;
-import com.oceanbase.tools.loaddump.manager.ControlManager;
 import com.oceanbase.tools.loaddump.utils.SerializeUtils;
 
 import lombok.extern.slf4j.Slf4j;
@@ -183,9 +181,6 @@ public class LoadParameterFactory extends BaseParameterFactory<LoadParameter> {
         }
         String tableName = dbObjects.get(0).getObjectName();
         parameter.getColumnNameMapping().put(tableName, csvMapping);
-        ControlManager controlManager = ControlManager.newInstance();
-        controlManager.register(transferConfig.getSchemaName(), tableName, new ControlContext());
-        parameter.setControlManager(controlManager);
     }
 
     /**

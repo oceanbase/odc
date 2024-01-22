@@ -16,10 +16,6 @@
 
 package com.oceanbase.odc.plugin.task.obmysql.datatransfer.task;
 
-import static com.oceanbase.odc.core.shared.constant.OdcConstants.DEFAULT_ZERO_DATE_TIME_BEHAVIOR;
-import static com.oceanbase.tools.loaddump.common.constants.Constants.JdbcConsts.JDBC_URL_USE_SERVER_PREP_STMTS;
-import static com.oceanbase.tools.loaddump.common.constants.Constants.JdbcConsts.JDBC_URL_ZERO_DATETIME_BEHAVIOR;
-
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -42,7 +38,6 @@ import com.oceanbase.tools.loaddump.common.model.DumpParameter;
 import com.oceanbase.tools.loaddump.common.model.ObjectStatus;
 import com.oceanbase.tools.loaddump.common.model.TaskDetail;
 import com.oceanbase.tools.loaddump.context.TaskContext;
-import com.oceanbase.tools.loaddump.manager.session.SessionProperties;
 
 import lombok.NonNull;
 
@@ -60,14 +55,12 @@ public abstract class BaseOceanBaseTransferJob<T extends BaseParameter> implemen
     protected final boolean transferData;
     protected final boolean transferSchema;
     private final long sleepInterval;
-    private final boolean usePrepStmts;
     private volatile TaskStatus status = TaskStatus.PREPARING;
     private TaskContext schemaContext;
     private TaskContext dataContext;
     private int totalTaskCount = 0;
 
-    public BaseOceanBaseTransferJob(@NonNull T parameter, boolean transferData, boolean transferSchema,
-            boolean usePrepStmts) {
+    public BaseOceanBaseTransferJob(@NonNull T parameter, boolean transferData, boolean transferSchema) {
         this.parameter = parameter;
         this.transferSchema = transferSchema;
         if (parameter instanceof DumpParameter) {
@@ -81,7 +74,6 @@ public abstract class BaseOceanBaseTransferJob<T extends BaseParameter> implemen
         totalTaskCount += transferData ? 1 : 0;
         totalTaskCount += transferSchema ? 1 : 0;
         this.sleepInterval = 500;
-        this.usePrepStmts = usePrepStmts;
     }
 
     protected abstract TaskContext startTransferData() throws Exception;
@@ -151,7 +143,6 @@ public abstract class BaseOceanBaseTransferJob<T extends BaseParameter> implemen
     public DataTransferTaskResult call() throws Exception {
         try {
             status = TaskStatus.RUNNING;
-            setSessionProperties();
 
             String fileSuffix = parameter.getFileSuffix();
             if (transferSchema) {
@@ -252,11 +243,6 @@ public abstract class BaseOceanBaseTransferJob<T extends BaseParameter> implemen
         if (dataContext != null) {
             Verify.verify(dataContextPredicate.test(dataContext), "Data context verify failed");
         }
-    }
-
-    private void setSessionProperties() {
-        SessionProperties.setString(JDBC_URL_USE_SERVER_PREP_STMTS, String.valueOf(usePrepStmts));
-        SessionProperties.setString(JDBC_URL_ZERO_DATETIME_BEHAVIOR, DEFAULT_ZERO_DATE_TIME_BEHAVIOR);
     }
 
     /**
