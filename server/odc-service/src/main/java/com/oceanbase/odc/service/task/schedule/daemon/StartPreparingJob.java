@@ -27,12 +27,12 @@ import com.google.common.collect.Lists;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.task.caller.JobContext;
-import com.oceanbase.odc.service.task.caller.JobException;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.enums.JobStatus;
-import com.oceanbase.odc.service.task.executor.executor.TaskRuntimeException;
+import com.oceanbase.odc.service.task.exception.JobException;
+import com.oceanbase.odc.service.task.exception.TaskRuntimeException;
 import com.oceanbase.odc.service.task.schedule.DefaultJobContextBuilder;
 import com.oceanbase.odc.service.task.schedule.SingleJobProperties;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
@@ -80,7 +80,7 @@ public class StartPreparingJob implements Job {
 
     private void startJob(TaskFrameworkService taskFrameworkService, JobEntity oldEntity) {
         getConfiguration().getTransactionManager().doInTransactionWithoutResult(() -> {
-            JobEntity je = taskFrameworkService.findWithLock(oldEntity.getId());
+            JobEntity je = taskFrameworkService.findWithPessimisticLock(oldEntity.getId());
 
             if (je.getStatus() == JobStatus.PREPARING || je.getStatus() == JobStatus.RETRYING) {
                 log.info("Job {} current status is {}, prepare start job.",

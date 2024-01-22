@@ -36,11 +36,11 @@ import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.schedule.model.TriggerConfig;
 import com.oceanbase.odc.service.schedule.model.TriggerStrategy;
-import com.oceanbase.odc.service.task.caller.JobException;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.enums.JobStatus;
-import com.oceanbase.odc.service.task.executor.executor.TaskRuntimeException;
+import com.oceanbase.odc.service.task.exception.JobException;
+import com.oceanbase.odc.service.task.exception.TaskRuntimeException;
 import com.oceanbase.odc.service.task.listener.DefaultJobCallerListener;
 import com.oceanbase.odc.service.task.listener.DestroyExecutorListener;
 import com.oceanbase.odc.service.task.schedule.daemon.CheckRunningJob;
@@ -106,7 +106,7 @@ public class StdJobScheduler implements JobScheduler {
     }
 
     private Void TryCanceling(Long id) {
-        JobEntity jobEntity = configuration.getTaskFrameworkService().findWithLock(id);
+        JobEntity jobEntity = configuration.getTaskFrameworkService().findWithPessimisticLock(id);
         if (!cancelable(jobEntity.getStatus())) {
             throw new TaskRuntimeException(
                     MessageFormat.format("Cancel job failed, current job {0} status is {1}, can't be cancel.",

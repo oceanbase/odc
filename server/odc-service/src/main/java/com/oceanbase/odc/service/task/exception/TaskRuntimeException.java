@@ -13,37 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package com.oceanbase.odc.service.task;
-
-import org.junit.Ignore;
-import org.junit.Test;
-
-import com.oceanbase.odc.service.task.executor.server.EmbedServer;
-
-import lombok.extern.slf4j.Slf4j;
+package com.oceanbase.odc.service.task.exception;
 
 /**
  * @author yaobin
- * @date 2023-12-13
+ * @date 2023-11-15
  * @since 4.2.4
  */
-@Slf4j
-public class EmbedServerTest {
+public class TaskRuntimeException extends RuntimeException {
 
-    @Ignore
-    @Test
-    public void test_server() throws Exception {
+    public TaskRuntimeException() {}
 
-        EmbedServer server = new EmbedServer();
-        server.start(8888);
-        try {
-            synchronized (this) {
-                this.wait(30 * 60 * 1000);
-            }
-        } finally {
-            server.stop();
-        }
+    public TaskRuntimeException(String message) {
+        super(message);
+    }
 
+    public TaskRuntimeException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
+    public TaskRuntimeException(Throwable cause) {
+        super(cause);
     }
 }

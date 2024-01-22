@@ -66,10 +66,16 @@ public abstract class BaseJobTest {
         System.setProperty(JobEnvKeyConstants.ODC_LOG_DIRECTORY, LogUtils.getBaseLogPath());
         System.setProperty(JobEnvKeyConstants.ODC_BOOT_MODE, JobConstants.ODC_BOOT_MODE_EXECUTOR);
         System.setProperty(JobEnvKeyConstants.ODC_TASK_RUN_MODE, TaskRunModeEnum.K8S.name());
+        System.setProperty(JobEnvKeyConstants.ODC_SERVER_PORT, "8990");
+
+
         DefaultJobConfiguration jc = new DefaultJobConfiguration() {};
 
+        HostProperties hostProperties = new HostProperties();
+        hostProperties.setOdcHost("localhost");
+        hostProperties.setPort("8990");
         HostUrlProvider urlProvider = new DefaultHostUrlProvider(
-                () -> Mockito.mock(TaskFrameworkProperties.class), new HostProperties());
+                () -> Mockito.mock(TaskFrameworkProperties.class), hostProperties);
         jc.setHostUrlProvider(urlProvider);
         jc.setTaskFrameworkService(Mockito.mock(TaskFrameworkService.class));
         JobConfigurationHolder.setJobConfiguration(jc);

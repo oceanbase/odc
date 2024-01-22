@@ -13,29 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package com.oceanbase.odc.service.task.executor;
-
-import java.util.concurrent.CountDownLatch;
-
-import lombok.extern.slf4j.Slf4j;
+package com.oceanbase.odc.service.task.exception;
 
 /**
  * @author yaobin
- * @date 2023-12-13
+ * @date 2023-11-15
  * @since 4.2.4
  */
-@Slf4j
-public class ExitHelper {
+public class JobException extends Exception {
 
-    private static final CountDownLatch LATCH = new CountDownLatch(1);
+    public JobException() {}
 
-    public static void await() {
-        try {
-            LATCH.await();
-        } catch (InterruptedException e) {
-            log.warn("Await thread be interrupted and exit:", e);
-        }
+    public JobException(String message) {
+        super(message);
     }
 
+    public JobException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
+    public JobException(Throwable cause) {
+        super(cause);
+    }
 }

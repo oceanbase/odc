@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.oceanbase.odc.service.task.executor.server;
 
-package com.oceanbase.odc.service.task.executor.task;
-
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -24,9 +24,16 @@ import java.util.concurrent.TimeUnit;
 
 import com.oceanbase.odc.common.util.ObjectUtil;
 import com.oceanbase.odc.core.task.TaskThreadFactory;
+import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
 import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.odc.service.task.constants.JobUrlConstants;
+import com.oceanbase.odc.service.task.enums.JobStatus;
+import com.oceanbase.odc.service.task.executor.logger.LogBiz;
+import com.oceanbase.odc.service.task.executor.logger.LogBizImpl;
+import com.oceanbase.odc.service.task.executor.task.DefaultTaskResult;
+import com.oceanbase.odc.service.task.executor.task.DefaultTaskResultBuilder;
+import com.oceanbase.odc.service.task.executor.task.Task;
 import com.oceanbase.odc.service.task.util.JobUtils;
 
 import lombok.extern.slf4j.Slf4j;
@@ -39,22 +46,26 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class TaskMonitor {
 
+    private static final int REPORT_RESULT_RETRY_TIMES = Integer.MAX_VALUE;
     private final TaskReporter reporter;
     private final Task<?> task;
+    private final CloudObjectStorageService cloudObjectStorageService;
     private volatile long startTimeMilliSeconds;
     private ScheduledExecutorService reportScheduledExecutor;
     private ScheduledExecutorService heartScheduledExecutor;
 
-    public TaskMonitor(Task<?> task, TaskReporter reporter) {
+
+    public TaskMonitor(Task<?> task, CloudObjectStorageService cloudObjectStorageService) {
         this.task = task;
-        this.reporter = reporter;
+        this.reporter = new TaskReporter(task.getJobContext().getHostUrls());;
+        this.cloudObjectStorageService = cloudObjectStorageService;
     }
 
     public void monitor() {
         this.startTimeMilliSeconds = System.currentTimeMillis();
 
         ThreadFactory threadFactory =
-                new TaskThreadFactory(("Task-Monitor-Job-" + getJobId()));
+                new TraceDecoratorThreadFactory(new TaskThreadFactory(("Task-Monitor-Job-" + getJobId())));
         this.reportScheduledExecutor = Executors.newSingleThreadScheduledExecutor(threadFactory);
         reportScheduledExecutor.scheduleAtFixedRate(() -> {
             if (isTimeout()) {
@@ -81,9 +92,13 @@ public class TaskMonitor {
         log.info("Task heart init success");
     }
 
-    public void destroy() {
-        destroy(reportScheduledExecutor);
-        destroy(heartScheduledExecutor);
+    public void finalWork() {
+        try {
+            doFinal();
+        } finally {
+            destroy(reportScheduledExecutor);
+            destroy(heartScheduledExecutor);
+        }
     }
 
     private void destroy(ExecutorService executorService) {
@@ -98,12 +113,12 @@ public class TaskMonitor {
 
     private void reportTaskResult() {
         DefaultTaskResult taskResult = DefaultTaskResultBuilder.build(getTask());
-        if (taskResult.getStatus().isTerminated()) {
+        DefaultTaskResult copiedResult = ObjectUtil.deepCopy(taskResult, DefaultTaskResult.class);
+        if (copiedResult.getStatus().isTerminated()) {
             log.info("job {} status {} is terminate, monitor report be ignored.",
-                    taskResult.getJobIdentity().getId(), taskResult.getStatus());
+                    copiedResult.getJobIdentity().getId(), copiedResult.getStatus());
             return;
         }
-        DefaultTaskResult copiedResult = ObjectUtil.deepCopy(taskResult, DefaultTaskResult.class);
         getReporter().report(JobUrlConstants.TASK_RESULT_UPLOAD, copiedResult);
         log.info("Report task info, id: {}, status: {}, progress: {}%, result: {}", getJobId(),
                 copiedResult.getStatus(), String.format("%.2f", copiedResult.getProgress()), getTask().getTaskResult());
@@ -118,6 +133,60 @@ public class TaskMonitor {
             return System.currentTimeMillis() - startTimeMilliSeconds > Long.parseLong(milliSecStr);
         } else {
             return false;
+        }
+    }
+
+
+    private void doFinal() {
+
+        DefaultTaskResult finalResult = DefaultTaskResultBuilder.build(getTask());
+        // Report final result
+        log.info("Task id: {}, finished with status: {}, start to report final result", getJobId(),
+                finalResult.getStatus());
+
+        // todo wait timeout for upload log file
+        log.info("Task id: {}, start to do remained work.", getJobId());
+        uploadLogFileToCloudStorage(finalResult);
+
+        log.info("Task id: {}, remained work be completed, report finished status.", getJobId());
+
+        // Report finish signal to task server
+        reportTaskResultWithRetry(finalResult, REPORT_RESULT_RETRY_TIMES);
+        log.info("Task id: {} exit.", getJobId());
+    }
+
+    private void uploadLogFileToCloudStorage(DefaultTaskResult finalResult) {
+        if (cloudObjectStorageService != null && cloudObjectStorageService.supported()) {
+            LogBiz biz = new LogBizImpl();
+            Map<String, String> logMap = null;
+            try {
+                logMap = biz.uploadLogFileToCloudStorage(finalResult.getJobIdentity(), cloudObjectStorageService);
+            } catch (Throwable e) {
+                log.warn("Upload job {} log file to cloud storage occur error", getJobId(), e);
+            }
+            finalResult.setLogMetadata(logMap);
+        }
+    }
+
+    private void reportTaskResultWithRetry(DefaultTaskResult result, int retries) {
+        if (result.getStatus() == JobStatus.DONE) {
+            result.setProgress(100.0);
+        }
+        int retryTimes = 0;
+        while (retryTimes++ < retries) {
+            try {
+                boolean success = reporter.report(JobUrlConstants.TASK_RESULT_UPLOAD, result);
+                if (success) {
+                    log.info("Report task result successfully");
+                    break;
+                } else {
+                    log.warn("Report task result failed, will retry after {} seconds, remaining retries: {}",
+                            JobConstants.REPORT_TASK_INFO_INTERVAL_SECONDS, retries - retryTimes);
+                    Thread.sleep(JobConstants.REPORT_TASK_INFO_INTERVAL_SECONDS * 1000L);
+                }
+            } catch (Throwable e) {
+                log.warn("Report task result failed, taskId: {}", getJobId(), e);
+            }
         }
     }
 

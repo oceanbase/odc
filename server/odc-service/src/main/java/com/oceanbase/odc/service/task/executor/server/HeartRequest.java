@@ -13,27 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.oceanbase.odc.service.task.executor.server;
 
-package com.oceanbase.odc.service.task.executor.executor;
+import com.oceanbase.odc.service.task.schedule.JobIdentity;
+
+import lombok.Data;
 
 /**
  * @author yaobin
- * @date 2023-11-15
+ * @date 2023-11-29
  * @since 4.2.4
  */
-public class TaskRuntimeException extends RuntimeException {
+@Data
+public class HeartRequest {
 
-    public TaskRuntimeException() {}
+    private JobIdentity jobIdentity;
 
-    public TaskRuntimeException(String message) {
-        super(message);
-    }
+    private String executorEndpoint;
 
-    public TaskRuntimeException(String message, Throwable cause) {
-        super(message, cause);
-    }
-
-    public TaskRuntimeException(Throwable cause) {
-        super(cause);
-    }
 }

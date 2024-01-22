@@ -53,5 +53,7 @@ public class JobEnvKeyConstants {
 
     public static final String DATABASE_PASSWORD = "DATABASE_PASSWORD";
 
+    public static final String ENCRYPT_KEY = "ENCRYPT_KEY";
 
+    public static final String ENCRYPT_SALT = "ENCRYPT_SALT";
 }

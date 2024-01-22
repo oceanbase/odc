@@ -18,7 +18,7 @@ package com.oceanbase.odc.service.task.executor.task;
 
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.enums.JobStatus;
-import com.oceanbase.odc.service.task.executor.executor.TaskExecutor;
+import com.oceanbase.odc.service.task.executor.server.TaskExecutor;
 
 /**
  * Task interface. Each task should implement this interface

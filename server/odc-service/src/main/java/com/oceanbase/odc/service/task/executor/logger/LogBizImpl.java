@@ -19,6 +19,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
@@ -38,7 +39,7 @@ public class LogBizImpl implements LogBiz {
 
     @Override
     public String getLog(Long jobId, String logType, Long fetchMaxLine, Long fetchMaxByteSize) {
-        log.info("Accept log request, job id = {}, logType = {}", jobId, logType);
+        log.info("Accept log request, job id = {}, logType = {}.", jobId, logType);
         OdcTaskLogLevel logTypeLevel = null;
         try {
             logTypeLevel = OdcTaskLogLevel.valueOf(logType);
@@ -47,29 +48,41 @@ public class LogBizImpl implements LogBiz {
             return "logType " + logType + " is illegal.";
         }
 
-        String logFileStr = LogUtils.getJobLogFileWithPath(jobId, logTypeLevel);
+        String logFileStr = LogUtils.getTaskLogFileWithPath(jobId, logTypeLevel);
         return LogUtils.getLogContent(logFileStr, fetchMaxLine, fetchMaxByteSize);
     }
 
 
     @Override
     public Map<String, String> uploadLogFileToCloudStorage(JobIdentity ji,
-            CloudObjectStorageService cloudObjectStorageService) throws IOException {
-        log.info("Job id: {}, upload log", ji.getId());
-        String logFileStr = LogUtils.getJobLogFileWithPath(ji.getId(), OdcTaskLogLevel.ALL);
+            CloudObjectStorageService storageService) throws IOException {
+        log.info("Job id: {}, upload log.", ji.getId());
+
+        Map<String, String> logMap = new HashMap<>();
+        Optional<String> allLogObjectId = updateTemp(ji.getId(), OdcTaskLogLevel.ALL, storageService);
+        allLogObjectId.ifPresent(a -> logMap.put(JobAttributeKeyConstants.LOG_STORAGE_ALL_OBJECT_ID, a));
+
+        Optional<String> warnLogObjectId = updateTemp(ji.getId(), OdcTaskLogLevel.WARN, storageService);
+        warnLogObjectId.ifPresent(a -> logMap.put(JobAttributeKeyConstants.LOG_STORAGE_WARN_OBJECT_ID, a));
+
+        if (allLogObjectId.isPresent() || warnLogObjectId.isPresent()) {
+            logMap.put(JobAttributeKeyConstants.LOG_STORAGE_BUCKET_NAME, storageService.getBucketName());
+        }
+        return logMap;
+    }
+
+    private Optional<String> updateTemp(Long jobId, OdcTaskLogLevel logType,
+            CloudObjectStorageService storageService) throws IOException {
+        String logFileStr = LogUtils.getTaskLogFileWithPath(jobId, logType);
         String fileId = StringUtils.uuid();
         File jobLogFile = new File(logFileStr);
-        if (!jobLogFile.exists()) {
-            return null;
+        if (jobLogFile.exists() && jobLogFile.length() > 0) {
+            String ossName = storageService.uploadTemp(fileId, jobLogFile);
+            log.info("upload job {} log to OSS successfully, file name={}, oss object name {}.",
+                    logType.getName(), fileId, ossName);
+            return Optional.of(ossName);
         }
-        String objectName = cloudObjectStorageService.uploadTemp(fileId, jobLogFile);
-        Map<String, String> logMap = new HashMap<>();
-        logMap.put(JobAttributeKeyConstants.LOG_STORAGE_ALL_OBJECT_ID, objectName);
-        logMap.put(JobAttributeKeyConstants.LOG_STORAGE_WARN_OBJECT_ID, objectName);
-        logMap.put(JobAttributeKeyConstants.LOG_STORAGE_BUCKET_NAME,
-                cloudObjectStorageService.getBucketName());
-        log.info("upload job log to OSS successfully, file name={}", fileId);
-        return logMap;
+        return Optional.empty();
 
     }
 

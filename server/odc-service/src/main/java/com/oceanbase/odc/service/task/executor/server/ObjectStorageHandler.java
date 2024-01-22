@@ -13,8 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package com.oceanbase.odc.service.task.executor.task;
+package com.oceanbase.odc.service.task.executor.server;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -46,12 +45,6 @@ public class ObjectStorageHandler {
 
     public ObjectStorageHandler(CloudObjectStorageService cloudObjectStorageService, String localDir) {
         this.localFileOperator = new LocalFileOperator(localDir);
-        this.cloudObjectStorageService = cloudObjectStorageService;
-    }
-
-    public ObjectStorageHandler(CloudObjectStorageService cloudObjectStorageService,
-            LocalFileOperator localFileOperator) {
-        this.localFileOperator = localFileOperator;
         this.cloudObjectStorageService = cloudObjectStorageService;
     }
 

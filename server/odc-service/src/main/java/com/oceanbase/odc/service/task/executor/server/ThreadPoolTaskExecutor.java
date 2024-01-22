@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.task.executor.executor;
+package com.oceanbase.odc.service.task.executor.server;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -49,7 +49,7 @@ public class ThreadPoolTaskExecutor implements TaskExecutor {
 
     private ThreadPoolTaskExecutor() {
         this.executor = Executors.newFixedThreadPool(2,
-                new TaskThreadFactory("Task-Executor"));
+                new TraceDecoratorThreadFactory(new TaskThreadFactory("Task-Executor")));
     }
 
     public static TaskExecutor getInstance() {

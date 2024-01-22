@@ -37,9 +37,10 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class LogUtils {
 
-    private static final long MAX_LOG_LINE_COUNT = 10000;
-    private static final long MAX_LOG_BYTE_COUNT = 1024 * 1024;
-    private static final String LOG_PATH_PATTERN = "%s/%s/task.%s";
+    public static final long MAX_LOG_LINE_COUNT = 10000;
+    public static final long MAX_LOG_BYTE_COUNT = 1024 * 1024;
+    private static final String TASK_LOG_BASE_PATH = "%s/task/%s";
+    private static final String TASK_LOG_PATH_PATTERN = TASK_LOG_BASE_PATH + "/log.%s";
 
     public static String getLogContent(String file, Long fetchMaxLine, Long fetchMaxByteSize) {
 
@@ -79,17 +80,8 @@ public class LogUtils {
         return logPath == null ? "./log" : logPath;
     }
 
-    public static String getJobLogFileWithPath(Long jobId, OdcTaskLogLevel logType) {
-
-        // String filePath = String.format(LOG_PATH_PATTERN, JobUtils.getLogPath(), id, logType);
-        // todo optimize log
-        return "/opt/odc/log/odc.log";
+    public static String getTaskLogFileWithPath(Long jobId, OdcTaskLogLevel logType) {
+        return String.format(TASK_LOG_PATH_PATTERN, getBaseLogPath(), jobId, logType);
     }
 
-    public static String getJobLogPath(Long jobId) {
-
-        // String filePath = String.format(LOG_PATH_PATTERN, JobUtils.getLogPath(), id, logType);
-        // todo optimize log
-        return "/opt/odc/log";
-    }
 }

@@ -18,8 +18,8 @@ package com.oceanbase.odc.service.task.listener;
 
 import com.oceanbase.odc.common.event.AbstractEventListener;
 import com.oceanbase.odc.metadb.task.JobEntity;
-import com.oceanbase.odc.service.task.caller.JobException;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
+import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 
 import lombok.extern.slf4j.Slf4j;

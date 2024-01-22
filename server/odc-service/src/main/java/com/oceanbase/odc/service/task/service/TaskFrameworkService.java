@@ -22,7 +22,7 @@ import org.springframework.data.domain.Page;
 
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.task.enums.JobStatus;
-import com.oceanbase.odc.service.task.executor.task.HeartRequest;
+import com.oceanbase.odc.service.task.executor.server.HeartRequest;
 import com.oceanbase.odc.service.task.executor.task.TaskResult;
 import com.oceanbase.odc.service.task.schedule.JobDefinition;
 
@@ -41,7 +41,7 @@ public interface TaskFrameworkService {
 
     JobEntity find(Long id);
 
-    JobEntity findWithLock(Long id);
+    JobEntity findWithPessimisticLock(Long id);
 
     Page<JobEntity> find(JobStatus status, int page, int size);
 

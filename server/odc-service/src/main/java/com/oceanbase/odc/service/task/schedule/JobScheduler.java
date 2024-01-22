@@ -19,7 +19,7 @@ package com.oceanbase.odc.service.task.schedule;
 import java.util.concurrent.TimeUnit;
 
 import com.oceanbase.odc.common.event.EventPublisher;
-import com.oceanbase.odc.service.task.caller.JobException;
+import com.oceanbase.odc.service.task.exception.JobException;
 
 /**
  * @author yaobin

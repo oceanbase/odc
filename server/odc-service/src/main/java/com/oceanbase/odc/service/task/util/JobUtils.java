@@ -63,6 +63,11 @@ public class JobUtils {
         return "http://" + SystemUtils.getLocalIpAddress() + ":" + JobUtils.getPort();
     }
 
+    public static String getExecutorDataPath() {
+        String userDir = SystemUtils.getEnvOrProperty("user.dir");
+        return userDir != null ? userDir : "./data";
+    }
+
     public static ConnectionConfig getMetaDBConnectionConfig() {
         ConnectionConfig config = new ConnectionConfig();
         config.setHost(SystemUtils.getEnvOrProperty(JobEnvKeyConstants.DATABASE_HOST));
@@ -78,7 +83,8 @@ public class JobUtils {
     public static Optional<ObjectStorageConfiguration> getObjectStorageConfiguration() {
         String osc;
         if ((osc = SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_OBJECT_STORAGE_CONFIGURATION)) != null) {
-            ObjectStorageConfiguration storageConfig = JsonUtils.fromJson(osc, ObjectStorageConfiguration.class);
+            ObjectStorageConfiguration storageConfig = JsonUtils.fromJson(
+                    JobEncryptUtils.decrypt(osc), ObjectStorageConfiguration.class);
             return Optional.of(storageConfig);
         }
         return Optional.empty();

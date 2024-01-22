@@ -14,26 +14,22 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.task.caller;
+package com.oceanbase.odc.service.task.executor.server;
+
+import com.oceanbase.odc.service.task.caller.JobContext;
+import com.oceanbase.odc.service.task.executor.task.Task;
+import com.oceanbase.odc.service.task.schedule.JobIdentity;
 
 /**
- * @author yaobin
- * @date 2023-11-15
- * @since 4.2.4
+ * @author gaoda.xy
+ * @date 2023/11/24 11:18
  */
-public class JobException extends Exception {
+public interface TaskExecutor {
 
-    public JobException() {}
+    void execute(Task<?> task, JobContext jc);
 
-    public JobException(String message) {
-        super(message);
-    }
+    boolean cancel(JobIdentity ji);
 
-    public JobException(String message, Throwable cause) {
-        super(message, cause);
-    }
+    Task<?> getTask(JobIdentity ji);
 
-    public JobException(Throwable cause) {
-        super(cause);
-    }
 }

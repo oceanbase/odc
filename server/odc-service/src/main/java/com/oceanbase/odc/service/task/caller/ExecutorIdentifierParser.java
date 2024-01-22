@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.task.caller;
 import org.springframework.web.util.UriComponents;
 
 import com.oceanbase.odc.service.common.util.UrlUtils;
+import com.oceanbase.odc.service.task.exception.JobException;
 
 /**
  * @author yaobin
