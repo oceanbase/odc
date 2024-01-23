@@ -79,7 +79,9 @@ public class TaskApplicationTest extends BaseJobTest {
 
         JobDefinition jd = buildJobDefinition();
         JobContext jc = new DefaultJobContextBuilder().build(jobIdentity, jd);
-        System.setProperty(JobEnvKeyConstants.ODC_JOB_CONTEXT, JobUtils.toJson(jc));
+        TextEncryptor textEncryptor = Encryptors.aesBase64(System.getProperty(JobEnvKeyConstants.ENCRYPT_KEY),
+                System.getProperty(JobEnvKeyConstants.ENCRYPT_SALT));
+        System.setProperty(JobEnvKeyConstants.ODC_JOB_CONTEXT, textEncryptor.encrypt(JobUtils.toJson(jc)));
         startTaskApplication();
         assertCancelResult(jc);
     }
@@ -99,7 +101,7 @@ public class TaskApplicationTest extends BaseJobTest {
     private void assertCancelResult(JobContext jc) {
 
         try {
-            Thread.sleep(5 * 1000L);
+            Thread.sleep(10 * 1000L);
             boolean result = ThreadPoolTaskExecutor.getInstance().cancel(jc.getJobIdentity());
             Assert.assertTrue(result);
         } catch (InterruptedException e) {
