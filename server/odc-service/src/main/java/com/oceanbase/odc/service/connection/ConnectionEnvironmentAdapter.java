@@ -33,10 +33,6 @@ public class ConnectionEnvironmentAdapter {
     @Autowired
     private CloudMetadataClient cloudMetadataClient;
 
-    public static void main(String[] args) throws ClassNotFoundException {
-        System.out.println(Class.forName("com.aliyun.itgov.sdk.common.availability.service.ClientAvailabilityService"));
-    }
-
     /**
      * 连接配置适配，主要是确定连接的 Endpoint{@link OBTenantEndpoint} 配置
      */
