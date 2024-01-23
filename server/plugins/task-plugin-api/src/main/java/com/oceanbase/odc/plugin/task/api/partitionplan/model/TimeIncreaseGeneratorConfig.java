@@ -13,32 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.partitionplan.model;
+package com.oceanbase.odc.plugin.task.api.partitionplan.model;
 
-import java.io.Serializable;
-import java.util.Map;
+import com.oceanbase.odc.plugin.task.api.partitionplan.datatype.TimeDataType;
 
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
 /**
- * {@link PartitionPlanKeyConfig}
+ * {@link TimeIncreaseGeneratorConfig}
  *
  * @author yh263208
- * @date 2024-01-10 15:36
+ * @date 2024-01-19 17:23
  * @since ODC_release_4.2.4
- * @see java.io.Serializable
  */
 @Getter
 @Setter
 @ToString
-public class PartitionPlanKeyConfig implements Serializable {
+public class TimeIncreaseGeneratorConfig {
 
-    private static final long serialVersionUID = 7176051008183974787L;
-    private PartitionPlanStrategy strategy;
-    private String partitionKey;
-    private String partitionKeyInvoker;
-    private Map<String, Object> partitionKeyInvokerParameters;
+    private long fromTimestampMillis;
+    private int interval;
+    /**
+     * ref {@link TimeDataType#getPrecision()}
+     */
+    private int intervalUnit;
+    private boolean fromCurrentTime;
 
 }
