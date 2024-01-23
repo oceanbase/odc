@@ -1,15 +1,5 @@
 ###
-# This workflow is used for daily development
-# Triggers:
-#   1. Push
-#   2. Pull-Request
-# Jobs:
-#   1. Check Code Format
-#   2. PMD Scan
-#   3. Unit Test
-#   4. Calculate Version Number
-#   5. Build RPM (exclude front resources and only x86_64 platform for now)
-#   (Job 3 to 5 are executed only when Pull-Request)
+# This workflow is used for testing new task framework
 ###
 
 name: Build Docker Image For Test
