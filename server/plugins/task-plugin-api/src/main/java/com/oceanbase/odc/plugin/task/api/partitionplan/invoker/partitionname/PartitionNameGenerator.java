@@ -18,7 +18,7 @@ package com.oceanbase.odc.plugin.task.api.partitionplan.invoker.partitionname;
 import java.sql.Connection;
 import java.util.Map;
 
-import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.PartitionPlanKeyInvoker;
+import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.AutoPartitionKeyInvoker;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartitionDefinition;
 
@@ -31,7 +31,7 @@ import lombok.NonNull;
  * @date 2024-01-22 16:22
  * @since ODC_release_4.2.4
  */
-public interface PartitionNameGenerator extends PartitionPlanKeyInvoker<String> {
+public interface PartitionNameGenerator extends AutoPartitionKeyInvoker<String> {
 
     String TARGET_PARTITION_DEF_KEY = "targetPartition";
 

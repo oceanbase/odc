@@ -17,7 +17,7 @@ package com.oceanbase.odc.plugin.task.api.partitionplan.invoker.drop;
 
 import java.util.List;
 
-import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.PartitionPlanKeyInvoker;
+import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.AutoPartitionKeyInvoker;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartitionDefinition;
 
 /**
@@ -27,5 +27,5 @@ import com.oceanbase.tools.dbbrowser.model.DBTablePartitionDefinition;
  * @date 2024-01-19 17:41
  * @since ODC_release_4.2.4
  */
-public interface DropPartitionGenerator extends PartitionPlanKeyInvoker<List<DBTablePartitionDefinition>> {
+public interface DropPartitionGenerator extends AutoPartitionKeyInvoker<List<DBTablePartitionDefinition>> {
 }

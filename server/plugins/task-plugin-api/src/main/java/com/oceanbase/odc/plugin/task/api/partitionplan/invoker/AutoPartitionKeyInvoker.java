@@ -23,15 +23,15 @@ import com.oceanbase.tools.dbbrowser.model.DBTable;
 import lombok.NonNull;
 
 /**
- * {@link PartitionPlanKeyInvoker}
+ * {@link AutoPartitionKeyInvoker}
  *
  * @author yh263208
  * @date 2024-01-12 15:02
  * @since ODC_release_4.2.4
  */
-public interface PartitionPlanKeyInvoker<T> {
+public interface AutoPartitionKeyInvoker<T> {
     /**
-     * name of the {@link PartitionPlanKeyInvoker}
+     * name of the {@link AutoPartitionKeyInvoker}
      *
      * @return get name
      */

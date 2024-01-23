@@ -21,7 +21,7 @@ import java.util.Map;
 
 import org.apache.commons.lang3.Validate;
 
-import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.PartitionPlanKeyInvoker;
+import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.AutoPartitionKeyInvoker;
 import com.oceanbase.odc.plugin.task.api.partitionplan.util.ParameterUtil;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
 
@@ -35,7 +35,7 @@ import lombok.NonNull;
  * @date 2024-01-18 20:45
  * @since ODC_release_4.2.4
  */
-public interface PartitionExprGenerator extends PartitionPlanKeyInvoker<List<String>> {
+public interface PartitionExprGenerator extends AutoPartitionKeyInvoker<List<String>> {
 
     String GENERATE_COUNT_KEY = "generateCount";
     String GENERATOR_PARAMETER_KEY = "generateParameter";

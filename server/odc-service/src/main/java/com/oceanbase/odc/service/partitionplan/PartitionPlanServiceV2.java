@@ -33,7 +33,7 @@ import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.plugin.schema.api.TableExtensionPoint;
-import com.oceanbase.odc.plugin.task.api.partitionplan.PartitionPlanExtensionPoint;
+import com.oceanbase.odc.plugin.task.api.partitionplan.AutoPartitionExtensionPoint;
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.create.PartitionExprGenerator;
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.drop.DropPartitionGenerator;
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.partitionname.PartitionNameGenerator;
@@ -66,10 +66,10 @@ public class PartitionPlanServiceV2 {
      */
     public Map<PartitionPlanStrategy, List<String>> generatePartitionDdl(@NonNull Connection connection,
             @NonNull DialectType dialectType, @NonNull String schema, @NonNull PartitionPlanTableConfig tableConfig) {
-        PartitionPlanExtensionPoint partitionPlanExtensionPoint = TaskPluginUtil
-                .getPartitionPlanExtensionPoint(dialectType);
+        AutoPartitionExtensionPoint autoPartitionExtensionPoint = TaskPluginUtil
+                .getAutoPartitionExtensionPoint(dialectType);
         TableExtensionPoint tableExtensionPoint = SchemaPluginUtil.getTableExtension(dialectType);
-        if (tableExtensionPoint == null || partitionPlanExtensionPoint == null) {
+        if (tableExtensionPoint == null || autoPartitionExtensionPoint == null) {
             throw new UnsupportedOperationException("Unsupported dialect " + dialectType);
         }
         String tableName = tableConfig.getTableName();
@@ -86,7 +86,7 @@ public class PartitionPlanServiceV2 {
             if (partitionType == DBTablePartitionType.UNKNOWN
                     || partitionType == DBTablePartitionType.NOT_PARTITIONED) {
                 throw new IllegalArgumentException("Table " + schema + "." + tableName + " is not partitioned");
-            } else if (partitionPlanExtensionPoint.supports(partition)) {
+            } else if (autoPartitionExtensionPoint.supports(partition)) {
                 throw new IllegalArgumentException("Unsupported partition type, " + partitionType);
             }
         }
@@ -96,11 +96,11 @@ public class PartitionPlanServiceV2 {
         Map<String, Integer> key2Index = new HashMap<>();
         DBTablePartitionOption partitionOption = partition.getPartitionOption();
         if (StringUtils.isNotEmpty(partitionOption.getExpression())) {
-            key2Index.put(partitionPlanExtensionPoint.unquoteIdentifier(partitionOption.getExpression()), 0);
+            key2Index.put(autoPartitionExtensionPoint.unquoteIdentifier(partitionOption.getExpression()), 0);
         } else if (CollectionUtils.isNotEmpty(partitionOption.getColumnNames())) {
             List<String> keys = partitionOption.getColumnNames();
             for (int i = 0; i < keys.size(); i++) {
-                key2Index.put(partitionPlanExtensionPoint.unquoteIdentifier(keys.get(i)), i);
+                key2Index.put(autoPartitionExtensionPoint.unquoteIdentifier(keys.get(i)), i);
             }
         } else {
             throw new IllegalStateException("Unknown partition key");
@@ -113,8 +113,8 @@ public class PartitionPlanServiceV2 {
             configs.sort((o1, o2) -> {
                 String p1 = o1.getPartitionKey();
                 String p2 = o2.getPartitionKey();
-                Integer idx1 = key2Index.get(partitionPlanExtensionPoint.unquoteIdentifier(p1));
-                Integer idx2 = key2Index.get(partitionPlanExtensionPoint.unquoteIdentifier(p2));
+                Integer idx1 = key2Index.get(autoPartitionExtensionPoint.unquoteIdentifier(p1));
+                Integer idx2 = key2Index.get(autoPartitionExtensionPoint.unquoteIdentifier(p2));
                 if (idx1 == null || idx2 == null) {
                     throw new IllegalStateException("Unknown error, " + p1 + ", " + p2);
                 }
@@ -122,13 +122,13 @@ public class PartitionPlanServiceV2 {
             });
         }
         Map<PartitionPlanStrategy, DBTablePartition> strategyListMap = doPartitionPlan(connection, dbTable,
-                tableConfig, partitionPlanExtensionPoint, strategy2PartitionKeyConfigs);
+                tableConfig, autoPartitionExtensionPoint, strategy2PartitionKeyConfigs);
         return strategyListMap.entrySet().stream().collect(Collectors.toMap(Entry::getKey, e -> {
             switch (e.getKey()) {
                 case DROP:
-                    return partitionPlanExtensionPoint.getDropPartitionDdls(e.getValue(), true);
+                    return autoPartitionExtensionPoint.generateDropPartitionDdls(e.getValue(), true);
                 case CREATE:
-                    return partitionPlanExtensionPoint.getCreatePartitionDdls(e.getValue());
+                    return autoPartitionExtensionPoint.generateCreatePartitionDdls(e.getValue());
                 default:
                     return Collections.emptyList();
             }
@@ -136,7 +136,7 @@ public class PartitionPlanServiceV2 {
     }
 
     private Map<PartitionPlanStrategy, DBTablePartition> doPartitionPlan(Connection connection, DBTable dbTable,
-            PartitionPlanTableConfig tableConfig, PartitionPlanExtensionPoint extensionPoint,
+            PartitionPlanTableConfig tableConfig, AutoPartitionExtensionPoint extensionPoint,
             Map<PartitionPlanStrategy, List<PartitionPlanKeyConfig>> strategy2PartitionKeyConfigs) {
         Map<Integer, List<String>> lineNum2CreateExprs = new HashMap<>();
         List<DBTablePartitionDefinition> droppedPartitions = new ArrayList<>();

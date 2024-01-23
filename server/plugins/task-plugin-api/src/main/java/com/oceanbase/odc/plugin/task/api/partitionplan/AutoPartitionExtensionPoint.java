@@ -30,14 +30,14 @@ import com.oceanbase.tools.dbbrowser.model.datatype.DataType;
 import lombok.NonNull;
 
 /**
- * {@link PartitionPlanExtensionPoint}
+ * {@link AutoPartitionExtensionPoint}
  *
  * @author yh263208
  * @date 2023-01-11 20:23
  * @since ODC_release_4.2.4
  * @see org.pf4j.ExtensionPoint
  */
-public interface PartitionPlanExtensionPoint extends ExtensionPoint {
+public interface AutoPartitionExtensionPoint extends ExtensionPoint {
 
     boolean supports(@NonNull DBTablePartition dbTablePartition);
 
@@ -45,9 +45,9 @@ public interface PartitionPlanExtensionPoint extends ExtensionPoint {
 
     List<DataType> getPartitionKeyDataTypes(@NonNull Connection connection, @NonNull DBTable table);
 
-    List<String> getCreatePartitionDdls(@NonNull DBTablePartition partition);
+    List<String> generateCreatePartitionDdls(@NonNull DBTablePartition partition);
 
-    List<String> getDropPartitionDdls(@NonNull DBTablePartition partition, boolean reloadIndexes);
+    List<String> generateDropPartitionDdls(@NonNull DBTablePartition partition, boolean reloadIndexes);
 
     DropPartitionGenerator getDropPartitionGeneratorByName(@NonNull String name);
 
