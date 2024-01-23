@@ -77,7 +77,7 @@ public class ImmediateJobDispatcher implements JobDispatcher {
             return JobCallerBuilder.buildK8sJobCaller(config.getK8sJobClient(),
                     createDefaultPodConfig(config.getTaskFrameworkProperties()), context);
         }
-        return JobCallerBuilder.buildJvmCaller();
+        return JobCallerBuilder.buildProcessCaller(context);
     }
 
     private PodConfig createDefaultPodConfig(TaskFrameworkProperties taskFrameworkProperties) {

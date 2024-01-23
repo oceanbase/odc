@@ -44,6 +44,7 @@ import com.oceanbase.odc.service.task.exception.TaskRuntimeException;
 import com.oceanbase.odc.service.task.listener.DefaultJobCallerListener;
 import com.oceanbase.odc.service.task.listener.DestroyExecutorListener;
 import com.oceanbase.odc.service.task.schedule.daemon.CheckRunningJob;
+import com.oceanbase.odc.service.task.schedule.daemon.DestroyExecutorJob;
 import com.oceanbase.odc.service.task.schedule.daemon.DoCancelingJob;
 import com.oceanbase.odc.service.task.schedule.daemon.StartPreparingJob;
 
@@ -131,6 +132,7 @@ public class StdJobScheduler implements JobScheduler {
         initCheckRunningJob();
         initStartPreparingJob();
         initDoCancelingJob();
+        initDestroyExecutorJob();
     }
 
     private void initCheckRunningJob() {
@@ -152,6 +154,13 @@ public class StdJobScheduler implements JobScheduler {
         initCronJob(key, key + "Group",
                 configuration.getTaskFrameworkProperties().getDoCancelingJobCronExpression(),
                 DoCancelingJob.class);
+    }
+
+    private void initDestroyExecutorJob() {
+        String key = "destroyExecutorJob";
+        initCronJob(key, key + "Group",
+                configuration.getTaskFrameworkProperties().getDestroyExecutorJobCronExpression(),
+                DestroyExecutorJob.class);
     }
 
     private void initCronJob(String key, String group, String cronExpression, Class<? extends Job> jobClass) {

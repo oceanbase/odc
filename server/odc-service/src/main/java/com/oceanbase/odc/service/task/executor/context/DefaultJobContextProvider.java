@@ -28,7 +28,7 @@ import com.oceanbase.odc.service.task.util.JobEncryptUtils;
  * @author gaoda.xy
  * @date 2023/11/22 20:21
  */
-public class K8sJobContextProvider implements JobContextProvider {
+public class DefaultJobContextProvider implements JobContextProvider {
 
     @Override
     public JobContext provide() {

@@ -37,12 +37,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.google.common.collect.Lists;
 import com.oceanbase.odc.common.event.EventPublisher;
 import com.oceanbase.odc.common.jpa.SpecificationUtil;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.trace.TraceContextHolder;
+import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
-import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.metadb.task.JobAttributeEntity;
@@ -52,11 +53,11 @@ import com.oceanbase.odc.metadb.task.JobRepository;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.constants.JobEntityColumn;
 import com.oceanbase.odc.service.task.enums.JobStatus;
+import com.oceanbase.odc.service.task.enums.TaskRunModeEnum;
 import com.oceanbase.odc.service.task.exception.TaskRuntimeException;
 import com.oceanbase.odc.service.task.executor.server.HeartRequest;
 import com.oceanbase.odc.service.task.executor.task.Task;
 import com.oceanbase.odc.service.task.executor.task.TaskResult;
-import com.oceanbase.odc.service.task.listener.DestroyExecutorEvent;
 import com.oceanbase.odc.service.task.listener.JobTerminateEvent;
 import com.oceanbase.odc.service.task.schedule.DefaultJobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobDefinition;
@@ -122,10 +123,48 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     }
 
     @Override
+    public Page<JobEntity> findCancelingJob(int page, int size) {
+        Specification<JobEntity> condition = Specification.where(getRecentDaySpec(RECENT_DAY))
+                .and(SpecificationUtil.columnEqual(JobEntityColumn.STATUS, JobStatus.CANCELING));
+        condition.and(getK8sExecutor().or(getProcessExecutor()));
+        return page(condition, page, size);
+    }
+
+    @Override
+    public Page<JobEntity> findTerminalJob(int page, int size) {
+        Specification<JobEntity> condition = Specification.where(getRecentDaySpec(RECENT_DAY))
+                .and(SpecificationUtil.columnIn(JobEntityColumn.STATUS,
+                        Lists.newArrayList(JobStatus.CANCELED, JobStatus.DONE, JobStatus.FAILED)));
+        condition.and(SpecificationUtil.columnIsNotNull(JobEntityColumn.EXECUTOR_DESTROYED_TIME));
+        condition.and(getK8sExecutor().or(getProcessExecutor()));
+        return page(condition, page, size);
+    }
+
+    private Specification<JobEntity> getK8sExecutor() {
+        return SpecificationUtil.columnEqual(JobEntityColumn.RUN_MODE, TaskRunModeEnum.K8S);
+    }
+
+    private Specification<JobEntity> getProcessExecutor() {
+        Specification<JobEntity> spec =
+                SpecificationUtil.columnEqual(JobEntityColumn.RUN_MODE, TaskRunModeEnum.PROCESS);
+        // get local machine executor when run mode is process
+        return spec.and(getLocalExecutor().or(SpecificationUtil.columnIsNull(JobEntityColumn.EXECUTOR_IDENTIFIER)));
+    }
+
+
+    private Specification<JobEntity> getLocalExecutor() {
+        Specification<JobEntity> localJobSpec = SpecificationUtil.columnLike(JobEntityColumn.EXECUTOR_IDENTIFIER,
+                SystemUtils.getLocalIpAddress());
+
+        return localJobSpec.and(SpecificationUtil.columnIsNotNull(JobEntityColumn.EXECUTOR_IDENTIFIER));
+    }
+
+    @Override
     public Page<JobEntity> findHeartTimeTimeoutJobs(int timeoutSeconds, int page, int size) {
         Specification<JobEntity> condition = Specification.where(getRecentDaySpec(RECENT_DAY))
                 .and(getTimeoutOnColumnSpec(JobEntityColumn.LAST_HEART_TIME, timeoutSeconds))
                 .and(SpecificationUtil.columnEqual(JobEntityColumn.STATUS, JobStatus.RUNNING));
+        condition.and(getK8sExecutor().or(getProcessExecutor()));
         return page(condition, page, size);
     }
 
@@ -217,8 +256,6 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         if (publisher != null && taskResult.getStatus() != null && taskResult.getStatus().isTerminated()) {
             taskResultPublisherExecutor.execute(() -> publisher
                     .publishEvent(new JobTerminateEvent(taskResult.getJobIdentity(), taskResult.getStatus())));
-            taskResultPublisherExecutor
-                    .execute(() -> publisher.publishEvent(new DestroyExecutorEvent(taskResult.getJobIdentity())));
         }
 
     }
@@ -375,7 +412,6 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     @Override
     public String findByJobIdAndAttributeKey(Long jobId, String attributeKey) {
         JobAttributeEntity attributeEntity = jobAttributeRepository.findByJobIdAndAttributeKey(jobId, attributeKey);
-        Verify.notNull(attributeEntity, attributeKey);
         return attributeEntity.getAttributeValue();
     }
 }

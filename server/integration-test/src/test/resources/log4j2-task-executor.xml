@@ -96,18 +96,23 @@
         <!-- 接口日志输出 start -->
         <Logger name="com.oceanbase.odc.server.OdcServer" level="INFO" additivity="false">
             <AppenderRef ref="ExecutorFileAppender"/>
+            <AppenderRef ref="ConsoleAppender"/>
         </Logger>
         <Logger name="com.oceanbase.odc.service.task.executor.TaskApplication" level="INFO" additivity="false">
             <AppenderRef ref="ExecutorFileAppender"/>
+            <AppenderRef ref="ConsoleAppender"/>
         </Logger>
         <Logger name="com.oceanbase.odc.service.task.executor.server" level="INFO" additivity="false">
             <AppenderRef ref="ExecutorFileAppender"/>
+            <AppenderRef ref="ConsoleAppender"/>
         </Logger>
         <Logger name="com.oceanbase.odc.service.task.executor.context" level="INFO" additivity="false">
             <AppenderRef ref="ExecutorFileAppender"/>
+            <AppenderRef ref="ConsoleAppender"/>
         </Logger>
         <Logger name="com.oceanbase.odc.service.task.executor.logger" level="INFO" additivity="false">
             <AppenderRef ref="ExecutorFileAppender"/>
+            <AppenderRef ref="ConsoleAppender"/>
         </Logger>
         <!-- 接口日志输出 end -->
 
@@ -115,11 +120,13 @@
         <Logger name="com.oceanbase.odc" level="INFO" additivity="false">
             <AppenderRef ref="TaskAllRoutingAppender"/>
             <AppenderRef ref="TaskWarnRoutingAppender"/>
+            <AppenderRef ref="ConsoleAppender"/>
         </Logger>
 
         <!-- 其它程序日志输出，输出级别 WARN -->
         <Root level="WARN">
             <AppenderRef ref="ExecutorFileAppender"/>
+            <AppenderRef ref="ConsoleAppender"/>
         </Root>
 
     </Loggers>

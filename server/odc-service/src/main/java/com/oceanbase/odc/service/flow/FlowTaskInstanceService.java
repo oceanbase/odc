@@ -73,6 +73,7 @@ import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.common.util.OdcFileUtil;
 import com.oceanbase.odc.service.datatransfer.LocalFileManager;
 import com.oceanbase.odc.service.dispatch.DispatchResponse;
+import com.oceanbase.odc.service.dispatch.JobDispatchChecker;
 import com.oceanbase.odc.service.dispatch.RequestDispatcher;
 import com.oceanbase.odc.service.dispatch.TaskDispatchChecker;
 import com.oceanbase.odc.service.flow.instance.FlowTaskInstance;
@@ -96,21 +97,22 @@ import com.oceanbase.odc.service.flow.task.util.DatabaseChangeOssUrlCache;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
-import com.oceanbase.odc.service.objectstorage.operator.LocalFileOperator;
 import com.oceanbase.odc.service.partitionplan.PartitionPlanService;
 import com.oceanbase.odc.service.permissionapply.project.ApplyProjectResult;
 import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleResult;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.odc.service.task.TaskService;
+import com.oceanbase.odc.service.task.caller.ExecutorIdentifier;
+import com.oceanbase.odc.service.task.caller.ExecutorIdentifierParser;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.constants.JobAttributeKeyConstants;
 import com.oceanbase.odc.service.task.constants.JobUrlConstants;
-import com.oceanbase.odc.service.task.enums.TaskRunModeEnum;
 import com.oceanbase.odc.service.task.executor.logger.LogUtils;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 import com.oceanbase.odc.service.task.util.HttpUtil;
+import com.oceanbase.odc.service.task.util.JobUtils;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -168,7 +170,7 @@ public class FlowTaskInstanceService {
     private TaskFrameworkService taskFrameworkService;
 
     @Autowired
-    private LocalFileOperator localFileOperator;
+    private JobDispatchChecker jobDispatchChecker;
 
     public FlowInstanceDetailResp executeTask(@NotNull Long id) throws IOException {
         List<FlowTaskInstance> instances =
@@ -226,11 +228,7 @@ public class FlowTaskInstanceService {
         JobEntity jobEntity = taskFrameworkService.find(jobId);
         PreConditions.notNull(jobEntity, "job not found by id " + jobId);
 
-        if (!Objects.equals(jobEntity.getRunMode(), TaskRunModeEnum.K8S.name())) {
-            return "No log message at this moment";
-        }
-
-        if (cloudObjectStorageService.supported()) {
+        if (JobUtils.isK8sRunMode(jobEntity.getRunMode()) && cloudObjectStorageService.supported()) {
 
             String logIdKey = level == OdcTaskLogLevel.ALL ? JobAttributeKeyConstants.LOG_STORAGE_ALL_OBJECT_ID
                     : JobAttributeKeyConstants.LOG_STORAGE_WARN_OBJECT_ID;
@@ -258,17 +256,29 @@ public class FlowTaskInstanceService {
 
             }
         }
-        if (jobEntity.getExecutorDestroyedTime() == null && jobEntity.getExecutorEndpoint() != null) {
-            if (log.isDebugEnabled()) {
-                log.debug("job: {} is not finished, try to get log from remote pod.", jobEntity.getId());
+        if (JobUtils.isK8sRunMode(jobEntity.getRunMode())) {
+            if (jobEntity.getExecutorDestroyedTime() == null && jobEntity.getExecutorEndpoint() != null) {
+                if (log.isDebugEnabled()) {
+                    log.debug("job: {} is not finished, try to get log from remote pod.", jobEntity.getId());
+                }
+                String hostWithUrl = jobEntity.getExecutorEndpoint() + String.format(JobUrlConstants.LOG_QUERY,
+                        jobEntity.getId()) + "?logType=" + level.getName();
+                SuccessResponse<String> response =
+                        HttpUtil.request(hostWithUrl, new TypeReference<SuccessResponse<String>>() {});
+                return response.getData();
             }
-            String hostWithUrl = jobEntity.getExecutorEndpoint() + String.format(JobUrlConstants.LOG_QUERY,
-                    jobEntity.getId()) + "?logType=" + level.getName();
-            SuccessResponse<String> response =
-                    HttpUtil.request(hostWithUrl, new TypeReference<SuccessResponse<String>>() {});
-            return response.getData();
+        } else {
+            // process mode when executor is not current host, forward to target
+            if (!jobDispatchChecker.isExecutorOnThisMachine(jobEntity)) {
+                ExecutorIdentifier ei = ExecutorIdentifierParser.parser(jobEntity.getExecutorIdentifier());
+                DispatchResponse response = requestDispatcher.forward(ei.getHost(), ei.getPort());
+                return response.getContentByType(new TypeReference<String>() {});
+            }
+            String logFileStr = LogUtils.getTaskLogFileWithPath(jobEntity.getId(), level);
+            return LogUtils.getLogContent(logFileStr, LogUtils.MAX_LOG_LINE_COUNT, LogUtils.MAX_LOG_BYTE_COUNT);
         }
-        return "No log message be found.";
+        // if log not found then return description to user
+        return jobEntity.getDescription();
     }
 
     public List<? extends FlowTaskResult> getResult(@NotNull Long id) throws IOException {

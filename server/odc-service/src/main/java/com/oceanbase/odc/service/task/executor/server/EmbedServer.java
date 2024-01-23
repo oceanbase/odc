@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.task.executor.server;
 
+import java.net.InetSocketAddress;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadFactory;
@@ -27,6 +28,7 @@ import org.slf4j.LoggerFactory;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.service.common.util.UrlUtils;
+import com.oceanbase.odc.service.task.util.JobUtils;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.Unpooled;
@@ -66,7 +68,7 @@ public class EmbedServer {
     private RequestHandler requestHandler;
     private Thread thread;
 
-    public void start(final int port) {
+    public void start() {
         requestHandler = new RequestHandler();
         thread = new Thread(TraceDecoratorUtils.decorate(new Runnable() {
             @Override
@@ -112,9 +114,18 @@ public class EmbedServer {
                             })
                             .childOption(ChannelOption.SO_KEEPALIVE, true);
 
-                    // bind
-                    ChannelFuture future = bootstrap.bind(port).sync();
-
+                    ChannelFuture future;
+                    int port;
+                    if (JobUtils.getExecutorPort().isPresent()) {
+                        future = bootstrap.bind(JobUtils.getExecutorPort().get()).sync();
+                        port = JobUtils.getExecutorPort().get();
+                    } else {
+                        future = bootstrap.bind().sync();
+                        InetSocketAddress localAddress = (InetSocketAddress) future.channel().localAddress();
+                        // save port to system properties
+                        JobUtils.setExecutorPort(localAddress.getPort());
+                        port = localAddress.getPort();
+                    }
                     log.info(">>>>>>>>>>> odc-job remoting server start success, nettype = {}, port = {}",
                             EmbedServer.class, port);
 

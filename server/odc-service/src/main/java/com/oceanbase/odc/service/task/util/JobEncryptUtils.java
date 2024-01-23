@@ -27,6 +27,10 @@ import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
  */
 public class JobEncryptUtils {
 
+    public static String encrypt(String key, String salt, String plaintText) {
+        TextEncryptor textEncryptor = Encryptors.aesBase64(key, salt);
+        return textEncryptor.encrypt(plaintText);
+    }
 
     public static String decrypt(String encrypted) {
         String key = SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ENCRYPT_KEY);

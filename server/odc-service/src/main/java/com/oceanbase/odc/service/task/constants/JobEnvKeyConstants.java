@@ -35,6 +35,8 @@ public class JobEnvKeyConstants {
 
     public static final String ODC_SERVER_PORT = "ODC_SERVER_PORT";
 
+    public static final String ODC_EXECUTOR_PORT = "ODC_EXECUTOR_PORT";
+
     public static final String ODC_SERVICE_HOST = "ODC_SERVICE_HOST";
 
     public static final String ODC_SERVICE_PORT = "ODC_SERVICE_PORT";

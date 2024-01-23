@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.task.util;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Objects;
 import java.util.Optional;
 
 import com.google.gson.Gson;
@@ -27,6 +28,8 @@ import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfiguration;
 import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
+import com.oceanbase.odc.service.task.enums.TaskRunModeEnum;
+import com.oceanbase.odc.service.task.exception.TaskRuntimeException;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 
 import lombok.extern.slf4j.Slf4j;
@@ -54,13 +57,36 @@ public class JobUtils {
         return new Gson().toJson(obj);
     }
 
-    public static int getPort() {
+    public static boolean isK8sRunMode(String runMode) {
+        return Objects.equals(runMode, TaskRunModeEnum.K8S.name());
+    }
+
+    public static boolean isProcessRunMode(String runMode) {
+        return Objects.equals(runMode, TaskRunModeEnum.PROCESS.name());
+    }
+
+    public static int getOdcServerPort() {
         String port = SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_SERVER_PORT);
         return port != null ? Integer.parseInt(port) : 8989;
     }
 
+    public static Optional<Integer> getExecutorPort() {
+        String port = SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_EXECUTOR_PORT);
+        return port != null ? Optional.of(Integer.parseInt(port)) : Optional.empty();
+    }
+
+
+    public static void setExecutorPort(int port) {
+        if (SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_EXECUTOR_PORT) == null) {
+            System.setProperty(JobEnvKeyConstants.ODC_EXECUTOR_PORT, port + "");
+        }
+    }
+
     public static String getExecutorPoint() {
-        return "http://" + SystemUtils.getLocalIpAddress() + ":" + JobUtils.getPort();
+        if (!JobUtils.getExecutorPort().isPresent()) {
+            throw new TaskRuntimeException("Executor point is not exists");
+        }
+        return "http://" + SystemUtils.getLocalIpAddress() + ":" + JobUtils.getExecutorPort().get();
     }
 
     public static String getExecutorDataPath() {

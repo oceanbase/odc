@@ -13,17 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.oceanbase.odc.service.dispatch;
 
-package com.oceanbase.odc.service.task.executor.context;
+import org.springframework.context.annotation.Profile;
+import org.springframework.stereotype.Component;
+
+import com.oceanbase.odc.metadb.task.JobEntity;
+
+import lombok.NonNull;
 
 /**
- * @author gaoda.xy
- * @date 2023/11/23 13:55
+ * @author yaobin
+ * @date 2023-01-23
+ * @since 4.2.4
  */
-public class JobContextProviderFactory {
+@Component
+@Profile("clientMode")
+public class DesktopJobDispatchChecker implements JobDispatchChecker {
 
-    public static JobContextProvider create() {
-        return new DefaultJobContextProvider();
+    @Override
+    public boolean isExecutorOnThisMachine(@NonNull JobEntity je) {
+        return true;
     }
-
 }

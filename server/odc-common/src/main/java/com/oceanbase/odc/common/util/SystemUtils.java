@@ -15,6 +15,9 @@
  */
 package com.oceanbase.odc.common.util;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryUsage;
@@ -22,6 +25,7 @@ import java.lang.reflect.Field;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -146,12 +150,60 @@ public abstract class SystemUtils {
                 f.setAccessible(true);
                 pid = f.getLong(process);
                 f.setAccessible(false);
+            } else if (isOnWindows()) {
+                Field f = process.getClass().getDeclaredField("handle");
+                f.setAccessible(true);
+                pid = Kernel32.INSTANCE.GetProcessId((Long) f.get(process));
+            } else {
+                throw new UnsupportedOperationException("Unsupported process class: " + process.getClass().getName());
             }
         } catch (Exception e) {
+            log.warn("get process id failed.", e);
             pid = -1;
         }
         return pid;
     }
+
+    public static boolean killProcessByPid(long pid) {
+        if (-1 == pid) {
+            throw new IllegalArgumentException("kill process by illegal argument pid: " + pid);
+        }
+        Process process = null;
+        BufferedReader reader = null;
+        String command = "";
+        boolean result;
+        if (isOnWindows()) {
+            command = "cmd.exe /c taskkill /PID " + pid + " /F /T ";
+        } else {
+            command = "kill " + pid;
+        }
+        try {
+            // execute kill process by command
+            process = Runtime.getRuntime().exec(command);
+            reader = new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8));
+            String line;
+            while ((line = reader.readLine()) != null) {
+                log.info(line);
+            }
+            result = true;
+        } catch (Exception e) {
+            log.warn("Kill process by command " + command + " failed.", e);
+            result = false;
+        } finally {
+            if (process != null) {
+                process.destroy();
+            }
+            if (reader != null) {
+                try {
+                    reader.close();
+                } catch (IOException e) {
+                    log.warn("reader close failed", e);
+                }
+            }
+        }
+        return result;
+    }
+
 
     private static String innerGetHostName() {
         String hostName = null;

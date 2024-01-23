@@ -68,7 +68,7 @@ public class TaskMonitor {
                 new TraceDecoratorThreadFactory(new TaskThreadFactory(("Task-Monitor-Job-" + getJobId())));
         this.reportScheduledExecutor = Executors.newSingleThreadScheduledExecutor(threadFactory);
         reportScheduledExecutor.scheduleAtFixedRate(() -> {
-            if (isTimeout()) {
+            if (isTimeout() && !getTask().getStatus().isTerminated()) {
                 getTask().stop();
             }
             try {

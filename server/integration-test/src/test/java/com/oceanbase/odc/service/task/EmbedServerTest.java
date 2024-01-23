@@ -36,7 +36,7 @@ public class EmbedServerTest {
     public void test_server() throws Exception {
 
         EmbedServer server = new EmbedServer();
-        server.start(8888);
+        server.start();
         try {
             synchronized (this) {
                 this.wait(30 * 60 * 1000);

@@ -32,7 +32,7 @@ public class DefaultExecutorIdentifier implements ExecutorIdentifier {
 
     public static final String DEFAULT_PROTOCOL = "http";
     public static final String DEFAULT_HOST = "odc";
-    public static final Integer DEFAULT_PORT = JobUtils.getPort();
+    public static final Integer DEFAULT_PORT = JobUtils.getOdcServerPort();
 
     @Builder.Default()
     private String protocol = DEFAULT_PROTOCOL;
