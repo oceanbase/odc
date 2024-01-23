@@ -34,6 +34,9 @@ import com.oceanbase.odc.metadb.iam.UserEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.service.common.model.InnerUser;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
+import com.oceanbase.odc.service.dlm.model.DataDeleteParameters;
+import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
 import com.oceanbase.odc.service.quartz.model.MisfireStrategy;
 import com.oceanbase.odc.service.quartz.util.QuartzCronExpressionUtils;
 
@@ -124,6 +127,9 @@ public class ScheduleDetailResp implements OrganizationIsolated {
 
         private Function<Long, Set<UserEntity>> getCandidatesById = null;
 
+        private Function<Long, RateLimitConfiguration> getDLMRateLimitConfigurationById = null;
+
+
         public ScheduleResponseMapper withGetUserById(@NonNull Function<Long, UserEntity> getUserById) {
             this.getUserById = getUserById;
             return this;
@@ -147,6 +153,12 @@ public class ScheduleDetailResp implements OrganizationIsolated {
             return this;
         }
 
+        public ScheduleResponseMapper withGetDLMRateLimitConfigurationById(
+                @NonNull Function<Long, RateLimitConfiguration> getCandidatesById) {
+            this.getDLMRateLimitConfigurationById = getCandidatesById;
+            return this;
+        }
+
 
         public ScheduleDetailResp map(@NonNull ScheduleEntity entity) {
 
@@ -163,8 +175,31 @@ public class ScheduleDetailResp implements OrganizationIsolated {
             if (datasource != null) {
                 resp.setDatasource(new InnerConnection(datasource));
             }
-
-            resp.setJobParameters(entity.getJobParametersJson());
+            switch (entity.getJobType()) {
+                case DATA_ARCHIVE: {
+                    DataArchiveParameters parameters =
+                            JsonUtils.fromJson(entity.getJobParametersJson(), DataArchiveParameters.class);
+                    RateLimitConfiguration rateLimitConfig = getDLMRateLimitConfigurationById.apply(entity.getId());
+                    if (rateLimitConfig != null) {
+                        parameters.setRateLimit(rateLimitConfig);
+                    }
+                    resp.setJobParameters(JsonUtils.toJson(parameters));
+                    break;
+                }
+                case DATA_DELETE: {
+                    DataDeleteParameters parameters =
+                            JsonUtils.fromJson(entity.getJobParametersJson(), DataDeleteParameters.class);
+                    RateLimitConfiguration rateLimitConfig = getDLMRateLimitConfigurationById.apply(entity.getId());
+                    if (rateLimitConfig != null) {
+                        parameters.setRateLimit(rateLimitConfig);
+                    }
+                    resp.setJobParameters(JsonUtils.toJson(parameters));
+                    break;
+                }
+                default: {
+                    resp.setJobParameters(entity.getJobParametersJson());
+                }
+            }
             resp.setTriggerConfig(entity.getTriggerConfigJson());
             resp.setNextFireTimes(
                     QuartzCronExpressionUtils.getNextFireTimes(JsonUtils.fromJson(entity.getTriggerConfigJson(),

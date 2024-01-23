@@ -163,7 +163,8 @@ public class AbstractDlmJobPreprocessor implements Preprocessor {
         if (limiterConfig.getBatchSize() == null) {
             limiterConfig.setBatchSize(defaultLimiterConfig.getBatchSize());
         }
-        limiterService.createAndBindToOrder(scheduleId, limiterConfig);
+        limiterConfig.setOrderId(scheduleId);
+        limiterService.create(limiterConfig);
     }
 
 }
