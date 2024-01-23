@@ -6,7 +6,7 @@ name: Build Docker Image For Test
 run-name: ${{ github.event_name }} triggered by ${{ github.actor }} 🚀
 
 on:
-  push:
+  pull_request:
     branches:
       - "**"
 
