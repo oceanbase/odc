@@ -38,4 +38,9 @@ public interface UserDatabasePermissionRepository extends ReadOnlyRepository<Use
     List<UserDatabasePermissionEntity> findNotExpiredByUserIdAndDatabaseIdIn(@Param("userId") Long userId,
             @Param("databaseIds") Collection<Long> databaseIds);
 
+    @Query(value = "select v.* from list_user_database_permission_view v where v.user_id = :userId "
+            + "and v.project_id = :projectId", nativeQuery = true)
+    List<UserDatabasePermissionEntity> findByUserIdAndProjectId(@Param("userId") Long userId,
+            @Param("projectId") Long projectId);
+
 }
