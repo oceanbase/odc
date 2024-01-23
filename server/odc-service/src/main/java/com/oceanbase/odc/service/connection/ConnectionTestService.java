@@ -31,6 +31,7 @@ import com.oceanbase.odc.core.shared.constant.ConnectionAccountType;
 import com.oceanbase.odc.core.shared.constant.ErrorCode;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
+import com.oceanbase.odc.service.connection.CloudMetadataClient.PermissionAction;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.model.ConnectionTestResult;
 import com.oceanbase.odc.service.connection.model.OBTenant;
@@ -67,8 +68,8 @@ public class ConnectionTestService {
         }
         if (Objects.nonNull(connectionId)) {
             ConnectionConfig connection = connectionService.getForConnect(connectionId);
-            cloudMetadataClient.additionalAuthenticationChecks(OBTenant.of(connection.getClusterName(),
-                    connection.getTenantName()), connection.getInstanceType());
+            cloudMetadataClient.checkPermission(OBTenant.of(connection.getClusterName(),
+                    connection.getTenantName()), connection.getInstanceType(), false, PermissionAction.READONLY);
             if (Objects.isNull(req.getType())) {
                 req.setType(connection.getType());
             }

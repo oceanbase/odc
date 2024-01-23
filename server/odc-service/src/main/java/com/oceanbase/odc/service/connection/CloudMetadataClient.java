@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.connection;
 import java.util.List;
 
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 
 import com.oceanbase.odc.core.authority.exception.AccessDeniedException;
 import com.oceanbase.odc.service.connection.model.OBDatabaseUser;
@@ -47,7 +48,8 @@ public interface CloudMetadataClient {
      * @param type
      * @return true if permission check passed, otherwise false
      */
-    default void additionalAuthenticationChecks(OBTenant tenant, OBInstanceType type)
+    default void checkPermission(OBTenant tenant, OBInstanceType type, boolean isForAll,
+            @NotNull PermissionAction action)
             throws AccessDeniedException {}
 
     /**
@@ -83,4 +85,9 @@ public interface CloudMetadataClient {
     OBTenantEndpoint getTenantEndpoint(@NotBlank String instanceId, @NotBlank String tenantId);
 
     OBDatabaseUser getSysTenantUser(@NotBlank String instanceId);
+
+    enum PermissionAction {
+        READONLY,
+        FULL
+    }
 }

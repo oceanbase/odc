@@ -69,6 +69,7 @@ import com.oceanbase.odc.service.common.util.SidUtils;
 import com.oceanbase.odc.service.config.UserConfigFacade;
 import com.oceanbase.odc.service.config.model.UserConfig;
 import com.oceanbase.odc.service.connection.CloudMetadataClient;
+import com.oceanbase.odc.service.connection.CloudMetadataClient.PermissionAction;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.ConnectionTesting;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
@@ -238,8 +239,8 @@ public class ConnectSessionService {
         }
         preCheckSessionLimit();
         ConnectionConfig connection = connectionService.getForConnectionSkipPermissionCheck(dataSourceId);
-        cloudMetadataClient.additionalAuthenticationChecks(OBTenant.of(connection.getClusterName(),
-                connection.getTenantName()), connection.getInstanceType());
+        cloudMetadataClient.checkPermission(OBTenant.of(connection.getClusterName(),
+                connection.getTenantName()), connection.getInstanceType(), false, PermissionAction.READONLY);
         if (StringUtils.isNotBlank(schemaName) && connection.getDialectType().isOracle()) {
             schemaName = com.oceanbase.odc.common.util.StringUtils.quoteOracleIdentifier(schemaName);
         }

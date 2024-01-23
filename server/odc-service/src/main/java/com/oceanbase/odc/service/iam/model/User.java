@@ -119,18 +119,6 @@ public class User implements Principal, UserDetails, SecurityResource, Organizat
     @JsonIgnore
     private String parentUid;
 
-    @JsonIgnore
-    private String subUid;
-
-    @JsonIgnore
-    private String callerType;
-
-    @JsonIgnore
-    private String securityToken;
-
-    @JsonIgnore
-    private String accessKeyId;
-
     public User() {}
 
     public static User of(Long id) {
