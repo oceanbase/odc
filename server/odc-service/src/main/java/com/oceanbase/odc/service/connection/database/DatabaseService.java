@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
@@ -50,7 +51,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
-import com.oceanbase.odc.common.lang.CaseInsensitiveString;
 import com.oceanbase.odc.core.authority.util.Authenticated;
 import com.oceanbase.odc.core.authority.util.PreAuthenticate;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
@@ -585,13 +585,13 @@ public class DatabaseService {
         ConnectionConfig dataSource = connectionService.nullSafeGet(dataSourceId);
         List<Database> databases = listDatabasesByConnectionIds(Collections.singleton(dataSourceId));
         databases.forEach(d -> d.getDataSource().setName(dataSource.getName()));
-        Map<CaseInsensitiveString, Database> name2Database = databases.stream()
-                .collect(Collectors.toMap(d -> new CaseInsensitiveString(d.getName()), d -> d, (d1, d2) -> d1));
+        Map<String, Database> name2Database = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        databases.forEach(d -> name2Database.put(d.getName(), d));
         Map<Long, Set<DatabasePermissionType>> id2Types = databasePermissionHelper
                 .getPermissions(databases.stream().map(Database::getId).collect(Collectors.toList()));
         List<UnauthorizedDatabase> unauthorizedDatabases = new ArrayList<>();
         for (Map.Entry<String, Set<DatabasePermissionType>> entry : schemaName2PermissionTypes.entrySet()) {
-            CaseInsensitiveString schemaName = new CaseInsensitiveString(entry.getKey());
+            String schemaName = entry.getKey();
             Set<DatabasePermissionType> needs = entry.getValue();
             if (CollectionUtils.isEmpty(needs)) {
                 continue;
@@ -610,7 +610,7 @@ public class DatabaseService {
                 }
             } else {
                 Database unknownDatabase = new Database();
-                unknownDatabase.setName(schemaName.toString());
+                unknownDatabase.setName(schemaName);
                 unknownDatabase.setDataSource(dataSource);
                 unauthorizedDatabases.add(UnauthorizedDatabase.from(unknownDatabase, needs));
             }
