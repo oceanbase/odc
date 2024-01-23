@@ -24,6 +24,8 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import com.oceanbase.odc.TestConnectionUtil;
+import com.oceanbase.odc.common.crypto.Encryptors;
+import com.oceanbase.odc.common.crypto.TextEncryptor;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
@@ -63,7 +65,9 @@ public class TaskApplicationTest extends BaseJobTest {
 
         JobDefinition jd = buildJobDefinition();
         JobContext jc = new DefaultJobContextBuilder().build(jobIdentity, jd);
-        System.setProperty(JobEnvKeyConstants.ODC_JOB_CONTEXT, JobUtils.toJson(jc));
+        TextEncryptor textEncryptor = Encryptors.aesBase64(System.getProperty(JobEnvKeyConstants.ENCRYPT_KEY),
+                System.getProperty(JobEnvKeyConstants.ENCRYPT_SALT));
+        System.setProperty(JobEnvKeyConstants.ODC_JOB_CONTEXT, textEncryptor.encrypt(JobUtils.toJson(jc)));
         startTaskApplication();
         assertRunningResult(jc);
     }
@@ -83,7 +87,7 @@ public class TaskApplicationTest extends BaseJobTest {
     private void assertRunningResult(JobContext jc) {
 
         try {
-            Thread.sleep(600 * 1000L);
+            Thread.sleep(30 * 1000L);
             Task<?> task = ThreadPoolTaskExecutor.getInstance().getTask(jc.getJobIdentity());
             Assert.assertSame(JobStatus.DONE, task.getStatus());
         } catch (InterruptedException e) {
