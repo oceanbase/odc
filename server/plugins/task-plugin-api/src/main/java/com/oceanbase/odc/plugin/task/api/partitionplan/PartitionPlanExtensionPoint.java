@@ -23,8 +23,8 @@ import org.pf4j.ExtensionPoint;
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.create.PartitionExprGenerator;
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.drop.DropPartitionGenerator;
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.partitionname.PartitionNameGenerator;
+import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartition;
-import com.oceanbase.tools.dbbrowser.model.DBTablePartitionDefinition;
 import com.oceanbase.tools.dbbrowser.model.datatype.DataType;
 
 import lombok.NonNull;
@@ -43,16 +43,16 @@ public interface PartitionPlanExtensionPoint extends ExtensionPoint {
 
     String unquoteIdentifier(@NonNull String identifier);
 
-    List<String> getCreatePartitionDdls(List<DBTablePartitionDefinition> definitions);
+    List<DataType> getPartitionKeyDataTypes(@NonNull Connection connection, @NonNull DBTable table);
 
-    List<String> getDropPartitionDdls(List<DBTablePartitionDefinition> definitions);
+    List<String> getCreatePartitionDdls(@NonNull DBTablePartition partition);
+
+    List<String> getDropPartitionDdls(@NonNull DBTablePartition partition, boolean reloadIndexes);
 
     DropPartitionGenerator getDropPartitionGeneratorByName(@NonNull String name);
 
     PartitionExprGenerator getPartitionExpressionGeneratorByName(@NonNull String name);
 
     PartitionNameGenerator getPartitionNameGeneratorGeneratorByName(@NonNull String name);
-
-    List<DataType> getDataTypes(@NonNull Connection connection, @NonNull DBTablePartition partition);
 
 }

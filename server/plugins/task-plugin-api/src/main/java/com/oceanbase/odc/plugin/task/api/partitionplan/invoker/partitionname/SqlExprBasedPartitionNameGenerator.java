@@ -19,6 +19,7 @@ import java.sql.Connection;
 import java.util.Map;
 
 import com.oceanbase.odc.plugin.task.api.partitionplan.util.ParameterUtil;
+import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartitionDefinition;
 
 import lombok.NonNull;
@@ -34,7 +35,7 @@ public interface SqlExprBasedPartitionNameGenerator extends PartitionNameGenerat
 
     String PARTITION_NAME_EXPR_KEY = "partitionNameExpr";
 
-    String generate(@NonNull Connection connection, @NonNull String schema, @NonNull String tableName,
+    String generate(@NonNull Connection connection, @NonNull DBTable dbTable,
             @NonNull DBTablePartitionDefinition target, @NonNull String sqlExpression);
 
     @Override
@@ -43,9 +44,9 @@ public interface SqlExprBasedPartitionNameGenerator extends PartitionNameGenerat
     }
 
     @Override
-    default String generate(@NonNull Connection connection, @NonNull String schema, @NonNull String tableName,
+    default String generate(@NonNull Connection connection, @NonNull DBTable dbTable,
             @NonNull DBTablePartitionDefinition target, @NonNull Map<String, Object> parameters) {
-        return generate(connection, schema, tableName, target, ParameterUtil.nullSafeExtract(parameters,
+        return generate(connection, dbTable, target, ParameterUtil.nullSafeExtract(parameters,
                 PARTITION_NAME_EXPR_KEY, String.class));
     }
 

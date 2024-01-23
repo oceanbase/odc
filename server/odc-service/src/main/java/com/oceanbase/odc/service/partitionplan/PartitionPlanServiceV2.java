@@ -121,13 +121,12 @@ public class PartitionPlanServiceV2 {
                 return idx1.compareTo(idx2);
             });
         }
-        Map<PartitionPlanStrategy, List<DBTablePartitionDefinition>> strategyListMap = doPartitionPlan(connection,
-                schema, tableName, tableConfig, partition.getPartitionDefinitions(), strategy2PartitionKeyConfigs,
-                partitionPlanExtensionPoint);
+        Map<PartitionPlanStrategy, DBTablePartition> strategyListMap = doPartitionPlan(connection, dbTable,
+                tableConfig, partitionPlanExtensionPoint, strategy2PartitionKeyConfigs);
         return strategyListMap.entrySet().stream().collect(Collectors.toMap(Entry::getKey, e -> {
             switch (e.getKey()) {
                 case DROP:
-                    return partitionPlanExtensionPoint.getDropPartitionDdls(e.getValue());
+                    return partitionPlanExtensionPoint.getDropPartitionDdls(e.getValue(), true);
                 case CREATE:
                     return partitionPlanExtensionPoint.getCreatePartitionDdls(e.getValue());
                 default:
@@ -136,11 +135,9 @@ public class PartitionPlanServiceV2 {
         }));
     }
 
-    private Map<PartitionPlanStrategy, List<DBTablePartitionDefinition>> doPartitionPlan(
-            Connection connection, String schema, String tableName,
-            PartitionPlanTableConfig tableConfig, List<DBTablePartitionDefinition> definitions,
-            Map<PartitionPlanStrategy, List<PartitionPlanKeyConfig>> strategy2PartitionKeyConfigs,
-            PartitionPlanExtensionPoint partitionPlanExtensionPoint) {
+    private Map<PartitionPlanStrategy, DBTablePartition> doPartitionPlan(Connection connection, DBTable dbTable,
+            PartitionPlanTableConfig tableConfig, PartitionPlanExtensionPoint extensionPoint,
+            Map<PartitionPlanStrategy, List<PartitionPlanKeyConfig>> strategy2PartitionKeyConfigs) {
         Map<Integer, List<String>> lineNum2CreateExprs = new HashMap<>();
         List<DBTablePartitionDefinition> droppedPartitions = new ArrayList<>();
         Map<PartitionPlanStrategy, List<DBTablePartitionDefinition>> strategyListMap = new HashMap<>();
@@ -148,28 +145,27 @@ public class PartitionPlanServiceV2 {
             for (PartitionPlanKeyConfig config : strategy2PartitionKeyConfigs.get(strategy)) {
                 switch (strategy) {
                     case CREATE:
-                        PartitionExprGenerator createInvoker = partitionPlanExtensionPoint
+                        PartitionExprGenerator createInvoker = extensionPoint
                                 .getPartitionExpressionGeneratorByName(config.getPartitionKeyInvoker());
                         if (createInvoker == null) {
                             throw new IllegalStateException(
                                     "Failed to get invoker by name, " + config.getPartitionKeyInvoker());
                         }
-                        List<String> exprs = createInvoker.invoke(connection, schema,
-                                tableName, config.getPartitionKeyInvokerParameters());
+                        List<String> exprs = createInvoker.invoke(connection, dbTable,
+                                config.getPartitionKeyInvokerParameters());
                         for (int i = 0; i < exprs.size(); i++) {
                             lineNum2CreateExprs.computeIfAbsent(i, key -> new ArrayList<>()).add(exprs.get(i));
                         }
                         break;
                     case DROP:
-                        DropPartitionGenerator dropInvoker = partitionPlanExtensionPoint
+                        DropPartitionGenerator dropInvoker = extensionPoint
                                 .getDropPartitionGeneratorByName(config.getPartitionKeyInvoker());
                         if (dropInvoker == null) {
                             throw new IllegalStateException(
                                     "Failed to get invoker by name, " + config.getPartitionKeyInvoker());
                         }
-                        Map<String, Object> parameters = config.getPartitionKeyInvokerParameters();
-                        parameters.put(DropPartitionGenerator.PARTITION_CANDIDATE_KEY, definitions);
-                        droppedPartitions.addAll(dropInvoker.invoke(connection, schema, tableName, parameters));
+                        droppedPartitions.addAll(dropInvoker.invoke(connection, dbTable,
+                                config.getPartitionKeyInvokerParameters()));
                     default:
                         throw new UnsupportedOperationException("Unsupported partition strategy, " + strategy);
                 }
@@ -178,7 +174,7 @@ public class PartitionPlanServiceV2 {
         strategyListMap.put(PartitionPlanStrategy.CREATE, lineNum2CreateExprs.values().stream().map(s -> {
             DBTablePartitionDefinition definition = new DBTablePartitionDefinition();
             definition.setMaxValues(s);
-            PartitionNameGenerator invoker = partitionPlanExtensionPoint
+            PartitionNameGenerator invoker = extensionPoint
                     .getPartitionNameGeneratorGeneratorByName(tableConfig.getPartitionNameInvoker());
             if (invoker == null) {
                 throw new IllegalStateException(
@@ -186,11 +182,19 @@ public class PartitionPlanServiceV2 {
             }
             Map<String, Object> parameters = tableConfig.getPartitionNameInvokerParameters();
             parameters.putIfAbsent(PartitionNameGenerator.TARGET_PARTITION_DEF_KEY, definition);
-            definition.setName(invoker.invoke(connection, schema, tableName, parameters));
+            definition.setName(invoker.invoke(connection, dbTable, parameters));
             return definition;
         }).collect(Collectors.toList()));
         strategyListMap.put(PartitionPlanStrategy.DROP, droppedPartitions);
-        return strategyListMap;
+        DBTablePartition partition = dbTable.getPartition();
+        return strategyListMap.entrySet().stream().collect(Collectors.toMap(Entry::getKey, e -> {
+            DBTablePartition dbTablePartition = new DBTablePartition();
+            dbTablePartition.setPartitionDefinitions(e.getValue());
+            dbTablePartition.setPartitionOption(partition.getPartitionOption());
+            dbTablePartition.setSchemaName(partition.getSchemaName());
+            dbTablePartition.setTableName(partition.getTableName());
+            return dbTablePartition;
+        }));
     }
 
     private void checkPartitionKeyValue(

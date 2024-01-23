@@ -21,6 +21,7 @@ import java.util.Map;
 
 import com.oceanbase.odc.plugin.task.api.partitionplan.model.TimeIncreaseGeneratorConfig;
 import com.oceanbase.odc.plugin.task.api.partitionplan.util.ParameterUtil;
+import com.oceanbase.tools.dbbrowser.model.DBTable;
 
 import lombok.NonNull;
 
@@ -33,8 +34,7 @@ import lombok.NonNull;
  */
 public interface TimeIncreasePartitionExprGenerator extends PartitionExprGenerator {
 
-    List<String> generate(@NonNull Connection connection, @NonNull String schema,
-            @NonNull String tableName, @NonNull String partitionKey,
+    List<String> generate(@NonNull Connection connection, @NonNull DBTable dbTable, @NonNull String partitionKey,
             @NonNull Integer generateCount, @NonNull TimeIncreaseGeneratorConfig config);
 
     @Override
@@ -43,10 +43,9 @@ public interface TimeIncreasePartitionExprGenerator extends PartitionExprGenerat
     }
 
     @Override
-    default List<String> generate(@NonNull Connection connection, @NonNull String schema,
-            @NonNull String tableName, @NonNull String partitionKey,
-            @NonNull Integer generateCount, @NonNull Map<String, Object> parameters) {
-        return generate(connection, schema, tableName, partitionKey, generateCount,
+    default List<String> generate(@NonNull Connection connection, @NonNull DBTable dbTable,
+            @NonNull String partitionKey, @NonNull Integer generateCount, @NonNull Map<String, Object> parameters) {
+        return generate(connection, dbTable, partitionKey, generateCount,
                 ParameterUtil.nullSafeExtract(parameters, GENERATOR_PARAMETER_KEY, TimeIncreaseGeneratorConfig.class));
     }
 

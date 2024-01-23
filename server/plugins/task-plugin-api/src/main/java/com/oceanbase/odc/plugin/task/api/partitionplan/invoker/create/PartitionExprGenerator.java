@@ -23,6 +23,7 @@ import org.apache.commons.lang3.Validate;
 
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.PartitionPlanKeyInvoker;
 import com.oceanbase.odc.plugin.task.api.partitionplan.util.ParameterUtil;
+import com.oceanbase.tools.dbbrowser.model.DBTable;
 
 import lombok.NonNull;
 
@@ -40,17 +41,16 @@ public interface PartitionExprGenerator extends PartitionPlanKeyInvoker<List<Str
     String GENERATOR_PARAMETER_KEY = "generateParameter";
     String GENERATOR_PARTITION_KEY = "partitionKey";
 
-    List<String> generate(@NonNull Connection connection, @NonNull String schema,
-            @NonNull String tableName, @NonNull String partitionKey,
-            @NonNull Integer generateCount, @NonNull Map<String, Object> parameters);
+    List<String> generate(@NonNull Connection connection, @NonNull DBTable dbTable,
+            @NonNull String partitionKey, @NonNull Integer generateCount, @NonNull Map<String, Object> parameters);
 
     @Override
-    default List<String> invoke(@NonNull Connection connection, @NonNull String schema,
-            @NonNull String tableName, @NonNull Map<String, Object> parameters) {
+    default List<String> invoke(@NonNull Connection connection, @NonNull DBTable dbTable,
+            @NonNull Map<String, Object> parameters) {
         Integer generateCount = ParameterUtil.nullSafeExtract(parameters, GENERATE_COUNT_KEY, Integer.class);
         Validate.isTrue(generateCount > 0, "Partition generate count can not be smaller than 1");
         String partitionKey = ParameterUtil.nullSafeExtract(parameters, GENERATOR_PARTITION_KEY, String.class);
-        return generate(connection, schema, tableName, partitionKey, generateCount, parameters);
+        return generate(connection, dbTable, partitionKey, generateCount, parameters);
     }
 
 }

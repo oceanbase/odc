@@ -20,6 +20,7 @@ import java.util.Map;
 
 import com.oceanbase.odc.plugin.task.api.partitionplan.model.DateBasedPartitionNameGeneratorConfig;
 import com.oceanbase.odc.plugin.task.api.partitionplan.util.ParameterUtil;
+import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartitionDefinition;
 
 import lombok.NonNull;
@@ -35,7 +36,7 @@ public interface DateBasedPartitionNameGenerator extends PartitionNameGenerator 
 
     String PARTITION_NAME_GENERATOR_KEY = "partitionNameGeneratorConfig";
 
-    String generate(@NonNull Connection connection, @NonNull String schema, @NonNull String tableName,
+    String generate(@NonNull Connection connection, @NonNull DBTable dbTable,
             @NonNull DBTablePartitionDefinition target, @NonNull DateBasedPartitionNameGeneratorConfig config);
 
     @Override
@@ -44,9 +45,9 @@ public interface DateBasedPartitionNameGenerator extends PartitionNameGenerator 
     }
 
     @Override
-    default String generate(@NonNull Connection connection, @NonNull String schema, @NonNull String tableName,
+    default String generate(@NonNull Connection connection, @NonNull DBTable dbTable,
             @NonNull DBTablePartitionDefinition target, @NonNull Map<String, Object> parameters) {
-        return generate(connection, schema, tableName, target, ParameterUtil.nullSafeExtract(parameters,
+        return generate(connection, dbTable, target, ParameterUtil.nullSafeExtract(parameters,
                 PARTITION_NAME_GENERATOR_KEY, DateBasedPartitionNameGeneratorConfig.class));
     }
 

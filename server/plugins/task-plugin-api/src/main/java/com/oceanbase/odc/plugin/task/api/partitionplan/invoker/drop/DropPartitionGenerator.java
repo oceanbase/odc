@@ -15,14 +15,10 @@
  */
 package com.oceanbase.odc.plugin.task.api.partitionplan.invoker.drop;
 
-import java.sql.Connection;
 import java.util.List;
-import java.util.Map;
 
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.PartitionPlanKeyInvoker;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartitionDefinition;
-
-import lombok.NonNull;
 
 /**
  * {@link DropPartitionGenerator}
@@ -32,21 +28,4 @@ import lombok.NonNull;
  * @since ODC_release_4.2.4
  */
 public interface DropPartitionGenerator extends PartitionPlanKeyInvoker<List<DBTablePartitionDefinition>> {
-
-    String PARTITION_CANDIDATE_KEY = "candidates";
-
-    List<DBTablePartitionDefinition> generate(@NonNull Connection connection, @NonNull String schema,
-            @NonNull String tableName, @NonNull List<DBTablePartitionDefinition> candidates,
-            @NonNull Map<String, Object> parameters);
-
-    @Override
-    default List<DBTablePartitionDefinition> invoke(@NonNull Connection connection, @NonNull String schema,
-            @NonNull String tableName, @NonNull Map<String, Object> parameters) {
-        Object definitions = parameters.get(PARTITION_CANDIDATE_KEY);
-        if (!(definitions instanceof List)) {
-            throw new IllegalArgumentException(PARTITION_CANDIDATE_KEY + " is missing");
-        }
-        return generate(connection, schema, tableName, (List<DBTablePartitionDefinition>) definitions, parameters);
-    }
-
 }

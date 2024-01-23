@@ -19,6 +19,7 @@ import java.sql.Connection;
 import java.util.Map;
 
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.PartitionPlanKeyInvoker;
+import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartitionDefinition;
 
 import lombok.NonNull;
@@ -34,17 +35,17 @@ public interface PartitionNameGenerator extends PartitionPlanKeyInvoker<String> 
 
     String TARGET_PARTITION_DEF_KEY = "targetPartition";
 
-    String generate(@NonNull Connection connection, @NonNull String schema, @NonNull String tableName,
+    String generate(@NonNull Connection connection, @NonNull DBTable dbTable,
             @NonNull DBTablePartitionDefinition target, @NonNull Map<String, Object> parameters);
 
     @Override
-    default String invoke(@NonNull Connection connection, @NonNull String schema,
-            @NonNull String tableName, @NonNull Map<String, Object> parameters) {
+    default String invoke(@NonNull Connection connection, @NonNull DBTable dbTable,
+            @NonNull Map<String, Object> parameters) {
         Object value = parameters.get(TARGET_PARTITION_DEF_KEY);
         if (!(value instanceof DBTablePartitionDefinition)) {
             throw new IllegalArgumentException("Missing target partition candidate");
         }
-        return generate(connection, schema, tableName, (DBTablePartitionDefinition) value, parameters);
+        return generate(connection, dbTable, (DBTablePartitionDefinition) value, parameters);
     }
 
 }

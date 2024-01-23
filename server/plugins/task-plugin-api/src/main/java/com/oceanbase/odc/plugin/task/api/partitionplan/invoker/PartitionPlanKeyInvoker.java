@@ -18,6 +18,8 @@ package com.oceanbase.odc.plugin.task.api.partitionplan.invoker;
 import java.sql.Connection;
 import java.util.Map;
 
+import com.oceanbase.tools.dbbrowser.model.DBTable;
+
 import lombok.NonNull;
 
 /**
@@ -39,11 +41,9 @@ public interface PartitionPlanKeyInvoker<T> {
      * invoke method
      *
      * @param connection the target {@link Connection}
-     * @param schema target schema
-     * @param tableName target table name
+     * @param dbTable target table
      * @param parameters parameters for this invoker
      */
-    T invoke(@NonNull Connection connection, @NonNull String schema, @NonNull String tableName,
-            @NonNull Map<String, Object> parameters);
+    T invoke(@NonNull Connection connection, @NonNull DBTable dbTable, @NonNull Map<String, Object> parameters);
 
 }

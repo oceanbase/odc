@@ -22,6 +22,7 @@ import java.util.Map;
 import org.apache.commons.lang3.Validate;
 
 import com.oceanbase.odc.plugin.task.api.partitionplan.util.ParameterUtil;
+import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartitionDefinition;
 
 import lombok.NonNull;
@@ -38,8 +39,7 @@ public interface KeepMostRecentPartitionGenerator extends DropPartitionGenerator
     String KEEP_RECENT_COUNT_KEY = "keepRecentCount";
 
     List<DBTablePartitionDefinition> generate(@NonNull Connection connection,
-            @NonNull String schema, @NonNull String tableName,
-            @NonNull List<DBTablePartitionDefinition> candidates, @NonNull Integer keepCount);
+            @NonNull DBTable dbTable, @NonNull Integer keepCount);
 
     @Override
     default String getName() {
@@ -47,12 +47,11 @@ public interface KeepMostRecentPartitionGenerator extends DropPartitionGenerator
     }
 
     @Override
-    default List<DBTablePartitionDefinition> generate(@NonNull Connection connection, @NonNull String schema,
-            @NonNull String tableName, @NonNull List<DBTablePartitionDefinition> candidates,
-            @NonNull Map<String, Object> parameters) {
+    default List<DBTablePartitionDefinition> invoke(@NonNull Connection connection,
+            @NonNull DBTable dbTable, @NonNull Map<String, Object> parameters) {
         Integer keepCount = ParameterUtil.nullSafeExtract(parameters, KEEP_RECENT_COUNT_KEY, Integer.class);
         Validate.isTrue(keepCount > 0, "Keep count can not be smaller than 1");
-        return generate(connection, schema, tableName, candidates, keepCount);
+        return generate(connection, dbTable, keepCount);
     }
 
 }
