@@ -61,6 +61,7 @@ import com.oceanbase.odc.service.collaboration.project.model.Project;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.iam.PermissionService;
+import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.permission.database.model.CreateDatabasePermissionReq;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
@@ -79,6 +80,9 @@ public class DatabasePermissionService {
 
     @Autowired
     private ProjectService projectService;
+
+    @Autowired
+    private ProjectPermissionValidator projectPermissionValidator;
 
     @Autowired
     private DatabaseService databaseService;
@@ -110,13 +114,10 @@ public class DatabasePermissionService {
             Pageable pageable) {
         boolean hasPermission;
         if (params.getUserId() == null || params.getUserId() != authenticationFacade.currentUserId()) {
-            hasPermission = projectService.checkPermission(projectId,
+            projectPermissionValidator.checkProjectRole(projectId,
                     Arrays.asList(ResourceRoleName.OWNER, ResourceRoleName.DBA));
         } else {
-            hasPermission = projectService.checkPermission(projectId, ResourceRoleName.all());
-        }
-        if (!hasPermission) {
-            throw new AccessDeniedException();
+            projectPermissionValidator.checkProjectRole(projectId, ResourceRoleName.all());
         }
         Date expiredTime = new Date(System.currentTimeMillis() - expiredRetentionTimeSeconds * 1000);
         permissionService.deleteExpiredPermission(expiredTime);

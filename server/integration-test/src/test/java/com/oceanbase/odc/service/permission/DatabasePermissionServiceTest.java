@@ -47,6 +47,7 @@ import com.oceanbase.odc.metadb.iam.UserPermissionRepository;
 import com.oceanbase.odc.service.collaboration.project.ProjectService;
 import com.oceanbase.odc.service.connection.database.DatabaseMapper;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
+import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.permission.database.DatabasePermissionService;
 import com.oceanbase.odc.service.permission.database.model.CreateDatabasePermissionReq;
@@ -82,6 +83,9 @@ public class DatabasePermissionServiceTest extends ServiceTestEnv {
 
     @MockBean
     private ProjectService projectService;
+
+    @MockBean
+    private ProjectPermissionValidator projectPermissionValidator;
 
     @MockBean
     private DatabaseService databaseService;
@@ -128,7 +132,7 @@ public class DatabasePermissionServiceTest extends ServiceTestEnv {
         createUserPermission(p5.getId());
         createUserPermission(p6.getId());
         // Mock
-        Mockito.when(projectService.checkPermission(Mockito.eq(PROJECT_ID), Mockito.any())).thenReturn(true);
+        Mockito.doNothing().when(projectPermissionValidator).checkProjectRole(Mockito.eq(PROJECT_ID), Mockito.any());
         Mockito.when(projectService.getMemberProjectIds(Mockito.eq(USER_ID)))
                 .thenReturn(Collections.singleton(PROJECT_ID));
         Mockito.when(databaseService.listDatabasesByIds(Mockito.any())).thenReturn(

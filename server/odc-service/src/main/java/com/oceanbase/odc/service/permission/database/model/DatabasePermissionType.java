@@ -28,6 +28,7 @@ import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.tools.dbbrowser.parser.constant.SqlType;
 
 import lombok.Getter;
+import lombok.NonNull;
 
 /**
  * @author gaoda.xy
@@ -63,7 +64,7 @@ public enum DatabasePermissionType implements Translatable {
         return null;
     }
 
-    public static DatabasePermissionType from(SqlType sqlType) {
+    public static DatabasePermissionType from(@NonNull SqlType sqlType) {
         switch (sqlType) {
             case SELECT:
                 return QUERY;
@@ -81,7 +82,7 @@ public enum DatabasePermissionType implements Translatable {
         }
     }
 
-    public static Set<DatabasePermissionType> from(TaskType taskType) {
+    public static Set<DatabasePermissionType> from(@NonNull TaskType taskType) {
         Set<DatabasePermissionType> types = new HashSet<>();
         switch (taskType) {
             case EXPORT:

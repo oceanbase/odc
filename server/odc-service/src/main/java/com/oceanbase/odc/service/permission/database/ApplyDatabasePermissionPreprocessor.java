@@ -41,6 +41,7 @@ import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
 import com.oceanbase.odc.service.flow.processor.FlowTaskPreprocessor;
 import com.oceanbase.odc.service.flow.processor.Preprocessor;
+import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.permission.database.model.ApplyDatabaseParameter;
 import com.oceanbase.odc.service.permission.database.model.ApplyDatabaseParameter.ApplyDatabase;
@@ -55,6 +56,9 @@ public class ApplyDatabasePermissionPreprocessor implements Preprocessor {
 
     @Autowired
     private ProjectService projectService;
+
+    @Autowired
+    private ProjectPermissionValidator projectPermissionValidator;
 
     @Autowired
     private DatabaseService databaseService;
@@ -76,9 +80,7 @@ public class ApplyDatabasePermissionPreprocessor implements Preprocessor {
         Long projectId = parameter.getProject().getId();
         ProjectEntity projectEntity = projectService.nullSafeGet(projectId);
         Verify.verify(Boolean.FALSE.equals(projectEntity.getArchived()), "Project is archived");
-        if (!projectService.checkPermission(projectId, ResourceRoleName.all())) {
-            throw new AccessDeniedException();
-        }
+        projectPermissionValidator.checkProjectRole(projectId, ResourceRoleName.all());
         parameter.getProject().setName(projectEntity.getName());
         parameter.setExpireTime(parameter.getExpireTime() == null ? TimeUtils.getMySQLMaxDatetime()
                 : TimeUtils.getEndOfDay(parameter.getExpireTime()));

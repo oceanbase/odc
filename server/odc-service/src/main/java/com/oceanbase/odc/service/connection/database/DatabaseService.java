@@ -56,6 +56,7 @@ import com.oceanbase.odc.core.authority.util.PreAuthenticate;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
@@ -90,6 +91,7 @@ import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.db.DBSchemaService;
 import com.oceanbase.odc.service.iam.HorizontalDataPermissionValidator;
 import com.oceanbase.odc.service.iam.OrganizationService;
+import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.onlineschemachange.ddl.DBUser;
 import com.oceanbase.odc.service.onlineschemachange.ddl.OscDBAccessor;
@@ -125,6 +127,9 @@ public class DatabaseService {
 
     @Autowired
     private ProjectService projectService;
+
+    @Autowired
+    private ProjectPermissionValidator projectPermissionValidator;
 
     @Autowired
     private EnvironmentService environmentService;
@@ -174,9 +179,8 @@ public class DatabaseService {
     private Database getDatabase(Long id) {
         Database database = entityToModel(databaseRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException(ResourceType.ODC_DATABASE, "id", id)));
-        if (!projectService.checkPermission(database.getProject().getId(), ResourceRoleName.all())) {
-            throw new AccessDeniedException();
-        }
+        Verify.notNull(database.getProject().getId(), "projectId");
+        projectPermissionValidator.checkProjectRole(database.getProject().getId(), ResourceRoleName.all());
         return database;
     }
 
@@ -272,8 +276,9 @@ public class DatabaseService {
     public Database create(@NonNull CreateDatabaseReq req) {
         ConnectionConfig connection = connectionService.getForConnectionSkipPermissionCheck(req.getDataSourceId());
         if ((connection.getProjectId() != null && !connection.getProjectId().equals(req.getProjectId()))
-                || !projectService.checkPermission(req.getProjectId(),
-                        Arrays.asList(ResourceRoleName.OWNER, ResourceRoleName.DBA, ResourceRoleName.DEVELOPER))
+                || (Objects.nonNull(req.getProjectId())
+                        && !projectPermissionValidator.hasProjectRole(req.getProjectId(),
+                                Arrays.asList(ResourceRoleName.OWNER, ResourceRoleName.DBA)))
                 || !connectionService.checkPermission(req.getDataSourceId(), Collections.singletonList("update"))) {
             throw new AccessDeniedException();
         }
@@ -654,9 +659,8 @@ public class DatabaseService {
         }
         boolean isProjectMember = false;
         if (Objects.nonNull(projectId)) {
-            isProjectMember = projectService.checkPermission(projectId, ResourceRoleName.all());
+            isProjectMember = projectPermissionValidator.hasProjectRole(projectId, ResourceRoleName.all());
         }
-
         boolean canUpdateDataSource = false;
         if (Objects.nonNull(dataSourceId)) {
             canUpdateDataSource = connectionService.checkPermission(dataSourceId, Arrays.asList("update"));
@@ -670,15 +674,14 @@ public class DatabaseService {
         if (CollectionUtils.isEmpty(databases)) {
             return;
         }
-        PreConditions.validArgumentState(
-                projectService.checkPermission(newProjectId,
-                        Arrays.asList(ResourceRoleName.DBA, ResourceRoleName.OWNER)),
-                ErrorCodes.AccessDenied, null, "Only project's OWNER/DBA can transfer databases");
+        if (Objects.nonNull(newProjectId)) {
+            projectPermissionValidator.checkProjectRole(newProjectId,
+                    Arrays.asList(ResourceRoleName.DBA, ResourceRoleName.OWNER));
+        }
         List<Long> projectIds = databases.stream().map(DatabaseEntity::getProjectId).collect(Collectors.toList());
         List<Long> connectionIds = databases.stream().map(DatabaseEntity::getConnectionId).collect(Collectors.toList());
-        PreConditions.validArgumentState(
-                projectService.checkPermission(projectIds, Arrays.asList(ResourceRoleName.DBA, ResourceRoleName.OWNER)),
-                ErrorCodes.AccessDenied, null, "Only project's OWNER/DBA can transfer databases");
+        projectPermissionValidator.checkProjectRole(projectIds,
+                Arrays.asList(ResourceRoleName.DBA, ResourceRoleName.OWNER));
         PreConditions.validArgumentState(
                 connectionService.checkPermission(connectionIds, Collections.singletonList("update")),
                 ErrorCodes.AccessDenied, null, "Lack of update permission on current datasource");

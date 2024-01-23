@@ -70,7 +70,6 @@ import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.TaskType;
-import com.oceanbase.odc.core.shared.exception.AccessDeniedException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.core.shared.exception.OverLimitException;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
@@ -89,7 +88,6 @@ import com.oceanbase.odc.metadb.flow.UserTaskInstanceRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
-import com.oceanbase.odc.service.collaboration.project.ProjectService;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.odc.service.config.SystemConfigService;
@@ -129,6 +127,7 @@ import com.oceanbase.odc.service.flow.task.model.RuntimeTaskConstants;
 import com.oceanbase.odc.service.flow.task.model.ShadowTableSyncTaskParameter;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
 import com.oceanbase.odc.service.iam.HorizontalDataPermissionValidator;
+import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
 import com.oceanbase.odc.service.iam.ResourceRoleService;
 import com.oceanbase.odc.service.iam.UserService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
@@ -221,7 +220,7 @@ public class FlowInstanceService {
     @Autowired
     private FlowInstanceViewRepository flowInstanceViewRepository;
     @Autowired
-    private ProjectService projectService;
+    private ProjectPermissionValidator projectPermissionValidator;
     @Autowired
     private ResourceRoleService resourceRoleService;
     @Autowired
@@ -326,9 +325,7 @@ public class FlowInstanceService {
 
     public Page<FlowInstanceEntity> listAll(@NotNull Pageable pageable, @NotNull QueryFlowInstanceParams params) {
         if (Objects.nonNull(params.getProjectId())) {
-            if (!projectService.checkPermission(params.getProjectId(), ResourceRoleName.all())) {
-                throw new AccessDeniedException();
-            }
+            projectPermissionValidator.checkProjectRole(params.getProjectId(), ResourceRoleName.all());
         }
         if (params.getParentInstanceId() != null) {
             // TODO 4.1.3 自动运行模块改造完成后剥离
@@ -412,8 +409,8 @@ public class FlowInstanceService {
                 specification = specification.and(FlowInstanceViewSpecs.projectIdEquals(params.getProjectId()));
                 // if other project roles, show current user's created, waiting for approval and approved/rejected
                 // tickets
-                if (!projectService.checkPermission(params.getProjectId(), Arrays.asList(ResourceRoleName.OWNER))) {
-
+                if (!projectPermissionValidator.hasProjectRole(params.getProjectId(),
+                        Arrays.asList(ResourceRoleName.OWNER))) {
                     specification = specification.and(FlowInstanceViewSpecs.leftJoinFlowInstanceApprovalView(
                             resourceRoleIdentifiers, authenticationFacade.currentUserId(),
                             FlowNodeStatus.getExecutingAndFinalStatuses()));
@@ -628,8 +625,8 @@ public class FlowInstanceService {
                 optional.orElseThrow(() -> new NotFoundException(ResourceType.ODC_FLOW_INSTANCE, "id", flowInstanceId));
         try {
             if (!skipAuth) {
-                boolean isProjectOwner = flowInstance.getProjectId() != null && projectService.checkPermission(
-                        flowInstance.getProjectId(), Collections.singletonList(ResourceRoleName.OWNER));
+                boolean isProjectOwner = flowInstance.getProjectId() != null && projectPermissionValidator
+                        .hasProjectRole(flowInstance.getProjectId(), Collections.singletonList(ResourceRoleName.OWNER));
                 if (!Objects.equals(authenticationFacade.currentUserId(), flowInstance.getCreatorId())
                         && !isProjectOwner) {
                     List<UserTaskInstanceEntity> entities = approvalPermissionService.getApprovableApprovalInstances();

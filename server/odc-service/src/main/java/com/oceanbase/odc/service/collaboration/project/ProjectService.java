@@ -15,7 +15,6 @@
  */
 package com.oceanbase.odc.service.collaboration.project;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -39,9 +38,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import org.springframework.validation.annotation.Validated;
 
-import com.oceanbase.odc.core.authority.model.DefaultSecurityResource;
-import com.oceanbase.odc.core.authority.permission.Permission;
-import com.oceanbase.odc.core.authority.permission.ResourceRoleBasedPermission;
 import com.oceanbase.odc.core.authority.util.Authenticated;
 import com.oceanbase.odc.core.authority.util.PreAuthenticate;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
@@ -376,31 +372,6 @@ public class ProjectService {
         }
         return repository.findAllById(ids).stream().map(projectMapper::entityToModel)
                 .collect(Collectors.groupingBy(Project::getId));
-    }
-
-    @SkipAuthorize("permission check inside")
-    public boolean checkPermission(Long projectId, List<ResourceRoleName> resourceRoles) {
-        if (Objects.isNull(projectId)) {
-            return true;
-        }
-        if (CollectionUtils.isEmpty(resourceRoles)) {
-            return false;
-        }
-        return checkPermission(Collections.singleton(projectId), resourceRoles);
-    }
-
-    @SkipAuthorize("permission check inside")
-    public boolean checkPermission(@NonNull Collection<Long> projectIds,
-            @NotNull List<ResourceRoleName> resourceRoles) {
-        projectIds = projectIds.stream().filter(Objects::nonNull).collect(Collectors.toSet());
-        if (projectIds.isEmpty() || resourceRoles.isEmpty()) {
-            return true;
-        }
-        List<Permission> permissions = projectIds.stream()
-                .map(projectId -> new ResourceRoleBasedPermission(
-                        new DefaultSecurityResource(projectId.toString(), "ODC_PROJECT"), resourceRoles))
-                .collect(Collectors.toList());
-        return authorizationFacade.isImpliesPermissions(authenticationFacade.currentUser(), permissions);
     }
 
     @SkipAuthorize("permission check inside")
