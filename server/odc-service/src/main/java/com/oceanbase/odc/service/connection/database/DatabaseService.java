@@ -582,7 +582,7 @@ public class DatabaseService {
         if (schemaName2PermissionTypes == null || schemaName2PermissionTypes.isEmpty()) {
             return Collections.emptyList();
         }
-        ConnectionConfig dataSource = connectionService.nullSafeGet(dataSourceId);
+        ConnectionConfig dataSource = connectionService.getBasicWithoutPermissionCheck(dataSourceId);
         List<Database> databases = listDatabasesByConnectionIds(Collections.singleton(dataSourceId));
         databases.forEach(d -> d.getDataSource().setName(dataSource.getName()));
         Map<String, Database> name2Database = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);

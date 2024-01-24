@@ -476,7 +476,7 @@ public class ConnectionService {
     }
 
     @SkipAuthorize("odc internal usage")
-    public ConnectionConfig nullSafeGet(@NonNull Long id) {
+    public ConnectionConfig getBasicWithoutPermissionCheck(@NonNull Long id) {
         return repository.findById(id).map(mapper::entityToModel)
                 .orElseThrow(() -> new NotFoundException(ResourceType.ODC_CONNECTION, "id", id));
     }
