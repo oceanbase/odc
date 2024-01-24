@@ -18,7 +18,6 @@ package com.oceanbase.odc.service.task.util;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Objects;
 import java.util.Optional;
 
 import com.google.gson.Gson;

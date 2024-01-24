@@ -102,7 +102,8 @@ public class ImmediateJobDispatcher implements JobDispatcher {
         podParam.setLimitCpu(k8s.getLimitCpu());
         podParam.setLimitMem(k8s.getLimitMem());
         podParam.setEnableMount(k8s.getEnableMount());
-        podParam.setMountPath(k8s.getMountPath() == null ? JobConstants.TASK_EXECUTOR_DEFAULT_MOUNT_PATH : k8s.getMountPath());
+        podParam.setMountPath(
+                k8s.getMountPath() == null ? JobConstants.TASK_EXECUTOR_DEFAULT_MOUNT_PATH : k8s.getMountPath());
         podParam.setMountDiskSize(k8s.getMountDiskSize());
         return podConfig;
     }

@@ -160,7 +160,8 @@ public class TaskMonitor {
     }
 
     private void uploadLogFileToCloudStorage(DefaultTaskResult finalResult) {
-        if (cloudObjectStorageService != null && cloudObjectStorageService.supported() && JobUtils.isK8sRunModeOfEnv()) {
+        if (cloudObjectStorageService != null && cloudObjectStorageService.supported()
+                && JobUtils.isK8sRunModeOfEnv()) {
             LogBiz biz = new LogBizImpl();
             Map<String, String> logMap = null;
             try {

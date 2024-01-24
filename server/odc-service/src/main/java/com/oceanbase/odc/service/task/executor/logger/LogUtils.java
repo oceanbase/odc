@@ -81,7 +81,7 @@ public class LogUtils {
     }
 
     public static String getTaskLogFileWithPath(Long jobId, OdcTaskLogLevel logType) {
-        return String.format(TASK_LOG_PATH_PATTERN,  getBaseLogPath(), jobId, logType);
+        return String.format(TASK_LOG_PATH_PATTERN, getBaseLogPath(), jobId, logType);
     }
 
 }

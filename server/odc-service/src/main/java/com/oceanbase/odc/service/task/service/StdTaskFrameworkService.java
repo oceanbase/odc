@@ -25,6 +25,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.LockModeType;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaUpdate;
+import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -126,7 +127,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     public Page<JobEntity> findCancelingJob(int page, int size) {
         Specification<JobEntity> condition = Specification.where(getRecentDaySpec(RECENT_DAY))
                 .and(SpecificationUtil.columnEqual(JobEntityColumn.STATUS, JobStatus.CANCELING))
-                .and(getK8sExecutor().or(getProcessExecutor()));
+                .and(getExecutorSpec());
         return page(condition, page, size);
     }
 
@@ -136,35 +137,32 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
                 .and(SpecificationUtil.columnIn(JobEntityColumn.STATUS,
                         Lists.newArrayList(JobStatus.CANCELED, JobStatus.DONE, JobStatus.FAILED)))
                 .and(SpecificationUtil.columnIsNull(JobEntityColumn.EXECUTOR_DESTROYED_TIME))
-                .and(getK8sExecutor().or(getProcessExecutor()));
+                .and(getExecutorSpec());
         return page(condition, page, size);
     }
 
     @Override
     public Page<JobEntity> findHeartTimeTimeoutJobs(int timeoutSeconds, int page, int size) {
         Specification<JobEntity> condition = Specification.where(getRecentDaySpec(RECENT_DAY))
-            .and(getTimeoutOnColumnSpec(JobEntityColumn.LAST_HEART_TIME, timeoutSeconds))
-            .and(SpecificationUtil.columnEqual(JobEntityColumn.STATUS, JobStatus.RUNNING))
-            .and(getK8sExecutor().or(getProcessExecutor()));
+                .and(getTimeoutOnColumnSpec(JobEntityColumn.LAST_HEART_TIME, timeoutSeconds))
+                .and(SpecificationUtil.columnEqual(JobEntityColumn.STATUS, JobStatus.RUNNING))
+                .and(getExecutorSpec());
         return page(condition, page, size);
     }
 
-    private Specification<JobEntity> getK8sExecutor() {
-        return SpecificationUtil.columnEqual(JobEntityColumn.RUN_MODE, TaskRunModeEnum.K8S);
-    }
+    private Specification<JobEntity> getExecutorSpec() {
+        return (root, query, builder) -> {
+            Predicate k8sCondition = builder.equal(root.get(JobEntityColumn.RUN_MODE), TaskRunModeEnum.K8S);
 
-    private Specification<JobEntity> getProcessExecutor() {
-        Specification<JobEntity> spec =
-                SpecificationUtil.columnEqual(JobEntityColumn.RUN_MODE, TaskRunModeEnum.PROCESS);
-        // get local machine executor when run mode is process
-        return spec.and(getLocalExecutor().or(SpecificationUtil.columnIsNull(JobEntityColumn.EXECUTOR_IDENTIFIER)));
-    }
+            Predicate processCondition = builder.and(
+                    builder.equal(root.get(JobEntityColumn.RUN_MODE), TaskRunModeEnum.PROCESS),
+                    builder.or(
+                            builder.like(root.get(JobEntityColumn.EXECUTOR_IDENTIFIER),
+                                    SystemUtils.getLocalIpAddress()),
+                            builder.isNull(root.get(JobEntityColumn.EXECUTOR_IDENTIFIER))));
 
-
-    private Specification<JobEntity> getLocalExecutor() {
-        Specification<JobEntity> localJobSpec = SpecificationUtil.columnLike(JobEntityColumn.EXECUTOR_IDENTIFIER,
-                SystemUtils.getLocalIpAddress());
-        return localJobSpec.and(SpecificationUtil.columnIsNotNull(JobEntityColumn.EXECUTOR_IDENTIFIER));
+            return builder.or(processCondition, k8sCondition);
+        };
     }
 
     private Page<JobEntity> page(Specification<JobEntity> specification, int page, int size) {

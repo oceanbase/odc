@@ -37,7 +37,7 @@ public class JobCallerBuilder {
         PodParam podParam = podConfig.getPodParam();
         podParam.setEnvironments(new JobEnvBuilder().buildMap(context, TaskRunModeEnum.K8S));
         podParam.getEnvironments().putIfAbsent(JobEnvKeyConstants.ODC_LOG_DIRECTORY,
-            JobConstants.TASK_EXECUTOR_DEFAULT_MOUNT_PATH);
+                JobConstants.TASK_EXECUTOR_DEFAULT_MOUNT_PATH);
         return new K8sJobCaller(k8sJobClient, podConfig);
     }
 }
