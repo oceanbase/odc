@@ -49,7 +49,7 @@ import com.oceanbase.tools.dbbrowser.model.datatype.GeneralDataType;
  * @date 2024-01-23 17:47
  * @since ODC_release_4.2.4
  */
-public class OBMySQLAutoPartitionKeyDataTypeFactoryTest {
+public class OBMySQLPartitionKeyDataTypeFactoryTest {
 
     public static final String RANGE_TABLE_NAME = "range_parti_tbl";
     public static final String RANGE_COLUMNS_TABLE_NAME = "range_column_parti_tbl";
@@ -100,7 +100,7 @@ public class OBMySQLAutoPartitionKeyDataTypeFactoryTest {
 
     private static List<String> getDdlContent() throws IOException {
         String delimiter = "\\$\\$\\s*";
-        try (InputStream input = OBMySQLAutoPartitionKeyDataTypeFactoryTest.class.getClassLoader()
+        try (InputStream input = OBMySQLPartitionKeyDataTypeFactoryTest.class.getClassLoader()
                 .getResourceAsStream("partitionplan/datatype_factory_create_table_partition.sql")) {
             byte[] buffer = new byte[input.available()];
             IOUtils.readFully(input, buffer);

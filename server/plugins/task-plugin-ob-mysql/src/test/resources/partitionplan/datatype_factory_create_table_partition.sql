@@ -1,4 +1,4 @@
-CREATE TABLE `${const:com.oceanbase.odc.plugin.task.obmysql.partitionplan.OBMySQLAutoPartitionKeyDataTypeFactoryTest.RANGE_COLUMNS_TABLE_NAME}` (
+CREATE TABLE `${const:com.oceanbase.odc.plugin.task.obmysql.partitionplan.OBMySQLPartitionKeyDataTypeFactoryTest.RANGE_COLUMNS_TABLE_NAME}` (
   `c1` int(11) DEFAULT NULL,
   `c2` varchar(64) DEFAULT NULL,
   `c3` date DEFAULT NULL
@@ -7,7 +7,7 @@ CREATE TABLE `${const:com.oceanbase.odc.plugin.task.obmysql.partitionplan.OBMySQ
 partition p2 values less than ('bbb', '2021-12-31'),
 partition p3 values less than ('ccc', '2022-12-31'));
 
-CREATE TABLE `${const:com.oceanbase.odc.plugin.task.obmysql.partitionplan.OBMySQLAutoPartitionKeyDataTypeFactoryTest.RANGE_TABLE_NAME}` (
+CREATE TABLE `${const:com.oceanbase.odc.plugin.task.obmysql.partitionplan.OBMySQLPartitionKeyDataTypeFactoryTest.RANGE_TABLE_NAME}` (
   `c1` int(11) DEFAULT NULL,
   `c2` varchar(64) DEFAULT NULL,
   `c3` date DEFAULT NULL

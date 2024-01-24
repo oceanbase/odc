@@ -164,7 +164,7 @@ public class OBMySQLAutoPartitionExtensionPointTest {
 
     private static List<String> getDdlContent() throws IOException {
         String delimiter = "\\$\\$\\s*";
-        try (InputStream input = OBMySQLAutoPartitionKeyDataTypeFactoryTest.class.getClassLoader()
+        try (InputStream input = OBMySQLPartitionKeyDataTypeFactoryTest.class.getClassLoader()
                 .getResourceAsStream("partitionplan/extension_point_create_table_partition.sql")) {
             byte[] buffer = new byte[input.available()];
             IOUtils.readFully(input, buffer);
