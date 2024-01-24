@@ -271,8 +271,7 @@ public class DatabasePermissionServiceTest extends ServiceTestEnv {
             Long ticketId, Date expireTime) {
         PermissionEntity entity = TestRandom.nextObject(PermissionEntity.class);
         entity.setOrganizationId(ORGANIZATION_ID);
-        entity.setResourceId(databaseId);
-        entity.setResourceType(ResourceType.ODC_DATABASE);
+        entity.setResourceIdentifier(ResourceType.ODC_DATABASE.name() + ":" + databaseId);
         entity.setAction(action);
         entity.setAuthorizationType(authorizationType);
         entity.setTicketId(ticketId);

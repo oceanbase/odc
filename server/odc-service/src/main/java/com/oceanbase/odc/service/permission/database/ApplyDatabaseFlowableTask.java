@@ -107,8 +107,6 @@ public class ApplyDatabaseFlowableTask extends BaseODCFlowTaskDelegate<ApplyData
                             permissionEntity.setAction(permissionType.getAction());
                             permissionEntity
                                     .setResourceIdentifier(ResourceType.ODC_DATABASE.name() + ":" + database.getId());
-                            permissionEntity.setResourceType(ResourceType.ODC_DATABASE);
-                            permissionEntity.setResourceId(database.getId());
                             permissionEntity.setType(PermissionType.PUBLIC_RESOURCE);
                             permissionEntity.setCreatorId(this.creatorId);
                             permissionEntity.setOrganizationId(organizationId);

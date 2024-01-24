@@ -175,8 +175,6 @@ public class DatabasePermissionService {
                 PermissionEntity permissionEntity = new PermissionEntity();
                 permissionEntity.setAction(permissionType.getAction());
                 permissionEntity.setResourceIdentifier(ResourceType.ODC_DATABASE.name() + ":" + databaseId);
-                permissionEntity.setResourceType(ResourceType.ODC_DATABASE);
-                permissionEntity.setResourceId(databaseId);
                 permissionEntity.setType(PermissionType.PUBLIC_RESOURCE);
                 permissionEntity.setCreatorId(creatorId);
                 permissionEntity.setOrganizationId(organizationId);

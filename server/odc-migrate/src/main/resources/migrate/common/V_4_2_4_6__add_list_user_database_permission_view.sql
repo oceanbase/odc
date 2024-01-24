@@ -1,10 +1,4 @@
 --
--- Add column `resource_type`, `resource_id` to `iam_permission` table
---
-ALTER TABLE `iam_permission` ADD COLUMN `resource_type` VARCHAR ( 32 ) DEFAULT NULL COMMENT 'Resource type of the permission, the default value is null which means not assigned';
-ALTER TABLE `iam_permission` ADD COLUMN `resource_id` BIGINT ( 20 ) DEFAULT NULL COMMENT 'Resource ID of the permission, the default value is null which means not assigned';
-
---
 -- Add `list_user_database_permission_view` view for query user database permissions list
 --
 create or replace view `list_user_database_permission_view` as
@@ -28,7 +22,7 @@ from
     select
       i_p.`id` as `id`,
       i_up.`user_id` as `user_id`,
-      i_p.`resource_id` as `resource_id`,
+      i_p.`resource_identifier` as `resource_identifier`,
       i_p.`action` as `action`,
       i_p.`authorization_type` as `authorization_type`,
       i_p.`ticket_id` as `ticket_id`,
@@ -40,7 +34,7 @@ from
       `iam_permission` as i_p
       inner join `iam_user_permission` as i_up on i_p.`id` = i_up.`permission_id`
     where
-      i_p.`resource_type` = 'ODC_DATABASE' and i_p.`action` in ('query', 'change', 'export')
+      i_p.`resource_identifier` LIKE 'ODC_DATABASE:%' and i_p.`action` in ('query', 'change', 'export')
   ) as u_p
-  inner join `connect_database` as c_d on u_p.`resource_id` = c_d.`id`
+  inner join `connect_database` as c_d on SUBSTRING( u_p.`resource_identifier` FROM 14 ) = c_d.`id`
   inner join `connect_connection` as c_c on c_d.`connection_id` = c_c.`id`;
