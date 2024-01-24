@@ -28,7 +28,6 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang.time.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -65,7 +64,7 @@ import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.permission.database.model.CreateDatabasePermissionReq;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
-import com.oceanbase.odc.service.permission.database.model.PermissionStatus;
+import com.oceanbase.odc.service.permission.database.model.ExpirationStatusFilter;
 import com.oceanbase.odc.service.permission.database.model.QueryDatabasePermissionParams;
 import com.oceanbase.odc.service.permission.database.model.UserDatabasePermission;
 
@@ -121,6 +120,7 @@ public class DatabasePermissionService {
         }
         Date expiredTime = new Date(System.currentTimeMillis() - expiredRetentionTimeSeconds * 1000);
         permissionService.deleteExpiredPermission(expiredTime);
+        Date expireTimeThreshold = TimeUtils.getStartOfDay(new Date());
         Specification<UserDatabasePermissionEntity> spec = Specification
                 .where(UserDatabasePermissionSpec.projectIdEqual(projectId))
                 .and(UserDatabasePermissionSpec.organizationIdEqual(authenticationFacade.currentOrganizationId()))
@@ -129,29 +129,18 @@ public class DatabasePermissionService {
                 .and(UserDatabasePermissionSpec.databaseNameLike(params.getFuzzyDatabaseName()))
                 .and(UserDatabasePermissionSpec.dataSourceNameLike(params.getFuzzyDataSourceName()))
                 .and(UserDatabasePermissionSpec.typeIn(params.getTypes()))
-                .and(UserDatabasePermissionSpec.authorizationTypeEqual(params.getAuthorizationType()));
-        Date expireTimeThreshold = TimeUtils.getStartOfDay(new Date());
-        if (CollectionUtils.isNotEmpty(params.getStatuses())) {
-            List<Specification<UserDatabasePermissionEntity>> expireSpecList = new ArrayList<>();
-            for (PermissionStatus status : params.getStatuses()) {
-                expireSpecList.add(getSpecificationByStatus(status, expireTimeThreshold));
-            }
-            Specification<UserDatabasePermissionEntity> expireSpec = expireSpecList.get(0);
-            for (int i = 1; i < expireSpecList.size(); i++) {
-                expireSpec = expireSpec.or(expireSpecList.get(i));
-            }
-            spec = spec.and(expireSpec);
-        }
+                .and(UserDatabasePermissionSpec.authorizationTypeEqual(params.getAuthorizationType()))
+                .and(UserDatabasePermissionSpec.filterByExpirationStatus(params.getStatuses(), expireTimeThreshold));
         return userDatabasePermissionRepository.findAll(spec, pageable).map(
                 e -> {
                     UserDatabasePermission permission = mapper.entityToModel(e);
                     Date expireTime = permission.getExpireTime();
                     if (expireTime.before(expireTimeThreshold)) {
-                        permission.setStatus(PermissionStatus.EXPIRED);
+                        permission.setStatus(ExpirationStatusFilter.EXPIRED);
                     } else if (expireTime.before(DateUtils.addDays(expireTimeThreshold, EXPIRING_DAYS))) {
-                        permission.setStatus(PermissionStatus.EXPIRING);
+                        permission.setStatus(ExpirationStatusFilter.EXPIRING);
                     } else {
-                        permission.setStatus(PermissionStatus.NOT_EXPIRED);
+                        permission.setStatus(ExpirationStatusFilter.NOT_EXPIRED);
                     }
                     return permission;
                 });
@@ -222,21 +211,6 @@ public class DatabasePermissionService {
         permissionRepository.deleteByIds(permissionIds);
         userPermissionRepository.deleteByPermissionIds(permissionIds);
         return permissionIds.stream().map(UserDatabasePermission::from).collect(Collectors.toList());
-    }
-
-    private Specification<UserDatabasePermissionEntity> getSpecificationByStatus(PermissionStatus status,
-            Date date) {
-        switch (status) {
-            case EXPIRED:
-                return UserDatabasePermissionSpec.expireTimeBefore(date);
-            case EXPIRING:
-                return UserDatabasePermissionSpec.expireTimeLate(date)
-                        .and(UserDatabasePermissionSpec.expireTimeBefore(DateUtils.addDays(date, EXPIRING_DAYS)));
-            case NOT_EXPIRED:
-                return UserDatabasePermissionSpec.expireTimeLate(date);
-            default:
-                throw new IllegalArgumentException("Unknown status: " + status);
-        }
     }
 
 }

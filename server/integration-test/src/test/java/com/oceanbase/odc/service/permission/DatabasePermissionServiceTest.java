@@ -52,7 +52,7 @@ import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.permission.database.DatabasePermissionService;
 import com.oceanbase.odc.service.permission.database.model.CreateDatabasePermissionReq;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
-import com.oceanbase.odc.service.permission.database.model.PermissionStatus;
+import com.oceanbase.odc.service.permission.database.model.ExpirationStatusFilter;
 import com.oceanbase.odc.service.permission.database.model.QueryDatabasePermissionParams;
 import com.oceanbase.odc.service.permission.database.model.UserDatabasePermission;
 import com.oceanbase.odc.test.tool.TestRandom;
@@ -157,7 +157,7 @@ public class DatabasePermissionServiceTest extends ServiceTestEnv {
                 .fuzzyDataSourceName("c")
                 .types(DatabasePermissionType.all())
                 .authorizationType(AuthorizationType.TICKET_APPLICATION)
-                .statuses(PermissionStatus.all())
+                .statuses(ExpirationStatusFilter.all())
                 .build();
         Page<UserDatabasePermission> result = service.list(PROJECT_ID, params, Pageable.unpaged());
         Assert.assertEquals(3, result.getTotalElements());
@@ -166,7 +166,7 @@ public class DatabasePermissionServiceTest extends ServiceTestEnv {
     @Test
     public void test_list_expireTime_expired() {
         QueryDatabasePermissionParams params = QueryDatabasePermissionParams.builder()
-                .statuses(Arrays.asList(PermissionStatus.EXPIRED))
+                .statuses(Arrays.asList(ExpirationStatusFilter.EXPIRED))
                 .build();
         Page<UserDatabasePermission> result = service.list(PROJECT_ID, params, Pageable.unpaged());
         Assert.assertEquals(1, result.getTotalElements());
@@ -175,7 +175,7 @@ public class DatabasePermissionServiceTest extends ServiceTestEnv {
     @Test
     public void test_list_expireTime_expiring() {
         QueryDatabasePermissionParams params = QueryDatabasePermissionParams.builder()
-                .statuses(Arrays.asList(PermissionStatus.EXPIRING))
+                .statuses(Arrays.asList(ExpirationStatusFilter.EXPIRING))
                 .build();
         Page<UserDatabasePermission> result = service.list(PROJECT_ID, params, Pageable.unpaged());
         Assert.assertEquals(2, result.getTotalElements());
@@ -184,7 +184,7 @@ public class DatabasePermissionServiceTest extends ServiceTestEnv {
     @Test
     public void test_list_expireTime_notExpired() {
         QueryDatabasePermissionParams params = QueryDatabasePermissionParams.builder()
-                .statuses(Arrays.asList(PermissionStatus.NOT_EXPIRED))
+                .statuses(Arrays.asList(ExpirationStatusFilter.NOT_EXPIRED))
                 .build();
         Page<UserDatabasePermission> result = service.list(PROJECT_ID, params, Pageable.unpaged());
         Assert.assertEquals(5, result.getTotalElements());
@@ -193,7 +193,7 @@ public class DatabasePermissionServiceTest extends ServiceTestEnv {
     @Test
     public void test_list_expireTime_notExpiredAndExpiring() {
         QueryDatabasePermissionParams params = QueryDatabasePermissionParams.builder()
-                .statuses(Arrays.asList(PermissionStatus.EXPIRED, PermissionStatus.EXPIRING))
+                .statuses(Arrays.asList(ExpirationStatusFilter.EXPIRED, ExpirationStatusFilter.EXPIRING))
                 .build();
         Page<UserDatabasePermission> result = service.list(PROJECT_ID, params, Pageable.unpaged());
         Assert.assertEquals(3, result.getTotalElements());
@@ -202,7 +202,7 @@ public class DatabasePermissionServiceTest extends ServiceTestEnv {
     @Test
     public void test_list_expireTime_expiredAndNotExpired() {
         QueryDatabasePermissionParams params = QueryDatabasePermissionParams.builder()
-                .statuses(Arrays.asList(PermissionStatus.EXPIRED, PermissionStatus.NOT_EXPIRED))
+                .statuses(Arrays.asList(ExpirationStatusFilter.EXPIRED, ExpirationStatusFilter.NOT_EXPIRED))
                 .build();
         Page<UserDatabasePermission> result = service.list(PROJECT_ID, params, Pageable.unpaged());
         Assert.assertEquals(6, result.getTotalElements());
@@ -211,7 +211,7 @@ public class DatabasePermissionServiceTest extends ServiceTestEnv {
     @Test
     public void test_list_expireTime_expiringAndNotExpired() {
         QueryDatabasePermissionParams params = QueryDatabasePermissionParams.builder()
-                .statuses(Arrays.asList(PermissionStatus.EXPIRING, PermissionStatus.NOT_EXPIRED))
+                .statuses(Arrays.asList(ExpirationStatusFilter.EXPIRING, ExpirationStatusFilter.NOT_EXPIRED))
                 .build();
         Page<UserDatabasePermission> result = service.list(PROJECT_ID, params, Pageable.unpaged());
         Assert.assertEquals(5, result.getTotalElements());
@@ -220,7 +220,7 @@ public class DatabasePermissionServiceTest extends ServiceTestEnv {
     @Test
     public void test_list_expireTime_expiredAndExpiringAndNotExpired() {
         QueryDatabasePermissionParams params = QueryDatabasePermissionParams.builder()
-                .statuses(PermissionStatus.all())
+                .statuses(ExpirationStatusFilter.all())
                 .build();
         Page<UserDatabasePermission> result = service.list(PROJECT_ID, params, Pageable.unpaged());
         Assert.assertEquals(6, result.getTotalElements());

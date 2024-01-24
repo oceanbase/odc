@@ -52,7 +52,7 @@ public class UserDatabasePermission {
     private Date expireTime;
 
     @JsonProperty(access = Access.READ_ONLY)
-    private PermissionStatus status;
+    private ExpirationStatusFilter status;
 
     @JsonProperty(access = Access.READ_ONLY)
     private Long creatorId;

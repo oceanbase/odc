@@ -80,6 +80,7 @@ public class DatabasePermissionHelper {
         }
         Map<Long, Set<DatabasePermissionType>> id2PermissionTypes = getDatabaseId2PermissionTypes(databaseIds);
         for (Long databaseId : toCheckDatabaseIds) {
+            // TODO: may use Permission#implies() to check permission
             Set<DatabasePermissionType> authorized = id2PermissionTypes.get(databaseId);
             if (CollectionUtils.isEmpty(authorized)) {
                 throw new AccessDeniedException(String.format("No permission for the database with id %s", databaseId));

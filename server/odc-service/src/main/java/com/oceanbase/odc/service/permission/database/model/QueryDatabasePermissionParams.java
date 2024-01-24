@@ -36,6 +36,6 @@ public class QueryDatabasePermissionParams {
     private String fuzzyDataSourceName;
     private List<DatabasePermissionType> types;
     private AuthorizationType authorizationType;
-    private List<PermissionStatus> statuses;
+    private List<ExpirationStatusFilter> statuses;
 
 }

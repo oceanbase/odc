@@ -22,7 +22,7 @@ import java.util.List;
  * @author gaoda.xy
  * @date 2024/1/18 15:48
  */
-public enum PermissionStatus {
+public enum ExpirationStatusFilter {
     /**
      * Expired
      */
@@ -36,8 +36,8 @@ public enum PermissionStatus {
      */
     NOT_EXPIRED;
 
-    public static List<PermissionStatus> all() {
-        return Arrays.asList(PermissionStatus.values());
+    public static List<ExpirationStatusFilter> all() {
+        return Arrays.asList(ExpirationStatusFilter.values());
     }
 
 }

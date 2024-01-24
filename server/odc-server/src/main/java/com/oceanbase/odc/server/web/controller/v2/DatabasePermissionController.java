@@ -35,7 +35,7 @@ import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.permission.database.DatabasePermissionService;
 import com.oceanbase.odc.service.permission.database.model.CreateDatabasePermissionReq;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
-import com.oceanbase.odc.service.permission.database.model.PermissionStatus;
+import com.oceanbase.odc.service.permission.database.model.ExpirationStatusFilter;
 import com.oceanbase.odc.service.permission.database.model.QueryDatabasePermissionParams;
 import com.oceanbase.odc.service.permission.database.model.UserDatabasePermission;
 
@@ -61,7 +61,7 @@ public class DatabasePermissionController {
             @RequestParam(name = "dataSourceName", required = false) String fuzzyDataSourceName,
             @RequestParam(name = "type", required = false) List<DatabasePermissionType> types,
             @RequestParam(name = "authorizationType", required = false) AuthorizationType authorizationType,
-            @RequestParam(name = "status", required = false) List<PermissionStatus> statuses,
+            @RequestParam(name = "status", required = false) List<ExpirationStatusFilter> statuses,
             @PageableDefault(size = Integer.MAX_VALUE, sort = {"id"}, direction = Direction.DESC) Pageable pageable) {
         QueryDatabasePermissionParams params = QueryDatabasePermissionParams.builder()
                 .userId(userId)
