@@ -13,23 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.plugin.task.api.partitionplan.datatype;
+package com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker;
 
-import com.oceanbase.tools.dbbrowser.model.datatype.GeneralDataType;
+import com.oceanbase.tools.dbbrowser.model.datatype.DataType;
 
+import lombok.Getter;
 import lombok.NonNull;
+import lombok.Setter;
 
 /**
- * {@link NumberDataType}
+ * {@link SqlExprCalculator}
  *
  * @author yh263208
- * @date 2024-01-09 15:46
+ * @date 2024-01-23 16:10
  * @since ODC_release_4.2.4
  */
-public class NumberDataType extends GeneralDataType {
+public interface SqlExprCalculator {
+    /**
+     * get the value of this expression
+     */
+    SqlExprResult calculate(@NonNull String expression);
 
-    public NumberDataType(@NonNull Integer precision, @NonNull Integer scale) {
-        super(precision, scale, "AUTO_PARTI_NUMBER");
+    @Getter
+    @Setter
+    class SqlExprResult {
+        private Object value;
+        private DataType dataType;
     }
 
 }

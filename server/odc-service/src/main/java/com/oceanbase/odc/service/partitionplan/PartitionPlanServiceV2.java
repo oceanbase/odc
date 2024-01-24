@@ -86,7 +86,7 @@ public class PartitionPlanServiceV2 {
             if (partitionType == DBTablePartitionType.UNKNOWN
                     || partitionType == DBTablePartitionType.NOT_PARTITIONED) {
                 throw new IllegalArgumentException("Table " + schema + "." + tableName + " is not partitioned");
-            } else if (autoPartitionExtensionPoint.supports(partition)) {
+            } else if (!autoPartitionExtensionPoint.supports(partition)) {
                 throw new IllegalArgumentException("Unsupported partition type, " + partitionType);
             }
         }
