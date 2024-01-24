@@ -15,43 +15,21 @@
  */
 package com.oceanbase.odc.plugin.task.api.partitionplan.datatype;
 
+import com.oceanbase.tools.dbbrowser.model.datatype.GeneralDataType;
+
 import lombok.NonNull;
 
 /**
- * {@link PartitionPlanNumberType}
+ * {@link NumberDataType}
  *
  * @author yh263208
  * @date 2024-01-09 15:46
  * @since ODC_release_4.2.4
  */
-public class PartitionPlanNumberType implements PartitionPlanDataType {
+public class NumberDataType extends GeneralDataType {
 
-    private final Integer scale;
-    private final Integer precision;
-
-    public PartitionPlanNumberType(@NonNull Integer precision, @NonNull Integer scale) {
-        this.scale = scale;
-        this.precision = precision;
-    }
-
-    @Override
-    public Integer getScale() {
-        return this.scale;
-    }
-
-    @Override
-    public Integer getWidth() {
-        return -1;
-    }
-
-    @Override
-    public String getName() {
-        return "NUMBER";
-    }
-
-    @Override
-    public Integer getPrecision() {
-        return this.precision;
+    public NumberDataType(@NonNull Integer precision, @NonNull Integer scale) {
+        super(precision, scale, "NUMBER");
     }
 
 }

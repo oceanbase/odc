@@ -17,8 +17,8 @@ package com.oceanbase.odc.service.partitionplan.model;
 
 import java.util.List;
 
-import com.oceanbase.odc.plugin.task.api.partitionplan.datatype.PartitionPlanDataType;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartition;
+import com.oceanbase.tools.dbbrowser.model.datatype.DataType;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -37,6 +37,6 @@ import lombok.Setter;
 @EqualsAndHashCode(callSuper = true)
 public class PartitionPlanDBTablePartition extends DBTablePartition {
 
-    private List<PartitionPlanDataType> partitionKeyTypes;
+    private List<DataType> partitionKeyTypes;
 
 }
