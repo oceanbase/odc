@@ -69,11 +69,8 @@ public class ProjectPermissionValidator {
 
     @SkipAuthorize("internal usage only")
     public boolean hasProjectRole(@NonNull Collection<Long> projectIds, @NonNull List<ResourceRoleName> roleNames) {
-        if (projectIds.isEmpty()) {
+        if (projectIds.isEmpty() || roleNames.isEmpty()) {
             return false;
-        }
-        if (roleNames.isEmpty()) {
-            return true;
         }
         List<Permission> permissions = projectIds.stream().filter(Objects::nonNull)
                 .map(projectId -> new ResourceRoleBasedPermission(
