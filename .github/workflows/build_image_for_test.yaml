@@ -1,5 +1,5 @@
 ###
-# This workflow is used for testing new task framework
+# This workflow is used for testing, and will be deleted after the new task framework is merged into master.
 ###
 
 name: Build Docker Image For Test
@@ -48,32 +48,6 @@ jobs:
           java-version: "8"
           distribution: "temurin"
           cache: maven
-      - name: Setup node 16
-        uses: actions/setup-node@v3
-        with:
-          node-version: "16"
-      - name: Build front static resources
-        run: |
-          echo "Current directory: "`pwd`
-          echo "Start build front static resources"
-          pushd client
-          echo "Run npm install pnpm -g"
-          npm install pnpm -g
-          echo "Run pnpm install"
-          pnpm install
-          echo "Run npm run build:odc"
-          npm run build:odc
-          popd
-          echo "Build front static resources success"
-          echo "Start copy resources files"
-          static_resources_path="server/odc-server/src/main/resources/static"
-          if [ ! -d "${static_resources_path}" ]; then
-            echo "mkdir -p ${static_resources_path}"
-            mkdir -p "${static_resources_path}"
-          fi
-          rm --force --recursive --verbose ${static_resources_path}/*
-          cp --force --recursive --verbose client/dist/renderer/* ${static_resources_path}
-          echo "Copy resources files success"
       - name: Set release version
         id: set_release_version
         run: |
@@ -129,8 +103,3 @@ jobs:
           docker load -i distribution/docker/resources/odc-${odc_docker_image_tag}.tar.gz
           docker tag oceanbase/odc:${odc_docker_image_tag} ${{ secrets.DOCKER_USERNAME }}/odc:${odc_docker_image_tag}
           docker push ${{ secrets.DOCKER_USERNAME }}/odc:${odc_docker_image_tag}
-      - name: Upload docker image (x86_64)
-        uses: actions/upload-artifact@v3
-        with:
-          name: odc-${{ env.odc_docker_image_tag }}.tar.gz
-          path: distribution/docker/resources/odc-*.tar.gz
