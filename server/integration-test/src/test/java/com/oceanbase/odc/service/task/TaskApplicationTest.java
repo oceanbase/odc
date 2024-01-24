@@ -46,6 +46,7 @@ import com.oceanbase.odc.service.task.schedule.DefaultJobContextBuilder;
 import com.oceanbase.odc.service.task.schedule.DefaultJobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
+import com.oceanbase.odc.service.task.util.JobEncryptUtils;
 import com.oceanbase.odc.service.task.util.JobUtils;
 
 /**
@@ -61,11 +62,9 @@ public class TaskApplicationTest extends BaseJobTest {
         Long exceptedTaskId = System.currentTimeMillis();
         JobIdentity jobIdentity = JobIdentity.of(exceptedTaskId);
 
-        JobDefinition jd = buildJobDefinition();
-        JobContext jc = new DefaultJobContextBuilder().build(jobIdentity, jd);
-        System.setProperty(JobEnvKeyConstants.ODC_JOB_CONTEXT, JobUtils.toJson(jc));
+        setJobContextInSystemProperty(jobIdentity);
         startTaskApplication();
-        assertRunningResult(jc);
+        assertRunningResult(jobIdentity);
     }
 
     @Test
@@ -73,18 +72,24 @@ public class TaskApplicationTest extends BaseJobTest {
         Long exceptedTaskId = System.currentTimeMillis();
         JobIdentity jobIdentity = JobIdentity.of(exceptedTaskId);
 
-        JobDefinition jd = buildJobDefinition();
-        JobContext jc = new DefaultJobContextBuilder().build(jobIdentity, jd);
-        System.setProperty(JobEnvKeyConstants.ODC_JOB_CONTEXT, JobUtils.toJson(jc));
+        setJobContextInSystemProperty(jobIdentity);
         startTaskApplication();
-        assertCancelResult(jc);
+        assertCancelResult(jobIdentity);
     }
 
-    private void assertRunningResult(JobContext jc) {
+    private void setJobContextInSystemProperty(JobIdentity jobIdentity) {
+        JobDefinition jd = buildJobDefinition();
+        JobContext jc = new DefaultJobContextBuilder().build(jobIdentity, jd);
+        System.setProperty(JobEnvKeyConstants.ODC_JOB_CONTEXT,
+                JobEncryptUtils.encrypt(System.getProperty(JobEnvKeyConstants.ENCRYPT_KEY),
+                        System.getProperty(JobEnvKeyConstants.ENCRYPT_SALT), JobUtils.toJson(jc)));
+    }
+
+    private void assertRunningResult(JobIdentity ji) {
 
         try {
             Thread.sleep(60 * 1000L);
-            Task<?> task = ThreadPoolTaskExecutor.getInstance().getTask(jc.getJobIdentity());
+            Task<?> task = ThreadPoolTaskExecutor.getInstance().getTask(ji);
             Assert.assertSame(JobStatus.DONE, task.getStatus());
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
@@ -92,11 +97,11 @@ public class TaskApplicationTest extends BaseJobTest {
 
     }
 
-    private void assertCancelResult(JobContext jc) {
+    private void assertCancelResult(JobIdentity ji) {
 
         try {
-            Thread.sleep(5 * 1000L);
-            boolean result = ThreadPoolTaskExecutor.getInstance().cancel(jc.getJobIdentity());
+            Thread.sleep(10 * 1000L);
+            boolean result = ThreadPoolTaskExecutor.getInstance().cancel(ji);
             Assert.assertTrue(result);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);

@@ -83,16 +83,17 @@ public class TaskApplication {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             log.info("Task executor exits, systemInfo={}", SystemUtils.getSystemMemoryInfo());
         }));
+        context = JobContextProviderFactory.create().provide();
+        trace(context.getJobIdentity().getId());
+        setLog4JConfigXml();
+        log.info("Log task id is {}.", context.getJobIdentity().getId());
+
         System.setProperty(JobEnvKeyConstants.ODC_LOG_DIRECTORY, LogUtils.getBaseLogPath());
         log.info("Log directory is {}.", LogUtils.getBaseLogPath());
-        setLog4JConfigXml();
 
         String runMode = SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_TASK_RUN_MODE);
         log.info("ODC TASK RUN MODE is {}.", runMode);
         Verify.notBlank(runMode, JobEnvKeyConstants.ODC_TASK_RUN_MODE);
-
-        context = JobContextProviderFactory.create().provide();
-        trace(context.getJobIdentity().getId());
 
         taskExecutor = ThreadPoolTaskExecutor.getInstance();
         log.info("Task executor init success: {}", taskExecutor.getClass().getSimpleName());

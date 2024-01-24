@@ -29,7 +29,6 @@ import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfigur
 import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
 import com.oceanbase.odc.service.task.enums.TaskRunModeEnum;
-import com.oceanbase.odc.service.task.exception.TaskRuntimeException;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 
 import lombok.extern.slf4j.Slf4j;
@@ -57,13 +56,6 @@ public class JobUtils {
         return new Gson().toJson(obj);
     }
 
-    public static boolean isK8sRunMode(String runMode) {
-        return Objects.equals(runMode, TaskRunModeEnum.K8S.name());
-    }
-
-    public static boolean isProcessRunMode(String runMode) {
-        return Objects.equals(runMode, TaskRunModeEnum.PROCESS.name());
-    }
 
     public static int getOdcServerPort() {
         String port = SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_SERVER_PORT);
@@ -83,15 +75,30 @@ public class JobUtils {
     }
 
     public static String getExecutorPoint() {
-        if (!JobUtils.getExecutorPort().isPresent()) {
-            throw new TaskRuntimeException("Executor point is not exists");
-        }
         return "http://" + SystemUtils.getLocalIpAddress() + ":" + JobUtils.getExecutorPort().get();
     }
 
     public static String getExecutorDataPath() {
         String userDir = SystemUtils.getEnvOrProperty("user.dir");
         return userDir != null ? userDir : "./data";
+    }
+
+    public static boolean isK8sRunMode(TaskRunModeEnum runMode) {
+        return runMode == TaskRunModeEnum.K8S;
+    }
+
+    public static boolean isProcessRunMode(TaskRunModeEnum runMode) {
+        return runMode == TaskRunModeEnum.PROCESS;
+    }
+
+
+    public static boolean isK8sRunModeOfEnv() {
+        return TaskRunModeEnum.K8S.name().equals(SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_TASK_RUN_MODE));
+    }
+
+    public static boolean isProcessRunModeOfEnv() {
+        return TaskRunModeEnum.PROCESS.name()
+                .equals(SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_TASK_RUN_MODE));
     }
 
     public static ConnectionConfig getMetaDBConnectionConfig() {

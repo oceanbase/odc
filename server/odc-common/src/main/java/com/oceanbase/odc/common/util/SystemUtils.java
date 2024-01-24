@@ -154,7 +154,7 @@ public abstract class SystemUtils {
             } else if (isOnWindows()) {
                 Field f = process.getClass().getDeclaredField("handle");
                 f.setAccessible(true);
-                pid = Kernel32.INSTANCE.GetProcessId((Long) f.get(process));
+                pid = Kernel32.INSTANCE.getProcessId((Long) f.get(process));
             } else {
                 throw new UnsupportedOperationException("Unsupported process class: " + process.getClass().getName());
             }

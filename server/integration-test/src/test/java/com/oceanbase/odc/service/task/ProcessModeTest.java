@@ -28,6 +28,7 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.oceanbase.odc.TestConnectionUtil;
@@ -61,6 +62,7 @@ import lombok.extern.slf4j.Slf4j;
  * @date 2024-01-22
  * @since 4.2.4
  */
+@Ignore("manual test this case for process mode")
 @Slf4j
 public class ProcessModeTest extends BaseJobTest {
 

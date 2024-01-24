@@ -31,6 +31,7 @@ import org.hibernate.annotations.Generated;
 import org.hibernate.annotations.GenerationTime;
 
 import com.oceanbase.odc.service.task.enums.JobStatus;
+import com.oceanbase.odc.service.task.enums.TaskRunModeEnum;
 
 import lombok.Data;
 
@@ -76,8 +77,9 @@ public class JobEntity implements Serializable {
     @Column(name = "executor_identifier")
     private String executorIdentifier;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "run_mode")
-    private String runMode;
+    private TaskRunModeEnum runMode;
 
     @Column(name = "result_json")
     private String resultJson;

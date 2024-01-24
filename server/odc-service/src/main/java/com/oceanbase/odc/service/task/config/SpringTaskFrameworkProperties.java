@@ -53,12 +53,12 @@ public class SpringTaskFrameworkProperties implements TaskFrameworkProperties {
     // single fetch job rows for schedule
     private int singleFetchPreparingJobRows = 10;
 
-    private int singleFetchCancelingJobRows = 30;
+    private int singleFetchCancelingJobRows = 100;
 
-    private int singleFetchDestroyExecutorJobRows = 30;
+    private int singleFetchDestroyExecutorJobRows = 100;
 
     // single fetch job rows to check report timeout or not
-    private int singleFetchCheckHeartTimeoutJobRows = 100;
+    private int singleFetchCheckHeartTimeoutJobRows = 1000;
 
     // max retry times after heart timeout
     private int maxHeartTimeoutRetryTimes = 3;

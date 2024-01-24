@@ -28,9 +28,9 @@ import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.config.JobConfigurationValidator;
 import com.oceanbase.odc.service.task.config.K8sProperties;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
+import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.enums.TaskRunModeEnum;
 import com.oceanbase.odc.service.task.exception.JobException;
-import com.oceanbase.odc.service.task.executor.logger.LogUtils;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 import com.oceanbase.odc.service.task.schedule.provider.JobImageNameProvider;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
@@ -84,7 +84,7 @@ public class ImmediateJobDispatcher implements JobDispatcher {
         JobConfigurationValidator.validComponent();
         TaskFrameworkService taskFrameworkService =
                 JobConfigurationHolder.getJobConfiguration().getTaskFrameworkService();
-        return TaskRunModeEnum.valueOf(taskFrameworkService.find(ji.getId()).getRunMode());
+        return taskFrameworkService.find(ji.getId()).getRunMode();
     }
 
     private PodConfig createDefaultPodConfig(TaskFrameworkProperties taskFrameworkProperties) {
@@ -102,7 +102,7 @@ public class ImmediateJobDispatcher implements JobDispatcher {
         podParam.setLimitCpu(k8s.getLimitCpu());
         podParam.setLimitMem(k8s.getLimitMem());
         podParam.setEnableMount(k8s.getEnableMount());
-        podParam.setMountPath(k8s.getMountPath() == null ? LogUtils.getBaseLogPath() : k8s.getMountPath());
+        podParam.setMountPath(k8s.getMountPath() == null ? JobConstants.TASK_EXECUTOR_DEFAULT_MOUNT_PATH : k8s.getMountPath());
         podParam.setMountDiskSize(k8s.getMountDiskSize());
         return podConfig;
     }

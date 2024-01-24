@@ -125,8 +125,8 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     @Override
     public Page<JobEntity> findCancelingJob(int page, int size) {
         Specification<JobEntity> condition = Specification.where(getRecentDaySpec(RECENT_DAY))
-                .and(SpecificationUtil.columnEqual(JobEntityColumn.STATUS, JobStatus.CANCELING));
-        condition.and(getK8sExecutor().or(getProcessExecutor()));
+                .and(SpecificationUtil.columnEqual(JobEntityColumn.STATUS, JobStatus.CANCELING))
+                .and(getK8sExecutor().or(getProcessExecutor()));
         return page(condition, page, size);
     }
 
@@ -134,9 +134,18 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     public Page<JobEntity> findTerminalJob(int page, int size) {
         Specification<JobEntity> condition = Specification.where(getRecentDaySpec(RECENT_DAY))
                 .and(SpecificationUtil.columnIn(JobEntityColumn.STATUS,
-                        Lists.newArrayList(JobStatus.CANCELED, JobStatus.DONE, JobStatus.FAILED)));
-        condition.and(SpecificationUtil.columnIsNotNull(JobEntityColumn.EXECUTOR_DESTROYED_TIME));
-        condition.and(getK8sExecutor().or(getProcessExecutor()));
+                        Lists.newArrayList(JobStatus.CANCELED, JobStatus.DONE, JobStatus.FAILED)))
+                .and(SpecificationUtil.columnIsNull(JobEntityColumn.EXECUTOR_DESTROYED_TIME))
+                .and(getK8sExecutor().or(getProcessExecutor()));
+        return page(condition, page, size);
+    }
+
+    @Override
+    public Page<JobEntity> findHeartTimeTimeoutJobs(int timeoutSeconds, int page, int size) {
+        Specification<JobEntity> condition = Specification.where(getRecentDaySpec(RECENT_DAY))
+            .and(getTimeoutOnColumnSpec(JobEntityColumn.LAST_HEART_TIME, timeoutSeconds))
+            .and(SpecificationUtil.columnEqual(JobEntityColumn.STATUS, JobStatus.RUNNING))
+            .and(getK8sExecutor().or(getProcessExecutor()));
         return page(condition, page, size);
     }
 
@@ -155,17 +164,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     private Specification<JobEntity> getLocalExecutor() {
         Specification<JobEntity> localJobSpec = SpecificationUtil.columnLike(JobEntityColumn.EXECUTOR_IDENTIFIER,
                 SystemUtils.getLocalIpAddress());
-
         return localJobSpec.and(SpecificationUtil.columnIsNotNull(JobEntityColumn.EXECUTOR_IDENTIFIER));
-    }
-
-    @Override
-    public Page<JobEntity> findHeartTimeTimeoutJobs(int timeoutSeconds, int page, int size) {
-        Specification<JobEntity> condition = Specification.where(getRecentDaySpec(RECENT_DAY))
-                .and(getTimeoutOnColumnSpec(JobEntityColumn.LAST_HEART_TIME, timeoutSeconds))
-                .and(SpecificationUtil.columnEqual(JobEntityColumn.STATUS, JobStatus.RUNNING));
-        condition.and(getK8sExecutor().or(getProcessExecutor()));
-        return page(condition, page, size);
     }
 
     private Page<JobEntity> page(Specification<JobEntity> specification, int page, int size) {
@@ -207,7 +206,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         jse.setJobClass(jd.getJobClass().getCanonicalName());
         jse.setJobType(jd.getJobType());
         jse.setStatus(JobStatus.PREPARING);
-        jse.setRunMode(taskFrameworkProperties.getRunMode().name());
+        jse.setRunMode(taskFrameworkProperties.getRunMode());
 
         jse.setCreatorId(TraceContextHolder.getUserId());
         jse.setOrganizationId(TraceContextHolder.getOrganizationId());

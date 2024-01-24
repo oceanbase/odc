@@ -120,7 +120,7 @@ public class EmbedServer {
                         future = bootstrap.bind(JobUtils.getExecutorPort().get()).sync();
                         port = JobUtils.getExecutorPort().get();
                     } else {
-                        future = bootstrap.bind().sync();
+                        future = bootstrap.bind(0).sync();
                         InetSocketAddress localAddress = (InetSocketAddress) future.channel().localAddress();
                         // save port to system properties
                         JobUtils.setExecutorPort(localAddress.getPort());
