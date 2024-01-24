@@ -36,11 +36,12 @@ public interface PartitionNameGenerator extends AutoPartitionKeyInvoker<String> 
     String TARGET_PARTITION_DEF_KEY = "targetPartition";
 
     String generate(@NonNull Connection connection, @NonNull DBTable dbTable,
-            @NonNull DBTablePartitionDefinition target, @NonNull Map<String, Object> parameters);
+            @NonNull DBTablePartitionDefinition target,
+            @NonNull Map<String, Object> parameters) throws Exception;
 
     @Override
     default String invoke(@NonNull Connection connection, @NonNull DBTable dbTable,
-            @NonNull Map<String, Object> parameters) {
+            @NonNull Map<String, Object> parameters) throws Exception {
         Object value = parameters.get(TARGET_PARTITION_DEF_KEY);
         if (!(value instanceof DBTablePartitionDefinition)) {
             throw new IllegalArgumentException("Missing target partition candidate");

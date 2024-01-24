@@ -39,7 +39,7 @@ public interface KeepMostRecentPartitionGenerator extends DropPartitionGenerator
     String KEEP_RECENT_COUNT_KEY = "keepRecentCount";
 
     List<DBTablePartitionDefinition> generate(@NonNull Connection connection,
-            @NonNull DBTable dbTable, @NonNull Integer keepCount);
+            @NonNull DBTable dbTable, @NonNull Integer keepCount) throws Exception;
 
     @Override
     default String getName() {
@@ -48,7 +48,7 @@ public interface KeepMostRecentPartitionGenerator extends DropPartitionGenerator
 
     @Override
     default List<DBTablePartitionDefinition> invoke(@NonNull Connection connection,
-            @NonNull DBTable dbTable, @NonNull Map<String, Object> parameters) {
+            @NonNull DBTable dbTable, @NonNull Map<String, Object> parameters) throws Exception {
         Integer keepCount = ParameterUtil.nullSafeExtract(parameters, KEEP_RECENT_COUNT_KEY, Integer.class);
         Validate.isTrue(keepCount > 0, "Keep count can not be smaller than 1");
         return generate(connection, dbTable, keepCount);

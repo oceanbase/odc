@@ -44,6 +44,7 @@ public interface AutoPartitionKeyInvoker<T> {
      * @param dbTable target table
      * @param parameters parameters for this invoker
      */
-    T invoke(@NonNull Connection connection, @NonNull DBTable dbTable, @NonNull Map<String, Object> parameters);
+    T invoke(@NonNull Connection connection, @NonNull DBTable dbTable,
+            @NonNull Map<String, Object> parameters) throws Exception;
 
 }

@@ -65,7 +65,8 @@ public class PartitionPlanServiceV2 {
      * generate the ddl of a partition plan
      */
     public Map<PartitionPlanStrategy, List<String>> generatePartitionDdl(@NonNull Connection connection,
-            @NonNull DialectType dialectType, @NonNull String schema, @NonNull PartitionPlanTableConfig tableConfig) {
+            @NonNull DialectType dialectType, @NonNull String schema,
+            @NonNull PartitionPlanTableConfig tableConfig) throws Exception {
         AutoPartitionExtensionPoint autoPartitionExtensionPoint = TaskPluginUtil
                 .getAutoPartitionExtensionPoint(dialectType);
         TableExtensionPoint tableExtensionPoint = SchemaPluginUtil.getTableExtension(dialectType);
@@ -137,7 +138,7 @@ public class PartitionPlanServiceV2 {
 
     private Map<PartitionPlanStrategy, DBTablePartition> doPartitionPlan(Connection connection, DBTable dbTable,
             PartitionPlanTableConfig tableConfig, AutoPartitionExtensionPoint extensionPoint,
-            Map<PartitionPlanStrategy, List<PartitionPlanKeyConfig>> strategy2PartitionKeyConfigs) {
+            Map<PartitionPlanStrategy, List<PartitionPlanKeyConfig>> strategy2PartitionKeyConfigs) throws Exception {
         Map<Integer, List<String>> lineNum2CreateExprs = new HashMap<>();
         List<DBTablePartitionDefinition> droppedPartitions = new ArrayList<>();
         Map<PartitionPlanStrategy, List<DBTablePartitionDefinition>> strategyListMap = new HashMap<>();
@@ -182,7 +183,11 @@ public class PartitionPlanServiceV2 {
             }
             Map<String, Object> parameters = tableConfig.getPartitionNameInvokerParameters();
             parameters.putIfAbsent(PartitionNameGenerator.TARGET_PARTITION_DEF_KEY, definition);
-            definition.setName(invoker.invoke(connection, dbTable, parameters));
+            try {
+                definition.setName(invoker.invoke(connection, dbTable, parameters));
+            } catch (Exception e) {
+                throw new IllegalStateException(e);
+            }
             return definition;
         }).collect(Collectors.toList()));
         strategyListMap.put(PartitionPlanStrategy.DROP, droppedPartitions);
