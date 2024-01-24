@@ -21,6 +21,10 @@ alter table `flow_instance_node_task` add index `flow_instance_node_task_flow_in
 
 alter table `flow_instance` add index `flow_instance_parent_oid_ct_id`(`organization_id`,`create_time`,`id`);
 
+alter table `flow_instance_node` add index `flow_instance_node_intsance_id`(`instance_id`);
+
+alter table `flow_instance` add index `flow_instance_process_definition_id`(`process_definition_id`);
+
 CREATE or replace  VIEW `list_flow_instance_view` AS
 select
     `flow_instance`.`id` AS `id`,
