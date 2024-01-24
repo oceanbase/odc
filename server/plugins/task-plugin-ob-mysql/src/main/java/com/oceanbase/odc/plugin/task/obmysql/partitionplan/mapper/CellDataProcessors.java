@@ -16,6 +16,8 @@
 package com.oceanbase.odc.plugin.task.obmysql.partitionplan.mapper;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.oceanbase.odc.core.sql.execute.mapper.CellData;
 import com.oceanbase.tools.dbbrowser.model.datatype.DataType;
@@ -31,8 +33,14 @@ import lombok.NonNull;
  */
 public class CellDataProcessors {
 
+    private final static List<CellDataProcessor> PROCESSORS = new ArrayList<>();
+
+    static {
+        PROCESSORS.add(new OBMySQLTimeDataTypeProcessor());
+    }
+
     public static CellDataProcessor getByDataType(@NonNull DataType dataType) {
-        return new EmptyCellDataProcessor();
+        return PROCESSORS.stream().filter(p -> p.supports(dataType)).findFirst().orElse(new EmptyCellDataProcessor());
     }
 
     static public class EmptyCellDataProcessor implements CellDataProcessor {
@@ -43,7 +51,7 @@ public class CellDataProcessors {
         }
 
         @Override
-        public String convertToSqlLiteral(Object target) {
+        public String convertToSqlLiteral(Object target, @NonNull DataType dataType) {
             return target.toString();
         }
 

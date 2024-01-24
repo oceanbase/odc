@@ -33,7 +33,7 @@ public interface CellDataProcessor {
 
     Object mapCell(@NonNull CellData cellData) throws SQLException;
 
-    String convertToSqlLiteral(Object target);
+    String convertToSqlLiteral(Object target, @NonNull DataType dataType);
 
     boolean supports(@NonNull DataType dataType);
 

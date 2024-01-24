@@ -38,7 +38,7 @@ public class TimeIncreaseGeneratorConfig {
     /**
      * ref {@link TimeDataType#getPrecision()}
      */
-    private int intervalUnit;
+    private int intervalPrecision;
     private boolean fromCurrentTime;
 
 }
