@@ -111,7 +111,6 @@ public class DatabasePermissionService {
     @SkipAuthorize("permission check inside")
     public Page<UserDatabasePermission> list(@NotNull Long projectId, @NotNull QueryDatabasePermissionParams params,
             Pageable pageable) {
-        boolean hasPermission;
         if (params.getUserId() == null || params.getUserId() != authenticationFacade.currentUserId()) {
             projectPermissionValidator.checkProjectRole(projectId,
                     Arrays.asList(ResourceRoleName.OWNER, ResourceRoleName.DBA));
