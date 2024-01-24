@@ -43,10 +43,10 @@ public class EventMapper {
         event.setStatus(entity.getStatus());
         event.setTriggerTime(entity.getTriggerTime());
         entity.setProjectId(entity.getProjectId());
+        EventLabels labels = new EventLabels();
+        event.setLabels(labels);
         if (CollectionUtils.isNotEmpty(entity.getLabels())) {
-            EventLabels labels = new EventLabels();
             entity.getLabels().forEach(label -> labels.put(label.getKey(), label.getValue()));
-            event.setLabels(labels);
         }
         return event;
     }

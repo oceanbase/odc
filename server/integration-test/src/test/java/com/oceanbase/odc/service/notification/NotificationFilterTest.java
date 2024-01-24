@@ -24,7 +24,6 @@ import java.util.Map;
 import org.junit.Assert;
 import org.junit.Test;
 
-import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.metadb.notification.NotificationPolicyEntity;
 import com.oceanbase.odc.service.notification.helper.NotificationPolicyFilter;
 import com.oceanbase.odc.service.notification.model.EventLabels;
@@ -54,7 +53,7 @@ public class NotificationFilterTest {
         Map<String, String> conditions = new HashMap<>();
         conditions.put("action", "failed");
         NotificationPolicyEntity policy = new NotificationPolicyEntity();
-        policy.setMatchExpression(JsonUtils.toJson(conditions));
+        policy.setMatchExpression("action.equals('failed')");
         return Collections.singletonList(policy);
     }
 

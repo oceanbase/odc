@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.collections4.MapUtils;
 import org.springframework.context.expression.MapAccessor;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.Expression;
@@ -36,7 +35,7 @@ public class NotificationPolicyFilter {
     private static final SpelExpressionParser PARSER = new SpelExpressionParser();
 
     public static List<NotificationPolicy> filter(EventLabels labels, List<NotificationPolicyEntity> policies) {
-        if (CollectionUtils.isEmpty(policies) || MapUtils.isEmpty(labels)) {
+        if (CollectionUtils.isEmpty(policies)) {
             return Collections.emptyList();
         }
         StandardEvaluationContext context = new StandardEvaluationContext(labels);

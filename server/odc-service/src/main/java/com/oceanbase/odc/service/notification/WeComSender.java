@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.odc.service.notification;
 
 import java.util.HashMap;
@@ -43,7 +42,7 @@ public class WeComSender extends HttpSender {
         Map<String, Object> params = new HashMap<>();
         // WeChat does not support @ user when using markdown
         params.put("msgtype", "text");
-        Map<String , Object> text = new HashMap<>();
+        Map<String, Object> text = new HashMap<>();
         text.put("content", message.getContent());
         WeComChannelConfig channelConfig = (WeComChannelConfig) message.getChannel().getChannelConfig();
         text.put("mentioned_mobile_list", channelConfig.getAtMobiles());

@@ -76,7 +76,7 @@ public class EventFilterTest extends ServiceTestEnv {
         }
         List<EventEntity> entities = eventRepository.saveAll(events);
         doReturn(Collections.singletonList(getNotificationPolicy())).when(policyRepository)
-                .findByOrganizationIds(any());
+                .findEnabledByProjectIds(any());
         List<Event> filtered =
                 filter.filter(entities.stream().map(entity -> mapper.fromEntity(entity)).collect(Collectors.toList()));
         Assert.assertEquals(eventCount, filtered.size());
@@ -94,6 +94,7 @@ public class EventFilterTest extends ServiceTestEnv {
 
     private NotificationPolicyEntity getNotificationPolicy() {
         NotificationPolicyEntity policy = new NotificationPolicyEntity();
+        policy.setProjectId(1L);
         policy.setMatchExpression("true");
         policy.setOrganizationId(ORGANIZATION_ID);
         return policy;

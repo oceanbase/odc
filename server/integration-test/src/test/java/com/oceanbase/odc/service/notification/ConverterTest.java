@@ -42,6 +42,7 @@ import com.oceanbase.odc.metadb.notification.NotificationPolicyChannelRelationRe
 import com.oceanbase.odc.metadb.notification.NotificationPolicyEntity;
 import com.oceanbase.odc.metadb.notification.NotificationPolicyRepository;
 import com.oceanbase.odc.service.notification.helper.EventMapper;
+import com.oceanbase.odc.service.notification.helper.PolicyMapper;
 import com.oceanbase.odc.service.notification.model.ChannelType;
 import com.oceanbase.odc.service.notification.model.Event;
 import com.oceanbase.odc.service.notification.model.EventStatus;
@@ -90,15 +91,17 @@ public class ConverterTest extends ServiceTestEnv {
         }
         eventRepository.saveAll(events);
 
-        when(policyRepository.findByOrganizationIds(any()))
-                .thenReturn(Collections.singletonList(getNotificationPolicy()));
         when(policyChannelRepository.findByNotificationPolicyIds(any()))
                 .thenReturn(Collections.singletonList(getNotificationChannelRelationEntity()));
         when(channelRepository.findByIdIn(any()))
                 .thenReturn(Arrays.asList(getChannelEntity()));
 
         List<Message> messages =
-                converter.convert(events.stream().map(e -> mapper.fromEntity(e)).collect(Collectors.toList()));
+                converter.convert(events.stream().map(e -> {
+                    Event event = mapper.fromEntity(e);
+                    event.setPolicies(Collections.singletonList(PolicyMapper.fromEntity(getNotificationPolicy())));
+                    return event;
+                }).collect(Collectors.toList()));
 
         Assert.assertEquals(eventCount, messages.size());
     }

@@ -30,7 +30,7 @@ public interface MessageSendingHistoryRepository extends JpaRepository<MessageSe
     @Query(value = "SELECT count(*) FROM notification_message m "
             + "RIGHT JOIN notification_message_sending_history h ON m.id = h.message_id "
             + "WHERE m.channel_id = :channelId "
-            + "and h.create_time > UTC_TIMESTAMP () - INTERVAL :interval MINUTE "
+            + "and h.create_time > now() - INTERVAL :interval MINUTE "
             + "and m.status = 'SENT_SUCCESSFULLY'",
             nativeQuery = true)
     int countMessageSendingTimesByChannelId(@Param("channelId") Long channelId,

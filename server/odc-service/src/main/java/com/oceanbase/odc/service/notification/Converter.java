@@ -71,13 +71,10 @@ public class Converter {
             return messages;
         }
 
-        List<NotificationPolicy> policies = events.stream()
-                .flatMap(event -> event.getPolicies().stream())
-                .collect(Collectors.toList());
-
         List<NotificationChannelRelationEntity> policyChannelEntities =
-                policyChannelRepository.findByNotificationPolicyIds(
-                        policies.stream().map(NotificationPolicy::getId).collect(Collectors.toSet()));
+                policyChannelRepository.findByNotificationPolicyIds(events.stream()
+                        .flatMap(event -> event.getPolicies().stream().map(NotificationPolicy::getId))
+                        .collect(Collectors.toSet()));
         if (CollectionUtils.isEmpty(policyChannelEntities)) {
             return messages;
         }

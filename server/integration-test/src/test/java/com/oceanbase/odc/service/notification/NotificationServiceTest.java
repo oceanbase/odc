@@ -86,7 +86,7 @@ public class NotificationServiceTest extends AuthorityTestEnv {
         Channel saved = notificationService.createChannel(PROJECT_ID, getChannel());
         Assert.assertNotNull(saved);
         List<ChannelPropertyEntity> properties = channelPropertyRepository.findAllByChannelId(saved.getId());
-        Assert.assertEquals(1, properties.size());
+        Assert.assertEquals(2, properties.size());
     }
 
     @Test

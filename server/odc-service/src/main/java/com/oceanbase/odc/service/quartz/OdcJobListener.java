@@ -15,12 +15,10 @@
  */
 package com.oceanbase.odc.service.quartz;
 
-import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.quartz.JobKey;
@@ -31,7 +29,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.common.json.JsonUtils;
-import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
@@ -46,10 +43,6 @@ import com.oceanbase.odc.service.iam.model.User;
 import com.oceanbase.odc.service.iam.util.SecurityContextUtils;
 import com.oceanbase.odc.service.notification.Broker;
 import com.oceanbase.odc.service.notification.NotificationProperties;
-import com.oceanbase.odc.service.notification.constant.EventLabelKeys;
-import com.oceanbase.odc.service.notification.model.Event;
-import com.oceanbase.odc.service.notification.model.EventLabels;
-import com.oceanbase.odc.service.notification.model.EventStatus;
 import com.oceanbase.odc.service.quartz.util.ScheduleTaskUtils;
 import com.oceanbase.odc.service.schedule.model.JobType;
 import com.oceanbase.odc.service.schedule.model.QuartzKeyGenerator;
@@ -142,26 +135,6 @@ public class OdcJobListener implements JobListener {
 
     @Override
     public void jobWasExecuted(JobExecutionContext context, JobExecutionException jobException) {
-        if (notificationProperties.isEnabled() && jobException != null) {
-            try {
-                JobDataMap dataMap = context.getMergedJobDataMap();
-                EventLabels labels = new EventLabels();
-                labels.put(EventLabelKeys.TASK_TYPE, context.getJobInstance().getClass().getName());
-                labels.put(EventLabelKeys.TASK_STATUS, "failed");
-                labels.put(EventLabelKeys.REGION, SystemUtils.getEnvOrProperty("OB_ARN_PARTITION"));
-                labels.put("taskInfo", JsonUtils.toJson(context.getMergedJobDataMap()));
-                labels.put("errorMessage", jobException.getMessage());
-                broker.enqueueEvent(Event.builder()
-                        .status(EventStatus.CREATED)
-                        .creatorId(dataMap.getLongFromString("creatorId"))
-                        .organizationId(dataMap.getLongFromString("organizationId"))
-                        .triggerTime(new Date(System.currentTimeMillis()))
-                        .labels(labels)
-                        .build());
-            } catch (Exception e) {
-                log.warn("Enqueue event failed, jobException:{}", jobException, e);
-            }
-        }
         List<? extends Trigger> jobTriggers;
         Optional<ScheduleEntity> scheduleEntityOptional =
                 scheduleRepository.findById(ScheduleTaskUtils.getScheduleId(context));
