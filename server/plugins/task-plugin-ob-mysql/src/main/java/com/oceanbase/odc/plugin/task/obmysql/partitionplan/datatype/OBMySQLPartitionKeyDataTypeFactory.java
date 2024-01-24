@@ -25,6 +25,7 @@ import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.plugin.task.api.partitionplan.datatype.TimeDataType;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.SqlExprCalculator;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
+import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.oceanbase.tools.dbbrowser.model.datatype.DataType;
 import com.oceanbase.tools.sqlparser.OBMySQLParser;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser;
@@ -34,24 +35,22 @@ import com.oceanbase.tools.sqlparser.statement.expression.FunctionCall;
 import lombok.NonNull;
 
 /**
- * {@link OBMySQLAutoPartitionKeyDataTypeFactory}
+ * {@link OBMySQLPartitionKeyDataTypeFactory}
  *
  * @author yh263208
  * @date 2024-01-23 17:01
  * @since ODC_release_4.2.4
  */
-public class OBMySQLAutoPartitionKeyDataTypeFactory extends BaseAutoPartitionKeyDataTypeFactory {
+public class OBMySQLPartitionKeyDataTypeFactory extends BasePartitionKeyDataTypeFactory {
 
-    private static final Map<String, Integer> TIME_FUNCTION_OR_TYPE_NAME_2_PREC = new HashMap<>();
+    private static final Map<String, Integer> FUNCTION_NAME_2_PREC = new HashMap<>();
 
     static {
-        TIME_FUNCTION_OR_TYPE_NAME_2_PREC.put("date", TimeDataType.DAY);
-        TIME_FUNCTION_OR_TYPE_NAME_2_PREC.put("datetime", TimeDataType.SECOND);
-        TIME_FUNCTION_OR_TYPE_NAME_2_PREC.put("timestamp", TimeDataType.SECOND);
-        TIME_FUNCTION_OR_TYPE_NAME_2_PREC.put("str_to_date", TimeDataType.DAY);
+        FUNCTION_NAME_2_PREC.put("from_days", TimeDataType.DAY);
+        FUNCTION_NAME_2_PREC.put("str_to_date", TimeDataType.DAY);
     }
 
-    public OBMySQLAutoPartitionKeyDataTypeFactory(@NonNull SqlExprCalculator calculator,
+    public OBMySQLPartitionKeyDataTypeFactory(@NonNull SqlExprCalculator calculator,
             @NonNull DBTable dbTable, @NonNull String partitionKey) {
         super(calculator, dbTable, partitionKey);
     }
@@ -62,13 +61,12 @@ public class OBMySQLAutoPartitionKeyDataTypeFactory extends BaseAutoPartitionKey
     }
 
     @Override
-    protected DataType afterConvert(DataType target) {
-        DataType dataType = recognizeTimeDataType(target.getDataTypeName());
-        return dataType == null ? target : dataType;
+    protected DataType recognizeColumnDataType(@NonNull DBTableColumn column) {
+        return new OBMySQLCommonDataTypeFactory(column.getTypeName()).generate();
     }
 
     @Override
-    protected DataType preRecognizeExprDataType(@NonNull String partitionKeyExpression) {
+    protected DataType recognizeExprDataType(@NonNull String partitionKeyExpression) {
         Statement statement;
         try {
             statement = new ExpressionParser().parse(new StringReader(partitionKeyExpression));
@@ -79,11 +77,7 @@ public class OBMySQLAutoPartitionKeyDataTypeFactory extends BaseAutoPartitionKey
             return null;
         }
         FunctionCall f = (FunctionCall) statement;
-        return recognizeTimeDataType(f.getFunctionName());
-    }
-
-    private DataType recognizeTimeDataType(@NonNull String funcNameOrTypeName) {
-        Integer prec = TIME_FUNCTION_OR_TYPE_NAME_2_PREC.get(funcNameOrTypeName.toLowerCase());
+        Integer prec = FUNCTION_NAME_2_PREC.get(f.getFunctionName().toLowerCase());
         return prec == null ? null : new TimeDataType(prec);
     }
 

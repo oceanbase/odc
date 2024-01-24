@@ -31,27 +31,26 @@ import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartitionDefinition;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartitionOption;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartitionType;
-import com.oceanbase.tools.dbbrowser.model.datatype.CommonDataTypeFactory;
 import com.oceanbase.tools.dbbrowser.model.datatype.DataType;
 import com.oceanbase.tools.dbbrowser.model.datatype.DataTypeFactory;
 
 import lombok.NonNull;
 
 /**
- * {@link BaseAutoPartitionKeyDataTypeFactory}
+ * {@link BasePartitionKeyDataTypeFactory}
  *
  * @author yh263208
  * @date 2024-01-23 15:21
  * @since ODC_release_4.2.4
  * @see DataTypeFactory
  */
-public abstract class BaseAutoPartitionKeyDataTypeFactory implements DataTypeFactory {
+public abstract class BasePartitionKeyDataTypeFactory implements DataTypeFactory {
 
     private final SqlExprCalculator calculator;
     private final DBTable dbTable;
     private final String partitionKey;
 
-    public BaseAutoPartitionKeyDataTypeFactory(@NonNull SqlExprCalculator calculator,
+    public BasePartitionKeyDataTypeFactory(@NonNull SqlExprCalculator calculator,
             @NonNull DBTable dbTable, @NonNull String partitionKey) {
         this.calculator = calculator;
         this.dbTable = dbTable;
@@ -83,13 +82,13 @@ public abstract class BaseAutoPartitionKeyDataTypeFactory implements DataTypeFac
              * other datasource?
              */
             Verify.singleton(definition.getMaxValues(), "Range partition table can only has one partition key");
-            DataType dataType = preRecognizeExprDataType(this.partitionKey);
+            DataType dataType = recognizeExprDataType(this.partitionKey);
             if (dataType != null) {
-                return afterConvert(dataType);
+                return dataType;
             }
             SqlExprResult result = this.calculator.calculate(definition.getMaxValues().get(0));
             Verify.notNull(result, "Sql expression's calculation result can not be null");
-            return afterConvert(result.getDataType());
+            return result.getDataType();
         } else if (CollectionUtils.isNotEmpty(option.getColumnNames())) {
             /**
              * range column partition, partition key is a column
@@ -105,14 +104,14 @@ public abstract class BaseAutoPartitionKeyDataTypeFactory implements DataTypeFac
             if (column == null) {
                 throw new IllegalStateException("Failed to find target column by name, " + pk);
             }
-            return afterConvert(new CommonDataTypeFactory(column.getTypeName()).generate());
+            return recognizeColumnDataType(column);
         }
         throw new IllegalStateException("Partition type is unknown, expression and columns are both null");
     }
 
     protected abstract String unquoteIdentifier(String identifier);
 
-    protected abstract DataType afterConvert(DataType target);
+    protected abstract DataType recognizeColumnDataType(@NonNull DBTableColumn column);
 
     /**
      * recognize the data type of partition key by parsing.
@@ -123,6 +122,6 @@ public abstract class BaseAutoPartitionKeyDataTypeFactory implements DataTypeFac
      * @param partitionKeyExpression target partition key
      * @return if null means that failed to get
      */
-    protected abstract DataType preRecognizeExprDataType(@NonNull String partitionKeyExpression);
+    protected abstract DataType recognizeExprDataType(@NonNull String partitionKeyExpression);
 
 }

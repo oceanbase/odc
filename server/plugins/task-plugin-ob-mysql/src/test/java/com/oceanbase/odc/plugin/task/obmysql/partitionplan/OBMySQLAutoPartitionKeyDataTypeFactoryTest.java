@@ -33,7 +33,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.oceanbase.odc.plugin.schema.obmysql.OBMySQLTableExtension;
 import com.oceanbase.odc.plugin.task.api.partitionplan.datatype.TimeDataType;
-import com.oceanbase.odc.plugin.task.obmysql.partitionplan.datatype.OBMySQLAutoPartitionKeyDataTypeFactory;
+import com.oceanbase.odc.plugin.task.obmysql.partitionplan.datatype.OBMySQLPartitionKeyDataTypeFactory;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.OBMySQLExprCalculator;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.SqlExprCalculator;
 import com.oceanbase.odc.test.database.TestDBConfiguration;
@@ -43,7 +43,7 @@ import com.oceanbase.tools.dbbrowser.model.datatype.DataType;
 import com.oceanbase.tools.dbbrowser.model.datatype.GeneralDataType;
 
 /**
- * Test cases for {@link OBMySQLAutoPartitionKeyDataTypeFactory}
+ * Test cases for {@link OBMySQLPartitionKeyDataTypeFactory}
  *
  * @author yh263208
  * @date 2024-01-23 17:47
@@ -78,8 +78,8 @@ public class OBMySQLAutoPartitionKeyDataTypeFactoryTest {
                     configuration.getDefaultDBName(), RANGE_COLUMNS_TABLE_NAME);
             SqlExprCalculator calculator = new OBMySQLExprCalculator(connection);
             List<DataType> actuals = new ArrayList<>();
-            actuals.add(new OBMySQLAutoPartitionKeyDataTypeFactory(calculator, dbTable, "`c2`").generate());
-            actuals.add(new OBMySQLAutoPartitionKeyDataTypeFactory(calculator, dbTable, "c3").generate());
+            actuals.add(new OBMySQLPartitionKeyDataTypeFactory(calculator, dbTable, "`c2`").generate());
+            actuals.add(new OBMySQLPartitionKeyDataTypeFactory(calculator, dbTable, "c3").generate());
             Assert.assertEquals(Arrays.asList(
                     new GeneralDataType(0, 0, "varchar"), new TimeDataType(TimeDataType.DAY)), actuals);
         }
@@ -93,8 +93,8 @@ public class OBMySQLAutoPartitionKeyDataTypeFactoryTest {
             DBTable dbTable = tableExtension.getDetail(connection,
                     configuration.getDefaultDBName(), RANGE_TABLE_NAME);
             SqlExprCalculator calculator = new OBMySQLExprCalculator(connection);
-            DataType actual = new OBMySQLAutoPartitionKeyDataTypeFactory(calculator, dbTable, "year(`c3`)").generate();
-            Assert.assertEquals(new GeneralDataType(4, 0, "BIGINT"), actual);
+            DataType actual = new OBMySQLPartitionKeyDataTypeFactory(calculator, dbTable, "year(`c3`)").generate();
+            Assert.assertEquals(new GeneralDataType(0, 0, "BIGINT"), actual);
         }
     }
 

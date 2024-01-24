@@ -21,7 +21,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.SingleConnectionDataSource;
 
 import com.oceanbase.odc.core.shared.Verify;
-import com.oceanbase.tools.dbbrowser.model.datatype.JdbcDataTypeFactory;
+import com.oceanbase.odc.plugin.task.obmysql.partitionplan.datatype.OBMySQLJdbcDataTypeFactory;
 import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
 
@@ -50,7 +50,7 @@ public class OBMySQLExprCalculator implements SqlExprCalculator {
         return new JdbcTemplate(new SingleConnectionDataSource(this.con, false)).queryForObject(sql, (rs, r) -> {
             SqlExprResult result = new SqlExprResult();
             result.setValue(rs.getObject(1));
-            result.setDataType(new JdbcDataTypeFactory(rs.getMetaData(), 0).generate());
+            result.setDataType(new OBMySQLJdbcDataTypeFactory(rs.getMetaData(), 0).generate());
             return result;
         });
     }

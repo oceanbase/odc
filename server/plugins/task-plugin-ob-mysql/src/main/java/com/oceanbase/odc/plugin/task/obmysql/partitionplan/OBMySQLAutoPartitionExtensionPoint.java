@@ -27,7 +27,7 @@ import com.oceanbase.odc.plugin.task.api.partitionplan.AutoPartitionExtensionPoi
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.create.PartitionExprGenerator;
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.drop.DropPartitionGenerator;
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.partitionname.PartitionNameGenerator;
-import com.oceanbase.odc.plugin.task.obmysql.partitionplan.datatype.OBMySQLAutoPartitionKeyDataTypeFactory;
+import com.oceanbase.odc.plugin.task.obmysql.partitionplan.datatype.OBMySQLPartitionKeyDataTypeFactory;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.OBMySQLExprCalculator;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.SqlExprCalculator;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
@@ -80,13 +80,13 @@ public class OBMySQLAutoPartitionExtensionPoint implements AutoPartitionExtensio
         if (CollectionUtils.isNotEmpty(option.getColumnNames())) {
             return option.getColumnNames().stream().map(col -> {
                 try {
-                    return new OBMySQLAutoPartitionKeyDataTypeFactory(calculator, table, col).generate();
+                    return new OBMySQLPartitionKeyDataTypeFactory(calculator, table, col).generate();
                 } catch (Exception e) {
                     throw new IllegalStateException(e);
                 }
             }).collect(Collectors.toList());
         } else if (StringUtils.isNotEmpty(option.getExpression())) {
-            return Collections.singletonList(new OBMySQLAutoPartitionKeyDataTypeFactory(
+            return Collections.singletonList(new OBMySQLPartitionKeyDataTypeFactory(
                     calculator, table, option.getExpression()).generate());
         }
         throw new IllegalStateException("Partition type is unknown, expression and columns are both null");

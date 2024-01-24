@@ -139,7 +139,7 @@ public class OBMySQLAutoPartitionExtensionPointTest {
                     configuration.getDefaultDBName(), RANGE_TABLE_NAME);
             AutoPartitionExtensionPoint extensionPoint = new OBMySQLAutoPartitionExtensionPoint();
             List<DataType> actuals = extensionPoint.getPartitionKeyDataTypes(connection, dbTable);
-            Assert.assertEquals(Collections.singletonList(new GeneralDataType(4, 0, "BIGINT")), actuals);
+            Assert.assertEquals(Collections.singletonList(new GeneralDataType(0, 0, "BIGINT")), actuals);
         }
     }
 
