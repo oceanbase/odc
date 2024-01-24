@@ -171,16 +171,16 @@ public class DatabasePermissionService {
                 : TimeUtils.getEndOfDay(req.getExpireTime());
         for (Long databaseId : req.getDatabaseIds()) {
             for (DatabasePermissionType permissionType : req.getTypes()) {
-                PermissionEntity permissionEntity = new PermissionEntity();
-                permissionEntity.setAction(permissionType.getAction());
-                permissionEntity.setResourceIdentifier(ResourceType.ODC_DATABASE.name() + ":" + databaseId);
-                permissionEntity.setType(PermissionType.PUBLIC_RESOURCE);
-                permissionEntity.setCreatorId(creatorId);
-                permissionEntity.setOrganizationId(organizationId);
-                permissionEntity.setBuiltIn(false);
-                permissionEntity.setExpireTime(expireTime);
-                permissionEntity.setAuthorizationType(AuthorizationType.USER_AUTHORIZATION);
-                permissionEntities.add(permissionEntity);
+                PermissionEntity entity = new PermissionEntity();
+                entity.setAction(permissionType.getAction());
+                entity.setResourceIdentifier(ResourceType.ODC_DATABASE.name() + ":" + databaseId);
+                entity.setType(PermissionType.PUBLIC_RESOURCE);
+                entity.setCreatorId(creatorId);
+                entity.setOrganizationId(organizationId);
+                entity.setBuiltIn(false);
+                entity.setExpireTime(expireTime);
+                entity.setAuthorizationType(AuthorizationType.USER_AUTHORIZATION);
+                permissionEntities.add(entity);
             }
         }
         List<PermissionEntity> saved = permissionRepository.batchCreate(permissionEntities);
