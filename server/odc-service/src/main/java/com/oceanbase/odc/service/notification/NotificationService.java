@@ -153,7 +153,7 @@ public class NotificationService {
                 () -> existsChannel(projectId, channel.getName()));
 
         if (StringUtils.isEmpty(channel.getChannelConfig().getTitleTemplate())) {
-            channel.getChannelConfig().setTitleTemplate("【ODC】${taskType}-${taskStatus}");
+            channel.getChannelConfig().setTitleTemplate("${taskType}-${taskStatus}");
         }
         ChannelEntity entity = channelMapper.toEntity(channel);
         entity.setCreatorId(authenticationFacade.currentUserId());

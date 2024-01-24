@@ -15,10 +15,15 @@
  */
 package com.oceanbase.odc.service.notification.model;
 
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+
 /**
  * @author liuyizhuo.lyz
  * @date 2024/1/4
  */
+@Data
+@EqualsAndHashCode(callSuper = true)
 public class WebhookChannelConfig extends BaseChannelConfig {
 
     private String webhook;

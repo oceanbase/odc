@@ -15,8 +15,17 @@
  */
 package com.oceanbase.odc.service.notification;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.util.stream.Collectors;
 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.stereotype.Component;
 
@@ -24,6 +33,7 @@ import com.dingtalk.api.DefaultDingTalkClient;
 import com.dingtalk.api.request.OapiRobotSendRequest;
 import com.dingtalk.api.request.OapiRobotSendRequest.Markdown;
 import com.dingtalk.api.response.OapiRobotSendResponse;
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.service.notification.model.ChannelType;
 import com.oceanbase.odc.service.notification.model.DingTalkChannelConfig;
@@ -52,8 +62,13 @@ public class DingTalkSender implements MessageSender {
         Verify.notEmpty(message.getContent(), "message.content");
 
         DingTalkChannelConfig channelConfig = (DingTalkChannelConfig) message.getChannel().getChannelConfig();
-
-        DefaultDingTalkClient client = new DefaultDingTalkClient(channelConfig.getWebhook());
+        String webhook = channelConfig.getWebhook();
+        if (StringUtils.isNotEmpty(channelConfig.getSign())) {
+            long timestamp = System.currentTimeMillis();
+            webhook = String.format("%s&timestamp=%d&sign=%s",
+                    webhook, timestamp, sign(timestamp, channelConfig.getSign()));
+        }
+        DefaultDingTalkClient client = new DefaultDingTalkClient(webhook);
         OapiRobotSendRequest request = new OapiRobotSendRequest();
         if (CollectionUtils.isNotEmpty(channelConfig.getAtMobiles())) {
             OapiRobotSendRequest.At at = new OapiRobotSendRequest.At();
@@ -77,6 +92,15 @@ public class DingTalkSender implements MessageSender {
                     response.getRequestUrl(), response.getRequestId());
             return MessageSendResult.ofFail(response.getErrmsg());
         }
+    }
+
+    private String sign(Long timestamp, String secret)
+            throws NoSuchAlgorithmException, UnsupportedEncodingException, InvalidKeyException {
+        String stringToSign = timestamp + "\n" + secret;
+        Mac mac = Mac.getInstance("HmacSHA256");
+        mac.init(new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
+        byte[] signData = mac.doFinal(stringToSign.getBytes(StandardCharsets.UTF_8));
+        return URLEncoder.encode(new String(Base64.encodeBase64(signData)), "UTF-8");
     }
 
 }
