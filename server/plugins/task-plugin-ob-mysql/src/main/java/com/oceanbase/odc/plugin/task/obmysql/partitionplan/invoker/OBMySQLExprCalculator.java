@@ -16,12 +16,18 @@
 package com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker;
 
 import java.sql.Connection;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
 
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.SingleConnectionDataSource;
 
 import com.oceanbase.odc.core.shared.Verify;
+import com.oceanbase.odc.core.sql.execute.mapper.CellData;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.datatype.OBMySQLJdbcDataTypeFactory;
+import com.oceanbase.odc.plugin.task.obmysql.partitionplan.mapper.CellDataProcessor;
+import com.oceanbase.odc.plugin.task.obmysql.partitionplan.mapper.CellDataProcessors;
+import com.oceanbase.tools.dbbrowser.model.datatype.DataType;
 import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
 
@@ -45,21 +51,28 @@ public class OBMySQLExprCalculator implements SqlExprCalculator {
 
     @Override
     public SqlExprResult calculate(@NonNull String expression) {
-        String sql = generateExecuteSql(expression, getSqlBuilder());
+        String sql = generateExecuteSql(expression);
         Verify.notEmpty(sql, "Query sql can not be empty");
         return new JdbcTemplate(new SingleConnectionDataSource(this.con, false)).queryForObject(sql, (rs, r) -> {
             SqlExprResult result = new SqlExprResult();
-            result.setValue(rs.getObject(1));
-            result.setDataType(new OBMySQLJdbcDataTypeFactory(rs.getMetaData(), 0).generate());
+            DataType dataType = getDataType(rs.getMetaData(), 0);
+            CellDataProcessor processor = getByDataType(dataType);
+            result.setDataType(dataType);
+            result.setValue(processor.mapCell(new CellData(rs, 0, dataType)));
             return result;
         });
     }
 
-    protected SqlBuilder getSqlBuilder() {
-        return new MySQLSqlBuilder();
+    protected CellDataProcessor getByDataType(@NonNull DataType dataType) {
+        return CellDataProcessors.getByDataType(dataType);
     }
 
-    protected String generateExecuteSql(String expression, SqlBuilder sqlBuilder) {
+    protected DataType getDataType(@NonNull ResultSetMetaData metaData, Integer index) throws SQLException {
+        return new OBMySQLJdbcDataTypeFactory(metaData, index).generate();
+    }
+
+    protected String generateExecuteSql(String expression) {
+        SqlBuilder sqlBuilder = new MySQLSqlBuilder();
         return sqlBuilder.append("select ").append(expression).append(" from dual").toString();
     }
 
