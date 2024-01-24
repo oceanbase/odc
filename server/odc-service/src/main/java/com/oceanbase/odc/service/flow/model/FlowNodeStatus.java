@@ -22,7 +22,6 @@ import java.util.stream.Collectors;
 import com.oceanbase.odc.service.flow.instance.FlowTaskInstance;
 
 import lombok.Getter;
-import lombok.NonNull;
 
 /**
  * Process state, used to mark the execution state of process instance nodes, including process
