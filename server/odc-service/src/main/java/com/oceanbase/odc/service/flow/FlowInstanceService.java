@@ -92,7 +92,7 @@ import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.odc.service.config.SystemConfigService;
 import com.oceanbase.odc.service.config.model.Configuration;
 import com.oceanbase.odc.service.connection.CloudMetadataClient;
-import com.oceanbase.odc.service.connection.CloudMetadataClient.PermissionAction;
+import com.oceanbase.odc.service.connection.CloudMetadataClient.CloudPermissionAction;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
@@ -262,7 +262,7 @@ public class FlowInstanceService {
         Long connId = createReq.getConnectionId();
         ConnectionConfig conn = connectionService.getForConnect(connId);
         cloudMetadataClient.checkPermission(OBTenant.of(conn.getClusterName(),
-                conn.getTenantName()), conn.getInstanceType(), false, PermissionAction.READONLY);
+                conn.getTenantName()), conn.getInstanceType(), false, CloudPermissionAction.READONLY);
         return Collections.singletonList(buildWithoutApprovalNode(createReq, conn));
     }
 
@@ -302,7 +302,7 @@ public class FlowInstanceService {
             conn = connectionService.getForConnectionSkipPermissionCheck(createReq.getConnectionId());
         }
         cloudMetadataClient.checkPermission(OBTenant.of(conn.getClusterName(),
-                conn.getTenantName()), conn.getInstanceType(), false, PermissionAction.READONLY);
+                conn.getTenantName()), conn.getInstanceType(), false, CloudPermissionAction.READONLY);
         return Collections.singletonList(buildFlowInstance(riskLevels, createReq, conn));
     }
 

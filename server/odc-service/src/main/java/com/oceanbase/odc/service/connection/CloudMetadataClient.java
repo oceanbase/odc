@@ -42,15 +42,13 @@ public interface CloudMetadataClient {
 
     /**
      * Permission check hook. If you want to check some permission additionally, you can override this
-     * method. The default implementation will always return true.
+     * method. The default implementation will do nothing.
      * 
      * @param tenant, the tenant to be checked
-     * @param type
-     * @return true if permission check passed, otherwise false
+     * @param type, instance type
      */
     default void checkPermission(OBTenant tenant, OBInstanceType type, boolean isForAll,
-            @NotNull PermissionAction action)
-            throws AccessDeniedException {}
+            @NotNull CloudMetadataClient.CloudPermissionAction action) throws AccessDeniedException {}
 
     /**
      * if cluster name should be included in jdbc username
@@ -86,7 +84,7 @@ public interface CloudMetadataClient {
 
     OBDatabaseUser getSysTenantUser(@NotBlank String instanceId);
 
-    enum PermissionAction {
+    enum CloudPermissionAction {
         READONLY,
         FULL
     }

@@ -39,7 +39,7 @@ import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.plugin.connect.api.ConnectionExtensionPoint;
 import com.oceanbase.odc.plugin.connect.api.TestResult;
-import com.oceanbase.odc.service.connection.CloudMetadataClient.PermissionAction;
+import com.oceanbase.odc.service.connection.CloudMetadataClient.CloudPermissionAction;
 import com.oceanbase.odc.service.connection.model.ConnectProperties;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.model.ConnectionTestResult;
@@ -85,7 +85,7 @@ public class ConnectionTesting {
 
         environmentAdapter.adaptConfig(req);
         cloudMetadataClient.checkPermission(OBTenant.of(req.getClusterName(),
-                req.getTenantName()), req.getInstanceType(), false, PermissionAction.READONLY);
+                req.getTenantName()), req.getInstanceType(), false, CloudPermissionAction.READONLY);
         connectionSSLAdaptor.adapt(req);
 
         PreConditions.validNotSqlInjection(req.getUsername(), "username");
