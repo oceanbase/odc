@@ -83,8 +83,17 @@ public class ProcessJobCaller extends BaseJobCaller {
     @Override
     protected void doDestroy(ExecutorIdentifier identifier) throws JobException {
         if (SystemUtils.getLocalIpAddress().equals(identifier.getHost())) {
-            String executorName = identifier.getExecutorName();
-            SystemUtils.killProcessByPid(Long.parseLong(executorName));
+            if (SystemUtils.isProcessRunning(Long.parseLong(identifier.getExecutorName()))) {
+                String executorName = identifier.getExecutorName();
+                boolean result = SystemUtils.killProcessByPid(Long.parseLong(executorName));
+                if (result) {
+                    log.info("Destroy identifier {} by kill pid {} succeed.", identifier,
+                            identifier.getExecutorName());
+                } else {
+                    throw new JobException("Destroy identifier" + identifier + " by kill pid " +
+                            identifier.getExecutorName() + "  failed.");
+                }
+            }
         }
     }
 

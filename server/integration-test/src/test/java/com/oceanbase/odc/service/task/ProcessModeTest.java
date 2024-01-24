@@ -43,8 +43,8 @@ import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfigur
 import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfiguration.CloudProvider;
 import com.oceanbase.odc.service.plugin.PluginProperties;
 import com.oceanbase.odc.service.task.caller.JobContext;
+import com.oceanbase.odc.service.task.caller.JobEnvBuilder;
 import com.oceanbase.odc.service.task.constants.JobConstants;
-import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.odc.service.task.enums.TaskRunModeEnum;
 import com.oceanbase.odc.service.task.executor.task.DatabaseChangeTask;
@@ -52,7 +52,6 @@ import com.oceanbase.odc.service.task.schedule.DefaultJobContextBuilder;
 import com.oceanbase.odc.service.task.schedule.DefaultJobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
-import com.oceanbase.odc.service.task.util.JobEncryptUtils;
 import com.oceanbase.odc.service.task.util.JobUtils;
 
 import lombok.extern.slf4j.Slf4j;
@@ -97,29 +96,15 @@ public class ProcessModeTest extends BaseJobTest {
 
     private void setEnvironments(ProcessBuilder pb) {
         Map<String, String> environment = pb.environment();
-        environment.put(JobEnvKeyConstants.DATABASE_HOST, System.getProperty(JobEnvKeyConstants.DATABASE_HOST));
-        environment.put(JobEnvKeyConstants.DATABASE_PORT, System.getProperty(JobEnvKeyConstants.DATABASE_PORT));
-        environment.put(JobEnvKeyConstants.DATABASE_NAME, System.getProperty(JobEnvKeyConstants.DATABASE_NAME));
-        environment.put(JobEnvKeyConstants.DATABASE_USERNAME, System.getProperty(JobEnvKeyConstants.DATABASE_USERNAME));
-        environment.put(JobEnvKeyConstants.DATABASE_PASSWORD, System.getProperty(JobEnvKeyConstants.DATABASE_PASSWORD));
-        environment.put(JobEnvKeyConstants.ODC_BOOT_MODE, System.getProperty(JobEnvKeyConstants.ODC_BOOT_MODE));
-        environment.put(JobEnvKeyConstants.ODC_TASK_RUN_MODE, TaskRunModeEnum.PROCESS.name());
-        environment.put(JobEnvKeyConstants.ODC_SERVER_PORT, System.getProperty(JobEnvKeyConstants.ODC_SERVER_PORT));
-
         String pluginPath = Paths.get("").toAbsolutePath().getParent().getParent()
                 .resolve("distribution/plugins").toFile().getAbsolutePath();
         environment.put(PluginProperties.PLUGIN_DIR_KEY, pluginPath);
 
-        environment.put(JobEnvKeyConstants.ENCRYPT_KEY, System.getProperty(JobEnvKeyConstants.ENCRYPT_KEY));
-        environment.put(JobEnvKeyConstants.ENCRYPT_SALT, System.getProperty(JobEnvKeyConstants.ENCRYPT_SALT));
         Long exceptedTaskId = System.currentTimeMillis();
         JobIdentity jobIdentity = JobIdentity.of(exceptedTaskId);
         JobDefinition jd = buildJobDefinition();
         JobContext jc = new DefaultJobContextBuilder().build(jobIdentity, jd);
-        environment.put(JobEnvKeyConstants.ODC_JOB_CONTEXT, JobEncryptUtils.encrypt(
-                System.getProperty(JobEnvKeyConstants.ENCRYPT_KEY),
-                System.getProperty(JobEnvKeyConstants.ENCRYPT_SALT),
-                JobUtils.toJson(jc)));
+        environment.putAll(new JobEnvBuilder().buildMap(jc, TaskRunModeEnum.PROCESS));
     }
 
     private JobDefinition buildJobDefinition() {

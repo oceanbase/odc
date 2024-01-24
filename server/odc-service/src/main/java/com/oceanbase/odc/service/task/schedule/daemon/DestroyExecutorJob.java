@@ -22,12 +22,12 @@ import org.quartz.JobExecutionException;
 import org.springframework.data.domain.Page;
 
 import com.oceanbase.odc.metadb.task.JobEntity;
-import com.oceanbase.odc.service.task.caller.ExecutorIdentifierParser;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.exception.TaskRuntimeException;
+import com.oceanbase.odc.service.task.schedule.JobIdentity;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 
 import lombok.extern.slf4j.Slf4j;
@@ -72,12 +72,12 @@ public class DestroyExecutorJob implements Job {
                 log.info("Job {} current status is {}, prepare destroy executor.", newEntity.getId(),
                         newEntity.getStatus());
                 try {
-                    getConfiguration().getJobDispatcher()
-                            .destroy(ExecutorIdentifierParser.parser(newEntity.getExecutorIdentifier()));
+                    getConfiguration().getJobDispatcher().destroy(JobIdentity.of(newEntity.getId()));
                 } catch (JobException e) {
-                    log.warn("Stop destroy executor occur error: ", e);
+                    log.warn("Destroy executor occur error: ", e);
                     throw new TaskRuntimeException(e);
                 }
+                log.info("Job {} destroy executor succeed.", newEntity.getId());
             }
             return null;
         });

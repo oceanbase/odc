@@ -22,7 +22,6 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.common.util.SystemUtils;
-import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.common.model.HostProperties;
 import com.oceanbase.odc.service.task.caller.ExecutorIdentifier;
@@ -56,7 +55,6 @@ public class WebJobDispatcherChecker implements JobDispatchChecker {
         ExecutorIdentifier ei = ExecutorIdentifierParser.parser(identifier);
         String host =
                 hostProperties.getOdcHost() == null ? SystemUtils.getLocalIpAddress() : hostProperties.getOdcHost();
-        Verify.notNull(hostProperties.getPort(), "Port");
         return Objects.equals(host, ei.getHost());
     }
 }

@@ -96,14 +96,18 @@ public class JobUtils {
 
     public static ConnectionConfig getMetaDBConnectionConfig() {
         ConnectionConfig config = new ConnectionConfig();
-        config.setHost(SystemUtils.getEnvOrProperty(JobEnvKeyConstants.DATABASE_HOST));
-        String port = SystemUtils.getEnvOrProperty(JobEnvKeyConstants.DATABASE_PORT);
+        config.setHost(getDecryptedFromEnv(JobEnvKeyConstants.DATABASE_HOST));
+        String port = getDecryptedFromEnv(JobEnvKeyConstants.DATABASE_PORT);
         config.setPort(port != null ? Integer.parseInt(port) : 8989);
-        config.setDefaultSchema(SystemUtils.getEnvOrProperty(JobEnvKeyConstants.DATABASE_NAME));
-        config.setUsername(SystemUtils.getEnvOrProperty(JobEnvKeyConstants.DATABASE_USERNAME));
-        config.setPassword(SystemUtils.getEnvOrProperty(JobEnvKeyConstants.DATABASE_PASSWORD));
+        config.setDefaultSchema(getDecryptedFromEnv(JobEnvKeyConstants.DATABASE_NAME));
+        config.setUsername(getDecryptedFromEnv(JobEnvKeyConstants.DATABASE_USERNAME));
+        config.setPassword(getDecryptedFromEnv(JobEnvKeyConstants.DATABASE_PASSWORD));
         config.setId(1L);
         return config;
+    }
+
+    private static String getDecryptedFromEnv(String envName) {
+        return JobEncryptUtils.decrypt(SystemUtils.getEnvOrProperty(envName));
     }
 
     public static Optional<ObjectStorageConfiguration> getObjectStorageConfiguration() {

@@ -80,6 +80,7 @@ public class DoCancelingJob implements Job {
                     log.warn("Stop job occur error: ", e);
                     throw new TaskRuntimeException(e);
                 }
+                log.info("Job {} be cancelled successfully.", newEntity.getId());
             }
             return null;
         });

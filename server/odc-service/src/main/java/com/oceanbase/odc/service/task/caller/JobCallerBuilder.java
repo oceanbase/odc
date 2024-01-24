@@ -26,16 +26,14 @@ public class JobCallerBuilder {
 
     public static JobCaller buildProcessCaller(JobContext context) {
         ProcessConfig config = new ProcessConfig();
-        config.setEnvironments(JobEnvBuilder.buildMap(context, TaskRunModeEnum.PROCESS));
+        config.setEnvironments(new JobEnvBuilder().buildMap(context, TaskRunModeEnum.PROCESS));
         return new ProcessJobCaller(config);
     }
 
     public static JobCaller buildK8sJobCaller(K8sJobClient k8sJobClient, PodConfig podConfig, JobContext context) {
 
         PodParam podParam = podConfig.getPodParam();
-        podParam.setEnvironments(JobEnvBuilder.buildMap(context, TaskRunModeEnum.K8S));
+        podParam.setEnvironments(new JobEnvBuilder().buildMap(context, TaskRunModeEnum.K8S));
         return new K8sJobCaller(k8sJobClient, podConfig);
     }
-
-
 }

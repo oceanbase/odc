@@ -32,6 +32,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringUtils;
@@ -168,27 +169,70 @@ public abstract class SystemUtils {
         if (-1 == pid) {
             throw new IllegalArgumentException("kill process by illegal argument pid: " + pid);
         }
-        Process process = null;
-        BufferedReader reader = null;
         String command = "";
-        boolean result;
         if (isOnWindows()) {
             command = "cmd.exe /c taskkill /PID " + pid + " /F /T ";
         } else {
-            command = "kill " + pid;
+            command = "kill -9 " + pid;
         }
-        try {
-            // execute kill process by command
-            process = Runtime.getRuntime().exec(command);
-            reader = new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8));
-            String line;
-            while ((line = reader.readLine()) != null) {
-                log.info(line);
+
+        return executeCommand(command, reader -> {
+            boolean result = false;
+            try {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    log.info(line);
+                }
+                result = true;
+            } catch (IOException e) {
+                log.warn("Reader from process output failed.", e);
             }
-            result = true;
-        } catch (Exception e) {
-            log.warn("Kill process by command " + command + " failed.", e);
-            result = false;
+            return result;
+        });
+    }
+
+    public static boolean isProcessRunning(long pid) {
+        if (-1 == pid) {
+            throw new IllegalArgumentException("query process by illegal argument pid: " + pid);
+        }
+        String command = "";
+        if (isOnWindows()) {
+            // tasklist exit code is always 0. Parse output
+            // findstr exit code 0 if found pid, 1 if it doesn't
+            command = "cmd.exe /c \"tasklist /FI \"PID eq " + pid + "\" | findstr " + pid + "\"";
+        } else {
+            // ps exit code 0 if process exists, 1 if it doesn't
+            command = "ps -p " + pid;
+        }
+        return executeCommand(command, reader -> {
+            boolean result = false;
+            try {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    if (line.startsWith(pid + " ")) {
+                        result = true;
+                        break;
+                    }
+                }
+            } catch (IOException e) {
+                log.warn("Reader from process output failed.", e);
+            }
+            return result;
+        });
+    }
+
+
+    private static <R> R executeCommand(String cmd, Function<BufferedReader, R> cmdResultReader) {
+
+        Process process = null;
+        BufferedReader reader = null;
+        try {
+            process = Runtime.getRuntime().exec(cmd);
+            reader = new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8));
+            return cmdResultReader.apply(reader);
+        } catch (IOException e) {
+            log.warn("Execute command " + cmd + " failed.", e);
+            throw new IllegalArgumentException(e);
         } finally {
             if (process != null) {
                 process.destroy();
@@ -197,11 +241,10 @@ public abstract class SystemUtils {
                 try {
                     reader.close();
                 } catch (IOException e) {
-                    log.warn("reader close failed", e);
+                    log.warn("Command result reader close failed.", e);
                 }
             }
         }
-        return result;
     }
 
 
