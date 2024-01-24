@@ -410,6 +410,11 @@ public class ProjectService {
                 .collect(Collectors.toSet());
     }
 
+    @SkipAuthorize
+    public Project detailSkipPermissionCheck(Long id) {
+        return projectMapper.entityToModel(nullSafeGet(id));
+    }
+
     private Project entityToModel(ProjectEntity entity, List<UserResourceRole> userResourceRoles) {
         Project project = projectMapper.entityToModel(entity);
         project.setCreator(currentInnerUser());

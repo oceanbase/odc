@@ -25,6 +25,8 @@ public class EventLabelKeys {
      * basic info
      */
     public static final String TASK_ID = "taskId";
+    // internal usage
+    public static final String TASK_ENTITY_ID = "taskEntityId";
     public static final String TASK_TYPE = "taskType";
     public static final String TASK_STATUS = "taskStatus";
     public static final String TRIGGER_TIME = "triggerTime";

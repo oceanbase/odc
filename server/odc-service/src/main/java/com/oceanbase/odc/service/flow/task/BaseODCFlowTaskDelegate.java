@@ -268,7 +268,16 @@ public abstract class BaseODCFlowTaskDelegate<T> extends BaseRuntimeFlowableDele
      * The callback method of the task execution timeout, which is used to update the status and other
      * operations
      */
-    protected abstract void onTimeout(Long taskId, TaskService taskService);
+    protected void onTimeout(Long taskId, TaskService taskService) {
+        if (notificationProperties.isEnabled()) {
+            try {
+                Event event = eventBuilder.ofTimeoutTask(taskService.detail(taskId));
+                broker.enqueueEvent(event);
+            } catch (Exception e) {
+                log.warn("Failed to enqueue event.", e);
+            }
+        }
+    }
 
     /**
      * This method is scheduled periodically to update the progress of the task

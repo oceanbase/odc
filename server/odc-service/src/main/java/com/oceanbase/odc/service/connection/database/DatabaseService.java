@@ -152,7 +152,7 @@ public class DatabaseService {
 
     @SkipAuthorize("odc internal usage")
     public Database detailSkipPermissionCheck(Long id) {
-        return entityToModel(databaseRepository.findById(id)
+        return databaseMapper.entityToModel(databaseRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException(ResourceType.ODC_DATABASE, "id", id)));
     }
 

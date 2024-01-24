@@ -41,16 +41,18 @@ public class MessageTemplateProcessor {
         if (CollectionUtils.isEmpty(variables)) {
             return template;
         }
-        if (variables.containsKey("taskType")) {
-            String taskTypeI18nKey = String.format("${com.oceanbase.odc.TaskType.%s}", variables.get("taskType"));
-            variables.put("taskType", taskTypeI18nKey);
+        Map<String, String> copiedVariables = new HashMap<>(variables);
+        if (copiedVariables.containsKey("taskType")) {
+            String taskTypeI18nKey = String.format("${com.oceanbase.odc.TaskType.%s}", copiedVariables.get("taskType"));
+            copiedVariables.put("taskType", taskTypeI18nKey);
         }
-        if (variables.containsKey("taskStatus")) {
-            String taskStatusI18nKey = String.format("${com.oceanbase.odc.event.%s.name}", variables.get("taskStatus"));
-            variables.put("taskStatus", taskStatusI18nKey);
+        if (copiedVariables.containsKey("taskStatus")) {
+            String taskStatusI18nKey =
+                    String.format("${com.oceanbase.odc.event.TASK.%s.name}", copiedVariables.get("taskStatus"));
+            copiedVariables.put("taskStatus", taskStatusI18nKey);
         }
         StringSubstitutor sub =
-                new StringSubstitutor(variables).setDisableSubstitutionInValues(true);
+                new StringSubstitutor(copiedVariables).setDisableSubstitutionInValues(true);
         String message = sub.replace(template);
 
         if (Objects.nonNull(locale)) {

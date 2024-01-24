@@ -186,6 +186,7 @@ public class ApplyDatabaseFlowableTask extends BaseODCFlowTaskDelegate<ApplyData
         TaskContextHolder.trace(getTaskCreatorId(taskId, taskService), taskId);
         log.warn("Apply database permission task timeout, taskId={}", taskId);
         TaskContextHolder.clear();
+        super.onTimeout(taskId, taskService);
     }
 
     @Override

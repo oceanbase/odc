@@ -82,6 +82,10 @@ public interface ServiceTaskInstanceRepository extends OdcJpaRepository<ServiceT
     List<ServiceTaskInstanceEntity> findByScheduleIdAndTaskType(@Param("id") Long scheduleId,
             @Param("type") TaskType type);
 
+    @Query(value = "select distinct flow_instance_id from flow_instance_node_task where task_task_id=:taskId",
+            nativeQuery = true)
+    List<Long> findFlowInstanceIdsByTargetTaskId(@Param("taskId") Long taskId);
+
     default List<ServiceTaskInstanceEntity> batchCreate(List<ServiceTaskInstanceEntity> entities) {
         String sql = InsertSqlTemplateBuilder.from("flow_instance_node_task")
                 .field(ServiceTaskInstanceEntity_.organizationId)

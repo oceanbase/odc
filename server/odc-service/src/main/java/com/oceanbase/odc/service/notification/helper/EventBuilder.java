@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.notification.helper;
 
+import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.APPROVER_ID;
+import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.APPROVER_NAME;
 import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.CLUSTER_NAME;
 import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.CONNECTION_ID;
 import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.CREATOR_ID;
@@ -24,22 +26,29 @@ import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.DAT
 import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.ENVIRONMENT;
 import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.PROJECT_ID;
 import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.PROJECT_NAME;
+import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.TASK_ENTITY_ID;
 import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.TASK_ID;
 import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.TASK_STATUS;
 import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.TASK_TYPE;
 import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.TENANT_NAME;
 import static com.oceanbase.odc.service.notification.constant.EventLabelKeys.TRIGGER_TIME;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.core.shared.Verify;
+import com.oceanbase.odc.metadb.flow.ServiceTaskInstanceRepository;
 import com.oceanbase.odc.metadb.iam.UserEntity;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.service.collaboration.environment.EnvironmentService;
 import com.oceanbase.odc.service.collaboration.environment.model.Environment;
+import com.oceanbase.odc.service.collaboration.project.ProjectService;
+import com.oceanbase.odc.service.collaboration.project.model.Project;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
@@ -50,12 +59,18 @@ import com.oceanbase.odc.service.notification.model.EventLabels;
 import com.oceanbase.odc.service.notification.model.EventStatus;
 import com.oceanbase.odc.service.notification.model.TaskEvent;
 
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * @author liuyizhuo.lyz
  * @date 2024/1/18
  */
 @Component
+@Slf4j
 public class EventBuilder {
+    private static final DateTimeFormatter DATE_FORMATTER =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
     @Autowired
     private ConnectionService connectionService;
     @Autowired
@@ -64,6 +79,10 @@ public class EventBuilder {
     private DatabaseService databaseService;
     @Autowired
     private UserService userService;
+    @Autowired
+    private ServiceTaskInstanceRepository serviceTaskInstanceRepository;
+    @Autowired
+    private ProjectService projectService;
 
     public Event ofFailedTask(TaskEntity task) {
         Event event = ofTask(task, TaskEvent.EXECUTION_FAILED);
@@ -77,28 +96,53 @@ public class EventBuilder {
         return event;
     }
 
+    public Event ofTimeoutTask(TaskEntity task) {
+        Event event = ofTask(task, TaskEvent.EXECUTION_TIMEOUT);
+        resolveLabels(event.getLabels());
+        return event;
+    }
+
+    public Event ofPendingApprovalTask(TaskEntity task) {
+        Event event = ofTask(task, TaskEvent.PENDING_APPROVAL);
+        resolveLabels(event.getLabels());
+        return event;
+    }
+
+    public Event ofApprovedTask(TaskEntity task, Long approver) {
+        Event event = ofTask(task, TaskEvent.APPROVED);
+        event.getLabels().put(APPROVER_ID, approver + "");
+        resolveLabels(event.getLabels());
+        return event;
+    }
+
+    public Event ofRejectedTask(TaskEntity task, Long approver) {
+        Event event = ofTask(task, TaskEvent.APPROVAL_REJECTION);
+        event.getLabels().put(APPROVER_ID, approver + "");
+        resolveLabels(event.getLabels());
+        return event;
+    }
+
     private Event ofTask(TaskEntity task, TaskEvent status) {
         EventLabels labels = new EventLabels();
         labels.putIfNonNull(TASK_TYPE, task.getTaskType().name());
         labels.putIfNonNull(TASK_STATUS, status.name());
-        labels.putIfNonNull(TASK_ID, task.getId() + "");
+        labels.putIfNonNull(TASK_ENTITY_ID, task.getId());
         labels.putIfNonNull(CONNECTION_ID, task.getConnectionId());
         labels.putIfNonNull(CREATOR_ID, task.getCreatorId());
-        labels.putIfNonNull(TRIGGER_TIME, new Date(System.currentTimeMillis()));
+        labels.putIfNonNull(TRIGGER_TIME, LocalDateTime.now().format(DATE_FORMATTER));
 
         Verify.notNull(task.getDatabaseId(), "database id");
         Database database = databaseService.detailSkipPermissionCheck(task.getDatabaseId());
         labels.putIfNonNull(DATABASE_ID, database.id());
         labels.putIfNonNull(DATABASE_NAME, database.getName());
         labels.putIfNonNull(PROJECT_ID, database.getProject().id());
-        labels.putIfNonNull(PROJECT_NAME, database.getProject().getName());
 
         return Event.builder()
                 .status(EventStatus.CREATED)
                 .creatorId(task.getCreatorId())
                 .organizationId(task.getOrganizationId())
                 .projectId(database.getProject().id())
-                .triggerTime(new Date(System.currentTimeMillis()))
+                .triggerTime(new Date())
                 .labels(labels)
                 .build();
     }
@@ -107,16 +151,49 @@ public class EventBuilder {
         Verify.notNull(labels, "event.labels");
 
         if (labels.containsKey(CONNECTION_ID)) {
-            ConnectionConfig connectionConfig = connectionService.getForConnectionSkipPermissionCheck(
-                    Long.parseLong(labels.get(CONNECTION_ID)));
-            labels.put(CLUSTER_NAME, connectionConfig.getClusterName());
-            labels.put(TENANT_NAME, connectionConfig.getTenantName());
-            Environment environment = environmentService.detail(connectionConfig.getEnvironmentId());
-            labels.put(ENVIRONMENT, environment.getName());
+            try {
+                ConnectionConfig connectionConfig = connectionService.getForConnectionSkipPermissionCheck(
+                        labels.getLongFromString(CONNECTION_ID));
+                labels.put(CLUSTER_NAME, connectionConfig.getClusterName());
+                labels.put(TENANT_NAME, connectionConfig.getTenantName());
+                Environment environment = environmentService.detail(connectionConfig.getEnvironmentId());
+                labels.put(ENVIRONMENT, environment.getName());
+            } catch (Exception e) {
+                log.warn("failed to query connection info.", e);
+            }
         }
         if (labels.containsKey(CREATOR_ID)) {
-            UserEntity user = userService.nullSafeGet(Long.parseLong(labels.get(CREATOR_ID)));
-            labels.putIfNonNull(CREATOR_NAME, user.getName());
+            try {
+                UserEntity user = userService.nullSafeGet(labels.getLongFromString(CREATOR_ID));
+                labels.putIfNonNull(CREATOR_NAME, user.getName());
+            } catch (Exception e) {
+                log.warn("failed to query creator info.", e);
+            }
+        }
+        if (labels.containsKey(APPROVER_ID)) {
+            try {
+                UserEntity user = userService.nullSafeGet(labels.getLongFromString(APPROVER_ID));
+                labels.putIfNonNull(APPROVER_NAME, user.getName());
+            } catch (Exception e) {
+                log.warn("failed to query approver.", e);
+            }
+        }
+        if (labels.containsKey(TASK_ENTITY_ID)) {
+            try {
+                List<Long> flowInstanceIds = serviceTaskInstanceRepository
+                        .findFlowInstanceIdsByTargetTaskId(labels.getLongFromString(TASK_ENTITY_ID));
+                labels.putIfNonNull(TASK_ID, flowInstanceIds.get(0));
+            } catch (Exception e) {
+                log.warn("failed to query flow instance.", e);
+            }
+        }
+        if (labels.containsKey(PROJECT_ID)) {
+            try {
+                Project project = projectService.detailSkipPermissionCheck(labels.getLongFromString(PROJECT_ID));
+                labels.putIfNonNull(PROJECT_NAME, project.getName());
+            } catch (Exception e) {
+                log.warn("failed to query project info.", e);
+            }
         }
     }
 

@@ -142,6 +142,7 @@ public class DataTransferRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Voi
     protected void onTimeout(Long taskId, TaskService taskService) {
         log.warn("Data transfer task timeout, taskId={}", taskId);
         taskService.fail(taskId, context.getProgress(), context.getStatus());
+        super.onTimeout(taskId, taskService);
     }
 
     @Override

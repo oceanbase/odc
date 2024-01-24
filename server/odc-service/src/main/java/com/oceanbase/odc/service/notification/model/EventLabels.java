@@ -44,6 +44,10 @@ public class EventLabels extends TreeMap<String, String> {
         return null;
     }
 
+    public Long getLongFromString(String key) {
+        return Long.parseLong(get(key));
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {

@@ -184,6 +184,7 @@ public class ApplyProjectFlowableTask extends BaseODCFlowTaskDelegate<ApplyProje
         TaskContextHolder.trace(getTaskCreatorId(taskId, taskService), taskId);
         log.warn("Apply project permission task timeout, taskId={}", taskId);
         TaskContextHolder.clear();
+        super.onTimeout(taskId, taskService);
     }
 
     @Override
