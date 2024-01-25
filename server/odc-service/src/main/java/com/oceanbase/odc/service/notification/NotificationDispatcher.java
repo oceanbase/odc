@@ -20,7 +20,7 @@ import org.springframework.stereotype.Service;
 
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.metadb.notification.MessageRepository;
-import com.oceanbase.odc.service.notification.model.ChannelConfig;
+import com.oceanbase.odc.service.notification.model.Channel;
 import com.oceanbase.odc.service.notification.model.MessageSendingStatus;
 import com.oceanbase.odc.service.notification.model.Notification;
 
@@ -39,8 +39,8 @@ public class NotificationDispatcher {
     private ChannelFactory channelFactory;
 
     public void dispatch(Notification notification) {
-        ChannelConfig channelConfig = notification.getChannel();
-        Channel channel = channelFactory.generate(channelConfig);
+        Channel channelConfig = notification.getChannel();
+        MessageChannel channel = channelFactory.generate(channelConfig);
         if (channel.send(notification.getMessage())) {
             messageRepository.updateStatusById(notification.getMessage().getId(),
                     MessageSendingStatus.SENT_SUCCESSFULLY);

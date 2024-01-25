@@ -65,7 +65,7 @@ import lombok.Data;
  * @author jingtian
  */
 public class OBOracleSchemaAccessorTest extends BaseTestEnv {
-    private static final String BASE_PATH = "src/test/resources/table/oracle/";
+    private static final String BASE_PATH = "src/test/resources/table/oboracle/";
     private static String ddl;
     private static String dropTables;
     private static String testFunctionDDL;
@@ -223,6 +223,16 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
     }
 
     @Test
+    public void listTableIndex_listSchemaIndex_Success() {
+        Map<String, List<DBTableIndex>> tableName2Indexes = accessor.listTableIndexes(getOBOracleSchema());
+        Assert.assertEquals(4, tableName2Indexes.size());
+        Assert.assertEquals(2, tableName2Indexes.get("TEST_INDEX_TYPE").size());
+        Assert.assertEquals(2, tableName2Indexes.get("TEST_INDEX_RANGE").size());
+        Assert.assertEquals(1, tableName2Indexes.get("TEST_FK_PARENT").size());
+        Assert.assertEquals(1, tableName2Indexes.get("TEST_PK_INDEX").size());
+    }
+
+    @Test
     public void listTableConstraint_TestForeignKey_Success() {
         List<DBTableConstraint> constraintListList =
                 accessor.listTableConstraints(getOBOracleSchema(), "TEST_FK_CHILD");
@@ -242,6 +252,29 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
         Assert.assertEquals(2, constraintListList.get(0).getColumnNames().size());
         Assert.assertNotNull("TEST_FK_PARENT", constraintListList.get(0).getTableName());
         Assert.assertNotNull(getOBOracleSchema(), constraintListList.get(0).getSchemaName());
+    }
+
+    @Test
+    public void listTableConstraint_listSchemaConstraints_Success() {
+        Map<String, List<DBTableConstraint>> tableName2Constraints = accessor.listTableConstraints(getOBOracleSchema());
+        Assert.assertEquals(6, tableName2Constraints.size());
+        Assert.assertEquals(1, tableName2Constraints.get("TEST_FK_CHILD").size());
+        Assert.assertEquals(1, tableName2Constraints.get("TEST_FK_PARENT").size());
+        Assert.assertEquals(1, tableName2Constraints.get("TEST_INDEX_TYPE").size());
+        Assert.assertEquals(1, tableName2Constraints.get("TEST_OTHER_THAN_DATA_TYPE").size());
+        Assert.assertEquals(1, tableName2Constraints.get("TEST_PK_INDEX").size());
+        Assert.assertEquals(1, tableName2Constraints.get("part_hash").size());
+    }
+
+    @Test
+    public void listTableOptions_listSchemaTableOptions_Success() {
+        Map<String, DBTableOptions> tableName2Options = accessor.listTableOptions(getOBOracleSchema());
+        Assert.assertFalse(tableName2Options.isEmpty());
+        tableName2Options.values().forEach(options -> {
+            Assert.assertNotNull(options.getCharsetName());
+            Assert.assertNotNull(options.getCollationName());
+        });
+        Assert.assertEquals("this is a comment", tableName2Options.get("part_hash").getComment());
     }
 
     @Test
@@ -305,6 +338,12 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
     public void showViews_Success() {
         List<DBObjectIdentity> views = accessor.listViews(getOBOracleSchema());
         Assert.assertTrue(views != null && views.size() == 2);
+    }
+
+    @Test
+    public void listAllViews_Success() {
+        List<DBObjectIdentity> views = accessor.listAllViews("ALL");
+        Assert.assertTrue(views.size() > 0);
     }
 
     @Test

@@ -20,6 +20,7 @@ import java.util.Objects;
 import javax.validation.constraints.NotNull;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import com.oceanbase.tools.dbbrowser.editor.DBTablePartitionEditor;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartition;
@@ -40,6 +41,26 @@ public class MySQLDBTablePartitionEditor extends DBTablePartitionEditor {
     @Override
     protected SqlBuilder sqlBuilder() {
         return new MySQLSqlBuilder();
+    }
+
+    @Override
+    public String generateCreateObjectDDL(@NotNull DBTablePartition partition) {
+        if (partition.getPartitionOption().getType() == DBTablePartitionType.NOT_PARTITIONED) {
+            return StringUtils.EMPTY;
+        }
+        SqlBuilder sqlBuilder = sqlBuilder();
+        sqlBuilder.append("ALTER TABLE ").append(getFullyQualifiedTableName(partition)).space()
+                .append(generateCreateDefinitionDDL(partition));
+        return sqlBuilder.toString().trim() + ";\n";
+    }
+
+    @Override
+    public String generateDropObjectDDL(DBTablePartition dbObject) {
+        SqlBuilder sqlBuilder = sqlBuilder();
+        String fullyQualifiedTableName = getFullyQualifiedTableName(dbObject);
+        sqlBuilder.append("ALTER TABLE ").append(fullyQualifiedTableName).append(" REMOVE PARTITIONING").append(";")
+                .line();
+        return sqlBuilder.toString();
     }
 
     @Override
@@ -79,6 +100,12 @@ public class MySQLDBTablePartitionEditor extends DBTablePartitionEditor {
                         .append(")");
             }
         }
+    }
+
+    @Override
+    protected String modifyPartitionType(@NotNull DBTablePartition oldPartition,
+            @NotNull DBTablePartition newPartition) {
+        return generateCreateObjectDDL(newPartition);
     }
 
     @Override

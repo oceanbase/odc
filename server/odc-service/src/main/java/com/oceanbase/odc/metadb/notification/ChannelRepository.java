@@ -17,13 +17,38 @@ package com.oceanbase.odc.metadb.notification;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
 
-public interface ChannelRepository extends JpaRepository<ChannelEntity, Long>,
+import com.oceanbase.odc.config.jpa.OdcJpaRepository;
+import com.oceanbase.odc.service.notification.model.QueryChannelParams;
+
+import lombok.NonNull;
+
+public interface ChannelRepository extends OdcJpaRepository<ChannelEntity, Long>,
         JpaSpecificationExecutor<ChannelEntity> {
 
     List<ChannelEntity> findByIdIn(Collection<Long> ids);
+
+    Optional<ChannelEntity> findByProjectIdAndName(Long projectId, String name);
+
+    @Modifying
+    @Query(value = "select c.* from notification_channel c inner join notification_policy_channel_relation cr "
+            + "on c.id=cr.channel_id WHERE cr.notification_policy_id=?1", nativeQuery = true)
+    List<ChannelEntity> findByPolicyId(Long policyId);
+
+    default Page<ChannelEntity> find(@NonNull QueryChannelParams params, @NonNull Pageable pageable) {
+        Specification<ChannelEntity> specs = Specification
+                .where(OdcJpaRepository.eq(ChannelEntity_.projectId, params.getProjectId()))
+                .and(OdcJpaRepository.like(ChannelEntity_.name, params.getFuzzyChannelName()))
+                .and(OdcJpaRepository.in(ChannelEntity_.type, params.getChannelTypes()));
+        return findAll(specs, pageable);
+    }
 
 }

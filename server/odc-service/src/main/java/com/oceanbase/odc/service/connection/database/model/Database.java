@@ -17,7 +17,7 @@ package com.oceanbase.odc.service.connection.database.model;
 
 import java.io.Serializable;
 import java.util.Date;
-import java.util.List;
+import java.util.Set;
 
 import javax.validation.constraints.NotBlank;
 
@@ -29,6 +29,7 @@ import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.service.collaboration.environment.model.Environment;
 import com.oceanbase.odc.service.collaboration.project.model.Project;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
 
 import lombok.Data;
 
@@ -39,6 +40,9 @@ import lombok.Data;
  */
 @Data
 public class Database implements SecurityResource, OrganizationIsolated, Serializable {
+
+    private static final long serialVersionUID = 729227718029437346L;
+
     private Long id;
 
     @JsonProperty(access = Access.READ_ONLY)
@@ -50,10 +54,8 @@ public class Database implements SecurityResource, OrganizationIsolated, Seriali
     @NotBlank
     private String name;
 
-    @JsonProperty(access = Access.READ_ONLY)
     private Project project;
 
-    @JsonProperty(access = Access.READ_ONLY)
     private ConnectionConfig dataSource;
 
     @JsonProperty(access = Access.READ_ONLY)
@@ -81,7 +83,7 @@ public class Database implements SecurityResource, OrganizationIsolated, Seriali
     private boolean lockDatabaseUserRequired;
 
     @JsonProperty(access = Access.READ_ONLY)
-    private List<String> permittedActions;
+    private Set<DatabasePermissionType> authorizedPermissionTypes;
 
     @Override
     public String resourceId() {

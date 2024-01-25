@@ -227,10 +227,8 @@ public class ShadowTableComparingService {
         }
         Map<Long, Set<UserEntity>> flowInstanceId2Users = approvalPermissionService
                 .getApproverByFlowInstanceIds(Collections.singleton(taskEntity.getFlowInstanceId()));
-        Set<Long> approvalUserIds =
-                flowInstanceId2Users.get(taskEntity.getFlowInstanceId()).stream().filter(Objects::nonNull)
-                        .map(UserEntity::getId).collect(
-                                Collectors.toSet());
+        Set<Long> approvalUserIds = flowInstanceId2Users.get(taskEntity.getFlowInstanceId()).stream()
+                .filter(Objects::nonNull).map(UserEntity::getId).collect(Collectors.toSet());
         if (approvalUserIds.contains(currentUserId())) {
             return;
         }

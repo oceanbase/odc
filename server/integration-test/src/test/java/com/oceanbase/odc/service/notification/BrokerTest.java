@@ -22,9 +22,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.Arrays;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -35,14 +33,15 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 
 import com.oceanbase.odc.ServiceTestEnv;
 import com.oceanbase.odc.core.shared.constant.TaskType;
+import com.oceanbase.odc.metadb.notification.ChannelEntity;
 import com.oceanbase.odc.metadb.notification.ChannelRepository;
 import com.oceanbase.odc.metadb.notification.EventRepository;
 import com.oceanbase.odc.metadb.notification.MessageEntity;
 import com.oceanbase.odc.metadb.notification.MessageRepository;
-import com.oceanbase.odc.service.notification.constant.ChannelPropertiesConstants;
+import com.oceanbase.odc.service.notification.helper.ChannelMapper;
 import com.oceanbase.odc.service.notification.helper.EventMapper;
 import com.oceanbase.odc.service.notification.helper.EventUtils;
-import com.oceanbase.odc.service.notification.model.ChannelConfig;
+import com.oceanbase.odc.service.notification.model.Channel;
 import com.oceanbase.odc.service.notification.model.ChannelType;
 import com.oceanbase.odc.service.notification.model.Event;
 import com.oceanbase.odc.service.notification.model.EventLabels;
@@ -76,11 +75,14 @@ public class BrokerTest extends ServiceTestEnv {
     @MockBean
     private Converter converter;
 
-    @MockBean
+    @Autowired
     private ChannelRepository channelRepository;
 
-    @MockBean
+    @Autowired
     private JdbcNotificationQueue notificationQueue;
+
+    @Autowired
+    private ChannelMapper channelMapper;
 
     @Before
     public void setUp() throws Exception {
@@ -90,6 +92,7 @@ public class BrokerTest extends ServiceTestEnv {
     @After
     public void tearDown() throws Exception {
         eventRepository.deleteAll();
+        messageRepository.deleteAll();
     }
 
     @Test
@@ -114,9 +117,9 @@ public class BrokerTest extends ServiceTestEnv {
 
     @Test
     public void testDequeueNotification_Success() {
+        ChannelEntity channel = channelRepository.save(channelMapper.toEntity(getChannel()));
         MessageEntity entity = messageRepository.save(getMessage().toEntity());
 
-        when(notificationQueue.peek(anyInt(), any())).thenReturn(Arrays.asList(getNotification(entity)));
         broker.dequeueNotification(MessageSendingStatus.CREATED);
 
         Assert.assertEquals(MessageSendingStatus.SENT_FAILED, messageRepository.findAll().get(0).getStatus());
@@ -128,6 +131,7 @@ public class BrokerTest extends ServiceTestEnv {
         event.setOrganizationId(ORGANIZATION_ID);
         event.setTriggerTime(new Date());
         event.setCreatorId(USER_ID);
+        event.setProjectId(1L);
         event.setLabels(getLabels());
         return event;
     }
@@ -143,32 +147,28 @@ public class BrokerTest extends ServiceTestEnv {
         return notification;
     }
 
-    private ChannelConfig getChannel() {
-        ChannelConfig channelConfig = new ChannelConfig();
-        channelConfig.setType(ChannelType.DingTalkGroupBot);
-        channelConfig.setName("testChannel");
-        channelConfig.setId(1L);
-        Map<String, String> properties = new HashMap<>();
-        properties.put(ChannelPropertiesConstants.SERVICE_URL, "[\"fake_url\"]");
-        properties.put(ChannelPropertiesConstants.AT_ALL, "[false]");
-        properties.put(ChannelPropertiesConstants.RECIPIENT_ATTRIBUTE_NAME, "[\"user_account_name\"]");
-        channelConfig.setProperties(properties);
-        return channelConfig;
+    private Channel getChannel() {
+        Channel channel = new Channel();
+        channel.setType(ChannelType.DingTalk);
+        channel.setName("testChannel");
+        channel.setId(1L);
+        channel.setCreatorId(USER_ID);
+        channel.setOrganizationId(ORGANIZATION_ID);
+        channel.setProjectId(1L);
+        return channel;
     }
 
     private Message getMessage() {
         return Message.builder()
                 .title("test title")
                 .content("test content")
-                .channelId(1L)
-                .eventId(1L)
                 .retryTimes(0)
                 .maxRetryTimes(3)
                 .status(MessageSendingStatus.CREATED)
-                .toRecipients(Arrays.asList("1"))
-                .ccRecipients(Arrays.asList("2"))
                 .creatorId(USER_ID)
                 .organizationId(ORGANIZATION_ID)
+                .projectId(1L)
+                .channel(getChannel())
                 .build();
     }
 

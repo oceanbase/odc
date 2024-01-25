@@ -20,6 +20,7 @@ import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.service.flow.task.BaseRuntimeFlowableDelegate;
+import com.oceanbase.odc.service.flow.task.DBStructureComparisonFlowableTask;
 import com.oceanbase.odc.service.flow.task.DataTransferRuntimeFlowableTask;
 import com.oceanbase.odc.service.flow.task.DatabaseChangeRuntimeFlowableTask;
 import com.oceanbase.odc.service.flow.task.MockDataRuntimeFlowableTask;
@@ -28,6 +29,7 @@ import com.oceanbase.odc.service.flow.task.PreCheckRuntimeFlowableTask;
 import com.oceanbase.odc.service.flow.task.RollbackPlanRuntimeFlowableTask;
 import com.oceanbase.odc.service.flow.task.ShadowtableSyncRuntimeFlowableTask;
 import com.oceanbase.odc.service.onlineschemachange.OnlineSchemaChangeFlowableTask;
+import com.oceanbase.odc.service.permission.database.ApplyDatabaseFlowableTask;
 import com.oceanbase.odc.service.permission.project.ApplyProjectFlowableTask;
 import com.oceanbase.odc.service.resultset.ResultSetExportFlowableTask;
 import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleTask;
@@ -70,6 +72,10 @@ public class OdcRuntimeDelegateMapper implements RuntimeDelegateMapper {
                 return PreCheckRuntimeFlowableTask.class;
             case APPLY_PROJECT_PERMISSION:
                 return ApplyProjectFlowableTask.class;
+            case APPLY_DATABASE_PERMISSION:
+                return ApplyDatabaseFlowableTask.class;
+            case STRUCTURE_COMPARISON:
+                return DBStructureComparisonFlowableTask.class;
             default:
                 throw new UnsupportedException(ErrorCodes.Unsupported, new Object[] {ResourceType.ODC_TASK},
                         "Unsupported task type: " + taskType);

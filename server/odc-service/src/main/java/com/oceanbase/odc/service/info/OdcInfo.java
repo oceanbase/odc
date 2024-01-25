@@ -57,6 +57,11 @@ public class OdcInfo {
     private String ssoLoginName;
 
     /**
+     * 第三方登录类型 /OAUTH2、OIDC、LDAP
+     */
+    private String ssoLoginType;
+
+    /**
      * 是否开启密码登录
      */
     private boolean passwordLoginEnabled;

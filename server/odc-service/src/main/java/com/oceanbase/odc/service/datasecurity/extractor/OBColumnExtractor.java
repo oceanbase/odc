@@ -549,6 +549,8 @@ public class OBColumnExtractor implements ColumnExtractor {
             return extractFunctionCallItem((FunctionCall) expr);
         } else if (expr instanceof IntervalExpression) {
             return extractIntervalExpression((IntervalExpression) expr);
+        } else if (expr instanceof CaseWhen) {
+            return extractCaseWhenItem((CaseWhen) expr);
         } else {
             throw new IllegalStateException("Unknown type of expression: " + expr);
         }
