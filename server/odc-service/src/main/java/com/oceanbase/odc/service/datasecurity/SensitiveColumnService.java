@@ -47,7 +47,6 @@ import com.oceanbase.odc.core.authority.util.PreAuthenticate;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.shared.PreConditions;
-import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
@@ -122,7 +121,6 @@ public class SensitiveColumnService {
     private VersionDiffConfigService versionDiffConfigService;
 
     private static final SensitiveColumnMapper mapper = SensitiveColumnMapper.INSTANCE;
-    private static final List<DialectType> UNSUPPORTED_DIALECTS = Collections.singletonList(DialectType.MYSQL);
 
     @Transactional(rollbackFor = Exception.class)
     @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA, SECURITY_ADMINISTRATOR"}, resourceType = "ODC_PROJECT",

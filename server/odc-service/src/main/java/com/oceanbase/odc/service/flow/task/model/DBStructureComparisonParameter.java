@@ -33,6 +33,9 @@ import lombok.Data;
  */
 @Data
 public class DBStructureComparisonParameter implements Serializable, TaskParameters {
+
+    private static final long serialVersionUID = 1674761922363990858L;
+
     /**
      * Source database id, refer to {@link DatabaseEntity#getId()}
      */
