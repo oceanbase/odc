@@ -34,7 +34,7 @@ public class CreateDatabasePermissionReq {
     private List<Long> databaseIds;
 
     @NotEmpty
-    private List<DatabasePermissionType> permissionTypes;
+    private List<DatabasePermissionType> types;
 
     private Date expireTime;
 

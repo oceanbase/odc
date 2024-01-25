@@ -96,13 +96,13 @@ public class PartitionPlanServiceV2 {
         checkPartitionKeyValue(strategy2PartitionKeyConfigs);
         Map<String, Integer> key2Index = new HashMap<>();
         DBTablePartitionOption partitionOption = partition.getPartitionOption();
-        if (StringUtils.isNotEmpty(partitionOption.getExpression())) {
-            key2Index.put(autoPartitionExtensionPoint.unquoteIdentifier(partitionOption.getExpression()), 0);
-        } else if (CollectionUtils.isNotEmpty(partitionOption.getColumnNames())) {
+        if (CollectionUtils.isNotEmpty(partitionOption.getColumnNames())) {
             List<String> keys = partitionOption.getColumnNames();
             for (int i = 0; i < keys.size(); i++) {
                 key2Index.put(autoPartitionExtensionPoint.unquoteIdentifier(keys.get(i)), i);
             }
+        } else if (StringUtils.isNotEmpty(partitionOption.getExpression())) {
+            key2Index.put(autoPartitionExtensionPoint.unquoteIdentifier(partitionOption.getExpression()), 0);
         } else {
             throw new IllegalStateException("Unknown partition key");
         }

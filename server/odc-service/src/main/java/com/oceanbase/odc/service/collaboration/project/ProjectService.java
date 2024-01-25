@@ -15,7 +15,6 @@
  */
 package com.oceanbase.odc.service.collaboration.project;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -39,9 +38,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import org.springframework.validation.annotation.Validated;
 
-import com.oceanbase.odc.core.authority.model.DefaultSecurityResource;
-import com.oceanbase.odc.core.authority.permission.Permission;
-import com.oceanbase.odc.core.authority.permission.ResourceRoleBasedPermission;
 import com.oceanbase.odc.core.authority.util.Authenticated;
 import com.oceanbase.odc.core.authority.util.PreAuthenticate;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
@@ -57,7 +53,11 @@ import com.oceanbase.odc.metadb.collaboration.ProjectSpecs;
 import com.oceanbase.odc.metadb.connection.ConnectionConfigRepository;
 import com.oceanbase.odc.metadb.connection.ConnectionEntity;
 import com.oceanbase.odc.metadb.connection.DatabaseRepository;
+import com.oceanbase.odc.metadb.iam.PermissionRepository;
+import com.oceanbase.odc.metadb.iam.UserDatabasePermissionEntity;
+import com.oceanbase.odc.metadb.iam.UserDatabasePermissionRepository;
 import com.oceanbase.odc.metadb.iam.UserEntity;
+import com.oceanbase.odc.metadb.iam.UserPermissionRepository;
 import com.oceanbase.odc.metadb.iam.UserRepository;
 import com.oceanbase.odc.metadb.iam.resourcerole.ResourceRoleEntity;
 import com.oceanbase.odc.metadb.iam.resourcerole.ResourceRoleRepository;
@@ -71,7 +71,6 @@ import com.oceanbase.odc.service.common.model.InnerUser;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.iam.ResourceRoleService;
 import com.oceanbase.odc.service.iam.UserOrganizationService;
-import com.oceanbase.odc.service.iam.UserPermissionService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.auth.AuthorizationFacade;
 import com.oceanbase.odc.service.iam.model.User;
@@ -109,9 +108,6 @@ public class ProjectService {
     private AuthorizationFacade authorizationFacade;
 
     @Autowired
-    private UserPermissionService userPermissionService;
-
-    @Autowired
     private DatabaseRepository databaseRepository;
 
     @Autowired
@@ -122,6 +118,15 @@ public class ProjectService {
 
     @Autowired
     private ConnectionConfigRepository connectionConfigRepository;
+
+    @Autowired
+    private UserDatabasePermissionRepository userDatabasePermissionRepository;
+
+    @Autowired
+    private PermissionRepository permissionRepository;
+
+    @Autowired
+    private UserPermissionRepository userPermissionRepository;
 
     @Autowired
     private ConnectionService connectionService;
@@ -320,6 +325,7 @@ public class ProjectService {
         }
         resourceRoleService.deleteByUserIdAndResourceIdIn(userId, Collections.singleton(projectId));
         checkMemberRoles(detail(projectId).getMembers());
+        deleteMemberRelatedDatabasePermissions(userId, projectId);
         return true;
     }
 
@@ -366,31 +372,6 @@ public class ProjectService {
         }
         return repository.findAllById(ids).stream().map(projectMapper::entityToModel)
                 .collect(Collectors.groupingBy(Project::getId));
-    }
-
-    @SkipAuthorize("permission check inside")
-    public boolean checkPermission(Long projectId, List<ResourceRoleName> resourceRoles) {
-        if (Objects.isNull(projectId)) {
-            return true;
-        }
-        if (CollectionUtils.isEmpty(resourceRoles)) {
-            return false;
-        }
-        return checkPermission(Collections.singleton(projectId), resourceRoles);
-    }
-
-    @SkipAuthorize("permission check inside")
-    public boolean checkPermission(@NonNull Collection<Long> projectIds,
-            @NotNull List<ResourceRoleName> resourceRoles) {
-        projectIds = projectIds.stream().filter(Objects::nonNull).collect(Collectors.toSet());
-        if (projectIds.isEmpty() || resourceRoles.isEmpty()) {
-            return true;
-        }
-        List<Permission> permissions = projectIds.stream()
-                .map(projectId -> new ResourceRoleBasedPermission(
-                        new DefaultSecurityResource(projectId.toString(), "ODC_PROJECT"), resourceRoles))
-                .collect(Collectors.toList());
-        return authorizationFacade.isImpliesPermissions(authenticationFacade.currentUser(), permissions);
     }
 
     @SkipAuthorize("permission check inside")
@@ -470,6 +451,15 @@ public class ProjectService {
         PreConditions.validArgumentState(
                 members.stream().anyMatch(member -> member.getRole() == ResourceRoleName.DBA),
                 ErrorCodes.BadArgument, null, "please assign one project dba at least");
+    }
+
+    private void deleteMemberRelatedDatabasePermissions(@NonNull Long userId, @NonNull Long projectId) {
+        List<Long> permissionIds = userDatabasePermissionRepository.findByUserIdAndProjectId(userId, projectId).stream()
+                .map(UserDatabasePermissionEntity::getId).collect(Collectors.toList());
+        if (!CollectionUtils.isEmpty(permissionIds)) {
+            permissionRepository.deleteByIds(permissionIds);
+            userPermissionRepository.deleteByPermissionIds(permissionIds);
+        }
     }
 
     /**

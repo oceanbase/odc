@@ -110,9 +110,15 @@ public class PermissionService {
 
     @SkipAuthorize
     @Transactional(rollbackFor = Exception.class)
-    public void clearExpiredPermission(Date expiredTime) {
-        int count = permissionRepository.deleteByExpireTimeBefore(expiredTime);
-        log.info("Clear expired permission, count: {}, expired time: {}", count, expiredTime);
+    public void deleteExpiredPermission(Date expiredTime) {
+        List<Long> ids = permissionRepository.findByExpireTimeBefore(expiredTime).stream().map(PermissionEntity::getId)
+                .collect(Collectors.toList());
+        if (CollectionUtils.isNotEmpty(ids)) {
+            int count = permissionRepository.deleteByIds(ids);
+            userPermissionRepository.deleteByPermissionIds(ids);
+            rolePermissionRepository.deleteByPermissionIds(ids);
+            log.info("Clear expired permission, count: {}, expired time: {}", count, expiredTime);
+        }
     }
 
 }

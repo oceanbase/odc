@@ -15,7 +15,9 @@
  */
 package com.oceanbase.odc.service.flow.task.model;
 
-import java.util.Set;
+import java.util.List;
+
+import com.oceanbase.odc.service.permission.database.model.UnauthorizedDatabase;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -32,5 +34,5 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class DatabasePermissionCheckResult {
-    private Set<String> unauthorizedDatabaseNames;
+    private List<UnauthorizedDatabase> unauthorizedDatabases;
 }

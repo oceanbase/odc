@@ -34,7 +34,6 @@ import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.metadb.iam.PermissionEntity;
 import com.oceanbase.odc.metadb.iam.PermissionRepository;
-import com.oceanbase.odc.metadb.iam.resourcerole.UserResourceRoleRepository;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.auth.AuthorizationFacade;
 
@@ -54,9 +53,6 @@ public class VerticalPermissionValidator {
     private SecurityManager securityManager;
     @Autowired
     private PermissionRepository repository;
-    @Autowired
-    private UserResourceRoleRepository resourceRoleService;
-
     @Autowired
     private ResourcePermissionExtractor permissionMapper;
 

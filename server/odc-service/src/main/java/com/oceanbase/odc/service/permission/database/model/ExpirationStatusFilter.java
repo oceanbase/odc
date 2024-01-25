@@ -15,27 +15,29 @@
  */
 package com.oceanbase.odc.service.permission.database.model;
 
+import java.util.Arrays;
 import java.util.List;
-
-import com.oceanbase.odc.core.shared.constant.AuthorizationType;
-
-import lombok.Builder;
-import lombok.Data;
 
 /**
  * @author gaoda.xy
- * @date 2024/1/4 13:59
+ * @date 2024/1/18 15:48
  */
-@Data
-@Builder
-public class QueryDatabasePermissionParams {
+public enum ExpirationStatusFilter {
+    /**
+     * Expired
+     */
+    EXPIRED,
+    /**
+     * Expiring
+     */
+    EXPIRING,
+    /**
+     * Not expired
+     */
+    NOT_EXPIRED;
 
-    private Long userId;
-    private Long ticketId;
-    private String fuzzyDatabaseName;
-    private String fuzzyDataSourceName;
-    private List<DatabasePermissionType> types;
-    private AuthorizationType authorizationType;
-    private List<ExpirationStatusFilter> statuses;
+    public static List<ExpirationStatusFilter> all() {
+        return Arrays.asList(ExpirationStatusFilter.values());
+    }
 
 }
