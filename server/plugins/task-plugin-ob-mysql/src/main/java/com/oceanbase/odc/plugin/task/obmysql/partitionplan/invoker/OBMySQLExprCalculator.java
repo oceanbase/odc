@@ -32,6 +32,7 @@ import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
 
 import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * {@link OBMySQLExprCalculator}
@@ -41,6 +42,7 @@ import lombok.NonNull;
  * @since ODC_release_4.2.4
  * @see SqlExprCalculator
  */
+@Slf4j
 public class OBMySQLExprCalculator implements SqlExprCalculator {
 
     private final Connection con;
@@ -53,14 +55,19 @@ public class OBMySQLExprCalculator implements SqlExprCalculator {
     public SqlExprResult calculate(@NonNull String expression) {
         String sql = generateExecuteSql(expression);
         Verify.notEmpty(sql, "Query sql can not be empty");
-        return new JdbcTemplate(new SingleConnectionDataSource(this.con, false)).queryForObject(sql, (rs, r) -> {
-            SqlExprResult result = new SqlExprResult();
-            DataType dataType = getDataType(rs.getMetaData(), 0);
-            CellDataProcessor processor = getByDataType(dataType);
-            result.setDataType(dataType);
-            result.setValue(processor.mapCell(new CellData(rs, 0, dataType)));
-            return result;
-        });
+        try {
+            return new JdbcTemplate(new SingleConnectionDataSource(this.con, false)).queryForObject(sql, (rs, r) -> {
+                SqlExprResult result = new SqlExprResult();
+                DataType dataType = getDataType(rs.getMetaData(), 0);
+                CellDataProcessor processor = getByDataType(dataType);
+                result.setDataType(dataType);
+                result.setValue(processor.mapCell(new CellData(rs, 0, dataType)));
+                return result;
+            });
+        } catch (Exception e) {
+            log.warn("Failed to calculate an expression, sql={}", sql, e);
+            throw e;
+        }
     }
 
     protected CellDataProcessor getByDataType(@NonNull DataType dataType) {
