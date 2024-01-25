@@ -39,6 +39,8 @@ import com.oceanbase.odc.plugin.schema.obmysql.OBMySQLTableExtension;
 import com.oceanbase.odc.plugin.task.api.partitionplan.AutoPartitionExtensionPoint;
 import com.oceanbase.odc.plugin.task.api.partitionplan.datatype.TimeDataType;
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.create.PartitionExprGenerator;
+import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.drop.DropPartitionGenerator;
+import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.drop.KeepMostRecentPartitionGenerator;
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.partitionname.PartitionNameGenerator;
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.partitionname.SqlExprBasedPartitionNameGenerator;
 import com.oceanbase.odc.plugin.task.api.partitionplan.model.PartitionPlanVariableKey;
@@ -227,6 +229,57 @@ public class OBMySQLAutoPartitionExtensionPointTest {
                     configuration.getDefaultDBName(), REAL_RANGE_TABLE_NAME));
             Assert.assertEquals(expects, actuals);
         }
+    }
+
+    @Test
+    public void generateDropPartitionDdls_reloadIndexes_succeed() throws Exception {
+        TestDBConfiguration configuration = TestDBConfigurations.getInstance().getTestOBMysqlConfiguration();
+        try (Connection connection = configuration.getDataSource().getConnection()) {
+            DBTable dbTable = new OBMySQLTableExtension().getDetail(connection,
+                    configuration.getDefaultDBName(), REAL_RANGE_TABLE_NAME);
+            AutoPartitionExtensionPoint extensionPoint = new OBMySQLAutoPartitionExtensionPoint();
+            DropPartitionGenerator generator = extensionPoint
+                    .getDropPartitionGeneratorByName("KEEP_MOST_RECENT_GENERATOR");
+            List<DBTablePartitionDefinition> toDelete = generator.invoke(connection,
+                    dbTable, getDropPartitionParameters(1));
+            DBTablePartition dbTablePartition = new DBTablePartition();
+            dbTablePartition.setPartitionDefinitions(toDelete);
+            dbTablePartition.setTableName(dbTable.getName());
+            dbTablePartition.setSchemaName(dbTable.getSchemaName());
+            List<String> actual = extensionPoint.generateDropPartitionDdls(connection, dbTablePartition, true);
+            List<String> expects = Collections.singletonList(String.format("ALTER TABLE %s.%s DROP PARTITION "
+                    + "(p20220830, p20220829) UPDATE GLOBAL INDEXES;",
+                    configuration.getDefaultDBName(), REAL_RANGE_TABLE_NAME));
+            Assert.assertEquals(expects, actual);
+        }
+    }
+
+    @Test
+    public void generateDropPartitionDdls_dontReloadIndexes_succeed() throws Exception {
+        TestDBConfiguration configuration = TestDBConfigurations.getInstance().getTestOBMysqlConfiguration();
+        try (Connection connection = configuration.getDataSource().getConnection()) {
+            DBTable dbTable = new OBMySQLTableExtension().getDetail(connection,
+                    configuration.getDefaultDBName(), REAL_RANGE_TABLE_NAME);
+            AutoPartitionExtensionPoint extensionPoint = new OBMySQLAutoPartitionExtensionPoint();
+            DropPartitionGenerator generator = extensionPoint
+                    .getDropPartitionGeneratorByName("KEEP_MOST_RECENT_GENERATOR");
+            List<DBTablePartitionDefinition> toDelete = generator.invoke(connection,
+                    dbTable, getDropPartitionParameters(1));
+            DBTablePartition dbTablePartition = new DBTablePartition();
+            dbTablePartition.setPartitionDefinitions(toDelete);
+            dbTablePartition.setTableName(dbTable.getName());
+            dbTablePartition.setSchemaName(dbTable.getSchemaName());
+            List<String> actual = extensionPoint.generateDropPartitionDdls(connection, dbTablePartition, false);
+            List<String> expects = Collections.singletonList(String.format("ALTER TABLE %s.%s DROP PARTITION "
+                    + "(p20220830, p20220829);\n", configuration.getDefaultDBName(), REAL_RANGE_TABLE_NAME));
+            Assert.assertEquals(expects, actual);
+        }
+    }
+
+    private Map<String, Object> getDropPartitionParameters(int keepCount) {
+        Map<String, Object> parameters = new HashMap<>();
+        parameters.put(KeepMostRecentPartitionGenerator.KEEP_RECENT_COUNT_KEY, keepCount);
+        return parameters;
     }
 
     private Map<String, Object> getSqlExprBasedNameGeneratorParameters(String expr) {
