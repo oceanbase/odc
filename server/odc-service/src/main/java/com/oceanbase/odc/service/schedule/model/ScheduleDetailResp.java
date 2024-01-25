@@ -175,31 +175,7 @@ public class ScheduleDetailResp implements OrganizationIsolated {
             if (datasource != null) {
                 resp.setDatasource(new InnerConnection(datasource));
             }
-            switch (entity.getJobType()) {
-                case DATA_ARCHIVE: {
-                    DataArchiveParameters parameters =
-                            JsonUtils.fromJson(entity.getJobParametersJson(), DataArchiveParameters.class);
-                    RateLimitConfiguration rateLimitConfig = getDLMRateLimitConfigurationById.apply(entity.getId());
-                    if (rateLimitConfig != null) {
-                        parameters.setRateLimit(rateLimitConfig);
-                    }
-                    resp.setJobParameters(JsonUtils.toJson(parameters));
-                    break;
-                }
-                case DATA_DELETE: {
-                    DataDeleteParameters parameters =
-                            JsonUtils.fromJson(entity.getJobParametersJson(), DataDeleteParameters.class);
-                    RateLimitConfiguration rateLimitConfig = getDLMRateLimitConfigurationById.apply(entity.getId());
-                    if (rateLimitConfig != null) {
-                        parameters.setRateLimit(rateLimitConfig);
-                    }
-                    resp.setJobParameters(JsonUtils.toJson(parameters));
-                    break;
-                }
-                default: {
-                    resp.setJobParameters(entity.getJobParametersJson());
-                }
-            }
+            resp.setJobParameters(getJobParameters(entity));
             resp.setTriggerConfig(entity.getTriggerConfigJson());
             resp.setNextFireTimes(
                     QuartzCronExpressionUtils.getNextFireTimes(JsonUtils.fromJson(entity.getTriggerConfigJson(),
@@ -224,6 +200,32 @@ public class ScheduleDetailResp implements OrganizationIsolated {
             }
 
             return resp;
+        }
+
+        private String getJobParameters(ScheduleEntity entity) {
+            RateLimitConfiguration rateLimitConfig = getDLMRateLimitConfigurationById.apply(entity.getId());
+            if (rateLimitConfig == null) {
+                return entity.getJobParametersJson();
+            }
+            switch (entity.getJobType()) {
+                case DATA_ARCHIVE: {
+                    DataArchiveParameters parameters =
+                            JsonUtils.fromJson(entity.getJobParametersJson(), DataArchiveParameters.class);
+                    parameters.setRateLimit(rateLimitConfig);
+                    return JsonUtils.toJson(parameters);
+                }
+                case DATA_DELETE: {
+                    DataDeleteParameters parameters =
+                            JsonUtils.fromJson(entity.getJobParametersJson(), DataDeleteParameters.class);
+                    parameters.setRateLimit(rateLimitConfig);
+                    return JsonUtils.toJson(parameters);
+
+                }
+                default: {
+                    return entity.getJobParametersJson();
+                }
+            }
+
         }
 
     }
