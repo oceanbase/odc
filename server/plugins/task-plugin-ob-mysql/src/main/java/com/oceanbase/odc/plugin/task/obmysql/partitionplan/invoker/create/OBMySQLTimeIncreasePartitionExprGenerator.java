@@ -72,7 +72,7 @@ public class OBMySQLTimeIncreasePartitionExprGenerator implements TimeIncreasePa
             candidates.add(baseTime);
         }
         candidates = removeExcessPrecision(candidates, config.getIntervalPrecision());
-        CellDataProcessor processor = getByDataType(dataType);
+        CellDataProcessor processor = getCellDataProcessor(dataType);
         return candidates.stream().map(i -> processor.convertToSqlLiteral(i, dataType)).collect(Collectors.toList());
     }
 
@@ -83,7 +83,7 @@ public class OBMySQLTimeIncreasePartitionExprGenerator implements TimeIncreasePa
         return factory.generate();
     }
 
-    protected CellDataProcessor getByDataType(@NonNull DataType dataType) {
+    protected CellDataProcessor getCellDataProcessor(@NonNull DataType dataType) {
         return CellDataProcessors.getByDataType(dataType);
     }
 

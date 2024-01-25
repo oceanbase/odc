@@ -59,7 +59,7 @@ public class OBMySQLExprCalculator implements SqlExprCalculator {
             return new JdbcTemplate(new SingleConnectionDataSource(this.con, false)).queryForObject(sql, (rs, r) -> {
                 SqlExprResult result = new SqlExprResult();
                 DataType dataType = getDataType(rs.getMetaData(), 0);
-                CellDataProcessor processor = getByDataType(dataType);
+                CellDataProcessor processor = getCellDataProcessor(dataType);
                 result.setDataType(dataType);
                 result.setValue(processor.mapCell(new CellData(rs, 0, dataType)));
                 return result;
@@ -70,7 +70,7 @@ public class OBMySQLExprCalculator implements SqlExprCalculator {
         }
     }
 
-    protected CellDataProcessor getByDataType(@NonNull DataType dataType) {
+    protected CellDataProcessor getCellDataProcessor(@NonNull DataType dataType) {
         return CellDataProcessors.getByDataType(dataType);
     }
 

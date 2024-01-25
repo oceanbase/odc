@@ -75,7 +75,7 @@ public class OBMySQLSqlExprPartitionExprGenerator implements SqlExprBasedPartiti
         }
         return candidates.stream().map(sqlExprResult -> {
             DataType type = sqlExprResult.getDataType();
-            return getByDataType(type).convertToSqlLiteral(sqlExprResult.getValue(), type);
+            return getCellDataProcessor(type).convertToSqlLiteral(sqlExprResult.getValue(), type);
         }).collect(Collectors.toList());
     }
 
@@ -83,7 +83,7 @@ public class OBMySQLSqlExprPartitionExprGenerator implements SqlExprBasedPartiti
         return new OBMySQLExprCalculator(connection);
     }
 
-    protected CellDataProcessor getByDataType(@NonNull DataType dataType) {
+    protected CellDataProcessor getCellDataProcessor(@NonNull DataType dataType) {
         return CellDataProcessors.getByDataType(dataType);
     }
 
