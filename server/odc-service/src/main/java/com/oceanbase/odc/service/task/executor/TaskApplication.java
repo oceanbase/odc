@@ -23,13 +23,13 @@ import org.apache.commons.lang3.time.StopWatch;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.LoggerContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-import org.springframework.context.support.AbstractApplicationContext;
 
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.trace.TaskContextHolder;
 import com.oceanbase.odc.common.trace.TraceContextHolder;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.shared.Verify;
+import com.oceanbase.odc.service.datasecurity.DataMaskingService;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
 import com.oceanbase.odc.service.task.exception.TaskRuntimeException;
@@ -60,6 +60,9 @@ public class TaskApplication {
         AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
         ctx.register(TaskExecutorConfig.class);
         ctx.refresh();
+        DataMaskingService bean = ctx.getBean(DataMaskingService.class);
+        log.info("Get bean {} from spring, mask enable is {}.", bean.getClass().getSimpleName(),
+                bean.isMaskingEnabled());
         watch.stop();
         try {
             init(args);
