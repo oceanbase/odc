@@ -23,3 +23,7 @@ spring:
       - org.springframework.boot.autoconfigure.security.oauth2.client.servlet.OAuth2ClientAutoConfiguration
   jpa:
     database-platform: org.hibernate.dialect.H2Dialect
+
+logging:
+  level:
+    root: INFO
