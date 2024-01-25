@@ -39,7 +39,7 @@ public class EmbedServerTest {
         server.start();
         try {
             synchronized (this) {
-                this.wait(30 * 60 * 1000);
+                this.wait(60 * 1000);
             }
         } finally {
             server.stop();

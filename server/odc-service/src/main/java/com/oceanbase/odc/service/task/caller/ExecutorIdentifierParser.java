@@ -27,7 +27,7 @@ import com.oceanbase.odc.service.task.exception.TaskRuntimeException;
  */
 public class ExecutorIdentifierParser {
 
-    public static ExecutorIdentifier parser(String identifierString) throws TaskRuntimeException {
+    public static ExecutorIdentifier parser(String identifierString) {
         UriComponents uriComponents = UrlUtils.getUriComponents(identifierString);
         String path = uriComponents.getPath();
         int nameIndex = path.lastIndexOf("/");
