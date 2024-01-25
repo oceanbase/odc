@@ -17,8 +17,8 @@ package com.oceanbase.odc.metadb.dlm;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Random;
 
-import org.junit.After;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -38,19 +38,14 @@ public class DlmLimiterConfigRepositoryTest extends ServiceTestEnv {
 
     @Test
     public void testFindByOrderIds() {
-        createEntity(1L);
-        createEntity(2L);
+        Random rand = new Random();
+        DlmLimiterConfigEntity entity = createEntity(rand.nextLong());
+        DlmLimiterConfigEntity entity2 = createEntity(rand.nextLong());
         List<Long> ids = new LinkedList<>();
-        ids.add(1L);
-        ids.add(2L);
+        ids.add(entity.getOrderId());
+        ids.add(entity2.getOrderId());
         List<DlmLimiterConfigEntity> byOrderIdIn = dlmLimiterConfigRepository.findByOrderIdIn(ids);
         Assert.equals(byOrderIdIn.size(), 2);
-    }
-
-    @After
-    public void after() {
-        // clear target table.
-        dlmLimiterConfigRepository.deleteAll();
     }
 
     public DlmLimiterConfigEntity createEntity(Long orderId) {
