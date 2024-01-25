@@ -120,7 +120,9 @@ public class MySQLDBTablePartitionEditorTest {
         List<DBObjectTupleTestCase<DBTablePartition>> cases = MySQLConstraintEditorTest.fromJson(casesJson,
                 new TypeReference<List<DBObjectTupleTestCase<DBTablePartition>>>() {});
         cases.forEach(testCase -> {
-            String actual = partitionEditor.generateAddPartitionDefinitionDDL(testCase.getInput().getCurrent());
+            DBTablePartition partition = testCase.getInput().getCurrent();
+            String actual = partitionEditor.generateAddPartitionDefinitionDDL(partition.getSchemaName(),
+                    partition.getTableName(), partition.getPartitionOption(), partition.getPartitionDefinitions());
             Assert.assertEquals(testCase.getOutput(), actual);
         });
     }

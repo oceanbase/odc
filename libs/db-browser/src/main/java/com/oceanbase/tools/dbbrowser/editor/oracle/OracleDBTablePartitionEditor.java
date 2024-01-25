@@ -33,6 +33,8 @@ import com.oceanbase.tools.dbbrowser.util.DBSchemaAccessorUtil;
 import com.oceanbase.tools.dbbrowser.util.OracleSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
 
+import lombok.NonNull;
+
 /**
  * @Author: Lebie
  * @Date: 2022/8/17 下午11:35
@@ -109,23 +111,22 @@ public class OracleDBTablePartitionEditor extends DBTablePartitionEditor {
     }
 
     @Override
-    public String generateAddPartitionDefinitionDDL(@NotNull DBTablePartition partition) {
-        DBTablePartitionType partitionType = partition.getPartitionOption().getType();
+    public String generateAddPartitionDefinitionDDL(String schemaName, @NonNull String tableName,
+            @NonNull DBTablePartitionOption option, List<DBTablePartitionDefinition> definitions) {
+        DBTablePartitionType partitionType = option.getType();
         if (partitionType != DBTablePartitionType.RANGE && partitionType != DBTablePartitionType.LIST) {
             return "-- Unsupported operation to modify table partition type\n";
         }
         SqlBuilder sqlBuilder = sqlBuilder();
         sqlBuilder.append("ALTER TABLE ");
-        if (StringUtils.isNotEmpty(partition.getSchemaName())) {
-            sqlBuilder.append(partition.getSchemaName()).append(".");
+        if (StringUtils.isNotEmpty(schemaName)) {
+            sqlBuilder.append(schemaName).append(".");
         }
-        Validate.notEmpty(partition.getTableName(), "Table name can not be empty");
-        sqlBuilder.append(partition.getTableName()).append(" ADD ").append("\n\t");
-        List<DBTablePartitionDefinition> defs = partition.getPartitionDefinitions();
-        Validate.isTrue(!CollectionUtils.isEmpty(defs), "Partition elements can not be empty");
-        for (int i = 0; i < defs.size(); i++) {
-            appendDefinition(partition.getPartitionOption(), defs.get(i), sqlBuilder);
-            if (i < defs.size() - 1) {
+        sqlBuilder.append(tableName).append(" ADD ").append("\n\t");
+        Validate.isTrue(!CollectionUtils.isEmpty(definitions), "Partition elements can not be empty");
+        for (int i = 0; i < definitions.size(); i++) {
+            appendDefinition(option, definitions.get(i), sqlBuilder);
+            if (i < definitions.size() - 1) {
                 sqlBuilder.append(",\n\t");
             }
         }

@@ -35,6 +35,8 @@ import com.oceanbase.tools.dbbrowser.model.DBTablePartitionOption;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartitionType;
 import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
 
+import lombok.NonNull;
+
 /**
  * @Author: Lebie
  * @Date: 2022/8/17 下午10:22
@@ -245,7 +247,8 @@ public abstract class DBTablePartitionEditor implements DBObjectEditor<DBTablePa
     public abstract String generateAddPartitionDefinitionDDL(@NotNull DBTablePartitionDefinition definition,
             @NotNull DBTablePartitionOption option, String fullyQualifiedTableName);
 
-    public abstract String generateAddPartitionDefinitionDDL(@NotNull DBTablePartition partition);
+    public abstract String generateAddPartitionDefinitionDDL(String schemaName, @NonNull String tableName,
+            @NonNull DBTablePartitionOption option, List<DBTablePartitionDefinition> definitions);
 
     protected abstract SqlBuilder sqlBuilder();
 
