@@ -192,7 +192,7 @@ public class ApplyProjectFlowableTask extends BaseODCFlowTaskDelegate<ApplyProje
 
     @Override
     protected boolean cancel(boolean mayInterruptIfRunning, Long taskId, TaskService taskService) {
-        throw new UnsupportedException(ErrorCodes.TaskNotTerminable, null,
+        throw new UnsupportedException(ErrorCodes.RunningTaskNotTerminable, null,
                 "The task is not terminable during execution");
     }
 
