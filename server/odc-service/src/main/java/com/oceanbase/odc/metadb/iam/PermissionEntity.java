@@ -48,7 +48,7 @@ import lombok.NoArgsConstructor;
 @Data
 @Entity
 @EqualsAndHashCode(exclude = {"updateTime", "createTime"})
-@Where(clause = "expire_time is null or expire_time > now()")
+@Where(clause = "expire_time > now()")
 @Table(name = "iam_permission")
 @NoArgsConstructor
 @AllArgsConstructor
@@ -85,7 +85,7 @@ public class PermissionEntity implements PermissionConfiguration {
     @Column(name = "is_builtin", nullable = false)
     private Boolean builtIn;
 
-    @Column(name = "expire_time")
+    @Column(name = "expire_time", nullable = false)
     private Date expireTime;
 
     @Column(name = "authorization_type", nullable = false)

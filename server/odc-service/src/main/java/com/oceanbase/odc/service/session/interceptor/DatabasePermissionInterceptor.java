@@ -16,8 +16,11 @@
 
 package com.oceanbase.odc.service.session.interceptor;
 
-import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -32,11 +35,14 @@ import com.oceanbase.odc.core.sql.execute.SqlExecuteStages;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
+import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
+import com.oceanbase.odc.service.permission.database.model.UnauthorizedDatabase;
 import com.oceanbase.odc.service.session.model.SqlAsyncExecuteReq;
 import com.oceanbase.odc.service.session.model.SqlAsyncExecuteResp;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.odc.service.session.model.SqlTuplesWithViolation;
 import com.oceanbase.odc.service.session.util.SchemaExtractor;
+import com.oceanbase.tools.dbbrowser.parser.constant.SqlType;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -52,6 +58,7 @@ public class DatabasePermissionInterceptor extends BaseTimeConsumingInterceptor 
 
     @Autowired
     private DatabaseService databaseService;
+
     @Autowired
     private AuthenticationFacade authenticationFacade;
 
@@ -67,12 +74,25 @@ public class DatabasePermissionInterceptor extends BaseTimeConsumingInterceptor 
             return true;
         }
         ConnectionConfig connectionConfig = (ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(session);
-        Set<String> allDatabaseNames = SchemaExtractor.listSchemaNames(session.getDialectType(), response.getSqls()
-                .stream().map(SqlTuplesWithViolation::getSqlTuple).collect(Collectors.toList()));
-        Set<String> unauthorizedDatabaseNames =
-                databaseService.filterUnAuthorizedDatabaseNames(allDatabaseNames, connectionConfig.getId());
-        if (CollectionUtils.isNotEmpty(unauthorizedDatabaseNames)) {
-            response.setUnauthorizedDatabaseNames(new ArrayList<>(unauthorizedDatabaseNames));
+        String currentSchema = ConnectionSessionUtil.getCurrentSchema(session);
+        Map<String, Set<SqlType>> schemaName2SqlTypes = SchemaExtractor.listSchemaName2SqlTypes(
+                response.getSqls().stream().map(SqlTuplesWithViolation::getSqlTuple).collect(Collectors.toList()),
+                currentSchema, session.getDialectType());
+        Map<String, Set<DatabasePermissionType>> schemaName2PermissionTypes = new HashMap<>();
+        for (Entry<String, Set<SqlType>> entry : schemaName2SqlTypes.entrySet()) {
+            Set<SqlType> sqlTypes = entry.getValue();
+            if (CollectionUtils.isNotEmpty(sqlTypes)) {
+                Set<DatabasePermissionType> permissionTypes = sqlTypes.stream().map(DatabasePermissionType::from)
+                        .filter(Objects::nonNull).collect(Collectors.toSet());
+                if (CollectionUtils.isNotEmpty(permissionTypes)) {
+                    schemaName2PermissionTypes.put(entry.getKey(), permissionTypes);
+                }
+            }
+        }
+        List<UnauthorizedDatabase> unauthorizedDatabases =
+                databaseService.filterUnauthorizedDatabases(schemaName2PermissionTypes, connectionConfig.getId());
+        if (CollectionUtils.isNotEmpty(unauthorizedDatabases)) {
+            response.setUnauthorizedDatabases(unauthorizedDatabases);
             return false;
         }
         return true;
