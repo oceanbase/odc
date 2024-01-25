@@ -37,13 +37,16 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.core.shared.Verify;
-import com.oceanbase.odc.metadb.flow.ServiceTaskInstanceRepository;
+import com.oceanbase.odc.metadb.flow.FlowInstanceEntity;
+import com.oceanbase.odc.metadb.flow.FlowInstanceRepository;
 import com.oceanbase.odc.metadb.iam.UserEntity;
+import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.service.collaboration.environment.EnvironmentService;
 import com.oceanbase.odc.service.collaboration.environment.model.Environment;
@@ -58,6 +61,8 @@ import com.oceanbase.odc.service.notification.model.Event;
 import com.oceanbase.odc.service.notification.model.EventLabels;
 import com.oceanbase.odc.service.notification.model.EventStatus;
 import com.oceanbase.odc.service.notification.model.TaskEvent;
+import com.oceanbase.odc.service.schedule.ScheduleService;
+import com.oceanbase.odc.service.schedule.model.JobType;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -80,7 +85,9 @@ public class EventBuilder {
     @Autowired
     private UserService userService;
     @Autowired
-    private ServiceTaskInstanceRepository serviceTaskInstanceRepository;
+    private FlowInstanceRepository flowInstanceRepository;
+    @Autowired
+    private ScheduleService scheduleService;
     @Autowired
     private ProjectService projectService;
 
@@ -180,11 +187,22 @@ public class EventBuilder {
         }
         if (labels.containsKey(TASK_ENTITY_ID)) {
             try {
-                List<Long> flowInstanceIds = serviceTaskInstanceRepository
-                        .findFlowInstanceIdsByTargetTaskId(labels.getLongFromString(TASK_ENTITY_ID));
-                labels.putIfNonNull(TASK_ID, flowInstanceIds.get(0));
+                List<FlowInstanceEntity> flowInstances =
+                        flowInstanceRepository.findByTaskId(labels.getLongFromString(TASK_ENTITY_ID));
+                Verify.singleton(flowInstances, "flow instance");
+                Long parentInstanceId = flowInstances.get(0).getParentInstanceId();
+                if (Objects.nonNull(parentInstanceId)
+                        && "ASYNC".equals(labels.get(TASK_TYPE))) {
+                    // maybe sql plan or rollback
+                    ScheduleEntity scheduleEntity = scheduleService.nullSafeGetById(parentInstanceId);
+                    if (scheduleEntity.getJobType() == JobType.SQL_PLAN) {
+                        labels.putIfNonNull(TASK_TYPE, JobType.SQL_PLAN);
+                    }
+                } else {
+                    labels.putIfNonNull(TASK_ID, flowInstances.get(0).getId());
+                }
             } catch (Exception e) {
-                log.warn("failed to query flow instance.", e);
+                log.warn("failed to query task info.", e);
             }
         }
         if (labels.containsKey(PROJECT_ID)) {
