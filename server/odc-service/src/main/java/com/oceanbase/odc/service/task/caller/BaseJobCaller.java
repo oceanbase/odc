@@ -157,8 +157,10 @@ public abstract class BaseJobCaller implements JobCaller {
         int rows = taskFrameworkService.updateExecutorToDestroyed(ji.getId());
         if (rows > 0) {
             log.info("Destroy job {} executor {} succeed.", ji.getId(), executorIdentifier);
+            publishEvent(new JobCallerEvent(ji, JobCallerAction.DESTROY, true, null));
+        } else {
+            throw new JobException("update executor to destroyed failed, executor is " + executorIdentifier);
         }
-        publishEvent(new JobCallerEvent(ji, JobCallerAction.DESTROY, true, null));
     }
 
 
@@ -169,6 +171,9 @@ public abstract class BaseJobCaller implements JobCaller {
 
     @Override
     public void destroy(ExecutorIdentifier identifier) throws JobException {
+        if (identifier == null || identifier.getExecutorName() == null) {
+            return;
+        }
         doDestroy(identifier);
     }
 

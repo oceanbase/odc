@@ -39,6 +39,8 @@ public interface TaskFrameworkProperties {
 
     int getSingleFetchCancelingJobRows();
 
+    int getSingleFetchDestroyExecutorJobRows();
+
     int getSingleFetchCheckHeartTimeoutJobRows();
 
     int getMaxHeartTimeoutRetryTimes();
@@ -50,5 +52,7 @@ public interface TaskFrameworkProperties {
     String getCheckRunningJobCronExpression();
 
     String getDoCancelingJobCronExpression();
+
+    String getDestroyExecutorJobCronExpression();
 
 }

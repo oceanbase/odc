@@ -55,7 +55,7 @@ public abstract class BaseTask<RESULT> implements Task<RESULT> {
             doStart(context);
             updateStatus(JobStatus.DONE);
         } catch (Throwable e) {
-            log.info("Task failed, id: {}, details: {}", context.getJobIdentity().getId(), e);
+            log.info("Task failed, id:" + context.getJobIdentity().getId() + ", details: ", e);
             updateStatus(JobStatus.FAILED);
             onFail(e);
         } finally {

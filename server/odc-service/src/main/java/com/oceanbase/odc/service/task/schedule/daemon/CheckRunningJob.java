@@ -27,7 +27,8 @@ import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.enums.JobStatus;
-import com.oceanbase.odc.service.task.listener.DestroyExecutorEvent;
+import com.oceanbase.odc.service.task.exception.JobException;
+import com.oceanbase.odc.service.task.exception.TaskRuntimeException;
 import com.oceanbase.odc.service.task.listener.JobTerminateEvent;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 import com.oceanbase.odc.service.task.schedule.SingleJobProperties;
@@ -72,7 +73,11 @@ public class CheckRunningJob implements Job {
 
     private void doHandleJobRetryingOrCanceled(JobEntity a) {
         // destroy executor
-        getConfiguration().getEventPublisher().publishEvent(new DestroyExecutorEvent(JobIdentity.of(a.getId())));
+        try {
+            getConfiguration().getJobDispatcher().destroy(JobIdentity.of(a.getId()));
+        } catch (JobException e) {
+            throw new TaskRuntimeException(e);
+        }
 
         if (checkJobIfRetryNecessary(a)) {
             log.info("Need to restart job {}, try to destroy executor.", a.getId());

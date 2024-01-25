@@ -15,6 +15,9 @@
  */
 package com.oceanbase.odc.common.util;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryUsage;
@@ -22,12 +25,14 @@ import java.lang.reflect.Field;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringUtils;
@@ -146,12 +151,102 @@ public abstract class SystemUtils {
                 f.setAccessible(true);
                 pid = f.getLong(process);
                 f.setAccessible(false);
+            } else if (isOnWindows()) {
+                Field f = process.getClass().getDeclaredField("handle");
+                f.setAccessible(true);
+                pid = Kernel32.INSTANCE.getProcessId((Long) f.get(process));
+            } else {
+                throw new UnsupportedOperationException("Unsupported process class: " + process.getClass().getName());
             }
         } catch (Exception e) {
+            log.warn("get process id failed.", e);
             pid = -1;
         }
         return pid;
     }
+
+    public static boolean killProcessByPid(long pid) {
+        if (-1 == pid) {
+            throw new IllegalArgumentException("kill process by illegal argument pid: " + pid);
+        }
+        String command = "";
+        if (isOnWindows()) {
+            command = "cmd.exe /c taskkill /PID " + pid + " /F /T ";
+        } else {
+            command = "kill -9 " + pid;
+        }
+
+        return executeCommand(command, reader -> {
+            boolean result = false;
+            try {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    log.info(line);
+                }
+                result = true;
+            } catch (IOException e) {
+                log.warn("Reader from process output failed.", e);
+            }
+            return result;
+        });
+    }
+
+    public static boolean isProcessRunning(long pid) {
+        if (-1 == pid) {
+            throw new IllegalArgumentException("query process by illegal argument pid: " + pid);
+        }
+        String command = "";
+        if (isOnWindows()) {
+            // tasklist exit code is always 0. Parse output
+            // findstr exit code 0 if found pid, 1 if it doesn't
+            command = "cmd.exe /c \"tasklist /FI \"PID eq " + pid + "\" | findstr " + pid + "\"";
+        } else {
+            // ps exit code 0 if process exists, 1 if it doesn't
+            command = "ps -p " + pid;
+        }
+        return executeCommand(command, reader -> {
+            boolean result = false;
+            try {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    if (line.startsWith(pid + " ")) {
+                        result = true;
+                        break;
+                    }
+                }
+            } catch (IOException e) {
+                log.warn("Reader from process output failed.", e);
+            }
+            return result;
+        });
+    }
+
+
+    private static <R> R executeCommand(String cmd, Function<BufferedReader, R> cmdResultReader) {
+
+        Process process = null;
+        BufferedReader reader = null;
+        try {
+            process = Runtime.getRuntime().exec(cmd);
+            reader = new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8));
+            return cmdResultReader.apply(reader);
+        } catch (IOException e) {
+            log.warn("Execute command " + cmd + " failed.", e);
+            throw new IllegalArgumentException(e);
+        } finally {
+            if (process != null) {
+                process.destroy();
+            }
+            if (reader != null) {
+                try {
+                    reader.close();
+                } catch (IOException e) {
+                    log.warn("Command result reader close failed.", e);
+                }
+            }
+        }
+    }
+
 
     private static String innerGetHostName() {
         String hostName = null;

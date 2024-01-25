@@ -656,7 +656,6 @@
         <Logger name="org.flowable" level="INFO" additivity="false">
             <AppenderRef ref="OdcFileAppender"/>
         </Logger>
-
         <!-- 其它程序日志输出，输出级别 WARN -->
         <Root level="WARN">
             <AppenderRef ref="OdcFileAppender"/>

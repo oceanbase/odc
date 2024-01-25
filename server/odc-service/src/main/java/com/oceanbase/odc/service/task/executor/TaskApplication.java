@@ -32,9 +32,7 @@ import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
-import com.oceanbase.odc.service.task.enums.TaskRunModeEnum;
 import com.oceanbase.odc.service.task.exception.TaskRuntimeException;
-import com.oceanbase.odc.service.task.executor.context.JobContextProvider;
 import com.oceanbase.odc.service.task.executor.context.JobContextProviderFactory;
 import com.oceanbase.odc.service.task.executor.logger.LogUtils;
 import com.oceanbase.odc.service.task.executor.server.EmbedServer;
@@ -58,18 +56,21 @@ public class TaskApplication {
     private JobContext context;
 
     public void run(String[] args) {
-
         StopWatch watch = StopWatch.createStarted();
         AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
         ctx.register(TaskExecutorConfig.class);
         ctx.refresh();
         watch.stop();
-
-        init(args);
-        EmbedServer server = new EmbedServer();
-        server.start(JobUtils.getPort());
-        log.info("Starting embed server.");
         try {
+            init(args);
+        } catch (Exception e) {
+            log.warn("Init task error:", e);
+            throw e;
+        }
+        EmbedServer server = new EmbedServer();
+        try {
+            server.start();
+            log.info("Starting embed server.");
             Task<?> task = TaskFactory.create(context.getJobClass());
             log.info("Task created {}.", JsonUtils.toJson(context.getJobIdentity()));
             taskExecutor.execute(task, context);
@@ -90,27 +91,31 @@ public class TaskApplication {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             log.info("Task executor exits, systemInfo={}", SystemUtils.getSystemMemoryInfo());
         }));
+        context = JobContextProviderFactory.create().provide();
+        trace(context.getJobIdentity().getId());
+        setLog4JConfigXml();
+        log.info("Log task id is {}.", context.getJobIdentity().getId());
+
         System.setProperty(JobEnvKeyConstants.ODC_LOG_DIRECTORY, LogUtils.getBaseLogPath());
         log.info("Log directory is {}.", LogUtils.getBaseLogPath());
 
         String runMode = SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_TASK_RUN_MODE);
+        log.info("ODC TASK RUN MODE is {}.", runMode);
         Verify.notBlank(runMode, JobEnvKeyConstants.ODC_TASK_RUN_MODE);
 
-        JobContextProvider jobContextProvider = JobContextProviderFactory.create(TaskRunModeEnum.valueOf(runMode));
-        context = jobContextProvider.provide();
-        trace(context.getJobIdentity().getId());
-
-        System.setProperty(JobEnvKeyConstants.ODC_LOG_DIRECTORY, LogUtils.getBaseLogPath());
-        log.info("Log directory is {}.", LogUtils.getBaseLogPath());
-
-        log.info("JobContextProvider init success: {}", jobContextProvider.getClass().getSimpleName());
         taskExecutor = ThreadPoolTaskExecutor.getInstance();
         log.info("Task executor init success: {}", taskExecutor.getClass().getSimpleName());
         log.info("Task executor ip is {}.", SystemUtils.getLocalIpAddress());
-        log.info("Task executor port is {}.", JobUtils.getPort());
+        log.info("Task executor port is {}.", JobUtils.getExecutorPort());
     }
 
     private void trace(long taskId) {
+        TraceContextHolder.trace();
+        // mock userId
+        TaskContextHolder.trace(1L, taskId);
+    }
+
+    private void setLog4JConfigXml() {
         String taskLogFile = "log4j2-task-executor.xml";
         LoggerContext context = (org.apache.logging.log4j.core.LoggerContext) LogManager.getContext(false);
 
@@ -121,10 +126,6 @@ public class TaskApplication {
         } catch (URISyntaxException e) {
             throw new TaskRuntimeException("load " + taskLogFile + " occur error.", e);
         }
-
-        TraceContextHolder.trace();
-        // mock userId
-        TaskContextHolder.trace(1L, taskId);
     }
 
 }

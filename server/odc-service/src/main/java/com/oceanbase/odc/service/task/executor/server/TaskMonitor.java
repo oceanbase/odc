@@ -68,15 +68,17 @@ public class TaskMonitor {
                 new TraceDecoratorThreadFactory(new TaskThreadFactory(("Task-Monitor-Job-" + getJobId())));
         this.reportScheduledExecutor = Executors.newSingleThreadScheduledExecutor(threadFactory);
         reportScheduledExecutor.scheduleAtFixedRate(() -> {
-            if (isTimeout()) {
+            if (isTimeout() && !getTask().getStatus().isTerminated()) {
                 getTask().stop();
             }
             try {
-                reportTaskResult();
+                if (JobUtils.getExecutorPort().isPresent()) {
+                    reportTaskResult();
+                }
             } catch (Throwable e) {
                 log.warn("Update task info failed, id: {}", getJobId(), e);
             }
-        }, 1, JobConstants.REPORT_TASK_INFO_INTERVAL_SECONDS, TimeUnit.SECONDS);
+        }, 5, JobConstants.REPORT_TASK_INFO_INTERVAL_SECONDS, TimeUnit.SECONDS);
         log.info("Task monitor init success");
 
         heartScheduledExecutor = Executors.newSingleThreadScheduledExecutor(
@@ -84,11 +86,13 @@ public class TaskMonitor {
 
         heartScheduledExecutor.scheduleAtFixedRate(() -> {
             try {
-                getReporter().report(JobUrlConstants.TASK_HEART, buildHeartRequest());
+                if (JobUtils.getExecutorPort().isPresent()) {
+                    getReporter().report(JobUrlConstants.TASK_HEART, buildHeartRequest());
+                }
             } catch (Throwable e) {
                 log.warn("Update heart info failed, id: {}", getJobId(), e);
             }
-        }, 1, JobConstants.REPORT_TASK_HEART_INTERVAL_SECONDS, TimeUnit.SECONDS);
+        }, 5, JobConstants.REPORT_TASK_HEART_INTERVAL_SECONDS, TimeUnit.SECONDS);
         log.info("Task heart init success");
     }
 
@@ -156,7 +160,8 @@ public class TaskMonitor {
     }
 
     private void uploadLogFileToCloudStorage(DefaultTaskResult finalResult) {
-        if (cloudObjectStorageService != null && cloudObjectStorageService.supported()) {
+        if (cloudObjectStorageService != null && cloudObjectStorageService.supported()
+                && JobUtils.isK8sRunModeOfEnv()) {
             LogBiz biz = new LogBizImpl();
             Map<String, String> logMap = null;
             try {

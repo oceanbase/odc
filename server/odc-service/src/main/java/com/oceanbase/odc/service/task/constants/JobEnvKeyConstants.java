@@ -35,6 +35,8 @@ public class JobEnvKeyConstants {
 
     public static final String ODC_SERVER_PORT = "ODC_SERVER_PORT";
 
+    public static final String ODC_EXECUTOR_PORT = "ODC_EXECUTOR_PORT";
+
     public static final String ODC_SERVICE_HOST = "ODC_SERVICE_HOST";
 
     public static final String ODC_SERVICE_PORT = "ODC_SERVICE_PORT";
@@ -52,6 +54,16 @@ public class JobEnvKeyConstants {
     public static final String DATABASE_USERNAME = "DATABASE_USERNAME";
 
     public static final String DATABASE_PASSWORD = "DATABASE_PASSWORD";
+
+    public static final String DATABASE_HOST_ALIAS = "ODC_DATABASE_HOST";
+
+    public static final String DATABASE_PORT_ALIAS = "ODC_DATABASE_PORT";
+
+    public static final String DATABASE_NAME_ALIAS = "ODC_DATABASE_NAME";
+
+    public static final String DATABASE_USERNAME_ALIAS = "ODC_DATABASE_USERNAME";
+
+    public static final String DATABASE_PASSWORD_ALIAS = "ODC_DATABASE_PASSWORD";
 
     public static final String ENCRYPT_KEY = "ENCRYPT_KEY";
 

@@ -55,6 +55,8 @@ public class SpringTaskFrameworkProperties implements TaskFrameworkProperties {
 
     private int singleFetchCancelingJobRows = 100;
 
+    private int singleFetchDestroyExecutorJobRows = 100;
+
     // single fetch job rows to check report timeout or not
     private int singleFetchCheckHeartTimeoutJobRows = 1000;
 
@@ -69,5 +71,7 @@ public class SpringTaskFrameworkProperties implements TaskFrameworkProperties {
     private String checkRunningJobCronExpression;
 
     private String doCancelingJobCronExpression;
+
+    private String destroyExecutorJobCronExpression;
 
 }

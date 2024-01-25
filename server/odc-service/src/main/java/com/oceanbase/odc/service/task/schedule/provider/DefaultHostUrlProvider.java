@@ -60,7 +60,8 @@ public class DefaultHostUrlProvider implements HostUrlProvider {
         String host =
                 configProperties.getOdcHost() == null ? SystemUtils.getLocalIpAddress() : configProperties.getOdcHost();
         int port =
-                configProperties.getPort() == null ? JobUtils.getPort() : Integer.parseInt(configProperties.getPort());
+                configProperties.getPort() == null ? JobUtils.getOdcServerPort()
+                        : Integer.parseInt(configProperties.getPort());
         return Collections.singletonList("http://" + host + ":" + port);
 
     }

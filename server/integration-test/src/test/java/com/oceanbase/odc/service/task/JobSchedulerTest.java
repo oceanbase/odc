@@ -65,6 +65,7 @@ public class JobSchedulerTest {
         properties.setCheckRunningJobCronExpression("0/3 * * * * ?");
         properties.setStartPreparingJobCronExpression("0/3 * * * * ?");
         properties.setDoCancelingJobCronExpression("0/3 * * * * ?");
+        properties.setDestroyExecutorJobCronExpression("0/3 * * * * ?");
         jc.setTaskFrameworkProperties(properties);
         Mockito.when(taskFrameworkService.save(Mockito.any())).thenReturn(Mockito.mock(JobEntity.class));
         Mockito.when(taskFrameworkService.find(Mockito.any())).thenReturn(Mockito.mock(JobEntity.class));
