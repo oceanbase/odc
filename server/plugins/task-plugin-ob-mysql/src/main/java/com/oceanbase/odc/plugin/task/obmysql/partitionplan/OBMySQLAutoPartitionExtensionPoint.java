@@ -105,7 +105,8 @@ public class OBMySQLAutoPartitionExtensionPoint implements AutoPartitionExtensio
             @NonNull DBTablePartition partition) {
         InformationExtensionPoint extensionPoint = new OBMySQLInformationExtension();
         DBTablePartitionEditor editor = DBTablePartitionEditors.generate(extensionPoint.getDBVersion(connection));
-        return Collections.singletonList(editor.generateAddPartitionDefinitionDDL(partition));
+        return Collections.singletonList(editor.generateAddPartitionDefinitionDDL(partition.getSchemaName(),
+                partition.getTableName(), partition.getPartitionOption(), partition.getPartitionDefinitions()));
     }
 
     @Override
