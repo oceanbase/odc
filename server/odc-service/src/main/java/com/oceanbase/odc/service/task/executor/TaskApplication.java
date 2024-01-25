@@ -19,8 +19,11 @@ package com.oceanbase.odc.service.task.executor;
 import java.net.URISyntaxException;
 import java.net.URL;
 
+import org.apache.commons.lang3.time.StopWatch;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.LoggerContext;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.context.support.AbstractApplicationContext;
 
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.trace.TaskContextHolder;
@@ -55,6 +58,12 @@ public class TaskApplication {
     private JobContext context;
 
     public void run(String[] args) {
+
+        StopWatch watch = StopWatch.createStarted();
+        AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
+        ctx.register(TaskExecutorConfig.class);
+        ctx.refresh();
+        watch.stop();
 
         init(args);
         EmbedServer server = new EmbedServer();
