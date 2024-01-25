@@ -82,6 +82,11 @@ public interface FlowInstanceRepository
 
     List<FlowInstanceEntity> findByParentInstanceId(Long parentInstanceId);
 
+    List<FlowInstanceEntity> findByParentInstanceIdIn(Collection<Long> parentInstanceId);
+
+    default List<FlowInstanceEntity> partitionFindByParentInstanceIdIn(Collection<Long> parentInstanceId) {
+        return partitionFind(parentInstanceId, 200, this::findByParentInstanceIdIn);
+    }
 
     @Query(value = "select a.parent_instance_id from flow_instance a left join flow_instance_node_task b on a.id = b.flow_instance_id"
             + " where a.id=:id and task_task_id is not null and b.task_type='ALTER_SCHEDULE' LIMIT 1",
@@ -100,14 +105,4 @@ public interface FlowInstanceRepository
             nativeQuery = true)
     Set<FlowInstanceEntity> findByScheduleIdAndStatus(@Param("scheduleIds") Set<Long> scheduleIds,
             @Param("status") FlowStatus status);
-
-    @Query("select e.parentInstanceId as parentInstanceId, count(1) as count from FlowInstanceEntity e where e.parentInstanceId in (?1) group by parentInstanceId")
-    List<ParentInstanceIdCount> findByParentInstanceIdIn(Collection<Long> parentInstanceId);
-
-    interface ParentInstanceIdCount {
-
-        Long getParentInstanceId();
-
-        Integer getCount();
-    }
 }
