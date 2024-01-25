@@ -213,7 +213,7 @@ public class OBMySQLAutoPartitionExtensionPointTest {
                 DBTablePartitionDefinition definition = new DBTablePartitionDefinition();
                 definition.setMaxValues(Arrays.asList(pk1Values.get(i), pk2Values.get(i)));
                 definition.setName(nameGen.invoke(connection, dbTable,
-                        getSqlExprBasedNameGeneratorParameters("concat('p', date_format(now(), '%Y%m%d'))")));
+                        getSqlExprBasedNameGeneratorParameters("concat('p', '20240125')")));
                 partition.getPartitionDefinitions().add(definition);
             }
             partition.setPartitionOption(dbTable.getPartition().getPartitionOption());

@@ -23,6 +23,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.pf4j.Extension;
 
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.plugin.connect.api.InformationExtensionPoint;
@@ -57,6 +58,7 @@ import lombok.NonNull;
  * @since ODC_release_4.2.4
  * @see AutoPartitionExtensionPoint
  */
+@Extension
 public class OBMySQLAutoPartitionExtensionPoint implements AutoPartitionExtensionPoint {
 
     @Override

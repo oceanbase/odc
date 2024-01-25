@@ -48,8 +48,7 @@ public class OBMySQLExprBasedPartitionNameGeneratorTest {
         try (Connection connection = configuration.getDataSource().getConnection()) {
             DBTable dbTable = new DBTable();
             PartitionNameGenerator generator = new OBMySQLExprBasedPartitionNameGenerator();
-            String actual = generator.invoke(connection, dbTable, getParameters(
-                    "concat('p', date_format(now(), '%Y%m%d'))"));
+            String actual = generator.invoke(connection, dbTable, getParameters("concat('p', '20240125')"));
             DateFormat dateFormat = new SimpleDateFormat("yyyyMMdd");
             String expect = "p" + dateFormat.format(new Date());
             Assert.assertEquals(expect, actual);

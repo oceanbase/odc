@@ -16,7 +16,7 @@
 package com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.drop;
 
 import java.sql.Connection;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
@@ -43,10 +43,17 @@ public class OBMySQLKeepMostRecentPartitionGenerator implements KeepMostRecentPa
     public List<DBTablePartitionDefinition> generate(@NonNull Connection connection,
             @NonNull DBTable dbTable, @NonNull Integer keepCount) {
         Validate.isTrue(keepCount > 0, "Keep count can not be smaller that zero");
-        List<DBTablePartitionDefinition> defs = dbTable.getPartition().getPartitionDefinitions();
         AtomicLong counter = new AtomicLong(keepCount);
-        Collections.reverse(defs);
-        return defs.stream().filter(d -> counter.decrementAndGet() < 0).collect(Collectors.toList());
+        List<DBTablePartitionDefinition> reverse = reverse(dbTable.getPartition().getPartitionDefinitions());
+        return reverse.stream().filter(d -> counter.decrementAndGet() < 0).collect(Collectors.toList());
+    }
+
+    private List<DBTablePartitionDefinition> reverse(List<DBTablePartitionDefinition> defs) {
+        List<DBTablePartitionDefinition> returnVal = new ArrayList<>();
+        for (int i = defs.size() - 1; i >= 0; i--) {
+            returnVal.add(defs.get(i));
+        }
+        return returnVal;
     }
 
 }

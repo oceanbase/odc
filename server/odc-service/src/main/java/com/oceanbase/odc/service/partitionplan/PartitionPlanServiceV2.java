@@ -168,6 +168,7 @@ public class PartitionPlanServiceV2 {
                         }
                         droppedPartitions.addAll(dropInvoker.invoke(connection, dbTable,
                                 config.getPartitionKeyInvokerParameters()));
+                        break;
                     default:
                         throw new UnsupportedOperationException("Unsupported partition strategy, " + strategy);
                 }
@@ -193,14 +194,15 @@ public class PartitionPlanServiceV2 {
         }).filter(d -> removeExistingPartitionElement(dbTable, d)).collect(Collectors.toList()));
         strategyListMap.put(PartitionPlanStrategy.DROP, droppedPartitions);
         DBTablePartition partition = dbTable.getPartition();
-        return strategyListMap.entrySet().stream().collect(Collectors.toMap(Entry::getKey, e -> {
-            DBTablePartition dbTablePartition = new DBTablePartition();
-            dbTablePartition.setPartitionDefinitions(e.getValue());
-            dbTablePartition.setTableName(dbTable.getName());
-            dbTablePartition.setSchemaName(dbTable.getSchemaName());
-            dbTablePartition.setPartitionOption(partition.getPartitionOption());
-            return dbTablePartition;
-        }));
+        return strategyListMap.entrySet().stream().filter(e -> CollectionUtils.isNotEmpty(e.getValue()))
+                .collect(Collectors.toMap(Entry::getKey, e -> {
+                    DBTablePartition dbTablePartition = new DBTablePartition();
+                    dbTablePartition.setPartitionDefinitions(e.getValue());
+                    dbTablePartition.setTableName(dbTable.getName());
+                    dbTablePartition.setSchemaName(dbTable.getSchemaName());
+                    dbTablePartition.setPartitionOption(partition.getPartitionOption());
+                    return dbTablePartition;
+                }));
     }
 
     private boolean removeExistingPartitionElement(DBTable dbTable, DBTablePartitionDefinition definition) {
