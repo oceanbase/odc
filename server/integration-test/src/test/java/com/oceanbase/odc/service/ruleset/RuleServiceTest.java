@@ -59,7 +59,7 @@ public class RuleServiceTest extends ServiceTestEnv {
 
     private List<InnerDefaultRuleApplying> defaultRuleApplyingEntities;
     @Autowired
-    private RuleService                    ruleService;
+    private RuleService ruleService;
 
     @MockBean
     private RulesetService rulesetService;

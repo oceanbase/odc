@@ -43,7 +43,7 @@ public class RuleMetadataServiceTest extends ServiceTestEnv {
     private static final String MIGRATE_CONFIG_FILE = "init-config/init/regulation-rule-metadata.yaml";
     private List<MetadataEntity> metadatas;
     @Autowired
-    private RuleMetadataService  ruleMetadataService;
+    private RuleMetadataService ruleMetadataService;
 
     @Before
     public void setUp() {
