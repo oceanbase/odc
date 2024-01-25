@@ -96,12 +96,14 @@ public class OBMySQLAutoPartitionExtensionPoint implements AutoPartitionExtensio
     }
 
     @Override
-    public List<String> generateCreatePartitionDdls(@NonNull DBTablePartition partition) {
+    public List<String> generateCreatePartitionDdls(@NonNull Connection connection,
+            @NonNull DBTablePartition partition) {
         return null;
     }
 
     @Override
-    public List<String> generateDropPartitionDdls(@NonNull DBTablePartition partition, boolean reloadIndexes) {
+    public List<String> generateDropPartitionDdls(@NonNull Connection connection,
+            @NonNull DBTablePartition partition, boolean reloadIndexes) {
         return null;
     }
 

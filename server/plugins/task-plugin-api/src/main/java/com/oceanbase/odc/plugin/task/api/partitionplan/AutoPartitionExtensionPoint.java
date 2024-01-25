@@ -45,12 +45,14 @@ public interface AutoPartitionExtensionPoint extends ExtensionPoint {
 
     String unquoteIdentifier(@NonNull String identifier);
 
-    List<DataType> getPartitionKeyDataTypes(@NonNull Connection connection, @NonNull DBTable table)
-            throws IOException, SQLException;
+    List<DataType> getPartitionKeyDataTypes(@NonNull Connection connection,
+            @NonNull DBTable table) throws IOException, SQLException;
 
-    List<String> generateCreatePartitionDdls(@NonNull DBTablePartition partition);
+    List<String> generateCreatePartitionDdls(@NonNull Connection connection,
+            @NonNull DBTablePartition partition);
 
-    List<String> generateDropPartitionDdls(@NonNull DBTablePartition partition, boolean reloadIndexes);
+    List<String> generateDropPartitionDdls(@NonNull Connection connection,
+            @NonNull DBTablePartition partition, boolean reloadIndexes);
 
     DropPartitionGenerator getDropPartitionGeneratorByName(@NonNull String name);
 

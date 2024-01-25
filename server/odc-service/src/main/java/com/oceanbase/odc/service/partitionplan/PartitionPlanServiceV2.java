@@ -127,9 +127,9 @@ public class PartitionPlanServiceV2 {
         return strategyListMap.entrySet().stream().collect(Collectors.toMap(Entry::getKey, e -> {
             switch (e.getKey()) {
                 case DROP:
-                    return autoPartitionExtensionPoint.generateDropPartitionDdls(e.getValue(), true);
+                    return autoPartitionExtensionPoint.generateDropPartitionDdls(connection, e.getValue(), true);
                 case CREATE:
-                    return autoPartitionExtensionPoint.generateCreatePartitionDdls(e.getValue());
+                    return autoPartitionExtensionPoint.generateCreatePartitionDdls(connection, e.getValue());
                 default:
                     return Collections.emptyList();
             }
