@@ -21,12 +21,12 @@ import java.util.Set;
 
 import javax.transaction.Transactional;
 
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import com.oceanbase.odc.config.jpa.OdcJpaRepository;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 
@@ -39,7 +39,7 @@ import com.oceanbase.odc.core.shared.constant.TaskType;
  * @see org.springframework.data.jpa.repository.JpaRepository
  */
 public interface FlowInstanceRepository
-        extends OdcJpaRepository<FlowInstanceEntity, Long>, JpaSpecificationExecutor<FlowInstanceEntity> {
+        extends JpaRepository<FlowInstanceEntity, Long>, JpaSpecificationExecutor<FlowInstanceEntity> {
 
     List<FlowInstanceEntity> findByIdIn(Collection<Long> ids);
 
@@ -81,12 +81,6 @@ public interface FlowInstanceRepository
     Set<Long> findIdByCreatorId(@Param("creatorId") Long creatorId);
 
     List<FlowInstanceEntity> findByParentInstanceId(Long parentInstanceId);
-
-    List<FlowInstanceEntity> findByParentInstanceIdIn(Collection<Long> parentInstanceId);
-
-    default List<FlowInstanceEntity> partitionFindByParentInstanceIdIn(Collection<Long> parentInstanceId) {
-        return partitionFind(parentInstanceId, 200, this::findByParentInstanceIdIn);
-    }
 
     @Query(value = "select a.parent_instance_id from flow_instance a left join flow_instance_node_task b on a.id = b.flow_instance_id"
             + " where a.id=:id and task_task_id is not null and b.task_type='ALTER_SCHEDULE' LIMIT 1",

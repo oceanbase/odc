@@ -282,13 +282,8 @@ public class FlowResponseMapperFactory {
                 .collect(Collectors.groupingBy(ServiceTaskInstanceEntity::getFlowInstanceId,
                         Collectors.mapping(ServiceTaskInstanceEntity::getStrategy, Collectors.toList())));
 
-        Map<Long, List<FlowInstanceEntity>> parentInstanceIdMap = flowInstanceRepository
-                .partitionFindByParentInstanceIdIn(
-                        flowInstanceIds)
-                .stream().collect(Collectors.groupingBy(FlowInstanceEntity::getParentInstanceId));
-
         Map<Long, Boolean> flowInstanceId2Rollbackable = flowInstanceIds.stream().collect(Collectors
-                .toMap(Function.identity(), id -> CollectionUtils.isEmpty(parentInstanceIdMap.get(id))));
+                .toMap(Function.identity(), id -> flowInstanceRepository.findByParentInstanceId(id).size() == 0));
 
         /**
          * In order to improve the interface efficiency, it is necessary to find out the task entity
