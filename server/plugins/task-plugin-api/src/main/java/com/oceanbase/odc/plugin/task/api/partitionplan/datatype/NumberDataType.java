@@ -29,7 +29,7 @@ import lombok.NonNull;
 public class NumberDataType extends GeneralDataType {
 
     public NumberDataType(@NonNull Integer precision, @NonNull Integer scale) {
-        super(precision, scale, "AUTO_PARTI_NUMBER");
+        super(precision, scale, "NUMBER");
     }
 
 }

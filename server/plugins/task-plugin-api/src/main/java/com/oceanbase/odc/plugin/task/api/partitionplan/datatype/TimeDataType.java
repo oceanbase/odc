@@ -38,7 +38,7 @@ public class TimeDataType extends GeneralDataType {
     public static final int SECOND = 0x20 | MINUTE;
 
     public TimeDataType(@NonNull int precision) {
-        super(precision, -1, "AUTO_PARTI_TIME");
+        super(precision, -1, "TIME");
     }
 
 }
