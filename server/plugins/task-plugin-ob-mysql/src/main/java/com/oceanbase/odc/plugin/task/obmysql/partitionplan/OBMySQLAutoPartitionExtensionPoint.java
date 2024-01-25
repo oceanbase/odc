@@ -33,6 +33,8 @@ import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.OBMySQLExprCa
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.SqlExprCalculator;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.create.OBMySQLSqlExprPartitionExprGenerator;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.create.OBMySQLTimeIncreasePartitionExprGenerator;
+import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.partitionname.OBMySQLDateBasedPartitionNameGenerator;
+import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.partitionname.OBMySQLExprBasedPartitionNameGenerator;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartition;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartitionOption;
@@ -118,7 +120,11 @@ public class OBMySQLAutoPartitionExtensionPoint implements AutoPartitionExtensio
 
     @Override
     public PartitionNameGenerator getPartitionNameGeneratorGeneratorByName(@NonNull String name) {
-        return null;
+        List<PartitionNameGenerator> candidates = new ArrayList<>(2);
+        candidates.add(new OBMySQLDateBasedPartitionNameGenerator());
+        candidates.add(new OBMySQLExprBasedPartitionNameGenerator());
+        return candidates.stream().filter(i -> Objects.equals(i.getName(), name)).findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Failed to find generator by name " + name));
     }
 
 }
