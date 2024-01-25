@@ -42,6 +42,8 @@ public class ConnectionTestServiceTest {
     private ConnectionService connectionService;
     @Mock
     private ConnectionTesting connectionTesting;
+    @Mock
+    private CloudMetadataClient cloudMetadataClient;
 
     @Rule
     public ExpectedException thrown = ExpectedException.none();

@@ -50,8 +50,12 @@ public class Await {
     private Integer period = 5;
     @Builder.Default
     private String threadName = "await-thread-%d";
+    // await timeout time unit
     @Builder.Default
     private TimeUnit timeUnit = TimeUnit.SECONDS;
+    // period check condition time unit
+    @Builder.Default
+    private TimeUnit periodTimeUnit = TimeUnit.SECONDS;
     @Builder.Default
     private Integer maxRetryTimes = Integer.MAX_VALUE;
 
@@ -103,7 +107,7 @@ public class Await {
                         countDownLatch.countDown();
                     }
                 },
-                0, period, timeUnit);
+                0, period, periodTimeUnit);
     }
 
     private void predicateResult(AtomicInteger hasRetryTimes, boolean await, AtomicBoolean conditionResult)

@@ -261,5 +261,13 @@
             <groupId>com.oceanbase</groupId>
             <artifactId>task-plugin-api</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.kubernetes</groupId>
+            <artifactId>client-java</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-codec-http</artifactId>
+        </dependency>
     </dependencies>
 </project>

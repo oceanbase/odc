@@ -36,6 +36,8 @@ import com.oceanbase.odc.metadb.iam.UserRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.dlm.DlmLimiterService;
+import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
 import com.oceanbase.odc.service.flow.ApprovalPermissionService;
 import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
 import com.oceanbase.odc.service.schedule.model.ScheduleDetailResp.ScheduleResponseMapper;
@@ -59,6 +61,9 @@ public class ScheduleResponseMapperFactory {
     private ApprovalPermissionService approvalPermissionService;
     @Autowired
     private ConnectionService connectionService;
+
+    @Autowired
+    private DlmLimiterService dlmLimiterService;
 
     public ScheduleResponseMapper generate(ScheduleEntity entity) {
         return generate(Collections.singletonList(entity));
@@ -98,10 +103,15 @@ public class ScheduleResponseMapperFactory {
                 .filter(entry -> flowInstanceId2Candidates.get(entry.getValue()) != null).collect(
                         Collectors.toMap(Entry::getKey, entry -> flowInstanceId2Candidates.get(entry.getValue())));
 
+        Map<Long, RateLimitConfiguration> scheduleId2RateLimitConfiguration =
+                dlmLimiterService.findByOrderIds(scheduleIds).stream().collect(
+                        Collectors.toMap(RateLimitConfiguration::getOrderId, o -> o));
+
         return new ScheduleResponseMapper()
                 .withGetUserById(userEntityMap::get)
                 .withGetApproveInstanceIdById(approveInstanceIdMap::get)
                 .withGetDatasourceById(id2Datasource::get)
-                .withGetCandidatesById(scheduleId2Candidates::get);
+                .withGetCandidatesById(scheduleId2Candidates::get)
+                .withGetDLMRateLimitConfigurationById(scheduleId2RateLimitConfiguration::get);
     }
 }

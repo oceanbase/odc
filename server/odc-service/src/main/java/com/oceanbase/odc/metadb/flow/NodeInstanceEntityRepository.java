@@ -49,8 +49,6 @@ public interface NodeInstanceEntityRepository extends OdcJpaRepository<NodeInsta
 
     List<NodeInstanceEntity> findByFlowInstanceId(Long flowInstanceId);
 
-    List<NodeInstanceEntity> findByInstanceIdIn(Collection<Long> instanceId);
-
     @Query(value = "select * from flow_instance_node where id in (:ids)", nativeQuery = true)
     List<NodeInstanceEntity> findByIds(@Param("ids") Collection<Long> ids);
 
