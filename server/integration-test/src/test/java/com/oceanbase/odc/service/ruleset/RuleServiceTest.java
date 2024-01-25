@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 OceanBase.
+ * Copyright (c) 2024 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.regulation.ruleset;
+package com.oceanbase.odc.service.ruleset;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -39,6 +39,8 @@ import com.oceanbase.odc.metadb.regulation.ruleset.RuleApplyingEntity;
 import com.oceanbase.odc.metadb.regulation.ruleset.RuleApplyingRepository;
 import com.oceanbase.odc.migrate.jdbc.common.R4237DefaultRuleApplyingMigrate.InnerDefaultRuleApplying;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
+import com.oceanbase.odc.service.regulation.ruleset.RuleService;
+import com.oceanbase.odc.service.regulation.ruleset.RulesetService;
 import com.oceanbase.odc.service.regulation.ruleset.model.QueryRuleMetadataParams;
 import com.oceanbase.odc.service.regulation.ruleset.model.Rule;
 import com.oceanbase.odc.service.regulation.ruleset.model.Ruleset;
@@ -57,7 +59,7 @@ public class RuleServiceTest extends ServiceTestEnv {
 
     private List<InnerDefaultRuleApplying> defaultRuleApplyingEntities;
     @Autowired
-    private RuleService ruleService;
+    private RuleService                    ruleService;
 
     @MockBean
     private RulesetService rulesetService;
