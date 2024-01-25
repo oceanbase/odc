@@ -114,4 +114,15 @@ public class MySQLDBTablePartitionEditorTest {
         });
     }
 
+    @Test
+    public void generateAddPartitionDefinitionDDL_normalInput_generateSucceed() {
+        String casesJson = DBObjectUtilsTest.loadAsString(BASE_DIR + "/update_multi_partition_test_cases.json");
+        List<DBObjectTupleTestCase<DBTablePartition>> cases = MySQLConstraintEditorTest.fromJson(casesJson,
+                new TypeReference<List<DBObjectTupleTestCase<DBTablePartition>>>() {});
+        cases.forEach(testCase -> {
+            String actual = partitionEditor.generateAddPartitionDefinitionDDL(testCase.getInput().getCurrent());
+            Assert.assertEquals(testCase.getOutput(), actual);
+        });
+    }
+
 }

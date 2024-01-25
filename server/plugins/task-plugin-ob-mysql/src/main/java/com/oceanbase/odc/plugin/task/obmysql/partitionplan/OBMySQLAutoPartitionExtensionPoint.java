@@ -17,6 +17,7 @@ package com.oceanbase.odc.plugin.task.obmysql.partitionplan;
 
 import java.sql.Connection;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -24,6 +25,8 @@ import java.util.stream.Collectors;
 import org.apache.commons.collections4.CollectionUtils;
 
 import com.oceanbase.odc.common.util.StringUtils;
+import com.oceanbase.odc.plugin.connect.api.InformationExtensionPoint;
+import com.oceanbase.odc.plugin.connect.obmysql.OBMySQLInformationExtension;
 import com.oceanbase.odc.plugin.task.api.partitionplan.AutoPartitionExtensionPoint;
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.create.PartitionExprGenerator;
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.drop.DropPartitionGenerator;
@@ -36,6 +39,8 @@ import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.create.OBMySQ
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.drop.OBMySQLKeepMostRecentPartitionGenerator;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.partitionname.OBMySQLDateBasedPartitionNameGenerator;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.partitionname.OBMySQLExprBasedPartitionNameGenerator;
+import com.oceanbase.odc.plugin.task.obmysql.partitionplan.util.DBTablePartitionEditors;
+import com.oceanbase.tools.dbbrowser.editor.DBTablePartitionEditor;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartition;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartitionOption;
@@ -50,7 +55,7 @@ import lombok.NonNull;
  * @author yh263208
  * @date 2024-01-23 09:59
  * @since ODC_release_4.2.4
- * @see
+ * @see AutoPartitionExtensionPoint
  */
 public class OBMySQLAutoPartitionExtensionPoint implements AutoPartitionExtensionPoint {
 
@@ -98,7 +103,9 @@ public class OBMySQLAutoPartitionExtensionPoint implements AutoPartitionExtensio
     @Override
     public List<String> generateCreatePartitionDdls(@NonNull Connection connection,
             @NonNull DBTablePartition partition) {
-        return null;
+        InformationExtensionPoint extensionPoint = new OBMySQLInformationExtension();
+        DBTablePartitionEditor editor = DBTablePartitionEditors.generate(extensionPoint.getDBVersion(connection));
+        return Collections.singletonList(editor.generateAddPartitionDefinitionDDL(partition));
     }
 
     @Override

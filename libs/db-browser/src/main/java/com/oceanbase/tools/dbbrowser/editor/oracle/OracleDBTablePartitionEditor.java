@@ -15,11 +15,13 @@
  */
 package com.oceanbase.tools.dbbrowser.editor.oracle;
 
+import java.util.List;
 import java.util.Objects;
 
 import javax.validation.constraints.NotNull;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
 import org.springframework.util.CollectionUtils;
 
 import com.oceanbase.tools.dbbrowser.editor.DBTablePartitionEditor;
@@ -96,7 +98,7 @@ public class OracleDBTablePartitionEditor extends DBTablePartitionEditor {
     }
 
     @Override
-    protected String generateAddPartitionDefinitionDDL(
+    public String generateAddPartitionDefinitionDDL(
             @NotNull DBTablePartitionDefinition definition,
             @NotNull DBTablePartitionOption option, String fullyQualifiedTableName) {
         SqlBuilder sqlBuilder = sqlBuilder();
@@ -104,6 +106,30 @@ public class OracleDBTablePartitionEditor extends DBTablePartitionEditor {
         appendDefinition(option, definition, sqlBuilder);
         sqlBuilder.append(";").line();
         return sqlBuilder.toString();
+    }
+
+    @Override
+    public String generateAddPartitionDefinitionDDL(@NotNull DBTablePartition partition) {
+        DBTablePartitionType partitionType = partition.getPartitionOption().getType();
+        if (partitionType != DBTablePartitionType.RANGE && partitionType != DBTablePartitionType.LIST) {
+            return "-- Unsupported operation to modify table partition type\n";
+        }
+        SqlBuilder sqlBuilder = sqlBuilder();
+        sqlBuilder.append("ALTER TABLE ");
+        if (StringUtils.isNotEmpty(partition.getSchemaName())) {
+            sqlBuilder.append(partition.getSchemaName()).append(".");
+        }
+        Validate.notEmpty(partition.getTableName(), "Table name can not be empty");
+        sqlBuilder.append(partition.getTableName()).append(" ADD ").append("\n\t");
+        List<DBTablePartitionDefinition> defs = partition.getPartitionDefinitions();
+        Validate.isTrue(!CollectionUtils.isEmpty(defs), "Partition elements can not be empty");
+        for (int i = 0; i < defs.size(); i++) {
+            appendDefinition(partition.getPartitionOption(), defs.get(i), sqlBuilder);
+            if (i < defs.size() - 1) {
+                sqlBuilder.append(",\n\t");
+            }
+        }
+        return sqlBuilder.append(";").line().toString();
     }
 
     @Override

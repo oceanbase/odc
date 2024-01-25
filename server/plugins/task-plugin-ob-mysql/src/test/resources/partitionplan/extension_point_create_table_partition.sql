@@ -39,5 +39,16 @@ CREATE TABLE `${const:com.oceanbase.odc.plugin.task.obmysql.partitionplan.OBMySQ
 (partition p1 values in ('aaa', '2020-12-31'),
 partition p2 values in ('bbb', '2021-12-31'));
 
+CREATE TABLE `${const:com.oceanbase.odc.plugin.task.obmysql.partitionplan.OBMySQLAutoPartitionExtensionPointTest.REAL_RANGE_TABLE_NAME}` (
+  `id` bigint(20) unsigned NOT NULL,
+  `gmt_create` datetime NOT NULL,
+  `gmt_modified` datetime NOT NULL,
+  `datekey` int(11) NOT NULL,
+  `c3` date DEFAULT NULL
+) partition by range columns(datekey, c3)
+(partition p20220829 values less than (20220729, '2022-07-29'),
+partition p20220830 values less than (20220730, '2022-07-30'),
+partition p20220831 values less than (20220731, '2022-07-31'));
+
 
 

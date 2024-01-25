@@ -22,7 +22,9 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.apache.commons.io.IOUtils;
@@ -36,9 +38,17 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import com.oceanbase.odc.plugin.schema.obmysql.OBMySQLTableExtension;
 import com.oceanbase.odc.plugin.task.api.partitionplan.AutoPartitionExtensionPoint;
 import com.oceanbase.odc.plugin.task.api.partitionplan.datatype.TimeDataType;
+import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.create.PartitionExprGenerator;
+import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.partitionname.PartitionNameGenerator;
+import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.partitionname.SqlExprBasedPartitionNameGenerator;
+import com.oceanbase.odc.plugin.task.api.partitionplan.model.PartitionPlanVariableKey;
+import com.oceanbase.odc.plugin.task.api.partitionplan.model.SqlExprBasedGeneratorConfig;
+import com.oceanbase.odc.plugin.task.api.partitionplan.model.TimeIncreaseGeneratorConfig;
 import com.oceanbase.odc.test.database.TestDBConfiguration;
 import com.oceanbase.odc.test.database.TestDBConfigurations;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
+import com.oceanbase.tools.dbbrowser.model.DBTablePartition;
+import com.oceanbase.tools.dbbrowser.model.DBTablePartitionDefinition;
 import com.oceanbase.tools.dbbrowser.model.datatype.DataType;
 import com.oceanbase.tools.dbbrowser.model.datatype.GeneralDataType;
 
@@ -56,6 +66,7 @@ public class OBMySQLAutoPartitionExtensionPointTest {
     public static final String RANGE_TABLE_NAME = "range_parti_ext_tbl";
     public static final String RANGE_MAX_VALUE_TABLE_NAME = "range_maxvalue_parti_ext_tbl";
     public static final String RANGE_COLUMNS_TABLE_NAME = "range_col_parti_ext_tbl";
+    public static final String REAL_RANGE_TABLE_NAME = "real_range_parti_ext_tbl";
 
     @BeforeClass
     public static void setUp() throws IOException {
@@ -72,6 +83,7 @@ public class OBMySQLAutoPartitionExtensionPointTest {
         oracle.execute("DROP TABLE " + LIST_PARTI_TABLE_NAME);
         oracle.execute("DROP TABLE " + NO_PARTI_TABLE_NAME);
         oracle.execute("DROP TABLE " + RANGE_TABLE_NAME);
+        oracle.execute("DROP TABLE " + REAL_RANGE_TABLE_NAME);
         oracle.execute("DROP TABLE " + RANGE_MAX_VALUE_TABLE_NAME);
     }
 
@@ -160,6 +172,86 @@ public class OBMySQLAutoPartitionExtensionPointTest {
         AutoPartitionExtensionPoint extensionPoint = new OBMySQLAutoPartitionExtensionPoint();
         List<String> actuals = inputs.stream().map(extensionPoint::unquoteIdentifier).collect(Collectors.toList());
         Assert.assertEquals(Arrays.asList("abcd", "abcde"), actuals);
+    }
+
+    @Test
+    public void generateCreatePartitionDdls_normal_succeed() throws Exception {
+        TestDBConfiguration configuration = TestDBConfigurations.getInstance().getTestOBMysqlConfiguration();
+        try (Connection connection = configuration.getDataSource().getConnection()) {
+            DBTable dbTable = new OBMySQLTableExtension().getDetail(connection,
+                    configuration.getDefaultDBName(), REAL_RANGE_TABLE_NAME);
+            int generateCount = 5;
+            AutoPartitionExtensionPoint extensionPoint = new OBMySQLAutoPartitionExtensionPoint();
+            PartitionExprGenerator pk1 = extensionPoint
+                    .getPartitionExpressionGeneratorByName("CUSTOM_GENERATOR");
+            SqlExprBasedGeneratorConfig config = new SqlExprBasedGeneratorConfig();
+            config.setIntervalGenerateExpr("86400");
+            config.setPartitionLowerBoundGenerateExpr("cast(date_format(from_unixtime(unix_timestamp(STR_TO_DATE("
+                    + PartitionPlanVariableKey.LAST_PARTITION_VALUE.getVariable()
+                    + ", '%Y%m%d')) + " + PartitionPlanVariableKey.INTERVAL.getVariable()
+                    + "), '%Y%m%d') as signed)");
+            List<String> pk1Values = pk1.invoke(connection, dbTable,
+                    getSqlExprBasedGeneratorParameters(config, generateCount, "datekey"));
+
+            PartitionExprGenerator pk2 = extensionPoint
+                    .getPartitionExpressionGeneratorByName("TIME_INCREASING_GENERATOR");
+            TimeIncreaseGeneratorConfig config1 = new TimeIncreaseGeneratorConfig();
+            long current = 1706180200490L;// 2024-01-25 18:57
+            config1.setFromTimestampMillis(current);
+            config1.setInterval(1);
+            config1.setIntervalPrecision(TimeDataType.DAY);
+            List<String> pk2Values = pk2.invoke(connection, dbTable,
+                    getTimeIncreaseGeneratorParameters(config1, generateCount, "c3"));
+
+            PartitionNameGenerator nameGen = extensionPoint
+                    .getPartitionNameGeneratorGeneratorByName("CUSTOM_PARTITION_NAME_GENERATOR");
+            DBTablePartition partition = new DBTablePartition();
+            partition.setPartitionDefinitions(new ArrayList<>());
+            for (int i = 0; i < generateCount; i++) {
+                DBTablePartitionDefinition definition = new DBTablePartitionDefinition();
+                definition.setMaxValues(Arrays.asList(pk1Values.get(i), pk2Values.get(i)));
+                definition.setName(nameGen.invoke(connection, dbTable,
+                        getSqlExprBasedNameGeneratorParameters("concat('p', date_format(now(), '%Y%m%d'))")));
+                partition.getPartitionDefinitions().add(definition);
+            }
+            partition.setPartitionOption(dbTable.getPartition().getPartitionOption());
+            partition.setTableName(dbTable.getName());
+            partition.setSchemaName(dbTable.getSchemaName());
+            List<String> actuals = extensionPoint.generateCreatePartitionDdls(connection, partition);
+            List<String> expects = Collections.singletonList(String.format("ALTER TABLE %s.%s ADD PARTITION (\n"
+                    + "\tPARTITION `p20240125` VALUES LESS THAN (20220801,'2024-01-25'),\n"
+                    + "\tPARTITION `p20240125` VALUES LESS THAN (20220802,'2024-01-26'),\n"
+                    + "\tPARTITION `p20240125` VALUES LESS THAN (20220803,'2024-01-27'),\n"
+                    + "\tPARTITION `p20240125` VALUES LESS THAN (20220804,'2024-01-28'),\n"
+                    + "\tPARTITION `p20240125` VALUES LESS THAN (20220805,'2024-01-29'));\n",
+                    configuration.getDefaultDBName(), REAL_RANGE_TABLE_NAME));
+            Assert.assertEquals(expects, actuals);
+        }
+    }
+
+    private Map<String, Object> getSqlExprBasedNameGeneratorParameters(String expr) {
+        Map<String, Object> parameters = new HashMap<>();
+        parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_KEY, new DBTablePartitionDefinition());
+        parameters.put(SqlExprBasedPartitionNameGenerator.PARTITION_NAME_EXPR_KEY, expr);
+        return parameters;
+    }
+
+    private Map<String, Object> getSqlExprBasedGeneratorParameters(SqlExprBasedGeneratorConfig config,
+            Integer count, String partitionKey) {
+        Map<String, Object> parameters = new HashMap<>();
+        parameters.put(PartitionExprGenerator.GENERATOR_PARAMETER_KEY, config);
+        parameters.put(PartitionExprGenerator.GENERATE_COUNT_KEY, count);
+        parameters.put(PartitionExprGenerator.GENERATOR_PARTITION_KEY, partitionKey);
+        return parameters;
+    }
+
+    private Map<String, Object> getTimeIncreaseGeneratorParameters(TimeIncreaseGeneratorConfig config,
+            Integer count, String partitionKey) {
+        Map<String, Object> parameters = new HashMap<>();
+        parameters.put(PartitionExprGenerator.GENERATOR_PARAMETER_KEY, config);
+        parameters.put(PartitionExprGenerator.GENERATE_COUNT_KEY, count);
+        parameters.put(PartitionExprGenerator.GENERATOR_PARTITION_KEY, partitionKey);
+        return parameters;
     }
 
     private static List<String> getDdlContent() throws IOException {

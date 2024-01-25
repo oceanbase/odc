@@ -196,8 +196,8 @@ public class PartitionPlanServiceV2 {
             DBTablePartition dbTablePartition = new DBTablePartition();
             dbTablePartition.setPartitionDefinitions(e.getValue());
             dbTablePartition.setPartitionOption(partition.getPartitionOption());
-            dbTablePartition.setSchemaName(partition.getSchemaName());
-            dbTablePartition.setTableName(partition.getTableName());
+            dbTablePartition.setTableName(dbTable.getName());
+            dbTablePartition.setSchemaName(dbTable.getSchemaName());
             return dbTablePartition;
         }));
     }

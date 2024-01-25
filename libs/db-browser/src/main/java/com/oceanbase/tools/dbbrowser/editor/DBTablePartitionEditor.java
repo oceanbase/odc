@@ -242,8 +242,10 @@ public abstract class DBTablePartitionEditor implements DBObjectEditor<DBTablePa
         return sqlBuilder.toString();
     }
 
-    protected abstract String generateAddPartitionDefinitionDDL(@NotNull DBTablePartitionDefinition definition,
+    public abstract String generateAddPartitionDefinitionDDL(@NotNull DBTablePartitionDefinition definition,
             @NotNull DBTablePartitionOption option, String fullyQualifiedTableName);
+
+    public abstract String generateAddPartitionDefinitionDDL(@NotNull DBTablePartition partition);
 
     protected abstract SqlBuilder sqlBuilder();
 
