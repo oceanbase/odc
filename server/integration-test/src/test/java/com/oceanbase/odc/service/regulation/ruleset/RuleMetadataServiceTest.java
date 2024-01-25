@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.ruleset;
+package com.oceanbase.odc.service.regulation.ruleset;
 
 import java.util.Arrays;
 import java.util.List;
@@ -29,7 +29,6 @@ import com.oceanbase.odc.ServiceTestEnv;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.YamlUtils;
 import com.oceanbase.odc.metadb.regulation.ruleset.MetadataEntity;
-import com.oceanbase.odc.service.regulation.ruleset.RuleMetadataService;
 import com.oceanbase.odc.service.regulation.ruleset.model.MetadataLabel;
 import com.oceanbase.odc.service.regulation.ruleset.model.QueryRuleMetadataParams;
 import com.oceanbase.odc.service.regulation.ruleset.model.RuleType;

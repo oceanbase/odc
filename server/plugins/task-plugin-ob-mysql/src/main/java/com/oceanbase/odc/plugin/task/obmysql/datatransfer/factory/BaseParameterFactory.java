@@ -16,8 +16,12 @@
 
 package com.oceanbase.odc.plugin.task.obmysql.datatransfer.factory;
 
+import static com.oceanbase.odc.core.shared.constant.OdcConstants.DEFAULT_ZERO_DATE_TIME_BEHAVIOR;
+
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.HashMap;
@@ -29,6 +33,7 @@ import java.util.Set;
 import java.util.function.Predicate;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.io.IOUtils;
 
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.VersionUtils;
@@ -45,6 +50,7 @@ import com.oceanbase.odc.plugin.task.obmysql.datatransfer.util.ConnectionUtil;
 import com.oceanbase.odc.plugin.task.obmysql.datatransfer.util.PluginUtil;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
 import com.oceanbase.tools.loaddump.common.model.BaseParameter;
+import com.oceanbase.tools.loaddump.common.model.SessionConfig;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -67,7 +73,7 @@ public abstract class BaseParameterFactory<T extends BaseParameter> {
         T parameter = doGenerate(workingDir);
         parameter.setLogPath(logDir.getPath());
         setSessionInfo(parameter);
-        // setInitSqls(parameter);
+        setInitSqls(parameter);
         setFileConfig(parameter, workingDir);
         parameter.setThreads(3);
         if (transferConfig.getDataTransferFormat() == DataTransferFormat.SQL) {
@@ -89,7 +95,7 @@ public abstract class BaseParameterFactory<T extends BaseParameter> {
     private void setSessionInfo(@NonNull T parameter) {
         ConnectionInfo target = transferConfig.getConnectionInfo();
         parameter.setHost(target.getHost());
-        parameter.setPort(target.getPort());
+        parameter.setPort(target.getPort() + "");
         parameter.setPassword(target.getPassword());
         parameter.setCluster(target.getClusterName());
         parameter.setTenant(target.getTenantName());
@@ -141,20 +147,19 @@ public abstract class BaseParameterFactory<T extends BaseParameter> {
         }
     }
 
-    // private void setInitSqls(BaseParameter parameter) throws IOException {
-    // try (InputStream is = getClass().getResourceAsStream(SESSION_CONFIG_FILE_PATH)) {
-    //
-    // SessionConfig sessionConfig = SessionConfig.fromJson(IOUtils.toString(is,
-    // StandardCharsets.UTF_8));
-    //
-    // sessionConfig.setJdbcOption("useServerPrepStmts", transferConfig.isUsePrepStmts() + "");
-    // sessionConfig.setJdbcOption("useCursorFetch", transferConfig.isUsePrepStmts() + "");
-    // sessionConfig.setJdbcOption("zeroDateTimeBehavior", DEFAULT_ZERO_DATE_TIME_BEHAVIOR);
-    // sessionConfig.setJdbcOption("sendConnectionAttributes", "false");
-    //
-    // parameter.setSessionConfig(sessionConfig);
-    // }
-    // }
+    private void setInitSqls(BaseParameter parameter) throws IOException {
+        try (InputStream is = getClass().getResourceAsStream(SESSION_CONFIG_FILE_PATH)) {
+
+            SessionConfig sessionConfig = SessionConfig.fromJson(IOUtils.toString(is, StandardCharsets.UTF_8));
+
+            sessionConfig.setJdbcOption("useServerPrepStmts", transferConfig.isUsePrepStmts() + "");
+            sessionConfig.setJdbcOption("useCursorFetch", transferConfig.isUsePrepStmts() + "");
+            sessionConfig.setJdbcOption("zeroDateTimeBehavior", DEFAULT_ZERO_DATE_TIME_BEHAVIOR);
+            sessionConfig.setJdbcOption("sendConnectionAttributes", "false");
+
+            parameter.setSessionConfig(sessionConfig);
+        }
+    }
 
     private void setCsvInfo(BaseParameter parameter) {
         CsvConfig csvConfig = transferConfig.getCsvConfig();

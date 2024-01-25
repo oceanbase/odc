@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.risklevel;
+package com.oceanbase.odc.service.regulation.risklevel;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -34,8 +34,6 @@ import com.oceanbase.odc.metadb.iam.UserEntity;
 import com.oceanbase.odc.metadb.regulation.risklevel.RiskDetectRuleRepository;
 import com.oceanbase.odc.service.iam.UserService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
-import com.oceanbase.odc.service.regulation.risklevel.RiskDetectService;
-import com.oceanbase.odc.service.regulation.risklevel.RiskLevelService;
 import com.oceanbase.odc.service.regulation.risklevel.model.BaseTreeNode;
 import com.oceanbase.odc.service.regulation.risklevel.model.BooleanOperator;
 import com.oceanbase.odc.service.regulation.risklevel.model.ConditionExpression;

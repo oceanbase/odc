@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,8 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package com.oceanbase.odc.service.ruleset;
+package com.oceanbase.odc.service.regulation.ruleset;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -39,8 +38,6 @@ import com.oceanbase.odc.metadb.regulation.ruleset.RuleApplyingEntity;
 import com.oceanbase.odc.metadb.regulation.ruleset.RuleApplyingRepository;
 import com.oceanbase.odc.migrate.jdbc.common.R4237DefaultRuleApplyingMigrate.InnerDefaultRuleApplying;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
-import com.oceanbase.odc.service.regulation.ruleset.RuleService;
-import com.oceanbase.odc.service.regulation.ruleset.RulesetService;
 import com.oceanbase.odc.service.regulation.ruleset.model.QueryRuleMetadataParams;
 import com.oceanbase.odc.service.regulation.ruleset.model.Rule;
 import com.oceanbase.odc.service.regulation.ruleset.model.Ruleset;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.approval;
+package com.oceanbase.odc.service.regulation.approval;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,7 +37,6 @@ import com.oceanbase.odc.metadb.regulation.approval.ApprovalNodeConfigEntity;
 import com.oceanbase.odc.metadb.regulation.approval.ApprovalNodeConfigRepository;
 import com.oceanbase.odc.service.iam.ResourceRoleService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
-import com.oceanbase.odc.service.regulation.approval.ApprovalFlowConfigService;
 import com.oceanbase.odc.service.regulation.approval.model.ApprovalFlowConfig;
 import com.oceanbase.odc.service.regulation.approval.model.ApprovalNodeConfig;
 
