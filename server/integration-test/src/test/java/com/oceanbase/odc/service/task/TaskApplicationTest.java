@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.task;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.junit.Assert;
@@ -24,6 +25,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import com.oceanbase.odc.TestConnectionUtil;
+import com.oceanbase.odc.common.concurrent.Await;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
@@ -98,14 +100,11 @@ public class TaskApplicationTest extends BaseJobTest {
     }
 
     private void assertCancelResult(JobIdentity ji) {
-
-        try {
-            Thread.sleep(10 * 1000L);
-            boolean result = ThreadPoolTaskExecutor.getInstance().cancel(ji);
-            Assert.assertTrue(result);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
+        Await.await().timeout(60).timeUnit(TimeUnit.SECONDS).period(1).periodTimeUnit(TimeUnit.SECONDS).until(
+                () -> ThreadPoolTaskExecutor.getInstance().getTask(ji) != null)
+                .build().start();
+        boolean result = ThreadPoolTaskExecutor.getInstance().cancel(ji);
+        Assert.assertTrue(result);
 
     }
 

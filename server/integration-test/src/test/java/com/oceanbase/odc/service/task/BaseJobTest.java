@@ -37,6 +37,7 @@ import com.oceanbase.odc.service.task.executor.logger.LogUtils;
 import com.oceanbase.odc.service.task.schedule.provider.DefaultHostUrlProvider;
 import com.oceanbase.odc.service.task.schedule.provider.HostUrlProvider;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
+import com.oceanbase.odc.service.task.util.JobEncryptUtils;
 import com.oceanbase.odc.test.database.TestDBConfiguration;
 import com.oceanbase.odc.test.database.TestDBConfigurations;
 import com.oceanbase.odc.test.database.TestProperties;
@@ -55,20 +56,25 @@ public abstract class BaseJobTest {
 
     @BeforeClass
     public static void init() throws IOException {
+        String key = PasswordUtils.random(32);
+        String salt = PasswordUtils.random(8);
+        System.setProperty(JobEnvKeyConstants.ENCRYPT_KEY, key);
+        System.setProperty(JobEnvKeyConstants.ENCRYPT_SALT, salt);
 
         TestDBConfiguration tdc = TestDBConfigurations.getInstance().getTestOBMysqlConfiguration();
-        System.setProperty(JobEnvKeyConstants.DATABASE_HOST, tdc.getHost());
-        System.setProperty(JobEnvKeyConstants.DATABASE_PORT, tdc.getPort() + "");
-        System.setProperty(JobEnvKeyConstants.DATABASE_NAME, tdc.getDefaultDBName());
+        System.setProperty(JobEnvKeyConstants.DATABASE_HOST, JobEncryptUtils.encrypt(key, salt, tdc.getHost()));
+        System.setProperty(JobEnvKeyConstants.DATABASE_PORT, JobEncryptUtils.encrypt(key, salt, tdc.getPort() + ""));
+        System.setProperty(JobEnvKeyConstants.DATABASE_NAME,
+                JobEncryptUtils.encrypt(key, salt, tdc.getDefaultDBName()));
         System.setProperty(JobEnvKeyConstants.DATABASE_USERNAME,
-                JdbcUtil.buildUser(tdc.getUsername(), tdc.getTenant(), tdc.getCluster()));
-        System.setProperty(JobEnvKeyConstants.DATABASE_PASSWORD, tdc.getPassword());
+                JobEncryptUtils.encrypt(key, salt,
+                        JdbcUtil.buildUser(tdc.getUsername(), tdc.getTenant(), tdc.getCluster())));
+        System.setProperty(JobEnvKeyConstants.DATABASE_PASSWORD, JobEncryptUtils.encrypt(key, salt, tdc.getPassword()));
         System.setProperty(JobEnvKeyConstants.ODC_LOG_DIRECTORY, LogUtils.getBaseLogPath());
         System.setProperty(JobEnvKeyConstants.ODC_BOOT_MODE, JobConstants.ODC_BOOT_MODE_EXECUTOR);
         System.setProperty(JobEnvKeyConstants.ODC_TASK_RUN_MODE, TaskRunModeEnum.K8S.name());
         System.setProperty(JobEnvKeyConstants.ODC_SERVER_PORT, "8990");
-        System.setProperty(JobEnvKeyConstants.ENCRYPT_KEY, PasswordUtils.random(32));
-        System.setProperty(JobEnvKeyConstants.ENCRYPT_SALT, PasswordUtils.random(8));
+
 
         DefaultJobConfiguration jc = new DefaultJobConfiguration() {};
 
