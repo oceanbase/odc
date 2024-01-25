@@ -64,3 +64,7 @@ jasypt:
   encryptor:
     password: ${ODC_PROPERTY_ENCRYPTION_PASSWORD}
     algorithm: PBEWithHmacSHA512AndAES_128
+
+logging:
+  level:
+    root: INFO
