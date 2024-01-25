@@ -21,8 +21,8 @@ import java.util.Map;
 
 import org.antlr.v4.runtime.tree.ParseTree;
 
-import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.plugin.task.api.partitionplan.datatype.TimeDataType;
+import com.oceanbase.odc.plugin.task.obmysql.partitionplan.OBMySQLAutoPartitionExtensionPoint;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.SqlExprCalculator;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
@@ -57,7 +57,7 @@ public class OBMySQLPartitionKeyDataTypeFactory extends BasePartitionKeyDataType
 
     @Override
     protected String unquoteIdentifier(String identifier) {
-        return identifier == null ? null : StringUtils.unquoteMySqlIdentifier(identifier);
+        return new OBMySQLAutoPartitionExtensionPoint().unquoteIdentifier(identifier);
     }
 
     @Override
@@ -66,10 +66,10 @@ public class OBMySQLPartitionKeyDataTypeFactory extends BasePartitionKeyDataType
     }
 
     @Override
-    protected DataType recognizeExprDataType(@NonNull String partitionKeyExpression) {
+    protected DataType recognizeExprDataType(@NonNull DBTable dbTable, @NonNull String partitionKey) {
         Statement statement;
         try {
-            statement = new ExpressionParser().parse(new StringReader(partitionKeyExpression));
+            statement = new ExpressionParser().parse(new StringReader(partitionKey));
         } catch (Exception e) {
             statement = null;
         }

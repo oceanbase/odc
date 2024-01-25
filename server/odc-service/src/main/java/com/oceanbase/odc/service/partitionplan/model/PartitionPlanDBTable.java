@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.partitionplan.model;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +24,10 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
 
+import com.oceanbase.odc.common.util.StringUtils;
+import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.plugin.task.api.partitionplan.AutoPartitionExtensionPoint;
+import com.oceanbase.odc.service.plugin.TaskPluginUtil;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.oceanbase.tools.dbbrowser.model.DBTableIndex;
@@ -47,6 +52,7 @@ import lombok.Setter;
 @EqualsAndHashCode(callSuper = true)
 public class PartitionPlanDBTable extends DBTable {
 
+    private DialectType dialectType;
     private boolean inTablegroup;
     private List<PartitionPlanStrategy> strategies;
 
@@ -109,23 +115,25 @@ public class PartitionPlanDBTable extends DBTable {
             mode |= 0x40;
         }
         StringBuilder builder = new StringBuilder(mode);
-        if (option.getExpression() != null) {
-            builder.insert(0, option.getExpression().hashCode());
-        }
+        List<String> exprOrColumns = new ArrayList<>();
         if (CollectionUtils.isNotEmpty(option.getColumnNames())) {
-            List<DBTableColumn> columns = getColumns();
-            Map<String, String> colName2TypeName = new HashMap<>();
-            if (CollectionUtils.isNotEmpty(columns)) {
-                colName2TypeName = columns.stream().collect(
-                        Collectors.toMap(DBTableColumn::getName, DBTableColumn::getTypeName));
-            }
-            StringBuilder tmp = new StringBuilder();
-            for (String col : option.getColumnNames()) {
-                tmp.append(col).append(colName2TypeName.getOrDefault(col, "unknown"));
-            }
-            builder.insert(0, tmp.toString().hashCode());
+            exprOrColumns.addAll(option.getColumnNames());
+        } else if (StringUtils.isNotEmpty(option.getExpression())) {
+            exprOrColumns.add(option.getExpression());
         }
-        return builder.toString();
+        List<DBTableColumn> columns = getColumns();
+        AutoPartitionExtensionPoint extensionPoint = TaskPluginUtil.getAutoPartitionExtensionPoint(dialectType);
+        Map<String, String> colName2TypeName = new HashMap<>();
+        if (CollectionUtils.isNotEmpty(columns)) {
+            colName2TypeName = columns.stream().collect(Collectors.toMap(
+                    c -> extensionPoint.unquoteIdentifier(c.getName()), DBTableColumn::getTypeName));
+        }
+        StringBuilder tmp = new StringBuilder();
+        for (String exprOrColumn : exprOrColumns) {
+            String realName = extensionPoint.unquoteIdentifier(exprOrColumn);
+            tmp.append(realName).append(colName2TypeName.getOrDefault(realName, "unknown"));
+        }
+        return builder.insert(0, tmp.toString().hashCode()).toString();
     }
 
 }

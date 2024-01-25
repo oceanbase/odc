@@ -16,7 +16,7 @@
 package com.oceanbase.odc.plugin.task.obmysql.partitionplan;
 
 import java.sql.Connection;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -75,21 +75,18 @@ public class OBMySQLAutoPartitionExtensionPoint implements AutoPartitionExtensio
         if (!supports(table.getPartition())) {
             throw new UnsupportedOperationException("Unsupported db table");
         }
-        DBTablePartitionOption option = table.getPartition().getPartitionOption();
         SqlExprCalculator calculator = new OBMySQLExprCalculator(connection);
+        DBTablePartitionOption option = table.getPartition().getPartitionOption();
+        List<String> keys = new ArrayList<>();
         if (CollectionUtils.isNotEmpty(option.getColumnNames())) {
-            return option.getColumnNames().stream().map(col -> {
-                try {
-                    return new OBMySQLPartitionKeyDataTypeFactory(calculator, table, col).generate();
-                } catch (Exception e) {
-                    throw new IllegalStateException(e);
-                }
-            }).collect(Collectors.toList());
+            keys.addAll(option.getColumnNames());
         } else if (StringUtils.isNotEmpty(option.getExpression())) {
-            return Collections.singletonList(new OBMySQLPartitionKeyDataTypeFactory(
-                    calculator, table, option.getExpression()).generate());
+            keys.add(option.getExpression());
+        } else {
+            throw new IllegalStateException("Partition type is unknown, expression and columns are both null");
         }
-        throw new IllegalStateException("Partition type is unknown, expression and columns are both null");
+        return keys.stream().map(c -> new OBMySQLPartitionKeyDataTypeFactory(calculator, table, c).generate())
+                .collect(Collectors.toList());
     }
 
     @Override

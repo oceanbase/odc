@@ -23,9 +23,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
-import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.SqlExprCalculator;
-import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.SqlExprCalculator.SqlExprResult;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartitionDefinition;
@@ -68,45 +66,46 @@ public abstract class BasePartitionKeyDataTypeFactory implements DataTypeFactory
                 || partitionType == DBTablePartitionType.NOT_PARTITIONED) {
             throw new IllegalArgumentException("Partition type is illegal, " + partitionType);
         }
-        if (StringUtils.isNotEmpty(option.getExpression())) {
-            /**
-             * range partition, partition key a an expression
-             */
-            List<DBTablePartitionDefinition> definitions = this.dbTable.getPartition().getPartitionDefinitions();
-            if (CollectionUtils.isEmpty(definitions)) {
-                throw new IllegalStateException("Partition def is empty");
-            }
-            DBTablePartitionDefinition definition = definitions.get(0);
-            /**
-             * ob-oracle and ob-mysql only has one partition key for range partition type, but is that true for
-             * other datasource?
-             */
-            Verify.singleton(definition.getMaxValues(), "Range partition table can only has one partition key");
-            DataType dataType = recognizeExprDataType(this.partitionKey);
-            if (dataType != null) {
-                return dataType;
-            }
-            SqlExprResult result = this.calculator.calculate(definition.getMaxValues().get(0));
-            Verify.notNull(result, "Sql expression's calculation result can not be null");
-            return result.getDataType();
-        } else if (CollectionUtils.isNotEmpty(option.getColumnNames())) {
-            /**
-             * range column partition, partition key is a column
-             */
-            Map<String, DBTableColumn> colName2Col = this.dbTable.getColumns().stream()
-                    .collect(Collectors.toMap(c -> unquoteIdentifier(c.getName()), c -> c));
-            List<String> cols = option.getColumnNames();
-            String pk = unquoteIdentifier(partitionKey);
-            if (cols.stream().noneMatch(s -> Objects.equals(pk, unquoteIdentifier(s)))) {
-                throw new IllegalArgumentException("Failed to find " + pk + " in partition keys " + cols);
-            }
-            DBTableColumn column = colName2Col.get(pk);
-            if (column == null) {
-                throw new IllegalStateException("Failed to find target column by name, " + pk);
-            }
+        String unquotedPartitionKey = unquoteIdentifier(this.partitionKey);
+        /**
+         * assume that the partition key is a column
+         */
+        Map<String, DBTableColumn> colName2Col = this.dbTable.getColumns().stream()
+                .collect(Collectors.toMap(c -> unquoteIdentifier(c.getName()), c -> c));
+        DBTableColumn column = colName2Col.get(unquotedPartitionKey);
+        if (column != null) {
             return recognizeColumnDataType(column);
         }
-        throw new IllegalStateException("Partition type is unknown, expression and columns are both null");
+        /**
+         * assume that the partition key a an expression
+         */
+        DataType dataType = recognizeExprDataType(this.dbTable, this.partitionKey);
+        if (dataType != null) {
+            return dataType;
+        }
+        int i;
+        List<DBTablePartitionDefinition> definitions = this.dbTable.getPartition().getPartitionDefinitions();
+        if (CollectionUtils.isEmpty(definitions)) {
+            throw new IllegalStateException("Partition def is empty");
+        }
+        List<String> cols = option.getColumnNames();
+        if (CollectionUtils.isNotEmpty(cols)) {
+            for (i = 0; i < cols.size(); i++) {
+                if (Objects.equals(unquotedPartitionKey, unquoteIdentifier(cols.get(i)))) {
+                    break;
+                }
+            }
+            if (i >= cols.size() || i >= definitions.size()) {
+                throw new IllegalStateException("Failed to find partition key, " + this.partitionKey);
+            }
+        } else if (StringUtils.isNotEmpty(option.getExpression())
+                && Objects.equals(unquoteIdentifier(option.getExpression()), unquotedPartitionKey)) {
+            i = 0;
+        } else {
+            throw new IllegalStateException("Partition type is unknown, expression and columns are both null");
+        }
+        DBTablePartitionDefinition definition = definitions.get(0);
+        return this.calculator.calculate(definition.getMaxValues().get(i)).getDataType();
     }
 
     protected abstract String unquoteIdentifier(String identifier);
@@ -119,9 +118,10 @@ public abstract class BasePartitionKeyDataTypeFactory implements DataTypeFactory
      * you can return null if you can not get it by parsing and then we will get the datatype by
      * executing it.
      *
-     * @param partitionKeyExpression target partition key
+     * @param partitionKey target partition key
+     * @param dbTable target table
      * @return if null means that failed to get
      */
-    protected abstract DataType recognizeExprDataType(@NonNull String partitionKeyExpression);
+    protected abstract DataType recognizeExprDataType(@NonNull DBTable dbTable, @NonNull String partitionKey);
 
 }

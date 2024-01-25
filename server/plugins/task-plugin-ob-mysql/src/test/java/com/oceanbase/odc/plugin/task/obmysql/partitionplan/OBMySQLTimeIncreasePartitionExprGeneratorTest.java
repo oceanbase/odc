@@ -219,7 +219,7 @@ public class OBMySQLTimeIncreasePartitionExprGeneratorTest {
     private static List<String> getDdlContent() throws IOException {
         String delimiter = "\\$\\$\\s*";
         try (InputStream input = OBMySQLPartitionKeyDataTypeFactoryTest.class.getClassLoader()
-                .getResourceAsStream("partitionplan/partition_generator_create_table_partition.sql")) {
+                .getResourceAsStream("partitionplan/time_partition_generator_create_table_partition.sql")) {
             byte[] buffer = new byte[input.available()];
             IOUtils.readFully(input, buffer);
             StringSubstitutor substitutor = StringSubstitutor.createInterpolator();
