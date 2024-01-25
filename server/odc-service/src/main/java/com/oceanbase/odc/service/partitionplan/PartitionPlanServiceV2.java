@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
@@ -189,17 +190,32 @@ public class PartitionPlanServiceV2 {
                 throw new IllegalStateException(e);
             }
             return definition;
-        }).collect(Collectors.toList()));
+        }).filter(d -> removeExistingPartitionElement(dbTable, d)).collect(Collectors.toList()));
         strategyListMap.put(PartitionPlanStrategy.DROP, droppedPartitions);
         DBTablePartition partition = dbTable.getPartition();
         return strategyListMap.entrySet().stream().collect(Collectors.toMap(Entry::getKey, e -> {
             DBTablePartition dbTablePartition = new DBTablePartition();
             dbTablePartition.setPartitionDefinitions(e.getValue());
-            dbTablePartition.setPartitionOption(partition.getPartitionOption());
             dbTablePartition.setTableName(dbTable.getName());
             dbTablePartition.setSchemaName(dbTable.getSchemaName());
+            dbTablePartition.setPartitionOption(partition.getPartitionOption());
             return dbTablePartition;
         }));
+    }
+
+    private boolean removeExistingPartitionElement(DBTable dbTable, DBTablePartitionDefinition definition) {
+        return dbTable.getPartition().getPartitionDefinitions().stream().noneMatch(i -> {
+            if (Objects.equals(i.getName(), definition.getName())) {
+                return true;
+            }
+            int size = Math.min(i.getMaxValues().size(), definition.getMaxValues().size());
+            for (int k = 0; k < size; k++) {
+                if (Objects.equals(i.getMaxValues().get(k), definition.getMaxValues().get(k))) {
+                    return true;
+                }
+            }
+            return false;
+        });
     }
 
     private void checkPartitionKeyValue(
