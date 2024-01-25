@@ -333,8 +333,6 @@ public enum AuditEventAction implements Translatable {
 
     UPDATE_SQL_SECURITY_RULE,
 
-    ;
-
     /**
      * Permission management
      */
