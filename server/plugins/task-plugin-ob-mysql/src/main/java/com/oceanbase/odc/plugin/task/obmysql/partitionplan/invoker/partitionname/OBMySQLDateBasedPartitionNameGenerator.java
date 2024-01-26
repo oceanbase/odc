@@ -38,7 +38,7 @@ public class OBMySQLDateBasedPartitionNameGenerator implements DateBasedPartitio
 
     @Override
     public String generate(@NonNull Connection connection, @NonNull DBTable dbTable,
-            @NonNull DBTablePartitionDefinition target,
+            @NonNull Integer targetPartitionIndex, @NonNull DBTablePartitionDefinition target,
             @NonNull DateBasedPartitionNameGeneratorConfig config) {
         DateFormat dateFormat = new SimpleDateFormat(config.getNamingSuffixExpression());
         return config.getNamingPrefix() + dateFormat.format(new Date());

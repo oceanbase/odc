@@ -34,9 +34,10 @@ import lombok.NonNull;
 public interface PartitionNameGenerator extends AutoPartitionKeyInvoker<String> {
 
     String TARGET_PARTITION_DEF_KEY = "targetPartition";
+    String TARGET_PARTITION_DEF_INDEX_KEY = "targetPartitionIndex";
 
     String generate(@NonNull Connection connection, @NonNull DBTable dbTable,
-            @NonNull DBTablePartitionDefinition target,
+            @NonNull Integer targetPartitionIndex, @NonNull DBTablePartitionDefinition target,
             @NonNull Map<String, Object> parameters) throws Exception;
 
     @Override
@@ -46,7 +47,11 @@ public interface PartitionNameGenerator extends AutoPartitionKeyInvoker<String> 
         if (!(value instanceof DBTablePartitionDefinition)) {
             throw new IllegalArgumentException("Missing target partition candidate");
         }
-        return generate(connection, dbTable, (DBTablePartitionDefinition) value, parameters);
+        Object index = parameters.get(TARGET_PARTITION_DEF_INDEX_KEY);
+        if (!(index instanceof Integer) || ((Integer) index) < 0) {
+            throw new IllegalArgumentException("Target partition index is missing or illegal");
+        }
+        return generate(connection, dbTable, (Integer) index, (DBTablePartitionDefinition) value, parameters);
     }
 
 }

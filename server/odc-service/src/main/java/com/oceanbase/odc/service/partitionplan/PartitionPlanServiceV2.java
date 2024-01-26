@@ -174,9 +174,9 @@ public class PartitionPlanServiceV2 {
                 }
             }
         }
-        strategyListMap.put(PartitionPlanStrategy.CREATE, lineNum2CreateExprs.values().stream().map(s -> {
+        strategyListMap.put(PartitionPlanStrategy.CREATE, lineNum2CreateExprs.entrySet().stream().map(s -> {
             DBTablePartitionDefinition definition = new DBTablePartitionDefinition();
-            definition.setMaxValues(s);
+            definition.setMaxValues(s.getValue());
             PartitionNameGenerator invoker = extensionPoint
                     .getPartitionNameGeneratorGeneratorByName(tableConfig.getPartitionNameInvoker());
             if (invoker == null) {
@@ -185,6 +185,7 @@ public class PartitionPlanServiceV2 {
             }
             Map<String, Object> parameters = tableConfig.getPartitionNameInvokerParameters();
             parameters.putIfAbsent(PartitionNameGenerator.TARGET_PARTITION_DEF_KEY, definition);
+            parameters.putIfAbsent(PartitionNameGenerator.TARGET_PARTITION_DEF_INDEX_KEY, s.getKey());
             try {
                 definition.setName(invoker.invoke(connection, dbTable, parameters));
             } catch (Exception e) {

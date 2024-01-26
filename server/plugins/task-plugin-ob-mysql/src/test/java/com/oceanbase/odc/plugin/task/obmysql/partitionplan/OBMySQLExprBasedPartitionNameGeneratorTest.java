@@ -59,6 +59,7 @@ public class OBMySQLExprBasedPartitionNameGeneratorTest {
     private Map<String, Object> getParameters(String expr) {
         Map<String, Object> parameters = new HashMap<>();
         parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_KEY, new DBTablePartitionDefinition());
+        parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_INDEX_KEY, 1);
         parameters.put(SqlExprBasedPartitionNameGenerator.PARTITION_NAME_EXPR_KEY, expr);
         return parameters;
     }

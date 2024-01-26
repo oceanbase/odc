@@ -41,7 +41,8 @@ public class OBMySQLExprBasedPartitionNameGenerator implements SqlExprBasedParti
 
     @Override
     public String generate(@NonNull Connection connection, @NonNull DBTable dbTable,
-            @NonNull DBTablePartitionDefinition target, @NonNull String sqlExpression) {
+            @NonNull Integer targetPartitionIndex, @NonNull DBTablePartitionDefinition target,
+            @NonNull String sqlExpression) {
         SqlExprCalculator calculator = getSqlExprCalculator(connection);
         SqlExprResult result = calculator.calculate(sqlExpression);
         return getCellDataProcessor(result.getDataType()).convertToSqlLiteral(result.getValue(), result.getDataType());

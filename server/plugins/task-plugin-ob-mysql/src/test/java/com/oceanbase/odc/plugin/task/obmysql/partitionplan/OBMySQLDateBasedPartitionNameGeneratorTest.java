@@ -62,6 +62,7 @@ public class OBMySQLDateBasedPartitionNameGeneratorTest {
     private Map<String, Object> getParameters(DateBasedPartitionNameGeneratorConfig config) {
         Map<String, Object> parameters = new HashMap<>();
         parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_KEY, new DBTablePartitionDefinition());
+        parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_INDEX_KEY, 1);
         parameters.put(DateBasedPartitionNameGenerator.PARTITION_NAME_GENERATOR_KEY, config);
         return parameters;
     }

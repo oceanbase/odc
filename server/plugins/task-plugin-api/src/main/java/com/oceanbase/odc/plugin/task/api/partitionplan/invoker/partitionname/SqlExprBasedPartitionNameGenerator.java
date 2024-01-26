@@ -36,7 +36,8 @@ public interface SqlExprBasedPartitionNameGenerator extends PartitionNameGenerat
     String PARTITION_NAME_EXPR_KEY = "partitionNameExpr";
 
     String generate(@NonNull Connection connection, @NonNull DBTable dbTable,
-            @NonNull DBTablePartitionDefinition target, @NonNull String sqlExpression) throws Exception;
+            @NonNull Integer targetPartitionIndex, @NonNull DBTablePartitionDefinition target,
+            @NonNull String sqlExpression) throws Exception;
 
     @Override
     default String getName() {
@@ -45,9 +46,10 @@ public interface SqlExprBasedPartitionNameGenerator extends PartitionNameGenerat
 
     @Override
     default String generate(@NonNull Connection connection, @NonNull DBTable dbTable,
-            @NonNull DBTablePartitionDefinition target, @NonNull Map<String, Object> parameters) throws Exception {
-        return generate(connection, dbTable, target, ParameterUtil.nullSafeExtract(parameters,
-                PARTITION_NAME_EXPR_KEY, String.class));
+            @NonNull Integer targetPartitionIndex, @NonNull DBTablePartitionDefinition target,
+            @NonNull Map<String, Object> parameters) throws Exception {
+        return generate(connection, dbTable, targetPartitionIndex, target,
+                ParameterUtil.nullSafeExtract(parameters, PARTITION_NAME_EXPR_KEY, String.class));
     }
 
 }

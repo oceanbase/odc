@@ -37,7 +37,7 @@ public interface DateBasedPartitionNameGenerator extends PartitionNameGenerator 
     String PARTITION_NAME_GENERATOR_KEY = "partitionNameGeneratorConfig";
 
     String generate(@NonNull Connection connection, @NonNull DBTable dbTable,
-            @NonNull DBTablePartitionDefinition target,
+            @NonNull Integer targetPartitionIndex, @NonNull DBTablePartitionDefinition target,
             @NonNull DateBasedPartitionNameGeneratorConfig config) throws Exception;
 
     @Override
@@ -47,9 +47,10 @@ public interface DateBasedPartitionNameGenerator extends PartitionNameGenerator 
 
     @Override
     default String generate(@NonNull Connection connection, @NonNull DBTable dbTable,
-            @NonNull DBTablePartitionDefinition target, @NonNull Map<String, Object> parameters) throws Exception {
-        return generate(connection, dbTable, target, ParameterUtil.nullSafeExtract(parameters,
-                PARTITION_NAME_GENERATOR_KEY, DateBasedPartitionNameGeneratorConfig.class));
+            @NonNull Integer targetPartitionIndex, @NonNull DBTablePartitionDefinition target,
+            @NonNull Map<String, Object> parameters) throws Exception {
+        return generate(connection, dbTable, targetPartitionIndex, target, ParameterUtil.nullSafeExtract(
+                parameters, PARTITION_NAME_GENERATOR_KEY, DateBasedPartitionNameGeneratorConfig.class));
     }
 
 }
