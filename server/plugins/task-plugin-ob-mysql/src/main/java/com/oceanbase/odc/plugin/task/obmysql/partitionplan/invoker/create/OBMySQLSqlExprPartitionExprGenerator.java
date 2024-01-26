@@ -68,7 +68,7 @@ public class OBMySQLSqlExprPartitionExprGenerator implements SqlExprBasedPartiti
         SqlExprCalculator calculator = getSqlExprCalculator(connection);
         for (int i = 0; i < generateCount; i++) {
             Map<String, String> variables = new HashMap<>();
-            variables.put(PartitionPlanVariableKey.INTERVAL.name(), String.join("+", intervals));
+            variables.put(PartitionPlanVariableKey.INTERVAL.name(), "(" + String.join("+", intervals) + ")");
             intervals.add(realInterval);
             StringSubstitutor substitutor = new StringSubstitutor(variables);
             candidates.add(calculator.calculate(substitutor.replace(realExpression)));
