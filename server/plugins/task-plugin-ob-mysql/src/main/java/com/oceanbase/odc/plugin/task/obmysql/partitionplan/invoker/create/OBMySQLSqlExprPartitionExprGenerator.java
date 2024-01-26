@@ -57,7 +57,7 @@ public class OBMySQLSqlExprPartitionExprGenerator implements SqlExprBasedPartiti
             @NonNull String partitionKey,
             @NonNull Integer generateCount, @NonNull SqlExprBasedGeneratorConfig config) {
         String realInterval = config.getIntervalGenerateExpr();
-        String realExpression = config.getPartitionLowerBoundGenerateExpr();
+        String realExpression = config.getGenerateExpr();
         for (PartitionPlanVariableKey key : PartitionPlanVariableKey.values()) {
             realInterval = replaceVariable(dbTable, partitionKey, realInterval, key);
             realExpression = replaceVariable(dbTable, partitionKey, realExpression, key);

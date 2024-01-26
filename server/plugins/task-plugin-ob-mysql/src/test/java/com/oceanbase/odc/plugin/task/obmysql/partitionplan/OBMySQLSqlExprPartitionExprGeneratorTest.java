@@ -77,7 +77,7 @@ public class OBMySQLSqlExprPartitionExprGeneratorTest {
             AutoPartitionKeyInvoker<List<String>> generator = new OBMySQLSqlExprPartitionExprGenerator();
             SqlExprBasedGeneratorConfig config = new SqlExprBasedGeneratorConfig();
             config.setIntervalGenerateExpr("86400");
-            config.setPartitionLowerBoundGenerateExpr("cast(date_format(from_unixtime(unix_timestamp(STR_TO_DATE("
+            config.setGenerateExpr("cast(date_format(from_unixtime(unix_timestamp(STR_TO_DATE("
                     + PartitionPlanVariableKey.LAST_PARTITION_VALUE.getVariable()
                     + ", '%Y%m%d')) + " + PartitionPlanVariableKey.INTERVAL.getVariable()
                     + "), '%Y%m%d') as signed)");
