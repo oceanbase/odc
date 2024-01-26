@@ -28,6 +28,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.exception.AccessDeniedException;
 import com.oceanbase.odc.metadb.connection.DatabaseEntity;
@@ -64,6 +65,9 @@ public class DatabasePermissionHelper {
      * @param permissionTypes permission types
      */
     public void checkPermissions(Collection<Long> databaseIds, Collection<DatabasePermissionType> permissionTypes) {
+        if (authenticationFacade.currentUser().getOrganizationType() == OrganizationType.INDIVIDUAL) {
+            return;
+        }
         if (CollectionUtils.isEmpty(databaseIds) || CollectionUtils.isEmpty(permissionTypes)) {
             return;
         }
