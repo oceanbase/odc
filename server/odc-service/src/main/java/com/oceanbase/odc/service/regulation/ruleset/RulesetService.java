@@ -23,10 +23,12 @@ import com.oceanbase.odc.core.authority.util.Authenticated;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
+import com.oceanbase.odc.metadb.regulation.ruleset.RuleApplyingRepository;
 import com.oceanbase.odc.metadb.regulation.ruleset.RulesetEntity;
 import com.oceanbase.odc.metadb.regulation.ruleset.RulesetRepository;
 import com.oceanbase.odc.service.iam.HorizontalDataPermissionValidator;
 import com.oceanbase.odc.service.iam.UserService;
+import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.regulation.ruleset.model.Ruleset;
 
 import lombok.NonNull;
@@ -49,7 +51,10 @@ public class RulesetService {
     private HorizontalDataPermissionValidator permissionValidator;
 
     @Autowired
-    private RuleService ruleService;
+    private RuleApplyingRepository ruleApplyingRepository;
+
+    @Autowired
+    private AuthenticationFacade authenticationFacade;
 
     private final RulesetMapper rulesetMapper = RulesetMapper.INSTANCE;
 
@@ -73,7 +78,7 @@ public class RulesetService {
                 .orElseThrow(() -> new NotFoundException(ResourceType.ODC_RULESET, "id", id)));
         permissionValidator.checkCurrentOrganization(ruleset);
         rulesetRepository.deleteById(id);
-        ruleService.delete(id);
+        ruleApplyingRepository.deleteByOrganizationIdAndRulesetId(authenticationFacade.currentOrganizationId(), id);
         return ruleset;
     }
 

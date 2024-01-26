@@ -27,6 +27,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.i18n.LocaleContextHolder;
 
 import com.oceanbase.odc.common.i18n.I18n;
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.constant.AuditEventAction;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
@@ -34,11 +35,17 @@ import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.metadb.collaboration.ProjectEntity;
 import com.oceanbase.odc.metadb.collaboration.ProjectRepository;
+import com.oceanbase.odc.service.collaboration.environment.EnvironmentService;
 import com.oceanbase.odc.service.collaboration.project.ProjectService;
+import com.oceanbase.odc.service.connection.ConnectionService;
+import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.iam.ResourceRoleService;
 import com.oceanbase.odc.service.iam.UserService;
 import com.oceanbase.odc.service.regulation.approval.ApprovalFlowConfigService;
+import com.oceanbase.odc.service.regulation.risklevel.RiskDetectService;
 import com.oceanbase.odc.service.regulation.risklevel.RiskLevelService;
+import com.oceanbase.odc.service.regulation.risklevel.model.ConditionExpression;
+import com.oceanbase.odc.service.regulation.risklevel.model.RiskDetectRule;
 import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevel;
 
 import lombok.extern.slf4j.Slf4j;
@@ -71,6 +78,15 @@ public class HookConfiguration {
     @Autowired
     private ProjectRepository projectRepository;
 
+    @Autowired
+    private EnvironmentService environmentService;
+
+    @Autowired
+    private ConnectionService connectionService;
+
+    @Autowired
+    private RiskDetectService riskDetectService;
+
     @PostConstruct
     public void init() {
         userService.addPostUserDeleteHook(event -> {
@@ -88,6 +104,15 @@ public class HookConfiguration {
             approvalFlowConfigUsageCheck(event.getId());
         });
         log.info("PreApprovalFlowConfigDeleteHook added");
+
+        environmentService.addDeleteHook(event -> {
+            checkDataSourceReference(event.getId(), event.getOrganizationId());
+            checkRiskLevelReference(event.getId(), event.getOrganizationId());
+        });
+        log.info("PreDeleteEnvironmentHooks added");
+
+        environmentService.addDisableHook(event -> checkRiskLevelReference(event.getId(), event.getOrganizationId()));
+        log.info("PreDisableEnvironmentHooks added");
     }
 
     private void approvalFlowConfigUsageCheck(Long flowConfigId) {
@@ -133,6 +158,45 @@ public class HookConfiguration {
                         ResourceType.ODC_PROJECT.getLocalizedMessage()},
                 errorMessage);
 
+    }
+
+    private void checkDataSourceReference(Long id, Long organizationId) {
+        Set<ConnectionConfig> referencedConnections =
+                connectionService.listByOrganizationId(organizationId).stream()
+                        .filter(connection -> connection.getEnvironmentId().equals(id)).collect(Collectors.toSet());
+        if (!referencedConnections.isEmpty()) {
+            throw new BadRequestException(ErrorCodes.CannotOperateDueReference,
+                    new Object[] {
+                            AuditEventAction.DISABLE_ENVIRONMENT.getLocalizedMessage(),
+                            ResourceType.ODC_ENVIRONMENT.getLocalizedMessage(), "name",
+                            String.join(referencedConnections.stream().map(ConnectionConfig::getName)
+                                    .collect(Collectors.joining(", "))),
+                            ResourceType.ODC_CONNECTION.getLocalizedMessage()},
+                    "cannot disable the environment due to referenced by some data sources");
+        }
+
+    }
+
+    private void checkRiskLevelReference(Long id, Long organizationId) {
+        Set<RiskDetectRule> referencedRiskDetectRules =
+                riskDetectService.listAllByOrganizationId(organizationId)
+                        .stream().filter(rule -> rule.getRootNode().find(ConditionExpression.ENVIRONMENT_ID.name(), id))
+                        .collect(Collectors.toSet());
+
+        if (!referencedRiskDetectRules.isEmpty()) {
+            String riskLevelNames = referencedRiskDetectRules.stream().map(rule -> I18n.translate(
+                    StringUtils.substring(rule.getRiskLevel().getName(), 2, rule.getRiskLevel().getName().length() - 1),
+                    null, rule.getRiskLevel().getName(), LocaleContextHolder.getLocale()))
+                    .collect(Collectors.joining(", "));
+
+            throw new BadRequestException(ErrorCodes.CannotOperateDueReference,
+                    new Object[] {
+                            AuditEventAction.DELETE_ENVIRONMENT.getLocalizedMessage(),
+                            ResourceType.ODC_ENVIRONMENT.getLocalizedMessage(), "name",
+                            riskLevelNames,
+                            ResourceType.ODC_RISK_LEVEL.getLocalizedMessage()},
+                    "cannot delete the environment due to referenced by some risk level");
+        }
     }
 
 }

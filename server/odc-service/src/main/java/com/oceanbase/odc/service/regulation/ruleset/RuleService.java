@@ -212,12 +212,6 @@ public class RuleService {
         return rules;
     }
 
-    @Transactional(rollbackFor = Exception.class)
-    public boolean delete(@NotNull Long rulesetId) {
-        return ruleApplyingRepository.deleteByOrganizationIdAndRulesetId(authenticationFacade.currentOrganizationId(),
-                rulesetId) >= 0;
-    }
-
 
     private List<Rule> internalList(@NonNull Long rulesetId, @NonNull QueryRuleMetadataParams params) {
         List<RuleMetadata> ruleMetadatas = metadataService.list(params);

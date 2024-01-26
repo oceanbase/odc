@@ -15,8 +15,10 @@
  */
 package com.oceanbase.odc.service.collaboration.environment;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import javax.validation.constraints.NotNull;
@@ -50,6 +52,7 @@ import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.iam.HorizontalDataPermissionValidator;
 import com.oceanbase.odc.service.iam.UserService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
+import com.oceanbase.odc.service.regulation.approval.ApprovalFlowConfigService.ApprovalFlowConfigDeleteEvent;
 import com.oceanbase.odc.service.regulation.risklevel.RiskDetectService;
 import com.oceanbase.odc.service.regulation.risklevel.model.ConditionExpression;
 import com.oceanbase.odc.service.regulation.risklevel.model.RiskDetectRule;
@@ -59,6 +62,8 @@ import com.oceanbase.odc.service.regulation.ruleset.model.QueryRuleMetadataParam
 import com.oceanbase.odc.service.regulation.ruleset.model.Rule;
 import com.oceanbase.odc.service.regulation.ruleset.model.Ruleset;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.NonNull;
 
 /**
@@ -71,9 +76,6 @@ import lombok.NonNull;
 public class EnvironmentService {
     @Autowired
     private EnvironmentRepository environmentRepository;
-
-    @Autowired
-    private UserService userService;
 
     @Autowired
     private AuthenticationFacade authenticationFacade;
@@ -89,12 +91,10 @@ public class EnvironmentService {
     @Autowired
     private RuleService ruleService;
 
-    @Autowired
-    private RiskDetectService riskDetectService;
+    private final List<Consumer<EnvironmentDeleteEvent>> preDeleteHooks = new ArrayList<>();
+    private final List<Consumer<EnvironmentDisableEvent>> preDisableHooks = new ArrayList<>();
 
 
-    @Autowired
-    private ConnectionService connectionService;
 
     @Transactional(rollbackFor = Exception.class)
     @PreAuthenticate(actions = "create", resourceType = "ODC_ENVIRONMENT", isForAll = true)
@@ -166,7 +166,9 @@ public class EnvironmentService {
          * ensure that the environment is not referenced by any data source before disabling it
          */
         if (!req.getEnabled()) {
-            checkDataSourceReference(id);
+            for(Consumer<EnvironmentDisableEvent> hook : preDisableHooks) {
+                hook.accept(new EnvironmentDisableEvent(id, authenticationFacade.currentOrganizationId()));
+            }
         }
         return environmentRepository.updateEnabledById(id, req.getEnabled()) > 0;
     }
@@ -174,8 +176,9 @@ public class EnvironmentService {
     @PreAuthenticate(actions = "delete", resourceType = "ODC_ENVIRONMENT", indexOfIdParam = 0)
     @Transactional(rollbackFor = Exception.class)
     public Environment delete(@NotNull Long id) {
-        checkDataSourceReference(id);
-        checkRiskLevelReference(id);
+        for (Consumer<EnvironmentDeleteEvent> hook : preDeleteHooks) {
+            hook.accept(new EnvironmentDeleteEvent(id, authenticationFacade.currentOrganizationId()));
+        }
         Environment environment = innerDetail(id);
         if (environment.getBuiltIn()) {
             throw new BadRequestException("Not allowed to delete builtin environments");
@@ -185,44 +188,14 @@ public class EnvironmentService {
         return environment;
     }
 
-
-    private void checkDataSourceReference(Long id) {
-        Set<ConnectionConfig> referencedConnections =
-                connectionService.listByOrganizationId(authenticationFacade.currentOrganizationId()).stream()
-                        .filter(connection -> connection.getEnvironmentId().equals(id)).collect(Collectors.toSet());
-        if (!referencedConnections.isEmpty()) {
-            throw new BadRequestException(ErrorCodes.CannotOperateDueReference,
-                    new Object[] {
-                            AuditEventAction.DISABLE_ENVIRONMENT.getLocalizedMessage(),
-                            ResourceType.ODC_ENVIRONMENT.getLocalizedMessage(), "name",
-                            String.join(referencedConnections.stream().map(ConnectionConfig::getName)
-                                    .collect(Collectors.joining(", "))),
-                            ResourceType.ODC_CONNECTION.getLocalizedMessage()},
-                    "cannot disable the environment due to referenced by some data sources");
-        }
-
+    @SkipAuthorize("odc internal usage")
+    public void addDeleteHook(Consumer<EnvironmentDeleteEvent> hook) {
+        preDeleteHooks.add(hook);
     }
 
-    private void checkRiskLevelReference(Long id) {
-        Set<RiskDetectRule> referencedRiskDetectRules =
-                riskDetectService.listAllByOrganizationId(authenticationFacade.currentOrganizationId())
-                        .stream().filter(rule -> rule.getRootNode().find(ConditionExpression.ENVIRONMENT_ID.name(), id))
-                        .collect(Collectors.toSet());
-
-        if (!referencedRiskDetectRules.isEmpty()) {
-            String riskLevelNames = referencedRiskDetectRules.stream().map(rule -> I18n.translate(
-                    StringUtils.substring(rule.getRiskLevel().getName(), 2, rule.getRiskLevel().getName().length() - 1),
-                    null, rule.getRiskLevel().getName(), LocaleContextHolder.getLocale()))
-                    .collect(Collectors.joining(", "));
-
-            throw new BadRequestException(ErrorCodes.CannotOperateDueReference,
-                    new Object[] {
-                            AuditEventAction.DELETE_ENVIRONMENT.getLocalizedMessage(),
-                            ResourceType.ODC_ENVIRONMENT.getLocalizedMessage(), "name",
-                            riskLevelNames,
-                            ResourceType.ODC_RISK_LEVEL.getLocalizedMessage()},
-                    "cannot delete the environment due to referenced by some risk level");
-        }
+    @SkipAuthorize("odc internal usage")
+    public void addDisableHook(Consumer<EnvironmentDisableEvent> hook) {
+        preDisableHooks.add(hook);
     }
 
 
@@ -275,6 +248,20 @@ public class EnvironmentService {
         environment.setCreatorId(authenticationFacade.currentUserId());
         environment.setLastModifierId(authenticationFacade.currentUserId());
         return environment;
+    }
+
+    @Data
+    @AllArgsConstructor
+    public static class EnvironmentDeleteEvent {
+        private Long id;
+        private Long organizationId;
+    }
+
+    @Data
+    @AllArgsConstructor
+    public static class EnvironmentDisableEvent {
+        private Long id;
+        private Long organizationId;
     }
 
 }
