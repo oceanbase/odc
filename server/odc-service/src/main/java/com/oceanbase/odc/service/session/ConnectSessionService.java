@@ -68,6 +68,8 @@ import com.oceanbase.odc.metadb.collaboration.EnvironmentRepository;
 import com.oceanbase.odc.service.common.util.SidUtils;
 import com.oceanbase.odc.service.config.UserConfigFacade;
 import com.oceanbase.odc.service.config.model.UserConfig;
+import com.oceanbase.odc.service.connection.CloudMetadataClient;
+import com.oceanbase.odc.service.connection.CloudMetadataClient.CloudPermissionAction;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.ConnectionTesting;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
@@ -78,6 +80,7 @@ import com.oceanbase.odc.service.connection.model.ConnectionTestResult;
 import com.oceanbase.odc.service.connection.model.CreateSessionReq;
 import com.oceanbase.odc.service.connection.model.CreateSessionResp;
 import com.oceanbase.odc.service.connection.model.DBSessionResp;
+import com.oceanbase.odc.service.connection.model.OBTenant;
 import com.oceanbase.odc.service.db.DBCharsetService;
 import com.oceanbase.odc.service.db.session.DBSessionService;
 import com.oceanbase.odc.service.feature.VersionDiffConfigService;
@@ -138,6 +141,8 @@ public class ConnectSessionService {
     private HorizontalDataPermissionValidator horizontalDataPermissionValidator;
     @Autowired
     private SecurityManager securityManager;
+    @Autowired
+    private CloudMetadataClient cloudMetadataClient;
 
     @PostConstruct
     public void init() {
@@ -234,6 +239,8 @@ public class ConnectSessionService {
         }
         preCheckSessionLimit();
         ConnectionConfig connection = connectionService.getForConnectionSkipPermissionCheck(dataSourceId);
+        cloudMetadataClient.checkPermission(OBTenant.of(connection.getClusterName(),
+                connection.getTenantName()), connection.getInstanceType(), false, CloudPermissionAction.READONLY);
         if (StringUtils.isNotBlank(schemaName) && connection.getDialectType().isOracle()) {
             schemaName = com.oceanbase.odc.common.util.StringUtils.quoteOracleIdentifier(schemaName);
         }
