@@ -179,8 +179,10 @@ public class DatabaseService {
     private Database getDatabase(Long id) {
         Database database = entityToModel(databaseRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException(ResourceType.ODC_DATABASE, "id", id)));
-        Verify.notNull(database.getProject().getId(), "projectId");
-        projectPermissionValidator.checkProjectRole(database.getProject().getId(), ResourceRoleName.all());
+        if (authenticationFacade.currentOrganization().getType() == OrganizationType.TEAM) {
+            Verify.notNull(database.getProject().getId(), "projectId");
+            projectPermissionValidator.checkProjectRole(database.getProject().getId(), ResourceRoleName.all());
+        }
         return database;
     }
 
