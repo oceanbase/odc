@@ -143,7 +143,7 @@ public abstract class BaseOceanBaseTransferJob<T extends BaseParameter> implemen
     public DataTransferTaskResult call() throws Exception {
         try {
             status = TaskStatus.RUNNING;
-
+            System.clearProperty("logging.level");
             String fileSuffix = parameter.getFileSuffix();
             if (transferSchema) {
                 LOGGER.info("Begin transferring schema");
