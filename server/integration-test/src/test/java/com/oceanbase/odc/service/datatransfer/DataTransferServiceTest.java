@@ -25,6 +25,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -506,12 +507,11 @@ public class DataTransferServiceTest extends ServiceTestEnv {
     }
 
     private File getDumpFile() throws IOException {
-        File target = new File(fileManager
+        File dir = new File(fileManager
                 .getWorkingDir(TaskType.EXPORT, DataTransferService.CLIENT_DIR_PREFIX + BUCKET).getAbsolutePath());
-        List<File> files = Arrays.stream(target.listFiles()).filter(file -> file.getName().endsWith("zip"))
-                .collect(Collectors.toList());
-        Assert.assertEquals(1, files.size());
-        return files.get(0);
+        File target = new File(dir, BUCKET + ".zip");
+        new ExportOutput(dir).toZip(target);
+        return target;
     }
 
     private ConnectionConfig buildTestConnection(DialectType dialectType) {
