@@ -15,11 +15,13 @@
  */
 package com.oceanbase.odc.plugin.task.api.partitionplan.datatype;
 
+import org.springframework.context.i18n.LocaleContextHolder;
+
+import com.oceanbase.odc.common.i18n.I18n;
+import com.oceanbase.odc.common.i18n.Translatable;
 import com.oceanbase.tools.dbbrowser.model.datatype.DataType;
 import com.oceanbase.tools.dbbrowser.model.datatype.GeneralDataType;
 
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
 import lombok.NonNull;
 
 /**
@@ -30,8 +32,6 @@ import lombok.NonNull;
  * @since ODC_release_4.2.4
  * @see DataType
  */
-@Getter
-@EqualsAndHashCode(callSuper = true)
 public class TimeDataType extends GeneralDataType {
 
     public static final int YEAR = 0x1;
@@ -40,11 +40,14 @@ public class TimeDataType extends GeneralDataType {
     public static final int HOUR = 0x8 | DAY;
     public static final int MINUTE = 0x10 | HOUR;
     public static final int SECOND = 0x20 | MINUTE;
-    private final String realColumnTypeName;
 
-    public TimeDataType(@NonNull String realColumnTypeName, @NonNull int precision) {
-        super(precision, -1, "TIME");
-        this.realColumnTypeName = realColumnTypeName;
+    public TimeDataType(@NonNull String columnTypeName, @NonNull int precision) {
+        super(precision, -1, columnTypeName);
+    }
+
+    public String getLocalizedMessage() {
+        String key = Translatable.I18N_KEY_PREFIX + "partitionplan." + this.getClass().getSimpleName();
+        return I18n.translate(key, new Object[] {}, key, LocaleContextHolder.getLocale());
     }
 
 }
