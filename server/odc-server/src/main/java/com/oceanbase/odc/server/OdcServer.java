@@ -24,13 +24,16 @@ import javax.validation.Validator;
 
 import org.hibernate.validator.HibernateValidator;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.web.servlet.ServletComponentScan;
 import org.springframework.cloud.config.server.EnableConfigServer;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
+import org.springframework.context.annotation.FilterType;
 import org.springframework.context.annotation.Profile;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.validation.beanvalidation.MethodValidationPostProcessor;
@@ -51,7 +54,10 @@ import lombok.extern.slf4j.Slf4j;
  * @author mogao.zj
  */
 @Slf4j
-@SpringBootApplication(scanBasePackages = {"com.oceanbase.odc"})
+@EnableAutoConfiguration
+@ComponentScan(basePackages = "com.oceanbase.odc",
+        excludeFilters = {@ComponentScan.Filter(type = FilterType.REGEX,
+            pattern = "com.oceanbase.odc.service.task.executor.*")})
 @EnableWebMvc
 @Configuration
 @EnableScheduling

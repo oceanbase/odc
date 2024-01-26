@@ -25,7 +25,6 @@ import com.oceanbase.odc.common.crypto.TextEncryptor;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.security.PasswordUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
-import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.service.objectstorage.cloud.model.CloudEnvConfigurations;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.constants.JobConstants;
@@ -59,9 +58,10 @@ public class JobEnvBuilder {
 
         CloudEnvConfigurations cloudEnvConfigurations = JobConfigurationHolder.getJobConfiguration()
                 .getCloudEnvConfigurations();
-        PreConditions.notNull(cloudEnvConfigurations, "cloudEnvConfigurations");
-        putEnvWithEncrypted(JobEnvKeyConstants.ODC_OBJECT_STORAGE_CONFIGURATION,
-                () -> JsonUtils.toJson(cloudEnvConfigurations.getObjectStorageConfiguration()));
+        if (cloudEnvConfigurations != null) {
+            putEnvWithEncrypted(JobEnvKeyConstants.ODC_OBJECT_STORAGE_CONFIGURATION,
+                    () -> JsonUtils.toJson(cloudEnvConfigurations.getObjectStorageConfiguration()));
+        }
 
         putEnv(JobEnvKeyConstants.ODC_LOG_DIRECTORY,
                 () -> SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_LOG_DIRECTORY));

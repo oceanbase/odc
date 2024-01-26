@@ -59,7 +59,7 @@ public class DestroyExecutorJob implements Job {
             try {
                 destroyExecutor(taskFrameworkService, a);
             } catch (Throwable e) {
-                log.warn("Try to start job {} failed: ", a.getId(), e);
+                log.warn("Try to destroy executor {} failed: ", a.getId(), e);
             }
         });
     }

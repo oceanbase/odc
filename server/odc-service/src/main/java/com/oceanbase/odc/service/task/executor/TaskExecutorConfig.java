@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,14 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.odc.service.task.executor;
 
 import javax.persistence.EntityManagerFactory;
 import javax.sql.DataSource;
 
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.orm.jpa.JpaTransactionManager;
@@ -29,6 +27,7 @@ import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
+import com.oceanbase.odc.config.jpa.EnhancedJpaRepository;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.session.factory.DruidDataSourceFactory;
@@ -39,10 +38,9 @@ import com.oceanbase.odc.service.task.util.JobUtils;
  * @date 2024-01-25
  * @since 4.2.4
  */
-@EnableJpaRepositories(basePackages = {"com.oceanbase.odc.metadb.datasecurity"})
+@EnableJpaRepositories(basePackages = {"com.oceanbase.odc.metadb"}, repositoryBaseClass = EnhancedJpaRepository.class)
 @EnableTransactionManagement
 @Configuration
-@ComponentScan(basePackages = {"com.oceanbase.odc.service.datasecurity"})
 public class TaskExecutorConfig {
 
     @Bean
@@ -57,11 +55,10 @@ public class TaskExecutorConfig {
     public LocalContainerEntityManagerFactoryBean entityManagerFactory() {
 
         HibernateJpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();
-        vendorAdapter.setGenerateDdl(true);
 
         LocalContainerEntityManagerFactoryBean factory = new LocalContainerEntityManagerFactoryBean();
         factory.setJpaVendorAdapter(vendorAdapter);
-        factory.setPackagesToScan("com.acme.domain");
+        factory.setPackagesToScan("com.oceanbase.odc.metadb");
         factory.setDataSource(dataSource());
         return factory;
     }

@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.task.executor;
 
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.logging.log4j.LogManager;
@@ -29,7 +30,7 @@ import com.oceanbase.odc.common.trace.TaskContextHolder;
 import com.oceanbase.odc.common.trace.TraceContextHolder;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.shared.Verify;
-import com.oceanbase.odc.service.datasecurity.DataMaskingService;
+import com.oceanbase.odc.metadb.datasecurity.SensitiveColumnRepository;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
 import com.oceanbase.odc.service.task.exception.TaskRuntimeException;
@@ -56,14 +57,7 @@ public class TaskApplication {
     private JobContext context;
 
     public void run(String[] args) {
-        StopWatch watch = StopWatch.createStarted();
-        AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
-        ctx.register(TaskExecutorConfig.class);
-        ctx.refresh();
-        DataMaskingService bean = ctx.getBean(DataMaskingService.class);
-        log.info("Get bean {} from spring, mask enable is {}.", bean.getClass().getSimpleName(),
-                bean.isMaskingEnabled());
-        watch.stop();
+
         try {
             init(args);
         } catch (Exception e) {
@@ -90,6 +84,18 @@ public class TaskApplication {
 
     }
 
+    private void startSpring() {
+        StopWatch watch = StopWatch.createStarted();
+        AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
+        ctx.register(TaskExecutorConfig.class);
+        ctx.refresh();
+        SensitiveColumnRepository bean = ctx.getBean(SensitiveColumnRepository.class);
+        log.info("Get bean {} from spring, mask enable is {}.", bean.getClass().getSimpleName(),
+                bean.findById(1L));
+        watch.stop();
+        log.info("spring consume time {} millis.", watch.getTime(TimeUnit.MILLISECONDS));
+    }
+
     private void init(String[] args) {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             log.info("Task executor exits, systemInfo={}", SystemUtils.getSystemMemoryInfo());
@@ -97,6 +103,7 @@ public class TaskApplication {
         context = JobContextProviderFactory.create().provide();
         trace(context.getJobIdentity().getId());
         setLog4JConfigXml();
+        startSpring();
         log.info("Log task id is {}.", context.getJobIdentity().getId());
 
         System.setProperty(JobEnvKeyConstants.ODC_LOG_DIRECTORY, LogUtils.getBaseLogPath());

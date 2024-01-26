@@ -103,7 +103,9 @@ public class JobUtils {
     public static ConnectionConfig getMetaDBConnectionConfig() {
         ConnectionConfig config = new ConnectionConfig();
         config.setHost(getDecryptedFromEnv(JobEnvKeyConstants.DATABASE_HOST));
+        log.info("origin port =" + SystemUtils.getEnvOrProperty(JobEnvKeyConstants.DATABASE_PORT));
         String port = getDecryptedFromEnv(JobEnvKeyConstants.DATABASE_PORT);
+        log.info("decrypted port =" + port);
         config.setPort(port != null ? Integer.parseInt(port) : 8989);
         config.setDefaultSchema(getDecryptedFromEnv(JobEnvKeyConstants.DATABASE_NAME));
         config.setUsername(getDecryptedFromEnv(JobEnvKeyConstants.DATABASE_USERNAME));

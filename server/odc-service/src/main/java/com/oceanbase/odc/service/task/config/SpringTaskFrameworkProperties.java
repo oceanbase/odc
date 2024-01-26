@@ -33,7 +33,8 @@ import lombok.Data;
 @RefreshScope
 @Configuration
 @ConfigurationProperties(prefix = "odc.task-framework")
-public class SpringTaskFrameworkProperties implements TaskFrameworkProperties {
+public class
+SpringTaskFrameworkProperties implements TaskFrameworkProperties {
 
     private boolean enableTaskFramework;
 
