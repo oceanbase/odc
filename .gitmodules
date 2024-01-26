@@ -1,7 +1,7 @@
 [submodule "client"]
 	path = client
 	url = https://code.alipay.com/oceanbase/oceanbase-developer-center.git
-	branch = feat/dev-4.2.3-beta-task-0119
+	branch = feat/dev-4.2.3-beta-task-0126
 [submodule "build-resource"]
 	path = build-resource
 	url = https://github.com/oceanbase/odc-build-resource.git
