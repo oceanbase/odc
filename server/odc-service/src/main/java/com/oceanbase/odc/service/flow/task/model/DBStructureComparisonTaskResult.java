@@ -19,31 +19,37 @@ import java.util.List;
 
 import com.oceanbase.odc.core.flow.model.FlowTaskResult;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
-import com.oceanbase.odc.metadb.task.TaskEntity;
+import com.oceanbase.odc.metadb.structurecompare.StructureComparisonTaskEntity;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * @author jingtian
  * @date 2024/1/3
  * @since ODC_release_4.2.4
  */
+@NoArgsConstructor
 @Data
 public class DBStructureComparisonTaskResult implements FlowTaskResult {
     /**
-     * Refer to {@link TaskEntity#getId()}
+     * Refer to {@link StructureComparisonTaskEntity#getId()}
      */
     private Long taskId;
     private TaskStatus status;
     private List<Comparing> comparingList;
 
-    private class Comparing {
-        /**
-         * Refer to {@link DBObjectStructureComparisonResp#getId()}
-         */
-        private Long structureComparisonId;
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Data
+    public static class Comparing {
         private DBObjectType dbObjectType;
         private String dbObjectName;
+    }
+
+    public DBStructureComparisonTaskResult(TaskStatus status) {
+        this.status = status;
     }
 }

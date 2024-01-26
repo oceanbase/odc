@@ -34,6 +34,7 @@ import com.oceanbase.odc.service.shadowtable.model.SetSkippedReq;
 import com.oceanbase.odc.service.shadowtable.model.ShadowTableSyncReq;
 import com.oceanbase.odc.service.shadowtable.model.ShadowTableSyncResp;
 import com.oceanbase.odc.service.shadowtable.model.ShadowTableSyncResp.TableComparing;
+import com.oceanbase.odc.service.structurecompare.StructureComparisonService;
 
 /**
  * @Author: Lebie
@@ -45,6 +46,8 @@ import com.oceanbase.odc.service.shadowtable.model.ShadowTableSyncResp.TableComp
 public class SchemaSyncController {
     @Autowired
     private ShadowTableComparingService shadowTableComparingService;
+    @Autowired
+    private StructureComparisonService structureComparisonService;
 
     @RequestMapping(value = "/shadowTableSyncs", method = RequestMethod.POST)
     public SuccessResponse<String> createShadowTableSync(@RequestBody ShadowTableSyncReq shadowTableSyncReq) {
@@ -70,13 +73,14 @@ public class SchemaSyncController {
 
     @RequestMapping(value = "/structureComparison/{id}", method = RequestMethod.GET)
     public SuccessResponse<DBStructureComparisonResp> listStructureComparisonResult(@PathVariable Long id,
-            @RequestParam OperationType operationType) {
-        throw new UnsupportedOperationException("structure comparison not supported yet");
+            @RequestParam(required = false) OperationType operationType) {
+        return Responses.success(structureComparisonService.getDBStructureComparisonResult(id, operationType));
     }
 
     @RequestMapping(value = "/structureComparison/{id}/{structureComparisonId}", method = RequestMethod.GET)
-    public SuccessResponse<DBObjectStructureComparisonResp> getStructureComparisonResult(@PathVariable Long id,
+    public SuccessResponse<DBObjectStructureComparisonResp> getObjectStructureComparisonResult(@PathVariable Long id,
             @PathVariable Long structureComparisonId) {
-        throw new UnsupportedOperationException("structure comparison not supported yet");
+        return Responses
+                .success(structureComparisonService.getDBObjectStructureComparisonResult(id, structureComparisonId));
     }
 }

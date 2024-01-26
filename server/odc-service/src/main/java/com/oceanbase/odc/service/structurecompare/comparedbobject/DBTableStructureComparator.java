@@ -47,16 +47,21 @@ import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.OracleSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
 
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * @author jingtian
  * @date 2024/1/4
  * @since ODC_release_4.2.4
  */
+@Slf4j
 public class DBTableStructureComparator implements DBObjectStructureComparator<DBTable> {
     private DBTableEditor tgtTableEditor;
     private DialectType tgtDialectType;
     private String srcSchemaName;
     private String tgtSchemaName;
+    private Integer totalTableCount = null;
+    private Integer completedTableCount = 0;
 
     public DBTableStructureComparator(DBTableEditor tgtTableEditor, DialectType tgtDialectType, String srcSchemaName,
             String tgtSchemaName) {
@@ -70,11 +75,14 @@ public class DBTableStructureComparator implements DBObjectStructureComparator<D
     public List<DBObjectComparisonResult> compare(List<DBTable> srcTables, List<DBTable> tgtTables) {
         List<DBObjectComparisonResult> returnVal = new LinkedList<>();
         if (srcTables.isEmpty() && tgtTables.isEmpty()) {
+            this.totalTableCount = 0;
             return returnVal;
         } else if (srcTables.isEmpty()) {
+            this.totalTableCount = tgtTables.size();
             return buildOnlyInTargetResult(tgtTables.stream().map(DBTable::getName).collect(Collectors.toList()),
                     new HashMap<>(), srcSchemaName, tgtSchemaName);
         } else if (tgtTables.isEmpty()) {
+            this.totalTableCount = srcTables.size();
             return buildOnlyInSourceResult(srcTables.stream().map(DBTable::getName).collect(Collectors.toList()),
                     new HashMap<>(), srcSchemaName, tgtSchemaName);
         }
@@ -101,15 +109,16 @@ public class DBTableStructureComparator implements DBObjectStructureComparator<D
                 toDroppedNames.add(tableName);
             }
         }
+        this.totalTableCount = toCreatedNames.size() + toComparedNames.size() + toDroppedNames.size();
 
         List<DBObjectComparisonResult> createdResults =
                 buildOnlyInSourceResult(toCreatedNames, srcTableName2Table, srcSchemaName, tgtSchemaName);
         List<DBObjectComparisonResult> dropResults =
                 buildOnlyInTargetResult(toDroppedNames, tgtTableName2Table, srcSchemaName, tgtSchemaName);
-
         List<DBObjectComparisonResult> comparedResults = new ArrayList<>();
         toComparedNames.forEach(name -> {
             comparedResults.add(compare(srcTableName2Table.get(name), tgtTableName2Table.get(name)));
+            this.completedTableCount++;
         });
 
         returnVal.addAll(createdResults);
@@ -137,6 +146,7 @@ public class DBTableStructureComparator implements DBObjectStructureComparator<D
             BeanUtils.copyProperties(sourceTable, targetTable);
             targetTable.setSchemaName(tgtSchemaName);
             result.setChangeScript(this.tgtTableEditor.generateCreateObjectDDL(targetTable));
+            this.completedTableCount++;
             returnVal.add(result);
         });
         return returnVal;
@@ -160,6 +170,7 @@ public class DBTableStructureComparator implements DBObjectStructureComparator<D
             SqlBuilder sqlBuilder = getTargetDBSqlBuilder();
             result.setChangeScript(
                     GeneralSqlStatementBuilder.drop(sqlBuilder, DBObjectType.TABLE, tgtSchemaName, name) + ";\n");
+            this.completedTableCount++;
             returnVal.add(result);
         });
         return returnVal;
@@ -282,5 +293,20 @@ public class DBTableStructureComparator implements DBObjectStructureComparator<D
                 (DBTablePartitionEditor) this.tgtTableEditor.getPartitionEditor(),
                 srcSchemaName, tgtSchemaName)
                         .compare(srcTable.getPartition(), tgtTable.getPartition());
+    }
+
+    /**
+     * Get comparison progress for DBTableStructureComparator#compare(List<DBTable> srcTables,
+     * List<DBTable> tgtTables) method
+     */
+    public Double getProgress() {
+        if (this.totalTableCount == null) {
+            return 0D;
+        } else if (this.totalTableCount == 0) {
+            return 100D;
+        } else {
+            double progress = completedTableCount * 100D / totalTableCount;
+            return Math.min(progress, 100.0D);
+        }
     }
 }

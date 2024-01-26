@@ -23,8 +23,10 @@ import javax.validation.constraints.NotNull;
 
 import com.oceanbase.odc.core.flow.model.TaskParameters;
 import com.oceanbase.odc.metadb.connection.DatabaseEntity;
+import com.oceanbase.odc.metadb.structurecompare.StructureComparisonTaskEntity;
 
 import lombok.Data;
+import lombok.NonNull;
 
 /**
  * @author jingtian
@@ -50,8 +52,20 @@ public class DBStructureComparisonParameter implements Serializable, TaskParamet
     private ComparisonScope comparisonScope;
     private List<String> tableNamesToBeCompared;
 
-    private enum ComparisonScope {
+    public enum ComparisonScope {
         ALL,
         PART
+    }
+
+    public static class DBStructureComparisonMapper {
+        public static StructureComparisonTaskEntity ofTaskEntity(@NonNull DBStructureComparisonParameter parameters,
+                @NonNull Long creatorId, @NonNull Long flowInstanceId) {
+            StructureComparisonTaskEntity entity = new StructureComparisonTaskEntity();
+            entity.setSourceConnectDatabaseId(parameters.getSourceDatabaseId());
+            entity.setTargetConnectDatabaseId(parameters.getTargetDatabaseId());
+            entity.setFlowInstanceId(flowInstanceId);
+            entity.setCreatorId(creatorId);
+            return entity;
+        }
     }
 }

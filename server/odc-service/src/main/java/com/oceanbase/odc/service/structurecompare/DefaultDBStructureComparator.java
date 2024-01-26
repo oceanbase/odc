@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.sql.DataSource;
 
@@ -33,6 +34,7 @@ import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.plugin.schema.obmysql.parser.OBMySQLGetDBTableByParser;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.db.browser.DBTableEditorFactory;
+import com.oceanbase.odc.service.flow.task.model.DBStructureComparisonParameter.ComparisonScope;
 import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 import com.oceanbase.odc.service.structurecompare.comparedbobject.DBTableStructureComparator;
 import com.oceanbase.odc.service.structurecompare.model.ComparisonResult;
@@ -47,6 +49,7 @@ import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
 import com.oceanbase.tools.dbbrowser.model.DBTableIndex;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 
+import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
@@ -55,16 +58,26 @@ import lombok.extern.slf4j.Slf4j;
  * @date 2024/1/4
  * @since ODC_release_4.2.4
  */
+@NoArgsConstructor
 @Slf4j
 public class DefaultDBStructureComparator implements DBStructureComparator {
     private final List<DialectType> supportedDialectTypes =
             Arrays.asList(DialectType.MYSQL, DialectType.OB_MYSQL, DialectType.OB_ORACLE);
     private final List<DBObjectType> supportedDBObjectTypes = Arrays.asList(DBObjectType.TABLE);
+    private DBTableStructureComparator tableComparator;
+    private ComparisonScope scope;
+    private Integer totalObjectCount = null;
+    private Integer completedObjectCount = 0;
 
     @Override
     public List<DBObjectComparisonResult> compare(@NonNull DBStructureComparisonConfig srcConfig,
             @NonNull DBStructureComparisonConfig tgtConfig) throws SQLException {
         List<DBObjectComparisonResult> returnVal = new ArrayList<>();
+        if (srcConfig.getBlackListMap().isEmpty()) {
+            this.scope = ComparisonScope.ALL;
+        } else {
+            this.scope = ComparisonScope.PART;
+        }
         checkUnsupportedConfiguration(srcConfig, tgtConfig);
 
         String srcDbVersion = getDBVersion(srcConfig.getConnectType(), srcConfig.getDataSource());
@@ -77,12 +90,19 @@ public class DefaultDBStructureComparator implements DBStructureComparator {
 
         DBTableEditor tgtTableEditor = getDBTableEditor(tgtConfig.getConnectType(), tgtDbVersion);
 
+        log.info(
+                "DefaultDBStructureComparator start to build source and target schema tables, source schema name={}, target schema name={}",
+                srcConfig.getSchemaName(), tgtConfig.getSchemaName());
+        long startTimestamp = System.currentTimeMillis();
         Map<String, DBTable> srcTableName2Table = buildSchemaTables(srcAccessor, srcConfig.getSchemaName(),
                 srcConfig.getConnectType().getDialectType(), srcDbVersion);
         Map<String, DBTable> tgtTableName2Table = buildSchemaTables(tgtAccessor, tgtConfig.getSchemaName(),
                 tgtConfig.getConnectType().getDialectType(), tgtDbVersion);
+        log.info(
+                "DefaultDBStructureComparator build source and target schema tables success, time consuming={} seconds",
+                (System.currentTimeMillis() - startTimestamp) / 1000);
 
-        DBTableStructureComparator tableComparator = new DBTableStructureComparator(tgtTableEditor,
+        tableComparator = new DBTableStructureComparator(tgtTableEditor,
                 tgtConfig.getConnectType().getDialectType(),
                 srcConfig.getSchemaName(), tgtConfig.getSchemaName());
 
@@ -97,14 +117,18 @@ public class DefaultDBStructureComparator implements DBStructureComparator {
             /**
              * Compare specified tables between source database and target database.
              */
-            for (String tableName : srcConfig.getBlackListMap().get(DBObjectType.TABLE)) {
+            Set<String> tableNamesToBeCompared = srcConfig.getBlackListMap().get(DBObjectType.TABLE);
+            this.totalObjectCount = tableNamesToBeCompared.size();
+            for (String tableName : tableNamesToBeCompared) {
                 if (srcTableName2Table.containsKey(tableName)) {
                     returnVal.add(tableComparator.compare(srcTableName2Table.get(tableName),
                             tgtTableName2Table.get(tableName)));
+                    this.completedObjectCount++;
                 } else {
                     DBObjectComparisonResult result = new DBObjectComparisonResult(DBObjectType.TABLE, tableName,
                             srcConfig.getSchemaName(), tgtConfig.getSchemaName());
                     result.setComparisonResult(ComparisonResult.MISSING_IN_SOURCE);
+                    this.completedObjectCount++;
                     returnVal.add(result);
                 }
             }
@@ -187,5 +211,25 @@ public class DefaultDBStructureComparator implements DBStructureComparator {
             returnVal.put(tableName, table);
         }
         return returnVal;
+    }
+
+    @Override
+    public Double getProgress() {
+        if (this.scope == ComparisonScope.ALL) {
+            if (tableComparator != null) {
+                return tableComparator.getProgress();
+            } else {
+                return 0.0D;
+            }
+        } else {
+            if (totalObjectCount == null) {
+                return 0.0D;
+            } else if (totalObjectCount == 0) {
+                return 100.0D;
+            } else {
+                double progress = completedObjectCount * 100D / totalObjectCount;
+                return Math.min(progress, 100.0D);
+            }
+        }
     }
 }

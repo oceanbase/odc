@@ -910,6 +910,7 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
 
     private DBTablePartitionOption obtainPartitionOption(String schemaName, String tableName) {
         DBTablePartitionOption option = new DBTablePartitionOption();
+        option.setType(DBTablePartitionType.NOT_PARTITIONED);
         String queryPartitionTypeSql = this.sqlMapper.getSql(Statements.GET_PARTITION_OPTION);
         jdbcOperations.query(queryPartitionTypeSql, new Object[] {schemaName, tableName}, (rs, num) -> {
             option.setType(DBTablePartitionType.fromValue(rs.getString("PARTITIONING_TYPE")));

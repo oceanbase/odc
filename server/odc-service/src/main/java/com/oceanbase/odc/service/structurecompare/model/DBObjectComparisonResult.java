@@ -17,11 +17,24 @@
 package com.oceanbase.odc.service.structurecompare.model;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
+import org.apache.commons.lang3.Validate;
+
+import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTreeFactories;
+import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTreeFactory;
+import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
+import com.oceanbase.odc.metadb.structurecompare.StructureComparisonEntity;
+import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
+import com.oceanbase.tools.sqlparser.statement.Statement;
+import com.oceanbase.tools.sqlparser.statement.alter.table.AlterTable;
 
 import lombok.Data;
+import lombok.NonNull;
 
 /**
  * @author jingtian
@@ -56,5 +69,77 @@ public class DBObjectComparisonResult {
         this.dbObjectType = dbObjectType;
         this.sourceSchemaName = sourceSchemaName;
         this.targetSchemaName = targetSchemaName;
+    }
+
+    public StructureComparisonEntity toEntity(@NonNull Long structureComparisonTaskId,
+            @NonNull DialectType dialectType) {
+        StructureComparisonEntity entity = new StructureComparisonEntity();
+        entity.setComparisonTaskId(structureComparisonTaskId);
+        entity.setDatabaseObjectType(dbObjectType);
+        entity.setDatabaseObjectName(dbObjectName);
+        entity.setComparingResult(comparisonResult);
+        entity.setSourceObjectDdl(sourceDdl);
+        entity.setTargetObjectDdl(targetDdl);
+        StringBuilder totalSubScript = new StringBuilder();
+        if (!subDBObjectComparisonResult.isEmpty()) {
+            for (DBObjectComparisonResult subResult : subDBObjectComparisonResult) {
+                if (subResult.getChangeScript() == null || subResult.getChangeScript().isEmpty()) {
+                    continue;
+                }
+                // DDL operations involving deletion of database objects are placed in comments
+                if (subResult.getComparisonResult() == ComparisonResult.ONLY_IN_TARGET) {
+                    totalSubScript.append("/*\n")
+                            .append(subResult.getChangeScript())
+                            .append("*/\n")
+                            .append("\n");
+                } else if (subResult.getDbObjectType() == DBObjectType.PARTITION) {
+                    List<String> sqls = SqlUtils.split(dialectType, subResult.getChangeScript(), ";");
+                    for (String sql : sqls) {
+                        String sqlWithoutComment =
+                                SqlUtils.removeComments(new SqlCommentProcessor(dialectType, false, false), sql);
+                        String comments = sql.replace(sqlWithoutComment, "");
+                        if (isDropPartitionStatement(parseSingleSql(dialectType, sqlWithoutComment))) {
+                            totalSubScript.append(comments)
+                                    .append("/*\n")
+                                    .append(sqlWithoutComment)
+                                    .append(";\n")
+                                    .append("*/\n")
+                                    .append("\n");
+                        } else {
+                            totalSubScript.append(subResult.getChangeScript())
+                                    .append("\n");
+                        }
+                    }
+                } else {
+                    totalSubScript.append(subResult.getChangeScript())
+                            .append("\n");
+                }
+            }
+        }
+        entity.setChangeSqlScript(totalSubScript + "\n" + changeScript);
+        return entity;
+    }
+
+    private Statement parseSingleSql(DialectType dialectType, String sql) {
+        try {
+            AbstractSyntaxTreeFactory factory = AbstractSyntaxTreeFactories.getAstFactory(dialectType, 0);
+            Validate.notNull(factory, "AbstractSyntaxTreeFactory can not be null");
+            return factory.buildAst(sql).getStatement();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private boolean isDropPartitionStatement(Statement stmt) {
+        if (stmt instanceof AlterTable) {
+            return ((AlterTable) stmt).getAlterTableActions().stream().filter(Objects::nonNull)
+                    .anyMatch(action -> !getSafeList(action.getDropPartitionNames()).isEmpty()
+                            || !getSafeList(action.getDropSubPartitionNames()).isEmpty());
+        }
+        return false;
+    }
+
+    private <T> List<T> getSafeList(List<T> list) {
+        return list == null ? Collections.emptyList() : list;
     }
 }

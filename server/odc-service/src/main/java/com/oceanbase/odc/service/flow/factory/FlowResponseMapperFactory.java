@@ -39,7 +39,11 @@ import org.springframework.stereotype.Component;
 import com.google.common.base.MoreObjects;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
+import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.TaskType;
+import com.oceanbase.odc.core.shared.exception.NotFoundException;
+import com.oceanbase.odc.metadb.collaboration.ProjectEntity;
+import com.oceanbase.odc.metadb.collaboration.ProjectRepository;
 import com.oceanbase.odc.metadb.connection.ConnectionConfigRepository;
 import com.oceanbase.odc.metadb.connection.ConnectionEntity;
 import com.oceanbase.odc.metadb.connection.ConnectionSpecs;
@@ -67,6 +71,7 @@ import com.oceanbase.odc.metadb.regulation.risklevel.RiskLevelRepository;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.metadb.task.TaskRepository;
 import com.oceanbase.odc.metadb.task.TaskSpecs;
+import com.oceanbase.odc.service.collaboration.project.model.Project;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
@@ -135,6 +140,8 @@ public class FlowResponseMapperFactory {
     private RiskLevelRepository riskLevelRepository;
     @Autowired
     private AuthenticationFacade authenticationFacade;
+    @Autowired
+    private ProjectRepository projectRepository;
     private final ConnectionMapper connectionMapper = ConnectionMapper.INSTANCE;
 
     private final RiskLevelMapper riskLevelMapper = RiskLevelMapper.INSTANCE;
@@ -318,15 +325,31 @@ public class FlowResponseMapperFactory {
         Set<Long> databaseIds = new HashSet<>();
         databaseIds.addAll(taskId2TaskEntity.values().stream().map(TaskEntity::getDatabaseId).filter(Objects::nonNull)
                 .collect(Collectors.toSet()));
-        databaseIds.addAll(taskId2TaskEntity.values().stream()
+        Set<Long> sourceDatabaseIdsInComparisonTask = new HashSet<>();
+        Set<Long> targetDatabaseIdsInComparisonTask = new HashSet<>();
+
+        taskId2TaskEntity.values().stream()
                 .filter(task -> task.getTaskType().equals(TaskType.STRUCTURE_COMPARISON))
-                .map(taskEntity -> JsonUtils
-                        .fromJson(taskEntity.getParametersJson(), DBStructureComparisonParameter.class)
-                        .getTargetDatabaseId())
-                .collect(Collectors.toSet()));
+                .forEach(task -> {
+                    DBStructureComparisonParameter parameter = JsonUtils.fromJson(
+                            task.getParametersJson(), DBStructureComparisonParameter.class);
+                    sourceDatabaseIdsInComparisonTask.add(parameter.getSourceDatabaseId());
+                    targetDatabaseIdsInComparisonTask.add(parameter.getTargetDatabaseId());
+                });
+        databaseIds.addAll(targetDatabaseIdsInComparisonTask);
+
         if (CollectionUtils.isNotEmpty(databaseIds)) {
             id2Database = databaseService.listDatabasesByIds(databaseIds).stream()
                     .collect(Collectors.toMap(Database::getId, database -> database));
+            // set project name for structure comparison task
+            for (Long id : sourceDatabaseIdsInComparisonTask) {
+                if (Objects.nonNull(id2Database.get(id))) {
+                    Project project = id2Database.get(id).getProject();
+                    ProjectEntity projectEntity = projectRepository.findById(project.getId()).orElseThrow(
+                            () -> new NotFoundException(ResourceType.ODC_PROJECT, "projectId", project.getId()));
+                    project.setName(projectEntity.getName());
+                }
+            }
         }
         /**
          * find the ConnectionConfig associated with each Database
