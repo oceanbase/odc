@@ -25,5 +25,5 @@ spring:
     database-platform: org.hibernate.dialect.H2Dialect
 
 logging:
-  root:
-    level: INFO
+  level:
+    root: INFO

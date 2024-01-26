@@ -66,5 +66,5 @@ jasypt:
     algorithm: PBEWithHmacSHA512AndAES_128
 
 logging:
-  root:
-    level: INFO
+  level:
+    root: INFO
