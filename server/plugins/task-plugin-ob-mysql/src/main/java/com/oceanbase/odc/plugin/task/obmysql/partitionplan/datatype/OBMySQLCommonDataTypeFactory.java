@@ -49,7 +49,7 @@ public class OBMySQLCommonDataTypeFactory extends CommonDataTypeFactory {
     public DataType generate() {
         DataType dataType = super.generate();
         Integer prec = TYPE_NAME_2_PREC.get(dataType.getDataTypeName().toLowerCase());
-        return prec == null ? dataType : new TimeDataType(prec);
+        return prec == null ? dataType : new TimeDataType(dataType.getDataTypeName(), prec);
     }
 
 }

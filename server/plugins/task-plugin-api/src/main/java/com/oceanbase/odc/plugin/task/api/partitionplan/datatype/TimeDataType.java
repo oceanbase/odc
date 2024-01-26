@@ -18,6 +18,8 @@ package com.oceanbase.odc.plugin.task.api.partitionplan.datatype;
 import com.oceanbase.tools.dbbrowser.model.datatype.DataType;
 import com.oceanbase.tools.dbbrowser.model.datatype.GeneralDataType;
 
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.NonNull;
 
 /**
@@ -28,6 +30,8 @@ import lombok.NonNull;
  * @since ODC_release_4.2.4
  * @see DataType
  */
+@Getter
+@EqualsAndHashCode(callSuper = true)
 public class TimeDataType extends GeneralDataType {
 
     public static final int YEAR = 0x1;
@@ -36,9 +40,11 @@ public class TimeDataType extends GeneralDataType {
     public static final int HOUR = 0x8 | DAY;
     public static final int MINUTE = 0x10 | HOUR;
     public static final int SECOND = 0x20 | MINUTE;
+    private final String realColumnTypeName;
 
-    public TimeDataType(@NonNull int precision) {
+    public TimeDataType(@NonNull String realColumnTypeName, @NonNull int precision) {
         super(precision, -1, "TIME");
+        this.realColumnTypeName = realColumnTypeName;
     }
 
 }

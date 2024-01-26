@@ -78,7 +78,7 @@ public class OBMySQLPartitionKeyDataTypeFactory extends BasePartitionKeyDataType
         }
         FunctionCall f = (FunctionCall) statement;
         Integer prec = FUNCTION_NAME_2_PREC.get(f.getFunctionName().toLowerCase());
-        return prec == null ? null : new TimeDataType(prec);
+        return prec == null ? null : new TimeDataType("date", prec);
     }
 
     static private class ExpressionParser extends OBMySQLParser {

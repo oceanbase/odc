@@ -140,8 +140,8 @@ public class OBMySQLAutoPartitionExtensionPointTest {
                     configuration.getDefaultDBName(), RANGE_COLUMNS_TABLE_NAME);
             AutoPartitionExtensionPoint extensionPoint = new OBMySQLAutoPartitionExtensionPoint();
             List<DataType> actuals = extensionPoint.getPartitionKeyDataTypes(connection, dbTable);
-            Assert.assertEquals(Arrays.asList(
-                    new GeneralDataType(0, 0, "varchar"), new TimeDataType(TimeDataType.DAY)), actuals);
+            Assert.assertEquals(Arrays.asList(new GeneralDataType(0, 0, "varchar"),
+                    new TimeDataType("date", TimeDataType.DAY)), actuals);
         }
     }
 

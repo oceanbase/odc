@@ -80,8 +80,8 @@ public class OBMySQLPartitionKeyDataTypeFactoryTest {
             List<DataType> actuals = new ArrayList<>();
             actuals.add(new OBMySQLPartitionKeyDataTypeFactory(calculator, dbTable, "`c2`").generate());
             actuals.add(new OBMySQLPartitionKeyDataTypeFactory(calculator, dbTable, "c3").generate());
-            Assert.assertEquals(Arrays.asList(
-                    new GeneralDataType(0, 0, "varchar"), new TimeDataType(TimeDataType.DAY)), actuals);
+            Assert.assertEquals(Arrays.asList(new GeneralDataType(0, 0, "varchar"),
+                    new TimeDataType("date", TimeDataType.DAY)), actuals);
         }
     }
 
