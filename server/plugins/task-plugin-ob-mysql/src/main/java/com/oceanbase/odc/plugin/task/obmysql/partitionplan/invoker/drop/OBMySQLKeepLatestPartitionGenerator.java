@@ -30,14 +30,14 @@ import com.oceanbase.tools.dbbrowser.model.DBTablePartitionDefinition;
 import lombok.NonNull;
 
 /**
- * {@link OBMySQLKeepMostRecentPartitionGenerator}
+ * {@link OBMySQLKeepLatestPartitionGenerator}
  *
  * @author yh263208
  * @date 2024-01-24 15:50
  * @since ODC_release_4.2.4
  * @see KeepMostRecentPartitionGenerator
  */
-public class OBMySQLKeepMostRecentPartitionGenerator implements KeepMostRecentPartitionGenerator {
+public class OBMySQLKeepLatestPartitionGenerator implements KeepMostRecentPartitionGenerator {
 
     @Override
     public List<DBTablePartitionDefinition> generate(@NonNull Connection connection,

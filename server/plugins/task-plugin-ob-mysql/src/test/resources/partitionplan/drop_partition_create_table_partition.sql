@@ -1,4 +1,4 @@
-CREATE TABLE `${const:com.oceanbase.odc.plugin.task.obmysql.partitionplan.OBMySQLKeepMostRecentPartitionGeneratorTest.RANGE_COLUMNS_DATE_TABLE_NAME}` (
+CREATE TABLE `${const:com.oceanbase.odc.plugin.task.obmysql.partitionplan.OBMySQLKeepLatestPartitionGeneratorTest.RANGE_COLUMNS_DATE_TABLE_NAME}` (
   `c1` int(11) DEFAULT NULL,
   `c2` varchar(64) DEFAULT NULL,
   `c3` date DEFAULT NULL

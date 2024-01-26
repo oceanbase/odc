@@ -36,7 +36,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import com.oceanbase.odc.plugin.schema.obmysql.OBMySQLTableExtension;
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.drop.DropPartitionGenerator;
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.drop.KeepMostRecentPartitionGenerator;
-import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.drop.OBMySQLKeepMostRecentPartitionGenerator;
+import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.drop.OBMySQLKeepLatestPartitionGenerator;
 import com.oceanbase.odc.test.database.TestDBConfiguration;
 import com.oceanbase.odc.test.database.TestDBConfigurations;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
@@ -44,13 +44,13 @@ import com.oceanbase.tools.dbbrowser.model.DBTableAbstractPartitionDefinition;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartitionDefinition;
 
 /**
- * Test cases for {@link OBMySQLKeepMostRecentPartitionGenerator}
+ * Test cases for {@link OBMySQLKeepLatestPartitionGenerator}
  *
  * @author yh263208
  * @date 2024-01-24 15:54
  * @since ODC_release_4.2.4
  */
-public class OBMySQLKeepMostRecentPartitionGeneratorTest {
+public class OBMySQLKeepLatestPartitionGeneratorTest {
 
     public static final String RANGE_COLUMNS_DATE_TABLE_NAME = "range_parti_drop_test";
 
@@ -75,7 +75,7 @@ public class OBMySQLKeepMostRecentPartitionGeneratorTest {
             OBMySQLTableExtension tableExtension = new OBMySQLTableExtension();
             DBTable dbTable = tableExtension.getDetail(connection,
                     configuration.getDefaultDBName(), RANGE_COLUMNS_DATE_TABLE_NAME);
-            DropPartitionGenerator generator = new OBMySQLKeepMostRecentPartitionGenerator();
+            DropPartitionGenerator generator = new OBMySQLKeepLatestPartitionGenerator();
             List<DBTablePartitionDefinition> toDelete = generator.invoke(connection, dbTable, getParameters(1));
             List<String> actuals = toDelete.stream().map(DBTableAbstractPartitionDefinition::getName)
                     .collect(Collectors.toList());
