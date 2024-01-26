@@ -21,7 +21,7 @@ package com.oceanbase.odc.service.task.enums;
  * @date 2023-11-21
  * @since 4.2.4
  */
-public enum TaskRunModeEnum {
+public enum TaskRunMode {
     /**
      * ODC job run by k8s job
      */

@@ -17,20 +17,15 @@ package com.oceanbase.odc.service.task.caller;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.Supplier;
 
-import com.oceanbase.odc.common.crypto.Encryptors;
-import com.oceanbase.odc.common.crypto.TextEncryptor;
 import com.oceanbase.odc.common.json.JsonUtils;
-import com.oceanbase.odc.common.security.PasswordUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
-import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.service.objectstorage.cloud.model.CloudEnvConfigurations;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
-import com.oceanbase.odc.service.task.enums.TaskRunModeEnum;
+import com.oceanbase.odc.service.task.enums.TaskRunMode;
 import com.oceanbase.odc.service.task.util.JobUtils;
 
 /**
@@ -39,63 +34,45 @@ import com.oceanbase.odc.service.task.util.JobUtils;
  * @since 4.2.4
  */
 public class JobEnvBuilder {
-    private final Map<String, String> ENVS = new HashMap<>();
-    private final TextEncryptor textEncryptor;
 
-    public JobEnvBuilder() {
-        String key = PasswordUtils.random(32);
-        String salt = PasswordUtils.random(8);
-        textEncryptor = Encryptors.aesBase64(key, salt);
-        ENVS.put(JobEnvKeyConstants.ENCRYPT_KEY, key);
-        ENVS.put(JobEnvKeyConstants.ENCRYPT_SALT, salt);
-    }
+    private final Map<String, String> ENV_MAP = new HashMap<>();
 
-    public Map<String, String> buildMap(JobContext context, TaskRunModeEnum runMode) {
+    public Map<String, String> buildMap(JobContext context, TaskRunMode runMode) {
 
         putEnv(JobEnvKeyConstants.ODC_BOOT_MODE, () -> JobConstants.ODC_BOOT_MODE_EXECUTOR);
         putEnv(JobEnvKeyConstants.ODC_TASK_RUN_MODE, runMode::name);
-
-        putEnvWithEncrypted(JobEnvKeyConstants.ODC_JOB_CONTEXT, () -> JobUtils.toJson(context));
-
+        putEnv(JobEnvKeyConstants.ODC_JOB_CONTEXT, () -> JobUtils.toJson(context));
         CloudEnvConfigurations cloudEnvConfigurations = JobConfigurationHolder.getJobConfiguration()
                 .getCloudEnvConfigurations();
-        PreConditions.notNull(cloudEnvConfigurations, "cloudEnvConfigurations");
-        putEnvWithEncrypted(JobEnvKeyConstants.ODC_OBJECT_STORAGE_CONFIGURATION,
-                () -> JsonUtils.toJson(cloudEnvConfigurations.getObjectStorageConfiguration()));
+        if (cloudEnvConfigurations != null) {
+            putEnv(JobEnvKeyConstants.ODC_OBJECT_STORAGE_CONFIGURATION,
+                    () -> JsonUtils.toJson(cloudEnvConfigurations.getObjectStorageConfiguration()));
+        }
 
         putEnv(JobEnvKeyConstants.ODC_LOG_DIRECTORY,
                 () -> SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_LOG_DIRECTORY));
-
         setDatabaseEnv();
-        return ENVS;
+        return ENV_MAP;
 
     }
 
     private void setDatabaseEnv() {
-        putOrAliasInEnv(JobEnvKeyConstants.DATABASE_HOST, JobEnvKeyConstants.DATABASE_HOST_ALIAS);
-        putOrAliasInEnv(JobEnvKeyConstants.DATABASE_PORT, JobEnvKeyConstants.DATABASE_PORT_ALIAS);
-        putOrAliasInEnv(JobEnvKeyConstants.DATABASE_NAME, JobEnvKeyConstants.DATABASE_NAME_ALIAS);
-        putOrAliasInEnv(JobEnvKeyConstants.DATABASE_USERNAME, JobEnvKeyConstants.DATABASE_USERNAME_ALIAS);
-        putOrAliasInEnv(JobEnvKeyConstants.DATABASE_PASSWORD, JobEnvKeyConstants.DATABASE_PASSWORD_ALIAS);
+        putFromEnv(JobEnvKeyConstants.ODC_DATABASE_HOST);
+        putFromEnv(JobEnvKeyConstants.ODC_DATABASE_PORT);
+        putFromEnv(JobEnvKeyConstants.ODC_DATABASE_NAME);
+        putFromEnv(JobEnvKeyConstants.ODC_DATABASE_USERNAME);
+        putFromEnv(JobEnvKeyConstants.ODC_DATABASE_PASSWORD);
     }
 
-    private void putOrAliasInEnv(String envName, String envAlias) {
-        putEnvWithEncrypted(envName, () -> Optional.ofNullable(SystemUtils.getEnvOrProperty(envName))
-                .orElse(SystemUtils.getEnvOrProperty(envAlias)));
+    private void putFromEnv(String envName) {
+        putEnv(envName, () -> SystemUtils.getEnvOrProperty(envName));
     }
 
-
-    private void putEnvWithEncrypted(String envName, Supplier<String> envSupplier) {
-        String envValue;
-        if ((envValue = envSupplier.get()) != null) {
-            ENVS.put(envName, textEncryptor.encrypt(envValue));
-        }
-    }
 
     private void putEnv(String envName, Supplier<String> envSupplier) {
         String envValue;
         if ((envValue = envSupplier.get()) != null) {
-            ENVS.put(envName, (envValue));
+            ENV_MAP.put(envName, (envValue));
         }
     }
 

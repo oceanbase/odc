@@ -17,12 +17,15 @@ package com.oceanbase.odc.service.task.executor.server;
 
 import java.text.MessageFormat;
 import java.util.List;
+import java.util.Objects;
 
 import org.apache.commons.collections4.CollectionUtils;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
+import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
 import com.oceanbase.odc.service.task.util.HttpUtil;
 
 import lombok.extern.slf4j.Slf4j;
@@ -43,6 +46,10 @@ public class TaskReporter {
 
 
     public <T> boolean report(String url, T result) {
+        String reportEnabledValue = SystemUtils.getEnvOrProperty(JobEnvKeyConstants.REPORT_ENABLED);
+        if (reportEnabledValue != null && Objects.equals(Boolean.valueOf(reportEnabledValue), Boolean.FALSE)) {
+            return true;
+        }
         if (CollectionUtils.isEmpty(hostUrls)) {
             log.warn("host url is empty");
             return false;

@@ -54,7 +54,7 @@ import com.oceanbase.odc.metadb.task.JobRepository;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.constants.JobEntityColumn;
 import com.oceanbase.odc.service.task.enums.JobStatus;
-import com.oceanbase.odc.service.task.enums.TaskRunModeEnum;
+import com.oceanbase.odc.service.task.enums.TaskRunMode;
 import com.oceanbase.odc.service.task.exception.TaskRuntimeException;
 import com.oceanbase.odc.service.task.executor.server.HeartRequest;
 import com.oceanbase.odc.service.task.executor.task.Task;
@@ -152,10 +152,10 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
 
     private Specification<JobEntity> getExecutorSpec() {
         return (root, query, builder) -> {
-            Predicate k8sCondition = builder.equal(root.get(JobEntityColumn.RUN_MODE), TaskRunModeEnum.K8S);
+            Predicate k8sCondition = builder.equal(root.get(JobEntityColumn.RUN_MODE), TaskRunMode.K8S);
 
             Predicate processCondition = builder.and(
-                    builder.equal(root.get(JobEntityColumn.RUN_MODE), TaskRunModeEnum.PROCESS),
+                    builder.equal(root.get(JobEntityColumn.RUN_MODE), TaskRunMode.PROCESS),
                     builder.or(
                             builder.like(root.get(JobEntityColumn.EXECUTOR_IDENTIFIER),
                                     SystemUtils.getLocalIpAddress()),

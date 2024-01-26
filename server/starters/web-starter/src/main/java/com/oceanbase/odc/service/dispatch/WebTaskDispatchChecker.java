@@ -58,7 +58,7 @@ public class WebTaskDispatchChecker implements TaskDispatchChecker {
 
     @Override
     public boolean isTaskEntityOnThisMachine(@NonNull TaskEntity taskEntity) {
-        if (taskFrameworkProperties.isEnableTaskFramework() && taskEntity.getJobId() != null) {
+        if (taskFrameworkProperties.isEnabled() && taskEntity.getJobId() != null) {
             JobEntity jobEntity = taskFrameworkService.find(taskEntity.getJobId());
             if (jobEntity == null) {
                 return true;

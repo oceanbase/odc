@@ -13,29 +13,37 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.task.util;
+package com.oceanbase.odc.service.task.caller;
+
+import java.util.Map;
 
 import com.oceanbase.odc.common.crypto.Encryptors;
 import com.oceanbase.odc.common.crypto.TextEncryptor;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
 
+import lombok.NonNull;
+
 /**
+ * Decrypt
+ * 
  * @author yaobin
- * @date 2024-01-19
+ * @date 2024-01-26
  * @since 4.2.4
  */
-public class JobEncryptUtils {
+public class JobDecryptInterceptor implements JobEnvInterceptor {
 
-    public static String encrypt(String key, String salt, String plaintText) {
-        TextEncryptor textEncryptor = Encryptors.aesBase64(key, salt);
-        return textEncryptor.encrypt(plaintText);
-    }
+    @Override
+    public void intercept(@NonNull Map<String, String> environments) {
 
-    public static String decrypt(String encrypted) {
         String key = SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ENCRYPT_KEY);
         String salt = SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ENCRYPT_SALT);
         TextEncryptor textEncryptor = Encryptors.aesBase64(key, salt);
-        return textEncryptor.decrypt(encrypted);
+
+        JobEnvInterceptor.getSensitiveKeys().forEach(k -> {
+            if (environments.containsKey(k)) {
+                System.setProperty(k, textEncryptor.decrypt(environments.get(k)));
+            }
+        });
     }
 }

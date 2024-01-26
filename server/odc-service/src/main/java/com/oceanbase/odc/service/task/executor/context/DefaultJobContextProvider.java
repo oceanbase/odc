@@ -17,12 +17,9 @@
 package com.oceanbase.odc.service.task.executor.context;
 
 import com.oceanbase.odc.common.json.JsonUtils;
-import com.oceanbase.odc.common.util.SystemUtils;
-import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.service.task.caller.DefaultJobContext;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
-import com.oceanbase.odc.service.task.util.JobEncryptUtils;
 
 /**
  * @author gaoda.xy
@@ -32,9 +29,8 @@ public class DefaultJobContextProvider implements JobContextProvider {
 
     @Override
     public JobContext provide() {
-        String jobContextJson = SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_JOB_CONTEXT);
-        Verify.notBlank(jobContextJson, JobEnvKeyConstants.ODC_JOB_CONTEXT);
-        return JsonUtils.fromJson(JobEncryptUtils.decrypt(jobContextJson), DefaultJobContext.class);
+        String jobContextJson = System.getProperty(JobEnvKeyConstants.ODC_JOB_CONTEXT);
+        return JsonUtils.fromJson(jobContextJson, DefaultJobContext.class);
     }
 
 }

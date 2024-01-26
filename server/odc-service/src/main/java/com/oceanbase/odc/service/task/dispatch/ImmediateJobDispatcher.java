@@ -29,7 +29,7 @@ import com.oceanbase.odc.service.task.config.JobConfigurationValidator;
 import com.oceanbase.odc.service.task.config.K8sProperties;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.constants.JobConstants;
-import com.oceanbase.odc.service.task.enums.TaskRunModeEnum;
+import com.oceanbase.odc.service.task.enums.TaskRunMode;
 import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 import com.oceanbase.odc.service.task.schedule.provider.JobImageNameProvider;
@@ -67,20 +67,20 @@ public class ImmediateJobDispatcher implements JobDispatcher {
         throw new UnsupportedException("unsupported");
     }
 
-    private JobCaller getJobCaller(TaskRunModeEnum taskRunMode) {
+    private JobCaller getJobCaller(TaskRunMode taskRunMode) {
         return getJobCallerWithContext(taskRunMode, null);
     }
 
-    private JobCaller getJobCallerWithContext(TaskRunModeEnum taskRunMode, JobContext context) {
+    private JobCaller getJobCallerWithContext(TaskRunMode taskRunMode, JobContext context) {
         JobConfiguration config = JobConfigurationHolder.getJobConfiguration();
-        if (taskRunMode == TaskRunModeEnum.K8S) {
+        if (taskRunMode == TaskRunMode.K8S) {
             return JobCallerBuilder.buildK8sJobCaller(config.getK8sJobClient(),
                     createDefaultPodConfig(config.getTaskFrameworkProperties()), context);
         }
         return JobCallerBuilder.buildProcessCaller(context);
     }
 
-    private TaskRunModeEnum getJobRunMode(JobIdentity ji) {
+    private TaskRunMode getJobRunMode(JobIdentity ji) {
         JobConfigurationValidator.validComponent();
         TaskFrameworkService taskFrameworkService =
                 JobConfigurationHolder.getJobConfiguration().getTaskFrameworkService();

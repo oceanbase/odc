@@ -44,10 +44,11 @@ import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfigur
 import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfiguration.CloudProvider;
 import com.oceanbase.odc.service.plugin.PluginProperties;
 import com.oceanbase.odc.service.task.caller.JobContext;
+import com.oceanbase.odc.service.task.caller.JobEncryptInterceptor;
 import com.oceanbase.odc.service.task.caller.JobEnvBuilder;
 import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
-import com.oceanbase.odc.service.task.enums.TaskRunModeEnum;
+import com.oceanbase.odc.service.task.enums.TaskRunMode;
 import com.oceanbase.odc.service.task.executor.task.DatabaseChangeTask;
 import com.oceanbase.odc.service.task.schedule.DefaultJobContextBuilder;
 import com.oceanbase.odc.service.task.schedule.DefaultJobDefinition;
@@ -65,6 +66,7 @@ import lombok.extern.slf4j.Slf4j;
 @Ignore("manual test this case for process mode")
 @Slf4j
 public class ProcessModeTest extends BaseJobTest {
+
 
     @Test
     public void test_start_task_process_mode() {
@@ -87,12 +89,17 @@ public class ProcessModeTest extends BaseJobTest {
 
         setEnvironments(pb);
         pb.command(commands);
+        Process process = null;
         try {
-            Process process = pb.start();
-            boolean exited = process.waitFor(30, TimeUnit.SECONDS);
+            process = pb.start();
+            boolean exited = process.waitFor(50, TimeUnit.SECONDS);
             Assert.assertFalse(exited);
         } catch (Throwable ex) {
             log.error("start odc server error:", ex);
+        } finally {
+            if (process != null) {
+                process.destroyForcibly();
+            }
         }
     }
 
@@ -106,7 +113,10 @@ public class ProcessModeTest extends BaseJobTest {
         JobIdentity jobIdentity = JobIdentity.of(exceptedTaskId);
         JobDefinition jd = buildJobDefinition();
         JobContext jc = new DefaultJobContextBuilder().build(jobIdentity, jd);
-        environment.putAll(new JobEnvBuilder().buildMap(jc, TaskRunModeEnum.PROCESS));
+        Map<String, String> envMap = new JobEnvBuilder().buildMap(jc, TaskRunMode.PROCESS);
+        new JobEncryptInterceptor().intercept(envMap);
+
+        environment.putAll(envMap);
     }
 
     private JobDefinition buildJobDefinition() {

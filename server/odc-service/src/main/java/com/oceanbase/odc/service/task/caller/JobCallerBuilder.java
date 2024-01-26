@@ -15,8 +15,10 @@
  */
 package com.oceanbase.odc.service.task.caller;
 
+import java.util.Map;
+
 import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
-import com.oceanbase.odc.service.task.enums.TaskRunModeEnum;
+import com.oceanbase.odc.service.task.enums.TaskRunMode;
 
 /**
  * @author yaobin
@@ -27,14 +29,20 @@ public class JobCallerBuilder {
 
     public static JobCaller buildProcessCaller(JobContext context) {
         ProcessConfig config = new ProcessConfig();
-        config.setEnvironments(new JobEnvBuilder().buildMap(context, TaskRunModeEnum.PROCESS));
+        Map<String, String> maps = new JobEnvBuilder().buildMap(context, TaskRunMode.PROCESS);
+        new JobEncryptInterceptor().intercept(maps);
+        config.setEnvironments(maps);
+
         return new ProcessJobCaller(config);
     }
 
     public static JobCaller buildK8sJobCaller(K8sJobClient k8sJobClient, PodConfig podConfig, JobContext context) {
 
         PodParam podParam = podConfig.getPodParam();
-        podParam.setEnvironments(new JobEnvBuilder().buildMap(context, TaskRunModeEnum.K8S));
+        Map<String, String> maps = new JobEnvBuilder().buildMap(context, TaskRunMode.K8S);
+        new JobEncryptInterceptor().intercept(maps);
+
+        podParam.setEnvironments(maps);
         podParam.getEnvironments().putIfAbsent(JobEnvKeyConstants.ODC_LOG_DIRECTORY, podParam.getMountPath());
         return new K8sJobCaller(k8sJobClient, podConfig);
     }

@@ -18,6 +18,8 @@ package com.oceanbase.odc.service.task.executor;
 
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.LoggerContext;
@@ -28,6 +30,7 @@ import com.oceanbase.odc.common.trace.TraceContextHolder;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.service.task.caller.JobContext;
+import com.oceanbase.odc.service.task.caller.JobDecryptInterceptor;
 import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
 import com.oceanbase.odc.service.task.exception.TaskRuntimeException;
 import com.oceanbase.odc.service.task.executor.context.JobContextProviderFactory;
@@ -83,6 +86,8 @@ public class TaskApplication {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             log.info("Task executor exits, systemInfo={}", SystemUtils.getSystemMemoryInfo());
         }));
+        validEnvValues();
+        decryptIntercept();
         context = JobContextProviderFactory.create().provide();
         trace(context.getJobIdentity().getId());
         setLog4JConfigXml();
@@ -93,12 +98,19 @@ public class TaskApplication {
 
         String runMode = SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_TASK_RUN_MODE);
         log.info("ODC TASK RUN MODE is {}.", runMode);
-        Verify.notBlank(runMode, JobEnvKeyConstants.ODC_TASK_RUN_MODE);
 
         taskExecutor = ThreadPoolTaskExecutor.getInstance();
         log.info("Task executor init success: {}", taskExecutor.getClass().getSimpleName());
         log.info("Task executor ip is {}.", SystemUtils.getLocalIpAddress());
         log.info("Task executor port is {}.", JobUtils.getExecutorPort());
+    }
+
+    private void decryptIntercept() {
+        Map<String, String> allProperties = new HashMap<>(System.getenv());
+        System.getProperties().forEach((key, value) -> {
+            allProperties.put((String) key, (String) value);
+        });
+        new JobDecryptInterceptor().intercept(allProperties);
     }
 
     private void trace(long taskId) {
@@ -118,6 +130,19 @@ public class TaskApplication {
         } catch (URISyntaxException e) {
             throw new TaskRuntimeException("load " + taskLogFile + " occur error.", e);
         }
+    }
+
+    private void validEnvValues() {
+        validNotBlank(JobEnvKeyConstants.ODC_JOB_CONTEXT);
+        validNotBlank(JobEnvKeyConstants.ODC_BOOT_MODE);
+        validNotBlank(JobEnvKeyConstants.ODC_TASK_RUN_MODE);
+        validNotBlank(JobEnvKeyConstants.ENCRYPT_SALT);
+        validNotBlank(JobEnvKeyConstants.ENCRYPT_KEY);
+    }
+
+    private void validNotBlank(String envKey) {
+        Verify.notBlank(SystemUtils.getEnvOrProperty(envKey), envKey);
+
     }
 
 }

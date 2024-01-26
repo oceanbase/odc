@@ -52,7 +52,7 @@ public class OdcRuntimeDelegateMapper implements RuntimeDelegateMapper {
             case ASYNC:
                 TaskFrameworkProperties taskFrameworkProperties =
                         SpringContextUtil.getBean(TaskFrameworkProperties.class);
-                return taskFrameworkProperties.isEnableTaskFramework()
+                return taskFrameworkProperties.isEnabled()
                         ? DatabaseChangeRuntimeFlowableTaskCopied.class
                         : DatabaseChangeRuntimeFlowableTask.class;
             case MOCKDATA:

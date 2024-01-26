@@ -27,7 +27,7 @@ import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfiguration;
 import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
-import com.oceanbase.odc.service.task.enums.TaskRunModeEnum;
+import com.oceanbase.odc.service.task.enums.TaskRunMode;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 
 import lombok.extern.slf4j.Slf4j;
@@ -67,10 +67,9 @@ public class JobUtils {
     }
 
 
+
     public static void setExecutorPort(int port) {
-        if (SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_EXECUTOR_PORT) == null) {
-            System.setProperty(JobEnvKeyConstants.ODC_EXECUTOR_PORT, port + "");
-        }
+        System.setProperty(JobEnvKeyConstants.ODC_EXECUTOR_PORT, port + "");
     }
 
     public static String getExecutorPoint() {
@@ -82,45 +81,41 @@ public class JobUtils {
         return userDir != null ? userDir : "./data";
     }
 
-    public static boolean isK8sRunMode(TaskRunModeEnum runMode) {
-        return runMode == TaskRunModeEnum.K8S;
+    public static boolean isK8sRunMode(TaskRunMode runMode) {
+        return runMode == TaskRunMode.K8S;
     }
 
-    public static boolean isProcessRunMode(TaskRunModeEnum runMode) {
-        return runMode == TaskRunModeEnum.PROCESS;
+    public static boolean isProcessRunMode(TaskRunMode runMode) {
+        return runMode == TaskRunMode.PROCESS;
     }
 
 
     public static boolean isK8sRunModeOfEnv() {
-        return TaskRunModeEnum.K8S.name().equals(SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_TASK_RUN_MODE));
+        return TaskRunMode.K8S.name().equals(SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_TASK_RUN_MODE));
     }
 
     public static boolean isProcessRunModeOfEnv() {
-        return TaskRunModeEnum.PROCESS.name()
+        return TaskRunMode.PROCESS.name()
                 .equals(SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_TASK_RUN_MODE));
     }
 
     public static ConnectionConfig getMetaDBConnectionConfig() {
         ConnectionConfig config = new ConnectionConfig();
-        config.setHost(getDecryptedFromEnv(JobEnvKeyConstants.DATABASE_HOST));
-        String port = getDecryptedFromEnv(JobEnvKeyConstants.DATABASE_PORT);
+        config.setHost(System.getProperty(JobEnvKeyConstants.ODC_DATABASE_HOST));
+        String port = System.getProperty(JobEnvKeyConstants.ODC_DATABASE_PORT);
         config.setPort(port != null ? Integer.parseInt(port) : 8989);
-        config.setDefaultSchema(getDecryptedFromEnv(JobEnvKeyConstants.DATABASE_NAME));
-        config.setUsername(getDecryptedFromEnv(JobEnvKeyConstants.DATABASE_USERNAME));
-        config.setPassword(getDecryptedFromEnv(JobEnvKeyConstants.DATABASE_PASSWORD));
+        config.setDefaultSchema(System.getProperty(JobEnvKeyConstants.ODC_DATABASE_NAME));
+        config.setUsername(System.getProperty(JobEnvKeyConstants.ODC_DATABASE_USERNAME));
+        config.setPassword(System.getProperty(JobEnvKeyConstants.ODC_DATABASE_PASSWORD));
         config.setId(1L);
         return config;
     }
 
-    private static String getDecryptedFromEnv(String envName) {
-        return JobEncryptUtils.decrypt(SystemUtils.getEnvOrProperty(envName));
-    }
 
     public static Optional<ObjectStorageConfiguration> getObjectStorageConfiguration() {
         String osc;
-        if ((osc = SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_OBJECT_STORAGE_CONFIGURATION)) != null) {
-            ObjectStorageConfiguration storageConfig = JsonUtils.fromJson(
-                    JobEncryptUtils.decrypt(osc), ObjectStorageConfiguration.class);
+        if ((osc = System.getProperty(JobEnvKeyConstants.ODC_OBJECT_STORAGE_CONFIGURATION)) != null) {
+            ObjectStorageConfiguration storageConfig = JsonUtils.fromJson(osc, ObjectStorageConfiguration.class);
             return Optional.of(storageConfig);
         }
         return Optional.empty();

@@ -20,7 +20,7 @@ import org.springframework.boot.context.properties.NestedConfigurationProperty;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.context.annotation.Configuration;
 
-import com.oceanbase.odc.service.task.enums.TaskRunModeEnum;
+import com.oceanbase.odc.service.task.enums.TaskRunMode;
 
 import lombok.Data;
 
@@ -35,9 +35,10 @@ import lombok.Data;
 @ConfigurationProperties(prefix = "odc.task-framework")
 public class SpringTaskFrameworkProperties implements TaskFrameworkProperties {
 
-    private boolean enableTaskFramework;
+    // task-framework enabled
+    private boolean enabled;
 
-    private TaskRunModeEnum runMode;
+    private TaskRunMode runMode;
 
     private String odcUrl;
 

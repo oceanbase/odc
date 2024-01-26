@@ -110,8 +110,8 @@ public class CommonSecurityProperties {
     @Value("${odc.web.security.cors.allowedOrigins:*}")
     private List<String> corsAllowedOrigins;
 
-    @Value("${odc.task-framework.enable-task-framework:false}")
-    private boolean enableTaskFramework;
+    @Value("${odc.task-framework.enabled:false}")
+    private boolean taskFrameworkEnabled;
 
     @PostConstruct
     public void init() {
@@ -121,7 +121,7 @@ public class CommonSecurityProperties {
     }
 
     public String[] getAuthWhitelist() {
-        if (enableTaskFramework) {
+        if (taskFrameworkEnabled) {
             String[] copiedAuthWhitelist = new String[buildInAuthWhitelist.length + 2];
             System.arraycopy(buildInAuthWhitelist, 0, copiedAuthWhitelist, 0, buildInAuthWhitelist.length);
             copiedAuthWhitelist[copiedAuthWhitelist.length - 1] = "/api/v2/task/heart";

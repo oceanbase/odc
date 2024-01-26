@@ -17,7 +17,6 @@ package com.oceanbase.odc.service.task;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.junit.Assert;
@@ -25,7 +24,6 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import com.oceanbase.odc.TestConnectionUtil;
-import com.oceanbase.odc.common.concurrent.Await;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
@@ -37,9 +35,11 @@ import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfiguration;
 import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfiguration.CloudProvider;
 import com.oceanbase.odc.service.task.caller.JobContext;
-import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
+import com.oceanbase.odc.service.task.caller.JobEncryptInterceptor;
+import com.oceanbase.odc.service.task.caller.JobEnvBuilder;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.odc.service.task.enums.JobStatus;
+import com.oceanbase.odc.service.task.enums.TaskRunMode;
 import com.oceanbase.odc.service.task.executor.TaskApplication;
 import com.oceanbase.odc.service.task.executor.server.ThreadPoolTaskExecutor;
 import com.oceanbase.odc.service.task.executor.task.DatabaseChangeTask;
@@ -48,7 +48,6 @@ import com.oceanbase.odc.service.task.schedule.DefaultJobContextBuilder;
 import com.oceanbase.odc.service.task.schedule.DefaultJobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
-import com.oceanbase.odc.service.task.util.JobEncryptUtils;
 import com.oceanbase.odc.service.task.util.JobUtils;
 
 /**
@@ -58,6 +57,7 @@ import com.oceanbase.odc.service.task.util.JobUtils;
  */
 @Ignore("manual run this case")
 public class TaskApplicationTest extends BaseJobTest {
+
 
     @Test
     public void test_executeDatabaseChangeTask_run() {
@@ -69,22 +69,13 @@ public class TaskApplicationTest extends BaseJobTest {
         assertRunningResult(jobIdentity);
     }
 
-    @Test
-    public void test_executeDatabaseChangeTask_stop() {
-        Long exceptedTaskId = System.currentTimeMillis();
-        JobIdentity jobIdentity = JobIdentity.of(exceptedTaskId);
-
-        setJobContextInSystemProperty(jobIdentity);
-        startTaskApplication();
-        assertCancelResult(jobIdentity);
-    }
 
     private void setJobContextInSystemProperty(JobIdentity jobIdentity) {
         JobDefinition jd = buildJobDefinition();
         JobContext jc = new DefaultJobContextBuilder().build(jobIdentity, jd);
-        System.setProperty(JobEnvKeyConstants.ODC_JOB_CONTEXT,
-                JobEncryptUtils.encrypt(System.getProperty(JobEnvKeyConstants.ENCRYPT_KEY),
-                        System.getProperty(JobEnvKeyConstants.ENCRYPT_SALT), JobUtils.toJson(jc)));
+        Map<String, String> envMap = new JobEnvBuilder().buildMap(jc, TaskRunMode.PROCESS);
+        new JobEncryptInterceptor().intercept(envMap);
+        envMap.forEach(System::setProperty);
     }
 
     private void assertRunningResult(JobIdentity ji) {
@@ -99,14 +90,6 @@ public class TaskApplicationTest extends BaseJobTest {
 
     }
 
-    private void assertCancelResult(JobIdentity ji) {
-        Await.await().timeout(60).timeUnit(TimeUnit.SECONDS).period(1).periodTimeUnit(TimeUnit.SECONDS).until(
-                () -> ThreadPoolTaskExecutor.getInstance().getTask(ji) != null)
-                .build().start();
-        boolean result = ThreadPoolTaskExecutor.getInstance().cancel(ji);
-        Assert.assertTrue(result);
-
-    }
 
     private void startTaskApplication() {
         new Thread(() -> new TaskApplication().run(null)).start();

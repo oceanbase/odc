@@ -209,7 +209,7 @@ public abstract class SystemUtils {
             try {
                 String line;
                 while ((line = reader.readLine()) != null) {
-                    if (line.startsWith(pid + " ")) {
+                    if (line.trim().startsWith(pid + " ")) {
                         result = true;
                         break;
                     }

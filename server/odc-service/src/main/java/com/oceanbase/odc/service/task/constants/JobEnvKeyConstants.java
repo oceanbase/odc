@@ -33,7 +33,7 @@ public class JobEnvKeyConstants {
 
     public static final String ODC_LOG_DIRECTORY = "odc.log.directory";
 
-    public static final String ODC_SERVER_PORT = "ODC_SERVER_PORT";
+    public static final String ODC_SERVER_PORT = "server.port";
 
     public static final String ODC_EXECUTOR_PORT = "ODC_EXECUTOR_PORT";
 
@@ -45,27 +45,19 @@ public class JobEnvKeyConstants {
 
     public static final String ODC_OBJECT_STORAGE_CONFIGURATION = "ODC_OBJECT_STORAGE_CONFIGURATION";
 
-    public static final String DATABASE_HOST = "DATABASE_HOST";
+    public static final String ODC_DATABASE_HOST = "ODC_DATABASE_HOST";
 
-    public static final String DATABASE_PORT = "DATABASE_PORT";
+    public static final String ODC_DATABASE_PORT = "ODC_DATABASE_PORT";
 
-    public static final String DATABASE_NAME = "DATABASE_NAME";
+    public static final String ODC_DATABASE_NAME = "ODC_DATABASE_NAME";
 
-    public static final String DATABASE_USERNAME = "DATABASE_USERNAME";
+    public static final String ODC_DATABASE_USERNAME = "ODC_DATABASE_USERNAME";
 
-    public static final String DATABASE_PASSWORD = "DATABASE_PASSWORD";
-
-    public static final String DATABASE_HOST_ALIAS = "ODC_DATABASE_HOST";
-
-    public static final String DATABASE_PORT_ALIAS = "ODC_DATABASE_PORT";
-
-    public static final String DATABASE_NAME_ALIAS = "ODC_DATABASE_NAME";
-
-    public static final String DATABASE_USERNAME_ALIAS = "ODC_DATABASE_USERNAME";
-
-    public static final String DATABASE_PASSWORD_ALIAS = "ODC_DATABASE_PASSWORD";
+    public static final String ODC_DATABASE_PASSWORD = "ODC_DATABASE_PASSWORD";
 
     public static final String ENCRYPT_KEY = "ENCRYPT_KEY";
 
     public static final String ENCRYPT_SALT = "ENCRYPT_SALT";
+
+    public static final String REPORT_ENABLED = "REPORT_ENABLED";
 }

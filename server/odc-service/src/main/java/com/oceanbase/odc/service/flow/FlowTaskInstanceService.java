@@ -208,7 +208,7 @@ public class FlowTaskInstanceService {
             return null;
         }
 
-        if (taskFrameworkProperties.isEnableTaskFramework() && taskEntity.getJobId() != null) {
+        if (taskFrameworkProperties.isEnabled() && taskEntity.getJobId() != null) {
             return getLogByTaskFramework(level, taskEntity.getJobId());
         }
 
