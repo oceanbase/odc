@@ -184,8 +184,8 @@ public class PartitionPlanServiceV2 {
                         "Failed to get invoker by name, " + tableConfig.getPartitionNameInvoker());
             }
             Map<String, Object> parameters = tableConfig.getPartitionNameInvokerParameters();
-            parameters.putIfAbsent(PartitionNameGenerator.TARGET_PARTITION_DEF_KEY, definition);
-            parameters.putIfAbsent(PartitionNameGenerator.TARGET_PARTITION_DEF_INDEX_KEY, s.getKey());
+            parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_KEY, definition);
+            parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_INDEX_KEY, s.getKey());
             try {
                 definition.setName(invoker.invoke(connection, dbTable, parameters));
             } catch (Exception e) {

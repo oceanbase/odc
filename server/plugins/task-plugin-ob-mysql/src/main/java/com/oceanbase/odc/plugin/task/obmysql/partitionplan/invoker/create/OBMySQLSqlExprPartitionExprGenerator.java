@@ -67,11 +67,15 @@ public class OBMySQLSqlExprPartitionExprGenerator implements SqlExprBasedPartiti
         List<SqlExprResult> candidates = new ArrayList<>(generateCount);
         SqlExprCalculator calculator = getSqlExprCalculator(connection);
         for (int i = 0; i < generateCount; i++) {
-            Map<String, String> variables = new HashMap<>();
-            variables.put(PartitionPlanVariableKey.INTERVAL.name(), "(" + String.join("+", intervals) + ")");
-            intervals.add(realInterval);
-            StringSubstitutor substitutor = new StringSubstitutor(variables);
-            candidates.add(calculator.calculate(substitutor.replace(realExpression)));
+            if (StringUtils.isEmpty(realInterval)) {
+                candidates.add(calculator.calculate(realExpression));
+            } else {
+                Map<String, String> variables = new HashMap<>();
+                variables.put(PartitionPlanVariableKey.INTERVAL.name(), "(" + String.join("+", intervals) + ")");
+                intervals.add(realInterval);
+                StringSubstitutor substitutor = new StringSubstitutor(variables);
+                candidates.add(calculator.calculate(substitutor.replace(realExpression)));
+            }
         }
         return candidates.stream().map(sqlExprResult -> {
             DataType type = sqlExprResult.getDataType();
@@ -92,6 +96,9 @@ public class OBMySQLSqlExprPartitionExprGenerator implements SqlExprBasedPartiti
     }
 
     protected String replaceVariable(DBTable table, String partitionKey, String target, PartitionPlanVariableKey key) {
+        if (StringUtils.isEmpty(target)) {
+            return target;
+        }
         switch (key) {
             case LAST_PARTITION_VALUE:
                 DBTablePartitionOption option = table.getPartition().getPartitionOption();

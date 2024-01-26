@@ -18,6 +18,7 @@ package com.oceanbase.odc.plugin.task.api.partitionplan.invoker.partitionname;
 import java.sql.Connection;
 import java.util.Map;
 
+import com.oceanbase.odc.plugin.task.api.partitionplan.model.SqlExprBasedGeneratorConfig;
 import com.oceanbase.odc.plugin.task.api.partitionplan.util.ParameterUtil;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartitionDefinition;
@@ -33,11 +34,11 @@ import lombok.NonNull;
  */
 public interface SqlExprBasedPartitionNameGenerator extends PartitionNameGenerator {
 
-    String PARTITION_NAME_EXPR_KEY = "partitionNameExpr";
+    String PARTITION_NAME_GEN_CONFIG_KEY = "partitionNameGenerateConfig";
 
     String generate(@NonNull Connection connection, @NonNull DBTable dbTable,
             @NonNull Integer targetPartitionIndex, @NonNull DBTablePartitionDefinition target,
-            @NonNull String sqlExpression) throws Exception;
+            @NonNull SqlExprBasedGeneratorConfig config) throws Exception;
 
     @Override
     default String getName() {
@@ -48,8 +49,8 @@ public interface SqlExprBasedPartitionNameGenerator extends PartitionNameGenerat
     default String generate(@NonNull Connection connection, @NonNull DBTable dbTable,
             @NonNull Integer targetPartitionIndex, @NonNull DBTablePartitionDefinition target,
             @NonNull Map<String, Object> parameters) throws Exception {
-        return generate(connection, dbTable, targetPartitionIndex, target,
-                ParameterUtil.nullSafeExtract(parameters, PARTITION_NAME_EXPR_KEY, String.class));
+        return generate(connection, dbTable, targetPartitionIndex, target, ParameterUtil.nullSafeExtract(
+                parameters, PARTITION_NAME_GEN_CONFIG_KEY, SqlExprBasedGeneratorConfig.class));
     }
 
 }

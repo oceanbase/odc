@@ -212,8 +212,13 @@ public class OBMySQLAutoPartitionExtensionPointTest {
             for (int i = 0; i < generateCount; i++) {
                 DBTablePartitionDefinition definition = new DBTablePartitionDefinition();
                 definition.setMaxValues(Arrays.asList(pk1Values.get(i), pk2Values.get(i)));
+                SqlExprBasedGeneratorConfig config2 = new SqlExprBasedGeneratorConfig();
+                config2.setGenerateExpr("concat('p', date_format(from_unixtime(unix_timestamp("
+                        + "STR_TO_DATE(20240125, '%Y%m%d')) + "
+                        + PartitionPlanVariableKey.INTERVAL.getVariable() + "), '%Y%m%d'))");
+                config2.setIntervalGenerateExpr("86400");
                 definition.setName(nameGen.invoke(connection, dbTable,
-                        getSqlExprBasedNameGeneratorParameters("concat('p', '20240125')")));
+                        getSqlExprBasedNameGeneratorParameters(i, config2)));
                 partition.getPartitionDefinitions().add(definition);
             }
             partition.setPartitionOption(dbTable.getPartition().getPartitionOption());
@@ -221,11 +226,11 @@ public class OBMySQLAutoPartitionExtensionPointTest {
             partition.setSchemaName(dbTable.getSchemaName());
             List<String> actuals = extensionPoint.generateCreatePartitionDdls(connection, partition);
             List<String> expects = Collections.singletonList(String.format("ALTER TABLE %s.%s ADD PARTITION (\n"
-                    + "\tPARTITION `p20240125` VALUES LESS THAN (20220801,'2024-01-25'),\n"
-                    + "\tPARTITION `p20240125` VALUES LESS THAN (20220802,'2024-01-26'),\n"
-                    + "\tPARTITION `p20240125` VALUES LESS THAN (20220803,'2024-01-27'),\n"
-                    + "\tPARTITION `p20240125` VALUES LESS THAN (20220804,'2024-01-28'),\n"
-                    + "\tPARTITION `p20240125` VALUES LESS THAN (20220805,'2024-01-29'));\n",
+                    + "\tPARTITION `p20240126` VALUES LESS THAN (20220801,'2024-01-25'),\n"
+                    + "\tPARTITION `p20240127` VALUES LESS THAN (20220802,'2024-01-26'),\n"
+                    + "\tPARTITION `p20240128` VALUES LESS THAN (20220803,'2024-01-27'),\n"
+                    + "\tPARTITION `p20240129` VALUES LESS THAN (20220804,'2024-01-28'),\n"
+                    + "\tPARTITION `p20240130` VALUES LESS THAN (20220805,'2024-01-29'));\n",
                     configuration.getDefaultDBName(), REAL_RANGE_TABLE_NAME));
             Assert.assertEquals(expects, actuals);
         }
@@ -282,11 +287,11 @@ public class OBMySQLAutoPartitionExtensionPointTest {
         return parameters;
     }
 
-    private Map<String, Object> getSqlExprBasedNameGeneratorParameters(String expr) {
+    private Map<String, Object> getSqlExprBasedNameGeneratorParameters(int index, SqlExprBasedGeneratorConfig config) {
         Map<String, Object> parameters = new HashMap<>();
         parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_KEY, new DBTablePartitionDefinition());
-        parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_INDEX_KEY, 1);
-        parameters.put(SqlExprBasedPartitionNameGenerator.PARTITION_NAME_EXPR_KEY, expr);
+        parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_INDEX_KEY, index);
+        parameters.put(SqlExprBasedPartitionNameGenerator.PARTITION_NAME_GEN_CONFIG_KEY, config);
         return parameters;
     }
 

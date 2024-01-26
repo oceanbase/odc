@@ -83,8 +83,10 @@ public class PartitionPlanServiceV2Test extends ServiceTestEnv {
         PartitionPlanTableConfig tableConfig = new PartitionPlanTableConfig();
         tableConfig.setTableName(REAL_RANGE_TABLE_NAME);
         tableConfig.setPartitionNameInvoker("CUSTOM_PARTITION_NAME_GENERATOR");
-        tableConfig.setPartitionNameInvokerParameters(
-                getSqlExprBasedNameGeneratorParameters("concat('p', '20240125')"));
+        SqlExprBasedGeneratorConfig config = new SqlExprBasedGeneratorConfig();
+        config.setGenerateExpr("concat('p', date_format(from_unixtime(unix_timestamp("
+                + "STR_TO_DATE(20240125, '%Y%m%d'))), '%Y%m%d'))");
+        tableConfig.setPartitionNameInvokerParameters(getSqlExprBasedNameGeneratorParameters(config));
         int generateCount = 5;
         PartitionPlanKeyConfig c3Create = getc3CreateConfig(generateCount);
         PartitionPlanKeyConfig datekeyCreate = getdatekeyCreateConfig(generateCount);
@@ -131,8 +133,12 @@ public class PartitionPlanServiceV2Test extends ServiceTestEnv {
         PartitionPlanTableConfig tableConfig = new PartitionPlanTableConfig();
         tableConfig.setTableName(REAL_RANGE_TABLE_NAME);
         tableConfig.setPartitionNameInvoker("CUSTOM_PARTITION_NAME_GENERATOR");
-        tableConfig.setPartitionNameInvokerParameters(
-                getSqlExprBasedNameGeneratorParameters("concat('p', '20240125')"));
+        SqlExprBasedGeneratorConfig config = new SqlExprBasedGeneratorConfig();
+        config.setGenerateExpr("concat('p', date_format(from_unixtime(unix_timestamp("
+                + "STR_TO_DATE(20240125, '%Y%m%d')) + "
+                + PartitionPlanVariableKey.INTERVAL.getVariable() + "), '%Y%m%d'))");
+        config.setIntervalGenerateExpr("86400");
+        tableConfig.setPartitionNameInvokerParameters(getSqlExprBasedNameGeneratorParameters(config));
         int generateCount = 5;
         PartitionPlanKeyConfig c3Create = getc3CreateConfig(generateCount);
         PartitionPlanKeyConfig datekeyCreate = getdatekeyCreateConfig(generateCount);
@@ -149,11 +155,11 @@ public class PartitionPlanServiceV2Test extends ServiceTestEnv {
                     configuration.getDefaultDBName(), REAL_RANGE_TABLE_NAME)));
             expect.put(PartitionPlanStrategy.CREATE, Collections.singletonList(String.format(
                     "ALTER TABLE %s.%s ADD PARTITION (\n"
-                            + "\tPARTITION `p20240125` VALUES LESS THAN (20220801,'2024-01-25'),\n"
-                            + "\tPARTITION `p20240125` VALUES LESS THAN (20220802,'2024-01-26'),\n"
-                            + "\tPARTITION `p20240125` VALUES LESS THAN (20220803,'2024-01-27'),\n"
-                            + "\tPARTITION `p20240125` VALUES LESS THAN (20220804,'2024-01-28'),\n"
-                            + "\tPARTITION `p20240125` VALUES LESS THAN (20220805,'2024-01-29'));\n",
+                            + "\tPARTITION `p20240126` VALUES LESS THAN (20220801,'2024-01-25'),\n"
+                            + "\tPARTITION `p20240127` VALUES LESS THAN (20220802,'2024-01-26'),\n"
+                            + "\tPARTITION `p20240128` VALUES LESS THAN (20220803,'2024-01-27'),\n"
+                            + "\tPARTITION `p20240129` VALUES LESS THAN (20220804,'2024-01-28'),\n"
+                            + "\tPARTITION `p20240130` VALUES LESS THAN (20220805,'2024-01-29'));\n",
                     configuration.getDefaultDBName(), REAL_RANGE_TABLE_NAME)));
             Assert.assertEquals(expect, actual);
         }
@@ -164,8 +170,12 @@ public class PartitionPlanServiceV2Test extends ServiceTestEnv {
         PartitionPlanTableConfig tableConfig = new PartitionPlanTableConfig();
         tableConfig.setTableName(OVERLAP_RANGE_TABLE_NAME);
         tableConfig.setPartitionNameInvoker("CUSTOM_PARTITION_NAME_GENERATOR");
-        tableConfig.setPartitionNameInvokerParameters(
-                getSqlExprBasedNameGeneratorParameters("concat('p', '20240125')"));
+        SqlExprBasedGeneratorConfig config = new SqlExprBasedGeneratorConfig();
+        config.setGenerateExpr("concat('p', date_format(from_unixtime(unix_timestamp("
+                + "STR_TO_DATE(20240125, '%Y%m%d')) + "
+                + PartitionPlanVariableKey.INTERVAL.getVariable() + "), '%Y%m%d'))");
+        config.setIntervalGenerateExpr("86400");
+        tableConfig.setPartitionNameInvokerParameters(getSqlExprBasedNameGeneratorParameters(config));
         int generateCount = 5;
         PartitionPlanKeyConfig c3Create = getc3CreateConfig(generateCount);
         PartitionPlanKeyConfig datekeyCreate = getdatekeyCreateConfig(generateCount);
@@ -182,10 +192,9 @@ public class PartitionPlanServiceV2Test extends ServiceTestEnv {
                     configuration.getDefaultDBName(), OVERLAP_RANGE_TABLE_NAME)));
             expect.put(PartitionPlanStrategy.CREATE, Collections.singletonList(String.format(
                     "ALTER TABLE %s.%s ADD PARTITION (\n"
-                            + "\tPARTITION `p20240125` VALUES LESS THAN (20220802,'2024-01-26'),\n"
-                            + "\tPARTITION `p20240125` VALUES LESS THAN (20220803,'2024-01-27'),\n"
-                            + "\tPARTITION `p20240125` VALUES LESS THAN (20220804,'2024-01-28'),\n"
-                            + "\tPARTITION `p20240125` VALUES LESS THAN (20220805,'2024-01-29'));\n",
+                            + "\tPARTITION `p20240127` VALUES LESS THAN (20220802,'2024-01-26'),\n"
+                            + "\tPARTITION `p20240128` VALUES LESS THAN (20220803,'2024-01-27'),\n"
+                            + "\tPARTITION `p20240129` VALUES LESS THAN (20220804,'2024-01-28'));\n",
                     configuration.getDefaultDBName(), OVERLAP_RANGE_TABLE_NAME)));
             Assert.assertEquals(expect, actual);
         }
@@ -230,9 +239,9 @@ public class PartitionPlanServiceV2Test extends ServiceTestEnv {
         return datekeyCreate;
     }
 
-    private Map<String, Object> getSqlExprBasedNameGeneratorParameters(String expr) {
+    private Map<String, Object> getSqlExprBasedNameGeneratorParameters(SqlExprBasedGeneratorConfig config) {
         Map<String, Object> parameters = new HashMap<>();
-        parameters.put(SqlExprBasedPartitionNameGenerator.PARTITION_NAME_EXPR_KEY, expr);
+        parameters.put(SqlExprBasedPartitionNameGenerator.PARTITION_NAME_GEN_CONFIG_KEY, config);
         return parameters;
     }
 

@@ -87,6 +87,24 @@ public class OBMySQLSqlExprPartitionExprGeneratorTest {
         }
     }
 
+    @Test
+    public void generate_intPartitionKeyWithoutInterval_succeed() throws Exception {
+        TestDBConfiguration configuration = TestDBConfigurations.getInstance().getTestOBMysqlConfiguration();
+        try (Connection connection = configuration.getDataSource().getConnection()) {
+            OBMySQLTableExtension tableExtension = new OBMySQLTableExtension();
+            DBTable dbTable = tableExtension.getDetail(connection,
+                    configuration.getDefaultDBName(), RANGE_TABLE_NAME);
+            AutoPartitionKeyInvoker<List<String>> generator = new OBMySQLSqlExprPartitionExprGenerator();
+            SqlExprBasedGeneratorConfig config = new SqlExprBasedGeneratorConfig();
+            config.setGenerateExpr("cast(date_format(from_unixtime(unix_timestamp(STR_TO_DATE("
+                    + PartitionPlanVariableKey.LAST_PARTITION_VALUE.getVariable()
+                    + ", '%Y%m%d')) + 86400), '%Y%m%d') as signed)");
+            List<String> actuals = generator.invoke(connection, dbTable, getParameters(config, 5, "datekey"));
+            List<String> expects = Arrays.asList("20220902", "20220902", "20220902", "20220902", "20220902");
+            Assert.assertEquals(expects, actuals);
+        }
+    }
+
     private Map<String, Object> getParameters(SqlExprBasedGeneratorConfig config, Integer count, String partitionKey) {
         Map<String, Object> parameters = new HashMap<>();
         parameters.put(PartitionExprGenerator.GENERATOR_PARAMETER_KEY, config);

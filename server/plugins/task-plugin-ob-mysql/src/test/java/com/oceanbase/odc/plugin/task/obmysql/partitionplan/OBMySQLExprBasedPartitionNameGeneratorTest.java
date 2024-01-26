@@ -27,6 +27,8 @@ import org.junit.Test;
 
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.partitionname.PartitionNameGenerator;
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.partitionname.SqlExprBasedPartitionNameGenerator;
+import com.oceanbase.odc.plugin.task.api.partitionplan.model.PartitionPlanVariableKey;
+import com.oceanbase.odc.plugin.task.api.partitionplan.model.SqlExprBasedGeneratorConfig;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.partitionname.OBMySQLExprBasedPartitionNameGenerator;
 import com.oceanbase.odc.test.database.TestDBConfiguration;
 import com.oceanbase.odc.test.database.TestDBConfigurations;
@@ -48,19 +50,23 @@ public class OBMySQLExprBasedPartitionNameGeneratorTest {
         try (Connection connection = configuration.getDataSource().getConnection()) {
             DBTable dbTable = new DBTable();
             PartitionNameGenerator generator = new OBMySQLExprBasedPartitionNameGenerator();
-            String actual = generator.invoke(connection, dbTable, getParameters(
-                    "concat('p', date_format(now(), '%Y%m%d'))"));
+            SqlExprBasedGeneratorConfig config = new SqlExprBasedGeneratorConfig();
+            config.setGenerateExpr("concat('p', date_format(from_unixtime(unix_timestamp("
+                    + "STR_TO_DATE(20240125, '%Y%m%d')) + "
+                    + PartitionPlanVariableKey.INTERVAL.getVariable() + "), '%Y%m%d'))");
+            config.setIntervalGenerateExpr("86400");
+            String actual = generator.invoke(connection, dbTable, getParameters(0, config));
             DateFormat dateFormat = new SimpleDateFormat("yyyyMMdd");
             String expect = "p" + dateFormat.format(new Date());
             Assert.assertEquals(expect, actual);
         }
     }
 
-    private Map<String, Object> getParameters(String expr) {
+    private Map<String, Object> getParameters(int index, SqlExprBasedGeneratorConfig config) {
         Map<String, Object> parameters = new HashMap<>();
         parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_KEY, new DBTablePartitionDefinition());
-        parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_INDEX_KEY, 1);
-        parameters.put(SqlExprBasedPartitionNameGenerator.PARTITION_NAME_EXPR_KEY, expr);
+        parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_INDEX_KEY, index);
+        parameters.put(SqlExprBasedPartitionNameGenerator.PARTITION_NAME_GEN_CONFIG_KEY, config);
         return parameters;
     }
 
