@@ -62,6 +62,7 @@ public class DefaultDataTransferAdapter implements DataTransferAdapter {
         if (cloudObjectStorageService.supported()) {
             String objectName = cloudObjectStorageService.uploadTemp(dest.getName(), dest);
             log.info("Upload the data file to the oss successfully, objectName={}", objectName);
+            FileUtils.deleteQuietly(dest);
             result.setExportZipFilePath(objectName);
         }
     }
