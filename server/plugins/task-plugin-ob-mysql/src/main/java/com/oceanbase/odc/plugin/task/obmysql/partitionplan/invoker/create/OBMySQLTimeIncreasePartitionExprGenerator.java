@@ -73,11 +73,8 @@ public class OBMySQLTimeIncreasePartitionExprGenerator implements TimeIncreasePa
         }
         candidates = TimeDataTypeUtil.removeExcessPrecision(candidates, config.getIntervalPrecision());
         CellDataProcessor processor = getCellDataProcessor(dataType);
-        return candidates.stream().map(i -> processor.convertToSqlLiteral(i, dataType)).collect(Collectors.toList());
-    }
-
-    protected CellDataProcessor getCellDataProcessor(@NonNull DataType dataType) {
-        return CellDataProcessors.getByDataType(dataType);
+        return candidates.stream().map(i -> processor.convertToSqlLiteral(
+                convertCandidate(i, dataType, config), dataType)).collect(Collectors.toList());
     }
 
     protected DataType getPartitionKeyDataType(@NonNull Connection connection,
@@ -85,6 +82,14 @@ public class OBMySQLTimeIncreasePartitionExprGenerator implements TimeIncreasePa
         DataTypeFactory factory = new OBMySQLPartitionKeyDataTypeFactory(
                 new OBMySQLExprCalculator(connection), dbTable, partitionKey);
         return factory.generate();
+    }
+
+    protected CellDataProcessor getCellDataProcessor(@NonNull DataType dataType) {
+        return CellDataProcessors.getByDataType(dataType);
+    }
+
+    protected Object convertCandidate(Date candidate, DataType dataType, TimeIncreaseGeneratorConfig config) {
+        return candidate;
     }
 
 }
