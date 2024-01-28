@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.service.task.TaskService;
@@ -46,6 +47,7 @@ public class TaskTaskResultHandleService implements ResultHandleService {
     @Autowired
     private StdTaskFrameworkService stdTaskFrameworkService;
 
+    @SkipAuthorize("odc internal usage")
     @Transactional(rollbackFor = Exception.class)
     @Override
     public void handle(TaskResult taskResult) {
