@@ -230,6 +230,9 @@
                                     <location>${project.basedir}/../../script/start-odc.sh</location>
                                 </source>
                                 <source>
+                                    <location>${project.basedir}/../../script/start-job.sh</location>
+                                </source>
+                                <source>
                                     <location>${project.basedir}/../../script/kill-odc.sh</location>
                                 </source>
                                 <source>

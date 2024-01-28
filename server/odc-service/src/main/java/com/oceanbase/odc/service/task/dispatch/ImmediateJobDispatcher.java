@@ -16,6 +16,8 @@
 
 package com.oceanbase.odc.service.task.dispatch;
 
+import java.util.Arrays;
+
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.service.task.caller.ExecutorIdentifier;
 import com.oceanbase.odc.service.task.caller.JobCaller;
@@ -95,6 +97,8 @@ public class ImmediateJobDispatcher implements JobDispatcher {
         JobImageNameProvider jobImageNameProvider = JobConfigurationHolder.getJobConfiguration()
                 .getJobImageNameProvider();
         podConfig.setImage(jobImageNameProvider.provide());
+
+        podConfig.setCommand(Arrays.asList("bash", "c", "/opt/odc/bin/start-odc.sh"));
 
         PodParam podParam = podConfig.getPodParam();
         podParam.setRequestCpu(k8s.getRequestCpu());

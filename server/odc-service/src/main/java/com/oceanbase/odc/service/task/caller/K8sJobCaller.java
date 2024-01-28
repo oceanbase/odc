@@ -16,6 +16,8 @@
 
 package com.oceanbase.odc.service.task.caller;
 
+import java.util.Optional;
+
 import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 import com.oceanbase.odc.service.task.util.JobUtils;
@@ -57,6 +59,10 @@ public class K8sJobCaller extends BaseJobCaller {
 
     @Override
     protected void doDestroy(ExecutorIdentifier identifier) throws JobException {
-        client.delete(podConfig.getNamespace(), identifier.getExecutorName());
+        Optional<String> executorOptional = client.get(identifier.getNamespace(), identifier.getExecutorName());
+        if (executorOptional.isPresent()) {
+            log.info("Found pod {}, delete it.", identifier.getExecutorName());
+            client.delete(podConfig.getNamespace(), identifier.getExecutorName());
+        }
     }
 }
