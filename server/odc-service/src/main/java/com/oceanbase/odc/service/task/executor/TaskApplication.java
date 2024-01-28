@@ -120,7 +120,7 @@ public class TaskApplication {
     }
 
     private void setLog4JConfigXml() {
-        String taskLogFile = "log4j2-task-executor.xml";
+        String taskLogFile = "log4j2-task.xml";
         LoggerContext context = (org.apache.logging.log4j.core.LoggerContext) LogManager.getContext(false);
 
         URL resource = getClass().getClassLoader().getResource(taskLogFile);
