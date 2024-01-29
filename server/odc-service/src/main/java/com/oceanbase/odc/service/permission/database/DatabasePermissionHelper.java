@@ -110,6 +110,12 @@ public class DatabasePermissionHelper {
         if (CollectionUtils.isEmpty(databaseIds)) {
             return ret;
         }
+        if (authenticationFacade.currentUser().getOrganizationType() == OrganizationType.INDIVIDUAL) {
+            for (Long databaseId : databaseIds) {
+                ret.put(databaseId, new HashSet<>(DatabasePermissionType.all()));
+            }
+            return ret;
+        }
         List<DatabaseEntity> entities = databaseRepository.findByIdIn(databaseIds);
         Set<Long> projectIds = getPermittedProjectIds();
         Map<Long, Set<DatabasePermissionType>> id2PermissionTypes = getDatabaseId2PermissionTypes(databaseIds);
