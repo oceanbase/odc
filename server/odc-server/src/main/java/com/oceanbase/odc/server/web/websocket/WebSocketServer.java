@@ -64,6 +64,7 @@ import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.service.common.util.SidUtils;
+import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
@@ -245,7 +246,7 @@ public class WebSocketServer {
 
     private String[] generateCmd(ConnectionConfig connectionConfig, boolean supportSetGBK, String schema) {
         List<String> cmd;
-        if (!SystemUtils.isOnLinux()) {
+        if (SpringContextUtil.isActive("clientMode")) {
             cmd = getRunObClientCmd(connectionConfig, supportSetGBK, schema);
             return cmd.toArray(new String[cmd.size()]);
         }
