@@ -32,9 +32,9 @@ import lombok.NonNull;
 public class OceanBaseExportJob extends BaseOceanBaseTransferJob<DumpParameter> {
     private final DumpClient dumpClient;
 
-    public OceanBaseExportJob(@NonNull DumpParameter parameter, boolean transferData, boolean transferSchema,
-            boolean usePrepStmts) throws Exception {
-        super(parameter, transferData, transferSchema, usePrepStmts);
+    public OceanBaseExportJob(@NonNull DumpParameter parameter, boolean transferData, boolean transferSchema)
+            throws Exception {
+        super(parameter, transferData, transferSchema);
         this.dumpClient = new DumpClient.Builder(parameter).build();
     }
 
