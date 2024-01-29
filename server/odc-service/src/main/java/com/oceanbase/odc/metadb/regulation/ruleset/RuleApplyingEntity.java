@@ -26,6 +26,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import javax.validation.constraints.NotNull;
 
 import org.hibernate.annotations.Generated;
 import org.hibernate.annotations.GenerationTime;
@@ -79,22 +80,25 @@ public class RuleApplyingEntity {
     @Column(name = "properties_json", nullable = false)
     private String propertiesJson;
 
-    public static RuleApplyingEntity merge(DefaultRuleApplyingEntity defaultRuleApplyingEntity,
-            Optional<RuleApplyingEntity> ruleApplyingEntityOpt) {
-        RuleApplyingEntity entity = new RuleApplyingEntity();
-        if (!ruleApplyingEntityOpt.isPresent()) {
-            entity.setId(defaultRuleApplyingEntity.getId());
-            entity.setEnabled(defaultRuleApplyingEntity.getEnabled());
-            entity.setRuleMetadataId(defaultRuleApplyingEntity.getRuleMetadataId());
-            entity.setAppliedDialectTypes(defaultRuleApplyingEntity.getAppliedDialectTypes());
-            entity.setPropertiesJson(defaultRuleApplyingEntity.getPropertiesJson());
-            entity.setLevel(defaultRuleApplyingEntity.getLevel());
-            entity.setCreateTime(defaultRuleApplyingEntity.getCreateTime());
-            entity.setUpdateTime(defaultRuleApplyingEntity.getUpdateTime());
-            return entity;
+    public static RuleApplyingEntity merge(@NotNull Optional<DefaultRuleApplyingEntity> defaultRuleApplyingEntity,
+            @NotNull Optional<RuleApplyingEntity> ruleApplyingEntityOpt) {
+        if (!defaultRuleApplyingEntity.isPresent() && !ruleApplyingEntityOpt.isPresent()) {
+            return null;
         }
-        entity = ruleApplyingEntityOpt.get();
-        entity.setId(defaultRuleApplyingEntity.getId());
-        return entity;
+        if (ruleApplyingEntityOpt.isPresent()) {
+            return ruleApplyingEntityOpt.get();
+        } else {
+            RuleApplyingEntity entity = ruleApplyingEntityOpt.get();
+            entity.setId(defaultRuleApplyingEntity.get().getId());
+            entity.setEnabled(defaultRuleApplyingEntity.get().getEnabled());
+            entity.setRuleMetadataId(defaultRuleApplyingEntity.get().getRuleMetadataId());
+            entity.setAppliedDialectTypes(defaultRuleApplyingEntity.get().getAppliedDialectTypes());
+            entity.setPropertiesJson(defaultRuleApplyingEntity.get().getPropertiesJson());
+            entity.setLevel(defaultRuleApplyingEntity.get().getLevel());
+            entity.setCreateTime(defaultRuleApplyingEntity.get().getCreateTime());
+            entity.setUpdateTime(defaultRuleApplyingEntity.get().getUpdateTime());
+            return entity;
+
+        }
     }
 }

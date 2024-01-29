@@ -144,12 +144,22 @@ public class RuleService {
 
     @SkipAuthorize("internal authenticated")
     public Rule detail(@NonNull Long rulesetId, @NonNull Long ruleId) {
+        Ruleset ruleset = rulesetService.detail(rulesetId);
+        if (!ruleset.getBuiltin()) {
+            RuleApplyingEntity applyingEntity = ruleApplyingRepository.findById(ruleId).orElseThrow(
+                    () -> new UnexpectedException("rule applying not found, ruleId = " + ruleId));
+            Rule rule = entityToModel(applyingEntity);
+            rule.setRulesetId(rulesetId);
+            rule.setMetadata(metadataService.detail(applyingEntity.getRuleMetadataId()));
+            return rule;
+        }
+
         DefaultRuleApplyingEntity defaultApplying = defaultRuleApplyingRepository.findById(ruleId).orElseThrow(
                 () -> new UnexpectedException("default rule applying not found, ruleId = " + ruleId));
         Optional<RuleApplyingEntity> applyingEntityOpt =
                 ruleApplyingRepository.findByOrganizationIdAndRulesetIdAndRuleMetadataId(
                         authenticationFacade.currentOrganizationId(), rulesetId, defaultApplying.getRuleMetadataId());
-        RuleApplyingEntity merged = RuleApplyingEntity.merge(defaultApplying, applyingEntityOpt);
+        RuleApplyingEntity merged = RuleApplyingEntity.merge(Optional.of(defaultApplying), applyingEntityOpt);
         Rule rule = entityToModel(merged);
         rule.setRulesetId(rulesetId);
         rule.setMetadata(metadataService.detail(merged.getRuleMetadataId()));
@@ -158,6 +168,22 @@ public class RuleService {
 
     @PreAuthenticate(actions = "update", resourceType = "ODC_RULESET", indexOfIdParam = 0)
     public Rule update(@NonNull Long rulesetId, @NonNull Long ruleId, @NonNull Rule rule) {
+        Ruleset ruleset = rulesetService.detail(rulesetId);
+        if (!ruleset.getBuiltin()) {
+            RuleApplyingEntity savedRuleApplyingOpt;
+            savedRuleApplyingOpt = ruleApplyingRepository.findById(ruleId).orElseThrow(
+                    () -> new UnexpectedException("rule applying not found, ruleId = " + ruleId));
+            savedRuleApplyingOpt.setLevel(rule.getLevel());
+            savedRuleApplyingOpt.setEnabled(rule.getEnabled());
+            savedRuleApplyingOpt.setPropertiesJson(JsonUtils.toJson(rule.getProperties()));
+            if (Objects.nonNull(rule.getAppliedDialectTypes())) {
+                savedRuleApplyingOpt.setAppliedDialectTypes(
+                        rule.getAppliedDialectTypes().stream().map(DialectType::name).collect(Collectors.toList()));
+            }
+            ruleApplyingRepository.save(savedRuleApplyingOpt);
+            rulesetId2RulesCache.invalidate(rulesetId);
+            return rule;
+        }
         DefaultRuleApplyingEntity defaultApplying = defaultRuleApplyingRepository.findById(ruleId).orElseThrow(
                 () -> new UnexpectedException("default rule applying not found, ruleId = " + ruleId));
         Optional<RuleApplyingEntity> savedOpt =
@@ -222,9 +248,6 @@ public class RuleService {
         Map<Long, List<DefaultRuleApplyingEntity>> metadataId2DefaultRuleApplying =
                 defaultRuleApplyingRepository.findByRulesetName(ruleset.getName()).stream()
                         .collect(Collectors.groupingBy(DefaultRuleApplyingEntity::getRuleMetadataId));
-        if (metadataId2DefaultRuleApplying.isEmpty()) {
-            throw new UnexpectedException("default rule applying not found, rulesetId = " + rulesetId);
-        }
         List<Rule> rules = new ArrayList<>();
         Map<Long, List<RuleApplyingEntity>> metadataId2RuleApplying =
                 ruleApplyingRepository
@@ -232,19 +255,24 @@ public class RuleService {
                         .stream()
                         .collect(Collectors.groupingBy(RuleApplyingEntity::getRuleMetadataId));
         ruleMetadatas.forEach(metadata -> {
+            Rule rule;
+            RuleApplyingEntity userDefinedRuleApplying = metadataId2RuleApplying.get(metadata.getId()).get(0);
+            // no default rule applying, so this is a user-defined ruleset
             if (!metadataId2DefaultRuleApplying.containsKey(metadata.getId())) {
-                throw new UnexpectedException("default rule applying not found, ruleMetadataId = " + metadata.getId());
-            }
-            List<DefaultRuleApplyingEntity> defaultApplyings = metadataId2DefaultRuleApplying.get(metadata.getId());
-            Verify.equals(1, defaultApplyings.size(), "defaultRuleApplyingEntity");
-            RuleApplyingEntity merged;
-            if (!metadataId2RuleApplying.containsKey(metadata.getId())) {
-                merged = RuleApplyingEntity.merge(defaultApplyings.get(0), Optional.empty());
+                Verify.notNull(userDefinedRuleApplying, "userDefinedRuleApplying");
+                rule = entityToModel(userDefinedRuleApplying);
             } else {
-                merged = RuleApplyingEntity.merge(defaultApplyings.get(0),
-                        Optional.of(metadataId2RuleApplying.get(metadata.getId()).get(0)));
+                List<DefaultRuleApplyingEntity> defaultApplyings = metadataId2DefaultRuleApplying.get(metadata.getId());
+                Verify.equals(1, defaultApplyings.size(), "defaultRuleApplyingEntity");
+                RuleApplyingEntity merged;
+                if (!metadataId2RuleApplying.containsKey(metadata.getId())) {
+                    merged = RuleApplyingEntity.merge(Optional.of(defaultApplyings.get(0)), Optional.empty());
+                } else {
+                    merged = RuleApplyingEntity.merge(Optional.of(defaultApplyings.get(0)),
+                            Optional.of(userDefinedRuleApplying));
+                }
+                rule = entityToModel(merged);
             }
-            Rule rule = entityToModel(merged);
             rule.setRulesetId(rulesetId);
             rule.setMetadata(metadata);
             rules.add(rule);

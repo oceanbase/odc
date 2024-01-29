@@ -36,7 +36,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class CreateEnvironmentReq {
     @Name
-    @Size(min = 1, max = 5, message = "The length of the environment name must be between 1 and 5")
+    @Size(min = 1, max = 8, message = "The length of the environment name must be between 1 and 8")
     private String name;
 
     @Size(max = 256, message = "The length of the environment description must be between 0 and 256")

@@ -17,26 +17,20 @@ package com.oceanbase.odc.service.collaboration.environment;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import javax.validation.constraints.NotNull;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.Example;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.oceanbase.odc.common.i18n.I18n;
-import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.authority.util.Authenticated;
 import com.oceanbase.odc.core.authority.util.PreAuthenticate;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.PreConditions;
-import com.oceanbase.odc.core.shared.constant.AuditEventAction;
-import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
@@ -47,15 +41,8 @@ import com.oceanbase.odc.service.collaboration.environment.model.Environment;
 import com.oceanbase.odc.service.collaboration.environment.model.UpdateEnvironmentReq;
 import com.oceanbase.odc.service.common.model.InnerUser;
 import com.oceanbase.odc.service.common.model.SetEnabledReq;
-import com.oceanbase.odc.service.connection.ConnectionService;
-import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.iam.HorizontalDataPermissionValidator;
-import com.oceanbase.odc.service.iam.UserService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
-import com.oceanbase.odc.service.regulation.approval.ApprovalFlowConfigService.ApprovalFlowConfigDeleteEvent;
-import com.oceanbase.odc.service.regulation.risklevel.RiskDetectService;
-import com.oceanbase.odc.service.regulation.risklevel.model.ConditionExpression;
-import com.oceanbase.odc.service.regulation.risklevel.model.RiskDetectRule;
 import com.oceanbase.odc.service.regulation.ruleset.RuleService;
 import com.oceanbase.odc.service.regulation.ruleset.RulesetService;
 import com.oceanbase.odc.service.regulation.ruleset.model.QueryRuleMetadataParams;
@@ -166,7 +153,7 @@ public class EnvironmentService {
          * ensure that the environment is not referenced by any data source before disabling it
          */
         if (!req.getEnabled()) {
-            for(Consumer<EnvironmentDisableEvent> hook : preDisableHooks) {
+            for (Consumer<EnvironmentDisableEvent> hook : preDisableHooks) {
                 hook.accept(new EnvironmentDisableEvent(id, authenticationFacade.currentOrganizationId()));
             }
         }
@@ -244,7 +231,7 @@ public class EnvironmentService {
         environment.setStyle(req.getStyle());
         environment.setRulesetId(rulesetId);
         environment.setEnabled(req.getEnabled());
-        environment.setBuiltin(false);
+        environment.setBuiltIn(false);
         environment.setCreatorId(authenticationFacade.currentUserId());
         environment.setLastModifierId(authenticationFacade.currentUserId());
         return environment;
