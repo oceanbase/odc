@@ -202,9 +202,6 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
 
         } catch (Exception e) {
             try {
-                if (!statement.getConnection().getAutoCommit() && autoCommit) {
-                    rollback(statement.getConnection());
-                }
                 ConnectionSessionUtil.logSocketInfo(statement.getConnection(), "console error");
             } catch (Exception exception) {
                 log.warn("Failed to execute abnormal replenishment logic", exception);
