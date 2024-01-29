@@ -16,6 +16,9 @@
 package com.oceanbase.odc.server.web.controller.v2;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort.Direction;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -73,8 +76,10 @@ public class SchemaSyncController {
 
     @RequestMapping(value = "/structureComparison/{id}", method = RequestMethod.GET)
     public SuccessResponse<DBStructureComparisonResp> listStructureComparisonResult(@PathVariable Long id,
-            @RequestParam(required = false) OperationType operationType) {
-        return Responses.success(structureComparisonService.getDBStructureComparisonResult(id, operationType));
+            @RequestParam(required = false) OperationType operationType,
+            @PageableDefault(size = Integer.MAX_VALUE, sort = {"id"}, direction = Direction.DESC) Pageable pageable) {
+        return Responses
+                .success(structureComparisonService.getDBStructureComparisonResult(id, operationType, pageable));
     }
 
     @RequestMapping(value = "/structureComparison/{id}/{structureComparisonId}", method = RequestMethod.GET)

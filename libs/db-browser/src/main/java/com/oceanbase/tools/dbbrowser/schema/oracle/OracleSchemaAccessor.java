@@ -655,7 +655,7 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
                                 Collectors.toMap(DBTableConstraint::getName, cons -> cons));
                 int currentPosition = constraintName2Constraint.size();
                 if (!constraintName2Constraint.containsKey(constraintName)) {
-                    constraintName2Constraint.put(constraintName, createConstraintByResultSet(rs, currentPosition + 1));
+                    tableName2Constraints.get(tableName).add(createConstraintByResultSet(rs, currentPosition + 1));
                 } else {
                     constraintName2Constraint.get(constraintName).getColumnNames()
                             .add(rs.getString("COLUMN_NAME"));

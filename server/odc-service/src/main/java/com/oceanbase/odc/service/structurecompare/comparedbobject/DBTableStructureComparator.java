@@ -43,6 +43,7 @@ import com.oceanbase.tools.dbbrowser.model.DBConstraintType;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
+import com.oceanbase.tools.dbbrowser.model.DBTableIndex;
 import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.OracleSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
@@ -74,6 +75,8 @@ public class DBTableStructureComparator implements DBObjectStructureComparator<D
     @Override
     public List<DBObjectComparisonResult> compare(List<DBTable> srcTables, List<DBTable> tgtTables) {
         List<DBObjectComparisonResult> returnVal = new LinkedList<>();
+        preHandleDBTable(srcTables);
+        preHandleDBTable(tgtTables);
         if (srcTables.isEmpty() && tgtTables.isEmpty()) {
             this.totalTableCount = 0;
             return returnVal;
@@ -128,6 +131,21 @@ public class DBTableStructureComparator implements DBObjectStructureComparator<D
         return returnVal;
     }
 
+    private void preHandleDBTable(List<DBTable> tables) {
+        if (tgtDialectType != DialectType.OB_ORACLE) {
+            return;
+        }
+        // Filter out not null check constraints which will be compared in column comparison
+        tables.forEach(table -> {
+            List<DBTableConstraint> filteredConstraints = table.getConstraints().stream()
+                    .filter(constraint -> !(constraint.getType() == DBConstraintType.CHECK &&
+                            constraint.getCheckClause() != null &&
+                            constraint.getCheckClause().endsWith("IS NOT NULL")))
+                    .collect(Collectors.toList());
+            table.setConstraints(filteredConstraints);
+        });
+    }
+
     private List<DBObjectComparisonResult> buildOnlyInSourceResult(List<String> toCreate,
             Map<String, DBTable> srcTableName2Table, String srcSchemaName, String tgtSchemaName) {
         List<DBObjectComparisonResult> returnVal = new LinkedList<>();
@@ -142,14 +160,33 @@ public class DBTableStructureComparator implements DBObjectStructureComparator<D
             result.setComparisonResult(ComparisonResult.ONLY_IN_SOURCE);
             DBTable sourceTable = srcTableName2Table.get(name);
             result.setSourceDdl(sourceTable.getDDL());
-            DBTable targetTable = new DBTable();
-            BeanUtils.copyProperties(sourceTable, targetTable);
-            targetTable.setSchemaName(tgtSchemaName);
+            DBTable targetTable = copySrcSourceTable(sourceTable);
             result.setChangeScript(this.tgtTableEditor.generateCreateObjectDDL(targetTable));
             this.completedTableCount++;
             returnVal.add(result);
         });
         return returnVal;
+    }
+
+    private DBTable copySrcSourceTable(DBTable srcTable) {
+        DBTable copiedSrcTable = new DBTable();
+        if (tgtDialectType == DialectType.OB_ORACLE) {
+            List<DBTableConstraint> pk = srcTable.getConstraints().stream().filter(
+                    cons -> cons.getType() == DBConstraintType.PRIMARY_KEY).collect(
+                            Collectors.toList());
+            if (pk.size() > 0) {
+                // Filter out primary key index which will be compared as a constraint
+                List<DBTableIndex> filteredIndexes = srcTable.getIndexes().stream()
+                        .filter(idx -> !idx.getName().equals(pk.get(0).getName())).collect(Collectors.toList());
+                srcTable.setIndexes(filteredIndexes);
+            }
+        }
+        srcTable.getConstraints().stream()
+                .filter(cons -> cons.getType() == DBConstraintType.FOREIGN_KEY)
+                .forEach(cons -> cons.setReferenceSchemaName(this.tgtSchemaName));
+        BeanUtils.copyProperties(srcTable, copiedSrcTable);
+        copiedSrcTable.setSchemaName(tgtSchemaName);
+        return copiedSrcTable;
     }
 
     private List<DBObjectComparisonResult> buildOnlyInTargetResult(List<String> toDrop,

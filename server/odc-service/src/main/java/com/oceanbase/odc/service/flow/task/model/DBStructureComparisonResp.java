@@ -15,9 +15,8 @@
  */
 package com.oceanbase.odc.service.flow.task.model;
 
-import java.util.List;
-
 import com.oceanbase.odc.metadb.structurecompare.StructureComparisonEntity;
+import com.oceanbase.odc.service.common.response.PaginatedResponse;
 import com.oceanbase.odc.service.structurecompare.model.ComparisonResult;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 
@@ -36,7 +35,7 @@ public class DBStructureComparisonResp {
      * Refer to structure_comparison_task.id
      */
     private Long id;
-    private List<ObjectComparisonResult> comparisonResults;
+    private PaginatedResponse<ObjectComparisonResult> comparisonResults;
     private String totalChangeScript;
     private String storageObjectId;
 

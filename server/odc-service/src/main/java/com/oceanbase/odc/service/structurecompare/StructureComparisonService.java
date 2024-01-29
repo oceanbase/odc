@@ -18,15 +18,19 @@ package com.oceanbase.odc.service.structurecompare;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
+import javax.validation.constraints.NotNull;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 
@@ -39,9 +43,11 @@ import com.oceanbase.odc.metadb.connection.DatabaseEntity;
 import com.oceanbase.odc.metadb.connection.DatabaseRepository;
 import com.oceanbase.odc.metadb.iam.UserEntity;
 import com.oceanbase.odc.metadb.structurecompare.StructureComparisonEntity;
+import com.oceanbase.odc.metadb.structurecompare.StructureComparisonEntitySpecs;
 import com.oceanbase.odc.metadb.structurecompare.StructureComparisonRepository;
 import com.oceanbase.odc.metadb.structurecompare.StructureComparisonTaskEntity;
 import com.oceanbase.odc.metadb.structurecompare.StructureComparisonTaskRepository;
+import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.util.ConnectionMapper;
@@ -154,17 +160,21 @@ public class StructureComparisonService {
         return connectionConfig;
     }
 
-    public DBStructureComparisonResp getDBStructureComparisonResult(@NonNull Long id, OperationType operationType) {
+    public DBStructureComparisonResp getDBStructureComparisonResult(@NonNull Long id, OperationType operationType,
+            @NotNull Pageable pageable) {
         StructureComparisonTaskEntity taskEntity = structureComparisonTaskRepository.findById(id).orElseThrow(
                 () -> new NotFoundException(ResourceType.ODC_STRUCTURE_COMPARISON_TASK, "id", id));
         checkPermission(taskEntity);
 
-        List<StructureComparisonEntity> entities;
+        Specification<StructureComparisonEntity> specification;
+        Page<StructureComparisonEntity> entities;
         if (operationType == null) {
-            entities = structureComparisonRepository.findByComparisonTaskId(id);
+            specification = Specification.where(StructureComparisonEntitySpecs.comparisonTaskIdEquals(id));
+            entities = structureComparisonRepository.findAll(specification, pageable);
         } else {
-            entities = structureComparisonRepository.findByComparisonTaskIdAndComparisonResult(id,
-                    operationType.getComparisonResult());
+            specification = Specification.where(StructureComparisonEntitySpecs.comparisonTaskIdEquals(id))
+                    .and(StructureComparisonEntitySpecs.comparisonResultEquals(operationType.getComparisonResult()));
+            entities = structureComparisonRepository.findAll(specification, pageable);
         }
 
         DBStructureComparisonResp resp = new DBStructureComparisonResp();
@@ -172,8 +182,7 @@ public class StructureComparisonService {
         resp.setTotalChangeScript(taskEntity.getTotalChangeSqlScript());
         resp.setStorageObjectId(taskEntity.getStorageObjectId());
         if (!entities.isEmpty()) {
-            resp.setComparisonResults(
-                    entities.stream().map(ObjectComparisonResult::fromEntity).collect(Collectors.toList()));
+            resp.setComparisonResults(Responses.paginated(entities.map(ObjectComparisonResult::fromEntity)));
         }
 
         return resp;
