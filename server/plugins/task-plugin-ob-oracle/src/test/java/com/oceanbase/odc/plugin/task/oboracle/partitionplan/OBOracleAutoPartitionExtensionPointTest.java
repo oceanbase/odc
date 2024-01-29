@@ -52,7 +52,6 @@ import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartition;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartitionDefinition;
 import com.oceanbase.tools.dbbrowser.model.datatype.DataType;
-import com.oceanbase.tools.dbbrowser.model.datatype.GeneralDataType;
 
 /**
  * Test cases for {@link OBOracleAutoPartitionExtensionPoint}
