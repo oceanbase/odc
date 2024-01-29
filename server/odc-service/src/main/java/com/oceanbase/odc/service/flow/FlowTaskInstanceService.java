@@ -631,7 +631,7 @@ public class FlowTaskInstanceService {
         Verify.singleton(results, "OdcAsyncTaskResults");
 
         DatabaseChangeResult result = results.get(0);
-        // read records from filesele
+        // read records from file
         if (StringUtils.isNotEmpty(result.getErrorRecordsFilePath())) {
             File errorRecords = new File(result.getErrorRecordsFilePath());
             if (!errorRecords.exists()) {

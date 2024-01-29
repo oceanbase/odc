@@ -42,5 +42,4 @@ public class JobDateUtils {
         cal.add(Calendar.SECOND, Math.negateExact(seconds));
         return cal.getTime();
     }
-
 }
