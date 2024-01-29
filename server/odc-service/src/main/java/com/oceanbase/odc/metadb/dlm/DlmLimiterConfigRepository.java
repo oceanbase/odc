@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.metadb.dlm;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
 import com.oceanbase.odc.config.jpa.OdcJpaRepository;
@@ -27,5 +29,7 @@ import com.oceanbase.odc.config.jpa.OdcJpaRepository;
 public interface DlmLimiterConfigRepository extends OdcJpaRepository<DlmLimiterConfigEntity, Long> {
 
     Optional<DlmLimiterConfigEntity> findByOrderId(Long orderId);
+
+    List<DlmLimiterConfigEntity> findByOrderIdIn(Collection<Long> orderId);
 
 }

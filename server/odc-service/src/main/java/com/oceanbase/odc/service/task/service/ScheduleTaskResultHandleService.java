@@ -20,6 +20,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
 import com.oceanbase.odc.service.task.executor.task.TaskResult;
 
@@ -34,6 +35,8 @@ public class ScheduleTaskResultHandleService implements ResultHandleService {
     @Autowired
     private ScheduleTaskRepository scheduleTaskRepository;
 
+
+    @SkipAuthorize("odc internal usage")
     @Transactional(rollbackFor = Exception.class)
     @Override
     public void handle(TaskResult taskResult) {

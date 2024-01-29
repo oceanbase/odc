@@ -22,6 +22,8 @@ public interface CloudConnectionConfig {
 
     String getOBTenantName();
 
+    OBInstanceType getInstanceType();
+
     void setClusterName(String clusterName);
 
     void setTenantName(String tenantName);
@@ -37,4 +39,6 @@ public interface CloudConnectionConfig {
     void setSysTenantUsername(String userName);
 
     void setSysTenantPassword(String password);
+
+    void setInstanceType(OBInstanceType instanceType);
 }

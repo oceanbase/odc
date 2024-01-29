@@ -28,6 +28,7 @@ import java.io.Reader;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
@@ -79,7 +80,13 @@ public class NativeK8sJobClient implements K8sJobClient {
             apiClient = Config.defaultClient().setBasePath(k8sProperties.getKubeUrl());
         }
         Verify.notNull(apiClient, "k8s api client");
-
+        apiClient.setHttpClient(apiClient
+            .getHttpClient()
+            .newBuilder()
+            .readTimeout(TIMEOUT_MILLS, TimeUnit.MILLISECONDS)
+            .connectTimeout(TIMEOUT_MILLS, TimeUnit.MILLISECONDS)
+            .pingInterval(1, TimeUnit.MINUTES)
+            .build());
         Configuration.setDefaultApiClient(apiClient);
     }
 
@@ -111,7 +118,7 @@ public class NativeK8sJobClient implements K8sJobClient {
         try {
             job = api.listNamespacedPod(namespace, null, null, null,
                     FIELD_SELECTOR_METADATA_NAME + "=" + name,
-                    null, null, null, null, null, null);
+                    null, null, null, null, null, null, false);
         } catch (ApiException e) {
             throw new JobException(e.getResponseBody(), e);
         }
