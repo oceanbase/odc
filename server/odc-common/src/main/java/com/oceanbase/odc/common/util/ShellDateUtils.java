@@ -50,7 +50,7 @@ public class ShellDateUtils {
             return doParse(pattern, dateString);
         }
         matcher = P2.matcher(dateString);
-        if (matcher.matches()) {
+        if (!matcher.matches()) {
             throw new IllegalArgumentException("Illegal date string: " + dateString);
         }
         String pattern = String.format("%s %s hh:mm:ss yyyy",
