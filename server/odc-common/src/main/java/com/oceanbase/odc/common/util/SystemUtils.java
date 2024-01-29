@@ -191,7 +191,7 @@ public abstract class SystemUtils {
         });
     }
 
-    public static boolean isProcessRunning(long pid, long unixStampSeconds) {
+    public static boolean isProcessRunning(long pid, long unixStampMillSeconds) {
         if (-1 == pid) {
             throw new IllegalArgumentException("query process by illegal argument pid: " + pid);
         }
@@ -203,7 +203,7 @@ public abstract class SystemUtils {
         } else {
             // ps -p pid -o lstart= | xargs -i date -d {} +%s
             // echo process start seconds from 1970-01-01
-            command = "ps -p " + pid + " -o lstart= | xargs -i date -d {} +%s";
+            command = "ps -p " + pid + " -o lstart=";
         }
         return executeCommand(command, reader -> {
             boolean result = false;
@@ -214,8 +214,8 @@ public abstract class SystemUtils {
                         // todo windows get process start time
                         result = true;
                     } else {
-                        long startTime = Long.parseLong(line);
-                        result = Math.abs(unixStampSeconds - startTime) <= 2;
+                        Date date = ShellDateUtils.parseWithWeek(line);
+                        result = Math.abs(unixStampMillSeconds - date.getTime()) / 1000 <= 2;
                     }
                 }
             } catch (IOException e) {
