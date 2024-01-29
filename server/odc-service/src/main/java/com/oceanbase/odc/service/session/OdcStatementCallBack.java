@@ -202,7 +202,7 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
 
         } catch (Exception e) {
             try {
-                if (!statement.getConnection().getAutoCommit()) {
+                if (!statement.getConnection().getAutoCommit() && autoCommit) {
                     rollback(statement.getConnection());
                 }
                 ConnectionSessionUtil.logSocketInfo(statement.getConnection(), "console error");
