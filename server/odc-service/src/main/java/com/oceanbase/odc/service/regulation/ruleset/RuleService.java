@@ -159,7 +159,7 @@ public class RuleService {
         Optional<RuleApplyingEntity> applyingEntityOpt =
                 ruleApplyingRepository.findByOrganizationIdAndRulesetIdAndRuleMetadataId(
                         authenticationFacade.currentOrganizationId(), rulesetId, defaultApplying.getRuleMetadataId());
-        RuleApplyingEntity merged = RuleApplyingEntity.merge(Optional.of(defaultApplying), applyingEntityOpt);
+        RuleApplyingEntity merged = RuleApplyingEntity.merge(defaultApplying, applyingEntityOpt);
         Rule rule = entityToModel(merged);
         rule.setRulesetId(rulesetId);
         rule.setMetadata(metadataService.detail(merged.getRuleMetadataId()));
@@ -254,25 +254,34 @@ public class RuleService {
                         .findByOrganizationIdAndRulesetId(authenticationFacade.currentOrganizationId(), rulesetId)
                         .stream()
                         .collect(Collectors.groupingBy(RuleApplyingEntity::getRuleMetadataId));
-        ruleMetadatas.forEach(metadata -> {
-            Rule rule;
-            RuleApplyingEntity userDefinedRuleApplying = metadataId2RuleApplying.get(metadata.getId()).get(0);
-            // no default rule applying, so this is a user-defined ruleset
-            if (!metadataId2DefaultRuleApplying.containsKey(metadata.getId())) {
+
+        // user-defined ruleset, just use user-defined rule values
+        if (!ruleset.getBuiltin()) {
+            ruleMetadatas.forEach(metadata -> {
+                RuleApplyingEntity userDefinedRuleApplying = metadataId2RuleApplying.get(metadata.getId()).get(0);
                 Verify.notNull(userDefinedRuleApplying, "userDefinedRuleApplying");
-                rule = entityToModel(userDefinedRuleApplying);
-            } else {
-                List<DefaultRuleApplyingEntity> defaultApplyings = metadataId2DefaultRuleApplying.get(metadata.getId());
-                Verify.equals(1, defaultApplyings.size(), "defaultRuleApplyingEntity");
-                RuleApplyingEntity merged;
-                if (!metadataId2RuleApplying.containsKey(metadata.getId())) {
-                    merged = RuleApplyingEntity.merge(Optional.of(defaultApplyings.get(0)), Optional.empty());
-                } else {
-                    merged = RuleApplyingEntity.merge(Optional.of(defaultApplyings.get(0)),
-                            Optional.of(userDefinedRuleApplying));
-                }
-                rule = entityToModel(merged);
+                Rule rule = entityToModel(userDefinedRuleApplying);
+                rule.setRulesetId(rulesetId);
+                rule.setMetadata(metadata);
+                rules.add(rule);
+            });
+            return rules;
+        }
+        // builtin ruleset, merge default rule values and user-defined rule values
+        ruleMetadatas.forEach(metadata -> {
+            if (!metadataId2DefaultRuleApplying.containsKey(metadata.getId())) {
+                throw new UnexpectedException("default rule applying not found, ruleMetadataId = " + metadata.getId());
             }
+            List<DefaultRuleApplyingEntity> defaultApplyings = metadataId2DefaultRuleApplying.get(metadata.getId());
+            Verify.equals(1, defaultApplyings.size(), "defaultRuleApplyingEntity");
+            RuleApplyingEntity merged;
+            if (!metadataId2RuleApplying.containsKey(metadata.getId())) {
+                merged = RuleApplyingEntity.merge(defaultApplyings.get(0), Optional.empty());
+            } else {
+                merged = RuleApplyingEntity.merge(defaultApplyings.get(0),
+                        Optional.of(metadataId2RuleApplying.get(metadata.getId()).get(0)));
+            }
+            Rule rule = entityToModel(merged);
             rule.setRulesetId(rulesetId);
             rule.setMetadata(metadata);
             rules.add(rule);
