@@ -122,7 +122,7 @@ public class PartitionPlanServiceV2Test extends ServiceTestEnv {
                     connection, DialectType.OB_MYSQL, configuration.getDefaultDBName(), tableConfig);
             Map<PartitionPlanStrategy, List<String>> expect = new HashMap<>();
             expect.put(PartitionPlanStrategy.DROP, Collections.singletonList(String.format(
-                    "ALTER TABLE %s.%s DROP PARTITION (p20220830, p20220829) UPDATE GLOBAL INDEXES;",
+                    "ALTER TABLE %s.%s DROP PARTITION (p20220830, p20220829);\n",
                     configuration.getDefaultDBName(), REAL_RANGE_TABLE_NAME)));
             Assert.assertEquals(expect, actual);
         }
@@ -151,7 +151,7 @@ public class PartitionPlanServiceV2Test extends ServiceTestEnv {
                     connection, DialectType.OB_MYSQL, configuration.getDefaultDBName(), tableConfig);
             Map<PartitionPlanStrategy, List<String>> expect = new HashMap<>();
             expect.put(PartitionPlanStrategy.DROP, Collections.singletonList(String.format(
-                    "ALTER TABLE %s.%s DROP PARTITION (p20220830, p20220829) UPDATE GLOBAL INDEXES;",
+                    "ALTER TABLE %s.%s DROP PARTITION (p20220830, p20220829);\n",
                     configuration.getDefaultDBName(), REAL_RANGE_TABLE_NAME)));
             expect.put(PartitionPlanStrategy.CREATE, Collections.singletonList(String.format(
                     "ALTER TABLE %s.%s ADD PARTITION (\n"
@@ -188,7 +188,7 @@ public class PartitionPlanServiceV2Test extends ServiceTestEnv {
                     connection, DialectType.OB_MYSQL, configuration.getDefaultDBName(), tableConfig);
             Map<PartitionPlanStrategy, List<String>> expect = new HashMap<>();
             expect.put(PartitionPlanStrategy.DROP, Collections.singletonList(String.format(
-                    "ALTER TABLE %s.%s DROP PARTITION (p20220830, p20220829) UPDATE GLOBAL INDEXES;",
+                    "ALTER TABLE %s.%s DROP PARTITION (p20220830, p20220829);\n",
                     configuration.getDefaultDBName(), OVERLAP_RANGE_TABLE_NAME)));
             expect.put(PartitionPlanStrategy.CREATE, Collections.singletonList(String.format(
                     "ALTER TABLE %s.%s ADD PARTITION (\n"
