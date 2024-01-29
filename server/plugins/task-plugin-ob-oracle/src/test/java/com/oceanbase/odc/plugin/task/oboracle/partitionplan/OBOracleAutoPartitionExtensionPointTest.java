@@ -88,8 +88,7 @@ public class OBOracleAutoPartitionExtensionPointTest {
             AutoPartitionExtensionPoint extensionPoint = new OBOracleAutoPartitionExtensionPoint();
             List<DataType> actuals = extensionPoint.getPartitionKeyDataTypes(connection, dbTable);
             Assert.assertEquals(Arrays.asList(new TimeDataType("DATE", TimeDataType.SECOND),
-                    new TimeDataType("TIMESTAMP", TimeDataType.SECOND),
-                    new GeneralDataType(0, 0, "VARCHAR2")), actuals);
+                    new TimeDataType("TIMESTAMP", TimeDataType.SECOND)), actuals);
         }
     }
 
