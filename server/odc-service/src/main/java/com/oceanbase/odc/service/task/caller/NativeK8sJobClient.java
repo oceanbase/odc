@@ -119,7 +119,7 @@ public class NativeK8sJobClient implements K8sJobClient {
         try {
             job = api.listNamespacedPod(namespace, null, null, null,
                     FIELD_SELECTOR_METADATA_NAME + "=" + name,
-                    null, null, null, null, null, null);
+                    null, null, null, null, null, null, false);
         } catch (ApiException e) {
             throw new JobException(e.getResponseBody(), e);
         }
