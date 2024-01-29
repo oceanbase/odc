@@ -139,7 +139,7 @@ public class EventBuilder {
         labels.putIfNonNull(TRIGGER_TIME, LocalDateTime.now().format(DATE_FORMATTER));
 
         Verify.notNull(task.getDatabaseId(), "database id");
-        Database database = databaseService.detailSkipPermissionCheck(task.getDatabaseId());
+        Database database = databaseService.getBasicSkipPermissionCheck(task.getDatabaseId());
         labels.putIfNonNull(DATABASE_ID, database.id());
         labels.putIfNonNull(DATABASE_NAME, database.getName());
         labels.putIfNonNull(PROJECT_ID, database.getProject().id());
@@ -207,7 +207,7 @@ public class EventBuilder {
         }
         if (labels.containsKey(PROJECT_ID)) {
             try {
-                Project project = projectService.detailSkipPermissionCheck(labels.getLongFromString(PROJECT_ID));
+                Project project = projectService.getBasicSkipPermissionCheck(labels.getLongFromString(PROJECT_ID));
                 labels.putIfNonNull(PROJECT_NAME, project.getName());
             } catch (Exception e) {
                 log.warn("failed to query project info.", e);

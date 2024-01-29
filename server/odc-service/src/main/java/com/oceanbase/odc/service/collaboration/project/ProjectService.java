@@ -391,8 +391,8 @@ public class ProjectService {
                 .collect(Collectors.toSet());
     }
 
-    @SkipAuthorize
-    public Project detailSkipPermissionCheck(Long id) {
+    @SkipAuthorize("odc internal usage")
+    public Project getBasicSkipPermissionCheck(Long id) {
         return projectMapper.entityToModel(nullSafeGet(id));
     }
 
