@@ -15,11 +15,31 @@
  */
 package com.oceanbase.odc.plugin.task.oboracle.partitionplan;
 
+import java.sql.Connection;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
+import org.apache.commons.collections4.CollectionUtils;
 import org.pf4j.Extension;
 
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.create.PartitionExprGenerator;
+import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.partitionname.PartitionNameGenerator;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.OBMySQLAutoPartitionExtensionPoint;
+import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.SqlExprCalculator;
+import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.partitionname.OBMySQLDateBasedPartitionNameGenerator;
+import com.oceanbase.odc.plugin.task.oboracle.partitionplan.datatype.OBOraclePartitionKeyDataTypeFactory;
+import com.oceanbase.odc.plugin.task.oboracle.partitionplan.invoker.OBOracleSqlExprCalculator;
+import com.oceanbase.odc.plugin.task.oboracle.partitionplan.invoker.create.OBOracleSqlExprPartitionExprGenerator;
+import com.oceanbase.odc.plugin.task.oboracle.partitionplan.invoker.create.OBOracleTimeIncreasePartitionExprGenerator;
+import com.oceanbase.odc.plugin.task.oboracle.partitionplan.invoker.partitionname.OBOracleExprBasedPartitionNameGenerator;
+import com.oceanbase.tools.dbbrowser.model.DBTable;
+import com.oceanbase.tools.dbbrowser.model.DBTablePartitionOption;
+import com.oceanbase.tools.dbbrowser.model.datatype.DataType;
 
 import lombok.NonNull;
 
@@ -37,6 +57,43 @@ public class OBOracleAutoPartitionExtensionPoint extends OBMySQLAutoPartitionExt
     @Override
     public String unquoteIdentifier(@NonNull String identifier) {
         return ConnectionSessionUtil.getUserOrSchemaString(identifier, DialectType.OB_ORACLE);
+    }
+
+    @Override
+    public List<DataType> getPartitionKeyDataTypes(@NonNull Connection connection, @NonNull DBTable table) {
+        if (!supports(table.getPartition())) {
+            throw new UnsupportedOperationException("Unsupported db table");
+        }
+        SqlExprCalculator calculator = new OBOracleSqlExprCalculator(connection);
+        DBTablePartitionOption option = table.getPartition().getPartitionOption();
+        List<String> keys = new ArrayList<>();
+        if (CollectionUtils.isNotEmpty(option.getColumnNames())) {
+            keys.addAll(option.getColumnNames());
+        } else if (StringUtils.isNotEmpty(option.getExpression())) {
+            keys.add(option.getExpression());
+        } else {
+            throw new IllegalStateException("Partition type is unknown, expression and columns are both null");
+        }
+        return keys.stream().map(c -> new OBOraclePartitionKeyDataTypeFactory(calculator, table, c).generate())
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public PartitionExprGenerator getPartitionExpressionGeneratorByName(@NonNull String name) {
+        List<PartitionExprGenerator> candidates = new ArrayList<>(2);
+        candidates.add(new OBOracleSqlExprPartitionExprGenerator());
+        candidates.add(new OBOracleTimeIncreasePartitionExprGenerator());
+        return candidates.stream().filter(i -> Objects.equals(i.getName(), name)).findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Failed to find generator by name " + name));
+    }
+
+    @Override
+    public PartitionNameGenerator getPartitionNameGeneratorGeneratorByName(@NonNull String name) {
+        List<PartitionNameGenerator> candidates = new ArrayList<>(2);
+        candidates.add(new OBMySQLDateBasedPartitionNameGenerator());
+        candidates.add(new OBOracleExprBasedPartitionNameGenerator());
+        return candidates.stream().filter(i -> Objects.equals(i.getName(), name)).findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Failed to find generator by name " + name));
     }
 
 }
