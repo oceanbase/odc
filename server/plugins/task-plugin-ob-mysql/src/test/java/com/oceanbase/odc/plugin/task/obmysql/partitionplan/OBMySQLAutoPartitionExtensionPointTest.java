@@ -253,8 +253,7 @@ public class OBMySQLAutoPartitionExtensionPointTest {
             dbTablePartition.setSchemaName(dbTable.getSchemaName());
             List<String> actual = extensionPoint.generateDropPartitionDdls(connection, dbTablePartition, true);
             List<String> expects = Collections.singletonList(String.format("ALTER TABLE %s.%s DROP PARTITION "
-                    + "(p20220830, p20220829) UPDATE GLOBAL INDEXES;",
-                    configuration.getDefaultDBName(), REAL_RANGE_TABLE_NAME));
+                    + "(p20220830, p20220829);\n", configuration.getDefaultDBName(), REAL_RANGE_TABLE_NAME));
             Assert.assertEquals(expects, actual);
         }
     }

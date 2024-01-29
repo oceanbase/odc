@@ -116,13 +116,8 @@ public class OBMySQLAutoPartitionExtensionPoint implements AutoPartitionExtensio
             @NonNull DBTablePartition partition, boolean reloadIndexes) {
         InformationExtensionPoint extensionPoint = new OBMySQLInformationExtension();
         DBTablePartitionEditor editor = DBTablePartitionEditors.generate(extensionPoint.getDBVersion(connection));
-        String ddl = editor.generateDropPartitionDefinitionDDL(partition.getSchemaName(),
-                partition.getTableName(), partition.getPartitionDefinitions());
-        int index = ddl.indexOf(";");
-        if (index < 0 || !reloadIndexes) {
-            return Collections.singletonList(ddl);
-        }
-        return Collections.singletonList(ddl.substring(0, index) + " UPDATE GLOBAL INDEXES;");
+        return Collections.singletonList(editor.generateDropPartitionDefinitionDDL(partition.getSchemaName(),
+                partition.getTableName(), partition.getPartitionDefinitions()));
     }
 
     @Override
