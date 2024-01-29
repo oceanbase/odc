@@ -23,6 +23,7 @@ import java.util.List;
 import org.junit.BeforeClass;
 import org.mockito.Mockito;
 
+import com.oceanbase.odc.common.security.PasswordUtils;
 import com.oceanbase.odc.service.common.model.HostProperties;
 import com.oceanbase.odc.service.task.caller.K8sJobClient;
 import com.oceanbase.odc.service.task.caller.NativeK8sJobClient;
@@ -67,6 +68,8 @@ public abstract class BaseJobTest {
         System.setProperty(JobEnvKeyConstants.ODC_BOOT_MODE, JobConstants.ODC_BOOT_MODE_EXECUTOR);
         System.setProperty(JobEnvKeyConstants.ODC_TASK_RUN_MODE, TaskRunModeEnum.K8S.name());
         System.setProperty(JobEnvKeyConstants.ODC_SERVER_PORT, "8990");
+        System.setProperty(JobEnvKeyConstants.ENCRYPT_KEY, PasswordUtils.random(32));
+        System.setProperty(JobEnvKeyConstants.ENCRYPT_SALT, PasswordUtils.random(8));
 
 
         DefaultJobConfiguration jc = new DefaultJobConfiguration() {};
