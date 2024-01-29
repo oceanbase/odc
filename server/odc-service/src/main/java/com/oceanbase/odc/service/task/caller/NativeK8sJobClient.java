@@ -81,12 +81,12 @@ public class NativeK8sJobClient implements K8sJobClient {
         }
         Verify.notNull(apiClient, "k8s api client");
         apiClient.setHttpClient(apiClient
-            .getHttpClient()
-            .newBuilder()
-            .readTimeout(TIMEOUT_MILLS, TimeUnit.MILLISECONDS)
-            .connectTimeout(TIMEOUT_MILLS, TimeUnit.MILLISECONDS)
-            .pingInterval(1, TimeUnit.MINUTES)
-            .build());
+                .getHttpClient()
+                .newBuilder()
+                .readTimeout(TIMEOUT_MILLS, TimeUnit.MILLISECONDS)
+                .connectTimeout(TIMEOUT_MILLS, TimeUnit.MILLISECONDS)
+                .pingInterval(1, TimeUnit.MINUTES)
+                .build());
         Configuration.setDefaultApiClient(apiClient);
     }
 

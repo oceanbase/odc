@@ -58,7 +58,6 @@ import com.oceanbase.odc.service.task.util.JobUtils;
 @Ignore("manual run this case")
 public class TaskApplicationTest extends BaseJobTest {
 
-
     @Test
     public void test_executeDatabaseChangeTask_run() {
         Long exceptedTaskId = System.currentTimeMillis();

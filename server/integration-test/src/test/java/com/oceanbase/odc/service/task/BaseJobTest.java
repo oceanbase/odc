@@ -66,7 +66,5 @@ public abstract class BaseJobTest {
         jc.setTaskFrameworkService(Mockito.mock(TaskFrameworkService.class));
         JobConfigurationHolder.setJobConfiguration(jc);
 
-
-
     }
 }
