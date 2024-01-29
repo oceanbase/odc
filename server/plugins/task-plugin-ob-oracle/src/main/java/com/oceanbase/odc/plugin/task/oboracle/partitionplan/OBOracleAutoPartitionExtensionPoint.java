@@ -17,6 +17,7 @@ package com.oceanbase.odc.plugin.task.oboracle.partitionplan;
 
 import java.sql.Connection;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -27,6 +28,8 @@ import org.pf4j.Extension;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.plugin.connect.api.InformationExtensionPoint;
+import com.oceanbase.odc.plugin.connect.oboracle.OBOracleInformationExtension;
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.create.PartitionExprGenerator;
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.partitionname.PartitionNameGenerator;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.OBMySQLAutoPartitionExtensionPoint;
@@ -37,7 +40,10 @@ import com.oceanbase.odc.plugin.task.oboracle.partitionplan.invoker.OBOracleSqlE
 import com.oceanbase.odc.plugin.task.oboracle.partitionplan.invoker.create.OBOracleSqlExprPartitionExprGenerator;
 import com.oceanbase.odc.plugin.task.oboracle.partitionplan.invoker.create.OBOracleTimeIncreasePartitionExprGenerator;
 import com.oceanbase.odc.plugin.task.oboracle.partitionplan.invoker.partitionname.OBOracleExprBasedPartitionNameGenerator;
+import com.oceanbase.odc.plugin.task.oboracle.partitionplan.util.DBTablePartitionEditors;
+import com.oceanbase.tools.dbbrowser.editor.DBTablePartitionEditor;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
+import com.oceanbase.tools.dbbrowser.model.DBTablePartition;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartitionOption;
 import com.oceanbase.tools.dbbrowser.model.datatype.DataType;
 
@@ -76,6 +82,29 @@ public class OBOracleAutoPartitionExtensionPoint extends OBMySQLAutoPartitionExt
         }
         return keys.stream().map(c -> new OBOraclePartitionKeyDataTypeFactory(calculator, table, c).generate())
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<String> generateCreatePartitionDdls(@NonNull Connection connection,
+            @NonNull DBTablePartition partition) {
+        InformationExtensionPoint extensionPoint = new OBOracleInformationExtension();
+        DBTablePartitionEditor editor = DBTablePartitionEditors.generate(extensionPoint.getDBVersion(connection));
+        return Collections.singletonList(editor.generateAddPartitionDefinitionDDL(partition.getSchemaName(),
+                partition.getTableName(), partition.getPartitionOption(), partition.getPartitionDefinitions()));
+    }
+
+    @Override
+    public List<String> generateDropPartitionDdls(@NonNull Connection connection,
+            @NonNull DBTablePartition partition, boolean reloadIndexes) {
+        InformationExtensionPoint extensionPoint = new OBOracleInformationExtension();
+        DBTablePartitionEditor editor = DBTablePartitionEditors.generate(extensionPoint.getDBVersion(connection));
+        String ddl = editor.generateDropPartitionDefinitionDDL(partition.getSchemaName(),
+                partition.getTableName(), partition.getPartitionDefinitions());
+        int index = ddl.indexOf(";");
+        if (index < 0 || !reloadIndexes) {
+            return Collections.singletonList(ddl);
+        }
+        return Collections.singletonList(ddl.substring(0, index) + " UPDATE GLOBAL INDEXES;");
     }
 
     @Override

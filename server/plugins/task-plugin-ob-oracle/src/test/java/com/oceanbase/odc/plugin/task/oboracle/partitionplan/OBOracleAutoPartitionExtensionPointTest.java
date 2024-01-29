@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.plugin.task.obmysql.partitionplan;
+package com.oceanbase.odc.plugin.task.oboracle.partitionplan;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -35,7 +35,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-import com.oceanbase.odc.plugin.schema.obmysql.OBMySQLTableExtension;
+import com.oceanbase.odc.plugin.schema.oboracle.OBOracleTableExtension;
 import com.oceanbase.odc.plugin.task.api.partitionplan.AutoPartitionExtensionPoint;
 import com.oceanbase.odc.plugin.task.api.partitionplan.datatype.TimeDataType;
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.create.PartitionExprGenerator;
@@ -55,145 +55,60 @@ import com.oceanbase.tools.dbbrowser.model.datatype.DataType;
 import com.oceanbase.tools.dbbrowser.model.datatype.GeneralDataType;
 
 /**
- * Test cases for {@link OBMySQLAutoPartitionExtensionPoint}
+ * Test cases for {@link OBOracleAutoPartitionExtensionPoint}
  *
  * @author yh263208
- * @date 2024-01-24 14:30
+ * @date 2024-01-29 17:16
  * @since ODC_release_4.2.4
  */
-public class OBMySQLAutoPartitionExtensionPointTest {
+public class OBOracleAutoPartitionExtensionPointTest {
 
-    public static final String LIST_PARTI_TABLE_NAME = "list_parti_tbl";
-    public static final String NO_PARTI_TABLE_NAME = "no_parti_tbl";
-    public static final String RANGE_TABLE_NAME = "range_parti_ext_tbl";
-    public static final String RANGE_MAX_VALUE_TABLE_NAME = "range_maxvalue_parti_ext_tbl";
-    public static final String RANGE_COLUMNS_TABLE_NAME = "range_col_parti_ext_tbl";
-    public static final String REAL_RANGE_TABLE_NAME = "real_range_parti_ext_tbl";
+    public static final String RANGE_TABLE_NAME = "RANGE_PARTI_TIME_TBL100";
 
     @BeforeClass
     public static void setUp() throws IOException {
         JdbcTemplate oracle = new JdbcTemplate(TestDBConfigurations.getInstance()
-                .getTestOBMysqlConfiguration().getDataSource());
+                .getTestOBOracleConfiguration().getDataSource());
         getDdlContent().forEach(oracle::execute);
     }
 
     @AfterClass
     public static void clear() {
         JdbcTemplate oracle = new JdbcTemplate(TestDBConfigurations.getInstance()
-                .getTestOBMysqlConfiguration().getDataSource());
-        oracle.execute("DROP TABLE " + RANGE_COLUMNS_TABLE_NAME);
-        oracle.execute("DROP TABLE " + LIST_PARTI_TABLE_NAME);
-        oracle.execute("DROP TABLE " + NO_PARTI_TABLE_NAME);
+                .getTestOBOracleConfiguration().getDataSource());
         oracle.execute("DROP TABLE " + RANGE_TABLE_NAME);
-        oracle.execute("DROP TABLE " + REAL_RANGE_TABLE_NAME);
-        oracle.execute("DROP TABLE " + RANGE_MAX_VALUE_TABLE_NAME);
-    }
-
-    @Test
-    public void supports_rangeParti_returnTrue() throws SQLException {
-        TestDBConfiguration configuration = TestDBConfigurations.getInstance().getTestOBMysqlConfiguration();
-        try (Connection connection = configuration.getDataSource().getConnection()) {
-            DBTable dbTable = new OBMySQLTableExtension().getDetail(connection,
-                    configuration.getDefaultDBName(), RANGE_COLUMNS_TABLE_NAME);
-            AutoPartitionExtensionPoint extensionPoint = new OBMySQLAutoPartitionExtensionPoint();
-            Assert.assertTrue(extensionPoint.supports(dbTable.getPartition()));
-        }
-    }
-
-    @Test
-    public void supports_rangePartiMaxValue_returnFalse() throws SQLException {
-        TestDBConfiguration configuration = TestDBConfigurations.getInstance().getTestOBMysqlConfiguration();
-        Connection connection = configuration.getDataSource().getConnection();
-        DBTable dbTable = new OBMySQLTableExtension().getDetail(connection,
-                configuration.getDefaultDBName(), RANGE_MAX_VALUE_TABLE_NAME);
-        AutoPartitionExtensionPoint extensionPoint = new OBMySQLAutoPartitionExtensionPoint();
-        Assert.assertFalse(extensionPoint.supports(dbTable.getPartition()));
-    }
-
-    @Test
-    public void supports_nonParti_returnFalse() throws SQLException {
-        TestDBConfiguration configuration = TestDBConfigurations.getInstance().getTestOBMysqlConfiguration();
-        try (Connection connection = configuration.getDataSource().getConnection()) {
-            DBTable dbTable = new OBMySQLTableExtension().getDetail(connection,
-                    configuration.getDefaultDBName(), NO_PARTI_TABLE_NAME);
-            AutoPartitionExtensionPoint extensionPoint = new OBMySQLAutoPartitionExtensionPoint();
-            Assert.assertFalse(extensionPoint.supports(dbTable.getPartition()));
-        }
-    }
-
-    @Test
-    public void supports_listParti_returnFalse() throws SQLException {
-        TestDBConfiguration configuration = TestDBConfigurations.getInstance().getTestOBMysqlConfiguration();
-        try (Connection connection = configuration.getDataSource().getConnection()) {
-            DBTable dbTable = new OBMySQLTableExtension().getDetail(connection,
-                    configuration.getDefaultDBName(), LIST_PARTI_TABLE_NAME);
-            AutoPartitionExtensionPoint extensionPoint = new OBMySQLAutoPartitionExtensionPoint();
-            Assert.assertFalse(extensionPoint.supports(dbTable.getPartition()));
-        }
     }
 
     @Test
     public void getPartitionKeyDataTypes_rangeParti_getSucceed() throws SQLException, IOException {
-        TestDBConfiguration configuration = TestDBConfigurations.getInstance().getTestOBMysqlConfiguration();
+        TestDBConfiguration configuration = TestDBConfigurations.getInstance().getTestOBOracleConfiguration();
         try (Connection connection = configuration.getDataSource().getConnection()) {
-            DBTable dbTable = new OBMySQLTableExtension().getDetail(connection,
-                    configuration.getDefaultDBName(), RANGE_COLUMNS_TABLE_NAME);
-            AutoPartitionExtensionPoint extensionPoint = new OBMySQLAutoPartitionExtensionPoint();
-            List<DataType> actuals = extensionPoint.getPartitionKeyDataTypes(connection, dbTable);
-            Assert.assertEquals(Arrays.asList(new GeneralDataType(0, 0, "varchar"),
-                    new TimeDataType("date", TimeDataType.DAY)), actuals);
-        }
-    }
-
-    @Test
-    public void getPartitionKeyDataTypes_rangeExprParti_getSucceed() throws SQLException, IOException {
-        TestDBConfiguration configuration = TestDBConfigurations.getInstance().getTestOBMysqlConfiguration();
-        try (Connection connection = configuration.getDataSource().getConnection()) {
-            DBTable dbTable = new OBMySQLTableExtension().getDetail(connection,
+            DBTable dbTable = new OBOracleTableExtension().getDetail(connection,
                     configuration.getDefaultDBName(), RANGE_TABLE_NAME);
-            AutoPartitionExtensionPoint extensionPoint = new OBMySQLAutoPartitionExtensionPoint();
+            AutoPartitionExtensionPoint extensionPoint = new OBOracleAutoPartitionExtensionPoint();
             List<DataType> actuals = extensionPoint.getPartitionKeyDataTypes(connection, dbTable);
-            Assert.assertEquals(Collections.singletonList(new GeneralDataType(0, 0, "BIGINT")), actuals);
+            Assert.assertEquals(Arrays.asList(new TimeDataType("DATE", TimeDataType.SECOND),
+                    new TimeDataType("TIMESTAMP", TimeDataType.SECOND),
+                    new GeneralDataType(0, 0, "VARCHAR2")), actuals);
         }
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
-    public void getPartitionKeyDataTypes_listParti_exptThrown() throws SQLException, IOException {
-        TestDBConfiguration configuration = TestDBConfigurations.getInstance().getTestOBMysqlConfiguration();
-        try (Connection connection = configuration.getDataSource().getConnection()) {
-            DBTable dbTable = new OBMySQLTableExtension().getDetail(connection,
-                    configuration.getDefaultDBName(), LIST_PARTI_TABLE_NAME);
-            AutoPartitionExtensionPoint extensionPoint = new OBMySQLAutoPartitionExtensionPoint();
-            extensionPoint.getPartitionKeyDataTypes(connection, dbTable);
-        }
-    }
-
-    @Test
-    public void unquoteIdentifier_wrappedStr_succeed() {
-        List<String> inputs = Arrays.asList("`abcd`", "abcde");
-        AutoPartitionExtensionPoint extensionPoint = new OBMySQLAutoPartitionExtensionPoint();
-        List<String> actuals = inputs.stream().map(extensionPoint::unquoteIdentifier).collect(Collectors.toList());
-        Assert.assertEquals(Arrays.asList("abcd", "abcde"), actuals);
     }
 
     @Test
     public void generateCreatePartitionDdls_normal_succeed() throws Exception {
-        TestDBConfiguration configuration = TestDBConfigurations.getInstance().getTestOBMysqlConfiguration();
+        TestDBConfiguration configuration = TestDBConfigurations.getInstance().getTestOBOracleConfiguration();
         try (Connection connection = configuration.getDataSource().getConnection()) {
-            DBTable dbTable = new OBMySQLTableExtension().getDetail(connection,
-                    configuration.getDefaultDBName(), REAL_RANGE_TABLE_NAME);
+            DBTable dbTable = new OBOracleTableExtension().getDetail(connection,
+                    configuration.getDefaultDBName(), RANGE_TABLE_NAME);
             int generateCount = 5;
-            AutoPartitionExtensionPoint extensionPoint = new OBMySQLAutoPartitionExtensionPoint();
+            AutoPartitionExtensionPoint extensionPoint = new OBOracleAutoPartitionExtensionPoint();
             PartitionExprGenerator pk1 = extensionPoint
                     .getPartitionExpressionGeneratorByName("CUSTOM_GENERATOR");
             SqlExprBasedGeneratorConfig config = new SqlExprBasedGeneratorConfig();
-            config.setIntervalGenerateExpr("86400");
-            config.setGenerateExpr("cast(date_format(from_unixtime(unix_timestamp(STR_TO_DATE("
-                    + PartitionPlanVariableKey.LAST_PARTITION_VALUE.getVariable()
-                    + ", '%Y%m%d')) + " + PartitionPlanVariableKey.INTERVAL.getVariable()
-                    + "), '%Y%m%d') as signed)");
+            config.setIntervalGenerateExpr("NUMTOYMINTERVAL(1, 'YEAR')");
+            config.setGenerateExpr(PartitionPlanVariableKey.LAST_PARTITION_VALUE.getVariable()
+                    + " + " + PartitionPlanVariableKey.INTERVAL.getVariable());
             List<String> pk1Values = pk1.invoke(connection, dbTable,
-                    getSqlExprBasedGeneratorParameters(config, generateCount, "datekey"));
+                    getSqlExprBasedGeneratorParameters(config, generateCount, "c1"));
 
             PartitionExprGenerator pk2 = extensionPoint
                     .getPartitionExpressionGeneratorByName("TIME_INCREASING_GENERATOR");
@@ -203,7 +118,7 @@ public class OBMySQLAutoPartitionExtensionPointTest {
             config1.setInterval(1);
             config1.setIntervalPrecision(TimeDataType.DAY);
             List<String> pk2Values = pk2.invoke(connection, dbTable,
-                    getTimeIncreaseGeneratorParameters(config1, generateCount, "c3"));
+                    getTimeIncreaseGeneratorParameters(config1, generateCount, "c2"));
 
             PartitionNameGenerator nameGen = extensionPoint
                     .getPartitionNameGeneratorGeneratorByName("CUSTOM_PARTITION_NAME_GENERATOR");
@@ -213,10 +128,9 @@ public class OBMySQLAutoPartitionExtensionPointTest {
                 DBTablePartitionDefinition definition = new DBTablePartitionDefinition();
                 definition.setMaxValues(Arrays.asList(pk1Values.get(i), pk2Values.get(i)));
                 SqlExprBasedGeneratorConfig config2 = new SqlExprBasedGeneratorConfig();
-                config2.setGenerateExpr("concat('p', date_format(from_unixtime(unix_timestamp("
-                        + "STR_TO_DATE(20240125, '%Y%m%d')) + "
-                        + PartitionPlanVariableKey.INTERVAL.getVariable() + "), '%Y%m%d'))");
-                config2.setIntervalGenerateExpr("86400");
+                config2.setGenerateExpr("CONCAT('P', TO_CHAR(TO_DATE('20240125', 'YYYYMMDD') + "
+                        + PartitionPlanVariableKey.INTERVAL.getVariable() + ", 'YYYYMMDD'))");
+                config2.setIntervalGenerateExpr("NUMTOYMINTERVAL(1, 'MONTH')");
                 definition.setName(nameGen.invoke(connection, dbTable,
                         getSqlExprBasedNameGeneratorParameters(i, config2)));
                 partition.getPartitionDefinitions().add(definition);
@@ -225,24 +139,37 @@ public class OBMySQLAutoPartitionExtensionPointTest {
             partition.setTableName(dbTable.getName());
             partition.setSchemaName(dbTable.getSchemaName());
             List<String> actuals = extensionPoint.generateCreatePartitionDdls(connection, partition);
-            List<String> expects = Collections.singletonList(String.format("ALTER TABLE %s.%s ADD PARTITION (\n"
-                    + "\tPARTITION `p20240126` VALUES LESS THAN (20220801,'2024-01-25'),\n"
-                    + "\tPARTITION `p20240127` VALUES LESS THAN (20220802,'2024-01-26'),\n"
-                    + "\tPARTITION `p20240128` VALUES LESS THAN (20220803,'2024-01-27'),\n"
-                    + "\tPARTITION `p20240129` VALUES LESS THAN (20220804,'2024-01-28'),\n"
-                    + "\tPARTITION `p20240130` VALUES LESS THAN (20220805,'2024-01-29'));\n",
-                    configuration.getDefaultDBName(), REAL_RANGE_TABLE_NAME));
+            List<String> expects = Collections.singletonList(String.format("ALTER TABLE %s.%s ADD \n"
+                    + "\tPARTITION \"P20240225\" VALUES LESS THAN (TO_DATE('2024-12-31 23:59:59', 'YYYY-MM-DD HH24:MI:SS'),"
+                    + "TO_TIMESTAMP('2024-01-25 00:00:00', 'YYYY-MM-DD HH24:MI:SS')),\n"
+                    + "\tPARTITION \"P20240325\" VALUES LESS THAN (TO_DATE('2025-12-31 23:59:59', 'YYYY-MM-DD HH24:MI:SS'),"
+                    + "TO_TIMESTAMP('2024-01-26 00:00:00', 'YYYY-MM-DD HH24:MI:SS')),\n"
+                    + "\tPARTITION \"P20240425\" VALUES LESS THAN (TO_DATE('2026-12-31 23:59:59', 'YYYY-MM-DD HH24:MI:SS'),"
+                    + "TO_TIMESTAMP('2024-01-27 00:00:00', 'YYYY-MM-DD HH24:MI:SS')),\n"
+                    + "\tPARTITION \"P20240525\" VALUES LESS THAN (TO_DATE('2027-12-31 23:59:59', 'YYYY-MM-DD HH24:MI:SS'),"
+                    + "TO_TIMESTAMP('2024-01-28 00:00:00', 'YYYY-MM-DD HH24:MI:SS')),\n"
+                    + "\tPARTITION \"P20240625\" VALUES LESS THAN (TO_DATE('2028-12-31 23:59:59', 'YYYY-MM-DD HH24:MI:SS'),"
+                    + "TO_TIMESTAMP('2024-01-29 00:00:00', 'YYYY-MM-DD HH24:MI:SS'));\n",
+                    configuration.getDefaultDBName(), RANGE_TABLE_NAME));
             Assert.assertEquals(expects, actuals);
         }
     }
 
     @Test
+    public void unquoteIdentifier_wrappedStr_succeed() {
+        List<String> inputs = Arrays.asList("\"abcd\"", "abcde");
+        AutoPartitionExtensionPoint extensionPoint = new OBOracleAutoPartitionExtensionPoint();
+        List<String> actuals = inputs.stream().map(extensionPoint::unquoteIdentifier).collect(Collectors.toList());
+        Assert.assertEquals(Arrays.asList("abcd", "ABCDE"), actuals);
+    }
+
+    @Test
     public void generateDropPartitionDdls_reloadIndexes_succeed() throws Exception {
-        TestDBConfiguration configuration = TestDBConfigurations.getInstance().getTestOBMysqlConfiguration();
+        TestDBConfiguration configuration = TestDBConfigurations.getInstance().getTestOBOracleConfiguration();
         try (Connection connection = configuration.getDataSource().getConnection()) {
-            DBTable dbTable = new OBMySQLTableExtension().getDetail(connection,
-                    configuration.getDefaultDBName(), REAL_RANGE_TABLE_NAME);
-            AutoPartitionExtensionPoint extensionPoint = new OBMySQLAutoPartitionExtensionPoint();
+            DBTable dbTable = new OBOracleTableExtension().getDetail(connection,
+                    configuration.getDefaultDBName(), RANGE_TABLE_NAME);
+            AutoPartitionExtensionPoint extensionPoint = new OBOracleAutoPartitionExtensionPoint();
             DropPartitionGenerator generator = extensionPoint
                     .getDropPartitionGeneratorByName("KEEP_MOST_RECENT_GENERATOR");
             List<DBTablePartitionDefinition> toDelete = generator.invoke(connection,
@@ -252,8 +179,31 @@ public class OBMySQLAutoPartitionExtensionPointTest {
             dbTablePartition.setTableName(dbTable.getName());
             dbTablePartition.setSchemaName(dbTable.getSchemaName());
             List<String> actual = extensionPoint.generateDropPartitionDdls(connection, dbTablePartition, true);
-            List<String> expects = Collections.singletonList(String.format("ALTER TABLE %s.%s DROP PARTITION "
-                    + "(p20220830, p20220829);\n", configuration.getDefaultDBName(), REAL_RANGE_TABLE_NAME));
+            List<String> expects = Collections.singletonList(String.format(
+                    "ALTER TABLE %s.%s DROP PARTITION (P0) UPDATE GLOBAL INDEXES;",
+                    configuration.getDefaultDBName(), RANGE_TABLE_NAME));
+            Assert.assertEquals(expects, actual);
+        }
+    }
+
+    @Test
+    public void generateDropPartitionDdls_dontReloadIndexes_succeed() throws Exception {
+        TestDBConfiguration configuration = TestDBConfigurations.getInstance().getTestOBOracleConfiguration();
+        try (Connection connection = configuration.getDataSource().getConnection()) {
+            DBTable dbTable = new OBOracleTableExtension().getDetail(connection,
+                    configuration.getDefaultDBName(), RANGE_TABLE_NAME);
+            AutoPartitionExtensionPoint extensionPoint = new OBOracleAutoPartitionExtensionPoint();
+            DropPartitionGenerator generator = extensionPoint
+                    .getDropPartitionGeneratorByName("KEEP_MOST_RECENT_GENERATOR");
+            List<DBTablePartitionDefinition> toDelete = generator.invoke(connection,
+                    dbTable, getDropPartitionParameters(1));
+            DBTablePartition dbTablePartition = new DBTablePartition();
+            dbTablePartition.setPartitionDefinitions(toDelete);
+            dbTablePartition.setTableName(dbTable.getName());
+            dbTablePartition.setSchemaName(dbTable.getSchemaName());
+            List<String> actual = extensionPoint.generateDropPartitionDdls(connection, dbTablePartition, false);
+            List<String> expects = Collections.singletonList(String.format("ALTER TABLE %s.%s DROP PARTITION (P0);\n",
+                    configuration.getDefaultDBName(), RANGE_TABLE_NAME));
             Assert.assertEquals(expects, actual);
         }
     }
@@ -292,7 +242,7 @@ public class OBMySQLAutoPartitionExtensionPointTest {
 
     private static List<String> getDdlContent() throws IOException {
         String delimiter = "\\$\\$\\s*";
-        try (InputStream input = OBMySQLPartitionKeyDataTypeFactoryTest.class.getClassLoader()
+        try (InputStream input = OBOracleAutoPartitionExtensionPointTest.class.getClassLoader()
                 .getResourceAsStream("partitionplan/extension_point_create_table_partition.sql")) {
             byte[] buffer = new byte[input.available()];
             IOUtils.readFully(input, buffer);
