@@ -1,4 +1,4 @@
-create table ${const:com.oceanbase.odc.plugin.task.oboracle.partitionplan.OBOracleTimeIncreasePartitionExprGeneratorTest.RANGE_TABLE_NAME}(
+create table ${const:com.oceanbase.odc.plugin.task.oboracle.partitionplan.OBOracleSqlExprPartitionExprGeneratorTest.RANGE_TABLE_NAME}(
     c1 date,
     c2 timestamp(6),
     c5 varchar2(64)

@@ -5,4 +5,3 @@ create table ${const:com.oceanbase.odc.plugin.task.oboracle.partitionplan.OBOrac
 ) partition by range (c1, c2, c5) (
     partition p0 values less than(to_date('2022-12-31 23:59:59', 'YYYY-MM-DD HH24:MI:SS'), to_timestamp('2022-12-31 23:59:59', 'YYYY-MM-DD HH24:MI:SS'), 'aaa')
 );
-

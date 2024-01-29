@@ -52,7 +52,7 @@ import com.oceanbase.tools.dbbrowser.model.datatype.GeneralDataType;
  */
 public class OBOraclePartitionKeyDataTypeFactoryTest {
 
-    public static final String RANGE_TABLE_NAME = "RANGE_PARTI_TIME_TBL";
+    public static final String RANGE_TABLE_NAME = "RANGE_PARTI_TIME_TBL1";
 
     @BeforeClass
     public static void setUp() throws IOException {
