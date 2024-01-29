@@ -16,9 +16,6 @@
 package com.oceanbase.odc.plugin.task.obmysql.partitionplan;
 
 import java.sql.Connection;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -56,9 +53,7 @@ public class OBMySQLExprBasedPartitionNameGeneratorTest {
                     + PartitionPlanVariableKey.INTERVAL.getVariable() + "), '%Y%m%d'))");
             config.setIntervalGenerateExpr("86400");
             String actual = generator.invoke(connection, dbTable, getParameters(0, config));
-            DateFormat dateFormat = new SimpleDateFormat("yyyyMMdd");
-            String expect = "p" + dateFormat.format(new Date());
-            Assert.assertEquals(expect, actual);
+            Assert.assertEquals("p20240126", actual);
         }
     }
 
