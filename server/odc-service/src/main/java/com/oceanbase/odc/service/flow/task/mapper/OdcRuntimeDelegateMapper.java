@@ -27,6 +27,7 @@ import com.oceanbase.odc.service.flow.task.DatabaseChangeRuntimeFlowableTaskCopi
 import com.oceanbase.odc.service.flow.task.MockDataRuntimeFlowableTask;
 import com.oceanbase.odc.service.flow.task.PartitionPlanTask;
 import com.oceanbase.odc.service.flow.task.PreCheckRuntimeFlowableTask;
+import com.oceanbase.odc.service.flow.task.PreCheckRuntimeFlowableTaskCopied;
 import com.oceanbase.odc.service.flow.task.RollbackPlanRuntimeFlowableTask;
 import com.oceanbase.odc.service.flow.task.ShadowtableSyncRuntimeFlowableTask;
 import com.oceanbase.odc.service.onlineschemachange.OnlineSchemaChangeFlowableTask;
@@ -48,12 +49,10 @@ import lombok.NonNull;
 public class OdcRuntimeDelegateMapper implements RuntimeDelegateMapper {
     @Override
     public Class<? extends BaseRuntimeFlowableDelegate<?>> map(@NonNull TaskType taskType) {
+        boolean enableTaskFramework = SpringContextUtil.getBean(TaskFrameworkProperties.class).isEnableTaskFramework();
         switch (taskType) {
             case ASYNC:
-                TaskFrameworkProperties taskFrameworkProperties =
-                        SpringContextUtil.getBean(TaskFrameworkProperties.class);
-                return taskFrameworkProperties.isEnableTaskFramework()
-                        ? DatabaseChangeRuntimeFlowableTaskCopied.class
+                return enableTaskFramework ? DatabaseChangeRuntimeFlowableTaskCopied.class
                         : DatabaseChangeRuntimeFlowableTask.class;
             case MOCKDATA:
                 return MockDataRuntimeFlowableTask.class;
@@ -73,7 +72,8 @@ public class OdcRuntimeDelegateMapper implements RuntimeDelegateMapper {
             case EXPORT_RESULT_SET:
                 return ResultSetExportFlowableTask.class;
             case PRE_CHECK:
-                return PreCheckRuntimeFlowableTask.class;
+                return enableTaskFramework ? PreCheckRuntimeFlowableTaskCopied.class
+                        : PreCheckRuntimeFlowableTask.class;
             case APPLY_PROJECT_PERMISSION:
                 return ApplyProjectFlowableTask.class;
             default:
