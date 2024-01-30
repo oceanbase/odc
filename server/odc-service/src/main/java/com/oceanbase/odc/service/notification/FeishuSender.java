@@ -17,7 +17,9 @@ package com.oceanbase.odc.service.notification;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.common.json.JsonUtils;
@@ -25,6 +27,7 @@ import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.service.notification.model.ChannelType;
 import com.oceanbase.odc.service.notification.model.Message;
+import com.oceanbase.odc.service.notification.model.MessageSendResult;
 import com.oceanbase.odc.service.notification.model.WebhookChannelConfig;
 
 /**
@@ -55,6 +58,14 @@ public class FeishuSender extends HttpSender {
             throw new UnexpectedException("failed to calculate sign secret, reason: " + e.getMessage());
         }
         return JsonUtils.toJsonIgnoreNull(params);
+    }
+
+    protected MessageSendResult checkResponse(ResponseEntity response) {
+        Map<String, Object> body = (Map) response.getBody();
+        if (Objects.equals("success", body.get("msg"))) {
+            return MessageSendResult.ofSuccess();
+        }
+        return MessageSendResult.ofFail(String.format("Code: %s, message:%s", body.get("code"), body.get("msg")));
     }
 
 }

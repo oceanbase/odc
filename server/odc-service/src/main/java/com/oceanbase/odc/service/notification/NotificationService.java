@@ -70,6 +70,7 @@ import com.oceanbase.odc.metadb.notification.PolicyMetadataEntity;
 import com.oceanbase.odc.metadb.notification.PolicyMetadataRepository;
 import com.oceanbase.odc.service.iam.UserService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
+import com.oceanbase.odc.service.notification.helper.ChannelConfigValidator;
 import com.oceanbase.odc.service.notification.helper.ChannelMapper;
 import com.oceanbase.odc.service.notification.helper.PolicyMapper;
 import com.oceanbase.odc.service.notification.model.Channel;
@@ -115,6 +116,8 @@ public class NotificationService {
     private ChannelMapper channelMapper;
     @Autowired
     private MessageSenderMapper messageSenderMapper;
+    @Autowired
+    private ChannelConfigValidator validator;
 
     private TreeMap<Long, NotificationPolicy> metaPolicies;
 
@@ -151,6 +154,7 @@ public class NotificationService {
         PreConditions.notNull(channel.getType(), "channel.type");
         PreConditions.validNoDuplicated(ResourceType.ODC_NOTIFICATION_CHANNEL, "channel.name", channel.getName(),
                 () -> existsChannel(projectId, channel.getName()));
+        validator.validate(channel.getType(), channel.getChannelConfig());
 
         if (StringUtils.isEmpty(channel.getChannelConfig().getTitleTemplate())) {
             channel.getChannelConfig().setTitleTemplate("${taskType}-${taskStatus}");
@@ -167,6 +171,7 @@ public class NotificationService {
     @PreAuthenticate(hasAnyResourceRole = {"OWNER"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
     public Channel updateChannel(@NotNull Long projectId, @NotNull Channel channel) {
         PreConditions.notNull(channel.getId(), "channel.id");
+        validator.validate(channel.getType(), channel.getChannelConfig());
         ChannelEntity entity = nullSafeGetChannel(channel.getId());
         if (!Objects.equals(projectId, entity.getProjectId())) {
             throw new AccessDeniedException("Channel does not belong to this project");
@@ -200,6 +205,7 @@ public class NotificationService {
     public MessageSendResult testChannel(@NotNull Channel channel) {
         PreConditions.notNull(channel.getType(), "channel.type");
         PreConditions.notNull(channel.getChannelConfig(), "channel.config");
+        validator.validate(channel.getType(), channel.getChannelConfig());
         MessageSender sender = messageSenderMapper.get(channel);
 
         String testMessage = I18n.translate(CHANNEL_TEST_MESSAGE_KEY, null, LocaleContextHolder.getLocale());

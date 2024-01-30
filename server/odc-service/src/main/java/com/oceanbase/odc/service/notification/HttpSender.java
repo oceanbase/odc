@@ -59,12 +59,7 @@ public class HttpSender implements MessageSender {
         HttpEntity<String> request = new HttpEntity<>(getBody(message), getHeaders(message));
         ResponseEntity<Object> response =
                 new RestTemplate().exchange(getUrl(message), HttpMethod.POST, request, Object.class);
-        if (response.getStatusCode() != HttpStatus.OK) {
-            String errorMessage =
-                    response.getBody() == null ? "HttpCode:" + response.getStatusCode() : response.getBody().toString();
-            return MessageSendResult.ofFail(errorMessage);
-        }
-        return MessageSendResult.ofSuccess();
+        return checkResponse(response);
     }
 
     protected String getUrl(Message message) {
@@ -102,6 +97,15 @@ public class HttpSender implements MessageSender {
         mac.init(new SecretKeySpec(stringToSign.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
         byte[] signData = mac.doFinal(new byte[] {});
         return new String(Base64.encodeBase64(signData));
+    }
+
+    protected MessageSendResult checkResponse(ResponseEntity response) {
+        if (response.getStatusCode() != HttpStatus.OK) {
+            String errorMessage =
+                    response.getBody() == null ? "HttpCode:" + response.getStatusCode() : response.getBody().toString();
+            return MessageSendResult.ofFail(errorMessage);
+        }
+        return MessageSendResult.ofSuccess();
     }
 
 }

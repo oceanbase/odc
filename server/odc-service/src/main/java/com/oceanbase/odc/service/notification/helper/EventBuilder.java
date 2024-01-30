@@ -197,6 +197,9 @@ public class EventBuilder {
                     ScheduleEntity scheduleEntity = scheduleService.nullSafeGetById(parentInstanceId);
                     if (scheduleEntity.getJobType() == JobType.SQL_PLAN) {
                         labels.putIfNonNull(TASK_TYPE, JobType.SQL_PLAN);
+                        labels.putIfNonNull(TASK_ID, parentInstanceId);
+                    } else {
+                        labels.putIfNonNull(TASK_ID, flowInstances.get(0).getId());
                     }
                 } else {
                     labels.putIfNonNull(TASK_ID, flowInstances.get(0).getId());
