@@ -1,4 +1,4 @@
-CREATE TABLE `${const:com.oceanbase.odc.service.partitionplan.PartitionPlanServiceV2Test.REAL_RANGE_TABLE_NAME}` (
+CREATE TABLE `${const:com.oceanbase.odc.service.partitionplan.PartitionPlanServiceV2Test.MYSQL_REAL_RANGE_TABLE_NAME}` (
   `id` bigint(20) unsigned NOT NULL,
   `gmt_create` datetime NOT NULL,
   `gmt_modified` datetime NOT NULL,
@@ -9,7 +9,7 @@ CREATE TABLE `${const:com.oceanbase.odc.service.partitionplan.PartitionPlanServi
 partition p20220830 values less than (20220730, '2022-07-30'),
 partition p20220831 values less than (20220731, '2022-07-31'));
 
-CREATE TABLE `${const:com.oceanbase.odc.service.partitionplan.PartitionPlanServiceV2Test.OVERLAP_RANGE_TABLE_NAME}` (
+CREATE TABLE `${const:com.oceanbase.odc.service.partitionplan.PartitionPlanServiceV2Test.MYSQL_OVERLAP_RANGE_TABLE_NAME}` (
   `id` bigint(20) unsigned NOT NULL,
   `gmt_create` datetime NOT NULL,
   `gmt_modified` datetime NOT NULL,
