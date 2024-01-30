@@ -28,6 +28,8 @@ import org.apache.commons.text.StringSubstitutor;
 
 import com.google.common.primitives.Chars;
 
+import lombok.NonNull;
+
 /**
  * this is just a sample util class for package place holder <br>
  * 
@@ -394,6 +396,39 @@ public abstract class StringUtils extends org.apache.commons.lang3.StringUtils {
             String end = sql.substring(sqlLength - partLength);
             return start + "..." + end;
         }
+    }
+
+    public static boolean startsWithIgnoreSpaceAndNewLines(@NonNull String target, @NonNull String prefix,
+            boolean ignoreCase, int maxMatchLength) {
+        char[] targets;
+        char[] prefixes;
+        if (ignoreCase) {
+            targets = target.toLowerCase().toCharArray();
+            prefixes = prefix.toLowerCase().toCharArray();
+        } else {
+            targets = target.toCharArray();
+            prefixes = prefix.toCharArray();
+        }
+        int matchLength = 0;
+        int j = 0;
+        for (int i = 0; i < targets.length && j < prefixes.length && matchLength < maxMatchLength;) {
+            char iChar = targets[i];
+            char jChar = prefixes[j];
+            if (iChar == ' ' || iChar == '\t' || iChar == '\n' || iChar == '\r') {
+                i++;
+                continue;
+            } else if (jChar == ' ' || jChar == '\t' || jChar == '\n' || jChar == '\r') {
+                j++;
+                continue;
+            }
+            if (iChar != jChar) {
+                return false;
+            }
+            i++;
+            j++;
+            matchLength++;
+        }
+        return matchLength >= maxMatchLength || j >= prefixes.length;
     }
 
 }
