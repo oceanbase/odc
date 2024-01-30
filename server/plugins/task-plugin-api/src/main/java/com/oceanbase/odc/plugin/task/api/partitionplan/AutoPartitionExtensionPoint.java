@@ -15,7 +15,9 @@
  */
 package com.oceanbase.odc.plugin.task.api.partitionplan;
 
+import java.io.IOException;
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.List;
 
 import org.pf4j.ExtensionPoint;
@@ -39,15 +41,18 @@ import lombok.NonNull;
  */
 public interface AutoPartitionExtensionPoint extends ExtensionPoint {
 
-    boolean supports(@NonNull DBTablePartition dbTablePartition);
+    boolean supports(@NonNull DBTablePartition partition);
 
     String unquoteIdentifier(@NonNull String identifier);
 
-    List<DataType> getPartitionKeyDataTypes(@NonNull Connection connection, @NonNull DBTable table);
+    List<DataType> getPartitionKeyDataTypes(@NonNull Connection connection,
+            @NonNull DBTable table) throws IOException, SQLException;
 
-    List<String> generateCreatePartitionDdls(@NonNull DBTablePartition partition);
+    List<String> generateCreatePartitionDdls(@NonNull Connection connection,
+            @NonNull DBTablePartition partition);
 
-    List<String> generateDropPartitionDdls(@NonNull DBTablePartition partition, boolean reloadIndexes);
+    List<String> generateDropPartitionDdls(@NonNull Connection connection,
+            @NonNull DBTablePartition partition, boolean reloadIndexes);
 
     DropPartitionGenerator getDropPartitionGeneratorByName(@NonNull String name);
 

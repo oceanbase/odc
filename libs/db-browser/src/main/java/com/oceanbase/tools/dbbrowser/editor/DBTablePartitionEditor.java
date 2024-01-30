@@ -29,11 +29,14 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 
+import com.oceanbase.tools.dbbrowser.model.DBTableAbstractPartitionDefinition;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartition;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartitionDefinition;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartitionOption;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartitionType;
 import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
+
+import lombok.NonNull;
 
 /**
  * @Author: Lebie
@@ -234,7 +237,7 @@ public abstract class DBTablePartitionEditor implements DBObjectEditor<DBTablePa
         return StringUtils.EMPTY;
     }
 
-    protected String generateDropPartitionDefinitionDDL(@NotNull DBTablePartitionDefinition definition,
+    public String generateDropPartitionDefinitionDDL(@NotNull DBTablePartitionDefinition definition,
             String fullyQualifiedTableName) {
         SqlBuilder sqlBuilder = sqlBuilder();
         sqlBuilder.append("ALTER TABLE ").append(fullyQualifiedTableName).append(" DROP PARTITION (")
@@ -242,8 +245,24 @@ public abstract class DBTablePartitionEditor implements DBObjectEditor<DBTablePa
         return sqlBuilder.toString();
     }
 
-    protected abstract String generateAddPartitionDefinitionDDL(@NotNull DBTablePartitionDefinition definition,
+    public String generateDropPartitionDefinitionDDL(String schemaName, @NonNull String tableName,
+            List<DBTablePartitionDefinition> definitions) {
+        SqlBuilder sqlBuilder = sqlBuilder();
+        sqlBuilder.append("ALTER TABLE ");
+        if (StringUtils.isNotEmpty(schemaName)) {
+            sqlBuilder.append(schemaName).append(".");
+        }
+        sqlBuilder.append(tableName).append(" DROP PARTITION (");
+        Validate.isTrue(!CollectionUtils.isEmpty(definitions), "Partition elements can not be empty");
+        return sqlBuilder.append(definitions.stream().map(DBTableAbstractPartitionDefinition::getName)
+                .collect(Collectors.joining(", "))).append(");").line().toString();
+    }
+
+    public abstract String generateAddPartitionDefinitionDDL(@NotNull DBTablePartitionDefinition definition,
             @NotNull DBTablePartitionOption option, String fullyQualifiedTableName);
+
+    public abstract String generateAddPartitionDefinitionDDL(String schemaName, @NonNull String tableName,
+            @NonNull DBTablePartitionOption option, List<DBTablePartitionDefinition> definitions);
 
     protected abstract SqlBuilder sqlBuilder();
 
