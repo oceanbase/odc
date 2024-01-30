@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.partitionplan;
 import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -29,11 +30,17 @@ import java.util.stream.Collectors;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.stereotype.Service;
 
+import com.oceanbase.odc.core.session.ConnectionSession;
+import com.oceanbase.odc.core.session.ConnectionSessionConstants;
+import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
+import com.oceanbase.odc.core.sql.execute.SyncJdbcExecutor;
 import com.oceanbase.odc.plugin.schema.api.TableExtensionPoint;
 import com.oceanbase.odc.plugin.task.api.partitionplan.AutoPartitionExtensionPoint;
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.create.PartitionExprGenerator;
@@ -41,11 +48,13 @@ import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.drop.DropPartitio
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.partitionname.PartitionNameGenerator;
 import com.oceanbase.odc.plugin.task.api.partitionplan.model.PartitionPlanVariableKey;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanKeyConfig;
+import com.oceanbase.odc.service.partitionplan.model.PartitionPlanPreViewResp;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanStrategy;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanTableConfig;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanVariable;
 import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
 import com.oceanbase.odc.service.plugin.TaskPluginUtil;
+import com.oceanbase.odc.service.session.ConnectSessionService;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartition;
@@ -54,6 +63,7 @@ import com.oceanbase.tools.dbbrowser.model.DBTablePartitionOption;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartitionType;
 
 import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * {@link PartitionPlanServiceV2}
@@ -62,8 +72,46 @@ import lombok.NonNull;
  * @date 2024-01-11 15:36
  * @since ODC_release_4.2.4
  */
+@Slf4j
 @Service
 public class PartitionPlanServiceV2 {
+
+    @Autowired
+    private ConnectSessionService sessionService;
+
+    public PartitionPlanPreViewResp generatePartitionDdl(@NonNull String sessionId,
+            @NonNull PartitionPlanTableConfig tableConfig, Boolean onlyForPartitionName) {
+        ConnectionSession connectionSession = sessionService.nullSafeGet(sessionId, true);
+        DialectType dialectType = connectionSession.getDialectType();
+        String schema = ConnectionSessionUtil.getCurrentSchema(connectionSession);
+        SyncJdbcExecutor jdbc = connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY);
+        if (Boolean.TRUE.equals(onlyForPartitionName)) {
+            return jdbc.execute((ConnectionCallback<PartitionPlanPreViewResp>) con -> {
+                try {
+                    PartitionPlanPreViewResp returnVal = new PartitionPlanPreViewResp();
+                    returnVal.setTableName(tableConfig.getTableName());
+                    returnVal.setPartitionName(generatePartitionName(con, dialectType, schema, tableConfig));
+                    return returnVal;
+                } catch (Exception e) {
+                    log.warn("Failed to generate partition name", e);
+                    throw new IllegalStateException(e);
+                }
+            });
+        }
+        return jdbc.execute((ConnectionCallback<PartitionPlanPreViewResp>) con -> {
+            try {
+                Map<PartitionPlanStrategy, List<String>> resp = generatePartitionDdl(
+                        con, dialectType, schema, tableConfig);
+                PartitionPlanPreViewResp returnVal = new PartitionPlanPreViewResp();
+                returnVal.setTableName(tableConfig.getTableName());
+                returnVal.setSqls(resp.values().stream().flatMap(Collection::stream).collect(Collectors.toList()));
+                return returnVal;
+            } catch (Exception e) {
+                log.warn("Failed to generate partition ddl", e);
+                throw new IllegalStateException(e);
+            }
+        });
+    }
 
     /**
      * generate the ddl of a partition plan
@@ -143,6 +191,41 @@ public class PartitionPlanServiceV2 {
     public List<PartitionPlanVariable> getSupportedVariables() {
         return Arrays.stream(PartitionPlanVariableKey.values())
                 .map(PartitionPlanVariable::new).collect(Collectors.toList());
+    }
+
+    public String generatePartitionName(@NonNull Connection connection,
+            @NonNull DialectType dialectType, @NonNull String schema,
+            @NonNull PartitionPlanTableConfig tableConfig) throws Exception {
+        AutoPartitionExtensionPoint autoPartitionExtensionPoint = TaskPluginUtil
+                .getAutoPartitionExtensionPoint(dialectType);
+        TableExtensionPoint tableExtensionPoint = SchemaPluginUtil
+                .getTableExtension(dialectType);
+        if (tableExtensionPoint == null || autoPartitionExtensionPoint == null) {
+            throw new UnsupportedOperationException("Unsupported dialect " + dialectType);
+        }
+        String tableName = tableConfig.getTableName();
+        DBTable dbTable = tableExtensionPoint.getDetail(connection, schema, tableName);
+        DBTablePartition partition = dbTable.getPartition();
+        if (partition == null || partition.getPartitionOption() == null) {
+            throw new IllegalArgumentException("Partition is null");
+        } else if (!autoPartitionExtensionPoint.supports(partition)) {
+            throw new IllegalArgumentException("Unsupported partition type");
+        }
+        PartitionNameGenerator generator = autoPartitionExtensionPoint
+                .getPartitionNameGeneratorGeneratorByName(
+                        tableConfig.getPartitionNameInvoker());
+        if (generator == null) {
+            throw new IllegalStateException("Failed to get invoker by name, " + tableConfig.getPartitionNameInvoker());
+        }
+        Map<String, Object> parameters = tableConfig.getPartitionNameInvokerParameters();
+        int size = partition.getPartitionDefinitions().size();
+        if (size <= 0) {
+            throw new IllegalStateException("Partition definitions is empty");
+        }
+        DBTablePartitionDefinition lastDef = partition.getPartitionDefinitions().get(size - 1);
+        parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_KEY, lastDef);
+        parameters.put(PartitionNameGenerator.TARGET_PARTITION_DEF_INDEX_KEY, 0);
+        return generator.invoke(connection, dbTable, parameters);
     }
 
     private Map<PartitionPlanStrategy, DBTablePartition> doPartitionPlan(Connection connection, DBTable dbTable,

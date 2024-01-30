@@ -246,6 +246,24 @@ public class PartitionPlanServiceV2Test extends ServiceTestEnv {
         }
     }
 
+    @Test
+    public void generatePartitionName_oracle_generateSucceed() throws Exception {
+        PartitionPlanTableConfig tableConfig = new PartitionPlanTableConfig();
+        tableConfig.setTableName(ORACLE_RANGE_TABLE_NAME);
+        tableConfig.setPartitionNameInvoker("CUSTOM_PARTITION_NAME_GENERATOR");
+        SqlExprBasedGeneratorConfig config = new SqlExprBasedGeneratorConfig();
+        config.setGenerateExpr("CONCAT('P', TO_CHAR(TO_DATE('20240125', 'YYYYMMDD') + "
+                + PartitionPlanVariableKey.INTERVAL.getVariable() + ", 'YYYYMMDD'))");
+        config.setIntervalGenerateExpr("NUMTOYMINTERVAL(1, 'MONTH')");
+        tableConfig.setPartitionNameInvokerParameters(getSqlExprBasedNameGeneratorParameters(config));
+        TestDBConfiguration configuration = TestDBConfigurations.getInstance().getTestOBOracleConfiguration();
+        try (Connection connection = configuration.getDataSource().getConnection()) {
+            String actual = this.partitionPlanService.generatePartitionName(
+                    connection, DialectType.OB_ORACLE, configuration.getDefaultDBName(), tableConfig);
+            Assert.assertEquals("P20240225", actual);
+        }
+    }
+
     private PartitionPlanKeyConfig getDropConfig() {
         PartitionPlanKeyConfig dropConfig = new PartitionPlanKeyConfig();
         dropConfig.setPartitionKey(null);

@@ -39,7 +39,6 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.oceanbase.odc.core.session.ConnectionSession;
-import com.oceanbase.odc.core.shared.exception.NotImplementedException;
 import com.oceanbase.odc.service.common.response.ListResponse;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
@@ -51,6 +50,7 @@ import com.oceanbase.odc.service.db.session.DBSessionService;
 import com.oceanbase.odc.service.db.session.KillSessionOrQueryReq;
 import com.oceanbase.odc.service.db.session.KillSessionResult;
 import com.oceanbase.odc.service.dml.ValueEncodeType;
+import com.oceanbase.odc.service.partitionplan.PartitionPlanServiceV2;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanPreViewResp;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanTableConfig;
 import com.oceanbase.odc.service.session.ConnectConsoleService;
@@ -75,6 +75,7 @@ import io.swagger.annotations.ApiOperation;
 @RestController
 @RequestMapping("/api/v2/datasource")
 public class ConnectSessionController {
+
     @Autowired
     private ConnectSessionService sessionService;
     @Autowired
@@ -83,6 +84,8 @@ public class ConnectSessionController {
     private SqlCheckService sqlCheckService;
     @Autowired
     private DBSessionService dbSessionService;
+    @Autowired
+    private PartitionPlanServiceV2 partitionPlanServiceV2;
 
     @ApiOperation(value = "createSessionByDataSource", notes = "create connect session by a DataSource")
     @RequestMapping(value = "/datasources/{dataSourceId:[\\d]+}/sessions", method = RequestMethod.POST)
@@ -235,9 +238,13 @@ public class ConnectSessionController {
     }
 
     @PostMapping(value = "/sessions/{sessionId}/partitionPlans/latest/preview")
-    public ListResponse<PartitionPlanPreViewResp> getPreView(@RequestBody List<PartitionPlanTableConfig> tableConfigs,
+    public ListResponse<PartitionPlanPreViewResp> getPreView(@PathVariable String sessionId,
+            @RequestBody List<PartitionPlanTableConfig> tableConfigs,
             @RequestParam(name = "onlyForPartitionName", defaultValue = "false") Boolean onlyForPartitionName) {
-        throw new NotImplementedException();
+        String sid = SidUtils.getSessionId(sessionId);
+        return Responses.list(tableConfigs.stream()
+                .map(i -> partitionPlanServiceV2.generatePartitionDdl(sid, i, onlyForPartitionName))
+                .collect(Collectors.toList()));
     }
 
 }
