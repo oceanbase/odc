@@ -48,6 +48,7 @@ import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.OracleSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
 
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -75,8 +76,6 @@ public class DBTableStructureComparator implements DBObjectStructureComparator<D
     @Override
     public List<DBObjectComparisonResult> compare(List<DBTable> srcTables, List<DBTable> tgtTables) {
         List<DBObjectComparisonResult> returnVal = new LinkedList<>();
-        preHandleDBTable(srcTables);
-        preHandleDBTable(tgtTables);
         if (srcTables.isEmpty() && tgtTables.isEmpty()) {
             this.totalTableCount = 0;
             return returnVal;
@@ -131,19 +130,17 @@ public class DBTableStructureComparator implements DBObjectStructureComparator<D
         return returnVal;
     }
 
-    private void preHandleDBTable(List<DBTable> tables) {
+    private void filterNotNullCheckConstraint(@NonNull DBTable table) {
         if (tgtDialectType != DialectType.OB_ORACLE) {
             return;
         }
         // Filter out not null check constraints which will be compared in column comparison
-        tables.forEach(table -> {
-            List<DBTableConstraint> filteredConstraints = table.getConstraints().stream()
-                    .filter(constraint -> !(constraint.getType() == DBConstraintType.CHECK &&
-                            constraint.getCheckClause() != null &&
-                            constraint.getCheckClause().endsWith("IS NOT NULL")))
-                    .collect(Collectors.toList());
-            table.setConstraints(filteredConstraints);
-        });
+        List<DBTableConstraint> filteredConstraints = table.getConstraints().stream()
+                .filter(constraint -> !(constraint.getType() == DBConstraintType.CHECK &&
+                        constraint.getCheckClause() != null &&
+                        constraint.getCheckClause().endsWith("IS NOT NULL")))
+                .collect(Collectors.toList());
+        table.setConstraints(filteredConstraints);
     }
 
     private List<DBObjectComparisonResult> buildOnlyInSourceResult(List<String> toCreate,
@@ -160,7 +157,7 @@ public class DBTableStructureComparator implements DBObjectStructureComparator<D
             result.setComparisonResult(ComparisonResult.ONLY_IN_SOURCE);
             DBTable sourceTable = srcTableName2Table.get(name);
             result.setSourceDdl(sourceTable.getDDL());
-            DBTable targetTable = copySrcSourceTable(sourceTable);
+            DBTable targetTable = copySourceTable(sourceTable);
             result.setChangeScript(this.tgtTableEditor.generateCreateObjectDDL(targetTable));
             this.completedTableCount++;
             returnVal.add(result);
@@ -168,9 +165,10 @@ public class DBTableStructureComparator implements DBObjectStructureComparator<D
         return returnVal;
     }
 
-    private DBTable copySrcSourceTable(DBTable srcTable) {
+    private DBTable copySourceTable(DBTable srcTable) {
         DBTable copiedSrcTable = new DBTable();
         if (tgtDialectType == DialectType.OB_ORACLE) {
+            filterNotNullCheckConstraint(srcTable);
             List<DBTableConstraint> pk = srcTable.getConstraints().stream().filter(
                     cons -> cons.getType() == DBConstraintType.PRIMARY_KEY).collect(
                             Collectors.toList());
@@ -262,6 +260,8 @@ public class DBTableStructureComparator implements DBObjectStructureComparator<D
                     Collections.singletonMap(sourceTable.getName(), sourceTable), this.srcSchemaName,
                     this.tgtSchemaName).get(0);
         }
+        filterNotNullCheckConstraint(sourceTable);
+        filterNotNullCheckConstraint(targetTable);
 
         DBObjectComparisonResult result = new DBObjectComparisonResult(DBObjectType.TABLE, sourceTable.getName(),
                 this.srcSchemaName, this.tgtSchemaName);

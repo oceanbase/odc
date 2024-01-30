@@ -77,9 +77,11 @@ public class SchemaSyncController {
     @RequestMapping(value = "/structureComparison/{id}", method = RequestMethod.GET)
     public SuccessResponse<DBStructureComparisonResp> listStructureComparisonResult(@PathVariable Long id,
             @RequestParam(required = false) OperationType operationType,
+            @RequestParam(required = false, name = "dbObjectName") String dbObjectName,
             @PageableDefault(size = Integer.MAX_VALUE, sort = {"id"}, direction = Direction.DESC) Pageable pageable) {
         return Responses
-                .success(structureComparisonService.getDBStructureComparisonResult(id, operationType, pageable));
+                .success(structureComparisonService.getDBStructureComparisonResult(id, operationType, dbObjectName,
+                        pageable));
     }
 
     @RequestMapping(value = "/structureComparison/{id}/{structureComparisonId}", method = RequestMethod.GET)

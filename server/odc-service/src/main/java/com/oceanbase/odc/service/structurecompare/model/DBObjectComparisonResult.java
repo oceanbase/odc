@@ -17,10 +17,10 @@
 package com.oceanbase.odc.service.structurecompare.model;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 
 import com.oceanbase.odc.core.shared.constant.DialectType;
@@ -30,8 +30,7 @@ import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
 import com.oceanbase.odc.metadb.structurecompare.StructureComparisonEntity;
 import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
-import com.oceanbase.tools.sqlparser.statement.Statement;
-import com.oceanbase.tools.sqlparser.statement.alter.table.AlterTable;
+import com.oceanbase.tools.dbbrowser.parser.constant.SqlType;
 
 import lombok.Data;
 import lombok.NonNull;
@@ -87,32 +86,34 @@ public class DBObjectComparisonResult {
                     continue;
                 }
                 // DDL operations involving deletion of database objects are placed in comments
+                DBObjectType objectType = subResult.getDbObjectType();
                 if (subResult.getComparisonResult() == ComparisonResult.ONLY_IN_TARGET) {
                     totalSubScript.append("/*\n")
                             .append(subResult.getChangeScript())
-                            .append("*/\n")
-                            .append("\n");
-                } else if (subResult.getDbObjectType() == DBObjectType.PARTITION) {
+                            .append("*/\n\n");
+                } else if (objectType == DBObjectType.PARTITION || objectType == DBObjectType.CONSTRAINT
+                        || objectType == DBObjectType.INDEX) {
                     List<String> sqls = SqlUtils.split(dialectType, subResult.getChangeScript(), ";");
                     for (String sql : sqls) {
                         String sqlWithoutComment =
                                 SqlUtils.removeComments(new SqlCommentProcessor(dialectType, false, false), sql);
                         String comments = sql.replace(sqlWithoutComment, "");
-                        if (isDropPartitionStatement(parseSingleSql(dialectType, sqlWithoutComment))) {
+                        if (SqlType.DROP.equals(parseSingleSqlType(dialectType, sqlWithoutComment))) {
                             totalSubScript.append(comments)
                                     .append("/*\n")
-                                    .append(sqlWithoutComment)
-                                    .append(";\n")
-                                    .append("*/\n")
-                                    .append("\n");
+                                    .append(appendDelimiterIfNotExists(sqlWithoutComment))
+                                    .append("*/\n\n");
                         } else {
-                            totalSubScript.append(subResult.getChangeScript())
-                                    .append("\n");
+                            if (StringUtils.isNotEmpty(sqlWithoutComment)) {
+                                totalSubScript.append(appendDelimiterIfNotExists(sqlWithoutComment));
+                            }
+                            if (StringUtils.isNotEmpty(comments)) {
+                                totalSubScript.append(comments).append("\n");
+                            }
                         }
                     }
                 } else {
-                    totalSubScript.append(subResult.getChangeScript())
-                            .append("\n");
+                    totalSubScript.append(subResult.getChangeScript()).append("\n");
                 }
             }
         }
@@ -120,26 +121,24 @@ public class DBObjectComparisonResult {
         return entity;
     }
 
-    private Statement parseSingleSql(DialectType dialectType, String sql) {
+    private SqlType parseSingleSqlType(DialectType dialectType, String sql) {
+        if (Objects.isNull(sql) || sql.isEmpty()) {
+            return null;
+        }
         try {
             AbstractSyntaxTreeFactory factory = AbstractSyntaxTreeFactories.getAstFactory(dialectType, 0);
             Validate.notNull(factory, "AbstractSyntaxTreeFactory can not be null");
-            return factory.buildAst(sql).getStatement();
+            return factory.buildAst(sql).getParseResult().getSqlType();
         } catch (Exception e) {
             return null;
         }
     }
 
-    private boolean isDropPartitionStatement(Statement stmt) {
-        if (stmt instanceof AlterTable) {
-            return ((AlterTable) stmt).getAlterTableActions().stream().filter(Objects::nonNull)
-                    .anyMatch(action -> !getSafeList(action.getDropPartitionNames()).isEmpty()
-                            || !getSafeList(action.getDropSubPartitionNames()).isEmpty());
+    private String appendDelimiterIfNotExists(String sql) {
+        String s = sql.trim();
+        if (StringUtils.isBlank(s) || s.endsWith(";")) {
+            return sql + "\n";
         }
-        return false;
-    }
-
-    private <T> List<T> getSafeList(List<T> list) {
-        return list == null ? Collections.emptyList() : list;
+        return sql + ";\n";
     }
 }

@@ -161,21 +161,23 @@ public class StructureComparisonService {
     }
 
     public DBStructureComparisonResp getDBStructureComparisonResult(@NonNull Long id, OperationType operationType,
+            String dbObjectName,
             @NotNull Pageable pageable) {
         StructureComparisonTaskEntity taskEntity = structureComparisonTaskRepository.findById(id).orElseThrow(
                 () -> new NotFoundException(ResourceType.ODC_STRUCTURE_COMPARISON_TASK, "id", id));
         checkPermission(taskEntity);
 
-        Specification<StructureComparisonEntity> specification;
         Page<StructureComparisonEntity> entities;
-        if (operationType == null) {
-            specification = Specification.where(StructureComparisonEntitySpecs.comparisonTaskIdEquals(id));
-            entities = structureComparisonRepository.findAll(specification, pageable);
-        } else {
-            specification = Specification.where(StructureComparisonEntitySpecs.comparisonTaskIdEquals(id))
+        Specification<StructureComparisonEntity> specification =
+                Specification.where(StructureComparisonEntitySpecs.comparisonTaskIdEquals(id));
+        if (operationType != null) {
+            specification = specification
                     .and(StructureComparisonEntitySpecs.comparisonResultEquals(operationType.getComparisonResult()));
-            entities = structureComparisonRepository.findAll(specification, pageable);
         }
+        if (dbObjectName != null) {
+            specification = specification.and(StructureComparisonEntitySpecs.dbObjectNameLike(dbObjectName));
+        }
+        entities = structureComparisonRepository.findAll(specification, pageable);
 
         DBStructureComparisonResp resp = new DBStructureComparisonResp();
         resp.setId(id);
