@@ -88,8 +88,8 @@ public class PartitionPlanServiceV2Test extends ServiceTestEnv {
                 + "STR_TO_DATE(20240125, '%Y%m%d'))), '%Y%m%d'))");
         tableConfig.setPartitionNameInvokerParameters(getSqlExprBasedNameGeneratorParameters(config));
         int generateCount = 5;
-        PartitionPlanKeyConfig c3Create = getc3CreateConfig(generateCount);
-        PartitionPlanKeyConfig datekeyCreate = getdatekeyCreateConfig(generateCount);
+        PartitionPlanKeyConfig c3Create = getMysqlc3CreateConfig(generateCount);
+        PartitionPlanKeyConfig datekeyCreate = getMysqldatekeyCreateConfig(generateCount);
         tableConfig.setPartitionKeyConfigs(Arrays.asList(c3Create, datekeyCreate));
 
         TestDBConfiguration configuration = TestDBConfigurations.getInstance().getTestOBMysqlConfiguration();
@@ -140,8 +140,8 @@ public class PartitionPlanServiceV2Test extends ServiceTestEnv {
         config.setIntervalGenerateExpr("86400");
         tableConfig.setPartitionNameInvokerParameters(getSqlExprBasedNameGeneratorParameters(config));
         int generateCount = 5;
-        PartitionPlanKeyConfig c3Create = getc3CreateConfig(generateCount);
-        PartitionPlanKeyConfig datekeyCreate = getdatekeyCreateConfig(generateCount);
+        PartitionPlanKeyConfig c3Create = getMysqlc3CreateConfig(generateCount);
+        PartitionPlanKeyConfig datekeyCreate = getMysqldatekeyCreateConfig(generateCount);
         PartitionPlanKeyConfig dropConfig = getDropConfig();
         tableConfig.setPartitionKeyConfigs(Arrays.asList(c3Create, datekeyCreate, dropConfig));
 
@@ -177,8 +177,8 @@ public class PartitionPlanServiceV2Test extends ServiceTestEnv {
         config.setIntervalGenerateExpr("86400");
         tableConfig.setPartitionNameInvokerParameters(getSqlExprBasedNameGeneratorParameters(config));
         int generateCount = 5;
-        PartitionPlanKeyConfig c3Create = getc3CreateConfig(generateCount);
-        PartitionPlanKeyConfig datekeyCreate = getdatekeyCreateConfig(generateCount);
+        PartitionPlanKeyConfig c3Create = getMysqlc3CreateConfig(generateCount);
+        PartitionPlanKeyConfig datekeyCreate = getMysqldatekeyCreateConfig(generateCount);
         PartitionPlanKeyConfig dropConfig = getDropConfig();
         tableConfig.setPartitionKeyConfigs(Arrays.asList(c3Create, datekeyCreate, dropConfig));
 
@@ -204,12 +204,12 @@ public class PartitionPlanServiceV2Test extends ServiceTestEnv {
         PartitionPlanKeyConfig dropConfig = new PartitionPlanKeyConfig();
         dropConfig.setPartitionKey(null);
         dropConfig.setStrategy(PartitionPlanStrategy.DROP);
-        dropConfig.setPartitionKeyInvoker("KEEP_MOST_RECENT_GENERATOR");
+        dropConfig.setPartitionKeyInvoker("KEEP_MOST_LATEST_GENERATOR");
         dropConfig.setPartitionKeyInvokerParameters(getDropPartitionParameters(1));
         return dropConfig;
     }
 
-    private PartitionPlanKeyConfig getc3CreateConfig(int generateCount) {
+    private PartitionPlanKeyConfig getMysqlc3CreateConfig(int generateCount) {
         PartitionPlanKeyConfig c3Create = new PartitionPlanKeyConfig();
         c3Create.setPartitionKey("c3");
         c3Create.setStrategy(PartitionPlanStrategy.CREATE);
@@ -223,7 +223,7 @@ public class PartitionPlanServiceV2Test extends ServiceTestEnv {
         return c3Create;
     }
 
-    private PartitionPlanKeyConfig getdatekeyCreateConfig(int generateCount) {
+    private PartitionPlanKeyConfig getMysqldatekeyCreateConfig(int generateCount) {
         PartitionPlanKeyConfig datekeyCreate = new PartitionPlanKeyConfig();
         datekeyCreate.setPartitionKey("`datekey`");
         datekeyCreate.setStrategy(PartitionPlanStrategy.CREATE);
