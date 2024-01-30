@@ -45,15 +45,15 @@ public abstract class BaseJobTest {
     public static void init() throws IOException {
 
         TestDBConfiguration tdc = TestDBConfigurations.getInstance().getTestOBMysqlConfiguration();
-        System.setProperty(JobEnvKeyConstants.ODC_DATABASE_HOST, tdc.getHost());
-        System.setProperty(JobEnvKeyConstants.ODC_DATABASE_PORT, tdc.getPort() + "");
-        System.setProperty(JobEnvKeyConstants.ODC_DATABASE_NAME, tdc.getDefaultDBName());
-        System.setProperty(JobEnvKeyConstants.ODC_DATABASE_USERNAME,
+        System.setProperty(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_HOST, tdc.getHost());
+        System.setProperty(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_PORT, tdc.getPort() + "");
+        System.setProperty(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_NAME, tdc.getDefaultDBName());
+        System.setProperty(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_USERNAME,
                 JdbcUtil.buildUser(tdc.getUsername(), tdc.getTenant(), tdc.getCluster()));
-        System.setProperty(JobEnvKeyConstants.ODC_DATABASE_PASSWORD, tdc.getPassword());
+        System.setProperty(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_PASSWORD, tdc.getPassword());
         String port = "8990";
-        System.setProperty(JobEnvKeyConstants.ODC_SERVER_PORT, port);
         System.setProperty(JobEnvKeyConstants.REPORT_ENABLED, Boolean.FALSE.toString());
+        System.setProperty(JobEnvKeyConstants.ODC_EXECUTOR_USER_ID, "1");
 
         DefaultJobConfiguration jc = new DefaultJobConfiguration() {};
 

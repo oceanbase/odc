@@ -24,6 +24,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.scheduling.quartz.SchedulerFactoryBean;
 
 import com.oceanbase.odc.service.quartz.OdcJobListener;
@@ -64,12 +65,14 @@ public class QuartzConfiguration {
     @Lazy
     @Bean("taskFrameworkSchedulerFactoryBean")
     public SchedulerFactoryBean taskFrameworkSchedulerFactoryBean(DataSource dataSource,
-            TaskFrameworkProperties taskFrameworkProperties) {
+            TaskFrameworkProperties taskFrameworkProperties,
+            @Qualifier("taskFrameworkMonitorExecutor") ThreadPoolTaskExecutor executor) {
         SchedulerFactoryBean schedulerFactoryBean = new SchedulerFactoryBean();
         schedulerFactoryBean.setDataSource(dataSource);
         String taskFrameworkSchedulerName = "TASK-FRAMEWORK-SCHEDULER";
         schedulerFactoryBean.setSchedulerName(taskFrameworkSchedulerName);
         schedulerFactoryBean.setStartupDelay(taskFrameworkProperties.getQuartzStartDelaySeconds());
+        schedulerFactoryBean.setTaskExecutor(executor);
         return schedulerFactoryBean;
     }
 

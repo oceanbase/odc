@@ -24,6 +24,7 @@ import org.springframework.data.domain.Page;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
+import com.oceanbase.odc.service.task.config.JobConfigurationValidator;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.exception.TaskRuntimeException;
@@ -46,10 +47,8 @@ public class DestroyExecutorJob implements Job {
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {
         configuration = JobConfigurationHolder.getJobConfiguration();
-        if (configuration == null) {
-            log.debug("configuration is null, abort continue execute");
-            return;
-        }
+        JobConfigurationValidator.validComponent();
+
         // scan terminate job
         TaskFrameworkService taskFrameworkService = configuration.getTaskFrameworkService();
         TaskFrameworkProperties taskFrameworkProperties = configuration.getTaskFrameworkProperties();
@@ -59,27 +58,26 @@ public class DestroyExecutorJob implements Job {
             try {
                 destroyExecutor(taskFrameworkService, a);
             } catch (Throwable e) {
-                log.warn("Try to start job {} failed: ", a.getId(), e);
+                log.warn("Try to destroy failed, jobId={}.", a.getId(), e);
             }
         });
     }
 
-    private void destroyExecutor(TaskFrameworkService taskFrameworkService, JobEntity oldEntity) {
+    private void destroyExecutor(TaskFrameworkService taskFrameworkService, JobEntity jobEntity) {
         getConfiguration().getTransactionManager().doInTransactionWithoutResult(() -> {
-            JobEntity newEntity = taskFrameworkService.findWithPessimisticLock(oldEntity.getId());
+            JobEntity lockedEntity = taskFrameworkService.findWithPessimisticLock(jobEntity.getId());
 
-            if (newEntity.getStatus().isTerminated() && newEntity.getExecutorIdentifier() != null) {
-                log.info("Job {} current status is {}, prepare destroy executor.", newEntity.getId(),
-                        newEntity.getStatus());
+            if (lockedEntity.getStatus().isTerminated() && lockedEntity.getExecutorIdentifier() != null) {
+                log.info("Job prepare destroy executor, jobId={},status={}.", lockedEntity.getId(),
+                        lockedEntity.getStatus());
                 try {
-                    getConfiguration().getJobDispatcher().destroy(JobIdentity.of(newEntity.getId()));
+                    getConfiguration().getJobDispatcher().destroy(JobIdentity.of(lockedEntity.getId()));
                 } catch (JobException e) {
-                    log.warn("Destroy executor occur error: ", e);
+                    log.warn("Destroy executor occur error, jobId={}: ", lockedEntity.getId(), e);
                     throw new TaskRuntimeException(e);
                 }
-                log.info("Job {} destroy executor succeed.", newEntity.getId());
+                log.info("Job destroy executor succeed, jobId={}.", lockedEntity.getId());
             }
-            return null;
         });
     }
 

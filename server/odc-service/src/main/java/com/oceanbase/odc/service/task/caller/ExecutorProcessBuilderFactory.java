@@ -29,13 +29,14 @@ import com.oceanbase.odc.service.task.constants.JobConstants;
  * @date 2024-01-26
  * @since 4.2.4
  */
-public class JobProcessBuilder {
+public class ExecutorProcessBuilderFactory {
 
-    public ProcessBuilder build(Map<String, String> environments) {
+    public ProcessBuilder getProcessBuilder(Map<String, String> environments, String executorName) {
         RuntimeMXBean runtimeMxBean = ManagementFactory.getRuntimeMXBean();
         ProcessBuilder pb = new ProcessBuilder();
         List<String> commands = new ArrayList<>();
         commands.add("java");
+        commands.add("-D" + JobConstants.ODC_EXECUTOR_PROCESS_PROPERTIES_KEY + "=" + executorName);
         commands.addAll(jvmOptions());
         commands.add("-classpath");
         commands.add(runtimeMxBean.getClassPath());

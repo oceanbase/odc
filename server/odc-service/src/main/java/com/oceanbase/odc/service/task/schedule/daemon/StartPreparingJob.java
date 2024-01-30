@@ -25,10 +25,12 @@ import org.springframework.data.domain.Page;
 
 import com.google.common.collect.Lists;
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.common.trace.TraceContextHolder;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
+import com.oceanbase.odc.service.task.config.JobConfigurationValidator;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.exception.JobException;
@@ -54,10 +56,7 @@ public class StartPreparingJob implements Job {
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {
         configuration = JobConfigurationHolder.getJobConfiguration();
-        if (configuration == null) {
-            log.debug("configuration is null, abort continue execute");
-            return;
-        }
+        JobConfigurationValidator.validComponent();
         // scan preparing job
         TaskFrameworkService taskFrameworkService = configuration.getTaskFrameworkService();
         TaskFrameworkProperties taskFrameworkProperties = configuration.getTaskFrameworkProperties();
@@ -78,14 +77,21 @@ public class StartPreparingJob implements Job {
         });
     }
 
-    private void startJob(TaskFrameworkService taskFrameworkService, JobEntity oldEntity) {
+    private void startJob(TaskFrameworkService taskFrameworkService, JobEntity jobEntity) {
         getConfiguration().getTransactionManager().doInTransactionWithoutResult(() -> {
-            JobEntity je = taskFrameworkService.findWithPessimisticLock(oldEntity.getId());
+            JobEntity lockedEntity = taskFrameworkService.findWithPessimisticLock(jobEntity.getId());
 
-            if (je.getStatus() == JobStatus.PREPARING || je.getStatus() == JobStatus.RETRYING) {
+            if (lockedEntity.getStatus() == JobStatus.PREPARING || lockedEntity.getStatus() == JobStatus.RETRYING) {
+
+                // todo user id should be not null when submit job
+                if (jobEntity.getCreatorId() != null) {
+                    TraceContextHolder.setUserId(jobEntity.getCreatorId());
+                }
+
                 log.info("Job {} current status is {}, prepare start job.",
-                        je.getId(), je.getStatus());
-                JobContext jc = new DefaultJobContextBuilder().build(je, getConfiguration().getHostUrlProvider());
+                        lockedEntity.getId(), lockedEntity.getStatus());
+                JobContext jc =
+                        new DefaultJobContextBuilder().build(lockedEntity, getConfiguration().getHostUrlProvider());
                 try {
                     getConfiguration().getJobDispatcher().start(jc);
                 } catch (JobException e) {
@@ -94,9 +100,8 @@ public class StartPreparingJob implements Job {
                 }
             } else {
                 log.warn("Job {} current status is {} but not preparing or retrying, start explain is aborted.",
-                        je.getId(), je.getStatus());
+                        lockedEntity.getId(), lockedEntity.getStatus());
             }
-            return null;
         });
     }
 

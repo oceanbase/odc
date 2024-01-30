@@ -26,6 +26,7 @@ import org.springframework.data.domain.Page;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
+import com.oceanbase.odc.service.task.config.JobConfigurationValidator;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.exception.JobException;
@@ -50,10 +51,7 @@ public class DoCancelingJob implements Job {
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {
         configuration = JobConfigurationHolder.getJobConfiguration();
-        if (configuration == null) {
-            log.debug("configuration is null, abort continue execute");
-            return;
-        }
+        JobConfigurationValidator.validComponent();
         // scan preparing job
         TaskFrameworkService taskFrameworkService = configuration.getTaskFrameworkService();
         TaskFrameworkProperties taskFrameworkProperties = configuration.getTaskFrameworkProperties();
@@ -68,21 +66,21 @@ public class DoCancelingJob implements Job {
         });
     }
 
-    private void cancelJob(TaskFrameworkService taskFrameworkService, JobEntity oldEntity) {
+    private void cancelJob(TaskFrameworkService taskFrameworkService, JobEntity jobEntity) {
         getConfiguration().getTransactionManager().doInTransactionWithoutResult(() -> {
-            JobEntity newEntity = taskFrameworkService.findWithPessimisticLock(oldEntity.getId());
+            JobEntity lockedEntity = taskFrameworkService.findWithPessimisticLock(jobEntity.getId());
 
-            if (newEntity.getStatus() == JobStatus.CANCELING) {
-                log.info("Job {} current status is {}, prepare cancel.", newEntity.getId(), newEntity.getStatus());
+            if (lockedEntity.getStatus() == JobStatus.CANCELING) {
+                log.info("Job {} current status is {}, prepare cancel.", lockedEntity.getId(),
+                        lockedEntity.getStatus());
                 try {
-                    getConfiguration().getJobDispatcher().stop(JobIdentity.of(newEntity.getId()));
+                    getConfiguration().getJobDispatcher().stop(JobIdentity.of(lockedEntity.getId()));
                 } catch (JobException e) {
                     log.warn("Stop job occur error: ", e);
                     throw new TaskRuntimeException(e);
                 }
-                log.info("Job {} be cancelled successfully.", newEntity.getId());
+                log.info("Job {} be cancelled successfully.", lockedEntity.getId());
             }
-            return null;
         });
     }
 

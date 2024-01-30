@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.common.trace.TraceContextHolder;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.service.objectstorage.cloud.model.CloudEnvConfigurations;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
@@ -33,12 +34,11 @@ import com.oceanbase.odc.service.task.util.JobUtils;
  * @date 2024-01-22
  * @since 4.2.4
  */
-public class JobEnvBuilder {
+public class JobEnvironmentFactory {
 
-    private final Map<String, String> ENV_MAP = new HashMap<>();
+    private final Map<String, String> environments = new HashMap<>();
 
-    public Map<String, String> buildMap(JobContext context, TaskRunMode runMode) {
-
+    public Map<String, String> getEnvironments(JobContext context, TaskRunMode runMode) {
         putEnv(JobEnvKeyConstants.ODC_BOOT_MODE, () -> JobConstants.ODC_BOOT_MODE_EXECUTOR);
         putEnv(JobEnvKeyConstants.ODC_TASK_RUN_MODE, runMode::name);
         putEnv(JobEnvKeyConstants.ODC_JOB_CONTEXT, () -> JobUtils.toJson(context));
@@ -52,16 +52,19 @@ public class JobEnvBuilder {
         putEnv(JobEnvKeyConstants.ODC_LOG_DIRECTORY,
                 () -> SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_LOG_DIRECTORY));
         setDatabaseEnv();
-        return ENV_MAP;
+        if (TraceContextHolder.getUserId() != null) {
+            putEnv(JobEnvKeyConstants.ODC_EXECUTOR_USER_ID, () -> TraceContextHolder.getUserId() + "");
+        }
+        return environments;
 
     }
 
     private void setDatabaseEnv() {
-        putFromEnv(JobEnvKeyConstants.ODC_DATABASE_HOST);
-        putFromEnv(JobEnvKeyConstants.ODC_DATABASE_PORT);
-        putFromEnv(JobEnvKeyConstants.ODC_DATABASE_NAME);
-        putFromEnv(JobEnvKeyConstants.ODC_DATABASE_USERNAME);
-        putFromEnv(JobEnvKeyConstants.ODC_DATABASE_PASSWORD);
+        putFromEnv(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_HOST);
+        putFromEnv(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_PORT);
+        putFromEnv(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_NAME);
+        putFromEnv(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_USERNAME);
+        putFromEnv(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_PASSWORD);
     }
 
     private void putFromEnv(String envName) {
@@ -72,7 +75,7 @@ public class JobEnvBuilder {
     private void putEnv(String envName, Supplier<String> envSupplier) {
         String envValue;
         if ((envValue = envSupplier.get()) != null) {
-            ENV_MAP.put(envName, (envValue));
+            environments.put(envName, (envValue));
         }
     }
 

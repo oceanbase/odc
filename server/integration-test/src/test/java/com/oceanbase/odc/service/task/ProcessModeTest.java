@@ -28,11 +28,13 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
 import com.oceanbase.odc.TestConnectionUtil;
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
@@ -44,8 +46,8 @@ import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfigur
 import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfiguration.CloudProvider;
 import com.oceanbase.odc.service.plugin.PluginProperties;
 import com.oceanbase.odc.service.task.caller.JobContext;
-import com.oceanbase.odc.service.task.caller.JobEncryptInterceptor;
-import com.oceanbase.odc.service.task.caller.JobEnvBuilder;
+import com.oceanbase.odc.service.task.caller.JobEnvironmentEncryptor;
+import com.oceanbase.odc.service.task.caller.JobEnvironmentFactory;
 import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.odc.service.task.enums.TaskRunMode;
@@ -67,6 +69,12 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ProcessModeTest extends BaseJobTest {
 
+    private Long exceptedTaskId;
+
+    @Before
+    public void before() {
+        exceptedTaskId = System.currentTimeMillis();
+    }
 
     @Test
     public void test_start_task_process_mode() {
@@ -82,6 +90,8 @@ public class ProcessModeTest extends BaseJobTest {
         commands.addAll(runtimeMxBean.getInputArguments().stream()
                 .filter(c -> !c.startsWith("-agentlib") && !c.startsWith("-javaagent"))
                 .collect(Collectors.toList()));
+        commands.add(JobUtils.generateExecutorProcessProperties(
+                JobUtils.generateExecutorName(JobIdentity.of(exceptedTaskId))));
         commands.add("-classpath");
         commands.add(runtimeMxBean.getClassPath());
         commands.add(JobConstants.ODC_SERVER_CLASS_NAME);
@@ -98,6 +108,7 @@ public class ProcessModeTest extends BaseJobTest {
             log.error("start odc server error:", ex);
         } finally {
             if (process != null) {
+                log.info("Process id={}", SystemUtils.getProcessPid(process));
                 process.destroyForcibly();
             }
         }
@@ -113,14 +124,13 @@ public class ProcessModeTest extends BaseJobTest {
         JobIdentity jobIdentity = JobIdentity.of(exceptedTaskId);
         JobDefinition jd = buildJobDefinition();
         JobContext jc = new DefaultJobContextBuilder().build(jobIdentity, jd);
-        Map<String, String> envMap = new JobEnvBuilder().buildMap(jc, TaskRunMode.PROCESS);
-        new JobEncryptInterceptor().intercept(envMap);
+        Map<String, String> envMap = new JobEnvironmentFactory().getEnvironments(jc, TaskRunMode.PROCESS);
+        new JobEnvironmentEncryptor().encrypt(envMap);
 
         environment.putAll(envMap);
     }
 
     private JobDefinition buildJobDefinition() {
-        Long exceptedTaskId = System.currentTimeMillis();
         DatabaseChangeParameters parameters = new DatabaseChangeParameters();
         parameters.setSqlContent(String.format("CREATE TABLE %s (id int(10))", "t_" + exceptedTaskId));
         parameters.setErrorStrategy(TaskErrorStrategy.ABORT.name());

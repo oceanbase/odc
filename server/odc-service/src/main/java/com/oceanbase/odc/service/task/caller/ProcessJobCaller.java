@@ -16,12 +16,11 @@
 
 package com.oceanbase.odc.service.task.caller;
 
-import java.util.Date;
-
 import com.oceanbase.odc.common.util.SystemUtils;
+import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
-import com.oceanbase.odc.service.task.util.JobDateUtils;
+import com.oceanbase.odc.service.task.util.JobUtils;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -42,7 +41,9 @@ public class ProcessJobCaller extends BaseJobCaller {
     @Override
     protected ExecutorIdentifier doStart(JobContext context) throws JobException {
 
-        ProcessBuilder pb = new JobProcessBuilder().build(processConfig.getEnvironments());
+        String executorName = JobUtils.generateExecutorName(context.getJobIdentity());
+        ProcessBuilder pb = new ExecutorProcessBuilderFactory().getProcessBuilder(
+                processConfig.getEnvironments(), JobUtils.generateExecutorProcessProperties(executorName));
         Process process;
         try {
             process = pb.start();
@@ -50,15 +51,16 @@ public class ProcessJobCaller extends BaseJobCaller {
             throw new JobException("Start process failed.", ex);
         }
 
-        Date time = JobDateUtils.getCurrentDate();
         long pid = SystemUtils.getProcessPid(process);
         if (pid == -1) {
             process.destroyForcibly();
-            throw new JobException("Get pid failed,  job id " + context.getJobIdentity().getId());
+            throw new JobException("Get pid failed, job id={0} ", context.getJobIdentity().getId());
         }
 
-        return DefaultExecutorIdentifier.builder().host(SystemUtils.getLocalIpAddress()).namespace(time.getTime() + "")
-                .executorName(pid + "").build();
+        // set process id as namespace
+        return DefaultExecutorIdentifier.builder().host(SystemUtils.getLocalIpAddress())
+                .namespace(pid + "")
+                .executorName(executorName).build();
     }
 
     @Override
@@ -66,19 +68,16 @@ public class ProcessJobCaller extends BaseJobCaller {
 
     @Override
     protected void doDestroy(ExecutorIdentifier identifier) throws JobException {
-        if (SystemUtils.getLocalIpAddress().equals(identifier.getHost())) {
-            if (SystemUtils.isProcessRunning(Long.parseLong(identifier.getExecutorName()),
-                    Long.parseLong(identifier.getNamespace()))) {
-                log.info("Found process {}, kill it.", identifier.getExecutorName());
-                String executorName = identifier.getExecutorName();
-                boolean result = SystemUtils.killProcessByPid(Long.parseLong(executorName));
-                if (result) {
-                    log.info("Destroy identifier {} by kill pid {} succeed.", identifier,
-                            identifier.getExecutorName());
-                } else {
-                    throw new JobException("Destroy identifier" + identifier + " by kill pid " +
-                            identifier.getExecutorName() + "  failed.");
-                }
+        long pid = Long.parseLong(identifier.getNamespace());
+        String executorName = JobConstants.ODC_EXECUTOR_PROCESS_PROPERTIES_KEY + "=" + identifier.getExecutorName();
+        if (SystemUtils.isProcessRunning(pid, executorName)) {
+            log.info("Found process, try kill it, pid={}.", pid);
+            boolean result = SystemUtils.killProcessByPid(pid);
+            if (result) {
+                log.info("Destroy succeed by kill process, executorIdentifier={},  pid={}", identifier, pid);
+            } else {
+                throw new JobException(
+                        "Destroy executor failed by kill process, identifier={0}, pid{1}=", identifier, pid);
             }
         }
     }

@@ -59,7 +59,7 @@ public abstract class BaseJobCaller implements JobCaller {
                 afterStartSucceed(executorIdentifier, ji);
             } else {
                 afterStartFailed(ji, jobConfiguration, executorIdentifier,
-                        new JobException("Update job status to RUNNING failed."));
+                        new JobException("Update job status to RUNNING failed, jobId={0}.", ji.getId()));
             }
 
         } catch (Exception ex) {
@@ -83,7 +83,7 @@ public abstract class BaseJobCaller implements JobCaller {
             }
         }
         publishEvent(new JobCallerEvent(ji, JobCallerAction.START, false, ex));
-        throw new JobException(ex);
+        throw new JobException("Start job failed", ex);
     }
 
     @Override
@@ -125,7 +125,8 @@ public abstract class BaseJobCaller implements JobCaller {
         if (response != null && response.getSuccessful() && response.getData()) {
             afterStopSucceed(jobConfiguration, ji);
         } else {
-            afterStopFailed(ji, new JobException("Stop job response is " + response + ",not succeed"));
+            afterStopFailed(ji,
+                    new JobException("Stop job response not succeed, response={0}", JsonUtils.toJson(response)));
         }
     }
 
@@ -138,7 +139,7 @@ public abstract class BaseJobCaller implements JobCaller {
     protected void afterStopFailed(JobIdentity ji, Exception e) throws JobException {
         log.info("Stop job {} failed.", ji.getId());
         publishEvent(new JobCallerEvent(ji, JobCallerAction.STOP, false, null));
-        throw new JobException("job " + ji.getId() + "be stop failed.", e);
+        throw new JobException("job be stop failed, jobId={0}.", e, ji.getId());
     }
 
     @Override
@@ -151,7 +152,7 @@ public abstract class BaseJobCaller implements JobCaller {
         if (executorIdentifier == null) {
             return;
         }
-        log.info("Preparing destroy job {} executor {}.", ji.getId(), executorIdentifier);
+        log.info("Preparing destroy,jobId={}, executorIdentifier={}.", ji.getId(), executorIdentifier);
 
         destroy(ExecutorIdentifierParser.parser(executorIdentifier));
         int rows = taskFrameworkService.updateExecutorToDestroyed(ji.getId());
@@ -159,7 +160,7 @@ public abstract class BaseJobCaller implements JobCaller {
             log.info("Destroy job {} executor {} succeed.", ji.getId(), executorIdentifier);
             publishEvent(new JobCallerEvent(ji, JobCallerAction.DESTROY, true, null));
         } else {
-            throw new JobException("update executor to destroyed failed, executor is " + executorIdentifier);
+            throw new JobException("update executor to destroyed failed, executor={0}", executorIdentifier);
         }
     }
 

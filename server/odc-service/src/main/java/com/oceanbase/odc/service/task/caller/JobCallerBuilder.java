@@ -29,9 +29,9 @@ public class JobCallerBuilder {
 
     public static JobCaller buildProcessCaller(JobContext context) {
         ProcessConfig config = new ProcessConfig();
-        Map<String, String> maps = new JobEnvBuilder().buildMap(context, TaskRunMode.PROCESS);
-        new JobEncryptInterceptor().intercept(maps);
-        config.setEnvironments(maps);
+        Map<String, String> environments = new JobEnvironmentFactory().getEnvironments(context, TaskRunMode.PROCESS);
+        new JobEnvironmentEncryptor().encrypt(environments);
+        config.setEnvironments(environments);
 
         return new ProcessJobCaller(config);
     }
@@ -39,10 +39,10 @@ public class JobCallerBuilder {
     public static JobCaller buildK8sJobCaller(K8sJobClient k8sJobClient, PodConfig podConfig, JobContext context) {
 
         PodParam podParam = podConfig.getPodParam();
-        Map<String, String> maps = new JobEnvBuilder().buildMap(context, TaskRunMode.K8S);
-        new JobEncryptInterceptor().intercept(maps);
+        Map<String, String> environments = new JobEnvironmentFactory().getEnvironments(context, TaskRunMode.K8S);
+        new JobEnvironmentEncryptor().encrypt(environments);
 
-        podParam.setEnvironments(maps);
+        podParam.setEnvironments(environments);
         podParam.getEnvironments().putIfAbsent(JobEnvKeyConstants.ODC_LOG_DIRECTORY, podParam.getMountPath());
         return new K8sJobCaller(k8sJobClient, podConfig);
     }

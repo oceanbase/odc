@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.task.exception;
 
+import java.text.MessageFormat;
+
 /**
  * @author yaobin
  * @date 2023-11-15
@@ -22,17 +24,25 @@ package com.oceanbase.odc.service.task.exception;
  */
 public class JobException extends Exception {
 
-    public JobException() {}
-
-    public JobException(String message) {
-        super(message);
+    /**
+     * @param messagePattern message pattern, eg "id={0},name={1}"
+     * @param arguments message pattern arguments
+     */
+    public JobException(String messagePattern, Object... arguments) {
+        super(MessageFormat.format(messagePattern, arguments));
     }
 
     public JobException(String message, Throwable cause) {
         super(message, cause);
     }
 
-    public JobException(Throwable cause) {
-        super(cause);
+    /**
+     * @param messagePattern message pattern, eg "id={0},name={1}"
+     * @param cause origin exception
+     * @param arguments message pattern arguments
+     */
+    public JobException(String messagePattern, Throwable cause, Object... arguments) {
+        super(MessageFormat.format(messagePattern, arguments), cause);
     }
+
 }

@@ -191,7 +191,7 @@ public abstract class SystemUtils {
         });
     }
 
-    public static boolean isProcessRunning(long pid, long unixStampMillSeconds) {
+    public static boolean isProcessRunning(long pid, String processSelector) {
         if (-1 == pid) {
             throw new IllegalArgumentException("query process by illegal argument pid: " + pid);
         }
@@ -199,24 +199,17 @@ public abstract class SystemUtils {
         if (isOnWindows()) {
             // tasklist exit code is always 0. Parse output
             // findstr exit code 0 if found pid, 1 if it doesn't
-            command = "cmd.exe /c \"tasklist /FI \"PID eq " + pid + "\" | findstr " + pid + "\"";
+            command = "cmd.exe /c \"tasklist /FI \"PID eq " + pid + "\" | findstr " + processSelector + "\"";
         } else {
             // ps -p pid -o lstart= | xargs -i date -d {} +%s
-            // echo process start seconds from 1970-01-01
-            command = "ps -p " + pid + " -o lstart=";
+            command = "ps -p " + pid + " grep '" + processSelector + "'";
         }
         return executeCommand(command, reader -> {
             boolean result = false;
             try {
                 String line;
                 if ((line = reader.readLine()) != null) {
-                    if (isOnWindows()) {
-                        // todo windows get process start time
-                        result = true;
-                    } else {
-                        Date date = ShellDateUtils.parseWithWeek(line);
-                        result = Math.abs(unixStampMillSeconds - date.getTime()) / 1000 <= 2;
-                    }
+                    result = true;
                 }
             } catch (IOException e) {
                 log.warn("Reader from process output failed.", e);

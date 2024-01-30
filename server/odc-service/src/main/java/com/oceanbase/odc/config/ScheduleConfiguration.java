@@ -214,6 +214,22 @@ public class ScheduleConfiguration {
         return executor;
     }
 
+    @Bean(name = "taskFrameworkMonitorExecutor")
+    public ThreadPoolTaskExecutor taskFrameworkMonitorExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        int poolSize = Math.max(SystemUtils.availableProcessors() * 8, 128);
+        executor.setCorePoolSize(poolSize);
+        executor.setMaxPoolSize(poolSize);
+        executor.setThreadNamePrefix("task-framework-monitoring-");
+        executor.setWaitForTasksToCompleteOnShutdown(true);
+        executor.setAwaitTerminationSeconds(5);
+        executor.setTaskDecorator(new TraceDecorator<>());
+        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.DiscardPolicy());
+        executor.initialize();
+        log.info("taskFrameworkMonitorExecutor initialized");
+        return executor;
+    }
+
     @Scheduled(fixedDelay = REFRESH_CONFIG_RATE_MILLIS)
     public void refreshSysConfig() {
         systemConfigService.refresh();

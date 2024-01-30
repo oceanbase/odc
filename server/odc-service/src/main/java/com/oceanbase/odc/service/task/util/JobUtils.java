@@ -18,10 +18,12 @@ package com.oceanbase.odc.service.task.util;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Objects;
 import java.util.Optional;
 
 import com.google.gson.Gson;
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfiguration;
@@ -42,8 +44,12 @@ public class JobUtils {
 
     private static final DateTimeFormatter DTF = DateTimeFormatter.ofPattern("yyyyMMddHHmmssSSS");
 
-    public static String generateJobName(JobIdentity ji) {
+    public static String generateExecutorName(JobIdentity ji) {
         return JobConstants.TEMPLATE_JOB_NAME_PREFIX + ji.getId() + "-" + LocalDateTime.now().format(DTF);
+    }
+
+    public static String generateExecutorProcessProperties(String executorName) {
+        return "-D" + JobConstants.ODC_EXECUTOR_PROCESS_PROPERTIES_KEY + "=" + executorName;
     }
 
     public static String toJson(Object obj) {
@@ -55,18 +61,10 @@ public class JobUtils {
         return new Gson().toJson(obj);
     }
 
-
-    public static int getOdcServerPort() {
-        String port = SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_SERVER_PORT);
-        return port != null ? Integer.parseInt(port) : 8989;
-    }
-
     public static Optional<Integer> getExecutorPort() {
         String port = SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_EXECUTOR_PORT);
         return port != null ? Optional.of(Integer.parseInt(port)) : Optional.empty();
     }
-
-
 
     public static void setExecutorPort(int port) {
         System.setProperty(JobEnvKeyConstants.ODC_EXECUTOR_PORT, port + "");
@@ -101,12 +99,12 @@ public class JobUtils {
 
     public static ConnectionConfig getMetaDBConnectionConfig() {
         ConnectionConfig config = new ConnectionConfig();
-        config.setHost(System.getProperty(JobEnvKeyConstants.ODC_DATABASE_HOST));
-        String port = System.getProperty(JobEnvKeyConstants.ODC_DATABASE_PORT);
+        config.setHost(System.getProperty(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_HOST));
+        String port = System.getProperty(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_PORT);
         config.setPort(port != null ? Integer.parseInt(port) : 8989);
-        config.setDefaultSchema(System.getProperty(JobEnvKeyConstants.ODC_DATABASE_NAME));
-        config.setUsername(System.getProperty(JobEnvKeyConstants.ODC_DATABASE_USERNAME));
-        config.setPassword(System.getProperty(JobEnvKeyConstants.ODC_DATABASE_PASSWORD));
+        config.setDefaultSchema(System.getProperty(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_NAME));
+        config.setUsername(System.getProperty(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_USERNAME));
+        config.setPassword(System.getProperty(JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_PASSWORD));
         config.setId(1L);
         return config;
     }
@@ -119,5 +117,19 @@ public class JobUtils {
             return Optional.of(storageConfig);
         }
         return Optional.empty();
+    }
+
+    public static Long getUserId() {
+        String userId = SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_EXECUTOR_USER_ID);
+        return StringUtils.isNotBlank(userId) ? Long.parseLong(userId) : 1L;
+    }
+
+    public static boolean isReportEnabled() {
+        return !isReportDisabled();
+    }
+
+    public static boolean isReportDisabled() {
+        String reportEnabledValue = SystemUtils.getEnvOrProperty(JobEnvKeyConstants.REPORT_ENABLED);
+        return reportEnabledValue != null && Objects.equals(Boolean.valueOf(reportEnabledValue), Boolean.FALSE);
     }
 }
