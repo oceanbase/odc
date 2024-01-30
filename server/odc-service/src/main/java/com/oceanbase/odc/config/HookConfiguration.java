@@ -111,7 +111,7 @@ public class HookConfiguration {
         });
         log.info("PreDeleteEnvironmentHooks added");
 
-        environmentService.addDisableHook(event -> checkRiskLevelReference(event.getId(), event.getOrganizationId()));
+        environmentService.addDisableHook(event -> checkDataSourceReference(event.getId(), event.getOrganizationId()));
         log.info("PreDisableEnvironmentHooks added");
     }
 
