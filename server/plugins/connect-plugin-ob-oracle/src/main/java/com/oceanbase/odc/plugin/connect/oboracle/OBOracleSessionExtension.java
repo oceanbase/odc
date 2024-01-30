@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.plugin.connect.oboracle;
 
+import java.lang.reflect.Proxy;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Objects;
@@ -24,6 +25,7 @@ import org.pf4j.Extension;
 import com.oceanbase.jdbc.OceanBaseConnection;
 import com.oceanbase.odc.common.util.JdbcOperationsUtil;
 import com.oceanbase.odc.common.util.StringUtils;
+import com.oceanbase.odc.core.datasource.SingleConnectionDataSource.CloseIgnoreInvocationHandler;
 import com.oceanbase.odc.plugin.connect.api.SessionExtensionPoint;
 
 import lombok.extern.slf4j.Slf4j;
@@ -67,6 +69,9 @@ public class OBOracleSessionExtension implements SessionExtensionPoint {
         } catch (Exception e) {
             if (connection instanceof OceanBaseConnection) {
                 connectionId = ((OceanBaseConnection) connection).getServerThreadId() + "";
+            } else if (Proxy.isProxyClass(connection.getClass())) {
+                Connection actual = ((CloseIgnoreInvocationHandler) Proxy.getInvocationHandler(connection)).getTarget();
+                connectionId = ((OceanBaseConnection) actual).getServerThreadId() + "";
             }
         }
         return connectionId;

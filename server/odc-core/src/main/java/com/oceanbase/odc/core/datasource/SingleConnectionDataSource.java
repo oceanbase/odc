@@ -206,7 +206,7 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
      * @since ODC_release_3.2.2
      * @see java.lang.reflect.InvocationHandler
      */
-    private static class CloseIgnoreInvocationHandler implements InvocationHandler {
+    public static class CloseIgnoreInvocationHandler implements InvocationHandler {
         private final Connection target;
         private final Lock lock;
 
@@ -242,6 +242,11 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
                 throw ex.getTargetException();
             }
         }
+
+        public Connection getTarget() {
+            return target;
+        }
+
     }
 
 }
