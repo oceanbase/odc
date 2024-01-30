@@ -43,7 +43,7 @@ public interface KeepMostRecentPartitionGenerator extends DropPartitionGenerator
 
     @Override
     default String getName() {
-        return "KEEP_MOST_RECENT_GENERATOR";
+        return "KEEP_MOST_LATEST_GENERATOR";
     }
 
     @Override

@@ -192,7 +192,7 @@ public class PartitionPlanServiceV2 {
                 throw new IllegalStateException(e);
             }
             return definition;
-        }).filter(d -> removeExistingPartitionElement(dbTable, d)).collect(Collectors.toList()));
+        }).filter(d -> removeExistingPartitionElement(dbTable, d, extensionPoint)).collect(Collectors.toList()));
         strategyListMap.put(PartitionPlanStrategy.DROP, droppedPartitions);
         DBTablePartition partition = dbTable.getPartition();
         return strategyListMap.entrySet().stream().filter(e -> CollectionUtils.isNotEmpty(e.getValue()))
@@ -206,9 +206,11 @@ public class PartitionPlanServiceV2 {
                 }));
     }
 
-    private boolean removeExistingPartitionElement(DBTable dbTable, DBTablePartitionDefinition definition) {
+    private boolean removeExistingPartitionElement(DBTable dbTable, DBTablePartitionDefinition definition,
+            AutoPartitionExtensionPoint extensionPoint) {
         return dbTable.getPartition().getPartitionDefinitions().stream().noneMatch(i -> {
-            if (Objects.equals(i.getName(), definition.getName())) {
+            if (Objects.equals(extensionPoint.unquoteIdentifier(i.getName()),
+                    extensionPoint.unquoteIdentifier(definition.getName()))) {
                 return true;
             }
             int size = Math.min(i.getMaxValues().size(), definition.getMaxValues().size());

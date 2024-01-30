@@ -244,7 +244,7 @@ public class OBMySQLAutoPartitionExtensionPointTest {
                     configuration.getDefaultDBName(), REAL_RANGE_TABLE_NAME);
             AutoPartitionExtensionPoint extensionPoint = new OBMySQLAutoPartitionExtensionPoint();
             DropPartitionGenerator generator = extensionPoint
-                    .getDropPartitionGeneratorByName("KEEP_MOST_RECENT_GENERATOR");
+                    .getDropPartitionGeneratorByName("KEEP_MOST_LATEST_GENERATOR");
             List<DBTablePartitionDefinition> toDelete = generator.invoke(connection,
                     dbTable, getDropPartitionParameters(1));
             DBTablePartition dbTablePartition = new DBTablePartition();
