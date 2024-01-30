@@ -138,16 +138,16 @@ public class OBOracleAutoPartitionExtensionPointTest {
             partition.setSchemaName(dbTable.getSchemaName());
             List<String> actuals = extensionPoint.generateCreatePartitionDdls(connection, partition);
             List<String> expects = Collections.singletonList(String.format("ALTER TABLE %s.%s ADD \n"
-                    + "\tPARTITION \"P20240225\" VALUES LESS THAN (TO_DATE('2024-12-31 23:59:59', 'YYYY-MM-DD HH24:MI:SS'),"
-                    + "TO_TIMESTAMP('2024-01-25 00:00:00', 'YYYY-MM-DD HH24:MI:SS')),\n"
-                    + "\tPARTITION \"P20240325\" VALUES LESS THAN (TO_DATE('2025-12-31 23:59:59', 'YYYY-MM-DD HH24:MI:SS'),"
-                    + "TO_TIMESTAMP('2024-01-26 00:00:00', 'YYYY-MM-DD HH24:MI:SS')),\n"
-                    + "\tPARTITION \"P20240425\" VALUES LESS THAN (TO_DATE('2026-12-31 23:59:59', 'YYYY-MM-DD HH24:MI:SS'),"
-                    + "TO_TIMESTAMP('2024-01-27 00:00:00', 'YYYY-MM-DD HH24:MI:SS')),\n"
-                    + "\tPARTITION \"P20240525\" VALUES LESS THAN (TO_DATE('2027-12-31 23:59:59', 'YYYY-MM-DD HH24:MI:SS'),"
-                    + "TO_TIMESTAMP('2024-01-28 00:00:00', 'YYYY-MM-DD HH24:MI:SS')),\n"
-                    + "\tPARTITION \"P20240625\" VALUES LESS THAN (TO_DATE('2028-12-31 23:59:59', 'YYYY-MM-DD HH24:MI:SS'),"
-                    + "TO_TIMESTAMP('2024-01-29 00:00:00', 'YYYY-MM-DD HH24:MI:SS'));\n",
+                    + "\tPARTITION \"P20240225\" VALUES LESS THAN (TO_DATE(' 2024-12-31 23:59:59', "
+                    + "'SYYYY-MM-DD HH24:MI:SS', 'NLS_CALENDAR=GREGORIAN'),Timestamp '2024-01-25 00:00:00'),\n"
+                    + "\tPARTITION \"P20240325\" VALUES LESS THAN (TO_DATE(' 2025-12-31 23:59:59', "
+                    + "'SYYYY-MM-DD HH24:MI:SS', 'NLS_CALENDAR=GREGORIAN'),Timestamp '2024-01-26 00:00:00'),\n"
+                    + "\tPARTITION \"P20240425\" VALUES LESS THAN (TO_DATE(' 2026-12-31 23:59:59', "
+                    + "'SYYYY-MM-DD HH24:MI:SS', 'NLS_CALENDAR=GREGORIAN'),Timestamp '2024-01-27 00:00:00'),\n"
+                    + "\tPARTITION \"P20240525\" VALUES LESS THAN (TO_DATE(' 2027-12-31 23:59:59', "
+                    + "'SYYYY-MM-DD HH24:MI:SS', 'NLS_CALENDAR=GREGORIAN'),Timestamp '2024-01-28 00:00:00'),\n"
+                    + "\tPARTITION \"P20240625\" VALUES LESS THAN (TO_DATE(' 2028-12-31 23:59:59', "
+                    + "'SYYYY-MM-DD HH24:MI:SS', 'NLS_CALENDAR=GREGORIAN'),Timestamp '2024-01-29 00:00:00');\n",
                     configuration.getDefaultDBName(), RANGE_TABLE_NAME));
             Assert.assertEquals(expects, actuals);
         }
@@ -169,7 +169,7 @@ public class OBOracleAutoPartitionExtensionPointTest {
                     configuration.getDefaultDBName(), RANGE_TABLE_NAME);
             AutoPartitionExtensionPoint extensionPoint = new OBOracleAutoPartitionExtensionPoint();
             DropPartitionGenerator generator = extensionPoint
-                    .getDropPartitionGeneratorByName("KEEP_MOST_RECENT_GENERATOR");
+                    .getDropPartitionGeneratorByName("KEEP_MOST_LATEST_GENERATOR");
             List<DBTablePartitionDefinition> toDelete = generator.invoke(connection,
                     dbTable, getDropPartitionParameters(1));
             DBTablePartition dbTablePartition = new DBTablePartition();
@@ -192,7 +192,7 @@ public class OBOracleAutoPartitionExtensionPointTest {
                     configuration.getDefaultDBName(), RANGE_TABLE_NAME);
             AutoPartitionExtensionPoint extensionPoint = new OBOracleAutoPartitionExtensionPoint();
             DropPartitionGenerator generator = extensionPoint
-                    .getDropPartitionGeneratorByName("KEEP_MOST_RECENT_GENERATOR");
+                    .getDropPartitionGeneratorByName("KEEP_MOST_LATEST_GENERATOR");
             List<DBTablePartitionDefinition> toDelete = generator.invoke(connection,
                     dbTable, getDropPartitionParameters(1));
             DBTablePartition dbTablePartition = new DBTablePartition();

@@ -55,7 +55,8 @@ public class OBOracleDateTypeProcessor implements CellDataProcessor {
             throw new IllegalStateException("Illegal mapping data, actual: " + result);
         }
         DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        return "TO_DATE('" + dateFormat.format(new Date(result.getTimestamp())) + "', 'YYYY-MM-DD HH24:MI:SS')";
+        return "TO_DATE(' " + dateFormat.format(new Date(result.getTimestamp()))
+                + "', 'SYYYY-MM-DD HH24:MI:SS', 'NLS_CALENDAR=GREGORIAN')";
     }
 
     @Override

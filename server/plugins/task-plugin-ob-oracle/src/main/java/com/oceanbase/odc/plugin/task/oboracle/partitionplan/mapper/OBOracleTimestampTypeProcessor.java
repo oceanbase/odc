@@ -54,7 +54,7 @@ public class OBOracleTimestampTypeProcessor implements CellDataProcessor {
             throw new IllegalStateException("Illegal mapping data, actual: " + result);
         }
         DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        return "TO_TIMESTAMP('" + dateFormat.format(new Date(result.getTimestamp())) + "', 'YYYY-MM-DD HH24:MI:SS')";
+        return "Timestamp '" + dateFormat.format(new Date(result.getTimestamp())) + "'";
     }
 
     @Override

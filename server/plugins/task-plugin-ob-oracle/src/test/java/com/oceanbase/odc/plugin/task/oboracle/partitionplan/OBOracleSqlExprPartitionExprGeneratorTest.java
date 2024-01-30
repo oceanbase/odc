@@ -80,11 +80,12 @@ public class OBOracleSqlExprPartitionExprGeneratorTest {
             config.setGenerateExpr(PartitionPlanVariableKey.LAST_PARTITION_VALUE.getVariable()
                     + " + " + PartitionPlanVariableKey.INTERVAL.getVariable());
             List<String> actuals = generator.invoke(connection, dbTable, getParameters(config, 5, "c1"));
-            List<String> expects = Arrays.asList("TO_DATE('2024-12-31 23:59:59', 'YYYY-MM-DD HH24:MI:SS')",
-                    "TO_DATE('2025-12-31 23:59:59', 'YYYY-MM-DD HH24:MI:SS')",
-                    "TO_DATE('2026-12-31 23:59:59', 'YYYY-MM-DD HH24:MI:SS')",
-                    "TO_DATE('2027-12-31 23:59:59', 'YYYY-MM-DD HH24:MI:SS')",
-                    "TO_DATE('2028-12-31 23:59:59', 'YYYY-MM-DD HH24:MI:SS')");
+            List<String> expects = Arrays.asList(
+                    "TO_DATE(' 2024-12-31 23:59:59', 'SYYYY-MM-DD HH24:MI:SS', 'NLS_CALENDAR=GREGORIAN')",
+                    "TO_DATE(' 2025-12-31 23:59:59', 'SYYYY-MM-DD HH24:MI:SS', 'NLS_CALENDAR=GREGORIAN')",
+                    "TO_DATE(' 2026-12-31 23:59:59', 'SYYYY-MM-DD HH24:MI:SS', 'NLS_CALENDAR=GREGORIAN')",
+                    "TO_DATE(' 2027-12-31 23:59:59', 'SYYYY-MM-DD HH24:MI:SS', 'NLS_CALENDAR=GREGORIAN')",
+                    "TO_DATE(' 2028-12-31 23:59:59', 'SYYYY-MM-DD HH24:MI:SS', 'NLS_CALENDAR=GREGORIAN')");
             Assert.assertEquals(expects, actuals);
         }
     }

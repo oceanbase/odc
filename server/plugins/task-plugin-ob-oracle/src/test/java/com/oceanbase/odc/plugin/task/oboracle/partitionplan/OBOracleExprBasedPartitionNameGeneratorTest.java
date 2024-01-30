@@ -54,11 +54,11 @@ public class OBOracleExprBasedPartitionNameGeneratorTest {
             SqlExprBasedGeneratorConfig config = new SqlExprBasedGeneratorConfig();
             config.setGenerateExpr("CONCAT('P', TO_CHAR(SYSDATE + "
                     + PartitionPlanVariableKey.INTERVAL.getVariable() + ", 'YYYYMMDD'))");
-            config.setIntervalGenerateExpr("NUMTOYMINTERVAL(1, 'MONTH')");
+            config.setIntervalGenerateExpr("NUMTOYMINTERVAL(1, 'YEAR')");
             String actual = generator.invoke(connection, dbTable, getParameters(0, config));
             DateFormat dateFormat = new SimpleDateFormat("yyyyMMdd");
             Calendar calendar = Calendar.getInstance();
-            calendar.add(Calendar.MONTH, 1);
+            calendar.add(Calendar.YEAR, 1);
             String expect = "P" + dateFormat.format(calendar.getTime());
             Assert.assertEquals(expect, actual);
         }

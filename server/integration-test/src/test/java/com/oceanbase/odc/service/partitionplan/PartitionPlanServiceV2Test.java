@@ -198,14 +198,14 @@ public class PartitionPlanServiceV2Test extends ServiceTestEnv {
                     "ALTER TABLE %s.%s DROP PARTITION (P1, P0) UPDATE GLOBAL INDEXES;",
                     configuration.getDefaultDBName(), ORACLE_RANGE_TABLE_NAME)));
             expect.put(PartitionPlanStrategy.CREATE, Collections.singletonList(String.format("ALTER TABLE %s.%s ADD \n"
-                    + "\tPARTITION \"P20240225\" VALUES LESS THAN (TO_DATE('2024-01-25 00:00:00', "
-                    + "'YYYY-MM-DD HH24:MI:SS'),TO_TIMESTAMP('2025-12-31 23:59:59', 'YYYY-MM-DD HH24:MI:SS')),\n"
-                    + "\tPARTITION \"P20240325\" VALUES LESS THAN (TO_DATE('2024-01-26 00:00:00', "
-                    + "'YYYY-MM-DD HH24:MI:SS'),TO_TIMESTAMP('2026-12-31 23:59:59', 'YYYY-MM-DD HH24:MI:SS')),\n"
-                    + "\tPARTITION \"P20240525\" VALUES LESS THAN (TO_DATE('2024-01-28 00:00:00', "
-                    + "'YYYY-MM-DD HH24:MI:SS'),TO_TIMESTAMP('2028-12-31 23:59:59', 'YYYY-MM-DD HH24:MI:SS')),\n"
-                    + "\tPARTITION \"P20240625\" VALUES LESS THAN (TO_DATE('2024-01-29 00:00:00', "
-                    + "'YYYY-MM-DD HH24:MI:SS'),TO_TIMESTAMP('2029-12-31 23:59:59', 'YYYY-MM-DD HH24:MI:SS'));\n",
+                    + "\tPARTITION \"P20240225\" VALUES LESS THAN (TO_DATE(' 2024-01-25 00:00:00', "
+                    + "'SYYYY-MM-DD HH24:MI:SS', 'NLS_CALENDAR=GREGORIAN'),Timestamp '2025-12-31 23:59:59'),\n"
+                    + "\tPARTITION \"P20240325\" VALUES LESS THAN (TO_DATE(' 2024-01-26 00:00:00', "
+                    + "'SYYYY-MM-DD HH24:MI:SS', 'NLS_CALENDAR=GREGORIAN'),Timestamp '2026-12-31 23:59:59'),\n"
+                    + "\tPARTITION \"P20240525\" VALUES LESS THAN (TO_DATE(' 2024-01-28 00:00:00', "
+                    + "'SYYYY-MM-DD HH24:MI:SS', 'NLS_CALENDAR=GREGORIAN'),Timestamp '2028-12-31 23:59:59'),\n"
+                    + "\tPARTITION \"P20240625\" VALUES LESS THAN (TO_DATE(' 2024-01-29 00:00:00', "
+                    + "'SYYYY-MM-DD HH24:MI:SS', 'NLS_CALENDAR=GREGORIAN'),Timestamp '2029-12-31 23:59:59');\n",
                     configuration.getDefaultDBName(), ORACLE_RANGE_TABLE_NAME)));
             Assert.assertEquals(expect, actual);
         }

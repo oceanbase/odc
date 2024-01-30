@@ -109,8 +109,7 @@ public class OBOracleTimeIncreasePartitionExprGeneratorTest {
                 int month = calendar.get(Calendar.MONTH) + 1;
                 int day = calendar.get(Calendar.DAY_OF_MONTH);
                 int hour = calendar.get(Calendar.HOUR_OF_DAY);
-                expects.add(String.format("TO_TIMESTAMP('%04d-%02d-%02d %02d:00:00', 'YYYY-MM-DD HH24:MI:SS')",
-                        year, month, day, hour));
+                expects.add(String.format("Timestamp '%04d-%02d-%02d %02d:00:00'", year, month, day, hour));
                 calendar.add(Calendar.HOUR_OF_DAY, 5);
             } while ((++i) < 5);
             Assert.assertEquals(expects, actuals);
@@ -138,7 +137,9 @@ public class OBOracleTimeIncreasePartitionExprGeneratorTest {
             do {
                 int year = calendar.get(Calendar.YEAR);
                 int month = calendar.get(Calendar.MONTH) + 1;
-                expects.add(String.format("TO_DATE('%04d-%02d-01 00:00:00', 'YYYY-MM-DD HH24:MI:SS')", year, month));
+                expects.add(String.format(
+                        "TO_DATE(' %04d-%02d-01 00:00:00', 'SYYYY-MM-DD HH24:MI:SS', 'NLS_CALENDAR=GREGORIAN')",
+                        year, month));
                 calendar.add(Calendar.MONTH, 5);
             } while ((++i) < 5);
             Assert.assertEquals(expects, actuals);
