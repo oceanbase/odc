@@ -58,30 +58,30 @@ import com.oceanbase.odc.test.database.TestDBConfigurations;
  */
 public class PartitionPlanServiceV2Test extends ServiceTestEnv {
 
-    public static final String REAL_RANGE_TABLE_NAME = "range_svc_parti_tbl";
-    public static final String OVERLAP_RANGE_TABLE_NAME = "range_svc_parti_overlap_tbl";
+    public static final String MYSQL_REAL_RANGE_TABLE_NAME = "range_svc_parti_tbl";
+    public static final String MYSQL_OVERLAP_RANGE_TABLE_NAME = "range_svc_parti_overlap_tbl";
     @Autowired
     private PartitionPlanServiceV2 partitionPlanService;
 
     @BeforeClass
     public static void setUp() throws IOException {
-        JdbcTemplate oracle = new JdbcTemplate(TestDBConfigurations.getInstance()
+        JdbcTemplate mysql = new JdbcTemplate(TestDBConfigurations.getInstance()
                 .getTestOBMysqlConfiguration().getDataSource());
-        getDdlContent().forEach(oracle::execute);
+        getOBMysqlDdlContent().forEach(mysql::execute);
     }
 
     @AfterClass
     public static void clear() {
-        JdbcTemplate oracle = new JdbcTemplate(TestDBConfigurations.getInstance()
+        JdbcTemplate mysql = new JdbcTemplate(TestDBConfigurations.getInstance()
                 .getTestOBMysqlConfiguration().getDataSource());
-        oracle.execute("DROP TABLE " + REAL_RANGE_TABLE_NAME);
-        oracle.execute("DROP TABLE " + OVERLAP_RANGE_TABLE_NAME);
+        mysql.execute("DROP TABLE " + MYSQL_REAL_RANGE_TABLE_NAME);
+        mysql.execute("DROP TABLE " + MYSQL_OVERLAP_RANGE_TABLE_NAME);
     }
 
     @Test
-    public void generatePartitionDdl_onlyCreate_generateSucceed() throws Exception {
+    public void generatePartitionDdl_mysqlOnlyCreate_generateSucceed() throws Exception {
         PartitionPlanTableConfig tableConfig = new PartitionPlanTableConfig();
-        tableConfig.setTableName(REAL_RANGE_TABLE_NAME);
+        tableConfig.setTableName(MYSQL_REAL_RANGE_TABLE_NAME);
         tableConfig.setPartitionNameInvoker("CUSTOM_PARTITION_NAME_GENERATOR");
         SqlExprBasedGeneratorConfig config = new SqlExprBasedGeneratorConfig();
         config.setGenerateExpr("concat('p', date_format(from_unixtime(unix_timestamp("
@@ -104,15 +104,15 @@ public class PartitionPlanServiceV2Test extends ServiceTestEnv {
                             + "\tPARTITION `p20240125` VALUES LESS THAN (20220803,'2024-01-27'),\n"
                             + "\tPARTITION `p20240125` VALUES LESS THAN (20220804,'2024-01-28'),\n"
                             + "\tPARTITION `p20240125` VALUES LESS THAN (20220805,'2024-01-29'));\n",
-                    configuration.getDefaultDBName(), REAL_RANGE_TABLE_NAME)));
+                    configuration.getDefaultDBName(), MYSQL_REAL_RANGE_TABLE_NAME)));
             Assert.assertEquals(expect, actual);
         }
     }
 
     @Test
-    public void generatePartitionDdl_onlyDrop_generateSucceed() throws Exception {
+    public void generatePartitionDdl_mysqlOnlyDrop_generateSucceed() throws Exception {
         PartitionPlanTableConfig tableConfig = new PartitionPlanTableConfig();
-        tableConfig.setTableName(REAL_RANGE_TABLE_NAME);
+        tableConfig.setTableName(MYSQL_REAL_RANGE_TABLE_NAME);
         PartitionPlanKeyConfig dropConfig = getDropConfig();
         tableConfig.setPartitionKeyConfigs(Collections.singletonList(dropConfig));
 
@@ -123,15 +123,15 @@ public class PartitionPlanServiceV2Test extends ServiceTestEnv {
             Map<PartitionPlanStrategy, List<String>> expect = new HashMap<>();
             expect.put(PartitionPlanStrategy.DROP, Collections.singletonList(String.format(
                     "ALTER TABLE %s.%s DROP PARTITION (p20220830, p20220829);\n",
-                    configuration.getDefaultDBName(), REAL_RANGE_TABLE_NAME)));
+                    configuration.getDefaultDBName(), MYSQL_REAL_RANGE_TABLE_NAME)));
             Assert.assertEquals(expect, actual);
         }
     }
 
     @Test
-    public void generatePartitionDdl_bothCreateAndDrop_generateSucceed() throws Exception {
+    public void generatePartitionDdl_mysqlBothCreateAndDrop_generateSucceed() throws Exception {
         PartitionPlanTableConfig tableConfig = new PartitionPlanTableConfig();
-        tableConfig.setTableName(REAL_RANGE_TABLE_NAME);
+        tableConfig.setTableName(MYSQL_REAL_RANGE_TABLE_NAME);
         tableConfig.setPartitionNameInvoker("CUSTOM_PARTITION_NAME_GENERATOR");
         SqlExprBasedGeneratorConfig config = new SqlExprBasedGeneratorConfig();
         config.setGenerateExpr("concat('p', date_format(from_unixtime(unix_timestamp("
@@ -152,7 +152,7 @@ public class PartitionPlanServiceV2Test extends ServiceTestEnv {
             Map<PartitionPlanStrategy, List<String>> expect = new HashMap<>();
             expect.put(PartitionPlanStrategy.DROP, Collections.singletonList(String.format(
                     "ALTER TABLE %s.%s DROP PARTITION (p20220830, p20220829);\n",
-                    configuration.getDefaultDBName(), REAL_RANGE_TABLE_NAME)));
+                    configuration.getDefaultDBName(), MYSQL_REAL_RANGE_TABLE_NAME)));
             expect.put(PartitionPlanStrategy.CREATE, Collections.singletonList(String.format(
                     "ALTER TABLE %s.%s ADD PARTITION (\n"
                             + "\tPARTITION `p20240126` VALUES LESS THAN (20220801,'2024-01-25'),\n"
@@ -160,15 +160,15 @@ public class PartitionPlanServiceV2Test extends ServiceTestEnv {
                             + "\tPARTITION `p20240128` VALUES LESS THAN (20220803,'2024-01-27'),\n"
                             + "\tPARTITION `p20240129` VALUES LESS THAN (20220804,'2024-01-28'),\n"
                             + "\tPARTITION `p20240130` VALUES LESS THAN (20220805,'2024-01-29'));\n",
-                    configuration.getDefaultDBName(), REAL_RANGE_TABLE_NAME)));
+                    configuration.getDefaultDBName(), MYSQL_REAL_RANGE_TABLE_NAME)));
             Assert.assertEquals(expect, actual);
         }
     }
 
     @Test
-    public void generatePartitionDdl_bothCreateAndDropWithOverlap_generateSucceed() throws Exception {
+    public void generatePartitionDdl_mysqlBothCreateAndDropWithOverlap_generateSucceed() throws Exception {
         PartitionPlanTableConfig tableConfig = new PartitionPlanTableConfig();
-        tableConfig.setTableName(OVERLAP_RANGE_TABLE_NAME);
+        tableConfig.setTableName(MYSQL_OVERLAP_RANGE_TABLE_NAME);
         tableConfig.setPartitionNameInvoker("CUSTOM_PARTITION_NAME_GENERATOR");
         SqlExprBasedGeneratorConfig config = new SqlExprBasedGeneratorConfig();
         config.setGenerateExpr("concat('p', date_format(from_unixtime(unix_timestamp("
@@ -189,13 +189,13 @@ public class PartitionPlanServiceV2Test extends ServiceTestEnv {
             Map<PartitionPlanStrategy, List<String>> expect = new HashMap<>();
             expect.put(PartitionPlanStrategy.DROP, Collections.singletonList(String.format(
                     "ALTER TABLE %s.%s DROP PARTITION (p20220830, p20220829);\n",
-                    configuration.getDefaultDBName(), OVERLAP_RANGE_TABLE_NAME)));
+                    configuration.getDefaultDBName(), MYSQL_OVERLAP_RANGE_TABLE_NAME)));
             expect.put(PartitionPlanStrategy.CREATE, Collections.singletonList(String.format(
                     "ALTER TABLE %s.%s ADD PARTITION (\n"
                             + "\tPARTITION `p20240127` VALUES LESS THAN (20220802,'2024-01-26'),\n"
                             + "\tPARTITION `p20240128` VALUES LESS THAN (20220803,'2024-01-27'),\n"
                             + "\tPARTITION `p20240129` VALUES LESS THAN (20220804,'2024-01-28'));\n",
-                    configuration.getDefaultDBName(), OVERLAP_RANGE_TABLE_NAME)));
+                    configuration.getDefaultDBName(), MYSQL_OVERLAP_RANGE_TABLE_NAME)));
             Assert.assertEquals(expect, actual);
         }
     }
@@ -269,10 +269,10 @@ public class PartitionPlanServiceV2Test extends ServiceTestEnv {
         return parameters;
     }
 
-    private static List<String> getDdlContent() throws IOException {
+    private static List<String> getOBMysqlDdlContent() throws IOException {
         String delimiter = "\\$\\$\\s*";
         try (InputStream input = PartitionPlanServiceV2Test.class.getClassLoader()
-                .getResourceAsStream("partitionplan/service_create_table.sql")) {
+                .getResourceAsStream("partitionplan/obmysql/service_create_table.sql")) {
             byte[] buffer = new byte[input.available()];
             IOUtils.readFully(input, buffer);
             StringSubstitutor substitutor = StringSubstitutor.createInterpolator();
