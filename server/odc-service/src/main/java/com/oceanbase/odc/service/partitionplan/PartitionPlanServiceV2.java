@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.partitionplan;
 
 import java.sql.Connection;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -38,9 +39,11 @@ import com.oceanbase.odc.plugin.task.api.partitionplan.AutoPartitionExtensionPoi
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.create.PartitionExprGenerator;
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.drop.DropPartitionGenerator;
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.partitionname.PartitionNameGenerator;
+import com.oceanbase.odc.plugin.task.api.partitionplan.model.PartitionPlanVariableKey;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanKeyConfig;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanStrategy;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanTableConfig;
+import com.oceanbase.odc.service.partitionplan.model.PartitionPlanVariable;
 import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
 import com.oceanbase.odc.service.plugin.TaskPluginUtil;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
@@ -135,6 +138,11 @@ public class PartitionPlanServiceV2 {
                     return Collections.emptyList();
             }
         }));
+    }
+
+    public List<PartitionPlanVariable> getSupportedVariables() {
+        return Arrays.stream(PartitionPlanVariableKey.values())
+                .map(PartitionPlanVariable::new).collect(Collectors.toList());
     }
 
     private Map<PartitionPlanStrategy, DBTablePartition> doPartitionPlan(Connection connection, DBTable dbTable,
