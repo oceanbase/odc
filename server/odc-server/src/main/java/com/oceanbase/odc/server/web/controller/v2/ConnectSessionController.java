@@ -243,7 +243,7 @@ public class ConnectSessionController {
             @RequestParam(name = "onlyForPartitionName", defaultValue = "false") Boolean onlyForPartitionName) {
         String sid = SidUtils.getSessionId(sessionId);
         return Responses.list(tableConfigs.stream()
-                .map(i -> partitionPlanServiceV2.generatePartitionDdl(sid, i, onlyForPartitionName))
+                .map(i -> partitionPlanServiceV2.preview(sid, i, onlyForPartitionName))
                 .collect(Collectors.toList()));
     }
 

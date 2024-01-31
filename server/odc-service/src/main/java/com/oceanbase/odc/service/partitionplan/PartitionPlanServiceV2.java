@@ -79,7 +79,7 @@ public class PartitionPlanServiceV2 {
     @Autowired
     private ConnectSessionService sessionService;
 
-    public PartitionPlanPreViewResp generatePartitionDdl(@NonNull String sessionId,
+    public PartitionPlanPreViewResp preview(@NonNull String sessionId,
             @NonNull PartitionPlanTableConfig tableConfig, Boolean onlyForPartitionName) {
         ConnectionSession connectionSession = sessionService.nullSafeGet(sessionId, true);
         DialectType dialectType = connectionSession.getDialectType();
