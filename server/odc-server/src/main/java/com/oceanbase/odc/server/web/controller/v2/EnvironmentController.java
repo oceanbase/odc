@@ -22,11 +22,13 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.oceanbase.odc.service.collaboration.environment.EnvironmentService;
 import com.oceanbase.odc.service.collaboration.environment.model.CreateEnvironmentReq;
 import com.oceanbase.odc.service.collaboration.environment.model.Environment;
+import com.oceanbase.odc.service.collaboration.environment.model.QueryEnvironmentParam;
 import com.oceanbase.odc.service.collaboration.environment.model.UpdateEnvironmentReq;
 import com.oceanbase.odc.service.common.model.SetEnabledReq;
 import com.oceanbase.odc.service.common.response.ListResponse;
@@ -49,8 +51,10 @@ public class EnvironmentController {
 
     @ApiOperation(value = "listEnvironments", notes = "List all environments")
     @RequestMapping(value = "/environments", method = RequestMethod.GET)
-    public ListResponse<Environment> listEnvironments() {
-        return Responses.list(environmentService.list());
+    public ListResponse<Environment> listEnvironments(
+            @RequestParam(required = false, name = "enabled") Boolean enabled) {
+        QueryEnvironmentParam param = QueryEnvironmentParam.builder().enabled(enabled).build();
+        return Responses.list(environmentService.list(param));
     }
 
     @ApiOperation(value = "getEnvironments", notes = "Detail an environment")

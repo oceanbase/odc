@@ -24,6 +24,7 @@ import javax.validation.constraints.NotNull;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Example;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,8 +37,10 @@ import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.metadb.collaboration.EnvironmentEntity;
 import com.oceanbase.odc.metadb.collaboration.EnvironmentRepository;
+import com.oceanbase.odc.metadb.collaboration.EnvironmentSpecs;
 import com.oceanbase.odc.service.collaboration.environment.model.CreateEnvironmentReq;
 import com.oceanbase.odc.service.collaboration.environment.model.Environment;
+import com.oceanbase.odc.service.collaboration.environment.model.QueryEnvironmentParam;
 import com.oceanbase.odc.service.collaboration.environment.model.UpdateEnvironmentReq;
 import com.oceanbase.odc.service.common.model.InnerUser;
 import com.oceanbase.odc.service.common.model.SetEnabledReq;
@@ -98,14 +101,16 @@ public class EnvironmentService {
 
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("Internal authenticated")
-    public List<Environment> list() {
-        return list(authenticationFacade.currentOrganizationId());
+    public List<Environment> list(QueryEnvironmentParam param) {
+        return list(authenticationFacade.currentOrganizationId(), param);
     }
 
     @SkipAuthorize("Internal usage")
     @Transactional(rollbackFor = Exception.class)
-    public List<Environment> list(Long organizationId) {
-        return environmentRepository.findByOrganizationId(organizationId)
+    public List<Environment> list(Long organizationId, QueryEnvironmentParam param) {
+        Specification<EnvironmentEntity> specs = EnvironmentSpecs.organizationIdEquals(organizationId)
+                .and(EnvironmentSpecs.enabledEquals(param.getEnabled()));
+        return environmentRepository.findAll(specs)
                 .stream().map(this::entityToModel).collect(Collectors.toList());
     }
 

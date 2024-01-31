@@ -15,8 +15,6 @@
  */
 package com.oceanbase.odc.service.regulation.risklevel.model;
 
-import java.util.Objects;
-
 import javax.validation.Valid;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
@@ -73,6 +71,7 @@ public class RiskDetectRuleCondition extends BaseTreeNode {
 
     @Override
     public boolean find(@NotNull String key, Object value) {
-        return StringUtils.equals(key, expression.name()) && Objects.equals(this.value, value);
+        return StringUtils.equals(key, this.expression.name())
+                && StringUtils.equals(String.valueOf(value), String.valueOf(this.value));
     }
 }
