@@ -15,11 +15,11 @@
  */
 package com.oceanbase.odc.service.task.caller;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import com.google.common.collect.Lists;
 import com.oceanbase.odc.common.crypto.Encryptors;
 import com.oceanbase.odc.common.crypto.TextEncryptor;
 import com.oceanbase.odc.common.security.PasswordUtils;
@@ -37,7 +37,7 @@ public class JobEnvironmentEncryptor {
 
     private final AtomicBoolean ENCRYPTED = new AtomicBoolean(false);
 
-    private final List<String> sensitiveKeys = Lists.newArrayList(
+    private final List<String> sensitiveKeys = Arrays.asList(
             JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_HOST,
             JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_PORT,
             JobEnvKeyConstants.ODC_EXECUTOR_DATABASE_NAME,

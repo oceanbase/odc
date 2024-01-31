@@ -11,7 +11,6 @@ bin_directory=$(dirname $script_source)
 install_directory=$(dirname $bin_directory)
 app_log_config_file="${install_directory}/conf/log4j2-task.xml"
 current_work_directory="$(pwd)"
-default_server_port=8989
 gc_basic_options="-XX:+UseG1GC -XX:+PrintAdaptiveSizePolicy -XX:+PrintGCDetails -XX:+PrintGCTimeStamps -XX:+PrintGCDateStamps"
 gc_log_options="-Xloggc:${install_directory}/log/task/gc.log -XX:+UseGCLogFileRotation -XX:GCLogFileSize=50M -XX:NumberOfGCLogFiles=5"
 default_heap_options="-XX:MaxRAMPercentage=60.0 -XX:InitialRAMPercentage=60.0"
@@ -55,7 +54,6 @@ function init_parameters() {
     echo "init parameters start"
 
     # init parameters with default value
-    server_port="${ODC_SERVER_PORT:-${default_server_port}}"
     app_log_directory="${ODC_LOG_DIR:-${install_directory}/log}"
     jar_file="${ODC_JAR_FILE:-${install_directory}/lib/odc-server-*.jar}"
     main_class="com.oceanbase.odc.server.OdcServer"
@@ -84,9 +82,8 @@ function init_jvm_options() {
 
     app_options="${log_options} ${work_dir_options} ${plugin_options}"
 
-    local listen_port_args="--server.port=${server_port}"
     local extra_args="${ODC_APP_EXTRA_ARGS}"
-    app_args="${listen_port_args} ${extra_args}"
+    app_args="${extra_args}"
 
     echo "init jvm options done"
 }

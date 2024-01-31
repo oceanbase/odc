@@ -23,7 +23,6 @@ import java.util.Optional;
 
 import com.google.gson.Gson;
 import com.oceanbase.odc.common.json.JsonUtils;
-import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfiguration;
@@ -121,7 +120,7 @@ public class JobUtils {
 
     public static Long getUserId() {
         String userId = SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_EXECUTOR_USER_ID);
-        return StringUtils.isNotBlank(userId) ? Long.parseLong(userId) : 1L;
+        return Long.parseLong(userId);
     }
 
     public static boolean isReportEnabled() {

@@ -133,6 +133,7 @@ public class TaskApplication {
         validNotBlank(JobEnvKeyConstants.ODC_TASK_RUN_MODE);
         validNotBlank(JobEnvKeyConstants.ENCRYPT_SALT);
         validNotBlank(JobEnvKeyConstants.ENCRYPT_KEY);
+        validNotBlank(JobEnvKeyConstants.ODC_EXECUTOR_USER_ID);
     }
 
     private void validNotBlank(String envKey) {

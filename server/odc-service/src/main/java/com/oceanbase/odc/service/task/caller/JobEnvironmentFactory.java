@@ -52,9 +52,8 @@ public class JobEnvironmentFactory {
         putEnv(JobEnvKeyConstants.ODC_LOG_DIRECTORY,
                 () -> SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_LOG_DIRECTORY));
         setDatabaseEnv();
-        if (TraceContextHolder.getUserId() != null) {
-            putEnv(JobEnvKeyConstants.ODC_EXECUTOR_USER_ID, () -> TraceContextHolder.getUserId() + "");
-        }
+        long userId = TraceContextHolder.getUserId() != null ? TraceContextHolder.getUserId() : -1;
+        putEnv(JobEnvKeyConstants.ODC_EXECUTOR_USER_ID, () -> userId + "");
         return environments;
 
     }

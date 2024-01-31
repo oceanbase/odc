@@ -205,7 +205,7 @@ public class ScheduleConfiguration {
     public ThreadPoolTaskExecutor taskResultPublisherExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
         int corePoolSize = Math.max(SystemUtils.availableProcessors() * 2, 8);
-        int MaxPoolSize = Math.max(SystemUtils.availableProcessors() * 8, 128);
+        int MaxPoolSize = Math.max(SystemUtils.availableProcessors() * 8, 64);
         executor.setCorePoolSize(corePoolSize);
         executor.setMaxPoolSize(MaxPoolSize);
         executor.setThreadNamePrefix("task-result-publish-");
@@ -222,10 +222,8 @@ public class ScheduleConfiguration {
     @Bean(name = "taskFrameworkMonitorExecutor")
     public ThreadPoolTaskExecutor taskFrameworkMonitorExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        int corePoolSize = Math.max(SystemUtils.availableProcessors() * 2, 8);
-        int MaxPoolSize = Math.max(SystemUtils.availableProcessors() * 8, 16);
-        executor.setCorePoolSize(corePoolSize);
-        executor.setMaxPoolSize(MaxPoolSize);
+        executor.setCorePoolSize(4);
+        executor.setMaxPoolSize(4);
         executor.setThreadNamePrefix("task-framework-monitoring-");
         executor.setWaitForTasksToCompleteOnShutdown(true);
         executor.setAwaitTerminationSeconds(5);

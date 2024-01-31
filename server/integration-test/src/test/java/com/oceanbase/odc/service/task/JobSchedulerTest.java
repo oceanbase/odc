@@ -27,7 +27,7 @@ import com.oceanbase.odc.common.event.LocalEventPublisher;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.config.DefaultJobConfiguration;
-import com.oceanbase.odc.service.task.config.SpringTaskFrameworkProperties;
+import com.oceanbase.odc.service.task.config.DefaultTaskFrameworkProperties;
 import com.oceanbase.odc.service.task.dispatch.JobDispatcher;
 import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.executor.task.DatabaseChangeTask;
@@ -61,7 +61,7 @@ public class JobSchedulerTest {
         TaskFrameworkService taskFrameworkService = Mockito.mock(TaskFrameworkService.class);
         jc.setTaskFrameworkService(taskFrameworkService);
         jc.setTransactionManager(Mockito.mock(TransactionManager.class));
-        SpringTaskFrameworkProperties properties = new SpringTaskFrameworkProperties();
+        DefaultTaskFrameworkProperties properties = new DefaultTaskFrameworkProperties();
         properties.setCheckRunningJobCronExpression("0/3 * * * * ?");
         properties.setStartPreparingJobCronExpression("0/3 * * * * ?");
         properties.setDoCancelingJobCronExpression("0/3 * * * * ?");
