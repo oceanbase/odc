@@ -300,9 +300,9 @@ public class FlowInstanceService {
         ConnectionConfig conn = null;
         if (Objects.nonNull(createReq.getConnectionId())) {
             conn = connectionService.getForConnectionSkipPermissionCheck(createReq.getConnectionId());
+            cloudMetadataClient.checkPermission(OBTenant.of(conn.getClusterName(),
+                    conn.getTenantName()), conn.getInstanceType(), false, CloudPermissionAction.READONLY);
         }
-        cloudMetadataClient.checkPermission(OBTenant.of(conn.getClusterName(),
-                conn.getTenantName()), conn.getInstanceType(), false, CloudPermissionAction.READONLY);
         return Collections.singletonList(buildFlowInstance(riskLevels, createReq, conn));
     }
 
