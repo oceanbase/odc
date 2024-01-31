@@ -95,7 +95,7 @@ public class PreCheckTask extends BaseTask<FlowTaskResult> {
     protected void doInit(JobContext context) throws Exception {
         this.taskId = getJobContext().getJobIdentity().getId();
         log.info("Initiating pre-check task, taskId={}", taskId);
-        this.parameters = JsonUtils.fromJson(getJobParameters().get(JobParametersKeyConstants.TASK_PARAMETER_JSON_KEY),
+        this.parameters = JobUtils.fromJson(getJobParameters().get(JobParametersKeyConstants.TASK_PARAMETER_JSON_KEY),
                 PreCheckTaskParameters.class);
         log.info("Load pre-check task parameters successfully, taskId={}", taskId);
         loadUserInputSqlContent();
@@ -146,9 +146,6 @@ public class PreCheckTask extends BaseTask<FlowTaskResult> {
     public FlowTaskResult getTaskResult() {
         PreCheckTaskResult result = new PreCheckTaskResult();
         result.setOverLimit(this.overLimit);
-        if (Objects.nonNull(this.sqlCheckResult)) {
-            this.sqlCheckResult.setResults(null);
-        }
         result.setSqlCheckResult(this.sqlCheckResult);
         result.setPermissionCheckResult(this.permissionCheckResult);
         return result;

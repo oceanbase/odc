@@ -60,6 +60,13 @@ public class JobUtils {
         return new Gson().toJson(obj);
     }
 
+    public static <T> T fromJson(String json, Class<T> clazz) {
+        if (json == null) {
+            return null;
+        }
+        return new Gson().fromJson(json, clazz);
+    }
+
     public static Optional<Integer> getExecutorPort() {
         String port = SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_EXECUTOR_PORT);
         return port != null ? Optional.of(Integer.parseInt(port)) : Optional.empty();
