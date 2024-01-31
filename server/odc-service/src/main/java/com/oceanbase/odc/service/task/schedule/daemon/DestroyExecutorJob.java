@@ -15,8 +15,6 @@
  */
 package com.oceanbase.odc.service.task.schedule.daemon;
 
-import java.util.concurrent.TimeUnit;
-
 import org.quartz.DisallowConcurrentExecution;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
@@ -28,23 +26,21 @@ import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.config.JobConfigurationValidator;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
-import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.exception.TaskRuntimeException;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
-import com.oceanbase.odc.service.task.util.JobDateUtils;
 
 import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author yaobin
- * @date 2024-01-12
+ * @date 2024-01-22
  * @since 4.2.4
  */
 @Slf4j
 @DisallowConcurrentExecution
-public class DoCancelingJob implements Job {
+public class DestroyExecutorJob implements Job {
 
     private JobConfiguration configuration;
 
@@ -52,46 +48,39 @@ public class DoCancelingJob implements Job {
     public void execute(JobExecutionContext context) throws JobExecutionException {
         configuration = JobConfigurationHolder.getJobConfiguration();
         JobConfigurationValidator.validComponent();
-        // scan preparing job
+
+        // scan terminate job
         TaskFrameworkService taskFrameworkService = configuration.getTaskFrameworkService();
         TaskFrameworkProperties taskFrameworkProperties = configuration.getTaskFrameworkProperties();
-        Page<JobEntity> jobs = taskFrameworkService.findCancelingJob(0,
-                taskFrameworkProperties.getSingleFetchCancelingJobRows());
+        Page<JobEntity> jobs = taskFrameworkService.findTerminalJob(0,
+                taskFrameworkProperties.getSingleFetchDestroyExecutorJobRows());
         jobs.forEach(a -> {
             try {
-                cancelJob(taskFrameworkService, a);
+                destroyExecutor(taskFrameworkService, a);
             } catch (Throwable e) {
-                log.warn("Try to start job {} failed: ", a.getId(), e);
+                log.warn("Try to destroy failed, jobId={}.", a.getId(), e);
             }
         });
     }
 
-    private void cancelJob(TaskFrameworkService taskFrameworkService, JobEntity jobEntity) {
+    private void destroyExecutor(TaskFrameworkService taskFrameworkService, JobEntity jobEntity) {
         getConfiguration().getTransactionManager().doInTransactionWithoutResult(() -> {
             JobEntity lockedEntity = taskFrameworkService.findWithPessimisticLock(jobEntity.getId());
 
-            if (lockedEntity.getStatus() == JobStatus.CANCELING) {
-                log.info("Job {} current status is {}, prepare cancel.", lockedEntity.getId(),
+            if (lockedEntity.getStatus().isTerminated() && lockedEntity.getExecutorIdentifier() != null) {
+                log.info("Job prepare destroy executor, jobId={},status={}.", lockedEntity.getId(),
                         lockedEntity.getStatus());
                 try {
-                    getConfiguration().getJobDispatcher().stop(JobIdentity.of(lockedEntity.getId()));
+                    getConfiguration().getJobDispatcher().destroy(JobIdentity.of(lockedEntity.getId()));
                 } catch (JobException e) {
-                    log.warn("Stop job occur error: ", e);
+                    log.warn("Destroy executor occur error, jobId={}: ", lockedEntity.getId(), e);
                     throw new TaskRuntimeException(e);
                 }
-                log.info("Job {} be cancelled successfully.", lockedEntity.getId());
+                log.info("Job destroy executor succeed, jobId={}.", lockedEntity.getId());
             }
         });
     }
 
-    private boolean checkCancelingIsTimeout(JobEntity a) {
-
-        long baseTimeMills = a.getCreateTime().getTime();
-        long cancelTimeoutMills = TimeUnit.MILLISECONDS.convert(
-                getConfiguration().getTaskFrameworkProperties().getJobCancelTimeoutSeconds(), TimeUnit.SECONDS);
-        return JobDateUtils.getCurrentDate().getTime() - baseTimeMills > cancelTimeoutMills;
-
-    }
 
     private JobConfiguration getConfiguration() {
         return configuration;

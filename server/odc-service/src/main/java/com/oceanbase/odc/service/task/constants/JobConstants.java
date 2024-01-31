@@ -43,10 +43,21 @@ public class JobConstants {
 
     public static final String ODC_BOOT_MODE_EXECUTOR = "TASK_EXECUTOR";
 
-    public static final String QUARTZ_DATA_MAP_JOB_CONTEXT = JobEnvKeyConstants.ODC_JOB_CONTEXT;
-
     public static final int REPORT_TASK_INFO_INTERVAL_SECONDS = 30;
 
+    public static final int REPORT_TASK_INFO_DELAY_SECONDS = 5;
+
     public static final int REPORT_TASK_HEART_INTERVAL_SECONDS = 5;
+
+    public static final int REPORT_TASK_HEART_DELAY_SECONDS = 5;
+
+    public static final String ODC_SERVER_CLASS_NAME = "com.oceanbase.odc.server.OdcServer";
+
+    public static final String ODC_EXECUTOR_DEFAULT_MOUNT_PATH = "/data/logs/odc-task/runtime/task";
+
+    public static final String ODC_EXECUTOR_PROCESS_PROPERTIES_KEY = "odc.executor";
+
+    public static final String ODC_JOB_MONITORING = "odcJobMonitoring";
+
 
 }

@@ -26,5 +26,5 @@ public interface TransactionManager {
 
     <T> T doInTransaction(Supplier<T> action);
 
-    void doInTransactionWithoutResult(Supplier<Void> action);
+    void doInTransactionWithoutResult(Runnable r);
 }

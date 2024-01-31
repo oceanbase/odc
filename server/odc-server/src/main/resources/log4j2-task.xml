@@ -9,17 +9,16 @@
              缺省为 odc 工作路径下的 log 目录，
              Linux 下更符合惯例的日志目录其实是 /var/log/odc
         -->
-        <Property name="LOG_DIRECTORY">${sys:odc.log.directory:-./log}</Property>
+        <Property name="LOG_DIRECTORY">${sys:odc.log.directory:-./log/task}</Property>
 
         <!-- 日志格式配置，注意 %class, %line 成本较高，可能会导致日志性能下降大约 80%，当日志数据规模较大时需优化。
              如果每个类的 log 对象都基于当前类生成，%logger 可作为 %class 的替代。
         -->
         <Property name="LOG_PATTERN">
-            [%date{yyyy-MM-dd HH:mm:ss.SSS}][%thread][%X{traceId},%X{spanId},%X{requestId},%X{taskId}][%level][%class][%line]:
-            %message%n
+            [%date{yyyy-MM-dd HH:mm:ss.SSS}][%thread][%X{traceId},%X{spanId},%X{requestId}][%X{taskId}][%level][%class][%line]: %message%n
         </Property>
         <Property name="TASK_LOG_PATTERN">
-            %d{yyyy-MM-dd HH:mm:ss} [%X{taskId}] [%p] %m%n
+            [%d{yyyy-MM-dd HH:mm:ss}] [%X{taskId}] [%p] %m%n
         </Property>
     </Properties>
 
@@ -31,8 +30,8 @@
         </Console>
 
         <!-- ODC日志配置 -->
-        <RollingFile name="ExecutorFileAppender" fileName="${LOG_DIRECTORY}/executor.log"
-                     filePattern="${LOG_DIRECTORY}/executor-%d{yyyy-MM-dd}-%i.log">
+        <RollingFile name="ExecutorFileAppender" fileName="${LOG_DIRECTORY}/${ctx:taskId}/executor.log"
+                     filePattern="${LOG_DIRECTORY}/${ctx:taskId}/executor-%d{yyyy-MM-dd}-%i.log">
             <PatternLayout pattern="${LOG_PATTERN}"/>
             <Policies>
                 <SizeBasedTriggeringPolicy size="100MB"/>
@@ -50,10 +49,10 @@
             <Routes pattern="${TASK_LOG_PATTERN}">
                 <Route>
                     <RollingFile name="Rolling-${ctx:taskId}"
-                                 fileName="${LOG_DIRECTORY}/task/${ctx:taskId}/log.all"
-                                 filePattern="${LOG_DIRECTORY}/task/${ctx:taskId}/${date:yyyy-MM}/task-%d{yyyy-MM-dd}-%i.all.gz">
+                                 fileName="${LOG_DIRECTORY}/${ctx:taskId}/task-log.all"
+                                 filePattern="${LOG_DIRECTORY}/${ctx:taskId}/${date:yyyy-MM}/task-log-%d{yyyy-MM-dd}-%i.all.gz">
                         <PatternLayout>
-                            <pattern>%d{yyyy-MM-dd HH:mm:ss} [%X{taskId}] [%p] %m%n</pattern>
+                            <pattern>[%d{yyyy-MM-dd HH:mm:ss}] [%X{taskId}] [%p] %m%n</pattern>
                         </PatternLayout>
                         <Filters>
                             <!-- TRACE < DEBUG < INFO < WARN < ERROR < FATAL -->
@@ -72,10 +71,10 @@
             <Routes  pattern="${TASK_LOG_PATTERN}">
                 <Route>
                     <RollingFile name="Rolling-${ctx:taskId}"
-                                 fileName="${LOG_DIRECTORY}/task/${ctx:taskId}/log.warn"
-                                 filePattern="${LOG_DIRECTORY}/task/${ctx:taskId}/${date:yyyy-MM}/task-%d{yyyy-MM-dd}-%i.warn.gz">
+                                 fileName="${LOG_DIRECTORY}/${ctx:taskId}/task-log.warn"
+                                 filePattern="${LOG_DIRECTORY}/${ctx:taskId}/${date:yyyy-MM}/task-log-%d{yyyy-MM-dd}-%i.warn.gz">
                         <PatternLayout>
-                            <pattern>%d{yyyy-MM-dd HH:mm:ss} [%X{taskId}] [%p] %m%n</pattern>
+                            <pattern>[%d{yyyy-MM-dd HH:mm:ss}] [%X{taskId}] [%p] %m%n</pattern>
                         </PatternLayout>
                         <Filters>
                             <!-- TRACE < DEBUG < INFO < WARN < ERROR < FATAL -->

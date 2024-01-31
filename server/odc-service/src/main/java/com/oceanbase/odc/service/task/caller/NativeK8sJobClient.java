@@ -87,7 +87,6 @@ public class NativeK8sJobClient implements K8sJobClient {
                 .connectTimeout(TIMEOUT_MILLS, TimeUnit.MILLISECONDS)
                 .pingInterval(1, TimeUnit.MINUTES)
                 .build());
-
         Configuration.setDefaultApiClient(apiClient);
     }
 

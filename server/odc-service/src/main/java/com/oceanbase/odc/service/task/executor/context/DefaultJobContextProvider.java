@@ -13,25 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.task.util;
 
-import com.oceanbase.odc.common.crypto.Encryptors;
-import com.oceanbase.odc.common.crypto.TextEncryptor;
-import com.oceanbase.odc.common.util.SystemUtils;
+package com.oceanbase.odc.service.task.executor.context;
+
+import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.service.task.caller.DefaultJobContext;
+import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
 
 /**
- * @author yaobin
- * @date 2024-01-19
- * @since 4.2.4
+ * @author gaoda.xy
+ * @date 2023/11/22 20:21
  */
-public class JobEncryptUtils {
+public class DefaultJobContextProvider implements JobContextProvider {
 
-
-    public static String decrypt(String encrypted) {
-        String key = SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ENCRYPT_KEY);
-        String salt = SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ENCRYPT_SALT);
-        TextEncryptor textEncryptor = Encryptors.aesBase64(key, salt);
-        return textEncryptor.decrypt(encrypted);
+    @Override
+    public JobContext provide() {
+        String jobContextJson = System.getProperty(JobEnvKeyConstants.ODC_JOB_CONTEXT);
+        return JsonUtils.fromJson(jobContextJson, DefaultJobContext.class);
     }
+
 }

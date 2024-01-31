@@ -25,7 +25,6 @@ import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.service.common.model.HostProperties;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
-import com.oceanbase.odc.service.task.util.JobUtils;
 
 /**
  * @author yaobin
@@ -51,7 +50,7 @@ public class DefaultHostUrlProvider implements HostUrlProvider {
             return Collections.singletonList(taskFrameworkProperties.get().getOdcUrl());
         }
         if (StringUtils.isNotBlank(SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_SERVICE_HOST)) &&
-                StringUtils.isNotBlank(SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_SERVER_PORT))) {
+                StringUtils.isNotBlank(SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_SERVICE_PORT))) {
             return Collections
                     .singletonList("http://" + SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_SERVICE_HOST)
                             + ":" + SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_SERVICE_PORT));
@@ -59,8 +58,7 @@ public class DefaultHostUrlProvider implements HostUrlProvider {
 
         String host =
                 configProperties.getOdcHost() == null ? SystemUtils.getLocalIpAddress() : configProperties.getOdcHost();
-        int port =
-                configProperties.getPort() == null ? JobUtils.getPort() : Integer.parseInt(configProperties.getPort());
+        int port = Integer.parseInt(configProperties.getPort());
         return Collections.singletonList("http://" + host + ":" + port);
 
     }

@@ -38,7 +38,7 @@ public class SpringTransactionManager implements TransactionManager {
     }
 
     @Override
-    public void doInTransactionWithoutResult(Supplier<Void> action) {
-        transactionTemplate.executeWithoutResult(status -> action.get());
+    public void doInTransactionWithoutResult(Runnable r) {
+        transactionTemplate.executeWithoutResult(status -> r.run());
     }
 }

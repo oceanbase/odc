@@ -13,17 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.oceanbase.odc.common.util;
 
-package com.oceanbase.odc.service.task.executor.context;
+import com.sun.jna.Library;
+import com.sun.jna.Native;
 
 /**
- * @author gaoda.xy
- * @date 2023/11/23 13:55
+ * @author yaobin
+ * @date 2024-01-23
+ * @since 4.2.4
  */
-public class JobContextProviderFactory {
+public interface Kernel32 extends Library {
+    Kernel32 INSTANCE = Native.load("kernel32", Kernel32.class);
 
-    public static JobContextProvider create() {
-        return new DefaultJobContextProvider();
-    }
-
+    long getProcessId(Long hProcess);
 }

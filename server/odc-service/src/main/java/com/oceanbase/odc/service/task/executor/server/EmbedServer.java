@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.task.executor.server;
 
+import java.net.InetSocketAddress;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadFactory;
@@ -27,6 +28,7 @@ import org.slf4j.LoggerFactory;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.service.common.util.UrlUtils;
+import com.oceanbase.odc.service.task.util.JobUtils;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.Unpooled;
@@ -66,7 +68,7 @@ public class EmbedServer {
     private RequestHandler requestHandler;
     private Thread thread;
 
-    public void start(final int port) {
+    public void start() {
         requestHandler = new RequestHandler();
         thread = new Thread(TraceDecoratorUtils.decorate(new Runnable() {
             @Override
@@ -112,19 +114,30 @@ public class EmbedServer {
                             })
                             .childOption(ChannelOption.SO_KEEPALIVE, true);
 
-                    // bind
-                    ChannelFuture future = bootstrap.bind(port).sync();
-
-                    log.info(">>>>>>>>>>> odc-job remoting server start success, nettype = {}, port = {}",
+                    ChannelFuture future;
+                    int port;
+                    if (JobUtils.getExecutorPort().isPresent()) {
+                        // start with assigned port
+                        future = bootstrap.bind(JobUtils.getExecutorPort().get()).sync();
+                        port = JobUtils.getExecutorPort().get();
+                    } else {
+                        // start with random port
+                        future = bootstrap.bind(0).sync();
+                        InetSocketAddress localAddress = (InetSocketAddress) future.channel().localAddress();
+                        // save port to system properties
+                        JobUtils.setExecutorPort(localAddress.getPort());
+                        port = localAddress.getPort();
+                    }
+                    log.info("odc-job remoting server start success, nettype = {}, port = {}",
                             EmbedServer.class, port);
 
                     // wait util stop
                     future.channel().closeFuture().sync();
 
                 } catch (InterruptedException e) {
-                    log.info(">>>>>>>>>>> odc-job remoting server stop.");
+                    log.info("odc-job remoting server stop.");
                 } catch (Exception e) {
-                    log.error(">>>>>>>>>>> odc-job remoting server error.", e);
+                    log.error("odc-job remoting server error.", e);
                 } finally {
                     // stop
                     try {
@@ -146,7 +159,7 @@ public class EmbedServer {
             thread.interrupt();
         }
 
-        log.info(">>>>>>>>>>> odc-job remoting server destroy success.");
+        log.info("odc-job remoting server destroy success.");
     }
 
 
@@ -172,10 +185,10 @@ public class EmbedServer {
             HttpMethod httpMethod = msg.method();
             boolean keepAlive = HttpUtil.isKeepAlive(msg);
             if (StringUtils.isNotBlank(uri)) {
-                logger.info(">>>>>>>>>>> odc-job get uri {}", uri);
+                logger.info("odc-job get uri {}", uri);
             }
             if (StringUtils.isNotBlank(requestData)) {
-                logger.info(">>>>>>>>>>> odc-job get requestData {}", requestData);
+                logger.info("odc-job get requestData {}", requestData);
             }
 
             // invoke
@@ -200,8 +213,8 @@ public class EmbedServer {
         private void writeResponse(ChannelHandlerContext ctx, boolean keepAlive, String responseJson) {
             // write response
             FullHttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK,
-                    Unpooled.copiedBuffer(responseJson, CharsetUtil.UTF_8)); // Unpooled.wrappedBuffer(responseJson)
-            response.headers().set(HttpHeaderNames.CONTENT_TYPE, "application/json"); // HttpHeaderValues.TEXT_PLAIN.toString()
+                    Unpooled.copiedBuffer(responseJson, CharsetUtil.UTF_8));
+            response.headers().set(HttpHeaderNames.CONTENT_TYPE, "application/json");
             response.headers().set(HttpHeaderNames.CONTENT_LENGTH, response.content().readableBytes());
             if (keepAlive) {
                 response.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.KEEP_ALIVE);
@@ -216,7 +229,7 @@ public class EmbedServer {
 
         @Override
         public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-            logger.error(">>>>>>>>>>> odc-job provider netty_http server caught exception", cause);
+            logger.error("odc-job provider netty_http server caught exception", cause);
             ctx.close();
         }
 
@@ -224,7 +237,7 @@ public class EmbedServer {
         public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
             if (evt instanceof IdleStateEvent) {
                 ctx.channel().close(); // beat 3N, close if idle
-                logger.debug(">>>>>>>>>>> odc-job provider netty_http server close an idle channel.");
+                logger.debug("odc-job provider netty_http server close an idle channel.");
             } else {
                 super.userEventTriggered(ctx, evt);
             }

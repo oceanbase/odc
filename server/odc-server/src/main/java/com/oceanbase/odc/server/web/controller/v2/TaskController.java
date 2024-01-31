@@ -38,7 +38,7 @@ import lombok.extern.slf4j.Slf4j;
  * @date 2023-11-29
  * @since 4.2.4
  */
-@ConditionalOnProperty(prefix = "odc.task-framework", name = "enable-task-framework", havingValues = "true")
+@ConditionalOnProperty(prefix = "odc.task-framework", name = "enabled", havingValues = "true")
 @Slf4j
 @RestController
 @RequestMapping("/api/v2/task")

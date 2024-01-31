@@ -18,8 +18,10 @@ package com.oceanbase.odc.service.task.schedule;
 
 import java.text.MessageFormat;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
+import org.quartz.CronTrigger;
 import org.quartz.Job;
 import org.quartz.JobBuilder;
 import org.quartz.JobDetail;
@@ -38,12 +40,14 @@ import com.oceanbase.odc.service.schedule.model.TriggerConfig;
 import com.oceanbase.odc.service.schedule.model.TriggerStrategy;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
+import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.exception.TaskRuntimeException;
 import com.oceanbase.odc.service.task.listener.DefaultJobCallerListener;
 import com.oceanbase.odc.service.task.listener.DestroyExecutorListener;
 import com.oceanbase.odc.service.task.schedule.daemon.CheckRunningJob;
+import com.oceanbase.odc.service.task.schedule.daemon.DestroyExecutorJob;
 import com.oceanbase.odc.service.task.schedule.daemon.DoCancelingJob;
 import com.oceanbase.odc.service.task.schedule.daemon.StartPreparingJob;
 
@@ -66,10 +70,10 @@ public class StdJobScheduler implements JobScheduler {
         validConfiguration(configuration);
         JobConfigurationHolder.setJobConfiguration(configuration);
 
-        log.info("Job image name is {}", configuration.getJobImageNameProvider().provide());
         getEventPublisher().addEventListener(new DestroyExecutorListener(configuration));
         getEventPublisher().addEventListener(new DefaultJobCallerListener(this));
         initDaemonJob();
+        log.info("Start StdJobScheduler succeed.");
     }
 
 
@@ -89,7 +93,7 @@ public class StdJobScheduler implements JobScheduler {
     @Override
     public void cancelJob(Long id) throws JobException {
         configuration.getTransactionManager().doInTransactionWithoutResult(() -> {
-            return TryCanceling(id);
+            tryCanceling(id);
         });
     }
 
@@ -105,7 +109,7 @@ public class StdJobScheduler implements JobScheduler {
         return configuration.getEventPublisher();
     }
 
-    private Void TryCanceling(Long id) {
+    private void tryCanceling(Long id) {
         JobEntity jobEntity = configuration.getTaskFrameworkService().findWithPessimisticLock(id);
         if (!cancelable(jobEntity.getStatus())) {
             throw new TaskRuntimeException(
@@ -119,7 +123,6 @@ public class StdJobScheduler implements JobScheduler {
         } else {
             log.info("Update job {} status to {}", id, JobStatus.CANCELING.name());
         }
-        return null;
     }
 
     private boolean cancelable(JobStatus status) {
@@ -131,48 +134,65 @@ public class StdJobScheduler implements JobScheduler {
         initCheckRunningJob();
         initStartPreparingJob();
         initDoCancelingJob();
+        initDestroyExecutorJob();
     }
 
     private void initCheckRunningJob() {
         String key = "checkRunningJob";
-        initCronJob(key, key + "Group",
+        initCronJob(key,
                 configuration.getTaskFrameworkProperties().getCheckRunningJobCronExpression(),
                 CheckRunningJob.class);
     }
 
     private void initStartPreparingJob() {
         String key = "startPreparingJob";
-        initCronJob(key, key + "Group",
+        initCronJob(key,
                 configuration.getTaskFrameworkProperties().getStartPreparingJobCronExpression(),
                 StartPreparingJob.class);
     }
 
     private void initDoCancelingJob() {
         String key = "doCancelingJob";
-        initCronJob(key, key + "Group",
+        initCronJob(key,
                 configuration.getTaskFrameworkProperties().getDoCancelingJobCronExpression(),
                 DoCancelingJob.class);
     }
 
-    private void initCronJob(String key, String group, String cronExpression, Class<? extends Job> jobClass) {
+    private void initDestroyExecutorJob() {
+        String key = "destroyExecutorJob";
+        initCronJob(key,
+                configuration.getTaskFrameworkProperties().getDestroyExecutorJobCronExpression(),
+                DestroyExecutorJob.class);
+    }
+
+    private void initCronJob(String key, String cronExpression, Class<? extends Job> jobClass) {
         TriggerConfig config = new TriggerConfig();
         config.setTriggerStrategy(TriggerStrategy.CRON);
         config.setCronExpression(cronExpression);
         try {
+            String group = JobConstants.ODC_JOB_MONITORING;
             TriggerKey triggerKey = TriggerKey.triggerKey(key, group);
             JobKey jobKey = JobKey.jobKey(key, group);
             Trigger trigger = TriggerBuilder.build(triggerKey, config);
             JobDetail detail = JobBuilder.newJob(jobClass)
                     .withIdentity(JobKey.jobKey(key, group))
                     .build();
-            if (scheduler.checkExists(triggerKey)) {
-                scheduler.deleteJob(jobKey);
-            }
+            checkTriggerChanged(triggerKey, jobKey, trigger);
             scheduler.scheduleJob(detail, trigger);
         } catch (JobException e) {
             log.warn("build trigger {} failed:", key, e);
         } catch (SchedulerException e) {
             log.warn("schedule job failed:", e);
+        }
+    }
+
+    private void checkTriggerChanged(TriggerKey triggerKey, JobKey jobKey, Trigger trigger) throws SchedulerException {
+        if (scheduler.checkExists(triggerKey) && scheduler.getTrigger(triggerKey) instanceof CronTrigger
+                && trigger instanceof CronTrigger) {
+            CronTrigger existCronTrigger = (CronTrigger) scheduler.getTrigger(triggerKey);
+            if (!Objects.equals(existCronTrigger.getCronExpression(), ((CronTrigger) trigger).getCronExpression())) {
+                scheduler.deleteJob(jobKey);
+            }
         }
     }
 
