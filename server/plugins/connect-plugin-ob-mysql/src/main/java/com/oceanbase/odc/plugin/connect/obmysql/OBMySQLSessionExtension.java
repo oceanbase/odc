@@ -23,6 +23,8 @@ import org.pf4j.Extension;
 
 import com.oceanbase.jdbc.OceanBaseConnection;
 import com.oceanbase.odc.common.util.JdbcOperationsUtil;
+import com.oceanbase.odc.common.util.ReflectionUtils;
+import com.oceanbase.odc.core.datasource.SingleConnectionDataSource.CloseIgnoreInvocationHandler;
 import com.oceanbase.odc.plugin.connect.api.SessionExtensionPoint;
 
 import lombok.extern.slf4j.Slf4j;
@@ -65,6 +67,10 @@ public class OBMySQLSessionExtension implements SessionExtensionPoint {
         } catch (Exception e) {
             if (connection instanceof OceanBaseConnection) {
                 connectionId = ((OceanBaseConnection) connection).getServerThreadId() + "";
+            } else {
+                OceanBaseConnection actual =
+                        ReflectionUtils.getProxiedFieldValue(connection, CloseIgnoreInvocationHandler.class, "target");
+                connectionId = actual == null ? "" : actual.getServerThreadId() + "";
             }
         }
         return connectionId;
