@@ -19,6 +19,7 @@ package com.oceanbase.odc.service.task.executor.logger;
 import java.io.File;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.LineIterator;
 
 import com.oceanbase.odc.common.util.SystemUtils;
@@ -39,8 +40,7 @@ public class LogUtils {
 
     public static final long MAX_LOG_LINE_COUNT = 10000;
     public static final long MAX_LOG_BYTE_COUNT = 1024 * 1024;
-    private static final String TASK_LOG_BASE_PATH = "%s/task/%s";
-    private static final String TASK_LOG_PATH_PATTERN = TASK_LOG_BASE_PATH + "/log.%s";
+    private static final String TASK_LOG_PATH_PATTERN = "%s/task/%s/task-log.%s";
 
     public static String getLogContent(String file, Long fetchMaxLine, Long fetchMaxByteSize) {
 
@@ -70,7 +70,7 @@ public class LogUtils {
             log.warn("read task log file failed, reason={}", ex.getMessage());
             throw new UnexpectedException("read task log file failed, reason: " + ex.getMessage(), ex);
         } finally {
-            LineIterator.closeQuietly(it);
+            IOUtils.closeQuietly(it);
         }
     }
 

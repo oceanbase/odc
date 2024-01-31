@@ -18,7 +18,7 @@ package com.oceanbase.odc.service.task.caller;
 import org.springframework.web.util.UriComponents;
 
 import com.oceanbase.odc.service.common.util.UrlUtils;
-import com.oceanbase.odc.service.task.exception.JobException;
+import com.oceanbase.odc.service.task.exception.TaskRuntimeException;
 
 /**
  * @author yaobin
@@ -27,12 +27,12 @@ import com.oceanbase.odc.service.task.exception.JobException;
  */
 public class ExecutorIdentifierParser {
 
-    public static ExecutorIdentifier parser(String identifierString) throws JobException {
+    public static ExecutorIdentifier parser(String identifierString) {
         UriComponents uriComponents = UrlUtils.getUriComponents(identifierString);
         String path = uriComponents.getPath();
         int nameIndex = path.lastIndexOf("/");
         if (nameIndex == -1) {
-            throw new JobException("Illegal executor name : " + path);
+            throw new TaskRuntimeException("Illegal executor name : " + path);
         }
 
         String namespace = path.substring(0, nameIndex).replace("/", "");

@@ -68,15 +68,19 @@ public class TaskMonitor {
                 new TraceDecoratorThreadFactory(new TaskThreadFactory(("Task-Monitor-Job-" + getJobId())));
         this.reportScheduledExecutor = Executors.newSingleThreadScheduledExecutor(threadFactory);
         reportScheduledExecutor.scheduleAtFixedRate(() -> {
-            if (isTimeout()) {
+            if (isTimeout() && !getTask().getStatus().isTerminated()) {
                 getTask().stop();
             }
             try {
-                reportTaskResult();
+                if (JobUtils.getExecutorPort().isPresent()) {
+                    reportTaskResult();
+                }
             } catch (Throwable e) {
                 log.warn("Update task info failed, id: {}", getJobId(), e);
             }
-        }, 1, JobConstants.REPORT_TASK_INFO_INTERVAL_SECONDS, TimeUnit.SECONDS);
+        }, JobConstants.REPORT_TASK_INFO_DELAY_SECONDS,
+                JobConstants.REPORT_TASK_INFO_INTERVAL_SECONDS,
+                TimeUnit.SECONDS);
         log.info("Task monitor init success");
 
         heartScheduledExecutor = Executors.newSingleThreadScheduledExecutor(
@@ -84,11 +88,15 @@ public class TaskMonitor {
 
         heartScheduledExecutor.scheduleAtFixedRate(() -> {
             try {
-                getReporter().report(JobUrlConstants.TASK_HEART, buildHeartRequest());
+                if (JobUtils.getExecutorPort().isPresent() && JobUtils.isReportEnabled()) {
+                    getReporter().report(JobUrlConstants.TASK_HEART, buildHeartRequest());
+                }
             } catch (Throwable e) {
                 log.warn("Update heart info failed, id: {}", getJobId(), e);
             }
-        }, 1, JobConstants.REPORT_TASK_HEART_INTERVAL_SECONDS, TimeUnit.SECONDS);
+        }, JobConstants.REPORT_TASK_HEART_DELAY_SECONDS,
+                JobConstants.REPORT_TASK_HEART_INTERVAL_SECONDS,
+                TimeUnit.SECONDS);
         log.info("Task heart init success");
     }
 
@@ -112,6 +120,9 @@ public class TaskMonitor {
     }
 
     private void reportTaskResult() {
+        if (JobUtils.isReportDisabled()) {
+            return;
+        }
         DefaultTaskResult taskResult = DefaultTaskResultBuilder.build(getTask());
         DefaultTaskResult copiedResult = ObjectUtil.deepCopy(taskResult, DefaultTaskResult.class);
         if (copiedResult.getStatus().isTerminated()) {
@@ -119,6 +130,7 @@ public class TaskMonitor {
                     copiedResult.getJobIdentity().getId(), copiedResult.getStatus());
             return;
         }
+
         getReporter().report(JobUrlConstants.TASK_RESULT_UPLOAD, copiedResult);
         log.info("Report task info, id: {}, status: {}, progress: {}%, result: {}", getJobId(),
                 copiedResult.getStatus(), String.format("%.2f", copiedResult.getProgress()), getTask().getTaskResult());
@@ -150,13 +162,16 @@ public class TaskMonitor {
 
         log.info("Task id: {}, remained work be completed, report finished status.", getJobId());
 
-        // Report finish signal to task server
-        reportTaskResultWithRetry(finalResult, REPORT_RESULT_RETRY_TIMES);
+        if (JobUtils.isReportEnabled()) {
+            // Report finish signal to task server
+            reportTaskResultWithRetry(finalResult, REPORT_RESULT_RETRY_TIMES);
+        }
         log.info("Task id: {} exit.", getJobId());
     }
 
     private void uploadLogFileToCloudStorage(DefaultTaskResult finalResult) {
-        if (cloudObjectStorageService != null && cloudObjectStorageService.supported()) {
+        if (cloudObjectStorageService != null && cloudObjectStorageService.supported()
+                && JobUtils.isK8sRunModeOfEnv()) {
             LogBiz biz = new LogBizImpl();
             Map<String, String> logMap = null;
             try {

@@ -15,7 +15,7 @@
  */
 package com.oceanbase.odc.service.task.config;
 
-import com.oceanbase.odc.service.task.enums.TaskRunModeEnum;
+import com.oceanbase.odc.service.task.enums.TaskRunMode;
 
 /**
  * @author yaobin
@@ -23,9 +23,9 @@ import com.oceanbase.odc.service.task.enums.TaskRunModeEnum;
  * @since 4.2.4
  */
 public interface TaskFrameworkProperties {
-    boolean isEnableTaskFramework();
+    boolean isEnabled();
 
-    TaskRunModeEnum getRunMode();
+    TaskRunMode getRunMode();
 
     String getOdcUrl();
 
@@ -39,6 +39,8 @@ public interface TaskFrameworkProperties {
 
     int getSingleFetchCancelingJobRows();
 
+    int getSingleFetchDestroyExecutorJobRows();
+
     int getSingleFetchCheckHeartTimeoutJobRows();
 
     int getMaxHeartTimeoutRetryTimes();
@@ -50,5 +52,7 @@ public interface TaskFrameworkProperties {
     String getCheckRunningJobCronExpression();
 
     String getDoCancelingJobCronExpression();
+
+    String getDestroyExecutorJobCronExpression();
 
 }

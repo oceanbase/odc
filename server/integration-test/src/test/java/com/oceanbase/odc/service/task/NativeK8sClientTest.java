@@ -59,7 +59,7 @@ public class NativeK8sClientTest {
         JobIdentity jobIdentity = JobIdentity.of(exceptedTaskId);
 
         String imageName = "perl:5.34.0";
-        String exceptedJobName = JobUtils.generateJobName(jobIdentity);
+        String exceptedJobName = JobUtils.generateExecutorName(jobIdentity);
         List<String> cmd = Arrays.asList("perl", "-Mbignum=bpi", "-wle", "print bpi(2000)");
         PodParam podParam = new PodParam();
         String generateJobOfName = k8sClient.create("default", exceptedJobName, imageName, cmd, podParam);

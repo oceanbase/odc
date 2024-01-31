@@ -55,11 +55,11 @@ public abstract class BaseTask<RESULT> implements Task<RESULT> {
             doStart(context);
             updateStatus(JobStatus.DONE);
         } catch (Throwable e) {
-            log.info("Task failed, id: {}, details: {}", context.getJobIdentity().getId(), e);
+            log.info("Task failed, id={}.", context.getJobIdentity().getId(), e);
             updateStatus(JobStatus.FAILED);
             onFail(e);
         } finally {
-            log.info("Task id: {} be completed with status {}.", getJobId(), getStatus());
+            log.info("Task be completed, id={}, status={}.", getJobId(), getStatus());
             taskMonitor.finalWork();
         }
     }
@@ -67,18 +67,18 @@ public abstract class BaseTask<RESULT> implements Task<RESULT> {
     @Override
     public boolean stop() {
         if (getStatus().isTerminated()) {
-            log.warn("Task id: {} is already finished and cannot be canceled",
+            log.warn("Task is already finished and cannot be canceled, id={}",
                     getJobContext().getJobIdentity().getId());
             return true;
         }
         try {
             doStop();
         } catch (Throwable e) {
-            log.warn("stop task id : {} failed", getJobContext().getJobIdentity().getId(), e);
+            log.warn("stop task failed, id={}", getJobContext().getJobIdentity().getId(), e);
             return false;
         }
         updateStatus(JobStatus.CANCELED);
-        log.info("Task canceled, id: {}", getJobContext().getJobIdentity().getId());
+        log.info("Task be canceled, id={}", getJobContext().getJobIdentity().getId());
         return true;
     }
 

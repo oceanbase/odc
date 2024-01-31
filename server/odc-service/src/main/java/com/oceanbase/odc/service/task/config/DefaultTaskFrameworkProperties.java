@@ -20,7 +20,7 @@ import org.springframework.boot.context.properties.NestedConfigurationProperty;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.context.annotation.Configuration;
 
-import com.oceanbase.odc.service.task.enums.TaskRunModeEnum;
+import com.oceanbase.odc.service.task.enums.TaskRunMode;
 
 import lombok.Data;
 
@@ -33,11 +33,12 @@ import lombok.Data;
 @RefreshScope
 @Configuration
 @ConfigurationProperties(prefix = "odc.task-framework")
-public class SpringTaskFrameworkProperties implements TaskFrameworkProperties {
+public class DefaultTaskFrameworkProperties implements TaskFrameworkProperties {
 
-    private boolean enableTaskFramework;
+    // task-framework enabled
+    private boolean enabled;
 
-    private TaskRunModeEnum runMode;
+    private TaskRunMode runMode;
 
     private String odcUrl;
 
@@ -55,6 +56,8 @@ public class SpringTaskFrameworkProperties implements TaskFrameworkProperties {
 
     private int singleFetchCancelingJobRows = 100;
 
+    private int singleFetchDestroyExecutorJobRows = 100;
+
     // single fetch job rows to check report timeout or not
     private int singleFetchCheckHeartTimeoutJobRows = 1000;
 
@@ -69,5 +72,7 @@ public class SpringTaskFrameworkProperties implements TaskFrameworkProperties {
     private String checkRunningJobCronExpression;
 
     private String doCancelingJobCronExpression;
+
+    private String destroyExecutorJobCronExpression;
 
 }

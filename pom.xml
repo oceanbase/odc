@@ -141,6 +141,7 @@
         <micrometer-core.version>1.8.0</micrometer-core.version>
         <mariadb-java-client.version>2.7.11</mariadb-java-client.version>
         <kubernetes-client.version>19.0.0</kubernetes-client.version>
+        <jna.version>5.8.0</jna.version>
     </properties>
 
     <dependencyManagement>
@@ -1111,6 +1112,11 @@
                 <groupId>io.netty</groupId>
                 <artifactId>netty-codec-http</artifactId>
                 <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>net.java.dev.jna</groupId>
+                <artifactId>jna</artifactId>
+                <version>${jna.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

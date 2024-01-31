@@ -23,11 +23,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.quartz.SchedulerFactoryBean;
 
 import com.oceanbase.odc.service.quartz.OdcJobListener;
-import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 
 /**
  * @Author：tinker
@@ -59,19 +57,4 @@ public class QuartzConfiguration {
         scheduler.getListenerManager().addJobListener(odcJobListener);
         return scheduler;
     }
-
-
-    @Lazy
-    @Bean("taskFrameworkSchedulerFactoryBean")
-    public SchedulerFactoryBean taskFrameworkSchedulerFactoryBean(DataSource dataSource,
-            TaskFrameworkProperties taskFrameworkProperties) {
-        SchedulerFactoryBean schedulerFactoryBean = new SchedulerFactoryBean();
-        schedulerFactoryBean.setDataSource(dataSource);
-        String taskFrameworkSchedulerName = "TASK-FRAMEWORK-SCHEDULER";
-        schedulerFactoryBean.setSchedulerName(taskFrameworkSchedulerName);
-        schedulerFactoryBean.setStartupDelay(taskFrameworkProperties.getQuartzStartDelaySeconds());
-        return schedulerFactoryBean;
-    }
-
-
 }

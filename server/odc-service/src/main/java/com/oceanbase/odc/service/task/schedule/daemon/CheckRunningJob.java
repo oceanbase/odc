@@ -25,9 +25,11 @@ import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
+import com.oceanbase.odc.service.task.config.JobConfigurationValidator;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.enums.JobStatus;
-import com.oceanbase.odc.service.task.listener.DestroyExecutorEvent;
+import com.oceanbase.odc.service.task.exception.JobException;
+import com.oceanbase.odc.service.task.exception.TaskRuntimeException;
 import com.oceanbase.odc.service.task.listener.JobTerminateEvent;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 import com.oceanbase.odc.service.task.schedule.SingleJobProperties;
@@ -48,10 +50,7 @@ public class CheckRunningJob implements Job {
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {
         configuration = JobConfigurationHolder.getJobConfiguration();
-        if (configuration == null) {
-            log.debug("Job configuration is null, abort continue execute.");
-            return;
-        }
+        JobConfigurationValidator.validComponent();
         TaskFrameworkProperties taskFrameworkProperties = getConfiguration().getTaskFrameworkProperties();
         int size = taskFrameworkProperties.getSingleFetchCheckHeartTimeoutJobRows();
         int heartTimeoutPeriod = taskFrameworkProperties.getJobHeartTimeoutSeconds();
@@ -63,16 +62,19 @@ public class CheckRunningJob implements Job {
     }
 
     private void handleJobRetryingOrCanceled(JobEntity a) {
-        getConfiguration().getTransactionManager().doInTransaction(() -> {
+        getConfiguration().getTransactionManager().doInTransactionWithoutResult(() -> {
             doHandleJobRetryingOrCanceled(a);
-            return null;
         });
 
     }
 
     private void doHandleJobRetryingOrCanceled(JobEntity a) {
         // destroy executor
-        getConfiguration().getEventPublisher().publishEvent(new DestroyExecutorEvent(JobIdentity.of(a.getId())));
+        try {
+            getConfiguration().getJobDispatcher().destroy(JobIdentity.of(a.getId()));
+        } catch (JobException e) {
+            throw new TaskRuntimeException(e);
+        }
 
         if (checkJobIfRetryNecessary(a)) {
             log.info("Need to restart job {}, try to destroy executor.", a.getId());

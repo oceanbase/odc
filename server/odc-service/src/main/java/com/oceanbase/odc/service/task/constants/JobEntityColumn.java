@@ -38,4 +38,8 @@ public class JobEntityColumn {
 
     public static final String EXECUTOR_ENDPOINT = "executorEndpoint";
 
+    public static final String RUN_MODE = "runMode";
+
+    public static final String EXECUTOR_IDENTIFIER = "executorIdentifier";
+
 }

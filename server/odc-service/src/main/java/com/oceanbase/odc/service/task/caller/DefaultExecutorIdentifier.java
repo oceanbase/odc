@@ -16,7 +16,6 @@
 package com.oceanbase.odc.service.task.caller;
 
 import com.oceanbase.odc.common.util.StringUtils;
-import com.oceanbase.odc.service.task.util.JobUtils;
 
 import lombok.Builder;
 import lombok.Data;
@@ -32,7 +31,7 @@ public class DefaultExecutorIdentifier implements ExecutorIdentifier {
 
     public static final String DEFAULT_PROTOCOL = "http";
     public static final String DEFAULT_HOST = "odc";
-    public static final Integer DEFAULT_PORT = JobUtils.getPort();
+    public static final Integer DEFAULT_PORT = 8989;
 
     @Builder.Default()
     private String protocol = DEFAULT_PROTOCOL;

@@ -59,8 +59,8 @@ public class ThreadPoolTaskExecutor implements TaskExecutor {
     @Override
     public void execute(Task<?> task, JobContext jc) {
         Future<?> future = executor.submit(() -> task.start(jc));
-        tasks.put(jc.getJobIdentity(), task);
         futures.put(jc.getJobIdentity(), future);
+        tasks.put(jc.getJobIdentity(), task);
     }
 
     @Override

@@ -13,33 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.odc.service.task.caller;
 
-import com.oceanbase.odc.core.shared.exception.UnsupportedException;
-import com.oceanbase.odc.service.task.exception.JobException;
-import com.oceanbase.odc.service.task.schedule.JobIdentity;
+import java.util.Map;
+
+import lombok.Data;
 
 /**
  * @author yaobin
- * @date 2023-11-22
+ * @date 2024-01-22
  * @since 4.2.4
  */
-public class JvmJobCaller extends BaseJobCaller {
+@Data
+public class ProcessConfig {
 
-    @Override
-    protected ExecutorIdentifier doStart(JobContext context) throws JobException {
-        throw new UnsupportedException();
-    }
-
-    @Override
-    protected void doStop(JobIdentity ji) throws JobException {
-        throw new UnsupportedException();
-    }
-
-    @Override
-    protected void doDestroy(ExecutorIdentifier identifier) throws JobException {
-        throw new UnsupportedException();
-    }
-
+    private Map<String, String> environments;
 }

@@ -16,6 +16,9 @@
 
 package com.oceanbase.odc.service.task.dispatch;
 
+import java.util.Arrays;
+
+import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.service.task.caller.ExecutorIdentifier;
 import com.oceanbase.odc.service.task.caller.JobCaller;
 import com.oceanbase.odc.service.task.caller.JobCallerBuilder;
@@ -27,11 +30,12 @@ import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.config.JobConfigurationValidator;
 import com.oceanbase.odc.service.task.config.K8sProperties;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
-import com.oceanbase.odc.service.task.enums.TaskRunModeEnum;
+import com.oceanbase.odc.service.task.constants.JobConstants;
+import com.oceanbase.odc.service.task.enums.TaskRunMode;
 import com.oceanbase.odc.service.task.exception.JobException;
-import com.oceanbase.odc.service.task.executor.logger.LogUtils;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 import com.oceanbase.odc.service.task.schedule.provider.JobImageNameProvider;
+import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 
 /**
  * Dispatch job to JobCaller immediately
@@ -44,40 +48,45 @@ public class ImmediateJobDispatcher implements JobDispatcher {
 
     @Override
     public void start(JobContext context) throws JobException {
-        JobCaller jobCaller = getJobCallerWithContext(context);
+        JobCaller jobCaller = getJobCallerWithContext(getJobRunMode(context.getJobIdentity()), context);
         jobCaller.start(context);
     }
 
     @Override
     public void stop(JobIdentity ji) throws JobException {
-        JobCaller jobCaller = getJobCaller();
+        JobCaller jobCaller = getJobCaller(getJobRunMode(ji));
         jobCaller.stop(ji);
     }
 
     @Override
     public void destroy(JobIdentity ji) throws JobException {
-        JobCaller jobCaller = getJobCaller();
+        JobCaller jobCaller = getJobCaller(getJobRunMode(ji));
         jobCaller.destroy(ji);
     }
 
     @Override
     public void destroy(ExecutorIdentifier executorIdentifier) throws JobException {
-        JobCaller jobCaller = getJobCaller();
-        jobCaller.destroy(executorIdentifier);
+        throw new UnsupportedException("unsupported");
     }
 
-    private JobCaller getJobCaller() {
-        return getJobCallerWithContext(null);
+    private JobCaller getJobCaller(TaskRunMode taskRunMode) {
+        return getJobCallerWithContext(taskRunMode, null);
     }
 
-    private JobCaller getJobCallerWithContext(JobContext context) {
-        JobConfigurationValidator.validComponent();
+    private JobCaller getJobCallerWithContext(TaskRunMode taskRunMode, JobContext context) {
         JobConfiguration config = JobConfigurationHolder.getJobConfiguration();
-        if (config.getTaskFrameworkProperties().getRunMode() == TaskRunModeEnum.K8S) {
+        if (taskRunMode == TaskRunMode.K8S) {
             return JobCallerBuilder.buildK8sJobCaller(config.getK8sJobClient(),
                     createDefaultPodConfig(config.getTaskFrameworkProperties()), context);
         }
-        return JobCallerBuilder.buildJvmCaller();
+        return JobCallerBuilder.buildProcessCaller(context);
+    }
+
+    private TaskRunMode getJobRunMode(JobIdentity ji) {
+        JobConfigurationValidator.validComponent();
+        TaskFrameworkService taskFrameworkService =
+                JobConfigurationHolder.getJobConfiguration().getTaskFrameworkService();
+        return taskFrameworkService.find(ji.getId()).getRunMode();
     }
 
     private PodConfig createDefaultPodConfig(TaskFrameworkProperties taskFrameworkProperties) {
@@ -89,13 +98,16 @@ public class ImmediateJobDispatcher implements JobDispatcher {
                 .getJobImageNameProvider();
         podConfig.setImage(jobImageNameProvider.provide());
 
+        podConfig.setCommand(Arrays.asList("bash", "c", "/opt/odc/bin/start-odc.sh"));
+
         PodParam podParam = podConfig.getPodParam();
         podParam.setRequestCpu(k8s.getRequestCpu());
         podParam.setRequestMem(k8s.getRequestMem());
         podParam.setLimitCpu(k8s.getLimitCpu());
         podParam.setLimitMem(k8s.getLimitMem());
         podParam.setEnableMount(k8s.getEnableMount());
-        podParam.setMountPath(k8s.getMountPath() == null ? LogUtils.getBaseLogPath() : k8s.getMountPath());
+        podParam.setMountPath(
+                k8s.getMountPath() == null ? JobConstants.ODC_EXECUTOR_DEFAULT_MOUNT_PATH : k8s.getMountPath());
         podParam.setMountDiskSize(k8s.getMountDiskSize());
         return podConfig;
     }
