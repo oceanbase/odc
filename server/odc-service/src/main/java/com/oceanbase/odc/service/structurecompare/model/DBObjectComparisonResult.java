@@ -31,6 +31,8 @@ import com.oceanbase.odc.metadb.structurecompare.StructureComparisonEntity;
 import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.parser.constant.SqlType;
+import com.oceanbase.tools.sqlparser.statement.Statement;
+import com.oceanbase.tools.sqlparser.statement.alter.table.AlterTable;
 
 import lombok.Data;
 import lombok.NonNull;
@@ -79,6 +81,7 @@ public class DBObjectComparisonResult {
         entity.setComparingResult(comparisonResult);
         entity.setSourceObjectDdl(sourceDdl);
         entity.setTargetObjectDdl(targetDdl);
+
         StringBuilder totalSubScript = new StringBuilder();
         if (!subDBObjectComparisonResult.isEmpty()) {
             for (DBObjectComparisonResult subResult : subDBObjectComparisonResult) {
@@ -128,10 +131,45 @@ public class DBObjectComparisonResult {
         try {
             AbstractSyntaxTreeFactory factory = AbstractSyntaxTreeFactories.getAstFactory(dialectType, 0);
             Validate.notNull(factory, "AbstractSyntaxTreeFactory can not be null");
-            return factory.buildAst(sql).getParseResult().getSqlType();
+            SqlType sqlType = factory.buildAst(sql).getParseResult().getSqlType();
+            Statement stmt = factory.buildAst(sql).getStatement();
+            if (isDropPartitionStatement(stmt) || isDropConstraintStatement(stmt) || isDropIndexStatement(stmt)) {
+                sqlType = SqlType.DROP;
+            }
+            return sqlType;
         } catch (Exception e) {
             return null;
         }
+    }
+
+    private boolean isDropPartitionStatement(Statement stmt) {
+        if (stmt instanceof AlterTable) {
+            return ((AlterTable) stmt).getAlterTableActions().stream().filter(Objects::nonNull)
+                    .anyMatch(action -> !getSafeList(action.getDropPartitionNames()).isEmpty()
+                            || !getSafeList(action.getDropSubPartitionNames()).isEmpty());
+        }
+        return false;
+    }
+
+    private boolean isDropConstraintStatement(Statement stmt) {
+        if (stmt instanceof AlterTable) {
+            return ((AlterTable) stmt).getAlterTableActions().stream().filter(Objects::nonNull)
+                    .anyMatch(action -> action.getDropForeignKeyName() != null
+                            || !getSafeList(action.getDropConstraintNames()).isEmpty());
+        }
+        return false;
+    }
+
+    private boolean isDropIndexStatement(Statement stmt) {
+        if (stmt instanceof AlterTable) {
+            return ((AlterTable) stmt).getAlterTableActions().stream().filter(Objects::nonNull)
+                    .anyMatch(action -> action.getDropIndexName() != null || action.getDropPrimaryKey());
+        }
+        return false;
+    }
+
+    private List<String> getSafeList(List<String> list) {
+        return list == null ? new ArrayList<>() : list;
     }
 
     private String appendDelimiterIfNotExists(String sql) {

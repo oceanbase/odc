@@ -51,7 +51,6 @@ public class DBObjectComparisonResultTest {
                 + "\n"
                 + "ALTER TABLE `tgtSchema`.`t1` ADD PARTITION (p2);\n"
                 + "\n"
-                + "\n"
                 + "ALTER TABLE `tgtSchema`.`t1` COMMENT = 'comment1';\n"
                 + "-- Unsupported operation to modify table charset\n";
         Assert.assertEquals(expected, actual);
