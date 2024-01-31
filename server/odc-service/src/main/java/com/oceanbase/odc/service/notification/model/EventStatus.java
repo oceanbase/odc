@@ -27,7 +27,11 @@ public enum EventStatus {
      */
     THROWN("THROWN"),
 
-    CONVERTED("CONVERTED");
+    CONVERTED("CONVERTED"),
+
+    CONVERTING("CONVERTING")
+
+    ;
 
     private String name;
 

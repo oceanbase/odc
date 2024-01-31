@@ -138,6 +138,10 @@ import com.oceanbase.odc.service.integration.model.ApprovalProperties;
 import com.oceanbase.odc.service.integration.model.IntegrationConfig;
 import com.oceanbase.odc.service.integration.model.TemplateVariables;
 import com.oceanbase.odc.service.integration.model.TemplateVariables.Variable;
+import com.oceanbase.odc.service.notification.Broker;
+import com.oceanbase.odc.service.notification.NotificationProperties;
+import com.oceanbase.odc.service.notification.helper.EventBuilder;
+import com.oceanbase.odc.service.notification.model.Event;
 import com.oceanbase.odc.service.permission.database.DatabasePermissionHelper;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
 import com.oceanbase.odc.service.regulation.approval.model.ApprovalFlowConfig;
@@ -225,6 +229,12 @@ public class FlowInstanceService {
     private ResourceRoleService resourceRoleService;
     @Autowired
     private DatabasePermissionHelper databasePermissionHelper;
+    @Autowired
+    private NotificationProperties notificationProperties;
+    @Autowired
+    private Broker broker;
+    @Autowired
+    private EventBuilder eventBuilder;
 
     private final List<Consumer<DataTransferTaskInitEvent>> dataTransferTaskInitHooks = new ArrayList<>();
     private final List<Consumer<ShadowTableComparingUpdateEvent>> shadowTableComparingTaskHooks = new ArrayList<>();
@@ -601,6 +611,15 @@ public class FlowInstanceService {
             return response.getContentByType(new TypeReference<SuccessResponse<FlowInstanceDetailResp>>() {}).getData();
         }
         completeApprovalInstance(id, instance -> instance.approve(message, !skipAuth), skipAuth);
+        if (notificationProperties.isEnabled()) {
+            try {
+                Event event =
+                        eventBuilder.ofApprovedTask(getTaskByFlowInstanceId(id), authenticationFacade.currentUserId());
+                broker.enqueueEvent(event);
+            } catch (Exception e) {
+                log.warn("Failed to enqueue event.", e);
+            }
+        }
         return FlowInstanceDetailResp.withIdAndType(id, taskEntity.getTaskType());
     }
 
@@ -616,6 +635,15 @@ public class FlowInstanceService {
         FlowInstance flowInstance =
                 optional.orElseThrow(() -> new NotFoundException(ResourceType.ODC_FLOW_INSTANCE, "id", id));
         cancelAllRelatedExternalInstance(flowInstance);
+        if (notificationProperties.isEnabled()) {
+            try {
+                Event event =
+                        eventBuilder.ofRejectedTask(getTaskByFlowInstanceId(id), authenticationFacade.currentUserId());
+                broker.enqueueEvent(event);
+            } catch (Exception e) {
+                log.warn("Failed to enqueue event.", e);
+            }
+        }
         return FlowInstanceDetailResp.withIdAndType(id, getTaskByFlowInstanceId(id).getTaskType());
     }
 

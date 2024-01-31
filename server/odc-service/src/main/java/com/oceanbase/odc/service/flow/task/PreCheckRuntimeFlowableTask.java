@@ -193,7 +193,6 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
         } catch (Exception e) {
             log.warn("Failed to store task result", e);
         }
-        super.onFailure(taskId, taskService);
     }
 
     @Override
@@ -205,7 +204,6 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
         } catch (Exception e) {
             log.warn("Failed to store task result", e);
         }
-        super.onSuccessful(taskId, taskService);
     }
 
     @Override

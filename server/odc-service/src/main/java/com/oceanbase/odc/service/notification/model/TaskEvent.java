@@ -15,29 +15,21 @@
  */
 package com.oceanbase.odc.service.notification.model;
 
-import lombok.Data;
-
 /**
  * @author liuyizhuo.lyz
- * @date 2024/1/4
+ * @date 2024/1/17
  */
-@Data
-public class TestChannelResult {
+public enum TaskEvent {
 
-    private boolean active;
-    private String errorMessage;
+    EXECUTION_SUCCEEDED,
+    EXECUTION_FAILED,
+    EXECUTION_TIMEOUT,
+    PENDING_APPROVAL,
+    APPROVED,
+    APPROVAL_REJECTION,
+    SCHEDULING_FAILED,
+    SCHEDULING_TIMEOUT
 
-    public static TestChannelResult ofFail(String errorMessage) {
-        TestChannelResult result = new TestChannelResult();
-        result.setActive(false);
-        result.setErrorMessage(errorMessage);
-        return result;
-    }
-
-    public static TestChannelResult ofSuccess() {
-        TestChannelResult result = new TestChannelResult();
-        result.setActive(true);
-        return result;
-    }
+    ;
 
 }

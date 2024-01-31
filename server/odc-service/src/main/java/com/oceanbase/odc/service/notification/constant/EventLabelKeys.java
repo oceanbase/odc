@@ -21,18 +21,39 @@ package com.oceanbase.odc.service.notification.constant;
  * @Description: []
  */
 public class EventLabelKeys {
-    public static final String IDENTIFIER_KEY_TASK_TYPE = "taskType";
+    /**
+     * basic info
+     */
+    public static final String TASK_ID = "taskId";
+    // internal usage
+    public static final String TASK_ENTITY_ID = "taskEntityId";
+    public static final String TASK_TYPE = "taskType";
+    public static final String TASK_STATUS = "taskStatus";
+    public static final String TRIGGER_TIME = "triggerTime";
 
-    public static final String IDENTIFIER_KEY_CONNECTION_ID = "connectionId";
+    /**
+     * connection info
+     */
+    public static final String CONNECTION_ID = "connectionId";
+    public static final String ENVIRONMENT = "environment";
+    public static final String CLUSTER_NAME = "clusterName";
+    public static final String TENANT_NAME = "tenantName";
+    public static final String DATABASE_ID = "databaseId";
+    public static final String DATABASE_NAME = "databaseName";
 
-    public static final String IDENTIFIER_KEY_ACTION = "action";
+    /**
+     * collaboration info
+     */
+    public static final String PROJECT_ID = "projectId";
+    public static final String PROJECT_NAME = "projectName";
+    public static final String CREATOR_ID = "creatorId";
+    public static final String CREATOR_NAME = "creatorName";
+    public static final String APPROVER_ID = "approverId";
+    public static final String APPROVER_NAME = "approverName";
 
-    public static final String VARIABLE_KEY_CLUSTER_NAME = "clusterName";
-
-    public static final String VARIABLE_KEY_TENANT_NAME = "tenantName";
-
-    public static final String VARIABLE_KEY_REGION = "region";
-
-    public static final String VARIABLE_KEY_TASK_ID = "taskId";
+    /**
+     * global info
+     */
+    public static final String REGION = "region";
 
 }
