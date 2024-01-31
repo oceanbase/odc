@@ -234,7 +234,7 @@ public class RuleService {
             }
             return entity;
         }).collect(Collectors.toList());
-        ruleApplyingRepository.saveAll(entities);
+        ruleApplyingRepository.batchCreate(entities);
         return rules;
     }
 
