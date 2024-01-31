@@ -38,7 +38,6 @@ import com.oceanbase.odc.metadb.notification.NotificationPolicyEntity;
 import com.oceanbase.odc.metadb.notification.NotificationPolicyRepository;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.notification.helper.PolicyMapper;
-import com.oceanbase.odc.service.notification.model.BaseChannelConfig;
 import com.oceanbase.odc.service.notification.model.Channel;
 import com.oceanbase.odc.service.notification.model.ChannelType;
 import com.oceanbase.odc.service.notification.model.DingTalkChannelConfig;
@@ -93,7 +92,8 @@ public class NotificationServiceTest extends AuthorityTestEnv {
     public void test_DetailChannel_withChannelConfig() {
         Channel saved = notificationService.createChannel(PROJECT_ID, getChannel());
         Channel channel = notificationService.detailChannel(PROJECT_ID, saved.getId());
-        Assert.assertEquals("https://oapi.dingtalk.com/robot", ((DingTalkChannelConfig) channel.getChannelConfig()).getWebhook());
+        Assert.assertEquals("https://oapi.dingtalk.com/robot",
+                ((DingTalkChannelConfig) channel.getChannelConfig()).getWebhook());
     }
 
     @Test
