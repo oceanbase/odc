@@ -178,7 +178,7 @@ public class NotificationServiceTest extends AuthorityTestEnv {
         channel.setOrganizationId(ORGANIZATION_ID);
         channel.setCreatorId(ADMIN_USER_ID);
         DingTalkChannelConfig channelConfig = new DingTalkChannelConfig();
-        channelConfig.setWebhook("test");
+        channelConfig.setWebhook("https://oapi.dingtalk.com/robot");
         channel.setChannelConfig(channelConfig);
         return channel;
     }
