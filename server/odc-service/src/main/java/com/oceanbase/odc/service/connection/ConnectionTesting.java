@@ -39,7 +39,7 @@ import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.plugin.connect.api.ConnectionExtensionPoint;
 import com.oceanbase.odc.plugin.connect.api.TestResult;
-import com.oceanbase.odc.plugin.connect.model.ConnectionConstants;
+import com.oceanbase.odc.plugin.connect.model.ConnectionPropertiesBuilder;
 import com.oceanbase.odc.service.connection.model.ConnectProperties;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.model.ConnectionTestResult;
@@ -203,37 +203,19 @@ public class ConnectionTesting {
     }
 
     private Properties getJdbcUrlProperties(ConnectionConfig config, String schema) {
-        Properties properties = new Properties();
-        if (Objects.nonNull(config.getHost())) {
-            properties.put(ConnectionConstants.HOST, config.getHost());
-        }
-        if (Objects.nonNull(config.getPort())) {
-            properties.put(ConnectionConstants.PORT, config.getPort());
-        }
-        if (Objects.nonNull(schema)) {
-            properties.put(ConnectionConstants.DEFAULT_SCHEMA, schema);
-        }
-        if (Objects.nonNull(config.getSid())) {
-            properties.put(ConnectionConstants.SID, config.getSid());
-        }
-        if (Objects.nonNull(config.getServiceName())) {
-            properties.put(ConnectionConstants.SERVICE_NAME, config.getServiceName());
-        }
-        return properties;
+        return new ConnectionPropertiesBuilder()
+                .host(config.getHost())
+                .port(config.getPort())
+                .defaultSchema(schema)
+                .sid(config.getSid())
+                .serviceName(config.getServiceName())
+                .build();
     }
 
     private Properties getTestConnectionProperties(ConnectionConfig config) {
-        Properties properties = new Properties();
-        String password = OBConsoleDataSourceFactory.getPassword(config);
-        String username = OBConsoleDataSourceFactory.getUsername(config);
-        if (Objects.nonNull(username)) {
-            properties.put(ConnectionConstants.USER, username);
-        }
-        properties.put(ConnectionConstants.PASSWORD, Objects.isNull(password) ? "" : password);
-        if (Objects.nonNull(config.getUserRole())) {
-            properties.put(ConnectionConstants.USER_ROLE, config.getUserRole().getValue());
-        }
-        return properties;
+        return new ConnectionPropertiesBuilder().user(OBConsoleDataSourceFactory.getUsername(config))
+                .passWord(OBConsoleDataSourceFactory.getPassword(config)).userRole(config.getUserRole())
+                .build();
     }
 
     private ConnectionConfig reqToConnectionConfig(TestConnectionReq req) {

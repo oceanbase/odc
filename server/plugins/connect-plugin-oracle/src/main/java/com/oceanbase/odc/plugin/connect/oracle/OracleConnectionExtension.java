@@ -36,7 +36,7 @@ import com.oceanbase.odc.core.shared.constant.OdcConstants;
 import com.oceanbase.odc.core.shared.exception.VerifyException;
 import com.oceanbase.odc.core.shared.jdbc.JdbcUrlParser;
 import com.oceanbase.odc.plugin.connect.api.TestResult;
-import com.oceanbase.odc.plugin.connect.model.ConnectionConstants;
+import com.oceanbase.odc.plugin.connect.model.ConnectionPropertiesBuilder;
 import com.oceanbase.odc.plugin.connect.obmysql.OBMySQLConnectionExtension;
 
 import lombok.NonNull;
@@ -52,16 +52,15 @@ import lombok.extern.slf4j.Slf4j;
 public class OracleConnectionExtension extends OBMySQLConnectionExtension {
     @Override
     public String generateJdbcUrl(@NonNull Properties properties, Map<String, String> jdbcParameters) {
-        String host = properties.getProperty(ConnectionConstants.HOST);
-        Integer port = (properties.get(ConnectionConstants.PORT) instanceof Integer)
-                ? (Integer) properties.get(ConnectionConstants.PORT)
-                : null;
+        String host = properties.getProperty(ConnectionPropertiesBuilder.HOST);
+        Object portValue = properties.get(ConnectionPropertiesBuilder.PORT);
+        Integer port = (portValue instanceof Integer) ? (Integer) portValue : null;
         Validate.notEmpty(host, "host can not be empty");
         Validate.notNull(port, "port can not be null");
 
         StringBuilder jdbcUrl = new StringBuilder();
-        String sid = properties.getProperty(ConnectionConstants.SID);
-        String serviceName = properties.getProperty(ConnectionConstants.SERVICE_NAME);
+        String sid = properties.getProperty(ConnectionPropertiesBuilder.SID);
+        String serviceName = properties.getProperty(ConnectionPropertiesBuilder.SERVICE_NAME);
         if (Objects.nonNull(sid)) {
             jdbcUrl.append("jdbc:oracle:thin:@").append(host).append(":").append(port).append(":").append(sid);
         } else if (Objects.nonNull(serviceName)) {
@@ -108,7 +107,7 @@ public class OracleConnectionExtension extends OBMySQLConnectionExtension {
     }
 
     @Override
-    public JdbcUrlParser getJdbcUrlParser(@NonNull String jdbcUrl) throws SQLException {
-        return new OracleJdbcUrlParser(jdbcUrl);
+    public JdbcUrlParser getConnectionInfo(@NonNull String jdbcUrl, String userName) throws SQLException {
+        return new OracleJdbcUrlParser(jdbcUrl, userName);
     }
 }

@@ -41,7 +41,7 @@ import com.oceanbase.odc.core.shared.jdbc.HostAddress;
 import com.oceanbase.odc.core.shared.jdbc.JdbcUrlParser;
 import com.oceanbase.odc.plugin.connect.api.ConnectionExtensionPoint;
 import com.oceanbase.odc.plugin.connect.api.TestResult;
-import com.oceanbase.odc.plugin.connect.model.ConnectionConstants;
+import com.oceanbase.odc.plugin.connect.model.ConnectionPropertiesBuilder;
 import com.oceanbase.odc.plugin.connect.obmysql.initializer.EnableTraceInitializer;
 
 import lombok.NonNull;
@@ -60,13 +60,12 @@ public class OBMySQLConnectionExtension implements ConnectionExtensionPoint {
 
     @Override
     public String generateJdbcUrl(@NonNull Properties properties, Map<String, String> jdbcParameters) {
-        String host = properties.getProperty(ConnectionConstants.HOST);
+        String host = properties.getProperty(ConnectionPropertiesBuilder.HOST);
         Validate.notEmpty(host, "host can not be empty");
-        Integer port = (properties.get(ConnectionConstants.PORT) instanceof Integer)
-                ? (Integer) properties.get(ConnectionConstants.PORT)
-                : null;
+        Object portValue = properties.get(ConnectionPropertiesBuilder.PORT);
+        Integer port = (portValue instanceof Integer) ? (Integer) portValue : null;
         Validate.notNull(port, "port can not be null");
-        String defaultSchema = properties.getProperty(ConnectionConstants.DEFAULT_SCHEMA);
+        String defaultSchema = properties.getProperty(ConnectionPropertiesBuilder.DEFAULT_SCHEMA);
 
         StringBuilder jdbcUrl = new StringBuilder(String.format(getJdbcUrlPrefix(), host, port));
         if (StringUtils.isNotBlank(defaultSchema)) {
@@ -106,7 +105,7 @@ public class OBMySQLConnectionExtension implements ConnectionExtensionPoint {
     }
 
     @Override
-    public JdbcUrlParser getJdbcUrlParser(@NonNull String jdbcUrl) throws SQLException {
+    public JdbcUrlParser getConnectionInfo(@NonNull String jdbcUrl, String userName) throws SQLException {
         return new OceanBaseJdbcUrlParser(jdbcUrl);
     }
 
@@ -129,7 +128,7 @@ public class OBMySQLConnectionExtension implements ConnectionExtensionPoint {
     protected TestResult internalTest(String jdbcUrl, Properties properties, int queryTimeout) {
         HostAddress hostAddress;
         try {
-            hostAddress = getJdbcUrlParser(jdbcUrl).getHostAddresses().get(0);
+            hostAddress = getConnectionInfo(jdbcUrl, null).getHostAddresses().get(0);
         } catch (SQLException e) {
             return TestResult.unknownError(e);
         }

@@ -98,19 +98,16 @@ public class DefaultConnectSessionFactory implements ConnectionSessionFactory {
         try {
             JdbcUrlParser urlParser = ConnectionPluginUtil
                     .getConnectionExtension(connectionConfig.getDialectType())
-                    .getJdbcUrlParser(dataSourceFactory.getJdbcUrl());
+                    .getConnectionInfo(dataSourceFactory.getJdbcUrl(), connectionConfig.getUsername());
             String connectSchema = urlParser.getSchema();
             if (StringUtils.isNotBlank(connectSchema)) {
                 connectSchema = ConnectionSessionUtil.getUserOrSchemaString(connectSchema, session.getDialectType());
                 ConnectionSessionUtil.setConnectSchema(session, connectSchema);
-                ConnectionSessionUtil.setCurrentSchema(session, connectSchema);
-            } else {
-                ConnectionSessionUtil.setConnectSchema(session, null);
-                ConnectionSessionUtil.setCurrentSchema(session, connectionConfig.getDefaultSchema());
             }
+            ConnectionSessionUtil.setCurrentSchema(session, connectionConfig.getDefaultSchema());
         } catch (Exception e) {
             if (StringUtils.isNotBlank(connectionConfig.getDefaultSchema())) {
-                ConnectionSessionUtil.setConnectSchema(session, null);
+                ConnectionSessionUtil.setConnectSchema(session, connectionConfig.getDefaultSchema());
                 ConnectionSessionUtil.setCurrentSchema(session, connectionConfig.getDefaultSchema());
             }
         }

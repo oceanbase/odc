@@ -39,12 +39,12 @@ import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
 import com.oceanbase.odc.plugin.connect.api.ConnectionExtensionPoint;
-import com.oceanbase.odc.plugin.connect.model.ConnectionConstants;
+import com.oceanbase.odc.plugin.connect.model.ConnectionPropertiesBuilder;
+import com.oceanbase.odc.plugin.connect.model.UserRole;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig.SSLConfig;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig.SSLFileEntry;
 import com.oceanbase.odc.service.connection.model.OBTenantEndpoint;
-import com.oceanbase.odc.service.connection.model.UserRole;
 import com.oceanbase.odc.service.connection.util.ConnectionMapper;
 import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 import com.oceanbase.odc.service.session.initializer.SessionCreatedInitializer;
@@ -105,23 +105,13 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
     }
 
     private Properties getJdbcUrlProperties() {
-        Properties properties = new Properties();
-        if (Objects.nonNull(this.host)) {
-            properties.put(ConnectionConstants.HOST, this.host);
-        }
-        if (Objects.nonNull(this.port)) {
-            properties.put(ConnectionConstants.PORT, this.port);
-        }
-        if (Objects.nonNull(this.defaultSchema)) {
-            properties.put(ConnectionConstants.DEFAULT_SCHEMA, this.defaultSchema);
-        }
-        if (Objects.nonNull(this.sid)) {
-            properties.put(ConnectionConstants.SID, this.sid);
-        }
-        if (Objects.nonNull(this.serviceName)) {
-            properties.put(ConnectionConstants.SERVICE_NAME, this.serviceName);
-        }
-        return properties;
+        return new ConnectionPropertiesBuilder()
+                .host(this.host)
+                .port(this.port)
+                .defaultSchema(this.defaultSchema)
+                .sid(this.sid)
+                .serviceName(this.serviceName)
+                .build();
     }
 
     public static String getUsername(@NonNull ConnectionConfig connectionConfig) {
@@ -207,7 +197,7 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
 
         Properties properties = new Properties();
         if (Objects.nonNull(this.userRole)) {
-            properties.put(ConnectionConstants.USER_ROLE, this.userRole.name());
+            properties.put(ConnectionPropertiesBuilder.USER_ROLE, this.userRole.name());
             dataSource.setConnectionProperties(properties);
         }
         // Set datasource driver class

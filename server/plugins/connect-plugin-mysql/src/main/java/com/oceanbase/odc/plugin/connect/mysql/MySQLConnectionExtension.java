@@ -64,7 +64,7 @@ public class MySQLConnectionExtension extends OBMySQLConnectionExtension {
     }
 
     @Override
-    public JdbcUrlParser getJdbcUrlParser(@NonNull String jdbcUrl) throws SQLException {
+    public JdbcUrlParser getConnectionInfo(@NonNull String jdbcUrl, String userName) throws SQLException {
         return new MySQLJdbcUrlParser(jdbcUrl);
     }
 

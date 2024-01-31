@@ -24,7 +24,6 @@ import org.pf4j.ExtensionPoint;
 
 import com.oceanbase.odc.core.datasource.ConnectionInitializer;
 import com.oceanbase.odc.core.shared.jdbc.JdbcUrlParser;
-import com.oceanbase.odc.plugin.connect.model.ConnectionConstants;
 
 import lombok.NonNull;
 
@@ -37,7 +36,7 @@ public interface ConnectionExtensionPoint extends ExtensionPoint {
 
     /**
      * @param properties Properties required by jdbcURL, such as HOST, PORT and DEFAULT_SCHEMA, see
-     *        {@link ConnectionConstants}
+     *        {@link ConnectionPropertiesBuilder}
      * @param jdbcParameters jdbc parameters.
      *
      * @return jdbcURL
@@ -55,11 +54,18 @@ public interface ConnectionExtensionPoint extends ExtensionPoint {
      */
     List<ConnectionInitializer> getConnectionInitializers();
 
-    JdbcUrlParser getJdbcUrlParser(@NonNull String jdbcUrl) throws SQLException;
+    /**
+     * Get connection information based on jdbcUrl and the username of the current connection
+     *
+     * @param jdbcUrl jdbc url.
+     * @param userName jdbc url.
+     * @return {@link JdbcUrlParser}
+     */
+    JdbcUrlParser getConnectionInfo(@NonNull String jdbcUrl, String userName) throws SQLException;
 
     /**
      * @param properties Properties required by test connection, such as USER, PASSWORD, see
-     *        {@link ConnectionConstants}
+     *        {@link ConnectionPropertiesBuilder}
      * @param queryTimeout query timeout.
      *
      * @return test connection result

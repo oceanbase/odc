@@ -42,7 +42,7 @@ public class DefaultJdbcRowMapper extends BaseDialectBasedRowMapper {
     public DefaultJdbcRowMapper(@NonNull ConnectionSession session) {
         super(session.getDialectType());
         DialectType dialectType = session.getDialectType();
-        Validate.notNull(dialectType, "DialectType cannot be null");
+        Validate.notNull(dialectType, "DialectType can not be null");
         if (dialectType.isMysql()) {
             mapperList.add(new MySQLBitMapper());
             mapperList.add(new MySQLDatetimeMapper());

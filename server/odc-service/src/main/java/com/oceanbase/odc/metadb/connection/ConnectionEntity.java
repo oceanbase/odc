@@ -36,7 +36,7 @@ import com.oceanbase.odc.core.shared.constant.Cipher;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.ConnectionVisibleScope;
 import com.oceanbase.odc.core.shared.constant.DialectType;
-import com.oceanbase.odc.service.connection.model.UserRole;
+import com.oceanbase.odc.plugin.connect.model.UserRole;
 
 import lombok.Data;
 import lombok.ToString;
@@ -287,5 +287,6 @@ public class ConnectionEntity {
      * Oracle 连接方式特有的参数，该参数用户角色
      */
     @Column(name = "user_role")
+    @Enumerated(value = EnumType.STRING)
     private UserRole userRole;
 }

@@ -40,11 +40,13 @@ public class OracleJdbcUrlParser implements JdbcUrlParser {
     private String jdbcUrl;
     private List<HostAddress> addresses;
     private Map<String, Object> parameters;
+    private String userName;
 
-    public OracleJdbcUrlParser(@NonNull String jdbcUrl) {
+    public OracleJdbcUrlParser(@NonNull String jdbcUrl, String userName) {
         if (!jdbcUrl.startsWith(ORACLE_JDBC_PREFIX)) {
             throw new IllegalArgumentException("Invalid JDBC URL for Oracle: " + jdbcUrl);
         }
+        this.userName = userName;
         this.jdbcUrl = jdbcUrl;
         this.addresses = parseHostAndPort(jdbcUrl);
         this.parameters = parseParameters(jdbcUrl);
@@ -90,8 +92,7 @@ public class OracleJdbcUrlParser implements JdbcUrlParser {
 
     @Override
     public String getSchema() {
-        // we cannot get connect schema by parse jdbcUrl
-        return null;
+        return this.userName;
     }
 
     @Override

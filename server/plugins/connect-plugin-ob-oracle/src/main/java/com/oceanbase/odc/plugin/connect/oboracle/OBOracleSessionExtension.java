@@ -49,8 +49,16 @@ public class OBOracleSessionExtension implements SessionExtensionPoint {
         if (Objects.equals(currentSchema, schemaName)) {
             return;
         }
-        String alterSql = "ALTER SESSION SET CURRENT_SCHEMA=" + StringUtils.quoteOracleIdentifier(schemaName);
+        schemaName = isQuotedWithIdentifier(schemaName) ? schemaName : StringUtils.quoteOracleIdentifier(schemaName);
+        String alterSql = "ALTER SESSION SET CURRENT_SCHEMA=" + schemaName;
         JdbcOperationsUtil.getJdbcOperations(connection).update(alterSql);
+    }
+
+    public boolean isQuotedWithIdentifier(String text) {
+        if (text != null && text.length() >= 2) {
+            return text.startsWith("\"") && text.endsWith("\"");
+        }
+        return false;
     }
 
     @Override

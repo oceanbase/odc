@@ -52,7 +52,7 @@ public class SwitchSchemaInitializer implements ConnectionInitializer {
         }
         String currentSchema = ConnectionSessionUtil.getCurrentSchema(this.connectionSession);
         String connectSchema = ConnectionSessionUtil.getConnectSchema(this.connectionSession);
-        if (currentSchema == null || StringUtils.equals(connectSchema, currentSchema)) {
+        if (connection == null || currentSchema == null || StringUtils.equals(connectSchema, currentSchema)) {
             return;
         }
         ConnectionPluginUtil.getSessionExtension(connectionSession.getDialectType())

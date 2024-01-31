@@ -70,7 +70,7 @@ public class SessionSettingsService {
         }
         JdbcOperations jdbcOperations = session.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY);
         Boolean autocommit = jdbcOperations.execute(Connection::getAutoCommit);
-        if (!autocommit.equals(settings.getAutocommit())) {
+        if (!Objects.equals(autocommit, settings.getAutocommit())) {
             jdbcOperations.execute((ConnectionCallback<Void>) conn -> {
                 conn.setAutoCommit(settings.getAutocommit());
                 return null;

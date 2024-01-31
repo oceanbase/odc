@@ -34,7 +34,7 @@ import com.oceanbase.odc.plugin.connect.api.InformationExtensionPoint;
 import com.oceanbase.odc.plugin.connect.api.SessionExtensionPoint;
 import com.oceanbase.odc.plugin.connect.api.TestResult;
 import com.oceanbase.odc.plugin.connect.api.TraceExtensionPoint;
-import com.oceanbase.odc.plugin.connect.model.ConnectionConstants;
+import com.oceanbase.odc.plugin.connect.model.ConnectionPropertiesBuilder;
 import com.oceanbase.odc.test.database.TestDBConfiguration;
 import com.oceanbase.odc.test.database.TestDBConfigurations;
 
@@ -66,17 +66,12 @@ public class OracleExtensionTest extends BaseExtensionPointTest {
     }
 
     private Properties getJdbcProperties() {
-        Properties properties = new Properties();
-        properties.put(ConnectionConstants.HOST, configuration.getHost());
-        properties.put(ConnectionConstants.PORT, configuration.getPort());
-        return properties;
+        return new ConnectionPropertiesBuilder().host(configuration.getHost()).port(configuration.getPort()).build();
     }
 
     private Properties getTestConnectionProperties() {
-        Properties properties = new Properties();
-        properties.put(ConnectionConstants.USER, configuration.getUsername());
-        properties.put(ConnectionConstants.PASSWORD, configuration.getPassword());
-        return properties;
+        return new ConnectionPropertiesBuilder().user(configuration.getUsername()).passWord(configuration.getPassword())
+                .build();
     }
 
     @Test
@@ -88,10 +83,10 @@ public class OracleExtensionTest extends BaseExtensionPointTest {
     @Test
     public void test_oracle_connect_with_sid_success() {
         Properties jdbcProperties = getJdbcProperties();
-        jdbcProperties.put(ConnectionConstants.SID, configuration.getSID());
+        jdbcProperties.put(ConnectionPropertiesBuilder.SID, configuration.getSID());
         String url = connectionExtensionPoint.generateJdbcUrl(jdbcProperties, null);
         Properties testConnectionProperties = getTestConnectionProperties();
-        testConnectionProperties.put(ConnectionConstants.USER_ROLE, configuration.getRole());
+        testConnectionProperties.put(ConnectionPropertiesBuilder.USER_ROLE, configuration.getRole());
         TestResult result = connectionExtensionPoint.test(url, testConnectionProperties, 30);
         Assert.assertTrue(result.isActive());
         Assert.assertNull(result.getErrorCode());
@@ -100,10 +95,10 @@ public class OracleExtensionTest extends BaseExtensionPointTest {
     @Test
     public void test_oracle_connect_with_serviceName_success() {
         Properties jdbcProperties = getJdbcProperties();
-        jdbcProperties.put(ConnectionConstants.SERVICE_NAME, configuration.getServiceName());
+        jdbcProperties.put(ConnectionPropertiesBuilder.SERVICE_NAME, configuration.getServiceName());
         String url = connectionExtensionPoint.generateJdbcUrl(jdbcProperties, null);
         Properties testConnectionProperties = getTestConnectionProperties();
-        testConnectionProperties.put(ConnectionConstants.USER_ROLE, configuration.getRole());
+        testConnectionProperties.put(ConnectionPropertiesBuilder.USER_ROLE, configuration.getRole());
         TestResult result = connectionExtensionPoint.test(url, testConnectionProperties, 30);
         Assert.assertTrue(result.isActive());
         Assert.assertNull(result.getErrorCode());
@@ -112,12 +107,12 @@ public class OracleExtensionTest extends BaseExtensionPointTest {
     @Test
     public void test_oracle_connect_invalid_password() {
         Properties jdbcProperties = getJdbcProperties();
-        jdbcProperties.put(ConnectionConstants.SID, configuration.getSID());
+        jdbcProperties.put(ConnectionPropertiesBuilder.SID, configuration.getSID());
         String url = connectionExtensionPoint.generateJdbcUrl(jdbcProperties, null);
 
         Properties testConnectionProperties = getTestConnectionProperties();
-        testConnectionProperties.put(ConnectionConstants.PASSWORD, "error");
-        testConnectionProperties.put(ConnectionConstants.USER_ROLE, "sysdba");
+        testConnectionProperties.put(ConnectionPropertiesBuilder.PASSWORD, "error");
+        testConnectionProperties.put(ConnectionPropertiesBuilder.USER_ROLE, "sysdba");
 
         TestResult result = connectionExtensionPoint.test(url, testConnectionProperties, 30);
         Assert.assertFalse(result.isActive());
@@ -126,12 +121,12 @@ public class OracleExtensionTest extends BaseExtensionPointTest {
     @Test
     public void test_oracle_connect_invalid_port() {
         Properties jdbcProperties = getJdbcProperties();
-        jdbcProperties.put(ConnectionConstants.SID, configuration.getSID());
-        jdbcProperties.put(ConnectionConstants.PORT, configuration.getPort() + 100);
+        jdbcProperties.put(ConnectionPropertiesBuilder.SID, configuration.getSID());
+        jdbcProperties.put(ConnectionPropertiesBuilder.PORT, configuration.getPort() + 100);
         String url = connectionExtensionPoint.generateJdbcUrl(jdbcProperties, null);
 
         Properties testConnectionProperties = getTestConnectionProperties();
-        testConnectionProperties.put(ConnectionConstants.USER_ROLE, configuration.getRole());
+        testConnectionProperties.put(ConnectionPropertiesBuilder.USER_ROLE, configuration.getRole());
 
         TestResult result = connectionExtensionPoint.test(url, testConnectionProperties, 30);
 
@@ -141,12 +136,12 @@ public class OracleExtensionTest extends BaseExtensionPointTest {
     @Test
     public void test_oracle_connect_invalid_host() {
         Properties jdbcProperties = getJdbcProperties();
-        jdbcProperties.put(ConnectionConstants.SID, configuration.getSID());
-        jdbcProperties.put(ConnectionConstants.HOST, UUID.randomUUID().toString());
+        jdbcProperties.put(ConnectionPropertiesBuilder.SID, configuration.getSID());
+        jdbcProperties.put(ConnectionPropertiesBuilder.HOST, UUID.randomUUID().toString());
         String url = connectionExtensionPoint.generateJdbcUrl(jdbcProperties, null);
 
         Properties testConnectionProperties = getTestConnectionProperties();
-        testConnectionProperties.put(ConnectionConstants.USER_ROLE, configuration.getRole());
+        testConnectionProperties.put(ConnectionPropertiesBuilder.USER_ROLE, configuration.getRole());
         TestResult result = connectionExtensionPoint.test(url, testConnectionProperties, 30);
 
         Assert.assertFalse(result.isActive());

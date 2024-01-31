@@ -58,7 +58,7 @@ import com.oceanbase.odc.common.util.tableformat.CellStyle.NullStyle;
 import com.oceanbase.odc.common.util.tableformat.Table;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
-import com.oceanbase.odc.plugin.connect.model.ConnectionConstants;
+import com.oceanbase.odc.plugin.connect.model.ConnectionPropertiesBuilder;
 import com.oceanbase.odc.plugin.connect.mysql.MySQLConnectionExtension;
 import com.oceanbase.odc.plugin.task.api.datatransfer.DataTransferJob;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.ConnectionInfo;
@@ -184,17 +184,8 @@ public class MySQLDataTransferJob implements DataTransferJob {
     }
 
     private Properties getJdbcUrlProperties(ConnectionInfo connectionInfo) {
-        Properties properties = new Properties();
-        if (Objects.nonNull(connectionInfo.getHost())) {
-            properties.put(ConnectionConstants.HOST, connectionInfo.getHost());
-        }
-        if (Objects.nonNull(connectionInfo.getPort())) {
-            properties.put(ConnectionConstants.PORT, connectionInfo.getPort());
-        }
-        if (Objects.nonNull(connectionInfo.getSchema())) {
-            properties.put(ConnectionConstants.DEFAULT_SCHEMA, connectionInfo.getSchema());
-        }
-        return properties;
+        return new ConnectionPropertiesBuilder().host(connectionInfo.getHost()).port(connectionInfo.getPort())
+                .defaultSchema(connectionInfo.getSchema()).build();
     }
 
     private void initTransferJobs(DataSource dataSource, String jdbcUrl) {

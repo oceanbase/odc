@@ -46,6 +46,7 @@ import com.oceanbase.odc.core.shared.constant.ConnectionVisibleScope;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
+import com.oceanbase.odc.plugin.connect.model.UserRole;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.ConnectionInfo;
 import com.oceanbase.odc.service.collaboration.environment.model.EnvironmentStyle;
 import com.oceanbase.odc.service.connection.ConnectionStatusManager.CheckState;

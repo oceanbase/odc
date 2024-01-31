@@ -23,7 +23,7 @@ import java.util.Properties;
 
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.datasource.SingleConnectionDataSource;
-import com.oceanbase.odc.plugin.connect.model.ConnectionConstants;
+import com.oceanbase.odc.plugin.connect.model.ConnectionPropertiesBuilder;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.ConnectionInfo;
 
 public class ConnectionUtil {
@@ -50,17 +50,8 @@ public class ConnectionUtil {
     }
 
     private static Properties getJdbcUrlProperties(ConnectionInfo connectionInfo, String schema) {
-        Properties properties = new Properties();
-        if (Objects.nonNull(connectionInfo.getHost())) {
-            properties.put(ConnectionConstants.HOST, connectionInfo.getHost());
-        }
-        if (Objects.nonNull(connectionInfo.getPort())) {
-            properties.put(ConnectionConstants.PORT, connectionInfo.getPort());
-        }
-        if (Objects.nonNull(schema)) {
-            properties.put(ConnectionConstants.DEFAULT_SCHEMA, schema);
-        }
-        return properties;
+        return new ConnectionPropertiesBuilder().host(connectionInfo.getHost()).port(connectionInfo.getPort())
+                .defaultSchema(schema).build();
     }
 
 }

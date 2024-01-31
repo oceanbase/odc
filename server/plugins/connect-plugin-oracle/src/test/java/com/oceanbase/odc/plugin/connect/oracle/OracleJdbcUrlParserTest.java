@@ -44,12 +44,12 @@ public class OracleJdbcUrlParserTest {
 
         thrown.expect(IllegalArgumentException.class);
         thrown.expectMessage("Invalid JDBC URL for Oracle: " + jdbcUrl);
-        new OracleJdbcUrlParser(jdbcUrl);
+        new OracleJdbcUrlParser(jdbcUrl, null);
     }
 
     @Test
     public void getHostAndPort_with_serviceName_in_jdbcUrl() throws SQLException {
-        JdbcUrlParser parser = new OracleJdbcUrlParser("jdbc:oracle:thin:@//0.0.0.0:1234/serviceName");
+        JdbcUrlParser parser = new OracleJdbcUrlParser("jdbc:oracle:thin:@//0.0.0.0:1234/serviceName", null);
 
         List<HostAddress> expect = new ArrayList<>();
         expect.add(new HostAddress("0.0.0.0", 1234));
@@ -59,7 +59,7 @@ public class OracleJdbcUrlParserTest {
 
     @Test
     public void getHostAndPort_with_sid_in_jdbcUrl() throws SQLException {
-        JdbcUrlParser parser = new OracleJdbcUrlParser("jdbc:oracle:thin:@0.0.0.0:1234:sid");
+        JdbcUrlParser parser = new OracleJdbcUrlParser("jdbc:oracle:thin:@0.0.0.0:1234:sid", null);
 
         List<HostAddress> expect = new ArrayList<>();
         expect.add(new HostAddress("0.0.0.0", 1234));
@@ -69,13 +69,13 @@ public class OracleJdbcUrlParserTest {
 
     @Test
     public void getParameters_noParametersExists_returnEmpty() throws SQLException {
-        JdbcUrlParser parser = new OracleJdbcUrlParser("jdbc:oracle:thin:@0.0.0.0:1234:sid");
+        JdbcUrlParser parser = new OracleJdbcUrlParser("jdbc:oracle:thin:@0.0.0.0:1234:sid", null);
         Assert.assertTrue(parser.getParameters().isEmpty());
     }
 
     @Test
     public void getParameters_userParametersExists_returnNotEmpty() throws SQLException {
-        JdbcUrlParser parser = new OracleJdbcUrlParser("jdbc:oracle:thin:@0.0.0.0:1234:sid?user=David");
+        JdbcUrlParser parser = new OracleJdbcUrlParser("jdbc:oracle:thin:@0.0.0.0:1234:sid?user=David", null);
         Assert.assertEquals("David", parser.getParameters().get("user"));
     }
 }

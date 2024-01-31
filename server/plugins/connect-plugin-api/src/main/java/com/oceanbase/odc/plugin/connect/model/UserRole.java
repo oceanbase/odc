@@ -13,8 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package com.oceanbase.odc.service.connection.model;
+package com.oceanbase.odc.plugin.connect.model;
 
 /**
  * @author jingtian

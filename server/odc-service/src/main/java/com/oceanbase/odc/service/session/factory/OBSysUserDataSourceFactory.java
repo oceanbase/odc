@@ -17,7 +17,6 @@ package com.oceanbase.odc.service.session.factory;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
 
 import javax.sql.DataSource;
 
@@ -26,7 +25,7 @@ import com.oceanbase.odc.core.datasource.DataSourceFactory;
 import com.oceanbase.odc.core.datasource.SingleConnectionDataSource;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.plugin.connect.api.ConnectionExtensionPoint;
-import com.oceanbase.odc.plugin.connect.model.ConnectionConstants;
+import com.oceanbase.odc.plugin.connect.model.ConnectionPropertiesBuilder;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 
@@ -98,10 +97,9 @@ public class OBSysUserDataSourceFactory implements DataSourceFactory {
     }
 
     protected String getJdbcUrl() {
-        Properties properties = new Properties();
-        properties.put(ConnectionConstants.HOST, this.connectionConfig.getHost());
-        properties.put(ConnectionConstants.PORT, this.connectionConfig.getPort());
-        return connectionExtensionPoint.generateJdbcUrl(properties, JDBC_URL_PARAMS);
+        return connectionExtensionPoint
+                .generateJdbcUrl(new ConnectionPropertiesBuilder().host(this.connectionConfig.getHost()).port(
+                        this.connectionConfig.getPort()).build(), JDBC_URL_PARAMS);
     }
 
 }
