@@ -125,7 +125,7 @@ public class PartitionPlanServiceV2 {
 
     public List<PartitionPlanVariable> getSupportedVariables() {
         return Arrays.stream(PartitionPlanVariableKey.values())
-            .map(PartitionPlanVariable::new).collect(Collectors.toList());
+                .map(PartitionPlanVariable::new).collect(Collectors.toList());
     }
 
     /**
