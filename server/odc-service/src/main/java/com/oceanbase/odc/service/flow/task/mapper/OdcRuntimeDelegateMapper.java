@@ -49,7 +49,7 @@ import lombok.NonNull;
 public class OdcRuntimeDelegateMapper implements RuntimeDelegateMapper {
     @Override
     public Class<? extends BaseRuntimeFlowableDelegate<?>> map(@NonNull TaskType taskType) {
-        boolean enableTaskFramework = SpringContextUtil.getBean(TaskFrameworkProperties.class).isEnableTaskFramework();
+        boolean enableTaskFramework = SpringContextUtil.getBean(TaskFrameworkProperties.class).isEnabled();
         switch (taskType) {
             case ASYNC:
                 return enableTaskFramework ? DatabaseChangeRuntimeFlowableTaskCopied.class

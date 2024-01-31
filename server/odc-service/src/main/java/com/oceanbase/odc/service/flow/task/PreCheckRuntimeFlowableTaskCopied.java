@@ -73,6 +73,7 @@ import com.oceanbase.odc.service.task.schedule.DefaultJobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobScheduler;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
+import com.oceanbase.odc.service.task.util.JobUtils;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -219,7 +220,7 @@ public class PreCheckRuntimeFlowableTaskCopied extends BaseODCFlowTaskDelegate<V
             @NonNull RiskLevelDescriber riskLevelDescriber) {
         Map<String, String> parameters = new HashMap<>();
         parameters.put(JobParametersKeyConstants.TASK_PARAMETER_JSON_KEY,
-                JsonUtils.toJson(buildPreCheckTaskParameters(taskEntity, connectionConfig, riskLevelDescriber)));
+                JobUtils.toJson(buildPreCheckTaskParameters(taskEntity, connectionConfig, riskLevelDescriber)));
         return DefaultJobDefinition.builder()
                 .jobClass(PreCheckTask.class)
                 .jobType(TaskType.PRE_CHECK.name())
