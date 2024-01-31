@@ -242,11 +242,6 @@ public class SingleConnectionDataSource extends BaseClassBasedDataSource impleme
                 throw ex.getTargetException();
             }
         }
-
-        public Connection getTarget() {
-            return target;
-        }
-
     }
 
 }
