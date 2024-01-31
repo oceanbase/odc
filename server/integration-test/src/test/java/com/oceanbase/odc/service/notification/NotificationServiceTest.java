@@ -93,7 +93,7 @@ public class NotificationServiceTest extends AuthorityTestEnv {
     public void test_DetailChannel_withChannelConfig() {
         Channel saved = notificationService.createChannel(PROJECT_ID, getChannel());
         Channel channel = notificationService.detailChannel(PROJECT_ID, saved.getId());
-        Assert.assertEquals("test", ((DingTalkChannelConfig) channel.getChannelConfig()).getWebhook());
+        Assert.assertEquals("https://oapi.dingtalk.com/robot", ((DingTalkChannelConfig) channel.getChannelConfig()).getWebhook());
     }
 
     @Test
@@ -113,8 +113,9 @@ public class NotificationServiceTest extends AuthorityTestEnv {
         Channel channel = getChannel();
         channel.getChannelConfig().setLanguage("zh-CN");
         Channel saved = notificationService.createChannel(PROJECT_ID, channel);
-        BaseChannelConfig config = new DingTalkChannelConfig();
+        DingTalkChannelConfig config = new DingTalkChannelConfig();
         config.setLanguage("en");
+        config.setWebhook("https://oapi.dingtalk.com/robot");
         saved.setChannelConfig(config);
         Channel updated = notificationService.updateChannel(PROJECT_ID, saved);
 
