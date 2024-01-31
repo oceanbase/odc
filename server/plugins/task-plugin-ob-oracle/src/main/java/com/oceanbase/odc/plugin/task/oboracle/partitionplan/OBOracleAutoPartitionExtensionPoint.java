@@ -61,8 +61,8 @@ import lombok.NonNull;
 public class OBOracleAutoPartitionExtensionPoint extends OBMySQLAutoPartitionExtensionPoint {
 
     @Override
-    public List<DBTable> listTables(@NonNull Connection connection, @NonNull String schemaName,
-            List<String> tableNames) {
+    public List<DBTable> listAllPartitionedTables(@NonNull Connection connection,
+            @NonNull String schemaName, List<String> tableNames) {
         return null;
     }
 

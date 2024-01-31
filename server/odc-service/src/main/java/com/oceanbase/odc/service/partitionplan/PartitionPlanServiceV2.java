@@ -91,9 +91,9 @@ public class PartitionPlanServiceV2 {
                 .collect(Collectors.toList());
         String schema = ConnectionSessionUtil.getCurrentSchema(connectionSession);
         SyncJdbcExecutor jdbc = connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY);
-        Map<String, DBTable> name2Table = jdbc
-                .execute((ConnectionCallback<List<DBTable>>) con -> extensionPoint.listTables(con, schema, tableNames))
-                .stream().collect(Collectors.toMap(DBTable::getName, dbTable -> dbTable));
+        Map<String, DBTable> name2Table =
+                jdbc.execute((ConnectionCallback<List<DBTable>>) con -> extensionPoint.listAllPartitionedTables(con,
+                        schema, tableNames)).stream().collect(Collectors.toMap(DBTable::getName, dbTable -> dbTable));
         if (Boolean.TRUE.equals(onlyForPartitionName)) {
             return tableConfigs.stream().map(i -> jdbc.execute((ConnectionCallback<PartitionPlanPreViewResp>) con -> {
                 try {
