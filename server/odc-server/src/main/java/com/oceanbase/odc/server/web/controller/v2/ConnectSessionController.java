@@ -241,10 +241,8 @@ public class ConnectSessionController {
     public ListResponse<PartitionPlanPreViewResp> getPreView(@PathVariable String sessionId,
             @RequestBody List<PartitionPlanTableConfig> tableConfigs,
             @RequestParam(name = "onlyForPartitionName", defaultValue = "false") Boolean onlyForPartitionName) {
-        String sid = SidUtils.getSessionId(sessionId);
-        return Responses.list(tableConfigs.stream()
-                .map(i -> partitionPlanServiceV2.preview(sid, i, onlyForPartitionName))
-                .collect(Collectors.toList()));
+        return Responses.list(this.partitionPlanServiceV2.preview(
+                SidUtils.getSessionId(sessionId), tableConfigs, onlyForPartitionName));
     }
 
 }

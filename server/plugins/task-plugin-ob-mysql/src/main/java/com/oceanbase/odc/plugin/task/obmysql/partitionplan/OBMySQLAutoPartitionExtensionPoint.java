@@ -62,6 +62,12 @@ import lombok.NonNull;
 public class OBMySQLAutoPartitionExtensionPoint implements AutoPartitionExtensionPoint {
 
     @Override
+    public List<DBTable> listTables(@NonNull Connection connection, @NonNull String schemaName,
+            List<String> tableNames) {
+        return null;
+    }
+
+    @Override
     public boolean supports(@NonNull DBTablePartition partition) {
         DBTablePartitionType type = partition.getPartitionOption().getType();
         if (type == null) {

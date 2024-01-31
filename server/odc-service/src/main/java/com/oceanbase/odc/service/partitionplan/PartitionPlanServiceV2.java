@@ -79,38 +79,48 @@ public class PartitionPlanServiceV2 {
     @Autowired
     private ConnectSessionService sessionService;
 
-    public PartitionPlanPreViewResp preview(@NonNull String sessionId,
-            @NonNull PartitionPlanTableConfig tableConfig, Boolean onlyForPartitionName) {
+    public List<PartitionPlanPreViewResp> preview(@NonNull String sessionId,
+            @NonNull List<PartitionPlanTableConfig> tableConfigs, Boolean onlyForPartitionName) {
         ConnectionSession connectionSession = sessionService.nullSafeGet(sessionId, true);
         DialectType dialectType = connectionSession.getDialectType();
+        AutoPartitionExtensionPoint extensionPoint = TaskPluginUtil.getAutoPartitionExtensionPoint(dialectType);
+        if (extensionPoint == null) {
+            throw new UnsupportedOperationException("Unsupported dialect " + dialectType);
+        }
+        List<String> tableNames = tableConfigs.stream().map(PartitionPlanTableConfig::getTableName)
+                .collect(Collectors.toList());
         String schema = ConnectionSessionUtil.getCurrentSchema(connectionSession);
         SyncJdbcExecutor jdbc = connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY);
+        Map<String, DBTable> name2Table = jdbc
+                .execute((ConnectionCallback<List<DBTable>>) con -> extensionPoint.listTables(con, schema, tableNames))
+                .stream().collect(Collectors.toMap(DBTable::getName, dbTable -> dbTable));
         if (Boolean.TRUE.equals(onlyForPartitionName)) {
-            return jdbc.execute((ConnectionCallback<PartitionPlanPreViewResp>) con -> {
+            return tableConfigs.stream().map(i -> jdbc.execute((ConnectionCallback<PartitionPlanPreViewResp>) con -> {
                 try {
                     PartitionPlanPreViewResp returnVal = new PartitionPlanPreViewResp();
-                    returnVal.setTableName(tableConfig.getTableName());
-                    returnVal.setPartitionName(generatePartitionName(con, dialectType, schema, tableConfig));
+                    String tableName = i.getTableName();
+                    returnVal.setTableName(tableName);
+                    returnVal.setPartitionName(generatePartitionName(con, dialectType, name2Table.get(tableName), i));
                     return returnVal;
                 } catch (Exception e) {
                     log.warn("Failed to generate partition name", e);
                     throw new IllegalStateException(e);
                 }
-            });
+            })).collect(Collectors.toList());
         }
-        return jdbc.execute((ConnectionCallback<PartitionPlanPreViewResp>) con -> {
+        return tableConfigs.stream().map(i -> jdbc.execute((ConnectionCallback<PartitionPlanPreViewResp>) con -> {
             try {
-                Map<PartitionPlanStrategy, List<String>> resp = generatePartitionDdl(
-                        con, dialectType, schema, tableConfig);
+                String tableName = i.getTableName();
+                Map<PartitionPlanStrategy, List<String>> resp = generatePartitionDdl(con, dialectType, tableName, i);
                 PartitionPlanPreViewResp returnVal = new PartitionPlanPreViewResp();
-                returnVal.setTableName(tableConfig.getTableName());
+                returnVal.setTableName(tableName);
                 returnVal.setSqls(resp.values().stream().flatMap(Collection::stream).collect(Collectors.toList()));
                 return returnVal;
             } catch (Exception e) {
                 log.warn("Failed to generate partition ddl", e);
                 throw new IllegalStateException(e);
             }
-        });
+        })).collect(Collectors.toList());
     }
 
     /**

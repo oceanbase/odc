@@ -61,6 +61,12 @@ import lombok.NonNull;
 public class OBOracleAutoPartitionExtensionPoint extends OBMySQLAutoPartitionExtensionPoint {
 
     @Override
+    public List<DBTable> listTables(@NonNull Connection connection, @NonNull String schemaName,
+            List<String> tableNames) {
+        return null;
+    }
+
+    @Override
     public String unquoteIdentifier(@NonNull String identifier) {
         return ConnectionSessionUtil.getUserOrSchemaString(identifier, DialectType.OB_ORACLE);
     }
