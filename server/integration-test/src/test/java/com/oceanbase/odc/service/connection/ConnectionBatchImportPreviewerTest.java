@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.connection;
 
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import java.io.FileInputStream;
@@ -87,7 +88,7 @@ public class ConnectionBatchImportPreviewerTest extends MockedAuthorityTestEnv {
         when(authenticationFacade.currentUser()).thenReturn(User.of(CREATOR_ID));
         when(authenticationFacade.currentUserId()).thenReturn(CREATOR_ID);
         when(authenticationFacade.currentOrganizationId()).thenReturn(ORGANIZATION_ID);
-        when(environmentService.list(Mockito.anyLong(), QueryEnvironmentParam.builder().build()))
+        when(environmentService.list(Mockito.anyLong(), eq(QueryEnvironmentParam.builder().build())))
                 .thenReturn(initEnvironments());
         connectionRepository.deleteAll();
         grantAllPermissions(ResourceType.ODC_CONNECTION, ResourceType.ODC_RESOURCE_GROUP, ResourceType.ODC_USER,

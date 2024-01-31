@@ -124,7 +124,7 @@ public class ConnectionConfigServiceTest extends MockedAuthorityTestEnv {
         when(encryptionFacade.userEncryptor(eq(CREATOR_ID), eq(SALT))).thenReturn(mockEncryptor);
         when(encryptionFacade.organizationEncryptor(eq(ORGANIZATION_ID), eq(SALT))).thenReturn(mockEncryptor);
         Mockito.when(environmentService.detailSkipPermissionCheck(Mockito.anyLong())).thenReturn(getEnvironment());
-        when(environmentService.list(anyLong(), QueryEnvironmentParam.builder().build()))
+        when(environmentService.list(anyLong(), eq(QueryEnvironmentParam.builder().build())))
                 .thenReturn(Collections.singletonList(getEnvironment()));
         doNothing().when(userPermissionService).bindUserAndDataSourcePermission(eq(CREATOR_ID), eq(ORGANIZATION_ID),
                 any(Long.class), eq(Arrays.asList("read", "update", "delete")));

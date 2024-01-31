@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.connection;
 
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import java.time.Instant;
@@ -73,7 +74,7 @@ public class ConnectionConfigRecycleServiceTest extends ServiceTestEnv {
         when(connectProperties.getTempExpireAfterInactiveIntervalSeconds()).thenReturn(INTERVAL_SECONDS);
         when(authenticationFacade.currentUserId()).thenReturn(USER_ID);
         when(authenticationFacade.currentOrganizationId()).thenReturn(ORGANIZATION_ID);
-        when(environmentService.list(Mockito.anyLong(), QueryEnvironmentParam.builder().build()))
+        when(environmentService.list(Mockito.anyLong(), eq(QueryEnvironmentParam.builder().build())))
                 .thenReturn(createEnvironments());
         when(projectRepository.findByIdIn(Mockito.anyList())).thenReturn(createProjects());
     }
