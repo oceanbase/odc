@@ -238,7 +238,7 @@ public class ConnectSessionController {
     }
 
     @PostMapping(value = "/sessions/{sessionId}/partitionPlans/latest/preview")
-    public ListResponse<PartitionPlanPreViewResp> getPreView(@PathVariable String sessionId,
+    public ListResponse<PartitionPlanPreViewResp> getPreview(@PathVariable String sessionId,
             @RequestBody List<PartitionPlanTableConfig> tableConfigs,
             @RequestParam(name = "onlyForPartitionName", defaultValue = "false") Boolean onlyForPartitionName) {
         return Responses.list(this.partitionPlanServiceV2.preview(
