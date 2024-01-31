@@ -68,26 +68,35 @@ public class PartitionPlanServiceV2 {
     public Map<PartitionPlanStrategy, List<String>> generatePartitionDdl(@NonNull Connection connection,
             @NonNull DialectType dialectType, @NonNull String schema,
             @NonNull PartitionPlanTableConfig tableConfig) throws Exception {
+        TableExtensionPoint tableExtensionPoint = SchemaPluginUtil.getTableExtension(dialectType);
+        if (tableExtensionPoint == null) {
+            throw new UnsupportedOperationException("Unsupported dialect " + dialectType);
+        }
+        DBTable dbTable = tableExtensionPoint.getDetail(connection, schema, tableConfig.getTableName());
+        return generatePartitionDdl(connection, dialectType, dbTable, tableConfig);
+    }
+
+    public Map<PartitionPlanStrategy, List<String>> generatePartitionDdl(@NonNull Connection connection,
+            @NonNull DialectType dialectType, @NonNull DBTable dbTable,
+            @NonNull PartitionPlanTableConfig tableConfig) throws Exception {
         AutoPartitionExtensionPoint autoPartitionExtensionPoint = TaskPluginUtil
                 .getAutoPartitionExtensionPoint(dialectType);
-        TableExtensionPoint tableExtensionPoint = SchemaPluginUtil.getTableExtension(dialectType);
-        if (tableExtensionPoint == null || autoPartitionExtensionPoint == null) {
+        if (autoPartitionExtensionPoint == null) {
             throw new UnsupportedOperationException("Unsupported dialect " + dialectType);
         }
         String tableName = tableConfig.getTableName();
-        DBTable dbTable = tableExtensionPoint.getDetail(connection, schema, tableName);
         List<DBTableColumn> columns = dbTable.getColumns();
         if (CollectionUtils.isEmpty(columns)) {
             throw new NotFoundException(ResourceType.OB_TABLE, "tableName", tableName);
         }
         DBTablePartition partition = dbTable.getPartition();
         if (partition == null || partition.getPartitionOption() == null) {
-            throw new IllegalArgumentException("Partition is null for " + schema + "." + tableName);
+            throw new IllegalArgumentException("Partition is null for " + tableName);
         } else {
             DBTablePartitionType partitionType = partition.getPartitionOption().getType();
             if (partitionType == DBTablePartitionType.UNKNOWN
                     || partitionType == DBTablePartitionType.NOT_PARTITIONED) {
-                throw new IllegalArgumentException("Table " + schema + "." + tableName + " is not partitioned");
+                throw new IllegalArgumentException("Table " + tableName + " is not partitioned");
             } else if (!autoPartitionExtensionPoint.supports(partition)) {
                 throw new IllegalArgumentException("Unsupported partition type, " + partitionType);
             }
